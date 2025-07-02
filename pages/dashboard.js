@@ -40,7 +40,7 @@ export default function Dashboard() {
     if (!className.trim() || !studentNames.trim()) return;
 
     const studentsArray = studentNames
-      .split('\\n')
+      .split('\n')
       .map((name) => name.trim())
       .filter((name) => name.length > 0)
       .map((name) => ({
