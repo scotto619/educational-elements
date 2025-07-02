@@ -1,4 +1,3 @@
-// dashboard.js (UPDATED)
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
@@ -41,7 +40,7 @@ export default function Dashboard() {
     if (!className.trim() || !studentNames.trim()) return;
 
     const studentsArray = studentNames
-      .split('\n')
+      .split('\\n')
       .map((name) => name.trim())
       .filter((name) => name.length > 0)
       .map((name) => ({
@@ -49,7 +48,7 @@ export default function Dashboard() {
         firstName: name,
         avatarBase: '',
         avatarLevel: 1,
-        avatar: '/avatars/placeholder.png',
+        avatar: '',
         totalPoints: 0,
         weeklyPoints: 0,
         categoryTotal: {},
@@ -81,10 +80,24 @@ export default function Dashboard() {
     setStudentNames('');
   };
 
+  const handleDeleteClass = async (classId) => {
+    const confirmed = confirm('Are you sure you want to delete this class?');
+    if (!confirmed) return;
+
+    const docRef = doc(firestore, 'users', user.uid);
+    const snap = await getDoc(docRef);
+    if (!snap.exists()) return;
+
+    const data = snap.data();
+    const updatedClasses = (data.classes || []).filter((cls) => cls.id !== classId);
+
+    await setDoc(docRef, { ...data, classes: updatedClasses });
+    setSavedClasses(updatedClasses);
+  };
+
   const handleOpenClassroom = () => {
     router.push('/classroom-champions');
   };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -132,17 +145,31 @@ export default function Dashboard() {
         <h2 className="text-xl font-bold text-gray-700 mb-2">📂 Saved Classes</h2>
         <ul className="space-y-2">
           {savedClasses.map((cls) => (
-            <li key={cls.id} className="bg-gray-100 p-3 rounded shadow flex justify-between">
+            <li key={cls.id} className="bg-gray-100 p-3 rounded shadow flex justify-between items-center">
               <div>
                 <p className="font-semibold">{cls.name}</p>
                 <p className="text-sm text-gray-600">{cls.students.length} students</p>
               </div>
-              <button
-                onClick={handleOpenClassroom}
-                className="text-sm px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
-              >
-                Open
-              </button>
+              <div className="space-x-2">
+                <button
+                  className="text-sm px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+                  onClick={() => handleOpenClassroom()}
+                >
+                  Open
+                </button>
+                <button
+                  className="text-sm px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+                  onClick={() => alert('Edit coming soon!')}
+                >
+                  Edit
+                </button>
+                <button
+                  className="text-sm px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+                  onClick={() => handleDeleteClass(cls.id)}
+                >
+                  Delete
+                </button>
+              </div>
             </li>
           ))}
           {savedClasses.length === 0 && <p className="text-gray-500 italic">No classes saved yet.</p>}

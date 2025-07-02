@@ -630,6 +630,15 @@ useEffect(() => {
               {selectedStudent.firstName} – ⭐{selectedStudent.avatarLevel}
             </h2>
             <img src={selectedStudent.avatar} className="w-40 h-40 mx-auto rounded-full border-4 shadow mb-4" />
+            {selectedStudent && (
+  <button
+    className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+    onClick={() => handleAvatarClick(selectedStudent.id)}
+  >
+    🎨 Choose New Avatar
+  </button>
+)}
+
             <div className="text-left space-y-1 text-sm font-medium">
               <p>👍 Respectful: {selectedStudent.categoryTotal?.Respectful || 0}</p>
               <p>💼 Responsible: {selectedStudent.categoryTotal?.Responsible || 0}</p>
@@ -637,6 +646,7 @@ useEffect(() => {
               <p className="mt-2">🕐 Weekly XP: {selectedStudent.weeklyPoints}</p>
               <p>💯 Total XP: {selectedStudent.totalPoints}</p>
             </div>
+            
 
             {selectedStudent.pet?.image && (
               <div className="mt-6">
