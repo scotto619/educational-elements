@@ -634,12 +634,16 @@ useEffect(() => {
       src={selectedStudent.avatar}
       className="w-40 h-40 mx-auto rounded-full border-4 shadow mb-4"
     />
-    <button
-      className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-      onClick={() => handleAvatarClick(selectedStudent.id)}
-    >
-      🎨 Choose New Avatar
-    </button>
+<button
+  className="mb-4 mt-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+  onClick={() => {
+    setSelectedStudent(null); // Close the profile modal
+    setTimeout(() => handleAvatarClick(selectedStudent.id), 0); // THEN open avatar modal
+  }}
+>
+  🎨 Choose Avatar
+</button>
+
   </>
 ) : (
   <button
