@@ -21,6 +21,10 @@ export default function ClassroomChampions() {
   const [petUnlockData, setPetUnlockData] = useState(null);
   const [petNameInput, setPetNameInput] = useState('');
 
+  // Avatar selection states
+  const [showAvatarSelectionModal, setShowAvatarSelectionModal] = useState(false);
+  const [studentForAvatarChange, setStudentForAvatarChange] = useState(null);
+
   const [raceInProgress, setRaceInProgress] = useState(false);
   const [raceFinished, setRaceFinished] = useState(false);
   const [racePositions, setRacePositions] = useState({});
@@ -116,6 +120,7 @@ export default function ClassroomChampions() {
     const boost = level * 0.5;
     return base + boost;
   }
+
   function checkForLevelUp(student) {
     const nextLevel = student.avatarLevel + 1;
     const xpNeeded = student.avatarLevel * 100;
@@ -133,6 +138,53 @@ export default function ClassroomChampions() {
       };
     }
     return student;
+  }
+
+  // NEW: Avatar selection handler
+  function handleAvatarClick(studentId) {
+    const student = students.find(s => s.id === studentId);
+    if (student) {
+      setStudentForAvatarChange(student);
+      setShowAvatarSelectionModal(true);
+    }
+  }
+
+  // NEW: Handle avatar change
+  async function handleAvatarChange(avatarBase) {
+    if (!studentForAvatarChange) return;
+
+    const newAvatar = getAvatarImage(avatarBase, studentForAvatarChange.avatarLevel);
+    
+    // Update student in state
+    setStudents(prev => prev.map(student => 
+      student.id === studentForAvatarChange.id 
+        ? { ...student, avatarBase, avatar: newAvatar }
+        : student
+    ));
+
+    // Update in Firebase
+    try {
+      const docRef = doc(firestore, 'users', user.uid);
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        const data = snap.data();
+        const updatedClasses = data.classes.map(cls => ({
+          ...cls,
+          students: cls.students.map(student =>
+            student.id === studentForAvatarChange.id
+              ? { ...student, avatarBase, avatar: newAvatar }
+              : student
+          )
+        }));
+        await setDoc(docRef, { ...data, classes: updatedClasses });
+      }
+    } catch (error) {
+      console.error("Error updating avatar:", error);
+    }
+
+    // Close modal
+    setShowAvatarSelectionModal(false);
+    setStudentForAvatarChange(null);
   }
 
   function handleAwardXP(id, category) {
@@ -273,9 +325,6 @@ useEffect(() => {
   return () => unsubscribe();
 }, []);
 
-
-
-
   useEffect(() => {
     if (!raceInProgress || selectedPets.length === 0) return;
 
@@ -336,16 +385,135 @@ useEffect(() => {
   }, [raceInProgress, students, selectedPets, selectedPrize, xpAmount, raceFinished]);
 
   if (loading) return <div className="p-10 text-center text-xl">Loading...</div>;
+
+  // NEW: Dashboard content
+  const renderDashboard = () => {
+    const totalStudents = students.length;
+    const studentsWithAvatars = students.filter(s => s.avatar).length;
+    const studentsWithPets = students.filter(s => s.pet?.image).length;
+    const totalXP = students.reduce((sum, s) => sum + (s.totalPoints || 0), 0);
+    const topStudent = students.reduce((top, current) => 
+      (current.totalPoints || 0) > (top.totalPoints || 0) ? current : top
+    , students[0]);
+
+    return (
+      <div className="space-y-6">
+        {/* Class Overview Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-blue-100 p-6 rounded-lg text-center">
+            <h3 className="text-lg font-bold text-blue-800">Total Students</h3>
+            <p className="text-3xl font-bold text-blue-600">{totalStudents}</p>
+          </div>
+          <div className="bg-green-100 p-6 rounded-lg text-center">
+            <h3 className="text-lg font-bold text-green-800">Students with Avatars</h3>
+            <p className="text-3xl font-bold text-green-600">{studentsWithAvatars}</p>
+          </div>
+          <div className="bg-purple-100 p-6 rounded-lg text-center">
+            <h3 className="text-lg font-bold text-purple-800">Students with Pets</h3>
+            <p className="text-3xl font-bold text-purple-600">{studentsWithPets}</p>
+          </div>
+          <div className="bg-yellow-100 p-6 rounded-lg text-center">
+            <h3 className="text-lg font-bold text-yellow-800">Total Class XP</h3>
+            <p className="text-3xl font-bold text-yellow-600">{totalXP}</p>
+          </div>
+        </div>
+
+        {/* Top Performer */}
+        {topStudent && (
+          <div className="bg-gradient-to-r from-gold-200 to-yellow-200 p-6 rounded-lg">
+            <h3 className="text-xl font-bold text-gray-800 mb-4">🏆 Top Performer</h3>
+            <div className="flex items-center space-x-4">
+              {topStudent.avatar && (
+                <img 
+                  src={topStudent.avatar} 
+                  alt={topStudent.firstName} 
+                  className="w-16 h-16 rounded-full border-2 border-yellow-500"
+                />
+              )}
+              <div>
+                <p className="text-lg font-bold text-gray-800">{topStudent.firstName}</p>
+                <p className="text-yellow-700">⭐ Level {topStudent.avatarLevel} • {topStudent.totalPoints} XP</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Recent Activity */}
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-xl font-bold text-gray-800 mb-4">📈 Class Progress</h3>
+          <div className="space-y-3">
+            {students.slice(0, 5).map(student => (
+              <div key={student.id} className="flex justify-between items-center p-3 bg-gray-50 rounded">
+                <div className="flex items-center space-x-3">
+                  {student.avatar ? (
+                    <img src={student.avatar} alt={student.firstName} className="w-8 h-8 rounded-full" />
+                  ) : (
+                    <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center text-xs font-bold">
+                      {student.firstName.charAt(0)}
+                    </div>
+                  )}
+                  <span className="font-medium text-gray-800">{student.firstName}</span>
+                </div>
+                <div className="text-right">
+                  <span className="font-bold text-green-600">{student.totalPoints || 0} XP</span>
+                  <br />
+                  <span className="text-xs text-gray-500">Level {student.avatarLevel}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-xl font-bold text-gray-800 mb-4">⚡ Quick Actions</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <button 
+              onClick={() => setActiveTab('students')}
+              className="p-4 bg-blue-100 rounded-lg hover:bg-blue-200 transition-colors"
+            >
+              <div className="text-center">
+                <div className="text-2xl mb-2">👥</div>
+                <div className="font-semibold text-blue-800">Manage Students</div>
+              </div>
+            </button>
+            <button 
+              onClick={() => setActiveTab('race')}
+              className="p-4 bg-green-100 rounded-lg hover:bg-green-200 transition-colors"
+            >
+              <div className="text-center">
+                <div className="text-2xl mb-2">🏁</div>
+                <div className="font-semibold text-green-800">Start Pet Race</div>
+              </div>
+            </button>
+            <button 
+              onClick={() => setActiveTab('classes')}
+              className="p-4 bg-purple-100 rounded-lg hover:bg-purple-200 transition-colors"
+            >
+              <div className="text-center">
+                <div className="text-2xl mb-2">📚</div>
+                <div className="font-semibold text-purple-800">Manage Classes</div>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="p-6 max-w-screen-xl mx-auto bg-white min-h-screen">
       <h1 className="text-3xl font-bold mb-6 text-center text-blue-700">Classroom Champions</h1>
 
       <div className="flex justify-center gap-4 mb-6">
-        <button onClick={() => setActiveTab("dashboard")} className={`px-4 py-2 rounded ${activeTab === "dashboard" ? "bg-blue-600 text-white" : "bg-gray-200"}`}>Dashboard</button>
-        <button onClick={() => setActiveTab("students")} className={`px-4 py-2 rounded ${activeTab === "students" ? "bg-blue-600 text-white" : "bg-gray-200"}`}>Students</button>
-        <button onClick={() => setActiveTab("race")} className={`px-4 py-2 rounded ${activeTab === "race" ? "bg-blue-600 text-white" : "bg-gray-200"}`}>Pet Race</button>
-        <button onClick={() => setActiveTab("classes")} className={`px-4 py-2 rounded ${activeTab === "classes" ? "bg-blue-600 text-white" : "bg-gray-200"}`}>My Classes</button>
+        <button onClick={() => setActiveTab("dashboard")} className={`px-4 py-2 rounded font-semibold ${activeTab === "dashboard" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-800"}`}>Dashboard</button>
+        <button onClick={() => setActiveTab("students")} className={`px-4 py-2 rounded font-semibold ${activeTab === "students" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-800"}`}>Students</button>
+        <button onClick={() => setActiveTab("race")} className={`px-4 py-2 rounded font-semibold ${activeTab === "race" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-800"}`}>Pet Race</button>
+        <button onClick={() => setActiveTab("classes")} className={`px-4 py-2 rounded font-semibold ${activeTab === "classes" ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-800"}`}>My Classes</button>
       </div>
+
+      {/* Dashboard Tab */}
+      {activeTab === 'dashboard' && renderDashboard()}
 
       {/* Students Tab */}
       {activeTab === 'students' && (
@@ -621,6 +789,7 @@ useEffect(() => {
           </div>
         </div>
       )}
+
       {/* Character Sheet Modal */}
       {selectedStudent && (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
@@ -635,7 +804,7 @@ useEffect(() => {
       className="w-40 h-40 mx-auto rounded-full border-4 shadow mb-4"
     />
 <button
-  className="mb-4 mt-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+  className="mb-4 mt-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 font-semibold"
   onClick={() => {
     setSelectedStudent(null); // Close the profile modal
     setTimeout(() => handleAvatarClick(selectedStudent.id), 0); // THEN open avatar modal
@@ -647,7 +816,7 @@ useEffect(() => {
   </>
 ) : (
   <button
-    className="mb-4 mt-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+    className="mb-4 mt-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 font-semibold"
     onClick={() => {
       handleAvatarClick(selectedStudent.id);
       setSelectedStudent(null);
@@ -689,6 +858,50 @@ useEffect(() => {
             >
               Close
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Avatar Selection Modal */}
+      {showAvatarSelectionModal && studentForAvatarChange && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <h2 className="text-2xl font-bold mb-4 text-center text-gray-800">
+                Choose New Avatar for {studentForAvatarChange.firstName}
+              </h2>
+              
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4 max-h-96 overflow-y-auto">
+                {AVAILABLE_AVATARS.map((avatar) => (
+                  <div
+                    key={avatar.path}
+                    className="relative group cursor-pointer transform hover:scale-105 transition-transform"
+                    onClick={() => handleAvatarChange(avatar.base)}
+                  >
+                    <img
+                      src={avatar.path}
+                      alt={avatar.base}
+                      className="w-full h-full rounded-lg border-2 border-gray-300 hover:border-blue-500 object-cover shadow-md"
+                    />
+                    <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-75 text-white text-xs p-1 rounded-b-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                      {avatar.base}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="mt-6 flex justify-center">
+                <button
+                  onClick={() => {
+                    setShowAvatarSelectionModal(false);
+                    setStudentForAvatarChange(null);
+                  }}
+                  className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
