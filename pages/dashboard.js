@@ -35,7 +35,7 @@ export default function Dashboard() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-yellow-100">
       <h1 className="text-4xl font-bold text-gray-800">Welcome to your Dashboard!</h1>
-      <p className="text-lg text-gray-700 mt-4">You're successfully logged in. 🎉</p>
+      <p className="text-lg text-gray-700 mt-4">You&apos;re successfully logged in. 🎉</p>
       <button
         onClick={handleLogout}
         className="mt-6 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"

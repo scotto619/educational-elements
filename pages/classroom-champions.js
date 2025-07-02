@@ -473,7 +473,7 @@ useEffect(() => {
                   <li key={s.id} className="flex items-center gap-2">
                     <span className="font-bold">#{i + 1}</span>
                     <img src={s.pet.image} className="w-6 h-6 rounded-full border" />
-                    <span>{s.firstName}'s {s.pet.name} – {s.pet.wins} wins</span>
+                    <span>{s.firstName}&apos;s {s.pet.name} – {s.pet.wins} wins</span>
                   </li>
                 ))}
               {students.filter((s) => s.pet?.wins > 0).length === 0 && (
@@ -487,7 +487,7 @@ useEffect(() => {
             <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
               <div className="bg-white p-6 rounded-lg shadow-lg text-center">
                 <h3 className="text-xl font-bold mb-4 text-green-600">🏆 Winner!</h3>
-                <p className="mb-2 text-lg">{raceWinner.firstName}'s pet wins the race!</p>
+                <p className="mb-2 text-lg">{raceWinner.firstName}&apos;s pet wins the race!</p>
                 <img src={raceWinner.pet.image} className="w-24 h-24 mx-auto rounded-full border shadow mb-2" />
                 <p className="text-sm italic text-gray-500">Prize: {selectedPrize === 'XP' ? `${xpAmount} XP` : selectedPrize}</p>
                 <button
@@ -695,7 +695,7 @@ useEffect(() => {
       {petUnlockData && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full text-center">
-            <h2 className="text-2xl font-bold text-green-600 mb-3">🎉 You've unlocked a pet!</h2>
+            <h2 className="text-2xl font-bold text-green-600 mb-3">🎉 You&apos;ve unlocked a pet!</h2>
             <p className="mb-4 text-lg">{petUnlockData.firstName}, meet your new companion!</p>
             <img
               src={petUnlockData.pet.image}
