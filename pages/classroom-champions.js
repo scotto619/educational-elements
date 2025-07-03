@@ -36,6 +36,7 @@ export default function ClassroomChampions() {
   const [newClassName, setNewClassName] = useState('');
   const [newClassStudents, setNewClassStudents] = useState('');
   const [teacherClasses, setTeacherClasses] = useState([]);
+  const [currentClassId, setCurrentClassId] = useState(null);
 
   // New UX states
   const [savingData, setSavingData] = useState(false);
@@ -105,6 +106,29 @@ export default function ClassroomChampions() {
     setTimeout(() => setShowSuccessToast(''), 3000);
   };
 
+  // Save students data to Firebase
+  const saveStudentsToFirebase = async (updatedStudents) => {
+    if (!user || !currentClassId) return;
+    
+    try {
+      const docRef = doc(firestore, 'users', user.uid);
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        const data = snap.data();
+        // Update the specific class by ID
+        const updatedClasses = data.classes.map(cls => 
+          cls.id === currentClassId 
+            ? { ...cls, students: updatedStudents }
+            : cls
+        );
+        await setDoc(docRef, { ...data, classes: updatedClasses });
+        console.log("✅ Student data saved to Firebase");
+      }
+    } catch (error) {
+      console.error("❌ Error saving student data:", error);
+    }
+  };
+
   function getAvatarImage(base, level) {
     return `/avatars/${base.replaceAll(" ", "%20")}/Level%20${level}.png`;
   }
@@ -164,27 +188,19 @@ export default function ClassroomChampions() {
     setSavingData(true);
     const newAvatar = getAvatarImage(avatarBase, studentForAvatarChange.avatarLevel);
     
-    setStudents(prev => prev.map(student => 
-      student.id === studentForAvatarChange.id 
-        ? { ...student, avatarBase, avatar: newAvatar }
-        : student
-    ));
+    setStudents(prev => {
+      const updatedStudents = prev.map(student => 
+        student.id === studentForAvatarChange.id 
+          ? { ...student, avatarBase, avatar: newAvatar }
+          : student
+      );
+      
+      // Save to Firebase
+      saveStudentsToFirebase(updatedStudents);
+      return updatedStudents;
+    });
 
     try {
-      const docRef = doc(firestore, 'users', user.uid);
-      const snap = await getDoc(docRef);
-      if (snap.exists()) {
-        const data = snap.data();
-        const updatedClasses = data.classes.map(cls => ({
-          ...cls,
-          students: cls.students.map(student =>
-            student.id === studentForAvatarChange.id
-              ? { ...student, avatarBase, avatar: newAvatar }
-              : student
-          )
-        }));
-        await setDoc(docRef, { ...data, classes: updatedClasses });
-      }
       showToast('Avatar updated successfully!');
     } catch (error) {
       console.error("Error updating avatar:", error);
@@ -201,8 +217,8 @@ export default function ClassroomChampions() {
     setAnimatingXP(prev => ({ ...prev, [id]: category }));
     setTimeout(() => setAnimatingXP(prev => ({ ...prev, [id]: null })), 600);
 
-    setStudents((prev) =>
-      prev.map((s) => {
+    setStudents((prev) => {
+      const updatedStudents = prev.map((s) => {
         if (s.id !== id) return s;
 
         const newTotal = s.totalPoints + 1;
@@ -239,8 +255,12 @@ export default function ClassroomChampions() {
         }
 
         return checkForLevelUp(updated);
-      })
-    );
+      });
+
+      // Save to Firebase after state update
+      saveStudentsToFirebase(updatedStudents);
+      return updatedStudents;
+    });
   }
 
   async function handleClassImport() {
@@ -292,6 +312,8 @@ export default function ClassroomChampions() {
       await setDoc(docRef, { ...existingData, classes: updatedClasses });
 
       setTeacherClasses(updatedClasses);
+      setStudents(newClass.students); // Load the new class
+      setCurrentClassId(newClass.id); // Set as current class
       setNewClassName('');
       setNewClassStudents('');
       showToast('Class imported successfully!');
@@ -305,6 +327,7 @@ export default function ClassroomChampions() {
 
   function loadClass(cls) {
     setStudents(cls.students);
+    setCurrentClassId(cls.id);
     showToast(`${cls.name} loaded successfully!`);
   }
 
@@ -328,14 +351,17 @@ export default function ClassroomChampions() {
 
             if (savedClasses.length > 0) {
               setStudents(savedClasses[0].students);
+              setCurrentClassId(savedClasses[0].id);
             } else {
               setStudents([]);
+              setCurrentClassId(null);
             }
           } else {
             console.log("🆕 No user document, creating default");
             await setDoc(docRef, { subscription: 'basic', classes: [] });
             setTeacherClasses([]);
             setStudents([]);
+            setCurrentClassId(null);
           }
         } else {
           console.log("🚫 No user signed in — redirecting to login");
@@ -381,8 +407,8 @@ export default function ClassroomChampions() {
           setRaceInProgress(false);
           setRaceFinished(true);
 
-          setStudents((prev) =>
-            prev.map((s) => {
+          setStudents((prev) => {
+            const updatedStudents = prev.map((s) => {
               if (s.id === winnerId) {
                 const updated = {
                   ...s,
@@ -400,8 +426,12 @@ export default function ClassroomChampions() {
                 return updated;
               }
               return s;
-            })
-          );
+            });
+
+            // Save race results to Firebase
+            saveStudentsToFirebase(updatedStudents);
+            return updatedStudents;
+          });
         }
 
         return updated;
@@ -1183,7 +1213,7 @@ export default function ClassroomChampions() {
         </div>
       )}
 
-      {/* Add Student Modal */}
+ {/* Add Student Modal */}
       {showAddStudentModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md transform scale-100 animate-modal-appear">
@@ -1254,7 +1284,12 @@ export default function ClassroomChampions() {
                     logs: [],
                     pet: null
                   };
-                  setStudents((prev) => [...prev, newStudent]);
+                  setStudents((prev) => {
+                    const updatedStudents = [...prev, newStudent];
+                    // Save new student to Firebase
+                    saveStudentsToFirebase(updatedStudents);
+                    return updatedStudents;
+                  });
                   setNewStudentName('');
                   setNewStudentAvatar('');
                   setShowAddStudentModal(false);
