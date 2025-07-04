@@ -8,62 +8,27 @@ export default function Dashboard() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const [userData, setUserData] = useState(null);
   const [className, setClassName] = useState('');
   const [studentNames, setStudentNames] = useState('');
   const [savedClasses, setSavedClasses] = useState([]);
-  
-  // New states for avatar selection
-  const [showAvatarModal, setShowAvatarModal] = useState(false);
-  const [studentsForAvatars, setStudentsForAvatars] = useState([]);
-  const [currentStudentIndex, setCurrentStudentIndex] = useState(0);
+  const [showSubscriptionBanner, setShowSubscriptionBanner] = useState(false);
 
-  // Available avatars (same as in classroom-champions.js)
-  const AVAILABLE_AVATARS = [
-    { base: "Alchemist F", path: "/avatars/Alchemist%20F/Level%201.png" },
-    { base: "Alchemist M", path: "/avatars/Alchemist%20M/Level%201.png" },
-    { base: "Archer F", path: "/avatars/Archer%20F/Level%201.png" },
-    { base: "Archer M", path: "/avatars/Archer%20M/Level%201.png" },
-    { base: "Barbarian F", path: "/avatars/Barbarian%20F/Level%201.png" },
-    { base: "Barbarian M", path: "/avatars/Barbarian%20M/Level%201.png" },
-    { base: "Bard F", path: "/avatars/Bard%20F/Level%201.png" },
-    { base: "Bard M", path: "/avatars/Bard%20M/Level%201.png" },
-    { base: "Beastmaster F", path: "/avatars/Beastmaster%20F/Level%201.png" },
-    { base: "Beastmaster M", path: "/avatars/Beastmaster%20M/Level%201.png" },
-    { base: "Cleric F", path: "/avatars/Cleric%20F/Level%201.png" },
-    { base: "Cleric M", path: "/avatars/Cleric%20M/Level%201.png" },
-    { base: "Crystal Sage F", path: "/avatars/Crystal%20Sage%20F/Level%201.png" },
-    { base: "Crystal Sage M", path: "/avatars/Crystal%20Sage%20M/Level%201.png" },
-    { base: "Druid F", path: "/avatars/Druid%20F/Level%201.png" },
-    { base: "Druid M", path: "/avatars/Druid%20M/Level%201.png" },
-    { base: "Engineer F", path: "/avatars/Engineer%20F/Level%201.png" },
-    { base: "Engineer M", path: "/avatars/Engineer%20M/Level%201.png" },
-    { base: "Ice Mage F", path: "/avatars/Ice%20Mage%20F/Level%201.png" },
-    { base: "Ice Mage M", path: "/avatars/Ice%20Mage%20M/Level%201.png" },
-    { base: "Illusionist F", path: "/avatars/Illusionist%20F/Level%201.png" },
-    { base: "Illusionist M", path: "/avatars/Illusionist%20M/Level%201.png" },
-    { base: "Knight F", path: "/avatars/Knight%20F/Level%201.png" },
-    { base: "Knight M", path: "/avatars/Knight%20M/Level%201.png" },
-    { base: "Monk F", path: "/avatars/Monk%20F/Level%201.png" },
-    { base: "Monk M", path: "/avatars/Monk%20M/Level%201.png" },
-    { base: "Necromancer F", path: "/avatars/Necromancer%20F/Level%201.png" },
-    { base: "Necromancer M", path: "/avatars/Necromancer%20M/Level%201.png" },
-    { base: "Orc F", path: "/avatars/Orc%20F/Level%201.png" },
-    { base: "Orc M", path: "/avatars/Orc%20M/Level%201.png" },
-    { base: "Paladin F", path: "/avatars/Paladin%20F/Level%201.png" },
-    { base: "Paladin M", path: "/avatars/Paladin%20M/Level%201.png" },
-    { base: "Rogue F", path: "/avatars/Rogue%20F/Level%201.png" },
-    { base: "Rogue M", path: "/avatars/Rogue%20M/Level%201.png" },
-    { base: "Sky Knight F", path: "/avatars/Sky%20Knight%20F/Level%201.png" },
-    { base: "Sky Knight M", path: "/avatars/Sky%20Knight%20M/Level%201.png" },
-    { base: "Time Mage F", path: "/avatars/Time%20Mage%20F/Level%201.png" },
-    { base: "Time Mage M", path: "/avatars/Time%20Mage%20M/Level%201.png" },
-    { base: "Wizard F", path: "/avatars/Wizard%20F/Level%201.png" },
-    { base: "Wizard M", path: "/avatars/Wizard%20M/Level%201.png" }
-  ];
-
-  function getAvatarImage(base, level) {
-    return `/avatars/${base.replaceAll(" ", "%20")}/Level%20${level}.png`;
-  }
+  // Check for successful checkout
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionId = urlParams.get('session_id');
+    
+    if (sessionId) {
+      // Clear the URL parameter
+      window.history.replaceState({}, document.title, '/dashboard');
+      
+      // Show success message
+      setTimeout(() => {
+        alert('🎉 Welcome to Classroom Champions! Your subscription is now active.');
+      }, 1000);
+    }
+  }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -71,12 +36,26 @@ export default function Dashboard() {
         router.push('/login');
       } else {
         setUser(user);
+        
+        // Load user data including subscription info
         const docRef = doc(firestore, 'users', user.uid);
         const snap = await getDoc(docRef);
+        
         if (snap.exists()) {
           const data = snap.data();
+          setUserData(data);
           setSavedClasses(data.classes || []);
+          
+          // Check if user needs to subscribe
+          if (!data.subscription || data.subscription === 'cancelled') {
+            setShowSubscriptionBanner(true);
+          }
+        } else {
+          // New user - redirect to pricing
+          router.push('/pricing');
+          return;
         }
+        
         setLoading(false);
       }
     });
@@ -89,18 +68,53 @@ export default function Dashboard() {
     router.push('/login');
   };
 
-  const handleUploadClass = () => {
+  const handleManageSubscription = async () => {
+    if (!userData?.stripeCustomerId) {
+      alert('No subscription found. Please subscribe first.');
+      router.push('/pricing');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/create-portal-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customerId: userData.stripeCustomerId })
+      });
+
+      const { url } = await response.json();
+      window.open(url, '_blank');
+    } catch (error) {
+      console.error('Error opening billing portal:', error);
+      alert('Error opening billing portal. Please try again.');
+    }
+  };
+
+  const handleUploadClass = async () => {
     if (!className.trim() || !studentNames.trim()) {
       alert("Please enter both class name and student names");
       return;
     }
 
-    // Create students array with names only
+    // Check subscription limits
+    const maxAllowed = userData?.subscription === 'pro' ? 5 : 1;
+    if (savedClasses.length >= maxAllowed) {
+      alert(`Your ${userData?.subscription || 'basic'} plan only allows up to ${maxAllowed} class${maxAllowed > 1 ? 'es' : ''}.`);
+      if (userData?.subscription !== 'pro') {
+        const upgrade = confirm('Would you like to upgrade to Pro for unlimited classes?');
+        if (upgrade) {
+          router.push('/pricing');
+        }
+      }
+      return;
+    }
+
+    // Rest of upload logic...
     const studentsArray = studentNames
       .split('\n')
       .map((name) => name.trim())
       .filter((name) => name.length > 0)
-      .map((name, index) => ({
+      .map((name) => ({
         id: Date.now().toString() + Math.random().toString(36).substring(2, 8),
         firstName: name,
         avatarBase: '',
@@ -114,75 +128,23 @@ export default function Dashboard() {
         pet: null,
       }));
 
-    // Start avatar selection process
-    setStudentsForAvatars(studentsArray);
-    setCurrentStudentIndex(0);
-    setShowAvatarModal(true);
-  };
-
-  const handleAvatarSelect = (avatarPath, avatarBase) => {
-    const updatedStudents = [...studentsForAvatars];
-    updatedStudents[currentStudentIndex] = {
-      ...updatedStudents[currentStudentIndex],
-      avatarBase: avatarBase,
-      avatar: getAvatarImage(avatarBase, 1)
-    };
-    setStudentsForAvatars(updatedStudents);
-
-    // Move to next student or finish
-    if (currentStudentIndex < updatedStudents.length - 1) {
-      setCurrentStudentIndex(currentStudentIndex + 1);
-    } else {
-      // All avatars selected, save the class
-      saveClassWithAvatars(updatedStudents);
-    }
-  };
-
-  const saveClassWithAvatars = async (studentsWithAvatars) => {
     const newClass = {
       id: 'class-' + Date.now(),
       name: className,
-      students: studentsWithAvatars,
+      students: studentsArray,
     };
 
     const docRef = doc(firestore, 'users', user.uid);
-    const snap = await getDoc(docRef);
-    const data = snap.exists() ? snap.data() : { subscription: 'basic', classes: [] };
-    const maxAllowed = data.subscription === 'pro' ? 5 : 1;
-
-    if (data.classes.length >= maxAllowed) {
-      alert(`Your plan only allows up to ${maxAllowed} class${maxAllowed > 1 ? 'es' : ''}.`);
-      setShowAvatarModal(false);
-      return;
-    }
-
-    const updated = [...data.classes, newClass];
-    await setDoc(docRef, { ...data, classes: updated });
+    const updated = [...savedClasses, newClass];
+    
+    await setDoc(docRef, { 
+      ...userData, 
+      classes: updated 
+    });
+    
     setSavedClasses(updated);
     setClassName('');
     setStudentNames('');
-    setShowAvatarModal(false);
-    setStudentsForAvatars([]);
-    setCurrentStudentIndex(0);
-  };
-
-  const handleDeleteClass = async (classId) => {
-    const confirmed = confirm('Are you sure you want to delete this class?');
-    if (!confirmed) return;
-
-    const docRef = doc(firestore, 'users', user.uid);
-    const snap = await getDoc(docRef);
-    if (!snap.exists()) return;
-
-    const data = snap.data();
-    const updatedClasses = (data.classes || []).filter((cls) => cls.id !== classId);
-
-    await setDoc(docRef, { ...data, classes: updatedClasses });
-    setSavedClasses(updatedClasses);
-  };
-
-  const handleOpenClassroom = () => {
-    router.push('/classroom-champions');
   };
 
   if (loading) {
@@ -199,15 +161,62 @@ export default function Dashboard() {
   return (
     <div className="p-6 max-w-4xl mx-auto bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
       <div className="bg-white rounded-lg shadow-lg p-8">
-        <h1 className="text-4xl font-bold mb-6 text-blue-700 text-center">Teacher Dashboard</h1>
+        {/* Subscription Banner */}
+        {showSubscriptionBanner && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-yellow-800">Subscription Required</h3>
+                <p className="text-yellow-700">Subscribe to start creating classes and managing students.</p>
+              </div>
+              <button
+                onClick={() => router.push('/pricing')}
+                className="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 font-semibold"
+              >
+                Subscribe Now
+              </button>
+            </div>
+          </div>
+        )}
 
-        <button
-          onClick={handleOpenClassroom}
-          className="w-full mb-8 bg-green-600 text-white px-6 py-4 rounded-lg font-semibold hover:bg-green-700 transition-colors text-lg shadow-md"
-        >
-          🎮 Launch Classroom Champions
-        </button>
+        {/* Header */}
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-4xl font-bold text-blue-700">Teacher Dashboard</h1>
+            {userData?.subscription && (
+              <div className="flex items-center mt-2 space-x-4">
+                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                  userData.subscription === 'pro' 
+                    ? 'bg-purple-100 text-purple-800' 
+                    : 'bg-blue-100 text-blue-800'
+                }`}>
+                  {userData.subscription === 'pro' ? 'Pro Plan' : 'Basic Plan'}
+                </span>
+                <span className="text-sm text-gray-600">
+                  {savedClasses.length}/{userData.subscription === 'pro' ? '5' : '1'} classes used
+                </span>
+              </div>
+            )}
+          </div>
+          <div className="flex space-x-3">
+            {userData?.stripeCustomerId && (
+              <button
+                onClick={handleManageSubscription}
+                className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 font-semibold"
+              >
+                Manage Subscription
+              </button>
+            )}
+            <button
+              onClick={() => router.push('/classroom-champions')}
+              className="bg-green-600 text-white px-6 py-4 rounded-lg font-semibold hover:bg-green-700 text-lg shadow-md"
+            >
+              🎮 Launch Classroom Champions
+            </button>
+          </div>
+        </div>
 
+        {/* Rest of dashboard remains the same... */}
         <div className="mb-8 bg-gray-50 p-6 rounded-lg">
           <h2 className="text-2xl font-bold text-gray-700 mb-4">📘 Upload New Class</h2>
           <div className="space-y-4">
@@ -233,13 +242,15 @@ export default function Dashboard() {
             </div>
             <button
               onClick={handleUploadClass}
-              className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold text-lg shadow-md"
+              disabled={!userData?.subscription || userData.subscription === 'cancelled'}
+              className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold text-lg shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Select Avatars & Upload Class
+              {!userData?.subscription ? 'Subscribe to Upload Classes' : 'Select Avatars & Upload Class'}
             </button>
           </div>
         </div>
 
+        {/* Saved Classes */}
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-gray-700 mb-4">📂 Saved Classes</h2>
           {savedClasses.length === 0 ? (
@@ -255,26 +266,12 @@ export default function Dashboard() {
                     <p className="font-bold text-lg text-gray-800">{cls.name}</p>
                     <p className="text-gray-600">{cls.students.length} students</p>
                   </div>
-                  <div className="space-x-2 flex">
-                    <button
-                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold"
-                      onClick={() => handleOpenClassroom()}
-                    >
-                      Open
-                    </button>
-                    <button
-                      className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors font-semibold"
-                      onClick={() => alert('Edit feature coming soon!')}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold"
-                      onClick={() => handleDeleteClass(cls.id)}
-                    >
-                      Delete
-                    </button>
-                  </div>
+                  <button
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold"
+                    onClick={() => router.push('/classroom-champions')}
+                  >
+                    Open
+                  </button>
                 </div>
               ))}
             </div>
@@ -288,54 +285,6 @@ export default function Dashboard() {
           Logout
         </button>
       </div>
-
-      {/* Avatar Selection Modal */}
-      {showAvatarModal && studentsForAvatars.length > 0 && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <h2 className="text-2xl font-bold mb-4 text-center text-gray-800">
-                Choose Avatar for {studentsForAvatars[currentStudentIndex]?.firstName}
-              </h2>
-              <p className="text-center text-gray-600 mb-6">
-                Student {currentStudentIndex + 1} of {studentsForAvatars.length}
-              </p>
-              
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4 max-h-96 overflow-y-auto">
-                {AVAILABLE_AVATARS.map((avatar) => (
-                  <div
-                    key={avatar.path}
-                    className="relative group cursor-pointer transform hover:scale-105 transition-transform"
-                    onClick={() => handleAvatarSelect(avatar.path, avatar.base)}
-                  >
-                    <img
-                      src={avatar.path}
-                      alt={avatar.base}
-                      className="w-full h-full rounded-lg border-2 border-gray-300 hover:border-blue-500 object-cover shadow-md"
-                    />
-                    <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-75 text-white text-xs p-1 rounded-b-lg opacity-0 group-hover:opacity-100 transition-opacity">
-                      {avatar.base}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              
-              <div className="mt-6 flex justify-center">
-                <button
-                  onClick={() => {
-                    setShowAvatarModal(false);
-                    setStudentsForAvatars([]);
-                    setCurrentStudentIndex(0);
-                  }}
-                  className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
