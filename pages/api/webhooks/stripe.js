@@ -1,4 +1,4 @@
-import { buffer } from 'micro';
+// pages/api/webhooks/stripe.js - FIXED VERSION (no micro dependency)
 import Stripe from 'stripe';
 import { firestore } from '../../../utils/firebase';
 import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
@@ -12,17 +12,28 @@ export const config = {
   },
 };
 
+// Helper function to get raw body
+async function getRawBody(req) {
+  const chunks = [];
+  for await (const chunk of req) {
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks);
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).end();
   }
 
-  const buf = await buffer(req);
-  const sig = req.headers['stripe-signature'];
-
   let event;
 
   try {
+    // Get raw body buffer
+    const buf = await getRawBody(req);
+    const sig = req.headers['stripe-signature'];
+
+    // Verify webhook signature
     event = stripe.webhooks.constructEvent(buf, sig, endpointSecret);
   } catch (err) {
     console.error('Webhook signature verification failed:', err.message);
@@ -149,7 +160,7 @@ async function handleSubscriptionUpdated(subscription) {
     let plan = 'basic';
     if (subscription.items.data[0]) {
       const priceId = subscription.items.data[0].price.id;
-      // You'll need to map your actual price IDs here
+      // Replace with your actual Pro price ID
       if (priceId === 'price_YOUR_NEW_PRO_PRICE_ID') {
         plan = 'pro';
       }
