@@ -161,7 +161,7 @@ async function handleSubscriptionUpdated(subscription) {
     if (subscription.items.data[0]) {
       const priceId = subscription.items.data[0].price.id;
       // Replace with your actual Pro price ID
-      if (priceId === prod_ScGDMTmqQUYcYG) {
+      if (priceId === 'price_1Rh1hBEN0uIK7BDCgkPiM6xm') {
         plan = 'pro';
       }
     }

@@ -15,8 +15,8 @@ export default async function handler(req, res) {
 
   // Discount codes mapping
   const promoCoupons = {
-    'WELCOME1': 'promo_1Rh1m0EN0uIK7BDCCsj1rVsa',  // Replace with actual coupon ID
-    'LAUNCH1': 'promo_1Rh1lOEN0uIK7BDCriJw1EGh'      // Replace with actual coupon ID  
+    'WELCOME1': 'coupon_ZF97wzo2',  // Replace with actual coupon ID
+    'LAUNCH1': 'coupon_Eo5rwKMU'      // Replace with actual coupon ID  
   };
 
   const priceId = prices[plan];
