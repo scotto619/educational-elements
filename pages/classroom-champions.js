@@ -1,4 +1,4 @@
-// classroom-champions.js - Updated with Multiple XP Awards
+// classroom-champions.js - Updated with Settings Tab
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
@@ -10,6 +10,7 @@ const DashboardTab = React.lazy(() => import('../components/tabs/DashboardTab'))
 const StudentsTab = React.lazy(() => import('../components/tabs/StudentsTab'));
 const PetRaceTab = React.lazy(() => import('../components/tabs/PetRaceTab'));
 const ClassesTab = React.lazy(() => import('../components/tabs/ClassesTab'));
+const SettingsTab = React.lazy(() => import('../components/tabs/SettingsTab'));
 
 // Lazy load modals
 const CharacterSheetModal = React.lazy(() => import('../components/modals/CharacterSheetModal'));
@@ -84,6 +85,15 @@ export default function ClassroomChampions() {
   const [bulkXpAmount, setBulkXpAmount] = useState(1);
   const [bulkXpCategory, setBulkXpCategory] = useState('Respectful');
   const [showBulkXpPanel, setShowBulkXpPanel] = useState(false);
+
+  // Settings states
+  const [userData, setUserData] = useState(null);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(null);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [feedbackType, setFeedbackType] = useState('bug');
+  const [feedbackSubject, setFeedbackSubject] = useState('');
+  const [feedbackMessage, setFeedbackMessage] = useState('');
+  const [feedbackEmail, setFeedbackEmail] = useState('');
 
   // UX states
   const [savingData, setSavingData] = useState(false);
@@ -410,6 +420,139 @@ export default function ClassroomChampions() {
     setShowBulkXpPanel(false);
   }
 
+  // Settings functions
+  async function handleResetStudentPoints(studentId) {
+    setSavingData(true);
+    setStudents(prev => {
+      const updatedStudents = prev.map(s => 
+        s.id === studentId 
+          ? {
+              ...s,
+              totalPoints: 0,
+              weeklyPoints: 0,
+              categoryTotal: {},
+              categoryWeekly: {},
+              logs: [
+                ...(s.logs || []),
+                {
+                  type: "reset",
+                  amount: 0,
+                  date: new Date().toISOString(),
+                  source: "manual_reset",
+                },
+              ],
+            }
+          : s
+      );
+      saveStudentsToFirebase(updatedStudents);
+      return updatedStudents;
+    });
+    setSavingData(false);
+    showToast('Student points reset successfully!');
+  }
+
+  async function handleResetAllPoints() {
+    setSavingData(true);
+    setStudents(prev => {
+      const updatedStudents = prev.map(s => ({
+        ...s,
+        totalPoints: 0,
+        weeklyPoints: 0,
+        categoryTotal: {},
+        categoryWeekly: {},
+        logs: [
+          ...(s.logs || []),
+          {
+            type: "reset",
+            amount: 0,
+            date: new Date().toISOString(),
+            source: "bulk_reset",
+          },
+        ],
+      }));
+      saveStudentsToFirebase(updatedStudents);
+      return updatedStudents;
+    });
+    setSavingData(false);
+    showToast('All student points reset successfully!');
+  }
+
+  async function handleResetPetSpeeds() {
+    setSavingData(true);
+    setStudents(prev => {
+      const updatedStudents = prev.map(s => 
+        s.pet ? {
+          ...s,
+          pet: {
+            ...s.pet,
+            speed: 1,
+            wins: 0
+          }
+        } : s
+      );
+      saveStudentsToFirebase(updatedStudents);
+      return updatedStudents;
+    });
+    setSavingData(false);
+    showToast('Pet speeds reset successfully!');
+  }
+
+  async function handleRemoveStudent(studentId) {
+    setSavingData(true);
+    setStudents(prev => {
+      const updatedStudents = prev.filter(s => s.id !== studentId);
+      saveStudentsToFirebase(updatedStudents);
+      return updatedStudents;
+    });
+    setSavingData(false);
+    showToast('Student removed successfully!');
+  }
+
+  async function handleSubmitFeedback() {
+    setSavingData(true);
+    
+    try {
+      // Here you would typically send to your backend API
+      // For now, we'll just simulate the process
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Reset form
+      setFeedbackSubject('');
+      setFeedbackMessage('');
+      setFeedbackEmail('');
+      setShowFeedbackModal(false);
+      
+      showToast('Feedback submitted successfully!');
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+      alert('Error submitting feedback. Please try again.');
+    } finally {
+      setSavingData(false);
+    }
+  }
+
+  async function handleSubscriptionManagement() {
+    if (!userData?.stripeCustomerId) {
+      // Redirect to upgrade page
+      router.push('/pricing');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/create-portal-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customerId: userData.stripeCustomerId })
+      });
+
+      const { url } = await response.json();
+      window.open(url, '_blank');
+    } catch (error) {
+      console.error('Error opening billing portal:', error);
+      alert('Error opening billing portal. Please try again.');
+    }
+  }
+
   async function handleClassImport() {
     if (!newClassName.trim() || !newClassStudents.trim()) {
       alert("Please fill in both class name and student names");
@@ -535,7 +678,28 @@ export default function ClassroomChampions() {
     handleClassImport,
     loadClass,
     savingData,
-    showToast
+    showToast,
+    // Settings props
+    userData,
+    user,
+    handleResetStudentPoints,
+    handleResetAllPoints,
+    handleResetPetSpeeds,
+    handleRemoveStudent,
+    handleSubscriptionManagement,
+    setShowConfirmDialog,
+    setShowFeedbackModal,
+    feedbackType,
+    setFeedbackType,
+    feedbackSubject,
+    setFeedbackSubject,
+    feedbackMessage,
+    setFeedbackMessage,
+    feedbackEmail,
+    setFeedbackEmail,
+    handleSubmitFeedback,
+    showFeedbackModal,
+    router
   };
 
   // Modal props
@@ -708,6 +872,7 @@ export default function ClassroomChampions() {
           if (snap.exists()) {
             const data = snap.data();
             console.log("📦 User data from Firestore:", data);
+            setUserData(data);
 
             const savedClasses = data.classes || [];
             setTeacherClasses(savedClasses);
@@ -721,7 +886,9 @@ export default function ClassroomChampions() {
             }
           } else {
             console.log("🆕 No user document, creating default");
-            await setDoc(docRef, { subscription: 'basic', classes: [] });
+            const defaultData = { subscription: 'basic', classes: [] };
+            await setDoc(docRef, defaultData);
+            setUserData(defaultData);
             setTeacherClasses([]);
             setStudents([]);
             setCurrentClassId(null);
@@ -771,7 +938,8 @@ export default function ClassroomChampions() {
             { id: 'dashboard', label: 'Dashboard', icon: '📊' },
             { id: 'students', label: 'Students', icon: '👥' },
             { id: 'race', label: 'Pet Race', icon: '🏁' },
-            { id: 'classes', label: 'My Classes', icon: '📚' }
+            { id: 'classes', label: 'My Classes', icon: '📚' },
+            { id: 'settings', label: 'Settings', icon: '⚙️' }
           ].map((tab) => (
             <button
               key={tab.id}
@@ -795,9 +963,120 @@ export default function ClassroomChampions() {
             {activeTab === 'students' && <StudentsTab {...tabProps} />}
             {activeTab === 'race' && <PetRaceTab {...tabProps} />}
             {activeTab === 'classes' && <ClassesTab {...tabProps} />}
+            {activeTab === 'settings' && <SettingsTab {...tabProps} />}
           </Suspense>
         </div>
       </div>
+
+      {/* Confirmation Dialog */}
+      {showConfirmDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md transform scale-100 animate-modal-appear">
+            <div className="text-center">
+              <div className="text-6xl mb-4">{showConfirmDialog.icon}</div>
+              <h2 className="text-2xl font-bold mb-4 text-gray-800">{showConfirmDialog.title}</h2>
+              <p className="text-gray-600 mb-6">{showConfirmDialog.message}</p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowConfirmDialog(null)}
+                  className="flex-1 px-4 py-3 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    showConfirmDialog.onConfirm();
+                    setShowConfirmDialog(null);
+                  }}
+                  className={`flex-1 px-4 py-3 rounded-lg transition-colors font-semibold text-white ${
+                    showConfirmDialog.type === 'danger' 
+                      ? 'bg-red-600 hover:bg-red-700' 
+                      : 'bg-blue-600 hover:bg-blue-700'
+                  }`}
+                >
+                  {showConfirmDialog.confirmText}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Feedback Modal */}
+      {showFeedbackModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md transform scale-100 animate-modal-appear">
+            <h2 className="text-2xl font-bold mb-6 text-gray-800 flex items-center">
+              <span className="mr-3">{feedbackType === 'bug' ? '🐛' : '💡'}</span>
+              {feedbackType === 'bug' ? 'Report Bug' : 'Feature Request'}
+            </h2>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Type</label>
+                <select
+                  value={feedbackType}
+                  onChange={(e) => setFeedbackType(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="bug">🐛 Bug Report</option>
+                  <option value="feature">💡 Feature Request</option>
+                  <option value="feedback">💬 General Feedback</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Subject</label>
+                <input
+                  type="text"
+                  value={feedbackSubject}
+                  onChange={(e) => setFeedbackSubject(e.target.value)}
+                  placeholder="Brief description of the issue or idea"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Message</label>
+                <textarea
+                  value={feedbackMessage}
+                  onChange={(e) => setFeedbackMessage(e.target.value)}
+                  placeholder="Please provide detailed information..."
+                  rows="4"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Email (Optional)</label>
+                <input
+                  type="email"
+                  value={feedbackEmail}
+                  onChange={(e) => setFeedbackEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowFeedbackModal(false)}
+                className="flex-1 px-4 py-3 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmitFeedback}
+                disabled={!feedbackSubject || !feedbackMessage}
+                className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors font-semibold"
+              >
+                Submit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Success Toast */}
       {showSuccessToast && (
