@@ -236,7 +236,7 @@ export default function Dashboard() {
   value={studentNames}
   onChange={(e) => setStudentNames(e.target.value)}
   rows="6"
-  placeholder="Enter one student name per line:&#10;John Smith&#10;Emma Johnson&#10;Michael Brown&#10;Sarah Wilson&#10;David Lee"
+  placeholder="Enter one student name per line"
   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 font-medium"
 />
             </div>
