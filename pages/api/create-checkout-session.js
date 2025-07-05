@@ -9,14 +9,14 @@ export default async function handler(req, res) {
 
   // UPDATED PRICE IDs - Replace with your actual Stripe Price IDs
   const prices = {
-    basic: 'price_1Rh1gTEN0uIK7BDCufQXspyn',    // Replace with actual price ID for $6.99
-    pro: 'price_1Rh1hBEN0uIK7BDCgkPiM6xm'         // Replace with actual price ID for $11.99
+    basic: 'price_1RhLeACkfn6vIQTW7GQ3gJFF',    // Replace with actual price ID for $6.99
+    pro: 'price_1RhLfRCkfn6vIQTWRXsduvSu'         // Replace with actual price ID for $11.99
   };
 
   // Discount codes mapping
   const promoCoupons = {
-    'WELCOME1': 'ZF97wzo2',  // Replace with actual coupon ID
-    'LAUNCH1': 'Eo5rwKMU'      // Replace with actual coupon ID  
+    'WELCOME1': 'ivEFDMVH',  // Replace with actual coupon ID
+    'LAUNCH1': 'CkbvrYgN'      // Replace with actual coupon ID  
   };
 
   const priceId = prices[plan];
