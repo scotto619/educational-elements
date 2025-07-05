@@ -86,7 +86,7 @@ export default function Home() {
                   onClick={() => router.push('/signup')} 
                   className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
                 >
-                  Sign Up Free
+                  Sign Up
                 </button>
               </div>
             </div>
@@ -148,13 +148,13 @@ export default function Home() {
                     onClick={() => router.push('/signup')} 
                     className="bg-yellow-500 hover:bg-yellow-600 text-black px-8 py-4 rounded-xl text-lg font-semibold transition-all transform hover:scale-105 shadow-lg hover:shadow-xl"
                   >
-                    🚀 Start Your Adventure - FREE
+                    🚀 Start Your Adventure - $1 First Month
                   </button>
                   <button 
-                    onClick={() => scrollToSection('demo')} 
+                    onClick={() => router.push('/pricing')} 
                     className="bg-white/20 hover:bg-white/30 text-white px-8 py-4 rounded-xl text-lg font-semibold transition-all border border-white/30"
                   >
-                    👀 Watch Demo
+                    💰 View Pricing
                   </button>
                 </div>
               </div>
@@ -162,19 +162,28 @@ export default function Home() {
               {/* Right Side - Interactive Demo */}
               <div className="relative">
                 <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20">
-                  <h3 className="text-2xl font-bold text-white mb-6 text-center">Live Demo</h3>
+                  <h3 className="text-2xl font-bold text-white mb-6 text-center">LEVEL UP NOW!</h3>
                   
                   {/* Avatar Showcase */}
-                  <div className="grid grid-cols-3 gap-4 mb-6">
-                    {[1, 2, 3].map((level) => (
+                  <div className="grid grid-cols-4 gap-3 mb-6">
+                    {[1, 2, 3, 4].map((level) => (
                       <div key={level} className="text-center">
-                        <div className="w-20 h-20 bg-gradient-to-br from-blue-400 to-purple-600 rounded-full border-3 border-white mx-auto mb-2 flex items-center justify-center text-2xl">
-                          🎭
+                        <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-purple-600 rounded-full border-3 border-white mx-auto mb-2 flex items-center justify-center text-lg">
+                          {level <= 3 ? '🧙‍♂️' : '❓'}
                         </div>
-                        <div className="text-white text-sm">Level {level}</div>
-                        <div className="text-yellow-400 text-xs">{level * 50} XP</div>
+                        <div className="text-white text-xs">Level {level}</div>
+                        <div className="text-yellow-400 text-xs">{level * 100} XP</div>
                       </div>
                     ))}
+                  </div>
+                  
+                  {/* Pet Showcase */}
+                  <div className="bg-purple-600 rounded-lg p-3 mb-4 text-center">
+                    <div className="text-white text-sm mb-2">Unlock Your Pet Companion!</div>
+                    <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-red-500 rounded-full mx-auto mb-2 flex items-center justify-center text-lg">
+                      🐾
+                    </div>
+                    <div className="text-purple-200 text-xs">Available at 50 XP</div>
                   </div>
                   
                   {/* XP Award Demo */}
@@ -336,7 +345,7 @@ export default function Home() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
               <h2 className="text-4xl font-bold text-gray-900 mb-4">Simple, Transparent Pricing</h2>
-              <p className="text-xl text-gray-600">Start free, upgrade when you're ready</p>
+              <p className="text-xl text-gray-600">Get started for just $1 your first month</p>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
@@ -367,7 +376,7 @@ export default function Home() {
                   onClick={() => router.push('/signup')} 
                   className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
                 >
-                  Start Free Trial
+                  Get Started - $1 First Month
                 </button>
               </div>
               
@@ -405,7 +414,7 @@ export default function Home() {
                   onClick={() => router.push('/signup')} 
                   className="w-full bg-yellow-400 text-black px-6 py-3 rounded-lg hover:bg-yellow-500 transition-colors font-semibold"
                 >
-                  Start Free Trial
+                  Get Started - $1 First Month
                 </button>
               </div>
             </div>
@@ -421,7 +430,7 @@ export default function Home() {
               onClick={() => router.push('/signup')} 
               className="bg-yellow-400 hover:bg-yellow-500 text-black px-8 py-4 rounded-xl text-lg font-semibold transition-all transform hover:scale-105"
             >
-              🚀 Start Your Free Trial Now
+              🚀 Start Your Adventure - $1 First Month
             </button>
             <p className="text-white/80 mt-4">No credit card required • Cancel anytime</p>
           </div>
