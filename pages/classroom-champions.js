@@ -1,4 +1,4 @@
-// classroom-champions.js - Updated with Quest System
+// classroom-champions.js - Complete with Currency System
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
@@ -8,6 +8,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 // Lazy load components
 const DashboardTab = React.lazy(() => import('../components/tabs/DashboardTab'));
 const StudentsTab = React.lazy(() => import('../components/tabs/StudentsTab'));
+const ShopTab = React.lazy(() => import('../components/tabs/ShopTab'));
 const PetRaceTab = React.lazy(() => import('../components/tabs/PetRaceTab'));
 const ClassesTab = React.lazy(() => import('../components/tabs/ClassesTab'));
 const SettingsTab = React.lazy(() => import('../components/tabs/SettingsTab'));
@@ -21,6 +22,316 @@ const AddStudentModal = React.lazy(() => import('../components/modals/AddStudent
 const RaceWinnerModal = React.lazy(() => import('../components/modals/RaceWinnerModal'));
 const RaceSetupModal = React.lazy(() => import('../components/modals/RaceSetupModal'));
 const QuestCompletionModal = React.lazy(() => import('../components/modals/QuestCompletionModal'));
+
+// ===============================================
+// CURRENCY SYSTEM UTILITIES
+// ===============================================
+
+const XP_TO_COINS_RATIO = 5; // 5 XP = 1 coin
+
+const calculateCoins = (totalXP) => {
+  return Math.floor(totalXP / XP_TO_COINS_RATIO);
+};
+
+const canAfford = (student, cost) => {
+  const coins = calculateCoins(student.totalPoints || 0);
+  return coins >= cost;
+};
+
+const spendCoins = (student, cost) => {
+  const coins = calculateCoins(student.totalPoints || 0);
+  if (coins >= cost) {
+    const xpToDeduct = cost * XP_TO_COINS_RATIO;
+    return {
+      ...student,
+      totalPoints: Math.max(0, student.totalPoints - xpToDeduct),
+      coinsSpent: (student.coinsSpent || 0) + cost,
+      logs: [
+        ...(student.logs || []),
+        {
+          type: "purchase",
+          amount: -cost,
+          date: new Date().toISOString(),
+          source: "shop_purchase",
+        },
+      ],
+    };
+  }
+  return student;
+};
+
+// ===============================================
+// ITEM RARITY SYSTEM
+// ===============================================
+
+const ITEM_RARITIES = {
+  common: { 
+    name: 'Common', 
+    color: 'gray', 
+    bgColor: 'bg-gray-100', 
+    textColor: 'text-gray-700',
+    borderColor: 'border-gray-300',
+    chance: 60
+  },
+  rare: { 
+    name: 'Rare', 
+    color: 'blue', 
+    bgColor: 'bg-blue-100', 
+    textColor: 'text-blue-700',
+    borderColor: 'border-blue-300',
+    chance: 30
+  },
+  epic: { 
+    name: 'Epic', 
+    color: 'purple', 
+    bgColor: 'bg-purple-100', 
+    textColor: 'text-purple-700',
+    borderColor: 'border-purple-300',
+    chance: 8
+  },
+  legendary: { 
+    name: 'Legendary', 
+    color: 'yellow', 
+    bgColor: 'bg-yellow-100', 
+    textColor: 'text-yellow-700',
+    borderColor: 'border-yellow-300',
+    chance: 2
+  }
+};
+
+// ===============================================
+// SHOP ITEMS DATABASE
+// ===============================================
+
+const SHOP_ITEMS = [
+  // Cosmetic Items
+  {
+    id: 'crown',
+    name: 'Golden Crown',
+    description: 'A majestic crown for classroom royalty',
+    price: 10,
+    type: 'cosmetic',
+    rarity: 'epic',
+    icon: '👑',
+    category: 'accessories'
+  },
+  {
+    id: 'wizard_hat',
+    name: 'Wizard Hat',
+    description: 'Channel your inner magic user',
+    price: 6,
+    type: 'cosmetic',
+    rarity: 'rare',
+    icon: '🧙‍♂️',
+    category: 'accessories'
+  },
+  {
+    id: 'sunglasses',
+    name: 'Cool Sunglasses',
+    description: 'Look effortlessly cool',
+    price: 3,
+    type: 'cosmetic',
+    rarity: 'common',
+    icon: '😎',
+    category: 'accessories'
+  },
+  {
+    id: 'cape',
+    name: 'Superhero Cape',
+    description: 'Be the hero of your classroom',
+    price: 8,
+    type: 'cosmetic',
+    rarity: 'rare',
+    icon: '🦸‍♂️',
+    category: 'accessories'
+  },
+  
+  // Power-ups
+  {
+    id: 'double_xp',
+    name: 'Double XP Boost',
+    description: 'Double XP for your next 5 actions',
+    price: 8,
+    type: 'powerup',
+    rarity: 'rare',
+    icon: '⚡',
+    category: 'powerups',
+    effect: 'double_xp_5'
+  },
+  {
+    id: 'pet_treat',
+    name: 'Pet Speed Boost',
+    description: 'Permanently increase your pet\'s speed',
+    price: 12,
+    type: 'powerup',
+    rarity: 'epic',
+    icon: '🍖',
+    category: 'powerups',
+    effect: 'pet_speed_boost'
+  },
+  {
+    id: 'luck_charm',
+    name: 'Lucky Charm',
+    description: 'Increase your loot box luck for 24 hours',
+    price: 5,
+    type: 'powerup',
+    rarity: 'common',
+    icon: '🍀',
+    category: 'powerups',
+    effect: 'luck_boost_24h'
+  },
+  
+  // Loot Boxes
+  {
+    id: 'basic_box',
+    name: 'Basic Loot Box',
+    description: 'Contains 3 random items',
+    price: 4,
+    type: 'lootbox',
+    rarity: 'common',
+    icon: '📦',
+    category: 'lootboxes',
+    contents: { count: 3, rarityBonus: 0 }
+  },
+  {
+    id: 'premium_box',
+    name: 'Premium Loot Box',
+    description: 'Contains 5 random items with better odds',
+    price: 8,
+    type: 'lootbox',
+    rarity: 'rare',
+    icon: '🎁',
+    category: 'lootboxes',
+    contents: { count: 5, rarityBonus: 15 }
+  },
+  {
+    id: 'legendary_box',
+    name: 'Legendary Loot Box',
+    description: 'Contains 7 items with guaranteed rare+',
+    price: 15,
+    type: 'lootbox',
+    rarity: 'legendary',
+    icon: '💎',
+    category: 'lootboxes',
+    contents: { count: 7, rarityBonus: 30, guaranteedRare: true }
+  },
+  
+  // Collectibles
+  {
+    id: 'trophy_bronze',
+    name: 'Bronze Trophy',
+    description: 'A symbol of your achievements',
+    price: 5,
+    type: 'collectible',
+    rarity: 'common',
+    icon: '🥉',
+    category: 'trophies'
+  },
+  {
+    id: 'trophy_silver',
+    name: 'Silver Trophy',
+    description: 'Shining bright with success',
+    price: 10,
+    type: 'collectible',
+    rarity: 'rare',
+    icon: '🥈',
+    category: 'trophies'
+  },
+  {
+    id: 'trophy_gold',
+    name: 'Gold Trophy',
+    description: 'The ultimate achievement',
+    price: 20,
+    type: 'collectible',
+    rarity: 'epic',
+    icon: '🥇',
+    category: 'trophies'
+  }
+];
+
+// ===============================================
+// LOOT BOX ITEMS (separate from shop items)
+// ===============================================
+
+const LOOT_BOX_ITEMS = [
+  // Common Items
+  { id: 'coin_small', name: 'Coin Pouch', icon: '💰', rarity: 'common', effect: 'coins_1' },
+  { id: 'sticker_star', name: 'Star Sticker', icon: '⭐', rarity: 'common', effect: 'cosmetic' },
+  { id: 'pencil', name: 'Magic Pencil', icon: '✏️', rarity: 'common', effect: 'cosmetic' },
+  { id: 'eraser', name: 'Lucky Eraser', icon: '🔸', rarity: 'common', effect: 'cosmetic' },
+  
+  // Rare Items
+  { id: 'coin_medium', name: 'Coin Bag', icon: '💎', rarity: 'rare', effect: 'coins_3' },
+  { id: 'rainbow_sticker', name: 'Rainbow Sticker', icon: '🌈', rarity: 'rare', effect: 'cosmetic' },
+  { id: 'magic_wand', name: 'Magic Wand', icon: '🪄', rarity: 'rare', effect: 'cosmetic' },
+  { id: 'pet_toy', name: 'Pet Toy', icon: '🧸', rarity: 'rare', effect: 'pet_happiness' },
+  
+  // Epic Items
+  { id: 'coin_large', name: 'Treasure Chest', icon: '💰', rarity: 'epic', effect: 'coins_5' },
+  { id: 'crystal_ball', name: 'Crystal Ball', icon: '🔮', rarity: 'epic', effect: 'cosmetic' },
+  { id: 'spell_book', name: 'Ancient Spell Book', icon: '📚', rarity: 'epic', effect: 'xp_boost' },
+  { id: 'golden_apple', name: 'Golden Apple', icon: '🍎', rarity: 'epic', effect: 'teacher_favorite' },
+  
+  // Legendary Items
+  { id: 'coin_jackpot', name: 'Jackpot!', icon: '🎰', rarity: 'legendary', effect: 'coins_10' },
+  { id: 'unicorn', name: 'Unicorn Friend', icon: '🦄', rarity: 'legendary', effect: 'pet_legendary' },
+  { id: 'infinity_gem', name: 'Infinity Gem', icon: '💎', rarity: 'legendary', effect: 'permanent_buff' },
+  { id: 'phoenix_feather', name: 'Phoenix Feather', icon: '🔥', rarity: 'legendary', effect: 'resurrection' }
+];
+
+// ===============================================
+// LOOT BOX GENERATION SYSTEM
+// ===============================================
+
+const generateLootBoxRewards = (lootBox) => {
+  const rewards = [];
+  const { count, rarityBonus, guaranteedRare } = lootBox.contents;
+  
+  for (let i = 0; i < count; i++) {
+    let rarity = 'common';
+    const roll = Math.random() * 100;
+    
+    // Apply rarity bonus
+    const adjustedRoll = roll - (rarityBonus || 0);
+    
+    if (adjustedRoll <= ITEM_RARITIES.legendary.chance) {
+      rarity = 'legendary';
+    } else if (adjustedRoll <= ITEM_RARITIES.epic.chance) {
+      rarity = 'epic';
+    } else if (adjustedRoll <= ITEM_RARITIES.rare.chance) {
+      rarity = 'rare';
+    } else {
+      rarity = 'common';
+    }
+    
+    // Guarantee at least one rare+ item for premium boxes
+    if (guaranteedRare && i === 0 && rarity === 'common') {
+      rarity = 'rare';
+    }
+    
+    const availableItems = LOOT_BOX_ITEMS.filter(item => item.rarity === rarity);
+    const randomItem = availableItems[Math.floor(Math.random() * availableItems.length)];
+    
+    rewards.push({
+      ...randomItem,
+      id: `${randomItem.id}_${Date.now()}_${i}`,
+      obtainedAt: new Date().toISOString()
+    });
+  }
+  
+  return rewards;
+};
+
+// Update student with currency fields
+const updateStudentWithCurrency = (student) => {
+  return {
+    ...student,
+    coinsSpent: student.coinsSpent || 0,
+    inventory: student.inventory || [],
+    lootBoxes: student.lootBoxes || [],
+    achievements: student.achievements || []
+  };
+};
 
 // Loading component
 const LoadingSpinner = ({ message = "Loading..." }) => (
@@ -841,7 +1152,7 @@ export default function ClassroomChampions() {
       .map((name) => name.trim())
       .filter((name) => name.length > 0)
       .map((name) => {
-        return {
+        return updateStudentWithCurrency({
           id: Date.now().toString() + Math.random().toString(36).substring(2, 8),
           firstName: name,
           avatarBase: '',
@@ -853,7 +1164,7 @@ export default function ClassroomChampions() {
           categoryWeekly: {},
           logs: [],
           pet: null
-        };
+        });
       });
 
     const newClass = {
@@ -897,7 +1208,8 @@ export default function ClassroomChampions() {
   }
 
   function loadClass(cls) {
-    setStudents(cls.students);
+    const studentsWithCurrency = cls.students.map(updateStudentWithCurrency);
+    setStudents(studentsWithCurrency);
     setCurrentClassId(cls.id);
     setDailyQuests(cls.dailyQuests || []);
     setWeeklyQuests(cls.weeklyQuests || []);
@@ -996,18 +1308,6 @@ export default function ClassroomChampions() {
     loadClass,
     savingData,
     showToast,
-      // Quest management props (ADD THESE)
-  questTemplates,
-  setQuestTemplates,
-  dailyQuests,
-  weeklyQuests,
-  setDailyQuests,
-  setWeeklyQuests,
-  generateDailyQuests,
-  generateWeeklyQuests,
-  saveQuestDataToFirebase,
-  savingData,
-  showToast,
     // Settings props
     userData,
     user,
@@ -1028,7 +1328,18 @@ export default function ClassroomChampions() {
     setFeedbackEmail,
     handleSubmitFeedback,
     showFeedbackModal,
-    router
+    router,
+    // Currency & Shop props
+    selectedStudent,
+    setSelectedStudent,
+    calculateCoins,
+    canAfford,
+    spendCoins,
+    SHOP_ITEMS,
+    ITEM_RARITIES,
+    LOOT_BOX_ITEMS,
+    generateLootBoxRewards,
+    setSavingData
   };
 
   // Modal props
@@ -1085,128 +1396,128 @@ export default function ClassroomChampions() {
     questCompletionData,
     setQuestCompletionData,
     showQuestCompletion,
-    setShowQuestCompletion
+    setShowQuestCompletion,
+    // Currency utilities
+    calculateCoins
   };
 
-  // Race logic (keeping the existing problematic one for now)
-  // Replace the existing race useEffect in classroom-champions.js (around line 750-850)
+  // Race logic with fixed finish line
+  useEffect(() => {
+    if (!raceInProgress || selectedPets.length === 0) return;
 
-useEffect(() => {
-  if (!raceInProgress || selectedPets.length === 0) return;
+    const interval = setInterval(() => {
+      setRacePositions((prev) => {
+        const updated = { ...prev };
+        let winnerId = null;
 
-  const interval = setInterval(() => {
-    setRacePositions((prev) => {
-      const updated = { ...prev };
-      let winnerId = null;
+        // More accurate finish line calculation
+        const getRaceTrackWidth = () => {
+          const raceTrack = document.querySelector('.race-track-container');
+          if (raceTrack) {
+            const rect = raceTrack.getBoundingClientRect();
+            // Set finish line earlier to prevent squishing
+            return rect.width - 80; // Increased buffer from 45 to 80
+          }
+          return 720; // Reduced fallback from 700 to 720
+        };
 
-      // More accurate finish line calculation
-      const getRaceTrackWidth = () => {
-        const raceTrack = document.querySelector('.race-track-container');
-        if (raceTrack) {
-          const rect = raceTrack.getBoundingClientRect();
-          // Set finish line earlier to prevent squishing
-          return rect.width - 80; // Increased buffer from 45 to 80
+        const trackWidth = getRaceTrackWidth();
+        const FINISH_LINE_POSITION = trackWidth;
+
+        // Check for winners BEFORE updating positions
+        for (const id of selectedPets) {
+          const student = students.find((s) => s.id === id);
+          if (!student?.pet) continue;
+
+          const currentPosition = updated[id] || 0;
+          
+          // Check if this pet will cross the finish line with the next step
+          if (currentPosition < FINISH_LINE_POSITION) {
+            const speed = calculateSpeed(student.pet);
+            const baseStep = speed * 2;
+            const randomMultiplier = 0.8 + Math.random() * 0.4;
+            const step = baseStep * randomMultiplier;
+            const nextPosition = currentPosition + step;
+
+            // If the next position would cross the finish line, declare winner immediately
+            if (nextPosition >= FINISH_LINE_POSITION && !raceFinished) {
+              winnerId = id;
+              
+              // Set winner position exactly at finish line to prevent overrun
+              updated[id] = FINISH_LINE_POSITION;
+              
+              // Stop all other pets at their current positions
+              for (const otherId of selectedPets) {
+                if (otherId !== id && updated[otherId] !== undefined) {
+                  updated[otherId] = Math.min(updated[otherId] || 0, FINISH_LINE_POSITION - 10);
+                }
+              }
+              break;
+            }
+          }
         }
-        return 720; // Reduced fallback from 700 to 720
-      };
 
-      const trackWidth = getRaceTrackWidth();
-      const FINISH_LINE_POSITION = trackWidth;
+        // If we found a winner, end the race immediately
+        if (winnerId) {
+          clearInterval(interval);
+          
+          const winner = students.find((s) => s.id === winnerId);
+          setRaceWinner(winner);
+          setRaceInProgress(false);
+          setRaceFinished(true);
 
-      // Check for winners BEFORE updating positions
-      for (const id of selectedPets) {
-        const student = students.find((s) => s.id === id);
-        if (!student?.pet) continue;
+          // Award prizes
+          setStudents((prev) => {
+            const updatedStudents = prev.map((s) => {
+              if (s.id === winnerId) {
+                const updated = {
+                  ...s,
+                  pet: {
+                    ...s.pet,
+                    wins: (s.pet.wins || 0) + 1,
+                    speed: (s.pet.speed || 1) + 0.02
+                  },
+                };
 
-        const currentPosition = updated[id] || 0;
-        
-        // Check if this pet will cross the finish line with the next step
-        if (currentPosition < FINISH_LINE_POSITION) {
+                if (selectedPrize === 'XP') {
+                  updated.totalPoints = (updated.totalPoints || 0) + xpAmount;
+                  return checkForLevelUp(updated);
+                }
+
+                return updated;
+              }
+              return s;
+            });
+
+            saveStudentsToFirebase(updatedStudents);
+            return updatedStudents;
+          });
+
+          return updated; // Return the final positions
+        }
+
+        // Only update positions if no winner was found
+        for (const id of selectedPets) {
+          const student = students.find((s) => s.id === id);
+          if (!student?.pet) continue;
+
           const speed = calculateSpeed(student.pet);
           const baseStep = speed * 2;
           const randomMultiplier = 0.8 + Math.random() * 0.4;
           const step = baseStep * randomMultiplier;
-          const nextPosition = currentPosition + step;
-
-          // If the next position would cross the finish line, declare winner immediately
-          if (nextPosition >= FINISH_LINE_POSITION && !raceFinished) {
-            winnerId = id;
-            
-            // Set winner position exactly at finish line to prevent overrun
-            updated[id] = FINISH_LINE_POSITION;
-            
-            // Stop all other pets at their current positions
-            for (const otherId of selectedPets) {
-              if (otherId !== id && updated[otherId] !== undefined) {
-                updated[otherId] = Math.min(updated[otherId] || 0, FINISH_LINE_POSITION - 10);
-              }
-            }
-            break;
-          }
+          
+          const currentPosition = updated[id] || 0;
+          const newPosition = Math.min(currentPosition + step, FINISH_LINE_POSITION);
+          
+          updated[id] = newPosition;
         }
-      }
 
-      // If we found a winner, end the race immediately
-      if (winnerId) {
-        clearInterval(interval);
-        
-        const winner = students.find((s) => s.id === winnerId);
-        setRaceWinner(winner);
-        setRaceInProgress(false);
-        setRaceFinished(true);
+        return updated;
+      });
+    }, 100);
 
-        // Award prizes
-        setStudents((prev) => {
-          const updatedStudents = prev.map((s) => {
-            if (s.id === winnerId) {
-              const updated = {
-                ...s,
-                pet: {
-                  ...s.pet,
-                  wins: (s.pet.wins || 0) + 1,
-                  speed: (s.pet.speed || 1) + 0.02
-                },
-              };
-
-              if (selectedPrize === 'XP') {
-                updated.totalPoints = (updated.totalPoints || 0) + xpAmount;
-                return checkForLevelUp(updated);
-              }
-
-              return updated;
-            }
-            return s;
-          });
-
-          saveStudentsToFirebase(updatedStudents);
-          return updatedStudents;
-        });
-
-        return updated; // Return the final positions
-      }
-
-      // Only update positions if no winner was found
-      for (const id of selectedPets) {
-        const student = students.find((s) => s.id === id);
-        if (!student?.pet) continue;
-
-        const speed = calculateSpeed(student.pet);
-        const baseStep = speed * 2;
-        const randomMultiplier = 0.8 + Math.random() * 0.4;
-        const step = baseStep * randomMultiplier;
-        
-        const currentPosition = updated[id] || 0;
-        const newPosition = Math.min(currentPosition + step, FINISH_LINE_POSITION);
-        
-        updated[id] = newPosition;
-      }
-
-      return updated;
-    });
-  }, 100);
-
-  return () => clearInterval(interval);
-}, [raceInProgress, students, selectedPets, selectedPrize, xpAmount, raceFinished]);
+    return () => clearInterval(interval);
+  }, [raceInProgress, students, selectedPets, selectedPrize, xpAmount, raceFinished]);
 
   // Main auth effect
   useEffect(() => {
@@ -1230,7 +1541,8 @@ useEffect(() => {
 
             if (savedClasses.length > 0) {
               const firstClass = savedClasses[0];
-              setStudents(firstClass.students);
+              const studentsWithCurrency = firstClass.students.map(updateStudentWithCurrency);
+              setStudents(studentsWithCurrency);
               setCurrentClassId(firstClass.id);
               setDailyQuests(firstClass.dailyQuests || []);
               setWeeklyQuests(firstClass.weeklyQuests || []);
@@ -1298,6 +1610,7 @@ useEffect(() => {
           {[
             { id: 'dashboard', label: 'Dashboard', icon: '📊' },
             { id: 'students', label: 'Students', icon: '👥' },
+            { id: 'shop', label: 'Shop', icon: '🏪' },
             { id: 'race', label: 'Pet Race', icon: '🏁' },
             { id: 'classes', label: 'My Classes', icon: '📚' },
             { id: 'settings', label: 'Settings', icon: '⚙️' }
@@ -1322,6 +1635,7 @@ useEffect(() => {
           <Suspense fallback={<TabLoadingSpinner />}>
             {activeTab === 'dashboard' && <DashboardTab {...tabProps} />}
             {activeTab === 'students' && <StudentsTab {...tabProps} />}
+            {activeTab === 'shop' && <ShopTab {...tabProps} />}
             {activeTab === 'race' && <PetRaceTab {...tabProps} />}
             {activeTab === 'classes' && <ClassesTab {...tabProps} />}
             {activeTab === 'settings' && <SettingsTab {...tabProps} />}
@@ -1329,6 +1643,8 @@ useEffect(() => {
         </div>
       </div>
 
+      {/* All existing modals and UI elements remain the same... */}
+      
       {/* Confirmation Dialog */}
       {showConfirmDialog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">

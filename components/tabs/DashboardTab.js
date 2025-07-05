@@ -10,12 +10,14 @@ const DashboardTab = ({
   dailyQuests,
   weeklyQuests,
   checkQuestCompletion,
-  markQuestComplete
+  markQuestComplete,
+  calculateCoins
 }) => {
   const totalStudents = students.length;
   const studentsWithAvatars = students.filter(s => s.avatar).length;
   const studentsWithPets = students.filter(s => s.pet?.image).length;
   const totalXP = students.reduce((sum, s) => sum + (s.totalPoints || 0), 0);
+  const totalCoins = students.reduce((sum, s) => sum + calculateCoins(s.totalPoints || 0), 0);
   const averageXP = totalStudents > 0 ? Math.round(totalXP / totalStudents) : 0;
   const topStudent = students.reduce((top, current) => 
     (current.totalPoints || 0) > (top.totalPoints || 0) ? current : top
@@ -89,10 +91,10 @@ const DashboardTab = ({
           <div className="bg-gradient-to-br from-yellow-100 to-yellow-200 p-4 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-300">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-bold text-yellow-800 mb-1">Total Class XP</h3>
-                <p className="text-2xl font-bold text-yellow-600">{totalXP}</p>
+                <h3 className="text-sm font-bold text-yellow-800 mb-1">Total Coins</h3>
+                <p className="text-2xl font-bold text-yellow-600">{totalCoins}</p>
               </div>
-              <div className="text-3xl text-yellow-500">⭐</div>
+              <div className="text-3xl text-yellow-500">🪙</div>
             </div>
           </div>
         </div>
@@ -135,9 +137,9 @@ const DashboardTab = ({
         <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
           <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
             <span className="text-xl mr-2">📊</span>
-            XP Distribution
+            XP & Currency Distribution
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-gray-600 mb-2">{averageXP}</div>
               <div className="text-sm text-gray-500">Average XP</div>
@@ -162,6 +164,13 @@ const DashboardTab = ({
                 <span className="mr-1">📚</span>
                 Learner
               </div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-yellow-600 mb-2 flex items-center justify-center">
+                <span className="mr-1">🪙</span>
+                {totalCoins}
+              </div>
+              <div className="text-sm text-yellow-600">Total Coins</div>
             </div>
           </div>
         </div>
@@ -192,6 +201,10 @@ const DashboardTab = ({
                   <span className="mr-2">⭐</span>
                   Level {topStudent.avatarLevel} • {topStudent.totalPoints} XP
                 </p>
+                <p className="text-md text-yellow-600 flex items-center">
+                  <span className="mr-2">🪙</span>
+                  {calculateCoins(topStudent.totalPoints || 0)} coins available
+                </p>
               </div>
             </div>
           </div>
@@ -212,6 +225,17 @@ const DashboardTab = ({
                 <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">👥</div>
                 <div className="font-semibold text-blue-800 text-sm">Manage Students</div>
                 <div className="text-xs text-blue-600 mt-1">Award XP, view profiles</div>
+              </div>
+            </button>
+            
+            <button 
+              onClick={() => setActiveTab('shop')}
+              className="group p-4 bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl hover:from-yellow-100 hover:to-yellow-200 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg"
+            >
+              <div className="text-center">
+                <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">🏪</div>
+                <div className="font-semibold text-yellow-800 text-sm">Visit Shop</div>
+                <div className="text-xs text-yellow-600 mt-1">Buy items & loot boxes</div>
               </div>
             </button>
             
@@ -242,91 +266,97 @@ const DashboardTab = ({
                 <div className="text-xs text-purple-600 mt-1">Compete for prizes</div>
               </div>
             </button>
-            
-            <button 
-              onClick={() => setActiveTab('classes')}
-              className="group p-4 bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl hover:from-orange-100 hover:to-orange-200 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg"
-            >
-              <div className="text-center">
-                <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">📚</div>
-                <div className="font-semibold text-orange-800 text-sm">Manage Classes</div>
-                <div className="text-xs text-orange-600 mt-1">Import, switch classes</div>
-              </div>
-            </button>
           </div>
         </div>
 
-        {/* Class Progress */}
+        {/* Class Progress - Show ALL students sorted by XP */}
         <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
-  <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
-    <span className="text-xl mr-2">📈</span>
-    Class Progress
-  </h3>
-  <div className="space-y-3">
-    {students.length === 0 ? (
-      <div className="text-center py-8">
-        <div className="text-4xl mb-2">🎒</div>
-        <h4 className="text-lg font-semibold text-gray-600 mb-2">No students yet</h4>
-        <p className="text-gray-500">Add students or load a class to get started!</p>
-      </div>
-    ) : (
-      // Sort all students by total points (highest first)
-      students
-        .sort((a, b) => (b.totalPoints || 0) - (a.totalPoints || 0))
-        .map((student, index) => (
-          <div key={student.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-            <div className="flex items-center space-x-3">
-              <span className={`text-sm font-bold w-6 ${
-                index === 0 ? 'text-yellow-600' : 
-                index === 1 ? 'text-gray-600' : 
-                index === 2 ? 'text-orange-600' : 'text-gray-500'
-              }`}>
-                #{index + 1}
-                {index === 0 && ' 🏆'}
-                {index === 1 && ' 🥈'}
-                {index === 2 && ' 🥉'}
-              </span>
-              {student.avatar ? (
-                <img src={student.avatar} alt={student.firstName} className="w-10 h-10 rounded-full border-2 border-gray-300" />
-              ) : (
-                <div className="w-10 h-10 bg-gradient-to-br from-gray-300 to-gray-400 rounded-full flex items-center justify-center text-white font-bold">
-                  {student.firstName.charAt(0)}
+          <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
+            <span className="text-xl mr-2">📈</span>
+            Class Progress
+          </h3>
+          <div className="space-y-3">
+            {students.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="text-4xl mb-2">🎒</div>
+                <h4 className="text-lg font-semibold text-gray-600 mb-2">No students yet</h4>
+                <p className="text-gray-500">Add students or load a class to get started!</p>
+              </div>
+            ) : (
+              // Sort all students by total points (highest first)
+              students
+                .sort((a, b) => (b.totalPoints || 0) - (a.totalPoints || 0))
+                .map((student, index) => (
+                  <div key={student.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                    <div className="flex items-center space-x-3">
+                      <span className={`text-sm font-bold w-6 ${
+                        index === 0 ? 'text-yellow-600' : 
+                        index === 1 ? 'text-gray-600' : 
+                        index === 2 ? 'text-orange-600' : 'text-gray-500'
+                      }`}>
+                        #{index + 1}
+                        {index === 0 && ' 🏆'}
+                        {index === 1 && ' 🥈'}
+                        {index === 2 && ' 🥉'}
+                      </span>
+                      {student.avatar ? (
+                        <img src={student.avatar} alt={student.firstName} className="w-10 h-10 rounded-full border-2 border-gray-300" />
+                      ) : (
+                        <div className="w-10 h-10 bg-gradient-to-br from-gray-300 to-gray-400 rounded-full flex items-center justify-center text-white font-bold">
+                          {student.firstName.charAt(0)}
+                        </div>
+                      )}
+                      <div>
+                        <span className="font-semibold text-gray-800">{student.firstName}</span>
+                        {student.pet?.image && (
+                          <span className="ml-2 text-sm">🐾</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="flex items-center space-x-3">
+                        <div>
+                          <span className={`font-bold text-lg ${
+                            index === 0 ? 'text-yellow-600' : 'text-green-600'
+                          }`}>
+                            {student.totalPoints || 0} XP
+                          </span>
+                          <br />
+                          <span className="text-sm text-gray-500">Level {student.avatarLevel}</span>
+                        </div>
+                        <div className="text-center">
+                          <div className="flex items-center text-yellow-600 font-bold">
+                            <span className="mr-1">🪙</span>
+                            {calculateCoins(student.totalPoints || 0)}
+                          </div>
+                          <span className="text-xs text-gray-500">coins</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+            )}
+          </div>
+          
+          {students.length > 0 && (
+            <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-blue-800 font-medium">
+                  📊 Class Stats: {students.length} students
+                </span>
+                <div className="flex items-center space-x-4">
+                  <span className="text-blue-600">
+                    Average: {averageXP} XP
+                  </span>
+                  <span className="text-yellow-600 flex items-center">
+                    <span className="mr-1">🪙</span>
+                    {totalCoins} total coins
+                  </span>
                 </div>
-              )}
-              <div>
-                <span className="font-semibold text-gray-800">{student.firstName}</span>
-                {student.pet?.image && (
-                  <span className="ml-2 text-sm">🐾</span>
-                )}
               </div>
             </div>
-            <div className="text-right">
-              <span className={`font-bold text-lg ${
-                index === 0 ? 'text-yellow-600' : 'text-green-600'
-              }`}>
-                {student.totalPoints || 0} XP
-              </span>
-              <br />
-              <span className="text-sm text-gray-500">Level {student.avatarLevel}</span>
-            </div>
-          </div>
-        ))
-    )}
-  </div>
-  
-  {students.length > 0 && (
-    <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-      <div className="flex items-center justify-between text-sm">
-        <span className="text-blue-800 font-medium">
-          📊 Class Stats: {students.length} students
-        </span>
-        <span className="text-blue-600">
-          Average: {averageXP} XP
-        </span>
-      </div>
-    </div>
-  )}
-</div>
+          )}
+        </div>
       </div>
     </div>
   );

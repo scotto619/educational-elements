@@ -21,7 +21,8 @@ const StudentsTab = ({
   dailyQuests,
   weeklyQuests,
   checkQuestCompletion,
-  markQuestComplete
+  markQuestComplete,
+  calculateCoins
 }) => {
   const isSelectionMode = selectedStudents.length > 0;
 
@@ -169,9 +170,18 @@ const StudentsTab = ({
                   <div className="font-bold text-gray-800 mb-3 text-lg">{student.firstName}</div>
 
                   {/* XP Display */}
-                  <div className="mb-4">
+                  <div className="mb-2">
                     <div className="bg-gradient-to-r from-green-400 to-green-500 text-white text-sm font-bold px-3 py-1 rounded-full shadow-lg inline-block">
                       {student.totalPoints || 0} XP
+                    </div>
+                  </div>
+
+                  {/* Currency Display */}
+                  <div className="mb-4">
+                    <div className="flex items-center justify-center space-x-1">
+                      <span className="text-yellow-500">🪙</span>
+                      <span className="font-bold text-yellow-600">{calculateCoins(student.totalPoints || 0)}</span>
+                      <span className="text-gray-500 text-sm">coins</span>
                     </div>
                   </div>
 
