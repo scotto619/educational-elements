@@ -833,209 +833,261 @@ export default function ClassroomChampions() {
   }
 
   function handleAwardXP(id, category, amount = 1) {
-    setAnimatingXP(prev => ({ ...prev, [id]: category }));
-    setTimeout(() => setAnimatingXP(prev => ({ ...prev, [id]: null })), 600);
+  // Prevent rapid firing
+  if (animatingXP[id]) return;
+  
+  console.log(`🎯 Awarding ${amount} XP to student ${id} in category ${category}`);
+  
+  setAnimatingXP(prev => ({ ...prev, [id]: category }));
+  setTimeout(() => setAnimatingXP(prev => ({ ...prev, [id]: null })), 600);
 
-    setStudents((prev) => {
-      const updatedStudents = prev.map((s) => {
-        if (s.id !== id) return s;
+  setStudents((prev) => {
+    const updatedStudents = prev.map((s) => {
+      if (s.id !== id) return s;
 
-        const newTotal = s.totalPoints + amount;
-        let updated = {
-          ...s,
-          totalPoints: newTotal,
-          weeklyPoints: s.weeklyPoints + amount,
-          categoryTotal: {
-            ...s.categoryTotal,
-            [category]: (s.categoryTotal[category] || 0) + amount,
+      const newTotal = s.totalPoints + amount;
+      let updated = {
+        ...s,
+        totalPoints: newTotal,
+        weeklyPoints: (s.weeklyPoints || 0) + amount,
+        categoryTotal: {
+          ...s.categoryTotal,
+          [category]: (s.categoryTotal[category] || 0) + amount,
+        },
+        categoryWeekly: {
+          ...s.categoryWeekly,
+          [category]: (s.categoryWeekly[category] || 0) + amount,
+        },
+        logs: [
+          ...(s.logs || []),
+          {
+            type: category,
+            amount: amount,
+            date: new Date().toISOString(),
+            source: "manual",
           },
-          categoryWeekly: {
-            ...s.categoryWeekly,
-            [category]: (s.categoryWeekly[category] || 0) + amount,
-          },
-          logs: [
-            ...(s.logs || []),
-            {
-              type: category,
-              amount: amount,
-              date: new Date().toISOString(),
-              source: "manual",
-            },
-          ],
-        };
+        ],
+      };
 
-        if (!s.pet?.image && newTotal >= 50) {
-          const newPet = getRandomPet();
-          setPetNameInput(getRandomPetName());
-          setPetUnlockData({
-            studentId: s.id,
-            firstName: s.firstName,
-            pet: newPet,
-          });
-        }
-
-        return checkForLevelUp(updated);
-      });
-
-      saveStudentsToFirebase(updatedStudents);
-      
-      // Check for quest completions after XP award
-      setTimeout(() => {
-        updatedStudents.forEach(student => {
-          [...dailyQuests, ...weeklyQuests].forEach(quest => {
-            if (quest.category === 'individual' && !quest.completedBy.includes(student.id)) {
-              if (checkQuestCompletion(quest.id, student.id)) {
-                completeQuest(quest.id, student.id);
-              }
-            }
-          });
+      // Pet unlock check
+      if (!s.pet?.image && newTotal >= 50) {
+        const newPet = getRandomPet();
+        setPetNameInput(getRandomPetName());
+        setPetUnlockData({
+          studentId: s.id,
+          firstName: s.firstName,
+          pet: newPet,
         });
+      }
+
+      return checkForLevelUp(updated);
+    });
+
+    saveStudentsToFirebase(updatedStudents);
+    
+    // SAFE quest completion check (no recursive XP awards)
+    checkQuestCompletionSafely(id, updatedStudents);
+    
+    return updatedStudents;
+  });
+}
+
+function checkQuestCompletionSafely(studentId, updatedStudents) {
+  const student = updatedStudents.find(s => s.id === studentId);
+  if (!student) return;
+
+  console.log(`🎯 Checking quest completion for student ${studentId}`);
+
+  // Check individual quests
+  [...dailyQuests, ...weeklyQuests].forEach(quest => {
+    if (quest.category === 'individual' && !quest.completedBy.includes(studentId)) {
+      if (checkIndividualQuestCompletion(quest, studentId)) {
+        console.log(`✅ Quest ${quest.id} completed by ${studentId}`);
+        completeQuestSafely(quest.id, studentId);
+      }
+    }
+  });
+
+  // Check class quests
+  [...dailyQuests, ...weeklyQuests].forEach(quest => {
+    if (quest.category === 'class' && !quest.completedBy.includes('class')) {
+      if (checkClassQuestCompletionSafely(quest, updatedStudents)) {
+        console.log(`✅ Class quest ${quest.id} completed`);
+        completeQuestSafely(quest.id, null);
+      }
+    }
+  });
+}
+
+function completeQuestSafely(questId, studentId = null) {
+  const quest = [...dailyQuests, ...weeklyQuests].find(q => q.id === questId);
+  if (!quest) return;
+
+  const completionKey = studentId || 'class';
+  if (quest.completedBy.includes(completionKey)) return;
+
+  console.log(`🏆 Completing quest ${questId} for ${completionKey}`);
+
+  // Update quest completion
+  const updatedDailyQuests = dailyQuests.map(q => 
+    q.id === questId ? { ...q, completedBy: [...q.completedBy, completionKey] } : q
+  );
+  const updatedWeeklyQuests = weeklyQuests.map(q => 
+    q.id === questId ? { ...q, completedBy: [...q.completedBy, completionKey] } : q
+  );
+
+  setDailyQuests(updatedDailyQuests);
+  setWeeklyQuests(updatedWeeklyQuests);
+
+  // SAFE XP reward (no recursive calls)
+  if (quest.reward.type === 'XP') {
+    setStudents(prev => {
+      const rewardedStudents = prev.map(student => {
+        if (studentId && student.id !== studentId) return student;
         
-        // Check class quests
-        [...dailyQuests, ...weeklyQuests].forEach(quest => {
-          if (quest.category === 'class' && !quest.completedBy.includes('class')) {
-            if (checkQuestCompletion(quest.id)) {
-              completeQuest(quest.id);
-            }
-          }
-        });
-      }, 100);
+        if (!studentId || student.id === studentId) {
+          const newTotal = student.totalPoints + quest.reward.amount;
+          return {
+            ...student,
+            totalPoints: newTotal,
+            weeklyPoints: (student.weeklyPoints || 0) + quest.reward.amount,
+            categoryTotal: {
+              ...student.categoryTotal,
+              'Quest': (student.categoryTotal['Quest'] || 0) + quest.reward.amount,
+            },
+            categoryWeekly: {
+              ...student.categoryWeekly,
+              'Quest': (student.categoryWeekly['Quest'] || 0) + quest.reward.amount,
+            },
+            logs: [
+              ...(student.logs || []),
+              {
+                type: 'Quest',
+                amount: quest.reward.amount,
+                date: new Date().toISOString(),
+                source: `quest_${quest.id}`,
+              },
+            ],
+          };
+        }
+        return student;
+      });
       
-      return updatedStudents;
+      saveStudentsToFirebase(rewardedStudents);
+      return rewardedStudents;
     });
   }
+
+  function checkClassQuestCompletionSafely(quest, studentsArray) {
+  const { requirement } = quest;
+  
+  switch (requirement.type) {
+    case 'class_total_xp':
+      const totalClassXP = studentsArray.reduce((sum, s) => sum + (s.weeklyPoints || 0), 0);
+      return totalClassXP >= requirement.amount;
+    case 'manual':
+      return quest.completedBy.includes('class');
+    default:
+      return false;
+  }
+}
+
+  // Show completion modal
+  setQuestCompletionData({
+    quest,
+    studentId,
+    student: studentId ? students.find(s => s.id === studentId) : null
+  });
+  setShowQuestCompletion(true);
+
+  // Save to Firebase
+  saveQuestDataToFirebase({
+    dailyQuests: updatedDailyQuests,
+    weeklyQuests: updatedWeeklyQuests
+  });
+}
 
   // New function for bulk XP awards
   function handleBulkXpAward() {
-    if (selectedStudents.length === 0) {
-      alert("Please select at least one student");
-      return;
-    }
+  if (selectedStudents.length === 0) {
+    alert("Please select at least one student");
+    return;
+  }
 
-    setSavingData(true);
-    
-    // Animate all selected students
+  setSavingData(true);
+  
+  // Animate all selected students
+  selectedStudents.forEach(id => {
+    setAnimatingXP(prev => ({ ...prev, [id]: bulkXpCategory }));
+  });
+
+  setTimeout(() => {
     selectedStudents.forEach(id => {
-      setAnimatingXP(prev => ({ ...prev, [id]: bulkXpCategory }));
+      setAnimatingXP(prev => ({ ...prev, [id]: null }));
     });
+  }, 600);
 
-    setTimeout(() => {
-      selectedStudents.forEach(id => {
-        setAnimatingXP(prev => ({ ...prev, [id]: null }));
-      });
-    }, 600);
+  setStudents((prev) => {
+    const updatedStudents = prev.map((s) => {
+      if (!selectedStudents.includes(s.id)) return s;
 
-    setStudents((prev) => {
-      const updatedStudents = prev.map((s) => {
-        if (!selectedStudents.includes(s.id)) return s;
-
-        const newTotal = s.totalPoints + bulkXpAmount;
-        let updated = {
-          ...s,
-          totalPoints: newTotal,
-          weeklyPoints: s.weeklyPoints + bulkXpAmount,
-          categoryTotal: {
-            ...s.categoryTotal,
-            [bulkXpCategory]: (s.categoryTotal[bulkXpCategory] || 0) + bulkXpAmount,
+      const newTotal = s.totalPoints + bulkXpAmount;
+      let updated = {
+        ...s,
+        totalPoints: newTotal,
+        weeklyPoints: (s.weeklyPoints || 0) + bulkXpAmount,
+        categoryTotal: {
+          ...s.categoryTotal,
+          [bulkXpCategory]: (s.categoryTotal[bulkXpCategory] || 0) + bulkXpAmount,
+        },
+        categoryWeekly: {
+          ...s.categoryWeekly,
+          [bulkXpCategory]: (s.categoryWeekly[bulkXpCategory] || 0) + bulkXpAmount,
+        },
+        logs: [
+          ...(s.logs || []),
+          {
+            type: bulkXpCategory,
+            amount: bulkXpAmount,
+            date: new Date().toISOString(),
+            source: "bulk",
           },
-          categoryWeekly: {
-            ...s.categoryWeekly,
-            [bulkXpCategory]: (s.categoryWeekly[bulkXpCategory] || 0) + bulkXpAmount,
-          },
-          logs: [
-            ...(s.logs || []),
-            {
-              type: bulkXpCategory,
-              amount: bulkXpAmount,
-              date: new Date().toISOString(),
-              source: "bulk",
-            },
-          ],
-        };
+        ],
+      };
 
-        if (!s.pet?.image && newTotal >= 50) {
-          const newPet = getRandomPet();
-          setPetNameInput(getRandomPetName());
-          setPetUnlockData({
-            studentId: s.id,
-            firstName: s.firstName,
-            pet: newPet,
-          });
-        }
-
-        return checkForLevelUp(updated);
-      });
-
-      saveStudentsToFirebase(updatedStudents);
-      return updatedStudents;
-    });
-
-    // Clear selections and close panel
-    setSelectedStudents([]);
-    setShowBulkXpPanel(false);
-    setSavingData(false);
-    
-    const studentNames = selectedStudents.length === students.length 
-      ? 'the entire class'
-      : `${selectedStudents.length} students`;
-    
-    showToast(`Awarded ${bulkXpAmount} XP to ${studentNames}!`);
-  }
-
-  // Student selection functions
-  function handleStudentSelect(studentId) {
-    setSelectedStudents(prev => {
-      if (prev.includes(studentId)) {
-        return prev.filter(id => id !== studentId);
-      } else {
-        return [...prev, studentId];
+      if (!s.pet?.image && newTotal >= 50) {
+        const newPet = getRandomPet();
+        setPetNameInput(getRandomPetName());
+        setPetUnlockData({
+          studentId: s.id,
+          firstName: s.firstName,
+          pet: newPet,
+        });
       }
+
+      return checkForLevelUp(updated);
     });
-  }
 
-  function handleSelectAll() {
-    if (selectedStudents.length === students.length) {
-      setSelectedStudents([]);
-    } else {
-      setSelectedStudents(students.map(s => s.id));
-    }
-  }
+    saveStudentsToFirebase(updatedStudents);
 
-  function handleDeselectAll() {
-    setSelectedStudents([]);
-    setShowBulkXpPanel(false);
-  }
-
-  // Settings functions
-  async function handleResetStudentPoints(studentId) {
-    setSavingData(true);
-    setStudents(prev => {
-      const updatedStudents = prev.map(s => 
-        s.id === studentId 
-          ? {
-              ...s,
-              totalPoints: 0,
-              weeklyPoints: 0,
-              categoryTotal: {},
-              categoryWeekly: {},
-              logs: [
-                ...(s.logs || []),
-                {
-                  type: "reset",
-                  amount: 0,
-                  date: new Date().toISOString(),
-                  source: "manual_reset",
-                },
-              ],
-            }
-          : s
-      );
-      saveStudentsToFirebase(updatedStudents);
-      return updatedStudents;
+    // SAFE quest completion for each student
+    selectedStudents.forEach(studentId => {
+      checkQuestCompletionSafely(studentId, updatedStudents);
     });
-    setSavingData(false);
-    showToast('Student points reset successfully!');
-  }
+
+    return updatedStudents;
+  });
+
+  setSelectedStudents([]);
+  setShowBulkXpPanel(false);
+  setSavingData(false);
+  
+  const studentNames = selectedStudents.length === students.length 
+    ? 'the entire class'
+    : `${selectedStudents.length} students`;
+  
+  showToast(`Awarded ${bulkXpAmount} XP to ${studentNames}!`);
+}
 
   async function handleResetAllPoints() {
     setSavingData(true);
