@@ -1,4 +1,4 @@
-// classroom-champions.js - Updated with Settings Tab
+// classroom-champions.js - Updated with Quest System
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
@@ -20,6 +20,7 @@ const PetUnlockModal = React.lazy(() => import('../components/modals/PetUnlockMo
 const AddStudentModal = React.lazy(() => import('../components/modals/AddStudentModal'));
 const RaceWinnerModal = React.lazy(() => import('../components/modals/RaceWinnerModal'));
 const RaceSetupModal = React.lazy(() => import('../components/modals/RaceSetupModal'));
+const QuestCompletionModal = React.lazy(() => import('../components/modals/QuestCompletionModal'));
 
 // Loading component
 const LoadingSpinner = ({ message = "Loading..." }) => (
@@ -86,6 +87,13 @@ export default function ClassroomChampions() {
   const [bulkXpCategory, setBulkXpCategory] = useState('Respectful');
   const [showBulkXpPanel, setShowBulkXpPanel] = useState(false);
 
+  // Quest system states
+  const [dailyQuests, setDailyQuests] = useState([]);
+  const [weeklyQuests, setWeeklyQuests] = useState([]);
+  const [questTemplates, setQuestTemplates] = useState([]);
+  const [questCompletionData, setQuestCompletionData] = useState(null);
+  const [showQuestCompletion, setShowQuestCompletion] = useState(false);
+
   // Settings states
   const [userData, setUserData] = useState(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(null);
@@ -101,6 +109,92 @@ export default function ClassroomChampions() {
   const [animatingXP, setAnimatingXP] = useState({});
 
   const MAX_LEVEL = 4;
+
+  // Default quest templates
+  const DEFAULT_QUEST_TEMPLATES = [
+    // Daily Quests
+    {
+      id: 'daily-respectful-5',
+      title: 'Be Respectful',
+      description: 'Earn 5 Respectful points',
+      type: 'daily',
+      category: 'individual',
+      requirement: { type: 'xp', category: 'Respectful', amount: 5 },
+      reward: { type: 'XP', amount: 10 },
+      icon: '👍'
+    },
+    {
+      id: 'daily-responsible-3',
+      title: 'Show Responsibility',
+      description: 'Earn 3 Responsible points',
+      type: 'daily',
+      category: 'individual',
+      requirement: { type: 'xp', category: 'Responsible', amount: 3 },
+      reward: { type: 'XP', amount: 8 },
+      icon: '💼'
+    },
+    {
+      id: 'daily-learner-4',
+      title: 'Learning Champion',
+      description: 'Earn 4 Learner points',
+      type: 'daily',
+      category: 'individual',
+      requirement: { type: 'xp', category: 'Learner', amount: 4 },
+      reward: { type: 'XP', amount: 12 },
+      icon: '📚'
+    },
+    {
+      id: 'daily-homework',
+      title: 'Homework Hero',
+      description: 'Complete and submit homework',
+      type: 'daily',
+      category: 'individual',
+      requirement: { type: 'manual', description: 'Teacher verification required' },
+      reward: { type: 'XP', amount: 15 },
+      icon: '📝'
+    },
+    // Weekly Quests
+    {
+      id: 'weekly-total-xp',
+      title: 'XP Champion',
+      description: 'Earn 50 total XP this week',
+      type: 'weekly',
+      category: 'individual',
+      requirement: { type: 'total_xp', amount: 50 },
+      reward: { type: 'XP', amount: 25 },
+      icon: '⭐'
+    },
+    {
+      id: 'weekly-attendance',
+      title: 'Perfect Attendance',
+      description: 'Attend all classes this week',
+      type: 'weekly',
+      category: 'individual',
+      requirement: { type: 'manual', description: 'Teacher verification required' },
+      reward: { type: 'XP', amount: 30 },
+      icon: '🎯'
+    },
+    {
+      id: 'weekly-class-goal',
+      title: 'Class Unity',
+      description: 'Whole class earns 200 total XP',
+      type: 'weekly',
+      category: 'class',
+      requirement: { type: 'class_total_xp', amount: 200 },
+      reward: { type: 'XP', amount: 20 },
+      icon: '🏆'
+    },
+    {
+      id: 'weekly-pet-race',
+      title: 'Racing Champion',
+      description: 'Win 2 pet races this week',
+      type: 'weekly',
+      category: 'individual',
+      requirement: { type: 'pet_wins', amount: 2 },
+      reward: { type: 'XP', amount: 35 },
+      icon: '🏁'
+    }
+  ];
 
   const AVAILABLE_AVATARS = [
     { base: "Alchemist F", path: "/avatars/Alchemist%20F/Level%201.png" },
@@ -182,6 +276,164 @@ export default function ClassroomChampions() {
     } catch (error) {
       console.error("❌ Error saving student data:", error);
     }
+  };
+
+  const saveQuestDataToFirebase = async (questData) => {
+    if (!user || !currentClassId) return;
+    
+    try {
+      const docRef = doc(firestore, 'users', user.uid);
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        const data = snap.data();
+        const updatedClasses = data.classes.map(cls => 
+          cls.id === currentClassId 
+            ? { ...cls, ...questData }
+            : cls
+        );
+        await setDoc(docRef, { ...data, classes: updatedClasses });
+      }
+    } catch (error) {
+      console.error("❌ Error saving quest data:", error);
+    }
+  };
+
+  // Quest management functions
+  const generateDailyQuests = () => {
+    const dailyTemplates = questTemplates.filter(t => t.type === 'daily');
+    const selectedQuests = dailyTemplates.slice(0, 3).map(template => ({
+      ...template,
+      id: `daily-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      startDate: new Date().toISOString().split('T')[0],
+      endDate: new Date().toISOString().split('T')[0],
+      completedBy: [],
+      active: true
+    }));
+    return selectedQuests;
+  };
+
+  const generateWeeklyQuests = () => {
+    const weeklyTemplates = questTemplates.filter(t => t.type === 'weekly');
+    const selectedQuests = weeklyTemplates.slice(0, 2).map(template => ({
+      ...template,
+      id: `weekly-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      startDate: getWeekStart().toISOString().split('T')[0],
+      endDate: getWeekEnd().toISOString().split('T')[0],
+      completedBy: [],
+      active: true
+    }));
+    return selectedQuests;
+  };
+
+  const getWeekStart = () => {
+    const now = new Date();
+    const day = now.getDay();
+    const diff = now.getDate() - day;
+    return new Date(now.setDate(diff));
+  };
+
+  const getWeekEnd = () => {
+    const weekStart = getWeekStart();
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+    return weekEnd;
+  };
+
+  const checkQuestCompletion = (questId, studentId = null) => {
+    const quest = [...dailyQuests, ...weeklyQuests].find(q => q.id === questId);
+    if (!quest) return false;
+
+    if (quest.category === 'class') {
+      return checkClassQuestCompletion(quest);
+    } else {
+      return checkIndividualQuestCompletion(quest, studentId);
+    }
+  };
+
+  const checkIndividualQuestCompletion = (quest, studentId) => {
+    const student = students.find(s => s.id === studentId);
+    if (!student) return false;
+
+    const { requirement } = quest;
+    
+    switch (requirement.type) {
+      case 'xp':
+        const categoryPoints = student.categoryWeekly?.[requirement.category] || 0;
+        return categoryPoints >= requirement.amount;
+      case 'total_xp':
+        return student.weeklyPoints >= requirement.amount;
+      case 'pet_wins':
+        return (student.pet?.wins || 0) >= requirement.amount;
+      case 'manual':
+        return quest.completedBy.includes(studentId);
+      default:
+        return false;
+    }
+  };
+
+  const checkClassQuestCompletion = (quest) => {
+    const { requirement } = quest;
+    
+    switch (requirement.type) {
+      case 'class_total_xp':
+        const totalClassXP = students.reduce((sum, s) => sum + (s.weeklyPoints || 0), 0);
+        return totalClassXP >= requirement.amount;
+      case 'manual':
+        return quest.completedBy.includes('class');
+      default:
+        return false;
+    }
+  };
+
+  const completeQuest = (questId, studentId = null) => {
+    const quest = [...dailyQuests, ...weeklyQuests].find(q => q.id === questId);
+    if (!quest) return;
+
+    const completionKey = studentId || 'class';
+    if (quest.completedBy.includes(completionKey)) return;
+
+    // Update quest completion
+    const updatedDailyQuests = dailyQuests.map(q => 
+      q.id === questId ? { ...q, completedBy: [...q.completedBy, completionKey] } : q
+    );
+    const updatedWeeklyQuests = weeklyQuests.map(q => 
+      q.id === questId ? { ...q, completedBy: [...q.completedBy, completionKey] } : q
+    );
+
+    setDailyQuests(updatedDailyQuests);
+    setWeeklyQuests(updatedWeeklyQuests);
+
+    // Award rewards
+    if (quest.reward.type === 'XP') {
+      if (studentId) {
+        handleAwardXP(studentId, 'Quest', quest.reward.amount);
+      } else {
+        // Award to all students for class quests
+        students.forEach(student => {
+          handleAwardXP(student.id, 'Quest', quest.reward.amount);
+        });
+      }
+    }
+
+    // Show completion modal
+    setQuestCompletionData({
+      quest,
+      studentId,
+      student: studentId ? students.find(s => s.id === studentId) : null
+    });
+    setShowQuestCompletion(true);
+
+    // Save to Firebase
+    saveQuestDataToFirebase({
+      dailyQuests: updatedDailyQuests,
+      weeklyQuests: updatedWeeklyQuests
+    });
+  };
+
+  const markQuestComplete = (questId, studentId = null) => {
+    // For manual quests, mark as completed
+    completeQuest(questId, studentId);
+    showToast('Quest marked as complete!');
   };
 
   function getAvatarImage(base, level) {
@@ -315,6 +567,29 @@ export default function ClassroomChampions() {
       });
 
       saveStudentsToFirebase(updatedStudents);
+      
+      // Check for quest completions after XP award
+      setTimeout(() => {
+        updatedStudents.forEach(student => {
+          [...dailyQuests, ...weeklyQuests].forEach(quest => {
+            if (quest.category === 'individual' && !quest.completedBy.includes(student.id)) {
+              if (checkQuestCompletion(quest.id, student.id)) {
+                completeQuest(quest.id, student.id);
+              }
+            }
+          });
+        });
+        
+        // Check class quests
+        [...dailyQuests, ...weeklyQuests].forEach(quest => {
+          if (quest.category === 'class' && !quest.completedBy.includes('class')) {
+            if (checkQuestCompletion(quest.id)) {
+              completeQuest(quest.id);
+            }
+          }
+        });
+      }, 100);
+      
       return updatedStudents;
     });
   }
@@ -584,7 +859,10 @@ export default function ClassroomChampions() {
     const newClass = {
       id: 'class-' + Date.now(),
       name: newClassName,
-      students: studentsArray
+      students: studentsArray,
+      dailyQuests: [],
+      weeklyQuests: [],
+      questTemplates: DEFAULT_QUEST_TEMPLATES
     };
 
     try {
@@ -604,6 +882,9 @@ export default function ClassroomChampions() {
       setTeacherClasses(updatedClasses);
       setStudents(newClass.students);
       setCurrentClassId(newClass.id);
+      setDailyQuests([]);
+      setWeeklyQuests([]);
+      setQuestTemplates(DEFAULT_QUEST_TEMPLATES);
       setNewClassName('');
       setNewClassStudents('');
       showToast('Class imported successfully!');
@@ -618,10 +899,33 @@ export default function ClassroomChampions() {
   function loadClass(cls) {
     setStudents(cls.students);
     setCurrentClassId(cls.id);
+    setDailyQuests(cls.dailyQuests || []);
+    setWeeklyQuests(cls.weeklyQuests || []);
+    setQuestTemplates(cls.questTemplates || DEFAULT_QUEST_TEMPLATES);
     setSelectedStudents([]); // Clear selections when switching classes
     setShowBulkXpPanel(false);
     showToast(`${cls.name} loaded successfully!`);
   }
+
+  // Initialize quests when class loads
+  useEffect(() => {
+    if (currentClassId && questTemplates.length > 0) {
+      const today = new Date().toISOString().split('T')[0];
+      const weekStart = getWeekStart().toISOString().split('T')[0];
+      
+      // Generate daily quests if none exist for today
+      if (dailyQuests.length === 0 || dailyQuests.every(q => q.startDate !== today)) {
+        const newDailyQuests = generateDailyQuests();
+        setDailyQuests(newDailyQuests);
+      }
+      
+      // Generate weekly quests if none exist for this week
+      if (weeklyQuests.length === 0 || weeklyQuests.every(q => q.startDate !== weekStart)) {
+        const newWeeklyQuests = generateWeeklyQuests();
+        setWeeklyQuests(newWeeklyQuests);
+      }
+    }
+  }, [currentClassId, questTemplates]);
 
   // Props object for all tabs
   const tabProps = {
@@ -646,6 +950,19 @@ export default function ClassroomChampions() {
     bulkXpCategory,
     setBulkXpCategory,
     handleBulkXpAward,
+    // Quest props
+    dailyQuests,
+    weeklyQuests,
+    questTemplates,
+    setQuestTemplates,
+    checkQuestCompletion,
+    completeQuest,
+    markQuestComplete,
+    generateDailyQuests,
+    generateWeeklyQuests,
+    setDailyQuests,
+    setWeeklyQuests,
+    saveQuestDataToFirebase,
     // Race props
     raceInProgress,
     raceFinished,
@@ -679,6 +996,18 @@ export default function ClassroomChampions() {
     loadClass,
     savingData,
     showToast,
+      // Quest management props (ADD THESE)
+  questTemplates,
+  setQuestTemplates,
+  dailyQuests,
+  weeklyQuests,
+  setDailyQuests,
+  setWeeklyQuests,
+  generateDailyQuests,
+  generateWeeklyQuests,
+  saveQuestDataToFirebase,
+  savingData,
+  showToast,
     // Settings props
     userData,
     user,
@@ -751,7 +1080,12 @@ export default function ClassroomChampions() {
     setSelectedPets,
     setRacePositions,
     setRaceInProgress,
-    setRaceWinner
+    setRaceWinner,
+    // Quest completion
+    questCompletionData,
+    setQuestCompletionData,
+    showQuestCompletion,
+    setShowQuestCompletion
   };
 
   // Race logic (keeping the existing problematic one for now)
@@ -878,11 +1212,18 @@ export default function ClassroomChampions() {
             setTeacherClasses(savedClasses);
 
             if (savedClasses.length > 0) {
-              setStudents(savedClasses[0].students);
-              setCurrentClassId(savedClasses[0].id);
+              const firstClass = savedClasses[0];
+              setStudents(firstClass.students);
+              setCurrentClassId(firstClass.id);
+              setDailyQuests(firstClass.dailyQuests || []);
+              setWeeklyQuests(firstClass.weeklyQuests || []);
+              setQuestTemplates(firstClass.questTemplates || DEFAULT_QUEST_TEMPLATES);
             } else {
               setStudents([]);
               setCurrentClassId(null);
+              setDailyQuests([]);
+              setWeeklyQuests([]);
+              setQuestTemplates(DEFAULT_QUEST_TEMPLATES);
             }
           } else {
             console.log("🆕 No user document, creating default");
@@ -892,6 +1233,9 @@ export default function ClassroomChampions() {
             setTeacherClasses([]);
             setStudents([]);
             setCurrentClassId(null);
+            setDailyQuests([]);
+            setWeeklyQuests([]);
+            setQuestTemplates(DEFAULT_QUEST_TEMPLATES);
           }
         } else {
           console.log("🚫 No user signed in — redirecting to login");
@@ -1120,6 +1464,9 @@ export default function ClassroomChampions() {
         )}
         {showRaceSetup && (
           <RaceSetupModal {...modalProps} />
+        )}
+        {showQuestCompletion && (
+          <QuestCompletionModal {...modalProps} />
         )}
       </Suspense>
 
