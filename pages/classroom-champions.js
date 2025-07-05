@@ -489,39 +489,32 @@ export default function ClassroomChampions() {
       };
 
       const trackWidth = getRaceTrackWidth();
-      // Set finish line to touch the red line (not before it)
-      const FINISH_LINE_POSITION = Math.max(trackWidth - 45, 700); // 45px accounts for pet width + red line
+      // Set finish line to touch the red line
+      const FINISH_LINE_POSITION = Math.max(trackWidth - 45, 700);
 
+      // First, check for winners WITHOUT updating positions
       for (const id of selectedPets) {
         const student = students.find((s) => s.id === id);
         if (!student?.pet) continue;
 
-        const speed = calculateSpeed(student.pet);
-        // Add some randomness but ensure consistent forward progress
-        const baseStep = speed * 2;
-        const randomMultiplier = 0.8 + Math.random() * 0.4; // 0.8 to 1.2
-        const step = baseStep * randomMultiplier;
-        
         const currentPosition = updated[id] || 0;
+        const speed = calculateSpeed(student.pet);
+        const baseStep = speed * 2;
+        const randomMultiplier = 0.8 + Math.random() * 0.4;
+        const step = baseStep * randomMultiplier;
         const newPosition = currentPosition + step;
-        
-        // Check for winner BEFORE updating position to prevent squashing
-        if (currentPosition < FINISH_LINE_POSITION && newPosition >= FINISH_LINE_POSITION && !raceFinished && !winnerId) {
+
+        // Check if this pet would cross the finish line
+        if (currentPosition < FINISH_LINE_POSITION && newPosition >= FINISH_LINE_POSITION && !raceFinished) {
           winnerId = id;
-          // Don't update position - let pet stay where it naturally is
-          break; // End race immediately
+          break; // Stop checking as soon as we find a winner
         }
-        
-        // Normal movement for all pets
-        updated[id] = newPosition;
       }
 
-      // Handle winner immediately when detected
+      // If we found a winner, DON'T update any positions, just end the race
       if (winnerId) {
-        // Clear interval immediately
         clearInterval(interval);
         
-        // End the race immediately - no delay
         const winner = students.find((s) => s.id === winnerId);
         setRaceWinner(winner);
         setRaceInProgress(false);
@@ -554,6 +547,26 @@ export default function ClassroomChampions() {
           saveStudentsToFirebase(updatedStudents);
           return updatedStudents;
         });
+
+        // Return current positions without any updates
+        return prev;
+      }
+
+      // Only update positions if no winner was found
+      for (const id of selectedPets) {
+        const student = students.find((s) => s.id === id);
+        if (!student?.pet) continue;
+
+        const speed = calculateSpeed(student.pet);
+        const baseStep = speed * 2;
+        const randomMultiplier = 0.8 + Math.random() * 0.4;
+        const step = baseStep * randomMultiplier;
+        
+        const currentPosition = updated[id] || 0;
+        const newPosition = currentPosition + step;
+        
+        // Normal movement
+        updated[id] = newPosition;
       }
 
       return updated;
