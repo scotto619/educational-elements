@@ -60,12 +60,10 @@ const SettingsTab = ({
     };
 
     if (editingQuest) {
-      // Update existing quest
       setQuestTemplates(prev => prev.map(q => q.id === editingQuest.id ? questToSave : q));
       setEditingQuest(null);
       showToast('Quest updated successfully!');
     } else {
-      // Add new quest
       setQuestTemplates(prev => [...prev, questToSave]);
       showToast('Quest added successfully!');
     }
@@ -157,10 +155,95 @@ const SettingsTab = ({
         ))}
       </div>
 
+      {/* General Settings Tab */}
+      {activeSettingsTab === 'general' && (
+        <div className="space-y-8">
+          <div className="flex justify-between items-center">
+            <h2 className="text-3xl font-bold text-gray-800 flex items-center">
+              <span className="text-3xl mr-3">⚙️</span>
+              General Settings
+            </h2>
+          </div>
+
+          {/* Class Management */}
+          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+            <h3 className="text-xl font-bold text-gray-800 mb-4">Class Management</h3>
+            <div className="space-y-4">
+              <button
+                onClick={() => setShowConfirmDialog({
+                  title: 'Reset All Student Points',
+                  message: 'This will reset all student points to 0. This action cannot be undone.',
+                  icon: '🔄',
+                  type: 'danger',
+                  confirmText: 'Reset All',
+                  onConfirm: handleResetAllPoints
+                })}
+                className="w-full bg-orange-600 text-white px-6 py-3 rounded-lg hover:bg-orange-700 transition-colors font-semibold"
+              >
+                🔄 Reset All Student Points
+              </button>
+              <button
+                onClick={() => setShowConfirmDialog({
+                  title: 'Reset Pet Speeds',
+                  message: 'This will reset all pet speeds and wins to default values.',
+                  icon: '🐾',
+                  type: 'warning',
+                  confirmText: 'Reset',
+                  onConfirm: handleResetPetSpeeds
+                })}
+                className="w-full bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors font-semibold"
+              >
+                🐾 Reset Pet Speeds & Wins
+              </button>
+            </div>
+          </div>
+
+          {/* Feedback */}
+          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+            <h3 className="text-xl font-bold text-gray-800 mb-4">Help & Feedback</h3>
+            <div className="space-y-4">
+              <button
+                onClick={() => setShowFeedbackModal(true)}
+                className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+              >
+                💬 Send Feedback or Report Bug
+              </button>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="font-semibold text-gray-800 mb-2">Need Help?</h4>
+                <p className="text-gray-600 text-sm">
+                  Contact our support team at{' '}
+                  <a href="mailto:support@classroomchampions.com" className="text-blue-600 hover:underline">
+                    support@classroomchampions.com
+                  </a>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Legal */}
+          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+            <h3 className="text-xl font-bold text-gray-800 mb-4">Legal</h3>
+            <div className="space-y-2">
+              <button
+                onClick={() => router.push('/terms')}
+                className="block w-full text-left text-blue-600 hover:text-blue-800 transition-colors p-2 rounded hover:bg-blue-50"
+              >
+                📄 Terms of Service
+              </button>
+              <button
+                onClick={() => router.push('/privacy')}
+                className="block w-full text-left text-blue-600 hover:text-blue-800 transition-colors p-2 rounded hover:bg-blue-50"
+              >
+                🔒 Privacy Policy
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Quest Management Tab */}
       {activeSettingsTab === 'quests' && (
         <div className="space-y-8">
-          {/* Header */}
           <div className="flex justify-between items-center">
             <h2 className="text-3xl font-bold text-gray-800 flex items-center">
               <span className="text-3xl mr-3">🎯</span>
@@ -269,6 +352,149 @@ const SettingsTab = ({
         </div>
       )}
 
+      {/* Students Management Tab */}
+      {activeSettingsTab === 'students' && (
+        <div className="space-y-8">
+          <div className="flex justify-between items-center">
+            <h2 className="text-3xl font-bold text-gray-800 flex items-center">
+              <span className="text-3xl mr-3">👥</span>
+              Student Management
+            </h2>
+          </div>
+
+          {/* Student List */}
+          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+            <h3 className="text-xl font-bold text-gray-800 mb-4">Individual Student Actions</h3>
+            {students.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="text-4xl mb-2">👥</div>
+                <p className="text-gray-500">No students in your class yet</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {students.map((student) => (
+                  <div key={student.id} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        {student.avatar ? (
+                          <img src={student.avatar} alt={student.firstName} className="w-12 h-12 rounded-full border-2 border-gray-300" />
+                        ) : (
+                          <div className="w-12 h-12 bg-gradient-to-br from-gray-300 to-gray-400 rounded-full flex items-center justify-center text-white font-bold">
+                            {student.firstName.charAt(0)}
+                          </div>
+                        )}
+                        <div>
+                          <h4 className="font-semibold text-gray-800">{student.firstName}</h4>
+                          <p className="text-sm text-gray-600">
+                            Level {student.avatarLevel} • {student.totalPoints || 0} XP
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => setShowConfirmDialog({
+                            title: 'Reset Student Points',
+                            message: `Reset all points for ${student.firstName}? This action cannot be undone.`,
+                            icon: '🔄',
+                            type: 'warning',
+                            confirmText: 'Reset',
+                            onConfirm: () => handleResetStudentPoints(student.id)
+                          })}
+                          className="bg-orange-600 text-white px-3 py-1 rounded text-sm hover:bg-orange-700 transition-colors"
+                        >
+                          🔄 Reset
+                        </button>
+                        <button
+                          onClick={() => setShowConfirmDialog({
+                            title: 'Remove Student',
+                            message: `Remove ${student.firstName} from the class? This action cannot be undone.`,
+                            icon: '🗑️',
+                            type: 'danger',
+                            confirmText: 'Remove',
+                            onConfirm: () => handleRemoveStudent(student.id)
+                          })}
+                          className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 transition-colors"
+                        >
+                          🗑️ Remove
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Account Settings Tab */}
+      {activeSettingsTab === 'account' && (
+        <div className="space-y-8">
+          <div className="flex justify-between items-center">
+            <h2 className="text-3xl font-bold text-gray-800 flex items-center">
+              <span className="text-3xl mr-3">👤</span>
+              Account Settings
+            </h2>
+          </div>
+
+          {/* Account Info */}
+          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+            <h3 className="text-xl font-bold text-gray-800 mb-4">Account Information</h3>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div>
+                  <p className="font-semibold text-gray-800">Email</p>
+                  <p className="text-gray-600">{user?.email}</p>
+                </div>
+              </div>
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div>
+                  <p className="font-semibold text-gray-800">Subscription Plan</p>
+                  <p className="text-gray-600">
+                    {userData?.subscription === 'pro' ? 'Pro Plan' : 'Basic Plan'}
+                  </p>
+                </div>
+                <button
+                  onClick={handleSubscriptionManagement}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                >
+                  Manage Subscription
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Danger Zone */}
+          <div className="bg-red-50 border border-red-200 rounded-xl p-6">
+            <h3 className="text-xl font-bold text-red-800 mb-4">Danger Zone</h3>
+            <div className="space-y-4">
+              <div className="bg-white p-4 rounded-lg border border-red-200">
+                <h4 className="font-semibold text-red-800 mb-2">Delete Account</h4>
+                <p className="text-red-600 text-sm mb-3">
+                  Permanently delete your account and all associated data. This action cannot be undone.
+                </p>
+                <button
+                  onClick={() => setShowConfirmDialog({
+                    title: 'Delete Account',
+                    message: 'Are you sure you want to delete your account? This will permanently delete all your data and cannot be undone.',
+                    icon: '⚠️',
+                    type: 'danger',
+                    confirmText: 'Delete Account',
+                    onConfirm: () => {
+                      // Implement account deletion logic here
+                      alert('Account deletion is not implemented yet. Please contact support.');
+                    }
+                  })}
+                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors font-semibold"
+                >
+                  Delete Account
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Add/Edit Quest Modal */}
       {showAddQuestModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -278,7 +504,6 @@ const SettingsTab = ({
             </h2>
 
             <div className="space-y-6">
-              {/* Basic Info */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Quest Title</label>
@@ -319,7 +544,6 @@ const SettingsTab = ({
                 />
               </div>
 
-              {/* Quest Type & Category */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Quest Type</label>
@@ -345,7 +569,6 @@ const SettingsTab = ({
                 </div>
               </div>
 
-              {/* Requirement */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Requirement</label>
                 <div className="space-y-3">
@@ -413,7 +636,6 @@ const SettingsTab = ({
                 </div>
               </div>
 
-              {/* Reward */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Reward</label>
                 <div className="grid grid-cols-2 gap-3">
@@ -470,25 +692,6 @@ const SettingsTab = ({
               </button>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Other settings tabs remain the same... */}
-      {activeSettingsTab === 'general' && (
-        <div className="space-y-8">
-          {/* Existing general settings content */}
-        </div>
-      )}
-
-      {activeSettingsTab === 'students' && (
-        <div className="space-y-8">
-          {/* Existing students settings content */}
-        </div>
-      )}
-
-      {activeSettingsTab === 'account' && (
-        <div className="space-y-8">
-          {/* Existing account settings content */}
         </div>
       )}
     </div>
