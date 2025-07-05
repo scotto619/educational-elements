@@ -1,5 +1,5 @@
 import React from 'react';
-import QuestPanel from '../components/QuestPanel';
+import QuestPanel from '../QuestPanel';
 
 const DashboardTab = ({ 
   students, 
