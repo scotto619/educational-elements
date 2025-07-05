@@ -1,13 +1,27 @@
 import React from 'react';
 
-const DashboardTab = ({ students, setActiveTab }) => {
+const DashboardTab = ({ 
+  students, 
+  setActiveTab,
+  selectedStudents,
+  handleSelectAll,
+  setShowBulkXpPanel
+}) => {
   const totalStudents = students.length;
   const studentsWithAvatars = students.filter(s => s.avatar).length;
   const studentsWithPets = students.filter(s => s.pet?.image).length;
   const totalXP = students.reduce((sum, s) => sum + (s.totalPoints || 0), 0);
+  const averageXP = totalStudents > 0 ? Math.round(totalXP / totalStudents) : 0;
   const topStudent = students.reduce((top, current) => 
     (current.totalPoints || 0) > (top.totalPoints || 0) ? current : top
   , students[0]);
+
+  // XP distribution stats
+  const xpDistribution = {
+    respectful: students.reduce((sum, s) => sum + (s.categoryTotal?.Respectful || 0), 0),
+    responsible: students.reduce((sum, s) => sum + (s.categoryTotal?.Responsible || 0), 0),
+    learner: students.reduce((sum, s) => sum + (s.categoryTotal?.Learner || 0), 0)
+  };
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -51,6 +65,41 @@ const DashboardTab = ({ students, setActiveTab }) => {
         </div>
       </div>
 
+      {/* XP Distribution Chart */}
+      <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-100">
+        <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+          <span className="text-2xl mr-3">📊</span>
+          XP Distribution
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="text-center">
+            <div className="text-3xl font-bold text-gray-600 mb-2">{averageXP}</div>
+            <div className="text-sm text-gray-500">Average XP</div>
+          </div>
+          <div className="text-center">
+            <div className="text-3xl font-bold text-blue-600 mb-2">{xpDistribution.respectful}</div>
+            <div className="text-sm text-blue-600 flex items-center justify-center">
+              <span className="mr-1">👍</span>
+              Respectful
+            </div>
+          </div>
+          <div className="text-center">
+            <div className="text-3xl font-bold text-green-600 mb-2">{xpDistribution.responsible}</div>
+            <div className="text-sm text-green-600 flex items-center justify-center">
+              <span className="mr-1">💼</span>
+              Responsible
+            </div>
+          </div>
+          <div className="text-center">
+            <div className="text-3xl font-bold text-purple-600 mb-2">{xpDistribution.learner}</div>
+            <div className="text-sm text-purple-600 flex items-center justify-center">
+              <span className="mr-1">📚</span>
+              Learner
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Top Performer */}
       {topStudent && (
         <div className="bg-gradient-to-r from-yellow-100 via-yellow-200 to-orange-200 p-8 rounded-xl shadow-lg border-2 border-yellow-300">
@@ -81,6 +130,65 @@ const DashboardTab = ({ students, setActiveTab }) => {
           </div>
         </div>
       )}
+
+      {/* Quick Actions */}
+      <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-100">
+        <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+          <span className="text-2xl mr-3">⚡</span>
+          Quick Actions
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <button 
+            onClick={() => setActiveTab('students')}
+            className="group p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl hover:from-blue-100 hover:to-blue-200 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg"
+          >
+            <div className="text-center">
+              <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">👥</div>
+              <div className="font-semibold text-blue-800 text-lg">Manage Students</div>
+              <div className="text-sm text-blue-600 mt-1">Award XP, view profiles</div>
+            </div>
+          </button>
+          
+          <button 
+            onClick={() => {
+              if (students.length > 0) {
+                handleSelectAll();
+                setShowBulkXpPanel(true);
+              }
+            }}
+            disabled={students.length === 0}
+            className="group p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-xl hover:from-green-100 hover:to-green-200 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <div className="text-center">
+              <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">⚡</div>
+              <div className="font-semibold text-green-800 text-lg">Bulk XP Award</div>
+              <div className="text-sm text-green-600 mt-1">Award XP to entire class</div>
+            </div>
+          </button>
+          
+          <button 
+            onClick={() => setActiveTab('race')}
+            className="group p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl hover:from-purple-100 hover:to-purple-200 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg"
+          >
+            <div className="text-center">
+              <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">🏁</div>
+              <div className="font-semibold text-purple-800 text-lg">Start Pet Race</div>
+              <div className="text-sm text-purple-600 mt-1">Compete for prizes</div>
+            </div>
+          </button>
+          
+          <button 
+            onClick={() => setActiveTab('classes')}
+            className="group p-6 bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl hover:from-orange-100 hover:to-orange-200 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg"
+          >
+            <div className="text-center">
+              <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">📚</div>
+              <div className="font-semibold text-orange-800 text-lg">Manage Classes</div>
+              <div className="text-sm text-orange-600 mt-1">Import, switch classes</div>
+            </div>
+          </button>
+        </div>
+      </div>
 
       {/* Class Progress */}
       <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-100">
@@ -116,46 +224,6 @@ const DashboardTab = ({ students, setActiveTab }) => {
               <p className="text-gray-500">Add students or load a class to get started!</p>
             </div>
           )}
-        </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-100">
-        <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-          <span className="text-2xl mr-3">⚡</span>
-          Quick Actions
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <button 
-            onClick={() => setActiveTab('students')}
-            className="group p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl hover:from-blue-100 hover:to-blue-200 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg"
-          >
-            <div className="text-center">
-              <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">👥</div>
-              <div className="font-semibold text-blue-800 text-lg">Manage Students</div>
-              <div className="text-sm text-blue-600 mt-1">Add XP, view profiles</div>
-            </div>
-          </button>
-          <button 
-            onClick={() => setActiveTab('race')}
-            className="group p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-xl hover:from-green-100 hover:to-green-200 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg"
-          >
-            <div className="text-center">
-              <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">🏁</div>
-              <div className="font-semibold text-green-800 text-lg">Start Pet Race</div>
-              <div className="text-sm text-green-600 mt-1">Compete for prizes</div>
-            </div>
-          </button>
-          <button 
-            onClick={() => setActiveTab('classes')}
-            className="group p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl hover:from-purple-100 hover:to-purple-200 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg"
-          >
-            <div className="text-center">
-              <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">📚</div>
-              <div className="font-semibold text-purple-800 text-lg">Manage Classes</div>
-              <div className="text-sm text-purple-600 mt-1">Import, switch classes</div>
-            </div>
-          </button>
         </div>
       </div>
     </div>

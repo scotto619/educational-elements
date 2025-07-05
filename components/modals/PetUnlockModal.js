@@ -6,13 +6,14 @@ const PetUnlockModal = ({
   petNameInput, 
   setPetNameInput,
   setStudents,
-  getRandomPetName
+  getRandomPetName,
+  saveStudentsToFirebase
 }) => {
   if (!petUnlockData) return null;
 
   const handlePetUnlock = () => {
-    setStudents((prev) =>
-      prev.map((s) =>
+    setStudents((prev) => {
+      const updatedStudents = prev.map((s) =>
         s.id === petUnlockData.studentId
           ? {
               ...s,
@@ -22,8 +23,13 @@ const PetUnlockModal = ({
               },
             }
           : s
-      )
-    );
+      );
+      
+      // Save to Firebase
+      saveStudentsToFirebase(updatedStudents);
+      return updatedStudents;
+    });
+    
     setPetUnlockData(null);
     setPetNameInput('');
   };
@@ -54,6 +60,13 @@ const PetUnlockModal = ({
           >
             🎲 Random Name
           </button>
+        </div>
+
+        <div className="bg-blue-50 p-4 rounded-lg mb-6">
+          <h3 className="font-bold text-blue-800 mb-2">🎯 Pet Racing Tips</h3>
+          <p className="text-sm text-blue-700">
+            Your pet can now participate in races! Visit the Pet Race tab to compete for prizes.
+          </p>
         </div>
 
         <button

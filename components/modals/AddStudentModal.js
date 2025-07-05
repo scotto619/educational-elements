@@ -12,7 +12,8 @@ const AddStudentModal = ({
   students,
   setStudents,
   saveStudentsToFirebase,
-  showToast
+  showToast,
+  handleDeselectAll
 }) => {
   if (!showAddStudentModal) return null;
 
@@ -46,6 +47,12 @@ const AddStudentModal = ({
     setNewStudentName('');
     setNewStudentAvatar('');
     setShowAddStudentModal(false);
+    
+    // Clear any selections when adding a new student
+    if (handleDeselectAll) {
+      handleDeselectAll();
+    }
+    
     showToast('Student added successfully!');
   };
 

@@ -1,4 +1,4 @@
-// classroom-champions.js - Complete file with race fix
+// classroom-champions.js - Updated with Multiple XP Awards
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
@@ -78,6 +78,12 @@ export default function ClassroomChampions() {
   const [newClassStudents, setNewClassStudents] = useState('');
   const [teacherClasses, setTeacherClasses] = useState([]);
   const [currentClassId, setCurrentClassId] = useState(null);
+
+  // Multiple XP award states
+  const [selectedStudents, setSelectedStudents] = useState([]);
+  const [bulkXpAmount, setBulkXpAmount] = useState(1);
+  const [bulkXpCategory, setBulkXpCategory] = useState('Respectful');
+  const [showBulkXpPanel, setShowBulkXpPanel] = useState(false);
 
   // UX states
   const [savingData, setSavingData] = useState(false);
@@ -187,17 +193,15 @@ export default function ClassroomChampions() {
     return PET_NAMES[Math.floor(Math.random() * PET_NAMES.length)];
   }
 
-  // Enhanced calculateSpeed function with race improvements
   function calculateSpeed(pet) {
-  const baseSpeed = pet.speed || 1;
-  const level = pet.level || 1;
-  
-  // Very small level bonus to keep races competitive
-  // Remove win bonuses entirely
-  const levelBonus = (level - 1) * 0.05; // Only +0.05 per level above 1
-  
-  return Math.max(baseSpeed + levelBonus, 0.8); // Minimum speed of 0.8
-}
+    const baseSpeed = pet.speed || 1;
+    const level = pet.level || 1;
+    
+    // Very small level bonus to keep races competitive
+    const levelBonus = (level - 1) * 0.05;
+    
+    return Math.max(baseSpeed + levelBonus, 0.8);
+  }
 
   function checkForLevelUp(student) {
     const nextLevel = student.avatarLevel + 1;
@@ -255,7 +259,7 @@ export default function ClassroomChampions() {
     setStudentForAvatarChange(null);
   }
 
-  function handleAwardXP(id, category) {
+  function handleAwardXP(id, category, amount = 1) {
     setAnimatingXP(prev => ({ ...prev, [id]: category }));
     setTimeout(() => setAnimatingXP(prev => ({ ...prev, [id]: null })), 600);
 
@@ -263,23 +267,24 @@ export default function ClassroomChampions() {
       const updatedStudents = prev.map((s) => {
         if (s.id !== id) return s;
 
-        const newTotal = s.totalPoints + 1;
+        const newTotal = s.totalPoints + amount;
         let updated = {
           ...s,
           totalPoints: newTotal,
-          weeklyPoints: s.weeklyPoints + 1,
+          weeklyPoints: s.weeklyPoints + amount,
           categoryTotal: {
             ...s.categoryTotal,
-            [category]: (s.categoryTotal[category] || 0) + 1,
+            [category]: (s.categoryTotal[category] || 0) + amount,
           },
           categoryWeekly: {
             ...s.categoryWeekly,
-            [category]: (s.categoryWeekly[category] || 0) + 1,
+            [category]: (s.categoryWeekly[category] || 0) + amount,
           },
           logs: [
             ...(s.logs || []),
             {
               type: category,
+              amount: amount,
               date: new Date().toISOString(),
               source: "manual",
             },
@@ -302,6 +307,107 @@ export default function ClassroomChampions() {
       saveStudentsToFirebase(updatedStudents);
       return updatedStudents;
     });
+  }
+
+  // New function for bulk XP awards
+  function handleBulkXpAward() {
+    if (selectedStudents.length === 0) {
+      alert("Please select at least one student");
+      return;
+    }
+
+    setSavingData(true);
+    
+    // Animate all selected students
+    selectedStudents.forEach(id => {
+      setAnimatingXP(prev => ({ ...prev, [id]: bulkXpCategory }));
+    });
+
+    setTimeout(() => {
+      selectedStudents.forEach(id => {
+        setAnimatingXP(prev => ({ ...prev, [id]: null }));
+      });
+    }, 600);
+
+    setStudents((prev) => {
+      const updatedStudents = prev.map((s) => {
+        if (!selectedStudents.includes(s.id)) return s;
+
+        const newTotal = s.totalPoints + bulkXpAmount;
+        let updated = {
+          ...s,
+          totalPoints: newTotal,
+          weeklyPoints: s.weeklyPoints + bulkXpAmount,
+          categoryTotal: {
+            ...s.categoryTotal,
+            [bulkXpCategory]: (s.categoryTotal[bulkXpCategory] || 0) + bulkXpAmount,
+          },
+          categoryWeekly: {
+            ...s.categoryWeekly,
+            [bulkXpCategory]: (s.categoryWeekly[bulkXpCategory] || 0) + bulkXpAmount,
+          },
+          logs: [
+            ...(s.logs || []),
+            {
+              type: bulkXpCategory,
+              amount: bulkXpAmount,
+              date: new Date().toISOString(),
+              source: "bulk",
+            },
+          ],
+        };
+
+        if (!s.pet?.image && newTotal >= 50) {
+          const newPet = getRandomPet();
+          setPetNameInput(getRandomPetName());
+          setPetUnlockData({
+            studentId: s.id,
+            firstName: s.firstName,
+            pet: newPet,
+          });
+        }
+
+        return checkForLevelUp(updated);
+      });
+
+      saveStudentsToFirebase(updatedStudents);
+      return updatedStudents;
+    });
+
+    // Clear selections and close panel
+    setSelectedStudents([]);
+    setShowBulkXpPanel(false);
+    setSavingData(false);
+    
+    const studentNames = selectedStudents.length === students.length 
+      ? 'the entire class'
+      : `${selectedStudents.length} students`;
+    
+    showToast(`Awarded ${bulkXpAmount} XP to ${studentNames}!`);
+  }
+
+  // Student selection functions
+  function handleStudentSelect(studentId) {
+    setSelectedStudents(prev => {
+      if (prev.includes(studentId)) {
+        return prev.filter(id => id !== studentId);
+      } else {
+        return [...prev, studentId];
+      }
+    });
+  }
+
+  function handleSelectAll() {
+    if (selectedStudents.length === students.length) {
+      setSelectedStudents([]);
+    } else {
+      setSelectedStudents(students.map(s => s.id));
+    }
+  }
+
+  function handleDeselectAll() {
+    setSelectedStudents([]);
+    setShowBulkXpPanel(false);
   }
 
   async function handleClassImport() {
@@ -369,6 +475,8 @@ export default function ClassroomChampions() {
   function loadClass(cls) {
     setStudents(cls.students);
     setCurrentClassId(cls.id);
+    setSelectedStudents([]); // Clear selections when switching classes
+    setShowBulkXpPanel(false);
     showToast(`${cls.name} loaded successfully!`);
   }
 
@@ -382,6 +490,19 @@ export default function ClassroomChampions() {
     setSelectedStudent,
     animatingXP,
     setShowAddStudentModal,
+    // Multiple XP props
+    selectedStudents,
+    setSelectedStudents,
+    handleStudentSelect,
+    handleSelectAll,
+    handleDeselectAll,
+    showBulkXpPanel,
+    setShowBulkXpPanel,
+    bulkXpAmount,
+    setBulkXpAmount,
+    bulkXpCategory,
+    setBulkXpCategory,
+    handleBulkXpAward,
     // Race props
     raceInProgress,
     raceFinished,
@@ -469,112 +590,108 @@ export default function ClassroomChampions() {
     setRaceWinner
   };
 
-  // IMPROVED RACE LOGIC - This replaces the old race useEffect
+  // Race logic (keeping the existing problematic one for now)
   useEffect(() => {
-  if (!raceInProgress || selectedPets.length === 0) return;
+    if (!raceInProgress || selectedPets.length === 0) return;
 
-  const interval = setInterval(() => {
-    setRacePositions((prev) => {
-      const updated = { ...prev };
-      let winnerId = null;
+    const interval = setInterval(() => {
+      setRacePositions((prev) => {
+        const updated = { ...prev };
+        let winnerId = null;
 
-      // Dynamic finish line calculation
-      const getRaceTrackWidth = () => {
-        const raceTrack = document.querySelector('.race-track-container');
-        if (raceTrack) {
-          const rect = raceTrack.getBoundingClientRect();
-          return rect.width;
+        // Dynamic finish line calculation
+        const getRaceTrackWidth = () => {
+          const raceTrack = document.querySelector('.race-track-container');
+          if (raceTrack) {
+            const rect = raceTrack.getBoundingClientRect();
+            return rect.width;
+          }
+          return 800; // fallback
+        };
+
+        const trackWidth = getRaceTrackWidth();
+        const FINISH_LINE_POSITION = Math.max(trackWidth - 45, 700);
+
+        // First, check for winners WITHOUT updating positions
+        for (const id of selectedPets) {
+          const student = students.find((s) => s.id === id);
+          if (!student?.pet) continue;
+
+          const currentPosition = updated[id] || 0;
+          const speed = calculateSpeed(student.pet);
+          const baseStep = speed * 2;
+          const randomMultiplier = 0.8 + Math.random() * 0.4;
+          const step = baseStep * randomMultiplier;
+          const newPosition = currentPosition + step;
+
+          // Check if this pet would cross the finish line
+          if (currentPosition < FINISH_LINE_POSITION && newPosition >= FINISH_LINE_POSITION && !raceFinished) {
+            winnerId = id;
+            break;
+          }
         }
-        return 800; // fallback
-      };
 
-      const trackWidth = getRaceTrackWidth();
-      // Set finish line to touch the red line
-      const FINISH_LINE_POSITION = Math.max(trackWidth - 45, 700);
+        // If we found a winner, DON'T update any positions, just end the race
+        if (winnerId) {
+          clearInterval(interval);
+          
+          const winner = students.find((s) => s.id === winnerId);
+          setRaceWinner(winner);
+          setRaceInProgress(false);
+          setRaceFinished(true);
 
-      // First, check for winners WITHOUT updating positions
-      for (const id of selectedPets) {
-        const student = students.find((s) => s.id === id);
-        if (!student?.pet) continue;
+          // Award prizes
+          setStudents((prev) => {
+            const updatedStudents = prev.map((s) => {
+              if (s.id === winnerId) {
+                const updated = {
+                  ...s,
+                  pet: {
+                    ...s.pet,
+                    wins: (s.pet.wins || 0) + 1,
+                    speed: (s.pet.speed || 1) + 0.02
+                  },
+                };
 
-        const currentPosition = updated[id] || 0;
-        const speed = calculateSpeed(student.pet);
-        const baseStep = speed * 2;
-        const randomMultiplier = 0.8 + Math.random() * 0.4;
-        const step = baseStep * randomMultiplier;
-        const newPosition = currentPosition + step;
+                if (selectedPrize === 'XP') {
+                  updated.totalPoints = (updated.totalPoints || 0) + xpAmount;
+                  return checkForLevelUp(updated);
+                }
 
-        // Check if this pet would cross the finish line
-        if (currentPosition < FINISH_LINE_POSITION && newPosition >= FINISH_LINE_POSITION && !raceFinished) {
-          winnerId = id;
-          break; // Stop checking as soon as we find a winner
-        }
-      }
-
-      // If we found a winner, DON'T update any positions, just end the race
-      if (winnerId) {
-        clearInterval(interval);
-        
-        const winner = students.find((s) => s.id === winnerId);
-        setRaceWinner(winner);
-        setRaceInProgress(false);
-        setRaceFinished(true);
-
-        // Award prizes
-        setStudents((prev) => {
-          const updatedStudents = prev.map((s) => {
-            if (s.id === winnerId) {
-              const updated = {
-                ...s,
-                pet: {
-                  ...s.pet,
-                  wins: (s.pet.wins || 0) + 1,
-                  // Very small speed increase to keep races competitive
-                  speed: (s.pet.speed || 1) + 0.02
-                },
-              };
-
-              if (selectedPrize === 'XP') {
-                updated.totalPoints = (updated.totalPoints || 0) + xpAmount;
-                return checkForLevelUp(updated);
+                return updated;
               }
+              return s;
+            });
 
-              return updated;
-            }
-            return s;
+            saveStudentsToFirebase(updatedStudents);
+            return updatedStudents;
           });
 
-          saveStudentsToFirebase(updatedStudents);
-          return updatedStudents;
-        });
+          return prev;
+        }
 
-        // Return current positions without any updates
-        return prev;
-      }
+        // Only update positions if no winner was found
+        for (const id of selectedPets) {
+          const student = students.find((s) => s.id === id);
+          if (!student?.pet) continue;
 
-      // Only update positions if no winner was found
-      for (const id of selectedPets) {
-        const student = students.find((s) => s.id === id);
-        if (!student?.pet) continue;
+          const speed = calculateSpeed(student.pet);
+          const baseStep = speed * 2;
+          const randomMultiplier = 0.8 + Math.random() * 0.4;
+          const step = baseStep * randomMultiplier;
+          
+          const currentPosition = updated[id] || 0;
+          const newPosition = currentPosition + step;
+          
+          updated[id] = newPosition;
+        }
 
-        const speed = calculateSpeed(student.pet);
-        const baseStep = speed * 2;
-        const randomMultiplier = 0.8 + Math.random() * 0.4;
-        const step = baseStep * randomMultiplier;
-        
-        const currentPosition = updated[id] || 0;
-        const newPosition = currentPosition + step;
-        
-        // Normal movement
-        updated[id] = newPosition;
-      }
+        return updated;
+      });
+    }, 100);
 
-      return updated;
-    });
-  }, 100); // Keep the smooth 100ms interval
-
-  return () => clearInterval(interval);
-}, [raceInProgress, students, selectedPets, selectedPrize, xpAmount, raceFinished]);
+    return () => clearInterval(interval);
+  }, [raceInProgress, students, selectedPets, selectedPrize, xpAmount, raceFinished]);
 
   // Main auth effect
   useEffect(() => {
