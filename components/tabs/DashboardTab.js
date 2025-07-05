@@ -258,40 +258,75 @@ const DashboardTab = ({
 
         {/* Class Progress */}
         <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
-          <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
-            <span className="text-xl mr-2">📈</span>
-            Class Progress
-          </h3>
-          <div className="space-y-3">
-            {students.slice(0, 5).map((student, index) => (
-              <div key={student.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                <div className="flex items-center space-x-3">
-                  <span className="text-sm font-bold text-gray-500 w-6">#{index + 1}</span>
-                  {student.avatar ? (
-                    <img src={student.avatar} alt={student.firstName} className="w-10 h-10 rounded-full border-2 border-gray-300" />
-                  ) : (
-                    <div className="w-10 h-10 bg-gradient-to-br from-gray-300 to-gray-400 rounded-full flex items-center justify-center text-white font-bold">
-                      {student.firstName.charAt(0)}
-                    </div>
-                  )}
-                  <span className="font-semibold text-gray-800">{student.firstName}</span>
+  <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
+    <span className="text-xl mr-2">📈</span>
+    Class Progress
+  </h3>
+  <div className="space-y-3">
+    {students.length === 0 ? (
+      <div className="text-center py-8">
+        <div className="text-4xl mb-2">🎒</div>
+        <h4 className="text-lg font-semibold text-gray-600 mb-2">No students yet</h4>
+        <p className="text-gray-500">Add students or load a class to get started!</p>
+      </div>
+    ) : (
+      // Sort all students by total points (highest first)
+      students
+        .sort((a, b) => (b.totalPoints || 0) - (a.totalPoints || 0))
+        .map((student, index) => (
+          <div key={student.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+            <div className="flex items-center space-x-3">
+              <span className={`text-sm font-bold w-6 ${
+                index === 0 ? 'text-yellow-600' : 
+                index === 1 ? 'text-gray-600' : 
+                index === 2 ? 'text-orange-600' : 'text-gray-500'
+              }`}>
+                #{index + 1}
+                {index === 0 && ' 🏆'}
+                {index === 1 && ' 🥈'}
+                {index === 2 && ' 🥉'}
+              </span>
+              {student.avatar ? (
+                <img src={student.avatar} alt={student.firstName} className="w-10 h-10 rounded-full border-2 border-gray-300" />
+              ) : (
+                <div className="w-10 h-10 bg-gradient-to-br from-gray-300 to-gray-400 rounded-full flex items-center justify-center text-white font-bold">
+                  {student.firstName.charAt(0)}
                 </div>
-                <div className="text-right">
-                  <span className="font-bold text-green-600 text-lg">{student.totalPoints || 0} XP</span>
-                  <br />
-                  <span className="text-sm text-gray-500">Level {student.avatarLevel}</span>
-                </div>
+              )}
+              <div>
+                <span className="font-semibold text-gray-800">{student.firstName}</span>
+                {student.pet?.image && (
+                  <span className="ml-2 text-sm">🐾</span>
+                )}
               </div>
-            ))}
-            {students.length === 0 && (
-              <div className="text-center py-8">
-                <div className="text-4xl mb-2">🎒</div>
-                <h4 className="text-lg font-semibold text-gray-600 mb-2">No students yet</h4>
-                <p className="text-gray-500">Add students or load a class to get started!</p>
-              </div>
-            )}
+            </div>
+            <div className="text-right">
+              <span className={`font-bold text-lg ${
+                index === 0 ? 'text-yellow-600' : 'text-green-600'
+              }`}>
+                {student.totalPoints || 0} XP
+              </span>
+              <br />
+              <span className="text-sm text-gray-500">Level {student.avatarLevel}</span>
+            </div>
           </div>
-        </div>
+        ))
+    )}
+  </div>
+  
+  {students.length > 0 && (
+    <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+      <div className="flex items-center justify-between text-sm">
+        <span className="text-blue-800 font-medium">
+          📊 Class Stats: {students.length} students
+        </span>
+        <span className="text-blue-600">
+          Average: {averageXP} XP
+        </span>
+      </div>
+    </div>
+  )}
+</div>
       </div>
     </div>
   );

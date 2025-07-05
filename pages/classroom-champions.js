@@ -1089,107 +1089,124 @@ export default function ClassroomChampions() {
   };
 
   // Race logic (keeping the existing problematic one for now)
-  useEffect(() => {
-    if (!raceInProgress || selectedPets.length === 0) return;
+  // Replace the existing race useEffect in classroom-champions.js (around line 750-850)
 
-    const interval = setInterval(() => {
-      setRacePositions((prev) => {
-        const updated = { ...prev };
-        let winnerId = null;
+useEffect(() => {
+  if (!raceInProgress || selectedPets.length === 0) return;
 
-        // Dynamic finish line calculation
-        const getRaceTrackWidth = () => {
-          const raceTrack = document.querySelector('.race-track-container');
-          if (raceTrack) {
-            const rect = raceTrack.getBoundingClientRect();
-            return rect.width;
-          }
-          return 800; // fallback
-        };
+  const interval = setInterval(() => {
+    setRacePositions((prev) => {
+      const updated = { ...prev };
+      let winnerId = null;
 
-        const trackWidth = getRaceTrackWidth();
-        const FINISH_LINE_POSITION = Math.max(trackWidth - 45, 700);
+      // More accurate finish line calculation
+      const getRaceTrackWidth = () => {
+        const raceTrack = document.querySelector('.race-track-container');
+        if (raceTrack) {
+          const rect = raceTrack.getBoundingClientRect();
+          // Set finish line earlier to prevent squishing
+          return rect.width - 80; // Increased buffer from 45 to 80
+        }
+        return 720; // Reduced fallback from 700 to 720
+      };
 
-        // First, check for winners WITHOUT updating positions
-        for (const id of selectedPets) {
-          const student = students.find((s) => s.id === id);
-          if (!student?.pet) continue;
+      const trackWidth = getRaceTrackWidth();
+      const FINISH_LINE_POSITION = trackWidth;
 
-          const currentPosition = updated[id] || 0;
+      // Check for winners BEFORE updating positions
+      for (const id of selectedPets) {
+        const student = students.find((s) => s.id === id);
+        if (!student?.pet) continue;
+
+        const currentPosition = updated[id] || 0;
+        
+        // Check if this pet will cross the finish line with the next step
+        if (currentPosition < FINISH_LINE_POSITION) {
           const speed = calculateSpeed(student.pet);
           const baseStep = speed * 2;
           const randomMultiplier = 0.8 + Math.random() * 0.4;
           const step = baseStep * randomMultiplier;
-          const newPosition = currentPosition + step;
+          const nextPosition = currentPosition + step;
 
-          // Check if this pet would cross the finish line
-          if (currentPosition < FINISH_LINE_POSITION && newPosition >= FINISH_LINE_POSITION && !raceFinished) {
+          // If the next position would cross the finish line, declare winner immediately
+          if (nextPosition >= FINISH_LINE_POSITION && !raceFinished) {
             winnerId = id;
+            
+            // Set winner position exactly at finish line to prevent overrun
+            updated[id] = FINISH_LINE_POSITION;
+            
+            // Stop all other pets at their current positions
+            for (const otherId of selectedPets) {
+              if (otherId !== id && updated[otherId] !== undefined) {
+                updated[otherId] = Math.min(updated[otherId] || 0, FINISH_LINE_POSITION - 10);
+              }
+            }
             break;
           }
         }
+      }
 
-        // If we found a winner, DON'T update any positions, just end the race
-        if (winnerId) {
-          clearInterval(interval);
-          
-          const winner = students.find((s) => s.id === winnerId);
-          setRaceWinner(winner);
-          setRaceInProgress(false);
-          setRaceFinished(true);
+      // If we found a winner, end the race immediately
+      if (winnerId) {
+        clearInterval(interval);
+        
+        const winner = students.find((s) => s.id === winnerId);
+        setRaceWinner(winner);
+        setRaceInProgress(false);
+        setRaceFinished(true);
 
-          // Award prizes
-          setStudents((prev) => {
-            const updatedStudents = prev.map((s) => {
-              if (s.id === winnerId) {
-                const updated = {
-                  ...s,
-                  pet: {
-                    ...s.pet,
-                    wins: (s.pet.wins || 0) + 1,
-                    speed: (s.pet.speed || 1) + 0.02
-                  },
-                };
+        // Award prizes
+        setStudents((prev) => {
+          const updatedStudents = prev.map((s) => {
+            if (s.id === winnerId) {
+              const updated = {
+                ...s,
+                pet: {
+                  ...s.pet,
+                  wins: (s.pet.wins || 0) + 1,
+                  speed: (s.pet.speed || 1) + 0.02
+                },
+              };
 
-                if (selectedPrize === 'XP') {
-                  updated.totalPoints = (updated.totalPoints || 0) + xpAmount;
-                  return checkForLevelUp(updated);
-                }
-
-                return updated;
+              if (selectedPrize === 'XP') {
+                updated.totalPoints = (updated.totalPoints || 0) + xpAmount;
+                return checkForLevelUp(updated);
               }
-              return s;
-            });
 
-            saveStudentsToFirebase(updatedStudents);
-            return updatedStudents;
+              return updated;
+            }
+            return s;
           });
 
-          return prev;
-        }
+          saveStudentsToFirebase(updatedStudents);
+          return updatedStudents;
+        });
 
-        // Only update positions if no winner was found
-        for (const id of selectedPets) {
-          const student = students.find((s) => s.id === id);
-          if (!student?.pet) continue;
+        return updated; // Return the final positions
+      }
 
-          const speed = calculateSpeed(student.pet);
-          const baseStep = speed * 2;
-          const randomMultiplier = 0.8 + Math.random() * 0.4;
-          const step = baseStep * randomMultiplier;
-          
-          const currentPosition = updated[id] || 0;
-          const newPosition = currentPosition + step;
-          
-          updated[id] = newPosition;
-        }
+      // Only update positions if no winner was found
+      for (const id of selectedPets) {
+        const student = students.find((s) => s.id === id);
+        if (!student?.pet) continue;
 
-        return updated;
-      });
-    }, 100);
+        const speed = calculateSpeed(student.pet);
+        const baseStep = speed * 2;
+        const randomMultiplier = 0.8 + Math.random() * 0.4;
+        const step = baseStep * randomMultiplier;
+        
+        const currentPosition = updated[id] || 0;
+        const newPosition = Math.min(currentPosition + step, FINISH_LINE_POSITION);
+        
+        updated[id] = newPosition;
+      }
 
-    return () => clearInterval(interval);
-  }, [raceInProgress, students, selectedPets, selectedPrize, xpAmount, raceFinished]);
+      return updated;
+    });
+  }, 100);
+
+  return () => clearInterval(interval);
+}, [raceInProgress, students, selectedPets, selectedPrize, xpAmount, raceFinished]);
 
   // Main auth effect
   useEffect(() => {

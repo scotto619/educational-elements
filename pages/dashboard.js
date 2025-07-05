@@ -233,12 +233,12 @@ export default function Dashboard() {
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">Student Names</label>
               <textarea
-                value={studentNames}
-                onChange={(e) => setStudentNames(e.target.value)}
-                rows="6"
-                placeholder="Enter one student name per line&#10;Example:&#10;John Smith&#10;Emma Johnson&#10;Michael Brown"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 font-medium"
-              />
+  value={studentNames}
+  onChange={(e) => setStudentNames(e.target.value)}
+  rows="6"
+  placeholder="Enter one student name per line:&#10;John Smith&#10;Emma Johnson&#10;Michael Brown&#10;Sarah Wilson&#10;David Lee"
+  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 font-medium"
+/>
             </div>
             <button
               onClick={handleUploadClass}

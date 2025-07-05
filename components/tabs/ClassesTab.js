@@ -37,8 +37,8 @@ const ClassesTab = ({
             <textarea
               value={newClassStudents}
               onChange={(e) => setNewClassStudents(e.target.value)}
-              rows="4"
-              placeholder="John Smith&#10;Emma Johnson&#10;Michael Brown"
+              rows="6"
+              placeholder="Enter one student name per line:&#10;John Smith&#10;Emma Johnson&#10;Michael Brown&#10;Sarah Wilson&#10;David Lee"
               className="w-full border-2 border-gray-300 px-4 py-3 rounded-lg focus:border-blue-500 transition-colors"
             />
           </div>
