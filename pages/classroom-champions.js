@@ -189,16 +189,15 @@ export default function ClassroomChampions() {
 
   // Enhanced calculateSpeed function with race improvements
   function calculateSpeed(pet) {
-    const baseSpeed = pet.speed || 1;
-    const level = pet.level || 1;
-    const wins = pet.wins || 0;
-    
-    // Speed increases with level and wins
-    const levelBonus = level * 0.3;
-    const winBonus = wins * 0.2;
-    
-    return Math.max(baseSpeed + levelBonus + winBonus, 1);
-  }
+  const baseSpeed = pet.speed || 1;
+  const level = pet.level || 1;
+  
+  // Very small level bonus to keep races competitive
+  // Remove win bonuses entirely
+  const levelBonus = (level - 1) * 0.05; // Only +0.05 per level above 1
+  
+  return Math.max(baseSpeed + levelBonus, 0.8); // Minimum speed of 0.8
+}
 
   function checkForLevelUp(student) {
     const nextLevel = student.avatarLevel + 1;
@@ -506,14 +505,15 @@ export default function ClassroomChampions() {
         const currentPosition = updated[id] || 0;
         const newPosition = currentPosition + step;
         
-        // DON'T cap the position - let pets continue moving
-        updated[id] = newPosition;
-
-        // Check for winner when pet TOUCHES the finish line
-        if (newPosition >= FINISH_LINE_POSITION && !raceFinished && !winnerId) {
+        // Check for winner BEFORE updating position to prevent squashing
+        if (currentPosition < FINISH_LINE_POSITION && newPosition >= FINISH_LINE_POSITION && !raceFinished && !winnerId) {
           winnerId = id;
-          // End the race immediately when someone touches the line
-          break;
+          // Set winner position exactly at finish line
+          updated[id] = FINISH_LINE_POSITION;
+          break; // End race immediately
+        } else {
+          // Normal movement - don't cap position
+          updated[id] = newPosition;
         }
       }
 
@@ -537,8 +537,8 @@ export default function ClassroomChampions() {
                 pet: {
                   ...s.pet,
                   wins: (s.pet.wins || 0) + 1,
-                  // Slightly increase speed for future races
-                  speed: (s.pet.speed || 1) + 0.1
+                  // Very small speed increase to keep races competitive
+                  speed: (s.pet.speed || 1) + 0.02
                 },
               };
 

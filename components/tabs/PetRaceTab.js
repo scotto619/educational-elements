@@ -101,11 +101,8 @@ const PetRaceTab = ({
             />
           ))}
           
-          {/* Starting line with fixed text */}
+          {/* Starting line */}
           <div className="absolute top-0 bottom-0 left-5 w-2 bg-gradient-to-b from-gray-600 to-gray-800 shadow-lg z-20 rounded">
-          </div>
-          <div className="absolute top-2 left-2 bg-gray-800 text-white text-xs px-2 py-1 rounded font-bold">
-            START
           </div>
 
           {/* Progress markers every 25% */}
@@ -161,9 +158,6 @@ const PetRaceTab = ({
 
           {/* Enhanced Finish Line */}
           <div className="absolute top-0 bottom-0 right-5 w-4 bg-gradient-to-b from-red-500 to-red-600 shadow-lg z-20 rounded">
-          </div>
-          <div className="absolute top-2 right-2 bg-red-600 text-white text-xs px-2 py-1 rounded font-bold">
-            FINISH
           </div>
 
           {/* Finish line flag */}
