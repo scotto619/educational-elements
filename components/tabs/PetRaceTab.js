@@ -160,11 +160,6 @@ const PetRaceTab = ({
           <div className="absolute top-0 bottom-0 right-5 w-4 bg-gradient-to-b from-red-500 to-red-600 shadow-lg z-20 rounded">
           </div>
 
-          {/* Finish line flag */}
-          <div className="absolute top-8 right-2 z-20">
-            <div className="w-6 h-4 bg-gradient-to-r from-red-500 to-white to-red-500 border border-gray-400 rounded-sm shadow-md"></div>
-          </div>
-
           {/* Race completed overlay */}
           {raceFinished && (
             <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-30">

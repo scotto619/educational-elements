@@ -508,13 +508,12 @@ export default function ClassroomChampions() {
         // Check for winner BEFORE updating position to prevent squashing
         if (currentPosition < FINISH_LINE_POSITION && newPosition >= FINISH_LINE_POSITION && !raceFinished && !winnerId) {
           winnerId = id;
-          // Set winner position exactly at finish line
-          updated[id] = FINISH_LINE_POSITION;
+          // Don't update position - let pet stay where it naturally is
           break; // End race immediately
-        } else {
-          // Normal movement - don't cap position
-          updated[id] = newPosition;
         }
+        
+        // Normal movement for all pets
+        updated[id] = newPosition;
       }
 
       // Handle winner immediately when detected
