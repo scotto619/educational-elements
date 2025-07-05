@@ -472,95 +472,97 @@ export default function ClassroomChampions() {
 
   // IMPROVED RACE LOGIC - This replaces the old race useEffect
   useEffect(() => {
-    if (!raceInProgress || selectedPets.length === 0) return;
+  if (!raceInProgress || selectedPets.length === 0) return;
 
-    const interval = setInterval(() => {
-      setRacePositions((prev) => {
-        const updated = { ...prev };
-        let winnerId = null;
+  const interval = setInterval(() => {
+    setRacePositions((prev) => {
+      const updated = { ...prev };
+      let winnerId = null;
 
-        // Dynamic finish line calculation
-        const getRaceTrackWidth = () => {
-          const raceTrack = document.querySelector('.race-track-container');
-          if (raceTrack) {
-            const rect = raceTrack.getBoundingClientRect();
-            return rect.width;
-          }
-          return 800; // fallback
-        };
-
-        const trackWidth = getRaceTrackWidth();
-        const FINISH_LINE_POSITION = Math.max(trackWidth - 50, 700); // Ensure minimum race distance
-
-        for (const id of selectedPets) {
-          const student = students.find((s) => s.id === id);
-          if (!student?.pet) continue;
-
-          const speed = calculateSpeed(student.pet);
-          // Add some randomness but ensure consistent forward progress
-          const baseStep = speed * 2;
-          const randomMultiplier = 0.8 + Math.random() * 0.4; // 0.8 to 1.2
-          const step = baseStep * randomMultiplier;
-          
-          const newPosition = (updated[id] || 0) + step;
-          
-          // Cap position at finish line
-          updated[id] = Math.min(newPosition, FINISH_LINE_POSITION);
-
-          // Check for winner - first to reach finish line
-          if (newPosition >= FINISH_LINE_POSITION && !raceFinished && !winnerId) {
-            winnerId = id;
-          }
+      // Dynamic finish line calculation
+      const getRaceTrackWidth = () => {
+        const raceTrack = document.querySelector('.race-track-container');
+        if (raceTrack) {
+          const rect = raceTrack.getBoundingClientRect();
+          return rect.width;
         }
+        return 800; // fallback
+      };
 
-        // Handle winner after all pets have moved
-        if (winnerId) {
-          // Clear interval immediately
-          clearInterval(interval);
-          
-          // Small delay to ensure visual finish
-          setTimeout(() => {
-            const winner = students.find((s) => s.id === winnerId);
-            setRaceWinner(winner);
-            setRaceInProgress(false);
-            setRaceFinished(true);
+      const trackWidth = getRaceTrackWidth();
+      // Set finish line to touch the red line (not before it)
+      const FINISH_LINE_POSITION = Math.max(trackWidth - 45, 700); // 45px accounts for pet width + red line
 
-            // Award prizes
-            setStudents((prev) => {
-              const updatedStudents = prev.map((s) => {
-                if (s.id === winnerId) {
-                  const updated = {
-                    ...s,
-                    pet: {
-                      ...s.pet,
-                      wins: (s.pet.wins || 0) + 1,
-                      // Slightly increase speed for future races
-                      speed: (s.pet.speed || 1) + 0.1
-                    },
-                  };
+      for (const id of selectedPets) {
+        const student = students.find((s) => s.id === id);
+        if (!student?.pet) continue;
 
-                  if (selectedPrize === 'XP') {
-                    updated.totalPoints = (updated.totalPoints || 0) + xpAmount;
-                    return checkForLevelUp(updated);
-                  }
+        const speed = calculateSpeed(student.pet);
+        // Add some randomness but ensure consistent forward progress
+        const baseStep = speed * 2;
+        const randomMultiplier = 0.8 + Math.random() * 0.4; // 0.8 to 1.2
+        const step = baseStep * randomMultiplier;
+        
+        const currentPosition = updated[id] || 0;
+        const newPosition = currentPosition + step;
+        
+        // DON'T cap the position - let pets continue moving
+        updated[id] = newPosition;
 
-                  return updated;
-                }
-                return s;
-              });
-
-              saveStudentsToFirebase(updatedStudents);
-              return updatedStudents;
-            });
-          }, 300); // Small delay for visual effect
+        // Check for winner when pet TOUCHES the finish line
+        if (newPosition >= FINISH_LINE_POSITION && !raceFinished && !winnerId) {
+          winnerId = id;
+          // End the race immediately when someone touches the line
+          break;
         }
+      }
 
-        return updated;
-      });
-    }, 100); // Faster interval for smoother animation
+      // Handle winner immediately when detected
+      if (winnerId) {
+        // Clear interval immediately
+        clearInterval(interval);
+        
+        // End the race immediately - no delay
+        const winner = students.find((s) => s.id === winnerId);
+        setRaceWinner(winner);
+        setRaceInProgress(false);
+        setRaceFinished(true);
 
-    return () => clearInterval(interval);
-  }, [raceInProgress, students, selectedPets, selectedPrize, xpAmount, raceFinished]);
+        // Award prizes
+        setStudents((prev) => {
+          const updatedStudents = prev.map((s) => {
+            if (s.id === winnerId) {
+              const updated = {
+                ...s,
+                pet: {
+                  ...s.pet,
+                  wins: (s.pet.wins || 0) + 1,
+                  // Slightly increase speed for future races
+                  speed: (s.pet.speed || 1) + 0.1
+                },
+              };
+
+              if (selectedPrize === 'XP') {
+                updated.totalPoints = (updated.totalPoints || 0) + xpAmount;
+                return checkForLevelUp(updated);
+              }
+
+              return updated;
+            }
+            return s;
+          });
+
+          saveStudentsToFirebase(updatedStudents);
+          return updatedStudents;
+        });
+      }
+
+      return updated;
+    });
+  }, 100); // Keep the smooth 100ms interval
+
+  return () => clearInterval(interval);
+}, [raceInProgress, students, selectedPets, selectedPrize, xpAmount, raceFinished]);
 
   // Main auth effect
   useEffect(() => {

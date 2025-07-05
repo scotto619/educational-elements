@@ -14,7 +14,6 @@ const PetRaceTab = ({
 }) => {
   const raceTrackRef = useRef(null);
   const [trackWidth, setTrackWidth] = useState(800);
-  const [finishLinePosition, setFinishLinePosition] = useState(750);
 
   // Calculate track dimensions on mount and resize
   useEffect(() => {
@@ -22,7 +21,6 @@ const PetRaceTab = ({
       if (raceTrackRef.current) {
         const rect = raceTrackRef.current.getBoundingClientRect();
         setTrackWidth(rect.width);
-        setFinishLinePosition(rect.width - 50); // 20px for right-5 + 30px buffer
       }
     };
 
@@ -103,9 +101,11 @@ const PetRaceTab = ({
             />
           ))}
           
-          {/* Starting line with better visibility */}
+          {/* Starting line with fixed text */}
           <div className="absolute top-0 bottom-0 left-5 w-2 bg-gradient-to-b from-gray-600 to-gray-800 shadow-lg z-20 rounded">
-            <div className="text-white text-center text-xs font-bold mt-2 transform -rotate-90">START</div>
+          </div>
+          <div className="absolute top-2 left-2 bg-gray-800 text-white text-xs px-2 py-1 rounded font-bold">
+            START
           </div>
 
           {/* Progress markers every 25% */}
@@ -115,7 +115,7 @@ const PetRaceTab = ({
               className="absolute top-0 bottom-0 w-1 bg-gray-300 z-10"
               style={{ left: `${5 + (trackWidth - 50) * percent}px` }}
             >
-              <div className="text-gray-500 text-xs font-bold mt-1 transform -rotate-90">
+              <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-gray-500 text-xs font-bold bg-white px-1 rounded">
                 {Math.round(percent * 100)}%
               </div>
             </div>
@@ -161,12 +161,14 @@ const PetRaceTab = ({
 
           {/* Enhanced Finish Line */}
           <div className="absolute top-0 bottom-0 right-5 w-4 bg-gradient-to-b from-red-500 to-red-600 shadow-lg z-20 rounded">
-            <div className="text-white text-center text-xs font-bold mt-2 transform -rotate-90">FINISH</div>
+          </div>
+          <div className="absolute top-2 right-2 bg-red-600 text-white text-xs px-2 py-1 rounded font-bold">
+            FINISH
           </div>
 
-          {/* Finish line flag animation */}
-          <div className="absolute top-2 right-2 z-20">
-            <div className="w-6 h-4 bg-checkered bg-white border border-gray-400 rounded-sm shadow-md animate-pulse"></div>
+          {/* Finish line flag */}
+          <div className="absolute top-8 right-2 z-20">
+            <div className="w-6 h-4 bg-gradient-to-r from-red-500 to-white to-red-500 border border-gray-400 rounded-sm shadow-md"></div>
           </div>
 
           {/* Race completed overlay */}
@@ -209,17 +211,6 @@ const PetRaceTab = ({
               <p className="text-gray-500 italic">No races completed yet. Start your first race!</p>
             </div>
           )}
-        </div>
-
-        {/* Racing Tips */}
-        <div className="mt-8 bg-blue-50 p-6 rounded-xl border border-blue-200">
-          <h4 className="text-lg font-bold text-blue-800 mb-3">🎯 Racing Tips</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-700">
-            <div>• Pet speed increases with wins</div>
-            <div>• Higher level pets are faster</div>
-            <div>• Races are won by chance and skill</div>
-            <div>• Winners earn the selected prize</div>
-          </div>
         </div>
       </div>
     </div>
