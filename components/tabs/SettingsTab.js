@@ -132,27 +132,6 @@ const SettingsTab = ({
 
   return (
     <div className="animate-fade-in">
-
-      {/* Emergency Fix Button - Add to your SettingsTab */}
-<div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-  <h4 className="font-bold text-yellow-800 mb-2">🛠️ Emergency Fix</h4>
-  <button
-    onClick={() => {
-      // Direct inline fix
-      console.log('🔧 Applying fixes...');
-      // Add your fix logic here or call the function
-      if (typeof quickFixForExistingUsers === 'function') {
-        quickFixForExistingUsers();
-      } else {
-        alert('Fix function not available. Try Option 1.');
-      }
-    }}
-    className="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700"
-  >
-    Apply Quick Fix
-  </button>
-</div>
-
       {/* Settings Navigation */}
       <div className="flex justify-center gap-2 mb-8">
         {[

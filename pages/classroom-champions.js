@@ -1,4 +1,4 @@
-// classroom-champions.js - Complete with All Fixes
+// classroom-champions.js - Complete with Working Quest System
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
@@ -760,14 +760,15 @@ export default function ClassroomChampions() {
     }
   };
 
-  const completeQuestSafely = (questId, studentId = null) => {
+  // WORKING: Quest completion function that shows modals and awards XP
+  const completeQuest = (questId, studentId = null) => {
     const quest = [...dailyQuests, ...weeklyQuests].find(q => q.id === questId);
     if (!quest) return;
 
     const completionKey = studentId || 'class';
     if (quest.completedBy.includes(completionKey)) return;
 
-    console.log(`🏆 Completing quest ${questId} for ${completionKey}`);
+    console.log(`🏆 Completing quest ${quest.id} for ${completionKey} - FULL completion with modal`);
 
     // Update quest completion
     const updatedDailyQuests = dailyQuests.map(q => 
@@ -780,7 +781,7 @@ export default function ClassroomChampions() {
     setDailyQuests(updatedDailyQuests);
     setWeeklyQuests(updatedWeeklyQuests);
 
-    // SAFE XP reward (no recursive calls)
+    // Award XP rewards (but prevent recursive quest checking)
     if (quest.reward.type === 'XP') {
       setStudents(prev => {
         const rewardedStudents = prev.map(student => {
@@ -792,6 +793,7 @@ export default function ClassroomChampions() {
               ...student,
               totalPoints: newTotal,
               weeklyPoints: (student.weeklyPoints || 0) + quest.reward.amount,
+              // DON'T update lastXpDate here to prevent recursive quest checking
               categoryTotal: {
                 ...student.categoryTotal,
                 'Quest': (student.categoryTotal['Quest'] || 0) + quest.reward.amount,
@@ -819,7 +821,7 @@ export default function ClassroomChampions() {
       });
     }
 
-    // Show completion modal
+    // ALWAYS show completion modal for quest completions
     setQuestCompletionData({
       quest,
       studentId,
@@ -834,7 +836,7 @@ export default function ClassroomChampions() {
     });
   };
 
-  // FIXED: Quest completion check that prevents retroactive completions
+  // WORKING: Quest completion check with retroactive prevention
   const checkQuestCompletionSafely = (studentId, updatedStudents) => {
     const student = updatedStudents.find(s => s.id === studentId);
     if (!student) return;
@@ -851,11 +853,16 @@ export default function ClassroomChampions() {
         
         // Only trigger quest completion if:
         // 1. The student gained XP AFTER the quest was created, OR
-        // 2. The student is newly created (no lastXpDate)
-        if (questCreatedDate <= studentLastActive || !student.lastXpDate) {
+        // 2. The student is newly created (no lastXpDate), OR
+        // 3. The quest was created today (new quests should work immediately)
+        const today = new Date().toISOString().split('T')[0];
+        const isNewQuest = quest.startDate === today;
+        
+        if (questCreatedDate <= studentLastActive || !student.lastXpDate || isNewQuest) {
           if (checkIndividualQuestCompletion(quest, studentId)) {
-            console.log(`✅ Quest ${quest.id} completed by ${studentId}`);
-            completeQuestSafely(quest.id, studentId);
+            console.log(`✅ Quest ${quest.id} completed by ${studentId} - showing modal and awarding XP`);
+            // Use the NORMAL complete quest function to show modal and award XP
+            setTimeout(() => completeQuest(quest.id, studentId), 100);
           }
         }
       }
@@ -865,55 +872,11 @@ export default function ClassroomChampions() {
     [...dailyQuests, ...weeklyQuests].forEach(quest => {
       if (quest.category === 'class' && !quest.completedBy.includes('class')) {
         if (checkClassQuestCompletionSafely(quest, updatedStudents)) {
-          console.log(`✅ Class quest ${quest.id} completed`);
-          completeQuestSafely(quest.id, null);
+          console.log(`✅ Class quest ${quest.id} completed - showing modal and awarding XP`);
+          // Use the NORMAL complete quest function to show modal and award XP
+          setTimeout(() => completeQuest(quest.id, null), 100);
         }
       }
-    });
-  };
-
-  const completeQuest = (questId, studentId = null) => {
-    const quest = [...dailyQuests, ...weeklyQuests].find(q => q.id === questId);
-    if (!quest) return;
-
-    const completionKey = studentId || 'class';
-    if (quest.completedBy.includes(completionKey)) return;
-
-    // Update quest completion
-    const updatedDailyQuests = dailyQuests.map(q => 
-      q.id === questId ? { ...q, completedBy: [...q.completedBy, completionKey] } : q
-    );
-    const updatedWeeklyQuests = weeklyQuests.map(q => 
-      q.id === questId ? { ...q, completedBy: [...q.completedBy, completionKey] } : q
-    );
-
-    setDailyQuests(updatedDailyQuests);
-    setWeeklyQuests(updatedWeeklyQuests);
-
-    // Award rewards
-    if (quest.reward.type === 'XP') {
-      if (studentId) {
-        handleAwardXP(studentId, 'Quest', quest.reward.amount);
-      } else {
-        // Award to all students for class quests
-        students.forEach(student => {
-          handleAwardXP(student.id, 'Quest', quest.reward.amount);
-        });
-      }
-    }
-
-    // Show completion modal
-    setQuestCompletionData({
-      quest,
-      studentId,
-      student: studentId ? students.find(s => s.id === studentId) : null
-    });
-    setShowQuestCompletion(true);
-
-    // Save to Firebase
-    saveQuestDataToFirebase({
-      dailyQuests: updatedDailyQuests,
-      weeklyQuests: updatedWeeklyQuests
     });
   };
 
@@ -979,7 +942,7 @@ export default function ClassroomChampions() {
     setStudentForAvatarChange(null);
   };
 
-  // FIXED: Award XP function with tracking of last XP date
+  // WORKING: Award XP function with tracking of last XP date
   const handleAwardXP = (id, category, amount = 1) => {
     // Prevent rapid firing
     if (animatingXP[id]) return;
@@ -1034,7 +997,7 @@ export default function ClassroomChampions() {
 
       saveStudentsToFirebase(updatedStudents);
       
-      // SAFE quest completion check (no recursive XP awards)
+      // Quest completion check with modal and XP rewards
       checkQuestCompletionSafely(id, updatedStudents);
       
       return updatedStudents;
@@ -1128,7 +1091,7 @@ export default function ClassroomChampions() {
 
       saveStudentsToFirebase(updatedStudents);
 
-      // SAFE quest completion for each student
+      // Quest completion for each student
       selectedStudents.forEach(studentId => {
         checkQuestCompletionSafely(studentId, updatedStudents);
       });
