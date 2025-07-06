@@ -416,14 +416,15 @@ const spendCoins = (student, cost) => {
   return student;
 };
 
-// NEW: Function to award coins (adds equivalent XP but doesn't trigger quest checks)
+// NEW: Function to award coins WITHOUT triggering quest checks
 const awardCoins = (student, coinAmount) => {
   const xpToAdd = coinAmount * XP_TO_COINS_RATIO;
   return {
     ...student,
     totalPoints: student.totalPoints + xpToAdd,
     weeklyPoints: (student.weeklyPoints || 0) + xpToAdd,
-    // DON'T update lastXpDate to prevent recursive quest checking
+    // CRITICAL: Set lastXpDate to PAST date to prevent recursive quest checking
+    lastXpDate: '2020-01-01T00:00:00.000Z', // Far past date prevents quest triggers
     logs: [
       ...(student.logs || []),
       {
@@ -857,15 +858,13 @@ export default function ClassroomChampions() {
       });
     }
 
-    // FIXED: Show completion modal immediately using setTimeout to ensure state updates
-    setTimeout(() => {
-      setQuestCompletionData({
-        quest,
-        studentId,
-        student: studentId ? students.find(s => s.id === studentId) : null
-      });
-      setShowQuestCompletion(true);
-    }, 100);
+    // FIXED: Show completion modal immediately and update states synchronously
+    setQuestCompletionData({
+      quest,
+      studentId,
+      student: studentId ? students.find(s => s.id === studentId) : null
+    });
+    setShowQuestCompletion(true);
 
     // Save to Firebase
     saveQuestDataToFirebase({
@@ -874,12 +873,21 @@ export default function ClassroomChampions() {
     });
   };
 
-  // WORKING: Quest completion check with retroactive prevention
+  // ENHANCED: Quest completion check with recursive prevention
   const checkQuestCompletionSafely = (studentId, updatedStudents) => {
     const student = updatedStudents.find(s => s.id === studentId);
     if (!student) return;
 
     console.log(`🎯 Checking quest completion for student ${studentId}`);
+
+    // PROTECTION: Don't check quests if this XP came from quest completion
+    const recentQuestReward = student.logs && student.logs.length > 0 && 
+                             student.logs[student.logs.length - 1].type === 'quest_coins';
+    
+    if (recentQuestReward) {
+      console.log(`🛡️ Skipping quest check for ${studentId} - recent quest reward detected`);
+      return;
+    }
 
     // Check individual quests
     [...dailyQuests, ...weeklyQuests].forEach(quest => {
