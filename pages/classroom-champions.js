@@ -416,13 +416,14 @@ const spendCoins = (student, cost) => {
   return student;
 };
 
-// NEW: Function to award coins (adds equivalent XP)
+// NEW: Function to award coins (adds equivalent XP but doesn't trigger quest checks)
 const awardCoins = (student, coinAmount) => {
   const xpToAdd = coinAmount * XP_TO_COINS_RATIO;
   return {
     ...student,
     totalPoints: student.totalPoints + xpToAdd,
     weeklyPoints: (student.weeklyPoints || 0) + xpToAdd,
+    // DON'T update lastXpDate to prevent recursive quest checking
     logs: [
       ...(student.logs || []),
       {
@@ -856,13 +857,15 @@ export default function ClassroomChampions() {
       });
     }
 
-    // ALWAYS show completion modal for quest completions
-    setQuestCompletionData({
-      quest,
-      studentId,
-      student: studentId ? students.find(s => s.id === studentId) : null
-    });
-    setShowQuestCompletion(true);
+    // FIXED: Show completion modal immediately using setTimeout to ensure state updates
+    setTimeout(() => {
+      setQuestCompletionData({
+        quest,
+        studentId,
+        student: studentId ? students.find(s => s.id === studentId) : null
+      });
+      setShowQuestCompletion(true);
+    }, 100);
 
     // Save to Firebase
     saveQuestDataToFirebase({
