@@ -1,4 +1,4 @@
-// classroom-champions.js - Complete with Working Quest System
+// classroom-champions.js - Updated with Coin Rewards for Quests
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
@@ -237,8 +237,9 @@ const LOOT_BOX_ITEMS = [
   { id: 'phoenix_feather', name: 'Phoenix Feather', icon: '🔥', rarity: 'legendary', effect: 'resurrection' }
 ];
 
+// UPDATED: Quest templates now award COINS instead of XP
 const DEFAULT_QUEST_TEMPLATES = [
-  // Daily Quests
+  // Daily Quests - Award 1 coin each
   {
     id: 'daily-respectful-5',
     title: 'Be Respectful',
@@ -246,7 +247,7 @@ const DEFAULT_QUEST_TEMPLATES = [
     type: 'daily',
     category: 'individual',
     requirement: { type: 'xp', category: 'Respectful', amount: 5 },
-    reward: { type: 'XP', amount: 10 },
+    reward: { type: 'COINS', amount: 1 }, // Changed from XP to COINS
     icon: '👍'
   },
   {
@@ -256,7 +257,7 @@ const DEFAULT_QUEST_TEMPLATES = [
     type: 'daily',
     category: 'individual',
     requirement: { type: 'xp', category: 'Responsible', amount: 3 },
-    reward: { type: 'XP', amount: 8 },
+    reward: { type: 'COINS', amount: 1 }, // Changed from XP to COINS
     icon: '💼'
   },
   {
@@ -266,7 +267,7 @@ const DEFAULT_QUEST_TEMPLATES = [
     type: 'daily',
     category: 'individual',
     requirement: { type: 'xp', category: 'Learner', amount: 4 },
-    reward: { type: 'XP', amount: 12 },
+    reward: { type: 'COINS', amount: 1 }, // Changed from XP to COINS
     icon: '📚'
   },
   {
@@ -276,10 +277,10 @@ const DEFAULT_QUEST_TEMPLATES = [
     type: 'daily',
     category: 'individual',
     requirement: { type: 'manual', description: 'Teacher verification required' },
-    reward: { type: 'XP', amount: 15 },
+    reward: { type: 'COINS', amount: 1 }, // Changed from XP to COINS
     icon: '📝'
   },
-  // Weekly Quests
+  // Weekly Quests - Award 5 coins each
   {
     id: 'weekly-total-xp',
     title: 'XP Champion',
@@ -287,7 +288,7 @@ const DEFAULT_QUEST_TEMPLATES = [
     type: 'weekly',
     category: 'individual',
     requirement: { type: 'total_xp', amount: 50 },
-    reward: { type: 'XP', amount: 25 },
+    reward: { type: 'COINS', amount: 5 }, // Changed from XP to COINS
     icon: '⭐'
   },
   {
@@ -297,7 +298,7 @@ const DEFAULT_QUEST_TEMPLATES = [
     type: 'weekly',
     category: 'individual',
     requirement: { type: 'manual', description: 'Teacher verification required' },
-    reward: { type: 'XP', amount: 30 },
+    reward: { type: 'COINS', amount: 5 }, // Changed from XP to COINS
     icon: '🎯'
   },
   {
@@ -307,7 +308,7 @@ const DEFAULT_QUEST_TEMPLATES = [
     type: 'weekly',
     category: 'class',
     requirement: { type: 'class_total_xp', amount: 200 },
-    reward: { type: 'XP', amount: 20 },
+    reward: { type: 'COINS', amount: 5 }, // Changed from XP to COINS
     icon: '🏆'
   },
   {
@@ -317,7 +318,7 @@ const DEFAULT_QUEST_TEMPLATES = [
     type: 'weekly',
     category: 'individual',
     requirement: { type: 'pet_wins', amount: 2 },
-    reward: { type: 'XP', amount: 35 },
+    reward: { type: 'COINS', amount: 5 }, // Changed from XP to COINS
     icon: '🏁'
   }
 ];
@@ -413,6 +414,25 @@ const spendCoins = (student, cost) => {
     };
   }
   return student;
+};
+
+// NEW: Function to award coins (adds equivalent XP)
+const awardCoins = (student, coinAmount) => {
+  const xpToAdd = coinAmount * XP_TO_COINS_RATIO;
+  return {
+    ...student,
+    totalPoints: student.totalPoints + xpToAdd,
+    weeklyPoints: (student.weeklyPoints || 0) + xpToAdd,
+    logs: [
+      ...(student.logs || []),
+      {
+        type: "quest_coins",
+        amount: coinAmount,
+        date: new Date().toISOString(),
+        source: "quest_completion",
+      },
+    ],
+  };
 };
 
 const generateLootBoxRewards = (lootBox) => {
@@ -760,7 +780,7 @@ export default function ClassroomChampions() {
     }
   };
 
-  // WORKING: Quest completion function that shows modals and awards XP
+  // UPDATED: Quest completion function that awards COINS instead of XP
   const completeQuest = (questId, studentId = null) => {
     const quest = [...dailyQuests, ...weeklyQuests].find(q => q.id === questId);
     if (!quest) return;
@@ -768,7 +788,7 @@ export default function ClassroomChampions() {
     const completionKey = studentId || 'class';
     if (quest.completedBy.includes(completionKey)) return;
 
-    console.log(`🏆 Completing quest ${quest.id} for ${completionKey} - FULL completion with modal`);
+    console.log(`🏆 Completing quest ${quest.id} for ${completionKey} - COIN reward system`);
 
     // Update quest completion
     const updatedDailyQuests = dailyQuests.map(q => 
@@ -781,8 +801,24 @@ export default function ClassroomChampions() {
     setDailyQuests(updatedDailyQuests);
     setWeeklyQuests(updatedWeeklyQuests);
 
-    // Award XP rewards (but prevent recursive quest checking)
-    if (quest.reward.type === 'XP') {
+    // UPDATED: Award coin rewards instead of XP
+    if (quest.reward.type === 'COINS') {
+      setStudents(prev => {
+        const rewardedStudents = prev.map(student => {
+          if (studentId && student.id !== studentId) return student;
+          
+          if (!studentId || student.id === studentId) {
+            // Award coins by adding equivalent XP (but track as coins in logs)
+            return awardCoins(student, quest.reward.amount);
+          }
+          return student;
+        });
+        
+        saveStudentsToFirebase(rewardedStudents);
+        return rewardedStudents;
+      });
+    } else if (quest.reward.type === 'XP') {
+      // Handle legacy XP rewards for custom quests
       setStudents(prev => {
         const rewardedStudents = prev.map(student => {
           if (studentId && student.id !== studentId) return student;
@@ -793,7 +829,6 @@ export default function ClassroomChampions() {
               ...student,
               totalPoints: newTotal,
               weeklyPoints: (student.weeklyPoints || 0) + quest.reward.amount,
-              // DON'T update lastXpDate here to prevent recursive quest checking
               categoryTotal: {
                 ...student.categoryTotal,
                 'Quest': (student.categoryTotal['Quest'] || 0) + quest.reward.amount,
@@ -860,8 +895,8 @@ export default function ClassroomChampions() {
         
         if (questCreatedDate <= studentLastActive || !student.lastXpDate || isNewQuest) {
           if (checkIndividualQuestCompletion(quest, studentId)) {
-            console.log(`✅ Quest ${quest.id} completed by ${studentId} - showing modal and awarding XP`);
-            // Use the NORMAL complete quest function to show modal and award XP
+            console.log(`✅ Quest ${quest.id} completed by ${studentId} - showing modal and awarding coins`);
+            // Use the NORMAL complete quest function to show modal and award coins
             setTimeout(() => completeQuest(quest.id, studentId), 100);
           }
         }
@@ -872,8 +907,8 @@ export default function ClassroomChampions() {
     [...dailyQuests, ...weeklyQuests].forEach(quest => {
       if (quest.category === 'class' && !quest.completedBy.includes('class')) {
         if (checkClassQuestCompletionSafely(quest, updatedStudents)) {
-          console.log(`✅ Class quest ${quest.id} completed - showing modal and awarding XP`);
-          // Use the NORMAL complete quest function to show modal and award XP
+          console.log(`✅ Class quest ${quest.id} completed - showing modal and awarding coins`);
+          // Use the NORMAL complete quest function to show modal and award coins
           setTimeout(() => completeQuest(quest.id, null), 100);
         }
       }
@@ -997,7 +1032,7 @@ export default function ClassroomChampions() {
 
       saveStudentsToFirebase(updatedStudents);
       
-      // Quest completion check with modal and XP rewards
+      // Quest completion check with modal and coin rewards
       checkQuestCompletionSafely(id, updatedStudents);
       
       return updatedStudents;

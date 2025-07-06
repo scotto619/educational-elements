@@ -1,9 +1,10 @@
+// SettingsTab.js - Complete Settings Component with Enhanced Management
 import React, { useState } from 'react';
 
-const SettingsTab = ({ 
-  userData, 
-  user, 
+export default function SettingsTab({
   students,
+  userData,
+  user,
   handleResetStudentPoints,
   handleResetAllPoints,
   handleResetPetSpeeds,
@@ -22,673 +23,483 @@ const SettingsTab = ({
   handleSubmitFeedback,
   showFeedbackModal,
   router,
-  // Quest management props
-  questTemplates,
-  setQuestTemplates,
-  dailyQuests,
-  weeklyQuests,
-  setDailyQuests,
-  setWeeklyQuests,
-  generateDailyQuests,
-  generateWeeklyQuests,
-  saveQuestDataToFirebase,
-  savingData,
-  showToast
-}) => {
+  calculateCoins,
+  handleDeductXP,
+  handleDeductCurrency,
+  debugCurrencySystem,
+  quickFixForExistingUsers,
+  resetQuestProgressForExistingStudents
+}) {
   const [activeSettingsTab, setActiveSettingsTab] = useState('general');
-  const [editingQuest, setEditingQuest] = useState(null);
-  const [showAddQuestModal, setShowAddQuestModal] = useState(false);
-  const [newQuest, setNewQuest] = useState({
-    title: '',
-    description: '',
-    type: 'daily',
-    category: 'individual',
-    requirement: { type: 'xp', category: 'Respectful', amount: 5 },
-    reward: { type: 'XP', amount: 10 },
-    icon: '🎯'
-  });
+  const [selectedStudentId, setSelectedStudentId] = useState('');
+  const [xpAmount, setXpAmount] = useState(1);
+  const [coinAmount, setCoinAmount] = useState(1);
 
-  const handleSaveQuest = async () => {
-    if (!newQuest.title || !newQuest.description) {
-      alert('Please fill in all required fields');
-      return;
-    }
-
-    const questToSave = {
-      ...newQuest,
-      id: editingQuest ? editingQuest.id : `custom-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-    };
-
-    if (editingQuest) {
-      setQuestTemplates(prev => prev.map(q => q.id === editingQuest.id ? questToSave : q));
-      setEditingQuest(null);
-      showToast('Quest updated successfully!');
-    } else {
-      setQuestTemplates(prev => [...prev, questToSave]);
-      showToast('Quest added successfully!');
-    }
-
-    setNewQuest({
-      title: '',
-      description: '',
-      type: 'daily',
-      category: 'individual',
-      requirement: { type: 'xp', category: 'Respectful', amount: 5 },
-      reward: { type: 'XP', amount: 10 },
-      icon: '🎯'
-    });
-    setShowAddQuestModal(false);
-  };
-
-  const handleEditQuest = (quest) => {
-    setEditingQuest(quest);
-    setNewQuest({ ...quest });
-    setShowAddQuestModal(true);
-  };
-
-  const handleDeleteQuest = (questId) => {
-    setShowConfirmDialog({
-      title: 'Delete Quest',
-      message: 'Are you sure you want to delete this quest template?',
-      icon: '🗑️',
-      type: 'danger',
-      confirmText: 'Delete',
-      onConfirm: () => {
-        setQuestTemplates(prev => prev.filter(q => q.id !== questId));
-        showToast('Quest deleted successfully!');
-      }
-    });
-  };
-
-  const handleResetQuests = () => {
-    setShowConfirmDialog({
-      title: 'Reset Quests',
-      message: 'This will generate new daily and weekly quests. Current progress will be lost.',
-      icon: '🔄',
-      type: 'warning',
-      confirmText: 'Reset',
-      onConfirm: async () => {
-        const newDailyQuests = generateDailyQuests();
-        const newWeeklyQuests = generateWeeklyQuests();
-        setDailyQuests(newDailyQuests);
-        setWeeklyQuests(newWeeklyQuests);
-        await saveQuestDataToFirebase({
-          dailyQuests: newDailyQuests,
-          weeklyQuests: newWeeklyQuests
-        });
-        showToast('Quests reset successfully!');
-      }
-    });
-  };
-
-  const QUEST_ICONS = ['🎯', '⭐', '📚', '👍', '💼', '🏆', '🎊', '🌟', '🔥', '💎', '🎁', '🚀'];
-  const REQUIREMENT_TYPES = [
-    { id: 'xp', label: 'Earn XP Points', hasCategory: true, hasAmount: true },
-    { id: 'total_xp', label: 'Total XP', hasCategory: false, hasAmount: true },
-    { id: 'manual', label: 'Manual Verification', hasCategory: false, hasAmount: false },
-    { id: 'pet_wins', label: 'Pet Race Wins', hasCategory: false, hasAmount: true },
-    { id: 'class_total_xp', label: 'Class Total XP', hasCategory: false, hasAmount: true }
+  const settingsTabs = [
+    { id: 'general', name: 'General', icon: '⚙️' },
+    { id: 'quests', name: 'Quests', icon: '🎯' },
+    { id: 'students', name: 'Students', icon: '👥' },
+    { id: 'account', name: 'Account', icon: '👤' }
   ];
 
   return (
-    <div className="animate-fade-in">
-      {/* Settings Navigation */}
-      <div className="flex justify-center gap-2 mb-8">
-        {[
-          { id: 'general', label: 'General', icon: '⚙️' },
-          { id: 'quests', label: 'Quests', icon: '🎯' },
-          { id: 'students', label: 'Students', icon: '👥' },
-          { id: 'account', label: 'Account', icon: '👤' }
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveSettingsTab(tab.id)}
-            className={`px-4 py-2 rounded-lg font-semibold transition-all duration-300 flex items-center space-x-2 ${
-              activeSettingsTab === tab.id
-                ? "bg-blue-600 text-white shadow-lg"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-          >
-            <span>{tab.icon}</span>
-            <span>{tab.label}</span>
-          </button>
-        ))}
+    <div className="space-y-6">
+      {/* Settings Header */}
+      <div className="text-center">
+        <h2 className="text-3xl font-bold text-gray-800 mb-2">⚙️ Settings</h2>
+        <p className="text-gray-600">Manage your classroom and account settings</p>
       </div>
 
-      {/* General Settings Tab */}
-      {activeSettingsTab === 'general' && (
-        <div className="space-y-8">
-          <div className="flex justify-between items-center">
-            <h2 className="text-3xl font-bold text-gray-800 flex items-center">
-              <span className="text-3xl mr-3">⚙️</span>
-              General Settings
-            </h2>
-          </div>
+      {/* Quick Fix Section for Existing Users */}
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+        <h3 className="text-xl font-bold text-yellow-800 mb-4">🔧 Quick Fixes</h3>
+        <p className="text-yellow-700 mb-4">
+          If you're experiencing XP/quest issues after recent updates, use these fixes:
+        </p>
+        <div className="flex flex-wrap gap-3">
+          <button
+            onClick={() => {
+              if (quickFixForExistingUsers) {
+                quickFixForExistingUsers();
+              } else {
+                alert('Fix function not available');
+              }
+            }}
+            className="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 font-semibold"
+          >
+            🛠️ Apply All Fixes
+          </button>
+          <button
+            onClick={() => {
+              if (resetQuestProgressForExistingStudents) {
+                resetQuestProgressForExistingStudents();
+              } else {
+                alert('Fix function not available');
+              }
+            }}
+            className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 font-semibold"
+          >
+            🎯 Reset Quest Progress
+          </button>
+          <button
+            onClick={() => {
+              if (debugCurrencySystem) {
+                debugCurrencySystem();
+              } else {
+                alert('Debug function not available');
+              }
+            }}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-semibold"
+          >
+            🪙 Debug Currency
+          </button>
+        </div>
+      </div>
 
-          {/* Class Management */}
-          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Class Management</h3>
-            <div className="space-y-4">
-              <button
-                onClick={() => setShowConfirmDialog({
-                  title: 'Reset All Student Points',
-                  message: 'This will reset all student points to 0. This action cannot be undone.',
-                  icon: '🔄',
-                  type: 'danger',
-                  confirmText: 'Reset All',
-                  onConfirm: handleResetAllPoints
-                })}
-                className="w-full bg-orange-600 text-white px-6 py-3 rounded-lg hover:bg-orange-700 transition-colors font-semibold"
-              >
-                🔄 Reset All Student Points
-              </button>
-              <button
-                onClick={() => setShowConfirmDialog({
-                  title: 'Reset Pet Speeds',
-                  message: 'This will reset all pet speeds and wins to default values.',
-                  icon: '🐾',
-                  type: 'warning',
-                  confirmText: 'Reset',
-                  onConfirm: handleResetPetSpeeds
-                })}
-                className="w-full bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors font-semibold"
-              >
-                🐾 Reset Pet Speeds & Wins
-              </button>
+      {/* Settings Navigation */}
+      <div className="flex justify-center">
+        <div className="flex bg-gray-100 rounded-lg p-1">
+          {settingsTabs.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveSettingsTab(tab.id)}
+              className={`px-4 py-2 rounded-md transition-all flex items-center space-x-2 ${
+                activeSettingsTab === tab.id
+                  ? 'bg-white text-blue-600 shadow-md'
+                  : 'text-gray-600 hover:text-blue-600'
+              }`}
+            >
+              <span>{tab.icon}</span>
+              <span className="font-medium">{tab.name}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Settings Content */}
+      <div className="bg-white rounded-xl shadow-lg p-6">
+        
+        {/* General Settings */}
+        {activeSettingsTab === 'general' && (
+          <div className="space-y-6">
+            <h3 className="text-2xl font-bold text-gray-800 mb-6">⚙️ General Settings</h3>
+            
+            {/* System Information */}
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+              <h4 className="text-xl font-bold text-gray-800 mb-4">📊 System Information</h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-600">{students.length}</div>
+                  <div className="text-gray-600">Total Students</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-600">
+                    {students.reduce((sum, s) => sum + (s.totalPoints || 0), 0)}
+                  </div>
+                  <div className="text-gray-600">Total Class XP</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-yellow-600">
+                    {students.reduce((sum, s) => sum + calculateCoins(s.totalPoints || 0), 0)}
+                  </div>
+                  <div className="text-gray-600">Total Class Coins</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-purple-600">
+                    {students.filter(s => s.pet?.image).length}
+                  </div>
+                  <div className="text-gray-600">Students with Pets</div>
+                </div>
+              </div>
             </div>
-          </div>
 
-          {/* Feedback */}
-          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Help & Feedback</h3>
-            <div className="space-y-4">
+            {/* Feedback Section */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+              <h4 className="text-xl font-bold text-blue-800 mb-4">💬 Feedback & Support</h4>
+              <p className="text-blue-700 mb-4">
+                Help us improve Classroom Champions! Report bugs or suggest new features.
+              </p>
               <button
                 onClick={() => setShowFeedbackModal(true)}
-                className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-semibold"
               >
-                💬 Send Feedback or Report Bug
+                📝 Send Feedback
               </button>
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h4 className="font-semibold text-gray-800 mb-2">Need Help?</h4>
-                <p className="text-gray-600 text-sm">
-                  Contact our support team at{' '}
-                  <a href="mailto:support@classroomchampions.com" className="text-blue-600 hover:underline">
-                    support@classroomchampions.com
-                  </a>
-                </p>
-              </div>
             </div>
           </div>
+        )}
 
-          {/* Legal */}
-          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Legal</h3>
-            <div className="space-y-2">
+        {/* Quest Settings */}
+        {activeSettingsTab === 'quests' && (
+          <div className="space-y-6">
+            <h3 className="text-2xl font-bold text-gray-800 mb-6">🎯 Quest Management</h3>
+            
+            <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+              <h4 className="text-xl font-bold text-green-800 mb-4">🏆 Quest System Status</h4>
+              <p className="text-green-700 mb-4">
+                Quests now reward coins instead of XP to prevent cascading rewards:
+              </p>
+              <ul className="list-disc list-inside text-green-700 space-y-1">
+                <li>Daily Quests: 1 coin each (5 XP equivalent)</li>
+                <li>Weekly Quests: 5 coins each (25 XP equivalent)</li>
+                <li>No more double XP rewards</li>
+              </ul>
+            </div>
+
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+              <h4 className="text-xl font-bold text-yellow-800 mb-4">🔄 Quest Reset Options</h4>
               <button
-                onClick={() => router.push('/terms')}
-                className="block w-full text-left text-blue-600 hover:text-blue-800 transition-colors p-2 rounded hover:bg-blue-50"
+                onClick={() => {
+                  if (resetQuestProgressForExistingStudents) {
+                    setShowConfirmDialog({
+                      title: "Reset Quest Progress",
+                      message: "This will reset all quest completion progress for all students. They can complete quests again.",
+                      icon: "🎯",
+                      type: "warning",
+                      confirmText: "Reset Quests",
+                      onConfirm: resetQuestProgressForExistingStudents
+                    });
+                  }
+                }}
+                className="w-full bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 font-semibold"
               >
-                📄 Terms of Service
-              </button>
-              <button
-                onClick={() => router.push('/privacy')}
-                className="block w-full text-left text-blue-600 hover:text-blue-800 transition-colors p-2 rounded hover:bg-blue-50"
-              >
-                🔒 Privacy Policy
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Quest Management Tab */}
-      {activeSettingsTab === 'quests' && (
-        <div className="space-y-8">
-          <div className="flex justify-between items-center">
-            <h2 className="text-3xl font-bold text-gray-800 flex items-center">
-              <span className="text-3xl mr-3">🎯</span>
-              Quest Management
-            </h2>
-            <div className="flex space-x-3">
-              <button
-                onClick={handleResetQuests}
-                className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors font-semibold"
-              >
-                🔄 Reset Active Quests
-              </button>
-              <button
-                onClick={() => setShowAddQuestModal(true)}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
-              >
-                + Add Quest
+                🎯 Reset All Quest Progress
               </button>
             </div>
           </div>
+        )}
 
-          {/* Active Quests Overview */}
-          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Active Quests</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h4 className="font-semibold text-blue-800 mb-2">Daily Quests ({dailyQuests.length})</h4>
-                <div className="space-y-2">
-                  {dailyQuests.map((quest) => (
-                    <div key={quest.id} className="bg-blue-50 p-3 rounded-lg">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-lg">{quest.icon}</span>
-                        <span className="font-medium">{quest.title}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <h4 className="font-semibold text-purple-800 mb-2">Weekly Quests ({weeklyQuests.length})</h4>
-                <div className="space-y-2">
-                  {weeklyQuests.map((quest) => (
-                    <div key={quest.id} className="bg-purple-50 p-3 rounded-lg">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-lg">{quest.icon}</span>
-                        <span className="font-medium">{quest.title}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Quest Templates */}
-          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Quest Templates</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {questTemplates.map((quest) => (
-                <div key={quest.id} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-2xl">{quest.icon}</span>
-                      <div>
-                        <h4 className="font-semibold text-gray-800">{quest.title}</h4>
-                        <p className="text-sm text-gray-600">{quest.description}</p>
-                      </div>
-                    </div>
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => handleEditQuest(quest)}
-                        className="text-blue-600 hover:text-blue-800 text-sm"
-                      >
-                        ✏️
-                      </button>
-                      <button
-                        onClick={() => handleDeleteQuest(quest.id)}
-                        className="text-red-600 hover:text-red-800 text-sm"
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex space-x-2">
-                      <span className={`px-2 py-1 rounded-full text-xs ${
-                        quest.type === 'daily' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
-                      }`}>
-                        {quest.type}
-                      </span>
-                      <span className={`px-2 py-1 rounded-full text-xs ${
-                        quest.category === 'individual' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
-                      }`}>
-                        {quest.category}
-                      </span>
-                    </div>
-                    <span className="text-purple-600 font-medium">
-                      {quest.reward.type} +{quest.reward.amount}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Students Management Tab */}
-      {activeSettingsTab === 'students' && (
-        <div className="space-y-8">
-          <div className="flex justify-between items-center">
-            <h2 className="text-3xl font-bold text-gray-800 flex items-center">
-              <span className="text-3xl mr-3">👥</span>
-              Student Management
-            </h2>
-          </div>
-
-          {/* Student List */}
-          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Individual Student Actions</h3>
-            {students.length === 0 ? (
-              <div className="text-center py-8">
-                <div className="text-4xl mb-2">👥</div>
-                <p className="text-gray-500">No students in your class yet</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {students.map((student) => (
-                  <div key={student.id} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        {student.avatar ? (
-                          <img src={student.avatar} alt={student.firstName} className="w-12 h-12 rounded-full border-2 border-gray-300" />
-                        ) : (
-                          <div className="w-12 h-12 bg-gradient-to-br from-gray-300 to-gray-400 rounded-full flex items-center justify-center text-white font-bold">
-                            {student.firstName.charAt(0)}
-                          </div>
-                        )}
-                        <div>
-                          <h4 className="font-semibold text-gray-800">{student.firstName}</h4>
-                          <p className="text-sm text-gray-600">
-                            Level {student.avatarLevel} • {student.totalPoints || 0} XP
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => setShowConfirmDialog({
-                            title: 'Reset Student Points',
-                            message: `Reset all points for ${student.firstName}? This action cannot be undone.`,
-                            icon: '🔄',
-                            type: 'warning',
-                            confirmText: 'Reset',
-                            onConfirm: () => handleResetStudentPoints(student.id)
-                          })}
-                          className="bg-orange-600 text-white px-3 py-1 rounded text-sm hover:bg-orange-700 transition-colors"
-                        >
-                          🔄 Reset
-                        </button>
-                        <button
-                          onClick={() => setShowConfirmDialog({
-                            title: 'Remove Student',
-                            message: `Remove ${student.firstName} from the class? This action cannot be undone.`,
-                            icon: '🗑️',
-                            type: 'danger',
-                            confirmText: 'Remove',
-                            onConfirm: () => handleRemoveStudent(student.id)
-                          })}
-                          className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 transition-colors"
-                        >
-                          🗑️ Remove
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Account Settings Tab */}
-      {activeSettingsTab === 'account' && (
-        <div className="space-y-8">
-          <div className="flex justify-between items-center">
-            <h2 className="text-3xl font-bold text-gray-800 flex items-center">
-              <span className="text-3xl mr-3">👤</span>
-              Account Settings
-            </h2>
-          </div>
-
-          {/* Account Info */}
-          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Account Information</h3>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div>
-                  <p className="font-semibold text-gray-800">Email</p>
-                  <p className="text-gray-600">{user?.email}</p>
-                </div>
-              </div>
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div>
-                  <p className="font-semibold text-gray-800">Subscription Plan</p>
-                  <p className="text-gray-600">
-                    {userData?.subscription === 'pro' ? 'Pro Plan' : 'Basic Plan'}
-                  </p>
-                </div>
-                <button
-                  onClick={handleSubscriptionManagement}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
-                >
-                  Manage Subscription
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Danger Zone */}
-          <div className="bg-red-50 border border-red-200 rounded-xl p-6">
-            <h3 className="text-xl font-bold text-red-800 mb-4">Danger Zone</h3>
-            <div className="space-y-4">
-              <div className="bg-white p-4 rounded-lg border border-red-200">
-                <h4 className="font-semibold text-red-800 mb-2">Delete Account</h4>
-                <p className="text-red-600 text-sm mb-3">
-                  Permanently delete your account and all associated data. This action cannot be undone.
-                </p>
-                <button
-                  onClick={() => setShowConfirmDialog({
-                    title: 'Delete Account',
-                    message: 'Are you sure you want to delete your account? This will permanently delete all your data and cannot be undone.',
-                    icon: '⚠️',
-                    type: 'danger',
-                    confirmText: 'Delete Account',
-                    onConfirm: () => {
-                      // Implement account deletion logic here
-                      alert('Account deletion is not implemented yet. Please contact support.');
-                    }
-                  })}
-                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors font-semibold"
-                >
-                  Delete Account
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Add/Edit Quest Modal */}
-      {showAddQuestModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <h2 className="text-2xl font-bold mb-6 text-gray-800">
-              {editingQuest ? 'Edit Quest' : 'Add New Quest'}
-            </h2>
-
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Quest Title</label>
-                  <input
-                    type="text"
-                    value={newQuest.title}
-                    onChange={(e) => setNewQuest(prev => ({ ...prev, title: e.target.value }))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Enter quest title"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Icon</label>
-                  <div className="flex space-x-2">
-                    {QUEST_ICONS.map(icon => (
-                      <button
-                        key={icon}
-                        onClick={() => setNewQuest(prev => ({ ...prev, icon }))}
-                        className={`text-2xl p-2 rounded-lg transition-colors ${
-                          newQuest.icon === icon ? 'bg-blue-100 border-2 border-blue-500' : 'bg-gray-100 hover:bg-gray-200'
-                        }`}
-                      >
-                        {icon}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
-                <textarea
-                  value={newQuest.description}
-                  onChange={(e) => setNewQuest(prev => ({ ...prev, description: e.target.value }))}
+        {/* Student Management */}
+        {activeSettingsTab === 'students' && (
+          <div className="space-y-6">
+            <h3 className="text-2xl font-bold text-gray-800 mb-6">👥 Student Management</h3>
+            
+            {/* Individual Student Management */}
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <h4 className="text-xl font-bold text-gray-800 mb-4">👤 Individual Student Management</h4>
+              
+              {/* Student Selector */}
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Select Student</label>
+                <select
+                  value={selectedStudentId}
+                  onChange={(e) => setSelectedStudentId(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  rows="2"
-                  placeholder="Enter quest description"
+                >
+                  <option value="">Choose a student...</option>
+                  {students.map(student => (
+                    <option key={student.id} value={student.id}>
+                      {student.firstName} - {student.totalPoints || 0} XP - {calculateCoins(student.totalPoints || 0)} coins
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {selectedStudentId && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* XP Management */}
+                  <div className="space-y-4">
+                    <h5 className="font-semibold text-gray-700">⭐ XP Management</h5>
+                    <div>
+                      <label className="block text-sm text-gray-600 mb-1">XP Amount</label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={xpAmount}
+                        onChange={(e) => setXpAmount(parseInt(e.target.value) || 1)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          if (handleDeductXP) {
+                            handleDeductXP(selectedStudentId, xpAmount);
+                          }
+                        }}
+                        className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 font-semibold"
+                      >
+                        Remove {xpAmount} XP
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Currency Management */}
+                  <div className="space-y-4">
+                    <h5 className="font-semibold text-gray-700">🪙 Currency Management</h5>
+                    <div>
+                      <label className="block text-sm text-gray-600 mb-1">Coin Amount</label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={coinAmount}
+                        onChange={(e) => setCoinAmount(parseInt(e.target.value) || 1)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          if (handleDeductCurrency) {
+                            handleDeductCurrency(selectedStudentId, coinAmount);
+                          }
+                        }}
+                        className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 font-semibold"
+                      >
+                        Remove {coinAmount} Coins
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Reset Options */}
+                  <div className="md:col-span-2 space-y-3">
+                    <h5 className="font-semibold text-gray-700">🔄 Reset Options</h5>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => {
+                          setShowConfirmDialog({
+                            title: "Complete Student Reset",
+                            message: "This will reset ALL progress for this student: XP, level, pet, inventory, and currency. This cannot be undone!",
+                            icon: "🚨",
+                            type: "danger",
+                            confirmText: "Reset Everything",
+                            onConfirm: () => handleResetStudentPoints(selectedStudentId)
+                          });
+                        }}
+                        className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 font-semibold"
+                      >
+                        🚨 Complete Reset
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowConfirmDialog({
+                            title: "Remove Student",
+                            message: "This will permanently remove this student from your class. This cannot be undone!",
+                            icon: "❌",
+                            type: "danger",
+                            confirmText: "Remove Student",
+                            onConfirm: () => handleRemoveStudent(selectedStudentId)
+                          });
+                        }}
+                        className="flex-1 bg-red-700 text-white px-4 py-2 rounded-lg hover:bg-red-800 font-semibold"
+                      >
+                        ❌ Remove Student
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Bulk Operations */}
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <h4 className="text-xl font-bold text-gray-800 mb-4">🏫 Class-Wide Operations</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button
+                  onClick={() => {
+                    setShowConfirmDialog({
+                      title: "Reset All Students",
+                      message: "This will completely reset ALL students: XP, levels, pets, inventories, and currency. This cannot be undone!",
+                      icon: "🚨",
+                      type: "danger",
+                      confirmText: "Reset Everyone",
+                      onConfirm: handleResetAllPoints
+                    });
+                  }}
+                  className="bg-red-600 text-white px-4 py-3 rounded-lg hover:bg-red-700 font-semibold"
+                >
+                  🚨 Reset All Students
+                </button>
+                <button
+                  onClick={() => {
+                    setShowConfirmDialog({
+                      title: "Reset Pet Speeds",
+                      message: "This will reset all pet speeds and wins to default values. Continue?",
+                      icon: "🐾",
+                      type: "warning",
+                      confirmText: "Reset Pet Speeds",
+                      onConfirm: handleResetPetSpeeds
+                    });
+                  }}
+                  className="bg-orange-600 text-white px-4 py-3 rounded-lg hover:bg-orange-700 font-semibold"
+                >
+                  🐾 Reset All Pet Speeds
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Account Settings */}
+        {activeSettingsTab === 'account' && (
+          <div className="space-y-6">
+            <h3 className="text-2xl font-bold text-gray-800 mb-6">👤 Account Settings</h3>
+            
+            {/* Subscription Info */}
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
+              <h4 className="text-xl font-bold text-purple-800 mb-4">💎 Subscription</h4>
+              {userData?.subscription && (
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                      userData.subscription === 'pro' 
+                        ? 'bg-purple-100 text-purple-800' 
+                        : 'bg-blue-100 text-blue-800'
+                    }`}>
+                      {userData.subscription === 'pro' ? 'Pro Plan' : 'Basic Plan'}
+                    </span>
+                    <p className="text-purple-700 text-sm mt-2">
+                      {userData.subscription === 'pro' 
+                        ? 'Access to up to 5 classes and premium features'
+                        : 'Access to 1 class with core features'
+                      }
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    {userData.subscription !== 'pro' && (
+                      <button
+                        onClick={() => router.push('/pricing')}
+                        className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 font-semibold"
+                      >
+                        Upgrade to Pro
+                      </button>
+                    )}
+                    {userData?.stripeCustomerId && (
+                      <button
+                        onClick={handleSubscriptionManagement}
+                        className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 font-semibold"
+                      >
+                        Manage Billing
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Account Info */}
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+              <h4 className="text-xl font-bold text-gray-800 mb-4">📧 Account Information</h4>
+              <div className="space-y-2">
+                <p><strong>Email:</strong> {user?.email}</p>
+                <p><strong>Account Created:</strong> {user?.metadata?.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString() : 'Unknown'}</p>
+                <p><strong>User ID:</strong> <code className="bg-gray-200 px-2 py-1 rounded text-sm">{user?.uid}</code></p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Feedback Modal */}
+      {showFeedbackModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md transform scale-100">
+            <h2 className="text-2xl font-bold mb-6 text-gray-800 flex items-center">
+              <span className="mr-3">{feedbackType === 'bug' ? '🐛' : '💡'}</span>
+              {feedbackType === 'bug' ? 'Report Bug' : 'Feature Request'}
+            </h2>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Type</label>
+                <select
+                  value={feedbackType}
+                  onChange={(e) => setFeedbackType(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="bug">🐛 Bug Report</option>
+                  <option value="feature">💡 Feature Request</option>
+                  <option value="feedback">💬 General Feedback</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Subject</label>
+                <input
+                  type="text"
+                  value={feedbackSubject}
+                  onChange={(e) => setFeedbackSubject(e.target.value)}
+                  placeholder="Brief description of the issue or idea"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Quest Type</label>
-                  <select
-                    value={newQuest.type}
-                    onChange={(e) => setNewQuest(prev => ({ ...prev, type: e.target.value }))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="daily">Daily Quest</option>
-                    <option value="weekly">Weekly Quest</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Category</label>
-                  <select
-                    value={newQuest.category}
-                    onChange={(e) => setNewQuest(prev => ({ ...prev, category: e.target.value }))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="individual">Individual Quest</option>
-                    <option value="class">Class Quest</option>
-                  </select>
-                </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Message</label>
+                <textarea
+                  value={feedbackMessage}
+                  onChange={(e) => setFeedbackMessage(e.target.value)}
+                  placeholder="Please provide detailed information..."
+                  rows="4"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Requirement</label>
-                <div className="space-y-3">
-                  <select
-                    value={newQuest.requirement.type}
-                    onChange={(e) => {
-                      const reqType = REQUIREMENT_TYPES.find(r => r.id === e.target.value);
-                      setNewQuest(prev => ({ 
-                        ...prev, 
-                        requirement: { 
-                          type: e.target.value,
-                          ...(reqType?.hasCategory && { category: 'Respectful' }),
-                          ...(reqType?.hasAmount && { amount: 5 })
-                        }
-                      }));
-                    }}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    {REQUIREMENT_TYPES.map(req => (
-                      <option key={req.id} value={req.id}>{req.label}</option>
-                    ))}
-                  </select>
-                  
-                  {newQuest.requirement.type === 'xp' && (
-                    <div className="grid grid-cols-2 gap-3">
-                      <select
-                        value={newQuest.requirement.category}
-                        onChange={(e) => setNewQuest(prev => ({ 
-                          ...prev, 
-                          requirement: { ...prev.requirement, category: e.target.value }
-                        }))}
-                        className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      >
-                        <option value="Respectful">Respectful</option>
-                        <option value="Responsible">Responsible</option>
-                        <option value="Learner">Learner</option>
-                      </select>
-                      <input
-                        type="number"
-                        value={newQuest.requirement.amount}
-                        onChange={(e) => setNewQuest(prev => ({ 
-                          ...prev, 
-                          requirement: { ...prev.requirement, amount: Number(e.target.value) }
-                        }))}
-                        className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Amount"
-                        min="1"
-                      />
-                    </div>
-                  )}
-                  
-                  {(newQuest.requirement.type === 'total_xp' || newQuest.requirement.type === 'pet_wins' || newQuest.requirement.type === 'class_total_xp') && (
-                    <input
-                      type="number"
-                      value={newQuest.requirement.amount}
-                      onChange={(e) => setNewQuest(prev => ({ 
-                        ...prev, 
-                        requirement: { ...prev.requirement, amount: Number(e.target.value) }
-                      }))}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Amount required"
-                      min="1"
-                    />
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Reward</label>
-                <div className="grid grid-cols-2 gap-3">
-                  <select
-                    value={newQuest.reward.type}
-                    onChange={(e) => setNewQuest(prev => ({ 
-                      ...prev, 
-                      reward: { ...prev.reward, type: e.target.value }
-                    }))}
-                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="XP">XP Points</option>
-                    <option value="coins">Coins</option>
-                  </select>
-                  <input
-                    type="number"
-                    value={newQuest.reward.amount}
-                    onChange={(e) => setNewQuest(prev => ({ 
-                      ...prev, 
-                      reward: { ...prev.reward, amount: Number(e.target.value) }
-                    }))}
-                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Amount"
-                    min="1"
-                  />
-                </div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Email (Optional)</label>
+                <input
+                  type="email"
+                  value={feedbackEmail}
+                  onChange={(e) => setFeedbackEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
               </div>
             </div>
 
-            <div className="flex gap-3 mt-8">
+            <div className="flex gap-3 mt-6">
               <button
-                onClick={() => {
-                  setShowAddQuestModal(false);
-                  setEditingQuest(null);
-                  setNewQuest({
-                    title: '',
-                    description: '',
-                    type: 'daily',
-                    category: 'individual',
-                    requirement: { type: 'xp', category: 'Respectful', amount: 5 },
-                    reward: { type: 'XP', amount: 10 },
-                    icon: '🎯'
-                  });
-                }}
+                onClick={() => setShowFeedbackModal(false)}
                 className="flex-1 px-4 py-3 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
               >
                 Cancel
               </button>
               <button
-                onClick={handleSaveQuest}
-                className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                onClick={handleSubmitFeedback}
+                disabled={!feedbackSubject || !feedbackMessage}
+                className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors font-semibold"
               >
-                {editingQuest ? 'Update Quest' : 'Add Quest'}
+                Submit
               </button>
             </div>
           </div>
@@ -696,6 +507,4 @@ const SettingsTab = ({
       )}
     </div>
   );
-};
-
-export default SettingsTab;
+}
