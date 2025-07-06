@@ -1,4 +1,4 @@
-// classroom-champions.js - Complete with Currency System
+// classroom-champions.js - Complete with All Fixes
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
@@ -382,7 +382,10 @@ const PET_NAMES = [
 // ===============================================
 
 const calculateCoins = (totalXP) => {
-  return Math.floor(totalXP / XP_TO_COINS_RATIO);
+  const xp = totalXP || 0;
+  const coins = Math.floor(xp / XP_TO_COINS_RATIO);
+  console.log(`Calculating coins: ${xp} XP ÷ ${XP_TO_COINS_RATIO} = ${coins} coins`);
+  return coins;
 };
 
 const canAfford = (student, cost) => {
@@ -457,7 +460,8 @@ const updateStudentWithCurrency = (student) => {
     coinsSpent: student.coinsSpent || 0,
     inventory: student.inventory || [],
     lootBoxes: student.lootBoxes || [],
-    achievements: student.achievements || []
+    achievements: student.achievements || [],
+    lastXpDate: student.lastXpDate || null
   };
 };
 
@@ -525,6 +529,32 @@ const TabLoadingSpinner = () => (
     </div>
   </div>
 );
+
+// Currency Display Component
+const CurrencyDisplay = ({ student }) => {
+  const coins = calculateCoins(student?.totalPoints || 0);
+  const coinsSpent = student?.coinsSpent || 0;
+  
+  return (
+    <div className="flex items-center space-x-4 bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+      <div className="text-center">
+        <div className="text-2xl font-bold text-yellow-600">💰</div>
+        <div className="text-sm text-yellow-700">Available</div>
+        <div className="text-lg font-bold text-yellow-800">{coins}</div>
+      </div>
+      <div className="text-center">
+        <div className="text-2xl font-bold text-gray-600">🛍️</div>
+        <div className="text-sm text-gray-700">Spent</div>
+        <div className="text-lg font-bold text-gray-800">{coinsSpent}</div>
+      </div>
+      <div className="text-center">
+        <div className="text-2xl font-bold text-blue-600">⭐</div>
+        <div className="text-sm text-blue-700">Total XP</div>
+        <div className="text-lg font-bold text-blue-800">{student?.totalPoints || 0}</div>
+      </div>
+    </div>
+  );
+};
 
 // ===============================================
 // MAIN COMPONENT
@@ -804,6 +834,7 @@ export default function ClassroomChampions() {
     });
   };
 
+  // FIXED: Quest completion check that prevents retroactive completions
   const checkQuestCompletionSafely = (studentId, updatedStudents) => {
     const student = updatedStudents.find(s => s.id === studentId);
     if (!student) return;
@@ -813,14 +844,24 @@ export default function ClassroomChampions() {
     // Check individual quests
     [...dailyQuests, ...weeklyQuests].forEach(quest => {
       if (quest.category === 'individual' && !quest.completedBy.includes(studentId)) {
-        if (checkIndividualQuestCompletion(quest, studentId)) {
-          console.log(`✅ Quest ${quest.id} completed by ${studentId}`);
-          completeQuestSafely(quest.id, studentId);
+        // IMPORTANT: Only check quests that were created AFTER the student's last XP gain
+        // This prevents retroactive quest completion for existing students
+        const questCreatedDate = new Date(quest.startDate);
+        const studentLastActive = student.lastXpDate ? new Date(student.lastXpDate) : new Date('2024-01-01');
+        
+        // Only trigger quest completion if:
+        // 1. The student gained XP AFTER the quest was created, OR
+        // 2. The student is newly created (no lastXpDate)
+        if (questCreatedDate <= studentLastActive || !student.lastXpDate) {
+          if (checkIndividualQuestCompletion(quest, studentId)) {
+            console.log(`✅ Quest ${quest.id} completed by ${studentId}`);
+            completeQuestSafely(quest.id, studentId);
+          }
         }
       }
     });
 
-    // Check class quests
+    // Check class quests (these can be retroactive since they're class-wide)
     [...dailyQuests, ...weeklyQuests].forEach(quest => {
       if (quest.category === 'class' && !quest.completedBy.includes('class')) {
         if (checkClassQuestCompletionSafely(quest, updatedStudents)) {
@@ -938,6 +979,7 @@ export default function ClassroomChampions() {
     setStudentForAvatarChange(null);
   };
 
+  // FIXED: Award XP function with tracking of last XP date
   const handleAwardXP = (id, category, amount = 1) => {
     // Prevent rapid firing
     if (animatingXP[id]) return;
@@ -956,6 +998,7 @@ export default function ClassroomChampions() {
           ...s,
           totalPoints: newTotal,
           weeklyPoints: (s.weeklyPoints || 0) + amount,
+          lastXpDate: new Date().toISOString(), // Track when XP was last awarded
           categoryTotal: {
             ...s.categoryTotal,
             [category]: (s.categoryTotal[category] || 0) + amount,
@@ -1050,6 +1093,7 @@ export default function ClassroomChampions() {
           ...s,
           totalPoints: newTotal,
           weeklyPoints: (s.weeklyPoints || 0) + bulkXpAmount,
+          lastXpDate: new Date().toISOString(), // Track XP date
           categoryTotal: {
             ...s.categoryTotal,
             [bulkXpCategory]: (s.categoryTotal[bulkXpCategory] || 0) + bulkXpAmount,
@@ -1103,6 +1147,80 @@ export default function ClassroomChampions() {
     showToast(`Awarded ${bulkXpAmount} XP to ${studentNames}!`);
   };
 
+  // ENHANCED: Settings functions with proper resets
+  const handleDeductXP = (studentId, amount) => {
+    if (amount <= 0) {
+      alert("Please enter a positive amount");
+      return;
+    }
+
+    setSavingData(true);
+    setStudents(prev => {
+      const updatedStudents = prev.map(s => 
+        s.id === studentId ? {
+          ...s,
+          totalPoints: Math.max(0, s.totalPoints - amount),
+          weeklyPoints: Math.max(0, (s.weeklyPoints || 0) - amount),
+          logs: [
+            ...(s.logs || []),
+            {
+              type: "deduction",
+              amount: -amount,
+              date: new Date().toISOString(),
+              source: "manual_deduction",
+            },
+          ],
+        } : s
+      );
+      saveStudentsToFirebase(updatedStudents);
+      return updatedStudents;
+    });
+    setSavingData(false);
+    showToast(`Deducted ${amount} XP successfully!`);
+  };
+
+  const handleDeductCurrency = (studentId, coinAmount) => {
+    if (coinAmount <= 0) {
+      alert("Please enter a positive amount");
+      return;
+    }
+
+    const xpToDeduct = coinAmount * XP_TO_COINS_RATIO;
+    
+    setSavingData(true);
+    setStudents(prev => {
+      const updatedStudents = prev.map(s => {
+        if (s.id !== studentId) return s;
+        
+        const currentCoins = calculateCoins(s.totalPoints || 0);
+        if (currentCoins < coinAmount) {
+          alert(`Student only has ${currentCoins} coins available`);
+          return s;
+        }
+        
+        return {
+          ...s,
+          totalPoints: Math.max(0, s.totalPoints - xpToDeduct),
+          weeklyPoints: Math.max(0, (s.weeklyPoints || 0) - xpToDeduct),
+          logs: [
+            ...(s.logs || []),
+            {
+              type: "currency_deduction",
+              amount: -coinAmount,
+              date: new Date().toISOString(),
+              source: "manual_currency_deduction",
+            },
+          ],
+        };
+      });
+      saveStudentsToFirebase(updatedStudents);
+      return updatedStudents;
+    });
+    setSavingData(false);
+    showToast(`Deducted ${coinAmount} coins successfully!`);
+  };
+
+  // ENHANCED: Reset functions that properly reset everything
   const handleResetStudentPoints = (studentId) => {
     setSavingData(true);
     setStudents(prev => {
@@ -1113,13 +1231,22 @@ export default function ClassroomChampions() {
           weeklyPoints: 0,
           categoryTotal: {},
           categoryWeekly: {},
+          // Reset avatar to level 1
+          avatarLevel: 1,
+          avatar: s.avatarBase ? getAvatarImage(s.avatarBase, 1) : '',
+          // Remove pet completely
+          pet: null,
+          // Clear inventory and currency items
+          inventory: [],
+          lootBoxes: [],
+          coinsSpent: 0,
           logs: [
             ...(s.logs || []),
             {
-              type: "reset",
+              type: "full_reset",
               amount: 0,
               date: new Date().toISOString(),
-              source: "individual_reset",
+              source: "complete_reset",
             },
           ],
         } : s
@@ -1128,7 +1255,7 @@ export default function ClassroomChampions() {
       return updatedStudents;
     });
     setSavingData(false);
-    showToast('Student points reset successfully!');
+    showToast('Student completely reset successfully!');
   };
 
   const handleResetAllPoints = async () => {
@@ -1140,10 +1267,19 @@ export default function ClassroomChampions() {
         weeklyPoints: 0,
         categoryTotal: {},
         categoryWeekly: {},
+        // Reset avatar to level 1
+        avatarLevel: 1,
+        avatar: s.avatarBase ? getAvatarImage(s.avatarBase, 1) : '',
+        // Remove pets completely
+        pet: null,
+        // Clear inventory and currency items
+        inventory: [],
+        lootBoxes: [],
+        coinsSpent: 0,
         logs: [
           ...(s.logs || []),
           {
-            type: "reset",
+            type: "bulk_reset",
             amount: 0,
             date: new Date().toISOString(),
             source: "bulk_reset",
@@ -1154,7 +1290,7 @@ export default function ClassroomChampions() {
       return updatedStudents;
     });
     setSavingData(false);
-    showToast('All student points reset successfully!');
+    showToast('All students completely reset successfully!');
   };
 
   const handleResetPetSpeeds = async () => {
@@ -1313,6 +1449,150 @@ export default function ClassroomChampions() {
     showToast(`${cls.name} loaded successfully!`);
   };
 
+  // ENHANCED: Shop functions
+  const handleShopStudentSelect = (student) => {
+    console.log('Shop: Selected student:', student);
+    setSelectedStudent(student);
+    // Don't open character sheet in shop - just select the student
+  };
+
+  const handleShopPurchase = (student, item) => {
+    const coins = calculateCoins(student.totalPoints || 0);
+    const cost = item.price;
+    
+    console.log(`Purchase attempt: ${student.firstName} buying ${item.name} for ${cost} coins (has ${coins})`);
+    
+    if (!canAfford(student, cost)) {
+      alert(`${student.firstName} doesn't have enough coins! Needs ${cost}, has ${coins}`);
+      return;
+    }
+
+    setSavingData(true);
+    
+    setStudents(prev => {
+      const updatedStudents = prev.map(s => {
+        if (s.id !== student.id) return s;
+        
+        const updatedStudent = spendCoins(s, cost);
+        
+        // Add item to inventory
+        const newItem = {
+          ...item,
+          id: `${item.id}_${Date.now()}`,
+          purchasedAt: new Date().toISOString()
+        };
+        
+        return {
+          ...updatedStudent,
+          inventory: [...(updatedStudent.inventory || []), newItem]
+        };
+      });
+      
+      saveStudentsToFirebase(updatedStudents);
+      return updatedStudents;
+    });
+    
+    setSavingData(false);
+    showToast(`${student.firstName} purchased ${item.name}!`);
+  };
+
+  const handleLootBoxPurchase = (student, lootBox) => {
+    const coins = calculateCoins(student.totalPoints || 0);
+    const cost = lootBox.price;
+    
+    if (!canAfford(student, cost)) {
+      alert(`${student.firstName} doesn't have enough coins!`);
+      return;
+    }
+
+    setSavingData(true);
+    
+    // Generate rewards
+    const rewards = generateLootBoxRewards(lootBox);
+    
+    setStudents(prev => {
+      const updatedStudents = prev.map(s => {
+        if (s.id !== student.id) return s;
+        
+        const updatedStudent = spendCoins(s, cost);
+        
+        return {
+          ...updatedStudent,
+          lootBoxes: [...(updatedStudent.lootBoxes || []), {
+            boxType: lootBox.id,
+            rewards: rewards,
+            openedAt: new Date().toISOString()
+          }]
+        };
+      });
+      
+      saveStudentsToFirebase(updatedStudents);
+      return updatedStudents;
+    });
+    
+    setSavingData(false);
+    
+    // Show rewards modal or toast
+    const rewardsList = rewards.map(r => r.name).join(', ');
+    showToast(`${student.firstName} opened ${lootBox.name} and got: ${rewardsList}!`);
+  };
+
+  // Debug functions
+  const debugCurrencySystem = () => {
+    console.log('=== CURRENCY DEBUG ===');
+    students.forEach(student => {
+      const coins = calculateCoins(student.totalPoints || 0);
+      console.log(`${student.firstName}: ${student.totalPoints} XP = ${coins} coins`);
+    });
+    
+    showToast('Check console for currency debug info');
+  };
+
+  // Quick fix function for existing users
+  const quickFixForExistingUsers = () => {
+    console.log('🔧 Applying quick fixes for existing users...');
+    
+    // 1. Reset quest progress to prevent retroactive completions
+    setDailyQuests(prev => prev.map(q => ({ ...q, completedBy: [] })));
+    setWeeklyQuests(prev => prev.map(q => ({ ...q, completedBy: [] })));
+    
+    // 2. Add lastXpDate to all students to prevent future retroactive quests
+    setStudents(prev => {
+      const updatedStudents = prev.map(student => ({
+        ...student,
+        lastXpDate: new Date().toISOString(),
+        // Ensure currency fields exist
+        coinsSpent: student.coinsSpent || 0,
+        inventory: student.inventory || [],
+        lootBoxes: student.lootBoxes || [],
+      }));
+      
+      saveStudentsToFirebase(updatedStudents);
+      return updatedStudents;
+    });
+    
+    showToast('✅ Applied fixes for existing users!');
+    console.log('✅ Quick fixes applied successfully');
+  };
+
+  const resetQuestProgressForExistingStudents = () => {
+    setStudents(prev => {
+      const updatedStudents = prev.map(student => ({
+        ...student,
+        lastXpDate: new Date().toISOString(), // Set current date to prevent retroactive quests
+      }));
+      
+      saveStudentsToFirebase(updatedStudents);
+      return updatedStudents;
+    });
+    
+    // Also clear all current quest completions
+    setDailyQuests(prev => prev.map(q => ({ ...q, completedBy: [] })));
+    setWeeklyQuests(prev => prev.map(q => ({ ...q, completedBy: [] })));
+    
+    showToast('Quest progress reset for all students!');
+  };
+
   // Props object for all tabs
   const tabProps = {
     students,
@@ -1382,7 +1662,7 @@ export default function ClassroomChampions() {
     loadClass,
     savingData,
     showToast,
-    // Settings props
+    // Enhanced Settings props
     userData,
     user,
     handleResetStudentPoints,
@@ -1403,7 +1683,7 @@ export default function ClassroomChampions() {
     handleSubmitFeedback,
     showFeedbackModal,
     router,
-    // Currency & Shop props
+    // Enhanced Currency & Shop props
     selectedStudent,
     setSelectedStudent,
     calculateCoins,
@@ -1413,7 +1693,17 @@ export default function ClassroomChampions() {
     ITEM_RARITIES,
     LOOT_BOX_ITEMS,
     generateLootBoxRewards,
-    setSavingData
+    setSavingData,
+    handleShopStudentSelect,
+    handleShopPurchase,
+    handleLootBoxPurchase,
+    CurrencyDisplay,
+    // Enhanced Settings Functions
+    handleDeductXP,
+    handleDeductCurrency,
+    debugCurrencySystem,
+    quickFixForExistingUsers,
+    resetQuestProgressForExistingStudents
   };
 
   // Modal props
