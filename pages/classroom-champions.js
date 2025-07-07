@@ -28,7 +28,6 @@ const QuestCompletionModal = React.lazy(() => import('../components/modals/Quest
 // ===============================================
 
 const MAX_LEVEL = 4;
-const XP_TO_COINS_RATIO = 5; // 5 XP = 1 coin
 
 const ITEM_RARITIES = {
   common: { 
@@ -379,28 +378,25 @@ const PET_NAMES = [
 ];
 
 // ===============================================
-// UTILITY FUNCTIONS
+// UTILITY FUNCTIONS - UPDATED FOR SEPARATE COINS
 // ===============================================
 
-const calculateCoins = (totalXP) => {
-  const xp = totalXP || 0;
-  const coins = Math.floor(xp / XP_TO_COINS_RATIO);
-  console.log(`Calculating coins: ${xp} XP ÷ ${XP_TO_COINS_RATIO} = ${coins} coins`);
-  return coins;
+const calculateCoins = (student) => {
+  // NEW: Use actual coins field instead of XP calculation
+  return student?.coins || 0;
 };
 
 const canAfford = (student, cost) => {
-  const coins = calculateCoins(student.totalPoints || 0);
+  const coins = calculateCoins(student);
   return coins >= cost;
 };
 
 const spendCoins = (student, cost) => {
-  const coins = calculateCoins(student.totalPoints || 0);
+  const coins = calculateCoins(student);
   if (coins >= cost) {
-    const xpToDeduct = cost * XP_TO_COINS_RATIO;
     return {
       ...student,
-      totalPoints: Math.max(0, student.totalPoints - xpToDeduct),
+      coins: Math.max(0, (student.coins || 0) - cost),
       coinsSpent: (student.coinsSpent || 0) + cost,
       logs: [
         ...(student.logs || []),
@@ -416,15 +412,11 @@ const spendCoins = (student, cost) => {
   return student;
 };
 
-// NEW: Function to award coins WITHOUT triggering quest checks
+// NEW: Function to award actual coins (no XP involved)
 const awardCoins = (student, coinAmount) => {
-  const xpToAdd = coinAmount * XP_TO_COINS_RATIO;
   return {
     ...student,
-    totalPoints: student.totalPoints + xpToAdd,
-    weeklyPoints: (student.weeklyPoints || 0) + xpToAdd,
-    // CRITICAL: Set lastXpDate to PAST date to prevent recursive quest checking
-    lastXpDate: '2030-01-01T00:00:00.000Z', // Far past date prevents quest triggers
+    coins: (student.coins || 0) + coinAmount,
     logs: [
       ...(student.logs || []),
       {
@@ -479,6 +471,7 @@ const generateLootBoxRewards = (lootBox) => {
 const updateStudentWithCurrency = (student) => {
   return {
     ...student,
+    coins: student.coins || 0, // NEW: Separate coins field
     coinsSpent: student.coinsSpent || 0,
     inventory: student.inventory || [],
     lootBoxes: student.lootBoxes || [],
@@ -552,9 +545,9 @@ const TabLoadingSpinner = () => (
   </div>
 );
 
-// Currency Display Component
+// Currency Display Component - Updated for separate coins
 const CurrencyDisplay = ({ student }) => {
-  const coins = calculateCoins(student?.totalPoints || 0);
+  const coins = calculateCoins(student);
   const coinsSpent = student?.coinsSpent || 0;
   
   return (
@@ -873,21 +866,12 @@ export default function ClassroomChampions() {
     });
   };
 
-  // ENHANCED: Quest completion check with recursive prevention
+  // ENHANCED: Quest completion check - now simpler since coins don't affect XP
   const checkQuestCompletionSafely = (studentId, updatedStudents) => {
     const student = updatedStudents.find(s => s.id === studentId);
     if (!student) return;
 
     console.log(`🎯 Checking quest completion for student ${studentId}`);
-
-    // PROTECTION: Don't check quests if this XP came from quest completion
-    const recentQuestReward = student.logs && student.logs.length > 0 && 
-                             student.logs[student.logs.length - 1].type === 'quest_coins';
-    
-    if (recentQuestReward) {
-      console.log(`🛡️ Skipping quest check for ${studentId} - recent quest reward detected`);
-      return;
-    }
 
     // Check individual quests
     [...dailyQuests, ...weeklyQuests].forEach(quest => {
@@ -1193,15 +1177,13 @@ export default function ClassroomChampions() {
       alert("Please enter a positive amount");
       return;
     }
-
-    const xpToDeduct = coinAmount * XP_TO_COINS_RATIO;
     
     setSavingData(true);
     setStudents(prev => {
       const updatedStudents = prev.map(s => {
         if (s.id !== studentId) return s;
         
-        const currentCoins = calculateCoins(s.totalPoints || 0);
+        const currentCoins = calculateCoins(s);
         if (currentCoins < coinAmount) {
           alert(`Student only has ${currentCoins} coins available`);
           return s;
@@ -1209,8 +1191,7 @@ export default function ClassroomChampions() {
         
         return {
           ...s,
-          totalPoints: Math.max(0, s.totalPoints - xpToDeduct),
-          weeklyPoints: Math.max(0, (s.weeklyPoints || 0) - xpToDeduct),
+          coins: Math.max(0, (s.coins || 0) - coinAmount),
           logs: [
             ...(s.logs || []),
             {
@@ -1229,7 +1210,7 @@ export default function ClassroomChampions() {
     showToast(`Deducted ${coinAmount} coins successfully!`);
   };
 
-  // ENHANCED: Reset functions that properly reset everything
+  // ENHANCED: Reset functions that properly reset everything including coins
   const handleResetStudentPoints = (studentId) => {
     setSavingData(true);
     setStudents(prev => {
@@ -1245,7 +1226,8 @@ export default function ClassroomChampions() {
           avatar: s.avatarBase ? getAvatarImage(s.avatarBase, 1) : '',
           // Remove pet completely
           pet: null,
-          // Clear inventory and currency items
+          // Clear inventory, currency, and coins
+          coins: 0, // NEW: Reset separate coins
           inventory: [],
           lootBoxes: [],
           coinsSpent: 0,
@@ -1281,7 +1263,8 @@ export default function ClassroomChampions() {
         avatar: s.avatarBase ? getAvatarImage(s.avatarBase, 1) : '',
         // Remove pets completely
         pet: null,
-        // Clear inventory and currency items
+        // Clear inventory, currency, and coins
+        coins: 0, // NEW: Reset separate coins
         inventory: [],
         lootBoxes: [],
         coinsSpent: 0,
@@ -1401,6 +1384,7 @@ export default function ClassroomChampions() {
           weeklyPoints: 0,
           categoryTotal: {},
           categoryWeekly: {},
+          coins: 0, // NEW: Initialize with 0 coins
           logs: [],
           pet: null
         });
@@ -1466,7 +1450,7 @@ export default function ClassroomChampions() {
   };
 
   const handleShopPurchase = (student, item) => {
-    const coins = calculateCoins(student.totalPoints || 0);
+                  const coins = calculateCoins(student);
     const cost = item.price;
     
     console.log(`Purchase attempt: ${student.firstName} buying ${item.name} for ${cost} coins (has ${coins})`);
@@ -1550,14 +1534,14 @@ export default function ClassroomChampions() {
   const debugCurrencySystem = () => {
     console.log('=== CURRENCY DEBUG ===');
     students.forEach(student => {
-      const coins = calculateCoins(student.totalPoints || 0);
-      console.log(`${student.firstName}: ${student.totalPoints} XP = ${coins} coins`);
+      const coins = calculateCoins(student);
+      console.log(`${student.firstName}: ${student.totalPoints} XP, ${coins} coins (separate fields)`);
     });
     
     showToast('Check console for currency debug info');
   };
 
-  // Quick fix function for existing users
+  // Quick fix function for existing users - migrate to separate coins
   const quickFixForExistingUsers = () => {
     console.log('🔧 Applying quick fixes for existing users...');
     
@@ -1565,12 +1549,13 @@ export default function ClassroomChampions() {
     setDailyQuests(prev => prev.map(q => ({ ...q, completedBy: [] })));
     setWeeklyQuests(prev => prev.map(q => ({ ...q, completedBy: [] })));
     
-    // 2. Add lastXpDate to all students to prevent future retroactive quests
+    // 2. Migrate students to separate coin system
     setStudents(prev => {
       const updatedStudents = prev.map(student => ({
         ...student,
         lastXpDate: new Date().toISOString(),
-        // Ensure currency fields exist
+        // Migrate to separate coins: give them coins based on their current XP
+        coins: student.coins || Math.floor((student.totalPoints || 0) / 5),
         coinsSpent: student.coinsSpent || 0,
         inventory: student.inventory || [],
         lootBoxes: student.lootBoxes || [],
@@ -1580,7 +1565,7 @@ export default function ClassroomChampions() {
       return updatedStudents;
     });
     
-    showToast('✅ Applied fixes for existing users!');
+    showToast('✅ Applied fixes and migrated to separate coin system!');
     console.log('✅ Quick fixes applied successfully');
   };
 
