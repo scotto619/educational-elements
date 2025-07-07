@@ -12,6 +12,7 @@ const ShopTab = React.lazy(() => import('../components/tabs/ShopTab'));
 const PetRaceTab = React.lazy(() => import('../components/tabs/PetRaceTab'));
 const ClassesTab = React.lazy(() => import('../components/tabs/ClassesTab'));
 const SettingsTab = React.lazy(() => import('../components/tabs/SettingsTab'));
+const TeachersToolkitTab = React.lazy(() => import('../components/tabs/TeachersToolkitTab'));
 
 // Lazy load modals
 const CharacterSheetModal = React.lazy(() => import('../components/modals/CharacterSheetModal'));
@@ -1932,6 +1933,11 @@ export default function ClassroomChampions() {
               setWeeklyQuests([]);
               setQuestTemplates(DEFAULT_QUEST_TEMPLATES);
             }
+
+            // Redirect to dashboard if trying to access toolkit without PRO
+            if (activeTab === 'toolkit' && data.subscription !== 'pro') {
+              setActiveTab('dashboard');
+            }
           } else {
             console.log("🆕 No user document, creating default");
             const defaultData = { subscription: 'basic', classes: [] };
@@ -1943,6 +1949,11 @@ export default function ClassroomChampions() {
             setDailyQuests([]);
             setWeeklyQuests([]);
             setQuestTemplates(DEFAULT_QUEST_TEMPLATES);
+            
+            // Redirect to dashboard if trying to access toolkit without PRO
+            if (activeTab === 'toolkit') {
+              setActiveTab('dashboard');
+            }
           }
         } else {
           console.log("🚫 No user signed in — redirecting to login");
@@ -1957,7 +1968,7 @@ export default function ClassroomChampions() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [activeTab]);
 
   if (loading) {
     return (
@@ -1984,12 +1995,14 @@ export default function ClassroomChampions() {
 
       {/* Navigation */}
       <div className="max-w-screen-xl mx-auto px-6 py-6">
-        <div className="flex justify-center gap-2 mb-8">
+        <div className="flex justify-center gap-2 mb-8 flex-wrap">
           {[
             { id: 'dashboard', label: 'Dashboard', icon: '📊' },
             { id: 'students', label: 'Students', icon: '👥' },
             { id: 'shop', label: 'Shop', icon: '🏪' },
             { id: 'race', label: 'Pet Race', icon: '🏁' },
+            // Only show Teachers Toolkit for PRO users
+            ...(userData?.subscription === 'pro' ? [{ id: 'toolkit', label: 'Teachers Toolkit', icon: '🛠️', isPro: true }] : []),
             { id: 'classes', label: 'My Classes', icon: '📚' },
             { id: 'settings', label: 'Settings', icon: '⚙️' }
           ].map((tab) => (
@@ -1997,13 +2010,22 @@ export default function ClassroomChampions() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center space-x-2 ${
-                activeTab === tab.id
-                  ? "bg-blue-600 text-white shadow-lg transform scale-105"
-                  : "bg-white text-gray-700 hover:bg-gray-50 shadow-md hover:shadow-lg"
+                tab.isPro 
+                  ? (activeTab === tab.id 
+                      ? "bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg transform scale-105" 
+                      : "bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 shadow-md hover:shadow-lg")
+                  : (activeTab === tab.id
+                      ? "bg-blue-600 text-white shadow-lg transform scale-105"
+                      : "bg-white text-gray-700 hover:bg-gray-50 shadow-md hover:shadow-lg")
               }`}
             >
               <span>{tab.icon}</span>
               <span>{tab.label}</span>
+              {tab.isPro && (
+                <span className="bg-yellow-400 text-purple-800 text-xs px-2 py-1 rounded-full font-bold">
+                  PRO
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -2015,6 +2037,7 @@ export default function ClassroomChampions() {
             {activeTab === 'students' && <StudentsTab {...tabProps} />}
             {activeTab === 'shop' && <ShopTab {...tabProps} />}
             {activeTab === 'race' && <PetRaceTab {...tabProps} />}
+            {activeTab === 'toolkit' && <TeachersToolkitTab {...tabProps} />}
             {activeTab === 'classes' && <ClassesTab {...tabProps} />}
             {activeTab === 'settings' && <SettingsTab {...tabProps} />}
           </Suspense>
