@@ -776,15 +776,13 @@ export default function ClassroomChampions() {
     }
   };
 
-  // UPDATED: Quest completion function that awards COINS instead of XP
+  // Quest completion function that awards COINS instead of XP
   const completeQuest = (questId, studentId = null) => {
     const quest = [...dailyQuests, ...weeklyQuests].find(q => q.id === questId);
     if (!quest) return;
 
     const completionKey = studentId || 'class';
     if (quest.completedBy.includes(completionKey)) return;
-
-    console.log(`🏆 Completing quest ${quest.id} for ${completionKey} - COIN reward system`);
 
     // Update quest completion
     const updatedDailyQuests = dailyQuests.map(q => 
@@ -797,14 +795,13 @@ export default function ClassroomChampions() {
     setDailyQuests(updatedDailyQuests);
     setWeeklyQuests(updatedWeeklyQuests);
 
-    // UPDATED: Award coin rewards instead of XP
+    // Award coin rewards
     if (quest.reward.type === 'COINS') {
       setStudents(prev => {
         const rewardedStudents = prev.map(student => {
           if (studentId && student.id !== studentId) return student;
           
           if (!studentId || student.id === studentId) {
-            // Award coins by adding equivalent XP (but track as coins in logs)
             return awardCoins(student, quest.reward.amount);
           }
           return student;
@@ -852,7 +849,7 @@ export default function ClassroomChampions() {
       });
     }
 
-    // FIXED: Show completion modal immediately and update states synchronously
+    // Show completion modal
     setQuestCompletionData({
       quest,
       studentId,
@@ -867,44 +864,34 @@ export default function ClassroomChampions() {
     });
   };
 
-  // ENHANCED: Quest completion check - now simpler since coins don't affect XP
+  // ENHANCED: Quest completion check - clean quest completion logic
   const checkQuestCompletionSafely = (studentId, updatedStudents) => {
     const student = updatedStudents.find(s => s.id === studentId);
     if (!student) return;
 
-    console.log(`🎯 Checking quest completion for student ${studentId}`);
-
     // Check individual quests
     [...dailyQuests, ...weeklyQuests].forEach(quest => {
       if (quest.category === 'individual' && !quest.completedBy.includes(studentId)) {
-        // IMPORTANT: Only check quests that were created AFTER the student's last XP gain
-        // This prevents retroactive quest completion for existing students
+        // Only check quests that were created AFTER the student's last XP gain
         const questCreatedDate = new Date(quest.startDate);
         const studentLastActive = student.lastXpDate ? new Date(student.lastXpDate) : new Date('2024-01-01');
         
-        // Only trigger quest completion if:
-        // 1. The student gained XP AFTER the quest was created, OR
-        // 2. The student is newly created (no lastXpDate), OR
-        // 3. The quest was created today (new quests should work immediately)
+        // Only trigger quest completion if appropriate
         const today = new Date().toISOString().split('T')[0];
         const isNewQuest = quest.startDate === today;
         
         if (questCreatedDate <= studentLastActive || !student.lastXpDate || isNewQuest) {
           if (checkIndividualQuestCompletion(quest, studentId)) {
-            console.log(`✅ Quest ${quest.id} completed by ${studentId} - showing modal and awarding coins`);
-            // Use the NORMAL complete quest function to show modal and award coins
             setTimeout(() => completeQuest(quest.id, studentId), 100);
           }
         }
       }
     });
 
-    // Check class quests (these can be retroactive since they're class-wide)
+    // Check class quests
     [...dailyQuests, ...weeklyQuests].forEach(quest => {
       if (quest.category === 'class' && !quest.completedBy.includes('class')) {
         if (checkClassQuestCompletionSafely(quest, updatedStudents)) {
-          console.log(`✅ Class quest ${quest.id} completed - showing modal and awarding coins`);
-          // Use the NORMAL complete quest function to show modal and award coins
           setTimeout(() => completeQuest(quest.id, null), 100);
         }
       }
@@ -1531,61 +1518,50 @@ export default function ClassroomChampions() {
     showToast(`${student.firstName} opened ${lootBox.name} and got: ${rewardsList}!`);
   };
 
-  // Debug functions
-  const debugCurrencySystem = () => {
-    console.log('=== CURRENCY DEBUG ===');
-    students.forEach(student => {
-      const coins = calculateCoins(student);
-      console.log(`${student.firstName}: ${student.totalPoints} XP, ${coins} coins (separate fields)`);
+  // Enhanced Settings Functions - Removed quick fixes and debug functions
+
+  // Quest Template Management Functions
+  const handleAddQuestTemplate = (questTemplate) => {
+    const newTemplate = {
+      ...questTemplate,
+      id: `custom-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    };
+    
+    setQuestTemplates(prev => {
+      const updated = [...prev, newTemplate];
+      saveQuestDataToFirebase({ questTemplates: updated });
+      return updated;
     });
     
-    showToast('Check console for currency debug info');
+    showToast('Quest template added successfully!');
   };
 
-  // Quick fix function for existing users - migrate to separate coins
-  const quickFixForExistingUsers = () => {
-    console.log('🔧 Applying quick fixes for existing users...');
-    
-    // 1. Reset quest progress to prevent retroactive completions
-    setDailyQuests(prev => prev.map(q => ({ ...q, completedBy: [] })));
-    setWeeklyQuests(prev => prev.map(q => ({ ...q, completedBy: [] })));
-    
-    // 2. Migrate students to separate coin system
-    setStudents(prev => {
-      const updatedStudents = prev.map(student => ({
-        ...student,
-        lastXpDate: new Date().toISOString(),
-        // Migrate to separate coins: give them coins based on their current XP
-        coins: student.coins || Math.floor((student.totalPoints || 0) / 5),
-        coinsSpent: student.coinsSpent || 0,
-        inventory: student.inventory || [],
-        lootBoxes: student.lootBoxes || [],
-      }));
-      
-      saveStudentsToFirebase(updatedStudents);
-      return updatedStudents;
+  const handleEditQuestTemplate = (templateId, updatedTemplate) => {
+    setQuestTemplates(prev => {
+      const updated = prev.map(template => 
+        template.id === templateId ? { ...template, ...updatedTemplate } : template
+      );
+      saveQuestDataToFirebase({ questTemplates: updated });
+      return updated;
     });
     
-    showToast('✅ Applied fixes and migrated to separate coin system!');
-    console.log('✅ Quick fixes applied successfully');
+    showToast('Quest template updated successfully!');
   };
 
-  const resetQuestProgressForExistingStudents = () => {
-    setStudents(prev => {
-      const updatedStudents = prev.map(student => ({
-        ...student,
-        lastXpDate: new Date().toISOString(), // Set current date to prevent retroactive quests
-      }));
-      
-      saveStudentsToFirebase(updatedStudents);
-      return updatedStudents;
+  const handleDeleteQuestTemplate = (templateId) => {
+    setQuestTemplates(prev => {
+      const updated = prev.filter(template => template.id !== templateId);
+      saveQuestDataToFirebase({ questTemplates: updated });
+      return updated;
     });
     
-    // Also clear all current quest completions
-    setDailyQuests(prev => prev.map(q => ({ ...q, completedBy: [] })));
-    setWeeklyQuests(prev => prev.map(q => ({ ...q, completedBy: [] })));
-    
-    showToast('Quest progress reset for all students!');
+    showToast('Quest template deleted successfully!');
+  };
+
+  const handleResetQuestTemplates = () => {
+    setQuestTemplates(DEFAULT_QUEST_TEMPLATES);
+    saveQuestDataToFirebase({ questTemplates: DEFAULT_QUEST_TEMPLATES });
+    showToast('Quest templates reset to defaults!');
   };
 
   // Props object for all tabs
@@ -1696,9 +1672,11 @@ export default function ClassroomChampions() {
     // Enhanced Settings Functions
     handleDeductXP,
     handleDeductCurrency,
-    debugCurrencySystem,
-    quickFixForExistingUsers,
-    resetQuestProgressForExistingStudents
+    // Quest Template Management
+    handleAddQuestTemplate,
+    handleEditQuestTemplate,
+    handleDeleteQuestTemplate,
+    handleResetQuestTemplates
   };
 
   // Modal props
@@ -1898,13 +1876,11 @@ export default function ClassroomChampions() {
     return () => clearInterval(interval);
   }, [raceInProgress, students, selectedPets, selectedPrize, xpAmount, raceFinished]);
 
-  // Main auth effect
+  // Authentication and user data management
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      console.log("👤 onAuthStateChanged triggered");
       try {
         if (user) {
-          console.log("✅ User detected:", user.uid);
           setUser(user);
 
           const docRef = doc(firestore, 'users', user.uid);
@@ -1912,7 +1888,6 @@ export default function ClassroomChampions() {
 
           if (snap.exists()) {
             const data = snap.data();
-            console.log("📦 User data from Firestore:", data);
             setUserData(data);
 
             const savedClasses = data.classes || [];
@@ -1939,7 +1914,6 @@ export default function ClassroomChampions() {
               setActiveTab('dashboard');
             }
           } else {
-            console.log("🆕 No user document, creating default");
             const defaultData = { subscription: 'basic', classes: [] };
             await setDoc(docRef, defaultData);
             setUserData(defaultData);
@@ -1956,13 +1930,11 @@ export default function ClassroomChampions() {
             }
           }
         } else {
-          console.log("🚫 No user signed in — redirecting to login");
           router.push("/login");
         }
       } catch (error) {
-        console.error("❌ Error in auth listener:", error);
+        console.error("Error in auth listener:", error);
       } finally {
-        console.log("✅ Done loading user");
         setLoading(false);
       }
     });

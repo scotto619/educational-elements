@@ -1,4 +1,4 @@
-// SettingsTab.js - Complete Settings Component with Enhanced Management
+// SettingsTab.js - Cleaned Up Settings Component
 import React, { useState } from 'react';
 
 export default function SettingsTab({
@@ -26,21 +26,60 @@ export default function SettingsTab({
   calculateCoins,
   handleDeductXP,
   handleDeductCurrency,
-  debugCurrencySystem,
-  quickFixForExistingUsers,
-  resetQuestProgressForExistingStudents
+  questTemplates,
+  handleAddQuestTemplate,
+  handleEditQuestTemplate,
+  handleDeleteQuestTemplate,
+  handleResetQuestTemplates
 }) {
   const [activeSettingsTab, setActiveSettingsTab] = useState('general');
   const [selectedStudentId, setSelectedStudentId] = useState('');
   const [xpAmount, setXpAmount] = useState(1);
   const [coinAmount, setCoinAmount] = useState(1);
+  const [showQuestEditor, setShowQuestEditor] = useState(false);
+  const [editingQuest, setEditingQuest] = useState(null);
+  const [questForm, setQuestForm] = useState({
+    title: '',
+    description: '',
+    type: 'daily',
+    category: 'individual',
+    requirement: { type: 'xp', category: 'Respectful', amount: 5 },
+    reward: { type: 'COINS', amount: 1 },
+    icon: '⭐'
+  });
 
   const settingsTabs = [
     { id: 'general', name: 'General', icon: '⚙️' },
-    { id: 'quests', name: 'Quests', icon: '🎯' },
+    { id: 'quests', name: 'Quest Editor', icon: '🎯' },
     { id: 'students', name: 'Students', icon: '👥' },
     { id: 'account', name: 'Account', icon: '👤' }
   ];
+
+  const handleQuestSubmit = (e) => {
+    e.preventDefault();
+    if (editingQuest) {
+      handleEditQuestTemplate(editingQuest.id, questForm);
+      setEditingQuest(null);
+    } else {
+      handleAddQuestTemplate(questForm);
+    }
+    setQuestForm({
+      title: '',
+      description: '',
+      type: 'daily',
+      category: 'individual',
+      requirement: { type: 'xp', category: 'Respectful', amount: 5 },
+      reward: { type: 'COINS', amount: 1 },
+      icon: '⭐'
+    });
+    setShowQuestEditor(false);
+  };
+
+  const handleEditQuest = (quest) => {
+    setEditingQuest(quest);
+    setQuestForm({ ...quest });
+    setShowQuestEditor(true);
+  };
 
   return (
     <div className="space-y-6">
@@ -48,52 +87,6 @@ export default function SettingsTab({
       <div className="text-center">
         <h2 className="text-3xl font-bold text-gray-800 mb-2">⚙️ Settings</h2>
         <p className="text-gray-600">Manage your classroom and account settings</p>
-      </div>
-
-      {/* Quick Fix Section for Existing Users */}
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-        <h3 className="text-xl font-bold text-yellow-800 mb-4">🔧 Quick Fixes</h3>
-        <p className="text-yellow-700 mb-4">
-          If you're experiencing XP/quest issues after recent updates, use these fixes:
-        </p>
-        <div className="flex flex-wrap gap-3">
-          <button
-            onClick={() => {
-              if (quickFixForExistingUsers) {
-                quickFixForExistingUsers();
-              } else {
-                alert('Fix function not available');
-              }
-            }}
-            className="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 font-semibold"
-          >
-            🛠️ Apply All Fixes
-          </button>
-          <button
-            onClick={() => {
-              if (resetQuestProgressForExistingStudents) {
-                resetQuestProgressForExistingStudents();
-              } else {
-                alert('Fix function not available');
-              }
-            }}
-            className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 font-semibold"
-          >
-            🎯 Reset Quest Progress
-          </button>
-          <button
-            onClick={() => {
-              if (debugCurrencySystem) {
-                debugCurrencySystem();
-              } else {
-                alert('Debug function not available');
-              }
-            }}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-semibold"
-          >
-            🪙 Debug Currency
-          </button>
-        </div>
       </div>
 
       {/* Settings Navigation */}
@@ -140,7 +133,7 @@ export default function SettingsTab({
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-yellow-600">
-                    {students.reduce((sum, s) => sum + calculateCoins(s.totalPoints || 0), 0)}
+                    {students.reduce((sum, s) => sum + calculateCoins(s), 0)}
                   </div>
                   <div className="text-gray-600">Total Class Coins</div>
                 </div>
@@ -169,41 +162,88 @@ export default function SettingsTab({
           </div>
         )}
 
-        {/* Quest Settings */}
+        {/* Quest Editor */}
         {activeSettingsTab === 'quests' && (
           <div className="space-y-6">
-            <h3 className="text-2xl font-bold text-gray-800 mb-6">🎯 Quest Management</h3>
-            
-            <div className="bg-green-50 border border-green-200 rounded-lg p-6">
-              <h4 className="text-xl font-bold text-green-800 mb-4">🏆 Quest System Status</h4>
-              <p className="text-green-700 mb-4">
-                Quests now reward coins instead of XP to prevent cascading rewards:
-              </p>
-              <ul className="list-disc list-inside text-green-700 space-y-1">
-                <li>Daily Quests: 1 coin each (5 XP equivalent)</li>
-                <li>Weekly Quests: 5 coins each (25 XP equivalent)</li>
-                <li>No more double XP rewards</li>
-              </ul>
+            <div className="flex items-center justify-between">
+              <h3 className="text-2xl font-bold text-gray-800">🎯 Quest Template Editor</h3>
+              <button
+                onClick={() => setShowQuestEditor(true)}
+                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-semibold"
+              >
+                + Add Quest Template
+              </button>
             </div>
 
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-              <h4 className="text-xl font-bold text-yellow-800 mb-4">🔄 Quest Reset Options</h4>
+            {/* Quest Templates List */}
+            <div className="space-y-4">
+              {questTemplates.map(quest => (
+                <div key={quest.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <span className="text-2xl">{quest.icon}</span>
+                      <div>
+                        <h4 className="font-semibold text-gray-800">{quest.title}</h4>
+                        <p className="text-sm text-gray-600">{quest.description}</p>
+                        <div className="flex items-center space-x-4 mt-2">
+                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                            {quest.type}
+                          </span>
+                          <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full">
+                            {quest.category}
+                          </span>
+                          <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                            {quest.reward.type} +{quest.reward.amount}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => handleEditQuest(quest)}
+                        className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowConfirmDialog({
+                            title: "Delete Quest Template",
+                            message: `Are you sure you want to delete "${quest.title}"?`,
+                            icon: "🗑️",
+                            type: "danger",
+                            confirmText: "Delete",
+                            onConfirm: () => handleDeleteQuestTemplate(quest.id)
+                          });
+                        }}
+                        className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Reset Templates */}
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <h4 className="font-semibold text-yellow-800 mb-2">🔄 Reset Quest Templates</h4>
+              <p className="text-yellow-700 mb-4">Reset all quest templates to default ones.</p>
               <button
                 onClick={() => {
-                  if (resetQuestProgressForExistingStudents) {
-                    setShowConfirmDialog({
-                      title: "Reset Quest Progress",
-                      message: "This will reset all quest completion progress for all students. They can complete quests again.",
-                      icon: "🎯",
-                      type: "warning",
-                      confirmText: "Reset Quests",
-                      onConfirm: resetQuestProgressForExistingStudents
-                    });
-                  }
+                  setShowConfirmDialog({
+                    title: "Reset Quest Templates",
+                    message: "This will delete all custom quests and restore defaults. Continue?",
+                    icon: "🔄",
+                    type: "warning",
+                    confirmText: "Reset Templates",
+                    onConfirm: handleResetQuestTemplates
+                  });
                 }}
-                className="w-full bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 font-semibold"
+                className="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 font-semibold"
               >
-                🎯 Reset All Quest Progress
+                Reset to Defaults
               </button>
             </div>
           </div>
@@ -229,7 +269,7 @@ export default function SettingsTab({
                   <option value="">Choose a student...</option>
                   {students.map(student => (
                     <option key={student.id} value={student.id}>
-                      {student.firstName} - {student.totalPoints || 0} XP - {calculateCoins(student.totalPoints || 0)} coins
+                      {student.firstName} - {student.totalPoints || 0} XP - {calculateCoins(student)} coins
                     </option>
                   ))}
                 </select>
@@ -250,23 +290,17 @@ export default function SettingsTab({
                         className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => {
-                          if (handleDeductXP) {
-                            handleDeductXP(selectedStudentId, xpAmount);
-                          }
-                        }}
-                        className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 font-semibold"
-                      >
-                        Remove {xpAmount} XP
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => handleDeductXP(selectedStudentId, xpAmount)}
+                      className="w-full bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 font-semibold"
+                    >
+                      Remove {xpAmount} XP
+                    </button>
                   </div>
 
                   {/* Currency Management */}
                   <div className="space-y-4">
-                    <h5 className="font-semibold text-gray-700">🪙 Currency Management</h5>
+                    <h5 className="font-semibold text-gray-700">💰 Currency Management</h5>
                     <div>
                       <label className="block text-sm text-gray-600 mb-1">Coin Amount</label>
                       <input
@@ -277,18 +311,12 @@ export default function SettingsTab({
                         className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => {
-                          if (handleDeductCurrency) {
-                            handleDeductCurrency(selectedStudentId, coinAmount);
-                          }
-                        }}
-                        className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 font-semibold"
-                      >
-                        Remove {coinAmount} Coins
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => handleDeductCurrency(selectedStudentId, coinAmount)}
+                      className="w-full bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 font-semibold"
+                    >
+                      Remove {coinAmount} Coins
+                    </button>
                   </div>
 
                   {/* Reset Options */}
@@ -390,7 +418,7 @@ export default function SettingsTab({
                     </span>
                     <p className="text-purple-700 text-sm mt-2">
                       {userData.subscription === 'pro' 
-                        ? 'Access to up to 5 classes and premium features'
+                        ? 'Access to up to 5 classes, Teachers Toolkit, and premium features'
                         : 'Access to 1 class with core features'
                       }
                     </p>
@@ -430,10 +458,136 @@ export default function SettingsTab({
         )}
       </div>
 
+      {/* Quest Editor Modal */}
+      {showQuestEditor && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-2xl">
+            <h2 className="text-2xl font-bold mb-6 text-gray-800">
+              {editingQuest ? 'Edit Quest Template' : 'Add Quest Template'}
+            </h2>
+
+            <form onSubmit={handleQuestSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Title</label>
+                  <input
+                    type="text"
+                    value={questForm.title}
+                    onChange={(e) => setQuestForm({...questForm, title: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Icon</label>
+                  <input
+                    type="text"
+                    value={questForm.icon}
+                    onChange={(e) => setQuestForm({...questForm, icon: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="⭐"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+                <textarea
+                  value={questForm.description}
+                  onChange={(e) => setQuestForm({...questForm, description: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  rows="3"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Type</label>
+                  <select
+                    value={questForm.type}
+                    onChange={(e) => setQuestForm({...questForm, type: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Category</label>
+                  <select
+                    value={questForm.category}
+                    onChange={(e) => setQuestForm({...questForm, category: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="individual">Individual</option>
+                    <option value="class">Class</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Reward Type</label>
+                  <select
+                    value={questForm.reward.type}
+                    onChange={(e) => setQuestForm({...questForm, reward: {...questForm.reward, type: e.target.value}})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="COINS">Coins</option>
+                    <option value="XP">XP</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Reward Amount</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={questForm.reward.amount}
+                    onChange={(e) => setQuestForm({...questForm, reward: {...questForm.reward, amount: parseInt(e.target.value) || 1}})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowQuestEditor(false);
+                    setEditingQuest(null);
+                    setQuestForm({
+                      title: '',
+                      description: '',
+                      type: 'daily',
+                      category: 'individual',
+                      requirement: { type: 'xp', category: 'Respectful', amount: 5 },
+                      reward: { type: 'COINS', amount: 1 },
+                      icon: '⭐'
+                    });
+                  }}
+                  className="flex-1 px-4 py-3 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                >
+                  {editingQuest ? 'Update Quest' : 'Add Quest'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Feedback Modal */}
       {showFeedbackModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md transform scale-100">
+          <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md">
             <h2 className="text-2xl font-bold mb-6 text-gray-800 flex items-center">
               <span className="mr-3">{feedbackType === 'bug' ? '🐛' : '💡'}</span>
               {feedbackType === 'bug' ? 'Report Bug' : 'Feature Request'}
