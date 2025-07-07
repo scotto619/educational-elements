@@ -87,7 +87,7 @@ const CharacterSheetModal = ({
           
           <div className="bg-yellow-50 p-4 rounded-lg text-center">
             <div className="text-2xl font-bold text-yellow-600 flex items-center justify-center">
-              <span className="mr-1">🪙</span>
+              <span className="mr-1">💰</span>
               {coins}
             </div>
             <div className="text-sm text-yellow-700">Coins Available</div>
@@ -226,7 +226,7 @@ const CharacterSheetModal = ({
             <div>
               <span className="text-yellow-700">Coins Available:</span>
               <span className="font-semibold ml-2 text-yellow-800 flex items-center">
-                <span className="mr-1">🪙</span>
+                <span className="mr-1">💰</span>
                 {coins}
               </span>
             </div>

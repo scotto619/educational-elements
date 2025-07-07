@@ -424,7 +424,7 @@ const awardCoins = (student, coinAmount) => {
     totalPoints: student.totalPoints + xpToAdd,
     weeklyPoints: (student.weeklyPoints || 0) + xpToAdd,
     // CRITICAL: Set lastXpDate to PAST date to prevent recursive quest checking
-    lastXpDate: '2020-01-01T00:00:00.000Z', // Far past date prevents quest triggers
+    lastXpDate: '2030-01-01T00:00:00.000Z', // Far past date prevents quest triggers
     logs: [
       ...(student.logs || []),
       {
