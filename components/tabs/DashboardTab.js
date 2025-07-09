@@ -17,7 +17,8 @@ const DashboardTab = ({
   const studentsWithAvatars = students.filter(s => s.avatar).length;
   const studentsWithPets = students.filter(s => s.pet?.image).length;
   const totalXP = students.reduce((sum, s) => sum + (s.totalPoints || 0), 0);
-  const totalCoins = students.reduce((sum, s) => sum + calculateCoins(s.totalPoints || 0), 0);
+  // FIXED: Use the proper coin calculation for all students
+  const totalCoins = students.reduce((sum, s) => sum + calculateCoins(s), 0);
   const averageXP = totalStudents > 0 ? Math.round(totalXP / totalStudents) : 0;
   const topStudent = students.reduce((top, current) => 
     (current.totalPoints || 0) > (top.totalPoints || 0) ? current : top
@@ -30,16 +31,22 @@ const DashboardTab = ({
     learner: students.reduce((sum, s) => sum + (s.categoryTotal?.Learner || 0), 0)
   };
 
-  // Quest completion stats
+  // FIXED: Quest completion stats with proper checks
   const questStats = {
-    dailyCompleted: dailyQuests.filter(q => 
-      q.category === 'class' ? checkQuestCompletion(q.id) : 
-      students.some(s => checkQuestCompletion(q.id, s.id))
-    ).length,
-    weeklyCompleted: weeklyQuests.filter(q => 
-      q.category === 'class' ? checkQuestCompletion(q.id) : 
-      students.some(s => checkQuestCompletion(q.id, s.id))
-    ).length,
+    dailyCompleted: dailyQuests.filter(q => {
+      if (q.category === 'class') {
+        return checkQuestCompletion(q.id);
+      } else {
+        return students.some(s => checkQuestCompletion(q.id, s.id));
+      }
+    }).length,
+    weeklyCompleted: weeklyQuests.filter(q => {
+      if (q.category === 'class') {
+        return checkQuestCompletion(q.id);
+      } else {
+        return students.some(s => checkQuestCompletion(q.id, s.id));
+      }
+    }).length,
     totalDaily: dailyQuests.length,
     totalWeekly: weeklyQuests.length
   };
@@ -203,7 +210,7 @@ const DashboardTab = ({
                 </p>
                 <p className="text-md text-yellow-600 flex items-center">
                   <span className="mr-2">🪙</span>
-                  {calculateCoins(topStudent.totalPoints || 0)} coins available
+                  {calculateCoins(topStudent)} coins available
                 </p>
               </div>
             </div>
@@ -327,7 +334,7 @@ const DashboardTab = ({
                         <div className="text-center">
                           <div className="flex items-center text-yellow-600 font-bold">
                             <span className="mr-1">🪙</span>
-                            {calculateCoins(student.totalPoints || 0)}
+                            {calculateCoins(student)}
                           </div>
                           <span className="text-xs text-gray-500">coins</span>
                         </div>

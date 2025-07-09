@@ -1,4 +1,4 @@
-// SettingsTab.js - Cleaned Up Settings Component
+// SettingsTab.js - FIXED VERSION with Proper Coin System
 import React, { useState } from 'react';
 
 export default function SettingsTab({
@@ -298,11 +298,11 @@ export default function SettingsTab({
                     </button>
                   </div>
 
-                  {/* Currency Management */}
+                  {/* FIXED: Currency Management */}
                   <div className="space-y-4">
                     <h5 className="font-semibold text-gray-700">💰 Currency Management</h5>
                     <div>
-                      <label className="block text-sm text-gray-600 mb-1">Coin Amount</label>
+                      <label className="block text-sm text-gray-600 mb-1">Bonus Coin Amount</label>
                       <input
                         type="number"
                         min="1"
@@ -311,11 +311,16 @@ export default function SettingsTab({
                         className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
+                    <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+                      <p className="text-xs text-yellow-700">
+                        Note: This removes bonus coins only. XP coins are calculated automatically (1 coin per 5 XP).
+                      </p>
+                    </div>
                     <button
                       onClick={() => handleDeductCurrency(selectedStudentId, coinAmount)}
                       className="w-full bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 font-semibold"
                     >
-                      Remove {coinAmount} Coins
+                      Remove {coinAmount} Bonus Coins
                     </button>
                   </div>
 

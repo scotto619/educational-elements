@@ -9,7 +9,7 @@ const CharacterSheetModal = ({
   if (!selectedStudent) return null;
 
   const student = selectedStudent;
-  const coins = calculateCoins(student.totalPoints || 0);
+  const coins = calculateCoins(student); // FIXED: Use the proper coin calculation
 
   // Calculate category percentages
   const categoryTotals = student.categoryTotal || {};
@@ -25,6 +25,10 @@ const CharacterSheetModal = ({
   const currentLevel = student.avatarLevel;
   const nextLevelXP = currentLevel * 100;
   const xpProgress = Math.min((student.totalPoints || 0) / nextLevelXP * 100, 100);
+
+  // FIXED: Calculate coin breakdown
+  const xpCoins = Math.floor((student.totalPoints || 0) / 5); // 1 coin per 5 XP
+  const bonusCoins = student.coins || 0; // Bonus coins from quests/other sources
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -91,6 +95,27 @@ const CharacterSheetModal = ({
               {coins}
             </div>
             <div className="text-sm text-yellow-700">Coins Available</div>
+          </div>
+        </div>
+
+        {/* FIXED: Enhanced Coin Breakdown */}
+        <div className="mb-6">
+          <h4 className="text-lg font-semibold text-gray-800 mb-3">💰 Coin Breakdown</h4>
+          <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+            <div className="grid grid-cols-2 gap-4 mb-3">
+              <div className="text-center">
+                <div className="text-xl font-bold text-yellow-800">{xpCoins}</div>
+                <div className="text-sm text-yellow-700">From XP (1 per 5 XP)</div>
+              </div>
+              <div className="text-center">
+                <div className="text-xl font-bold text-yellow-800">{bonusCoins}</div>
+                <div className="text-sm text-yellow-700">Bonus Coins</div>
+              </div>
+            </div>
+            <div className="text-center border-t border-yellow-300 pt-3">
+              <div className="text-2xl font-bold text-yellow-800">{coins}</div>
+              <div className="text-sm text-yellow-700">Total Available</div>
+            </div>
           </div>
         </div>
 
@@ -200,6 +225,7 @@ const CharacterSheetModal = ({
                 <div key={index} className="text-sm p-2 bg-gray-50 rounded flex justify-between items-center">
                   <span className="text-gray-700">
                     {log.type === 'purchase' ? '🛒 Shop Purchase' : 
+                     log.type === 'quest_coins' ? '💰 Quest Reward' :
                      log.type === 'reset' ? '🔄 Points Reset' : 
                      `${log.type === 'Respectful' ? '👍' : log.type === 'Responsible' ? '💼' : log.type === 'Learner' ? '📚' : '⭐'} ${log.type}`}
                   </span>

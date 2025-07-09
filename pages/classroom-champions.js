@@ -1,4 +1,4 @@
-// classroom-champions.js - Updated with Coin Rewards for Quests
+// classroom-champions.js - FIXED VERSION with Working Quests & Coin System
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
@@ -29,6 +29,7 @@ const QuestCompletionModal = React.lazy(() => import('../components/modals/Quest
 // ===============================================
 
 const MAX_LEVEL = 4;
+const COINS_PER_XP = 5; // 1 coin per 5 XP
 
 const ITEM_RARITIES = {
   common: { 
@@ -237,7 +238,7 @@ const LOOT_BOX_ITEMS = [
   { id: 'phoenix_feather', name: 'Phoenix Feather', icon: '🔥', rarity: 'legendary', effect: 'resurrection' }
 ];
 
-// UPDATED: Quest templates now award COINS instead of XP
+// FIXED: Default quest templates - always available
 const DEFAULT_QUEST_TEMPLATES = [
   // Daily Quests - Award 1 coin each
   {
@@ -247,7 +248,7 @@ const DEFAULT_QUEST_TEMPLATES = [
     type: 'daily',
     category: 'individual',
     requirement: { type: 'xp', category: 'Respectful', amount: 5 },
-    reward: { type: 'COINS', amount: 1 }, // Changed from XP to COINS
+    reward: { type: 'COINS', amount: 1 },
     icon: '👍'
   },
   {
@@ -257,7 +258,7 @@ const DEFAULT_QUEST_TEMPLATES = [
     type: 'daily',
     category: 'individual',
     requirement: { type: 'xp', category: 'Responsible', amount: 3 },
-    reward: { type: 'COINS', amount: 1 }, // Changed from XP to COINS
+    reward: { type: 'COINS', amount: 1 },
     icon: '💼'
   },
   {
@@ -267,7 +268,7 @@ const DEFAULT_QUEST_TEMPLATES = [
     type: 'daily',
     category: 'individual',
     requirement: { type: 'xp', category: 'Learner', amount: 4 },
-    reward: { type: 'COINS', amount: 1 }, // Changed from XP to COINS
+    reward: { type: 'COINS', amount: 1 },
     icon: '📚'
   },
   {
@@ -277,7 +278,7 @@ const DEFAULT_QUEST_TEMPLATES = [
     type: 'daily',
     category: 'individual',
     requirement: { type: 'manual', description: 'Teacher verification required' },
-    reward: { type: 'COINS', amount: 1 }, // Changed from XP to COINS
+    reward: { type: 'COINS', amount: 1 },
     icon: '📝'
   },
   // Weekly Quests - Award 5 coins each
@@ -288,7 +289,7 @@ const DEFAULT_QUEST_TEMPLATES = [
     type: 'weekly',
     category: 'individual',
     requirement: { type: 'total_xp', amount: 50 },
-    reward: { type: 'COINS', amount: 5 }, // Changed from XP to COINS
+    reward: { type: 'COINS', amount: 5 },
     icon: '⭐'
   },
   {
@@ -298,7 +299,7 @@ const DEFAULT_QUEST_TEMPLATES = [
     type: 'weekly',
     category: 'individual',
     requirement: { type: 'manual', description: 'Teacher verification required' },
-    reward: { type: 'COINS', amount: 5 }, // Changed from XP to COINS
+    reward: { type: 'COINS', amount: 5 },
     icon: '🎯'
   },
   {
@@ -308,7 +309,7 @@ const DEFAULT_QUEST_TEMPLATES = [
     type: 'weekly',
     category: 'class',
     requirement: { type: 'class_total_xp', amount: 200 },
-    reward: { type: 'COINS', amount: 5 }, // Changed from XP to COINS
+    reward: { type: 'COINS', amount: 5 },
     icon: '🏆'
   },
   {
@@ -318,7 +319,7 @@ const DEFAULT_QUEST_TEMPLATES = [
     type: 'weekly',
     category: 'individual',
     requirement: { type: 'pet_wins', amount: 2 },
-    reward: { type: 'COINS', amount: 5 }, // Changed from XP to COINS
+    reward: { type: 'COINS', amount: 5 },
     icon: '🏁'
   }
 ];
@@ -379,12 +380,14 @@ const PET_NAMES = [
 ];
 
 // ===============================================
-// UTILITY FUNCTIONS - UPDATED FOR SEPARATE COINS
+// UTILITY FUNCTIONS - FIXED COIN SYSTEM
 // ===============================================
 
+// FIXED: Calculate coins based on both XP and separate coins field
 const calculateCoins = (student) => {
-  // NEW: Use actual coins field instead of XP calculation
-  return student?.coins || 0;
+  const xpCoins = Math.floor((student?.totalPoints || 0) / COINS_PER_XP);
+  const bonusCoins = student?.coins || 0;
+  return xpCoins + bonusCoins;
 };
 
 const canAfford = (student, cost) => {
@@ -395,9 +398,27 @@ const canAfford = (student, cost) => {
 const spendCoins = (student, cost) => {
   const coins = calculateCoins(student);
   if (coins >= cost) {
+    // Deduct from bonus coins first, then from XP coins if needed
+    const bonusCoins = student?.coins || 0;
+    const xpCoins = Math.floor((student?.totalPoints || 0) / COINS_PER_XP);
+    
+    let newBonusCoins = bonusCoins;
+    let newTotalPoints = student?.totalPoints || 0;
+    
+    if (cost <= bonusCoins) {
+      // Can pay with bonus coins only
+      newBonusCoins = bonusCoins - cost;
+    } else {
+      // Need to use XP coins too
+      const remainingCost = cost - bonusCoins;
+      newBonusCoins = 0;
+      newTotalPoints = Math.max(0, newTotalPoints - (remainingCost * COINS_PER_XP));
+    }
+    
     return {
       ...student,
-      coins: Math.max(0, (student.coins || 0) - cost),
+      coins: newBonusCoins,
+      totalPoints: newTotalPoints,
       coinsSpent: (student.coinsSpent || 0) + cost,
       logs: [
         ...(student.logs || []),
@@ -413,7 +434,7 @@ const spendCoins = (student, cost) => {
   return student;
 };
 
-// NEW: Function to award actual coins (no XP involved)
+// FIXED: Award bonus coins (from quests)
 const awardCoins = (student, coinAmount) => {
   return {
     ...student,
@@ -472,7 +493,7 @@ const generateLootBoxRewards = (lootBox) => {
 const updateStudentWithCurrency = (student) => {
   return {
     ...student,
-    coins: student.coins || 0, // NEW: Separate coins field
+    coins: student.coins || 0,
     coinsSpent: student.coinsSpent || 0,
     inventory: student.inventory || [],
     lootBoxes: student.lootBoxes || [],
@@ -546,10 +567,12 @@ const TabLoadingSpinner = () => (
   </div>
 );
 
-// Currency Display Component - Updated for separate coins
+// Currency Display Component - FIXED
 const CurrencyDisplay = ({ student }) => {
   const coins = calculateCoins(student);
   const coinsSpent = student?.coinsSpent || 0;
+  const xpCoins = Math.floor((student?.totalPoints || 0) / COINS_PER_XP);
+  const bonusCoins = student?.coins || 0;
   
   return (
     <div className="flex items-center space-x-4 bg-yellow-50 p-3 rounded-lg border border-yellow-200">
@@ -557,6 +580,7 @@ const CurrencyDisplay = ({ student }) => {
         <div className="text-2xl font-bold text-yellow-600">💰</div>
         <div className="text-sm text-yellow-700">Available</div>
         <div className="text-lg font-bold text-yellow-800">{coins}</div>
+        <div className="text-xs text-yellow-600">({xpCoins} XP + {bonusCoins} bonus)</div>
       </div>
       <div className="text-center">
         <div className="text-2xl font-bold text-gray-600">🛍️</div>
@@ -619,10 +643,10 @@ export default function ClassroomChampions() {
   const [bulkXpCategory, setBulkXpCategory] = useState('Respectful');
   const [showBulkXpPanel, setShowBulkXpPanel] = useState(false);
 
-  // Quest system states
+  // FIXED: Quest system states - always initialized
   const [dailyQuests, setDailyQuests] = useState([]);
   const [weeklyQuests, setWeeklyQuests] = useState([]);
-  const [questTemplates, setQuestTemplates] = useState([]);
+  const [questTemplates, setQuestTemplates] = useState(DEFAULT_QUEST_TEMPLATES);
   const [questCompletionData, setQuestCompletionData] = useState(null);
   const [showQuestCompletion, setShowQuestCompletion] = useState(false);
 
@@ -641,7 +665,7 @@ export default function ClassroomChampions() {
   const [animatingXP, setAnimatingXP] = useState({});
 
   // ===============================================
-  // FUNCTION DEFINITIONS (BEFORE tabProps)
+  // FUNCTION DEFINITIONS
   // ===============================================
 
   const showToast = (message) => {
@@ -670,6 +694,7 @@ export default function ClassroomChampions() {
     }
   };
 
+  // FIXED: Enhanced quest data saving
   const saveQuestDataToFirebase = async (questData) => {
     if (!user || !currentClassId) return;
     
@@ -684,35 +709,46 @@ export default function ClassroomChampions() {
             : cls
         );
         await setDoc(docRef, { ...data, classes: updatedClasses });
+        console.log("✅ Quest data saved to Firebase");
       }
     } catch (error) {
       console.error("❌ Error saving quest data:", error);
     }
   };
 
-  const generateDailyQuests = () => {
+  // FIXED: Quest generation with immediate save
+  const generateDailyQuests = async () => {
+    const today = new Date().toISOString().split('T')[0];
     const dailyTemplates = questTemplates.filter(t => t.type === 'daily');
     const selectedQuests = dailyTemplates.slice(0, 3).map(template => ({
       ...template,
-      id: `daily-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      startDate: new Date().toISOString().split('T')[0],
-      endDate: new Date().toISOString().split('T')[0],
+      id: `daily-${today}-${template.id}`,
+      startDate: today,
+      endDate: today,
       completedBy: [],
       active: true
     }));
+    
+    // Immediately save to Firebase
+    await saveQuestDataToFirebase({ dailyQuests: selectedQuests });
     return selectedQuests;
   };
 
-  const generateWeeklyQuests = () => {
+  const generateWeeklyQuests = async () => {
+    const weekStart = getWeekStart().toISOString().split('T')[0];
+    const weekEnd = getWeekEnd().toISOString().split('T')[0];
     const weeklyTemplates = questTemplates.filter(t => t.type === 'weekly');
     const selectedQuests = weeklyTemplates.slice(0, 2).map(template => ({
       ...template,
-      id: `weekly-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      startDate: getWeekStart().toISOString().split('T')[0],
-      endDate: getWeekEnd().toISOString().split('T')[0],
+      id: `weekly-${weekStart}-${template.id}`,
+      startDate: weekStart,
+      endDate: weekEnd,
       completedBy: [],
       active: true
     }));
+    
+    // Immediately save to Firebase
+    await saveQuestDataToFirebase({ weeklyQuests: selectedQuests });
     return selectedQuests;
   };
 
@@ -776,7 +812,7 @@ export default function ClassroomChampions() {
     }
   };
 
-  // Quest completion function that awards COINS instead of XP
+  // FIXED: Quest completion with proper coin rewards
   const completeQuest = (questId, studentId = null) => {
     const quest = [...dailyQuests, ...weeklyQuests].find(q => q.id === questId);
     if (!quest) return;
@@ -795,7 +831,7 @@ export default function ClassroomChampions() {
     setDailyQuests(updatedDailyQuests);
     setWeeklyQuests(updatedWeeklyQuests);
 
-    // Award coin rewards
+    // Award rewards
     if (quest.reward.type === 'COINS') {
       setStudents(prev => {
         const rewardedStudents = prev.map(student => {
@@ -864,7 +900,7 @@ export default function ClassroomChampions() {
     });
   };
 
-  // ENHANCED: Quest completion check - clean quest completion logic
+  // FIXED: Quest completion check
   const checkQuestCompletionSafely = (studentId, updatedStudents) => {
     const student = updatedStudents.find(s => s.id === studentId);
     if (!student) return;
@@ -872,11 +908,9 @@ export default function ClassroomChampions() {
     // Check individual quests
     [...dailyQuests, ...weeklyQuests].forEach(quest => {
       if (quest.category === 'individual' && !quest.completedBy.includes(studentId)) {
-        // Only check quests that were created AFTER the student's last XP gain
         const questCreatedDate = new Date(quest.startDate);
         const studentLastActive = student.lastXpDate ? new Date(student.lastXpDate) : new Date('2024-01-01');
         
-        // Only trigger quest completion if appropriate
         const today = new Date().toISOString().split('T')[0];
         const isNewQuest = quest.startDate === today;
         
@@ -960,7 +994,7 @@ export default function ClassroomChampions() {
     setStudentForAvatarChange(null);
   };
 
-  // WORKING: Award XP function with tracking of last XP date
+  // FIXED: Award XP function with automatic coin generation
   const handleAwardXP = (id, category, amount = 1) => {
     // Prevent rapid firing
     if (animatingXP[id]) return;
@@ -979,7 +1013,7 @@ export default function ClassroomChampions() {
           ...s,
           totalPoints: newTotal,
           weeklyPoints: (s.weeklyPoints || 0) + amount,
-          lastXpDate: new Date().toISOString(), // Track when XP was last awarded
+          lastXpDate: new Date().toISOString(),
           categoryTotal: {
             ...s.categoryTotal,
             [category]: (s.categoryTotal[category] || 0) + amount,
@@ -1015,7 +1049,7 @@ export default function ClassroomChampions() {
 
       saveStudentsToFirebase(updatedStudents);
       
-      // Quest completion check with modal and coin rewards
+      // Quest completion check
       checkQuestCompletionSafely(id, updatedStudents);
       
       return updatedStudents;
@@ -1074,7 +1108,7 @@ export default function ClassroomChampions() {
           ...s,
           totalPoints: newTotal,
           weeklyPoints: (s.weeklyPoints || 0) + bulkXpAmount,
-          lastXpDate: new Date().toISOString(), // Track XP date
+          lastXpDate: new Date().toISOString(),
           categoryTotal: {
             ...s.categoryTotal,
             [bulkXpCategory]: (s.categoryTotal[bulkXpCategory] || 0) + bulkXpAmount,
@@ -1128,7 +1162,7 @@ export default function ClassroomChampions() {
     showToast(`Awarded ${bulkXpAmount} XP to ${studentNames}!`);
   };
 
-  // ENHANCED: Settings functions with proper resets
+  // Settings functions
   const handleDeductXP = (studentId, amount) => {
     if (amount <= 0) {
       alert("Please enter a positive amount");
@@ -1198,7 +1232,7 @@ export default function ClassroomChampions() {
     showToast(`Deducted ${coinAmount} coins successfully!`);
   };
 
-  // ENHANCED: Reset functions that properly reset everything including coins
+  // Reset functions
   const handleResetStudentPoints = (studentId) => {
     setSavingData(true);
     setStudents(prev => {
@@ -1209,13 +1243,10 @@ export default function ClassroomChampions() {
           weeklyPoints: 0,
           categoryTotal: {},
           categoryWeekly: {},
-          // Reset avatar to level 1
           avatarLevel: 1,
           avatar: s.avatarBase ? getAvatarImage(s.avatarBase, 1) : '',
-          // Remove pet completely
           pet: null,
-          // Clear inventory, currency, and coins
-          coins: 0, // NEW: Reset separate coins
+          coins: 0,
           inventory: [],
           lootBoxes: [],
           coinsSpent: 0,
@@ -1246,13 +1277,10 @@ export default function ClassroomChampions() {
         weeklyPoints: 0,
         categoryTotal: {},
         categoryWeekly: {},
-        // Reset avatar to level 1
         avatarLevel: 1,
         avatar: s.avatarBase ? getAvatarImage(s.avatarBase, 1) : '',
-        // Remove pets completely
         pet: null,
-        // Clear inventory, currency, and coins
-        coins: 0, // NEW: Reset separate coins
+        coins: 0,
         inventory: [],
         lootBoxes: [],
         coinsSpent: 0,
@@ -1308,11 +1336,8 @@ export default function ClassroomChampions() {
     setSavingData(true);
     
     try {
-      // Here you would typically send to your backend API
-      // For now, we'll just simulate the process
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Reset form
       setFeedbackSubject('');
       setFeedbackMessage('');
       setFeedbackEmail('');
@@ -1329,7 +1354,6 @@ export default function ClassroomChampions() {
 
   const handleSubscriptionManagement = async () => {
     if (!userData?.stripeCustomerId) {
-      // Redirect to upgrade page
       router.push('/pricing');
       return;
     }
@@ -1349,6 +1373,7 @@ export default function ClassroomChampions() {
     }
   };
 
+  // FIXED: Class import with proper quest initialization
   const handleClassImport = async () => {
     if (!newClassName.trim() || !newClassStudents.trim()) {
       alert("Please fill in both class name and student names");
@@ -1372,18 +1397,22 @@ export default function ClassroomChampions() {
           weeklyPoints: 0,
           categoryTotal: {},
           categoryWeekly: {},
-          coins: 0, // NEW: Initialize with 0 coins
+          coins: 0,
           logs: [],
           pet: null
         });
       });
 
+    // Generate initial quests
+    const initialDailyQuests = await generateDailyQuests();
+    const initialWeeklyQuests = await generateWeeklyQuests();
+
     const newClass = {
       id: 'class-' + Date.now(),
       name: newClassName,
       students: studentsArray,
-      dailyQuests: [],
-      weeklyQuests: [],
+      dailyQuests: initialDailyQuests,
+      weeklyQuests: initialWeeklyQuests,
       questTemplates: DEFAULT_QUEST_TEMPLATES
     };
 
@@ -1404,8 +1433,8 @@ export default function ClassroomChampions() {
       setTeacherClasses(updatedClasses);
       setStudents(newClass.students);
       setCurrentClassId(newClass.id);
-      setDailyQuests([]);
-      setWeeklyQuests([]);
+      setDailyQuests(initialDailyQuests);
+      setWeeklyQuests(initialWeeklyQuests);
       setQuestTemplates(DEFAULT_QUEST_TEMPLATES);
       setNewClassName('');
       setNewClassStudents('');
@@ -1418,30 +1447,49 @@ export default function ClassroomChampions() {
     }
   };
 
-  const loadClass = (cls) => {
+  // FIXED: Load class with proper quest initialization
+  const loadClass = async (cls) => {
     const studentsWithCurrency = cls.students.map(updateStudentWithCurrency);
     setStudents(studentsWithCurrency);
     setCurrentClassId(cls.id);
-    setDailyQuests(cls.dailyQuests || []);
-    setWeeklyQuests(cls.weeklyQuests || []);
+    
+    // Load saved quests or generate new ones
+    const savedDailyQuests = cls.dailyQuests || [];
+    const savedWeeklyQuests = cls.weeklyQuests || [];
+    
+    // Check if we need to generate new quests
+    const today = new Date().toISOString().split('T')[0];
+    const weekStart = getWeekStart().toISOString().split('T')[0];
+    
+    let dailyQuestsToUse = savedDailyQuests;
+    let weeklyQuestsToUse = savedWeeklyQuests;
+    
+    // Generate new daily quests if needed
+    if (savedDailyQuests.length === 0 || !savedDailyQuests.some(q => q.startDate === today)) {
+      dailyQuestsToUse = await generateDailyQuests();
+    }
+    
+    // Generate new weekly quests if needed
+    if (savedWeeklyQuests.length === 0 || !savedWeeklyQuests.some(q => q.startDate === weekStart)) {
+      weeklyQuestsToUse = await generateWeeklyQuests();
+    }
+    
+    setDailyQuests(dailyQuestsToUse);
+    setWeeklyQuests(weeklyQuestsToUse);
     setQuestTemplates(cls.questTemplates || DEFAULT_QUEST_TEMPLATES);
-    setSelectedStudents([]); // Clear selections when switching classes
+    setSelectedStudents([]);
     setShowBulkXpPanel(false);
     showToast(`${cls.name} loaded successfully!`);
   };
 
-  // ENHANCED: Shop functions
+  // Shop functions
   const handleShopStudentSelect = (student) => {
-    console.log('Shop: Selected student:', student);
     setSelectedStudent(student);
-    // Don't open character sheet in shop - just select the student
   };
 
   const handleShopPurchase = (student, item) => {
-                  const coins = calculateCoins(student);
+    const coins = calculateCoins(student);
     const cost = item.price;
-    
-    console.log(`Purchase attempt: ${student.firstName} buying ${item.name} for ${cost} coins (has ${coins})`);
     
     if (!canAfford(student, cost)) {
       alert(`${student.firstName} doesn't have enough coins! Needs ${cost}, has ${coins}`);
@@ -1456,7 +1504,6 @@ export default function ClassroomChampions() {
         
         const updatedStudent = spendCoins(s, cost);
         
-        // Add item to inventory
         const newItem = {
           ...item,
           id: `${item.id}_${Date.now()}`,
@@ -1478,7 +1525,7 @@ export default function ClassroomChampions() {
   };
 
   const handleLootBoxPurchase = (student, lootBox) => {
-    const coins = calculateCoins(student.totalPoints || 0);
+    const coins = calculateCoins(student);
     const cost = lootBox.price;
     
     if (!canAfford(student, cost)) {
@@ -1488,7 +1535,6 @@ export default function ClassroomChampions() {
 
     setSavingData(true);
     
-    // Generate rewards
     const rewards = generateLootBoxRewards(lootBox);
     
     setStudents(prev => {
@@ -1513,12 +1559,9 @@ export default function ClassroomChampions() {
     
     setSavingData(false);
     
-    // Show rewards modal or toast
     const rewardsList = rewards.map(r => r.name).join(', ');
     showToast(`${student.firstName} opened ${lootBox.name} and got: ${rewardsList}!`);
   };
-
-  // Enhanced Settings Functions - Removed quick fixes and debug functions
 
   // Quest Template Management Functions
   const handleAddQuestTemplate = (questTemplate) => {
@@ -1633,7 +1676,7 @@ export default function ClassroomChampions() {
     loadClass,
     savingData,
     showToast,
-    // Enhanced Settings props
+    // Settings props
     userData,
     user,
     handleResetStudentPoints,
@@ -1654,7 +1697,7 @@ export default function ClassroomChampions() {
     handleSubmitFeedback,
     showFeedbackModal,
     router,
-    // Enhanced Currency & Shop props
+    // Shop props
     selectedStudent,
     setSelectedStudent,
     calculateCoins,
@@ -1669,7 +1712,7 @@ export default function ClassroomChampions() {
     handleShopPurchase,
     handleLootBoxPurchase,
     CurrencyDisplay,
-    // Enhanced Settings Functions
+    // Settings Functions
     handleDeductXP,
     handleDeductCurrency,
     // Quest Template Management
@@ -1738,24 +1781,32 @@ export default function ClassroomChampions() {
     calculateCoins
   };
 
-  // Initialize quests when class loads
+  // FIXED: Enhanced quest initialization
   useEffect(() => {
-    if (currentClassId && questTemplates.length > 0) {
-      const today = new Date().toISOString().split('T')[0];
-      const weekStart = getWeekStart().toISOString().split('T')[0];
-      
-      // Generate daily quests if none exist for today
-      if (dailyQuests.length === 0 || dailyQuests.every(q => q.startDate !== today)) {
-        const newDailyQuests = generateDailyQuests();
-        setDailyQuests(newDailyQuests);
+    const initializeQuests = async () => {
+      if (currentClassId && questTemplates.length > 0) {
+        const today = new Date().toISOString().split('T')[0];
+        const weekStart = getWeekStart().toISOString().split('T')[0];
+        
+        // Check if we need new daily quests
+        const needNewDaily = dailyQuests.length === 0 || !dailyQuests.some(q => q.startDate === today);
+        
+        // Check if we need new weekly quests
+        const needNewWeekly = weeklyQuests.length === 0 || !weeklyQuests.some(q => q.startDate === weekStart);
+        
+        if (needNewDaily) {
+          const newDailyQuests = await generateDailyQuests();
+          setDailyQuests(newDailyQuests);
+        }
+        
+        if (needNewWeekly) {
+          const newWeeklyQuests = await generateWeeklyQuests();
+          setWeeklyQuests(newWeeklyQuests);
+        }
       }
-      
-      // Generate weekly quests if none exist for this week
-      if (weeklyQuests.length === 0 || weeklyQuests.every(q => q.startDate !== weekStart)) {
-        const newWeeklyQuests = generateWeeklyQuests();
-        setWeeklyQuests(newWeeklyQuests);
-      }
-    }
+    };
+    
+    initializeQuests();
   }, [currentClassId, questTemplates]);
 
   // Race logic with fixed finish line
@@ -1767,15 +1818,13 @@ export default function ClassroomChampions() {
         const updated = { ...prev };
         let winnerId = null;
 
-        // More accurate finish line calculation
         const getRaceTrackWidth = () => {
           const raceTrack = document.querySelector('.race-track-container');
           if (raceTrack) {
             const rect = raceTrack.getBoundingClientRect();
-            // Set finish line earlier to prevent squishing
-            return rect.width - 80; // Increased buffer from 45 to 80
+            return rect.width - 80;
           }
-          return 720; // Reduced fallback from 700 to 720
+          return 720;
         };
 
         const trackWidth = getRaceTrackWidth();
@@ -1788,7 +1837,6 @@ export default function ClassroomChampions() {
 
           const currentPosition = updated[id] || 0;
           
-          // Check if this pet will cross the finish line with the next step
           if (currentPosition < FINISH_LINE_POSITION) {
             const speed = calculateSpeed(student.pet);
             const baseStep = speed * 2;
@@ -1796,14 +1844,10 @@ export default function ClassroomChampions() {
             const step = baseStep * randomMultiplier;
             const nextPosition = currentPosition + step;
 
-            // If the next position would cross the finish line, declare winner immediately
             if (nextPosition >= FINISH_LINE_POSITION && !raceFinished) {
               winnerId = id;
-              
-              // Set winner position exactly at finish line to prevent overrun
               updated[id] = FINISH_LINE_POSITION;
               
-              // Stop all other pets at their current positions
               for (const otherId of selectedPets) {
                 if (otherId !== id && updated[otherId] !== undefined) {
                   updated[otherId] = Math.min(updated[otherId] || 0, FINISH_LINE_POSITION - 10);
@@ -1814,7 +1858,6 @@ export default function ClassroomChampions() {
           }
         }
 
-        // If we found a winner, end the race immediately
         if (winnerId) {
           clearInterval(interval);
           
@@ -1850,10 +1893,9 @@ export default function ClassroomChampions() {
             return updatedStudents;
           });
 
-          return updated; // Return the final positions
+          return updated;
         }
 
-        // Only update positions if no winner was found
         for (const id of selectedPets) {
           const student = students.find((s) => s.id === id);
           if (!student?.pet) continue;
@@ -1895,15 +1937,11 @@ export default function ClassroomChampions() {
 
             if (savedClasses.length > 0) {
               const firstClass = savedClasses[0];
-              const studentsWithCurrency = firstClass.students.map(updateStudentWithCurrency);
-              setStudents(studentsWithCurrency);
-              setCurrentClassId(firstClass.id);
-              setDailyQuests(firstClass.dailyQuests || []);
-              setWeeklyQuests(firstClass.weeklyQuests || []);
-              setQuestTemplates(firstClass.questTemplates || DEFAULT_QUEST_TEMPLATES);
+              await loadClass(firstClass); // Use loadClass to properly initialize quests
             } else {
               setStudents([]);
               setCurrentClassId(null);
+              // Initialize with empty quests but keep templates
               setDailyQuests([]);
               setWeeklyQuests([]);
               setQuestTemplates(DEFAULT_QUEST_TEMPLATES);
@@ -1924,7 +1962,6 @@ export default function ClassroomChampions() {
             setWeeklyQuests([]);
             setQuestTemplates(DEFAULT_QUEST_TEMPLATES);
             
-            // Redirect to dashboard if trying to access toolkit without PRO
             if (activeTab === 'toolkit') {
               setActiveTab('dashboard');
             }
@@ -1973,7 +2010,6 @@ export default function ClassroomChampions() {
             { id: 'students', label: 'Students', icon: '👥' },
             { id: 'shop', label: 'Shop', icon: '🏪' },
             { id: 'race', label: 'Pet Race', icon: '🏁' },
-            // Only show Teachers Toolkit for PRO users
             ...(userData?.subscription === 'pro' ? [{ id: 'toolkit', label: 'Teachers Toolkit', icon: '🛠️', isPro: true }] : []),
             { id: 'classes', label: 'My Classes', icon: '📚' },
             { id: 'settings', label: 'Settings', icon: '⚙️' }

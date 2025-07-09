@@ -1,4 +1,4 @@
-// ShopTab.js - Complete Shop Component with Working Student Selection
+// ShopTab.js - FIXED VERSION with Proper Coin Calculation
 import React, { useState } from 'react';
 
 export default function ShopTab({
@@ -72,7 +72,7 @@ export default function ShopTab({
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {students.map(student => {
-              const coins = calculateCoins(student.totalPoints || 0);
+              const coins = calculateCoins(student); // FIXED: Use proper coin calculation
               const isSelected = selectedStudent?.id === student.id;
               
               return (
@@ -214,6 +214,15 @@ export default function ShopTab({
               <div className="flex items-center justify-center space-x-2 mb-6">
                 <span className="text-yellow-600 text-2xl">🪙</span>
                 <span className="text-2xl font-bold text-yellow-800">{showPurchaseModal.price}</span>
+              </div>
+
+              {/* FIXED: Show current coin balance */}
+              <div className="bg-gray-50 p-3 rounded-lg mb-6">
+                <p className="text-sm text-gray-600">Current Balance:</p>
+                <p className="text-lg font-bold text-yellow-800 flex items-center justify-center">
+                  <span className="mr-1">🪙</span>
+                  {calculateCoins(selectedStudent)}
+                </p>
               </div>
 
               <div className="flex gap-3">

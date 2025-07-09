@@ -176,11 +176,11 @@ const StudentsTab = ({
                     </div>
                   </div>
 
-                  {/* Currency Display */}
+                  {/* FIXED: Currency Display with proper coin calculation */}
                   <div className="mb-4">
                     <div className="flex items-center justify-center space-x-1">
                       <span className="text-yellow-500">🪙</span>
-                      <span className="font-bold text-yellow-600">{calculateCoins(student.totalPoints || 0)}</span>
+                      <span className="font-bold text-yellow-600">{calculateCoins(student)}</span>
                       <span className="text-gray-500 text-sm">coins</span>
                     </div>
                   </div>
