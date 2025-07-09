@@ -1,4 +1,4 @@
-// classroom-champions.js - FIXED VERSION with Working Quests & Coin System
+// classroom-champions.js - UPDATED with StudentHelpQueue Integration
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
