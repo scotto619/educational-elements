@@ -1,8 +1,11 @@
-// TeachersToolkitTab.js - Updated with Interactive Teaching Tools
+// TeachersToolkitTab.js - Complete Interactive Teaching Tools Suite
 import React, { useState } from 'react';
 import StudentHelpQueue from '../StudentHelpQueue';
 import HundredsBoard from '../HundredsBoard';
 import GroupMaker from '../GroupMaker';
+import NamePicker from '../NamePicker';
+import TimerTools from '../TimerTools';
+import DiceRoller from '../DiceRoller';
 
 const TeachersToolkitTab = ({ 
   students, 
@@ -42,15 +45,15 @@ const TeachersToolkitTab = ({
             <div className="space-y-2">
               <div className="flex items-center space-x-2">
                 <span>🎯</span>
-                <span>Name Picker Wheel</span>
+                <span>Smart Name Picker Wheel</span>
               </div>
               <div className="flex items-center space-x-2">
                 <span>⏰</span>
-                <span>Classroom Timer Tools</span>
+                <span>Professional Timer Suite</span>
               </div>
               <div className="flex items-center space-x-2">
-                <span>📊</span>
-                <span>Interactive Polling</span>
+                <span>🎲</span>
+                <span>Advanced Dice Roller</span>
               </div>
             </div>
           </div>
@@ -88,15 +91,19 @@ const TeachersToolkitTab = ({
       id: 'name-picker', 
       label: 'Name Picker', 
       icon: '🎯',
-      description: 'Random student selector',
-      comingSoon: true
+      description: 'Random student selector wheel'
     },
     { 
       id: 'timer-tools', 
       label: 'Timer Tools', 
       icon: '⏰',
-      description: 'Classroom timing utilities',
-      comingSoon: true
+      description: 'Classroom timing utilities'
+    },
+    { 
+      id: 'dice-roller', 
+      label: 'Dice Roller', 
+      icon: '🎲',
+      description: 'Advanced multi-dice rolling system'
     }
   ];
 
@@ -179,32 +186,27 @@ const TeachersToolkitTab = ({
         )}
 
         {activeToolkitTab === 'name-picker' && (
-          <div className="text-center py-20 animate-fade-in">
-            <div className="text-6xl mb-4">🎯</div>
-            <h3 className="text-2xl font-bold text-gray-800 mb-4">Name Picker</h3>
-            <p className="text-gray-600 mb-6 max-w-md mx-auto">
-              Randomly select students for questions, activities, or presentations. Coming soon!
-            </p>
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 max-w-sm mx-auto">
-              <p className="text-green-700 text-sm">
-                Features will include weighted selection, exclusion lists, and spinning wheel animation.
-              </p>
-            </div>
+          <div className="animate-fade-in">
+            <NamePicker 
+              students={students} 
+              showToast={showToast} 
+            />
           </div>
         )}
 
         {activeToolkitTab === 'timer-tools' && (
-          <div className="text-center py-20 animate-fade-in">
-            <div className="text-6xl mb-4">⏰</div>
-            <h3 className="text-2xl font-bold text-gray-800 mb-4">Timer Tools</h3>
-            <p className="text-gray-600 mb-6 max-w-md mx-auto">
-              Customizable timers for activities, transitions, and classroom management. Coming soon!
-            </p>
-            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 max-w-sm mx-auto">
-              <p className="text-orange-700 text-sm">
-                Includes countdown timers, stopwatches, and interval timers with sound alerts.
-              </p>
-            </div>
+          <div className="animate-fade-in">
+            <TimerTools 
+              showToast={showToast} 
+            />
+          </div>
+        )}
+
+        {activeToolkitTab === 'dice-roller' && (
+          <div className="animate-fade-in">
+            <DiceRoller 
+              showToast={showToast} 
+            />
           </div>
         )}
       </div>
