@@ -2,11 +2,14 @@
 import React, { useState } from 'react';
 import StudentHelpQueue from '../StudentHelpQueue';
 import HundredsBoard from '../HundredsBoard';
+import GroupMaker from '../GroupMaker';
 
 const TeachersToolkitTab = ({ 
   students, 
   showToast,
-  userData
+  userData,
+  saveGroupDataToFirebase,
+  currentClassId
 }) => {
   const [activeToolkitTab, setActiveToolkitTab] = useState('help-queue');
 
@@ -33,7 +36,7 @@ const TeachersToolkitTab = ({
               </div>
               <div className="flex items-center space-x-2">
                 <span>👥</span>
-                <span>Random Group Generator</span>
+                <span>Smart Group Maker with Constraints</span>
               </div>
             </div>
             <div className="space-y-2">
@@ -79,8 +82,7 @@ const TeachersToolkitTab = ({
       id: 'group-maker', 
       label: 'Group Maker', 
       icon: '👥',
-      description: 'Create random student groups',
-      comingSoon: true
+      description: 'Create and manage student groups'
     },
     { 
       id: 'name-picker', 
@@ -165,17 +167,14 @@ const TeachersToolkitTab = ({
         )}
 
         {activeToolkitTab === 'group-maker' && (
-          <div className="text-center py-20 animate-fade-in">
-            <div className="text-6xl mb-4">👥</div>
-            <h3 className="text-2xl font-bold text-gray-800 mb-4">Group Maker</h3>
-            <p className="text-gray-600 mb-6 max-w-md mx-auto">
-              Automatically create random student groups for activities and projects. Coming soon!
-            </p>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-sm mx-auto">
-              <p className="text-blue-700 text-sm">
-                This tool will help you instantly create balanced groups based on your preferences.
-              </p>
-            </div>
+          <div className="animate-fade-in">
+            <GroupMaker 
+              students={students} 
+              showToast={showToast} 
+              saveGroupDataToFirebase={saveGroupDataToFirebase}
+              userData={userData}
+              currentClassId={currentClassId}
+            />
           </div>
         )}
 

@@ -716,6 +716,28 @@ export default function ClassroomChampions() {
     }
   };
 
+  // Group data saving
+  const saveGroupDataToFirebase = async (groupData) => {
+    if (!user || !currentClassId) return;
+    
+    try {
+      const docRef = doc(firestore, 'users', user.uid);
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        const data = snap.data();
+        const updatedClasses = data.classes.map(cls => 
+          cls.id === currentClassId 
+            ? { ...cls, groupData }
+            : cls
+        );
+        await setDoc(docRef, { ...data, classes: updatedClasses });
+        console.log("✅ Group data saved to Firebase");
+      }
+    } catch (error) {
+      console.error("❌ Error saving group data:", error);
+    }
+  };
+
   // FIXED: Quest generation with immediate save
   const generateDailyQuests = async () => {
     const today = new Date().toISOString().split('T')[0];
@@ -1719,7 +1741,10 @@ export default function ClassroomChampions() {
     handleAddQuestTemplate,
     handleEditQuestTemplate,
     handleDeleteQuestTemplate,
-    handleResetQuestTemplates
+    handleResetQuestTemplates,
+    // Group Management
+    saveGroupDataToFirebase,
+    currentClassId
   };
 
   // Modal props
