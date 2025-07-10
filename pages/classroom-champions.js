@@ -1715,7 +1715,7 @@ export default function ClassroomChampions() {
     // Settings Functions
     handleDeductXP,
     handleDeductCurrency,
-    // Quest Template Management
+    // Quest Template Management (for Settings tab)
     handleAddQuestTemplate,
     handleEditQuestTemplate,
     handleDeleteQuestTemplate,
