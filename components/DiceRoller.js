@@ -1,530 +1,516 @@
-// TimerTools.js - Comprehensive Classroom Timer System
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+// DiceRoller.js - Advanced Multi-Dice Rolling System
+import React, { useState, useEffect, useRef } from 'react';
 
-const TimerTools = ({ showToast }) => {
-  const [activeTimer, setActiveTimer] = useState('countdown');
-  const [isRunning, setIsRunning] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(300); // 5 minutes default
-  const [initialTime, setInitialTime] = useState(300);
-  const [elapsedTime, setElapsedTime] = useState(0);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+const DiceRoller = ({ showToast }) => {
+  const [diceConfigs, setDiceConfigs] = useState([
+    { id: 1, type: 'standard', values: ['1', '2', '3', '4', '5', '6'], result: null, isRolling: false }
+  ]);
+  const [rollHistory, setRollHistory] = useState([]);
+  const [statistics, setStatistics] = useState({});
+  const [showStatistics, setShowStatistics] = useState(true);
+  const [showHistory, setShowHistory] = useState(true);
+  const [customDiceModal, setCustomDiceModal] = useState(false);
+  const [editingDice, setEditingDice] = useState(null);
   
-  // Interval timer state
-  const [workDuration, setWorkDuration] = useState(25 * 60); // 25 minutes
-  const [breakDuration, setBreakDuration] = useState(5 * 60); // 5 minutes
-  const [currentCycle, setCurrentCycle] = useState('work'); // 'work' or 'break'
-  const [cycleCount, setCycleCount] = useState(0);
-  
-  // Audio state
-  const [soundEnabled, setSoundEnabled] = useState(true);
-  const [selectedAlert, setSelectedAlert] = useState('bell');
-  
-  const intervalRef = useRef(null);
-  const audioContextRef = useRef(null);
+  // Dice presets
+  const dicePresets = {
+    standard: { name: 'D6 Standard', values: ['1', '2', '3', '4', '5', '6'], shape: 'square' },
+    d4: { name: 'D4', values: ['1', '2', '3', '4'], shape: 'triangle' },
+    d8: { name: 'D8', values: ['1', '2', '3', '4', '5', '6', '7', '8'], shape: 'octagon' },
+    d10: { name: 'D10', values: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'], shape: 'square' },
+    d12: { name: 'D12', values: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'], shape: 'square' },
+    d20: { name: 'D20', values: Array.from({length: 20}, (_, i) => (i + 1).toString()), shape: 'square' },
+    d100: { name: 'D100', values: Array.from({length: 100}, (_, i) => (i + 1).toString()), shape: 'square' },
+    coin: { name: 'Coin', values: ['Heads', 'Tails'], shape: 'circle' },
+    yesno: { name: 'Yes/No', values: ['Yes', 'No', 'Maybe'], shape: 'square' },
+    colors: { name: 'Colors', values: ['Red', 'Blue', 'Green', 'Yellow', 'Purple', 'Orange'], shape: 'square' },
+    directions: { name: 'Directions', values: ['North', 'South', 'East', 'West'], shape: 'square' }
+  };
 
-  // Initialize audio context
-  useEffect(() => {
-    audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
-  }, []);
+  // Add new dice
+  const addDice = (preset = 'standard') => {
+    const newDice = {
+      id: Date.now(),
+      type: preset,
+      values: [...dicePresets[preset].values],
+      result: null,
+      isRolling: false
+    };
+    setDiceConfigs(prev => [...prev, newDice]);
+    showToast(`Added ${dicePresets[preset].name}!`);
+  };
 
-  // Sound effects
-  const playAlert = useCallback((type = 'bell') => {
-    if (!soundEnabled) return;
-    
+  // Remove dice
+  const removeDice = (diceId) => {
+    if (diceConfigs.length === 1) {
+      showToast('You must have at least one dice!');
+      return;
+    }
+    setDiceConfigs(prev => prev.filter(dice => dice.id !== diceId));
+    showToast('Dice removed!');
+  };
+
+  // Roll single dice
+  const rollSingleDice = (diceId) => {
+    setDiceConfigs(prev => prev.map(dice => 
+      dice.id === diceId 
+        ? { ...dice, isRolling: true, result: null }
+        : dice
+    ));
+
+    setTimeout(() => {
+      setDiceConfigs(prev => prev.map(dice => {
+        if (dice.id === diceId) {
+          const result = dice.values[Math.floor(Math.random() * dice.values.length)];
+          return { ...dice, isRolling: false, result };
+        }
+        return dice;
+      }));
+    }, 800);
+  };
+
+  // Roll all dice
+  const rollAllDice = () => {
+    // Start rolling animation for all dice
+    setDiceConfigs(prev => prev.map(dice => ({ ...dice, isRolling: true, result: null })));
+
+    setTimeout(() => {
+      const newResults = {};
+      setDiceConfigs(prev => prev.map(dice => {
+        const result = dice.values[Math.floor(Math.random() * dice.values.length)];
+        newResults[dice.id] = { type: dice.type, result, values: dice.values };
+        return { ...dice, isRolling: false, result };
+      }));
+
+      // Add to history
+      const historyEntry = {
+        id: Date.now(),
+        timestamp: new Date(),
+        results: newResults,
+        total: calculateTotal(newResults)
+      };
+      
+      setRollHistory(prev => [historyEntry, ...prev.slice(0, 49)]); // Keep last 50 rolls
+      updateStatistics(newResults);
+      
+      playRollSound();
+      showToast(`Rolled! Total: ${historyEntry.total}`);
+    }, 800);
+  };
+
+  // Calculate total (for numeric dice)
+  const calculateTotal = (results) => {
+    return Object.values(results).reduce((sum, { result }) => {
+      const num = parseInt(result);
+      return isNaN(num) ? sum : sum + num;
+    }, 0);
+  };
+
+  // Update statistics
+  const updateStatistics = (results) => {
+    setStatistics(prev => {
+      const newStats = { ...prev };
+      
+      Object.entries(results).forEach(([diceId, { result, type }]) => {
+        if (!newStats[type]) {
+          newStats[type] = {};
+        }
+        if (!newStats[type][result]) {
+          newStats[type][result] = 0;
+        }
+        newStats[type][result]++;
+      });
+      
+      return newStats;
+    });
+  };
+
+  // Play roll sound
+  const playRollSound = () => {
     try {
-      const audioContext = audioContextRef.current;
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
       
       oscillator.connect(gainNode);
       gainNode.connect(audioContext.destination);
       
-      switch (type) {
-        case 'bell':
-          oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-          oscillator.frequency.exponentialRampToValueAtTime(400, audioContext.currentTime + 0.5);
-          break;
-        case 'chime':
-          oscillator.frequency.setValueAtTime(523, audioContext.currentTime);
-          oscillator.frequency.setValueAtTime(659, audioContext.currentTime + 0.2);
-          oscillator.frequency.setValueAtTime(784, audioContext.currentTime + 0.4);
-          break;
-        case 'beep':
-          oscillator.frequency.setValueAtTime(1000, audioContext.currentTime);
-          break;
-        default:
-          oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-      }
+      oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(100, audioContext.currentTime + 0.3);
       
-      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.8);
+      gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
       
-      oscillator.type = 'sine';
+      oscillator.type = 'sawtooth';
       oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.8);
+      oscillator.stop(audioContext.currentTime + 0.3);
     } catch (error) {
       console.log('Audio not supported');
     }
-  }, [soundEnabled]);
-
-  // Timer logic
-  useEffect(() => {
-    if (isRunning && !isPaused) {
-      intervalRef.current = setInterval(() => {
-        if (activeTimer === 'countdown' || activeTimer === 'interval') {
-          setTimeLeft(prev => {
-            if (prev <= 1) {
-              // Timer finished
-              setIsRunning(false);
-              playAlert(selectedAlert);
-              
-              if (activeTimer === 'interval') {
-                // Handle interval timer cycle
-                if (currentCycle === 'work') {
-                  setCurrentCycle('break');
-                  setTimeLeft(breakDuration);
-                  setInitialTime(breakDuration);
-                  showToast('Work time finished! Break time starts now. 🌟');
-                } else {
-                  setCurrentCycle('work');
-                  setTimeLeft(workDuration);
-                  setInitialTime(workDuration);
-                  setCycleCount(prev => prev + 1);
-                  showToast('Break time finished! Back to work. 💪');
-                }
-                setIsRunning(true); // Auto-start next cycle
-              } else {
-                showToast('Timer finished! ⏰');
-              }
-              
-              return 0;
-            }
-            return prev - 1;
-          });
-        } else if (activeTimer === 'stopwatch') {
-          setElapsedTime(prev => prev + 1);
-        }
-      }, 1000);
-    } else {
-      clearInterval(intervalRef.current);
-    }
-
-    return () => clearInterval(intervalRef.current);
-  }, [isRunning, isPaused, activeTimer, selectedAlert, playAlert, currentCycle, workDuration, breakDuration, showToast]);
-
-  // Format time display
-  const formatTime = (seconds) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    
-    if (hours > 0) {
-      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }
-    return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Control functions
-  const startTimer = () => {
-    setIsRunning(true);
-    setIsPaused(false);
-  };
+  // Custom dice modal
+  const CustomDiceModal = () => {
+    const [customValues, setCustomValues] = useState('');
+    const [customName, setCustomName] = useState('');
 
-  const pauseTimer = () => {
-    setIsPaused(!isPaused);
-  };
+    const handleSaveCustomDice = () => {
+      const values = customValues.split('\n').map(v => v.trim()).filter(v => v.length > 0);
+      if (values.length < 2) {
+        showToast('Please enter at least 2 values!');
+        return;
+      }
 
-  const stopTimer = () => {
-    setIsRunning(false);
-    setIsPaused(false);
-    if (activeTimer === 'countdown' || activeTimer === 'interval') {
-      setTimeLeft(initialTime);
-    } else {
-      setElapsedTime(0);
-    }
-  };
+      if (editingDice) {
+        // Edit existing dice
+        setDiceConfigs(prev => prev.map(dice =>
+          dice.id === editingDice.id
+            ? { ...dice, values, type: 'custom' }
+            : dice
+        ));
+        showToast('Dice updated!');
+      } else {
+        // Create new custom dice
+        const newDice = {
+          id: Date.now(),
+          type: 'custom',
+          values,
+          result: null,
+          isRolling: false
+        };
+        setDiceConfigs(prev => [...prev, newDice]);
+        showToast(`Added custom dice with ${values.length} sides!`);
+      }
 
-  const resetTimer = () => {
-    setIsRunning(false);
-    setIsPaused(false);
-    if (activeTimer === 'countdown' || activeTimer === 'interval') {
-      setTimeLeft(initialTime);
-    } else {
-      setElapsedTime(0);
-    }
-    if (activeTimer === 'interval') {
-      setCurrentCycle('work');
-      setCycleCount(0);
-    }
-  };
+      setCustomDiceModal(false);
+      setEditingDice(null);
+      setCustomValues('');
+      setCustomName('');
+    };
 
-  // Preset timer functions
-  const setPresetTime = (minutes) => {
-    const seconds = minutes * 60;
-    setTimeLeft(seconds);
-    setInitialTime(seconds);
-    setIsRunning(false);
-    setIsPaused(false);
-  };
+    useEffect(() => {
+      if (editingDice) {
+        setCustomValues(editingDice.values.join('\n'));
+      }
+    }, [editingDice]);
 
-  // Custom time input
-  const [customMinutes, setCustomMinutes] = useState(5);
-  const [customSeconds, setCustomSeconds] = useState(0);
-
-  const setCustomTime = () => {
-    const totalSeconds = (customMinutes * 60) + customSeconds;
-    setTimeLeft(totalSeconds);
-    setInitialTime(totalSeconds);
-    setIsRunning(false);
-    setIsPaused(false);
-  };
-
-  // Progress calculation
-  const getProgress = () => {
-    if (activeTimer === 'countdown' || activeTimer === 'interval') {
-      if (initialTime === 0) return 0;
-      return ((initialTime - timeLeft) / initialTime) * 100;
-    }
-    return 0; // Stopwatch doesn't have progress
-  };
-
-  // Timer presets
-  const presets = [
-    { name: '1 min', minutes: 1, icon: '⚡' },
-    { name: '2 min', minutes: 2, icon: '🏃' },
-    { name: '5 min', minutes: 5, icon: '📝' },
-    { name: '10 min', minutes: 10, icon: '📚' },
-    { name: '15 min', minutes: 15, icon: '🎯' },
-    { name: '20 min', minutes: 20, icon: '💡' },
-    { name: '30 min', minutes: 30, icon: '📖' },
-    { name: '45 min', minutes: 45, icon: '🎓' }
-  ];
-
-  const timerTypes = [
-    { id: 'countdown', name: 'Countdown', icon: '⏰', description: 'Count down from a set time' },
-    { id: 'stopwatch', name: 'Stopwatch', icon: '⏱️', description: 'Count up from zero' },
-    { id: 'interval', name: 'Interval', icon: '🔄', description: 'Work/break cycles (Pomodoro)' }
-  ];
-
-  const TimerDisplay = () => {
-    const displayTime = activeTimer === 'stopwatch' ? elapsedTime : timeLeft;
-    const progress = getProgress();
-    
     return (
-      <div className={`relative ${isFullscreen ? 'w-full h-full flex items-center justify-center bg-black text-white' : ''}`}>
-        {/* Progress Circle */}
-        {(activeTimer === 'countdown' || activeTimer === 'interval') && (
-          <div className="relative inline-block">
-            <svg 
-              className={`transform -rotate-90 ${isFullscreen ? 'w-96 h-96' : 'w-64 h-64'}`} 
-              viewBox="0 0 200 200"
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">
+            {editingDice ? 'Edit Custom Dice' : 'Create Custom Dice'}
+          </h2>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Dice Values (one per line)
+              </label>
+              <textarea
+                value={customValues}
+                onChange={(e) => setCustomValues(e.target.value)}
+                placeholder="Red&#10;Blue&#10;Green&#10;Yellow"
+                className="w-full h-32 px-3 py-2 border border-gray-300 rounded-lg resize-none"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Enter each possible result on a new line
+              </p>
+            </div>
+          </div>
+
+          <div className="flex gap-3 mt-6">
+            <button
+              onClick={() => {
+                setCustomDiceModal(false);
+                setEditingDice(null);
+                setCustomValues('');
+              }}
+              className="flex-1 px-4 py-3 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
             >
-              <circle
-                cx="100"
-                cy="100"
-                r="90"
-                stroke="currentColor"
-                strokeWidth="8"
-                fill="none"
-                className="opacity-20"
-              />
-              <circle
-                cx="100"
-                cy="100"
-                r="90"
-                stroke="currentColor"
-                strokeWidth="8"
-                fill="none"
-                strokeDasharray={`${2 * Math.PI * 90}`}
-                strokeDashoffset={`${2 * Math.PI * 90 * (1 - progress / 100)}`}
-                className="transition-all duration-1000 ease-linear"
-                strokeLinecap="round"
-              />
-            </svg>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center">
-                <div className={`font-mono font-bold ${isFullscreen ? 'text-8xl' : 'text-4xl'}`}>
-                  {formatTime(displayTime)}
-                </div>
-                {activeTimer === 'interval' && (
-                  <div className={`mt-2 ${isFullscreen ? 'text-2xl' : 'text-lg'}`}>
-                    {currentCycle === 'work' ? '💼 Work Time' : '☕ Break Time'}
-                    <div className="text-sm opacity-75">Cycle {cycleCount + 1}</div>
-                  </div>
-                )}
-              </div>
-            </div>
+              Cancel
+            </button>
+            <button
+              onClick={handleSaveCustomDice}
+              className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+            >
+              {editingDice ? 'Update' : 'Create'}
+            </button>
           </div>
-        )}
-
-        {/* Stopwatch Display */}
-        {activeTimer === 'stopwatch' && (
-          <div className="text-center">
-            <div className={`font-mono font-bold ${isFullscreen ? 'text-8xl' : 'text-6xl'} text-blue-600`}>
-              {formatTime(displayTime)}
-            </div>
-            <div className={`mt-2 ${isFullscreen ? 'text-2xl' : 'text-lg'} text-gray-600`}>
-              ⏱️ Stopwatch
-            </div>
-          </div>
-        )}
+        </div>
       </div>
     );
   };
 
-  if (isFullscreen) {
-    return (
-      <div className="fixed inset-0 bg-black text-white z-50 flex flex-col">
-        <div className="flex-1 flex items-center justify-center">
-          <TimerDisplay />
-        </div>
-        
-        {/* Fullscreen Controls */}
-        <div className="p-8 flex justify-center space-x-4">
-          <button
-            onClick={isRunning ? pauseTimer : startTimer}
-            className={`px-8 py-4 rounded-lg font-bold text-2xl ${
-              isRunning 
-                ? 'bg-yellow-600 hover:bg-yellow-700' 
-                : 'bg-green-600 hover:bg-green-700'
-            } text-white transition-colors`}
-          >
-            {isRunning ? (isPaused ? '▶️ Resume' : '⏸️ Pause') : '▶️ Start'}
-          </button>
-          
-          <button
-            onClick={stopTimer}
-            className="px-8 py-4 bg-red-600 text-white rounded-lg font-bold text-2xl hover:bg-red-700 transition-colors"
-          >
-            ⏹️ Stop
-          </button>
-          
-          <button
-            onClick={() => setIsFullscreen(false)}
-            className="px-8 py-4 bg-gray-600 text-white rounded-lg font-bold text-2xl hover:bg-gray-700 transition-colors"
-          >
-            🔙 Exit
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // Get dice shape class
+  const getDiceShapeClass = (diceType) => {
+    const preset = dicePresets[diceType];
+    if (!preset) return '';
+    
+    switch (preset.shape) {
+      case 'circle': return 'rounded-full';
+      case 'triangle': return 'dice-triangle';
+      case 'octagon': return 'dice-octagon';
+      default: return 'rounded-xl';
+    }
+  };
+
+  // Clear all data
+  const clearAllData = () => {
+    if (window.confirm('Are you sure you want to clear all history and statistics?')) {
+      setRollHistory([]);
+      setStatistics({});
+      showToast('All data cleared!');
+    }
+  };
+
+  // Get color for dice based on type
+  const getDiceColor = (diceType, index) => {
+    const colors = [
+      'bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-yellow-500', 
+      'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-orange-500'
+    ];
+    return colors[index % colors.length];
+  };
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="text-center">
-        <h2 className="text-3xl font-bold text-gray-800 mb-2">⏰ Timer Tools</h2>
-        <p className="text-gray-600">Professional classroom timing solutions</p>
+        <h2 className="text-3xl font-bold text-gray-800 mb-2">🎲 Advanced Dice Roller</h2>
+        <p className="text-gray-600">Roll multiple dice with custom values and detailed statistics</p>
       </div>
 
-      {/* Timer Type Selection */}
+      {/* Dice Controls */}
       <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-        <h3 className="text-lg font-bold text-gray-800 mb-4">Timer Type</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {timerTypes.map(type => (
-            <button
-              key={type.id}
-              onClick={() => {
-                setActiveTimer(type.id);
-                resetTimer();
-              }}
-              className={`p-4 rounded-lg border-2 transition-all duration-200 text-left ${
-                activeTimer === type.id
-                  ? 'border-blue-500 bg-blue-50 text-blue-800'
-                  : 'border-gray-200 bg-white hover:bg-gray-50'
-              }`}
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+          <h3 className="text-lg font-bold text-gray-800">Dice Setup</h3>
+          <div className="flex flex-wrap gap-2">
+            <select
+              onChange={(e) => e.target.value && addDice(e.target.value)}
+              value=""
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
             >
-              <div className="flex items-center space-x-3 mb-2">
-                <span className="text-2xl">{type.icon}</span>
-                <span className="font-bold text-lg">{type.name}</span>
-              </div>
-              <p className="text-sm text-gray-600">{type.description}</p>
+              <option value="">Add Dice...</option>
+              {Object.entries(dicePresets).map(([key, preset]) => (
+                <option key={key} value={key}>{preset.name}</option>
+              ))}
+            </select>
+            <button
+              onClick={() => setCustomDiceModal(true)}
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-semibold text-sm"
+            >
+              + Custom Dice
             </button>
+          </div>
+        </div>
+
+        {/* Dice Display */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 mb-6">
+          {diceConfigs.map((dice, index) => (
+            <div key={dice.id} className="text-center">
+              <div className="relative mb-2">
+                <div
+                  onClick={() => rollSingleDice(dice.id)}
+                  className={`
+                    w-20 h-20 mx-auto flex items-center justify-center cursor-pointer
+                    text-white font-bold text-lg transition-all duration-200
+                    hover:scale-105 hover:shadow-lg user-select-none
+                    ${getDiceColor(dice.type, index)} ${getDiceShapeClass(dice.type)}
+                    ${dice.isRolling ? 'animate-spin' : ''}
+                  `}
+                >
+                  {dice.isRolling ? '🎲' : (dice.result || '?')}
+                </div>
+                
+                <button
+                  onClick={() => removeDice(dice.id)}
+                  className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full text-xs hover:bg-red-600 transition-colors"
+                >
+                  ×
+                </button>
+              </div>
+              
+              <div className="text-xs font-semibold text-gray-700 mb-1">
+                {dicePresets[dice.type]?.name || 'Custom'}
+              </div>
+              
+              {dice.type === 'custom' && (
+                <button
+                  onClick={() => {
+                    setEditingDice(dice);
+                    setCustomDiceModal(true);
+                  }}
+                  className="text-xs text-blue-600 hover:text-blue-800"
+                >
+                  Edit
+                </button>
+              )}
+            </div>
           ))}
+        </div>
+
+        {/* Roll Controls */}
+        <div className="flex justify-center gap-4">
+          <button
+            onClick={rollAllDice}
+            disabled={diceConfigs.some(dice => dice.isRolling)}
+            className="px-8 py-3 bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-lg font-bold hover:from-green-700 hover:to-blue-700 disabled:opacity-50 transition-all duration-300 shadow-lg"
+          >
+            🎲 Roll All Dice
+          </button>
+          <button
+            onClick={clearAllData}
+            className="px-6 py-3 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition-colors"
+          >
+            🗑️ Clear Data
+          </button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Timer Display */}
+        {/* Roll History */}
         <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-          <div className="text-center mb-6">
-            <TimerDisplay />
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold text-gray-800">Roll History</h3>
+            <label className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={showHistory}
+                onChange={(e) => setShowHistory(e.target.checked)}
+                className="w-4 h-4 text-blue-600"
+              />
+              <span className="text-sm text-gray-600">Show</span>
+            </label>
           </div>
 
-          {/* Controls */}
-          <div className="flex justify-center space-x-3 mb-4">
-            <button
-              onClick={isRunning ? pauseTimer : startTimer}
-              className={`px-6 py-3 rounded-lg font-bold ${
-                isRunning 
-                  ? 'bg-yellow-600 hover:bg-yellow-700' 
-                  : 'bg-green-600 hover:bg-green-700'
-              } text-white transition-colors`}
-            >
-              {isRunning ? (isPaused ? '▶️ Resume' : '⏸️ Pause') : '▶️ Start'}
-            </button>
-            
-            <button
-              onClick={stopTimer}
-              className="px-6 py-3 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition-colors"
-            >
-              ⏹️ Stop
-            </button>
-            
-            <button
-              onClick={resetTimer}
-              className="px-6 py-3 bg-gray-600 text-white rounded-lg font-bold hover:bg-gray-700 transition-colors"
-            >
-              🔄 Reset
-            </button>
-          </div>
-
-          <div className="flex justify-center">
-            <button
-              onClick={() => setIsFullscreen(true)}
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 transition-colors"
-            >
-              🔍 Fullscreen
-            </button>
-          </div>
+          {showHistory && (
+            <div className="max-h-96 overflow-y-auto space-y-2">
+              {rollHistory.length === 0 ? (
+                <p className="text-gray-500 italic text-center py-8">No rolls yet. Start rolling!</p>
+              ) : (
+                rollHistory.map((entry) => (
+                  <div key={entry.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex flex-wrap gap-2">
+                        {Object.entries(entry.results).map(([diceId, { result, type }]) => (
+                          <span
+                            key={diceId}
+                            className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm font-semibold"
+                          >
+                            {result}
+                          </span>
+                        ))}
+                      </div>
+                      {entry.total > 0 && (
+                        <span className="font-bold text-green-600">
+                          Total: {entry.total}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {entry.timestamp.toLocaleTimeString()}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
         </div>
 
-        {/* Settings and Presets */}
-        <div className="space-y-6">
-          {/* Quick Presets */}
-          {(activeTimer === 'countdown' || activeTimer === 'interval') && (
-            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-              <h3 className="text-lg font-bold text-gray-800 mb-4">Quick Presets</h3>
-              <div className="grid grid-cols-4 gap-2">
-                {presets.map(preset => (
-                  <button
-                    key={preset.name}
-                    onClick={() => setPresetTime(preset.minutes)}
-                    disabled={isRunning}
-                    className="p-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 disabled:opacity-50 transition-colors text-center"
-                  >
-                    <div className="text-lg">{preset.icon}</div>
-                    <div className="text-xs font-semibold text-blue-800">{preset.name}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Custom Time Input */}
-          {activeTimer === 'countdown' && (
-            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-              <h3 className="text-lg font-bold text-gray-800 mb-4">Custom Time</h3>
-              <div className="flex items-center space-x-2 mb-4">
-                <input
-                  type="number"
-                  value={customMinutes}
-                  onChange={(e) => setCustomMinutes(Math.max(0, parseInt(e.target.value) || 0))}
-                  className="w-20 px-3 py-2 border border-gray-300 rounded-lg text-center"
-                  min="0"
-                  max="999"
-                />
-                <span className="text-gray-600 font-semibold">min</span>
-                <input
-                  type="number"
-                  value={customSeconds}
-                  onChange={(e) => setCustomSeconds(Math.max(0, Math.min(59, parseInt(e.target.value) || 0)))}
-                  className="w-20 px-3 py-2 border border-gray-300 rounded-lg text-center"
-                  min="0"
-                  max="59"
-                />
-                <span className="text-gray-600 font-semibold">sec</span>
-              </div>
-              <button
-                onClick={setCustomTime}
-                disabled={isRunning}
-                className="w-full bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50 transition-colors"
-              >
-                Set Custom Time
-              </button>
-            </div>
-          )}
-
-          {/* Interval Timer Settings */}
-          {activeTimer === 'interval' && (
-            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-              <h3 className="text-lg font-bold text-gray-800 mb-4">Interval Settings</h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Work Duration (minutes)</label>
-                  <input
-                    type="number"
-                    value={Math.floor(workDuration / 60)}
-                    onChange={(e) => setWorkDuration((parseInt(e.target.value) || 25) * 60)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                    min="1"
-                    max="120"
-                    disabled={isRunning}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Break Duration (minutes)</label>
-                  <input
-                    type="number"
-                    value={Math.floor(breakDuration / 60)}
-                    onChange={(e) => setBreakDuration((parseInt(e.target.value) || 5) * 60)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                    min="1"
-                    max="60"
-                    disabled={isRunning}
-                  />
-                </div>
-                <div className="text-sm text-gray-600">
-                  Current: {formatTime(currentCycle === 'work' ? workDuration : breakDuration)} 
-                  ({currentCycle === 'work' ? 'Work' : 'Break'})
-                  <br />
-                  Completed cycles: {cycleCount}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Audio Settings */}
-          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">Audio Settings</h3>
-            <div className="space-y-4">
-              <label className="flex items-center space-x-3">
-                <input
-                  type="checkbox"
-                  checked={soundEnabled}
-                  onChange={(e) => setSoundEnabled(e.target.checked)}
-                  className="w-4 h-4 text-blue-600"
-                />
-                <span className="text-gray-700">Enable sound alerts</span>
-              </label>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Alert Sound</label>
-                <select
-                  value={selectedAlert}
-                  onChange={(e) => setSelectedAlert(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                >
-                  <option value="bell">🔔 Bell</option>
-                  <option value="chime">🎵 Chime</option>
-                  <option value="beep">📢 Beep</option>
-                </select>
-              </div>
-
-              <button
-                onClick={() => playAlert(selectedAlert)}
-                className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-              >
-                🎵 Test Sound
-              </button>
-            </div>
+        {/* Statistics */}
+        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold text-gray-800">Statistics</h3>
+            <label className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={showStatistics}
+                onChange={(e) => setShowStatistics(e.target.checked)}
+                className="w-4 h-4 text-blue-600"
+              />
+              <span className="text-sm text-gray-600">Show</span>
+            </label>
           </div>
+
+          {showStatistics && (
+            <div className="max-h-96 overflow-y-auto">
+              {Object.keys(statistics).length === 0 ? (
+                <p className="text-gray-500 italic text-center py-8">No statistics yet. Start rolling!</p>
+              ) : (
+                Object.entries(statistics).map(([diceType, results]) => {
+                  const preset = dicePresets[diceType];
+                  const total = Object.values(results).reduce((sum, count) => sum + count, 0);
+                  
+                  return (
+                    <div key={diceType} className="mb-6">
+                      <h4 className="font-semibold text-gray-800 mb-3">
+                        {preset?.name || 'Custom Dice'} ({total} rolls)
+                      </h4>
+                      
+                      <div className="space-y-2">
+                        {Object.entries(results)
+                          .sort(([a], [b]) => {
+                            const numA = parseInt(a);
+                            const numB = parseInt(b);
+                            if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+                            return a.localeCompare(b);
+                          })
+                          .map(([result, count]) => {
+                            const percentage = ((count / total) * 100).toFixed(1);
+                            return (
+                              <div key={result} className="flex items-center justify-between">
+                                <span className="text-sm font-medium text-gray-700">{result}</span>
+                                <div className="flex items-center space-x-2">
+                                  <div className="w-20 bg-gray-200 rounded-full h-2">
+                                    <div
+                                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                                      style={{ width: `${percentage}%` }}
+                                    ></div>
+                                  </div>
+                                  <span className="text-xs text-gray-600 w-12 text-right">
+                                    {count} ({percentage}%)
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Custom Dice Modal */}
+      {customDiceModal && <CustomDiceModal />}
+
+      <style jsx>{`
+        .dice-triangle {
+          clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+        }
+        
+        .dice-octagon {
+          clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
+        }
+        
+        .user-select-none {
+          user-select: none;
+        }
+        
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        
+        .animate-spin {
+          animation: spin 0.8s ease-in-out;
+        }
+      `}</style>
     </div>
   );
 };
 
-export default TimerTools;
+export default DiceRoller;
