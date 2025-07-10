@@ -6,12 +6,14 @@ import GroupMaker from '../GroupMaker';
 import NamePicker from '../NamePicker';
 import TimerTools from '../TimerTools';
 import DiceRoller from '../DiceRoller';
+import ClassroomDesigner from '../ClassroomDesigner';
 
 const TeachersToolkitTab = ({ 
   students, 
   showToast,
   userData,
   saveGroupDataToFirebase,
+  saveClassroomDataToFirebase,
   currentClassId
 }) => {
   const [activeToolkitTab, setActiveToolkitTab] = useState('help-queue');
@@ -54,6 +56,10 @@ const TeachersToolkitTab = ({
               <div className="flex items-center space-x-2">
                 <span>🎲</span>
                 <span>Advanced Dice Roller</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span>🏫</span>
+                <span>Classroom Layout Designer</span>
               </div>
             </div>
           </div>
@@ -104,6 +110,12 @@ const TeachersToolkitTab = ({
       label: 'Dice Roller', 
       icon: '🎲',
       description: 'Advanced multi-dice rolling system'
+    },
+    { 
+      id: 'classroom-designer', 
+      label: 'Classroom Designer', 
+      icon: '🏫',
+      description: 'Design and plan classroom layouts'
     }
   ];
 
@@ -160,7 +172,7 @@ const TeachersToolkitTab = ({
       </div>
 
       {/* Tool Content */}
-      <div className="bg-gray-50 rounded-xl p-6 min-h-[600px]">
+      <div className={`bg-gray-50 rounded-xl p-6 ${activeToolkitTab === 'classroom-designer' ? 'h-[800px]' : 'min-h-[600px]'}`}>
         {activeToolkitTab === 'help-queue' && (
           <div className="animate-fade-in">
             <StudentHelpQueue students={students} showToast={showToast} />
@@ -206,6 +218,17 @@ const TeachersToolkitTab = ({
           <div className="animate-fade-in">
             <DiceRoller 
               showToast={showToast} 
+            />
+          </div>
+        )}
+
+        {activeToolkitTab === 'classroom-designer' && (
+          <div className="animate-fade-in -m-6 h-full">
+            <ClassroomDesigner 
+              students={students}
+              showToast={showToast} 
+              saveClassroomDataToFirebase={saveClassroomDataToFirebase}
+              currentClassId={currentClassId}
             />
           </div>
         )}
