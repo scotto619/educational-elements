@@ -1,4 +1,4 @@
-// TeachersToolkitTab.js - Complete Interactive Teaching Tools Suite
+// TeachersToolkitTab.js - Complete Interactive Teaching Tools Suite with Anchor Tools
 import React, { useState } from 'react';
 import StudentHelpQueue from '../StudentHelpQueue';
 import HundredsBoard from '../HundredsBoard';
@@ -7,6 +7,8 @@ import NamePicker from '../NamePicker';
 import TimerTools from '../TimerTools';
 import DiceRoller from '../DiceRoller';
 import ClassroomDesigner from '../ClassroomDesigner';
+import WordStudy from '../WordStudy';
+import NumberMat from '../NumberMat';
 
 const TeachersToolkitTab = ({ 
   students, 
@@ -43,8 +45,6 @@ const TeachersToolkitTab = ({
                 <span>👥</span>
                 <span>Smart Group Maker with Constraints</span>
               </div>
-            </div>
-            <div className="space-y-2">
               <div className="flex items-center space-x-2">
                 <span>🎯</span>
                 <span>Smart Name Picker Wheel</span>
@@ -53,6 +53,8 @@ const TeachersToolkitTab = ({
                 <span>⏰</span>
                 <span>Professional Timer Suite</span>
               </div>
+            </div>
+            <div className="space-y-2">
               <div className="flex items-center space-x-2">
                 <span>🎲</span>
                 <span>Advanced Dice Roller</span>
@@ -60,6 +62,14 @@ const TeachersToolkitTab = ({
               <div className="flex items-center space-x-2">
                 <span>🏫</span>
                 <span>Classroom Layout Designer</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span>📚</span>
+                <span>Word Study Anchor Charts</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span>🧮</span>
+                <span>Number Mat Anchor Charts</span>
               </div>
             </div>
           </div>
@@ -116,6 +126,18 @@ const TeachersToolkitTab = ({
       label: 'Classroom Designer', 
       icon: '🏫',
       description: 'Design and plan classroom layouts'
+    },
+    { 
+      id: 'word-study', 
+      label: 'Word Study', 
+      icon: '📚',
+      description: 'Interactive vocabulary anchor charts'
+    },
+    { 
+      id: 'number-mat', 
+      label: 'Number Mat', 
+      icon: '🧮',
+      description: 'Interactive number exploration charts'
     }
   ];
 
@@ -172,7 +194,9 @@ const TeachersToolkitTab = ({
       </div>
 
       {/* Tool Content */}
-      <div className={`bg-gray-50 rounded-xl p-6 ${activeToolkitTab === 'classroom-designer' ? 'h-[800px]' : 'min-h-[600px]'}`}>
+      <div className={`bg-gray-50 rounded-xl p-6 ${
+        activeToolkitTab === 'classroom-designer' ? 'h-[800px]' : 'min-h-[600px]'
+      }`}>
         {activeToolkitTab === 'help-queue' && (
           <div className="animate-fade-in">
             <StudentHelpQueue students={students} showToast={showToast} />
@@ -229,6 +253,22 @@ const TeachersToolkitTab = ({
               showToast={showToast} 
               saveClassroomDataToFirebase={saveClassroomDataToFirebase}
               currentClassId={currentClassId}
+            />
+          </div>
+        )}
+
+        {activeToolkitTab === 'word-study' && (
+          <div className="animate-fade-in">
+            <WordStudy 
+              showToast={showToast} 
+            />
+          </div>
+        )}
+
+        {activeToolkitTab === 'number-mat' && (
+          <div className="animate-fade-in">
+            <NumberMat 
+              showToast={showToast} 
             />
           </div>
         )}
