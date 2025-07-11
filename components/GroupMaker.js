@@ -100,70 +100,153 @@ const GroupMaker = ({ students, showToast, saveGroupDataToFirebase, userData, cu
     // Get remaining students
     const remainingStudents = availableStudents.filter(s => !usedStudents.has(s.id));
     
+    if (remainingStudents.length === 0) {
+      setGroups(newGroups);
+      showToast(`Created ${newGroups.length} groups from constraints`);
+      return;
+    }
+
     // Shuffle remaining students
     const shuffled = [...remainingStudents].sort(() => Math.random() - 0.5);
 
     // Determine target group size
     let targetSize;
     if (groupSize === 'auto') {
-      targetSize = Math.ceil(shuffled.length / Math.ceil(shuffled.length / 4)); // Aim for groups of ~4
+      // Auto-balance: aim for groups of 3-5 students
+      const idealSize = 4;
+      const numGroups = Math.ceil(shuffled.length / idealSize);
+      targetSize = Math.ceil(shuffled.length / numGroups);
     } else {
       targetSize = parseInt(groupSize);
     }
 
-    // Create groups from remaining students
-    let currentGroup = [];
+    // Create groups with proper size management
+    const studentsToPlace = [...shuffled];
     let attempts = 0;
-    const maxAttempts = shuffled.length * 2;
+    const maxAttempts = shuffled.length * 3; // Prevent infinite loops
 
-    for (let i = 0; i < shuffled.length && attempts < maxAttempts; attempts++) {
-      const student = shuffled[i % shuffled.length];
+    while (studentsToPlace.length > 0 && attempts < maxAttempts) {
+      attempts++;
       
-      if (usedStudents.has(student.id)) {
-        i++;
-        continue;
+      // Calculate remaining groups needed and adjust target size if necessary
+      const remainingStudents = studentsToPlace.length;
+      const groupsStillNeeded = Math.ceil(remainingStudents / targetSize);
+      let currentTargetSize = targetSize;
+      
+      // If this is the last batch and we have a small remainder, distribute more evenly
+      if (groupSize !== 'auto' && remainingStudents <= targetSize * 1.5 && remainingStudents > targetSize) {
+        // Split remainder across 2 groups instead of making one full and one tiny group
+        currentTargetSize = Math.ceil(remainingStudents / 2);
       }
 
-      // Check if this student can be added to current group
-      let canAdd = true;
-      for (const groupStudent of currentGroup) {
-        if (shouldNeverGroup(student.id, groupStudent.id)) {
-          canAdd = false;
-          break;
+      const currentGroup = [];
+      const groupStudentIds = [];
+      
+      // Try to fill current group to target size
+      for (let i = 0; i < studentsToPlace.length && currentGroup.length < currentTargetSize; i++) {
+        const student = studentsToPlace[i];
+        let canAdd = true;
+
+        // Check constraints with current group members
+        for (const groupStudent of currentGroup) {
+          if (shouldNeverGroup(student.id, groupStudent.id)) {
+            canAdd = false;
+            break;
+          }
+        }
+
+        if (canAdd) {
+          currentGroup.push(student);
+          groupStudentIds.push(student.id);
         }
       }
 
-      if (canAdd) {
-        currentGroup.push(student);
-        usedStudents.add(student.id);
-        i++;
-
-        // If group is full or we've reached target size, create the group
-        if (currentGroup.length >= targetSize || (shuffled.length - usedStudents.size < targetSize && currentGroup.length > 0)) {
-          newGroups.push({
-            id: `group-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            name: `Group ${newGroups.length + 1}`,
-            students: [...currentGroup]
-          });
-          currentGroup = [];
+      // If we couldn't form a group of minimum size due to constraints
+      if (currentGroup.length === 0) {
+        // Take the first available student to avoid infinite loop
+        if (studentsToPlace.length > 0) {
+          currentGroup.push(studentsToPlace[0]);
+          groupStudentIds.push(studentsToPlace[0].id);
         }
+      }
+
+      // Only create group if we have students
+      if (currentGroup.length > 0) {
+        newGroups.push({
+          id: `group-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          name: `Group ${newGroups.length + 1}`,
+          students: currentGroup
+        });
+
+        // Remove placed students from the pool
+        groupStudentIds.forEach(id => {
+          const index = studentsToPlace.findIndex(s => s.id === id);
+          if (index !== -1) {
+            studentsToPlace.splice(index, 1);
+          }
+        });
       } else {
-        // Move to next student
-        i++;
+        // Safety break if we can't place any students
+        break;
+      }
+
+      // For non-auto mode, if we have a very small remainder (1-2 students), 
+      // add them to existing groups instead of creating tiny groups
+      if (groupSize !== 'auto' && studentsToPlace.length > 0 && studentsToPlace.length < targetSize / 2 && newGroups.length > 0) {
+        // Distribute remaining students to existing groups
+        let groupIndex = 0;
+        while (studentsToPlace.length > 0 && groupIndex < newGroups.length) {
+          const remainingStudent = studentsToPlace[0];
+          let canAddToGroup = true;
+
+          // Check constraints with the target group
+          for (const groupStudent of newGroups[groupIndex].students) {
+            if (shouldNeverGroup(remainingStudent.id, groupStudent.id)) {
+              canAddToGroup = false;
+              break;
+            }
+          }
+
+          if (canAddToGroup) {
+            newGroups[groupIndex].students.push(remainingStudent);
+            studentsToPlace.shift();
+          }
+          
+          groupIndex++;
+          
+          // Reset to first group if we've tried all groups
+          if (groupIndex >= newGroups.length) {
+            groupIndex = 0;
+            // If we've tried all groups and can't place student due to constraints,
+            // create a new group for them
+            if (studentsToPlace.length > 0) {
+              break;
+            }
+          }
+        }
       }
     }
 
-    // Add any remaining students to existing groups or create a new group
-    if (currentGroup.length > 0) {
+    // Handle any remaining students that couldn't be placed due to constraints
+    if (studentsToPlace.length > 0) {
       newGroups.push({
         id: `group-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         name: `Group ${newGroups.length + 1}`,
-        students: currentGroup
+        students: studentsToPlace
       });
     }
 
     setGroups(newGroups);
-    showToast(`Created ${newGroups.length} groups successfully!`);
+    
+    // Provide feedback about group sizes
+    const groupSizes = newGroups.map(g => g.students.length);
+    const uniqueSizes = [...new Set(groupSizes)];
+    
+    if (groupSize !== 'auto' && uniqueSizes.length > 1) {
+      showToast(`Created ${newGroups.length} groups. Note: Constraints resulted in varying sizes (${uniqueSizes.join(', ')} students per group)`);
+    } else {
+      showToast(`Created ${newGroups.length} groups successfully!`);
+    }
   };
 
   // Handle drag and drop
