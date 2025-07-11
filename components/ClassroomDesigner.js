@@ -264,11 +264,27 @@ const ClassroomDesigner = ({ students, showToast, saveClassroomDataToFirebase, c
     const furniture = furnitureTypes[type];
     if (!furniture) return;
 
+    // Position new items within the classroom bounds
+    const roomLeft = 70; // 50 + 20 padding
+    const roomTop = 70;  // 50 + 20 padding
+    const roomRight = 50 + roomDimensions.width - 20;
+    const roomBottom = 50 + roomDimensions.height - 20;
+    
+    // Find a good position that doesn't overlap with existing items
+    let x = roomLeft + Math.random() * (roomRight - roomLeft - furniture.width);
+    let y = roomTop + Math.random() * (roomBottom - roomTop - furniture.height);
+    
+    // Snap to grid if enabled
+    if (snapToGrid) {
+      x = Math.round(x / gridSize) * gridSize;
+      y = Math.round(y / gridSize) * gridSize;
+    }
+
     const newItem = {
       id: Date.now() + Math.random(),
       type,
-      x: 100,
-      y: 100,
+      x: Math.max(roomLeft, Math.min(x, roomRight - furniture.width)),
+      y: Math.max(roomTop, Math.min(y, roomBottom - furniture.height)),
       width: furniture.width,
       height: furniture.height,
       rotation: 0,
@@ -286,9 +302,11 @@ const ClassroomDesigner = ({ students, showToast, saveClassroomDataToFirebase, c
   // Handle mouse events
   const handleMouseDown = (e, itemId = null) => {
     e.preventDefault();
+    e.stopPropagation();
+    
     const rect = canvasRef.current.getBoundingClientRect();
-    const x = (e.clientX - rect.left - pan.x) / zoom;
-    const y = (e.clientY - rect.top - pan.y) / zoom;
+    const x = (e.clientX - rect.left) / zoom - pan.x;
+    const y = (e.clientY - rect.top) / zoom - pan.y;
 
     if (tool === 'select' && itemId) {
       // Multi-select with Ctrl/Cmd
@@ -331,8 +349,8 @@ const ClassroomDesigner = ({ students, showToast, saveClassroomDataToFirebase, c
     if (!dragState) return;
 
     const rect = canvasRef.current.getBoundingClientRect();
-    const x = (e.clientX - rect.left - pan.x) / zoom;
-    const y = (e.clientY - rect.top - pan.y) / zoom;
+    const x = (e.clientX - rect.left) / zoom - pan.x;
+    const y = (e.clientY - rect.top) / zoom - pan.y;
 
     if (dragState.type === 'move') {
       const deltaX = x - dragState.startX;
@@ -349,6 +367,10 @@ const ClassroomDesigner = ({ students, showToast, saveClassroomDataToFirebase, c
             newY = Math.round(newY / gridSize) * gridSize;
           }
 
+          // Keep items within room bounds
+          newX = Math.max(50, Math.min(newX, 50 + roomDimensions.width - item.width));
+          newY = Math.max(50, Math.min(newY, 50 + roomDimensions.height - item.height));
+
           return { ...item, x: newX, y: newY };
         }
         return item;
@@ -358,7 +380,7 @@ const ClassroomDesigner = ({ students, showToast, saveClassroomDataToFirebase, c
     }
   };
 
-  const handleMouseUp = () => {
+  const handleMouseUp = (e) => {
     if (dragState?.type === 'move') {
       saveToHistory(items);
     } else if (dragState?.type === 'select') {
@@ -467,6 +489,18 @@ const ClassroomDesigner = ({ students, showToast, saveClassroomDataToFirebase, c
     showToast(`Deleted ${selectedItems.length} items`);
   };
 
+  // Clear all items
+  const clearAll = () => {
+    if (items.length === 0) return;
+    
+    if (window.confirm('Are you sure you want to clear all items from the classroom?')) {
+      setItems([]);
+      setSelectedItems([]);
+      saveToHistory([]);
+      showToast('Classroom cleared!');
+    }
+  };
+
   // Rotate selected items
   const rotateSelected = (degrees) => {
     const newItems = items.map(item => 
@@ -529,19 +563,36 @@ const ClassroomDesigner = ({ students, showToast, saveClassroomDataToFirebase, c
   const generateArrangement = (style) => {
     const newItems = [];
     let id = 1;
+    
+    // Define classroom interior bounds (room boundary + padding)
+    const roomLeft = 70; // 50 + 20 padding
+    const roomTop = 70;  // 50 + 20 padding  
+    const roomRight = 50 + roomDimensions.width - 20; // room boundary - padding
+    const roomBottom = 50 + roomDimensions.height - 20;
+    const roomWidth = roomRight - roomLeft;
+    const roomHeight = roomBottom - roomTop;
 
     switch (style) {
       case 'rows':
-        // Traditional rows
-        for (let row = 0; row < 4; row++) {
-          for (let col = 0; col < 6; col++) {
+        // Traditional rows - positioned within classroom
+        const deskWidth = 60;
+        const deskHeight = 40;
+        const deskSpacing = 80;
+        const rowSpacing = 70;
+        
+        // Calculate how many desks fit
+        const desksPerRow = Math.floor(roomWidth / deskSpacing);
+        const maxRows = Math.floor((roomHeight - 100) / rowSpacing); // Leave space for teacher area
+        
+        for (let row = 0; row < maxRows && row < 4; row++) {
+          for (let col = 0; col < desksPerRow && col < 6; col++) {
             newItems.push({
               id: id++,
               type: 'student_desk',
-              x: 100 + col * 80,
-              y: 150 + row * 80,
-              width: 60,
-              height: 40,
+              x: roomLeft + col * deskSpacing + (roomWidth - (desksPerRow - 1) * deskSpacing) / 2 - deskWidth/2,
+              y: roomTop + 80 + row * rowSpacing,
+              width: deskWidth,
+              height: deskHeight,
               rotation: 0,
               label: `Desk ${id - 1}`,
               assignedStudent: null,
@@ -549,12 +600,13 @@ const ClassroomDesigner = ({ students, showToast, saveClassroomDataToFirebase, c
             });
           }
         }
-        // Teacher desk
+        
+        // Teacher desk - centered at front
         newItems.push({
           id: id++,
           type: 'teacher_desk',
-          x: 300,
-          y: 50,
+          x: roomLeft + roomWidth/2 - 60,
+          y: roomTop + 20,
           width: 120,
           height: 60,
           rotation: 0,
@@ -562,12 +614,13 @@ const ClassroomDesigner = ({ students, showToast, saveClassroomDataToFirebase, c
           assignedStudent: null,
           zIndex: id - 1
         });
-        // Whiteboard
+        
+        // Whiteboard - centered at front
         newItems.push({
           id: id++,
           type: 'whiteboard',
-          x: 200,
-          y: 20,
+          x: roomLeft + roomWidth/2 - 100,
+          y: roomTop,
           width: 200,
           height: 15,
           rotation: 0,
@@ -578,62 +631,74 @@ const ClassroomDesigner = ({ students, showToast, saveClassroomDataToFirebase, c
         break;
 
       case 'groups':
-        // Group tables
-        const groupPositions = [
-          { x: 100, y: 100 }, { x: 300, y: 100 }, { x: 500, y: 100 },
-          { x: 100, y: 250 }, { x: 300, y: 250 }, { x: 500, y: 250 }
-        ];
-        groupPositions.forEach((pos, index) => {
-          newItems.push({
-            id: id++,
-            type: 'table_round',
-            x: pos.x,
-            y: pos.y,
-            width: 80,
-            height: 80,
-            rotation: 0,
-            label: `Group ${index + 1}`,
-            assignedStudent: null,
-            zIndex: id - 1
-          });
-        });
+        // Group tables - arranged in grid within classroom
+        const tableSize = 80;
+        const tableSpacing = 120;
+        const tablesPerRow = Math.floor(roomWidth / tableSpacing);
+        const tableRows = Math.floor(roomHeight / tableSpacing);
+        
+        let groupCount = 0;
+        for (let row = 0; row < tableRows && groupCount < 6; row++) {
+          for (let col = 0; col < tablesPerRow && groupCount < 6; col++) {
+            newItems.push({
+              id: id++,
+              type: 'table_round',
+              x: roomLeft + col * tableSpacing + (roomWidth - (tablesPerRow - 1) * tableSpacing) / 2 - tableSize/2,
+              y: roomTop + 40 + row * tableSpacing,
+              width: tableSize,
+              height: tableSize,
+              rotation: 0,
+              label: `Group ${groupCount + 1}`,
+              assignedStudent: null,
+              zIndex: id - 1
+            });
+            groupCount++;
+          }
+        }
         break;
 
       case 'horseshoe':
-        // U-shaped arrangement
-        const horseshoePositions = [
-          // Left side
-          { x: 100, y: 100, rotation: 270 },
-          { x: 100, y: 160, rotation: 270 },
-          { x: 100, y: 220, rotation: 270 },
-          { x: 100, y: 280, rotation: 270 },
-          // Bottom
-          { x: 160, y: 340, rotation: 0 },
-          { x: 220, y: 340, rotation: 0 },
-          { x: 280, y: 340, rotation: 0 },
-          { x: 340, y: 340, rotation: 0 },
-          { x: 400, y: 340, rotation: 0 },
-          { x: 460, y: 340, rotation: 0 },
-          // Right side
-          { x: 520, y: 280, rotation: 90 },
-          { x: 520, y: 220, rotation: 90 },
-          { x: 520, y: 160, rotation: 90 },
-          { x: 520, y: 100, rotation: 90 }
-        ];
+        // U-shaped arrangement - positioned within classroom bounds
+        const centerX = roomLeft + roomWidth / 2;
+        const centerY = roomTop + roomHeight / 2;
+        const radius = Math.min(roomWidth, roomHeight) / 3;
         
-        horseshoePositions.forEach((pos, index) => {
+        // Calculate positions around a horseshoe
+        const totalDesks = 14;
+        const angleStep = Math.PI / (totalDesks - 1); // Spread across 180 degrees
+        
+        for (let i = 0; i < totalDesks; i++) {
+          const angle = Math.PI + i * angleStep; // Start from left side
+          const x = centerX + Math.cos(angle) * radius - 30; // -30 to center desk
+          const y = centerY + Math.sin(angle) * radius - 20; // -20 to center desk
+          const rotation = (angle * 180 / Math.PI + 90) % 360; // Face inward
+          
           newItems.push({
             id: id++,
             type: 'student_desk',
-            x: pos.x,
-            y: pos.y,
+            x: Math.max(roomLeft, Math.min(x, roomRight - 60)),
+            y: Math.max(roomTop, Math.min(y, roomBottom - 40)),
             width: 60,
             height: 40,
-            rotation: pos.rotation,
-            label: `Desk ${index + 1}`,
+            rotation: rotation,
+            label: `Desk ${i + 1}`,
             assignedStudent: null,
             zIndex: id - 1
           });
+        }
+        
+        // Teacher desk in center
+        newItems.push({
+          id: id++,
+          type: 'teacher_desk',
+          x: centerX - 60,
+          y: centerY - 30,
+          width: 120,
+          height: 60,
+          rotation: 0,
+          label: 'Teacher Desk',
+          assignedStudent: null,
+          zIndex: id - 1
         });
         break;
     }
@@ -661,29 +726,51 @@ const ClassroomDesigner = ({ students, showToast, saveClassroomDataToFirebase, c
       shapeStyle.borderRadius = '15px';
     }
 
+    // Determine text color based on background color for better contrast
+    const getTextColor = (bgColor) => {
+      // Convert hex to RGB and calculate luminance
+      const hex = bgColor.replace('#', '');
+      const r = parseInt(hex.substr(0, 2), 16);
+      const g = parseInt(hex.substr(2, 2), 16);
+      const b = parseInt(hex.substr(4, 2), 16);
+      const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+      
+      // Return white for dark backgrounds, black for light backgrounds
+      return luminance < 0.5 ? '#FFFFFF' : '#000000';
+    };
+
+    const textColor = getTextColor(furniture.color);
+
     return (
       <div
         key={item.id}
-        className={`absolute cursor-move select-none ${isSelected ? 'ring-2 ring-blue-500' : ''}`}
+        className={`absolute cursor-move select-none transition-all duration-150 ${isSelected ? 'ring-2 ring-blue-500 ring-offset-2' : ''}`}
         style={{
           transform,
           transformOrigin: 'top left',
           width: item.width,
           height: item.height,
           backgroundColor: furniture.color,
-          border: furniture.border ? `2px solid ${furniture.border}` : '1px solid #000',
+          border: furniture.border ? `2px solid ${furniture.border}` : '1px solid #333',
           zIndex: item.zIndex + (isSelected ? 1000 : 0),
+          boxShadow: isSelected ? '0 4px 12px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.1)',
           ...shapeStyle
         }}
         onMouseDown={(e) => handleMouseDown(e, item.id)}
       >
-        <div className="w-full h-full flex items-center justify-center text-xs font-bold text-white text-center p-1 overflow-hidden">
+        <div 
+          className="w-full h-full flex items-center justify-center text-xs font-bold text-center p-1 overflow-hidden"
+          style={{ 
+            color: textColor,
+            textShadow: textColor === '#FFFFFF' ? '1px 1px 2px rgba(0,0,0,0.8)' : '1px 1px 2px rgba(255,255,255,0.8)'
+          }}
+        >
           {furniture.icon && <span className="mr-1">{furniture.icon}</span>}
           <span className="truncate">{item.label}</span>
         </div>
         
         {item.assignedStudent && students.find(s => s.id === item.assignedStudent) && (
-          <div className="absolute -top-6 left-0 bg-blue-500 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
+          <div className="absolute -top-6 left-0 bg-blue-500 text-white text-xs px-2 py-1 rounded whitespace-nowrap shadow-lg">
             {students.find(s => s.id === item.assignedStudent)?.firstName}
           </div>
         )}
@@ -741,6 +828,13 @@ const ClassroomDesigner = ({ students, showToast, saveClassroomDataToFirebase, c
               className="px-3 py-2 bg-gray-600 text-white rounded text-sm hover:bg-gray-700 disabled:opacity-50"
             >
               ↷ Redo
+            </button>
+            <button
+              onClick={clearAll}
+              disabled={items.length === 0}
+              className="px-3 py-2 bg-red-600 text-white rounded text-sm hover:bg-red-700 disabled:opacity-50 col-span-2"
+            >
+              🗑️ Clear All
             </button>
           </div>
         </div>
@@ -887,13 +981,12 @@ const ClassroomDesigner = ({ students, showToast, saveClassroomDataToFirebase, c
               backgroundImage: showGrid 
                 ? `radial-gradient(circle, #ccc 1px, transparent 1px)`
                 : 'none',
-              backgroundSize: showGrid ? `${gridSize}px ${gridSize}px` : 'auto',
-              transform: `scale(${zoom}) translate(${pan.x}px, ${pan.y}px)`,
-              transformOrigin: 'top left'
+              backgroundSize: showGrid ? `${gridSize}px ${gridSize}px` : 'auto'
             }}
-            onMouseDown={handleMouseDown}
+            onMouseDown={(e) => !e.target.closest('[data-furniture-item]') && handleMouseDown(e)}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
           >
             {/* Room boundary */}
             <div
@@ -914,13 +1007,18 @@ const ClassroomDesigner = ({ students, showToast, saveClassroomDataToFirebase, c
                   left: Math.min(dragState.startX, dragState.currentX),
                   top: Math.min(dragState.startY, dragState.currentY),
                   width: Math.abs(dragState.currentX - dragState.startX),
-                  height: Math.abs(dragState.currentY - dragState.startY)
+                  height: Math.abs(dragState.currentY - dragState.startY),
+                  pointerEvents: 'none'
                 }}
               />
             )}
 
             {/* Render all items */}
-            {items.map(renderItem)}
+            {items.map(item => (
+              <div key={item.id} data-furniture-item>
+                {renderItem(item)}
+              </div>
+            ))}
           </div>
         </div>
 
