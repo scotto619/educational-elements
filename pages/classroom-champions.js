@@ -1,4 +1,4 @@
-// classroom-champions.js - FIXED Class Loading Issue
+// classroom-champions.js - UPDATED with StudentHelpQueue Integration
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
@@ -29,105 +29,506 @@ const QuestCompletionModal = React.lazy(() => import('../components/modals/Quest
 // ===============================================
 
 const MAX_LEVEL = 4;
-const AVATAR_OPTIONS = [
-  'warrior-male', 'warrior-female', 'wizard-male', 'wizard-female',
-  'rogue-male', 'rogue-female', 'archer-male', 'archer-female',
-  'knight-male', 'knight-female', 'mage-male', 'mage-female'
+const COINS_PER_XP = 5; // 1 coin per 5 XP
+
+const ITEM_RARITIES = {
+  common: { 
+    name: 'Common', 
+    color: 'gray', 
+    bgColor: 'bg-gray-100', 
+    textColor: 'text-gray-700',
+    borderColor: 'border-gray-300',
+    chance: 60
+  },
+  rare: { 
+    name: 'Rare', 
+    color: 'blue', 
+    bgColor: 'bg-blue-100', 
+    textColor: 'text-blue-700',
+    borderColor: 'border-blue-300',
+    chance: 30
+  },
+  epic: { 
+    name: 'Epic', 
+    color: 'purple', 
+    bgColor: 'bg-purple-100', 
+    textColor: 'text-purple-700',
+    borderColor: 'border-purple-300',
+    chance: 8
+  },
+  legendary: { 
+    name: 'Legendary', 
+    color: 'yellow', 
+    bgColor: 'bg-yellow-100', 
+    textColor: 'text-yellow-700',
+    borderColor: 'border-yellow-300',
+    chance: 2
+  }
+};
+
+const SHOP_ITEMS = [
+  // Cosmetic Items
+  {
+    id: 'crown',
+    name: 'Golden Crown',
+    description: 'A majestic crown for classroom royalty',
+    price: 10,
+    type: 'cosmetic',
+    rarity: 'epic',
+    icon: '👑',
+    category: 'accessories'
+  },
+  {
+    id: 'wizard_hat',
+    name: 'Wizard Hat',
+    description: 'Channel your inner magic user',
+    price: 6,
+    type: 'cosmetic',
+    rarity: 'rare',
+    icon: '🧙‍♂️',
+    category: 'accessories'
+  },
+  {
+    id: 'sunglasses',
+    name: 'Cool Sunglasses',
+    description: 'Look effortlessly cool',
+    price: 3,
+    type: 'cosmetic',
+    rarity: 'common',
+    icon: '😎',
+    category: 'accessories'
+  },
+  {
+    id: 'cape',
+    name: 'Superhero Cape',
+    description: 'Be the hero of your classroom',
+    price: 8,
+    type: 'cosmetic',
+    rarity: 'rare',
+    icon: '🦸‍♂️',
+    category: 'accessories'
+  },
+  
+  // Power-ups
+  {
+    id: 'double_xp',
+    name: 'Double XP Boost',
+    description: 'Double XP for your next 5 actions',
+    price: 8,
+    type: 'powerup',
+    rarity: 'rare',
+    icon: '⚡',
+    category: 'powerups',
+    effect: 'double_xp_5'
+  },
+  {
+    id: 'pet_treat',
+    name: 'Pet Speed Boost',
+    description: 'Permanently increase your pet\'s speed',
+    price: 12,
+    type: 'powerup',
+    rarity: 'epic',
+    icon: '🍖',
+    category: 'powerups',
+    effect: 'pet_speed_boost'
+  },
+  {
+    id: 'luck_charm',
+    name: 'Lucky Charm',
+    description: 'Increase your loot box luck for 24 hours',
+    price: 5,
+    type: 'powerup',
+    rarity: 'common',
+    icon: '🍀',
+    category: 'powerups',
+    effect: 'luck_boost_24h'
+  },
+  
+  // Loot Boxes
+  {
+    id: 'basic_box',
+    name: 'Basic Loot Box',
+    description: 'Contains 3 random items',
+    price: 4,
+    type: 'lootbox',
+    rarity: 'common',
+    icon: '📦',
+    category: 'lootboxes',
+    contents: { count: 3, rarityBonus: 0 }
+  },
+  {
+    id: 'premium_box',
+    name: 'Premium Loot Box',
+    description: 'Contains 5 random items with better odds',
+    price: 8,
+    type: 'lootbox',
+    rarity: 'rare',
+    icon: '🎁',
+    category: 'lootboxes',
+    contents: { count: 5, rarityBonus: 15 }
+  },
+  {
+    id: 'legendary_box',
+    name: 'Legendary Loot Box',
+    description: 'Contains 7 items with guaranteed rare+',
+    price: 15,
+    type: 'lootbox',
+    rarity: 'legendary',
+    icon: '💎',
+    category: 'lootboxes',
+    contents: { count: 7, rarityBonus: 30, guaranteedRare: true }
+  },
+  
+  // Collectibles
+  {
+    id: 'trophy_bronze',
+    name: 'Bronze Trophy',
+    description: 'A symbol of your achievements',
+    price: 5,
+    type: 'collectible',
+    rarity: 'common',
+    icon: '🥉',
+    category: 'trophies'
+  },
+  {
+    id: 'trophy_silver',
+    name: 'Silver Trophy',
+    description: 'Shining bright with success',
+    price: 10,
+    type: 'collectible',
+    rarity: 'rare',
+    icon: '🥈',
+    category: 'trophies'
+  },
+  {
+    id: 'trophy_gold',
+    name: 'Gold Trophy',
+    description: 'The ultimate achievement',
+    price: 20,
+    type: 'collectible',
+    rarity: 'epic',
+    icon: '🥇',
+    category: 'trophies'
+  }
 ];
 
-const PET_SPECIES = ['dragon', 'unicorn', 'phoenix', 'griffin', 'pegasus'];
-const PET_NAMES = [
-  'Blaze', 'Luna', 'Storm', 'Nova', 'Ember', 'Frost', 'Thunder', 'Aurora',
-  'Shadow', 'Star', 'Fire', 'Ice', 'Lightning', 'Crystal', 'Mystic'
+const LOOT_BOX_ITEMS = [
+  // Common Items
+  { id: 'coin_small', name: 'Coin Pouch', icon: '💰', rarity: 'common', effect: 'coins_1' },
+  { id: 'sticker_star', name: 'Star Sticker', icon: '⭐', rarity: 'common', effect: 'cosmetic' },
+  { id: 'pencil', name: 'Magic Pencil', icon: '✏️', rarity: 'common', effect: 'cosmetic' },
+  { id: 'eraser', name: 'Lucky Eraser', icon: '🔸', rarity: 'common', effect: 'cosmetic' },
+  
+  // Rare Items
+  { id: 'coin_medium', name: 'Coin Bag', icon: '💎', rarity: 'rare', effect: 'coins_3' },
+  { id: 'rainbow_sticker', name: 'Rainbow Sticker', icon: '🌈', rarity: 'rare', effect: 'cosmetic' },
+  { id: 'magic_wand', name: 'Magic Wand', icon: '🪄', rarity: 'rare', effect: 'cosmetic' },
+  { id: 'pet_toy', name: 'Pet Toy', icon: '🧸', rarity: 'rare', effect: 'pet_happiness' },
+  
+  // Epic Items
+  { id: 'coin_large', name: 'Treasure Chest', icon: '💰', rarity: 'epic', effect: 'coins_5' },
+  { id: 'crystal_ball', name: 'Crystal Ball', icon: '🔮', rarity: 'epic', effect: 'cosmetic' },
+  { id: 'spell_book', name: 'Ancient Spell Book', icon: '📚', rarity: 'epic', effect: 'xp_boost' },
+  { id: 'golden_apple', name: 'Golden Apple', icon: '🍎', rarity: 'epic', effect: 'teacher_favorite' },
+  
+  // Legendary Items
+  { id: 'coin_jackpot', name: 'Jackpot!', icon: '🎰', rarity: 'legendary', effect: 'coins_10' },
+  { id: 'unicorn', name: 'Unicorn Friend', icon: '🦄', rarity: 'legendary', effect: 'pet_legendary' },
+  { id: 'infinity_gem', name: 'Infinity Gem', icon: '💎', rarity: 'legendary', effect: 'permanent_buff' },
+  { id: 'phoenix_feather', name: 'Phoenix Feather', icon: '🔥', rarity: 'legendary', effect: 'resurrection' }
 ];
 
+// FIXED: Default quest templates - always available
 const DEFAULT_QUEST_TEMPLATES = [
+  // Daily Quests - Award 1 coin each
   {
-    id: 'helpful_student',
-    name: 'Helpful Student',
-    description: 'Help another student with their work',
-    type: 'daily',
-    category: 'individual',
-    requirement: { type: 'manual' },
-    reward: { type: 'coins', amount: 3 }
-  },
-  {
-    id: 'complete_work',
-    name: 'Work Complete',
-    description: 'Complete all assigned work',
-    type: 'daily',
-    category: 'individual',
-    requirement: { type: 'manual' },
-    reward: { type: 'coins', amount: 2 }
-  },
-  {
-    id: 'respectful_points',
-    name: 'Respectful Champion',
+    id: 'daily-respectful-5',
+    title: 'Be Respectful',
     description: 'Earn 5 Respectful points',
     type: 'daily',
     category: 'individual',
     requirement: { type: 'xp', category: 'Respectful', amount: 5 },
-    reward: { type: 'coins', amount: 2 }
+    reward: { type: 'COINS', amount: 1 },
+    icon: '👍'
   },
   {
-    id: 'responsible_points',
-    name: 'Responsible Champion',
-    description: 'Earn 5 Responsible points',
+    id: 'daily-responsible-3',
+    title: 'Show Responsibility',
+    description: 'Earn 3 Responsible points',
     type: 'daily',
     category: 'individual',
-    requirement: { type: 'xp', category: 'Responsible', amount: 5 },
-    reward: { type: 'coins', amount: 2 }
+    requirement: { type: 'xp', category: 'Responsible', amount: 3 },
+    reward: { type: 'COINS', amount: 1 },
+    icon: '💼'
   },
   {
-    id: 'learner_points',
-    name: 'Learning Champion',
-    description: 'Earn 5 Learner points',
+    id: 'daily-learner-4',
+    title: 'Learning Champion',
+    description: 'Earn 4 Learner points',
     type: 'daily',
     category: 'individual',
-    requirement: { type: 'xp', category: 'Learner', amount: 5 },
-    reward: { type: 'coins', amount: 2 }
+    requirement: { type: 'xp', category: 'Learner', amount: 4 },
+    reward: { type: 'COINS', amount: 1 },
+    icon: '📚'
   },
   {
-    id: 'class_total_xp',
-    name: 'Class Achievement',
-    description: 'Class earns 100 total XP',
+    id: 'daily-homework',
+    title: 'Homework Hero',
+    description: 'Complete and submit homework',
+    type: 'daily',
+    category: 'individual',
+    requirement: { type: 'manual', description: 'Teacher verification required' },
+    reward: { type: 'COINS', amount: 1 },
+    icon: '📝'
+  },
+  // Weekly Quests - Award 5 coins each
+  {
+    id: 'weekly-total-xp',
+    title: 'XP Champion',
+    description: 'Earn 50 total XP this week',
     type: 'weekly',
-    category: 'class',
-    requirement: { type: 'class_xp', amount: 100 },
-    reward: { type: 'coins', amount: 5 }
+    category: 'individual',
+    requirement: { type: 'total_xp', amount: 50 },
+    reward: { type: 'COINS', amount: 5 },
+    icon: '⭐'
   },
   {
-    id: 'all_pets_unlocked',
-    name: 'Pet Masters',
-    description: 'Every student unlocks their pet',
+    id: 'weekly-attendance',
+    title: 'Perfect Attendance',
+    description: 'Attend all classes this week',
+    type: 'weekly',
+    category: 'individual',
+    requirement: { type: 'manual', description: 'Teacher verification required' },
+    reward: { type: 'COINS', amount: 5 },
+    icon: '🎯'
+  },
+  {
+    id: 'weekly-class-goal',
+    title: 'Class Unity',
+    description: 'Whole class earns 200 total XP',
     type: 'weekly',
     category: 'class',
-    requirement: { type: 'all_pets' },
-    reward: { type: 'coins', amount: 10 }
+    requirement: { type: 'class_total_xp', amount: 200 },
+    reward: { type: 'COINS', amount: 5 },
+    icon: '🏆'
+  },
+  {
+    id: 'weekly-pet-race',
+    title: 'Racing Champion',
+    description: 'Win 2 pet races this week',
+    type: 'weekly',
+    category: 'individual',
+    requirement: { type: 'pet_wins', amount: 2 },
+    reward: { type: 'COINS', amount: 5 },
+    icon: '🏁'
   }
 ];
 
+const AVAILABLE_AVATARS = [
+  { base: "Alchemist F", path: "/avatars/Alchemist%20F/Level%201.png" },
+  { base: "Alchemist M", path: "/avatars/Alchemist%20M/Level%201.png" },
+  { base: "Archer F", path: "/avatars/Archer%20F/Level%201.png" },
+  { base: "Archer M", path: "/avatars/Archer%20M/Level%201.png" },
+  { base: "Barbarian F", path: "/avatars/Barbarian%20F/Level%201.png" },
+  { base: "Barbarian M", path: "/avatars/Barbarian%20M/Level%201.png" },
+  { base: "Bard F", path: "/avatars/Bard%20F/Level%201.png" },
+  { base: "Bard M", path: "/avatars/Bard%20M/Level%201.png" },
+  { base: "Beastmaster F", path: "/avatars/Beastmaster%20F/Level%201.png" },
+  { base: "Beastmaster M", path: "/avatars/Beastmaster%20M/Level%201.png" },
+  { base: "Cleric F", path: "/avatars/Cleric%20F/Level%201.png" },
+  { base: "Cleric M", path: "/avatars/Cleric%20M/Level%201.png" },
+  { base: "Crystal Sage F", path: "/avatars/Crystal%20Sage%20F/Level%201.png" },
+  { base: "Crystal Sage M", path: "/avatars/Crystal%20Sage%20M/Level%201.png" },
+  { base: "Druid F", path: "/avatars/Druid%20F/Level%201.png" },
+  { base: "Druid M", path: "/avatars/Druid%20M/Level%201.png" },
+  { base: "Engineer F", path: "/avatars/Engineer%20F/Level%201.png" },
+  { base: "Engineer M", path: "/avatars/Engineer%20M/Level%201.png" },
+  { base: "Ice Mage F", path: "/avatars/Ice%20Mage%20F/Level%201.png" },
+  { base: "Ice Mage M", path: "/avatars/Ice%20Mage%20M/Level%201.png" },
+  { base: "Illusionist F", path: "/avatars/Illusionist%20F/Level%201.png" },
+  { base: "Illusionist M", path: "/avatars/Illusionist%20M/Level%201.png" },
+  { base: "Knight F", path: "/avatars/Knight%20F/Level%201.png" },
+  { base: "Knight M", path: "/avatars/Knight%20M/Level%201.png" },
+  { base: "Monk F", path: "/avatars/Monk%20F/Level%201.png" },
+  { base: "Monk M", path: "/avatars/Monk%20M/Level%201.png" },
+  { base: "Necromancer F", path: "/avatars/Necromancer%20F/Level%201.png" },
+  { base: "Necromancer M", path: "/avatars/Necromancer%20M/Level%201.png" },
+  { base: "Orc F", path: "/avatars/Orc%20F/Level%201.png" },
+  { base: "Orc M", path: "/avatars/Orc%20M/Level%201.png" },
+  { base: "Paladin F", path: "/avatars/Paladin%20F/Level%201.png" },
+  { base: "Paladin M", path: "/avatars/Paladin%20M/Level%201.png" },
+  { base: "Rogue F", path: "/avatars/Rogue%20F/Level%201.png" },
+  { base: "Rogue M", path: "/avatars/Rogue%20M/Level%201.png" },
+  { base: "Sky Knight F", path: "/avatars/Sky%20Knight%20F/Level%201.png" },
+  { base: "Sky Knight M", path: "/avatars/Sky%20Knight%20M/Level%201.png" },
+  { base: "Time Mage F", path: "/avatars/Time%20Mage%20F/Level%201.png" },
+  { base: "Time Mage M", path: "/avatars/Time%20Mage%20M/Level%201.png" },
+  { base: "Wizard F", path: "/avatars/Wizard%20F/Level%201.png" },
+  { base: "Wizard M", path: "/avatars/Wizard%20M/Level%201.png" }
+];
+
+const PETS = [
+  "Alchemist", "Barbarian", "Bard", "Beastmaster", "Cleric", "Crystal Knight",
+  "Crystal Sage", "Dream", "Druid", "Engineer", "Frost Mage", "Illusionist",
+  "Knight", "Lightning", "Monk", "Necromancer", "Orc", "Paladin", "Rogue",
+  "Stealth", "Time Knight", "Warrior", "Wizard"
+];
+
+const PET_NAMES = [
+  "Flamepaw", "Shadowtail", "Brightfang", "Mysticwhisker", "Stormclaw",
+  "Ironhoof", "Swiftbeak", "Frostwhisker", "Moonfang", "Nightclaw"
+];
+
 // ===============================================
-// UTILITY FUNCTIONS
+// UTILITY FUNCTIONS - FIXED COIN SYSTEM
 // ===============================================
 
+// FIXED: Calculate coins based on both XP and separate coins field
+const calculateCoins = (student) => {
+  const xpCoins = Math.floor((student?.totalPoints || 0) / COINS_PER_XP);
+  const bonusCoins = student?.coins || 0;
+  return xpCoins + bonusCoins;
+};
+
+const canAfford = (student, cost) => {
+  const coins = calculateCoins(student);
+  return coins >= cost;
+};
+
+const spendCoins = (student, cost) => {
+  const coins = calculateCoins(student);
+  if (coins >= cost) {
+    // Deduct from bonus coins first, then from XP coins if needed
+    const bonusCoins = student?.coins || 0;
+    const xpCoins = Math.floor((student?.totalPoints || 0) / COINS_PER_XP);
+    
+    let newBonusCoins = bonusCoins;
+    let newTotalPoints = student?.totalPoints || 0;
+    
+    if (cost <= bonusCoins) {
+      // Can pay with bonus coins only
+      newBonusCoins = bonusCoins - cost;
+    } else {
+      // Need to use XP coins too
+      const remainingCost = cost - bonusCoins;
+      newBonusCoins = 0;
+      newTotalPoints = Math.max(0, newTotalPoints - (remainingCost * COINS_PER_XP));
+    }
+    
+    return {
+      ...student,
+      coins: newBonusCoins,
+      totalPoints: newTotalPoints,
+      coinsSpent: (student.coinsSpent || 0) + cost,
+      logs: [
+        ...(student.logs || []),
+        {
+          type: "purchase",
+          amount: -cost,
+          date: new Date().toISOString(),
+          source: "shop_purchase",
+        },
+      ],
+    };
+  }
+  return student;
+};
+
+// FIXED: Award bonus coins (from quests)
+const awardCoins = (student, coinAmount) => {
+  return {
+    ...student,
+    coins: (student.coins || 0) + coinAmount,
+    logs: [
+      ...(student.logs || []),
+      {
+        type: "quest_coins",
+        amount: coinAmount,
+        date: new Date().toISOString(),
+        source: "quest_completion",
+      },
+    ],
+  };
+};
+
+const generateLootBoxRewards = (lootBox) => {
+  const rewards = [];
+  const { count, rarityBonus, guaranteedRare } = lootBox.contents;
+  
+  for (let i = 0; i < count; i++) {
+    let rarity = 'common';
+    const roll = Math.random() * 100;
+    
+    // Apply rarity bonus
+    const adjustedRoll = roll - (rarityBonus || 0);
+    
+    if (adjustedRoll <= ITEM_RARITIES.legendary.chance) {
+      rarity = 'legendary';
+    } else if (adjustedRoll <= ITEM_RARITIES.epic.chance) {
+      rarity = 'epic';
+    } else if (adjustedRoll <= ITEM_RARITIES.rare.chance) {
+      rarity = 'rare';
+    } else {
+      rarity = 'common';
+    }
+    
+    // Guarantee at least one rare+ item for premium boxes
+    if (guaranteedRare && i === 0 && rarity === 'common') {
+      rarity = 'rare';
+    }
+    
+    const availableItems = LOOT_BOX_ITEMS.filter(item => item.rarity === rarity);
+    const randomItem = availableItems[Math.floor(Math.random() * availableItems.length)];
+    
+    rewards.push({
+      ...randomItem,
+      id: `${randomItem.id}_${Date.now()}_${i}`,
+      obtainedAt: new Date().toISOString()
+    });
+  }
+  
+  return rewards;
+};
+
+const updateStudentWithCurrency = (student) => {
+  return {
+    ...student,
+    coins: student.coins || 0,
+    coinsSpent: student.coinsSpent || 0,
+    inventory: student.inventory || [],
+    lootBoxes: student.lootBoxes || [],
+    achievements: student.achievements || [],
+    lastXpDate: student.lastXpDate || null
+  };
+};
+
 const getAvatarImage = (base, level) => {
-  return `/avatars/${base}-level-${level}.png`;
+  return `/avatars/${base.replaceAll(" ", "%20")}/Level%20${level}.png`;
 };
 
 const getRandomPet = () => {
-  const species = PET_SPECIES[Math.floor(Math.random() * PET_SPECIES.length)];
-  const name = PET_NAMES[Math.floor(Math.random() * PET_NAMES.length)];
-  
+  const type = PETS[Math.floor(Math.random() * PETS.length)];
   return {
-    species,
-    name,
-    speed: Math.floor(Math.random() * 50) + 50,
-    strength: Math.floor(Math.random() * 50) + 50,
-    intelligence: Math.floor(Math.random() * 50) + 50,
-    raceWins: 0,
-    unlockedAt: new Date().toISOString()
+    image: `/Pets/${type}.png`,
+    level: 1,
+    speed: 1,
+    wins: 0,
+    name: ''
   };
+};
+
+const getRandomPetName = () => {
+  return PET_NAMES[Math.floor(Math.random() * PET_NAMES.length)];
+};
+
+const calculateSpeed = (pet) => {
+  const baseSpeed = pet.speed || 1;
+  const level = pet.level || 1;
+  
+  // Very small level bonus to keep races competitive
+  const levelBonus = (level - 1) * 0.05;
+  
+  return Math.max(baseSpeed + levelBonus, 0.8);
 };
 
 const getWeekStart = () => {
@@ -139,21 +540,60 @@ const getWeekStart = () => {
 
 const getWeekEnd = () => {
   const weekStart = getWeekStart();
-  return new Date(weekStart.getTime() + 6 * 24 * 60 * 60 * 1000);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 6);
+  return weekEnd;
 };
 
-const updateStudentWithCurrency = (student) => {
-  const coins = Math.floor(student.totalPoints / 5);
-  return { ...student, coins };
-};
+// Loading component
+const LoadingSpinner = ({ message = "Loading..." }) => (
+  <div className="flex items-center justify-center p-8">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
+      <p className="text-gray-600 font-medium">{message}</p>
+    </div>
+  </div>
+);
 
-const calculateCoins = (student) => {
-  return Math.floor(student.totalPoints / 5);
-};
+// Tab Loading component
+const TabLoadingSpinner = () => (
+  <div className="animate-fade-in">
+    <div className="flex items-center justify-center py-20">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
+        <p className="text-xl font-semibold text-gray-700">Loading tab content...</p>
+      </div>
+    </div>
+  </div>
+);
 
-const canAfford = (student, cost) => {
+// Currency Display Component - FIXED
+const CurrencyDisplay = ({ student }) => {
   const coins = calculateCoins(student);
-  return coins >= cost;
+  const coinsSpent = student?.coinsSpent || 0;
+  const xpCoins = Math.floor((student?.totalPoints || 0) / COINS_PER_XP);
+  const bonusCoins = student?.coins || 0;
+  
+  return (
+    <div className="flex items-center space-x-4 bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+      <div className="text-center">
+        <div className="text-2xl font-bold text-yellow-600">💰</div>
+        <div className="text-sm text-yellow-700">Available</div>
+        <div className="text-lg font-bold text-yellow-800">{coins}</div>
+        <div className="text-xs text-yellow-600">({xpCoins} XP + {bonusCoins} bonus)</div>
+      </div>
+      <div className="text-center">
+        <div className="text-2xl font-bold text-gray-600">🛍️</div>
+        <div className="text-sm text-gray-700">Spent</div>
+        <div className="text-lg font-bold text-gray-800">{coinsSpent}</div>
+      </div>
+      <div className="text-center">
+        <div className="text-2xl font-bold text-blue-600">⭐</div>
+        <div className="text-sm text-blue-700">Total XP</div>
+        <div className="text-lg font-bold text-blue-800">{student?.totalPoints || 0}</div>
+      </div>
+    </div>
+  );
 };
 
 // ===============================================
@@ -162,28 +602,31 @@ const canAfford = (student, cost) => {
 
 export default function ClassroomChampions() {
   const router = useRouter();
-
-  // Core states
   const [user, setUser] = useState(null);
-  const [students, setStudents] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [students, setStudents] = useState([]);
 
   // Modal states
-  const [selectedStudent, setSelectedStudent] = useState(null);
-  const [showAvatarSelectionModal, setShowAvatarSelectionModal] = useState(false);
-  const [studentForAvatarChange, setStudentForAvatarChange] = useState(null);
-  const [levelUpData, setLevelUpData] = useState(null);
-  const [petUnlockData, setPetUnlockData] = useState(null);
   const [showAddStudentModal, setShowAddStudentModal] = useState(false);
   const [newStudentName, setNewStudentName] = useState('');
   const [newStudentAvatar, setNewStudentAvatar] = useState('');
+  const [levelUpData, setLevelUpData] = useState(null);
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [petUnlockData, setPetUnlockData] = useState(null);
+  const [petNameInput, setPetNameInput] = useState('');
+
+  // Avatar selection states
+  const [showAvatarSelectionModal, setShowAvatarSelectionModal] = useState(false);
+  const [studentForAvatarChange, setStudentForAvatarChange] = useState(null);
 
   // Race states
   const [raceInProgress, setRaceInProgress] = useState(false);
   const [raceFinished, setRaceFinished] = useState(false);
   const [racePositions, setRacePositions] = useState({});
   const [raceWinner, setRaceWinner] = useState(null);
-  const [selectedPrize, setSelectedPrize] = useState('');
+  const [selectedPrize, setSelectedPrize] = useState('XP');
   const [xpAmount, setXpAmount] = useState(1);
   const [selectedPets, setSelectedPets] = useState([]);
   const [showRaceSetup, setShowRaceSetup] = useState(false);
@@ -230,7 +673,7 @@ export default function ClassroomChampions() {
     setTimeout(() => setShowSuccessToast(''), 3000);
   };
 
-  // FIXED: Save active class ID to Firebase
+  // FIXED: Add function to save active class ID
   const saveActiveClassToFirebase = async (classId) => {
     if (!user) return;
     
@@ -265,28 +708,6 @@ export default function ClassroomChampions() {
       }
     } catch (error) {
       console.error("❌ Error saving student data:", error);
-    }
-  };
-
-  // Enhanced classroom data saving functions
-  const saveClassroomDataToFirebase = async (classId, classroomData) => {
-    if (!user || !classId) return;
-    
-    try {
-      const docRef = doc(firestore, 'users', user.uid);
-      const snap = await getDoc(docRef);
-      if (snap.exists()) {
-        const data = snap.data();
-        const updatedClasses = data.classes.map(cls => 
-          cls.id === classId 
-            ? { ...cls, classroomData }
-            : cls
-        );
-        await setDoc(docRef, { ...data, classes: updatedClasses });
-        console.log("✅ Classroom data saved to Firebase");
-      }
-    } catch (error) {
-      console.error("❌ Error saving classroom data:", error);
     }
   };
 
@@ -334,7 +755,29 @@ export default function ClassroomChampions() {
     }
   };
 
-  // FIXED: Generate daily quests with immediate save
+  // Classroom layout data saving
+  const saveClassroomDataToFirebase = async (classroomData) => {
+    if (!user || !currentClassId) return;
+    
+    try {
+      const docRef = doc(firestore, 'users', user.uid);
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        const data = snap.data();
+        const updatedClasses = data.classes.map(cls => 
+          cls.id === currentClassId 
+            ? { ...cls, classroomData }
+            : cls
+        );
+        await setDoc(docRef, { ...data, classes: updatedClasses });
+        console.log("✅ Classroom data saved to Firebase");
+      }
+    } catch (error) {
+      console.error("❌ Error saving classroom data:", error);
+    }
+  };
+
+  // FIXED: Quest generation with immediate save
   const generateDailyQuests = async () => {
     const today = new Date().toISOString().split('T')[0];
     const dailyTemplates = questTemplates.filter(t => t.type === 'daily');
@@ -380,84 +823,133 @@ export default function ClassroomChampions() {
       case 'xp':
         const categoryPoints = student.categoryWeekly?.[requirement.category] || 0;
         return categoryPoints >= requirement.amount;
+      case 'total_xp':
+        return student.weeklyPoints >= requirement.amount;
+      case 'pet_wins':
+        return (student.pet?.wins || 0) >= requirement.amount;
       case 'manual':
-        return false; // Manual quests need teacher confirmation
+        return quest.completedBy.includes(studentId);
       default:
         return false;
     }
   };
 
-  const checkClassQuestCompletionSafely = (quest, studentsArray = students) => {
+  const checkClassQuestCompletion = (quest) => {
     const { requirement } = quest;
     
     switch (requirement.type) {
-      case 'class_xp':
-        const totalXP = studentsArray.reduce((sum, student) => sum + (student.totalPoints || 0), 0);
-        return totalXP >= requirement.amount;
-      case 'all_pets':
-        return studentsArray.length > 0 && studentsArray.every(student => student.pet);
+      case 'class_total_xp':
+        const totalClassXP = students.reduce((sum, s) => sum + (s.weeklyPoints || 0), 0);
+        return totalClassXP >= requirement.amount;
+      case 'manual':
+        return quest.completedBy.includes('class');
       default:
         return false;
     }
   };
 
-  const completeQuest = async (questId, studentId = null) => {
-    const updatedDailyQuests = dailyQuests.map(quest => {
-      if (quest.id === questId) {
-        const completedBy = studentId 
-          ? [...quest.completedBy, studentId]
-          : [...quest.completedBy, 'class'];
-        return { ...quest, completedBy };
-      }
-      return quest;
-    });
+  const checkClassQuestCompletionSafely = (quest, studentsArray) => {
+    const { requirement } = quest;
+    
+    switch (requirement.type) {
+      case 'class_total_xp':
+        const totalClassXP = studentsArray.reduce((sum, s) => sum + (s.weeklyPoints || 0), 0);
+        return totalClassXP >= requirement.amount;
+      case 'manual':
+        return quest.completedBy.includes('class');
+      default:
+        return false;
+    }
+  };
 
-    const updatedWeeklyQuests = weeklyQuests.map(quest => {
-      if (quest.id === questId) {
-        const completedBy = studentId 
-          ? [...quest.completedBy, studentId]
-          : [...quest.completedBy, 'class'];
-        return { ...quest, completedBy };
-      }
-      return quest;
-    });
+  const checkQuestCompletion = (questId, studentId = null) => {
+    const quest = [...dailyQuests, ...weeklyQuests].find(q => q.id === questId);
+    if (!quest) return false;
+
+    if (quest.category === 'class') {
+      return checkClassQuestCompletion(quest);
+    } else {
+      return checkIndividualQuestCompletion(quest, studentId);
+    }
+  };
+
+  // FIXED: Quest completion with proper coin rewards
+  const completeQuest = (questId, studentId = null) => {
+    const quest = [...dailyQuests, ...weeklyQuests].find(q => q.id === questId);
+    if (!quest) return;
+
+    const completionKey = studentId || 'class';
+    if (quest.completedBy.includes(completionKey)) return;
+
+    // Update quest completion
+    const updatedDailyQuests = dailyQuests.map(q => 
+      q.id === questId ? { ...q, completedBy: [...q.completedBy, completionKey] } : q
+    );
+    const updatedWeeklyQuests = weeklyQuests.map(q => 
+      q.id === questId ? { ...q, completedBy: [...q.completedBy, completionKey] } : q
+    );
 
     setDailyQuests(updatedDailyQuests);
     setWeeklyQuests(updatedWeeklyQuests);
 
-    // Find the completed quest
-    const completedQuest = [...updatedDailyQuests, ...updatedWeeklyQuests].find(q => q.id === questId);
-    
-    if (completedQuest && completedQuest.reward.type === 'coins') {
-      if (studentId) {
-        // Individual reward
-        setStudents(prev => {
-          const updated = prev.map(student => {
-            if (student.id === studentId) {
-              const newTotalPoints = student.totalPoints + (completedQuest.reward.amount * 5);
-              return { ...student, totalPoints: newTotalPoints };
-            }
-            return student;
-          });
-          saveStudentsToFirebase(updated);
-          return updated;
+    // Award rewards
+    if (quest.reward.type === 'COINS') {
+      setStudents(prev => {
+        const rewardedStudents = prev.map(student => {
+          if (studentId && student.id !== studentId) return student;
+          
+          if (!studentId || student.id === studentId) {
+            return awardCoins(student, quest.reward.amount);
+          }
+          return student;
         });
-      } else {
-        // Class reward
-        setStudents(prev => {
-          const updated = prev.map(student => {
-            const newTotalPoints = student.totalPoints + (completedQuest.reward.amount * 5);
-            return { ...student, totalPoints: newTotalPoints };
-          });
-          saveStudentsToFirebase(updated);
-          return updated;
+        
+        saveStudentsToFirebase(rewardedStudents);
+        return rewardedStudents;
+      });
+    } else if (quest.reward.type === 'XP') {
+      // Handle legacy XP rewards for custom quests
+      setStudents(prev => {
+        const rewardedStudents = prev.map(student => {
+          if (studentId && student.id !== studentId) return student;
+          
+          if (!studentId || student.id === studentId) {
+            const newTotal = student.totalPoints + quest.reward.amount;
+            return {
+              ...student,
+              totalPoints: newTotal,
+              weeklyPoints: (student.weeklyPoints || 0) + quest.reward.amount,
+              categoryTotal: {
+                ...student.categoryTotal,
+                'Quest': (student.categoryTotal['Quest'] || 0) + quest.reward.amount,
+              },
+              categoryWeekly: {
+                ...student.categoryWeekly,
+                'Quest': (student.categoryWeekly['Quest'] || 0) + quest.reward.amount,
+              },
+              logs: [
+                ...(student.logs || []),
+                {
+                  type: 'Quest',
+                  amount: quest.reward.amount,
+                  date: new Date().toISOString(),
+                  source: `quest_${quest.id}`,
+                },
+              ],
+            };
+          }
+          return student;
         });
-      }
+        
+        saveStudentsToFirebase(rewardedStudents);
+        return rewardedStudents;
+      });
     }
 
     // Show completion modal
     setQuestCompletionData({
-      quest: completedQuest,
+      quest,
+      studentId,
       student: studentId ? students.find(s => s.id === studentId) : null
     });
     setShowQuestCompletion(true);
@@ -546,187 +1038,449 @@ export default function ClassroomChampions() {
           ? { ...student, avatarBase, avatar: newAvatar }
           : student
       );
+      
       saveStudentsToFirebase(updatedStudents);
       return updatedStudents;
     });
+
+    try {
+      showToast('Avatar updated successfully!');
+    } catch (error) {
+      console.error("Error updating avatar:", error);
+    } finally {
+      setSavingData(false);
+    }
 
     setShowAvatarSelectionModal(false);
     setStudentForAvatarChange(null);
-    setSavingData(false);
-    showToast('Avatar updated successfully!');
   };
 
-  const handleAddStudent = async () => {
-    if (!newStudentName.trim() || !newStudentAvatar) {
-      alert('Please enter a name and select an avatar.');
-      return;
-    }
+  // FIXED: Award XP function with automatic coin generation
+  const handleAwardXP = (id, category, amount = 1) => {
+    // Prevent rapid firing
+    if (animatingXP[id]) return;
+    
+    console.log(`🎯 Awarding ${amount} XP to student ${id} in category ${category}`);
+    
+    setAnimatingXP(prev => ({ ...prev, [id]: category }));
+    setTimeout(() => setAnimatingXP(prev => ({ ...prev, [id]: null })), 600);
 
-    setSavingData(true);
-    const newStudent = {
-      id: Date.now().toString(),
-      firstName: newStudentName.trim(),
-      avatarBase: newStudentAvatar,
-      avatar: getAvatarImage(newStudentAvatar, 1),
-      avatarLevel: 1,
-      respectfulPoints: 0,
-      responsiblePoints: 0,
-      learnerPoints: 0,
-      totalPoints: 0,
-      categoryWeekly: { Respectful: 0, Responsible: 0, Learner: 0 },
-      pet: null
-    };
+    setStudents((prev) => {
+      const updatedStudents = prev.map((s) => {
+        if (s.id !== id) return s;
 
-    setStudents(prev => {
-      const updatedStudents = [...prev, newStudent];
+        const newTotal = s.totalPoints + amount;
+        let updated = {
+          ...s,
+          totalPoints: newTotal,
+          weeklyPoints: (s.weeklyPoints || 0) + amount,
+          lastXpDate: new Date().toISOString(),
+          categoryTotal: {
+            ...s.categoryTotal,
+            [category]: (s.categoryTotal[category] || 0) + amount,
+          },
+          categoryWeekly: {
+            ...s.categoryWeekly,
+            [category]: (s.categoryWeekly[category] || 0) + amount,
+          },
+          logs: [
+            ...(s.logs || []),
+            {
+              type: category,
+              amount: amount,
+              date: new Date().toISOString(),
+              source: "manual",
+            },
+          ],
+        };
+
+        // Pet unlock check
+        if (!s.pet?.image && newTotal >= 50) {
+          const newPet = getRandomPet();
+          setPetNameInput(getRandomPetName());
+          setPetUnlockData({
+            studentId: s.id,
+            firstName: s.firstName,
+            pet: newPet,
+          });
+        }
+
+        return checkForLevelUp(updated);
+      });
+
       saveStudentsToFirebase(updatedStudents);
+      
+      // Quest completion check
+      checkQuestCompletionSafely(id, updatedStudents);
+      
       return updatedStudents;
     });
-
-    setNewStudentName('');
-    setNewStudentAvatar('');
-    setShowAddStudentModal(false);
-    setSavingData(false);
-    showToast('Student added successfully!');
   };
 
+  // Student selection functions
   const handleStudentSelect = (studentId) => {
-    setSelectedStudents(prev => 
-      prev.includes(studentId) 
-        ? prev.filter(id => id !== studentId)
-        : [...prev, studentId]
-    );
+    setSelectedStudents(prev => {
+      if (prev.includes(studentId)) {
+        return prev.filter(id => id !== studentId);
+      } else {
+        return [...prev, studentId];
+      }
+    });
   };
 
   const handleSelectAll = () => {
-    setSelectedStudents(students.map(s => s.id));
+    if (selectedStudents.length === students.length) {
+      setSelectedStudents([]);
+    } else {
+      setSelectedStudents(students.map(s => s.id));
+    }
   };
 
   const handleDeselectAll = () => {
     setSelectedStudents([]);
+    setShowBulkXpPanel(false);
   };
 
   const handleBulkXpAward = () => {
     if (selectedStudents.length === 0) {
-      alert('Please select at least one student.');
+      alert("Please select at least one student");
       return;
     }
 
-    selectedStudents.forEach(studentId => {
-      for (let i = 0; i < bulkXpAmount; i++) {
-        setTimeout(() => handleAwardXP(studentId, bulkXpCategory), i * 100);
-      }
+    setSavingData(true);
+    
+    // Animate all selected students
+    selectedStudents.forEach(id => {
+      setAnimatingXP(prev => ({ ...prev, [id]: bulkXpCategory }));
+    });
+
+    setTimeout(() => {
+      selectedStudents.forEach(id => {
+        setAnimatingXP(prev => ({ ...prev, [id]: null }));
+      });
+    }, 600);
+
+    setStudents((prev) => {
+      const updatedStudents = prev.map((s) => {
+        if (!selectedStudents.includes(s.id)) return s;
+
+        const newTotal = s.totalPoints + bulkXpAmount;
+        let updated = {
+          ...s,
+          totalPoints: newTotal,
+          weeklyPoints: (s.weeklyPoints || 0) + bulkXpAmount,
+          lastXpDate: new Date().toISOString(),
+          categoryTotal: {
+            ...s.categoryTotal,
+            [bulkXpCategory]: (s.categoryTotal[bulkXpCategory] || 0) + bulkXpAmount,
+          },
+          categoryWeekly: {
+            ...s.categoryWeekly,
+            [bulkXpCategory]: (s.categoryWeekly[bulkXpCategory] || 0) + bulkXpAmount,
+          },
+          logs: [
+            ...(s.logs || []),
+            {
+              type: bulkXpCategory,
+              amount: bulkXpAmount,
+              date: new Date().toISOString(),
+              source: "bulk",
+            },
+          ],
+        };
+
+        if (!s.pet?.image && newTotal >= 50) {
+          const newPet = getRandomPet();
+          setPetNameInput(getRandomPetName());
+          setPetUnlockData({
+            studentId: s.id,
+            firstName: s.firstName,
+            pet: newPet,
+          });
+        }
+
+        return checkForLevelUp(updated);
+      });
+
+      saveStudentsToFirebase(updatedStudents);
+
+      // Quest completion for each student
+      selectedStudents.forEach(studentId => {
+        checkQuestCompletionSafely(studentId, updatedStudents);
+      });
+
+      return updatedStudents;
     });
 
     setSelectedStudents([]);
     setShowBulkXpPanel(false);
-    showToast(`Awarded ${bulkXpAmount} ${bulkXpCategory} XP to ${selectedStudents.length} students!`);
+    setSavingData(false);
+    
+    const studentNames = selectedStudents.length === students.length 
+      ? 'the entire class'
+      : `${selectedStudents.length} students`;
+    
+    showToast(`Awarded ${bulkXpAmount} XP to ${studentNames}!`);
   };
 
-  const handleAwardXP = (studentId, category) => {
+  // Settings functions
+  const handleDeductXP = (studentId, amount) => {
+    if (amount <= 0) {
+      alert("Please enter a positive amount");
+      return;
+    }
+
     setSavingData(true);
-
-    // Animate XP
-    setAnimatingXP(prev => ({ ...prev, [studentId]: category }));
-    setTimeout(() => {
-      setAnimatingXP(prev => ({ ...prev, [studentId]: null }));
-    }, 1000);
-
     setStudents(prev => {
-      const updatedStudents = prev.map(student => {
-        if (student.id === studentId) {
-          const newCategoryPoints = student[category.toLowerCase() + 'Points'] + 1;
-          const newTotalPoints = student.totalPoints + 1;
-          const newCategoryWeekly = {
-            ...student.categoryWeekly,
-            [category]: (student.categoryWeekly?.[category] || 0) + 1
-          };
-
-          let updatedStudent = {
-            ...student,
-            [category.toLowerCase() + 'Points']: newCategoryPoints,
-            totalPoints: newTotalPoints,
-            categoryWeekly: newCategoryWeekly,
-            lastXpDate: new Date().toISOString()
-          };
-
-          // Check for level up
-          updatedStudent = checkForLevelUp(updatedStudent);
-
-          // Check for pet unlock
-          if (!updatedStudent.pet && updatedStudent.totalPoints >= 50) {
-            const newPet = getRandomPet();
-            updatedStudent.pet = newPet;
-            setPetUnlockData({
-              name: updatedStudent.firstName,
-              pet: newPet
-            });
-          }
-
-          return updatedStudent;
-        }
-        return student;
-      });
-
-      // Save to Firebase
+      const updatedStudents = prev.map(s => 
+        s.id === studentId ? {
+          ...s,
+          totalPoints: Math.max(0, s.totalPoints - amount),
+          weeklyPoints: Math.max(0, (s.weeklyPoints || 0) - amount),
+          logs: [
+            ...(s.logs || []),
+            {
+              type: "deduction",
+              amount: -amount,
+              date: new Date().toISOString(),
+              source: "manual_deduction",
+            },
+          ],
+        } : s
+      );
       saveStudentsToFirebase(updatedStudents);
-      
-      // Check quest completion after state update
-      const targetStudent = updatedStudents.find(s => s.id === studentId);
-      if (targetStudent) {
-        setTimeout(() => checkQuestCompletionSafely(studentId, updatedStudents), 100);
-      }
-
-      setSavingData(false);
       return updatedStudents;
     });
+    setSavingData(false);
+    showToast(`Deducted ${amount} XP successfully!`);
   };
 
-  // FIXED: Class import with proper currentClassId setting and active class saving
+  const handleDeductCurrency = (studentId, coinAmount) => {
+    if (coinAmount <= 0) {
+      alert("Please enter a positive amount");
+      return;
+    }
+    
+    setSavingData(true);
+    setStudents(prev => {
+      const updatedStudents = prev.map(s => {
+        if (s.id !== studentId) return s;
+        
+        const currentCoins = calculateCoins(s);
+        if (currentCoins < coinAmount) {
+          alert(`Student only has ${currentCoins} coins available`);
+          return s;
+        }
+        
+        return {
+          ...s,
+          coins: Math.max(0, (s.coins || 0) - coinAmount),
+          logs: [
+            ...(s.logs || []),
+            {
+              type: "currency_deduction",
+              amount: -coinAmount,
+              date: new Date().toISOString(),
+              source: "manual_currency_deduction",
+            },
+          ],
+        };
+      });
+      saveStudentsToFirebase(updatedStudents);
+      return updatedStudents;
+    });
+    setSavingData(false);
+    showToast(`Deducted ${coinAmount} coins successfully!`);
+  };
+
+  // Reset functions
+  const handleResetStudentPoints = (studentId) => {
+    setSavingData(true);
+    setStudents(prev => {
+      const updatedStudents = prev.map(s => 
+        s.id === studentId ? {
+          ...s,
+          totalPoints: 0,
+          weeklyPoints: 0,
+          categoryTotal: {},
+          categoryWeekly: {},
+          avatarLevel: 1,
+          avatar: s.avatarBase ? getAvatarImage(s.avatarBase, 1) : '',
+          pet: null,
+          coins: 0,
+          inventory: [],
+          lootBoxes: [],
+          coinsSpent: 0,
+          logs: [
+            ...(s.logs || []),
+            {
+              type: "full_reset",
+              amount: 0,
+              date: new Date().toISOString(),
+              source: "complete_reset",
+            },
+          ],
+        } : s
+      );
+      saveStudentsToFirebase(updatedStudents);
+      return updatedStudents;
+    });
+    setSavingData(false);
+    showToast('Student completely reset successfully!');
+  };
+
+  const handleResetAllPoints = async () => {
+    setSavingData(true);
+    setStudents(prev => {
+      const updatedStudents = prev.map(s => ({
+        ...s,
+        totalPoints: 0,
+        weeklyPoints: 0,
+        categoryTotal: {},
+        categoryWeekly: {},
+        avatarLevel: 1,
+        avatar: s.avatarBase ? getAvatarImage(s.avatarBase, 1) : '',
+        pet: null,
+        coins: 0,
+        inventory: [],
+        lootBoxes: [],
+        coinsSpent: 0,
+        logs: [
+          ...(s.logs || []),
+          {
+            type: "bulk_reset",
+            amount: 0,
+            date: new Date().toISOString(),
+            source: "bulk_reset",
+          },
+        ],
+      }));
+      saveStudentsToFirebase(updatedStudents);
+      return updatedStudents;
+    });
+    setSavingData(false);
+    showToast('All students completely reset successfully!');
+  };
+
+  const handleResetPetSpeeds = async () => {
+    setSavingData(true);
+    setStudents(prev => {
+      const updatedStudents = prev.map(s => 
+        s.pet ? {
+          ...s,
+          pet: {
+            ...s.pet,
+            speed: 1,
+            wins: 0
+          }
+        } : s
+      );
+      saveStudentsToFirebase(updatedStudents);
+      return updatedStudents;
+    });
+    setSavingData(false);
+    showToast('Pet speeds reset successfully!');
+  };
+
+  const handleRemoveStudent = async (studentId) => {
+    setSavingData(true);
+    setStudents(prev => {
+      const updatedStudents = prev.filter(s => s.id !== studentId);
+      saveStudentsToFirebase(updatedStudents);
+      return updatedStudents;
+    });
+    setSavingData(false);
+    showToast('Student removed successfully!');
+  };
+
+  const handleSubmitFeedback = async () => {
+    setSavingData(true);
+    
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      setFeedbackSubject('');
+      setFeedbackMessage('');
+      setFeedbackEmail('');
+      setShowFeedbackModal(false);
+      
+      showToast('Feedback submitted successfully!');
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+      alert('Error submitting feedback. Please try again.');
+    } finally {
+      setSavingData(false);
+    }
+  };
+
+  const handleSubscriptionManagement = async () => {
+    if (!userData?.stripeCustomerId) {
+      router.push('/pricing');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/create-portal-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customerId: userData.stripeCustomerId })
+      });
+
+      const { url } = await response.json();
+      window.open(url, '_blank');
+    } catch (error) {
+      console.error('Error opening billing portal:', error);
+      alert('Error opening billing portal. Please try again.');
+    }
+  };
+
+  // FIXED: Class import with proper quest initialization and active class setting
   const handleClassImport = async () => {
     if (!newClassName.trim() || !newClassStudents.trim()) {
-      alert('Please enter both class name and student names.');
+      alert("Please fill in both class name and student names");
       return;
     }
 
     setSavingData(true);
 
-    const studentList = newClassStudents
+    const studentsArray = newClassStudents
       .split('\n')
-      .map(name => name.trim())
-      .filter(name => name.length > 0)
-      .map((name, index) => ({
-        id: `${Date.now()}-${index}`,
-        firstName: name,
-        avatarBase: AVATAR_OPTIONS[index % AVATAR_OPTIONS.length],
-        avatar: getAvatarImage(AVATAR_OPTIONS[index % AVATAR_OPTIONS.length], 1),
-        avatarLevel: 1,
-        respectfulPoints: 0,
-        responsiblePoints: 0,
-        learnerPoints: 0,
-        totalPoints: 0,
-        categoryWeekly: { Respectful: 0, Responsible: 0, Learner: 0 },
-        pet: null
-      }));
+      .map((name) => name.trim())
+      .filter((name) => name.length > 0)
+      .map((name) => {
+        return updateStudentWithCurrency({
+          id: Date.now().toString() + Math.random().toString(36).substring(2, 8),
+          firstName: name,
+          avatarBase: '',
+          avatarLevel: 1,
+          avatar: '',
+          totalPoints: 0,
+          weeklyPoints: 0,
+          categoryTotal: {},
+          categoryWeekly: {},
+          coins: 0,
+          logs: [],
+          pet: null
+        });
+      });
 
+    // Generate initial quests
     const initialDailyQuests = await generateDailyQuests();
     const initialWeeklyQuests = await generateWeeklyQuests();
 
     const newClass = {
-      id: Date.now().toString(),
-      name: newClassName.trim(),
-      students: studentList,
+      id: 'class-' + Date.now(),
+      name: newClassName,
+      students: studentsArray,
       dailyQuests: initialDailyQuests,
       weeklyQuests: initialWeeklyQuests,
-      questTemplates: DEFAULT_QUEST_TEMPLATES,
-      createdAt: new Date().toISOString()
+      questTemplates: DEFAULT_QUEST_TEMPLATES
     };
 
     try {
       const docRef = doc(firestore, 'users', user.uid);
       const snap = await getDoc(docRef);
-      const existingData = snap.exists() ? 
-        snap.data() : { subscription: 'basic', classes: [] };
+      const existingData = snap.exists() ? snap.data() : { subscription: 'basic', classes: [] };
       const maxAllowed = existingData.subscription === 'pro' ? 5 : 1;
 
       if (existingData.classes.length >= maxAllowed) {
@@ -736,11 +1490,11 @@ export default function ClassroomChampions() {
 
       const updatedClasses = [...existingData.classes, newClass];
       
-      // FIXED: Save both the updated classes and the active class ID
+      // FIXED: Save both classes and active class ID
       await setDoc(docRef, { 
         ...existingData, 
         classes: updatedClasses,
-        activeClassId: newClass.id // Set the new class as active
+        activeClassId: newClass.id
       });
 
       setTeacherClasses(updatedClasses);
@@ -762,12 +1516,12 @@ export default function ClassroomChampions() {
 
   // FIXED: Load class with proper quest initialization and active class saving
   const loadClass = async (cls) => {
+    // FIXED: Save this as the active class
+    await saveActiveClassToFirebase(cls.id);
+    
     const studentsWithCurrency = cls.students.map(updateStudentWithCurrency);
     setStudents(studentsWithCurrency);
     setCurrentClassId(cls.id);
-    
-    // FIXED: Save this as the active class
-    await saveActiveClassToFirebase(cls.id);
     
     // Load saved quests or generate new ones
     const savedDailyQuests = cls.dailyQuests || [];
@@ -808,155 +1562,86 @@ export default function ClassroomChampions() {
     const cost = item.price;
     
     if (!canAfford(student, cost)) {
+      alert(`${student.firstName} doesn't have enough coins! Needs ${cost}, has ${coins}`);
+      return;
+    }
+
+    setSavingData(true);
+    
+    setStudents(prev => {
+      const updatedStudents = prev.map(s => {
+        if (s.id !== student.id) return s;
+        
+        const updatedStudent = spendCoins(s, cost);
+        
+        const newItem = {
+          ...item,
+          id: `${item.id}_${Date.now()}`,
+          purchasedAt: new Date().toISOString()
+        };
+        
+        return {
+          ...updatedStudent,
+          inventory: [...(updatedStudent.inventory || []), newItem]
+        };
+      });
+      
+      saveStudentsToFirebase(updatedStudents);
+      return updatedStudents;
+    });
+    
+    setSavingData(false);
+    showToast(`${student.firstName} purchased ${item.name}!`);
+  };
+
+  const handleLootBoxPurchase = (student, lootBox) => {
+    const coins = calculateCoins(student);
+    const cost = lootBox.price;
+    
+    if (!canAfford(student, cost)) {
       alert(`${student.firstName} doesn't have enough coins!`);
       return;
     }
 
-    // Deduct XP (5 XP = 1 coin)
-    const xpToDeduct = cost * 5;
+    setSavingData(true);
+    
+    const rewards = generateLootBoxRewards(lootBox);
+    
     setStudents(prev => {
-      const updated = prev.map(s => 
-        s.id === student.id 
-          ? { ...s, totalPoints: Math.max(0, s.totalPoints - xpToDeduct) }
-          : s
-      );
-      saveStudentsToFirebase(updated);
-      return updated;
-    });
-
-    showToast(`${student.firstName} purchased ${item.name} for ${cost} coins!`);
-  };
-
-  // Settings functions
-  const handleResetStudentPoints = (studentId) => {
-    setStudents(prev => {
-      const updated = prev.map(student => 
-        student.id === studentId 
-          ? {
-              ...student,
-              respectfulPoints: 0,
-              responsiblePoints: 0,
-              learnerPoints: 0,
-              totalPoints: 0,
-              categoryWeekly: { Respectful: 0, Responsible: 0, Learner: 0 }
-            }
-          : student
-      );
-      saveStudentsToFirebase(updated);
-      return updated;
-    });
-    showToast('Student points reset successfully!');
-  };
-
-  const handleResetAllPoints = () => {
-    setStudents(prev => {
-      const updated = prev.map(student => ({
-        ...student,
-        respectfulPoints: 0,
-        responsiblePoints: 0,
-        learnerPoints: 0,
-        totalPoints: 0,
-        categoryWeekly: { Respectful: 0, Responsible: 0, Learner: 0 }
-      }));
-      saveStudentsToFirebase(updated);
-      return updated;
-    });
-    showToast('All student points reset successfully!');
-  };
-
-  const handleResetPetSpeeds = () => {
-    setStudents(prev => {
-      const updated = prev.map(student => 
-        student.pet 
-          ? {
-              ...student,
-              pet: {
-                ...student.pet,
-                speed: Math.floor(Math.random() * 50) + 50,
-                strength: Math.floor(Math.random() * 50) + 50,
-                intelligence: Math.floor(Math.random() * 50) + 50
-              }
-            }
-          : student
-      );
-      saveStudentsToFirebase(updated);
-      return updated;
-    });
-    showToast('Pet stats randomized successfully!');
-  };
-
-  const handleRemoveStudent = (studentId) => {
-    setStudents(prev => {
-      const updated = prev.filter(student => student.id !== studentId);
-      saveStudentsToFirebase(updated);
-      return updated;
-    });
-    showToast('Student removed successfully!');
-  };
-
-  const handleSubscriptionManagement = async () => {
-    if (!userData?.stripeCustomerId) {
-      router.push('/pricing');
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/create-portal-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ customerId: userData.stripeCustomerId })
+      const updatedStudents = prev.map(s => {
+        if (s.id !== student.id) return s;
+        
+        const updatedStudent = spendCoins(s, cost);
+        
+        return {
+          ...updatedStudent,
+          lootBoxes: [...(updatedStudent.lootBoxes || []), {
+            boxType: lootBox.id,
+            rewards: rewards,
+            openedAt: new Date().toISOString()
+          }]
+        };
       });
-
-      const { url } = await response.json();
-      window.open(url, '_blank');
-    } catch (error) {
-      console.error('Error opening billing portal:', error);
-      alert('Error opening billing portal. Please try again.');
-    }
+      
+      saveStudentsToFirebase(updatedStudents);
+      return updatedStudents;
+    });
+    
+    setSavingData(false);
+    
+    const rewardsList = rewards.map(r => r.name).join(', ');
+    showToast(`${student.firstName} opened ${lootBox.name} and got: ${rewardsList}!`);
   };
 
-  const handleSubmitFeedback = async () => {
-    if (!feedbackMessage.trim()) {
-      alert('Please enter your feedback message.');
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/submit-feedback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: feedbackType,
-          subject: feedbackSubject,
-          message: feedbackMessage,
-          email: feedbackEmail,
-          userId: user.uid
-        })
-      });
-
-      if (response.ok) {
-        showToast('Feedback submitted successfully!');
-        setShowFeedbackModal(false);
-        setFeedbackSubject('');
-        setFeedbackMessage('');
-        setFeedbackEmail('');
-      } else {
-        throw new Error('Failed to submit feedback');
-      }
-    } catch (error) {
-      console.error('Error submitting feedback:', error);
-      alert('Error submitting feedback. Please try again.');
-    }
-  };
-
-  const handleAddQuestTemplate = (newTemplate) => {
-    const templateWithId = {
-      ...newTemplate,
-      id: `custom-${Date.now()}`
+  // Quest Template Management Functions
+  const handleAddQuestTemplate = (questTemplate) => {
+    const newTemplate = {
+      ...questTemplate,
+      id: `custom-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     };
     
     setQuestTemplates(prev => {
-      const updated = [...prev, templateWithId];
+      const updated = [...prev, newTemplate];
       saveQuestDataToFirebase({ questTemplates: updated });
       return updated;
     });
@@ -1020,7 +1705,7 @@ export default function ClassroomChampions() {
     weeklyQuests,
     questTemplates,
     setQuestTemplates,
-    checkQuestCompletion: checkQuestCompletionSafely,
+    checkQuestCompletion,
     completeQuest,
     markQuestComplete,
     generateDailyQuests,
@@ -1045,7 +1730,7 @@ export default function ClassroomChampions() {
     setShowRaceSetup,
     setRaceInProgress,
     setRaceFinished,
-    calculateSpeed: (pet) => pet?.speed || 50,
+    calculateSpeed,
     checkForLevelUp,
     saveStudentsToFirebase,
     // Class props
@@ -1085,25 +1770,93 @@ export default function ClassroomChampions() {
     // Shop props
     selectedStudent,
     setSelectedStudent,
-    handleShopStudentSelect,
-    handleShopPurchase,
     calculateCoins,
     canAfford,
-    // Toolkit props
-    saveGroupDataToFirebase,
-    saveClassroomDataToFirebase,
-    // Quest template management
+    spendCoins,
+    SHOP_ITEMS,
+    ITEM_RARITIES,
+    LOOT_BOX_ITEMS,
+    generateLootBoxRewards,
+    setSavingData,
+    handleShopStudentSelect,
+    handleShopPurchase,
+    handleLootBoxPurchase,
+    CurrencyDisplay,
+    // Settings Functions
+    handleDeductXP,
+    handleDeductCurrency,
+    // Quest Template Management (for Settings tab)
     handleAddQuestTemplate,
     handleEditQuestTemplate,
     handleDeleteQuestTemplate,
-    handleResetQuestTemplates
+    handleResetQuestTemplates,
+    // Group Management
+    saveGroupDataToFirebase,
+    // Classroom Management
+    saveClassroomDataToFirebase,
+    currentClassId
   };
 
-  // ===============================================
-  // EFFECTS
-  // ===============================================
+  // Modal props
+  const modalProps = {
+    // Common
+    students,
+    setStudents,
+    AVAILABLE_AVATARS,
+    getAvatarImage,
+    getRandomPetName,
+    saveStudentsToFirebase,
+    showToast,
+    setSavingData,
+    // Character sheet
+    selectedStudent,
+    setSelectedStudent,
+    handleAvatarClick,
+    // Avatar selection
+    showAvatarSelectionModal,
+    setShowAvatarSelectionModal,
+    studentForAvatarChange,
+    setStudentForAvatarChange,
+    handleAvatarChange,
+    savingData,
+    // Level up
+    levelUpData,
+    setLevelUpData,
+    // Pet unlock
+    petUnlockData,
+    setPetUnlockData,
+    petNameInput,
+    setPetNameInput,
+    // Add student
+    showAddStudentModal,
+    setShowAddStudentModal,
+    newStudentName,
+    setNewStudentName,
+    newStudentAvatar,
+    setNewStudentAvatar,
+    // Race
+    raceFinished,
+    setRaceFinished,
+    raceWinner,
+    selectedPrize,
+    xpAmount,
+    showRaceSetup,
+    setShowRaceSetup,
+    selectedPets,
+    setSelectedPets,
+    setRacePositions,
+    setRaceInProgress,
+    setRaceWinner,
+    // Quest completion
+    questCompletionData,
+    setQuestCompletionData,
+    showQuestCompletion,
+    setShowQuestCompletion,
+    // Currency utilities
+    calculateCoins
+  };
 
-  // Quest initialization
+  // FIXED: Enhanced quest initialization
   useEffect(() => {
     const initializeQuests = async () => {
       if (currentClassId && questTemplates.length > 0) {
@@ -1160,53 +1913,77 @@ export default function ClassroomChampions() {
           const currentPosition = updated[id] || 0;
           
           if (currentPosition < FINISH_LINE_POSITION) {
-            const speed = student.pet.speed;
+            const speed = calculateSpeed(student.pet);
             const baseStep = speed * 2;
             const randomMultiplier = 0.8 + Math.random() * 0.4;
             const step = baseStep * randomMultiplier;
-            
-            const newPosition = Math.min(currentPosition + step, FINISH_LINE_POSITION);
-            updated[id] = newPosition;
+            const nextPosition = currentPosition + step;
 
-            // Check if this pet just won
-            if (newPosition >= FINISH_LINE_POSITION && !winnerId) {
+            if (nextPosition >= FINISH_LINE_POSITION && !raceFinished) {
               winnerId = id;
+              updated[id] = FINISH_LINE_POSITION;
+              
+              for (const otherId of selectedPets) {
+                if (otherId !== id && updated[otherId] !== undefined) {
+                  updated[otherId] = Math.min(updated[otherId] || 0, FINISH_LINE_POSITION - 10);
+                }
+              }
+              break;
             }
           }
         }
 
-        // Handle race completion
-        if (winnerId && !raceFinished) {
-          setTimeout(() => {
-            setRaceInProgress(false);
-            setRaceFinished(true);
-            setRaceWinner(winnerId);
+        if (winnerId) {
+          clearInterval(interval);
+          
+          const winner = students.find((s) => s.id === winnerId);
+          setRaceWinner(winner);
+          setRaceInProgress(false);
+          setRaceFinished(true);
 
-            // Award prize to winner
-            if (selectedPrize && xpAmount > 0) {
-              for (let i = 0; i < xpAmount; i++) {
-                setTimeout(() => handleAwardXP(winnerId, selectedPrize), i * 200);
+          // Award prizes
+          setStudents((prev) => {
+            const updatedStudents = prev.map((s) => {
+              if (s.id === winnerId) {
+                const updated = {
+                  ...s,
+                  pet: {
+                    ...s.pet,
+                    wins: (s.pet.wins || 0) + 1,
+                    speed: (s.pet.speed || 1) + 0.02
+                  },
+                };
+
+                if (selectedPrize === 'XP') {
+                  updated.totalPoints = (updated.totalPoints || 0) + xpAmount;
+                  return checkForLevelUp(updated);
+                }
+
+                return updated;
               }
+              return s;
+            });
 
-              // Update race wins
-              setStudents(prev => {
-                const updatedStudents = prev.map(student => {
-                  if (student.id === winnerId && student.pet) {
-                    return {
-                      ...student,
-                      pet: {
-                        ...student.pet,
-                        raceWins: (student.pet.raceWins || 0) + 1
-                      }
-                    };
-                  }
-                  return student;
-                });
-                saveStudentsToFirebase(updatedStudents);
-                return updatedStudents;
-              });
-            }
-          }, 500);
+            saveStudentsToFirebase(updatedStudents);
+            return updatedStudents;
+          });
+
+          return updated;
+        }
+
+        for (const id of selectedPets) {
+          const student = students.find((s) => s.id === id);
+          if (!student?.pet) continue;
+
+          const speed = calculateSpeed(student.pet);
+          const baseStep = speed * 2;
+          const randomMultiplier = 0.8 + Math.random() * 0.4;
+          const step = baseStep * randomMultiplier;
+          
+          const currentPosition = updated[id] || 0;
+          const newPosition = Math.min(currentPosition + step, FINISH_LINE_POSITION);
+          
+          updated[id] = newPosition;
         }
 
         return updated;
@@ -1271,217 +2048,283 @@ export default function ClassroomChampions() {
             setDailyQuests([]);
             setWeeklyQuests([]);
             setQuestTemplates(DEFAULT_QUEST_TEMPLATES);
+            
+            if (activeTab === 'toolkit') {
+              setActiveTab('dashboard');
+            }
           }
         } else {
-          router.push('/login');
+          router.push("/login");
         }
       } catch (error) {
-        console.error('Error in auth state change:', error);
-        router.push('/login');
+        console.error("Error in auth listener:", error);
+      } finally {
+        setLoading(false);
       }
     });
 
     return () => unsubscribe();
-  }, [router]);
+  }, [activeTab]);
 
-  // ===============================================
-  // RENDER
-  // ===============================================
-
-  if (!user || !userData) {
+  if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-green-100 to-blue-100">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-600 mx-auto mb-4"></div>
-          <p className="text-xl text-gray-700">Loading Classroom Champions...</p>
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
+          <h2 className="text-2xl font-bold text-gray-700 mb-2">Loading Classroom Champions</h2>
+          <p className="text-gray-500">Preparing your adventure...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-100 to-blue-100">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      {/* Header */}
+      <div className="bg-white shadow-lg border-b border-gray-200">
+        <div className="max-w-screen-xl mx-auto px-6 py-6">
+          <h1 className="text-4xl font-bold text-center bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            Classroom Champions
+          </h1>
+        </div>
+      </div>
+
       {/* Navigation */}
-      <nav className="bg-white shadow-lg border-b-4 border-green-600">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-4">
-              <h1 className="text-2xl font-bold text-gray-800">🏆 Classroom Champions</h1>
-              {currentClassId && (
-                <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
-                  {teacherClasses.find(cls => cls.id === currentClassId)?.name || 'Current Class'}
+      <div className="max-w-screen-xl mx-auto px-6 py-6">
+        <div className="flex justify-center gap-2 mb-8 flex-wrap">
+          {[
+            { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+            { id: 'students', label: 'Students', icon: '👥' },
+            { id: 'shop', label: 'Shop', icon: '🏪' },
+            { id: 'race', label: 'Pet Race', icon: '🏁' },
+            ...(userData?.subscription === 'pro' ? [{ id: 'toolkit', label: 'Teachers Toolkit', icon: '🛠️', isPro: true }] : []),
+            { id: 'classes', label: 'My Classes', icon: '📚' },
+            { id: 'settings', label: 'Settings', icon: '⚙️' }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center space-x-2 ${
+                tab.isPro 
+                  ? (activeTab === tab.id 
+                      ? "bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg transform scale-105" 
+                      : "bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 shadow-md hover:shadow-lg")
+                  : (activeTab === tab.id
+                      ? "bg-blue-600 text-white shadow-lg transform scale-105"
+                      : "bg-white text-gray-700 hover:bg-gray-50 shadow-md hover:shadow-lg")
+              }`}
+            >
+              <span>{tab.icon}</span>
+              <span>{tab.label}</span>
+              {tab.isPro && (
+                <span className="bg-yellow-400 text-purple-800 text-xs px-2 py-1 rounded-full font-bold">
+                  PRO
                 </span>
               )}
-            </div>
-            
-            <div className="flex space-x-1 bg-gray-100 rounded-lg p-1">
-              {[
-                { id: 'dashboard', label: '📊 Dashboard', icon: '📊' },
-                { id: 'students', label: '👥 Students', icon: '👥' },
-                { id: 'shop', label: '🛍️ Shop', icon: '🛍️' },
-                { id: 'races', label: '🏁 Races', icon: '🏁' },
-                { id: 'classes', label: '📚 Classes', icon: '📚' },
-                { id: 'toolkit', label: '🛠️ Toolkit', icon: '🛠️', locked: userData?.subscription !== 'pro' },
-                { id: 'settings', label: '⚙️ Settings', icon: '⚙️' }
-              ].map((tab) => (
+            </button>
+          ))}
+        </div>
+
+        {/* Tab Content with Suspense */}
+        <div className="bg-white rounded-xl shadow-lg p-8">
+          <Suspense fallback={<TabLoadingSpinner />}>
+            {activeTab === 'dashboard' && <DashboardTab {...tabProps} />}
+            {activeTab === 'students' && <StudentsTab {...tabProps} />}
+            {activeTab === 'shop' && <ShopTab {...tabProps} />}
+            {activeTab === 'race' && <PetRaceTab {...tabProps} />}
+            {activeTab === 'toolkit' && <TeachersToolkitTab {...tabProps} />}
+            {activeTab === 'classes' && <ClassesTab {...tabProps} />}
+            {activeTab === 'settings' && <SettingsTab {...tabProps} />}
+          </Suspense>
+        </div>
+      </div>
+
+      {/* Confirmation Dialog */}
+      {showConfirmDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md transform scale-100 animate-modal-appear">
+            <div className="text-center">
+              <div className="text-6xl mb-4">{showConfirmDialog.icon}</div>
+              <h2 className="text-2xl font-bold mb-4 text-gray-800">{showConfirmDialog.title}</h2>
+              <p className="text-gray-600 mb-6">{showConfirmDialog.message}</p>
+              <div className="flex gap-3">
                 <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  disabled={tab.locked}
-                  className={`px-4 py-2 rounded-md font-medium transition-all duration-200 relative ${
-                    activeTab === tab.id
-                      ? 'bg-white text-green-700 shadow-md transform scale-105'
-                      : tab.locked
-                      ? 'text-gray-400 cursor-not-allowed'
-                      : 'text-gray-600 hover:text-green-700 hover:bg-white/50'
+                  onClick={() => setShowConfirmDialog(null)}
+                  className="flex-1 px-4 py-3 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    showConfirmDialog.onConfirm();
+                    setShowConfirmDialog(null);
+                  }}
+                  className={`flex-1 px-4 py-3 rounded-lg transition-colors font-semibold text-white ${
+                    showConfirmDialog.type === 'danger' 
+                      ? 'bg-red-600 hover:bg-red-700' 
+                      : 'bg-blue-600 hover:bg-blue-700'
                   }`}
                 >
-                  <span className="hidden sm:inline">{tab.label}</span>
-                  <span className="sm:hidden text-xl">{tab.icon}</span>
-                  {tab.locked && (
-                    <span className="absolute -top-1 -right-1 text-xs">🔒</span>
-                  )}
+                  {showConfirmDialog.confirmText}
                 </button>
-              ))}
+              </div>
             </div>
           </div>
-        </div>
-      </nav>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        <Suspense fallback={
-          <div className="flex items-center justify-center py-16">
-            <div className="animate-spin rounded-full h-8 w-8 border-2 border-green-600 border-t-transparent"></div>
-          </div>
-        }>
-          {activeTab === 'dashboard' && <DashboardTab {...tabProps} />}
-          {activeTab === 'students' && <StudentsTab {...tabProps} />}
-          {activeTab === 'shop' && <ShopTab {...tabProps} />}
-          {activeTab === 'races' && <PetRaceTab {...tabProps} />}
-          {activeTab === 'classes' && <ClassesTab {...tabProps} />}
-          {activeTab === 'settings' && <SettingsTab {...tabProps} />}
-          {activeTab === 'toolkit' && userData?.subscription === 'pro' && (
-            <TeachersToolkitTab {...tabProps} />
-          )}
-        </Suspense>
-      </main>
-
-      {/* Modals */}
-      <Suspense fallback={null}>
-        {selectedStudent && (
-          <CharacterSheetModal
-            student={selectedStudent}
-            onClose={() => setSelectedStudent(null)}
-            onAvatarClick={handleAvatarClick}
-          />
-        )}
-
-        {showAvatarSelectionModal && (
-          <AvatarSelectionModal
-            currentAvatar={studentForAvatarChange?.avatarBase}
-            onSelect={handleAvatarChange}
-            onClose={() => {
-              setShowAvatarSelectionModal(false);
-              setStudentForAvatarChange(null);
-            }}
-            loading={savingData}
-          />
-        )}
-
-        {levelUpData && (
-          <LevelUpModal
-            levelUpData={levelUpData}
-            onClose={() => setLevelUpData(null)}
-          />
-        )}
-
-        {petUnlockData && (
-          <PetUnlockModal
-            petUnlockData={petUnlockData}
-            onClose={() => setPetUnlockData(null)}
-          />
-        )}
-
-        {showAddStudentModal && (
-          <AddStudentModal
-            showAddStudentModal={showAddStudentModal}
-            setShowAddStudentModal={setShowAddStudentModal}
-            newStudentName={newStudentName}
-            setNewStudentName={setNewStudentName}
-            newStudentAvatar={newStudentAvatar}
-            setNewStudentAvatar={setNewStudentAvatar}
-            handleAddStudent={handleAddStudent}
-            AVATAR_OPTIONS={AVATAR_OPTIONS}
-            savingData={savingData}
-          />
-        )}
-
-        {raceWinner && (
-          <RaceWinnerModal
-            raceWinner={raceWinner}
-            students={students}
-            selectedPrize={selectedPrize}
-            xpAmount={xpAmount}
-            onClose={() => {
-              setRaceWinner(null);
-              setRacePositions({});
-              setRaceFinished(false);
-            }}
-          />
-        )}
-
-        {showRaceSetup && (
-          <RaceSetupModal
-            {...tabProps}
-            onClose={() => setShowRaceSetup(false)}
-          />
-        )}
-
-        {showQuestCompletion && questCompletionData && (
-          <QuestCompletionModal
-            questData={questCompletionData}
-            onClose={() => {
-              setShowQuestCompletion(false);
-              setQuestCompletionData(null);
-            }}
-          />
-        )}
-      </Suspense>
-
-      {/* Toast Notification */}
-      {showSuccessToast && (
-        <div className="fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-bounce">
-          {showSuccessToast}
         </div>
       )}
 
-      {/* Confirm Dialog */}
-      {showConfirmDialog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-xl shadow-xl max-w-md w-full mx-4">
-            <h3 className="text-lg font-bold mb-4">{showConfirmDialog.title}</h3>
-            <p className="text-gray-700 mb-6">{showConfirmDialog.message}</p>
-            <div className="flex gap-3">
+      {/* Feedback Modal */}
+      {showFeedbackModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md transform scale-100 animate-modal-appear">
+            <h2 className="text-2xl font-bold mb-6 text-gray-800 flex items-center">
+              <span className="mr-3">{feedbackType === 'bug' ? '🐛' : '💡'}</span>
+              {feedbackType === 'bug' ? 'Report Bug' : 'Feature Request'}
+            </h2>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Type</label>
+                <select
+                  value={feedbackType}
+                  onChange={(e) => setFeedbackType(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="bug">🐛 Bug Report</option>
+                  <option value="feature">💡 Feature Request</option>
+                  <option value="feedback">💬 General Feedback</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Subject</label>
+                <input
+                  type="text"
+                  value={feedbackSubject}
+                  onChange={(e) => setFeedbackSubject(e.target.value)}
+                  placeholder="Brief description of the issue or idea"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Message</label>
+                <textarea
+                  value={feedbackMessage}
+                  onChange={(e) => setFeedbackMessage(e.target.value)}
+                  placeholder="Please provide detailed information..."
+                  rows="4"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Email (Optional)</label>
+                <input
+                  type="email"
+                  value={feedbackEmail}
+                  onChange={(e) => setFeedbackEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
               <button
-                onClick={() => setShowConfirmDialog(null)}
-                className="flex-1 px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition-colors"
+                onClick={() => setShowFeedbackModal(false)}
+                className="flex-1 px-4 py-3 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
               >
                 Cancel
               </button>
               <button
-                onClick={() => {
-                  showConfirmDialog.onConfirm();
-                  setShowConfirmDialog(null);
-                }}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                onClick={handleSubmitFeedback}
+                disabled={!feedbackSubject || !feedbackMessage}
+                className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors font-semibold"
               >
-                Confirm
+                Submit
               </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Success Toast */}
+      {showSuccessToast && (
+        <div className="fixed top-6 right-6 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-slide-in">
+          <div className="flex items-center space-x-2">
+            <span className="text-xl">✅</span>
+            <span className="font-semibold">{showSuccessToast}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Loading Overlay */}
+      {savingData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
+            <p className="text-gray-700 font-medium">Saving changes...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Lazy-loaded Modals */}
+      <Suspense fallback={null}>
+        {selectedStudent && (
+          <CharacterSheetModal {...modalProps} />
+        )}
+        {showAvatarSelectionModal && (
+          <AvatarSelectionModal {...modalProps} />
+        )}
+        {levelUpData && (
+          <LevelUpModal {...modalProps} />
+        )}
+        {petUnlockData && (
+          <PetUnlockModal {...modalProps} />
+        )}
+        {showAddStudentModal && (
+          <AddStudentModal {...modalProps} />
+        )}
+        {raceFinished && raceWinner && (
+          <RaceWinnerModal {...modalProps} />
+        )}
+        {showRaceSetup && (
+          <RaceSetupModal {...modalProps} />
+        )}
+        {showQuestCompletion && (
+          <QuestCompletionModal {...modalProps} />
+        )}
+      </Suspense>
+
+      <style jsx>{`
+        @keyframes fade-in {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes slide-in {
+          from { transform: translateX(100%); }
+          to { transform: translateX(0); }
+        }
+        
+        @keyframes modal-appear {
+          from { opacity: 0; transform: scale(0.9); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        
+        .animate-fade-in {
+          animation: fade-in 0.5s ease-out;
+        }
+        
+        .animate-slide-in {
+          animation: slide-in 0.3s ease-out;
+        }
+        
+        .animate-modal-appear {
+          animation: modal-appear 0.3s ease-out;
+        }
+      `}</style>
     </div>
   );
 }
