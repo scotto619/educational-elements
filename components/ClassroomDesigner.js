@@ -248,9 +248,11 @@ const ClassroomDesigner = ({
   // Delete selected item
   const deleteItem = () => {
     if (selectedItem) {
-      setItems(prev => prev.filter(item => item.id !== selectedItem.id));
-      setSelectedItem(null);
-      showToast('Item deleted!');
+      if (window.confirm(`Are you sure you want to delete "${selectedItem.label}"?`)) {
+        setItems(prev => prev.filter(item => item.id !== selectedItem.id));
+        setSelectedItem(null);
+        showToast('Item deleted!');
+      }
     }
   };
 
@@ -505,6 +507,16 @@ const ClassroomDesigner = ({
     showToast(`Loaded layout: ${layout.name}!`);
   };
 
+  // Clear all items
+  const clearAllItems = () => {
+    if (window.confirm('Are you sure you want to clear all items? This cannot be undone.')) {
+      setItems([]);
+      setSelectedItem(null);
+      setNextId(1);
+      showToast('All items cleared!');
+    }
+  };
+
   // Mouse event handlers
   const handleMouseDown = (e, item) => {
     if (viewMode !== 'design') return;
@@ -580,7 +592,7 @@ const ClassroomDesigner = ({
       <div
         key={item.id}
         className={`absolute cursor-move select-none transition-all duration-200 ${
-          isSelected ? 'ring-2 ring-blue-500 ring-offset-1' : ''
+          isSelected ? 'ring-4 ring-blue-500 ring-offset-2 shadow-lg z-50' : 'hover:ring-2 hover:ring-gray-300'
         } ${viewMode === 'design' ? 'hover:shadow-lg' : ''}`}
         style={{
           left: item.x,
@@ -601,9 +613,14 @@ const ClassroomDesigner = ({
         </div>
         
         {isSelected && viewMode === 'design' && (
-          <div className="absolute -top-6 left-0 bg-blue-600 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
-            {item.label}
-          </div>
+          <>
+            <div className="absolute -top-8 left-0 bg-blue-600 text-white text-xs px-3 py-1 rounded whitespace-nowrap shadow-lg">
+              ✏️ {item.label} - Editing
+            </div>
+            <div className="absolute -bottom-1 -right-1 bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
+              ✓
+            </div>
+          </>
         )}
       </div>
     );
@@ -695,6 +712,11 @@ const ClassroomDesigner = ({
 
             {/* Item Controls */}
             <div className="flex items-center gap-2">
+              {selectedItem && (
+                <span className="text-sm text-blue-600 font-semibold mr-2">
+                  ✏️ Editing: {selectedItem.label}
+                </span>
+              )}
               <button
                 onClick={duplicateItem}
                 disabled={!selectedItem}
@@ -708,6 +730,12 @@ const ClassroomDesigner = ({
                 className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 text-sm font-semibold"
               >
                 🗑️ Delete
+              </button>
+              <button
+                onClick={clearAllItems}
+                className="px-3 py-1 bg-red-700 text-white rounded hover:bg-red-800 text-sm font-semibold"
+              >
+                🧹 Clear All
               </button>
             </div>
 
@@ -807,7 +835,12 @@ const ClassroomDesigner = ({
                    linear-gradient(to bottom, #e5e5e5 1px, transparent 1px)` : 'none',
                 backgroundSize: `${gridSize}px ${gridSize}px`
               }}
-              onClick={() => setSelectedItem(null)}
+              onClick={(e) => {
+                // Only deselect if clicking directly on the canvas background, not on items
+                if (e.target === e.currentTarget) {
+                  setSelectedItem(null);
+                }
+              }}
             >
               {/* Room borders */}
               <div className="absolute inset-0 pointer-events-none">
@@ -817,10 +850,16 @@ const ClassroomDesigner = ({
               {/* Render all items */}
               {items.map(renderItem)}
 
-              {/* Room label */}
+              {/* Room label and help text */}
               <div className="absolute top-2 left-2 bg-gray-800 text-white px-2 py-1 rounded text-xs font-bold">
                 Classroom ({roomDimensions.width}×{roomDimensions.height})
               </div>
+              
+              {!selectedItem && viewMode === 'design' && items.length > 0 && (
+                <div className="absolute bottom-4 right-4 bg-yellow-100 border border-yellow-300 text-yellow-800 px-3 py-2 rounded-lg text-xs max-w-48">
+                  💡 Click any item to open the properties panel and assign students or modify settings.
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -828,7 +867,22 @@ const ClassroomDesigner = ({
         {/* Properties Panel */}
         {selectedItem && viewMode === 'design' && (
           <div className="w-80 bg-white border-l border-gray-200 p-4">
-            <h3 className="font-bold text-gray-800 mb-4">Item Properties</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-gray-800">Item Properties</h3>
+              <button
+                onClick={() => setSelectedItem(null)}
+                className="text-gray-500 hover:text-gray-700 font-bold text-lg"
+                title="Close properties panel"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-xs text-blue-700">
+                💡 <strong>Tip:</strong> This panel stays open while you modify your selected item. Click the × to close or click empty space to deselect.
+              </p>
+            </div>
             
             <div className="space-y-4">
               <div>
