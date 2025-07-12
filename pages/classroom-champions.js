@@ -1,14 +1,4 @@
-const markQuestComplete = (questId, studentId = null) => {
-    try {
-      if (questId && typeof completeQuest === 'function') {
-        completeQuest(questId, studentId);
-        showToast('Quest marked as complete!');
-      }
-    } catch (error) {
-      console.log('Quest completion failed:', error);
-      showToast('Failed to complete quest. Please try again.');
-    }
-  };// classroom-champions.js - EMERGENCY FIX VERSION (Minimal Changes)
+// classroom-champions.js - COMPLETE FIXED VERSION with Doubled Loot Boxes
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
@@ -77,6 +67,7 @@ const ITEM_RARITIES = {
 };
 
 const SHOP_ITEMS = [
+  // Cosmetic Items
   {
     id: 'crown',
     name: 'Golden Crown',
@@ -117,6 +108,8 @@ const SHOP_ITEMS = [
     icon: '🦸‍♂️',
     category: 'accessories'
   },
+  
+  // Power-ups
   {
     id: 'double_xp',
     name: 'Double XP Boost',
@@ -150,40 +143,43 @@ const SHOP_ITEMS = [
     category: 'powerups',
     effect: 'luck_boost_24h'
   },
-  // DOUBLED LOOT BOXES
+  
+  // DOUBLED LOOT BOXES - All counts doubled!
   {
     id: 'basic_box',
     name: 'Basic Loot Box',
-    description: 'Contains 6 random items',
+    description: 'Contains 6 random items', // Was 3, now 6
     price: 4,
     type: 'lootbox',
     rarity: 'common',
     icon: '📦',
     category: 'lootboxes',
-    contents: { count: 6, rarityBonus: 0 }
+    contents: { count: 6, rarityBonus: 0 } // DOUBLED from 3 to 6
   },
   {
     id: 'premium_box',
     name: 'Premium Loot Box',
-    description: 'Contains 10 random items with better odds',
+    description: 'Contains 10 random items with better odds', // Was 5, now 10
     price: 8,
     type: 'lootbox',
     rarity: 'rare',
     icon: '🎁',
     category: 'lootboxes',
-    contents: { count: 10, rarityBonus: 15 }
+    contents: { count: 10, rarityBonus: 15 } // DOUBLED from 5 to 10
   },
   {
     id: 'legendary_box',
     name: 'Legendary Loot Box',
-    description: 'Contains 14 items with guaranteed rare+',
+    description: 'Contains 14 items with guaranteed rare+', // Was 7, now 14
     price: 15,
     type: 'lootbox',
     rarity: 'legendary',
     icon: '💎',
     category: 'lootboxes',
-    contents: { count: 14, rarityBonus: 30, guaranteedRare: true }
+    contents: { count: 14, rarityBonus: 30, guaranteedRare: true } // DOUBLED from 7 to 14
   },
+  
+  // Collectibles
   {
     id: 'trophy_bronze',
     name: 'Bronze Trophy',
@@ -217,24 +213,31 @@ const SHOP_ITEMS = [
 ];
 
 const LOOT_BOX_ITEMS = [
+  // Common Items
   { id: 'coin_small', name: 'Coin Pouch', icon: '💰', rarity: 'common', effect: 'coins_1' },
   { id: 'sticker_star', name: 'Star Sticker', icon: '⭐', rarity: 'common', effect: 'cosmetic' },
   { id: 'pencil', name: 'Magic Pencil', icon: '✏️', rarity: 'common', effect: 'cosmetic' },
   { id: 'eraser', name: 'Lucky Eraser', icon: '🔸', rarity: 'common', effect: 'cosmetic' },
   { id: 'notebook', name: 'Enchanted Notebook', icon: '📓', rarity: 'common', effect: 'cosmetic' },
   { id: 'ruler', name: 'Golden Ruler', icon: '📏', rarity: 'common', effect: 'cosmetic' },
+  
+  // Rare Items
   { id: 'coin_medium', name: 'Coin Bag', icon: '💎', rarity: 'rare', effect: 'coins_3' },
   { id: 'rainbow_sticker', name: 'Rainbow Sticker', icon: '🌈', rarity: 'rare', effect: 'cosmetic' },
   { id: 'magic_wand', name: 'Magic Wand', icon: '🪄', rarity: 'rare', effect: 'cosmetic' },
   { id: 'pet_toy', name: 'Pet Toy', icon: '🧸', rarity: 'rare', effect: 'pet_happiness' },
   { id: 'crystal', name: 'Power Crystal', icon: '💎', rarity: 'rare', effect: 'cosmetic' },
   { id: 'scroll', name: 'Ancient Scroll', icon: '📜', rarity: 'rare', effect: 'cosmetic' },
+  
+  // Epic Items
   { id: 'coin_large', name: 'Treasure Chest', icon: '💰', rarity: 'epic', effect: 'coins_5' },
   { id: 'crystal_ball', name: 'Crystal Ball', icon: '🔮', rarity: 'epic', effect: 'cosmetic' },
   { id: 'spell_book', name: 'Ancient Spell Book', icon: '📚', rarity: 'epic', effect: 'xp_boost' },
   { id: 'golden_apple', name: 'Golden Apple', icon: '🍎', rarity: 'epic', effect: 'teacher_favorite' },
   { id: 'magic_ring', name: 'Ring of Power', icon: '💍', rarity: 'epic', effect: 'cosmetic' },
   { id: 'dragon_scale', name: 'Dragon Scale', icon: '🐲', rarity: 'epic', effect: 'cosmetic' },
+  
+  // Legendary Items
   { id: 'coin_jackpot', name: 'Jackpot!', icon: '🎰', rarity: 'legendary', effect: 'coins_10' },
   { id: 'unicorn', name: 'Unicorn Friend', icon: '🦄', rarity: 'legendary', effect: 'pet_legendary' },
   { id: 'infinity_gem', name: 'Infinity Gem', icon: '💎', rarity: 'legendary', effect: 'permanent_buff' },
@@ -243,7 +246,9 @@ const LOOT_BOX_ITEMS = [
   { id: 'star_fragment', name: 'Star Fragment', icon: '✨', rarity: 'legendary', effect: 'cosmetic' }
 ];
 
+// Default quest templates
 const DEFAULT_QUEST_TEMPLATES = [
+  // Daily Quests - Award 1 coin each
   {
     id: 'daily-respectful-5',
     title: 'Be Respectful',
@@ -273,6 +278,57 @@ const DEFAULT_QUEST_TEMPLATES = [
     requirement: { type: 'xp', category: 'Learner', amount: 4 },
     reward: { type: 'COINS', amount: 1 },
     icon: '📚'
+  },
+  {
+    id: 'daily-homework',
+    title: 'Homework Hero',
+    description: 'Complete and submit homework',
+    type: 'daily',
+    category: 'individual',
+    requirement: { type: 'manual', description: 'Teacher verification required' },
+    reward: { type: 'COINS', amount: 1 },
+    icon: '📝'
+  },
+  // Weekly Quests - Award 5 coins each
+  {
+    id: 'weekly-total-xp',
+    title: 'XP Champion',
+    description: 'Earn 50 total XP this week',
+    type: 'weekly',
+    category: 'individual',
+    requirement: { type: 'total_xp', amount: 50 },
+    reward: { type: 'COINS', amount: 5 },
+    icon: '⭐'
+  },
+  {
+    id: 'weekly-attendance',
+    title: 'Perfect Attendance',
+    description: 'Attend all classes this week',
+    type: 'weekly',
+    category: 'individual',
+    requirement: { type: 'manual', description: 'Teacher verification required' },
+    reward: { type: 'COINS', amount: 5 },
+    icon: '🎯'
+  },
+  {
+    id: 'weekly-class-goal',
+    title: 'Class Unity',
+    description: 'Whole class earns 200 total XP',
+    type: 'weekly',
+    category: 'class',
+    requirement: { type: 'class_total_xp', amount: 200 },
+    reward: { type: 'COINS', amount: 5 },
+    icon: '🏆'
+  },
+  {
+    id: 'weekly-pet-race',
+    title: 'Racing Champion',
+    description: 'Win 2 pet races this week',
+    type: 'weekly',
+    category: 'individual',
+    requirement: { type: 'pet_wins', amount: 2 },
+    reward: { type: 'COINS', amount: 5 },
+    icon: '🏁'
   }
 ];
 
@@ -332,16 +388,31 @@ const PET_NAMES = [
 ];
 
 // ===============================================
-// UTILITY FUNCTIONS - MINIMAL SAFE VERSION
+// UTILITY FUNCTIONS - FIXED COIN SYSTEM + SAFETY CHECKS
 // ===============================================
+
+// SAFETY CHECKS - Prevent array operation errors
+const safeArrayOperation = (arr, operation) => {
+  if (!Array.isArray(arr)) return [];
+  return arr.filter(item => item != null);
+};
+
+const safeSome = (arr, callback) => {
+  if (!Array.isArray(arr)) return false;
+  return arr.filter(item => item != null).some(callback);
+};
+
+const safeFilter = (arr, callback) => {
+  if (!Array.isArray(arr)) return [];
+  return arr.filter(item => item != null).filter(callback);
+};
 
 // FIXED: Calculate coins properly including coinsSpent
 const calculateCoins = (student) => {
-  if (!student) return 0;
-  const xpCoins = Math.floor((student.totalPoints || 0) / COINS_PER_XP);
-  const bonusCoins = student.coins || 0;
-  const coinsSpent = student.coinsSpent || 0;
-  return Math.max(0, xpCoins + bonusCoins - coinsSpent);
+  const xpCoins = Math.floor((student?.totalPoints || 0) / COINS_PER_XP);
+  const bonusCoins = student?.coins || 0;
+  const coinsSpent = student?.coinsSpent || 0;
+  return Math.max(0, xpCoins + bonusCoins - coinsSpent); // NOW INCLUDES COINSSPENT!
 };
 
 const canAfford = (student, cost) => {
@@ -352,13 +423,18 @@ const canAfford = (student, cost) => {
 const spendCoins = (student, cost) => {
   const coins = calculateCoins(student);
   if (coins >= cost) {
+    // Deduct from bonus coins first, then from XP coins if needed
     const bonusCoins = student?.coins || 0;
+    const xpCoins = Math.floor((student?.totalPoints || 0) / COINS_PER_XP);
+    
     let newBonusCoins = bonusCoins;
     let newTotalPoints = student?.totalPoints || 0;
     
     if (cost <= bonusCoins) {
+      // Can pay with bonus coins only
       newBonusCoins = bonusCoins - cost;
     } else {
+      // Need to use XP coins too
       const remainingCost = cost - bonusCoins;
       newBonusCoins = 0;
       newTotalPoints = Math.max(0, newTotalPoints - (remainingCost * COINS_PER_XP));
@@ -383,6 +459,7 @@ const spendCoins = (student, cost) => {
   return student;
 };
 
+// Award bonus coins (from quests)
 const awardCoins = (student, coinAmount) => {
   return {
     ...student,
@@ -406,6 +483,8 @@ const generateLootBoxRewards = (lootBox) => {
   for (let i = 0; i < count; i++) {
     let rarity = 'common';
     const roll = Math.random() * 100;
+    
+    // Apply rarity bonus
     const adjustedRoll = roll - (rarityBonus || 0);
     
     if (adjustedRoll <= ITEM_RARITIES.legendary.chance) {
@@ -418,6 +497,7 @@ const generateLootBoxRewards = (lootBox) => {
       rarity = 'common';
     }
     
+    // Guarantee at least one rare+ item for premium boxes
     if (guaranteedRare && i === 0 && rarity === 'common') {
       rarity = 'rare';
     }
@@ -469,7 +549,10 @@ const getRandomPetName = () => {
 const calculateSpeed = (pet) => {
   const baseSpeed = pet.speed || 1;
   const level = pet.level || 1;
+  
+  // Very small level bonus to keep races competitive
   const levelBonus = (level - 1) * 0.05;
+  
   return Math.max(baseSpeed + levelBonus, 0.8);
 };
 
@@ -509,9 +592,9 @@ const TabLoadingSpinner = () => (
   </div>
 );
 
-// Currency Display Component
+// FIXED: Currency Display Component that uses the corrected calculateCoins
 const CurrencyDisplay = ({ student }) => {
-  const coins = calculateCoins(student);
+  const coins = calculateCoins(student); // Now correctly calculates available coins
   const coinsSpent = student?.coinsSpent || 0;
   const xpCoins = Math.floor((student?.totalPoints || 0) / COINS_PER_XP);
   const bonusCoins = student?.coins || 0;
@@ -539,7 +622,7 @@ const CurrencyDisplay = ({ student }) => {
 };
 
 // ===============================================
-// MAIN COMPONENT - SIMPLIFIED VERSION
+// MAIN COMPONENT
 // ===============================================
 
 export default function ClassroomChampions() {
@@ -585,7 +668,7 @@ export default function ClassroomChampions() {
   const [bulkXpCategory, setBulkXpCategory] = useState('Respectful');
   const [showBulkXpPanel, setShowBulkXpPanel] = useState(false);
 
-  // SIMPLIFIED Quest system states
+  // Quest system states
   const [dailyQuests, setDailyQuests] = useState([]);
   const [weeklyQuests, setWeeklyQuests] = useState([]);
   const [questTemplates, setQuestTemplates] = useState(DEFAULT_QUEST_TEMPLATES);
@@ -607,7 +690,7 @@ export default function ClassroomChampions() {
   const [animatingXP, setAnimatingXP] = useState({});
 
   // ===============================================
-  // SIMPLIFIED FUNCTION DEFINITIONS
+  // FUNCTION DEFINITIONS
   // ===============================================
 
   const showToast = (message) => {
@@ -656,334 +739,234 @@ export default function ClassroomChampions() {
   };
 
   const generateDailyQuests = () => {
-    try {
-      const today = new Date().toISOString().split('T')[0];
-      const templates = Array.isArray(DEFAULT_QUEST_TEMPLATES) ? DEFAULT_QUEST_TEMPLATES : [];
-      
-      return templates
-        .filter(template => template && template.type === 'daily')
-        .map(template => ({
-          ...template,
-          id: `${template.id}-${today}`,
-          startDate: today,
-          completedBy: [],
-          active: true
-        }));
-    } catch (error) {
-      console.error('Error generating daily quests:', error);
-      return [];
-    }
+    const today = new Date().toISOString().split('T')[0];
+    const templates = Array.isArray(DEFAULT_QUEST_TEMPLATES) ? DEFAULT_QUEST_TEMPLATES : [];
+    
+    return templates
+      .filter(template => template && template.type === 'daily')
+      .map(template => ({
+        ...template,
+        id: `${template.id}-${today}`,
+        startDate: today,
+        completedBy: [],
+        active: true
+      }));
   };
 
   const generateWeeklyQuests = () => {
-    try {
-      const weekStart = getWeekStart().toISOString().split('T')[0];
-      const templates = Array.isArray(DEFAULT_QUEST_TEMPLATES) ? DEFAULT_QUEST_TEMPLATES : [];
-      
-      return templates
-        .filter(template => template && template.type === 'weekly')
-        .map(template => ({
-          ...template,
-          id: `${template.id}-${weekStart}`,
-          startDate: weekStart,
-          completedBy: [],
-          active: true
-        }));
-    } catch (error) {
-      console.error('Error generating weekly quests:', error);
-      return [];
-    }
+    const weekStart = getWeekStart().toISOString().split('T')[0];
+    const templates = Array.isArray(DEFAULT_QUEST_TEMPLATES) ? DEFAULT_QUEST_TEMPLATES : [];
+    
+    return templates
+      .filter(template => template && template.type === 'weekly')
+      .map(template => ({
+        ...template,
+        id: `${template.id}-${weekStart}`,
+        startDate: weekStart,
+        completedBy: [],
+        active: true
+      }));
   };
 
   const checkIndividualQuestCompletion = (quest, studentId) => {
-    try {
-      if (!quest || !quest.requirement || !students) {
-        return false;
-      }
-
-      const studentArray = Array.isArray(students) ? students : [];
-      const student = studentArray.find(s => s && s.id === studentId);
-      if (!student) return false;
-
-      const requirement = quest.requirement;
-      
-      switch (requirement.type) {
-        case 'xp':
-          const categoryXP = student.categoryTotal && student.categoryTotal[requirement.category] 
-            ? student.categoryTotal[requirement.category] 
-            : 0;
-          return categoryXP >= requirement.amount;
-        case 'total_xp':
-          return (student.totalPoints || 0) >= requirement.amount;
-        case 'pet_wins':
-          return (student.pet && student.pet.wins ? student.pet.wins : 0) >= requirement.amount;
-        case 'manual':
-          return false;
-        default:
-          return false;
-      }
-    } catch (error) {
-      console.error('Error checking individual quest completion:', error);
+    if (!quest || !quest.requirement || !Array.isArray(students)) {
       return false;
+    }
+
+    const student = students.find(s => s && s.id === studentId);
+    if (!student) return false;
+
+    const requirement = quest.requirement;
+    
+    switch (requirement.type) {
+      case 'xp':
+        const categoryXP = student.categoryTotal && student.categoryTotal[requirement.category] 
+          ? student.categoryTotal[requirement.category] 
+          : 0;
+        return categoryXP >= requirement.amount;
+      case 'total_xp':
+        return (student.totalPoints || 0) >= requirement.amount;
+      case 'pet_wins':
+        return (student.pet && student.pet.wins ? student.pet.wins : 0) >= requirement.amount;
+      case 'manual':
+        return false; // Manual quests need teacher verification
+      default:
+        return false;
     }
   };
 
   const checkClassQuestCompletionSafely = (quest, currentStudents) => {
-    try {
-      if (!quest || !quest.requirement || !currentStudents) {
-        return false;
-      }
-
-      const studentArray = Array.isArray(currentStudents) ? currentStudents : [];
-      const requirement = quest.requirement;
-      
-      switch (requirement.type) {
-        case 'class_total_xp':
-          let totalClassXP = 0;
-          for (let i = 0; i < studentArray.length; i++) {
-            const student = studentArray[i];
-            if (student && student.totalPoints) {
-              totalClassXP += student.totalPoints;
-            }
-          }
-          return totalClassXP >= requirement.amount;
-        default:
-          return false;
-      }
-    } catch (error) {
-      console.error('Error checking class quest completion:', error);
+    if (!quest || !quest.requirement || !Array.isArray(currentStudents)) {
       return false;
+    }
+
+    const requirement = quest.requirement;
+    
+    switch (requirement.type) {
+      case 'class_total_xp':
+        const totalClassXP = currentStudents.reduce((sum, student) => {
+          return sum + (student && student.totalPoints ? student.totalPoints : 0);
+        }, 0);
+        return totalClassXP >= requirement.amount;
+      default:
+        return false;
     }
   };
 
   const completeQuest = (questId, studentId = null) => {
-    try {
-      if (!questId) return;
+    if (!questId) return;
 
-      // Safety check for quest arrays with manual checks
-      const questCheckArray = Array.isArray(weeklyQuests) ? weeklyQuests : [];
-      let weeklyQuestExists = false;
-      
-      for (let i = 0; i < questCheckArray.length; i++) {
-        const q = questCheckArray[i];
-        if (q && q.id === questId) {
-          weeklyQuestExists = true;
-          break;
-        }
-      }
-      
-      if (weeklyQuestExists) {
-        setWeeklyQuests(prev => {
-          const prevArray = Array.isArray(prev) ? prev : [];
-          const updatedQuests = [];
+    // Safety check for quest arrays
+    const weeklyQuestExists = Array.isArray(weeklyQuests) && weeklyQuests.some(q => q && q.id === questId);
+    
+    if (weeklyQuestExists) {
+      setWeeklyQuests(prev => {
+        if (!Array.isArray(prev)) return [];
+        
+        const updatedQuests = prev.map(quest => {
+          if (!quest || quest.id !== questId) return quest;
           
-          for (let i = 0; i < prevArray.length; i++) {
-            const quest = prevArray[i];
-            if (!quest || quest.id !== questId) {
-              updatedQuests.push(quest);
-            } else {
-              const currentCompletedBy = Array.isArray(quest.completedBy) ? quest.completedBy : [];
-              const newCompletedBy = [...currentCompletedBy];
-              if (studentId) {
-                newCompletedBy.push(studentId);
-              } else {
-                newCompletedBy.push('class');
-              }
-              
-              updatedQuests.push({ ...quest, completedBy: newCompletedBy });
-            }
-          }
+          const currentCompletedBy = Array.isArray(quest.completedBy) ? quest.completedBy : [];
+          const newCompletedBy = studentId 
+            ? [...currentCompletedBy, studentId]
+            : [...currentCompletedBy, 'class'];
+          
+          return { ...quest, completedBy: newCompletedBy };
+        });
 
-          if (typeof saveQuestDataToFirebase === 'function') {
-            saveQuestDataToFirebase({ weeklyQuests: updatedQuests });
+        if (typeof saveQuestDataToFirebase === 'function') {
+          saveQuestDataToFirebase({ weeklyQuests: updatedQuests });
+        }
+        return updatedQuests;
+      });
+    } else {
+      setDailyQuests(prev => {
+        if (!Array.isArray(prev)) return [];
+        
+        const updatedQuests = prev.map(quest => {
+          if (!quest || quest.id !== questId) return quest;
+          
+          const currentCompletedBy = Array.isArray(quest.completedBy) ? quest.completedBy : [];
+          const newCompletedBy = studentId 
+            ? [...currentCompletedBy, studentId]
+            : [...currentCompletedBy, 'class'];
+          
+          return { ...quest, completedBy: newCompletedBy };
+        });
+
+        if (typeof saveQuestDataToFirebase === 'function') {
+          saveQuestDataToFirebase({ dailyQuests: updatedQuests });
+        }
+        return updatedQuests;
+      });
+    }
+
+    // Award coins safely
+    const allQuests = [
+      ...(Array.isArray(dailyQuests) ? dailyQuests : []), 
+      ...(Array.isArray(weeklyQuests) ? weeklyQuests : [])
+    ];
+    
+    const completedQuest = allQuests.find(q => q && q.id === questId);
+    
+    if (completedQuest && completedQuest.reward && completedQuest.reward.type === 'COINS') {
+      if (studentId) {
+        setStudents(prev => {
+          if (!Array.isArray(prev)) return [];
+          
+          const updatedStudents = prev.map(s => 
+            s && s.id === studentId ? awardCoins(s, completedQuest.reward.amount) : s
+          );
+          
+          if (typeof saveStudentsToFirebase === 'function') {
+            saveStudentsToFirebase(updatedStudents);
           }
-          return updatedQuests;
+          return updatedStudents;
         });
       } else {
-        setDailyQuests(prev => {
-          const prevArray = Array.isArray(prev) ? prev : [];
-          const updatedQuests = [];
+        setStudents(prev => {
+          if (!Array.isArray(prev)) return [];
           
-          for (let i = 0; i < prevArray.length; i++) {
-            const quest = prevArray[i];
-            if (!quest || quest.id !== questId) {
-              updatedQuests.push(quest);
-            } else {
-              const currentCompletedBy = Array.isArray(quest.completedBy) ? quest.completedBy : [];
-              const newCompletedBy = [...currentCompletedBy];
-              if (studentId) {
-                newCompletedBy.push(studentId);
-              } else {
-                newCompletedBy.push('class');
-              }
-              
-              updatedQuests.push({ ...quest, completedBy: newCompletedBy });
-            }
+          const updatedStudents = prev.map(s => s ? awardCoins(s, completedQuest.reward.amount) : s);
+          
+          if (typeof saveStudentsToFirebase === 'function') {
+            saveStudentsToFirebase(updatedStudents);
           }
-
-          if (typeof saveQuestDataToFirebase === 'function') {
-            saveQuestDataToFirebase({ dailyQuests: updatedQuests });
-          }
-          return updatedQuests;
+          return updatedStudents;
         });
       }
+    }
 
-      // Award coins safely
-      const allDailyQuests = Array.isArray(dailyQuests) ? dailyQuests : [];
-      const allWeeklyQuests = Array.isArray(weeklyQuests) ? weeklyQuests : [];
-      const combinedQuests = [...allDailyQuests, ...allWeeklyQuests];
+    // Set quest completion data safely
+    if (completedQuest && typeof setQuestCompletionData === 'function') {
+      const student = studentId && Array.isArray(students) 
+        ? students.find(s => s && s.id === studentId) 
+        : null;
+        
+      setQuestCompletionData({
+        quest: completedQuest,
+        student: student
+      });
       
-      let completedQuest = null;
-      for (let i = 0; i < combinedQuests.length; i++) {
-        const q = combinedQuests[i];
-        if (q && q.id === questId) {
-          completedQuest = q;
-          break;
-        }
+      if (typeof setShowQuestCompletion === 'function') {
+        setShowQuestCompletion(true);
       }
-      
-      if (completedQuest && completedQuest.reward && completedQuest.reward.type === 'COINS') {
-        if (studentId) {
-          setStudents(prev => {
-            const prevStudentArray = Array.isArray(prev) ? prev : [];
-            const updatedStudents = [];
-            
-            for (let i = 0; i < prevStudentArray.length; i++) {
-              const s = prevStudentArray[i];
-              if (s && s.id === studentId) {
-                updatedStudents.push(awardCoins(s, completedQuest.reward.amount));
-              } else {
-                updatedStudents.push(s);
-              }
-            }
-            
-            if (typeof saveStudentsToFirebase === 'function') {
-              saveStudentsToFirebase(updatedStudents);
-            }
-            return updatedStudents;
-          });
-        } else {
-          setStudents(prev => {
-            const prevStudentArray = Array.isArray(prev) ? prev : [];
-            const updatedStudents = [];
-            
-            for (let i = 0; i < prevStudentArray.length; i++) {
-              const s = prevStudentArray[i];
-              if (s) {
-                updatedStudents.push(awardCoins(s, completedQuest.reward.amount));
-              }
-            }
-            
-            if (typeof saveStudentsToFirebase === 'function') {
-              saveStudentsToFirebase(updatedStudents);
-            }
-            return updatedStudents;
-          });
-        }
-      }
+    }
 
-      // Set quest completion data safely
-      if (completedQuest && typeof setQuestCompletionData === 'function') {
-        const currentStudentArray = Array.isArray(students) ? students : [];
-        let foundStudent = null;
-        
-        if (studentId) {
-          for (let i = 0; i < currentStudentArray.length; i++) {
-            const s = currentStudentArray[i];
-            if (s && s.id === studentId) {
-              foundStudent = s;
-              break;
-            }
-          }
-        }
-          
-        setQuestCompletionData({
-          quest: completedQuest,
-          student: foundStudent
-        });
-        
-        if (typeof setShowQuestCompletion === 'function') {
-          setShowQuestCompletion(true);
-        }
-      }
-    } catch (error) {
-      console.error('Error completing quest:', error);
+    if (typeof saveQuestDataToFirebase === 'function') {
+      saveQuestDataToFirebase({
+        dailyQuests: weeklyQuestExists ? dailyQuests : [...(Array.isArray(dailyQuests) ? dailyQuests : [])],
+        weeklyQuests: weeklyQuestExists ? [...(Array.isArray(weeklyQuests) ? weeklyQuests : [])] : weeklyQuests
+      });
     }
   };
 
   const checkQuestCompletionSafely = (studentId, updatedStudents) => {
+    const student = updatedStudents.find(s => s && s.id === studentId);
+    if (!student) return;
+
+    // Ensure arrays exist before using array methods
+    const allQuests = [
+      ...(Array.isArray(dailyQuests) ? dailyQuests : []), 
+      ...(Array.isArray(weeklyQuests) ? weeklyQuests : [])
+    ];
+
+    // Check individual quests with safety checks
+    allQuests.forEach(quest => {
+      if (quest && quest.category === 'individual' && Array.isArray(quest.completedBy) && !quest.completedBy.includes(studentId)) {
+        const questCreatedDate = new Date(quest.startDate);
+        const studentLastActive = student.lastXpDate ? new Date(student.lastXpDate) : new Date('2024-01-01');
+        
+        const today = new Date().toISOString().split('T')[0];
+        const isNewQuest = quest.startDate === today;
+        
+        if (questCreatedDate <= studentLastActive || !student.lastXpDate || isNewQuest) {
+          if (checkIndividualQuestCompletion(quest, studentId)) {
+            setTimeout(() => completeQuest(quest.id, studentId), 100);
+          }
+        }
+      }
+    });
+
+    // Check class quests with safety checks
+    allQuests.forEach(quest => {
+      if (quest && quest.category === 'class' && Array.isArray(quest.completedBy) && !quest.completedBy.includes('class')) {
+        if (checkClassQuestCompletionSafely(quest, updatedStudents)) {
+          setTimeout(() => completeQuest(quest.id, null), 100);
+        }
+      }
+    });
+  };
+
+  const markQuestComplete = (questId, studentId = null) => {
     try {
-      const studentCheckArray = Array.isArray(updatedStudents) ? updatedStudents : [];
-      let targetStudent = null;
-      
-      for (let i = 0; i < studentCheckArray.length; i++) {
-        const s = studentCheckArray[i];
-        if (s && s.id === studentId) {
-          targetStudent = s;
-          break;
-        }
-      }
-      
-      if (!targetStudent) return;
-
-      // Combine quest arrays safely
-      const currentDailyQuests = Array.isArray(dailyQuests) ? dailyQuests : [];
-      const currentWeeklyQuests = Array.isArray(weeklyQuests) ? weeklyQuests : [];
-      const allQuestsList = [...currentDailyQuests, ...currentWeeklyQuests];
-
-      // Check individual quests manually
-      for (let i = 0; i < allQuestsList.length; i++) {
-        const quest = allQuestsList[i];
-        if (quest && quest.category === 'individual') {
-          const completedByList = Array.isArray(quest.completedBy) ? quest.completedBy : [];
-          let alreadyCompleted = false;
-          
-          for (let j = 0; j < completedByList.length; j++) {
-            if (completedByList[j] === studentId) {
-              alreadyCompleted = true;
-              break;
-            }
-          }
-          
-          if (!alreadyCompleted) {
-            const questCreatedDate = new Date(quest.startDate);
-            const studentLastActive = targetStudent.lastXpDate ? new Date(targetStudent.lastXpDate) : new Date('2024-01-01');
-            
-            const today = new Date().toISOString().split('T')[0];
-            const isNewQuest = quest.startDate === today;
-            
-            if (questCreatedDate <= studentLastActive || !targetStudent.lastXpDate || isNewQuest) {
-              if (checkIndividualQuestCompletion(quest, studentId)) {
-                setTimeout(() => completeQuest(quest.id, studentId), 100);
-              }
-            }
-          }
-        }
-      }
-
-      // Check class quests manually
-      for (let i = 0; i < allQuestsList.length; i++) {
-        const quest = allQuestsList[i];
-        if (quest && quest.category === 'class') {
-          const completedByList = Array.isArray(quest.completedBy) ? quest.completedBy : [];
-          let alreadyCompleted = false;
-          
-          for (let j = 0; j < completedByList.length; j++) {
-            if (completedByList[j] === 'class') {
-              alreadyCompleted = true;
-              break;
-            }
-          }
-          
-          if (!alreadyCompleted) {
-            if (checkClassQuestCompletionSafely(quest, studentCheckArray)) {
-              setTimeout(() => completeQuest(quest.id, null), 100);
-            }
-          }
-        }
+      if (questId && typeof completeQuest === 'function') {
+        completeQuest(questId, studentId);
+        showToast('Quest marked as complete!');
       }
     } catch (error) {
-      console.error('Error checking quest completion:', error);
+      console.log('Quest completion failed:', error);
+      showToast('Failed to complete quest. Please try again.');
     }
   };
 
@@ -1093,7 +1076,6 @@ export default function ClassroomChampions() {
 
       saveStudentsToFirebase(updatedStudents);
       
-      // Check quest completion with error handling
       setTimeout(() => {
         try {
           if (typeof checkQuestCompletionSafely === 'function') {
@@ -1153,7 +1135,6 @@ export default function ClassroomChampions() {
     showToast('Student added successfully!');
   };
 
-  // REAL race functions - restored
   const startRace = () => {
     if (selectedPets.length < 2) {
       alert("Select at least 2 pets to race!");
@@ -1251,7 +1232,6 @@ export default function ClassroomChampions() {
     setSelectedPets([]);
   };
 
-  // ENHANCED class management - with quest generation
   const importClass = async () => {
     if (!newClassName.trim()) {
       alert("Please enter a class name");
@@ -1326,43 +1306,37 @@ export default function ClassroomChampions() {
   };
 
   const loadClass = async (cls) => {
-    try {
-      const studentsWithCurrency = Array.isArray(cls.students) 
-        ? cls.students.map(updateStudentWithCurrency) 
-        : [];
-      setStudents(studentsWithCurrency);
-      setCurrentClassId(cls.id);
-      
-      const savedDailyQuests = Array.isArray(cls.dailyQuests) ? cls.dailyQuests : [];
-      const savedWeeklyQuests = Array.isArray(cls.weeklyQuests) ? cls.weeklyQuests : [];
-      
-      const today = new Date().toISOString().split('T')[0];
-      const weekStart = getWeekStart().toISOString().split('T')[0];
-      
-      let dailyQuestsToUse = savedDailyQuests;
-      let weeklyQuestsToUse = savedWeeklyQuests;
-      
-      if (savedDailyQuests.length === 0 || !savedDailyQuests.some(q => q && q.startDate === today)) {
-        dailyQuestsToUse = generateDailyQuests();
-      }
-      
-      if (savedWeeklyQuests.length === 0 || !savedWeeklyQuests.some(q => q && q.startDate === weekStart)) {
-        weeklyQuestsToUse = generateWeeklyQuests();
-      }
-      
-      setDailyQuests(dailyQuestsToUse);
-      setWeeklyQuests(weeklyQuestsToUse);
-      setQuestTemplates(Array.isArray(cls.questTemplates) ? cls.questTemplates : DEFAULT_QUEST_TEMPLATES);
-      setSelectedStudents([]);
-      setShowBulkXpPanel(false);
-      showToast(`${cls.name} loaded successfully!`);
-    } catch (error) {
-      console.error('Error loading class:', error);
-      showToast('Error loading class. Please try again.');
+    const studentsWithCurrency = Array.isArray(cls.students) 
+      ? cls.students.map(updateStudentWithCurrency) 
+      : [];
+    setStudents(studentsWithCurrency);
+    setCurrentClassId(cls.id);
+    
+    const savedDailyQuests = Array.isArray(cls.dailyQuests) ? cls.dailyQuests : [];
+    const savedWeeklyQuests = Array.isArray(cls.weeklyQuests) ? cls.weeklyQuests : [];
+    
+    const today = new Date().toISOString().split('T')[0];
+    const weekStart = getWeekStart().toISOString().split('T')[0];
+    
+    let dailyQuestsToUse = savedDailyQuests;
+    let weeklyQuestsToUse = savedWeeklyQuests;
+    
+    if (savedDailyQuests.length === 0 || !savedDailyQuests.some(q => q && q.startDate === today)) {
+      dailyQuestsToUse = generateDailyQuests();
     }
+    
+    if (savedWeeklyQuests.length === 0 || !savedWeeklyQuests.some(q => q && q.startDate === weekStart)) {
+      weeklyQuestsToUse = generateWeeklyQuests();
+    }
+    
+    setDailyQuests(dailyQuestsToUse);
+    setWeeklyQuests(weeklyQuestsToUse);
+    setQuestTemplates(Array.isArray(cls.questTemplates) ? cls.questTemplates : DEFAULT_QUEST_TEMPLATES);
+    setSelectedStudents([]);
+    setShowBulkXpPanel(false);
+    showToast(`${cls.name} loaded successfully!`);
   };
 
-  // SIMPLIFIED shop functions
   const handleShopStudentSelect = (student) => {
     setSelectedStudent(student);
   };
@@ -1372,16 +1346,18 @@ export default function ClassroomChampions() {
     const cost = item.price;
     
     if (!canAfford(student, cost)) {
-      alert(`${student.firstName} doesn't have enough coins!`);
+      alert(`${student.firstName} doesn't have enough coins! Needs ${cost}, has ${coins}`);
       return;
     }
 
     setSavingData(true);
+    
     setStudents(prev => {
       const updatedStudents = prev.map(s => {
         if (s.id !== student.id) return s;
         
         const updatedStudent = spendCoins(s, cost);
+        
         const newItem = {
           ...item,
           id: `${item.id}_${Date.now()}`,
@@ -1412,6 +1388,7 @@ export default function ClassroomChampions() {
     }
 
     setSavingData(true);
+    
     const rewards = generateLootBoxRewards(lootBox);
     
     setStudents(prev => {
@@ -1422,7 +1399,11 @@ export default function ClassroomChampions() {
         
         return {
           ...updatedStudent,
-          inventory: [...(updatedStudent.inventory || []), ...rewards]
+          lootBoxes: [...(updatedStudent.lootBoxes || []), {
+            boxType: lootBox.id,
+            rewards: rewards,
+            openedAt: new Date().toISOString()
+          }]
         };
       });
       
@@ -1436,7 +1417,155 @@ export default function ClassroomChampions() {
     showToast(`${student.firstName} opened ${lootBox.name} and got: ${rewardsList}!`);
   };
 
-  // REAL settings functions - restored
+  const handleAddQuestTemplate = (questTemplate) => {
+    const newTemplate = {
+      ...questTemplate,
+      id: `custom-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    };
+    
+    setQuestTemplates(prev => {
+      const updated = [...prev, newTemplate];
+      saveQuestDataToFirebase({ questTemplates: updated });
+      return updated;
+    });
+    
+    showToast('Quest template added successfully!');
+  };
+
+  const handleEditQuestTemplate = (templateId, updatedTemplate) => {
+    setQuestTemplates(prev => {
+      const updated = prev.map(template => 
+        template.id === templateId ? { ...template, ...updatedTemplate } : template
+      );
+      saveQuestDataToFirebase({ questTemplates: updated });
+      return updated;
+    });
+    
+    showToast('Quest template updated successfully!');
+  };
+
+  const handleDeleteQuestTemplate = (templateId) => {
+    setQuestTemplates(prev => {
+      const updated = prev.filter(template => template.id !== templateId);
+      saveQuestDataToFirebase({ questTemplates: updated });
+      return updated;
+    });
+    
+    showToast('Quest template deleted successfully!');
+  };
+
+  const handleResetQuestTemplates = () => {
+    setQuestTemplates(DEFAULT_QUEST_TEMPLATES);
+    saveQuestDataToFirebase({ questTemplates: DEFAULT_QUEST_TEMPLATES });
+    showToast('Quest templates reset to defaults!');
+  };
+
+  const saveGroupDataToFirebase = async (groupData) => {
+    if (!user || !currentClassId) return;
+    
+    try {
+      const docRef = doc(firestore, 'users', user.uid);
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        const data = snap.data();
+        const updatedClasses = data.classes.map(cls => 
+          cls.id === currentClassId 
+            ? { ...cls, ...groupData }
+            : cls
+        );
+        await setDoc(docRef, { ...data, classes: updatedClasses });
+      }
+    } catch (error) {
+      console.error('Error saving group data:', error);
+    }
+  };
+
+  const saveClassroomDataToFirebase = async (classroomData) => {
+    if (!user || !currentClassId) return;
+    
+    try {
+      const docRef = doc(firestore, 'users', user.uid);
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        const data = snap.data();
+        const updatedClasses = data.classes.map(cls => 
+          cls.id === currentClassId 
+            ? { ...cls, ...classroomData }
+            : cls
+        );
+        await setDoc(docRef, { ...data, classes: updatedClasses });
+      }
+    } catch (error) {
+      console.error('Error saving classroom data:', error);
+    }
+  };
+
+  const awardBulkXP = () => {
+    if (selectedStudents.length === 0) {
+      alert("Please select at least one student");
+      return;
+    }
+
+    setSavingData(true);
+    setStudents(prev => {
+      const updatedStudents = prev.map(student => {
+        if (!selectedStudents.includes(student.id)) return student;
+
+        const newTotalPoints = (student.totalPoints || 0) + bulkXpAmount;
+        const newWeeklyPoints = (student.weeklyPoints || 0) + bulkXpAmount;
+        const newCategoryTotal = {
+          ...student.categoryTotal,
+          [bulkXpCategory]: (student.categoryTotal?.[bulkXpCategory] || 0) + bulkXpAmount
+        };
+        const newCategoryWeekly = {
+          ...student.categoryWeekly,
+          [bulkXpCategory]: (student.categoryWeekly?.[bulkXpCategory] || 0) + bulkXpAmount
+        };
+
+        let updatedStudent = {
+          ...student,
+          totalPoints: newTotalPoints,
+          weeklyPoints: newWeeklyPoints,
+          categoryTotal: newCategoryTotal,
+          categoryWeekly: newCategoryWeekly,
+          lastXpDate: new Date().toISOString(),
+          logs: [
+            ...(student.logs || []),
+            {
+              type: bulkXpCategory,
+              amount: bulkXpAmount,
+              date: new Date().toISOString(),
+              source: "bulk_award"
+            }
+          ]
+        };
+
+        updatedStudent = checkForLevelUp(updatedStudent);
+
+        if (!student.pet && newTotalPoints >= 50) {
+          const newPet = getRandomPet();
+          newPet.name = getRandomPetName();
+          updatedStudent.pet = newPet;
+        }
+
+        return updatedStudent;
+      });
+
+      saveStudentsToFirebase(updatedStudents);
+      return updatedStudents;
+    });
+
+    setSavingData(false);
+    setSelectedStudents([]);
+    setShowBulkXpPanel(false);
+    
+    const studentNames = selectedStudents.length === students.length 
+      ? 'the entire class'
+      : `${selectedStudents.length} students`;
+    
+    showToast(`Awarded ${bulkXpAmount} XP to ${studentNames}!`);
+  };
+
   const handleDeductXP = (studentId, amount) => {
     if (amount <= 0) {
       alert("Please enter a positive amount");
@@ -1654,155 +1783,6 @@ export default function ClassroomChampions() {
     } finally {
       setSavingData(false);
     }
-  };
-
-  const handleAddQuestTemplate = (questTemplate) => {
-    const newTemplate = {
-      ...questTemplate,
-      id: `custom-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-    };
-    
-    setQuestTemplates(prev => {
-      const updated = [...prev, newTemplate];
-      saveQuestDataToFirebase({ questTemplates: updated });
-      return updated;
-    });
-    
-    showToast('Quest template added successfully!');
-  };
-
-  const handleEditQuestTemplate = (templateId, updatedTemplate) => {
-    setQuestTemplates(prev => {
-      const updated = prev.map(template => 
-        template.id === templateId ? { ...template, ...updatedTemplate } : template
-      );
-      saveQuestDataToFirebase({ questTemplates: updated });
-      return updated;
-    });
-    
-    showToast('Quest template updated successfully!');
-  };
-
-  const handleDeleteQuestTemplate = (templateId) => {
-    setQuestTemplates(prev => {
-      const updated = prev.filter(template => template.id !== templateId);
-      saveQuestDataToFirebase({ questTemplates: updated });
-      return updated;
-    });
-    
-    showToast('Quest template deleted successfully!');
-  };
-
-  const handleResetQuestTemplates = () => {
-    setQuestTemplates(DEFAULT_QUEST_TEMPLATES);
-    saveQuestDataToFirebase({ questTemplates: DEFAULT_QUEST_TEMPLATES });
-    showToast('Quest templates reset to defaults!');
-  };
-
-  const saveGroupDataToFirebase = async (groupData) => {
-    if (!user || !currentClassId) return;
-    
-    try {
-      const docRef = doc(firestore, 'users', user.uid);
-      const snap = await getDoc(docRef);
-      if (snap.exists()) {
-        const data = snap.data();
-        const updatedClasses = data.classes.map(cls => 
-          cls.id === currentClassId 
-            ? { ...cls, ...groupData }
-            : cls
-        );
-        await setDoc(docRef, { ...data, classes: updatedClasses });
-      }
-    } catch (error) {
-      console.error('Error saving group data:', error);
-    }
-  };
-
-  const saveClassroomDataToFirebase = async (classroomData) => {
-    if (!user || !currentClassId) return;
-    
-    try {
-      const docRef = doc(firestore, 'users', user.uid);
-      const snap = await getDoc(docRef);
-      if (snap.exists()) {
-        const data = snap.data();
-        const updatedClasses = data.classes.map(cls => 
-          cls.id === currentClassId 
-            ? { ...cls, ...classroomData }
-            : cls
-        );
-        await setDoc(docRef, { ...data, classes: updatedClasses });
-      }
-    } catch (error) {
-      console.error('Error saving classroom data:', error);
-    }
-  };
-
-  const awardBulkXP = () => {
-    if (selectedStudents.length === 0) {
-      alert("Please select at least one student");
-      return;
-    }
-
-    setSavingData(true);
-    setStudents(prev => {
-      const updatedStudents = prev.map(student => {
-        if (!selectedStudents.includes(student.id)) return student;
-
-        const newTotalPoints = (student.totalPoints || 0) + bulkXpAmount;
-        const newWeeklyPoints = (student.weeklyPoints || 0) + bulkXpAmount;
-        const newCategoryTotal = {
-          ...student.categoryTotal,
-          [bulkXpCategory]: (student.categoryTotal?.[bulkXpCategory] || 0) + bulkXpAmount
-        };
-        const newCategoryWeekly = {
-          ...student.categoryWeekly,
-          [bulkXpCategory]: (student.categoryWeekly?.[bulkXpCategory] || 0) + bulkXpAmount
-        };
-
-        let updatedStudent = {
-          ...student,
-          totalPoints: newTotalPoints,
-          weeklyPoints: newWeeklyPoints,
-          categoryTotal: newCategoryTotal,
-          categoryWeekly: newCategoryWeekly,
-          lastXpDate: new Date().toISOString(),
-          logs: [
-            ...(student.logs || []),
-            {
-              type: bulkXpCategory,
-              amount: bulkXpAmount,
-              date: new Date().toISOString(),
-              source: "bulk_award"
-            }
-          ]
-        };
-
-        updatedStudent = checkForLevelUp(updatedStudent);
-
-        if (!student.pet && newTotalPoints >= 50) {
-          const newPet = getRandomPet();
-          newPet.name = getRandomPetName();
-          updatedStudent.pet = newPet;
-        }
-
-        return updatedStudent;
-      });
-
-      saveStudentsToFirebase(updatedStudents);
-      return updatedStudents;
-    });
-
-    setSavingData(false);
-    setSelectedStudents([]);
-    setShowBulkXpPanel(false);
-    
-    const studentNames = selectedStudents.length === students.length 
-      ? 'the entire class'
-      : `${selectedStudents.length} students`;
-    
-    showToast(`Awarded ${bulkXpAmount} XP to ${studentNames}!`);
   };
 
   useEffect(() => {
