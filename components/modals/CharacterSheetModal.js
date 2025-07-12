@@ -1,6 +1,110 @@
-// CharacterSheetModal.js - Enhanced with Full Screen Image Viewing
+// CharacterSheetModal.js - Fixed with Working Full Screen Viewing
 import React, { useState } from 'react';
-import FullScreenImageViewer from '../FullScreenImageViewer';
+
+// Simple inline FullScreenImageViewer to avoid import issues
+const FullScreenImageViewer = ({ 
+  src, 
+  alt, 
+  isVisible, 
+  onClose,
+  title,
+  subtitle
+}) => {
+  const [imageLoaded, setImageLoaded] = useState(false);
+
+  if (!isVisible) return null;
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Escape') {
+      onClose();
+    }
+  };
+
+  React.useEffect(() => {
+    if (isVisible) {
+      setImageLoaded(false);
+      document.body.style.overflow = 'hidden';
+      document.addEventListener('keydown', handleKeyDown);
+      return () => {
+        document.body.style.overflow = 'unset';
+        document.removeEventListener('keydown', handleKeyDown);
+      };
+    }
+  }, [isVisible]);
+
+  return (
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center z-[9999]"
+      onClick={onClose}
+    >
+      {/* Loading Spinner */}
+      {!imageLoaded && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white"></div>
+        </div>
+      )}
+
+      {/* Main Image Container */}
+      <div 
+        className="relative max-w-[85vw] max-h-[85vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Image */}
+        <img
+          src={src}
+          alt={alt}
+          className={`w-full h-full object-contain rounded-xl shadow-2xl transition-opacity duration-300 ${
+            imageLoaded ? 'opacity-100' : 'opacity-0'
+          }`}
+          onLoad={() => setImageLoaded(true)}
+          onError={() => {
+            console.error('Failed to load image:', src);
+            setImageLoaded(true);
+          }}
+          style={{ maxHeight: '85vh', maxWidth: '85vw' }}
+        />
+
+        {/* Image Info Overlay */}
+        {imageLoaded && (title || subtitle) && (
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/50 to-transparent text-white p-6 rounded-b-xl">
+            {title && (
+              <h3 className="text-2xl font-bold mb-2">{title}</h3>
+            )}
+            {subtitle && (
+              <p className="text-lg text-gray-200">{subtitle}</p>
+            )}
+          </div>
+        )}
+
+        {/* Close Button */}
+        {imageLoaded && (
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 bg-black bg-opacity-50 hover:bg-opacity-70 text-white p-3 rounded-full transition-all duration-200"
+            title="Close (ESC)"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        )}
+
+        {/* Fantasy Corners */}
+        <div className="absolute top-0 left-0 w-8 h-8 border-l-4 border-t-4 border-yellow-400 rounded-tl-xl opacity-70"></div>
+        <div className="absolute top-0 right-0 w-8 h-8 border-r-4 border-t-4 border-yellow-400 rounded-tr-xl opacity-70"></div>
+        <div className="absolute bottom-0 left-0 w-8 h-8 border-l-4 border-b-4 border-yellow-400 rounded-bl-xl opacity-70"></div>
+        <div className="absolute bottom-0 right-0 w-8 h-8 border-r-4 border-b-4 border-yellow-400 rounded-br-xl opacity-70"></div>
+      </div>
+
+      {/* Instructions */}
+      {imageLoaded && (
+        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 text-white text-center">
+          <p className="text-sm opacity-70">Click anywhere or press ESC to close</p>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const CharacterSheetModal = ({ 
   selectedStudent, 
@@ -9,7 +113,7 @@ const CharacterSheetModal = ({
   calculateCoins 
 }) => {
   const [fullScreenImage, setFullScreenImage] = useState(null);
-  const [hoverTimeout, setHoverTimeout] = useState(null);
+  const [isHovering, setIsHovering] = useState(false);
 
   if (!selectedStudent) return null;
 
@@ -35,36 +139,38 @@ const CharacterSheetModal = ({
   const xpCoins = Math.floor((student.totalPoints || 0) / 5);
   const bonusCoins = student.coins || 0;
 
-  // Handle hover for full screen viewing
-  const handleImageHover = (imageSrc, title, subtitle) => {
-    if (hoverTimeout) {
-      clearTimeout(hoverTimeout);
+  // Handle avatar hover for full screen viewing
+  const handleAvatarHover = () => {
+    if (student.avatar) {
+      setIsHovering(true);
+      setTimeout(() => {
+        if (isHovering) {
+          setFullScreenImage({
+            src: student.avatar,
+            title: `${student.firstName}'s Avatar`,
+            subtitle: `Level ${student.avatarLevel} Champion • ${student.totalPoints || 0} Total XP`
+          });
+        }
+      }, 800); // 800ms delay for avatar
     }
-
-    const timeout = setTimeout(() => {
-      setFullScreenImage({
-        src: imageSrc,
-        title,
-        subtitle
-      });
-    }, 500); // 500ms delay before showing full screen
-
-    setHoverTimeout(timeout);
   };
 
-  const handleImageLeave = () => {
-    if (hoverTimeout) {
-      clearTimeout(hoverTimeout);
-      setHoverTimeout(null);
+  // Handle pet hover for full screen viewing
+  const handlePetHover = () => {
+    if (student.pet?.image) {
+      setTimeout(() => {
+        setFullScreenImage({
+          src: student.pet.image,
+          title: `${student.pet.name || 'Pet Companion'}`,
+          subtitle: `Level ${student.pet.level || 1} • Speed: ${(student.pet.speed || 1).toFixed(2)} • 🏆 ${student.pet.wins || 0} wins`
+        });
+      }, 1000); // 1000ms delay for pet
     }
   };
 
   const closeFullScreen = () => {
     setFullScreenImage(null);
-    if (hoverTimeout) {
-      clearTimeout(hoverTimeout);
-      setHoverTimeout(null);
-    }
+    setIsHovering(false);
   };
 
   return (
@@ -92,14 +198,10 @@ const CharacterSheetModal = ({
                     alt={student.firstName}
                     className="w-32 h-32 rounded-full border-4 border-gray-300 object-cover shadow-lg cursor-pointer hover:shadow-xl transition-all duration-300 hover:scale-105 hover:border-blue-400"
                     onClick={() => handleAvatarClick(student.id)}
-                    onMouseEnter={() => handleImageHover(
-                      student.avatar, 
-                      `${student.firstName}'s Avatar`,
-                      `Level ${student.avatarLevel} Champion`
-                    )}
-                    onMouseLeave={handleImageLeave}
+                    onMouseEnter={handleAvatarHover}
+                    onMouseLeave={() => setIsHovering(false)}
                   />
-                  {/* Hover indicator */}
+                  {/* Hover indicator for avatar */}
                   <div className="absolute inset-0 rounded-full bg-blue-500 bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 pointer-events-none flex items-center justify-center">
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-white text-sm font-bold bg-black bg-opacity-50 px-2 py-1 rounded">
                       🔍 Full View
@@ -122,12 +224,7 @@ const CharacterSheetModal = ({
                     src={student.pet.image}
                     alt="Pet"
                     className="w-12 h-12 rounded-full border-2 border-white shadow-lg cursor-pointer hover:shadow-xl transition-all duration-300 hover:scale-110 hover:border-purple-400"
-                    onMouseEnter={() => handleImageHover(
-                      student.pet.image,
-                      `${student.pet.name || 'Pet Companion'}`,
-                      `Level ${student.pet.level || 1} • Speed: ${(student.pet.speed || 1).toFixed(2)} • 🏆 ${student.pet.wins || 0} wins`
-                    )}
-                    onMouseLeave={handleImageLeave}
+                    onMouseEnter={handlePetHover}
                   />
                   {/* Pet hover indicator */}
                   <div className="absolute inset-0 rounded-full bg-purple-500 bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 pointer-events-none flex items-center justify-center">
@@ -223,12 +320,7 @@ const CharacterSheetModal = ({
                       src={student.pet.image} 
                       alt="Pet" 
                       className="w-16 h-16 rounded-full border-2 border-purple-300 cursor-pointer hover:border-purple-500 transition-all duration-300 hover:scale-110"
-                      onMouseEnter={() => handleImageHover(
-                        student.pet.image,
-                        `${student.pet.name || 'Pet Companion'}`,
-                        `Level ${student.pet.level || 1} • Speed: ${(student.pet.speed || 1).toFixed(2)} • 🏆 ${student.pet.wins || 0} wins`
-                      )}
-                      onMouseLeave={handleImageLeave}
+                      onMouseEnter={handlePetHover}
                     />
                     {/* Pet hover indicator */}
                     <div className="absolute inset-0 rounded-full bg-purple-500 bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 pointer-events-none flex items-center justify-center">
