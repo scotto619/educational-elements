@@ -1,206 +1,7 @@
-// ShopTab.js - Complete Working Shop with Inventory System
+// ShopTab.js - Complete Shop & Sell System with Full UI Integration
 import React, { useState } from 'react';
 
-// Shop Items Configuration
-const SHOP_ITEMS = [
-  // Accessories
-  {
-    id: 'crown_gold',
-    name: 'Golden Crown',
-    description: 'A magnificent golden crown for true champions',
-    icon: '👑',
-    price: 25,
-    category: 'accessories',
-    rarity: 'epic',
-    type: 'accessory'
-  },
-  {
-    id: 'glasses_cool',
-    name: 'Cool Sunglasses',
-    description: 'Look stylish with these awesome shades',
-    icon: '🕶️',
-    price: 15,
-    category: 'accessories',
-    rarity: 'rare',
-    type: 'accessory'
-  },
-  {
-    id: 'hat_wizard',
-    name: 'Wizard Hat',
-    description: 'Channel your inner wizard with this magical hat',
-    icon: '🧙‍♂️',
-    price: 20,
-    category: 'accessories',
-    rarity: 'rare',
-    type: 'accessory'
-  },
-  {
-    id: 'cape_hero',
-    name: 'Hero Cape',
-    description: 'Every hero needs a cape!',
-    icon: '🦸‍♂️',
-    price: 30,
-    category: 'accessories',
-    rarity: 'epic',
-    type: 'accessory'
-  },
-
-  // Power-ups
-  {
-    id: 'boost_xp',
-    name: 'XP Boost',
-    description: 'Double XP for your next achievement!',
-    icon: '⚡',
-    price: 20,
-    category: 'powerups',
-    rarity: 'rare',
-    type: 'powerup'
-  },
-  {
-    id: 'luck_charm',
-    name: 'Lucky Charm',
-    description: 'Increases your luck in everything!',
-    icon: '🍀',
-    price: 15,
-    category: 'powerups',
-    rarity: 'common',
-    type: 'powerup'
-  },
-  {
-    id: 'time_freeze',
-    name: 'Time Freeze',
-    description: 'Stop time for 10 seconds during activities',
-    icon: '⏰',
-    price: 35,
-    category: 'powerups',
-    rarity: 'legendary',
-    type: 'powerup'
-  },
-
-  // Trophies
-  {
-    id: 'trophy_bronze',
-    name: 'Bronze Trophy',
-    description: 'A shiny bronze trophy for your achievements',
-    icon: '🥉',
-    price: 10,
-    category: 'trophies',
-    rarity: 'common',
-    type: 'trophy'
-  },
-  {
-    id: 'trophy_silver',
-    name: 'Silver Trophy',
-    description: 'A gleaming silver trophy',
-    icon: '🥈',
-    price: 20,
-    category: 'trophies',
-    rarity: 'rare',
-    type: 'trophy'
-  },
-  {
-    id: 'trophy_gold',
-    name: 'Gold Trophy',
-    description: 'The ultimate golden trophy!',
-    icon: '🥇',
-    price: 35,
-    category: 'trophies',
-    rarity: 'epic',
-    type: 'trophy'
-  },
-
-  // Loot Boxes
-  {
-    id: 'basic_box',
-    name: 'Basic Loot Box',
-    description: 'Contains 3 random items of various rarities',
-    icon: '📦',
-    price: 25,
-    category: 'lootboxes',
-    rarity: 'common',
-    type: 'lootbox',
-    contents: {
-      count: 3,
-      rarityBonus: 0,
-      guaranteedRare: false
-    }
-  },
-  {
-    id: 'premium_box',
-    name: 'Premium Loot Box',
-    description: 'Contains 5 random items with guaranteed rare+',
-    icon: '✨',
-    price: 50,
-    category: 'lootboxes',
-    rarity: 'epic',
-    type: 'lootbox',
-    contents: {
-      count: 5,
-      rarityBonus: 10,
-      guaranteedRare: true
-    }
-  }
-];
-
-// Item Rarities
-const ITEM_RARITIES = {
-  common: {
-    name: 'Common',
-    bgColor: 'bg-gray-100',
-    textColor: 'text-gray-700',
-    borderColor: 'border-gray-300',
-    chance: 60
-  },
-  rare: {
-    name: 'Rare',
-    bgColor: 'bg-blue-100',
-    textColor: 'text-blue-700',
-    borderColor: 'border-blue-300',
-    chance: 25
-  },
-  epic: {
-    name: 'Epic',
-    bgColor: 'bg-purple-100',
-    textColor: 'text-purple-700',
-    borderColor: 'border-purple-300',
-    chance: 10
-  },
-  legendary: {
-    name: 'Legendary',
-    bgColor: 'bg-yellow-100',
-    textColor: 'text-yellow-700',
-    borderColor: 'border-yellow-300',
-    chance: 5
-  }
-};
-
-// Loot Box Items Pool
-const LOOT_BOX_ITEMS = [
-  // Common items
-  { id: 'sticker_star', name: 'Star Sticker', icon: '⭐', rarity: 'common', type: 'collectible' },
-  { id: 'sticker_heart', name: 'Heart Sticker', icon: '💖', rarity: 'common', type: 'collectible' },
-  { id: 'badge_good', name: 'Good Student Badge', icon: '😊', rarity: 'common', type: 'badge' },
-  
-  // Rare items
-  { id: 'gem_blue', name: 'Blue Gem', icon: '💎', rarity: 'rare', type: 'collectible' },
-  { id: 'medal_bronze', name: 'Bronze Medal', icon: '🏅', rarity: 'rare', type: 'award' },
-  { id: 'book_magic', name: 'Magic Book', icon: '📚', rarity: 'rare', type: 'accessory' },
-  
-  // Epic items
-  { id: 'sword_hero', name: 'Hero Sword', icon: '⚔️', rarity: 'epic', type: 'accessory' },
-  { id: 'shield_knight', name: 'Knight Shield', icon: '🛡️', rarity: 'epic', type: 'accessory' },
-  
-  // Legendary items
-  { id: 'crown_diamond', name: 'Diamond Crown', icon: '💎👑', rarity: 'legendary', type: 'accessory' },
-  { id: 'staff_wizard', name: 'Wizard Staff', icon: '🔮', rarity: 'legendary', type: 'accessory' }
-];
-
-const ShopTab = ({ 
-  students, 
-  setStudents, 
-  showToast,
-  saveStudentsToFirebase 
-}) => {
+const ShopTab = ({ students, setStudents, saveStudentsToFirebase, showToast }) => {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [activeCategory, setActiveCategory] = useState('accessories');
   const [showPurchaseModal, setShowPurchaseModal] = useState(null);
@@ -208,6 +9,112 @@ const ShopTab = ({
 
   // Constants
   const COINS_PER_XP = 5; // 5 XP = 1 coin
+  
+  // Sell values based on rarity
+  const SELL_VALUES = {
+    common: 1,
+    rare: 5,
+    epic: 10,
+    legendary: 15
+  };
+
+  // Item rarities with styles
+  const ITEM_RARITIES = {
+    common: {
+      name: 'Common',
+      chance: 60,
+      bgColor: 'bg-gray-100',
+      textColor: 'text-gray-700',
+      borderColor: 'border-gray-300'
+    },
+    rare: {
+      name: 'Rare',
+      chance: 25,
+      bgColor: 'bg-blue-100',
+      textColor: 'text-blue-700',
+      borderColor: 'border-blue-300'
+    },
+    epic: {
+      name: 'Epic',
+      chance: 10,
+      bgColor: 'bg-purple-100',
+      textColor: 'text-purple-700',
+      borderColor: 'border-purple-300'
+    },
+    legendary: {
+      name: 'Legendary',
+      chance: 5,
+      bgColor: 'bg-yellow-100',
+      textColor: 'text-yellow-700',
+      borderColor: 'border-yellow-300'
+    }
+  };
+
+  // Shop items
+  const SHOP_ITEMS = [
+    // Accessories
+    { id: 'crown', name: 'Golden Crown', icon: '👑', price: 15, rarity: 'epic', category: 'accessories', description: 'Majestic crown fit for a classroom champion!' },
+    { id: 'cape', name: 'Hero Cape', icon: '🦸', price: 10, rarity: 'rare', category: 'accessories', description: 'Every hero needs a cape!' },
+    { id: 'medal', name: 'Bronze Medal', icon: '🥉', price: 3, rarity: 'common', category: 'accessories', description: 'Your first step to greatness!' },
+    { id: 'glasses', name: 'Smart Glasses', icon: '🤓', price: 8, rarity: 'rare', category: 'accessories', description: 'Intelligence +10!' },
+    { id: 'hat', name: 'Wizard Hat', icon: '🧙', price: 12, rarity: 'epic', category: 'accessories', description: 'Magical wisdom awaits!' },
+    
+    // Power-ups
+    { id: 'lightning', name: 'Lightning Bolt', icon: '⚡', price: 6, rarity: 'rare', category: 'powerups', description: 'Instant energy boost!' },
+    { id: 'star', name: 'Power Star', icon: '⭐', price: 20, rarity: 'legendary', category: 'powerups', description: 'Ultimate power boost!' },
+    { id: 'shield', name: 'Protection Shield', icon: '🛡️', price: 8, rarity: 'rare', category: 'powerups', description: 'Protects from point loss!' },
+    { id: 'rocket', name: 'Speed Rocket', icon: '🚀', price: 15, rarity: 'epic', category: 'powerups', description: 'Zoom past the competition!' },
+    
+    // Trophies
+    { id: 'trophy_gold', name: 'Golden Trophy', icon: '🏆', price: 25, rarity: 'legendary', category: 'trophies', description: 'The ultimate achievement!' },
+    { id: 'trophy_silver', name: 'Silver Trophy', icon: '🥈', price: 12, rarity: 'epic', category: 'trophies', description: 'Outstanding performance!' },
+    { id: 'trophy_bronze', name: 'Bronze Trophy', icon: '🥉', price: 5, rarity: 'rare', category: 'trophies', description: 'Great job!' },
+    { id: 'ribbon', name: 'Achievement Ribbon', icon: '🎗️', price: 3, rarity: 'common', category: 'trophies', description: 'Recognition of effort!' }
+  ];
+
+  // Loot boxes
+  const LOOT_BOXES = [
+    {
+      id: 'basic_box',
+      name: 'Basic Loot Box',
+      icon: '📦',
+      price: 10,
+      rarity: 'common',
+      category: 'lootboxes',
+      description: 'Contains 3 random items',
+      contents: { count: 3, rarityBonus: 0, guaranteedRare: false }
+    },
+    {
+      id: 'premium_box',
+      name: 'Premium Loot Box',
+      icon: '🎁',
+      price: 20,
+      rarity: 'rare',
+      category: 'lootboxes',
+      description: 'Contains 5 random items with better chances',
+      contents: { count: 5, rarityBonus: 15, guaranteedRare: true }
+    },
+    {
+      id: 'legendary_box',
+      name: 'Legendary Loot Box',
+      icon: '💎',
+      price: 35,
+      rarity: 'legendary',
+      category: 'lootboxes',
+      description: 'Contains 7 random items with premium chances',
+      contents: { count: 7, rarityBonus: 30, guaranteedRare: true }
+    }
+  ];
+
+  // Loot box possible items
+  const LOOT_BOX_ITEMS = [
+    ...SHOP_ITEMS,
+    // Additional exclusive loot box items
+    { id: 'gem_red', name: 'Ruby Gem', icon: '💎', rarity: 'legendary' },
+    { id: 'gem_blue', name: 'Sapphire Gem', icon: '💠', rarity: 'epic' },
+    { id: 'gem_green', name: 'Emerald Gem', icon: '💚', rarity: 'rare' },
+    { id: 'coin_stack', name: 'Coin Stack', icon: '🪙', rarity: 'common' }
+  ];
 
   // Categories
   const categories = [
@@ -319,7 +226,6 @@ const ShopTab = ({
       return;
     }
 
-    // Generate loot box rewards
     const rewards = generateLootBoxRewards(lootBox);
 
     // Update student with loot box purchase
@@ -363,7 +269,73 @@ const ShopTab = ({
 
     setShowPurchaseModal(null);
     const rewardNames = rewards.map(r => r.name).join(', ');
-    showToast(`${selectedStudent.firstName} opened ${lootBox.name} and got: ${rewardNames}! 🎁`);
+    showToast(`${selectedStudent.firstName} opened ${lootBox.name} and got: ${rewardNames}! 🎉`);
+  };
+
+  // Handle selling an item - UPDATED WITH PROPER UI INTEGRATION
+  const handleSellItem = (student, item, itemIndex) => {
+    const sellValue = SELL_VALUES[item.rarity] || 1;
+    
+    if (window.confirm(`Sell ${item.name} for ${sellValue} coins?`)) {
+      // Update student with sold item
+      setStudents(prevStudents => {
+        const updatedStudents = prevStudents.map(s => {
+          if (s.id !== student.id) return s;
+
+          // Remove item from inventory
+          const newInventory = [...(s.inventory || [])];
+          newInventory.splice(itemIndex, 1);
+
+          const updatedStudent = {
+            ...s,
+            inventory: newInventory,
+            coins: (s.coins || 0) + sellValue, // Add coins as bonus coins
+            logs: [
+              ...(s.logs || []),
+              {
+                type: 'sale',
+                amount: sellValue,
+                date: new Date().toISOString(),
+                source: 'item_sale',
+                item: item.name
+              }
+            ]
+          };
+
+          return updatedStudent;
+        });
+
+        // Save to Firebase
+        if (saveStudentsToFirebase) {
+          saveStudentsToFirebase(updatedStudents);
+        }
+
+        return updatedStudents;
+      });
+
+      // Update inventory modal state if it's the same student
+      if (showInventoryModal?.id === student.id) {
+        setShowInventoryModal(prev => {
+          const newInventory = [...(prev.inventory || [])];
+          newInventory.splice(itemIndex, 1);
+          return {
+            ...prev,
+            inventory: newInventory,
+            coins: (prev.coins || 0) + sellValue
+          };
+        });
+      }
+
+      // Update selected student if it's the same
+      if (selectedStudent?.id === student.id) {
+        setSelectedStudent(prev => ({
+          ...prev,
+          coins: (prev.coins || 0) + sellValue
+        }));
+      }
+
+      showToast(`Sold ${item.name} for ${sellValue} coins! 💰`);
+    }
   };
 
   // Generate loot box rewards
@@ -405,7 +377,9 @@ const ShopTab = ({
   };
 
   // Get filtered items
-  const filteredItems = SHOP_ITEMS.filter(item => item.category === activeCategory);
+  const filteredItems = activeCategory === 'lootboxes' 
+    ? LOOT_BOXES 
+    : SHOP_ITEMS.filter(item => item.category === activeCategory);
 
   // Get rarity styles
   const getRarityStyles = (rarity) => {
@@ -636,7 +610,7 @@ const ShopTab = ({
                 </button>
                 <button
                   onClick={() => {
-                    if (showPurchaseModal.type === 'lootbox') {
+                    if (showPurchaseModal.category === 'lootboxes') {
                       handleLootBoxPurchase(showPurchaseModal);
                     } else {
                       handlePurchase(showPurchaseModal);
@@ -652,18 +626,25 @@ const ShopTab = ({
         </div>
       )}
 
-      {/* Inventory Modal */}
+      {/* Enhanced Inventory Modal with Selling Functionality */}
       {showInventoryModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-2xl max-h-96 overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-4xl max-h-96 overflow-y-auto">
             <div className="text-center mb-6">
               <h2 className="text-2xl font-bold text-gray-800 mb-2">
                 🎒 {showInventoryModal.firstName}'s Inventory
               </h2>
               <CurrencyDisplay student={showInventoryModal} />
+              <div className="mt-3 text-sm text-gray-600">
+                <span className="font-semibold">Sell Values:</span> 
+                <span className="ml-2 text-gray-500">Common: 1🪙</span>
+                <span className="ml-2 text-blue-600">Rare: 5🪙</span>
+                <span className="ml-2 text-purple-600">Epic: 10🪙</span>
+                <span className="ml-2 text-yellow-600">Legendary: 15🪙</span>
+              </div>
             </div>
 
-            <div className="grid grid-cols-3 md:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
               {(showInventoryModal.inventory || []).length === 0 ? (
                 <div className="col-span-full text-center py-8">
                   <p className="text-gray-500 italic">No items in inventory yet!</p>
@@ -672,11 +653,29 @@ const ShopTab = ({
               ) : (
                 (showInventoryModal.inventory || []).map((item, index) => {
                   const rarity = getRarityStyles(item.rarity);
+                  const sellValue = SELL_VALUES[item.rarity] || 1;
+                  
                   return (
-                    <div key={index} className={`${rarity.bg} border-2 ${rarity.border} rounded-lg p-3 text-center`}>
-                      <div className="text-2xl mb-1">{item.icon}</div>
-                      <div className="text-xs font-semibold text-gray-800">{item.name}</div>
-                      <div className={`text-xs ${rarity.text}`}>{ITEM_RARITIES[item.rarity].name}</div>
+                    <div key={index} className={`${rarity.bg} border-2 ${rarity.border} rounded-lg p-3 text-center relative group hover:shadow-lg transition-all`}>
+                      <div className="text-3xl mb-2">{item.icon}</div>
+                      <div className="text-sm font-semibold text-gray-800 mb-1">{item.name}</div>
+                      <div className={`text-xs ${rarity.text} mb-2`}>{ITEM_RARITIES[item.rarity].name}</div>
+                      
+                      {/* Sell Button */}
+                      <button
+                        onClick={() => handleSellItem(showInventoryModal, item, index)}
+                        className="w-full bg-red-500 hover:bg-red-600 text-white text-xs px-2 py-1 rounded transition-colors font-semibold"
+                        title={`Sell for ${sellValue} coins`}
+                      >
+                        Sell {sellValue}🪙
+                      </button>
+                      
+                      {/* Purchase date tooltip */}
+                      {item.purchasedAt && (
+                        <div className="text-xs text-gray-400 mt-1">
+                          {new Date(item.purchasedAt).toLocaleDateString()}
+                        </div>
+                      )}
                     </div>
                   );
                 })
