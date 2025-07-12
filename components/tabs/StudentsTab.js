@@ -179,7 +179,7 @@ const StudentsTab = ({
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500"
             >
               <option value="name">Name (A-Z)</option>
               <option value="xp">Total XP</option>
@@ -194,7 +194,7 @@ const StudentsTab = ({
             <select
               value={filterBy}
               onChange={(e) => setFilterBy(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">All Students</option>
               <option value="present">Present Today</option>
@@ -244,7 +244,7 @@ const StudentsTab = ({
                 <select
                   value={bulkXpCategory}
                   onChange={(e) => setBulkXpCategory(e.target.value)}
-                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                  className="w-full px-2 py-1 border border-gray-700 rounded text-sm"
                 >
                   <option value="Respectful">Respectful</option>
                   <option value="Responsible">Responsible</option>
@@ -259,7 +259,7 @@ const StudentsTab = ({
                   max="10"
                   value={bulkXpAmount}
                   onChange={(e) => setBulkXpAmount(parseInt(e.target.value))}
-                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                  className="w-full px-2 py-1 border border-gray-700 rounded text-sm"
                 />
               </div>
               <div className="flex items-end">
@@ -297,7 +297,7 @@ const StudentsTab = ({
               present: 'border-green-500 bg-green-50',
               absent: 'border-red-500 bg-red-50',
               late: 'border-yellow-500 bg-yellow-50',
-              unmarked: 'border-gray-300 bg-white'
+              unmarked: 'border-gray-700 bg-white'
             }[attendanceStatus];
 
             return (
@@ -311,7 +311,7 @@ const StudentsTab = ({
                 {/* Selection Indicator */}
                 {showBulkXpPanel && (
                   <div className={`absolute top-2 right-2 w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                    isSelected ? 'border-purple-500 bg-purple-500' : 'border-gray-300 bg-white'
+                    isSelected ? 'border-purple-500 bg-purple-500' : 'border-gray-700 bg-white'
                   }`}>
                     {isSelected && <span className="text-white text-xs">✓</span>}
                   </div>
@@ -322,7 +322,7 @@ const StudentsTab = ({
                   <div className={`w-3 h-3 rounded-full ${
                     attendanceStatus === 'present' ? 'bg-green-500' :
                     attendanceStatus === 'absent' ? 'bg-red-500' :
-                    attendanceStatus === 'late' ? 'bg-yellow-500' : 'bg-gray-300'
+                    attendanceStatus === 'late' ? 'bg-yellow-500' : 'bg-gray-700'
                   }`} title={`Attendance: ${attendanceStatus}`}></div>
                   {availableQuests.length > 0 && (
                     <div className="w-3 h-3 rounded-full bg-blue-500 animate-pulse" title={`${availableQuests.length} quests available`}></div>
