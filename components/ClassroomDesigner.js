@@ -279,6 +279,7 @@ const ClassroomDesigner = ({
     
     // Clear existing items
     setItems([]);
+    setSelectedItem(null);
     
     const roomLeft = 50;
     const roomTop = 50;
@@ -296,7 +297,7 @@ const ClassroomDesigner = ({
         const rows = Math.ceil(Math.min(students.length, 30) / desksPerRow);
         
         for (let row = 0; row < rows; row++) {
-          for (let col = 0; col < desksPerRow && id <= students.length; col++) {
+          for (let col = 0; col < desksPerRow && newItems.length < students.length; col++) {
             newItems.push({
               id: id,
               type: 'desk_single',
@@ -305,16 +306,17 @@ const ClassroomDesigner = ({
               width: deskWidth,
               height: deskHeight,
               rotation: 0,
-              label: `Desk ${id - 1}`,
+              label: `Desk ${id}`,
               assignedStudent: null,
-              zIndex: id - 1
+              zIndex: id
             });
+            id++;
           }
         }
         
         // Teacher desk - centered at front
         newItems.push({
-          id: id++,
+          id: id,
           type: 'teacher_desk',
           x: roomLeft + roomWidth/2 - 60,
           y: roomTop + 20,
@@ -323,12 +325,13 @@ const ClassroomDesigner = ({
           rotation: 0,
           label: 'Teacher Desk',
           assignedStudent: null,
-          zIndex: id - 1
+          zIndex: id
         });
+        id++;
         
         // Whiteboard - centered at front
         newItems.push({
-          id: id++,
+          id: id,
           type: 'whiteboard',
           x: roomLeft + roomWidth/2 - 100,
           y: roomTop,
@@ -337,39 +340,41 @@ const ClassroomDesigner = ({
           rotation: 0,
           label: 'Whiteboard',
           assignedStudent: null,
-          zIndex: id - 1
+          zIndex: id
         });
+        id++;
         break;
 
       case 'groups':
         // Group tables - arranged in grid within classroom
         const tableSize = 80;
-        const tableSpacing = 120;
+        const tableSpacing = 150; // Increased spacing to prevent overlap
         const tablesPerRow = Math.floor(roomWidth / tableSpacing);
-        const tableRows = Math.floor(roomHeight / tableSpacing);
+        const tableRows = Math.ceil(6 / tablesPerRow); // Calculate rows needed for 6 tables
         
         let groupCount = 0;
         for (let row = 0; row < tableRows && groupCount < 6; row++) {
           for (let col = 0; col < tablesPerRow && groupCount < 6; col++) {
             newItems.push({
-              id: id++,
+              id: id,
               type: 'table_round',
-              x: roomLeft + col * tableSpacing + (roomWidth - (tablesPerRow - 1) * tableSpacing) / 2,
+              x: roomLeft + col * tableSpacing + (roomWidth - Math.min(tablesPerRow, 6 - row * tablesPerRow) * tableSpacing) / 2 + tableSpacing/2 - tableSize/2,
               y: roomTop + row * tableSpacing + 100,
               width: tableSize,
               height: tableSize,
               rotation: 0,
               label: `Group ${groupCount + 1}`,
               assignedStudent: null,
-              zIndex: id - 1
+              zIndex: id
             });
+            id++;
             groupCount++;
           }
         }
         
         // Teacher desk
         newItems.push({
-          id: id++,
+          id: id,
           type: 'teacher_desk',
           x: roomLeft + 20,
           y: roomTop + 20,
@@ -378,12 +383,13 @@ const ClassroomDesigner = ({
           rotation: 0,
           label: 'Teacher Desk',
           assignedStudent: null,
-          zIndex: id - 1
+          zIndex: id
         });
+        id++;
         
         // Whiteboard
         newItems.push({
-          id: id++,
+          id: id,
           type: 'whiteboard',
           x: roomLeft + roomWidth/2 - 100,
           y: roomTop,
@@ -392,16 +398,17 @@ const ClassroomDesigner = ({
           rotation: 0,
           label: 'Whiteboard',
           assignedStudent: null,
-          zIndex: id - 1
+          zIndex: id
         });
+        id++;
         break;
 
       case 'flexible':
-        // Flexible learning spaces
+        // Flexible learning spaces with better spacing
         
         // Reading corner
         newItems.push({
-          id: id++,
+          id: id,
           type: 'reading_corner',
           x: roomLeft + 20,
           y: roomTop + roomHeight - 120,
@@ -410,12 +417,13 @@ const ClassroomDesigner = ({
           rotation: 0,
           label: 'Reading Corner',
           assignedStudent: null,
-          zIndex: id - 1
+          zIndex: id
         });
+        id++;
         
         // Computer station
         newItems.push({
-          id: id++,
+          id: id,
           type: 'computer_station',
           x: roomLeft + roomWidth - 100,
           y: roomTop + roomHeight - 80,
@@ -424,12 +432,13 @@ const ClassroomDesigner = ({
           rotation: 0,
           label: 'Computer Station',
           assignedStudent: null,
-          zIndex: id - 1
+          zIndex: id
         });
+        id++;
         
         // Central group table
         newItems.push({
-          id: id++,
+          id: id,
           type: 'table_group',
           x: roomLeft + roomWidth/2 - 60,
           y: roomTop + roomHeight/2 - 40,
@@ -438,12 +447,13 @@ const ClassroomDesigner = ({
           rotation: 0,
           label: 'Central Table',
           assignedStudent: null,
-          zIndex: id - 1
+          zIndex: id
         });
+        id++;
         
         // Teacher mobile desk
         newItems.push({
-          id: id++,
+          id: id,
           type: 'teacher_desk',
           x: roomLeft + roomWidth - 140,
           y: roomTop + 20,
@@ -452,12 +462,13 @@ const ClassroomDesigner = ({
           rotation: 0,
           label: 'Teacher Desk',
           assignedStudent: null,
-          zIndex: id - 1
+          zIndex: id
         });
+        id++;
         
         // Smart board
         newItems.push({
-          id: id++,
+          id: id,
           type: 'smart_board',
           x: roomLeft + 20,
           y: roomTop,
@@ -466,14 +477,15 @@ const ClassroomDesigner = ({
           rotation: 0,
           label: 'Smart Board',
           assignedStudent: null,
-          zIndex: id - 1
+          zIndex: id
         });
+        id++;
         break;
     }
 
     setItems(newItems);
     setNextId(id);
-    showToast(`Loaded ${layoutType} layout!`);
+    showToast(`Loaded ${layoutType} layout with ${newItems.length} items!`);
   };
 
   // Save current layout
@@ -587,6 +599,7 @@ const ClassroomDesigner = ({
     if (!libraryItem) return null;
 
     const isSelected = selectedItem?.id === item.id;
+    const assignedStudent = item.assignedStudent ? students.find(s => s.id === item.assignedStudent) : null;
     
     return (
       <div
@@ -606,10 +619,16 @@ const ClassroomDesigner = ({
           transform: `rotate(${item.rotation || 0}deg)`,
         }}
         onMouseDown={(e) => handleMouseDown(e, item)}
-        title={item.label}
+        title={item.label + (assignedStudent ? ` - ${assignedStudent.firstName}` : '')}
       >
-        <div className="w-full h-full flex items-center justify-center text-xs font-bold text-white p-1 text-center">
-          <span className="truncate">{libraryItem.icon}</span>
+        <div className="w-full h-full flex flex-col items-center justify-center text-xs font-bold text-white p-1 text-center">
+          <span className="text-base">{libraryItem.icon}</span>
+          {/* Show student name if assigned */}
+          {assignedStudent && (
+            <div className="bg-black bg-opacity-75 text-white px-1 py-0.5 rounded text-xs font-bold mt-1 truncate w-full text-center">
+              {assignedStudent.firstName}
+            </div>
+          )}
         </div>
         
         {isSelected && viewMode === 'design' && (
