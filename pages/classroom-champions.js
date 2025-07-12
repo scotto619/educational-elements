@@ -1,4 +1,4 @@
-// classroom-champions.js - UPDATED with StudentHelpQueue Integration
+// classroom-champions.js - COMPLETE FIXED VERSION with Doubled Loot Boxes
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
@@ -29,7 +29,7 @@ const QuestCompletionModal = React.lazy(() => import('../components/modals/Quest
 // ===============================================
 
 const MAX_LEVEL = 4;
-const COINS_PER_XP = 5; // 1 coin per 5 XP
+const COINS_PER_XP = 5; // 5 XP = 1 coin
 
 const ITEM_RARITIES = {
   common: { 
@@ -144,39 +144,39 @@ const SHOP_ITEMS = [
     effect: 'luck_boost_24h'
   },
   
-  // Loot Boxes
+  // DOUBLED LOOT BOXES - All counts doubled!
   {
     id: 'basic_box',
     name: 'Basic Loot Box',
-    description: 'Contains 3 random items',
+    description: 'Contains 6 random items', // Was 3, now 6
     price: 4,
     type: 'lootbox',
     rarity: 'common',
     icon: '📦',
     category: 'lootboxes',
-    contents: { count: 3, rarityBonus: 0 }
+    contents: { count: 6, rarityBonus: 0 } // DOUBLED from 3 to 6
   },
   {
     id: 'premium_box',
     name: 'Premium Loot Box',
-    description: 'Contains 5 random items with better odds',
+    description: 'Contains 10 random items with better odds', // Was 5, now 10
     price: 8,
     type: 'lootbox',
     rarity: 'rare',
     icon: '🎁',
     category: 'lootboxes',
-    contents: { count: 5, rarityBonus: 15 }
+    contents: { count: 10, rarityBonus: 15 } // DOUBLED from 5 to 10
   },
   {
     id: 'legendary_box',
     name: 'Legendary Loot Box',
-    description: 'Contains 7 items with guaranteed rare+',
+    description: 'Contains 14 items with guaranteed rare+', // Was 7, now 14
     price: 15,
     type: 'lootbox',
     rarity: 'legendary',
     icon: '💎',
     category: 'lootboxes',
-    contents: { count: 7, rarityBonus: 30, guaranteedRare: true }
+    contents: { count: 14, rarityBonus: 30, guaranteedRare: true } // DOUBLED from 7 to 14
   },
   
   // Collectibles
@@ -218,27 +218,35 @@ const LOOT_BOX_ITEMS = [
   { id: 'sticker_star', name: 'Star Sticker', icon: '⭐', rarity: 'common', effect: 'cosmetic' },
   { id: 'pencil', name: 'Magic Pencil', icon: '✏️', rarity: 'common', effect: 'cosmetic' },
   { id: 'eraser', name: 'Lucky Eraser', icon: '🔸', rarity: 'common', effect: 'cosmetic' },
+  { id: 'notebook', name: 'Enchanted Notebook', icon: '📓', rarity: 'common', effect: 'cosmetic' },
+  { id: 'ruler', name: 'Golden Ruler', icon: '📏', rarity: 'common', effect: 'cosmetic' },
   
   // Rare Items
   { id: 'coin_medium', name: 'Coin Bag', icon: '💎', rarity: 'rare', effect: 'coins_3' },
   { id: 'rainbow_sticker', name: 'Rainbow Sticker', icon: '🌈', rarity: 'rare', effect: 'cosmetic' },
   { id: 'magic_wand', name: 'Magic Wand', icon: '🪄', rarity: 'rare', effect: 'cosmetic' },
   { id: 'pet_toy', name: 'Pet Toy', icon: '🧸', rarity: 'rare', effect: 'pet_happiness' },
+  { id: 'crystal', name: 'Power Crystal', icon: '💎', rarity: 'rare', effect: 'cosmetic' },
+  { id: 'scroll', name: 'Ancient Scroll', icon: '📜', rarity: 'rare', effect: 'cosmetic' },
   
   // Epic Items
   { id: 'coin_large', name: 'Treasure Chest', icon: '💰', rarity: 'epic', effect: 'coins_5' },
   { id: 'crystal_ball', name: 'Crystal Ball', icon: '🔮', rarity: 'epic', effect: 'cosmetic' },
   { id: 'spell_book', name: 'Ancient Spell Book', icon: '📚', rarity: 'epic', effect: 'xp_boost' },
   { id: 'golden_apple', name: 'Golden Apple', icon: '🍎', rarity: 'epic', effect: 'teacher_favorite' },
+  { id: 'magic_ring', name: 'Ring of Power', icon: '💍', rarity: 'epic', effect: 'cosmetic' },
+  { id: 'dragon_scale', name: 'Dragon Scale', icon: '🐲', rarity: 'epic', effect: 'cosmetic' },
   
   // Legendary Items
   { id: 'coin_jackpot', name: 'Jackpot!', icon: '🎰', rarity: 'legendary', effect: 'coins_10' },
   { id: 'unicorn', name: 'Unicorn Friend', icon: '🦄', rarity: 'legendary', effect: 'pet_legendary' },
   { id: 'infinity_gem', name: 'Infinity Gem', icon: '💎', rarity: 'legendary', effect: 'permanent_buff' },
-  { id: 'phoenix_feather', name: 'Phoenix Feather', icon: '🔥', rarity: 'legendary', effect: 'resurrection' }
+  { id: 'phoenix_feather', name: 'Phoenix Feather', icon: '🔥', rarity: 'legendary', effect: 'resurrection' },
+  { id: 'time_crystal', name: 'Time Crystal', icon: '⏰', rarity: 'legendary', effect: 'cosmetic' },
+  { id: 'star_fragment', name: 'Star Fragment', icon: '✨', rarity: 'legendary', effect: 'cosmetic' }
 ];
 
-// FIXED: Default quest templates - always available
+// Default quest templates
 const DEFAULT_QUEST_TEMPLATES = [
   // Daily Quests - Award 1 coin each
   {
@@ -383,11 +391,12 @@ const PET_NAMES = [
 // UTILITY FUNCTIONS - FIXED COIN SYSTEM
 // ===============================================
 
-// FIXED: Calculate coins based on both XP and separate coins field
+// FIXED: Calculate coins properly including coinsSpent
 const calculateCoins = (student) => {
   const xpCoins = Math.floor((student?.totalPoints || 0) / COINS_PER_XP);
   const bonusCoins = student?.coins || 0;
-  return xpCoins + bonusCoins;
+  const coinsSpent = student?.coinsSpent || 0;
+  return Math.max(0, xpCoins + bonusCoins - coinsSpent); // NOW INCLUDES COINSSPENT!
 };
 
 const canAfford = (student, cost) => {
@@ -434,7 +443,7 @@ const spendCoins = (student, cost) => {
   return student;
 };
 
-// FIXED: Award bonus coins (from quests)
+// Award bonus coins (from quests)
 const awardCoins = (student, coinAmount) => {
   return {
     ...student,
@@ -567,9 +576,9 @@ const TabLoadingSpinner = () => (
   </div>
 );
 
-// Currency Display Component - FIXED
+// FIXED: Currency Display Component that uses the corrected calculateCoins
 const CurrencyDisplay = ({ student }) => {
-  const coins = calculateCoins(student);
+  const coins = calculateCoins(student); // Now correctly calculates available coins
   const coinsSpent = student?.coinsSpent || 0;
   const xpCoins = Math.floor((student?.totalPoints || 0) / COINS_PER_XP);
   const bonusCoins = student?.coins || 0;
@@ -580,7 +589,7 @@ const CurrencyDisplay = ({ student }) => {
         <div className="text-2xl font-bold text-yellow-600">💰</div>
         <div className="text-sm text-yellow-700">Available</div>
         <div className="text-lg font-bold text-yellow-800">{coins}</div>
-        <div className="text-xs text-yellow-600">({xpCoins} XP + {bonusCoins} bonus)</div>
+        <div className="text-xs text-yellow-600">({xpCoins} XP + {bonusCoins} bonus - {coinsSpent} spent)</div>
       </div>
       <div className="text-center">
         <div className="text-2xl font-bold text-gray-600">🛍️</div>
@@ -643,7 +652,7 @@ export default function ClassroomChampions() {
   const [bulkXpCategory, setBulkXpCategory] = useState('Respectful');
   const [showBulkXpPanel, setShowBulkXpPanel] = useState(false);
 
-  // FIXED: Quest system states - always initialized
+  // Quest system states
   const [dailyQuests, setDailyQuests] = useState([]);
   const [weeklyQuests, setWeeklyQuests] = useState([]);
   const [questTemplates, setQuestTemplates] = useState(DEFAULT_QUEST_TEMPLATES);
@@ -687,14 +696,12 @@ export default function ClassroomChampions() {
             : cls
         );
         await setDoc(docRef, { ...data, classes: updatedClasses });
-        console.log("✅ Student data saved to Firebase");
       }
     } catch (error) {
-      console.error("❌ Error saving student data:", error);
+      console.error('Error saving students:', error);
     }
   };
 
-  // FIXED: Enhanced quest data saving
   const saveQuestDataToFirebase = async (questData) => {
     if (!user || !currentClassId) return;
     
@@ -709,247 +716,141 @@ export default function ClassroomChampions() {
             : cls
         );
         await setDoc(docRef, { ...data, classes: updatedClasses });
-        console.log("✅ Quest data saved to Firebase");
       }
     } catch (error) {
-      console.error("❌ Error saving quest data:", error);
+      console.error('Error saving quest data:', error);
     }
   };
 
-  // Group data saving
-  const saveGroupDataToFirebase = async (groupData) => {
-    if (!user || !currentClassId) return;
-    
-    try {
-      const docRef = doc(firestore, 'users', user.uid);
-      const snap = await getDoc(docRef);
-      if (snap.exists()) {
-        const data = snap.data();
-        const updatedClasses = data.classes.map(cls => 
-          cls.id === currentClassId 
-            ? { ...cls, groupData }
-            : cls
-        );
-        await setDoc(docRef, { ...data, classes: updatedClasses });
-        console.log("✅ Group data saved to Firebase");
-      }
-    } catch (error) {
-      console.error("❌ Error saving group data:", error);
-    }
-  };
-
-  // Classroom layout data saving
-  const saveClassroomDataToFirebase = async (classroomData) => {
-    if (!user || !currentClassId) return;
-    
-    try {
-      const docRef = doc(firestore, 'users', user.uid);
-      const snap = await getDoc(docRef);
-      if (snap.exists()) {
-        const data = snap.data();
-        const updatedClasses = data.classes.map(cls => 
-          cls.id === currentClassId 
-            ? { ...cls, classroomData }
-            : cls
-        );
-        await setDoc(docRef, { ...data, classes: updatedClasses });
-        console.log("✅ Classroom data saved to Firebase");
-      }
-    } catch (error) {
-      console.error("❌ Error saving classroom data:", error);
-    }
-  };
-
-  // FIXED: Quest generation with immediate save
-  const generateDailyQuests = async () => {
+  const generateDailyQuests = () => {
     const today = new Date().toISOString().split('T')[0];
-    const dailyTemplates = questTemplates.filter(t => t.type === 'daily');
-    const selectedQuests = dailyTemplates.slice(0, 3).map(template => ({
-      ...template,
-      id: `daily-${today}-${template.id}`,
-      startDate: today,
-      endDate: today,
-      completedBy: [],
-      active: true
-    }));
-    
-    // Immediately save to Firebase
-    await saveQuestDataToFirebase({ dailyQuests: selectedQuests });
-    return selectedQuests;
+    return DEFAULT_QUEST_TEMPLATES
+      .filter(template => template.type === 'daily')
+      .map(template => ({
+        ...template,
+        id: `${template.id}-${today}`,
+        startDate: today,
+        completedBy: [],
+        active: true
+      }));
   };
 
-  const generateWeeklyQuests = async () => {
+  const generateWeeklyQuests = () => {
     const weekStart = getWeekStart().toISOString().split('T')[0];
-    const weekEnd = getWeekEnd().toISOString().split('T')[0];
-    const weeklyTemplates = questTemplates.filter(t => t.type === 'weekly');
-    const selectedQuests = weeklyTemplates.slice(0, 2).map(template => ({
-      ...template,
-      id: `weekly-${weekStart}-${template.id}`,
-      startDate: weekStart,
-      endDate: weekEnd,
-      completedBy: [],
-      active: true
-    }));
-    
-    // Immediately save to Firebase
-    await saveQuestDataToFirebase({ weeklyQuests: selectedQuests });
-    return selectedQuests;
+    return DEFAULT_QUEST_TEMPLATES
+      .filter(template => template.type === 'weekly')
+      .map(template => ({
+        ...template,
+        id: `${template.id}-${weekStart}`,
+        startDate: weekStart,
+        completedBy: [],
+        active: true
+      }));
   };
 
   const checkIndividualQuestCompletion = (quest, studentId) => {
     const student = students.find(s => s.id === studentId);
     if (!student) return false;
 
-    const { requirement } = quest;
+    const requirement = quest.requirement;
     
     switch (requirement.type) {
       case 'xp':
-        const categoryPoints = student.categoryWeekly?.[requirement.category] || 0;
-        return categoryPoints >= requirement.amount;
+        const categoryXP = student.categoryTotal?.[requirement.category] || 0;
+        return categoryXP >= requirement.amount;
       case 'total_xp':
-        return student.weeklyPoints >= requirement.amount;
+        return (student.totalPoints || 0) >= requirement.amount;
       case 'pet_wins':
         return (student.pet?.wins || 0) >= requirement.amount;
       case 'manual':
-        return quest.completedBy.includes(studentId);
+        return false; // Manual quests need teacher verification
       default:
         return false;
     }
   };
 
-  const checkClassQuestCompletion = (quest) => {
-    const { requirement } = quest;
+  const checkClassQuestCompletionSafely = (quest, currentStudents) => {
+    const requirement = quest.requirement;
     
     switch (requirement.type) {
       case 'class_total_xp':
-        const totalClassXP = students.reduce((sum, s) => sum + (s.weeklyPoints || 0), 0);
+        const totalClassXP = currentStudents.reduce((sum, student) => sum + (student.totalPoints || 0), 0);
         return totalClassXP >= requirement.amount;
-      case 'manual':
-        return quest.completedBy.includes('class');
       default:
         return false;
     }
   };
 
-  const checkClassQuestCompletionSafely = (quest, studentsArray) => {
-    const { requirement } = quest;
-    
-    switch (requirement.type) {
-      case 'class_total_xp':
-        const totalClassXP = studentsArray.reduce((sum, s) => sum + (s.weeklyPoints || 0), 0);
-        return totalClassXP >= requirement.amount;
-      case 'manual':
-        return quest.completedBy.includes('class');
-      default:
-        return false;
-    }
-  };
-
-  const checkQuestCompletion = (questId, studentId = null) => {
-    const quest = [...dailyQuests, ...weeklyQuests].find(q => q.id === questId);
-    if (!quest) return false;
-
-    if (quest.category === 'class') {
-      return checkClassQuestCompletion(quest);
-    } else {
-      return checkIndividualQuestCompletion(quest, studentId);
-    }
-  };
-
-  // FIXED: Quest completion with proper coin rewards
   const completeQuest = (questId, studentId = null) => {
-    const quest = [...dailyQuests, ...weeklyQuests].find(q => q.id === questId);
-    if (!quest) return;
-
-    const completionKey = studentId || 'class';
-    if (quest.completedBy.includes(completionKey)) return;
-
-    // Update quest completion
-    const updatedDailyQuests = dailyQuests.map(q => 
-      q.id === questId ? { ...q, completedBy: [...q.completedBy, completionKey] } : q
-    );
-    const updatedWeeklyQuests = weeklyQuests.map(q => 
-      q.id === questId ? { ...q, completedBy: [...q.completedBy, completionKey] } : q
-    );
-
-    setDailyQuests(updatedDailyQuests);
-    setWeeklyQuests(updatedWeeklyQuests);
-
-    // Award rewards
-    if (quest.reward.type === 'COINS') {
-      setStudents(prev => {
-        const rewardedStudents = prev.map(student => {
-          if (studentId && student.id !== studentId) return student;
+    const isWeekly = weeklyQuests.some(q => q.id === questId);
+    
+    if (isWeekly) {
+      setWeeklyQuests(prev => {
+        const updatedQuests = prev.map(quest => {
+          if (quest.id !== questId) return quest;
           
-          if (!studentId || student.id === studentId) {
-            return awardCoins(student, quest.reward.amount);
-          }
-          return student;
+          const newCompletedBy = studentId 
+            ? [...(quest.completedBy || []), studentId]
+            : [...(quest.completedBy || []), 'class'];
+          
+          return { ...quest, completedBy: newCompletedBy };
         });
-        
-        saveStudentsToFirebase(rewardedStudents);
-        return rewardedStudents;
+
+        saveQuestDataToFirebase({ weeklyQuests: updatedQuests });
+        return updatedQuests;
       });
-    } else if (quest.reward.type === 'XP') {
-      // Handle legacy XP rewards for custom quests
-      setStudents(prev => {
-        const rewardedStudents = prev.map(student => {
-          if (studentId && student.id !== studentId) return student;
+    } else {
+      setDailyQuests(prev => {
+        const updatedQuests = prev.map(quest => {
+          if (quest.id !== questId) return quest;
           
-          if (!studentId || student.id === studentId) {
-            const newTotal = student.totalPoints + quest.reward.amount;
-            return {
-              ...student,
-              totalPoints: newTotal,
-              weeklyPoints: (student.weeklyPoints || 0) + quest.reward.amount,
-              categoryTotal: {
-                ...student.categoryTotal,
-                'Quest': (student.categoryTotal['Quest'] || 0) + quest.reward.amount,
-              },
-              categoryWeekly: {
-                ...student.categoryWeekly,
-                'Quest': (student.categoryWeekly['Quest'] || 0) + quest.reward.amount,
-              },
-              logs: [
-                ...(student.logs || []),
-                {
-                  type: 'Quest',
-                  amount: quest.reward.amount,
-                  date: new Date().toISOString(),
-                  source: `quest_${quest.id}`,
-                },
-              ],
-            };
-          }
-          return student;
+          const newCompletedBy = studentId 
+            ? [...(quest.completedBy || []), studentId]
+            : [...(quest.completedBy || []), 'class'];
+          
+          return { ...quest, completedBy: newCompletedBy };
         });
-        
-        saveStudentsToFirebase(rewardedStudents);
-        return rewardedStudents;
+
+        saveQuestDataToFirebase({ dailyQuests: updatedQuests });
+        return updatedQuests;
       });
     }
 
-    // Show completion modal
+    const completedQuest = [...dailyQuests, ...weeklyQuests].find(q => q.id === questId);
+    if (completedQuest && completedQuest.reward.type === 'COINS') {
+      if (studentId) {
+        setStudents(prev => {
+          const updatedStudents = prev.map(s => 
+            s.id === studentId ? awardCoins(s, completedQuest.reward.amount) : s
+          );
+          saveStudentsToFirebase(updatedStudents);
+          return updatedStudents;
+        });
+      } else {
+        setStudents(prev => {
+          const updatedStudents = prev.map(s => awardCoins(s, completedQuest.reward.amount));
+          saveStudentsToFirebase(updatedStudents);
+          return updatedStudents;
+        });
+      }
+    }
+
     setQuestCompletionData({
-      quest,
-      studentId,
+      quest: completedQuest,
       student: studentId ? students.find(s => s.id === studentId) : null
     });
     setShowQuestCompletion(true);
 
-    // Save to Firebase
     saveQuestDataToFirebase({
-      dailyQuests: updatedDailyQuests,
-      weeklyQuests: updatedWeeklyQuests
+      dailyQuests: isWeekly ? dailyQuests : [...dailyQuests],
+      weeklyQuests: isWeekly ? [...weeklyQuests] : weeklyQuests
     });
   };
 
-  // FIXED: Quest completion check
   const checkQuestCompletionSafely = (studentId, updatedStudents) => {
     const student = updatedStudents.find(s => s.id === studentId);
     if (!student) return;
 
-    // Check individual quests
     [...dailyQuests, ...weeklyQuests].forEach(quest => {
       if (quest.category === 'individual' && !quest.completedBy.includes(studentId)) {
         const questCreatedDate = new Date(quest.startDate);
@@ -966,7 +867,6 @@ export default function ClassroomChampions() {
       }
     });
 
-    // Check class quests
     [...dailyQuests, ...weeklyQuests].forEach(quest => {
       if (quest.category === 'class' && !quest.completedBy.includes('class')) {
         if (checkClassQuestCompletionSafely(quest, updatedStudents)) {
@@ -977,7 +877,6 @@ export default function ClassroomChampions() {
   };
 
   const markQuestComplete = (questId, studentId = null) => {
-    // For manual quests, mark as completed
     completeQuest(questId, studentId);
     showToast('Quest marked as complete!');
   };
@@ -1018,186 +917,550 @@ export default function ClassroomChampions() {
     setStudents(prev => {
       const updatedStudents = prev.map(student => 
         student.id === studentForAvatarChange.id 
-          ? { ...student, avatarBase, avatar: newAvatar }
+          ? { ...student, avatar: newAvatar, avatarBase }
           : student
       );
-      
       saveStudentsToFirebase(updatedStudents);
       return updatedStudents;
     });
-
-    try {
-      showToast('Avatar updated successfully!');
-    } catch (error) {
-      console.error("Error updating avatar:", error);
-    } finally {
-      setSavingData(false);
-    }
-
+    
+    setSavingData(false);
     setShowAvatarSelectionModal(false);
     setStudentForAvatarChange(null);
+    showToast('Avatar updated successfully!');
   };
 
-  // FIXED: Award XP function with automatic coin generation
-  const handleAwardXP = (id, category, amount = 1) => {
-    // Prevent rapid firing
-    if (animatingXP[id]) return;
-    
-    console.log(`🎯 Awarding ${amount} XP to student ${id} in category ${category}`);
-    
-    setAnimatingXP(prev => ({ ...prev, [id]: category }));
-    setTimeout(() => setAnimatingXP(prev => ({ ...prev, [id]: null })), 600);
+  const awardXP = (studentId, amount, category) => {
+    if (amount <= 0) return;
 
-    setStudents((prev) => {
-      const updatedStudents = prev.map((s) => {
-        if (s.id !== id) return s;
+    setSavingData(true);
+    setAnimatingXP({ [studentId]: true });
 
-        const newTotal = s.totalPoints + amount;
-        let updated = {
-          ...s,
-          totalPoints: newTotal,
-          weeklyPoints: (s.weeklyPoints || 0) + amount,
+    setStudents(prev => {
+      const updatedStudents = prev.map(student => {
+        if (student.id !== studentId) return student;
+
+        const newTotalPoints = (student.totalPoints || 0) + amount;
+        const newWeeklyPoints = (student.weeklyPoints || 0) + amount;
+        const newCategoryTotal = {
+          ...student.categoryTotal,
+          [category]: (student.categoryTotal?.[category] || 0) + amount
+        };
+        const newCategoryWeekly = {
+          ...student.categoryWeekly,
+          [category]: (student.categoryWeekly?.[category] || 0) + amount
+        };
+
+        let updatedStudent = {
+          ...student,
+          totalPoints: newTotalPoints,
+          weeklyPoints: newWeeklyPoints,
+          categoryTotal: newCategoryTotal,
+          categoryWeekly: newCategoryWeekly,
           lastXpDate: new Date().toISOString(),
-          categoryTotal: {
-            ...s.categoryTotal,
-            [category]: (s.categoryTotal[category] || 0) + amount,
-          },
-          categoryWeekly: {
-            ...s.categoryWeekly,
-            [category]: (s.categoryWeekly[category] || 0) + amount,
-          },
           logs: [
-            ...(s.logs || []),
+            ...(student.logs || []),
             {
               type: category,
               amount: amount,
               date: new Date().toISOString(),
-              source: "manual",
-            },
-          ],
+              source: "teacher_award"
+            }
+          ]
         };
 
-        // Pet unlock check
-        if (!s.pet?.image && newTotal >= 50) {
+        updatedStudent = checkForLevelUp(updatedStudent);
+
+        if (!student.pet && newTotalPoints >= 50) {
           const newPet = getRandomPet();
-          setPetNameInput(getRandomPetName());
+          newPet.name = getRandomPetName();
           setPetUnlockData({
-            studentId: s.id,
-            firstName: s.firstName,
-            pet: newPet,
+            studentName: student.firstName,
+            petImage: newPet.image,
+            petName: newPet.name
           });
+          updatedStudent.pet = newPet;
         }
 
-        return checkForLevelUp(updated);
+        return updatedStudent;
       });
 
       saveStudentsToFirebase(updatedStudents);
       
-      // Quest completion check
-      checkQuestCompletionSafely(id, updatedStudents);
-      
+      setTimeout(() => {
+        checkQuestCompletionSafely(studentId, updatedStudents);
+      }, 500);
+
       return updatedStudents;
     });
+
+    setSavingData(false);
+    setTimeout(() => setAnimatingXP({}), 2000);
+    showToast(`+${amount} ${category} XP awarded!`);
   };
 
-  // Student selection functions
-  const handleStudentSelect = (studentId) => {
-    setSelectedStudents(prev => {
-      if (prev.includes(studentId)) {
-        return prev.filter(id => id !== studentId);
-      } else {
-        return [...prev, studentId];
-      }
+  const handleAddStudent = async () => {
+    if (!newStudentName.trim()) {
+      alert("Please enter a student name");
+      return;
+    }
+    if (!newStudentAvatar) {
+      alert("Please select an avatar");
+      return;
+    }
+
+    const newStudent = {
+      id: Date.now().toString(),
+      firstName: newStudentName.trim(),
+      avatar: getAvatarImage(newStudentAvatar, 1),
+      avatarBase: newStudentAvatar,
+      avatarLevel: 1,
+      totalPoints: 0,
+      weeklyPoints: 0,
+      categoryTotal: {},
+      categoryWeekly: {},
+      pet: null,
+      coins: 0,
+      coinsSpent: 0,
+      inventory: [],
+      logs: []
+    };
+
+    setSavingData(true);
+    setStudents(prev => {
+      const updatedStudents = [...prev, newStudent];
+      saveStudentsToFirebase(updatedStudents);
+      return updatedStudents;
     });
+
+    setSavingData(false);
+    setNewStudentName('');
+    setNewStudentAvatar('');
+    setShowAddStudentModal(false);
+    showToast('Student added successfully!');
   };
 
-  const handleSelectAll = () => {
-    if (selectedStudents.length === students.length) {
-      setSelectedStudents([]);
-    } else {
-      setSelectedStudents(students.map(s => s.id));
+  const startRace = () => {
+    if (selectedPets.length < 2) {
+      alert("Select at least 2 pets to race!");
+      return;
+    }
+
+    setRaceInProgress(true);
+    setRaceFinished(false);
+    setRaceWinner(null);
+
+    const speeds = {};
+    selectedPets.forEach(pet => {
+      speeds[pet.id] = calculateSpeed(pet);
+    });
+
+    let positions = {};
+    selectedPets.forEach(pet => {
+      positions[pet.id] = 0;
+    });
+
+    const raceInterval = setInterval(() => {
+      setRacePositions(prev => {
+        const newPositions = { ...prev };
+        let winner = null;
+
+        selectedPets.forEach(pet => {
+          if (!winner) {
+            const speed = speeds[pet.id];
+            const randomFactor = 0.8 + Math.random() * 0.4;
+            newPositions[pet.id] = (prev[pet.id] || 0) + (speed * randomFactor);
+
+            if (newPositions[pet.id] >= 100) {
+              newPositions[pet.id] = 100;
+              winner = pet;
+            }
+          }
+        });
+
+        if (winner) {
+          clearInterval(raceInterval);
+          setRaceWinner(winner);
+          setRaceFinished(true);
+          setRaceInProgress(false);
+
+          setStudents(prevStudents => {
+            const updatedStudents = prevStudents.map(student => {
+              if (student.id === winner.studentId) {
+                const updatedPet = {
+                  ...student.pet,
+                  wins: (student.pet.wins || 0) + 1,
+                  speed: Math.min((student.pet.speed || 1) + 0.1, 3)
+                };
+
+                let bonusReward = {};
+                if (selectedPrize === 'XP') {
+                  bonusReward = {
+                    totalPoints: (student.totalPoints || 0) + xpAmount,
+                    weeklyPoints: (student.weeklyPoints || 0) + xpAmount
+                  };
+                }
+
+                return {
+                  ...student,
+                  pet: updatedPet,
+                  ...bonusReward,
+                  logs: [
+                    ...(student.logs || []),
+                    {
+                      type: "pet_race_win",
+                      amount: selectedPrize === 'XP' ? xpAmount : 0,
+                      date: new Date().toISOString(),
+                      source: "pet_race"
+                    }
+                  ]
+                };
+              }
+              return student;
+            });
+
+            saveStudentsToFirebase(updatedStudents);
+            return updatedStudents;
+          });
+        }
+
+        return newPositions;
+      });
+    }, 100);
+  };
+
+  const resetRace = () => {
+    setRacePositions({});
+    setRaceWinner(null);
+    setRaceFinished(false);
+    setRaceInProgress(false);
+    setSelectedPets([]);
+  };
+
+  const importClass = async () => {
+    if (!newClassName.trim()) {
+      alert("Please enter a class name");
+      return;
+    }
+    if (!newClassStudents.trim()) {
+      alert("Please enter student names");
+      return;
+    }
+
+    setSavingData(true);
+    try {
+      const studentNames = newClassStudents.split('\n').filter(name => name.trim());
+      const newStudents = studentNames.map((name, index) => ({
+        id: `${Date.now()}_${index}`,
+        firstName: name.trim(),
+        avatar: '',
+        avatarBase: '',
+        avatarLevel: 1,
+        totalPoints: 0,
+        weeklyPoints: 0,
+        categoryTotal: {},
+        categoryWeekly: {},
+        pet: null,
+        coins: 0,
+        coinsSpent: 0,
+        inventory: [],
+        logs: []
+      }));
+
+      const initialDailyQuests = generateDailyQuests();
+      const initialWeeklyQuests = generateWeeklyQuests();
+
+      const newClass = {
+        id: Date.now().toString(),
+        name: newClassName.trim(),
+        students: newStudents,
+        dailyQuests: initialDailyQuests,
+        weeklyQuests: initialWeeklyQuests,
+        questTemplates: DEFAULT_QUEST_TEMPLATES,
+        createdAt: new Date().toISOString()
+      };
+
+      const docRef = doc(firestore, 'users', user.uid);
+      const snap = await getDoc(docRef);
+      const existingData = snap.exists() ? snap.data() : { subscription: 'basic', classes: [] };
+      const maxAllowed = existingData.subscription === 'pro' ? 5 : 1;
+
+      if (existingData.classes.length >= maxAllowed) {
+        alert(`Your plan only allows up to ${maxAllowed} class${maxAllowed > 1 ? 'es' : ''}.`);
+        return;
+      }
+
+      const updatedClasses = [...existingData.classes, newClass];
+      await setDoc(docRef, { ...existingData, classes: updatedClasses });
+
+      setTeacherClasses(updatedClasses);
+      setStudents(newClass.students);
+      setCurrentClassId(newClass.id);
+      setDailyQuests(initialDailyQuests);
+      setWeeklyQuests(initialWeeklyQuests);
+      setQuestTemplates(DEFAULT_QUEST_TEMPLATES);
+      setNewClassName('');
+      setNewClassStudents('');
+      showToast('Class imported successfully!');
+    } catch (error) {
+      console.error("Error importing class:", error);
+      alert("Error importing class. Please try again.");
+    } finally {
+      setSavingData(false);
     }
   };
 
-  const handleDeselectAll = () => {
+  const loadClass = async (cls) => {
+    const studentsWithCurrency = cls.students.map(updateStudentWithCurrency);
+    setStudents(studentsWithCurrency);
+    setCurrentClassId(cls.id);
+    
+    const savedDailyQuests = cls.dailyQuests || [];
+    const savedWeeklyQuests = cls.weeklyQuests || [];
+    
+    const today = new Date().toISOString().split('T')[0];
+    const weekStart = getWeekStart().toISOString().split('T')[0];
+    
+    let dailyQuestsToUse = savedDailyQuests;
+    let weeklyQuestsToUse = savedWeeklyQuests;
+    
+    if (savedDailyQuests.length === 0 || !savedDailyQuests.some(q => q.startDate === today)) {
+      dailyQuestsToUse = generateDailyQuests();
+    }
+    
+    if (savedWeeklyQuests.length === 0 || !savedWeeklyQuests.some(q => q.startDate === weekStart)) {
+      weeklyQuestsToUse = generateWeeklyQuests();
+    }
+    
+    setDailyQuests(dailyQuestsToUse);
+    setWeeklyQuests(weeklyQuestsToUse);
+    setQuestTemplates(cls.questTemplates || DEFAULT_QUEST_TEMPLATES);
     setSelectedStudents([]);
     setShowBulkXpPanel(false);
+    showToast(`${cls.name} loaded successfully!`);
   };
 
-  const handleBulkXpAward = () => {
+  const handleShopStudentSelect = (student) => {
+    setSelectedStudent(student);
+  };
+
+  const handleShopPurchase = (student, item) => {
+    const coins = calculateCoins(student);
+    const cost = item.price;
+    
+    if (!canAfford(student, cost)) {
+      alert(`${student.firstName} doesn't have enough coins! Needs ${cost}, has ${coins}`);
+      return;
+    }
+
+    setSavingData(true);
+    
+    setStudents(prev => {
+      const updatedStudents = prev.map(s => {
+        if (s.id !== student.id) return s;
+        
+        const updatedStudent = spendCoins(s, cost);
+        
+        const newItem = {
+          ...item,
+          id: `${item.id}_${Date.now()}`,
+          purchasedAt: new Date().toISOString()
+        };
+        
+        return {
+          ...updatedStudent,
+          inventory: [...(updatedStudent.inventory || []), newItem]
+        };
+      });
+      
+      saveStudentsToFirebase(updatedStudents);
+      return updatedStudents;
+    });
+    
+    setSavingData(false);
+    showToast(`${student.firstName} purchased ${item.name}!`);
+  };
+
+  const handleLootBoxPurchase = (student, lootBox) => {
+    const coins = calculateCoins(student);
+    const cost = lootBox.price;
+    
+    if (!canAfford(student, cost)) {
+      alert(`${student.firstName} doesn't have enough coins!`);
+      return;
+    }
+
+    setSavingData(true);
+    
+    const rewards = generateLootBoxRewards(lootBox);
+    
+    setStudents(prev => {
+      const updatedStudents = prev.map(s => {
+        if (s.id !== student.id) return s;
+        
+        const updatedStudent = spendCoins(s, cost);
+        
+        return {
+          ...updatedStudent,
+          lootBoxes: [...(updatedStudent.lootBoxes || []), {
+            boxType: lootBox.id,
+            rewards: rewards,
+            openedAt: new Date().toISOString()
+          }]
+        };
+      });
+      
+      saveStudentsToFirebase(updatedStudents);
+      return updatedStudents;
+    });
+    
+    setSavingData(false);
+    
+    const rewardsList = rewards.map(r => r.name).join(', ');
+    showToast(`${student.firstName} opened ${lootBox.name} and got: ${rewardsList}!`);
+  };
+
+  const handleAddQuestTemplate = (questTemplate) => {
+    const newTemplate = {
+      ...questTemplate,
+      id: `custom-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    };
+    
+    setQuestTemplates(prev => {
+      const updated = [...prev, newTemplate];
+      saveQuestDataToFirebase({ questTemplates: updated });
+      return updated;
+    });
+    
+    showToast('Quest template added successfully!');
+  };
+
+  const handleEditQuestTemplate = (templateId, updatedTemplate) => {
+    setQuestTemplates(prev => {
+      const updated = prev.map(template => 
+        template.id === templateId ? { ...template, ...updatedTemplate } : template
+      );
+      saveQuestDataToFirebase({ questTemplates: updated });
+      return updated;
+    });
+    
+    showToast('Quest template updated successfully!');
+  };
+
+  const handleDeleteQuestTemplate = (templateId) => {
+    setQuestTemplates(prev => {
+      const updated = prev.filter(template => template.id !== templateId);
+      saveQuestDataToFirebase({ questTemplates: updated });
+      return updated;
+    });
+    
+    showToast('Quest template deleted successfully!');
+  };
+
+  const handleResetQuestTemplates = () => {
+    setQuestTemplates(DEFAULT_QUEST_TEMPLATES);
+    saveQuestDataToFirebase({ questTemplates: DEFAULT_QUEST_TEMPLATES });
+    showToast('Quest templates reset to defaults!');
+  };
+
+  const saveGroupDataToFirebase = async (groupData) => {
+    if (!user || !currentClassId) return;
+    
+    try {
+      const docRef = doc(firestore, 'users', user.uid);
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        const data = snap.data();
+        const updatedClasses = data.classes.map(cls => 
+          cls.id === currentClassId 
+            ? { ...cls, ...groupData }
+            : cls
+        );
+        await setDoc(docRef, { ...data, classes: updatedClasses });
+      }
+    } catch (error) {
+      console.error('Error saving group data:', error);
+    }
+  };
+
+  const saveClassroomDataToFirebase = async (classroomData) => {
+    if (!user || !currentClassId) return;
+    
+    try {
+      const docRef = doc(firestore, 'users', user.uid);
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        const data = snap.data();
+        const updatedClasses = data.classes.map(cls => 
+          cls.id === currentClassId 
+            ? { ...cls, ...classroomData }
+            : cls
+        );
+        await setDoc(docRef, { ...data, classes: updatedClasses });
+      }
+    } catch (error) {
+      console.error('Error saving classroom data:', error);
+    }
+  };
+
+  const awardBulkXP = () => {
     if (selectedStudents.length === 0) {
       alert("Please select at least one student");
       return;
     }
 
     setSavingData(true);
-    
-    // Animate all selected students
-    selectedStudents.forEach(id => {
-      setAnimatingXP(prev => ({ ...prev, [id]: bulkXpCategory }));
-    });
+    setStudents(prev => {
+      const updatedStudents = prev.map(student => {
+        if (!selectedStudents.includes(student.id)) return student;
 
-    setTimeout(() => {
-      selectedStudents.forEach(id => {
-        setAnimatingXP(prev => ({ ...prev, [id]: null }));
-      });
-    }, 600);
+        const newTotalPoints = (student.totalPoints || 0) + bulkXpAmount;
+        const newWeeklyPoints = (student.weeklyPoints || 0) + bulkXpAmount;
+        const newCategoryTotal = {
+          ...student.categoryTotal,
+          [bulkXpCategory]: (student.categoryTotal?.[bulkXpCategory] || 0) + bulkXpAmount
+        };
+        const newCategoryWeekly = {
+          ...student.categoryWeekly,
+          [bulkXpCategory]: (student.categoryWeekly?.[bulkXpCategory] || 0) + bulkXpAmount
+        };
 
-    setStudents((prev) => {
-      const updatedStudents = prev.map((s) => {
-        if (!selectedStudents.includes(s.id)) return s;
-
-        const newTotal = s.totalPoints + bulkXpAmount;
-        let updated = {
-          ...s,
-          totalPoints: newTotal,
-          weeklyPoints: (s.weeklyPoints || 0) + bulkXpAmount,
+        let updatedStudent = {
+          ...student,
+          totalPoints: newTotalPoints,
+          weeklyPoints: newWeeklyPoints,
+          categoryTotal: newCategoryTotal,
+          categoryWeekly: newCategoryWeekly,
           lastXpDate: new Date().toISOString(),
-          categoryTotal: {
-            ...s.categoryTotal,
-            [bulkXpCategory]: (s.categoryTotal[bulkXpCategory] || 0) + bulkXpAmount,
-          },
-          categoryWeekly: {
-            ...s.categoryWeekly,
-            [bulkXpCategory]: (s.categoryWeekly[bulkXpCategory] || 0) + bulkXpAmount,
-          },
           logs: [
-            ...(s.logs || []),
+            ...(student.logs || []),
             {
               type: bulkXpCategory,
               amount: bulkXpAmount,
               date: new Date().toISOString(),
-              source: "bulk",
-            },
-          ],
+              source: "bulk_award"
+            }
+          ]
         };
 
-        if (!s.pet?.image && newTotal >= 50) {
+        updatedStudent = checkForLevelUp(updatedStudent);
+
+        if (!student.pet && newTotalPoints >= 50) {
           const newPet = getRandomPet();
-          setPetNameInput(getRandomPetName());
-          setPetUnlockData({
-            studentId: s.id,
-            firstName: s.firstName,
-            pet: newPet,
-          });
+          newPet.name = getRandomPetName();
+          updatedStudent.pet = newPet;
         }
 
-        return checkForLevelUp(updated);
+        return updatedStudent;
       });
 
       saveStudentsToFirebase(updatedStudents);
-
-      // Quest completion for each student
-      selectedStudents.forEach(studentId => {
-        checkQuestCompletionSafely(studentId, updatedStudents);
-      });
-
       return updatedStudents;
     });
 
+    setSavingData(false);
     setSelectedStudents([]);
     setShowBulkXpPanel(false);
-    setSavingData(false);
     
     const studentNames = selectedStudents.length === students.length 
       ? 'the entire class'
@@ -1206,7 +1469,6 @@ export default function ClassroomChampions() {
     showToast(`Awarded ${bulkXpAmount} XP to ${studentNames}!`);
   };
 
-  // Settings functions
   const handleDeductXP = (studentId, amount) => {
     if (amount <= 0) {
       alert("Please enter a positive amount");
@@ -1276,8 +1538,38 @@ export default function ClassroomChampions() {
     showToast(`Deducted ${coinAmount} coins successfully!`);
   };
 
-  // Reset functions
   const handleResetStudentPoints = (studentId) => {
+    setSavingData(true);
+    setStudents(prev => {
+      const updatedStudents = prev.map(s => 
+        s.id === studentId ? {
+          ...s,
+          totalPoints: 0,
+          weeklyPoints: 0,
+          categoryTotal: {},
+          categoryWeekly: {},
+          avatarLevel: 1,
+          avatar: s.avatarBase ? getAvatarImage(s.avatarBase, 1) : '',
+          pet: null,
+          logs: [
+            ...(s.logs || []),
+            {
+              type: "reset",
+              amount: 0,
+              date: new Date().toISOString(),
+              source: "points_reset",
+            },
+          ],
+        } : s
+      );
+      saveStudentsToFirebase(updatedStudents);
+      return updatedStudents;
+    });
+    setSavingData(false);
+    showToast('Student points reset successfully!');
+  };
+
+  const handleCompleteReset = (studentId) => {
     setSavingData(true);
     setStudents(prev => {
       const updatedStudents = prev.map(s => 
@@ -1396,339 +1688,96 @@ export default function ClassroomChampions() {
     }
   };
 
-  const handleSubscriptionManagement = async () => {
-    if (!userData?.stripeCustomerId) {
-      router.push('/pricing');
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/create-portal-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ customerId: userData.stripeCustomerId })
-      });
-
-      const { url } = await response.json();
-      window.open(url, '_blank');
-    } catch (error) {
-      console.error('Error opening billing portal:', error);
-      alert('Error opening billing portal. Please try again.');
-    }
-  };
-
-  // FIXED: Class import with proper quest initialization
-  const handleClassImport = async () => {
-    if (!newClassName.trim() || !newClassStudents.trim()) {
-      alert("Please fill in both class name and student names");
-      return;
-    }
-
-    setSavingData(true);
-
-    const studentsArray = newClassStudents
-      .split('\n')
-      .map((name) => name.trim())
-      .filter((name) => name.length > 0)
-      .map((name) => {
-        return updateStudentWithCurrency({
-          id: Date.now().toString() + Math.random().toString(36).substring(2, 8),
-          firstName: name,
-          avatarBase: '',
-          avatarLevel: 1,
-          avatar: '',
-          totalPoints: 0,
-          weeklyPoints: 0,
-          categoryTotal: {},
-          categoryWeekly: {},
-          coins: 0,
-          logs: [],
-          pet: null
-        });
-      });
-
-    // Generate initial quests
-    const initialDailyQuests = await generateDailyQuests();
-    const initialWeeklyQuests = await generateWeeklyQuests();
-
-    const newClass = {
-      id: 'class-' + Date.now(),
-      name: newClassName,
-      students: studentsArray,
-      dailyQuests: initialDailyQuests,
-      weeklyQuests: initialWeeklyQuests,
-      questTemplates: DEFAULT_QUEST_TEMPLATES
-    };
-
-    try {
-      const docRef = doc(firestore, 'users', user.uid);
-      const snap = await getDoc(docRef);
-      const existingData = snap.exists() ? snap.data() : { subscription: 'basic', classes: [] };
-      const maxAllowed = existingData.subscription === 'pro' ? 5 : 1;
-
-      if (existingData.classes.length >= maxAllowed) {
-        alert(`Your plan only allows up to ${maxAllowed} class${maxAllowed > 1 ? 'es' : ''}.`);
-        return;
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setUser(user);
+        try {
+          const docRef = doc(firestore, 'users', user.uid);
+          const snap = await getDoc(docRef);
+          if (snap.exists()) {
+            const data = snap.data();
+            setUserData(data);
+            setTeacherClasses(data.classes || []);
+            
+            if (data.classes && data.classes.length > 0) {
+              const firstClass = data.classes[0];
+              await loadClass(firstClass);
+            }
+          }
+        } catch (error) {
+          console.error("Error loading user data:", error);
+        }
+      } else {
+        router.push('/login');
       }
-
-      const updatedClasses = [...existingData.classes, newClass];
-      await setDoc(docRef, { ...existingData, classes: updatedClasses });
-
-      setTeacherClasses(updatedClasses);
-      setStudents(newClass.students);
-      setCurrentClassId(newClass.id);
-      setDailyQuests(initialDailyQuests);
-      setWeeklyQuests(initialWeeklyQuests);
-      setQuestTemplates(DEFAULT_QUEST_TEMPLATES);
-      setNewClassName('');
-      setNewClassStudents('');
-      showToast('Class imported successfully!');
-    } catch (error) {
-      console.error("Error importing class:", error);
-      alert("Error importing class. Please try again.");
-    } finally {
-      setSavingData(false);
-    }
-  };
-
-  // FIXED: Load class with proper quest initialization
-  const loadClass = async (cls) => {
-    const studentsWithCurrency = cls.students.map(updateStudentWithCurrency);
-    setStudents(studentsWithCurrency);
-    setCurrentClassId(cls.id);
-    
-    // Load saved quests or generate new ones
-    const savedDailyQuests = cls.dailyQuests || [];
-    const savedWeeklyQuests = cls.weeklyQuests || [];
-    
-    // Check if we need to generate new quests
-    const today = new Date().toISOString().split('T')[0];
-    const weekStart = getWeekStart().toISOString().split('T')[0];
-    
-    let dailyQuestsToUse = savedDailyQuests;
-    let weeklyQuestsToUse = savedWeeklyQuests;
-    
-    // Generate new daily quests if needed
-    if (savedDailyQuests.length === 0 || !savedDailyQuests.some(q => q.startDate === today)) {
-      dailyQuestsToUse = await generateDailyQuests();
-    }
-    
-    // Generate new weekly quests if needed
-    if (savedWeeklyQuests.length === 0 || !savedWeeklyQuests.some(q => q.startDate === weekStart)) {
-      weeklyQuestsToUse = await generateWeeklyQuests();
-    }
-    
-    setDailyQuests(dailyQuestsToUse);
-    setWeeklyQuests(weeklyQuestsToUse);
-    setQuestTemplates(cls.questTemplates || DEFAULT_QUEST_TEMPLATES);
-    setSelectedStudents([]);
-    setShowBulkXpPanel(false);
-    showToast(`${cls.name} loaded successfully!`);
-  };
-
-  // Shop functions
-  const handleShopStudentSelect = (student) => {
-    setSelectedStudent(student);
-  };
-
-  const handleShopPurchase = (student, item) => {
-    const coins = calculateCoins(student);
-    const cost = item.price;
-    
-    if (!canAfford(student, cost)) {
-      alert(`${student.firstName} doesn't have enough coins! Needs ${cost}, has ${coins}`);
-      return;
-    }
-
-    setSavingData(true);
-    
-    setStudents(prev => {
-      const updatedStudents = prev.map(s => {
-        if (s.id !== student.id) return s;
-        
-        const updatedStudent = spendCoins(s, cost);
-        
-        const newItem = {
-          ...item,
-          id: `${item.id}_${Date.now()}`,
-          purchasedAt: new Date().toISOString()
-        };
-        
-        return {
-          ...updatedStudent,
-          inventory: [...(updatedStudent.inventory || []), newItem]
-        };
-      });
-      
-      saveStudentsToFirebase(updatedStudents);
-      return updatedStudents;
+      setLoading(false);
     });
-    
-    setSavingData(false);
-    showToast(`${student.firstName} purchased ${item.name}!`);
-  };
 
-  const handleLootBoxPurchase = (student, lootBox) => {
-    const coins = calculateCoins(student);
-    const cost = lootBox.price;
-    
-    if (!canAfford(student, cost)) {
-      alert(`${student.firstName} doesn't have enough coins!`);
-      return;
-    }
+    return () => unsubscribe();
+  }, [router]);
 
-    setSavingData(true);
-    
-    const rewards = generateLootBoxRewards(lootBox);
-    
-    setStudents(prev => {
-      const updatedStudents = prev.map(s => {
-        if (s.id !== student.id) return s;
-        
-        const updatedStudent = spendCoins(s, cost);
-        
-        return {
-          ...updatedStudent,
-          lootBoxes: [...(updatedStudent.lootBoxes || []), {
-            boxType: lootBox.id,
-            rewards: rewards,
-            openedAt: new Date().toISOString()
-          }]
-        };
-      });
-      
-      saveStudentsToFirebase(updatedStudents);
-      return updatedStudents;
-    });
-    
-    setSavingData(false);
-    
-    const rewardsList = rewards.map(r => r.name).join(', ');
-    showToast(`${student.firstName} opened ${lootBox.name} and got: ${rewardsList}!`);
-  };
+  if (loading) {
+    return <LoadingSpinner message="Loading Classroom Champions..." />;
+  }
 
-  // Quest Template Management Functions
-  const handleAddQuestTemplate = (questTemplate) => {
-    const newTemplate = {
-      ...questTemplate,
-      id: `custom-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-    };
-    
-    setQuestTemplates(prev => {
-      const updated = [...prev, newTemplate];
-      saveQuestDataToFirebase({ questTemplates: updated });
-      return updated;
-    });
-    
-    showToast('Quest template added successfully!');
-  };
+  if (!user) {
+    return <LoadingSpinner message="Redirecting to login..." />;
+  }
 
-  const handleEditQuestTemplate = (templateId, updatedTemplate) => {
-    setQuestTemplates(prev => {
-      const updated = prev.map(template => 
-        template.id === templateId ? { ...template, ...updatedTemplate } : template
-      );
-      saveQuestDataToFirebase({ questTemplates: updated });
-      return updated;
-    });
-    
-    showToast('Quest template updated successfully!');
-  };
-
-  const handleDeleteQuestTemplate = (templateId) => {
-    setQuestTemplates(prev => {
-      const updated = prev.filter(template => template.id !== templateId);
-      saveQuestDataToFirebase({ questTemplates: updated });
-      return updated;
-    });
-    
-    showToast('Quest template deleted successfully!');
-  };
-
-  const handleResetQuestTemplates = () => {
-    setQuestTemplates(DEFAULT_QUEST_TEMPLATES);
-    saveQuestDataToFirebase({ questTemplates: DEFAULT_QUEST_TEMPLATES });
-    showToast('Quest templates reset to defaults!');
-  };
-
-  // Props object for all tabs
+  // Tab props
   const tabProps = {
     students,
     setStudents,
-    setActiveTab,
-    handleAwardXP,
-    handleAvatarClick,
-    setSelectedStudent,
-    animatingXP,
-    setShowAddStudentModal,
-    // Multiple XP props
-    selectedStudents,
-    setSelectedStudents,
-    handleStudentSelect,
-    handleSelectAll,
-    handleDeselectAll,
-    showBulkXpPanel,
-    setShowBulkXpPanel,
-    bulkXpAmount,
-    setBulkXpAmount,
-    bulkXpCategory,
-    setBulkXpCategory,
-    handleBulkXpAward,
-    // Quest props
-    dailyQuests,
-    weeklyQuests,
-    questTemplates,
-    setQuestTemplates,
-    checkQuestCompletion,
-    completeQuest,
-    markQuestComplete,
-    generateDailyQuests,
-    generateWeeklyQuests,
-    setDailyQuests,
-    setWeeklyQuests,
-    saveQuestDataToFirebase,
-    // Race props
-    raceInProgress,
-    raceFinished,
-    racePositions,
-    setRacePositions,
-    raceWinner,
-    setRaceWinner,
-    selectedPrize,
-    setSelectedPrize,
-    xpAmount,
-    setXpAmount,
-    selectedPets,
-    setSelectedPets,
-    showRaceSetup,
-    setShowRaceSetup,
-    setRaceInProgress,
-    setRaceFinished,
-    calculateSpeed,
-    checkForLevelUp,
+    awardXP,
+    showToast,
+    setSavingData,
     saveStudentsToFirebase,
-    // Class props
+    animatingXP,
+    setSelectedStudent,
+    handleAvatarClick,
+    teacherClasses,
     newClassName,
     setNewClassName,
     newClassStudents,
     setNewClassStudents,
-    teacherClasses,
-    setTeacherClasses,
-    currentClassId,
-    setCurrentClassId,
-    handleClassImport,
+    importClass,
     loadClass,
+    currentClassId,
+    raceInProgress,
+    raceFinished,
+    racePositions,
+    raceWinner,
+    selectedPets,
+    setSelectedPets,
+    startRace,
+    resetRace,
+    selectedPrize,
+    setSelectedPrize,
+    xpAmount,
+    setXpAmount,
+    PETS,
+    calculateSpeed,
+    setShowRaceSetup,
     savingData,
-    showToast,
-    // Settings props
+    selectedStudents,
+    setSelectedStudents,
+    bulkXpAmount,
+    setBulkXpAmount,
+    bulkXpCategory,
+    setBulkXpCategory,
+    showBulkXpPanel,
+    setShowBulkXpPanel,
+    awardBulkXP,
+    dailyQuests,
+    weeklyQuests,
+    markQuestComplete,
+    questTemplates,
     userData,
     user,
-    handleResetStudentPoints,
-    handleResetAllPoints,
-    handleResetPetSpeeds,
-    handleRemoveStudent,
-    handleSubscriptionManagement,
+    showConfirmDialog,
     setShowConfirmDialog,
+    showFeedbackModal,
     setShowFeedbackModal,
     feedbackType,
     setFeedbackType,
@@ -1739,9 +1788,13 @@ export default function ClassroomChampions() {
     feedbackEmail,
     setFeedbackEmail,
     handleSubmitFeedback,
-    showFeedbackModal,
-    router,
-    // Shop props
+    handleDeductXP,
+    handleDeductCurrency,
+    handleResetStudentPoints,
+    handleCompleteReset,
+    handleResetAllPoints,
+    handleResetPetSpeeds,
+    handleRemoveStudent,
     selectedStudent,
     setSelectedStudent,
     calculateCoins,
@@ -1756,24 +1809,17 @@ export default function ClassroomChampions() {
     handleShopPurchase,
     handleLootBoxPurchase,
     CurrencyDisplay,
-    // Settings Functions
-    handleDeductXP,
-    handleDeductCurrency,
-    // Quest Template Management (for Settings tab)
     handleAddQuestTemplate,
     handleEditQuestTemplate,
     handleDeleteQuestTemplate,
     handleResetQuestTemplates,
-    // Group Management
     saveGroupDataToFirebase,
-    // Classroom Management
     saveClassroomDataToFirebase,
     currentClassId
   };
 
   // Modal props
   const modalProps = {
-    // Common
     students,
     setStudents,
     AVAILABLE_AVATARS,
@@ -1782,33 +1828,27 @@ export default function ClassroomChampions() {
     saveStudentsToFirebase,
     showToast,
     setSavingData,
-    // Character sheet
     selectedStudent,
     setSelectedStudent,
     handleAvatarClick,
-    // Avatar selection
     showAvatarSelectionModal,
     setShowAvatarSelectionModal,
     studentForAvatarChange,
     setStudentForAvatarChange,
     handleAvatarChange,
     savingData,
-    // Level up
     levelUpData,
     setLevelUpData,
-    // Pet unlock
     petUnlockData,
     setPetUnlockData,
     petNameInput,
     setPetNameInput,
-    // Add student
     showAddStudentModal,
     setShowAddStudentModal,
     newStudentName,
     setNewStudentName,
     newStudentAvatar,
     setNewStudentAvatar,
-    // Race
     raceFinished,
     setRaceFinished,
     raceWinner,
@@ -1821,472 +1861,90 @@ export default function ClassroomChampions() {
     setRacePositions,
     setRaceInProgress,
     setRaceWinner,
-    // Quest completion
     questCompletionData,
     setQuestCompletionData,
     showQuestCompletion,
     setShowQuestCompletion,
-    // Currency utilities
     calculateCoins
   };
 
-  // FIXED: Enhanced quest initialization
-  useEffect(() => {
-    const initializeQuests = async () => {
-      if (currentClassId && questTemplates.length > 0) {
-        const today = new Date().toISOString().split('T')[0];
-        const weekStart = getWeekStart().toISOString().split('T')[0];
-        
-        // Check if we need new daily quests
-        const needNewDaily = dailyQuests.length === 0 || !dailyQuests.some(q => q.startDate === today);
-        
-        // Check if we need new weekly quests
-        const needNewWeekly = weeklyQuests.length === 0 || !weeklyQuests.some(q => q.startDate === weekStart);
-        
-        if (needNewDaily) {
-          const newDailyQuests = await generateDailyQuests();
-          setDailyQuests(newDailyQuests);
-        }
-        
-        if (needNewWeekly) {
-          const newWeeklyQuests = await generateWeeklyQuests();
-          setWeeklyQuests(newWeeklyQuests);
-        }
-      }
-    };
-    
-    initializeQuests();
-  }, [currentClassId, questTemplates]);
-
-  // Race logic with fixed finish line
-  useEffect(() => {
-    if (!raceInProgress || selectedPets.length === 0) return;
-
-    const interval = setInterval(() => {
-      setRacePositions((prev) => {
-        const updated = { ...prev };
-        let winnerId = null;
-
-        const getRaceTrackWidth = () => {
-          const raceTrack = document.querySelector('.race-track-container');
-          if (raceTrack) {
-            const rect = raceTrack.getBoundingClientRect();
-            return rect.width - 80;
-          }
-          return 720;
-        };
-
-        const trackWidth = getRaceTrackWidth();
-        const FINISH_LINE_POSITION = trackWidth;
-
-        // Check for winners BEFORE updating positions
-        for (const id of selectedPets) {
-          const student = students.find((s) => s.id === id);
-          if (!student?.pet) continue;
-
-          const currentPosition = updated[id] || 0;
-          
-          if (currentPosition < FINISH_LINE_POSITION) {
-            const speed = calculateSpeed(student.pet);
-            const baseStep = speed * 2;
-            const randomMultiplier = 0.8 + Math.random() * 0.4;
-            const step = baseStep * randomMultiplier;
-            const nextPosition = currentPosition + step;
-
-            if (nextPosition >= FINISH_LINE_POSITION && !raceFinished) {
-              winnerId = id;
-              updated[id] = FINISH_LINE_POSITION;
-              
-              for (const otherId of selectedPets) {
-                if (otherId !== id && updated[otherId] !== undefined) {
-                  updated[otherId] = Math.min(updated[otherId] || 0, FINISH_LINE_POSITION - 10);
-                }
-              }
-              break;
-            }
-          }
-        }
-
-        if (winnerId) {
-          clearInterval(interval);
-          
-          const winner = students.find((s) => s.id === winnerId);
-          setRaceWinner(winner);
-          setRaceInProgress(false);
-          setRaceFinished(true);
-
-          // Award prizes
-          setStudents((prev) => {
-            const updatedStudents = prev.map((s) => {
-              if (s.id === winnerId) {
-                const updated = {
-                  ...s,
-                  pet: {
-                    ...s.pet,
-                    wins: (s.pet.wins || 0) + 1,
-                    speed: (s.pet.speed || 1) + 0.02
-                  },
-                };
-
-                if (selectedPrize === 'XP') {
-                  updated.totalPoints = (updated.totalPoints || 0) + xpAmount;
-                  return checkForLevelUp(updated);
-                }
-
-                return updated;
-              }
-              return s;
-            });
-
-            saveStudentsToFirebase(updatedStudents);
-            return updatedStudents;
-          });
-
-          return updated;
-        }
-
-        for (const id of selectedPets) {
-          const student = students.find((s) => s.id === id);
-          if (!student?.pet) continue;
-
-          const speed = calculateSpeed(student.pet);
-          const baseStep = speed * 2;
-          const randomMultiplier = 0.8 + Math.random() * 0.4;
-          const step = baseStep * randomMultiplier;
-          
-          const currentPosition = updated[id] || 0;
-          const newPosition = Math.min(currentPosition + step, FINISH_LINE_POSITION);
-          
-          updated[id] = newPosition;
-        }
-
-        return updated;
-      });
-    }, 100);
-
-    return () => clearInterval(interval);
-  }, [raceInProgress, students, selectedPets, selectedPrize, xpAmount, raceFinished]);
-
-  // Authentication and user data management
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      try {
-        if (user) {
-          setUser(user);
-
-          const docRef = doc(firestore, 'users', user.uid);
-          const snap = await getDoc(docRef);
-
-          if (snap.exists()) {
-            const data = snap.data();
-            setUserData(data);
-
-            const savedClasses = data.classes || [];
-            setTeacherClasses(savedClasses);
-
-            if (savedClasses.length > 0) {
-              const firstClass = savedClasses[0];
-              await loadClass(firstClass); // Use loadClass to properly initialize quests
-            } else {
-              setStudents([]);
-              setCurrentClassId(null);
-              // Initialize with empty quests but keep templates
-              setDailyQuests([]);
-              setWeeklyQuests([]);
-              setQuestTemplates(DEFAULT_QUEST_TEMPLATES);
-            }
-
-            // Redirect to dashboard if trying to access toolkit without PRO
-            if (activeTab === 'toolkit' && data.subscription !== 'pro') {
-              setActiveTab('dashboard');
-            }
-          } else {
-            const defaultData = { subscription: 'basic', classes: [] };
-            await setDoc(docRef, defaultData);
-            setUserData(defaultData);
-            setTeacherClasses([]);
-            setStudents([]);
-            setCurrentClassId(null);
-            setDailyQuests([]);
-            setWeeklyQuests([]);
-            setQuestTemplates(DEFAULT_QUEST_TEMPLATES);
-            
-            if (activeTab === 'toolkit') {
-              setActiveTab('dashboard');
-            }
-          }
-        } else {
-          router.push("/login");
-        }
-      } catch (error) {
-        console.error("Error in auth listener:", error);
-      } finally {
-        setLoading(false);
-      }
-    });
-
-    return () => unsubscribe();
-  }, [activeTab]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
-          <h2 className="text-2xl font-bold text-gray-700 mb-2">Loading Classroom Champions</h2>
-          <p className="text-gray-500">Preparing your adventure...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      {/* Header */}
-      <div className="bg-white shadow-lg border-b border-gray-200">
-        <div className="max-w-screen-xl mx-auto px-6 py-6">
-          <h1 className="text-4xl font-bold text-center bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Classroom Champions
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+            🏆 Classroom Champions
           </h1>
-        </div>
-      </div>
-
-      {/* Navigation */}
-      <div className="max-w-screen-xl mx-auto px-6 py-6">
-        <div className="flex justify-center gap-2 mb-8 flex-wrap">
-          {[
-            { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-            { id: 'students', label: 'Students', icon: '👥' },
-            { id: 'shop', label: 'Shop', icon: '🏪' },
-            { id: 'race', label: 'Pet Race', icon: '🏁' },
-            ...(userData?.subscription === 'pro' ? [{ id: 'toolkit', label: 'Teachers Toolkit', icon: '🛠️', isPro: true }] : []),
-            { id: 'classes', label: 'My Classes', icon: '📚' },
-            { id: 'settings', label: 'Settings', icon: '⚙️' }
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center space-x-2 ${
-                tab.isPro 
-                  ? (activeTab === tab.id 
-                      ? "bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg transform scale-105" 
-                      : "bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 shadow-md hover:shadow-lg")
-                  : (activeTab === tab.id
-                      ? "bg-blue-600 text-white shadow-lg transform scale-105"
-                      : "bg-white text-gray-700 hover:bg-gray-50 shadow-md hover:shadow-lg")
-              }`}
-            >
-              <span>{tab.icon}</span>
-              <span>{tab.label}</span>
-              {tab.isPro && (
-                <span className="bg-yellow-400 text-purple-800 text-xs px-2 py-1 rounded-full font-bold">
-                  PRO
-                </span>
-              )}
-            </button>
-          ))}
+          <p className="text-gray-600">Transform your classroom into an epic adventure!</p>
         </div>
 
-        {/* Tab Content with Suspense */}
-        <div className="bg-white rounded-xl shadow-lg p-8">
-          <Suspense fallback={<TabLoadingSpinner />}>
-            {activeTab === 'dashboard' && <DashboardTab {...tabProps} />}
-            {activeTab === 'students' && <StudentsTab {...tabProps} />}
-            {activeTab === 'shop' && <ShopTab {...tabProps} />}
-            {activeTab === 'race' && <PetRaceTab {...tabProps} />}
-            {activeTab === 'toolkit' && <TeachersToolkitTab {...tabProps} />}
-            {activeTab === 'classes' && <ClassesTab {...tabProps} />}
-            {activeTab === 'settings' && <SettingsTab {...tabProps} />}
-          </Suspense>
-        </div>
-      </div>
-
-      {/* Confirmation Dialog */}
-      {showConfirmDialog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md transform scale-100 animate-modal-appear">
-            <div className="text-center">
-              <div className="text-6xl mb-4">{showConfirmDialog.icon}</div>
-              <h2 className="text-2xl font-bold mb-4 text-gray-800">{showConfirmDialog.title}</h2>
-              <p className="text-gray-600 mb-6">{showConfirmDialog.message}</p>
-              <div className="flex gap-3">
+        <div className="bg-white rounded-xl shadow-xl overflow-hidden">
+          <div className="border-b border-gray-200">
+            <nav className="-mb-px flex space-x-8 px-6">
+              {[
+                { id: 'dashboard', name: 'Dashboard', icon: '📊' },
+                { id: 'students', name: 'Students', icon: '👥' },
+                { id: 'shop', name: 'Shop', icon: '🏪' },
+                { id: 'pet-race', name: 'Pet Racing', icon: '🏁' },
+                { id: 'classes', name: 'Classes', icon: '📚' },
+                { id: 'toolkit', name: "Teacher's Toolkit", icon: '🛠️' },
+                { id: 'settings', name: 'Settings', icon: '⚙️' }
+              ].map(tab => (
                 <button
-                  onClick={() => setShowConfirmDialog(null)}
-                  className="flex-1 px-4 py-3 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    showConfirmDialog.onConfirm();
-                    setShowConfirmDialog(null);
-                  }}
-                  className={`flex-1 px-4 py-3 rounded-lg transition-colors font-semibold text-white ${
-                    showConfirmDialog.type === 'danger' 
-                      ? 'bg-red-600 hover:bg-red-700' 
-                      : 'bg-blue-600 hover:bg-blue-700'
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                    activeTab === tab.id
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
                 >
-                  {showConfirmDialog.confirmText}
+                  <span className="mr-2">{tab.icon}</span>
+                  {tab.name}
                 </button>
-              </div>
-            </div>
+              ))}
+            </nav>
+          </div>
+
+          <div className="p-6">
+            <Suspense fallback={<TabLoadingSpinner />}>
+              {activeTab === 'dashboard' && <DashboardTab {...tabProps} />}
+              {activeTab === 'students' && <StudentsTab {...tabProps} />}
+              {activeTab === 'shop' && <ShopTab {...tabProps} />}
+              {activeTab === 'pet-race' && <PetRaceTab {...tabProps} />}
+              {activeTab === 'classes' && <ClassesTab {...tabProps} />}
+              {activeTab === 'toolkit' && <TeachersToolkitTab {...tabProps} />}
+              {activeTab === 'settings' && <SettingsTab {...tabProps} />}
+            </Suspense>
           </div>
         </div>
-      )}
+      </div>
 
-      {/* Feedback Modal */}
-      {showFeedbackModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md transform scale-100 animate-modal-appear">
-            <h2 className="text-2xl font-bold mb-6 text-gray-800 flex items-center">
-              <span className="mr-3">{feedbackType === 'bug' ? '🐛' : '💡'}</span>
-              {feedbackType === 'bug' ? 'Report Bug' : 'Feature Request'}
-            </h2>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Type</label>
-                <select
-                  value={feedbackType}
-                  onChange={(e) => setFeedbackType(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="bug">🐛 Bug Report</option>
-                  <option value="feature">💡 Feature Request</option>
-                  <option value="feedback">💬 General Feedback</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Subject</label>
-                <input
-                  type="text"
-                  value={feedbackSubject}
-                  onChange={(e) => setFeedbackSubject(e.target.value)}
-                  placeholder="Brief description of the issue or idea"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Message</label>
-                <textarea
-                  value={feedbackMessage}
-                  onChange={(e) => setFeedbackMessage(e.target.value)}
-                  placeholder="Please provide detailed information..."
-                  rows="4"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Email (Optional)</label>
-                <input
-                  type="email"
-                  value={feedbackEmail}
-                  onChange={(e) => setFeedbackEmail(e.target.value)}
-                  placeholder="your@email.com"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setShowFeedbackModal(false)}
-                className="flex-1 px-4 py-3 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSubmitFeedback}
-                disabled={!feedbackSubject || !feedbackMessage}
-                className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors font-semibold"
-              >
-                Submit
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Success Toast */}
-      {showSuccessToast && (
-        <div className="fixed top-6 right-6 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-slide-in">
-          <div className="flex items-center space-x-2">
-            <span className="text-xl">✅</span>
-            <span className="font-semibold">{showSuccessToast}</span>
-          </div>
-        </div>
-      )}
-
-      {/* Loading Overlay */}
-      {savingData && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
-            <p className="text-gray-700 font-medium">Saving changes...</p>
-          </div>
-        </div>
-      )}
-
-      {/* Lazy-loaded Modals */}
       <Suspense fallback={null}>
-        {selectedStudent && (
-          <CharacterSheetModal {...modalProps} />
-        )}
-        {showAvatarSelectionModal && (
-          <AvatarSelectionModal {...modalProps} />
-        )}
-        {levelUpData && (
-          <LevelUpModal {...modalProps} />
-        )}
-        {petUnlockData && (
-          <PetUnlockModal {...modalProps} />
-        )}
-        {showAddStudentModal && (
-          <AddStudentModal {...modalProps} />
-        )}
-        {raceFinished && raceWinner && (
-          <RaceWinnerModal {...modalProps} />
-        )}
-        {showRaceSetup && (
-          <RaceSetupModal {...modalProps} />
-        )}
-        {showQuestCompletion && (
-          <QuestCompletionModal {...modalProps} />
-        )}
+        {selectedStudent && <CharacterSheetModal {...modalProps} />}
+        {showAvatarSelectionModal && <AvatarSelectionModal {...modalProps} />}
+        {levelUpData && <LevelUpModal {...modalProps} />}
+        {petUnlockData && <PetUnlockModal {...modalProps} />}
+        {showAddStudentModal && <AddStudentModal {...modalProps} />}
+        {raceFinished && <RaceWinnerModal {...modalProps} />}
+        {showRaceSetup && <RaceSetupModal {...modalProps} />}
+        {showQuestCompletion && <QuestCompletionModal {...modalProps} />}
       </Suspense>
 
-      <style jsx>{`
-        @keyframes fade-in {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        
-        @keyframes slide-in {
-          from { transform: translateX(100%); }
-          to { transform: translateX(0); }
-        }
-        
-        @keyframes modal-appear {
-          from { opacity: 0; transform: scale(0.9); }
-          to { opacity: 1; transform: scale(1); }
-        }
-        
-        .animate-fade-in {
-          animation: fade-in 0.5s ease-out;
-        }
-        
-        .animate-slide-in {
-          animation: slide-in 0.3s ease-out;
-        }
-        
-        .animate-modal-appear {
-          animation: modal-appear 0.3s ease-out;
-        }
-      `}</style>
+      {showSuccessToast && (
+        <div className="fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-bounce">
+          {showSuccessToast}
+        </div>
+      )}
+
+      {savingData && (
+        <div className="fixed top-4 right-4 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg z-50">
+          <div className="flex items-center space-x-2">
+            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+            <span>Saving...</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
