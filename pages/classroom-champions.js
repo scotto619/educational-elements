@@ -1,4 +1,4 @@
-// classroom-champions.js - UPDATED with StudentHelpQueue Integration
+// classroom-champions.js - COMPLETE WITH QUEST SYSTEM OVERHAUL
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
@@ -25,7 +25,319 @@ const RaceSetupModal = React.lazy(() => import('../components/modals/RaceSetupMo
 const QuestCompletionModal = React.lazy(() => import('../components/modals/QuestCompletionModal'));
 
 // ===============================================
-// CONSTANTS AND CONFIGURATIONS
+// QUEST SYSTEM OVERHAUL - QUEST GIVERS & DATA
+// ===============================================
+
+const QUEST_GIVERS = [
+  {
+    id: 'guide1',
+    name: 'Professor Hoot',
+    image: '/Guides/Guide 1.png',
+    personality: 'wise',
+    role: 'Learning Quest Giver',
+    specialty: 'academic',
+    greetings: [
+      "Wisdom comes to those who seek knowledge! 🦉",
+      "Ready for your next learning adventure?",
+      "Books and quests await, young scholar!"
+    ],
+    questTypes: ['learning', 'homework', 'reading'],
+    tips: [
+      "💡 Tip: Consistent daily learning builds strong foundations!",
+      "📚 Remember: Every expert was once a beginner!",
+      "🎯 Focus on understanding, not just completing!"
+    ]
+  },
+  {
+    id: 'guide2',
+    name: 'Captain Clockwork',
+    image: '/Guides/Guide 2.png',
+    personality: 'punctual',
+    role: 'Organization Quest Giver',
+    specialty: 'responsibility',
+    greetings: [
+      "Time for responsibility training! ⏰",
+      "A well-organized student is a successful student!",
+      "Ready to master the art of responsibility?"
+    ],
+    questTypes: ['organization', 'attendance', 'responsibility'],
+    tips: [
+      "⏰ Tip: Being on time shows respect for others!",
+      "📋 Organization today prevents chaos tomorrow!",
+      "✅ Small responsible actions build great character!"
+    ]
+  },
+  {
+    id: 'guide3',
+    name: 'Sunny the Motivator',
+    image: '/Guides/Guide 3.png',
+    personality: 'energetic',
+    role: 'Encouragement Specialist',
+    specialty: 'motivation',
+    greetings: [
+      "You're doing amazing! Keep shining! ✨",
+      "Every day is a new chance to be awesome!",
+      "Your potential is unlimited! Let's unlock it!"
+    ],
+    questTypes: ['participation', 'improvement', 'goals'],
+    tips: [
+      "⭐ Tip: Celebrate small wins - they add up!",
+      "🌟 Your effort matters more than perfection!",
+      "🚀 Believe in yourself - others believe in you too!"
+    ]
+  },
+  {
+    id: 'guide4',
+    name: 'Guardian Spirit',
+    image: '/Guides/Guide 4.png',
+    personality: 'protective',
+    role: 'Behavior Quest Giver',
+    specialty: 'respect',
+    greetings: [
+      "Kindness and respect make the strongest warriors.",
+      "Protecting others starts with respectful actions.",
+      "True strength comes from lifting others up."
+    ],
+    questTypes: ['kindness', 'respect', 'helping'],
+    tips: [
+      "🛡️ Tip: Kindness is a superpower everyone can have!",
+      "🤝 Helping others helps you grow too!",
+      "💙 Respect creates a safe space for everyone!"
+    ]
+  },
+  {
+    id: 'guide5',
+    name: 'Sage Elder',
+    image: '/Guides/Guide 5.png',
+    personality: 'wise',
+    role: 'Reflection Guide',
+    specialty: 'growth',
+    greetings: [
+      "Reflection brings wisdom, young one.",
+      "How have you grown today?",
+      "The journey of learning never ends."
+    ],
+    questTypes: ['reflection', 'improvement', 'goals'],
+    tips: [
+      "🔮 Tip: Reflecting on mistakes helps you learn!",
+      "🌱 Growth happens outside your comfort zone!",
+      "📈 Progress, not perfection, is the goal!"
+    ]
+  },
+  {
+    id: 'guide6',
+    name: 'Explorer Pete',
+    image: '/Guides/Guide 6.png',
+    personality: 'adventurous',
+    role: 'Discovery Quest Giver',
+    specialty: 'exploration',
+    greetings: [
+      "Adventure awaits around every corner! 🗺️",
+      "What new territory will you explore today?",
+      "The best discoveries come from curiosity!"
+    ],
+    questTypes: ['exploration', 'creativity', 'projects'],
+    tips: [
+      "🗺️ Tip: Ask questions - they lead to discoveries!",
+      "🔍 Curiosity is your best learning tool!",
+      "🎒 Every lesson is a new adventure!"
+    ]
+  },
+  {
+    id: 'guide7',
+    name: 'The Grand Wizard',
+    image: '/Guides/Guide 7.png',
+    personality: 'magical',
+    role: 'Master Quest Giver',
+    specialty: 'all',
+    greetings: [
+      "Magic happens when effort meets opportunity! ✨",
+      "You have the power to achieve greatness!",
+      "Let the magic of learning transform you!"
+    ],
+    questTypes: ['mastery', 'special', 'achievement'],
+    tips: [
+      "✨ Tip: Every skill you learn is like casting a spell!",
+      "🎭 Practice turns ordinary students into heroes!",
+      "🌟 The real magic is in never giving up!"
+    ]
+  }
+];
+
+// Enhanced Quest Templates
+const QUEST_TEMPLATES = [
+  // Academic Quests
+  {
+    id: 'complete_homework',
+    title: 'Homework Hero',
+    description: 'Complete and submit today\'s homework',
+    category: 'academic',
+    type: 'manual',
+    icon: '📝',
+    questGiver: 'guide1',
+    reward: { type: 'coins', amount: 3 },
+    difficulty: 'easy',
+    estimatedTime: '30-60 minutes'
+  },
+  {
+    id: 'participate_discussion',
+    title: 'Discussion Champion',
+    description: 'Actively participate in class discussion',
+    category: 'academic',
+    type: 'manual',
+    icon: '💬',
+    questGiver: 'guide3',
+    reward: { type: 'coins', amount: 2 },
+    difficulty: 'easy',
+    estimatedTime: 'During class'
+  },
+  {
+    id: 'ask_question',
+    title: 'Curious Explorer',
+    description: 'Ask a thoughtful question during class',
+    category: 'academic',
+    type: 'manual',
+    icon: '❓',
+    questGiver: 'guide6',
+    reward: { type: 'coins', amount: 2 },
+    difficulty: 'easy',
+    estimatedTime: 'During class'
+  },
+  {
+    id: 'earn_xp_learner',
+    title: 'Learning Master',
+    description: 'Earn 5 Learner XP',
+    category: 'academic',
+    type: 'auto',
+    requirement: { type: 'xp', category: 'Learner', amount: 5 },
+    icon: '📚',
+    questGiver: 'guide1',
+    reward: { type: 'coins', amount: 3 },
+    difficulty: 'medium',
+    estimatedTime: 'Throughout day'
+  },
+
+  // Behavior/Respect Quests
+  {
+    id: 'help_classmate',
+    title: 'Helpful Friend',
+    description: 'Help a classmate with their work',
+    category: 'behavior',
+    type: 'manual',
+    icon: '🤝',
+    questGiver: 'guide4',
+    reward: { type: 'coins', amount: 3 },
+    difficulty: 'easy',
+    estimatedTime: '10-15 minutes'
+  },
+  {
+    id: 'earn_xp_respectful',
+    title: 'Respect Champion',
+    description: 'Earn 5 Respectful XP',
+    category: 'behavior',
+    type: 'auto',
+    requirement: { type: 'xp', category: 'Respectful', amount: 5 },
+    icon: '👍',
+    questGiver: 'guide4',
+    reward: { type: 'coins', amount: 3 },
+    difficulty: 'medium',
+    estimatedTime: 'Throughout day'
+  },
+  {
+    id: 'kind_action',
+    title: 'Kindness Warrior',
+    description: 'Perform a random act of kindness',
+    category: 'behavior',
+    type: 'manual',
+    icon: '💝',
+    questGiver: 'guide4',
+    reward: { type: 'coins', amount: 4 },
+    difficulty: 'easy',
+    estimatedTime: 'Anytime'
+  },
+
+  // Responsibility Quests
+  {
+    id: 'perfect_attendance',
+    title: 'Attendance Star',
+    description: 'Attend all classes today',
+    category: 'responsibility',
+    type: 'auto',
+    requirement: { type: 'attendance', period: 'daily' },
+    icon: '⭐',
+    questGiver: 'guide2',
+    reward: { type: 'coins', amount: 2 },
+    difficulty: 'easy',
+    estimatedTime: 'All day'
+  },
+  {
+    id: 'organized_materials',
+    title: 'Organization Expert',
+    description: 'Keep your materials organized all day',
+    category: 'responsibility',
+    type: 'manual',
+    icon: '📋',
+    questGiver: 'guide2',
+    reward: { type: 'coins', amount: 2 },
+    difficulty: 'easy',
+    estimatedTime: 'All day'
+  },
+  {
+    id: 'earn_xp_responsible',
+    title: 'Responsibility Master',
+    description: 'Earn 5 Responsible XP',
+    category: 'responsibility',
+    type: 'auto',
+    requirement: { type: 'xp', category: 'Responsible', amount: 5 },
+    icon: '💼',
+    questGiver: 'guide2',
+    reward: { type: 'coins', amount: 3 },
+    difficulty: 'medium',
+    estimatedTime: 'Throughout day'
+  },
+
+  // Weekly Challenges
+  {
+    id: 'week_attendance',
+    title: 'Perfect Week',
+    description: 'Attend all classes this week',
+    category: 'weekly',
+    type: 'auto',
+    requirement: { type: 'attendance', period: 'weekly' },
+    icon: '🏆',
+    questGiver: 'guide7',
+    reward: { type: 'coins', amount: 10 },
+    difficulty: 'hard',
+    estimatedTime: 'All week'
+  },
+  {
+    id: 'improvement_goal',
+    title: 'Growth Tracker',
+    description: 'Show improvement in your chosen area',
+    category: 'weekly',
+    type: 'manual',
+    icon: '📈',
+    questGiver: 'guide5',
+    reward: { type: 'coins', amount: 8 },
+    difficulty: 'medium',
+    estimatedTime: 'All week'
+  },
+  {
+    id: 'creativity_project',
+    title: 'Creative Explorer',
+    description: 'Complete a creative project or presentation',
+    category: 'weekly',
+    type: 'manual',
+    icon: '🎨',
+    questGiver: 'guide6',
+    reward: { type: 'coins', amount: 6 },
+    difficulty: 'medium',
+    estimatedTime: 'Multiple days'
+  }
+];
+
+// ===============================================
+// CONSTANTS AND CONFIGURATIONS (EXISTING)
 // ===============================================
 
 const MAX_LEVEL = 4;
@@ -238,92 +550,6 @@ const LOOT_BOX_ITEMS = [
   { id: 'phoenix_feather', name: 'Phoenix Feather', icon: '🔥', rarity: 'legendary', effect: 'resurrection' }
 ];
 
-// FIXED: Default quest templates - always available
-const DEFAULT_QUEST_TEMPLATES = [
-  // Daily Quests - Award 1 coin each
-  {
-    id: 'daily-respectful-5',
-    title: 'Be Respectful',
-    description: 'Earn 5 Respectful points',
-    type: 'daily',
-    category: 'individual',
-    requirement: { type: 'xp', category: 'Respectful', amount: 5 },
-    reward: { type: 'COINS', amount: 1 },
-    icon: '👍'
-  },
-  {
-    id: 'daily-responsible-3',
-    title: 'Show Responsibility',
-    description: 'Earn 3 Responsible points',
-    type: 'daily',
-    category: 'individual',
-    requirement: { type: 'xp', category: 'Responsible', amount: 3 },
-    reward: { type: 'COINS', amount: 1 },
-    icon: '💼'
-  },
-  {
-    id: 'daily-learner-4',
-    title: 'Learning Champion',
-    description: 'Earn 4 Learner points',
-    type: 'daily',
-    category: 'individual',
-    requirement: { type: 'xp', category: 'Learner', amount: 4 },
-    reward: { type: 'COINS', amount: 1 },
-    icon: '📚'
-  },
-  {
-    id: 'daily-homework',
-    title: 'Homework Hero',
-    description: 'Complete and submit homework',
-    type: 'daily',
-    category: 'individual',
-    requirement: { type: 'manual', description: 'Teacher verification required' },
-    reward: { type: 'COINS', amount: 1 },
-    icon: '📝'
-  },
-  // Weekly Quests - Award 5 coins each
-  {
-    id: 'weekly-total-xp',
-    title: 'XP Champion',
-    description: 'Earn 50 total XP this week',
-    type: 'weekly',
-    category: 'individual',
-    requirement: { type: 'total_xp', amount: 50 },
-    reward: { type: 'COINS', amount: 5 },
-    icon: '⭐'
-  },
-  {
-    id: 'weekly-attendance',
-    title: 'Perfect Attendance',
-    description: 'Attend all classes this week',
-    type: 'weekly',
-    category: 'individual',
-    requirement: { type: 'manual', description: 'Teacher verification required' },
-    reward: { type: 'COINS', amount: 5 },
-    icon: '🎯'
-  },
-  {
-    id: 'weekly-class-goal',
-    title: 'Class Unity',
-    description: 'Whole class earns 200 total XP',
-    type: 'weekly',
-    category: 'class',
-    requirement: { type: 'class_total_xp', amount: 200 },
-    reward: { type: 'COINS', amount: 5 },
-    icon: '🏆'
-  },
-  {
-    id: 'weekly-pet-race',
-    title: 'Racing Champion',
-    description: 'Win 2 pet races this week',
-    type: 'weekly',
-    category: 'individual',
-    requirement: { type: 'pet_wins', amount: 2 },
-    reward: { type: 'COINS', amount: 5 },
-    icon: '🏁'
-  }
-];
-
 const AVAILABLE_AVATARS = [
   { base: "Alchemist F", path: "/avatars/Alchemist%20F/Level%201.png" },
   { base: "Alchemist M", path: "/avatars/Alchemist%20M/Level%201.png" },
@@ -380,8 +606,525 @@ const PET_NAMES = [
 ];
 
 // ===============================================
-// UTILITY FUNCTIONS - FIXED COIN SYSTEM
+// QUEST GIVER COMPONENTS
 // ===============================================
+
+const QuestGiverTip = ({ questGiverId, onClose }) => {
+  const questGiver = QUEST_GIVERS.find(qg => qg.id === questGiverId);
+  if (!questGiver) return null;
+
+  const randomTip = questGiver.tips[Math.floor(Math.random() * questGiver.tips.length)];
+  const randomGreeting = questGiver.greetings[Math.floor(Math.random() * questGiver.greetings.length)];
+
+  return (
+    <div className="fixed bottom-4 right-4 bg-white rounded-xl shadow-lg border-2 border-blue-200 max-w-sm z-50 animate-slide-up">
+      <div className="p-4">
+        <div className="flex items-start space-x-3">
+          <img 
+            src={questGiver.image} 
+            alt={questGiver.name}
+            className="w-16 h-16 rounded-full border-2 border-blue-300"
+          />
+          <div className="flex-1">
+            <div className="flex justify-between items-center">
+              <h4 className="font-bold text-blue-800">{questGiver.name}</h4>
+              <button 
+                onClick={onClose}
+                className="text-gray-400 hover:text-gray-600 text-xl leading-none"
+              >
+                ×
+              </button>
+            </div>
+            <p className="text-sm text-blue-600 mb-2">{randomGreeting}</p>
+            <p className="text-sm text-gray-700 bg-blue-50 p-2 rounded">{randomTip}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const QuestGiverModal = ({ quest, onComplete, onClose }) => {
+  const questGiver = QUEST_GIVERS.find(qg => qg.id === quest.questGiver);
+  if (!questGiver) return null;
+
+  const randomGreeting = questGiver.greetings[Math.floor(Math.random() * questGiver.greetings.length)];
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full animate-modal-appear">
+        <div className="p-6">
+          <div className="text-center mb-6">
+            <img 
+              src={questGiver.image} 
+              alt={questGiver.name}
+              className="w-24 h-24 mx-auto rounded-full border-4 border-blue-300 mb-4"
+            />
+            <h2 className="text-2xl font-bold text-blue-800">{questGiver.name}</h2>
+            <p className="text-blue-600">{questGiver.role}</p>
+            <p className="text-gray-600 mt-2">{randomGreeting}</p>
+          </div>
+
+          <div className="bg-blue-50 rounded-lg p-4 mb-6">
+            <div className="flex items-center space-x-3 mb-3">
+              <span className="text-3xl">{quest.icon}</span>
+              <div>
+                <h3 className="font-bold text-lg">{quest.title}</h3>
+                <p className="text-sm text-gray-600">Difficulty: {quest.difficulty}</p>
+              </div>
+            </div>
+            <p className="text-gray-700 mb-3">{quest.description}</p>
+            <div className="flex justify-between text-sm text-gray-600">
+              <span>⏱️ {quest.estimatedTime}</span>
+              <span>💰 {quest.reward.amount} coins</span>
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="flex-1 px-4 py-3 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
+            >
+              Close
+            </button>
+            {quest.type === 'manual' && (
+              <button
+                onClick={() => {
+                  onComplete(quest.id);
+                  onClose();
+                }}
+                className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold"
+              >
+                Mark Complete
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const QuestManagementModal = ({ 
+  isOpen, 
+  onClose, 
+  questTemplates,
+  currentQuests,
+  onAddQuest,
+  onRemoveQuest,
+  onCreateCustomQuest
+}) => {
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [newQuest, setNewQuest] = useState({
+    title: '',
+    description: '',
+    category: 'academic',
+    type: 'manual',
+    icon: '📝',
+    questGiver: 'guide1',
+    reward: { type: 'coins', amount: 3 },
+    difficulty: 'easy',
+    estimatedTime: '30 minutes'
+  });
+
+  const categories = ['all', 'academic', 'behavior', 'responsibility', 'weekly'];
+  const filteredTemplates = selectedCategory === 'all' 
+    ? questTemplates 
+    : questTemplates.filter(q => q.category === selectedCategory);
+
+  const handleCreateQuest = () => {
+    const customQuest = {
+      ...newQuest,
+      id: `custom-${Date.now()}`,
+    };
+    onCreateCustomQuest(customQuest);
+    setShowCreateForm(false);
+    setNewQuest({
+      title: '',
+      description: '',
+      category: 'academic',
+      type: 'manual',
+      icon: '📝',
+      questGiver: 'guide1',
+      reward: { type: 'coins', amount: 3 },
+      difficulty: 'easy',
+      estimatedTime: '30 minutes'
+    });
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+        <div className="p-6 border-b">
+          <div className="flex justify-between items-center">
+            <h2 className="text-2xl font-bold text-gray-800">Quest Management</h2>
+            <button 
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 text-2xl"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+
+        <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+          {!showCreateForm ? (
+            <>
+              <div className="flex justify-between items-center mb-6">
+                <div className="flex space-x-2">
+                  {categories.map(category => (
+                    <button
+                      key={category}
+                      onClick={() => setSelectedCategory(category)}
+                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                        selectedCategory === category
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      {category.charAt(0).toUpperCase() + category.slice(1)}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  onClick={() => setShowCreateForm(true)}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold"
+                >
+                  + Create Custom Quest
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {filteredTemplates.map(quest => {
+                  const questGiver = QUEST_GIVERS.find(qg => qg.id === quest.questGiver);
+                  const isActive = currentQuests.some(q => q.templateId === quest.id);
+
+                  return (
+                    <div key={quest.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                      <div className="flex items-start space-x-3">
+                        <img 
+                          src={questGiver?.image} 
+                          alt={questGiver?.name}
+                          className="w-12 h-12 rounded-full border-2 border-gray-300"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <span className="text-xl">{quest.icon}</span>
+                            <h3 className="font-bold">{quest.title}</h3>
+                          </div>
+                          <p className="text-sm text-gray-600 mb-2">{quest.description}</p>
+                          <div className="flex justify-between text-xs text-gray-500 mb-3">
+                            <span>{quest.category}</span>
+                            <span>{quest.difficulty}</span>
+                            <span>💰 {quest.reward.amount}</span>
+                          </div>
+                          <div className="flex gap-2">
+                            {isActive ? (
+                              <button
+                                onClick={() => onRemoveQuest(quest.id)}
+                                className="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
+                              >
+                                Remove
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => onAddQuest(quest)}
+                                className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors"
+                              >
+                                Add to Active
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          ) : (
+            <div className="max-w-2xl mx-auto">
+              <h3 className="text-xl font-bold mb-6">Create Custom Quest</h3>
+              
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Quest Title</label>
+                    <input
+                      type="text"
+                      value={newQuest.title}
+                      onChange={(e) => setNewQuest({...newQuest, title: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="Enter quest title"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Icon</label>
+                    <input
+                      type="text"
+                      value={newQuest.icon}
+                      onChange={(e) => setNewQuest({...newQuest, icon: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="📝"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+                  <textarea
+                    value={newQuest.description}
+                    onChange={(e) => setNewQuest({...newQuest, description: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    rows="3"
+                    placeholder="Describe what students need to do"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Category</label>
+                    <select
+                      value={newQuest.category}
+                      onChange={(e) => setNewQuest({...newQuest, category: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="academic">Academic</option>
+                      <option value="behavior">Behavior</option>
+                      <option value="responsibility">Responsibility</option>
+                      <option value="weekly">Weekly Challenge</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Type</label>
+                    <select
+                      value={newQuest.type}
+                      onChange={(e) => setNewQuest({...newQuest, type: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="manual">Manual (Teacher marks complete)</option>
+                      <option value="auto">Automatic (XP based)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Quest Giver</label>
+                    <select
+                      value={newQuest.questGiver}
+                      onChange={(e) => setNewQuest({...newQuest, questGiver: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    >
+                      {QUEST_GIVERS.map(qg => (
+                        <option key={qg.id} value={qg.id}>{qg.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Difficulty</label>
+                    <select
+                      value={newQuest.difficulty}
+                      onChange={(e) => setNewQuest({...newQuest, difficulty: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="easy">Easy</option>
+                      <option value="medium">Medium</option>
+                      <option value="hard">Hard</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Reward (Coins)</label>
+                    <input
+                      type="number"
+                      value={newQuest.reward.amount}
+                      onChange={(e) => setNewQuest({
+                        ...newQuest, 
+                        reward: {...newQuest.reward, amount: parseInt(e.target.value)}
+                      })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      min="1"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Estimated Time</label>
+                    <input
+                      type="text"
+                      value={newQuest.estimatedTime}
+                      onChange={(e) => setNewQuest({...newQuest, estimatedTime: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="e.g. 30 minutes"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-3 mt-6">
+                  <button
+                    onClick={() => setShowCreateForm(false)}
+                    className="flex-1 px-4 py-3 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleCreateQuest}
+                    disabled={!newQuest.title || !newQuest.description}
+                    className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors font-semibold"
+                  >
+                    Create Quest
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ===============================================
+// ATTENDANCE TRACKING COMPONENT
+// ===============================================
+
+const AttendanceTracker = ({ students, onMarkAttendance, attendanceData, currentDate }) => {
+  const [selectedDate, setSelectedDate] = useState(currentDate || new Date().toISOString().split('T')[0]);
+  
+  const getAttendanceForDate = (studentId, date) => {
+    return attendanceData?.[date]?.[studentId] || 'unmarked';
+  };
+
+  const markAttendance = (studentId, status) => {
+    onMarkAttendance(studentId, selectedDate, status);
+  };
+
+  return (
+    <div className="bg-white rounded-xl shadow-lg p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="text-xl font-bold text-gray-800">📅 Attendance Tracker</h3>
+        <input
+          type="date"
+          value={selectedDate}
+          onChange={(e) => setSelectedDate(e.target.value)}
+          className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
+      <div className="space-y-3">
+        {students.map(student => {
+          const attendance = getAttendanceForDate(student.id, selectedDate);
+          
+          return (
+            <div key={student.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center space-x-3">
+                <img 
+                  src={student.avatar || '/avatars/default.png'} 
+                  alt={student.firstName}
+                  className="w-10 h-10 rounded-full border-2 border-gray-300"
+                />
+                <span className="font-medium">{student.firstName}</span>
+              </div>
+              
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => markAttendance(student.id, 'present')}
+                  className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                    attendance === 'present'
+                      ? 'bg-green-600 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-green-200'
+                  }`}
+                >
+                  ✅ Present
+                </button>
+                <button
+                  onClick={() => markAttendance(student.id, 'absent')}
+                  className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                    attendance === 'absent'
+                      ? 'bg-red-600 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-red-200'
+                  }`}
+                >
+                  ❌ Absent
+                </button>
+                <button
+                  onClick={() => markAttendance(student.id, 'late')}
+                  className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                    attendance === 'late'
+                      ? 'bg-yellow-600 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-yellow-200'
+                  }`}
+                >
+                  ⏰ Late
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+// ===============================================
+// UTILITY FUNCTIONS - ENHANCED
+// ===============================================
+
+// Enhanced quest checking functions
+const checkQuestRequirement = (quest, student, attendanceData) => {
+  if (!quest.requirement) return false;
+
+  const { type, category, amount, period } = quest.requirement;
+
+  switch (type) {
+    case 'xp':
+      const categoryPoints = student.categoryWeekly?.[category] || 0;
+      return categoryPoints >= amount;
+    
+    case 'attendance':
+      if (period === 'daily') {
+        const today = new Date().toISOString().split('T')[0];
+        return attendanceData?.[today]?.[student.id] === 'present';
+      } else if (period === 'weekly') {
+        const weekDates = getWeekDates();
+        return weekDates.every(date => 
+          attendanceData?.[date]?.[student.id] === 'present'
+        );
+      }
+      return false;
+    
+    default:
+      return false;
+  }
+};
+
+const getWeekDates = () => {
+  const today = new Date();
+  const currentDay = today.getDay();
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - currentDay + 1);
+  
+  const weekDates = [];
+  for (let i = 0; i < 5; i++) { // Monday to Friday
+    const date = new Date(monday);
+    date.setDate(monday.getDate() + i);
+    weekDates.push(date.toISOString().split('T')[0]);
+  }
+  return weekDates;
+};
+
+// Random quest giver tip selector
+const getRandomQuestGiverTip = () => {
+  const randomGiver = QUEST_GIVERS[Math.floor(Math.random() * QUEST_GIVERS.length)];
+  const randomTip = randomGiver.tips[Math.floor(Math.random() * randomGiver.tips.length)];
+  return { questGiver: randomGiver, tip: randomTip };
+};
 
 // FIXED: Calculate coins based on both XP and separate coins field
 const calculateCoins = (student) => {
@@ -643,12 +1386,17 @@ export default function ClassroomChampions() {
   const [bulkXpCategory, setBulkXpCategory] = useState('Respectful');
   const [showBulkXpPanel, setShowBulkXpPanel] = useState(false);
 
-  // FIXED: Quest system states - always initialized
-  const [dailyQuests, setDailyQuests] = useState([]);
-  const [weeklyQuests, setWeeklyQuests] = useState([]);
-  const [questTemplates, setQuestTemplates] = useState(DEFAULT_QUEST_TEMPLATES);
+  // ENHANCED: Quest system states
+  const [activeQuests, setActiveQuests] = useState([]);
+  const [questTemplates, setQuestTemplates] = useState(QUEST_TEMPLATES);
   const [questCompletionData, setQuestCompletionData] = useState(null);
   const [showQuestCompletion, setShowQuestCompletion] = useState(false);
+  const [showQuestManagement, setShowQuestManagement] = useState(false);
+  const [selectedQuestGiver, setSelectedQuestGiver] = useState(null);
+  const [showQuestGiverTip, setShowQuestGiverTip] = useState(null);
+
+  // Attendance tracking states
+  const [attendanceData, setAttendanceData] = useState({});
 
   // Settings states
   const [userData, setUserData] = useState(null);
@@ -665,7 +1413,7 @@ export default function ClassroomChampions() {
   const [animatingXP, setAnimatingXP] = useState({});
 
   // ===============================================
-  // FUNCTION DEFINITIONS
+  // ENHANCED FUNCTION DEFINITIONS
   // ===============================================
 
   const showToast = (message) => {
@@ -711,7 +1459,7 @@ export default function ClassroomChampions() {
     }
   };
 
-  // FIXED: Enhanced quest data saving
+  // ENHANCED: Quest data saving
   const saveQuestDataToFirebase = async (questData) => {
     if (!user || !currentClassId) return;
     
@@ -730,6 +1478,28 @@ export default function ClassroomChampions() {
       }
     } catch (error) {
       console.error("❌ Error saving quest data:", error);
+    }
+  };
+
+  // ENHANCED: Attendance data saving
+  const saveAttendanceToFirebase = async (attendanceData) => {
+    if (!user || !currentClassId) return;
+    
+    try {
+      const docRef = doc(firestore, 'users', user.uid);
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        const data = snap.data();
+        const updatedClasses = data.classes.map(cls => 
+          cls.id === currentClassId 
+            ? { ...cls, attendanceData }
+            : cls
+        );
+        await setDoc(docRef, { ...data, classes: updatedClasses });
+        console.log("✅ Attendance data saved to Firebase");
+      }
+    } catch (error) {
+      console.error("❌ Error saving attendance data:", error);
     }
   };
 
@@ -777,123 +1547,56 @@ export default function ClassroomChampions() {
     }
   };
 
-  // FIXED: Quest generation with immediate save
-  const generateDailyQuests = async () => {
-    const today = new Date().toISOString().split('T')[0];
-    const dailyTemplates = questTemplates.filter(t => t.type === 'daily');
-    const selectedQuests = dailyTemplates.slice(0, 3).map(template => ({
-      ...template,
-      id: `daily-${today}-${template.id}`,
-      startDate: today,
-      endDate: today,
+  // ENHANCED: Quest Management Functions
+  const addQuestToActive = (questTemplate) => {
+    const newQuest = {
+      ...questTemplate,
+      id: `active-${Date.now()}`,
+      templateId: questTemplate.id,
+      startDate: new Date().toISOString().split('T')[0],
       completedBy: [],
       active: true
-    }));
-    
-    // Immediately save to Firebase
-    await saveQuestDataToFirebase({ dailyQuests: selectedQuests });
-    return selectedQuests;
+    };
+
+    setActiveQuests(prev => [...prev, newQuest]);
+    saveQuestDataToFirebase({ activeQuests: [...activeQuests, newQuest] });
+    showToast(`Added "${questTemplate.title}" to active quests!`);
   };
 
-  const generateWeeklyQuests = async () => {
-    const weekStart = getWeekStart().toISOString().split('T')[0];
-    const weekEnd = getWeekEnd().toISOString().split('T')[0];
-    const weeklyTemplates = questTemplates.filter(t => t.type === 'weekly');
-    const selectedQuests = weeklyTemplates.slice(0, 2).map(template => ({
-      ...template,
-      id: `weekly-${weekStart}-${template.id}`,
-      startDate: weekStart,
-      endDate: weekEnd,
-      completedBy: [],
-      active: true
-    }));
-    
-    // Immediately save to Firebase
-    await saveQuestDataToFirebase({ weeklyQuests: selectedQuests });
-    return selectedQuests;
+  const removeQuestFromActive = (templateId) => {
+    setActiveQuests(prev => {
+      const updated = prev.filter(q => q.templateId !== templateId);
+      saveQuestDataToFirebase({ activeQuests: updated });
+      return updated;
+    });
+    showToast('Quest removed from active list!');
   };
 
-  const checkIndividualQuestCompletion = (quest, studentId) => {
-    const student = students.find(s => s.id === studentId);
-    if (!student) return false;
-
-    const { requirement } = quest;
-    
-    switch (requirement.type) {
-      case 'xp':
-        const categoryPoints = student.categoryWeekly?.[requirement.category] || 0;
-        return categoryPoints >= requirement.amount;
-      case 'total_xp':
-        return student.weeklyPoints >= requirement.amount;
-      case 'pet_wins':
-        return (student.pet?.wins || 0) >= requirement.amount;
-      case 'manual':
-        return quest.completedBy.includes(studentId);
-      default:
-        return false;
-    }
+  const createCustomQuest = (customQuest) => {
+    setQuestTemplates(prev => {
+      const updated = [...prev, customQuest];
+      saveQuestDataToFirebase({ questTemplates: updated });
+      return updated;
+    });
+    showToast('Custom quest created successfully!');
   };
 
-  const checkClassQuestCompletion = (quest) => {
-    const { requirement } = quest;
-    
-    switch (requirement.type) {
-      case 'class_total_xp':
-        const totalClassXP = students.reduce((sum, s) => sum + (s.weeklyPoints || 0), 0);
-        return totalClassXP >= requirement.amount;
-      case 'manual':
-        return quest.completedBy.includes('class');
-      default:
-        return false;
-    }
-  };
-
-  const checkClassQuestCompletionSafely = (quest, studentsArray) => {
-    const { requirement } = quest;
-    
-    switch (requirement.type) {
-      case 'class_total_xp':
-        const totalClassXP = studentsArray.reduce((sum, s) => sum + (s.weeklyPoints || 0), 0);
-        return totalClassXP >= requirement.amount;
-      case 'manual':
-        return quest.completedBy.includes('class');
-      default:
-        return false;
-    }
-  };
-
-  const checkQuestCompletion = (questId, studentId = null) => {
-    const quest = [...dailyQuests, ...weeklyQuests].find(q => q.id === questId);
-    if (!quest) return false;
-
-    if (quest.category === 'class') {
-      return checkClassQuestCompletion(quest);
-    } else {
-      return checkIndividualQuestCompletion(quest, studentId);
-    }
-  };
-
-  // FIXED: Quest completion with proper coin rewards
   const completeQuest = (questId, studentId = null) => {
-    const quest = [...dailyQuests, ...weeklyQuests].find(q => q.id === questId);
+    const quest = activeQuests.find(q => q.id === questId);
     if (!quest) return;
 
     const completionKey = studentId || 'class';
     if (quest.completedBy.includes(completionKey)) return;
 
     // Update quest completion
-    const updatedDailyQuests = dailyQuests.map(q => 
-      q.id === questId ? { ...q, completedBy: [...q.completedBy, completionKey] } : q
-    );
-    const updatedWeeklyQuests = weeklyQuests.map(q => 
+    const updatedQuests = activeQuests.map(q => 
       q.id === questId ? { ...q, completedBy: [...q.completedBy, completionKey] } : q
     );
 
-    setDailyQuests(updatedDailyQuests);
-    setWeeklyQuests(updatedWeeklyQuests);
+    setActiveQuests(updatedQuests);
 
     // Award rewards
-    if (quest.reward.type === 'COINS') {
+    if (quest.reward.type === 'coins') {
       setStudents(prev => {
         const rewardedStudents = prev.map(student => {
           if (studentId && student.id !== studentId) return student;
@@ -907,97 +1610,76 @@ export default function ClassroomChampions() {
         saveStudentsToFirebase(rewardedStudents);
         return rewardedStudents;
       });
-    } else if (quest.reward.type === 'XP') {
-      // Handle legacy XP rewards for custom quests
-      setStudents(prev => {
-        const rewardedStudents = prev.map(student => {
-          if (studentId && student.id !== studentId) return student;
-          
-          if (!studentId || student.id === studentId) {
-            const newTotal = student.totalPoints + quest.reward.amount;
-            return {
-              ...student,
-              totalPoints: newTotal,
-              weeklyPoints: (student.weeklyPoints || 0) + quest.reward.amount,
-              categoryTotal: {
-                ...student.categoryTotal,
-                'Quest': (student.categoryTotal['Quest'] || 0) + quest.reward.amount,
-              },
-              categoryWeekly: {
-                ...student.categoryWeekly,
-                'Quest': (student.categoryWeekly['Quest'] || 0) + quest.reward.amount,
-              },
-              logs: [
-                ...(student.logs || []),
-                {
-                  type: 'Quest',
-                  amount: quest.reward.amount,
-                  date: new Date().toISOString(),
-                  source: `quest_${quest.id}`,
-                },
-              ],
-            };
-          }
-          return student;
-        });
-        
-        saveStudentsToFirebase(rewardedStudents);
-        return rewardedStudents;
-      });
     }
 
-    // Show completion modal
+    // Show completion modal with quest giver
     setQuestCompletionData({
       quest,
       studentId,
-      student: studentId ? students.find(s => s.id === studentId) : null
+      student: studentId ? students.find(s => s.id === studentId) : null,
+      questGiver: QUEST_GIVERS.find(qg => qg.id === quest.questGiver)
     });
     setShowQuestCompletion(true);
 
     // Save to Firebase
-    saveQuestDataToFirebase({
-      dailyQuests: updatedDailyQuests,
-      weeklyQuests: updatedWeeklyQuests
-    });
+    saveQuestDataToFirebase({ activeQuests: updatedQuests });
   };
 
-  // FIXED: Quest completion check
+  // ENHANCED: Quest checking with attendance
   const checkQuestCompletionSafely = (studentId, updatedStudents) => {
     const student = updatedStudents.find(s => s.id === studentId);
     if (!student) return;
 
-    // Check individual quests
-    [...dailyQuests, ...weeklyQuests].forEach(quest => {
-      if (quest.category === 'individual' && !quest.completedBy.includes(studentId)) {
-        const questCreatedDate = new Date(quest.startDate);
-        const studentLastActive = student.lastXpDate ? new Date(student.lastXpDate) : new Date('2024-01-01');
-        
-        const today = new Date().toISOString().split('T')[0];
-        const isNewQuest = quest.startDate === today;
-        
-        if (questCreatedDate <= studentLastActive || !student.lastXpDate || isNewQuest) {
-          if (checkIndividualQuestCompletion(quest, studentId)) {
-            setTimeout(() => completeQuest(quest.id, studentId), 100);
-          }
-        }
-      }
-    });
-
-    // Check class quests
-    [...dailyQuests, ...weeklyQuests].forEach(quest => {
-      if (quest.category === 'class' && !quest.completedBy.includes('class')) {
-        if (checkClassQuestCompletionSafely(quest, updatedStudents)) {
-          setTimeout(() => completeQuest(quest.id, null), 100);
+    activeQuests.forEach(quest => {
+      if (quest.type === 'auto' && !quest.completedBy.includes(studentId)) {
+        if (checkQuestRequirement(quest, student, attendanceData)) {
+          setTimeout(() => completeQuest(quest.id, studentId), 100);
         }
       }
     });
   };
 
-  const markQuestComplete = (questId, studentId = null) => {
-    // For manual quests, mark as completed
-    completeQuest(questId, studentId);
-    showToast('Quest marked as complete!');
+  // ENHANCED: Attendance management
+  const markAttendance = (studentId, date, status) => {
+    setAttendanceData(prev => {
+      const updated = {
+        ...prev,
+        [date]: {
+          ...prev[date],
+          [studentId]: status
+        }
+      };
+      saveAttendanceToFirebase(updated);
+      
+      // Check attendance-based quests
+      const student = students.find(s => s.id === studentId);
+      if (student && status === 'present') {
+        setTimeout(() => checkQuestCompletionSafely(studentId, students), 100);
+      }
+      
+      return updated;
+    });
+    
+    showToast(`${status.charAt(0).toUpperCase() + status.slice(1)} marked for ${students.find(s => s.id === studentId)?.firstName}`);
   };
+
+  // Quest Giver Tip System
+  const showRandomQuestGiverTip = () => {
+    const { questGiver } = getRandomQuestGiverTip();
+    setShowQuestGiverTip(questGiver.id);
+    setTimeout(() => setShowQuestGiverTip(null), 8000); // Auto-hide after 8 seconds
+  };
+
+  // Trigger tips periodically (you can customize this)
+  useEffect(() => {
+    const tipInterval = setInterval(() => {
+      if (Math.random() < 0.1 && !showQuestGiverTip) { // 10% chance every interval
+        showRandomQuestGiverTip();
+      }
+    }, 30000); // Check every 30 seconds
+
+    return () => clearInterval(tipInterval);
+  }, [showQuestGiverTip]);
 
   const checkForLevelUp = (student) => {
     const nextLevel = student.avatarLevel + 1;
@@ -1464,17 +2146,13 @@ export default function ClassroomChampions() {
         });
       });
 
-    // Generate initial quests
-    const initialDailyQuests = await generateDailyQuests();
-    const initialWeeklyQuests = await generateWeeklyQuests();
-
     const newClass = {
       id: 'class-' + Date.now(),
       name: newClassName,
       students: studentsArray,
-      dailyQuests: initialDailyQuests,
-      weeklyQuests: initialWeeklyQuests,
-      questTemplates: DEFAULT_QUEST_TEMPLATES
+      activeQuests: [],
+      questTemplates: QUEST_TEMPLATES,
+      attendanceData: {}
     };
 
     try {
@@ -1500,9 +2178,9 @@ export default function ClassroomChampions() {
       setTeacherClasses(updatedClasses);
       setStudents(newClass.students);
       setCurrentClassId(newClass.id);
-      setDailyQuests(initialDailyQuests);
-      setWeeklyQuests(initialWeeklyQuests);
-      setQuestTemplates(DEFAULT_QUEST_TEMPLATES);
+      setActiveQuests([]);
+      setQuestTemplates(QUEST_TEMPLATES);
+      setAttendanceData({});
       setNewClassName('');
       setNewClassStudents('');
       showToast('Class imported successfully!');
@@ -1523,30 +2201,11 @@ export default function ClassroomChampions() {
     setStudents(studentsWithCurrency);
     setCurrentClassId(cls.id);
     
-    // Load saved quests or generate new ones
-    const savedDailyQuests = cls.dailyQuests || [];
-    const savedWeeklyQuests = cls.weeklyQuests || [];
+    // Load quest and attendance data
+    setActiveQuests(cls.activeQuests || []);
+    setQuestTemplates(cls.questTemplates || QUEST_TEMPLATES);
+    setAttendanceData(cls.attendanceData || {});
     
-    // Check if we need to generate new quests
-    const today = new Date().toISOString().split('T')[0];
-    const weekStart = getWeekStart().toISOString().split('T')[0];
-    
-    let dailyQuestsToUse = savedDailyQuests;
-    let weeklyQuestsToUse = savedWeeklyQuests;
-    
-    // Generate new daily quests if needed
-    if (savedDailyQuests.length === 0 || !savedDailyQuests.some(q => q.startDate === today)) {
-      dailyQuestsToUse = await generateDailyQuests();
-    }
-    
-    // Generate new weekly quests if needed
-    if (savedWeeklyQuests.length === 0 || !savedWeeklyQuests.some(q => q.startDate === weekStart)) {
-      weeklyQuestsToUse = await generateWeeklyQuests();
-    }
-    
-    setDailyQuests(dailyQuestsToUse);
-    setWeeklyQuests(weeklyQuestsToUse);
-    setQuestTemplates(cls.questTemplates || DEFAULT_QUEST_TEMPLATES);
     setSelectedStudents([]);
     setShowBulkXpPanel(false);
     showToast(`${cls.name} loaded successfully!`);
@@ -1633,7 +2292,7 @@ export default function ClassroomChampions() {
     showToast(`${student.firstName} opened ${lootBox.name} and got: ${rewardsList}!`);
   };
 
-  // Quest Template Management Functions
+  // ENHANCED: Quest Template Management Functions
   const handleAddQuestTemplate = (questTemplate) => {
     const newTemplate = {
       ...questTemplate,
@@ -1672,12 +2331,12 @@ export default function ClassroomChampions() {
   };
 
   const handleResetQuestTemplates = () => {
-    setQuestTemplates(DEFAULT_QUEST_TEMPLATES);
-    saveQuestDataToFirebase({ questTemplates: DEFAULT_QUEST_TEMPLATES });
+    setQuestTemplates(QUEST_TEMPLATES);
+    saveQuestDataToFirebase({ questTemplates: QUEST_TEMPLATES });
     showToast('Quest templates reset to defaults!');
   };
 
-  // Props object for all tabs
+  // ENHANCED: Props object for all tabs with quest system
   const tabProps = {
     students,
     setStudents,
@@ -1700,19 +2359,24 @@ export default function ClassroomChampions() {
     bulkXpCategory,
     setBulkXpCategory,
     handleBulkXpAward,
-    // Quest props
-    dailyQuests,
-    weeklyQuests,
+    // ENHANCED: Quest props with quest givers
+    activeQuests,
+    setActiveQuests,
     questTemplates,
     setQuestTemplates,
-    checkQuestCompletion,
     completeQuest,
-    markQuestComplete,
-    generateDailyQuests,
-    generateWeeklyQuests,
-    setDailyQuests,
-    setWeeklyQuests,
+    addQuestToActive,
+    removeQuestFromActive,
+    createCustomQuest,
+    setShowQuestManagement,
+    showQuestManagement,
+    QUEST_GIVERS,
+    setSelectedQuestGiver,
+    selectedQuestGiver,
     saveQuestDataToFirebase,
+    // Attendance props
+    attendanceData,
+    markAttendance,
     // Race props
     raceInProgress,
     raceFinished,
@@ -1794,7 +2458,10 @@ export default function ClassroomChampions() {
     saveGroupDataToFirebase,
     // Classroom Management
     saveClassroomDataToFirebase,
-    currentClassId
+    currentClassId,
+    // Quest Giver Functions
+    showRandomQuestGiverTip,
+    setShowQuestGiverTip
   };
 
   // Modal props
@@ -1856,33 +2523,9 @@ export default function ClassroomChampions() {
     calculateCoins
   };
 
-  // FIXED: Enhanced quest initialization
-  useEffect(() => {
-    const initializeQuests = async () => {
-      if (currentClassId && questTemplates.length > 0) {
-        const today = new Date().toISOString().split('T')[0];
-        const weekStart = getWeekStart().toISOString().split('T')[0];
-        
-        // Check if we need new daily quests
-        const needNewDaily = dailyQuests.length === 0 || !dailyQuests.some(q => q.startDate === today);
-        
-        // Check if we need new weekly quests
-        const needNewWeekly = weeklyQuests.length === 0 || !weeklyQuests.some(q => q.startDate === weekStart);
-        
-        if (needNewDaily) {
-          const newDailyQuests = await generateDailyQuests();
-          setDailyQuests(newDailyQuests);
-        }
-        
-        if (needNewWeekly) {
-          const newWeeklyQuests = await generateWeeklyQuests();
-          setWeeklyQuests(newWeeklyQuests);
-        }
-      }
-    };
-    
-    initializeQuests();
-  }, [currentClassId, questTemplates]);
+  // ===============================================
+  // EFFECTS
+  // ===============================================
 
   // Race logic with fixed finish line
   useEffect(() => {
@@ -2028,10 +2671,10 @@ export default function ClassroomChampions() {
             } else {
               setStudents([]);
               setCurrentClassId(null);
-              // Initialize with empty quests but keep templates
-              setDailyQuests([]);
-              setWeeklyQuests([]);
-              setQuestTemplates(DEFAULT_QUEST_TEMPLATES);
+              // Initialize with empty quest data
+              setActiveQuests([]);
+              setQuestTemplates(QUEST_TEMPLATES);
+              setAttendanceData({});
             }
 
             // Redirect to dashboard if trying to access toolkit without PRO
@@ -2045,9 +2688,9 @@ export default function ClassroomChampions() {
             setTeacherClasses([]);
             setStudents([]);
             setCurrentClassId(null);
-            setDailyQuests([]);
-            setWeeklyQuests([]);
-            setQuestTemplates(DEFAULT_QUEST_TEMPLATES);
+            setActiveQuests([]);
+            setQuestTemplates(QUEST_TEMPLATES);
+            setAttendanceData({});
             
             if (activeTab === 'toolkit') {
               setActiveTab('dashboard');
@@ -2138,6 +2781,34 @@ export default function ClassroomChampions() {
           </Suspense>
         </div>
       </div>
+
+      {/* ENHANCED: Quest Management Modal */}
+      <QuestManagementModal
+        isOpen={showQuestManagement}
+        onClose={() => setShowQuestManagement(false)}
+        questTemplates={questTemplates}
+        currentQuests={activeQuests}
+        onAddQuest={addQuestToActive}
+        onRemoveQuest={removeQuestFromActive}
+        onCreateCustomQuest={createCustomQuest}
+      />
+
+      {/* ENHANCED: Quest Giver Modal */}
+      {selectedQuestGiver && (
+        <QuestGiverModal
+          quest={selectedQuestGiver}
+          onComplete={completeQuest}
+          onClose={() => setSelectedQuestGiver(null)}
+        />
+      )}
+
+      {/* ENHANCED: Quest Giver Tip */}
+      {showQuestGiverTip && (
+        <QuestGiverTip
+          questGiverId={showQuestGiverTip}
+          onClose={() => setShowQuestGiverTip(null)}
+        />
+      )}
 
       {/* Confirmation Dialog */}
       {showConfirmDialog && (
@@ -2308,6 +2979,11 @@ export default function ClassroomChampions() {
           to { transform: translateX(0); }
         }
         
+        @keyframes slide-up {
+          from { transform: translateY(100%); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+        
         @keyframes modal-appear {
           from { opacity: 0; transform: scale(0.9); }
           to { opacity: 1; transform: scale(1); }
@@ -2319,6 +2995,10 @@ export default function ClassroomChampions() {
         
         .animate-slide-in {
           animation: slide-in 0.3s ease-out;
+        }
+        
+        .animate-slide-up {
+          animation: slide-up 0.4s ease-out;
         }
         
         .animate-modal-appear {
