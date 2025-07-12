@@ -1,432 +1,321 @@
-// HundredsBoard.js - Interactive 100 Board Tool for Mathematics
-import React, { useState, useCallback } from 'react';
+// HundredsBoard.js - Interactive Number Board Teaching Tool (FIXED CONTRAST)
+import React, { useState, useEffect } from 'react';
 
 const HundredsBoard = ({ showToast }) => {
-  const [cellStates, setCellStates] = useState({});
-  const [isAllHidden, setIsAllHidden] = useState(false);
-  const [boardRange, setBoardRange] = useState({ start: 1, end: 100 });
-  const [customMultiple, setCustomMultiple] = useState('');
+  const [highlightedNumbers, setHighlightedNumbers] = useState(new Set());
+  const [showPrimes, setShowPrimes] = useState(false);
+  const [showEvens, setShowEvens] = useState(false);
+  const [showOdds, setShowOdds] = useState(false);
+  const [hiddenNumbers, setHiddenNumbers] = useState(new Set());
+  const [showAll, setShowAll] = useState(true);
+  const [selectedRange, setSelectedRange] = useState(null);
+  const [patternMode, setPatternMode] = useState(null);
+  const [skipCounting, setSkipCounting] = useState(null);
 
-  // Generate numbers array based on range
-  const generateNumbers = useCallback(() => {
-    const numbers = [];
-    for (let i = boardRange.start; i <= boardRange.end; i++) {
-      numbers.push(i);
+  // Generate prime numbers up to 100
+  const generatePrimes = (max) => {
+    const primes = new Set();
+    const sieve = new Array(max + 1).fill(true);
+    sieve[0] = sieve[1] = false;
+    
+    for (let i = 2; i <= Math.sqrt(max); i++) {
+      if (sieve[i]) {
+        for (let j = i * i; j <= max; j += i) {
+          sieve[j] = false;
+        }
+      }
     }
-    return numbers;
-  }, [boardRange]);
+    
+    for (let i = 2; i <= max; i++) {
+      if (sieve[i]) primes.add(i);
+    }
+    
+    return primes;
+  };
 
-  const numbers = generateNumbers();
-  const gridSize = Math.ceil(Math.sqrt(numbers.length));
+  const primes = generatePrimes(100);
 
   // Check if number is prime
-  const isPrime = (num) => {
-    if (num < 2) return false;
-    for (let i = 2; i <= Math.sqrt(num); i++) {
-      if (num % i === 0) return false;
-    }
-    return true;
-  };
+  const isPrime = (num) => primes.has(num);
 
-  // Handle cell click
-  const handleCellClick = (num, isShiftClick) => {
-    setCellStates(prev => {
-      const current = prev[num] || {};
-      if (isShiftClick) {
-        return {
-          ...prev,
-          [num]: { ...current, hidden: !current.hidden }
-        };
+  // Toggle number highlight
+  const toggleHighlight = (num) => {
+    setHighlightedNumbers(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(num)) {
+        newSet.delete(num);
       } else {
-        return {
-          ...prev,
-          [num]: { ...current, highlighted: !current.highlighted }
-        };
+        newSet.add(num);
       }
+      return newSet;
     });
   };
 
-  // Clear all highlights and effects
-  const clearHighlights = () => {
-    setCellStates(prev => {
-      const newStates = {};
-      Object.keys(prev).forEach(num => {
-        if (prev[num].hidden) {
-          newStates[num] = { hidden: true };
-        }
-      });
-      return newStates;
-    });
-    showToast('Highlights cleared!');
-  };
-
-  // Highlight multiples
-  const highlightMultiples = (multiplier) => {
-    if (!multiplier || multiplier <= 0) return;
-    
-    setCellStates(prev => {
-      const newStates = { ...prev };
-      numbers.forEach(num => {
-        if (num % multiplier === 0) {
-          newStates[num] = { 
-            ...newStates[num], 
-            highlighted: true, 
-            multiple: true 
-          };
-        } else {
-          const current = newStates[num] || {};
-          delete current.highlighted;
-          delete current.multiple;
-          delete current.prime;
-          if (Object.keys(current).length === 0) {
-            delete newStates[num];
-          } else {
-            newStates[num] = current;
-          }
-        }
-      });
-      return newStates;
-    });
-    showToast(`Highlighted multiples of ${multiplier}!`);
-  };
-
-  // Highlight prime numbers
-  const highlightPrimes = () => {
-    setCellStates(prev => {
-      const newStates = { ...prev };
-      numbers.forEach(num => {
-        if (isPrime(num)) {
-          newStates[num] = { 
-            ...newStates[num], 
-            prime: true 
-          };
-        } else {
-          const current = newStates[num] || {};
-          delete current.prime;
-          delete current.highlighted;
-          delete current.multiple;
-          if (Object.keys(current).length === 0) {
-            delete newStates[num];
-          } else {
-            newStates[num] = current;
-          }
-        }
-      });
-      return newStates;
-    });
-    showToast('Prime numbers highlighted!');
-  };
-
-  // Toggle hide/show all
-  const toggleHideAll = () => {
-    const newHiddenState = !isAllHidden;
-    setIsAllHidden(newHiddenState);
-    
-    setCellStates(prev => {
-      const newStates = {};
-      numbers.forEach(num => {
-        const current = prev[num] || {};
-        if (newHiddenState) {
-          newStates[num] = { ...current, hidden: true };
-        } else {
-          delete current.hidden;
-          if (Object.keys(current).length === 0) {
-            // Don't add empty objects
-          } else {
-            newStates[num] = current;
-          }
-        }
-      });
-      return newStates;
-    });
-    
-    showToast(newHiddenState ? 'All numbers hidden!' : 'All numbers revealed!');
-  };
-
-  // Highlight even numbers
-  const highlightEvens = () => {
-    setCellStates(prev => {
-      const newStates = { ...prev };
-      numbers.forEach(num => {
-        if (num % 2 === 0) {
-          newStates[num] = { 
-            ...newStates[num], 
-            highlighted: true, 
-            even: true 
-          };
-        } else {
-          const current = newStates[num] || {};
-          delete current.highlighted;
-          delete current.even;
-          delete current.odd;
-          delete current.prime;
-          delete current.multiple;
-          if (Object.keys(current).length === 0) {
-            delete newStates[num];
-          } else {
-            newStates[num] = current;
-          }
-        }
-      });
-      return newStates;
-    });
-    showToast('Even numbers highlighted!');
-  };
-
-  // Highlight odd numbers
-  const highlightOdds = () => {
-    setCellStates(prev => {
-      const newStates = { ...prev };
-      numbers.forEach(num => {
-        if (num % 2 === 1) {
-          newStates[num] = { 
-            ...newStates[num], 
-            highlighted: true, 
-            odd: true 
-          };
-        } else {
-          const current = newStates[num] || {};
-          delete current.highlighted;
-          delete current.odd;
-          delete current.even;
-          delete current.prime;
-          delete current.multiple;
-          if (Object.keys(current).length === 0) {
-            delete newStates[num];
-          } else {
-            newStates[num] = current;
-          }
-        }
-      });
-      return newStates;
-    });
-    showToast('Odd numbers highlighted!');
-  };
-
-  // Handle custom multiple input
-  const handleCustomMultiple = () => {
-    const num = parseInt(customMultiple);
-    if (num && num > 0 && num <= 100) {
-      highlightMultiples(num);
-      setCustomMultiple('');
-    } else {
-      showToast('Please enter a valid number between 1 and 100');
+  // Apply skip counting pattern
+  const applySkipCounting = (step) => {
+    const newHighlighted = new Set();
+    for (let i = step; i <= 100; i += step) {
+      newHighlighted.add(i);
     }
+    setHighlightedNumbers(newHighlighted);
+    setSkipCounting(step);
+    showToast(`Skip counting by ${step}s applied!`);
   };
 
-  // Change board range
-  const setBoardTo50 = () => {
-    setBoardRange({ start: 1, end: 50 });
-    setCellStates({});
-    setIsAllHidden(false);
-    showToast('Board set to 1-50!');
-  };
-
-  const setBoardTo100 = () => {
-    setBoardRange({ start: 1, end: 100 });
-    setCellStates({});
-    setIsAllHidden(false);
-    showToast('Board set to 1-100!');
-  };
-
-  const setBoardTo200 = () => {
-    setBoardRange({ start: 1, end: 200 });
-    setCellStates({});
-    setIsAllHidden(false);
-    showToast('Board set to 1-200!');
-  };
-
-  // Get cell style classes
-  const getCellClasses = (num) => {
-    const state = cellStates[num] || {};
-    let classes = 'cell';
+  // Apply number patterns
+  const applyPattern = (pattern) => {
+    const newHighlighted = new Set();
     
-    if (state.hidden) {
-      classes += ' hidden';
-    } else if (state.prime) {
-      classes += ' prime';
-    } else if (state.highlighted) {
-      if (state.even) {
-        classes += ' even';
-      } else if (state.odd) {
-        classes += ' odd';
+    switch (pattern) {
+      case 'squares':
+        for (let i = 1; i <= 10; i++) {
+          newHighlighted.add(i * i);
+        }
+        showToast('Perfect squares highlighted!');
+        break;
+      case 'triangular':
+        for (let i = 1; i <= 13; i++) {
+          const triangular = (i * (i + 1)) / 2;
+          if (triangular <= 100) newHighlighted.add(triangular);
+        }
+        showToast('Triangular numbers highlighted!');
+        break;
+      case 'fibonacci':
+        let a = 1, b = 1;
+        newHighlighted.add(1);
+        while (b <= 100) {
+          newHighlighted.add(b);
+          [a, b] = [b, a + b];
+        }
+        showToast('Fibonacci sequence highlighted!');
+        break;
+      case 'palindromes':
+        for (let i = 1; i <= 100; i++) {
+          const str = i.toString();
+          if (str === str.split('').reverse().join('')) {
+            newHighlighted.add(i);
+          }
+        }
+        showToast('Palindromic numbers highlighted!');
+        break;
+    }
+    
+    setHighlightedNumbers(newHighlighted);
+    setPatternMode(pattern);
+  };
+
+  // Range selection
+  const selectRange = (start, end) => {
+    const newHighlighted = new Set();
+    for (let i = start; i <= end; i++) {
+      newHighlighted.add(i);
+    }
+    setHighlightedNumbers(newHighlighted);
+    showToast(`Range ${start}-${end} selected!`);
+  };
+
+  // Clear all selections
+  const clearAll = () => {
+    setHighlightedNumbers(new Set());
+    setShowPrimes(false);
+    setShowEvens(false);
+    setShowOdds(false);
+    setHiddenNumbers(new Set());
+    setSelectedRange(null);
+    setPatternMode(null);
+    setSkipCounting(null);
+    showToast('All selections cleared!');
+  };
+
+  // Toggle number visibility
+  const toggleVisibility = (num) => {
+    setHiddenNumbers(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(num)) {
+        newSet.delete(num);
       } else {
-        classes += ' highlighted';
+        newSet.add(num);
       }
-    }
-    
-    return classes;
+      return newSet;
+    });
   };
 
-  if (numbers.length === 0) {
-    return (
-      <div className="text-center py-16">
-        <div className="text-6xl mb-4">🔢</div>
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">No Numbers to Display</h2>
-        <p className="text-gray-600">
-          Please check your board range settings.
-        </p>
-      </div>
-    );
-  }
+  // Get cell class for styling
+  const getCellClass = (num) => {
+    let classes = ['cell'];
+    
+    if (hiddenNumbers.has(num)) classes.push('hidden');
+    else if (highlightedNumbers.has(num)) classes.push('highlighted');
+    else if (showPrimes && isPrime(num)) classes.push('prime');
+    else if (showEvens && num % 2 === 0) classes.push('even');
+    else if (showOdds && num % 2 === 1) classes.push('odd');
+    
+    return classes.join(' ');
+  };
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="text-center">
         <h2 className="text-3xl font-bold text-gray-800 mb-2">🔢 Interactive Number Board</h2>
-        <p className="text-gray-600">Explore patterns, multiples, and prime numbers</p>
-        <p className="text-sm text-gray-500 mt-2">
-          Click to highlight • Shift+Click to hide • Current range: {boardRange.start}-{boardRange.end}
-        </p>
+        <p className="text-gray-700">Explore number patterns, skip counting, and mathematical concepts</p>
       </div>
 
-      {/* Board Range Controls */}
-      <div className="bg-gray-50 rounded-xl p-4">
-        <h3 className="text-lg font-bold text-gray-800 mb-3 text-center">Board Size</h3>
-        <div className="flex justify-center gap-3 flex-wrap">
-          <button
-            onClick={setBoardTo50}
-            className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-              boardRange.end === 50 
-                ? 'bg-blue-600 text-white' 
-                : 'bg-white text-gray-700 hover:bg-gray-100'
-            }`}
-          >
-            1-50 Board
-          </button>
-          <button
-            onClick={setBoardTo100}
-            className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-              boardRange.end === 100 
-                ? 'bg-blue-600 text-white' 
-                : 'bg-white text-gray-700 hover:bg-gray-100'
-            }`}
-          >
-            1-100 Board
-          </button>
-          <button
-            onClick={setBoardTo200}
-            className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-              boardRange.end === 200 
-                ? 'bg-blue-600 text-white' 
-                : 'bg-white text-gray-700 hover:bg-gray-100'
-            }`}
-          >
-            1-200 Board
-          </button>
+      {/* Controls */}
+      <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          
+          {/* Pattern Highlighting */}
+          <div>
+            <h3 className="font-bold text-gray-800 mb-3">Number Patterns</h3>
+            <div className="space-y-2">
+              <button
+                onClick={() => applyPattern('squares')}
+                className={`w-full px-3 py-2 rounded-lg font-semibold transition-colors ${
+                  patternMode === 'squares' 
+                    ? 'bg-blue-600 text-white' 
+                    : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                }`}
+              >
+                Perfect Squares
+              </button>
+              <button
+                onClick={() => applyPattern('triangular')}
+                className={`w-full px-3 py-2 rounded-lg font-semibold transition-colors ${
+                  patternMode === 'triangular' 
+                    ? 'bg-blue-600 text-white' 
+                    : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                }`}
+              >
+                Triangular Numbers
+              </button>
+              <button
+                onClick={() => applyPattern('fibonacci')}
+                className={`w-full px-3 py-2 rounded-lg font-semibold transition-colors ${
+                  patternMode === 'fibonacci' 
+                    ? 'bg-blue-600 text-white' 
+                    : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                }`}
+              >
+                Fibonacci Sequence
+              </button>
+            </div>
+          </div>
+
+          {/* Skip Counting */}
+          <div>
+            <h3 className="font-bold text-gray-800 mb-3">Skip Counting</h3>
+            <div className="grid grid-cols-3 gap-2">
+              {[2, 3, 4, 5, 6, 7, 8, 9, 10].map(step => (
+                <button
+                  key={step}
+                  onClick={() => applySkipCounting(step)}
+                  className={`px-3 py-2 rounded-lg font-semibold transition-colors ${
+                    skipCounting === step 
+                      ? 'bg-green-600 text-white' 
+                      : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                  }`}
+                >
+                  {step}s
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Range Selection */}
+          <div>
+            <h3 className="font-bold text-gray-800 mb-3">Quick Ranges</h3>
+            <div className="space-y-2">
+              <button
+                onClick={() => selectRange(1, 25)}
+                className="w-full px-3 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 font-semibold transition-colors"
+              >
+                1-25
+              </button>
+              <button
+                onClick={() => selectRange(26, 50)}
+                className="w-full px-3 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 font-semibold transition-colors"
+              >
+                26-50
+              </button>
+              <button
+                onClick={() => selectRange(51, 75)}
+                className="w-full px-3 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 font-semibold transition-colors"
+              >
+                51-75
+              </button>
+              <button
+                onClick={() => selectRange(76, 100)}
+                className="w-full px-3 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 font-semibold transition-colors"
+              >
+                76-100
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Toggle Controls */}
+        <div className="mt-6 pt-6 border-t border-gray-200">
+          <div className="flex flex-wrap gap-3 justify-center">
+            <button
+              onClick={() => setShowPrimes(!showPrimes)}
+              className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+                showPrimes 
+                  ? 'bg-teal-600 text-white' 
+                  : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+              }`}
+            >
+              {showPrimes ? 'Hide Primes' : 'Show Primes'}
+            </button>
+            <button
+              onClick={() => setShowEvens(!showEvens)}
+              className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+                showEvens 
+                  ? 'bg-purple-600 text-white' 
+                  : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+              }`}
+            >
+              {showEvens ? 'Hide Evens' : 'Show Evens'}
+            </button>
+            <button
+              onClick={() => setShowOdds(!showOdds)}
+              className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+                showOdds 
+                  ? 'bg-orange-600 text-white' 
+                  : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+              }`}
+            >
+              {showOdds ? 'Hide Odds' : 'Show Odds'}
+            </button>
+            <button
+              onClick={clearAll}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold transition-colors"
+            >
+              Clear All
+            </button>
+            <button
+              onClick={() => setShowAll(!showAll)}
+              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-semibold transition-colors"
+            >
+              {showAll ? 'Show All' : 'Hide All'}
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Number Board */}
       <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-        <div 
-          className="number-board"
-          style={{
-            display: 'grid',
-            gridTemplateColumns: `repeat(${Math.min(gridSize, 10)}, 1fr)`,
-            gap: '4px',
-            maxHeight: '70vh',
-            overflow: 'auto'
-          }}
-        >
-          {numbers.map(num => (
+        <div className="number-board grid grid-cols-10 gap-2 max-w-4xl mx-auto">
+          {Array.from({ length: 100 }, (_, i) => i + 1).map(num => (
             <div
               key={num}
-              className={getCellClasses(num)}
-              onClick={(e) => handleCellClick(num, e.shiftKey)}
-              style={{
-                aspectRatio: '1',
-                minHeight: '40px'
-              }}
+              onClick={() => toggleHighlight(num)}
+              onDoubleClick={() => toggleVisibility(num)}
+              className={getCellClass(num)}
             >
-              {num}
+              {showAll || !hiddenNumbers.has(num) ? num : ''}
             </div>
           ))}
-        </div>
-      </div>
-
-      {/* Controls */}
-      <div className="space-y-4">
-        {/* Pattern Controls */}
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-          <h3 className="text-lg font-bold text-gray-800 mb-4 text-center">Number Patterns</h3>
-          <div className="flex justify-center gap-2 flex-wrap mb-4">
-            <button
-              onClick={highlightPrimes}
-              className="bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition-colors font-semibold"
-            >
-              Prime Numbers
-            </button>
-            <button
-              onClick={highlightEvens}
-              className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors font-semibold"
-            >
-              Even Numbers
-            </button>
-            <button
-              onClick={highlightOdds}
-              className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors font-semibold"
-            >
-              Odd Numbers
-            </button>
-          </div>
-          
-          {/* Custom Multiple Input */}
-          <div className="flex justify-center items-center gap-2 mb-4">
-            <label className="text-sm font-semibold text-gray-700">Custom Multiple:</label>
-            <input
-              type="number"
-              value={customMultiple}
-              onChange={(e) => setCustomMultiple(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleCustomMultiple()}
-              placeholder="Enter number"
-              className="w-24 px-2 py-1 border border-gray-300 rounded text-center text-sm"
-              min="1"
-              max="200"
-            />
-            <button
-              onClick={handleCustomMultiple}
-              className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition-colors text-sm font-semibold"
-            >
-              Highlight
-            </button>
-          </div>
-        </div>
-
-        {/* Multiplication Tables */}
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-          <h3 className="text-lg font-bold text-gray-800 mb-4 text-center">Multiplication Tables</h3>
-          <div className="grid grid-cols-6 md:grid-cols-12 gap-2">
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(num => (
-              <button
-                key={num}
-                onClick={() => highlightMultiples(num)}
-                className="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors font-semibold text-sm"
-              >
-                ×{num}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Action Controls */}
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-          <h3 className="text-lg font-bold text-gray-800 mb-4 text-center">Actions</h3>
-          <div className="flex justify-center gap-3 flex-wrap">
-            <button
-              onClick={clearHighlights}
-              className="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition-colors font-semibold"
-            >
-              Clear Highlights
-            </button>
-            <button
-              onClick={toggleHideAll}
-              className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition-colors font-semibold"
-            >
-              {isAllHidden ? 'Show All' : 'Hide All'}
-            </button>
-          </div>
         </div>
       </div>
 
@@ -436,20 +325,25 @@ const HundredsBoard = ({ showToast }) => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <div className="flex items-center space-x-2">
             <div className="w-6 h-6 bg-yellow-400 rounded border"></div>
-            <span>Highlighted</span>
+            <span className="text-gray-800 font-semibold">Highlighted</span>
           </div>
           <div className="flex items-center space-x-2">
             <div className="w-6 h-6 bg-teal-600 rounded border"></div>
-            <span>Prime Numbers</span>
+            <span className="text-gray-800 font-semibold">Prime Numbers</span>
           </div>
           <div className="flex items-center space-x-2">
             <div className="w-6 h-6 bg-purple-600 rounded border"></div>
-            <span>Even Numbers</span>
+            <span className="text-gray-800 font-semibold">Even Numbers</span>
           </div>
           <div className="flex items-center space-x-2">
             <div className="w-6 h-6 bg-orange-600 rounded border"></div>
-            <span>Odd Numbers</span>
+            <span className="text-gray-800 font-semibold">Odd Numbers</span>
           </div>
+        </div>
+        <div className="mt-3 text-center">
+          <p className="text-gray-700 text-sm">
+            <strong>Click</strong> to highlight numbers • <strong>Double-click</strong> to hide/show numbers
+          </p>
         </div>
       </div>
 
@@ -467,6 +361,8 @@ const HundredsBoard = ({ showToast }) => {
           user-select: none;
           border: 2px solid transparent;
           font-size: 16px;
+          min-height: 40px;
+          color: #1f2937;
         }
 
         .cell:hover {

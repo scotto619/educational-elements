@@ -63,6 +63,41 @@ const NumberMat = ({ showToast }) => {
   const currentTheme = colorThemes[colorTheme];
   const currentFont = fontSizes[fontSize];
 
+  // Helper function to convert number to words
+  const numberToWords = (num) => {
+    const ones = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
+    const teens = ['ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+    const tens = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+    
+    if (num === 0) return 'zero';
+    if (num < 10) return ones[num];
+    if (num < 20) return teens[num - 10];
+    if (num < 100) return tens[Math.floor(num / 10)] + (num % 10 ? '-' + ones[num % 10] : '');
+    if (num < 1000) return ones[Math.floor(num / 100)] + ' hundred' + (num % 100 ? ' ' + numberToWords(num % 100) : '');
+    
+    return num.toString(); // For larger numbers, just return the number
+  };
+
+  // Helper function to find factors
+  const findFactors = (num) => {
+    const factors = [];
+    for (let i = 1; i <= num; i++) {
+      if (num % i === 0) {
+        factors.push(i);
+      }
+    }
+    return factors;
+  };
+
+  // Helper function to find first few multiples
+  const findMultiples = (num, count = 5) => {
+    const multiples = [];
+    for (let i = 1; i <= count; i++) {
+      multiples.push(num * i);
+    }
+    return multiples;
+  };
+
   // Auto-calculate some fields when center number changes
   const updateCenterNumber = (num) => {
     setCenterNumber(num);
@@ -72,59 +107,62 @@ const NumberMat = ({ showToast }) => {
       const newSections = { ...sections };
       
       // Auto-fill some basic information
-      if (number > 0) {
+      if (number > 0 && number < 10000) {
         // Even/Odd
         newSections.evenOdd = number % 2 === 0 ? 'Even' : 'Odd';
         
-        // Basic multiples (first 5)
-        const multiples = [];
-        for (let i = 1; i <= 5; i++) {
-          multiples.push(number * i);
-        }
-        if (multiples.length > 0) {
-          newSections.multiples = multiples.join(', ') + '...';
-        }
+        // Word Form
+        newSections.wordForm = numberToWords(number);
         
-        // Basic factors
-        const factors = [];
-        for (let i = 1; i <= number; i++) {
-          if (number % i === 0) {
-            factors.push(i);
-          }
-        }
-        if (factors.length > 0) {
+        // Factors (only for reasonable numbers)
+        if (number <= 100) {
+          const factors = findFactors(number);
           newSections.factors = factors.join(', ');
         }
         
-        // Place value for numbers up to millions
-        if (number < 1000000) {
-          const placeValues = [];
-          const numStr = number.toString();
-          const places = ['ones', 'tens', 'hundreds', 'thousands', 'ten thousands', 'hundred thousands'];
-          
-          for (let i = 0; i < numStr.length; i++) {
-            const digit = numStr[numStr.length - 1 - i];
-            const place = places[i];
-            if (digit !== '0') {
-              placeValues.unshift(`${digit} ${place}`);
-            }
-          }
-          newSections.placeValue = placeValues.join(', ');
+        // Multiples
+        if (number <= 20) {
+          const multiples = findMultiples(number);
+          newSections.multiples = multiples.join(', ');
         }
         
-        // Expanded form
-        if (number < 1000000) {
-          const expanded = [];
-          const numStr = number.toString();
-          const multipliers = [1, 10, 100, 1000, 10000, 100000];
+        // Place Value (for numbers up to thousands)
+        if (number < 10000) {
+          const thousands = Math.floor(number / 1000);
+          const hundreds = Math.floor((number % 1000) / 100);
+          const tens = Math.floor((number % 100) / 10);
+          const ones = number % 10;
           
-          for (let i = 0; i < numStr.length; i++) {
-            const digit = parseInt(numStr[numStr.length - 1 - i]);
-            if (digit !== 0) {
-              expanded.unshift(digit * multipliers[i]);
-            }
-          }
-          newSections.expandedForm = expanded.join(' + ');
+          let placeValueParts = [];
+          if (thousands > 0) placeValueParts.push(`${thousands} thousand${thousands > 1 ? 's' : ''}`);
+          if (hundreds > 0) placeValueParts.push(`${hundreds} hundred${hundreds > 1 ? 's' : ''}`);
+          if (tens > 0) placeValueParts.push(`${tens} ten${tens > 1 ? 's' : ''}`);
+          if (ones > 0) placeValueParts.push(`${ones} one${ones > 1 ? 's' : ''}`);
+          
+          newSections.placeValue = placeValueParts.join(', ');
+        }
+        
+        // Expanded Form
+        if (number < 10000) {
+          const thousands = Math.floor(number / 1000) * 1000;
+          const hundreds = Math.floor((number % 1000) / 100) * 100;
+          const tens = Math.floor((number % 100) / 10) * 10;
+          const ones = number % 10;
+          
+          let expandedParts = [];
+          if (thousands > 0) expandedParts.push(thousands.toString());
+          if (hundreds > 0) expandedParts.push(hundreds.toString());
+          if (tens > 0) expandedParts.push(tens.toString());
+          if (ones > 0) expandedParts.push(ones.toString());
+          
+          newSections.expandedForm = expandedParts.join(' + ');
+        }
+        
+        // Basic decimal and percentage (for numbers 0-100)
+        if (number >= 0 && number <= 100) {
+          newSections.decimal = (number / 100).toFixed(2);
+          newSections.percentage = number + '%';
+          newSections.fraction = `${number}/100`;
         }
       }
       
@@ -132,75 +170,60 @@ const NumberMat = ({ showToast }) => {
     }
   };
 
-  // Update individual section
-  const updateSection = (sectionKey, value) => {
-    setSections(prev => ({
-      ...prev,
-      [sectionKey]: value
-    }));
+  const updateSection = (key, value) => {
+    setSections(prev => ({ ...prev, [key]: value }));
   };
 
-  // Clear all content
-  const clearAll = () => {
-    if (window.confirm('Are you sure you want to clear all content?')) {
-      setCenterNumber('');
-      setSections({
-        wordForm: '',
-        placeValue: '',
-        expandedForm: '',
-        numberSentences: '',
-        multiples: '',
-        factors: '',
-        evenOdd: '',
-        comparison: '',
-        fraction: '',
-        decimal: '',
-        percentage: '',
-        visualRepresentation: ''
-      });
-      showToast('Number mat cleared!');
-    }
-  };
-
-  // Save current chart
   const saveChart = () => {
-    if (!centerNumber) {
-      showToast('Please enter a center number first!');
+    if (!centerNumber.trim()) {
+      showToast('Please enter a center number first!', 'error');
       return;
     }
     
-    const name = prompt('Enter a name for this number chart:');
-    if (name) {
-      const chart = {
-        id: Date.now(),
-        name,
-        centerNumber,
-        sections: { ...sections },
-        fontSize,
-        colorTheme,
-        createdAt: new Date().toISOString()
-      };
-      
-      setSavedCharts(prev => [chart, ...prev]);
-      showToast(`Chart "${name}" saved!`);
-    }
+    const chartData = {
+      id: Date.now(),
+      name: `Number ${centerNumber} Chart`,
+      centerNumber,
+      sections,
+      fontSize,
+      colorTheme,
+      createdAt: new Date().toLocaleDateString()
+    };
+    
+    setSavedCharts(prev => [...prev, chartData]);
+    showToast('Chart saved successfully!');
   };
 
-  // Load saved chart
-  const loadChart = (chart) => {
-    setCenterNumber(chart.centerNumber);
-    setSections(chart.sections);
-    setFontSize(chart.fontSize);
-    setColorTheme(chart.colorTheme);
-    showToast(`Loaded chart "${chart.name}"`);
+  const loadChart = (chartData) => {
+    setCenterNumber(chartData.centerNumber);
+    setSections(chartData.sections);
+    setFontSize(chartData.fontSize);
+    setColorTheme(chartData.colorTheme);
+    showToast('Chart loaded!');
   };
 
-  // Delete saved chart
+  const clearChart = () => {
+    setCenterNumber('');
+    setSections({
+      wordForm: '',
+      placeValue: '',
+      expandedForm: '',
+      numberSentences: '',
+      multiples: '',
+      factors: '',
+      evenOdd: '',
+      comparison: '',
+      fraction: '',
+      decimal: '',
+      percentage: '',
+      visualRepresentation: ''
+    });
+    showToast('Chart cleared!');
+  };
+
   const deleteChart = (chartId) => {
-    if (window.confirm('Are you sure you want to delete this chart?')) {
-      setSavedCharts(prev => prev.filter(chart => chart.id !== chartId));
-      showToast('Chart deleted!');
-    }
+    setSavedCharts(prev => prev.filter(chart => chart.id !== chartId));
+    showToast('Chart deleted!');
   };
 
   // Print/Export functionality
@@ -256,71 +279,95 @@ const NumberMat = ({ showToast }) => {
             />
           </div>
 
+          {/* Quick Number Buttons */}
+          <div className="bg-white rounded-xl shadow-lg p-4 border border-gray-200">
+            <h3 className="font-bold text-gray-800 mb-3">Quick Numbers</h3>
+            <div className="grid grid-cols-5 gap-2">
+              {[1, 2, 3, 4, 5, 10, 15, 20, 25, 50, 75, 100].map(num => (
+                <button
+                  key={num}
+                  onClick={() => updateCenterNumber(num.toString())}
+                  className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-colors"
+                >
+                  {num}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Display Options */}
           <div className="bg-white rounded-xl shadow-lg p-4 border border-gray-200">
             <h3 className="font-bold text-gray-800 mb-3">Display Options</h3>
             
             <div className="space-y-3">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Font Size</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Font Size</label>
                 <select
                   value={fontSize}
                   onChange={(e) => setFontSize(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                 >
                   <option value="small">Small</option>
                   <option value="medium">Medium</option>
                   <option value="large">Large</option>
                 </select>
               </div>
-
+              
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Color Theme</label>
-                <select
-                  value={colorTheme}
-                  onChange={(e) => setColorTheme(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                >
-                  <option value="blue">Blue</option>
-                  <option value="green">Green</option>
-                  <option value="purple">Purple</option>
-                  <option value="orange">Orange</option>
-                </select>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Color Theme</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {Object.keys(colorThemes).map(theme => (
+                    <button
+                      key={theme}
+                      onClick={() => setColorTheme(theme)}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        colorTheme === theme 
+                          ? colorThemes[theme].accent.replace('bg-', 'bg-') + ' text-white' 
+                          : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                      }`}
+                    >
+                      {theme.charAt(0).toUpperCase() + theme.slice(1)}
+                    </button>
+                  ))}
+                </div>
               </div>
-
-              <label className="flex items-center space-x-2">
+              
+              <div className="flex items-center space-x-2">
                 <input
                   type="checkbox"
+                  id="showGrid"
                   checked={showGrid}
                   onChange={(e) => setShowGrid(e.target.checked)}
-                  className="w-4 h-4"
+                  className="rounded"
                 />
-                <span className="text-sm text-gray-700">Show grid lines</span>
-              </label>
+                <label htmlFor="showGrid" className="text-sm font-medium text-gray-700">
+                  Show Grid
+                </label>
+              </div>
             </div>
           </div>
 
-          {/* Actions */}
+          {/* Action Buttons */}
           <div className="bg-white rounded-xl shadow-lg p-4 border border-gray-200">
             <h3 className="font-bold text-gray-800 mb-3">Actions</h3>
             <div className="space-y-2">
               <button
                 onClick={saveChart}
-                className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold text-sm"
+                className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"
               >
                 💾 Save Chart
               </button>
               <button
                 onClick={printChart}
-                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold text-sm"
+                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
               >
                 🖨️ Print Chart
               </button>
               <button
-                onClick={clearAll}
-                className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold text-sm"
+                onClick={clearChart}
+                className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-semibold"
               >
-                🗑️ Clear All
+                🗑️ Clear Chart
               </button>
             </div>
           </div>
@@ -371,71 +418,71 @@ const NumberMat = ({ showToast }) => {
             <div className="grid grid-cols-4 gap-4 h-full min-h-[600px]">
               {/* Top Row */}
               <div className={`${currentTheme.primary} ${currentTheme.border} border rounded-lg p-3`}>
-                <label className={`block ${currentFont.label} font-bold ${currentTheme.text} mb-2`}>
+                <label className={`block ${currentFont.label} font-bold text-gray-900 mb-2`}>
                   Word Form
                 </label>
                 <textarea
                   value={sections.wordForm}
                   onChange={(e) => updateSection('wordForm', e.target.value)}
                   placeholder="e.g., Twenty-five"
-                  className={`w-full h-20 p-2 border border-gray-300 rounded resize-none ${currentFont.main}`}
+                  className={`w-full h-20 p-2 border border-gray-300 rounded resize-none text-gray-900 ${currentFont.main}`}
                 />
               </div>
 
               <div className={`${currentTheme.primary} ${currentTheme.border} border rounded-lg p-3`}>
-                <label className={`block ${currentFont.label} font-bold ${currentTheme.text} mb-2`}>
+                <label className={`block ${currentFont.label} font-bold text-gray-900 mb-2`}>
                   Place Value
                 </label>
                 <textarea
                   value={sections.placeValue}
                   onChange={(e) => updateSection('placeValue', e.target.value)}
                   placeholder="e.g., 2 tens, 5 ones"
-                  className={`w-full h-20 p-2 border border-gray-300 rounded resize-none ${currentFont.main}`}
+                  className={`w-full h-20 p-2 border border-gray-300 rounded resize-none text-gray-900 ${currentFont.main}`}
                 />
               </div>
 
               <div className={`${currentTheme.primary} ${currentTheme.border} border rounded-lg p-3`}>
-                <label className={`block ${currentFont.label} font-bold ${currentTheme.text} mb-2`}>
+                <label className={`block ${currentFont.label} font-bold text-gray-900 mb-2`}>
                   Expanded Form
                 </label>
                 <textarea
                   value={sections.expandedForm}
                   onChange={(e) => updateSection('expandedForm', e.target.value)}
                   placeholder="e.g., 20 + 5"
-                  className={`w-full h-20 p-2 border border-gray-300 rounded resize-none ${currentFont.main}`}
+                  className={`w-full h-20 p-2 border border-gray-300 rounded resize-none text-gray-900 ${currentFont.main}`}
                 />
               </div>
 
               <div className={`${currentTheme.primary} ${currentTheme.border} border rounded-lg p-3`}>
-                <label className={`block ${currentFont.label} font-bold ${currentTheme.text} mb-2`}>
+                <label className={`block ${currentFont.label} font-bold text-gray-900 mb-2`}>
                   Number Sentences
                 </label>
                 <textarea
                   value={sections.numberSentences}
                   onChange={(e) => updateSection('numberSentences', e.target.value)}
                   placeholder="e.g., 20 + 5 = 25"
-                  className={`w-full h-20 p-2 border border-gray-300 rounded resize-none ${currentFont.main}`}
+                  className={`w-full h-20 p-2 border border-gray-300 rounded resize-none text-gray-900 ${currentFont.main}`}
                 />
               </div>
 
               {/* Second Row */}
               <div className={`${currentTheme.primary} ${currentTheme.border} border rounded-lg p-3`}>
-                <label className={`block ${currentFont.label} font-bold ${currentTheme.text} mb-2`}>
+                <label className={`block ${currentFont.label} font-bold text-gray-900 mb-2`}>
                   Multiples
                 </label>
                 <textarea
                   value={sections.multiples}
                   onChange={(e) => updateSection('multiples', e.target.value)}
-                  placeholder="e.g., 25, 50, 75..."
-                  className={`w-full h-20 p-2 border border-gray-300 rounded resize-none ${currentFont.main}`}
+                  placeholder="e.g., 25, 50, 75, 100"
+                  className={`w-full h-20 p-2 border border-gray-300 rounded resize-none text-gray-900 ${currentFont.main}`}
                 />
               </div>
 
               {/* CENTER NUMBER */}
               <div className={`col-span-2 ${currentTheme.accent} text-white rounded-lg flex items-center justify-center text-center p-4`}>
                 <div>
-                  <div className={`${currentFont.center} font-bold leading-none`}>
-                    {centerNumber || '?'}
+                  <div className={`${currentFont.center} font-bold leading-none break-all`}>
+                    {centerNumber || '25'}
                   </div>
                   <div className={`${currentFont.main} opacity-90 mt-2`}>
                     {sections.evenOdd && `${sections.evenOdd} Number`}
@@ -444,76 +491,76 @@ const NumberMat = ({ showToast }) => {
               </div>
 
               <div className={`${currentTheme.primary} ${currentTheme.border} border rounded-lg p-3`}>
-                <label className={`block ${currentFont.label} font-bold ${currentTheme.text} mb-2`}>
+                <label className={`block ${currentFont.label} font-bold text-gray-900 mb-2`}>
                   Factors
                 </label>
                 <textarea
                   value={sections.factors}
                   onChange={(e) => updateSection('factors', e.target.value)}
                   placeholder="e.g., 1, 5, 25"
-                  className={`w-full h-20 p-2 border border-gray-300 rounded resize-none ${currentFont.main}`}
+                  className={`w-full h-20 p-2 border border-gray-300 rounded resize-none text-gray-900 ${currentFont.main}`}
                 />
               </div>
 
               {/* Third Row */}
               <div className={`${currentTheme.primary} ${currentTheme.border} border rounded-lg p-3`}>
-                <label className={`block ${currentFont.label} font-bold ${currentTheme.text} mb-2`}>
+                <label className={`block ${currentFont.label} font-bold text-gray-900 mb-2`}>
                   Comparison
                 </label>
                 <textarea
                   value={sections.comparison}
                   onChange={(e) => updateSection('comparison', e.target.value)}
                   placeholder="e.g., 25 > 20, 25 < 30"
-                  className={`w-full h-20 p-2 border border-gray-300 rounded resize-none ${currentFont.main}`}
+                  className={`w-full h-20 p-2 border border-gray-300 rounded resize-none text-gray-900 ${currentFont.main}`}
                 />
               </div>
 
               <div className={`${currentTheme.primary} ${currentTheme.border} border rounded-lg p-3`}>
-                <label className={`block ${currentFont.label} font-bold ${currentTheme.text} mb-2`}>
+                <label className={`block ${currentFont.label} font-bold text-gray-900 mb-2`}>
                   Fraction
                 </label>
                 <textarea
                   value={sections.fraction}
                   onChange={(e) => updateSection('fraction', e.target.value)}
                   placeholder="e.g., 25/100"
-                  className={`w-full h-20 p-2 border border-gray-300 rounded resize-none ${currentFont.main}`}
+                  className={`w-full h-20 p-2 border border-gray-300 rounded resize-none text-gray-900 ${currentFont.main}`}
                 />
               </div>
 
               <div className={`${currentTheme.primary} ${currentTheme.border} border rounded-lg p-3`}>
-                <label className={`block ${currentFont.label} font-bold ${currentTheme.text} mb-2`}>
+                <label className={`block ${currentFont.label} font-bold text-gray-900 mb-2`}>
                   Decimal
                 </label>
                 <textarea
                   value={sections.decimal}
                   onChange={(e) => updateSection('decimal', e.target.value)}
                   placeholder="e.g., 0.25"
-                  className={`w-full h-20 p-2 border border-gray-300 rounded resize-none ${currentFont.main}`}
+                  className={`w-full h-20 p-2 border border-gray-300 rounded resize-none text-gray-900 ${currentFont.main}`}
                 />
               </div>
 
               <div className={`${currentTheme.primary} ${currentTheme.border} border rounded-lg p-3`}>
-                <label className={`block ${currentFont.label} font-bold ${currentTheme.text} mb-2`}>
+                <label className={`block ${currentFont.label} font-bold text-gray-900 mb-2`}>
                   Percentage
                 </label>
                 <textarea
                   value={sections.percentage}
                   onChange={(e) => updateSection('percentage', e.target.value)}
                   placeholder="e.g., 25%"
-                  className={`w-full h-20 p-2 border border-gray-300 rounded resize-none ${currentFont.main}`}
+                  className={`w-full h-20 p-2 border border-gray-300 rounded resize-none text-gray-900 ${currentFont.main}`}
                 />
               </div>
 
               {/* Bottom Row - Visual Representation (spans full width) */}
               <div className={`col-span-4 ${currentTheme.primary} ${currentTheme.border} border rounded-lg p-3`}>
-                <label className={`block ${currentFont.label} font-bold ${currentTheme.text} mb-2`}>
+                <label className={`block ${currentFont.label} font-bold text-gray-900 mb-2`}>
                   Visual Representation / Drawing Space
                 </label>
                 <textarea
                   value={sections.visualRepresentation}
                   onChange={(e) => updateSection('visualRepresentation', e.target.value)}
                   placeholder="Describe visual representations, draw base-10 blocks, arrays, etc."
-                  className={`w-full h-24 p-2 border border-gray-300 rounded resize-none ${currentFont.main}`}
+                  className={`w-full h-24 p-2 border border-gray-300 rounded resize-none text-gray-900 ${currentFont.main}`}
                 />
               </div>
             </div>

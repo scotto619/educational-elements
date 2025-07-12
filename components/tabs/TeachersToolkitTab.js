@@ -1,4 +1,4 @@
-// TeachersToolkitTab.js - Complete Interactive Teaching Tools Suite with Anchor Tools
+// TeachersToolkitTab.js - Complete Interactive Teaching Tools Suite with ALL Fixed Contrast
 import React, { useState } from 'react';
 import StudentHelpQueue from '../StudentHelpQueue';
 import HundredsBoard from '../HundredsBoard';
@@ -26,7 +26,7 @@ const TeachersToolkitTab = ({
       <div className="text-center py-16">
         <div className="text-6xl mb-4">🛠️</div>
         <h2 className="text-2xl font-bold text-gray-800 mb-4">Teachers Toolkit</h2>
-        <p className="text-gray-600 mb-6">
+        <p className="text-gray-700 mb-6">
           The Teachers Toolkit is a PRO feature that includes interactive teaching tools to enhance your classroom experience.
         </p>
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6 max-w-2xl mx-auto">
@@ -146,7 +146,7 @@ const TeachersToolkitTab = ({
       {/* Header */}
       <div className="text-center">
         <h2 className="text-3xl font-bold text-gray-800 mb-2">🛠️ Teachers Toolkit</h2>
-        <p className="text-gray-600">Interactive teaching tools to enhance your classroom experience</p>
+        <p className="text-gray-700">Interactive teaching tools to enhance your classroom experience</p>
       </div>
 
       {/* Toolkit Navigation */}
@@ -177,7 +177,7 @@ const TeachersToolkitTab = ({
                     )}
                   </div>
                   <p className={`text-sm mt-1 ${
-                    activeToolkitTab === tab.id ? 'text-purple-100' : 'text-gray-500'
+                    activeToolkitTab === tab.id ? 'text-purple-100' : 'text-gray-600'
                   }`}>
                     {tab.description}
                   </p>

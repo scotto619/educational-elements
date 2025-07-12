@@ -69,6 +69,11 @@ const WordStudy = ({ showToast }) => {
     'Preposition', 'Conjunction', 'Interjection'
   ];
 
+  // Helper function to count syllables
+  const countSyllables = (word) => {
+    return word.toLowerCase().replace(/[^aeiou]/g, '').length || 1;
+  };
+
   // Auto-analyze word when it changes
   const updateCenterWord = (word) => {
     setCenterWord(word);
@@ -89,92 +94,60 @@ const WordStudy = ({ showToast }) => {
     }
   };
 
-  // Simple syllable counter
-  const countSyllables = (word) => {
-    if (!word) return 0;
-    word = word.toLowerCase();
-    if (word.length <= 3) return 1;
-    
-    word = word.replace(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/, '');
-    word = word.replace(/^y/, '');
-    const matches = word.match(/[aeiouy]{1,2}/g);
-    return matches ? matches.length : 1;
+  const updateSection = (key, value) => {
+    setSections(prev => ({ ...prev, [key]: value }));
   };
 
-  // Update individual section
-  const updateSection = (sectionKey, value) => {
-    setSections(prev => ({
-      ...prev,
-      [sectionKey]: value
-    }));
-  };
-
-  // Quick set part of speech
-  const setPartOfSpeech = (pos) => {
-    updateSection('partOfSpeech', pos);
-  };
-
-  // Clear all content
-  const clearAll = () => {
-    if (window.confirm('Are you sure you want to clear all content?')) {
-      setCenterWord('');
-      setSections({
-        definition: '',
-        partOfSpeech: '',
-        sentences: '',
-        synonyms: '',
-        antonyms: '',
-        wordFamily: '',
-        syllables: '',
-        phonics: '',
-        etymology: '',
-        relatedWords: '',
-        examples: '',
-        nonExamples: ''
-      });
-      showToast('Word study chart cleared!');
-    }
-  };
-
-  // Save current chart
   const saveChart = () => {
     if (!centerWord.trim()) {
-      showToast('Please enter a center word first!');
+      showToast('Please enter a center word first!', 'error');
       return;
     }
     
-    const name = prompt('Enter a name for this word chart:');
-    if (name) {
-      const chart = {
-        id: Date.now(),
-        name,
-        centerWord,
-        sections: { ...sections },
-        fontSize,
-        colorTheme,
-        createdAt: new Date().toISOString()
-      };
-      
-      setSavedCharts(prev => [chart, ...prev]);
-      showToast(`Chart "${name}" saved!`);
-    }
+    const chartData = {
+      id: Date.now(),
+      name: `${centerWord} Chart`,
+      centerWord,
+      sections,
+      fontSize,
+      colorTheme,
+      createdAt: new Date().toLocaleDateString()
+    };
+    
+    setSavedCharts(prev => [...prev, chartData]);
+    showToast('Chart saved successfully!');
   };
 
-  // Load saved chart
-  const loadChart = (chart) => {
-    setCenterWord(chart.centerWord);
-    setSections(chart.sections);
-    setFontSize(chart.fontSize);
-    setColorTheme(chart.colorTheme);
-    showToast(`Loaded chart "${chart.name}"`);
+  const loadChart = (chartData) => {
+    setCenterWord(chartData.centerWord);
+    setSections(chartData.sections);
+    setFontSize(chartData.fontSize);
+    setColorTheme(chartData.colorTheme);
+    showToast('Chart loaded!');
   };
 
-  // Delete saved chart
+  const clearChart = () => {
+    setCenterWord('');
+    setSections({
+      definition: '',
+      partOfSpeech: '',
+      sentences: '',
+      synonyms: '',
+      antonyms: '',
+      wordFamily: '',
+      syllables: '',
+      phonics: '',
+      etymology: '',
+      relatedWords: '',
+      examples: '',
+      nonExamples: ''
+    });
+    showToast('Chart cleared!');
+  };
+
   const deleteChart = (chartId) => {
-    if (window.confirm('Are you sure you want to delete this chart?')) {
-      setSavedCharts(prev => prev.filter(chart => chart.id !== chartId));
-      showToast('Chart deleted!');
-    }
+    setSavedCharts(prev => prev.filter(chart => chart.id !== chartId));
+    showToast('Chart deleted!');
   };
 
   // Print/Export functionality
@@ -230,15 +203,19 @@ const WordStudy = ({ showToast }) => {
             />
           </div>
 
-          {/* Quick Part of Speech */}
+          {/* Part of Speech Quick Select */}
           <div className="bg-white rounded-xl shadow-lg p-4 border border-gray-200">
-            <h3 className="font-bold text-gray-800 mb-3">Quick Part of Speech</h3>
-            <div className="grid grid-cols-2 gap-1">
+            <h3 className="font-bold text-gray-800 mb-3">Part of Speech</h3>
+            <div className="grid grid-cols-2 gap-2">
               {partsOfSpeech.map(pos => (
                 <button
                   key={pos}
-                  onClick={() => setPartOfSpeech(pos)}
-                  className="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded text-xs font-semibold transition-colors"
+                  onClick={() => updateSection('partOfSpeech', pos)}
+                  className={`px-2 py-1 text-xs rounded transition-colors ${
+                    sections.partOfSpeech === pos 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                  }`}
                 >
                   {pos}
                 </button>
@@ -252,65 +229,73 @@ const WordStudy = ({ showToast }) => {
             
             <div className="space-y-3">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Font Size</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Font Size</label>
                 <select
                   value={fontSize}
                   onChange={(e) => setFontSize(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                 >
                   <option value="small">Small</option>
                   <option value="medium">Medium</option>
                   <option value="large">Large</option>
                 </select>
               </div>
-
+              
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Color Theme</label>
-                <select
-                  value={colorTheme}
-                  onChange={(e) => setColorTheme(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                >
-                  <option value="teal">Teal</option>
-                  <option value="indigo">Indigo</option>
-                  <option value="rose">Rose</option>
-                  <option value="emerald">Emerald</option>
-                </select>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Color Theme</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {Object.keys(colorThemes).map(theme => (
+                    <button
+                      key={theme}
+                      onClick={() => setColorTheme(theme)}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        colorTheme === theme 
+                          ? colorThemes[theme].accent.replace('bg-', 'bg-') + ' text-white' 
+                          : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                      }`}
+                    >
+                      {theme.charAt(0).toUpperCase() + theme.slice(1)}
+                    </button>
+                  ))}
+                </div>
               </div>
-
-              <label className="flex items-center space-x-2">
+              
+              <div className="flex items-center space-x-2">
                 <input
                   type="checkbox"
+                  id="showGrid"
                   checked={showGrid}
                   onChange={(e) => setShowGrid(e.target.checked)}
-                  className="w-4 h-4"
+                  className="rounded"
                 />
-                <span className="text-sm text-gray-700">Show grid lines</span>
-              </label>
+                <label htmlFor="showGrid" className="text-sm font-medium text-gray-700">
+                  Show Grid
+                </label>
+              </div>
             </div>
           </div>
 
-          {/* Actions */}
+          {/* Action Buttons */}
           <div className="bg-white rounded-xl shadow-lg p-4 border border-gray-200">
             <h3 className="font-bold text-gray-800 mb-3">Actions</h3>
             <div className="space-y-2">
               <button
                 onClick={saveChart}
-                className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold text-sm"
+                className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"
               >
                 💾 Save Chart
               </button>
               <button
                 onClick={printChart}
-                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold text-sm"
+                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
               >
                 🖨️ Print Chart
               </button>
               <button
-                onClick={clearAll}
-                className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold text-sm"
+                onClick={clearChart}
+                className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-semibold"
               >
-                🗑️ Clear All
+                🗑️ Clear Chart
               </button>
             </div>
           </div>
@@ -361,7 +346,7 @@ const WordStudy = ({ showToast }) => {
             <div className="grid grid-cols-4 gap-4 h-full min-h-[600px]">
               {/* Top Row */}
               <div className={`${currentTheme.primary} ${currentTheme.border} border rounded-lg p-3`}>
-                <label className={`block ${currentFont.label} font-bold ${currentTheme.text} mb-2`}>
+                <label className={`block ${currentFont.label} font-bold text-gray-900 mb-2`}>
                   Definition
                 </label>
                 <textarea
@@ -373,39 +358,39 @@ const WordStudy = ({ showToast }) => {
               </div>
 
               <div className={`${currentTheme.primary} ${currentTheme.border} border rounded-lg p-3`}>
-                <label className={`block ${currentFont.label} font-bold ${currentTheme.text} mb-2`}>
+                <label className={`block ${currentFont.label} font-bold text-gray-900 mb-2`}>
                   Part of Speech
                 </label>
                 <textarea
                   value={sections.partOfSpeech}
                   onChange={(e) => updateSection('partOfSpeech', e.target.value)}
-                  placeholder="noun, verb, adjective..."
-                  className={`w-full h-20 p-2 border border-gray-300 rounded resize-none ${currentFont.main}`}
+                  placeholder="Noun, verb, adjective, etc."
+                  className={`w-full h-20 p-2 border border-gray-300 rounded resize-none text-gray-900 ${currentFont.main}`}
                 />
               </div>
 
               <div className={`col-span-2 ${currentTheme.primary} ${currentTheme.border} border rounded-lg p-3`}>
-                <label className={`block ${currentFont.label} font-bold ${currentTheme.text} mb-2`}>
-                  Use in Sentences
+                <label className={`block ${currentFont.label} font-bold text-gray-900 mb-2`}>
+                  Sentences / Context
                 </label>
                 <textarea
                   value={sections.sentences}
                   onChange={(e) => updateSection('sentences', e.target.value)}
-                  placeholder="Write example sentences using this word..."
-                  className={`w-full h-20 p-2 border border-gray-300 rounded resize-none ${currentFont.main}`}
+                  placeholder="Use the word in meaningful sentences"
+                  className={`w-full h-20 p-2 border border-gray-300 rounded resize-none text-gray-900 ${currentFont.main}`}
                 />
               </div>
 
               {/* Second Row */}
               <div className={`${currentTheme.primary} ${currentTheme.border} border rounded-lg p-3`}>
-                <label className={`block ${currentFont.label} font-bold ${currentTheme.text} mb-2`}>
+                <label className={`block ${currentFont.label} font-bold text-gray-900 mb-2`}>
                   Synonyms
                 </label>
                 <textarea
                   value={sections.synonyms}
                   onChange={(e) => updateSection('synonyms', e.target.value)}
                   placeholder="Words with similar meaning"
-                  className={`w-full h-20 p-2 border border-gray-300 rounded resize-none ${currentFont.main}`}
+                  className={`w-full h-20 p-2 border border-gray-300 rounded resize-none text-gray-900 ${currentFont.main}`}
                 />
               </div>
 
@@ -422,88 +407,88 @@ const WordStudy = ({ showToast }) => {
               </div>
 
               <div className={`${currentTheme.primary} ${currentTheme.border} border rounded-lg p-3`}>
-                <label className={`block ${currentFont.label} font-bold ${currentTheme.text} mb-2`}>
+                <label className={`block ${currentFont.label} font-bold text-gray-900 mb-2`}>
                   Antonyms
                 </label>
                 <textarea
                   value={sections.antonyms}
                   onChange={(e) => updateSection('antonyms', e.target.value)}
                   placeholder="Words with opposite meaning"
-                  className={`w-full h-20 p-2 border border-gray-300 rounded resize-none ${currentFont.main}`}
+                  className={`w-full h-20 p-2 border border-gray-300 rounded resize-none text-gray-900 ${currentFont.main}`}
                 />
               </div>
 
               {/* Third Row */}
               <div className={`${currentTheme.primary} ${currentTheme.border} border rounded-lg p-3`}>
-                <label className={`block ${currentFont.label} font-bold ${currentTheme.text} mb-2`}>
+                <label className={`block ${currentFont.label} font-bold text-gray-900 mb-2`}>
                   Word Family
                 </label>
                 <textarea
                   value={sections.wordFamily}
                   onChange={(e) => updateSection('wordFamily', e.target.value)}
                   placeholder="Related words (root, prefix, suffix)"
-                  className={`w-full h-20 p-2 border border-gray-300 rounded resize-none ${currentFont.main}`}
+                  className={`w-full h-20 p-2 border border-gray-300 rounded resize-none text-gray-900 ${currentFont.main}`}
                 />
               </div>
 
               <div className={`${currentTheme.primary} ${currentTheme.border} border rounded-lg p-3`}>
-                <label className={`block ${currentFont.label} font-bold ${currentTheme.text} mb-2`}>
+                <label className={`block ${currentFont.label} font-bold text-gray-900 mb-2`}>
                   Phonics / Sounds
                 </label>
                 <textarea
                   value={sections.phonics}
                   onChange={(e) => updateSection('phonics', e.target.value)}
                   placeholder="Sounds, phonemes, blends"
-                  className={`w-full h-20 p-2 border border-gray-300 rounded resize-none ${currentFont.main}`}
+                  className={`w-full h-20 p-2 border border-gray-300 rounded resize-none text-gray-900 ${currentFont.main}`}
                 />
               </div>
 
               <div className={`${currentTheme.primary} ${currentTheme.border} border rounded-lg p-3`}>
-                <label className={`block ${currentFont.label} font-bold ${currentTheme.text} mb-2`}>
+                <label className={`block ${currentFont.label} font-bold text-gray-900 mb-2`}>
                   Etymology / Origin
                 </label>
                 <textarea
                   value={sections.etymology}
                   onChange={(e) => updateSection('etymology', e.target.value)}
                   placeholder="Where does this word come from?"
-                  className={`w-full h-20 p-2 border border-gray-300 rounded resize-none ${currentFont.main}`}
+                  className={`w-full h-20 p-2 border border-gray-300 rounded resize-none text-gray-900 ${currentFont.main}`}
                 />
               </div>
 
               <div className={`${currentTheme.primary} ${currentTheme.border} border rounded-lg p-3`}>
-                <label className={`block ${currentFont.label} font-bold ${currentTheme.text} mb-2`}>
+                <label className={`block ${currentFont.label} font-bold text-gray-900 mb-2`}>
                   Related Words
                 </label>
                 <textarea
                   value={sections.relatedWords}
                   onChange={(e) => updateSection('relatedWords', e.target.value)}
                   placeholder="Words in the same topic/theme"
-                  className={`w-full h-20 p-2 border border-gray-300 rounded resize-none ${currentFont.main}`}
+                  className={`w-full h-20 p-2 border border-gray-300 rounded resize-none text-gray-900 ${currentFont.main}`}
                 />
               </div>
 
               {/* Bottom Row */}
               <div className={`col-span-2 ${currentTheme.primary} ${currentTheme.border} border rounded-lg p-3`}>
-                <label className={`block ${currentFont.label} font-bold ${currentTheme.text} mb-2`}>
+                <label className={`block ${currentFont.label} font-bold text-gray-900 mb-2`}>
                   Examples
                 </label>
                 <textarea
                   value={sections.examples}
                   onChange={(e) => updateSection('examples', e.target.value)}
                   placeholder="What are examples of this word in action?"
-                  className={`w-full h-24 p-2 border border-gray-300 rounded resize-none ${currentFont.main}`}
+                  className={`w-full h-24 p-2 border border-gray-300 rounded resize-none text-gray-900 ${currentFont.main}`}
                 />
               </div>
 
               <div className={`col-span-2 ${currentTheme.primary} ${currentTheme.border} border rounded-lg p-3`}>
-                <label className={`block ${currentFont.label} font-bold ${currentTheme.text} mb-2`}>
+                <label className={`block ${currentFont.label} font-bold text-gray-900 mb-2`}>
                   Non-Examples
                 </label>
                 <textarea
                   value={sections.nonExamples}
                   onChange={(e) => updateSection('nonExamples', e.target.value)}
                   placeholder="What would NOT be examples of this word?"
-                  className={`w-full h-24 p-2 border border-gray-300 rounded resize-none ${currentFont.main}`}
+                  className={`w-full h-24 p-2 border border-gray-300 rounded resize-none text-gray-900 ${currentFont.main}`}
                 />
               </div>
             </div>

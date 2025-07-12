@@ -1,4 +1,4 @@
-// DiceRoller.js - Advanced Multi-Dice Rolling System
+// DiceRoller.js - Advanced Multi-Dice Rolling System (FIXED CONTRAST)
 import React, { useState, useEffect, useRef } from 'react';
 
 const DiceRoller = ({ showToast }) => {
@@ -11,6 +11,8 @@ const DiceRoller = ({ showToast }) => {
   const [showHistory, setShowHistory] = useState(true);
   const [customDiceModal, setCustomDiceModal] = useState(false);
   const [editingDice, setEditingDice] = useState(null);
+  const [customValues, setCustomValues] = useState('');
+  const [customName, setCustomName] = useState('');
   
   // Dice presets
   const dicePresets = {
@@ -25,6 +27,19 @@ const DiceRoller = ({ showToast }) => {
     yesno: { name: 'Yes/No', values: ['Yes', 'No', 'Maybe'], shape: 'square' },
     colors: { name: 'Colors', values: ['Red', 'Blue', 'Green', 'Yellow', 'Purple', 'Orange'], shape: 'square' },
     directions: { name: 'Directions', values: ['North', 'South', 'East', 'West'], shape: 'square' }
+  };
+
+  // Sound effects
+  const audioRef = useRef(null);
+  
+  useEffect(() => {
+    audioRef.current = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmkeBz2V4PS8cSQLKoHOvs2IXt8TZLaKl8TXTFANTrro9bGJ');
+  }, []);
+
+  const playRollSound = () => {
+    if (audioRef.current) {
+      audioRef.current.play().catch(e => console.log('Audio play failed:', e));
+    }
   };
 
   // Add new dice
@@ -54,209 +69,98 @@ const DiceRoller = ({ showToast }) => {
   const rollSingleDice = (diceId) => {
     setDiceConfigs(prev => prev.map(dice => 
       dice.id === diceId 
-        ? { ...dice, isRolling: true, result: null }
+        ? { ...dice, isRolling: true }
         : dice
     ));
+
+    playRollSound();
 
     setTimeout(() => {
       setDiceConfigs(prev => prev.map(dice => {
         if (dice.id === diceId) {
-          const result = dice.values[Math.floor(Math.random() * dice.values.length)];
-          return { ...dice, isRolling: false, result };
+          const randomIndex = Math.floor(Math.random() * dice.values.length);
+          const result = dice.values[randomIndex];
+          
+          // Add to history
+          addToHistory({
+            diceId: dice.id,
+            diceType: dice.type,
+            result: result,
+            timestamp: new Date()
+          });
+
+          return {
+            ...dice,
+            result: result,
+            isRolling: false
+          };
         }
         return dice;
       }));
-    }, 800);
+    }, 1000 + Math.random() * 1000); // Variable roll time
   };
 
   // Roll all dice
   const rollAllDice = () => {
-    // Start rolling animation for all dice
-    setDiceConfigs(prev => prev.map(dice => ({ ...dice, isRolling: true, result: null })));
+    setDiceConfigs(prev => prev.map(dice => ({ ...dice, isRolling: true })));
+    playRollSound();
 
     setTimeout(() => {
-      const newResults = {};
+      const rollResults = [];
+      
       setDiceConfigs(prev => prev.map(dice => {
-        const result = dice.values[Math.floor(Math.random() * dice.values.length)];
-        newResults[dice.id] = { type: dice.type, result, values: dice.values };
-        return { ...dice, isRolling: false, result };
+        const randomIndex = Math.floor(Math.random() * dice.values.length);
+        const result = dice.values[randomIndex];
+        
+        rollResults.push({
+          diceId: dice.id,
+          diceType: dice.type,
+          result: result,
+          timestamp: new Date()
+        });
+
+        return {
+          ...dice,
+          result: result,
+          isRolling: false
+        };
       }));
 
-      // Add to history
-      const historyEntry = {
-        id: Date.now(),
-        timestamp: new Date(),
-        results: newResults,
-        total: calculateTotal(newResults)
-      };
+      // Add all results to history as a group
+      addToHistory(rollResults);
       
-      setRollHistory(prev => [historyEntry, ...prev.slice(0, 49)]); // Keep last 50 rolls
-      updateStatistics(newResults);
-      
-      playRollSound();
-      showToast(`Rolled! Total: ${historyEntry.total}`);
-    }, 800);
+    }, 1000 + Math.random() * 1000);
   };
 
-  // Calculate total (for numeric dice)
-  const calculateTotal = (results) => {
-    return Object.values(results).reduce((sum, { result }) => {
-      const num = parseInt(result);
-      return isNaN(num) ? sum : sum + num;
-    }, 0);
+  // Add to roll history
+  const addToHistory = (rollData) => {
+    const historyEntry = {
+      id: Date.now(),
+      rolls: Array.isArray(rollData) ? rollData : [rollData],
+      timestamp: new Date()
+    };
+    
+    setRollHistory(prev => [historyEntry, ...prev.slice(0, 49)]); // Keep last 50 rolls
+    updateStatistics(historyEntry.rolls);
   };
 
   // Update statistics
-  const updateStatistics = (results) => {
+  const updateStatistics = (rolls) => {
     setStatistics(prev => {
       const newStats = { ...prev };
       
-      Object.entries(results).forEach(([diceId, { result, type }]) => {
-        if (!newStats[type]) {
-          newStats[type] = {};
-        }
-        if (!newStats[type][result]) {
-          newStats[type][result] = 0;
-        }
-        newStats[type][result]++;
+      rolls.forEach(roll => {
+        const key = `${roll.diceType}-${roll.result}`;
+        newStats[key] = (newStats[key] || 0) + 1;
       });
       
       return newStats;
     });
   };
 
-  // Play roll sound
-  const playRollSound = () => {
-    try {
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      
-      oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
-      oscillator.frequency.exponentialRampToValueAtTime(100, audioContext.currentTime + 0.3);
-      
-      gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-      
-      oscillator.type = 'sawtooth';
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.3);
-    } catch (error) {
-      console.log('Audio not supported');
-    }
-  };
-
-  // Custom dice modal
-  const CustomDiceModal = () => {
-    const [customValues, setCustomValues] = useState('');
-    const [customName, setCustomName] = useState('');
-
-    const handleSaveCustomDice = () => {
-      const values = customValues.split('\n').map(v => v.trim()).filter(v => v.length > 0);
-      if (values.length < 2) {
-        showToast('Please enter at least 2 values!');
-        return;
-      }
-
-      if (editingDice) {
-        // Edit existing dice
-        setDiceConfigs(prev => prev.map(dice =>
-          dice.id === editingDice.id
-            ? { ...dice, values, type: 'custom' }
-            : dice
-        ));
-        showToast('Dice updated!');
-      } else {
-        // Create new custom dice
-        const newDice = {
-          id: Date.now(),
-          type: 'custom',
-          values,
-          result: null,
-          isRolling: false
-        };
-        setDiceConfigs(prev => [...prev, newDice]);
-        showToast(`Added custom dice with ${values.length} sides!`);
-      }
-
-      setCustomDiceModal(false);
-      setEditingDice(null);
-      setCustomValues('');
-      setCustomName('');
-    };
-
-    useEffect(() => {
-      if (editingDice) {
-        setCustomValues(editingDice.values.join('\n'));
-      }
-    }, [editingDice]);
-
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">
-            {editingDice ? 'Edit Custom Dice' : 'Create Custom Dice'}
-          </h2>
-
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Dice Values (one per line)
-              </label>
-              <textarea
-                value={customValues}
-                onChange={(e) => setCustomValues(e.target.value)}
-                placeholder="Red&#10;Blue&#10;Green&#10;Yellow"
-                className="w-full h-32 px-3 py-2 border border-gray-300 rounded-lg resize-none"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Enter each possible result on a new line
-              </p>
-            </div>
-          </div>
-
-          <div className="flex gap-3 mt-6">
-            <button
-              onClick={() => {
-                setCustomDiceModal(false);
-                setEditingDice(null);
-                setCustomValues('');
-              }}
-              className="flex-1 px-4 py-3 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSaveCustomDice}
-              className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
-            >
-              {editingDice ? 'Update' : 'Create'}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // Get dice shape class
-  const getDiceShapeClass = (diceType) => {
-    const preset = dicePresets[diceType];
-    if (!preset) return '';
-    
-    switch (preset.shape) {
-      case 'circle': return 'rounded-full';
-      case 'triangle': return 'dice-triangle';
-      case 'octagon': return 'dice-octagon';
-      default: return 'rounded-xl';
-    }
-  };
-
   // Clear all data
   const clearAllData = () => {
-    if (window.confirm('Are you sure you want to clear all history and statistics?')) {
+    if (window.confirm('Clear all roll history and statistics?')) {
       setRollHistory([]);
       setStatistics({});
       showToast('All data cleared!');
@@ -272,12 +176,62 @@ const DiceRoller = ({ showToast }) => {
     return colors[index % colors.length];
   };
 
+  // Get dice shape class
+  const getDiceShapeClass = (diceType) => {
+    const shapes = {
+      circle: 'rounded-full',
+      triangle: 'rounded-lg transform rotate-45',
+      octagon: 'rounded-xl',
+      square: 'rounded-lg'
+    };
+    
+    const preset = dicePresets[diceType];
+    return shapes[preset?.shape] || shapes.square;
+  };
+
+  // Create custom dice
+  const createCustomDice = () => {
+    if (!customName.trim() || !customValues.trim()) {
+      showToast('Please enter both name and values!', 'error');
+      return;
+    }
+
+    const values = customValues.split(',').map(v => v.trim()).filter(v => v);
+    if (values.length < 2) {
+      showToast('Please enter at least 2 values!', 'error');
+      return;
+    }
+
+    const newDice = {
+      id: Date.now(),
+      type: 'custom',
+      name: customName,
+      values: values,
+      result: null,
+      isRolling: false
+    };
+
+    setDiceConfigs(prev => [...prev, newDice]);
+    setCustomDiceModal(false);
+    setCustomName('');
+    setCustomValues('');
+    showToast(`Created custom dice: ${customName}!`);
+  };
+
+  // Calculate sum of numeric results
+  const calculateSum = () => {
+    return diceConfigs.reduce((sum, dice) => {
+      const numResult = parseInt(dice.result);
+      return sum + (isNaN(numResult) ? 0 : numResult);
+    }, 0);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="text-center">
         <h2 className="text-3xl font-bold text-gray-800 mb-2">🎲 Advanced Dice Roller</h2>
-        <p className="text-gray-600">Roll multiple dice with custom values and detailed statistics</p>
+        <p className="text-gray-700">Roll multiple dice with custom values and detailed statistics</p>
       </div>
 
       {/* Dice Controls */}
@@ -288,7 +242,7 @@ const DiceRoller = ({ showToast }) => {
             <select
               onChange={(e) => e.target.value && addDice(e.target.value)}
               value=""
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-800"
             >
               <option value="">Add Dice...</option>
               {Object.entries(dicePresets).map(([key, preset]) => (
@@ -324,178 +278,234 @@ const DiceRoller = ({ showToast }) => {
                 
                 <button
                   onClick={() => removeDice(dice.id)}
-                  className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full text-xs hover:bg-red-600 transition-colors"
+                  className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-700 transition-colors"
                 >
                   ×
                 </button>
               </div>
               
-              <div className="text-xs font-semibold text-gray-700 mb-1">
-                {dicePresets[dice.type]?.name || 'Custom'}
+              <div className="text-xs text-gray-700 font-semibold">
+                {dice.name || dicePresets[dice.type]?.name || dice.type}
               </div>
-              
-              {dice.type === 'custom' && (
-                <button
-                  onClick={() => {
-                    setEditingDice(dice);
-                    setCustomDiceModal(true);
-                  }}
-                  className="text-xs text-blue-600 hover:text-blue-800"
-                >
-                  Edit
-                </button>
-              )}
+              <div className="text-xs text-gray-600">
+                {dice.values.length} sides
+              </div>
             </div>
           ))}
         </div>
 
         {/* Roll Controls */}
-        <div className="flex justify-center gap-4">
+        <div className="flex flex-wrap items-center justify-center gap-4">
           <button
             onClick={rollAllDice}
-            disabled={diceConfigs.some(dice => dice.isRolling)}
-            className="px-8 py-3 bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-lg font-bold hover:from-green-700 hover:to-blue-700 disabled:opacity-50 transition-all duration-300 shadow-lg"
+            disabled={diceConfigs.some(d => d.isRolling)}
+            className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-semibold transition-colors"
           >
             🎲 Roll All Dice
           </button>
+          
+          <div className="text-lg font-bold text-gray-800">
+            Sum: {calculateSum()}
+          </div>
+          
           <button
             onClick={clearAllData}
-            className="px-6 py-3 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition-colors"
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold transition-colors"
           >
-            🗑️ Clear Data
+            🗑️ Clear All Data
           </button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Roll History */}
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-gray-800">Roll History</h3>
-            <label className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                checked={showHistory}
-                onChange={(e) => setShowHistory(e.target.checked)}
-                className="w-4 h-4 text-blue-600"
-              />
-              <span className="text-sm text-gray-600">Show</span>
-            </label>
-          </div>
-
-          {showHistory && (
-            <div className="max-h-96 overflow-y-auto space-y-2">
+        {showHistory && (
+          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-800">
+                Roll History ({rollHistory.length})
+              </h3>
+              <button
+                onClick={() => setShowHistory(false)}
+                className="text-gray-600 hover:text-gray-800 font-semibold"
+              >
+                Hide
+              </button>
+            </div>
+            
+            <div className="space-y-3 max-h-96 overflow-y-auto">
               {rollHistory.length === 0 ? (
-                <p className="text-gray-500 italic text-center py-8">No rolls yet. Start rolling!</p>
+                <div className="text-center py-8 text-gray-600">
+                  <div className="text-4xl mb-2">🎲</div>
+                  <p className="italic">No rolls yet</p>
+                </div>
               ) : (
                 rollHistory.map((entry) => (
-                  <div key={entry.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex flex-wrap gap-2">
-                        {Object.entries(entry.results).map(([diceId, { result, type }]) => (
-                          <span
-                            key={diceId}
-                            className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm font-semibold"
-                          >
-                            {result}
+                  <div key={entry.id} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm text-gray-700 font-semibold">
+                        {entry.timestamp.toLocaleTimeString()}
+                      </span>
+                      <span className="text-sm text-gray-600">
+                        {entry.rolls.length} dice
+                      </span>
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-2">
+                      {entry.rolls.map((roll, index) => (
+                        <div key={index} className="px-2 py-1 bg-blue-100 rounded text-sm">
+                          <span className="font-semibold text-gray-800">{roll.result}</span>
+                          <span className="text-gray-600 ml-1">
+                            ({dicePresets[roll.diceType]?.name || roll.diceType})
                           </span>
-                        ))}
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {entry.rolls.length > 1 && (
+                      <div className="mt-2 text-sm text-gray-700 font-semibold">
+                        Sum: {entry.rolls.reduce((sum, roll) => {
+                          const num = parseInt(roll.result);
+                          return sum + (isNaN(num) ? 0 : num);
+                        }, 0)}
                       </div>
-                      {entry.total > 0 && (
-                        <span className="font-bold text-green-600">
-                          Total: {entry.total}
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {entry.timestamp.toLocaleTimeString()}
-                    </div>
+                    )}
                   </div>
                 ))
               )}
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Statistics */}
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-gray-800">Statistics</h3>
-            <label className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                checked={showStatistics}
-                onChange={(e) => setShowStatistics(e.target.checked)}
-                className="w-4 h-4 text-blue-600"
-              />
-              <span className="text-sm text-gray-600">Show</span>
-            </label>
-          </div>
-
-          {showStatistics && (
-            <div className="max-h-96 overflow-y-auto">
+        {showStatistics && (
+          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-800">Statistics</h3>
+              <button
+                onClick={() => setShowStatistics(false)}
+                className="text-gray-600 hover:text-gray-800 font-semibold"
+              >
+                Hide
+              </button>
+            </div>
+            
+            <div className="space-y-4 max-h-96 overflow-y-auto">
               {Object.keys(statistics).length === 0 ? (
-                <p className="text-gray-500 italic text-center py-8">No statistics yet. Start rolling!</p>
+                <div className="text-center py-8 text-gray-600">
+                  <div className="text-4xl mb-2">📊</div>
+                  <p className="italic">No statistics yet</p>
+                </div>
               ) : (
-                Object.entries(statistics).map(([diceType, results]) => {
-                  const preset = dicePresets[diceType];
-                  const total = Object.values(results).reduce((sum, count) => sum + count, 0);
-                  
-                  return (
-                    <div key={diceType} className="mb-6">
-                      <h4 className="font-semibold text-gray-800 mb-3">
-                        {preset?.name || 'Custom Dice'} ({total} rolls)
-                      </h4>
-                      
-                      <div className="space-y-2">
-                        {Object.entries(results)
-                          .sort(([a], [b]) => {
-                            const numA = parseInt(a);
-                            const numB = parseInt(b);
-                            if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
-                            return a.localeCompare(b);
-                          })
-                          .map(([result, count]) => {
-                            const percentage = ((count / total) * 100).toFixed(1);
-                            return (
-                              <div key={result} className="flex items-center justify-between">
-                                <span className="text-sm font-medium text-gray-700">{result}</span>
-                                <div className="flex items-center space-x-2">
-                                  <div className="w-20 bg-gray-200 rounded-full h-2">
-                                    <div
-                                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                                      style={{ width: `${percentage}%` }}
-                                    ></div>
-                                  </div>
-                                  <span className="text-xs text-gray-600 w-12 text-right">
-                                    {count} ({percentage}%)
-                                  </span>
-                                </div>
-                              </div>
-                            );
-                          })}
+                Object.entries(statistics)
+                  .sort(([a], [b]) => a.localeCompare(b))
+                  .map(([key, count]) => {
+                    const [diceType, result] = key.split('-');
+                    const diceName = dicePresets[diceType]?.name || diceType;
+                    
+                    return (
+                      <div key={key} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm font-semibold text-gray-800">{result}</span>
+                          <span className="text-xs text-gray-600">({diceName})</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <div className="bg-blue-200 rounded-full h-2 flex-1 min-w-16">
+                            <div 
+                              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                              style={{
+                                width: `${(count / Math.max(...Object.values(statistics))) * 100}%`
+                              }}
+                            ></div>
+                          </div>
+                          <span className="text-sm font-bold text-gray-800 min-w-8">{count}</span>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })
+                    );
+                  })
               )}
             </div>
-          )}
-        </div>
+          </div>
+        )}
+      </div>
+
+      {/* Toggle Panels */}
+      <div className="flex justify-center gap-4">
+        {!showHistory && (
+          <button
+            onClick={() => setShowHistory(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition-colors"
+          >
+            📜 Show History
+          </button>
+        )}
+        {!showStatistics && (
+          <button
+            onClick={() => setShowStatistics(true)}
+            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-semibold transition-colors"
+          >
+            📊 Show Statistics
+          </button>
+        )}
       </div>
 
       {/* Custom Dice Modal */}
-      {customDiceModal && <CustomDiceModal />}
+      {customDiceModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md">
+            <h3 className="text-xl font-bold text-gray-800 mb-4">Create Custom Dice</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-800 mb-2">Dice Name</label>
+                <input
+                  type="text"
+                  value={customName}
+                  onChange={(e) => setCustomName(e.target.value)}
+                  placeholder="e.g., Action Dice"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-800"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-semibold text-gray-800 mb-2">
+                  Values (comma-separated)
+                </label>
+                <textarea
+                  value={customValues}
+                  onChange={(e) => setCustomValues(e.target.value)}
+                  placeholder="e.g., Run, Jump, Hide, Attack, Defend, Rest"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg h-24 text-gray-800"
+                />
+                <p className="text-xs text-gray-600 mt-1">
+                  Enter at least 2 values separated by commas
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={createCustomDice}
+                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold transition-colors"
+              >
+                Create Dice
+              </button>
+              <button
+                onClick={() => {
+                  setCustomDiceModal(false);
+                  setCustomName('');
+                  setCustomValues('');
+                }}
+                className="flex-1 px-4 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500 font-semibold transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style jsx>{`
-        .dice-triangle {
-          clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
-        }
-        
-        .dice-octagon {
-          clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
-        }
-        
         .user-select-none {
           user-select: none;
         }
@@ -506,7 +516,7 @@ const DiceRoller = ({ showToast }) => {
         }
         
         .animate-spin {
-          animation: spin 0.8s ease-in-out;
+          animation: spin 1s linear infinite;
         }
       `}</style>
     </div>

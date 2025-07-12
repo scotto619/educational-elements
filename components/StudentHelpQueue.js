@@ -1,162 +1,135 @@
-// StudentHelpQueue.js - Integrated Help Queue Tool for Classroom Champions
-import React, { useState, useEffect, useRef } from 'react';
+// StudentHelpQueue.js - Student Assistance Request Management System (FIXED CONTRAST)
+import React, { useState, useRef, useEffect } from 'react';
 
 const StudentHelpQueue = ({ students, showToast }) => {
   const [helpQueue, setHelpQueue] = useState([]);
   const [currentlyHelping, setCurrentlyHelping] = useState(null);
-  const [nextTicketNumber, setNextTicketNumber] = useState(1);
-  const [completedToday, setCompletedToday] = useState([]);
   const [readyStudents, setReadyStudents] = useState(new Set());
-  const audioContextRef = useRef(null);
+  const [helpHistory, setHelpHistory] = useState([]);
+  const [ticketCounter, setTicketCounter] = useState(1);
+  const [showCompleted, setShowCompleted] = useState(false);
+  const [sortMode, setSortMode] = useState('queue'); // 'queue', 'alphabetical', 'priority'
+  
+  // Audio notification
+  const audioRef = useRef(null);
 
-  // Initialize audio context
   useEffect(() => {
-    audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+    audioRef.current = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmkeBz2V4PS8cSQLKoHOvs2IXt8TZLaKl8TXTFANTrro9bGJ');
   }, []);
 
-  // Sound effects
-  const playDingSound = () => {
-    try {
-      const audioContext = audioContextRef.current;
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      
-      oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-      oscillator.frequency.exponentialRampToValueAtTime(600, audioContext.currentTime + 0.1);
-      
-      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-      
-      oscillator.type = 'sine';
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.5);
-    } catch (error) {
-      console.log('Audio not supported');
+  const playNotificationSound = () => {
+    if (audioRef.current) {
+      audioRef.current.play().catch(e => console.log('Audio play failed:', e));
     }
   };
 
-  const playSuccessSound = () => {
-    try {
-      const audioContext = audioContextRef.current;
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      
-      oscillator.frequency.setValueAtTime(523, audioContext.currentTime);
-      oscillator.frequency.setValueAtTime(659, audioContext.currentTime + 0.1);
-      oscillator.frequency.setValueAtTime(784, audioContext.currentTime + 0.2);
-      
-      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
-      
-      oscillator.type = 'sine';
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.4);
-    } catch (error) {
-      console.log('Audio not supported');
+  // Add student to ready queue
+  const addToReadyQueue = (student) => {
+    if (readyStudents.has(student.id)) {
+      setReadyStudents(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(student.id);
+        return newSet;
+      });
+      showToast(`${student.firstName} removed from ready queue`);
+    } else {
+      setReadyStudents(prev => new Set([...prev, student.id]));
+      showToast(`${student.firstName} is ready for help!`);
+      playNotificationSound();
     }
   };
 
-  // Functions
-  const markStudentReady = (student) => {
-    setReadyStudents(prev => new Set([...prev, student.id]));
-    showToast(`${student.firstName} marked as ready for help!`);
-  };
+  // Add student to help queue
+  const addToHelpQueue = (student) => {
+    if (helpQueue.find(item => item.studentId === student.id)) {
+      showToast(`${student.firstName} is already in the queue!`);
+      return;
+    }
 
-  const unmarkStudentReady = (student) => {
-    setReadyStudents(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(student.id);
-      return newSet;
-    });
-    showToast(`${student.firstName} removed from ready status.`);
-  };
-
-  const addToQueue = (student) => {
     const queueItem = {
-      id: student.id,
+      studentId: student.id,
       name: student.firstName,
       avatar: student.avatar,
-      ticketNumber: nextTicketNumber,
-      timestamp: new Date().toISOString(),
+      ticketNumber: ticketCounter,
+      timeAdded: new Date(),
       priority: 'normal'
     };
-    
+
     setHelpQueue(prev => [...prev, queueItem]);
-    setNextTicketNumber(prev => prev + 1);
+    setTicketCounter(prev => prev + 1);
+    
+    // Remove from ready queue if they were there
     setReadyStudents(prev => {
       const newSet = new Set(prev);
       newSet.delete(student.id);
       return newSet;
     });
-    
-    playDingSound();
-    showToast(`${student.firstName} added to help queue with ticket #${nextTicketNumber}`);
+
+    showToast(`${student.firstName} added to help queue! Ticket #${ticketCounter}`);
+    playNotificationSound();
   };
 
+  // Remove student from queue
   const removeFromQueue = (ticketNumber) => {
     setHelpQueue(prev => prev.filter(item => item.ticketNumber !== ticketNumber));
-    showToast('Student removed from queue.');
+    showToast('Student removed from queue');
   };
 
+  // Start helping next student
   const startHelping = () => {
     if (helpQueue.length === 0) return;
-    
+
     const nextStudent = helpQueue[0];
-    setCurrentlyHelping(nextStudent);
+    setCurrentlyHelping({
+      ...nextStudent,
+      startTime: new Date()
+    });
+    
     setHelpQueue(prev => prev.slice(1));
-    
-    playDingSound();
-    showToast(`Now helping ${nextStudent.name} (Ticket #${nextStudent.ticketNumber})`);
+    showToast(`Now helping ${nextStudent.name}!`);
   };
 
-  const finishHelping = () => {
+  // Complete helping current student
+  const completeHelp = () => {
     if (!currentlyHelping) return;
-    
-    const completedItem = {
+
+    const completedHelp = {
       ...currentlyHelping,
-      completedAt: new Date().toISOString(),
-      helpDuration: Math.floor((new Date() - new Date(currentlyHelping.timestamp)) / 1000)
+      endTime: new Date(),
+      duration: Math.round((new Date() - currentlyHelping.startTime) / 1000) // seconds
     };
-    
-    setCompletedToday(prev => [...prev, completedItem]);
+
+    setHelpHistory(prev => [completedHelp, ...prev]);
     setCurrentlyHelping(null);
+    showToast(`Finished helping ${completedHelp.name}!`);
     
-    playSuccessSound();
-    showToast(`Finished helping ${completedItem.name}! 🎉`);
+    // Auto-start next if queue has students
+    if (helpQueue.length > 0) {
+      setTimeout(() => {
+        startHelping();
+      }, 1000);
+    }
   };
 
-  const resetQueue = () => {
+  // Clear all queues
+  const clearAll = () => {
     setHelpQueue([]);
     setCurrentlyHelping(null);
-    setNextTicketNumber(1);
-    setCompletedToday([]);
     setReadyStudents(new Set());
-    showToast('Help queue reset successfully!');
+    setHelpHistory([]);
+    setTicketCounter(1);
+    showToast('All queues cleared!');
   };
 
-  const getStudentStatus = (student) => {
-    if (currentlyHelping && currentlyHelping.id === student.id) {
-      return 'being-helped';
-    }
-    if (helpQueue.some(item => item.id === student.id)) {
-      return 'in-queue';
-    }
-    if (readyStudents.has(student.id)) {
-      return 'ready';
-    }
-    if (completedToday.some(item => item.id === student.id)) {
-      return 'completed';
-    }
-    return 'available';
+  // Format time duration
+  const formatDuration = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const getWaitTime = (ticketNumber) => {
+  // Get queue position
+  const getQueuePosition = (ticketNumber) => {
     const position = helpQueue.findIndex(item => item.ticketNumber === ticketNumber);
     return position === -1 ? 0 : position + 1;
   };
@@ -166,7 +139,7 @@ const StudentHelpQueue = ({ students, showToast }) => {
       <div className="text-center py-16">
         <div className="text-6xl mb-4">🎓</div>
         <h2 className="text-2xl font-bold text-gray-800 mb-4">No Students Available</h2>
-        <p className="text-gray-600">
+        <p className="text-gray-700">
           Add students to your class or load a class to use the Help Queue system.
         </p>
       </div>
@@ -178,7 +151,7 @@ const StudentHelpQueue = ({ students, showToast }) => {
       {/* Header */}
       <div className="text-center">
         <h2 className="text-3xl font-bold text-gray-800 mb-2">🎫 Student Help Queue</h2>
-        <p className="text-gray-600">Manage student assistance requests efficiently</p>
+        <p className="text-gray-700">Manage student assistance requests efficiently</p>
       </div>
 
       {/* Quick Stats */}
@@ -186,146 +159,116 @@ const StudentHelpQueue = ({ students, showToast }) => {
         <div className="bg-blue-50 p-4 rounded-xl border border-blue-200">
           <div className="text-center">
             <div className="text-2xl font-bold text-blue-600">{readyStudents.size}</div>
-            <div className="text-sm text-blue-700">Ready for Help</div>
+            <div className="text-sm text-gray-800 font-semibold">Ready for Help</div>
           </div>
         </div>
         <div className="bg-orange-50 p-4 rounded-xl border border-orange-200">
           <div className="text-center">
             <div className="text-2xl font-bold text-orange-600">{helpQueue.length}</div>
-            <div className="text-sm text-orange-700">In Queue</div>
+            <div className="text-sm text-gray-800 font-semibold">In Queue</div>
           </div>
         </div>
         <div className="bg-green-50 p-4 rounded-xl border border-green-200">
           <div className="text-center">
             <div className="text-2xl font-bold text-green-600">{currentlyHelping ? 1 : 0}</div>
-            <div className="text-sm text-green-700">Being Helped</div>
+            <div className="text-sm text-gray-800 font-semibold">Currently Helping</div>
           </div>
         </div>
         <div className="bg-purple-50 p-4 rounded-xl border border-purple-200">
           <div className="text-center">
-            <div className="text-2xl font-bold text-purple-600">{completedToday.length}</div>
-            <div className="text-sm text-purple-700">Completed Today</div>
+            <div className="text-2xl font-bold text-purple-600">{helpHistory.length}</div>
+            <div className="text-sm text-gray-800 font-semibold">Completed Today</div>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Class Roster */}
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-bold text-gray-800 flex items-center">
-              <span className="text-2xl mr-2">👥</span>
-              Class Roster
-            </h3>
+      {/* Controls */}
+      <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+          <h3 className="text-xl font-bold text-gray-800">Queue Management</h3>
+          <div className="flex gap-2">
             <button
-              onClick={resetQueue}
-              className="bg-gray-600 text-white px-3 py-1 rounded-lg hover:bg-gray-700 transition-colors text-sm font-semibold"
+              onClick={clearAll}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold"
             >
-              Reset All
+              🗑️ Clear All
             </button>
-          </div>
-          
-          <div className="space-y-2 max-h-96 overflow-y-auto">
-            {students.map(student => {
-              const status = getStudentStatus(student);
-              const queueItem = helpQueue.find(item => item.id === student.id);
-              
-              return (
-                <div
-                  key={student.id}
-                  className={`p-3 rounded-lg border-2 transition-all duration-300 ${
-                    status === 'being-helped' 
-                      ? 'bg-green-100 border-green-300' 
-                      : status === 'in-queue' 
-                      ? 'bg-orange-100 border-orange-300' 
-                      : status === 'ready' 
-                      ? 'bg-blue-100 border-blue-300' 
-                      : status === 'completed' 
-                      ? 'bg-purple-100 border-purple-300' 
-                      : 'bg-gray-50 border-gray-200'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      {student.avatar && (
-                        <img 
-                          src={student.avatar} 
-                          alt={student.firstName} 
-                          className="w-8 h-8 rounded-full border-2 border-gray-300"
-                        />
-                      )}
-                      <div>
-                        <span className="font-semibold text-gray-800">{student.firstName}</span>
-                        {queueItem && (
-                          <span className="ml-2 text-xs bg-orange-600 text-white px-2 py-1 rounded-full">
-                            #{queueItem.ticketNumber}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      {status === 'available' && (
-                        <button
-                          onClick={() => markStudentReady(student)}
-                          className="bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700 transition-colors text-sm font-semibold"
-                        >
-                          Ready
-                        </button>
-                      )}
-                      {status === 'ready' && (
-                        <>
-                          <button
-                            onClick={() => addToQueue(student)}
-                            className="bg-orange-600 text-white px-3 py-1 rounded-lg hover:bg-orange-700 transition-colors text-sm font-semibold"
-                          >
-                            Add to Queue
-                          </button>
-                          <button
-                            onClick={() => unmarkStudentReady(student)}
-                            className="bg-gray-600 text-white px-2 py-1 rounded-lg hover:bg-gray-700 transition-colors text-sm"
-                          >
-                            ×
-                          </button>
-                        </>
-                      )}
-                      {status === 'in-queue' && (
-                        <button
-                          onClick={() => removeFromQueue(queueItem.ticketNumber)}
-                          className="bg-red-600 text-white px-2 py-1 rounded-lg hover:bg-red-700 transition-colors text-sm"
-                        >
-                          ×
-                        </button>
-                      )}
-                      {status === 'being-helped' && (
-                        <span className="text-green-600 font-semibold text-sm">Being Helped</span>
-                      )}
-                      {status === 'completed' && (
-                        <span className="text-purple-600 font-semibold text-sm">✓ Done</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+            <button
+              onClick={() => setShowCompleted(!showCompleted)}
+              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-semibold"
+            >
+              {showCompleted ? '👁️ Hide History' : '📜 Show History'}
+            </button>
           </div>
         </div>
 
+        {/* Student Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
+          {students.map((student) => {
+            const isReady = readyStudents.has(student.id);
+            const isInQueue = helpQueue.find(item => item.studentId === student.id);
+            const isCurrentlyHelping = currentlyHelping?.studentId === student.id;
+            
+            return (
+              <div key={student.id} className="relative">
+                <button
+                  onClick={() => !isInQueue && !isCurrentlyHelping && addToReadyQueue(student)}
+                  disabled={isInQueue || isCurrentlyHelping}
+                  className={`w-full p-3 rounded-lg border-2 transition-all duration-200 ${
+                    isCurrentlyHelping
+                      ? 'border-green-500 bg-green-100 text-green-800'
+                      : isInQueue
+                        ? 'border-orange-500 bg-orange-100 text-orange-800'
+                        : isReady
+                          ? 'border-blue-500 bg-blue-100 text-blue-800'
+                          : 'border-gray-200 bg-white text-gray-800 hover:bg-gray-50'
+                  } disabled:cursor-not-allowed`}
+                >
+                  <div className="flex flex-col items-center space-y-2">
+                    {student.avatar && (
+                      <img
+                        src={student.avatar}
+                        alt={student.firstName}
+                        className="w-12 h-12 rounded-full border-2 border-gray-300"
+                      />
+                    )}
+                    <span className="font-semibold text-sm">{student.firstName}</span>
+                    {isReady && <span className="text-xs font-bold">READY</span>}
+                    {isInQueue && (
+                      <span className="text-xs font-bold">
+                        #{isInQueue.ticketNumber} (Pos: {getQueuePosition(isInQueue.ticketNumber)})
+                      </span>
+                    )}
+                    {isCurrentlyHelping && <span className="text-xs font-bold">HELPING NOW</span>}
+                  </div>
+                </button>
+                
+                {/* Add to Queue Button */}
+                {isReady && (
+                  <button
+                    onClick={() => addToHelpQueue(student)}
+                    className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-bold hover:bg-blue-700 transition-colors"
+                  >
+                    Add to Queue
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Help Queue */}
         <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-bold text-gray-800 flex items-center">
-              <span className="text-2xl mr-2">⏳</span>
-              Waiting Queue
-            </h3>
-            <span className="text-sm text-gray-600">
-              Next: #{nextTicketNumber}
-            </span>
-          </div>
+          <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
+            <span className="text-2xl mr-2">📋</span>
+            Help Queue ({helpQueue.length})
+          </h3>
           
-          <div className="space-y-2 max-h-96 overflow-y-auto">
+          <div className="space-y-3 mb-4 max-h-96 overflow-y-auto">
             {helpQueue.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-gray-600">
                 <div className="text-4xl mb-2">📝</div>
                 <p className="italic">No students in queue</p>
               </div>
@@ -353,7 +296,7 @@ const StudentHelpQueue = ({ students, showToast }) => {
                     </div>
                     
                     <div className="flex items-center space-x-2">
-                      <span className="text-xs text-gray-600">
+                      <span className="text-xs text-gray-700 font-semibold">
                         Position: {index + 1}
                       </span>
                       <button
@@ -392,79 +335,67 @@ const StudentHelpQueue = ({ students, showToast }) => {
             <div className="text-center">
               {currentlyHelping ? (
                 <div className="space-y-4">
-                  <div className="bg-green-50 p-6 rounded-lg border border-green-200">
-                    <div className="flex items-center justify-center space-x-3 mb-3">
-                      <span className="text-2xl font-bold text-green-600">#{currentlyHelping.ticketNumber}</span>
-                      {currentlyHelping.avatar && (
-                        <img 
-                          src={currentlyHelping.avatar} 
-                          alt={currentlyHelping.name} 
-                          className="w-12 h-12 rounded-full border-2 border-green-300"
-                        />
-                      )}
+                  <div className="flex items-center justify-center space-x-3">
+                    {currentlyHelping.avatar && (
+                      <img
+                        src={currentlyHelping.avatar}
+                        alt={currentlyHelping.name}
+                        className="w-16 h-16 rounded-full border-2 border-green-500"
+                      />
+                    )}
+                    <div>
+                      <div className="text-xl font-bold text-gray-800">{currentlyHelping.name}</div>
+                      <div className="text-sm text-gray-600">Ticket #{currentlyHelping.ticketNumber}</div>
                     </div>
-                    <h4 className="text-xl font-bold text-green-800">{currentlyHelping.name}</h4>
-                    <p className="text-sm text-green-600 mt-2">
-                      Started: {new Date(currentlyHelping.timestamp).toLocaleTimeString()}
-                    </p>
                   </div>
                   
                   <button
-                    onClick={finishHelping}
-                    className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold text-lg"
+                    onClick={completeHelp}
+                    className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold"
                   >
-                    ✓ Finish Helping
+                    ✅ Mark as Complete
                   </button>
                 </div>
               ) : (
-                <div className="py-8 text-gray-500">
-                  <div className="text-4xl mb-2">💤</div>
-                  <p className="italic">No one being helped</p>
+                <div className="py-8 text-gray-600">
+                  <div className="text-4xl mb-2">👨‍🏫</div>
+                  <p className="italic">No student currently being helped</p>
                 </div>
               )}
             </div>
           </div>
 
           {/* Completed Today */}
-          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-            <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
-              <span className="text-2xl mr-2">✅</span>
-              Completed Today
-            </h3>
-            
-            <div className="space-y-2 max-h-64 overflow-y-auto">
-              {completedToday.length === 0 ? (
-                <div className="text-center py-4 text-gray-500">
-                  <div className="text-3xl mb-2">📋</div>
-                  <p className="italic text-sm">No students helped yet</p>
-                </div>
-              ) : (
-                completedToday.map((item) => (
-                  <div
-                    key={`completed-${item.ticketNumber}`}
-                    className="p-3 rounded-lg bg-purple-50 border border-purple-200"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <span className="font-bold text-purple-600">#{item.ticketNumber}</span>
+          {showCompleted && (
+            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+              <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                <span className="text-2xl mr-2">✅</span>
+                Completed Today ({helpHistory.length})
+              </h3>
+              
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {helpHistory.length === 0 ? (
+                  <div className="text-center py-4 text-gray-600">
+                    <p className="italic">No completed sessions today</p>
+                  </div>
+                ) : (
+                  helpHistory.map((item, index) => (
+                    <div key={index} className="flex items-center justify-between p-2 bg-green-50 rounded-lg border border-green-200">
+                      <div className="flex items-center space-x-2">
                         {item.avatar && (
-                          <img 
-                            src={item.avatar} 
-                            alt={item.name} 
-                            className="w-6 h-6 rounded-full border border-purple-300"
-                          />
+                          <img src={item.avatar} alt={item.name} className="w-6 h-6 rounded-full" />
                         )}
                         <span className="font-semibold text-gray-800">{item.name}</span>
                       </div>
-                      <span className="text-xs text-purple-600">
-                        {new Date(item.completedAt).toLocaleTimeString()}
+                      <span className="text-xs text-gray-700 font-semibold">
+                        {formatDuration(item.duration)}
                       </span>
                     </div>
-                  </div>
-                ))
-              )}
+                  ))
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

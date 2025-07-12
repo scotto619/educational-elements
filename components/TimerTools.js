@@ -1,272 +1,263 @@
-// TimerTools.js - Comprehensive Classroom Timer System
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+// TimerTools.js - Professional Classroom Timing Solutions (FIXED CONTRAST)
+import React, { useState, useEffect, useRef } from 'react';
 
 const TimerTools = ({ showToast }) => {
   const [activeTimer, setActiveTimer] = useState('countdown');
+  const [time, setTime] = useState(300); // 5 minutes default
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(300); // 5 minutes default
-  const [initialTime, setInitialTime] = useState(300);
-  const [elapsedTime, setElapsedTime] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   
-  // Interval timer state
-  const [workDuration, setWorkDuration] = useState(25 * 60); // 25 minutes
-  const [breakDuration, setBreakDuration] = useState(5 * 60); // 5 minutes
+  // Interval timer specific
   const [currentCycle, setCurrentCycle] = useState('work'); // 'work' or 'break'
+  const [workDuration, setWorkDuration] = useState(1500); // 25 minutes
+  const [breakDuration, setBreakDuration] = useState(300); // 5 minutes
   const [cycleCount, setCycleCount] = useState(0);
-  
-  // Audio state
-  const [soundEnabled, setSoundEnabled] = useState(true);
-  const [selectedAlert, setSelectedAlert] = useState('bell');
-  
-  const intervalRef = useRef(null);
-  const audioContextRef = useRef(null);
 
-  // Initialize audio context
+  // Stopwatch specific
+  const [stopwatchTime, setStopwatchTime] = useState(0);
+  
+  // Audio and visual effects
+  const [showVisualAlert, setShowVisualAlert] = useState(false);
+  const audioRef = useRef(null);
+  const intervalRef = useRef(null);
+
+  // Timer presets
+  const presets = [
+    { name: '1 min', minutes: 1 },
+    { name: '2 min', minutes: 2 },
+    { name: '5 min', minutes: 5 },
+    { name: '10 min', minutes: 10 },
+    { name: '15 min', minutes: 15 },
+    { name: '20 min', minutes: 20 },
+    { name: '25 min', minutes: 25 },
+    { name: '30 min', minutes: 30 }
+  ];
+
+  // Timer types
+  const timerTypes = [
+    {
+      id: 'countdown',
+      name: 'Countdown Timer',
+      icon: '⏰',
+      description: 'Set a specific time and count down to zero'
+    },
+    {
+      id: 'stopwatch',
+      name: 'Stopwatch',
+      icon: '⏱️',
+      description: 'Count up from zero to track elapsed time'
+    },
+    {
+      id: 'interval',
+      name: 'Interval Timer',
+      icon: '🔄',
+      description: 'Alternate between work and break periods'
+    }
+  ];
+
   useEffect(() => {
-    audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+    // Create audio for timer completion
+    audioRef.current = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmkeBz2V4PS8cSQLKoHOvs2IXt8TZLaKl8TXTFANTrro9bGJ');
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
   }, []);
 
-  // Sound effects
-  const playAlert = useCallback((type = 'bell') => {
-    if (!soundEnabled) return;
-    
-    try {
-      const audioContext = audioContextRef.current;
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      
-      switch (type) {
-        case 'bell':
-          oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-          oscillator.frequency.exponentialRampToValueAtTime(400, audioContext.currentTime + 0.5);
-          break;
-        case 'chime':
-          oscillator.frequency.setValueAtTime(523, audioContext.currentTime);
-          oscillator.frequency.setValueAtTime(659, audioContext.currentTime + 0.2);
-          oscillator.frequency.setValueAtTime(784, audioContext.currentTime + 0.4);
-          break;
-        case 'beep':
-          oscillator.frequency.setValueAtTime(1000, audioContext.currentTime);
-          break;
-        default:
-          oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-      }
-      
-      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.8);
-      
-      oscillator.type = 'sine';
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.8);
-    } catch (error) {
-      console.log('Audio not supported');
-    }
-  }, [soundEnabled]);
-
-  // Timer logic
   useEffect(() => {
     if (isRunning && !isPaused) {
       intervalRef.current = setInterval(() => {
         if (activeTimer === 'countdown' || activeTimer === 'interval') {
-          setTimeLeft(prev => {
+          setTime(prev => {
             if (prev <= 1) {
-              // Timer finished
-              setIsRunning(false);
-              playAlert(selectedAlert);
-              
-              if (activeTimer === 'interval') {
-                // Handle interval timer cycle
-                if (currentCycle === 'work') {
-                  setCurrentCycle('break');
-                  setTimeLeft(breakDuration);
-                  setInitialTime(breakDuration);
-                  showToast('Work time finished! Break time starts now. 🌟');
-                } else {
-                  setCurrentCycle('work');
-                  setTimeLeft(workDuration);
-                  setInitialTime(workDuration);
-                  setCycleCount(prev => prev + 1);
-                  showToast('Break time finished! Back to work. 💪');
-                }
-                setIsRunning(true); // Auto-start next cycle
-              } else {
-                showToast('Timer finished! ⏰');
-              }
-              
+              handleTimerComplete();
               return 0;
             }
             return prev - 1;
           });
         } else if (activeTimer === 'stopwatch') {
-          setElapsedTime(prev => prev + 1);
+          setStopwatchTime(prev => prev + 1);
         }
       }, 1000);
     } else {
-      clearInterval(intervalRef.current);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
     }
 
-    return () => clearInterval(intervalRef.current);
-  }, [isRunning, isPaused, activeTimer, selectedAlert, playAlert, currentCycle, workDuration, breakDuration, showToast]);
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [isRunning, isPaused, activeTimer]);
 
-  // Format time display
-  const formatTime = (seconds) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
+  const handleTimerComplete = () => {
+    setIsRunning(false);
+    setIsPaused(false);
     
-    if (hours > 0) {
-      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    // Play completion sound
+    if (audioRef.current) {
+      audioRef.current.play().catch(e => console.log('Audio play failed:', e));
     }
-    return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
+    // Show visual alert
+    setShowVisualAlert(true);
+    setTimeout(() => setShowVisualAlert(false), 3000);
+
+    if (activeTimer === 'interval') {
+      // Handle interval cycling
+      if (currentCycle === 'work') {
+        setCurrentCycle('break');
+        setTime(breakDuration);
+        setCycleCount(prev => prev + 1);
+        showToast('Work period complete! Break time!');
+        
+        // Auto-start break if enabled
+        setTimeout(() => {
+          setIsRunning(true);
+        }, 1000);
+      } else {
+        setCurrentCycle('work');
+        setTime(workDuration);
+        showToast('Break complete! Back to work!');
+        
+        // Auto-start work if enabled
+        setTimeout(() => {
+          setIsRunning(true);
+        }, 1000);
+      }
+    } else {
+      showToast('Timer complete!');
+    }
   };
 
-  // Control functions
   const startTimer = () => {
+    if (activeTimer === 'countdown' && time === 0) {
+      showToast('Please set a time first!', 'error');
+      return;
+    }
+    
     setIsRunning(true);
     setIsPaused(false);
+    showToast('Timer started!');
   };
 
   const pauseTimer = () => {
     setIsPaused(!isPaused);
+    showToast(isPaused ? 'Timer resumed!' : 'Timer paused!');
   };
 
   const stopTimer = () => {
     setIsRunning(false);
     setIsPaused(false);
-    if (activeTimer === 'countdown' || activeTimer === 'interval') {
-      setTimeLeft(initialTime);
-    } else {
-      setElapsedTime(0);
-    }
+    showToast('Timer stopped!');
   };
 
   const resetTimer = () => {
     setIsRunning(false);
     setIsPaused(false);
-    if (activeTimer === 'countdown' || activeTimer === 'interval') {
-      setTimeLeft(initialTime);
-    } else {
-      setElapsedTime(0);
-    }
-    if (activeTimer === 'interval') {
+    
+    if (activeTimer === 'countdown') {
+      setTime(300); // Reset to 5 minutes
+    } else if (activeTimer === 'stopwatch') {
+      setStopwatchTime(0);
+    } else if (activeTimer === 'interval') {
       setCurrentCycle('work');
+      setTime(workDuration);
       setCycleCount(0);
     }
+    
+    showToast('Timer reset!');
   };
 
-  // Preset timer functions
   const setPresetTime = (minutes) => {
     const seconds = minutes * 60;
-    setTimeLeft(seconds);
-    setInitialTime(seconds);
-    setIsRunning(false);
-    setIsPaused(false);
+    setTime(seconds);
+    showToast(`Timer set to ${minutes} minute${minutes !== 1 ? 's' : ''}!`);
   };
-
-  // Custom time input
-  const [customMinutes, setCustomMinutes] = useState(5);
-  const [customSeconds, setCustomSeconds] = useState(0);
 
   const setCustomTime = () => {
-    const totalSeconds = (customMinutes * 60) + customSeconds;
-    setTimeLeft(totalSeconds);
-    setInitialTime(totalSeconds);
-    setIsRunning(false);
-    setIsPaused(false);
-  };
-
-  // Progress calculation
-  const getProgress = () => {
-    if (activeTimer === 'countdown' || activeTimer === 'interval') {
-      if (initialTime === 0) return 0;
-      return ((initialTime - timeLeft) / initialTime) * 100;
+    const minutes = prompt('Enter minutes:');
+    const seconds = prompt('Enter seconds (optional):') || 0;
+    
+    if (minutes !== null && !isNaN(minutes) && minutes >= 0) {
+      const totalSeconds = (parseInt(minutes) * 60) + parseInt(seconds);
+      setTime(totalSeconds);
+      showToast(`Timer set to ${minutes}:${seconds.toString().padStart(2, '0')}!`);
     }
-    return 0; // Stopwatch doesn't have progress
   };
 
-  // Timer presets
-  const presets = [
-    { name: '1 min', minutes: 1, icon: '⚡' },
-    { name: '2 min', minutes: 2, icon: '🏃' },
-    { name: '5 min', minutes: 5, icon: '📝' },
-    { name: '10 min', minutes: 10, icon: '📚' },
-    { name: '15 min', minutes: 15, icon: '🎯' },
-    { name: '20 min', minutes: 20, icon: '💡' },
-    { name: '30 min', minutes: 30, icon: '📖' },
-    { name: '45 min', minutes: 45, icon: '🎓' }
-  ];
+  const formatTime = (seconds) => {
+    const hours = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    
+    if (hours > 0) {
+      return `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
-  const timerTypes = [
-    { id: 'countdown', name: 'Countdown', icon: '⏰', description: 'Count down from a set time' },
-    { id: 'stopwatch', name: 'Stopwatch', icon: '⏱️', description: 'Count up from zero' },
-    { id: 'interval', name: 'Interval', icon: '🔄', description: 'Work/break cycles (Pomodoro)' }
-  ];
+  const getCurrentTime = () => {
+    switch (activeTimer) {
+      case 'countdown':
+      case 'interval':
+        return time;
+      case 'stopwatch':
+        return stopwatchTime;
+      default:
+        return 0;
+    }
+  };
 
   const TimerDisplay = () => {
-    const displayTime = activeTimer === 'stopwatch' ? elapsedTime : timeLeft;
-    const progress = getProgress();
+    const currentTime = getCurrentTime();
+    const isWarning = activeTimer === 'countdown' && currentTime <= 60 && currentTime > 0;
+    const isComplete = activeTimer === 'countdown' && currentTime === 0;
     
     return (
-      <div className={`relative ${isFullscreen ? 'w-full h-full flex items-center justify-center bg-black text-white' : ''}`}>
-        {/* Progress Circle */}
-        {(activeTimer === 'countdown' || activeTimer === 'interval') && (
-          <div className="relative inline-block">
-            <svg 
-              className={`transform -rotate-90 ${isFullscreen ? 'w-96 h-96' : 'w-64 h-64'}`} 
-              viewBox="0 0 200 200"
-            >
-              <circle
-                cx="100"
-                cy="100"
-                r="90"
-                stroke="currentColor"
-                strokeWidth="8"
-                fill="none"
-                className="opacity-20"
-              />
-              <circle
-                cx="100"
-                cy="100"
-                r="90"
-                stroke="currentColor"
-                strokeWidth="8"
-                fill="none"
-                strokeDasharray={`${2 * Math.PI * 90}`}
-                strokeDashoffset={`${2 * Math.PI * 90 * (1 - progress / 100)}`}
-                className="transition-all duration-1000 ease-linear"
-                strokeLinecap="round"
-              />
-            </svg>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center">
-                <div className={`font-mono font-bold ${isFullscreen ? 'text-8xl' : 'text-4xl'}`}>
-                  {formatTime(displayTime)}
-                </div>
-                {activeTimer === 'interval' && (
-                  <div className={`mt-2 ${isFullscreen ? 'text-2xl' : 'text-lg'}`}>
-                    {currentCycle === 'work' ? '💼 Work Time' : '☕ Break Time'}
-                    <div className="text-sm opacity-75">Cycle {cycleCount + 1}</div>
-                  </div>
-                )}
-              </div>
-            </div>
+      <div className={`text-center transition-all duration-300 ${showVisualAlert ? 'animate-pulse' : ''}`}>
+        <div className={`text-8xl font-mono font-bold mb-4 ${
+          isComplete ? 'text-red-600' : 
+          isWarning ? 'text-orange-500' : 
+          'text-gray-800'
+        }`}>
+          {formatTime(currentTime)}
+        </div>
+        
+        {activeTimer === 'interval' && (
+          <div className={`text-3xl font-bold mb-2 ${
+            currentCycle === 'work' ? 'text-blue-600' : 'text-green-600'
+          }`}>
+            {currentCycle === 'work' ? '💼 Work Time' : '☕ Break Time'}
           </div>
         )}
-
-        {/* Stopwatch Display */}
-        {activeTimer === 'stopwatch' && (
-          <div className="text-center">
-            <div className={`font-mono font-bold ${isFullscreen ? 'text-8xl' : 'text-6xl'} text-blue-600`}>
-              {formatTime(displayTime)}
-            </div>
-            <div className={`mt-2 ${isFullscreen ? 'text-2xl' : 'text-lg'} text-gray-600`}>
-              ⏱️ Stopwatch
-            </div>
+        
+        {activeTimer === 'interval' && (
+          <div className="text-xl text-gray-700 mb-2">
+            Cycle: {cycleCount + 1}
+          </div>
+        )}
+        
+        {isRunning && !isPaused && (
+          <div className="text-lg text-gray-700">
+            ▶️ Running
+          </div>
+        )}
+        
+        {isPaused && (
+          <div className="text-lg text-gray-700">
+            ⏸️ Paused
+          </div>
+        )}
+        
+        {activeTimer === 'stopwatch' && !isRunning && (
+          <div className={`text-2xl ${isFullscreen ? 'text-2xl' : 'text-lg'} text-gray-700`}>
+            ⏱️ Stopwatch
           </div>
         )}
       </div>
@@ -316,7 +307,7 @@ const TimerTools = ({ showToast }) => {
       {/* Header */}
       <div className="text-center">
         <h2 className="text-3xl font-bold text-gray-800 mb-2">⏰ Timer Tools</h2>
-        <p className="text-gray-600">Professional classroom timing solutions</p>
+        <p className="text-gray-700">Professional classroom timing solutions</p>
       </div>
 
       {/* Timer Type Selection */}
@@ -333,14 +324,14 @@ const TimerTools = ({ showToast }) => {
               className={`p-4 rounded-lg border-2 transition-all duration-200 text-left ${
                 activeTimer === type.id
                   ? 'border-blue-500 bg-blue-50 text-blue-800'
-                  : 'border-gray-200 bg-white hover:bg-gray-50'
+                  : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-800'
               }`}
             >
               <div className="flex items-center space-x-3 mb-2">
                 <span className="text-2xl">{type.icon}</span>
                 <span className="font-bold text-lg">{type.name}</span>
               </div>
-              <p className="text-sm text-gray-600">{type.description}</p>
+              <p className="text-sm text-gray-700">{type.description}</p>
             </button>
           ))}
         </div>
@@ -405,42 +396,14 @@ const TimerTools = ({ showToast }) => {
                     disabled={isRunning}
                     className="p-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 disabled:opacity-50 transition-colors text-center"
                   >
-                    <div className="text-lg">{preset.icon}</div>
-                    <div className="text-xs font-semibold text-blue-800">{preset.name}</div>
+                    <div className="font-bold text-blue-800">{preset.name}</div>
                   </button>
                 ))}
-              </div>
-            </div>
-          )}
-
-          {/* Custom Time Input */}
-          {activeTimer === 'countdown' && (
-            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-              <h3 className="text-lg font-bold text-gray-800 mb-4">Custom Time</h3>
-              <div className="flex items-center space-x-2 mb-4">
-                <input
-                  type="number"
-                  value={customMinutes}
-                  onChange={(e) => setCustomMinutes(Math.max(0, parseInt(e.target.value) || 0))}
-                  className="w-20 px-3 py-2 border border-gray-300 rounded-lg text-center"
-                  min="0"
-                  max="999"
-                />
-                <span className="text-gray-600 font-semibold">min</span>
-                <input
-                  type="number"
-                  value={customSeconds}
-                  onChange={(e) => setCustomSeconds(Math.max(0, Math.min(59, parseInt(e.target.value) || 0)))}
-                  className="w-20 px-3 py-2 border border-gray-300 rounded-lg text-center"
-                  min="0"
-                  max="59"
-                />
-                <span className="text-gray-600 font-semibold">sec</span>
               </div>
               <button
                 onClick={setCustomTime}
                 disabled={isRunning}
-                className="w-full bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50 transition-colors"
+                className="w-full mt-3 px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 disabled:opacity-50 text-gray-800 font-semibold transition-colors"
               >
                 Set Custom Time
               </button>
@@ -453,76 +416,90 @@ const TimerTools = ({ showToast }) => {
               <h3 className="text-lg font-bold text-gray-800 mb-4">Interval Settings</h3>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Work Duration (minutes)</label>
+                  <label className="block text-sm font-semibold text-gray-800 mb-2">Work Duration (minutes)</label>
                   <input
                     type="number"
                     value={Math.floor(workDuration / 60)}
                     onChange={(e) => setWorkDuration((parseInt(e.target.value) || 25) * 60)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-800"
                     min="1"
                     max="120"
                     disabled={isRunning}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Break Duration (minutes)</label>
+                  <label className="block text-sm font-semibold text-gray-800 mb-2">Break Duration (minutes)</label>
                   <input
                     type="number"
                     value={Math.floor(breakDuration / 60)}
                     onChange={(e) => setBreakDuration((parseInt(e.target.value) || 5) * 60)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-800"
                     min="1"
                     max="60"
                     disabled={isRunning}
                   />
                 </div>
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-700">
                   Current: {formatTime(currentCycle === 'work' ? workDuration : breakDuration)} 
-                  ({currentCycle === 'work' ? 'Work' : 'Break'})
-                  <br />
-                  Completed cycles: {cycleCount}
+                  ({currentCycle === 'work' ? 'Work' : 'Break'} Period)
                 </div>
               </div>
             </div>
           )}
 
-          {/* Audio Settings */}
+          {/* Timer Stats */}
           <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">Audio Settings</h3>
-            <div className="space-y-4">
-              <label className="flex items-center space-x-3">
-                <input
-                  type="checkbox"
-                  checked={soundEnabled}
-                  onChange={(e) => setSoundEnabled(e.target.checked)}
-                  className="w-4 h-4 text-blue-600"
-                />
-                <span className="text-gray-700">Enable sound alerts</span>
-              </label>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Alert Sound</label>
-                <select
-                  value={selectedAlert}
-                  onChange={(e) => setSelectedAlert(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                >
-                  <option value="bell">🔔 Bell</option>
-                  <option value="chime">🎵 Chime</option>
-                  <option value="beep">📢 Beep</option>
-                </select>
+            <h3 className="text-lg font-bold text-gray-800 mb-4">Session Stats</h3>
+            <div className="space-y-3">
+              <div className="flex justify-between">
+                <span className="text-gray-700 font-semibold">Timer Type:</span>
+                <span className="text-gray-800 font-bold">
+                  {timerTypes.find(t => t.id === activeTimer)?.name}
+                </span>
               </div>
-
-              <button
-                onClick={() => playAlert(selectedAlert)}
-                className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-              >
-                🎵 Test Sound
-              </button>
+              
+              {activeTimer === 'interval' && (
+                <>
+                  <div className="flex justify-between">
+                    <span className="text-gray-700 font-semibold">Cycles Completed:</span>
+                    <span className="text-gray-800 font-bold">{cycleCount}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-700 font-semibold">Current Phase:</span>
+                    <span className={`font-bold ${
+                      currentCycle === 'work' ? 'text-blue-600' : 'text-green-600'
+                    }`}>
+                      {currentCycle === 'work' ? 'Work' : 'Break'}
+                    </span>
+                  </div>
+                </>
+              )}
+              
+              <div className="flex justify-between">
+                <span className="text-gray-700 font-semibold">Status:</span>
+                <span className={`font-bold ${
+                  isRunning 
+                    ? isPaused 
+                      ? 'text-yellow-600' 
+                      : 'text-green-600'
+                    : 'text-gray-600'
+                }`}>
+                  {isRunning ? (isPaused ? 'Paused' : 'Running') : 'Stopped'}
+                </span>
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Visual Alert Overlay */}
+      {showVisualAlert && (
+        <div className="fixed inset-0 bg-red-600 bg-opacity-75 flex items-center justify-center z-40 animate-pulse">
+          <div className="text-white text-6xl font-bold">
+            ⏰ TIME'S UP! ⏰
+          </div>
+        </div>
+      )}
     </div>
   );
 };
