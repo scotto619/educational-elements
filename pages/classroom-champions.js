@@ -1130,7 +1130,8 @@ const getRandomQuestGiverTip = () => {
 const calculateCoins = (student) => {
   const xpCoins = Math.floor((student?.totalPoints || 0) / COINS_PER_XP);
   const bonusCoins = student?.coins || 0;
-  return xpCoins + bonusCoins;
+  const coinsSpent = student?.coinsSpent || 0;
+  return Math.max(0, xpCoins + bonusCoins - coinsSpent);
 };
 
 const canAfford = (student, cost) => {
@@ -1312,7 +1313,7 @@ const TabLoadingSpinner = () => (
 
 // Currency Display Component - FIXED
 const CurrencyDisplay = ({ student }) => {
-  const coins = calculateCoins(student);
+  const coins = Math.max(0, Math.floor((student?.totalPoints || 0) / COINS_PER_XP) + (student?.coins || 0) - (student?.coinsSpent || 0));
   const coinsSpent = student?.coinsSpent || 0;
   const xpCoins = Math.floor((student?.totalPoints || 0) / COINS_PER_XP);
   const bonusCoins = student?.coins || 0;
