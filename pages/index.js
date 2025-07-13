@@ -16,11 +16,11 @@ export default function Home() {
   const [activePet, setActivePet] = useState(0);
 
   const screenshots = [
-    { name: 'Dashboard', image: '/Screenshots/Quests.png', title: 'Quest Management Dashboard', description: 'Manage quests, track progress, and celebrate achievements' },
-    { name: 'Students', image: '/Screenshots/StudentsTab.png', title: 'Student Progress Tracking', description: 'Monitor individual progress, XP, and quest completions' },
-    { name: 'Shop', image: '/Screenshots/ShopTab.png', title: 'Classroom Shop System', description: 'Students spend earned coins on amazing rewards and power-ups' },
-    { name: 'Tools', image: '/Screenshots/RoomDesigner.png', title: 'Teaching Tools Suite', description: 'Professional teaching tools including classroom designer, help queue, and more' },
-    { name: 'Help Queue', image: '/Screenshots/HelpQueue.png', title: 'Student Help Management', description: 'Efficiently manage student assistance requests with our digital queue system' }
+    { name: 'Dashboard', image: '/images/Quests.png', title: 'Quest Management Dashboard', description: 'Manage quests, track progress, and celebrate achievements' },
+    { name: 'Students', image: '/images/StudentsTab.png', title: 'Student Progress Tracking', description: 'Monitor individual progress, XP, and quest completions' },
+    { name: 'Shop', image: '/images/ShopTab.png', title: 'Classroom Shop System', description: 'Students spend earned coins on amazing rewards and power-ups' },
+    { name: 'Tools', image: '/images/RoomDesigner.png', title: 'Teaching Tools Suite', description: 'Professional teaching tools including classroom designer, help queue, and more' },
+    { name: 'Help Queue', image: '/images/HelpQueue.png', title: 'Student Help Management', description: 'Efficiently manage student assistance requests with our digital queue system' }
   ];
 
   const pets = [
