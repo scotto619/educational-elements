@@ -14,12 +14,38 @@ export default function Home() {
   const [activeAvatarLevel, setActiveAvatarLevel] = useState(1);
   const [activePet, setActivePet] = useState(0);
 
+  // Temporary placeholder images - replace with your actual screenshots
   const screenshots = [
-    { name: 'Dashboard', image: '/screenshots/Quests.png', title: 'Quest Management Dashboard', description: 'Manage quests, track progress, and celebrate achievements' },
-    { name: 'Students', image: '/screenshots/StudentsTab.png', title: 'Student Progress Tracking', description: 'Monitor individual progress, XP, and quest completions' },
-    { name: 'Shop', image: '/screenshots/ShopTab.png', title: 'Classroom Shop System', description: 'Students spend earned coins on amazing rewards and power-ups' },
-    { name: 'Tools', image: '/screenshots/RoomDesigner.png', title: 'Teaching Tools Suite', description: 'Professional teaching tools including classroom designer, help queue, and more' },
-    { name: 'Help Queue', image: '/screenshots/HelpQueue.png', title: 'Student Help Management', description: 'Efficiently manage student assistance requests with our digital queue system' }
+    { 
+      name: 'Dashboard', 
+      image: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjYwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjNjU2NkY3Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSI0OCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5RdWVzdCBEYXNoYm9hcmQ8L3RleHQ+PC9zdmc+',
+      title: 'Quest Management Dashboard', 
+      description: 'Manage quests, track progress, and celebrate achievements' 
+    },
+    { 
+      name: 'Students', 
+      image: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjYwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMTA5OEY3Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSI0OCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5TdHVkZW50cyBUYWI8L3RleHQ+PC9zdmc+',
+      title: 'Student Progress Tracking', 
+      description: 'Monitor individual progress, XP, and quest completions' 
+    },
+    { 
+      name: 'Shop', 
+      image: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjYwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjRUY0MzQ0Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSI0OCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5DbGFzc3Jvb20gU2hvcDwvdGV4dD48L3N2Zz4=',
+      title: 'Classroom Shop System', 
+      description: 'Students spend earned coins on amazing rewards and power-ups' 
+    },
+    { 
+      name: 'Tools', 
+      image: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjYwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjOEI1QkY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSI0OCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Sb29tIERlc2lnbmVyPC90ZXh0Pjwvc3ZnPg==',
+      title: 'Teaching Tools Suite', 
+      description: 'Professional teaching tools including classroom designer, help queue, and more' 
+    },
+    { 
+      name: 'Help Queue', 
+      image: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjYwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMDZCNkQ0Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSI0OCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5IZWxwIFF1ZXVlPC90ZXh0Pjwvc3ZnPg==',
+      title: 'Student Help Management', 
+      description: 'Efficiently manage student assistance requests with our digital queue system' 
+    }
   ];
 
   const pets = [
