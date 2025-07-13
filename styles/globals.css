@@ -5,12 +5,15 @@
   --foreground: #171717;
 }
 
+/* COMMENT OUT THIS SECTION TEMPORARILY */
+/*
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
+*/
 
 @media (prefers-color-scheme: dark) {
   :root {
@@ -24,3 +27,30 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* ===== CONTRAST FIX FOR CLASSROOM CHAMPIONS ===== */
+input, select, textarea {
+  color: #1f2937 !important;
+  background-color: #ffffff !important;
+  font-weight: 500 !important;
+}
+
+input::placeholder, textarea::placeholder {
+  color: #6b7280 !important;
+  opacity: 1 !important;
+}
+
+select option {
+  color: #1f2937 !important;
+  background-color: #ffffff !important;
+}
+
+.quest-giver-name, 
+[class*="quest"] h3, 
+[class*="quest"] h4,
+[class*="modal"] h3,
+[class*="modal"] h4 {
+  color: #1f2937 !important;
+  font-weight: 600 !important;
+}
+/* ===== END CONTRAST FIX ===== */
