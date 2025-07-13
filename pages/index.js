@@ -10,17 +10,8 @@ export default function Home() {
     schools: 0,
     quests: 0
   });
-  const [activeScreenshot, setActiveScreenshot] = useState(0);
   const [activeAvatarLevel, setActiveAvatarLevel] = useState(1);
   const [activePet, setActivePet] = useState(0);
-
-  const screenshots = [
-    { name: 'Dashboard', image: '/images/Quests.png', title: 'Quest Management Dashboard', description: 'Manage quests, track progress, and celebrate achievements' },
-    { name: 'Students', image: '/images/StudentsTab.png', title: 'Student Progress Tracking', description: 'Monitor individual progress, XP, and quest completions' },
-    { name: 'Shop', image: '/images/ShopTab.png', title: 'Classroom Shop System', description: 'Students spend earned coins on amazing rewards and power-ups' },
-    { name: 'Tools', image: '/images/RoomDesigner.png', title: 'Teaching Tools Suite', description: 'Professional teaching tools including classroom designer, help queue, and more' },
-    { name: 'Help Queue', image: '/images/HelpQueue.png', title: 'Student Help Management', description: 'Efficiently manage student assistance requests with our digital queue system' }
-  ];
 
   const pets = [
     'Alchemist', 'Barbarian', 'Bard', 'Beastmaster', 'Cleric', 'Crystal Knight', 
@@ -52,15 +43,6 @@ export default function Home() {
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    // Auto-cycle screenshots
-    const screenshotTimer = setInterval(() => {
-      setActiveScreenshot(prev => (prev + 1) % screenshots.length);
-    }, 4000);
-
-    return () => clearInterval(screenshotTimer);
   }, []);
 
   useEffect(() => {
@@ -186,10 +168,10 @@ export default function Home() {
                     🚀 Start Your Epic Journey - $1 First Month
                   </button>
                   <button 
-                    onClick={() => scrollToSection('demo')} 
+                    onClick={() => scrollToSection('features')} 
                     className="bg-white/20 hover:bg-white/30 text-white px-8 py-4 rounded-xl text-lg font-semibold transition-all border border-white/30 backdrop-blur-sm"
                   >
-                    🎮 See It In Action
+                    🎮 See Features
                   </button>
                 </div>
 
@@ -350,48 +332,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Features Showcase with Screenshots */}
-        <section id="demo" className="py-20 bg-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl font-bold text-gray-900 mb-4">See Classroom Champions in Action</h2>
-              <p className="text-xl text-gray-600">Real screenshots from the actual app</p>
-            </div>
-            
-            {/* Screenshot Carousel */}
-            <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-8 mb-16 border border-purple-100">
-              <div className="flex justify-center space-x-4 mb-8">
-                {screenshots.map((screenshot, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setActiveScreenshot(index)}
-                    className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                      activeScreenshot === index
-                        ? 'bg-purple-600 text-white shadow-lg'
-                        : 'bg-white text-gray-700 hover:bg-purple-100'
-                    }`}
-                  >
-                    {screenshot.name}
-                  </button>
-                ))}
-              </div>
-              
-              <div className="text-center mb-6">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">{screenshots[activeScreenshot].title}</h3>
-                <p className="text-gray-600">{screenshots[activeScreenshot].description}</p>
-              </div>
-              
-              <div className="relative">
-                <img
-                  src={screenshots[activeScreenshot].image}
-                  alt={screenshots[activeScreenshot].title}
-                  className="w-full h-auto rounded-xl shadow-2xl border border-gray-200 transition-all duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-xl pointer-events-none"></div>
-              </div>
-            </div>
-          </div>
-        </section>
+
 
         {/* Features Section */}
         <section id="features" className="py-20 bg-gray-50">
@@ -775,10 +716,10 @@ export default function Home() {
                 🚀 Start Your Epic Journey - $1 First Month
               </button>
               <button 
-                onClick={() => scrollToSection('demo')} 
+                onClick={() => scrollToSection('features')} 
                 className="bg-white/20 hover:bg-white/30 text-white px-8 py-4 rounded-xl text-lg font-semibold transition-all border border-white/30 backdrop-blur-sm"
               >
-                📱 See Live Demo
+                📱 See Features
               </button>
             </div>
             
@@ -825,7 +766,6 @@ export default function Home() {
                 <h4 className="font-semibold mb-6 text-lg">Product</h4>
                 <ul className="space-y-3 text-gray-400">
                   <li><button onClick={() => scrollToSection('features')} className="hover:text-white transition-colors">Features</button></li>
-                  <li><button onClick={() => scrollToSection('demo')} className="hover:text-white transition-colors">Live Demo</button></li>
                   <li><button onClick={() => scrollToSection('pricing')} className="hover:text-white transition-colors">Pricing</button></li>
                   <li><button onClick={() => router.push('/login')} className="hover:text-white transition-colors">Login</button></li>
                 </ul>
