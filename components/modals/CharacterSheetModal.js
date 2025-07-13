@@ -1,5 +1,5 @@
-// CharacterSheetModal.js - FIXED: Coin display and real-time updates
-import React from 'react';
+// CharacterSheetModal.js - FIXED: Coin display and real-time updates + Full Screen Image Preview
+import React, { useState } from 'react';
 
 const CharacterSheetModal = ({ 
   selectedStudent, 
@@ -7,6 +7,8 @@ const CharacterSheetModal = ({
   handleAvatarClick,
   calculateCoins 
 }) => {
+  const [hoveredImage, setHoveredImage] = useState(null);
+
   if (!selectedStudent) return null;
 
   const student = selectedStudent;
@@ -52,8 +54,10 @@ const CharacterSheetModal = ({
               <img
                 src={student.avatar}
                 alt={student.firstName}
-                className="w-32 h-32 rounded-full border-4 border-gray-300 object-cover shadow-lg cursor-pointer hover:shadow-xl transition-shadow"
+                className="w-32 h-32 rounded-full border-4 border-gray-300 object-cover shadow-lg cursor-pointer hover:shadow-xl transition-all transform hover:scale-105"
                 onClick={() => handleAvatarClick(student.id)}
+                onMouseEnter={() => setHoveredImage({ src: student.avatar, alt: `${student.firstName}'s Avatar`, type: 'avatar' })}
+                onMouseLeave={() => setHoveredImage(null)}
               />
             ) : (
               <div 
@@ -69,7 +73,9 @@ const CharacterSheetModal = ({
               <img
                 src={student.pet.image}
                 alt="Pet"
-                className="w-12 h-12 absolute -top-2 -left-2 rounded-full border-2 border-white shadow-lg"
+                className="w-12 h-12 absolute -top-2 -left-2 rounded-full border-2 border-white shadow-lg cursor-pointer hover:shadow-xl transition-all transform hover:scale-110"
+                onMouseEnter={() => setHoveredImage({ src: student.pet.image, alt: `${student.pet.name || 'Pet'} - ${student.firstName}'s Companion`, type: 'pet' })}
+                onMouseLeave={() => setHoveredImage(null)}
               />
             )}
             
@@ -192,7 +198,9 @@ const CharacterSheetModal = ({
                 <img 
                   src={student.pet.image} 
                   alt="Pet" 
-                  className="w-16 h-16 rounded-full border-4 border-purple-300 shadow-lg"
+                  className="w-16 h-16 rounded-full border-4 border-purple-300 shadow-lg cursor-pointer hover:shadow-xl transition-all transform hover:scale-110"
+                  onMouseEnter={() => setHoveredImage({ src: student.pet.image, alt: `${student.pet.name || 'Pet'} - ${student.firstName}'s Companion`, type: 'pet' })}
+                  onMouseLeave={() => setHoveredImage(null)}
                 />
                 <div>
                   <h5 className="text-lg font-bold text-purple-800">
@@ -302,6 +310,36 @@ const CharacterSheetModal = ({
           </button>
         </div>
       </div>
+
+      {/* Full Screen Image Preview Overlay */}
+      {hoveredImage && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[60] pointer-events-none"
+          style={{ backdropFilter: 'blur(2px)' }}
+        >
+          <div className="relative">
+            <img 
+              src={hoveredImage.src} 
+              alt={hoveredImage.alt}
+              className={`max-w-[80vw] max-h-[80vh] object-contain shadow-2xl ${
+                hoveredImage.type === 'avatar' ? 'rounded-2xl' : 'rounded-full'
+              }`}
+              style={{ 
+                filter: 'drop-shadow(0 25px 50px rgba(0, 0, 0, 0.5))',
+                transform: 'scale(1.05)'
+              }}
+            />
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
+              <div className="bg-black bg-opacity-70 text-white px-4 py-2 rounded-lg backdrop-blur-sm">
+                <p className="text-sm font-medium text-center">{hoveredImage.alt}</p>
+                <p className="text-xs text-gray-300 text-center mt-1">
+                  {hoveredImage.type === 'avatar' ? '🎭 Character Avatar' : '🐾 Pet Companion'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
