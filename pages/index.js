@@ -17,8 +17,8 @@ export default function Home() {
   const screenshots = [
     { name: 'Dashboard', image: '/Screenshots/Quests.png', title: 'Quest Management Dashboard', description: 'Manage quests, track progress, and celebrate achievements' },
     { name: 'Students', image: '/Screenshots/StudentsTab.png', title: 'Student Progress Tracking', description: 'Monitor individual progress, XP, and quest completions' },
-    { name: 'Shop', image: '/Screenshots/Shop Tab.png', title: 'Classroom Shop System', description: 'Students spend earned coins on amazing rewards and power-ups' },
-    { name: 'Tools', image: '/Screenshots/Room Designer.png', title: 'Teaching Tools Suite', description: 'Professional teaching tools including classroom designer, help queue, and more' },
+    { name: 'Shop', image: '/Screenshots/Shop%20Tab.png', title: 'Classroom Shop System', description: 'Students spend earned coins on amazing rewards and power-ups' },
+    { name: 'Tools', image: '/Screenshots/Room%20Designer.png', title: 'Teaching Tools Suite', description: 'Professional teaching tools including classroom designer, help queue, and more' },
     { name: 'Help Queue', image: '/Screenshots/HelpQueue.png', title: 'Student Help Management', description: 'Efficiently manage student assistance requests with our digital queue system' }
   ];
 
