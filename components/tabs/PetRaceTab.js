@@ -55,7 +55,7 @@ const PetRaceTab = ({
               value={selectedPrize}
               onChange={(e) => setSelectedPrize(e.target.value)}
               disabled={raceInProgress}
-              className="px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 transition-colors disabled:opacity-50"
+              className="px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 transition-colors disabled:opacity-50 text-gray-900 font-medium bg-white"
             >
               <option value="XP">XP Points</option>
               <option value="Loot">Loot Item</option>
@@ -71,7 +71,7 @@ const PetRaceTab = ({
                 value={xpAmount}
                 onChange={(e) => setXpAmount(Number(e.target.value))}
                 disabled={raceInProgress}
-                className="w-20 px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 transition-colors disabled:opacity-50"
+                className="w-20 px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 transition-colors disabled:opacity-50 text-gray-900 font-medium bg-white"
                 min="1"
                 max="100"
               />

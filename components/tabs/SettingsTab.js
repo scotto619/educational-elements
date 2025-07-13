@@ -271,7 +271,7 @@ const SettingsTab = ({
                           className="w-12 h-12 rounded-full border-2 border-gray-300"
                         />
                         <div>
-                          <h4 className="font-bold">{questGiver.name}</h4>
+                          <h4 className="font-bold text-gray-900">{questGiver.name}</h4>
                           <p className="text-sm text-gray-600">{questGiver.role}</p>
                         </div>
                       </div>

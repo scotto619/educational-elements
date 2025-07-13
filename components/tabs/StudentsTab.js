@@ -179,7 +179,7 @@ const StudentsTab = ({
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium bg-white"
             >
               <option value="name">Name (A-Z)</option>
               <option value="xp">Total XP</option>
@@ -194,7 +194,7 @@ const StudentsTab = ({
             <select
               value={filterBy}
               onChange={(e) => setFilterBy(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium bg-white"
             >
               <option value="all">All Students</option>
               <option value="present">Present Today</option>
@@ -210,7 +210,7 @@ const StudentsTab = ({
             <select
               value={viewMode}
               onChange={(e) => setViewMode(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium bg-white"
             >
               <option value="grid">Grid View</option>
               <option value="list">List View</option>
