@@ -344,7 +344,7 @@ const DashboardTab = ({
                         <img 
                           src={questGiver.image} 
                           alt={questGiver.name}
-                          className="w-12 h-12 rounded-full border-2 border-gray-300"
+                          className="w-12 h-12 rounded-full border-2 border-gray-800"
                         />
                       )}
                       <div className="flex-1">
