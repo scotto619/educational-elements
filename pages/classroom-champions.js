@@ -1,4 +1,4 @@
-// classroom-champions.js - COMPLETE WITH QUEST SYSTEM OVERHAUL + GAMES TAB
+// classroom-champions.js - COMPLETE WITH QUEST SYSTEM OVERHAUL + GAMES TAB + FIXED QUEST MANAGEMENT
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
@@ -24,6 +24,7 @@ const AddStudentModal = React.lazy(() => import('../components/modals/AddStudent
 const RaceWinnerModal = React.lazy(() => import('../components/modals/RaceWinnerModal'));
 const RaceSetupModal = React.lazy(() => import('../components/modals/RaceSetupModal'));
 const QuestCompletionModal = React.lazy(() => import('../components/modals/QuestCompletionModal'));
+const QuestManagementModal = React.lazy(() => import('../components/modals/QuestManagementModal')); // FIXED: Added missing import
 
 // ===============================================
 // QUEST SYSTEM OVERHAUL - QUEST GIVERS & DATA
@@ -61,384 +62,365 @@ const QUEST_GIVERS = [
       "A well-organized student is a successful student!",
       "Ready to master the art of responsibility?"
     ],
-    questTypes: ['organization', 'attendance', 'responsibility'],
+    questTypes: ['organization', 'punctuality', 'responsibility'],
     tips: [
-      "⏰ Tip: Being on time shows respect for others!",
-      "📋 Organization today prevents chaos tomorrow!",
-      "✅ Small responsible actions build great character!"
+      "📅 Tip: Planning ahead prevents last-minute stress!",
+      "⏰ Time management is a superpower!",
+      "🎯 Small consistent actions lead to big results!"
     ]
   },
   {
     id: 'guide3',
-    name: 'Sunny the Motivator',
+    name: 'Spark the Motivator',
     image: '/Guides/Guide 3.png',
     personality: 'energetic',
-    role: 'Encouragement Specialist',
-    specialty: 'motivation',
+    role: 'Enthusiasm Quest Giver',
+    specialty: 'behavior',
     greetings: [
-      "You're doing amazing! Keep shining! ✨",
-      "Every day is a new chance to be awesome!",
-      "Your potential is unlimited! Let's unlock it!"
+      "Let's spark some amazing energy! ⚡",
+      "Ready to light up the classroom?",
+      "Your enthusiasm is contagious!"
     ],
-    questTypes: ['participation', 'improvement', 'goals'],
+    questTypes: ['participation', 'enthusiasm', 'teamwork'],
     tips: [
-      "⭐ Tip: Celebrate small wins - they add up!",
-      "🌟 Your effort matters more than perfection!",
-      "🚀 Believe in yourself - others believe in you too!"
+      "⚡ Tip: Positive energy multiplies when shared!",
+      "🌟 Your attitude determines your altitude!",
+      "🎉 Celebrate every small victory!"
     ]
   },
   {
     id: 'guide4',
-    name: 'Guardian Spirit',
+    name: 'Shield Guardian',
     image: '/Guides/Guide 4.png',
     personality: 'protective',
-    role: 'Behavior Quest Giver',
-    specialty: 'respect',
+    role: 'Respect Quest Giver',
+    specialty: 'behavior',
     greetings: [
-      "Kindness and respect make the strongest warriors.",
-      "Protecting others starts with respectful actions.",
-      "True strength comes from lifting others up."
+      "Respect and kindness are your greatest weapons! 🛡️",
+      "Ready to be a guardian of peace?",
+      "Your actions protect others!"
     ],
-    questTypes: ['kindness', 'respect', 'helping'],
+    questTypes: ['respect', 'kindness', 'helping'],
     tips: [
-      "🛡️ Tip: Kindness is a superpower everyone can have!",
-      "🤝 Helping others helps you grow too!",
-      "💙 Respect creates a safe space for everyone!"
+      "🛡️ Tip: True strength comes from protecting others!",
+      "💙 Kindness is never wasted!",
+      "🤝 We rise by lifting others!"
     ]
   },
   {
     id: 'guide5',
-    name: 'Sage Elder',
+    name: 'Sage Willow',
     image: '/Guides/Guide 5.png',
     personality: 'wise',
-    role: 'Reflection Guide',
-    specialty: 'growth',
+    role: 'Growth Quest Giver',
+    specialty: 'academic',
     greetings: [
-      "Reflection brings wisdom, young one.",
-      "How have you grown today?",
-      "The journey of learning never ends."
+      "Growth comes from reflection and effort! 🌱",
+      "Ready to bloom into your potential?",
+      "The journey of learning never ends!"
     ],
-    questTypes: ['reflection', 'improvement', 'goals'],
+    questTypes: ['improvement', 'reflection', 'persistence'],
     tips: [
-      "🔮 Tip: Reflecting on mistakes helps you learn!",
-      "🌱 Growth happens outside your comfort zone!",
-      "📈 Progress, not perfection, is the goal!"
+      "🌱 Tip: Growth happens outside your comfort zone!",
+      "🍃 Every mistake is a learning opportunity!",
+      "🔮 Patience and persistence unlock potential!"
     ]
   },
   {
     id: 'guide6',
-    name: 'Explorer Pete',
+    name: 'Explorer Quinn',
     image: '/Guides/Guide 6.png',
     personality: 'adventurous',
     role: 'Discovery Quest Giver',
-    specialty: 'exploration',
+    specialty: 'academic',
     greetings: [
-      "Adventure awaits around every corner! 🗺️",
-      "What new territory will you explore today?",
-      "The best discoveries come from curiosity!"
+      "Adventure awaits in every lesson! 🗺️",
+      "Ready to explore new knowledge?",
+      "Curiosity is your compass!"
     ],
-    questTypes: ['exploration', 'creativity', 'projects'],
+    questTypes: ['research', 'exploration', 'creativity'],
     tips: [
-      "🗺️ Tip: Ask questions - they lead to discoveries!",
-      "🔍 Curiosity is your best learning tool!",
-      "🎒 Every lesson is a new adventure!"
-    ]
-  },
-  {
-    id: 'guide7',
-    name: 'The Grand Wizard',
-    image: '/Guides/Guide 7.png',
-    personality: 'magical',
-    role: 'Master Quest Giver',
-    specialty: 'all',
-    greetings: [
-      "Magic happens when effort meets opportunity! ✨",
-      "You have the power to achieve greatness!",
-      "Let the magic of learning transform you!"
-    ],
-    questTypes: ['mastery', 'special', 'achievement'],
-    tips: [
-      "✨ Tip: Every skill you learn is like casting a spell!",
-      "🎭 Practice turns ordinary students into heroes!",
-      "🌟 The real magic is in never giving up!"
+      "🗺️ Tip: The best adventures start with curiosity!",
+      "🎒 Pack your imagination for every journey!",
+      "🔍 Questions are more valuable than answers!"
     ]
   }
 ];
 
-// Quest Templates
 const QUEST_TEMPLATES = [
+  // Academic Quests
   {
-    id: 'daily_homework',
-    title: 'Daily Homework Hero',
-    description: 'Complete your homework assignment on time',
-    type: 'daily',
-    category: 'learning',
-    reward: 2,
+    id: 'math-mastery',
+    title: 'Math Mastery Challenge',
+    description: 'Complete 5 math problems with perfect accuracy',
+    icon: '🔢',
+    category: 'academic',
+    difficulty: 'medium',
     questGiver: 'guide1',
-    difficulty: 'easy'
+    estimatedTime: '20 minutes',
+    reward: { type: 'coins', amount: 8 },
+    type: 'manual'
   },
   {
-    id: 'perfect_attendance',
-    title: 'Perfect Attendance Champion',
-    description: 'Attend all classes this week',
-    type: 'weekly',
-    category: 'responsibility',
-    reward: 5,
-    questGiver: 'guide2',
-    difficulty: 'medium'
+    id: 'reading-champion',
+    title: 'Reading Champion',
+    description: 'Read for 30 minutes and summarize what you learned',
+    icon: '📖',
+    category: 'academic',
+    difficulty: 'easy',
+    questGiver: 'guide1',
+    estimatedTime: '30 minutes',
+    reward: { type: 'coins', amount: 6 },
+    type: 'manual'
   },
   {
-    id: 'help_classmate',
-    title: 'Helpful Hero',
-    description: 'Help a classmate with their work',
-    type: 'manual',
-    category: 'respect',
-    reward: 3,
-    questGiver: 'guide4',
-    difficulty: 'easy'
-  },
-  {
-    id: 'creative_project',
-    title: 'Creative Explorer',
-    description: 'Complete a creative project or presentation',
-    type: 'manual',
-    category: 'learning',
-    reward: 4,
+    id: 'science-explorer',
+    title: 'Science Explorer',
+    description: 'Conduct a science experiment and record observations',
+    icon: '🔬',
+    category: 'academic',
+    difficulty: 'hard',
     questGiver: 'guide6',
-    difficulty: 'hard'
+    estimatedTime: '45 minutes',
+    reward: { type: 'coins', amount: 12 },
+    type: 'manual'
   },
   {
-    id: 'reading_quest',
-    title: 'Book Adventurer',
-    description: 'Read for 30 minutes today',
-    type: 'daily',
-    category: 'learning',
-    reward: 2,
-    questGiver: 'guide1',
-    difficulty: 'easy'
+    id: 'creative-writer',
+    title: 'Creative Writer',
+    description: 'Write a creative story of at least 200 words',
+    icon: '✍️',
+    category: 'academic',
+    difficulty: 'medium',
+    questGiver: 'guide6',
+    estimatedTime: '25 minutes',
+    reward: { type: 'coins', amount: 9 },
+    type: 'manual'
   },
+
+  // Behavior Quests
   {
-    id: 'organization_master',
-    title: 'Organization Master',
-    description: 'Keep your desk and materials organized all week',
-    type: 'weekly',
-    category: 'responsibility',
-    reward: 4,
-    questGiver: 'guide2',
-    difficulty: 'medium'
-  },
-  {
-    id: 'participation_star',
-    title: 'Participation Star',
-    description: 'Actively participate in class discussions',
-    type: 'daily',
-    category: 'learning',
-    reward: 2,
-    questGiver: 'guide3',
-    difficulty: 'easy'
-  },
-  {
-    id: 'kindness_warrior',
+    id: 'kindness-warrior',
     title: 'Kindness Warrior',
-    description: 'Perform three acts of kindness this week',
-    type: 'weekly',
-    category: 'respect',
-    reward: 6,
+    description: 'Perform 3 acts of kindness for classmates',
+    icon: '💝',
+    category: 'behavior',
+    difficulty: 'easy',
     questGiver: 'guide4',
-    difficulty: 'medium'
+    estimatedTime: 'Throughout the day',
+    reward: { type: 'coins', amount: 7 },
+    type: 'manual'
+  },
+  {
+    id: 'team-builder',
+    title: 'Team Builder',
+    description: 'Help a classmate who is struggling with work',
+    icon: '🤝',
+    category: 'behavior',
+    difficulty: 'medium',
+    questGiver: 'guide4',
+    estimatedTime: '15 minutes',
+    reward: { type: 'coins', amount: 8 },
+    type: 'manual'
+  },
+  {
+    id: 'energy-booster',
+    title: 'Energy Booster',
+    description: 'Encourage 5 classmates with positive words',
+    icon: '⚡',
+    category: 'behavior',
+    difficulty: 'easy',
+    questGiver: 'guide3',
+    estimatedTime: '10 minutes',
+    reward: { type: 'coins', amount: 5 },
+    type: 'manual'
+  },
+  {
+    id: 'conflict-resolver',
+    title: 'Conflict Resolver',
+    description: 'Help solve a disagreement peacefully',
+    icon: '🕊️',
+    category: 'behavior',
+    difficulty: 'hard',
+    questGiver: 'guide4',
+    estimatedTime: '20 minutes',
+    reward: { type: 'coins', amount: 15 },
+    type: 'manual'
+  },
+
+  // Responsibility Quests
+  {
+    id: 'homework-hero',
+    title: 'Homework Hero',
+    description: 'Complete all homework assignments on time for one week',
+    icon: '📚',
+    category: 'responsibility',
+    difficulty: 'medium',
+    questGiver: 'guide2',
+    estimatedTime: 'One week',
+    reward: { type: 'coins', amount: 20 },
+    type: 'manual'
+  },
+  {
+    id: 'classroom-cleaner',
+    title: 'Classroom Cleaner',
+    description: 'Organize and clean your workspace without being asked',
+    icon: '🧹',
+    category: 'responsibility',
+    difficulty: 'easy',
+    questGiver: 'guide2',
+    estimatedTime: '10 minutes',
+    reward: { type: 'coins', amount: 4 },
+    type: 'manual'
+  },
+  {
+    id: 'supply-manager',
+    title: 'Supply Manager',
+    description: 'Keep track of and organize classroom supplies for the day',
+    icon: '📦',
+    category: 'responsibility',
+    difficulty: 'medium',
+    questGiver: 'guide2',
+    estimatedTime: '30 minutes',
+    reward: { type: 'coins', amount: 10 },
+    type: 'manual'
+  },
+  {
+    id: 'punctuality-master',
+    title: 'Punctuality Master',
+    description: 'Arrive to class on time every day for one week',
+    icon: '⏰',
+    category: 'responsibility',
+    difficulty: 'easy',
+    questGiver: 'guide2',
+    estimatedTime: 'One week',
+    reward: { type: 'coins', amount: 15 },
+    type: 'manual'
+  },
+
+  // Weekly Challenges
+  {
+    id: 'growth-mindset',
+    title: 'Growth Mindset Week',
+    description: 'Show improvement in one subject area over the week',
+    icon: '🌱',
+    category: 'weekly',
+    difficulty: 'medium',
+    questGiver: 'guide5',
+    estimatedTime: 'One week',
+    reward: { type: 'coins', amount: 25 },
+    type: 'manual'
+  },
+  {
+    id: 'leadership-challenge',
+    title: 'Leadership Challenge',
+    description: 'Lead a group project or activity successfully',
+    icon: '👑',
+    category: 'weekly',
+    difficulty: 'hard',
+    questGiver: 'guide3',
+    estimatedTime: 'One week',
+    reward: { type: 'coins', amount: 30 },
+    type: 'manual'
   }
 ];
 
-// SHOP ITEMS
-const SHOP_ITEMS = [
-  // Accessories
-  { id: 'crown', name: 'Royal Crown', icon: '👑', price: 15, category: 'accessories', rarity: 'epic' },
-  { id: 'cape', name: 'Hero Cape', icon: '🦸', price: 10, category: 'accessories', rarity: 'rare' },
-  { id: 'glasses', name: 'Smart Glasses', icon: '🤓', price: 5, category: 'accessories', rarity: 'common' },
-  { id: 'wizard_hat', name: 'Wizard Hat', icon: '🧙', price: 12, category: 'accessories', rarity: 'rare' },
-  // Power-ups
-  { id: 'double_xp', name: 'Double XP Boost', icon: '⚡', price: 20, category: 'powerups', rarity: 'epic' },
-  { id: 'lucky_charm', name: 'Lucky Charm', icon: '🍀', price: 8, category: 'powerups', rarity: 'common' },
-  { id: 'speed_boost', name: 'Racing Speed Boost', icon: '💨', price: 15, category: 'powerups', rarity: 'rare' },
-  // Trophies
-  { id: 'gold_trophy', name: 'Golden Achievement', icon: '🏆', price: 25, category: 'trophies', rarity: 'legendary' },
-  { id: 'silver_medal', name: 'Silver Medal', icon: '🥈', price: 15, category: 'trophies', rarity: 'rare' },
-  { id: 'bronze_medal', name: 'Bronze Medal', icon: '🥉', price: 8, category: 'trophies', rarity: 'common' },
-  { id: 'diamond_trophy', name: 'Diamond Champion', icon: '💎', price: 35, category: 'trophies', rarity: 'epic' },
-  // Loot Boxes
-  { id: 'basic_box', name: 'Basic Loot Box', icon: '📦', price: 25, category: 'lootboxes', rarity: 'common', type: 'lootbox', contents: { count: 3, rarityBonus: 0, guaranteedRare: false } },
-  { id: 'premium_box', name: 'Premium Loot Box', icon: '✨', price: 50, category: 'lootboxes', rarity: 'epic', type: 'lootbox', contents: { count: 5, rarityBonus: 10, guaranteedRare: true } }
+// ===============================================
+// AVATAR SYSTEM
+// ===============================================
+
+const AVATAR_BASES = [
+  'Alchemist', 'Barbarian', 'Bard', 'Beastmaster', 'Cleric', 'Crystal Knight', 
+  'Crystal Sage', 'Engineer', 'Frost Mage', 'Illusionist', 'Knight', 'Lightning', 
+  'Monk', 'Necromancer', 'Rogue', 'Stealth', 'Time Knight', 'Warrior', 'Wizard'
 ];
 
-const ITEM_RARITIES = {
-  common: { name: 'Common', bgColor: 'bg-gray-100', textColor: 'text-gray-700', borderColor: 'border-gray-300', chance: 60 },
-  rare: { name: 'Rare', bgColor: 'bg-blue-100', textColor: 'text-blue-700', borderColor: 'border-blue-300', chance: 25 },
-  epic: { name: 'Epic', bgColor: 'bg-purple-100', textColor: 'text-purple-700', borderColor: 'border-purple-300', chance: 10 },
-  legendary: { name: 'Legendary', bgColor: 'bg-yellow-100', textColor: 'text-yellow-700', borderColor: 'border-yellow-300', chance: 5 }
+const getAvatarImage = (base, level) => {
+  return `/avatars/${base}/${base} lvl ${level}.png`;
 };
 
-const LOOT_BOX_ITEMS = [
-  { id: 'sticker_star', name: 'Star Sticker', icon: '⭐', rarity: 'common', type: 'collectible' },
-  { id: 'sticker_heart', name: 'Heart Sticker', icon: '💖', rarity: 'common', type: 'collectible' },
-  { id: 'badge_good', name: 'Good Student Badge', icon: '😊', rarity: 'common', type: 'badge' },
-  { id: 'gem_blue', name: 'Blue Gem', icon: '💎', rarity: 'rare', type: 'collectible' },
-  { id: 'medal_bronze', name: 'Bronze Medal', icon: '🏅', rarity: 'rare', type: 'award' },
-  { id: 'book_magic', name: 'Magic Book', icon: '📚', rarity: 'rare', type: 'accessory' },
-  { id: 'sword_hero', name: 'Hero Sword', icon: '⚔️', rarity: 'epic', type: 'accessory' },
-  { id: 'shield_knight', name: 'Knight Shield', icon: '🛡️', rarity: 'epic', type: 'accessory' },
-  { id: 'crown_diamond', name: 'Diamond Crown', icon: '💎👑', rarity: 'legendary', type: 'accessory' },
-  { id: 'staff_wizard', name: 'Wizard Staff', icon: '🔮', rarity: 'legendary', type: 'accessory' }
-];
+const getRandomPetName = () => {
+  const names = [
+    'Sparkle', 'Shadow', 'Flame', 'Frost', 'Thunder', 'Storm', 'Blaze', 'Crystal',
+    'Nova', 'Echo', 'Dash', 'Spirit', 'Mystic', 'Comet', 'Star', 'Luna',
+    'Phoenix', 'Sage', 'Knight', 'Scout', 'Flash', 'Bolt', 'Ember', 'Mist'
+  ];
+  return names[Math.floor(Math.random() * names.length)];
+};
 
-const AVAILABLE_AVATARS = [
-  { base: "Alchemist F", path: "/avatars/Alchemist%20F/Level%201.png" },
-  { base: "Alchemist M", path: "/avatars/Alchemist%20M/Level%201.png" },
-  { base: "Archer F", path: "/avatars/Archer%20F/Level%201.png" },
-  { base: "Archer M", path: "/avatars/Archer%20M/Level%201.png" },
-  { base: "Barbarian F", path: "/avatars/Barbarian%20F/Level%201.png" },
-  { base: "Barbarian M", path: "/avatars/Barbarian%20M/Level%201.png" },
-  { base: "Bard F", path: "/avatars/Bard%20F/Level%201.png" },
-  { base: "Bard M", path: "/avatars/Bard%20M/Level%201.png" },
-  { base: "Beastmaster F", path: "/avatars/Beastmaster%20F/Level%201.png" },
-  { base: "Beastmaster M", path: "/avatars/Beastmaster%20M/Level%201.png" },
-  { base: "Cleric F", path: "/avatars/Cleric%20F/Level%201.png" },
-  { base: "Cleric M", path: "/avatars/Cleric%20M/Level%201.png" },
-  { base: "Crystal Sage F", path: "/avatars/Crystal%20Sage%20F/Level%201.png" },
-  { base: "Crystal Sage M", path: "/avatars/Crystal%20Sage%20M/Level%201.png" },
-  { base: "Druid F", path: "/avatars/Druid%20F/Level%201.png" },
-  { base: "Druid M", path: "/avatars/Druid%20M/Level%201.png" },
-  { base: "Engineer F", path: "/avatars/Engineer%20F/Level%201.png" },
-  { base: "Engineer M", path: "/avatars/Engineer%20M/Level%201.png" },
-  { base: "Ice Mage F", path: "/avatars/Ice%20Mage%20F/Level%201.png" },
-  { base: "Ice Mage M", path: "/avatars/Ice%20Mage%20M/Level%201.png" },
-  { base: "Illusionist F", path: "/avatars/Illusionist%20F/Level%201.png" },
-  { base: "Illusionist M", path: "/avatars/Illusionist%20M/Level%201.png" },
-  { base: "Knight F", path: "/avatars/Knight%20F/Level%201.png" },
-  { base: "Knight M", path: "/avatars/Knight%20M/Level%201.png" },
-  { base: "Monk F", path: "/avatars/Monk%20F/Level%201.png" },
-  { base: "Monk M", path: "/avatars/Monk%20M/Level%201.png" },
-  { base: "Necromancer F", path: "/avatars/Necromancer%20F/Level%201.png" },
-  { base: "Necromancer M", path: "/avatars/Necromancer%20M/Level%201.png" },
-  { base: "Orc F", path: "/avatars/Orc%20F/Level%201.png" },
-  { base: "Orc M", path: "/avatars/Orc%20M/Level%201.png" },
-  { base: "Paladin F", path: "/avatars/Paladin%20F/Level%201.png" },
-  { base: "Paladin M", path: "/avatars/Paladin%20M/Level%201.png" },
-  { base: "Rogue F", path: "/avatars/Rogue%20F/Level%201.png" },
-  { base: "Rogue M", path: "/avatars/Rogue%20M/Level%201.png" },
-  { base: "Sky Knight F", path: "/avatars/Sky%20Knight%20F/Level%201.png" },
-  { base: "Sky Knight M", path: "/avatars/Sky%20Knight%20M/Level%201.png" },
-  { base: "Time Mage F", path: "/avatars/Time%20Mage%20F/Level%201.png" },
-  { base: "Time Mage M", path: "/avatars/Time%20Mage%20M/Level%201.png" },
-  { base: "Wizard F", path: "/avatars/Wizard%20F/Level%201.png" },
-  { base: "Wizard M", path: "/avatars/Wizard%20M/Level%201.png" }
-];
+// Pet generation and speed calculation
+const generatePet = () => {
+  const pets = AVATAR_BASES;
+  const randomPet = pets[Math.floor(Math.random() * pets.length)];
+  return {
+    type: randomPet,
+    name: getRandomPetName(),
+    speed: Math.floor(Math.random() * 50) + 25,
+    image: `/pets/${randomPet}.png`,
+    wins: 0
+  };
+};
 
-const PETS = [
-  "Alchemist", "Barbarian", "Bard", "Beastmaster", "Cleric", "Crystal Knight",
-  "Crystal Sage", "Dream", "Druid", "Engineer", "Frost Mage", "Illusionist",
-  "Knight", "Lightning", "Monk", "Necromancer", "Orc", "Paladin", "Rogue",
-  "Stealth", "Time Knight", "Warrior", "Wizard"
-];
-
-const PET_NAMES = [
-  "Flamepaw", "Shadowtail", "Brightfang", "Mysticwhisker", "Stormclaw",
-  "Ironhoof", "Swiftbeak", "Frostwhisker", "Moonfang", "Nightclaw"
-];
-
-// Constants
-const MAX_LEVEL = 4;
-const COINS_PER_XP = 5;
+const calculateSpeed = (pet) => {
+  if (!pet) return 0;
+  const baseSpeed = pet.speed || 50;
+  const winBonus = (pet.wins || 0) * 2;
+  return Math.min(baseSpeed + winBonus, 100);
+};
 
 // ===============================================
 // UTILITY FUNCTIONS
 // ===============================================
 
-const updateStudentWithDefaults = (student) => {
-  return {
-    ...student,
-    totalPoints: student.totalPoints || 0,
-    weeklyPoints: student.weeklyPoints || 0,
-    avatarLevel: student.avatarLevel || 1,
-    categoryTotal: student.categoryTotal || {},
-    categoryWeekly: student.categoryWeekly || {},
-    logs: student.logs || [],
-    coins: student.coins || 0,
-    coinsSpent: student.coinsSpent || 0,
-    inventory: student.inventory || [],
-    lootBoxes: student.lootBoxes || [],
-    achievements: student.achievements || [],
-    lastXpDate: student.lastXpDate || null
-  };
-};
-
-const getAvatarImage = (base, level) => {
-  return `/avatars/${base.replaceAll(" ", "%20")}/Level%20${level}.png`;
-};
-
-const getRandomPet = () => {
-  const type = PETS[Math.floor(Math.random() * PETS.length)];
-  return {
-    image: `/Pets/${type}.png`,
-    level: 1,
-    speed: 1,
-    wins: 0,
-    name: ''
-  };
-};
-
-const getRandomPetName = () => {
-  return PET_NAMES[Math.floor(Math.random() * PET_NAMES.length)];
-};
-
-const calculateSpeed = (pet) => {
-  const baseSpeed = pet.speed || 1;
-  const level = pet.level || 1;
-  const levelBonus = (level - 1) * 0.05;
-  return Math.max(baseSpeed + levelBonus, 0.8);
-};
-
-const getWeekStart = () => {
-  const now = new Date();
-  const day = now.getDay();
-  const diff = now.getDate() - day;
-  return new Date(now.setDate(diff));
-};
-
-const getWeekEnd = () => {
-  const weekStart = getWeekStart();
-  const weekEnd = new Date(weekStart);
-  weekEnd.setDate(weekStart.getDate() + 6);
-  return weekEnd;
-};
-
-// Loading component
-const LoadingSpinner = ({ message = "Loading..." }) => (
-  <div className="flex items-center justify-center p-8">
-    <div className="text-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
-      <p className="text-gray-600 font-medium">{message}</p>
+const showToast = (message, type = 'info') => {
+  // Toast notification system
+  const toastContainer = document.getElementById('toast-container') || createToastContainer();
+  
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type} opacity-0 transform translate-y-2 transition-all duration-300`;
+  
+  const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
+  toast.innerHTML = `
+    <div class="flex items-center space-x-2 bg-white rounded-lg shadow-lg border-l-4 ${
+      type === 'success' ? 'border-green-500' : 
+      type === 'error' ? 'border-red-500' : 'border-blue-500'
+    } p-4">
+      <span class="text-xl">${icon}</span>
+      <span class="text-gray-800 font-medium">${message}</span>
     </div>
-  </div>
-);
+  `;
+  
+  toastContainer.appendChild(toast);
+  
+  // Animate in
+  setTimeout(() => {
+    toast.classList.remove('opacity-0', 'translate-y-2');
+  }, 10);
+  
+  // Animate out and remove
+  setTimeout(() => {
+    toast.classList.add('opacity-0', 'translate-y-2');
+    setTimeout(() => {
+      if (toast.parentNode) {
+        toast.parentNode.removeChild(toast);
+      }
+    }, 300);
+  }, 3000);
+};
 
-// Tab Loading component
-const TabLoadingSpinner = () => (
-  <div className="animate-fade-in">
-    <div className="flex items-center justify-center py-20">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
-        <p className="text-xl font-semibold text-gray-700">Loading tab content...</p>
-      </div>
-    </div>
-  </div>
-);
+const createToastContainer = () => {
+  const container = document.createElement('div');
+  container.id = 'toast-container';
+  container.className = 'fixed top-4 right-4 z-50 space-y-2';
+  document.body.appendChild(container);
+  return container;
+};
 
-// Calculate coins based on XP and spending
-const calculateCoins = (student) => {
-  const xpCoins = Math.floor((student?.totalPoints || 0) / COINS_PER_XP);
-  const bonusCoins = student?.coins || 0;
-  const coinsSpent = student?.coinsSpent || 0;
-  return Math.max(0, xpCoins + bonusCoins - coinsSpent);
+const calculateTotalCoins = (student) => {
+  const baseCoins = Math.floor(student.totalPoints / 5) || 0;
+  const bonusCoins = student.bonusCoins || 0;
+  const coinsSpent = student.coinsSpent || 0;
+  return Math.max(0, baseCoins + bonusCoins - coinsSpent);
 };
 
 // ===============================================
@@ -492,76 +474,50 @@ export default function ClassroomChampions() {
   const [activeQuests, setActiveQuests] = useState([]);
   const [questTemplates, setQuestTemplates] = useState(QUEST_TEMPLATES);
   const [showQuestManagement, setShowQuestManagement] = useState(false);
+  const [selectedStudentForQuests, setSelectedStudentForQuests] = useState(null);
   const [selectedQuestGiver, setSelectedQuestGiver] = useState(null);
-  const [showQuestGiverTip, setShowQuestGiverTip] = useState(null);
   const [questCompletionData, setQuestCompletionData] = useState(null);
-  const [showQuestCompletion, setShowQuestCompletion] = useState(false);
   
   // Attendance system
   const [attendanceData, setAttendanceData] = useState({});
   
-  // Class management
+  // User and class management
+  const [userData, setUserData] = useState(null);
   const [teacherClasses, setTeacherClasses] = useState([]);
   const [currentClassId, setCurrentClassId] = useState(null);
   const [newClassName, setNewClassName] = useState('');
   const [newClassStudents, setNewClassStudents] = useState('');
-  
-  // User data
-  const [userData, setUserData] = useState(null);
-  
-  // Settings and feedback
-  const [showConfirmDialog, setShowConfirmDialog] = useState(null);
-  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
-  const [feedbackType, setFeedbackType] = useState('bug');
-  const [feedbackSubject, setFeedbackSubject] = useState('');
-  const [feedbackMessage, setFeedbackMessage] = useState('');
-  const [feedbackEmail, setFeedbackEmail] = useState('');
-
-  // Toast notification system
-  const [toastQueue, setToastQueue] = useState([]);
-  const [activeToast, setActiveToast] = useState(null);
-
-  const showToast = (message, type = 'success') => {
-    const id = Date.now();
-    const toast = { id, message, type };
-    setToastQueue(prev => [...prev, toast]);
-  };
-
-  useEffect(() => {
-    if (toastQueue.length > 0 && !activeToast) {
-      const nextToast = toastQueue[0];
-      setActiveToast(nextToast);
-      setToastQueue(prev => prev.slice(1));
-      
-      setTimeout(() => {
-        setActiveToast(null);
-      }, 3000);
-    }
-  }, [toastQueue, activeToast]);
 
   // ===============================================
-  // CORE FUNCTIONS
+  // FIREBASE FUNCTIONS
   // ===============================================
 
   const saveStudentsToFirebase = async (updatedStudents) => {
     if (!user || !currentClassId) return;
     
+    setSavingData(true);
     try {
-      const docRef = doc(firestore, 'users', user.uid);
-      const userDoc = await getDoc(docRef);
+      const userDocRef = doc(firestore, 'users', user.uid);
+      const userSnap = await getDoc(userDocRef);
       
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
+      if (userSnap.exists()) {
+        const userData = userSnap.data();
         const updatedClasses = userData.classes.map(cls => 
           cls.id === currentClassId 
             ? { ...cls, students: updatedStudents }
             : cls
         );
         
-        await setDoc(docRef, { ...userData, classes: updatedClasses }, { merge: true });
+        await setDoc(userDocRef, { 
+          ...userData, 
+          classes: updatedClasses 
+        }, { merge: true });
       }
     } catch (error) {
-      console.error("Error saving students to Firebase:", error);
+      console.error('Error saving to Firebase:', error);
+      showToast('Error saving data. Please try again.', 'error');
+    } finally {
+      setSavingData(false);
     }
   };
 
@@ -569,140 +525,121 @@ export default function ClassroomChampions() {
     if (!user || !currentClassId) return;
     
     try {
-      const docRef = doc(firestore, 'users', user.uid);
-      const userDoc = await getDoc(docRef);
+      const userDocRef = doc(firestore, 'users', user.uid);
+      const userSnap = await getDoc(userDocRef);
       
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
+      if (userSnap.exists()) {
+        const userData = userSnap.data();
         const updatedClasses = userData.classes.map(cls => 
           cls.id === currentClassId 
             ? { ...cls, ...questData }
             : cls
         );
         
-        await setDoc(docRef, { ...userData, classes: updatedClasses }, { merge: true });
+        await setDoc(userDocRef, { 
+          ...userData, 
+          classes: updatedClasses 
+        }, { merge: true });
       }
     } catch (error) {
-      console.error("Error saving quest data to Firebase:", error);
+      console.error('Error saving quest data:', error);
+      showToast('Error saving quest data', 'error');
     }
   };
+
+  // ===============================================
+  // XP AND LEVEL SYSTEM
+  // ===============================================
 
   const checkForLevelUp = (student) => {
-    const nextLevel = student.avatarLevel + 1;
-    const xpNeeded = student.avatarLevel * 100;
-    if (student.totalPoints >= xpNeeded && student.avatarLevel < MAX_LEVEL) {
-      const newAvatar = getAvatarImage(student.avatarBase, nextLevel);
-      setLevelUpData({
-        name: student.firstName,
-        oldAvatar: student.avatar,
-        newAvatar,
-      });
+    const currentLevel = student.avatarLevel || 1;
+    const totalPoints = student.totalPoints || 0;
+    
+    let newLevel = 1;
+    if (totalPoints >= 200) newLevel = 4;
+    else if (totalPoints >= 100) newLevel = 3;
+    else if (totalPoints >= 50) newLevel = 2;
+    
+    if (newLevel > currentLevel) {
       return {
-        ...student,
-        avatarLevel: nextLevel,
-        avatar: newAvatar,
+        student: student,
+        oldLevel: currentLevel,
+        newLevel: newLevel,
+        newAvatar: getAvatarImage(student.avatarBase, newLevel)
       };
     }
-    return student;
-  };
-
-  const handleAvatarClick = (studentId) => {
-    const student = students.find(s => s.id === studentId);
-    if (student) {
-      setStudentForAvatarChange(student);
-      setShowAvatarSelectionModal(true);
-    }
-  };
-
-  const handleAvatarChange = async (avatarBase) => {
-    if (!studentForAvatarChange) return;
-
-    setSavingData(true);
-    const newAvatar = getAvatarImage(avatarBase, studentForAvatarChange.avatarLevel);
     
-    setStudents(prev => {
-      const updatedStudents = prev.map(student => 
-        student.id === studentForAvatarChange.id 
-          ? { ...student, avatarBase, avatar: newAvatar }
-          : student
-      );
+    return null;
+  };
+
+  const handleAwardXP = async (studentId, category, points) => {
+    setAnimatingXP(prev => ({ ...prev, [studentId]: true }));
+    
+    setStudents(prevStudents => {
+      const updatedStudents = prevStudents.map(student => {
+        if (student.id === studentId) {
+          const newCategoryTotal = (student.categoryTotal?.[category] || 0) + points;
+          const newCategoryWeekly = (student.categoryWeekly?.[category] || 0) + points;
+          const newTotalPoints = (student.totalPoints || 0) + points;
+          
+          const updatedStudent = {
+            ...student,
+            totalPoints: newTotalPoints,
+            weeklyPoints: (student.weeklyPoints || 0) + points,
+            categoryTotal: {
+              ...student.categoryTotal,
+              [category]: newCategoryTotal
+            },
+            categoryWeekly: {
+              ...student.categoryWeekly,
+              [category]: newCategoryWeekly
+            },
+            logs: [
+              ...(student.logs || []),
+              {
+                type: 'xp',
+                category,
+                amount: points,
+                timestamp: new Date().toISOString()
+              }
+            ]
+          };
+          
+          // Check for level up
+          const levelUpInfo = checkForLevelUp(updatedStudent);
+          if (levelUpInfo) {
+            updatedStudent.avatarLevel = levelUpInfo.newLevel;
+            updatedStudent.avatar = levelUpInfo.newAvatar;
+            setLevelUpData(levelUpInfo);
+          }
+          
+          // Check for pet unlock
+          if (newTotalPoints >= 50 && !student.pet) {
+            const newPet = generatePet();
+            updatedStudent.pet = newPet;
+            setPetUnlockData({ student: updatedStudent, pet: newPet });
+          }
+          
+          return updatedStudent;
+        }
+        return student;
+      });
       
       saveStudentsToFirebase(updatedStudents);
       return updatedStudents;
     });
-
-    try {
-      showToast('Avatar updated successfully!');
-    } catch (error) {
-      console.error("Error updating avatar:", error);
-    } finally {
-      setSavingData(false);
-    }
-
-    setShowAvatarSelectionModal(false);
-    setStudentForAvatarChange(null);
-  };
-
-  // Award XP function
-  const handleAwardXP = (id, category, amount = 1) => {
-    if (animatingXP[id]) return;
     
-    setAnimatingXP(prev => ({ ...prev, [id]: category }));
-    setTimeout(() => setAnimatingXP(prev => ({ ...prev, [id]: null })), 600);
-
-    setStudents((prev) => {
-      const updatedStudents = prev.map((s) => {
-        if (s.id !== id) return s;
-
-        const newTotal = s.totalPoints + amount;
-        let updated = {
-          ...s,
-          totalPoints: newTotal,
-          weeklyPoints: (s.weeklyPoints || 0) + amount,
-          lastXpDate: new Date().toISOString(),
-          categoryTotal: {
-            ...s.categoryTotal,
-            [category]: (s.categoryTotal[category] || 0) + amount,
-          },
-          categoryWeekly: {
-            ...s.categoryWeekly,
-            [category]: (s.categoryWeekly[category] || 0) + amount,
-          },
-          logs: [
-            ...(s.logs || []),
-            {
-              type: category,
-              amount: amount,
-              date: new Date().toISOString(),
-              source: "manual",
-            },
-          ],
-        };
-
-        // Pet unlock check
-        if (!s.pet?.image && newTotal >= 50) {
-          const newPet = getRandomPet();
-          updated.pet = newPet;
-          setPetUnlockData({
-            studentName: s.firstName,
-            petImage: newPet.image,
-          });
-        }
-
-        // Level up check
-        updated = checkForLevelUp(updated);
-
-        return updated;
-      });
-
-      saveStudentsToFirebase(updatedStudents);
-      return updatedStudents;
-    });
-
-    showToast(`Awarded ${amount} XP to ${students.find(s => s.id === id)?.firstName}!`);
+    setTimeout(() => {
+      setAnimatingXP(prev => ({ ...prev, [studentId]: false }));
+    }, 1000);
+    
+    showToast(`+${points} ${category} XP awarded!`, 'success');
   };
 
-  // Bulk XP functions
+  // ===============================================
+  // STUDENT MANAGEMENT
+  // ===============================================
+
   const handleStudentSelect = (studentId) => {
     setSelectedStudents(prev => 
       prev.includes(studentId) 
@@ -712,7 +649,11 @@ export default function ClassroomChampions() {
   };
 
   const handleSelectAll = () => {
-    setSelectedStudents(students.map(s => s.id));
+    if (selectedStudents.length === students.length) {
+      setSelectedStudents([]);
+    } else {
+      setSelectedStudents(students.map(s => s.id));
+    }
   };
 
   const handleDeselectAll = () => {
@@ -721,74 +662,86 @@ export default function ClassroomChampions() {
 
   const handleBulkXpAward = () => {
     if (selectedStudents.length === 0) {
-      showToast('No students selected!', 'error');
+      showToast('Please select students first', 'error');
       return;
     }
-
+    
     selectedStudents.forEach(studentId => {
       handleAwardXP(studentId, bulkXpCategory, bulkXpAmount);
     });
-
+    
     setSelectedStudents([]);
     setShowBulkXpPanel(false);
-    
-    const studentNames = selectedStudents.length === students.length 
-      ? 'the entire class'
-      : `${selectedStudents.length} students`;
-    
-    showToast(`Awarded ${bulkXpAmount} XP to ${studentNames}!`);
+    showToast(`Awarded ${bulkXpAmount} ${bulkXpCategory} XP to ${selectedStudents.length} students!`, 'success');
   };
 
-  // Quest system functions
-  const completeQuest = (questId, studentId = null) => {
+  const handleAvatarClick = (student) => {
+    setSelectedStudent(student);
+  };
+
+  // ===============================================
+  // QUEST SYSTEM FUNCTIONS
+  // ===============================================
+
+  const getAvailableQuests = (student) => {
+    return activeQuests.filter(quest => 
+      !quest.completedBy.includes(student.id)
+    );
+  };
+
+  const completeQuest = (questId, studentId) => {
+    const quest = activeQuests.find(q => q.id === questId);
+    const student = students.find(s => s.id === studentId);
+    
+    if (!quest || !student) return;
+    
+    // Update quest completion
     setActiveQuests(prev => {
-      const updated = prev.map(quest => {
-        if (quest.id === questId) {
-          if (quest.category === 'class') {
-            return { ...quest, completed: true };
-          } else if (studentId) {
-            return { 
-              ...quest, 
-              completedBy: [...(quest.completedBy || []), studentId] 
-            };
-          }
-        }
-        return quest;
-      });
-      
+      const updated = prev.map(q => 
+        q.id === questId 
+          ? { ...q, completedBy: [...q.completedBy, studentId] }
+          : q
+      );
       saveQuestDataToFirebase({ activeQuests: updated });
       return updated;
     });
-
-    // Award coins to student
-    if (studentId) {
-      const quest = activeQuests.find(q => q.id === questId);
-      if (quest) {
-        setStudents(prev => {
-          const updated = prev.map(student => 
-            student.id === studentId 
-              ? {
-                  ...student,
-                  coins: (student.coins || 0) + quest.reward,
-                  logs: [
-                    ...(student.logs || []),
-                    {
-                      type: 'quest_coins',
-                      amount: quest.reward,
-                      date: new Date().toISOString(),
-                      source: 'quest_completion',
-                      quest: quest.title
-                    }
-                  ]
+    
+    // Award coins
+    setStudents(prev => {
+      const updated = prev.map(s => 
+        s.id === studentId 
+          ? { 
+              ...s, 
+              bonusCoins: (s.bonusCoins || 0) + quest.reward.amount,
+              logs: [
+                ...(s.logs || []),
+                {
+                  type: 'quest',
+                  questId: quest.id,
+                  questTitle: quest.title,
+                  reward: quest.reward.amount,
+                  timestamp: new Date().toISOString()
                 }
-              : student
-          );
-          saveStudentsToFirebase(updated);
-          return updated;
-        });
-        
-        showToast(`Quest completed! Awarded ${quest.reward} coins!`, 'success');
-      }
+              ]
+            }
+          : s
+      );
+      saveStudentsToFirebase(updated);
+      return updated;
+    });
+    
+    // Show completion modal
+    const questGiver = QUEST_GIVERS.find(qg => qg.id === quest.questGiver);
+    setQuestCompletionData({
+      quest,
+      student,
+      questGiver
+    });
+    
+    setSelectedStudentForQuests(null);
+    
+    if (quest.reward.type === 'coins') {
+      showToast(`${student.firstName} completed "${quest.title}"! Awarded ${quest.reward.amount} coins!`, 'success');
     }
   };
 
@@ -807,7 +760,7 @@ export default function ClassroomChampions() {
       return updated;
     });
     
-    showToast(`Added quest: ${template.title}`);
+    showToast(`Added quest: ${template.title}`, 'success');
   };
 
   const removeQuestFromActive = (questId) => {
@@ -817,7 +770,7 @@ export default function ClassroomChampions() {
       return updated;
     });
     
-    showToast('Quest removed successfully!');
+    showToast('Quest removed successfully!', 'success');
   };
 
   const createCustomQuest = (questData) => {
@@ -835,7 +788,7 @@ export default function ClassroomChampions() {
       return updated;
     });
     
-    showToast(`Created custom quest: ${questData.title}`);
+    showToast(`Created custom quest: ${questData.title}`, 'success');
   };
 
   // Attendance functions
@@ -854,7 +807,7 @@ export default function ClassroomChampions() {
     });
     
     const student = students.find(s => s.id === studentId);
-    showToast(`Marked ${student?.firstName} as ${status} for ${date}`);
+    showToast(`Marked ${student?.firstName} as ${status} for ${date}`, 'success');
   };
 
   // Class management functions
@@ -866,230 +819,89 @@ export default function ClassroomChampions() {
 
     const maxAllowed = userData?.subscription === 'pro' ? 5 : 1;
     if (teacherClasses.length >= maxAllowed) {
-      showToast(`Your ${userData?.subscription || 'basic'} plan only allows up to ${maxAllowed} class${maxAllowed > 1 ? 'es' : ''}.`, 'error');
+      showToast(`Your ${userData?.subscription || 'basic'} plan only allows up to ${maxAllowed} class${maxAllowed > 1 ? 'es' : ''}. Please upgrade to add more classes.`, 'error');
       return;
     }
 
-    setSavingData(true);
-    
-    try {
-      const studentList = newClassStudents
-        .split('\n')
-        .map(name => name.trim())
-        .filter(name => name.length > 0)
-        .map((name, index) => ({
-          id: Date.now() + index,
-          firstName: name,
-          avatarBase: AVAILABLE_AVATARS[Math.floor(Math.random() * AVAILABLE_AVATARS.length)].base,
-          avatarLevel: 1,
-          totalPoints: 0,
-          weeklyPoints: 0,
-          categoryTotal: {},
-          categoryWeekly: {},
-          logs: []
-        }))
-        .map(student => ({
-          ...student,
-          avatar: getAvatarImage(student.avatarBase, 1)
-        }));
-
-      const newClass = {
-        id: Date.now(),
-        name: newClassName,
-        students: studentList,
-        activeQuests: [],
-        questTemplates: QUEST_TEMPLATES,
-        attendanceData: {},
-        createdAt: new Date().toISOString()
-      };
-
-      const docRef = doc(firestore, 'users', user.uid);
-      const userDoc = await getDoc(docRef);
-      
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        const updatedClasses = [...(userData.classes || []), newClass];
-        await setDoc(docRef, { ...userData, classes: updatedClasses }, { merge: true });
-        
-        setTeacherClasses(updatedClasses);
-        await loadClass(newClass);
-        
-        setNewClassName('');
-        setNewClassStudents('');
-        showToast(`Class "${newClassName}" imported with ${studentList.length} students!`);
-      }
-    } catch (error) {
-      console.error("Error importing class:", error);
-      showToast('Error importing class. Please try again.', 'error');
-    } finally {
-      setSavingData(false);
-    }
-  };
-
-  const loadClass = async (classData) => {
-    const studentsWithDefaults = classData.students.map(updateStudentWithDefaults);
-    
-    setStudents(studentsWithDefaults);
-    setCurrentClassId(classData.id);
-    setActiveQuests(classData.activeQuests || []);
-    setQuestTemplates(classData.questTemplates || QUEST_TEMPLATES);
-    setAttendanceData(classData.attendanceData || {});
-    
-    showToast(`Loaded class: ${classData.name}`);
-  };
-
-  // Settings functions
-  const handleResetStudentPoints = (studentId) => {
-    setSavingData(true);
-    setStudents(prev => {
-      const updatedStudents = prev.map(s => 
-        s.id === studentId ? {
-          ...s,
-          totalPoints: 0,
-          weeklyPoints: 0,
-          categoryTotal: {},
-          categoryWeekly: {},
-          avatarLevel: 1,
-          avatar: s.avatarBase ? getAvatarImage(s.avatarBase, 1) : s.avatar,
-          coins: 0,
-          coinsSpent: 0,
-          inventory: [],
-          logs: [
-            ...(s.logs || []),
-            {
-              type: "reset",
-              amount: 0,
-              date: new Date().toISOString(),
-              source: "manual_reset",
-            },
-          ],
-        } : s
-      );
-      saveStudentsToFirebase(updatedStudents);
-      return updatedStudents;
-    });
-    setSavingData(false);
-    showToast('Student points reset successfully!');
-  };
-
-  const handleResetAllPoints = () => {
-    setSavingData(true);
-    setStudents(prev => {
-      const updatedStudents = prev.map(s => ({
-        ...s,
+    const studentNames = newClassStudents.split('\n').filter(name => name.trim());
+    const newStudents = studentNames.map((name, index) => {
+      const randomAvatarBase = AVATAR_BASES[Math.floor(Math.random() * AVATAR_BASES.length)];
+      return {
+        id: Date.now() + index,
+        firstName: name.trim(),
+        avatarBase: randomAvatarBase,
+        avatarLevel: 1,
+        avatar: getAvatarImage(randomAvatarBase, 1),
         totalPoints: 0,
         weeklyPoints: 0,
         categoryTotal: {},
         categoryWeekly: {},
-        avatarLevel: 1,
-        avatar: s.avatarBase ? getAvatarImage(s.avatarBase, 1) : s.avatar,
-        coins: 0,
-        coinsSpent: 0,
-        inventory: [],
-        logs: [
-          ...(s.logs || []),
-          {
-            type: "reset",
-            amount: 0,
-            date: new Date().toISOString(),
-            source: "manual_reset_all",
-          },
-        ],
-      }));
-      saveStudentsToFirebase(updatedStudents);
-      return updatedStudents;
+        logs: []
+      };
     });
-    setSavingData(false);
-    showToast('All student points reset successfully!');
-  };
 
-  const handleRemoveStudent = (studentId) => {
-    setStudents(prev => {
-      const updatedStudents = prev.filter(s => s.id !== studentId);
-      saveStudentsToFirebase(updatedStudents);
-      return updatedStudents;
-    });
-    showToast('Student removed successfully!');
-  };
-
-  const handleSubscriptionManagement = async () => {
-    if (!userData?.stripeCustomerId) {
-      showToast('No subscription found. Please subscribe first.', 'error');
-      router.push('/pricing');
-      return;
-    }
+    const newClass = {
+      id: Date.now(),
+      name: newClassName.trim(),
+      students: newStudents,
+      createdAt: new Date().toISOString(),
+      activeQuests: [],
+      questTemplates: QUEST_TEMPLATES,
+      attendanceData: {}
+    };
 
     try {
-      const response = await fetch('/api/create-portal-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ customerId: userData.stripeCustomerId })
-      });
-
-      const { url } = await response.json();
-      window.open(url, '_blank');
+      const userDocRef = doc(firestore, 'users', user.uid);
+      const updatedClasses = [...teacherClasses, newClass];
+      
+      await setDoc(userDocRef, { 
+        ...userData,
+        classes: updatedClasses 
+      }, { merge: true });
+      
+      setTeacherClasses(updatedClasses);
+      setNewClassName('');
+      setNewClassStudents('');
+      showToast(`Class "${newClass.name}" created successfully with ${newStudents.length} students!`, 'success');
     } catch (error) {
-      console.error('Error opening billing portal:', error);
-      showToast('Error opening billing portal. Please try again.', 'error');
+      console.error('Error creating class:', error);
+      showToast('Error creating class. Please try again.', 'error');
     }
   };
 
-  const handleSubmitFeedback = async () => {
-    if (!feedbackMessage.trim()) {
-      showToast('Please enter a message', 'error');
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/feedback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: feedbackType,
-          subject: feedbackSubject,
-          message: feedbackMessage,
-          email: feedbackEmail,
-          userId: user?.uid
-        })
-      });
-
-      if (response.ok) {
-        showToast('Thank you for your feedback!');
-        setShowFeedbackModal(false);
-        setFeedbackMessage('');
-        setFeedbackSubject('');
-        setFeedbackEmail('');
-      } else {
-        showToast('Error submitting feedback. Please try again.', 'error');
-      }
-    } catch (error) {
-      console.error('Error submitting feedback:', error);
-      showToast('Error submitting feedback. Please try again.', 'error');
-    }
+  const loadClass = async (classData) => {
+    setCurrentClassId(classData.id);
+    setStudents(classData.students || []);
+    setActiveQuests(classData.activeQuests || []);
+    setQuestTemplates(classData.questTemplates || QUEST_TEMPLATES);
+    setAttendanceData(classData.attendanceData || {});
+    setActiveTab('students');
+    showToast(`Loaded class: ${classData.name}`, 'success');
   };
 
   // ===============================================
-  // AUTH AND DATA LOADING
+  // EFFECTS
   // ===============================================
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       try {
-        if (user) {
-          setUser(user);
-          const docRef = doc(firestore, 'users', user.uid);
-          const snap = await getDoc(docRef);
+        if (currentUser) {
+          setUser(currentUser);
           
-          if (snap.exists()) {
-            const data = snap.data();
+          const docRef = doc(firestore, 'users', currentUser.uid);
+          const docSnap = await getDoc(docRef);
+          
+          if (docSnap.exists()) {
+            const data = docSnap.data();
             setUserData(data);
             setTeacherClasses(data.classes || []);
             
             const savedClasses = data.classes || [];
             if (savedClasses.length > 0) {
-              const activeClassId = data.activeClassId;
-              const activeClass = activeClassId 
-                ? savedClasses.find(cls => cls.id === activeClassId)
+              const activeClassId = localStorage.getItem('activeClassId');
+              const activeClass = activeClassId ? 
+                savedClasses.find(cls => cls.id === activeClassId) 
                 : savedClasses[0];
               
               if (activeClass) {
@@ -1213,288 +1025,269 @@ export default function ClassroomChampions() {
     setNewClassName,
     newClassStudents,
     setNewClassStudents,
+    handleClassImport,
     teacherClasses,
     setTeacherClasses,
+    loadClass,
     currentClassId,
     setCurrentClassId,
-    handleClassImport,
-    loadClass,
-    savingData,
-    showToast,
     userData,
+    setUserData,
     user,
-    handleResetStudentPoints,
-    handleResetAllPoints,
-    handleRemoveStudent,
-    handleSubscriptionManagement,
-    setShowConfirmDialog,
-    setShowFeedbackModal,
-    feedbackType,
-    setFeedbackType,
-    feedbackSubject,
-    setFeedbackSubject,
-    feedbackMessage,
-    setFeedbackMessage,
-    feedbackEmail,
-    setFeedbackEmail,
-    handleSubmitFeedback,
-    showFeedbackModal,
+    showToast,
     router,
-    calculateCoins,
-    SHOP_ITEMS,
-    ITEM_RARITIES,
-    LOOT_BOX_ITEMS,
-    AVAILABLE_AVATARS,
+    AVATAR_BASES,
     getAvatarImage,
-    getRandomPetName
+    calculateTotalCoins,
+    setSelectedStudentForQuests,
+    selectedStudentForQuests,
+    getAvailableQuests
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      {/* Header */}
-      <div className="bg-white shadow-lg border-b border-gray-200">
-        <div className="max-w-screen-xl mx-auto px-6 py-6">
-          <h1 className="text-4xl font-bold text-center bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Classroom Champions
-          </h1>
-        </div>
-      </div>
-
-      {/* Navigation */}
-      <div className="max-w-screen-xl mx-auto px-6 py-6">
-        <div className="flex justify-center gap-2 mb-8 flex-wrap">
-          {[
-            { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-            { id: 'students', label: 'Students', icon: '👥' },
-            { id: 'shop', label: 'Shop', icon: '🏪' },
-            { id: 'race', label: 'Pet Race', icon: '🏁' },
-            { id: 'games', label: 'Games', icon: '🎮' }, // NEW: Games tab
-            ...(userData?.subscription === 'pro' ? [{ id: 'toolkit', label: 'Teachers Toolkit', icon: '🛠️', isPro: true }] : []),
-            { id: 'classes', label: 'My Classes', icon: '📚' },
-            { id: 'settings', label: 'Settings', icon: '⚙️' }
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center space-x-2 ${
-                tab.isPro 
-                  ? (activeTab === tab.id 
-                      ? "bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg transform scale-105" 
-                      : "bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 shadow-md hover:shadow-lg")
-                  : (activeTab === tab.id
-                      ? "bg-blue-600 text-white shadow-lg transform scale-105"
-                      : "bg-white text-gray-700 hover:bg-gray-50 shadow-md hover:shadow-lg")
-              }`}
-            >
-              <span>{tab.icon}</span>
-              <span>{tab.label}</span>
-              {tab.isPro && (
-                <span className="bg-yellow-400 text-purple-800 text-xs px-2 py-1 rounded-full font-bold">
-                  PRO
-                </span>
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-800 mb-2">
+                🏆 Classroom Champions
+              </h1>
+              <p className="text-gray-600">
+                Transform your classroom into an epic RPG adventure!
+              </p>
+              {currentClassId && (
+                <p className="text-sm text-blue-600 mt-1">
+                  Current Class: {teacherClasses.find(cls => cls.id === currentClassId)?.name}
+                </p>
               )}
-            </button>
-          ))}
-        </div>
-
-        {/* Tab Content with Suspense */}
-        <div className="bg-white rounded-xl shadow-lg p-8">
-          <Suspense fallback={<TabLoadingSpinner />}>
-            {activeTab === 'dashboard' && <DashboardTab {...tabProps} />}
-            {activeTab === 'students' && <StudentsTab {...tabProps} />}
-            {activeTab === 'shop' && <ShopTab {...tabProps} />}
-            {activeTab === 'race' && <PetRaceTab {...tabProps} />}
-            {activeTab === 'games' && <GamesTab showToast={showToast} />} {/* NEW: Games Tab */}
-            {activeTab === 'toolkit' && <TeachersToolkitTab {...tabProps} />}
-            {activeTab === 'classes' && <ClassesTab {...tabProps} />}
-            {activeTab === 'settings' && <SettingsTab {...tabProps} />}
-          </Suspense>
-        </div>
-      </div>
-
-      {/* Toast Notifications */}
-      {activeToast && (
-        <div className="fixed top-4 right-4 z-50">
-          <div className={`px-6 py-3 rounded-lg shadow-lg text-white font-semibold ${
-            activeToast.type === 'success' ? 'bg-green-500' :
-            activeToast.type === 'error' ? 'bg-red-500' :
-            activeToast.type === 'info' ? 'bg-blue-500' :
-            'bg-gray-500'
-          }`}>
-            {activeToast.message}
-          </div>
-        </div>
-      )}
-
-      {/* All existing modals */}
-      <Suspense fallback={null}>
-        {selectedStudent && (
-          <CharacterSheetModal
-            selectedStudent={selectedStudent}
-            setSelectedStudent={setSelectedStudent}
-            handleAvatarClick={handleAvatarClick}
-            calculateCoins={calculateCoins}
-          />
-        )}
-
-        {showAvatarSelectionModal && (
-          <AvatarSelectionModal
-            show={showAvatarSelectionModal}
-            onClose={() => setShowAvatarSelectionModal(false)}
-            onSelectAvatar={handleAvatarChange}
-            currentAvatar={studentForAvatarChange?.avatarBase}
-            avatars={AVAILABLE_AVATARS}
-            studentName={studentForAvatarChange?.firstName}
-          />
-        )}
-
-        {levelUpData && (
-          <LevelUpModal
-            data={levelUpData}
-            onClose={() => setLevelUpData(null)}
-          />
-        )}
-
-        {petUnlockData && (
-          <PetUnlockModal
-            data={petUnlockData}
-            onClose={() => setPetUnlockData(null)}
-            onNamePet={(name) => {
-              const studentIndex = students.findIndex(s => s.firstName === petUnlockData.studentName);
-              if (studentIndex !== -1) {
-                setStudents(prev => {
-                  const updated = [...prev];
-                  updated[studentIndex] = {
-                    ...updated[studentIndex],
-                    pet: {
-                      ...updated[studentIndex].pet,
-                      name: name
-                    }
-                  };
-                  saveStudentsToFirebase(updated);
-                  return updated;
-                });
-              }
-              setPetUnlockData(null);
-            }}
-            getRandomPetName={getRandomPetName}
-          />
-        )}
-
-        {raceFinished && raceWinner && (
-          <RaceWinnerModal
-            winner={raceWinner}
-            onClose={() => {
-              setRaceFinished(false);
-              setRaceWinner(null);
-            }}
-            onAwardPrize={(prize, xp) => {
-              if (prize && xp) {
-                handleAwardXP(raceWinner.id, prize, parseInt(xp));
-              }
-              setRaceFinished(false);
-              setRaceWinner(null);
-            }}
-          />
-        )}
-
-        {showRaceSetup && (
-          <RaceSetupModal
-            students={students}
-            onClose={() => setShowRaceSetup(false)}
-            onStartRace={(pets, prize, xp) => {
-              setSelectedPets(pets);
-              setSelectedPrize(prize);
-              setXpAmount(xp);
-              setShowRaceSetup(false);
-              setRaceInProgress(true);
-            }}
-          />
-        )}
-
-        {questCompletionData && (
-          <QuestCompletionModal
-            quest={questCompletionData}
-            onClose={() => setQuestCompletionData(null)}
-          />
-        )}
-
-        {showAddStudentModal && (
-          <AddStudentModal
-            show={showAddStudentModal}
-            onClose={() => {
-              setShowAddStudentModal(false);
-              setNewStudentName('');
-              setNewStudentAvatar('');
-            }}
-            onAddStudent={(name, avatarBase) => {
-              const newStudent = {
-                id: Date.now(),
-                firstName: name,
-                avatarBase: avatarBase,
-                avatarLevel: 1,
-                avatar: getAvatarImage(avatarBase, 1),
-                totalPoints: 0,
-                weeklyPoints: 0,
-                categoryTotal: {},
-                categoryWeekly: {},
-                logs: []
-              };
-              
-              setStudents(prev => {
-                const updated = [...prev, updateStudentWithDefaults(newStudent)];
-                saveStudentsToFirebase(updated);
-                return updated;
-              });
-              
-              showToast(`Added ${name} to the class!`);
-              setShowAddStudentModal(false);
-              setNewStudentName('');
-              setNewStudentAvatar('');
-            }}
-            newStudentName={newStudentName}
-            setNewStudentName={setNewStudentName}
-            newStudentAvatar={newStudentAvatar}
-            setNewStudentAvatar={setNewStudentAvatar}
-            avatars={AVAILABLE_AVATARS}
-          />
-        )}
-      </Suspense>
-
-      {/* Confirmation Dialog */}
-      {showConfirmDialog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md">
-            <div className="text-center">
-              <div className="text-4xl mb-4">{showConfirmDialog.icon || '⚠️'}</div>
-              <h2 className="text-xl font-bold text-gray-800 mb-4">{showConfirmDialog.title}</h2>
-              <p className="text-gray-600 mb-6">{showConfirmDialog.message}</p>
-              
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowConfirmDialog(null)}
-                  className="flex-1 px-4 py-3 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    showConfirmDialog.onConfirm();
-                    setShowConfirmDialog(null);
-                  }}
-                  className={`flex-1 px-4 py-3 rounded-lg font-semibold transition-colors ${
-                    showConfirmDialog.type === 'danger'
-                      ? 'bg-red-600 text-white hover:bg-red-700'
-                      : 'bg-blue-600 text-white hover:bg-blue-700'
-                  }`}
-                >
-                  {showConfirmDialog.confirmText || 'Confirm'}
-                </button>
+            </div>
+            <div className="mt-4 md:mt-0 flex items-center space-x-4">
+              {savingData && (
+                <div className="flex items-center text-blue-600">
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent mr-2"></div>
+                  <span className="text-sm">Saving...</span>
+                </div>
+              )}
+              <div className="text-sm text-gray-600">
+                Plan: <span className="font-semibold capitalize">{userData?.subscription || 'Basic'}</span>
               </div>
             </div>
           </div>
         </div>
-      )}
+
+        {/* Navigation Tabs */}
+        <div className="bg-white rounded-xl shadow-lg mb-8">
+          <div className="flex flex-wrap border-b border-gray-200">
+            {[
+              { id: 'dashboard', label: '📊 Dashboard', icon: '📊' },
+              { id: 'students', label: '👥 Students', icon: '👥' },
+              { id: 'shop', label: '🛒 Shop', icon: '🛒' },
+              { id: 'pet-race', label: '🏁 Pet Race', icon: '🏁' },
+              { id: 'games', label: '🎮 Games', icon: '🎮' },
+              { id: 'classes', label: '📚 Classes', icon: '📚' },
+              { id: 'settings', label: '⚙️ Settings', icon: '⚙️' },
+              ...(userData?.subscription === 'pro' ? [{ id: 'toolkit', label: '🛠️ Toolkit', icon: '🛠️' }] : [])
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-6 py-4 font-semibold transition-colors ${
+                  activeTab === tab.id
+                    ? 'border-b-2 border-blue-500 text-blue-600 bg-blue-50'
+                    : 'text-gray-600 hover:text-blue-500 hover:bg-gray-50'
+                }`}
+              >
+                <span className="hidden sm:inline">{tab.label}</span>
+                <span className="sm:hidden text-xl">{tab.icon}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Tab Content */}
+        <Suspense fallback={
+          <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading...</p>
+          </div>
+        }>
+          {activeTab === 'dashboard' && <DashboardTab {...tabProps} />}
+          {activeTab === 'students' && <StudentsTab {...tabProps} />}
+          {activeTab === 'shop' && <ShopTab {...tabProps} />}
+          {activeTab === 'pet-race' && <PetRaceTab {...tabProps} />}
+          {activeTab === 'games' && <GamesTab {...tabProps} />}
+          {activeTab === 'classes' && <ClassesTab {...tabProps} />}
+          {activeTab === 'settings' && <SettingsTab {...tabProps} />}
+          {activeTab === 'toolkit' && userData?.subscription === 'pro' && <TeachersToolkitTab {...tabProps} />}
+        </Suspense>
+
+        {/* Modals */}
+        <Suspense fallback={null}>
+          {selectedStudent && (
+            <CharacterSheetModal
+              student={selectedStudent}
+              onClose={() => setSelectedStudent(null)}
+              onChangeAvatar={(student) => {
+                setStudentForAvatarChange(student);
+                setShowAvatarSelectionModal(true);
+                setSelectedStudent(null);
+              }}
+            />
+          )}
+
+          {showAvatarSelectionModal && (
+            <AvatarSelectionModal
+              student={studentForAvatarChange}
+              onClose={() => {
+                setShowAvatarSelectionModal(false);
+                setStudentForAvatarChange(null);
+              }}
+              onSelectAvatar={(avatarBase) => {
+                setStudents(prev => prev.map(s => 
+                  s.id === studentForAvatarChange.id 
+                    ? { 
+                        ...s, 
+                        avatarBase: avatarBase,
+                        avatar: getAvatarImage(avatarBase, s.avatarLevel || 1)
+                      }
+                    : s
+                ));
+                setShowAvatarSelectionModal(false);
+                setStudentForAvatarChange(null);
+                showToast('Avatar updated successfully!', 'success');
+              }}
+              AVATAR_BASES={AVATAR_BASES}
+              getAvatarImage={getAvatarImage}
+            />
+          )}
+
+          {levelUpData && (
+            <LevelUpModal
+              levelUpData={levelUpData}
+              onClose={() => setLevelUpData(null)}
+            />
+          )}
+
+          {petUnlockData && (
+            <PetUnlockModal
+              petData={petUnlockData}
+              onClose={() => setPetUnlockData(null)}
+              onNamePet={(petName) => {
+                setStudents(prev => prev.map(s => 
+                  s.id === petUnlockData.student.id 
+                    ? { ...s, pet: { ...s.pet, name: petName } }
+                    : s
+                ));
+                saveStudentsToFirebase(students.map(s => 
+                  s.id === petUnlockData.student.id 
+                    ? { ...s, pet: { ...s.pet, name: petName } }
+                    : s
+                ));
+                setPetUnlockData(null);
+                showToast(`Pet named ${petName}!`, 'success');
+              }}
+              petNameInput={petNameInput}
+              setPetNameInput={setPetNameInput}
+              randomPetName={getRandomPetName}
+            />
+          )}
+
+          {raceFinished && raceWinner && (
+            <RaceWinnerModal
+              winner={raceWinner}
+              onClose={() => {
+                setRaceFinished(false);
+                setRaceWinner(null);
+              }}
+              onAwardPrize={(prize, xp) => {
+                if (prize && xp) {
+                  handleAwardXP(raceWinner.id, prize, parseInt(xp));
+                }
+                setRaceFinished(false);
+                setRaceWinner(null);
+              }}
+            />
+          )}
+
+          {showRaceSetup && (
+            <RaceSetupModal
+              students={students}
+              onClose={() => setShowRaceSetup(false)}
+              onStartRace={(pets, prize, xp) => {
+                setSelectedPets(pets);
+                setSelectedPrize(prize);
+                setXpAmount(xp);
+                setShowRaceSetup(false);
+                setRaceInProgress(true);
+              }}
+            />
+          )}
+
+          {questCompletionData && (
+            <QuestCompletionModal
+              questData={questCompletionData}
+              onClose={() => setQuestCompletionData(null)}
+            />
+          )}
+
+          {/* FIXED: Added Quest Management Modal */}
+          {showQuestManagement && (
+            <QuestManagementModal
+              questTemplates={questTemplates}
+              activeQuests={activeQuests}
+              onAddQuest={addQuestToActive}
+              onRemoveQuest={removeQuestFromActive}
+              onCreateQuest={createCustomQuest}
+              onClose={() => setShowQuestManagement(false)}
+              QUEST_GIVERS={QUEST_GIVERS}
+            />
+          )}
+
+          {showAddStudentModal && (
+            <AddStudentModal
+              show={showAddStudentModal}
+              onClose={() => {
+                setShowAddStudentModal(false);
+                setNewStudentName('');
+                setNewStudentAvatar('');
+              }}
+              onAddStudent={(name, avatarBase) => {
+                const newStudent = {
+                  id: Date.now(),
+                  firstName: name,
+                  avatarBase: avatarBase,
+                  avatarLevel: 1,
+                  avatar: getAvatarImage(avatarBase, 1),
+                  totalPoints: 0,
+                  weeklyPoints: 0,
+                  categoryTotal: {},
+                  categoryWeekly: {},
+                  logs: []
+                };
+                
+                setStudents(prev => {
+                  const updated = [...prev, newStudent];
+                  saveStudentsToFirebase(updated);
+                  return updated;
+                });
+                
+                setShowAddStudentModal(false);
+                setNewStudentName('');
+                setNewStudentAvatar('');
+                showToast(`Added ${name} to the class!`, 'success');
+              }}
+              newStudentName={newStudentName}
+              setNewStudentName={setNewStudentName}
+              newStudentAvatar={newStudentAvatar}
+              setNewStudentAvatar={setNewStudentAvatar}
+              AVATAR_BASES={AVATAR_BASES}
+              getAvatarImage={getAvatarImage}
+            />
+          )}
+        </Suspense>
+      </div>
     </div>
   );
 }
