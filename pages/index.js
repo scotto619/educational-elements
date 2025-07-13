@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import Image from 'next/image';
 
 export default function Home() {
   const router = useRouter();
@@ -383,12 +382,10 @@ export default function Home() {
               </div>
               
               <div className="relative">
-                <Image
+                <img
                   src={screenshots[activeScreenshot].image}
                   alt={screenshots[activeScreenshot].title}
-                  width={800}
-                  height={600}
-                  className="w-full rounded-xl shadow-2xl border border-gray-200 transition-all duration-500"
+                  className="w-full h-auto rounded-xl shadow-2xl border border-gray-200 transition-all duration-500"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-xl pointer-events-none"></div>
               </div>
