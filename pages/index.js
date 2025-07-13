@@ -111,7 +111,7 @@ export default function Home() {
                 <button onClick={() => scrollToSection('story')} className="text-gray-700 hover:text-purple-600 transition-colors font-medium">My Story</button>
                 <button onClick={() => scrollToSection('pricing')} className="text-gray-700 hover:text-purple-600 transition-colors font-medium">Pricing</button>
                 <button onClick={() => router.push('/login')} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium">Login</button>
-                <button onClick={() => router.push('/signup')} className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-2 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all transform hover:scale-105 font-medium shadow-lg">Start Free Trial</button>
+                <button onClick={() => router.push('/signup')} className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-2 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all transform hover:scale-105 font-medium shadow-lg">Start for $1</button>
               </div>
             </div>
           </div>
@@ -183,7 +183,7 @@ export default function Home() {
                     onClick={() => router.push('/signup')} 
                     className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-black px-8 py-4 rounded-xl text-lg font-bold transition-all transform hover:scale-105 shadow-xl hover:shadow-2xl"
                   >
-                    🚀 Start Your Epic Journey - FREE Trial
+                    🚀 Start Your Epic Journey - $1 First Month
                   </button>
                   <button 
                     onClick={() => scrollToSection('demo')} 
@@ -194,7 +194,7 @@ export default function Home() {
                 </div>
 
                 <p className="text-white/70 mt-4 text-sm">
-                  ✨ No credit card required • Setup in 5 minutes • Cancel anytime
+                  ✨ Just $1 for your first month • Setup in 5 minutes • Cancel anytime
                 </p>
               </div>
               
@@ -341,7 +341,7 @@ export default function Home() {
                     <div className="text-4xl">🎯</div>
                     <div>
                       <h4 className="font-bold text-gray-900 mb-2">My Promise to You</h4>
-                      <p className="text-gray-700">If Classroom Champions doesn't transform your classroom engagement within 30 days, I'll personally refund every penny and help you find what works for your students.</p>
+                      <p className="text-gray-700">If Classroom Champions doesn't dramatically improve your student engagement, simply cancel your subscription. I'm confident this system will transform your classroom just like it did mine.</p>
                     </div>
                   </div>
                 </div>
@@ -588,7 +588,7 @@ export default function Home() {
                   onClick={() => router.push('/signup')} 
                   className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-3 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all font-semibold"
                 >
-                  Join Now & Get All Future Updates Free
+                  Join Now & Get All Future Updates
                 </button>
               </div>
             </div>
@@ -693,9 +693,9 @@ export default function Home() {
                   onClick={() => router.push('/signup')} 
                   className="w-full bg-blue-600 text-white px-6 py-4 rounded-xl hover:bg-blue-700 transition-colors font-semibold text-lg shadow-lg"
                 >
-                  Start Free Trial
+                  Start for $1 First Month
                 </button>
-                <p className="text-center text-gray-500 text-sm mt-3">14-day free trial • No credit card required</p>
+                <p className="text-center text-gray-500 text-sm mt-3">$1 for your first month • Cancel anytime</p>
               </div>
               
               {/* Pro Plan */}
@@ -739,20 +739,19 @@ export default function Home() {
                   onClick={() => router.push('/signup')} 
                   className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 text-black px-6 py-4 rounded-xl hover:from-yellow-500 hover:to-orange-600 transition-all font-bold text-lg shadow-xl transform hover:scale-105"
                 >
-                  Start Free Trial
+                  Start for $1 First Month
                 </button>
-                <p className="text-center text-purple-200 text-sm mt-3">14-day free trial • No credit card required</p>
+                <p className="text-center text-purple-200 text-sm mt-3">$1 for your first month • Cancel anytime</p>
               </div>
             </div>
             
-            {/* Money Back Guarantee */}
+            {/* Value Proposition */}
             <div className="mt-16 text-center">
               <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-8 border border-green-200 max-w-3xl mx-auto">
-                <div className="text-4xl mb-4">🛡️</div>
-                <h4 className="text-2xl font-bold text-gray-900 mb-4">30-Day Money-Back Guarantee</h4>
+                <div className="text-4xl mb-4">💰</div>
+                <h4 className="text-2xl font-bold text-gray-900 mb-4">Try Risk-Free for Just $1</h4>
                 <p className="text-gray-700 text-lg">
-                  If Classroom Champions doesn't dramatically improve your student engagement within 30 days, 
-                  I'll personally refund every penny. That's how confident I am in this system.
+                  Get full access to all features for an entire month for just $1. If you don't see dramatic improvements in student engagement, simply cancel before the month ends.
                 </p>
               </div>
             </div>
@@ -773,7 +772,7 @@ export default function Home() {
                 onClick={() => router.push('/signup')} 
                 className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black px-10 py-5 rounded-2xl text-xl font-bold transition-all transform hover:scale-105 shadow-2xl"
               >
-                🚀 Start Your Epic Journey - FREE Trial
+                🚀 Start Your Epic Journey - $1 First Month
               </button>
               <button 
                 onClick={() => scrollToSection('demo')} 
@@ -786,11 +785,7 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-8 text-white/80">
               <div className="flex items-center">
                 <span className="text-green-400 mr-2">✓</span>
-                <span>14-day free trial</span>
-              </div>
-              <div className="flex items-center">
-                <span className="text-green-400 mr-2">✓</span>
-                <span>No credit card required</span>
+                <span>$1 for first month</span>
               </div>
               <div className="flex items-center">
                 <span className="text-green-400 mr-2">✓</span>
