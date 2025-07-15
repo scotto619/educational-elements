@@ -1,5 +1,5 @@
 // StudentsTab.js - ClassDojo-Style Layout with Victory Celebration
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const StudentsTab = ({
   students,
@@ -36,12 +36,6 @@ const StudentsTab = ({
   const [showVictoryModal, setShowVictoryModal] = useState(false);
   const [victoryData, setVictoryData] = useState(null);
   const [showConfetti, setShowConfetti] = useState(false);
-  const audioRef = useRef(null);
-
-  // Initialize victory sound
-  useEffect(() => {
-    audioRef.current = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmkeBz2V4PS8cSQLKoHOvs2IXt8TZLaKl8TXTFANTrro9bGJ');
-  }, []);
 
   // Get today's date for attendance
   const today = new Date().toISOString().split('T')[0];
@@ -101,11 +95,6 @@ const StudentsTab = ({
   const handleXPAward = (category, amount = 1) => {
     if (!selectedStudentForXP) return;
 
-    // Play victory sound
-    if (audioRef.current) {
-      audioRef.current.play().catch(e => console.log('Audio play failed:', e));
-    }
-
     // Award the XP
     handleAwardXP(selectedStudentForXP.id, category, amount);
 
@@ -122,11 +111,11 @@ const StudentsTab = ({
     // Close XP selection modal
     setSelectedStudentForXP(null);
 
-    // Hide victory modal after 3 seconds
+    // Hide victory modal after 6 seconds
     setTimeout(() => {
       setShowVictoryModal(false);
       setShowConfetti(false);
-    }, 3000);
+    }, 6000);
   };
 
   // Get category reason text
@@ -318,7 +307,7 @@ const StudentsTab = ({
       </div>
 
       {/* Students Grid - ClassDojo Style */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
+      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 2xl:grid-cols-12 gap-3">
         {sortedAndFilteredStudents.map((student) => {
           const attendanceStatus = getAttendanceStatus(student.id);
           const isSelected = selectedStudents.includes(student.id);
@@ -328,14 +317,14 @@ const StudentsTab = ({
           return (
             <div
               key={student.id}
-              className={`bg-white rounded-2xl shadow-lg p-4 transition-all duration-300 cursor-pointer hover:shadow-xl transform hover:scale-105 ${
-                isSelected ? 'ring-4 ring-purple-300 bg-purple-50' : ''
+              className={`bg-white rounded-xl shadow-md p-3 transition-all duration-300 cursor-pointer hover:shadow-lg transform hover:scale-105 ${
+                isSelected ? 'ring-2 ring-purple-300 bg-purple-50' : ''
               } ${isAnimating ? 'animate-pulse' : ''}`}
               onClick={() => handleStudentClick(student)}
             >
               {/* Selection Indicator */}
               {showBulkXpPanel && (
-                <div className={`absolute -top-2 -right-2 w-6 h-6 rounded-full border-2 flex items-center justify-center z-10 ${
+                <div className={`absolute -top-1 -right-1 w-5 h-5 rounded-full border-2 flex items-center justify-center z-10 ${
                   isSelected ? 'border-purple-500 bg-purple-500' : 'border-gray-300 bg-white'
                 }`}>
                   {isSelected && <span className="text-white text-xs">✓</span>}
@@ -343,72 +332,68 @@ const StudentsTab = ({
               )}
 
               {/* Attendance Status Indicator */}
-              <div className={`absolute top-2 left-2 w-3 h-3 rounded-full ${
+              <div className={`absolute top-1 left-1 w-2 h-2 rounded-full ${
                 attendanceStatus === 'present' ? 'bg-green-500' :
                 attendanceStatus === 'absent' ? 'bg-red-500' :
                 attendanceStatus === 'late' ? 'bg-yellow-500' : 'bg-gray-300'
               }`}></div>
 
               {/* Avatar - Main Focus */}
-              <div className="text-center mb-3">
+              <div className="text-center mb-2">
                 <div className="relative inline-block">
                   {student.avatar ? (
                     <img 
                       src={student.avatar} 
                       alt={student.firstName}
-                      className="w-16 h-16 rounded-full mx-auto border-3 border-gray-200 shadow-md"
+                      className="w-12 h-12 rounded-full mx-auto border-2 border-gray-200 shadow-sm"
                     />
                   ) : (
-                    <div className="w-16 h-16 rounded-full mx-auto bg-gray-200 flex items-center justify-center text-2xl">
+                    <div className="w-12 h-12 rounded-full mx-auto bg-gray-200 flex items-center justify-center text-lg">
                       👤
                     </div>
                   )}
                   
                   {/* Level Badge */}
-                  <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                  <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
                     {student.avatarLevel || 1}
                   </div>
                 </div>
               </div>
 
               {/* Student Name */}
-              <h3 className="font-bold text-gray-800 text-center text-sm mb-2 truncate">
+              <h3 className="font-bold text-gray-800 text-center text-xs mb-1 truncate">
                 {student.firstName}
               </h3>
 
               {/* XP Display */}
-              <div className="text-center mb-2">
-                <div className="text-lg font-bold text-blue-600">
+              <div className="text-center mb-1">
+                <div className="text-sm font-bold text-blue-600">
                   {student.totalPoints || 0}
                 </div>
                 <div className="text-xs text-blue-700">XP</div>
               </div>
 
               {/* Coins Display */}
-              <div className="text-center mb-2">
-                <div className="text-sm font-bold text-yellow-600">
+              <div className="text-center mb-1">
+                <div className="text-xs font-bold text-yellow-600">
                   💰 {coins}
                 </div>
-                <div className="text-xs text-yellow-700">Coins</div>
               </div>
 
               {/* Pet Display */}
               {student.pet?.image && (
-                <div className="text-center mb-2">
+                <div className="text-center mb-1">
                   <img 
                     src={student.pet.image} 
                     alt="Pet" 
-                    className="w-6 h-6 rounded-full mx-auto"
+                    className="w-4 h-4 rounded-full mx-auto"
                   />
-                  <div className="text-xs text-gray-600 truncate">
-                    {student.pet.name || 'Pet'}
-                  </div>
                 </div>
               )}
 
               {/* Quick Actions (only in non-bulk mode) */}
               {!showBulkXpPanel && (
-                <div className="flex justify-center mt-2">
+                <div className="flex justify-center mt-1">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -427,9 +412,9 @@ const StudentsTab = ({
 
       {/* Empty State */}
       {sortedAndFilteredStudents.length === 0 && (
-        <div className="text-center py-12">
-          <div className="text-6xl mb-4">🎒</div>
-          <h3 className="text-xl font-bold text-gray-600 mb-2">No Students Found</h3>
+        <div className="text-center py-8">
+          <div className="text-4xl mb-3">🎒</div>
+          <h3 className="text-lg font-bold text-gray-600 mb-2">No Students Found</h3>
           <p className="text-gray-500 mb-4">
             {filterBy === 'all' 
               ? 'Add your first student to get started!' 
@@ -439,7 +424,7 @@ const StudentsTab = ({
           {filterBy === 'all' && (
             <button
               onClick={() => setShowAddStudentModal(true)}
-              className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-semibold"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
             >
               + Add Your First Student
             </button>
@@ -450,50 +435,50 @@ const StudentsTab = ({
       {/* XP Award Modal */}
       {selectedStudentForXP && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-            <div className="p-6">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm">
+            <div className="p-5">
               {/* Student Info */}
-              <div className="text-center mb-6">
-                <div className="mb-4">
+              <div className="text-center mb-5">
+                <div className="mb-3">
                   {selectedStudentForXP.avatar ? (
                     <img 
                       src={selectedStudentForXP.avatar} 
                       alt={selectedStudentForXP.firstName}
-                      className="w-20 h-20 rounded-full mx-auto border-4 border-gray-200 shadow-lg"
+                      className="w-16 h-16 rounded-full mx-auto border-4 border-gray-200 shadow-lg"
                     />
                   ) : (
-                    <div className="w-20 h-20 rounded-full mx-auto bg-gray-200 flex items-center justify-center text-3xl">
+                    <div className="w-16 h-16 rounded-full mx-auto bg-gray-200 flex items-center justify-center text-2xl">
                       👤
                     </div>
                   )}
                 </div>
-                <h2 className="text-2xl font-bold text-gray-800">
+                <h2 className="text-xl font-bold text-gray-800">
                   {selectedStudentForXP.firstName}
                 </h2>
-                <p className="text-gray-600">
+                <p className="text-gray-600 text-sm">
                   Choose why they deserve XP!
                 </p>
               </div>
 
               {/* XP Categories */}
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <button
                   onClick={() => handleXPAward('Respectful')}
-                  className="w-full p-4 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-colors font-semibold flex items-center justify-center space-x-2"
+                  className="w-full p-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-semibold flex items-center justify-center space-x-2"
                 >
                   <span>👍</span>
                   <span>Respectful</span>
                 </button>
                 <button
                   onClick={() => handleXPAward('Responsible')}
-                  className="w-full p-4 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors font-semibold flex items-center justify-center space-x-2"
+                  className="w-full p-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-semibold flex items-center justify-center space-x-2"
                 >
                   <span>💼</span>
                   <span>Responsible</span>
                 </button>
                 <button
                   onClick={() => handleXPAward('Learner')}
-                  className="w-full p-4 bg-purple-500 text-white rounded-xl hover:bg-purple-600 transition-colors font-semibold flex items-center justify-center space-x-2"
+                  className="w-full p-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors font-semibold flex items-center justify-center space-x-2"
                 >
                   <span>📚</span>
                   <span>Learner</span>
@@ -501,14 +486,14 @@ const StudentsTab = ({
               </div>
 
               {/* Multiple Points Option */}
-              <div className="mt-6 p-4 bg-gray-50 rounded-xl">
-                <h3 className="font-semibold text-gray-800 mb-2">Award Multiple Points</h3>
+              <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                <h3 className="font-semibold text-gray-800 mb-2 text-sm">Award Multiple Points</h3>
                 <div className="grid grid-cols-3 gap-2">
                   {[2, 3, 5].map(amount => (
                     <button
                       key={amount}
                       onClick={() => handleXPAward('Respectful', amount)}
-                      className="px-3 py-2 bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors font-medium"
+                      className="px-2 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors font-medium text-xs"
                     >
                       +{amount} Respectful
                     </button>
@@ -519,7 +504,7 @@ const StudentsTab = ({
               {/* Close Button */}
               <button
                 onClick={() => setSelectedStudentForXP(null)}
-                className="w-full mt-4 p-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-colors font-semibold"
+                className="w-full mt-3 p-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-semibold"
               >
                 Cancel
               </button>
@@ -538,41 +523,41 @@ const StudentsTab = ({
             </div>
           )}
           
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg transform animate-bounce">
-            <div className={`${getCategoryColor(victoryData.category)} text-white rounded-t-2xl p-8 text-center`}>
-              <div className="text-6xl mb-4">🎉</div>
-              <h2 className="text-3xl font-bold mb-2">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md transform animate-bounce">
+            <div className={`${getCategoryColor(victoryData.category)} text-white rounded-t-xl p-6 text-center`}>
+              <div className="text-4xl mb-3">🎉</div>
+              <h2 className="text-2xl font-bold mb-2">
                 Amazing Work!
               </h2>
-              <p className="text-lg opacity-90">
+              <p className="text-base opacity-90">
                 {victoryData.student.firstName} earned {victoryData.amount} XP!
               </p>
             </div>
             
-            <div className="p-8 text-center">
-              <div className="mb-6">
+            <div className="p-6 text-center">
+              <div className="mb-4">
                 {victoryData.student.avatar ? (
                   <img 
                     src={victoryData.student.avatar} 
                     alt={victoryData.student.firstName}
-                    className="w-24 h-24 rounded-full mx-auto border-4 border-gray-200 shadow-lg"
+                    className="w-20 h-20 rounded-full mx-auto border-4 border-gray-200 shadow-lg"
                   />
                 ) : (
-                  <div className="w-24 h-24 rounded-full mx-auto bg-gray-200 flex items-center justify-center text-4xl">
+                  <div className="w-20 h-20 rounded-full mx-auto bg-gray-200 flex items-center justify-center text-3xl">
                     👤
                   </div>
                 )}
               </div>
               
-              <h3 className="text-2xl font-bold text-gray-800 mb-2">
+              <h3 className="text-xl font-bold text-gray-800 mb-2">
                 {victoryData.student.firstName}
               </h3>
               
-              <p className="text-lg text-gray-600 mb-4">
+              <p className="text-base text-gray-600 mb-3">
                 {victoryData.reason}
               </p>
               
-              <div className={`inline-flex items-center px-4 py-2 ${getCategoryColor(victoryData.category)} text-white rounded-full font-bold`}>
+              <div className={`inline-flex items-center px-3 py-2 ${getCategoryColor(victoryData.category)} text-white rounded-full font-bold`}>
                 <span className="mr-2">
                   {victoryData.category === 'Respectful' ? '👍' : 
                    victoryData.category === 'Responsible' ? '💼' : '📚'}
