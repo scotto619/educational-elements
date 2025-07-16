@@ -67,7 +67,7 @@ const ShopTab = ({
     }
   };
 
-  // Loot Box Items based on uploaded images
+  // Loot Box Items based on uploaded images (including pets as very rare)
   const LOOT_ITEMS = {
     common: [
       { id: 'loot_c_1', name: 'Ancient Tome', image: '/Loot/Common/Loot 1.png', rarity: 'common', type: 'collectible' },
@@ -106,16 +106,22 @@ const ShopTab = ({
       { id: 'loot_r_5', name: 'Crown of Thorns', image: '/Loot/Rare/Loot 5.png', rarity: 'rare', type: 'accessory' },
       { id: 'loot_r_6', name: 'Twin Daggers', image: '/Loot/Rare/Loot 6.png', rarity: 'rare', type: 'weapon' },
       { id: 'loot_r_7', name: 'Crossed Swords', image: '/Loot/Rare/Loot 7.png', rarity: 'rare', type: 'weapon' },
-      { id: 'loot_r_8', name: 'Mystic Sphere', image: '/Loot/Rare/Loot 8.png', rarity: 'rare', type: 'artifact' }
+      { id: 'loot_r_8', name: 'Mystic Sphere', image: '/Loot/Rare/Loot 8.png', rarity: 'rare', type: 'artifact' },
+      // Add some pets as rare drops
+      ...ALL_AVAILABLE_PETS.filter(pet => pet.rarity === 'rare').slice(0, 5).map(pet => ({ ...pet, type: 'pet' }))
     ],
     epic: [
       { id: 'loot_e_1', name: 'Legendary Axe', image: '/Loot/Epic/Loot 1.png', rarity: 'epic', type: 'weapon' },
       { id: 'loot_e_2', name: 'Dragon Chain', image: '/Loot/Epic/Loot 2.png', rarity: 'epic', type: 'accessory' },
-      { id: 'loot_e_3', name: 'Rose Blade', image: '/Loot/Epic/Loot 3.png', rarity: 'epic', type: 'weapon' }
+      { id: 'loot_e_3', name: 'Rose Blade', image: '/Loot/Epic/Loot 3.png', rarity: 'epic', type: 'weapon' },
+      // Add some pets as epic drops
+      ...ALL_AVAILABLE_PETS.filter(pet => pet.rarity === 'epic').slice(0, 3).map(pet => ({ ...pet, type: 'pet' }))
     ],
     legendary: [
       { id: 'loot_l_1', name: 'Divine Hammer', image: '/Loot/Legendary/Loot 1.png', rarity: 'legendary', type: 'weapon' },
-      { id: 'loot_l_2', name: 'Crystal Staff of Power', image: '/Loot/Legendary/Loot 2.png', rarity: 'legendary', type: 'artifact' }
+      { id: 'loot_l_2', name: 'Crystal Staff of Power', image: '/Loot/Legendary/Loot 2.png', rarity: 'legendary', type: 'artifact' },
+      // Add legendary pets as very rare drops
+      ...ALL_AVAILABLE_PETS.filter(pet => pet.rarity === 'legendary').map(pet => ({ ...pet, type: 'pet' }))
     ]
   };
 
@@ -152,13 +158,11 @@ const ShopTab = ({
         price: 20 + (i * 10),
         base: 'Pirate M'
       })),
-      pets: Array.from({length: 3}, (_, i) => ({
-        id: `pirate_pet_${i+1}`,
-        name: `Pirate Pet ${i + 1}`,
-        image: `/shop/Themed/Pirate/Pet ${i + 1}.png`,
-        price: 25 + (i * 5),
-        type: 'pirate'
-      }))
+      pets: [
+        { id: 'pirate_pet_1', name: 'Pirate Parrot', image: '/shop/Themed/Pirate/Pet 1.png', price: 25, type: 'pirate' },
+        { id: 'pirate_pet_2', name: 'Pirate Monkey', image: '/shop/Themed/Pirate/Pet 2.png', price: 30, type: 'pirate' },
+        { id: 'pirate_pet_3', name: 'Pirate Companion', image: '/shop/Themed/Pirate/Pet 3.png', price: 35, type: 'pirate' }
+      ]
     },
     farm: {
       name: 'Farm Life',
@@ -178,13 +182,11 @@ const ShopTab = ({
         price: 20 + (i * 10),
         base: 'Farm M'
       })),
-      pets: Array.from({length: 3}, (_, i) => ({
-        id: `farm_pet_${i+1}`,
-        name: `Farm Pet ${i + 1}`,
-        image: `/shop/Themed/Farm/Pet ${i + 1}.png`,
-        price: 25 + (i * 5),
-        type: 'farm'
-      }))
+      pets: [
+        { id: 'farm_pet_1', name: 'Farm Pig', image: '/shop/Themed/Farm/Pet 1.png', price: 25, type: 'farm' },
+        { id: 'farm_pet_2', name: 'Farm Dog', image: '/shop/Themed/Farm/Pet 2.png', price: 30, type: 'farm' },
+        { id: 'farm_pet_3', name: 'Farm Cat', image: '/shop/Themed/Farm/Pet 3.png', price: 35, type: 'farm' }
+      ]
     },
     robot: {
       name: 'Robot Future',
@@ -204,15 +206,43 @@ const ShopTab = ({
         price: 25 + (i * 12),
         base: 'Robot M'
       })),
-      pets: Array.from({length: 2}, (_, i) => ({
-        id: `robot_pet_${i+1}`,
-        name: `Robot Pet ${i + 1}`,
-        image: `/shop/Themed/Robot/Pet ${i + 1}.png`,
-        price: 30 + (i * 8),
-        type: 'robot'
-      }))
+      pets: [
+        { id: 'robot_pet_1', name: 'Robot Drone', image: '/shop/Themed/Robot/Pet 1.png', price: 30, type: 'robot' },
+        { id: 'robot_pet_2', name: 'Robot Guardian', image: '/shop/Themed/Robot/Pet 2.png', price: 38, type: 'robot' }
+      ]
     }
   };
+
+  // All available pets from the game (existing pets + themed pets)
+  const ALL_AVAILABLE_PETS = [
+    // Existing game pets
+    { id: 'alchemist_pet', name: 'Alchemist Companion', image: '/Pets/Alchemist.png', price: 25, type: 'classic', rarity: 'rare' },
+    { id: 'barbarian_pet', name: 'Barbarian Beast', image: '/Pets/Barbarian.png', price: 30, type: 'classic', rarity: 'rare' },
+    { id: 'bard_pet', name: 'Musical Bird', image: '/Pets/Bard.png', price: 25, type: 'classic', rarity: 'rare' },
+    { id: 'beastmaster_pet', name: 'Wild Companion', image: '/Pets/Beastmaster.png', price: 35, type: 'classic', rarity: 'epic' },
+    { id: 'cleric_pet', name: 'Holy Spirit', image: '/Pets/Cleric.png', price: 28, type: 'classic', rarity: 'rare' },
+    { id: 'crystal_knight_pet', name: 'Crystal Guardian', image: '/Pets/Crystal Knight.png', price: 40, type: 'classic', rarity: 'epic' },
+    { id: 'crystal_sage_pet', name: 'Mystic Crystal', image: '/Pets/Crystal Sage.png', price: 35, type: 'classic', rarity: 'epic' },
+    { id: 'dream_pet', name: 'Dream Wisp', image: '/Pets/Dream.png', price: 45, type: 'classic', rarity: 'legendary' },
+    { id: 'druid_pet', name: 'Nature Friend', image: '/Pets/Druid.png', price: 30, type: 'classic', rarity: 'rare' },
+    { id: 'engineer_pet', name: 'Gear Buddy', image: '/Pets/Engineer.png', price: 32, type: 'classic', rarity: 'rare' },
+    { id: 'frost_mage_pet', name: 'Ice Sprite', image: '/Pets/Frost Mage.png', price: 35, type: 'classic', rarity: 'epic' },
+    { id: 'illusionist_pet', name: 'Phantom Friend', image: '/Pets/Illusionist.png', price: 38, type: 'classic', rarity: 'epic' },
+    { id: 'knight_pet', name: 'Noble Steed', image: '/Pets/Knight.png', price: 33, type: 'classic', rarity: 'rare' },
+    { id: 'lightning_pet', name: 'Storm Familiar', image: '/Pets/Lightning.png', price: 40, type: 'classic', rarity: 'epic' },
+    { id: 'monk_pet', name: 'Zen Companion', image: '/Pets/Monk.png', price: 28, type: 'classic', rarity: 'rare' },
+    { id: 'necromancer_pet', name: 'Shadow Spirit', image: '/Pets/Necromancer.png', price: 42, type: 'classic', rarity: 'epic' },
+    { id: 'orc_pet', name: 'Tribal Beast', image: '/Pets/Orc.png', price: 30, type: 'classic', rarity: 'rare' },
+    { id: 'paladin_pet', name: 'Divine Guardian', image: '/Pets/Paladin.png', price: 35, type: 'classic', rarity: 'epic' },
+    { id: 'rogue_pet', name: 'Stealth Cat', image: '/Pets/Rogue.png', price: 30, type: 'classic', rarity: 'rare' },
+    { id: 'stealth_pet', name: 'Shadow Beast', image: '/Pets/Stealth.png', price: 38, type: 'classic', rarity: 'epic' },
+    { id: 'time_knight_pet', name: 'Time Guardian', image: '/Pets/Time Knight.png', price: 45, type: 'classic', rarity: 'legendary' },
+    { id: 'warrior_pet', name: 'Battle Companion', image: '/Pets/Warrior.png', price: 32, type: 'classic', rarity: 'rare' },
+    { id: 'wizard_pet', name: 'Magic Familiar', image: '/Pets/Wizard.png', price: 40, type: 'classic', rarity: 'epic' },
+    
+    // Themed pets (from avatar sets)
+    ...Object.values(AVATAR_SETS).flatMap(set => set.pets.map(pet => ({ ...pet, rarity: 'rare' })))
+  ];
 
   // Loot Boxes
   const LOOT_BOXES = [
@@ -271,7 +301,8 @@ const ShopTab = ({
       // Combine all possible items for featured selection
       const allItems = [
         ...CONSUMABLES,
-        ...Object.values(AVATAR_SETS).flatMap(set => [...set.female, ...set.male, ...set.pets]),
+        ...Object.values(AVATAR_SETS).flatMap(set => [...set.female, ...set.male]),
+        ...ALL_AVAILABLE_PETS,
         ...LOOT_BOXES
       ];
       
@@ -594,25 +625,25 @@ const ShopTab = ({
             <div className="bg-gradient-to-r from-yellow-400 to-orange-500 rounded-xl p-6 text-white shadow-xl">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-2xl font-bold mb-2">🌟 Daily Featured Item</h3>
-                  <p className="text-lg opacity-90">{featuredItem.discount}% OFF Today Only!</p>
+                  <h3 className="text-2xl font-bold mb-2 text-white drop-shadow-lg">🌟 Daily Featured Item</h3>
+                  <p className="text-lg font-semibold text-white drop-shadow-md">{featuredItem.discount}% OFF Today Only!</p>
                 </div>
                 <div className="text-center">
-                  <div className="bg-white bg-opacity-20 rounded-xl p-4">
+                  <div className="bg-white bg-opacity-95 rounded-xl p-4 shadow-lg">
                     {featuredItem.image ? (
                       <img src={featuredItem.image} alt={featuredItem.name} className="w-16 h-16 mx-auto" />
                     ) : (
                       <div className="text-4xl">{featuredItem.image || '🎁'}</div>
                     )}
-                    <div className="font-bold mt-2">{featuredItem.name}</div>
+                    <div className="font-bold mt-2 text-gray-800">{featuredItem.name}</div>
                     <div className="flex items-center justify-center space-x-2 mt-1">
-                      <span className="line-through text-sm opacity-75">{featuredItem.originalPrice}</span>
-                      <span className="font-bold text-lg">{featuredItem.price} 💰</span>
+                      <span className="line-through text-sm text-gray-500">{featuredItem.originalPrice}</span>
+                      <span className="font-bold text-lg text-orange-600">{featuredItem.price} 💰</span>
                     </div>
                     <button
                       onClick={() => setShowPurchaseModal(featuredItem)}
                       disabled={!canAfford(selectedStudent, featuredItem.price)}
-                      className="mt-2 px-4 py-2 bg-white text-orange-600 rounded-lg font-bold hover:bg-gray-100 transition-colors disabled:opacity-50"
+                      className="mt-2 px-4 py-2 bg-orange-600 text-white rounded-lg font-bold hover:bg-orange-700 transition-colors disabled:opacity-50 shadow-md"
                     >
                       Buy Now
                     </button>
@@ -671,6 +702,45 @@ const ShopTab = ({
                   </button>
                 ))}
               </div>
+
+              {/* Pets Category - Standalone Pet Shop */}
+              {activeChampsCategory === 'pets' && (
+                <div className="bg-white rounded-xl shadow-lg p-6">
+                  <h3 className="text-2xl font-bold text-gray-800 mb-6 text-center">🐾 Pet Companions</h3>
+                  <p className="text-center text-gray-600 mb-6">Choose your loyal companion for adventures!</p>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                    {ALL_AVAILABLE_PETS.map(pet => {
+                      const isOwned = selectedStudent.ownedPets?.some(p => p.id === pet.id);
+                      const rarity = RARITY_STYLES[pet.rarity] || RARITY_STYLES.common;
+                      
+                      return (
+                        <div key={pet.id} className={`${rarity.bgColor} border-2 ${rarity.borderColor} rounded-xl p-4 text-center hover:shadow-lg transition-all ${rarity.glowColor}`}>
+                          <img src={pet.image} alt={pet.name} className="w-20 h-20 mx-auto rounded-lg mb-3 object-cover" />
+                          <div className="font-semibold text-gray-800 mb-1 text-sm">{pet.name}</div>
+                          <div className={`text-xs ${rarity.textColor} font-semibold mb-2`}>{rarity.name}</div>
+                          {isOwned ? (
+                            <button
+                              onClick={() => handleSwitchPet(pet)}
+                              className="w-full px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-semibold text-sm"
+                            >
+                              Use Pet
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => setShowPurchaseModal(pet)}
+                              disabled={!canAfford(selectedStudent, pet.price)}
+                              className="w-full px-3 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 disabled:bg-gray-400 font-semibold text-sm"
+                            >
+                              {pet.price} 💰
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Avatars Category */}
               {activeChampsCategory === 'avatars' && (
@@ -770,18 +840,18 @@ const ShopTab = ({
                       {/* Pets for this set */}
                       <div className="mt-6">
                         <h4 className="text-lg font-semibold text-green-600 mb-3">Companion Pets</h4>
-                        <div className="grid grid-cols-3 gap-3">
+                        <div className="grid grid-cols-3 gap-4">
                           {avatarSet.pets.map(pet => {
                             const isOwned = selectedStudent.ownedPets?.some(p => p.id === pet.id);
                             
                             return (
-                              <div key={pet.id} className="bg-gray-50 rounded-lg p-3 text-center">
-                                <img src={pet.image} alt={pet.name} className="w-16 h-16 mx-auto rounded-lg mb-2" />
-                                <div className="text-sm font-semibold">{pet.name}</div>
+                              <div key={pet.id} className="bg-gray-50 rounded-lg p-4 text-center">
+                                <img src={pet.image} alt={pet.name} className="w-24 h-24 mx-auto rounded-lg mb-3 object-cover" />
+                                <div className="text-sm font-semibold mb-2">{pet.name}</div>
                                 {isOwned ? (
                                   <button
                                     onClick={() => handleSwitchPet(pet)}
-                                    className="w-full px-3 py-1 bg-green-500 text-white rounded text-xs hover:bg-green-600 mt-2"
+                                    className="w-full px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-semibold text-sm"
                                   >
                                     Use Pet
                                   </button>
@@ -789,7 +859,7 @@ const ShopTab = ({
                                   <button
                                     onClick={() => setShowPurchaseModal(pet)}
                                     disabled={!canAfford(selectedStudent, pet.price)}
-                                    className="w-full px-3 py-1 bg-purple-500 text-white rounded text-xs hover:bg-purple-600 disabled:bg-gray-400 mt-2"
+                                    className="w-full px-3 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 disabled:bg-gray-400 font-semibold text-sm"
                                   >
                                     {pet.price} 💰
                                   </button>
