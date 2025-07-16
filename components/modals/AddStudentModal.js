@@ -1,3 +1,4 @@
+// AddStudentModal.js - UPDATED with new shop fields
 import React from 'react';
 
 const AddStudentModal = ({
@@ -24,6 +25,8 @@ const AddStudentModal = ({
     }
     
     const base = AVAILABLE_AVATARS.find(a => a.path === newStudentAvatar)?.base || '';
+    
+    // UPDATED: Include new shop fields in student creation
     const newStudent = {
       id: Date.now().toString(),
       firstName: newStudentName,
@@ -35,7 +38,14 @@ const AddStudentModal = ({
       categoryTotal: {},
       categoryWeekly: {},
       logs: [],
-      pet: null
+      pet: null,
+      coins: 0,
+      coinsSpent: 0,
+      // NEW SHOP FIELDS
+      ownedAvatars: [base], // Student owns their starting avatar
+      ownedPets: [],
+      rewardsPurchased: [],
+      inventory: []
     };
     
     setStudents((prev) => {
@@ -86,8 +96,8 @@ const AddStudentModal = ({
                   alt={avatar.base}
                   className={`w-full h-full rounded-lg border-2 object-cover transition-all duration-300 ${
                     newStudentAvatar === avatar.path 
-                      ? 'border-blue-600 shadow-lg scale-105' 
-                      : 'border-gray-300 hover:border-blue-400'
+                      ? 'border-blue-500 shadow-lg scale-110' 
+                      : 'border-gray-200 hover:border-blue-300'
                   }`}
                 />
               </div>
@@ -95,20 +105,16 @@ const AddStudentModal = ({
           </div>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex space-x-4">
           <button
-            onClick={() => {
-              setShowAddStudentModal(false);
-              setNewStudentName('');
-              setNewStudentAvatar('');
-            }}
-            className="flex-1 px-4 py-3 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
+            onClick={() => setShowAddStudentModal(false)}
+            className="flex-1 px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-semibold"
           >
             Cancel
           </button>
           <button
             onClick={handleAddStudent}
-            className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold shadow-lg"
+            className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
           >
             Add Student
           </button>
