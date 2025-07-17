@@ -528,6 +528,30 @@ const ShopTab = ({
     setNewPetName('');
   };
 
+  // NEW: Pet equipping function
+  const handleEquipPet = (pet) => {
+    const updatedStudent = { 
+      ...selectedStudent, 
+      pet: {
+        image: pet.image,
+        name: pet.name,
+        level: 1,
+        speed: 1,
+        wins: 0
+      }
+    };
+
+    const updatedStudents = students.map(s => 
+      s.id === selectedStudent.id ? updatedStudent : s
+    );
+    
+    setStudents(updatedStudents);
+    setSelectedStudent(updatedStudent);
+    saveStudentsToFirebase(updatedStudents);
+    
+    showToast(`${pet.name} is now your active pet!`, 'success');
+  };
+
   // Teacher reward functions
   const handleAddReward = () => {
     if (!newReward.name.trim()) return;
@@ -1052,19 +1076,33 @@ const ShopTab = ({
                 <div className="mb-8">
                   <h4 className="text-lg font-semibold text-green-600 mb-4">🐾 Pet Collection</h4>
                   <div className="grid grid-cols-4 md:grid-cols-6 gap-3">
-                    {selectedStudent.ownedPets.map(pet => (
-                      <div key={pet.id} className="text-center bg-green-50 rounded-lg p-2">
-                        <img src={pet.image} alt={pet.name} className="w-16 h-16 mx-auto rounded-lg mb-1" />
-                        <div className="text-xs font-semibold">{pet.name}</div>
-                        <div className="text-xs text-gray-500">{pet.type}</div>
-                        <button
-                          onClick={() => handlePetRename(pet)}
-                          className="text-xs px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600 mt-1"
-                        >
-                          Rename
-                        </button>
-                      </div>
-                    ))}
+                    {selectedStudent.ownedPets.map(pet => {
+                      const isActivePet = selectedStudent.pet?.image === pet.image;
+                      
+                      return (
+                        <div key={pet.id} className={`text-center bg-green-50 rounded-lg p-2 ${isActivePet ? 'ring-2 ring-green-500' : ''}`}>
+                          <img src={pet.image} alt={pet.name} className="w-16 h-16 mx-auto rounded-lg mb-1" />
+                          <div className="text-xs font-semibold">{pet.name}</div>
+                          <div className="text-xs text-gray-500">{pet.type}</div>
+                          {isActivePet ? (
+                            <div className="text-xs text-green-600 font-bold mt-1">Active Pet</div>
+                          ) : (
+                            <button
+                              onClick={() => handleEquipPet(pet)}
+                              className="text-xs px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 mt-1"
+                            >
+                              Equip
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handlePetRename(pet)}
+                            className="text-xs px-1 py-1 bg-green-500 text-white rounded hover:bg-green-600 mt-1 ml-1"
+                          >
+                            ✏️
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
