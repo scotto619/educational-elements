@@ -2152,6 +2152,7 @@ export default function ClassroomChampions() {
     // Settings props
     userData,
     user,
+    firestore,
     handleResetStudentPoints,
     handleResetAllPoints,
     handleResetPetSpeeds,

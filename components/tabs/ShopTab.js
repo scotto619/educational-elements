@@ -1,4 +1,4 @@
-// ShopTab.js - Redesigned Shop with Classroom Champions & Teacher Rewards
+// ShopTab.js - Enhanced Shop with Hover Preview, Firebase Rewards, and Pet Renaming
 import React, { useState, useEffect } from 'react';
 
 const ShopTab = ({ 
@@ -7,7 +7,9 @@ const ShopTab = ({
   showToast,
   saveStudentsToFirebase,
   currentClassId,
-  userData
+  userData,
+  user,
+  firestore
 }) => {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [activeSection, setActiveSection] = useState('champions'); // 'champions' or 'rewards'
@@ -19,6 +21,13 @@ const ShopTab = ({
   const [newReward, setNewReward] = useState({ name: '', description: '', price: 5, category: 'privileges' });
   const [editingReward, setEditingReward] = useState(null);
   const [featuredItem, setFeaturedItem] = useState(null);
+  
+  // NEW: Hover preview state
+  const [hoverPreview, setHoverPreview] = useState({ show: false, image: '', name: '', x: 0, y: 0 });
+  
+  // NEW: Pet renaming state
+  const [showPetRenameModal, setShowPetRenameModal] = useState(null);
+  const [newPetName, setNewPetName] = useState('');
 
   // Constants
   const COINS_PER_XP = 5;
@@ -290,7 +299,7 @@ const ShopTab = ({
     }
   ];
 
-  // Default teacher rewards
+  // Default teacher rewards (now deletable)
   const DEFAULT_TEACHER_REWARDS = [
     { id: 'tech_time', name: 'Technology Time', description: '10 minutes of educational technology', price: 15, category: 'privileges', icon: '💻' },
     { id: 'move_seat', name: 'Move Seat for a Day', description: 'Choose where to sit for one day', price: 10, category: 'privileges', icon: '🪑' },
@@ -302,11 +311,87 @@ const ShopTab = ({
     { id: 'free_draw', name: 'Free Drawing Time', description: '15 minutes of free drawing', price: 12, category: 'activities', icon: '🎨' }
   ];
 
+  // NEW: Firebase teacher rewards functions
+  const saveTeacherRewardsToFirebase = async (rewards) => {
+    if (!user || !currentClassId || !firestore) return;
+
+    try {
+      const { doc, getDoc, setDoc } = await import('firebase/firestore');
+      const docRef = doc(firestore, 'users', user.uid);
+      const snap = await getDoc(docRef);
+      
+      if (snap.exists()) {
+        const data = snap.data();
+        const updatedClasses = data.classes.map(cls => 
+          cls.id === currentClassId 
+            ? { 
+                ...cls, 
+                teacherRewards: rewards,
+                lastUpdated: new Date().toISOString()
+              }
+            : cls
+        );
+        
+        await setDoc(docRef, { 
+          ...data, 
+          classes: updatedClasses 
+        });
+      }
+    } catch (error) {
+      console.error("Error saving teacher rewards:", error);
+    }
+  };
+
+  // Load teacher rewards from Firebase
+  const loadTeacherRewardsFromFirebase = async () => {
+    if (!user || !currentClassId || !firestore) return;
+
+    try {
+      const { doc, getDoc } = await import('firebase/firestore');
+      const docRef = doc(firestore, 'users', user.uid);
+      const snap = await getDoc(docRef);
+      
+      if (snap.exists()) {
+        const data = snap.data();
+        const currentClass = data.classes?.find(cls => cls.id === currentClassId);
+        
+        if (currentClass?.teacherRewards) {
+          setTeacherRewards(currentClass.teacherRewards);
+        } else {
+          // Initialize with defaults if no saved rewards
+          setTeacherRewards(DEFAULT_TEACHER_REWARDS);
+          saveTeacherRewardsToFirebase(DEFAULT_TEACHER_REWARDS);
+        }
+      }
+    } catch (error) {
+      console.error("Error loading teacher rewards:", error);
+      setTeacherRewards(DEFAULT_TEACHER_REWARDS);
+    }
+  };
+
   // Initialize teacher rewards and featured item
   useEffect(() => {
-    setTeacherRewards(DEFAULT_TEACHER_REWARDS);
+    loadTeacherRewardsFromFirebase();
     generateDailyFeaturedItem();
-  }, []);
+  }, [currentClassId]);
+
+  // NEW: Hover preview handlers
+  const handleMouseEnter = (e, item) => {
+    if (!item.image || item.image.includes('📦') || item.image.includes('✨') || item.image.includes('🏆')) return;
+    
+    const rect = e.currentTarget.getBoundingClientRect();
+    setHoverPreview({
+      show: true,
+      image: item.image,
+      name: item.name,
+      x: rect.left + rect.width / 2,
+      y: rect.top
+    });
+  };
+
+  const handleMouseLeave = () => {
+    setHoverPreview({ show: false, image: '', name: '', x: 0, y: 0 });
+  };
 
   // Generate daily featured item
   const generateDailyFeaturedItem = () => {
@@ -413,6 +498,36 @@ const ShopTab = ({
     showToast('Avatar changed!', 'success');
   };
 
+  // NEW: Pet renaming functions
+  const handlePetRename = (pet) => {
+    setShowPetRenameModal(pet);
+    setNewPetName(pet.name);
+  };
+
+  const handlePetRenameConfirm = () => {
+    if (!newPetName.trim()) return;
+
+    const updatedStudent = { ...selectedStudent };
+    const updatedPets = updatedStudent.ownedPets.map(pet => 
+      pet.id === showPetRenameModal.id 
+        ? { ...pet, name: newPetName.trim() }
+        : pet
+    );
+    updatedStudent.ownedPets = updatedPets;
+
+    const updatedStudents = students.map(s => 
+      s.id === selectedStudent.id ? updatedStudent : s
+    );
+    
+    setStudents(updatedStudents);
+    setSelectedStudent(updatedStudent);
+    saveStudentsToFirebase(updatedStudents);
+    
+    showToast('Pet renamed successfully!', 'success');
+    setShowPetRenameModal(null);
+    setNewPetName('');
+  };
+
   // Teacher reward functions
   const handleAddReward = () => {
     if (!newReward.name.trim()) return;
@@ -423,7 +538,9 @@ const ShopTab = ({
       icon: newReward.icon || '🎁'
     };
     
-    setTeacherRewards(prev => [...prev, reward]);
+    const updatedRewards = [...teacherRewards, reward];
+    setTeacherRewards(updatedRewards);
+    saveTeacherRewardsToFirebase(updatedRewards);
     setNewReward({ name: '', description: '', price: 5, category: 'privileges' });
     showToast('Reward added!');
   };
@@ -435,16 +552,20 @@ const ShopTab = ({
   };
 
   const handleUpdateReward = () => {
-    setTeacherRewards(prev => prev.map(r => 
+    const updatedRewards = teacherRewards.map(r => 
       r.id === editingReward.id ? { ...newReward, id: editingReward.id } : r
-    ));
+    );
+    setTeacherRewards(updatedRewards);
+    saveTeacherRewardsToFirebase(updatedRewards);
     setEditingReward(null);
     setNewReward({ name: '', description: '', price: 5, category: 'privileges' });
     showToast('Reward updated successfully!');
   };
 
   const handleDeleteReward = (rewardId) => {
-    setTeacherRewards(prev => prev.filter(r => r.id !== rewardId));
+    const updatedRewards = teacherRewards.filter(r => r.id !== rewardId);
+    setTeacherRewards(updatedRewards);
+    saveTeacherRewardsToFirebase(updatedRewards);
     showToast('Reward deleted!');
   };
 
@@ -485,7 +606,30 @@ const ShopTab = ({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      {/* NEW: Hover Preview Overlay */}
+      {hoverPreview.show && (
+        <div 
+          className="fixed z-50 pointer-events-none"
+          style={{
+            left: `${hoverPreview.x}px`,
+            top: `${hoverPreview.y - 350}px`,
+            transform: 'translateX(-50%)'
+          }}
+        >
+          <div className="bg-black bg-opacity-90 rounded-2xl p-6 shadow-2xl border-4 border-yellow-400">
+            <img 
+              src={hoverPreview.image} 
+              alt={hoverPreview.name}
+              className="w-80 h-80 object-contain rounded-lg"
+            />
+            <div className="text-white text-center mt-4 text-xl font-bold">
+              {hoverPreview.name}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="text-center bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-2xl p-8 shadow-xl">
         <h2 className="text-4xl font-bold mb-2">🏪 Classroom Champions Shop</h2>
@@ -637,7 +781,12 @@ const ShopTab = ({
                           const isOwned = selectedStudent.ownedAvatars?.includes(avatar.base);
                           
                           return (
-                            <div key={avatar.id} className="bg-gray-50 rounded-lg p-3 text-center">
+                            <div 
+                              key={avatar.id} 
+                              className="bg-gray-50 rounded-lg p-3 text-center cursor-pointer"
+                              onMouseEnter={(e) => handleMouseEnter(e, avatar)}
+                              onMouseLeave={handleMouseLeave}
+                            >
                               <img 
                                 src={avatar.image} 
                                 alt={avatar.name} 
@@ -675,7 +824,12 @@ const ShopTab = ({
                           const isOwned = selectedStudent.ownedAvatars?.includes(avatar.base);
                           
                           return (
-                            <div key={avatar.id} className="bg-gray-50 rounded-lg p-3 text-center">
+                            <div 
+                              key={avatar.id} 
+                              className="bg-gray-50 rounded-lg p-3 text-center cursor-pointer"
+                              onMouseEnter={(e) => handleMouseEnter(e, avatar)}
+                              onMouseLeave={handleMouseLeave}
+                            >
                               <img 
                                 src={avatar.image} 
                                 alt={avatar.name} 
@@ -727,7 +881,12 @@ const ShopTab = ({
                     const isOwned = selectedStudent.ownedPets?.some(p => p.id === pet.id);
                     
                     return (
-                      <div key={pet.id} className="bg-gray-50 rounded-lg p-3 text-center">
+                      <div 
+                        key={pet.id} 
+                        className="bg-gray-50 rounded-lg p-3 text-center cursor-pointer"
+                        onMouseEnter={(e) => handleMouseEnter(e, pet)}
+                        onMouseLeave={handleMouseLeave}
+                      >
                         <img src={pet.image} alt={pet.name} className="w-16 h-16 mx-auto rounded-lg mb-2" />
                         <div className="text-sm font-semibold">{pet.name}</div>
                         {isOwned ? (
@@ -761,7 +920,12 @@ const ShopTab = ({
                       const isOwned = selectedStudent.ownedPets?.some(p => p.id === pet.id);
                       
                       return (
-                        <div key={pet.id} className="bg-gray-50 rounded-lg p-3 text-center">
+                        <div 
+                          key={pet.id} 
+                          className="bg-gray-50 rounded-lg p-3 text-center cursor-pointer"
+                          onMouseEnter={(e) => handleMouseEnter(e, pet)}
+                          onMouseLeave={handleMouseLeave}
+                        >
                           <img src={pet.image} alt={pet.name} className="w-16 h-16 mx-auto rounded-lg mb-2" />
                           <div className="text-sm font-semibold">{pet.name}</div>
                           {isOwned ? (
@@ -793,7 +957,12 @@ const ShopTab = ({
               
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {CONSUMABLES.map(item => (
-                  <div key={item.id} className="bg-gray-50 rounded-lg p-4 text-center">
+                  <div 
+                    key={item.id} 
+                    className="bg-gray-50 rounded-lg p-4 text-center cursor-pointer"
+                    onMouseEnter={(e) => handleMouseEnter(e, item)}
+                    onMouseLeave={handleMouseLeave}
+                  >
                     <img src={item.image} alt={item.name} className="w-16 h-16 mx-auto rounded-lg mb-2" />
                     <div className="text-sm font-semibold mb-1">{item.name}</div>
                     <div className="text-xs text-gray-600 mb-3">{item.effect}</div>
@@ -888,6 +1057,12 @@ const ShopTab = ({
                         <img src={pet.image} alt={pet.name} className="w-16 h-16 mx-auto rounded-lg mb-1" />
                         <div className="text-xs font-semibold">{pet.name}</div>
                         <div className="text-xs text-gray-500">{pet.type}</div>
+                        <button
+                          onClick={() => handlePetRename(pet)}
+                          className="text-xs px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600 mt-1"
+                        >
+                          Rename
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -996,6 +1171,45 @@ const ShopTab = ({
                 className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-gray-400"
               >
                 Buy Now
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Pet Rename Modal */}
+      {showPetRenameModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full">
+            <h3 className="text-xl font-bold mb-4">Rename Pet</h3>
+            <div className="text-center mb-4">
+              <img src={showPetRenameModal.image} alt={showPetRenameModal.name} className="w-20 h-20 mx-auto rounded-lg mb-2" />
+              <h4 className="font-bold">{showPetRenameModal.name}</h4>
+            </div>
+            <input
+              type="text"
+              value={newPetName}
+              onChange={(e) => setNewPetName(e.target.value)}
+              placeholder="Enter new pet name"
+              className="w-full p-3 border rounded-lg mb-4"
+              maxLength={20}
+            />
+            <div className="flex space-x-3">
+              <button
+                onClick={() => {
+                  setShowPetRenameModal(null);
+                  setNewPetName('');
+                }}
+                className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handlePetRenameConfirm}
+                disabled={!newPetName.trim()}
+                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400"
+              >
+                Rename
               </button>
             </div>
           </div>
