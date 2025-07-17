@@ -1,5 +1,5 @@
-// components/games/WordSearchGame.js - Word Search Game Component
-import React, { useState, useEffect, useCallback } from 'react';
+// components/games/WordSearchGame.js - Enhanced Word Search with Custom Lists & Printing
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 
 const WordSearchGame = ({ gameMode, showToast, students }) => {
   // Game State
@@ -12,18 +12,79 @@ const WordSearchGame = ({ gameMode, showToast, students }) => {
   const [timer, setTimer] = useState(300); // 5 minutes
   const [isActive, setIsActive] = useState(false);
   const [difficulty, setDifficulty] = useState('medium');
+  
+  // Custom word list features
+  const [useCustomWords, setUseCustomWords] = useState(false);
+  const [customWordInput, setCustomWordInput] = useState('');
+  const [customWords, setCustomWords] = useState([]);
+  const [showWordListEditor, setShowWordListEditor] = useState(false);
+  
+  // Print features
+  const [showPrintOptions, setShowPrintOptions] = useState(false);
+  const [printWithAnswers, setPrintWithAnswers] = useState(false);
+  const printRef = useRef();
 
-  // Word lists by difficulty
-  const wordLists = {
+  // Default word lists by difficulty
+  const defaultWordLists = {
     easy: ['CAT', 'DOG', 'SUN', 'FUN', 'RUN', 'EAT', 'PLAY', 'JUMP', 'BOOK', 'STAR'],
     medium: ['HAPPY', 'MUSIC', 'SMILE', 'FRIEND', 'SCHOOL', 'GARDEN', 'BRIGHT', 'FAMILY', 'NATURE', 'PURPLE'],
     hard: ['ELEPHANT', 'BUTTERFLY', 'ADVENTURE', 'KNOWLEDGE', 'BEAUTIFUL', 'WONDERFUL', 'CELEBRATE', 'FANTASTIC', 'RAINBOW', 'SUNSHINE']
   };
 
+  // Get current word source
+  const getCurrentWords = useCallback(() => {
+    if (useCustomWords && customWords.length > 0) {
+      return customWords.slice(0, Math.min(15, customWords.length)); // Max 15 words
+    }
+    return defaultWordLists[difficulty].slice(0, Math.min(10, defaultWordLists[difficulty].length));
+  }, [useCustomWords, customWords, difficulty]);
+
+  // Validate custom words
+  const validateCustomWords = (words) => {
+    const validated = words
+      .map(word => word.toUpperCase().trim())
+      .filter(word => {
+        if (word.length < 3) return false;
+        if (word.length > gridSize) return false;
+        if (!/^[A-Z]+$/.test(word)) return false;
+        return true;
+      });
+    
+    return [...new Set(validated)]; // Remove duplicates
+  };
+
+  // Add custom words from input
+  const handleAddCustomWords = () => {
+    const words = customWordInput
+      .split(/[\n,]+/)
+      .map(word => word.trim())
+      .filter(word => word.length > 0);
+    
+    const validatedWords = validateCustomWords(words);
+    
+    if (validatedWords.length === 0) {
+      showToast('Please enter valid words (3+ letters, no numbers/symbols)', 'error');
+      return;
+    }
+    
+    if (validatedWords.length > 15) {
+      showToast(`Only first 15 words will be used (${validatedWords.length} entered)`, 'warning');
+    }
+    
+    setCustomWords(validatedWords);
+    setCustomWordInput('');
+    showToast(`Added ${validatedWords.length} words to custom list`, 'success');
+  };
+
   // Generate grid with hidden words
   const generateGrid = useCallback(() => {
     const size = gridSize;
-    const words = wordLists[difficulty].slice(0, Math.min(10, wordLists[difficulty].length));
+    const words = getCurrentWords();
+    
+    if (words.length === 0) {
+      showToast('No words available to generate grid', 'error');
+      return;
+    }
     
     // Create empty grid
     const newGrid = Array(size).fill().map(() => Array(size).fill(''));
@@ -67,7 +128,11 @@ const WordSearchGame = ({ gameMode, showToast, students }) => {
     setWordList(placedWords);
     setFoundWords([]);
     setSelectedCells([]);
-  }, [gridSize, difficulty]);
+    
+    if (placedWords.length < words.length) {
+      showToast(`Placed ${placedWords.length}/${words.length} words (some didn't fit)`, 'warning');
+    }
+  }, [gridSize, getCurrentWords, showToast]);
 
   // Check if word can be placed
   const canPlaceWord = (grid, word, startRow, startCol, direction, size) => {
@@ -216,6 +281,160 @@ const WordSearchGame = ({ gameMode, showToast, students }) => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Print functionality
+  const handlePrint = () => {
+    const printWindow = window.open('', '_blank');
+    const printContent = generatePrintContent();
+    
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Word Search - ${useCustomWords ? 'Custom' : difficulty} Level</title>
+          <style>
+            body { 
+              font-family: Arial, sans-serif; 
+              margin: 20px; 
+              line-height: 1.4;
+            }
+            .header { 
+              text-align: center; 
+              margin-bottom: 20px; 
+              border-bottom: 2px solid #333; 
+              padding-bottom: 10px;
+            }
+            .grid-container { 
+              display: flex; 
+              justify-content: center; 
+              margin: 20px 0;
+            }
+            .grid { 
+              display: grid; 
+              grid-template-columns: repeat(${gridSize}, 25px);
+              gap: 1px; 
+              border: 2px solid #333;
+              background: #333;
+            }
+            .cell { 
+              width: 25px; 
+              height: 25px; 
+              display: flex; 
+              align-items: center; 
+              justify-content: center; 
+              font-weight: bold; 
+              font-size: 12px;
+              background: white;
+            }
+            .found-cell { 
+              background: #ffeb3b !important; 
+            }
+            .word-list { 
+              columns: 3; 
+              column-gap: 30px;
+              margin-top: 20px;
+            }
+            .word-item { 
+              margin: 5px 0; 
+              break-inside: avoid;
+            }
+            .found { 
+              text-decoration: line-through; 
+              color: #666;
+            }
+            .answer-key {
+              margin-top: 30px;
+              border-top: 2px solid #333;
+              padding-top: 20px;
+            }
+            @media print {
+              body { margin: 0; }
+              .no-print { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          ${printContent}
+        </body>
+      </html>
+    `);
+    
+    printWindow.document.close();
+    printWindow.print();
+  };
+
+  const generatePrintContent = () => {
+    const title = useCustomWords ? 'Custom Word Search' : `${difficulty.charAt(0).toUpperCase() + difficulty.slice(1)} Word Search`;
+    const date = new Date().toLocaleDateString();
+    
+    let gridHTML = '';
+    grid.forEach((row, rowIndex) => {
+      row.forEach((letter, colIndex) => {
+        const cellKey = `${rowIndex}-${colIndex}`;
+        const isPartOfFoundWord = printWithAnswers && foundWords.some(word => {
+          const wordData = wordList.find(w => w.word === word);
+          return wordData?.cells.includes(cellKey);
+        });
+        
+        gridHTML += `<div class="cell ${isPartOfFoundWord ? 'found-cell' : ''}">${letter}</div>`;
+      });
+    });
+    
+    let wordListHTML = '';
+    wordList.forEach(wordData => {
+      const isFound = foundWords.includes(wordData.word);
+      wordListHTML += `<div class="word-item ${isFound && printWithAnswers ? 'found' : ''}">${wordData.word}</div>`;
+    });
+    
+    let answerKeyHTML = '';
+    if (printWithAnswers) {
+      answerKeyHTML = `
+        <div class="answer-key">
+          <h3>Answer Key</h3>
+          <div style="columns: 2; column-gap: 30px;">
+            ${wordList.map(wordData => `
+              <div style="margin: 5px 0; break-inside: avoid;">
+                <strong>${wordData.word}</strong> - 
+                Row ${wordData.startRow + 1}, Col ${wordData.startCol + 1}, 
+                Direction: ${getDirectionName(wordData.direction)}
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+    
+    return `
+      <div class="header">
+        <h1>${title}</h1>
+        <p>Find all ${wordList.length} hidden words in the grid below</p>
+        <p style="font-size: 12px;">Generated on ${date} • Grid Size: ${gridSize}×${gridSize}</p>
+      </div>
+      
+      <div class="grid-container">
+        <div class="grid">
+          ${gridHTML}
+        </div>
+      </div>
+      
+      <div>
+        <h3>Words to Find (${wordList.length} total):</h3>
+        <div class="word-list">
+          ${wordListHTML}
+        </div>
+      </div>
+      
+      ${answerKeyHTML}
+      
+      <div style="margin-top: 30px; text-align: center; font-size: 12px; color: #666;">
+        Created with Classroom Champions Word Search Generator
+      </div>
+    `;
+  };
+
+  const getDirectionName = (direction) => {
+    const names = ['↖', '↑', '↗', '←', '→', '↙', '↓', '↘'];
+    return names[direction] || '?';
+  };
+
   // Initialize grid
   useEffect(() => {
     generateGrid();
@@ -258,20 +477,43 @@ const WordSearchGame = ({ gameMode, showToast, students }) => {
           <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-lg font-semibold">
             📝 Found: {foundWords.length}/{wordList.length}
           </div>
+          {useCustomWords && (
+            <div className="bg-purple-100 text-purple-800 px-3 py-1 rounded-lg font-semibold">
+              📝 Custom Words
+            </div>
+          )}
         </div>
 
         {/* Controls */}
         <div className="flex items-center space-x-2">
-          <select
-            value={difficulty}
-            onChange={(e) => setDifficulty(e.target.value)}
+          <button
+            onClick={() => setShowWordListEditor(true)}
             disabled={isActive}
-            className="px-3 py-2 border border-gray-300 rounded-lg"
+            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-semibold disabled:opacity-50"
           >
-            <option value="easy">Easy (3-4 letters)</option>
-            <option value="medium">Medium (5-6 letters)</option>
-            <option value="hard">Hard (7+ letters)</option>
-          </select>
+            📝 Custom Words
+          </button>
+
+          <button
+            onClick={() => setShowPrintOptions(true)}
+            disabled={wordList.length === 0}
+            className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-semibold disabled:opacity-50"
+          >
+            🖨️ Print
+          </button>
+
+          {!useCustomWords && (
+            <select
+              value={difficulty}
+              onChange={(e) => setDifficulty(e.target.value)}
+              disabled={isActive}
+              className="px-3 py-2 border border-gray-300 rounded-lg"
+            >
+              <option value="easy">Easy (3-4 letters)</option>
+              <option value="medium">Medium (5-6 letters)</option>
+              <option value="hard">Hard (7+ letters)</option>
+            </select>
+          )}
 
           <select
             value={gridSize}
@@ -406,6 +648,156 @@ const WordSearchGame = ({ gameMode, showToast, students }) => {
           </div>
         </div>
       </div>
+
+      {/* Custom Word List Editor Modal */}
+      {showWordListEditor && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <h3 className="text-xl font-bold mb-4">📝 Custom Word List Editor</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Enter words (one per line or comma-separated):
+                </label>
+                <textarea
+                  value={customWordInput}
+                  onChange={(e) => setCustomWordInput(e.target.value)}
+                  placeholder="math&#10;science&#10;reading&#10;writing&#10;history"
+                  className="w-full h-32 p-3 border rounded-lg resize-none"
+                  rows="6"
+                />
+                <div className="text-xs text-gray-500 mt-1">
+                  • Words must be 3+ letters • No numbers or symbols • Max 15 words • Max {gridSize} letters per word
+                </div>
+              </div>
+
+              <button
+                onClick={handleAddCustomWords}
+                disabled={!customWordInput.trim()}
+                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              >
+                Add Words to List
+              </button>
+
+              {/* Current Custom Words */}
+              {customWords.length > 0 && (
+                <div>
+                  <h4 className="font-semibold mb-2">Current Custom Words ({customWords.length}):</h4>
+                  <div className="grid grid-cols-3 gap-2 max-h-32 overflow-y-auto bg-gray-50 p-3 rounded">
+                    {customWords.map((word, index) => (
+                      <div key={index} className="text-sm bg-white p-1 rounded text-center">
+                        {word}
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => setCustomWords([])}
+                    className="mt-2 text-sm text-red-600 hover:text-red-800"
+                  >
+                    Clear All Custom Words
+                  </button>
+                </div>
+              )}
+
+              {/* Mode Selection */}
+              <div className="border-t pt-4">
+                <h4 className="font-semibold mb-2">Word Source:</h4>
+                <div className="space-y-2">
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      checked={!useCustomWords}
+                      onChange={() => setUseCustomWords(false)}
+                      className="mr-2"
+                    />
+                    Use default word lists (Easy/Medium/Hard)
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      checked={useCustomWords}
+                      onChange={() => setUseCustomWords(true)}
+                      disabled={customWords.length === 0}
+                      className="mr-2"
+                    />
+                    Use my custom word list ({customWords.length} words)
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex space-x-3 mt-6">
+              <button
+                onClick={() => setShowWordListEditor(false)}
+                className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => {
+                  setShowWordListEditor(false);
+                  if (!isActive) generateGrid();
+                }}
+                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              >
+                Apply & Generate Grid
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Print Options Modal */}
+      {showPrintOptions && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full">
+            <h3 className="text-xl font-bold mb-4">🖨️ Print Options</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-semibold mb-2">Print Settings:</h4>
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={printWithAnswers}
+                    onChange={(e) => setPrintWithAnswers(e.target.checked)}
+                  />
+                  <span>Include answer key</span>
+                </label>
+              </div>
+
+              <div className="bg-gray-50 p-3 rounded">
+                <h5 className="font-semibold mb-1">Print Preview:</h5>
+                <div className="text-sm text-gray-600">
+                  • Grid: {gridSize}×{gridSize}
+                  • Words: {wordList.length} total
+                  • Source: {useCustomWords ? 'Custom words' : `${difficulty} difficulty`}
+                  • Date: {new Date().toLocaleDateString()}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex space-x-3 mt-6">
+              <button
+                onClick={() => setShowPrintOptions(false)}
+                className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  handlePrint();
+                  setShowPrintOptions(false);
+                }}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                🖨️ Print
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
