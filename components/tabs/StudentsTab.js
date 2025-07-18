@@ -14,7 +14,20 @@ const StudentsTab = ({
   // Shop Props
   calculateCoins,
   // Navigation
-  setActiveTab
+  setActiveTab,
+  // Bulk XP Props
+  selectedStudents,
+  setSelectedStudents,
+  handleStudentSelect,
+  handleSelectAll,
+  handleDeselectAll,
+  showBulkXpPanel,
+  setShowBulkXpPanel,
+  bulkXpAmount,
+  setBulkXpAmount,
+  bulkXpCategory,
+  setBulkXpCategory,
+  handleBulkXpAward
 }) => {
   const [showXPSelector, setShowXPSelector] = useState(null);
   const [hoveredStudent, setHoveredStudent] = useState(null);
@@ -32,13 +45,23 @@ const StudentsTab = ({
     setShowXPSelector(showXPSelector === studentId ? null : studentId);
   };
 
-  // Handle quick XP award - Fixed function
+  // Handle quick XP award - Fixed function with better error handling
   const handleQuickXP = (studentId, category, amount, event) => {
-    event.stopPropagation();
-    event.preventDefault();
-    handleAwardXP(studentId, category, amount);
-    setShowXPSelector(null);
-    showToast(`+${amount} ${category} XP awarded!`);
+    if (event) {
+      event.stopPropagation();
+      event.preventDefault();
+    }
+    
+    console.log('Awarding XP:', { studentId, category, amount }); // Debug log
+    
+    try {
+      handleAwardXP(studentId, category, amount);
+      setShowXPSelector(null);
+      showToast(`+${amount} ${category} XP awarded to ${students.find(s => s.id === studentId)?.firstName}!`);
+    } catch (error) {
+      console.error('Error awarding XP:', error);
+      showToast('Error awarding XP. Please try again.', 'error');
+    }
   };
 
   // Handle coins click - go to shop with student selected
@@ -83,6 +106,76 @@ const StudentsTab = ({
         <div className="absolute top-0 right-0 transform translate-x-4 -translate-y-4">
           <div className="text-8xl opacity-10">🏰</div>
         </div>
+
+      {/* Bulk XP Panel */}
+      {showBulkXpPanel && (
+        <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border-2 border-purple-200 rounded-xl p-6">
+          <h3 className="text-xl font-bold text-purple-800 mb-4 text-center">⚡ Mass XP Distribution</h3>
+          
+          {/* XP Configuration */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-bold text-purple-700 mb-2">XP Amount</label>
+              <input
+                type="number"
+                min="1"
+                max="10"
+                value={bulkXpAmount}
+                onChange={(e) => setBulkXpAmount(parseInt(e.target.value))}
+                className="w-full px-3 py-2 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-purple-700 mb-2">Category</label>
+              <select
+                value={bulkXpCategory}
+                onChange={(e) => setBulkXpCategory(e.target.value)}
+                className="w-full px-3 py-2 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              >
+                <option value="Respectful">👍 Respectful</option>
+                <option value="Responsible">💼 Responsible</option>
+                <option value="Learner">📚 Learner</option>
+              </select>
+            </div>
+            <div className="md:col-span-2 flex items-end space-x-2">
+              <button
+                onClick={handleSelectAll}
+                className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 font-bold transition-all"
+              >
+                Select All
+              </button>
+              <button
+                onClick={handleDeselectAll}
+                className="px-4 py-2 bg-gradient-to-r from-gray-400 to-gray-500 text-white rounded-lg hover:from-gray-500 hover:to-gray-600 font-bold transition-all"
+              >
+                Clear
+              </button>
+              <button
+                onClick={handleBulkXpAward}
+                disabled={selectedStudents.length === 0}
+                className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed font-bold transition-all"
+              >
+                Award XP ({selectedStudents.length} heroes)
+              </button>
+            </div>
+          </div>
+          
+          {/* Student Selection Grid */}
+          <div className="grid grid-cols-3 md:grid-cols-6 lg:grid-cols-8 gap-2">
+            {students.map(student => (
+              <label key={student.id} className="flex items-center space-x-2 text-sm bg-white rounded-lg p-2 border border-purple-200 hover:bg-purple-50 transition-colors cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selectedStudents.includes(student.id)}
+                  onChange={() => handleStudentSelect(student.id)}
+                  className="rounded text-purple-600 focus:ring-purple-500"
+                />
+                <span className="truncate font-medium text-gray-700">{student.firstName}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
         <div className="relative z-10">
           <div className="flex justify-between items-center">
             <div>
@@ -91,13 +184,26 @@ const StudentsTab = ({
               </h2>
               <p className="text-indigo-100 text-lg">{students.length} brave adventurers ready for battle!</p>
             </div>
-            <button
-              onClick={() => setShowAddStudentModal(true)}
-              className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all duration-200 font-bold shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center space-x-2"
-            >
-              <span className="text-lg">⚡</span>
-              <span>Recruit Hero</span>
-            </button>
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setShowBulkXpPanel(!showBulkXpPanel)}
+                className={`px-6 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center space-x-2 transition-all duration-200 ${
+                  showBulkXpPanel 
+                    ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white' 
+                    : 'bg-gradient-to-r from-purple-400 to-indigo-500 text-white hover:from-purple-500 hover:to-indigo-600'
+                }`}
+              >
+                <span className="text-lg">⚡</span>
+                <span>Bulk XP</span>
+              </button>
+              <button
+                onClick={() => setShowAddStudentModal(true)}
+                className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all duration-200 font-bold shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center space-x-2"
+              >
+                <span className="text-lg">👤</span>
+                <span>Recruit Hero</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -170,15 +276,18 @@ const StudentsTab = ({
             const xpProgress = getXPProgress(student);
             const isHovered = hoveredStudent === student.id;
             const isAnimating = animatingXP[student.id];
+            const isSelected = selectedStudents.includes(student.id);
 
             return (
               <div
                 key={student.id}
                 className={`relative bg-gradient-to-b from-white to-gray-50 rounded-2xl shadow-lg border-2 overflow-hidden transition-all duration-300 transform ${
+                  isSelected ? 'scale-105 shadow-2xl border-purple-500 bg-gradient-to-b from-purple-50 to-purple-100' :
                   isHovered ? 'scale-105 shadow-2xl border-purple-400' : 'border-gray-200 hover:shadow-xl'
                 }`}
                 onMouseEnter={() => setHoveredStudent(student.id)}
                 onMouseLeave={() => setHoveredStudent(null)}
+                onClick={() => showBulkXpPanel && handleStudentSelect(student.id)}
               >
                 {/* Hero Card Background Pattern */}
                 <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5"></div>
@@ -188,6 +297,13 @@ const StudentsTab = ({
                 <div className="absolute top-2 left-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg">
                   Lv.{student.avatarLevel || 1}
                 </div>
+
+                {/* Selection Badge for Bulk XP */}
+                {isSelected && showBulkXpPanel && (
+                  <div className="absolute top-2 right-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg">
+                    ✓ Selected
+                  </div>
+                )}
 
                 {/* Hero Card Content */}
                 <div className="relative z-10 p-4 space-y-3">
@@ -329,7 +445,10 @@ const StudentsTab = ({
                           {[1, 2, 5].map(amount => (
                             <button
                               key={amount}
-                              onClick={(e) => handleQuickXP(student.id, category, amount, e)}
+                              onClick={(e) => {
+                                console.log('XP Button clicked:', { studentId: student.id, category, amount }); // Debug log
+                                handleQuickXP(student.id, category, amount, e);
+                              }}
                               className={`px-3 py-2 text-xs font-bold rounded-lg transition-all duration-200 transform hover:scale-105 ${
                                 category === 'Respectful' ? 'bg-gradient-to-r from-green-400 to-green-500 text-white hover:from-green-500 hover:to-green-600' :
                                 category === 'Responsible' ? 'bg-gradient-to-r from-blue-400 to-blue-500 text-white hover:from-blue-500 hover:to-blue-600' :
