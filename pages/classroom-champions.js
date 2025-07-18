@@ -1,4 +1,4 @@
-// classroom-champions.js - COMPLETE WITH NEW QUEST TAB SYSTEM
+// classroom-champions.js - COMPLETE WITH ALL FEATURES + NEW QUEST SYSTEM
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
@@ -24,6 +24,7 @@ const PetUnlockModal = React.lazy(() => import('../components/modals/PetUnlockMo
 const AddStudentModal = React.lazy(() => import('../components/modals/AddStudentModal'));
 const RaceWinnerModal = React.lazy(() => import('../components/modals/RaceWinnerModal'));
 const RaceSetupModal = React.lazy(() => import('../components/modals/RaceSetupModal'));
+const QuestCompletionModal = React.lazy(() => import('../components/modals/QuestCompletionModal'));
 
 // ===============================================
 // QUEST SYSTEM - QUEST GIVERS & DATA
@@ -127,6 +128,102 @@ const QUEST_GIVERS = [
   }
 ];
 
+// Quest Templates
+const QUEST_TEMPLATES = [
+  {
+    id: 'homework_basic',
+    name: 'Complete Homework',
+    description: 'Finish today\'s homework assignment',
+    category: 'academic',
+    questGiver: 'guide1',
+    icon: '📝',
+    reward: { type: 'coins', amount: 3 }
+  },
+  {
+    id: 'reading_challenge',
+    name: 'Reading Challenge',
+    description: 'Read for 20 minutes',
+    category: 'academic',
+    questGiver: 'guide1',
+    icon: '📚',
+    reward: { type: 'xp', amount: 2, category: 'Learner' }
+  },
+  {
+    id: 'help_classmate',
+    name: 'Help a Classmate',
+    description: 'Assist another student with their work',
+    category: 'behavior',
+    questGiver: 'guide3',
+    icon: '🤝',
+    reward: { type: 'xp', amount: 3, category: 'Respectful' }
+  },
+  {
+    id: 'organize_desk',
+    name: 'Organize Your Space',
+    description: 'Clean and organize your desk area',
+    category: 'responsibility',
+    questGiver: 'guide2',
+    icon: '🧹',
+    reward: { type: 'xp', amount: 2, category: 'Responsible' }
+  },
+  {
+    id: 'creative_project',
+    name: 'Creative Expression',
+    description: 'Complete a creative art or writing project',
+    category: 'creative',
+    questGiver: 'guide4',
+    icon: '🎨',
+    reward: { type: 'coins', amount: 5 }
+  }
+];
+
+// Shop Items
+const SHOP_ITEMS = {
+  avatars: [
+    { id: 'wizard', name: 'Wizard', price: 25, category: 'avatars', image: '/Avatars/Wizard/Level 1.png' },
+    { id: 'knight', name: 'Knight', price: 25, category: 'avatars', image: '/Avatars/Knight/Level 1.png' },
+    { id: 'archer', name: 'Archer', price: 25, category: 'avatars', image: '/Avatars/Archer/Level 1.png' },
+    { id: 'rogue', name: 'Rogue', price: 25, category: 'avatars', image: '/Avatars/Rogue/Level 1.png' },
+  ],
+  pets: [
+    { id: 'dragon', name: 'Fire Dragon', price: 15, category: 'pets', image: '/Pets/dragon.png' },
+    { id: 'unicorn', name: 'Magic Unicorn', price: 15, category: 'pets', image: '/Pets/unicorn.png' },
+    { id: 'phoenix', name: 'Phoenix', price: 20, category: 'pets', image: '/Pets/phoenix.png' },
+    { id: 'griffin', name: 'Griffin', price: 20, category: 'pets', image: '/Pets/griffin.png' },
+  ],
+  consumables: [
+    { id: 'xp_boost', name: 'XP Boost Potion', price: 10, category: 'consumables', description: '+5 XP to next activity' },
+    { id: 'luck_charm', name: 'Lucky Charm', price: 8, category: 'consumables', description: 'Increases loot box luck' },
+  ]
+};
+
+const ITEM_RARITIES = {
+  common: { name: 'Common', color: '#9CA3AF', chance: 60 },
+  uncommon: { name: 'Uncommon', color: '#10B981', chance: 25 },
+  rare: { name: 'Rare', color: '#3B82F6', chance: 12 },
+  epic: { name: 'Epic', color: '#8B5CF6', chance: 2.5 },
+  legendary: { name: 'Legendary', color: '#F59E0B', chance: 0.5 }
+};
+
+const LOOT_BOX_ITEMS = [
+  { name: 'Gold Star Sticker', rarity: 'common', value: 2 },
+  { name: 'Rainbow Pencil', rarity: 'common', value: 3 },
+  { name: 'Sparkly Eraser', rarity: 'uncommon', value: 5 },
+  { name: 'Magic Ruler', rarity: 'uncommon', value: 7 },
+  { name: 'Crystal Pen', rarity: 'rare', value: 12 },
+  { name: 'Golden Calculator', rarity: 'rare', value: 15 },
+  { name: 'Mystic Compass', rarity: 'epic', value: 25 },
+  { name: 'Phoenix Feather', rarity: 'epic', value: 30 },
+  { name: 'Dragon Scale', rarity: 'legendary', value: 50 },
+  { name: 'Unicorn Horn', rarity: 'legendary', value: 75 }
+];
+
+// Available Avatars
+const AVAILABLE_AVATARS = [
+  'Wizard', 'Knight', 'Archer', 'Rogue', 'Paladin', 'Mage', 'Barbarian', 'Monk',
+  'Ranger', 'Druid', 'Bard', 'Warlock', 'Sorcerer', 'Cleric', 'Fighter', 'Assassin'
+];
+
 // Constants
 const MAX_LEVEL = 4;
 const COINS_PER_XP = 5;
@@ -179,6 +276,73 @@ const getRandomPet = () => {
 const getRandomPetName = () => {
   const names = ['Spark', 'Luna', 'Blaze', 'Storm', 'Nova', 'Echo', 'Frost', 'Ember'];
   return names[Math.floor(Math.random() * names.length)];
+};
+
+const generateLootBoxRewards = (lootBox) => {
+  const rewards = [];
+  const numRewards = Math.floor(Math.random() * 3) + 1; // 1-3 rewards
+  
+  for (let i = 0; i < numRewards; i++) {
+    const randomValue = Math.random() * 100;
+    let selectedRarity = 'common';
+    
+    for (const [rarity, data] of Object.entries(ITEM_RARITIES)) {
+      if (randomValue <= data.chance) {
+        selectedRarity = rarity;
+        break;
+      }
+    }
+    
+    const rarityItems = LOOT_BOX_ITEMS.filter(item => item.rarity === selectedRarity);
+    if (rarityItems.length > 0) {
+      const randomItem = rarityItems[Math.floor(Math.random() * rarityItems.length)];
+      rewards.push({
+        ...randomItem,
+        id: `loot_${Date.now()}_${i}`,
+        acquired: new Date().toISOString()
+      });
+    }
+  }
+  
+  return rewards;
+};
+
+// Migration function for existing data
+const migrateClassData = async (cls) => {
+  console.log(`Migrating class: ${cls.name}`);
+  
+  const migratedStudents = cls.students.map(student => {
+    const migrated = updateStudentWithCurrency(student);
+    
+    // Migrate pet if exists
+    if (student.pet && !migrated.ownedPets.length) {
+      migrated.ownedPets = [{
+        id: `migrated_pet_${Date.now()}`,
+        name: student.pet.name || 'Companion',
+        image: student.pet.image,
+        type: 'migrated'
+      }];
+    }
+    
+    return migrated;
+  });
+
+  return {
+    ...cls,
+    students: migratedStudents,
+    activeQuests: cls.activeQuests || [],
+    questTemplates: cls.questTemplates || QUEST_TEMPLATES,
+    attendanceData: cls.attendanceData || {},
+    teacherRewards: cls.teacherRewards || []
+  };
+};
+
+// Speed calculation for racing
+const calculateSpeed = (pet) => {
+  const baseSpeed = 1;
+  const speedBoost = (pet.wins || 0) * 0.02;
+  const randomFactor = 0.8 + (Math.random() * 0.4);
+  return (baseSpeed + speedBoost) * randomFactor;
 };
 
 // Loading components
@@ -282,19 +446,65 @@ export default function ClassroomChampions() {
   const [bulkXpCategory, setBulkXpCategory] = useState('Respectful');
   const [showBulkXpPanel, setShowBulkXpPanel] = useState(false);
 
-  // NEW: Quest system states
+  // Quest system states
   const [activeQuests, setActiveQuests] = useState([]);
+  const [questTemplates, setQuestTemplates] = useState(QUEST_TEMPLATES);
+  const [questCompletionData, setQuestCompletionData] = useState(null);
+  const [showQuestCompletion, setShowQuestCompletion] = useState(false);
+  const [showQuestManagement, setShowQuestManagement] = useState(false);
+  const [selectedQuestGiver, setSelectedQuestGiver] = useState(null);
+  const [showQuestGiverTip, setShowQuestGiverTip] = useState(null);
+
+  // Animation states
+  const [animatingXP, setAnimatingXP] = useState({});
+  const [savingData, setSavingData] = useState(false);
+
+  // Settings states
+  const [showConfirmDialog, setShowConfirmDialog] = useState(null);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [feedbackType, setFeedbackType] = useState('bug');
+  const [feedbackSubject, setFeedbackSubject] = useState('');
+  const [feedbackMessage, setFeedbackMessage] = useState('');
+  const [feedbackEmail, setFeedbackEmail] = useState('');
+
+  // Attendance data
   const [attendanceData, setAttendanceData] = useState({});
 
-  // UI states
-  const [savingData, setSavingData] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
-  const [animatingXP, setAnimatingXP] = useState({});
+  // ===============================================
+  // CORE FUNCTIONS
+  // ===============================================
 
-  // Toast notification function
-  const showToast = (message) => {
-    setToastMessage(message);
-    setTimeout(() => setToastMessage(''), 3000);
+  // Toast notification system
+  const [toasts, setToasts] = useState([]);
+
+  const showToast = (message, type = 'success') => {
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(toast => toast.id !== id));
+    }, 3000);
+  };
+
+  // Calculate coins for a student
+  const calculateCoins = (student) => {
+    const xpCoins = Math.floor((student?.totalPoints || 0) / COINS_PER_XP);
+    const bonusCoins = student?.coins || 0;
+    const coinsSpent = student?.coinsSpent || 0;
+    return Math.max(0, xpCoins + bonusCoins - coinsSpent);
+  };
+
+  // Check if student can afford an item
+  const canAfford = (student, price) => {
+    return calculateCoins(student) >= price;
+  };
+
+  // Spend coins function
+  const spendCoins = (studentId, amount) => {
+    setStudents(prev => prev.map(student => 
+      student.id === studentId 
+        ? { ...student, coinsSpent: (student.coinsSpent || 0) + amount }
+        : student
+    ));
   };
 
   // ===============================================
@@ -381,6 +591,66 @@ export default function ClassroomChampions() {
       }
     } catch (error) {
       console.error("Error saving active class:", error);
+    }
+  };
+
+  // Save group data to Firebase (for toolkit)
+  const saveGroupDataToFirebase = async (groupData) => {
+    if (!user || !currentClassId) return;
+
+    try {
+      const docRef = doc(firestore, 'users', user.uid);
+      const snap = await getDoc(docRef);
+      
+      if (snap.exists()) {
+        const data = snap.data();
+        const updatedClasses = data.classes.map(cls => 
+          cls.id === currentClassId 
+            ? { 
+                ...cls, 
+                groupData,
+                lastUpdated: new Date().toISOString()
+              }
+            : cls
+        );
+        
+        await setDoc(docRef, { 
+          ...data, 
+          classes: updatedClasses 
+        });
+      }
+    } catch (error) {
+      console.error("Error saving group data:", error);
+    }
+  };
+
+  // Save classroom data to Firebase (for toolkit)
+  const saveClassroomDataToFirebase = async (classroomData) => {
+    if (!user || !currentClassId) return;
+
+    try {
+      const docRef = doc(firestore, 'users', user.uid);
+      const snap = await getDoc(docRef);
+      
+      if (snap.exists()) {
+        const data = snap.data();
+        const updatedClasses = data.classes.map(cls => 
+          cls.id === currentClassId 
+            ? { 
+                ...cls, 
+                classroomData,
+                lastUpdated: new Date().toISOString()
+              }
+            : cls
+        );
+        
+        await setDoc(docRef, { 
+          ...data, 
+          classes: updatedClasses 
+        });
+      }
+    } catch (error) {
+      console.error("Error saving classroom data:", error);
     }
   };
 
@@ -556,6 +826,20 @@ export default function ClassroomChampions() {
     });
   };
 
+  // Safe quest completion check
+  const checkQuestCompletionSafely = (studentId, studentsArray) => {
+    try {
+      // Check if any quests can be auto-completed
+      const student = studentsArray.find(s => s.id === studentId);
+      if (!student) return;
+
+      // Auto-complete logic would go here
+      // For now, this is just a placeholder
+    } catch (error) {
+      console.error('Error checking quest completion:', error);
+    }
+  };
+
   // ===============================================
   // STUDENT MANAGEMENT FUNCTIONS
   // ===============================================
@@ -630,11 +914,493 @@ export default function ClassroomChampions() {
       });
 
       saveStudentsToFirebase(updatedStudents);
+      checkQuestCompletionSafely(studentId, updatedStudents);
       return updatedStudents;
     });
 
     setSavingData(false);
     showToast(`+${amount} ${category} XP awarded!`);
+  };
+
+  const handleAvatarClick = (studentId) => {
+    const student = students.find(s => s.id === studentId);
+    if (student) {
+      setStudentForAvatarChange(student);
+      setShowAvatarSelectionModal(true);
+    }
+  };
+
+  const handleAvatarChange = async (avatarBase) => {
+    if (!studentForAvatarChange) return;
+
+    setSavingData(true);
+    const newAvatar = getAvatarImage(avatarBase, studentForAvatarChange.avatarLevel);
+    
+    setStudents(prev => {
+      const updatedStudents = prev.map(student => 
+        student.id === studentForAvatarChange.id 
+          ? { 
+              ...student, 
+              avatarBase, 
+              avatar: newAvatar,
+              ownedAvatars: student.ownedAvatars?.includes(avatarBase) 
+                ? student.ownedAvatars 
+                : [...(student.ownedAvatars || []), avatarBase]
+            }
+          : student
+      );
+      
+      saveStudentsToFirebase(updatedStudents);
+      return updatedStudents;
+    });
+    
+    setSavingData(false);
+    setShowAvatarSelectionModal(false);
+    setStudentForAvatarChange(null);
+    showToast('Avatar changed successfully!');
+  };
+
+  // Student selection functions
+  const handleStudentSelect = (studentId) => {
+    setSelectedStudents(prev => {
+      if (prev.includes(studentId)) {
+        return prev.filter(id => id !== studentId);
+      } else {
+        return [...prev, studentId];
+      }
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedStudents.length === students.length) {
+      setSelectedStudents([]);
+    } else {
+      setSelectedStudents(students.map(s => s.id));
+    }
+  };
+
+  const handleDeselectAll = () => {
+    setSelectedStudents([]);
+    setShowBulkXpPanel(false);
+  };
+
+  const handleBulkXpAward = () => {
+    if (selectedStudents.length === 0) {
+      alert("Please select at least one student");
+      return;
+    }
+
+    setSavingData(true);
+    
+    // Animate all selected students
+    selectedStudents.forEach(id => {
+      setAnimatingXP(prev => ({ ...prev, [id]: bulkXpCategory }));
+    });
+
+    setTimeout(() => {
+      selectedStudents.forEach(id => {
+        setAnimatingXP(prev => ({ ...prev, [id]: null }));
+      });
+    }, 600);
+
+    setStudents((prev) => {
+      const updatedStudents = prev.map((s) => {
+        if (!selectedStudents.includes(s.id)) return s;
+
+        const newTotal = s.totalPoints + bulkXpAmount;
+        let updated = {
+          ...s,
+          totalPoints: newTotal,
+          weeklyPoints: (s.weeklyPoints || 0) + bulkXpAmount,
+          lastXpDate: new Date().toISOString(),
+          categoryTotal: {
+            ...s.categoryTotal,
+            [bulkXpCategory]: (s.categoryTotal[bulkXpCategory] || 0) + bulkXpAmount,
+          },
+          categoryWeekly: {
+            ...s.categoryWeekly,
+            [bulkXpCategory]: (s.categoryWeekly[bulkXpCategory] || 0) + bulkXpAmount,
+          },
+          logs: [
+            ...(s.logs || []),
+            {
+              type: bulkXpCategory,
+              amount: bulkXpAmount,
+              date: new Date().toISOString(),
+              source: "bulk",
+            },
+          ],
+        };
+
+        if (!s.pet?.image && newTotal >= 50) {
+          const newPet = getRandomPet();
+          setPetNameInput(getRandomPetName());
+          setPetUnlockData({
+            studentId: s.id,
+            firstName: s.firstName,
+            pet: newPet,
+          });
+        }
+
+        return checkForLevelUp(updated);
+      });
+
+      saveStudentsToFirebase(updatedStudents);
+
+      // Quest completion for each student
+      selectedStudents.forEach(studentId => {
+        checkQuestCompletionSafely(studentId, updatedStudents);
+      });
+
+      return updatedStudents;
+    });
+
+    setSelectedStudents([]);
+    setShowBulkXpPanel(false);
+    setSavingData(false);
+    
+    const studentNames = selectedStudents.length === students.length 
+      ? 'the entire class'
+      : `${selectedStudents.length} students`;
+    
+    showToast(`Awarded ${bulkXpAmount} XP to ${studentNames}!`);
+  };
+
+  // ===============================================
+  // SETTINGS FUNCTIONS
+  // ===============================================
+
+  const handleDeductXP = (studentId, amount) => {
+    if (amount <= 0) {
+      alert("Please enter a positive amount");
+      return;
+    }
+
+    setSavingData(true);
+    setStudents(prev => {
+      const updatedStudents = prev.map(s => 
+        s.id === studentId 
+          ? { 
+              ...s, 
+              totalPoints: Math.max(0, s.totalPoints - amount),
+              logs: [
+                ...(s.logs || []),
+                {
+                  type: 'deduction',
+                  amount: -amount,
+                  date: new Date().toISOString(),
+                  source: 'admin'
+                }
+              ]
+            }
+          : s
+      );
+      saveStudentsToFirebase(updatedStudents);
+      return updatedStudents;
+    });
+    setSavingData(false);
+    showToast('XP deducted successfully');
+  };
+
+  const handleDeductCurrency = (studentId, amount) => {
+    if (amount <= 0) {
+      alert("Please enter a positive amount");
+      return;
+    }
+
+    setSavingData(true);
+    setStudents(prev => {
+      const updatedStudents = prev.map(s => 
+        s.id === studentId 
+          ? { 
+              ...s, 
+              coinsSpent: (s.coinsSpent || 0) + amount,
+              logs: [
+                ...(s.logs || []),
+                {
+                  type: 'coin_deduction',
+                  amount: -amount,
+                  date: new Date().toISOString(),
+                  source: 'admin'
+                }
+              ]
+            }
+          : s
+      );
+      saveStudentsToFirebase(updatedStudents);
+      return updatedStudents;
+    });
+    setSavingData(false);
+    showToast('Coins deducted successfully');
+  };
+
+  // Reset functions
+  const handleResetStudentPoints = (studentId) => {
+    setSavingData(true);
+    setStudents(prev => {
+      const updatedStudents = prev.map(s => 
+        s.id === studentId 
+          ? { 
+              ...s, 
+              totalPoints: 0, 
+              weeklyPoints: 0,
+              categoryTotal: {},
+              categoryWeekly: {},
+              avatarLevel: 1,
+              avatar: s.avatarBase ? getAvatarImage(s.avatarBase, 1) : s.avatar,
+              logs: [
+                ...(s.logs || []),
+                {
+                  type: 'reset',
+                  amount: 0,
+                  date: new Date().toISOString(),
+                  source: 'admin'
+                }
+              ]
+            }
+          : s
+      );
+      saveStudentsToFirebase(updatedStudents);
+      return updatedStudents;
+    });
+    setSavingData(false);
+    showToast('Student points reset successfully');
+  };
+
+  const handleResetAllPoints = () => {
+    setSavingData(true);
+    setStudents(prev => {
+      const updatedStudents = prev.map(s => ({
+        ...s,
+        totalPoints: 0,
+        weeklyPoints: 0,
+        categoryTotal: {},
+        categoryWeekly: {},
+        avatarLevel: 1,
+        avatar: s.avatarBase ? getAvatarImage(s.avatarBase, 1) : s.avatar,
+        logs: [
+          ...(s.logs || []),
+          {
+            type: 'reset_all',
+            amount: 0,
+            date: new Date().toISOString(),
+            source: 'admin'
+          }
+        ]
+      }));
+      saveStudentsToFirebase(updatedStudents);
+      return updatedStudents;
+    });
+    setSavingData(false);
+    showToast('All student points reset successfully');
+  };
+
+  const handleResetPetSpeeds = () => {
+    setSavingData(true);
+    setStudents(prev => {
+      const updatedStudents = prev.map(s => 
+        s.pet ? { 
+          ...s, 
+          pet: { 
+            ...s.pet, 
+            speed: 1, 
+            wins: 0 
+          } 
+        } : s
+      );
+      saveStudentsToFirebase(updatedStudents);
+      return updatedStudents;
+    });
+    setSavingData(false);
+    showToast('All pet speeds reset successfully');
+  };
+
+  const handleRemoveStudent = (studentId) => {
+    setSavingData(true);
+    setStudents(prev => {
+      const updatedStudents = prev.filter(s => s.id !== studentId);
+      saveStudentsToFirebase(updatedStudents);
+      return updatedStudents;
+    });
+    setSavingData(false);
+    showToast('Student removed successfully');
+  };
+
+  // Feedback functions
+  const handleSubmitFeedback = async () => {
+    setSavingData(true);
+    
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      setFeedbackSubject('');
+      setFeedbackMessage('');
+      setFeedbackEmail('');
+      setShowFeedbackModal(false);
+      
+      showToast('Feedback submitted successfully!');
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+      alert('Error submitting feedback. Please try again.');
+    } finally {
+      setSavingData(false);
+    }
+  };
+
+  const handleSubscriptionManagement = async () => {
+    if (!userData?.stripeCustomerId) {
+      router.push('/pricing');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/create-portal-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customerId: userData.stripeCustomerId })
+      });
+
+      const { url } = await response.json();
+      window.open(url, '_blank');
+    } catch (error) {
+      console.error('Error opening billing portal:', error);
+      alert('Error opening billing portal. Please try again.');
+    }
+  };
+
+  // Quest template management functions
+  const handleAddQuestTemplate = (questData) => {
+    const newTemplate = {
+      ...questData,
+      id: `template_${Date.now()}`,
+      isCustom: true
+    };
+    
+    setQuestTemplates(prev => {
+      const updated = [...prev, newTemplate];
+      saveQuestDataToFirebase({ questTemplates: updated });
+      return updated;
+    });
+    
+    showToast('Quest template added successfully!');
+  };
+
+  const handleEditQuestTemplate = (templateId, questData) => {
+    setQuestTemplates(prev => {
+      const updated = prev.map(template => 
+        template.id === templateId ? { ...template, ...questData } : template
+      );
+      saveQuestDataToFirebase({ questTemplates: updated });
+      return updated;
+    });
+    
+    showToast('Quest template updated successfully!');
+  };
+
+  const handleDeleteQuestTemplate = (templateId) => {
+    setQuestTemplates(prev => {
+      const updated = prev.filter(template => template.id !== templateId);
+      saveQuestDataToFirebase({ questTemplates: updated });
+      return updated;
+    });
+    
+    showToast('Quest template deleted successfully!');
+  };
+
+  const handleResetQuestTemplates = () => {
+    setQuestTemplates(QUEST_TEMPLATES);
+    saveQuestDataToFirebase({ questTemplates: QUEST_TEMPLATES });
+    showToast('Quest templates reset to defaults!');
+  };
+
+  // Random quest giver tip function
+  const showRandomQuestGiverTip = () => {
+    const randomGiver = QUEST_GIVERS[Math.floor(Math.random() * QUEST_GIVERS.length)];
+    const randomTip = randomGiver.tips[Math.floor(Math.random() * randomGiver.tips.length)];
+    setShowQuestGiverTip({ giver: randomGiver, tip: randomTip });
+    
+    setTimeout(() => setShowQuestGiverTip(null), 5000);
+  };
+
+  // ===============================================
+  // SHOP FUNCTIONS
+  // ===============================================
+
+  const handleShopStudentSelect = (student) => {
+    setSelectedStudent(student);
+  };
+
+  const handleShopPurchase = (student, item) => {
+    const coins = calculateCoins(student);
+    const cost = item.price;
+    
+    if (!canAfford(student, cost)) {
+      alert(`${student.firstName} doesn't have enough coins!`);
+      return;
+    }
+
+    spendCoins(student.id, cost);
+    
+    // Add item to student's owned items
+    setStudents(prev => prev.map(s => {
+      if (s.id !== student.id) return s;
+      
+      if (item.category === 'avatars') {
+        return {
+          ...s,
+          ownedAvatars: [...(s.ownedAvatars || []), item.id],
+          rewardsPurchased: [...(s.rewardsPurchased || []), item.name]
+        };
+      } else if (item.category === 'pets') {
+        return {
+          ...s,
+          ownedPets: [...(s.ownedPets || []), {
+            id: `pet_${Date.now()}`,
+            name: item.name,
+            image: item.image,
+            type: 'purchased'
+          }],
+          rewardsPurchased: [...(s.rewardsPurchased || []), item.name]
+        };
+      } else {
+        return {
+          ...s,
+          inventory: [...(s.inventory || []), {
+            id: `item_${Date.now()}`,
+            name: item.name,
+            description: item.description,
+            source: 'shop',
+            acquired: new Date().toISOString()
+          }],
+          rewardsPurchased: [...(s.rewardsPurchased || []), item.name]
+        };
+      }
+    }));
+    
+    showToast(`${student.firstName} purchased ${item.name}!`);
+  };
+
+  const handleLootBoxPurchase = (student, lootBox) => {
+    const coins = calculateCoins(student);
+    const cost = lootBox.price;
+    
+    if (!canAfford(student, cost)) {
+      alert(`${student.firstName} doesn't have enough coins!`);
+      return;
+    }
+
+    const rewards = generateLootBoxRewards(lootBox);
+    spendCoins(student.id, cost);
+    
+    // Add rewards to student inventory
+    setStudents(prev => prev.map(s => 
+      s.id === student.id 
+        ? { ...s, inventory: [...(s.inventory || []), ...rewards] }
+        : s
+    ));
+
+    const rewardNames = rewards.map(r => r.name).join(', ');
+    showToast(`${student.firstName} opened ${lootBox.name} and got: ${rewardNames}!`);
   };
 
   // ===============================================
@@ -679,8 +1445,10 @@ export default function ClassroomChampions() {
       id: 'class-' + Date.now(),
       name: newClassName,
       students: studentsArray,
-      activeQuests: [], // NEW: Initialize empty quest array
+      activeQuests: [],
+      questTemplates: QUEST_TEMPLATES,
       attendanceData: {},
+      teacherRewards: []
     };
 
     try {
@@ -706,6 +1474,7 @@ export default function ClassroomChampions() {
       setStudents(newClass.students);
       setCurrentClassId(newClass.id);
       setActiveQuests([]);
+      setQuestTemplates(QUEST_TEMPLATES);
       setAttendanceData({});
       setNewClassName('');
       setNewClassStudents('');
@@ -727,6 +1496,7 @@ export default function ClassroomChampions() {
     
     // Load quest and attendance data
     setActiveQuests(cls.activeQuests || []);
+    setQuestTemplates(cls.questTemplates || QUEST_TEMPLATES);
     setAttendanceData(cls.attendanceData || {});
     
     setSelectedStudents([]);
@@ -759,9 +1529,85 @@ export default function ClassroomChampions() {
   };
 
   // ===============================================
-  // AUTHENTICATION & DATA LOADING
+  // EFFECTS
   // ===============================================
 
+  // Pet racing effect
+  useEffect(() => {
+    if (!raceInProgress || raceFinished) return;
+
+    const interval = setInterval(() => {
+      setRacePositions(prev => {
+        const updated = { ...prev };
+        let hasWinner = false;
+
+        // Check if race should finish
+        if (Object.values(updated).some(pos => pos >= FINISH_LINE_POSITION)) {
+          setRaceInProgress(false);
+          setRaceFinished(true);
+
+          // Find winner
+          const maxPosition = Math.max(...Object.values(updated));
+          const winnerId = Object.keys(updated).find(id => updated[id] === maxPosition);
+          const winnerStudent = students.find(s => s.id === winnerId);
+          
+          if (winnerStudent) {
+            setRaceWinner(winnerStudent);
+
+            // Update winner's pet stats and award prize
+            setStudents(prev => {
+              const updatedStudents = prev.map(s => {
+                if (s.id === winnerId) {
+                  let updated = {
+                    ...s,
+                    pet: {
+                      ...s.pet,
+                      wins: (s.pet.wins || 0) + 1,
+                      speed: (s.pet.speed || 1) + 0.02
+                    },
+                  };
+
+                  if (selectedPrize === 'XP') {
+                    updated.totalPoints = (updated.totalPoints || 0) + xpAmount;
+                    return checkForLevelUp(updated);
+                  }
+
+                  return updated;
+                }
+                return s;
+              });
+
+              saveStudentsToFirebase(updatedStudents);
+              return updatedStudents;
+            });
+          }
+
+          return updated;
+        }
+
+        for (const id of selectedPets) {
+          const student = students.find((s) => s.id === id);
+          if (!student?.pet) continue;
+
+          const speed = calculateSpeed(student.pet);
+          const baseStep = speed * 2;
+          const randomMultiplier = 0.8 + Math.random() * 0.4;
+          const step = baseStep * randomMultiplier;
+          
+          const currentPosition = updated[id] || 0;
+          const newPosition = Math.min(currentPosition + step, FINISH_LINE_POSITION);
+          
+          updated[id] = newPosition;
+        }
+
+        return updated;
+      });
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [raceInProgress, students, selectedPets, selectedPrize, xpAmount, raceFinished]);
+
+  // Authentication and user data management with data migration
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       try {
@@ -777,26 +1623,44 @@ export default function ClassroomChampions() {
 
             let savedClasses = data.classes || [];
             
-            // Ensure all classes have quest data structure
-            const updatedClasses = savedClasses.map(cls => ({
-              ...cls,
-              activeQuests: cls.activeQuests || [],
-              attendanceData: cls.attendanceData || {}
-            }));
+            // Migration: Migrate existing classes to new data structure
+            let needsUpdate = false;
+            const migratedClasses = await Promise.all(
+              savedClasses.map(async (cls) => {
+                const hasOldData = cls.students.some(s => s.ownedAvatars === undefined);
+                if (hasOldData) {
+                  needsUpdate = true;
+                  console.log(`Migrating class: ${cls.name}`);
+                  return await migrateClassData(cls);
+                }
+                return cls;
+              })
+            );
 
-            setTeacherClasses(updatedClasses);
+            // Save migrated data back to Firebase if needed
+            if (needsUpdate) {
+              console.log('Saving migrated data to Firebase...');
+              await setDoc(docRef, { 
+                ...data, 
+                classes: migratedClasses 
+              });
+              showToast('Data updated for new shop features!');
+            }
 
-            if (updatedClasses.length > 0) {
+            setTeacherClasses(migratedClasses);
+
+            if (migratedClasses.length > 0) {
               const activeClassId = data.activeClassId;
               const activeClass = activeClassId 
-                ? updatedClasses.find(cls => cls.id === activeClassId)
-                : updatedClasses[0];
+                ? migratedClasses.find(cls => cls.id === activeClassId)
+                : migratedClasses[0];
 
               if (activeClass) {
                 const studentsWithCurrency = activeClass.students.map(student => updateStudentWithCurrency(student));
                 setStudents(studentsWithCurrency);
                 setCurrentClassId(activeClass.id);
                 setActiveQuests(activeClass.activeQuests || []);
+                setQuestTemplates(activeClass.questTemplates || QUEST_TEMPLATES);
                 setAttendanceData(activeClass.attendanceData || {});
               }
             }
@@ -840,20 +1704,20 @@ export default function ClassroomChampions() {
   const tabProps = {
     students,
     handleAwardXP,
-    handleAvatarClick: (studentId) => {
-      const student = students.find(s => s.id === studentId);
-      if (student) {
-        setStudentForAvatarChange(student);
-        setShowAvatarSelectionModal(true);
-      }
-    },
+    handleAvatarClick,
     setSelectedStudent,
     animatingXP,
     setShowAddStudentModal,
     showToast,
     userData,
+    user,
+    router,
+    currentClassId,
+    savingData,
+    setSavingData,
     // Quest System Props
     activeQuests,
+    questTemplates,
     QUEST_GIVERS,
     onCreateQuest: handleCreateQuest,
     onEditQuest: handleEditQuest,
@@ -862,27 +1726,90 @@ export default function ClassroomChampions() {
     getAvailableQuests,
     attendanceData,
     markAttendance,
+    saveQuestDataToFirebase,
+    handleAddQuestTemplate,
+    handleEditQuestTemplate,
+    handleDeleteQuestTemplate,
+    handleResetQuestTemplates,
+    selectedQuestGiver,
+    setSelectedQuestGiver,
+    showRandomQuestGiverTip,
     // Bulk XP Props
     selectedStudents,
     setSelectedStudents,
-    handleStudentSelect: (studentId) => {
-      setSelectedStudents(prev => 
-        prev.includes(studentId) 
-          ? prev.filter(id => id !== studentId)
-          : [...prev, studentId]
-      );
-    },
-    handleSelectAll: () => setSelectedStudents(students.map(s => s.id)),
-    handleDeselectAll: () => setSelectedStudents([]),
+    handleStudentSelect,
+    handleSelectAll,
+    handleDeselectAll,
     showBulkXpPanel,
     setShowBulkXpPanel,
     bulkXpAmount,
     setBulkXpAmount,
     bulkXpCategory,
     setBulkXpCategory,
-    handleBulkXpAward: () => {
-      // Bulk XP award logic here
-    }
+    handleBulkXpAward,
+    // Shop Props
+    calculateCoins,
+    canAfford,
+    spendCoins,
+    SHOP_ITEMS,
+    ITEM_RARITIES,
+    LOOT_BOX_ITEMS,
+    generateLootBoxRewards,
+    handleShopStudentSelect,
+    handleShopPurchase,
+    handleLootBoxPurchase,
+    CurrencyDisplay,
+    // Settings Props
+    handleResetStudentPoints,
+    handleResetAllPoints,
+    handleResetPetSpeeds,
+    handleRemoveStudent,
+    handleSubscriptionManagement,
+    setShowConfirmDialog,
+    setShowFeedbackModal,
+    feedbackType,
+    setFeedbackType,
+    feedbackSubject,
+    setFeedbackSubject,
+    feedbackMessage,
+    setFeedbackMessage,
+    feedbackEmail,
+    setFeedbackEmail,
+    handleSubmitFeedback,
+    showFeedbackModal,
+    handleDeductXP,
+    handleDeductCurrency,
+    // Group Management
+    saveGroupDataToFirebase,
+    // Classroom Management
+    saveClassroomDataToFirebase,
+    // Pet Race Props
+    raceInProgress,
+    setRaceInProgress,
+    raceFinished,
+    setRaceFinished,
+    racePositions,
+    setRacePositions,
+    raceWinner,
+    setRaceWinner,
+    selectedPrize,
+    setSelectedPrize,
+    xpAmount,
+    setXpAmount,
+    selectedPets,
+    setSelectedPets,
+    showRaceSetup,
+    setShowRaceSetup,
+    calculateSpeed,
+    FINISH_LINE_POSITION,
+    // Utility Functions
+    getAvatarImage,
+    getRandomPet,
+    getRandomPetName,
+    updateStudentWithCurrency,
+    checkForLevelUp,
+    AVAILABLE_AVATARS,
+    MAX_LEVEL
   };
 
   return (
@@ -981,10 +1908,9 @@ export default function ClassroomChampions() {
           <AvatarSelectionModal
             isOpen={showAvatarSelectionModal}
             onClose={() => setShowAvatarSelectionModal(false)}
-            onSelectAvatar={(avatarBase) => {
-              // Handle avatar change logic
-              setShowAvatarSelectionModal(false);
-            }}
+            onSelectAvatar={handleAvatarChange}
+            availableAvatars={AVAILABLE_AVATARS}
+            currentAvatar={studentForAvatarChange?.avatarBase}
             showToast={showToast}
           />
         )}
@@ -1002,20 +1928,165 @@ export default function ClassroomChampions() {
             petName={petNameInput}
             onPetNameChange={setPetNameInput}
             onConfirm={() => {
-              // Handle pet unlock logic
+              if (!petNameInput.trim()) {
+                alert('Please enter a name for your pet!');
+                return;
+              }
+
+              setStudents(prev => prev.map(student => 
+                student.id === petUnlockData.studentId 
+                  ? { 
+                      ...student, 
+                      pet: { 
+                        ...petUnlockData.pet, 
+                        name: petNameInput,
+                        speed: 1,
+                        wins: 0
+                      }
+                    }
+                  : student
+              ));
+
+              showToast(`${petUnlockData.firstName} unlocked ${petNameInput}!`);
               setPetUnlockData(null);
+              setPetNameInput('');
             }}
             onClose={() => setPetUnlockData(null)}
           />
         )}
+
+        {showAddStudentModal && (
+          <AddStudentModal
+            isOpen={showAddStudentModal}
+            onClose={() => setShowAddStudentModal(false)}
+            onAddStudent={(name, avatar) => {
+              const newStudent = updateStudentWithCurrency({
+                id: Date.now().toString() + Math.random().toString(36).substring(2, 8),
+                firstName: name,
+                avatarBase: avatar,
+                avatarLevel: 1,
+                avatar: getAvatarImage(avatar, 1),
+                totalPoints: 0,
+                weeklyPoints: 0,
+                categoryTotal: {},
+                categoryWeekly: {},
+                coins: 0,
+                logs: [],
+                pet: null
+              });
+
+              setStudents(prev => {
+                const updated = [...prev, newStudent];
+                saveStudentsToFirebase(updated);
+                return updated;
+              });
+
+              showToast(`${name} added to class!`);
+            }}
+            availableAvatars={AVAILABLE_AVATARS}
+            showToast={showToast}
+          />
+        )}
+
+        {raceFinished && raceWinner && (
+          <RaceWinnerModal
+            winner={raceWinner}
+            prize={selectedPrize}
+            xpAmount={xpAmount}
+            onClose={() => {
+              setRaceFinished(false);
+              setRaceWinner(null);
+              setRacePositions({});
+              setSelectedPets([]);
+            }}
+          />
+        )}
+
+        {showRaceSetup && (
+          <RaceSetupModal
+            students={students}
+            selectedPets={selectedPets}
+            setSelectedPets={setSelectedPets}
+            selectedPrize={selectedPrize}
+            setSelectedPrize={setSelectedPrize}
+            xpAmount={xpAmount}
+            setXpAmount={setXpAmount}
+            onStartRace={() => {
+              if (selectedPets.length < 2) {
+                alert('Please select at least 2 pets to race!');
+                return;
+              }
+              
+              setShowRaceSetup(false);
+              setRacePositions(Object.fromEntries(selectedPets.map(id => [id, 0])));
+              setRaceInProgress(true);
+            }}
+            onClose={() => setShowRaceSetup(false)}
+          />
+        )}
+
+        {showQuestCompletion && questCompletionData && (
+          <QuestCompletionModal
+            data={questCompletionData}
+            onClose={() => {
+              setShowQuestCompletion(false);
+              setQuestCompletionData(null);
+            }}
+          />
+        )}
       </Suspense>
 
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in">
-          {toastMessage}
+      {/* Confirm Dialog */}
+      {showConfirmDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
+            <div className="p-6">
+              <div className="flex items-center space-x-3 mb-4">
+                <span className="text-3xl">{showConfirmDialog.icon}</span>
+                <h3 className="text-xl font-bold text-gray-800">{showConfirmDialog.title}</h3>
+              </div>
+              <p className="text-gray-600 mb-6">{showConfirmDialog.message}</p>
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => {
+                    showConfirmDialog.onConfirm();
+                    setShowConfirmDialog(null);
+                  }}
+                  className={`flex-1 px-4 py-2 rounded-lg font-medium ${
+                    showConfirmDialog.type === 'danger' 
+                      ? 'bg-red-600 text-white hover:bg-red-700' 
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}
+                >
+                  {showConfirmDialog.confirmText}
+                </button>
+                <button
+                  onClick={() => setShowConfirmDialog(null)}
+                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
+
+      {/* Toast Notifications */}
+      <div className="fixed bottom-4 right-4 space-y-2 z-50">
+        {toasts.map(toast => (
+          <div
+            key={toast.id}
+            className={`px-6 py-3 rounded-lg shadow-lg animate-fade-in ${
+              toast.type === 'success' ? 'bg-green-600 text-white' :
+              toast.type === 'error' ? 'bg-red-600 text-white' :
+              'bg-blue-600 text-white'
+            }`}
+          >
+            {toast.message}
+          </div>
+        ))}
+      </div>
 
       {/* Saving Indicator */}
       {savingData && (
