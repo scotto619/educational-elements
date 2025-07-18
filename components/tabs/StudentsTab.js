@@ -15,21 +15,127 @@ const StudentsTab = ({
   calculateCoins,
   // Navigation
   setActiveTab,
-  // Bulk XP Props
-  selectedStudents,
+  // Bulk XP Props - with defaults if not provided
+  selectedStudents = [],
   setSelectedStudents,
   handleStudentSelect,
   handleSelectAll,
   handleDeselectAll,
-  showBulkXpPanel,
+  showBulkXpPanel = false,
   setShowBulkXpPanel,
-  bulkXpAmount,
+  bulkXpAmount = 1,
   setBulkXpAmount,
-  bulkXpCategory,
+  bulkXpCategory = 'Respectful',
   setBulkXpCategory,
   handleBulkXpAward
 }) => {
   const [hoveredStudent, setHoveredStudent] = useState(null);
+  const [localShowXpPanel, setLocalShowXpPanel] = useState(false);
+  const [localSelectedStudents, setLocalSelectedStudents] = useState([]);
+  const [localXpAmount, setLocalXpAmount] = useState(1);
+  const [localXpCategory, setLocalXpCategory] = useState('Respectful');
+
+  // Use local state if props aren't provided
+  const isXpPanelOpen = setShowBulkXpPanel ? showBulkXpPanel : localShowXpPanel;
+  const currentSelectedStudents = setSelectedStudents ? selectedStudents : localSelectedStudents;
+  const currentXpAmount = setBulkXpAmount ? bulkXpAmount : localXpAmount;
+  const currentXpCategory = setBulkXpCategory ? bulkXpCategory : localXpCategory;
+
+  // Local functions if props aren't provided
+  const toggleXpPanel = () => {
+    if (setShowBulkXpPanel) {
+      setShowBulkXpPanel(!showBulkXpPanel);
+    } else {
+      setLocalShowXpPanel(!localShowXpPanel);
+    }
+  };
+
+  const selectStudent = (studentId) => {
+    console.log('Selecting student:', studentId);
+    if (handleStudentSelect) {
+      handleStudentSelect(studentId);
+    } else {
+      setLocalSelectedStudents(prev => 
+        prev.includes(studentId) 
+          ? prev.filter(id => id !== studentId)
+          : [...prev, studentId]
+      );
+    }
+  };
+
+  const selectAllStudents = () => {
+    console.log('Selecting all students');
+    if (handleSelectAll) {
+      handleSelectAll();
+    } else {
+      setLocalSelectedStudents(students.map(s => s.id));
+    }
+  };
+
+  const clearAllStudents = () => {
+    console.log('Clearing all students');
+    if (handleDeselectAll) {
+      handleDeselectAll();
+    } else {
+      setLocalSelectedStudents([]);
+    }
+  };
+
+  const updateXpAmount = (amount) => {
+    console.log('Setting XP amount to:', amount);
+    if (setBulkXpAmount) {
+      setBulkXpAmount(amount);
+    } else {
+      setLocalXpAmount(amount);
+    }
+  };
+
+  const updateXpCategory = (category) => {
+    console.log('Setting XP category to:', category);
+    if (setBulkXpCategory) {
+      setBulkXpCategory(category);
+    } else {
+      setLocalXpCategory(category);
+    }
+  };
+
+  const awardXpToSelected = () => {
+    console.log('Awarding XP to selected students:', {
+      selected: currentSelectedStudents,
+      amount: currentXpAmount,
+      category: currentXpCategory
+    });
+
+    if (currentSelectedStudents.length === 0) {
+      showToast('Please select at least one student first!', 'error');
+      return;
+    }
+
+    if (handleBulkXpAward) {
+      handleBulkXpAward();
+    } else {
+      // Award XP individually to each selected student
+      currentSelectedStudents.forEach(studentId => {
+        const student = students.find(s => s.id === studentId);
+        if (student) {
+          handleAwardXP(studentId, currentXpCategory, currentXpAmount);
+        }
+      });
+      
+      const studentNames = currentSelectedStudents.length === students.length 
+        ? 'the entire class'
+        : `${currentSelectedStudents.length} students`;
+      
+      showToast(`Awarded ${currentXpAmount} ${currentXpCategory} XP to ${studentNames}!`);
+      
+      // Clear selections
+      if (setSelectedStudents) {
+        setSelectedStudents([]);
+      } else {
+        setLocalSelectedStudents([]);
+      }
+    }
+  };
 
   // Calculate quest progress for a student
   const getStudentQuestProgress = (student) => {
@@ -81,7 +187,7 @@ const StudentsTab = ({
         </div>
 
       {/* Award XP Panel */}
-      {showBulkXpPanel && (
+      {isXpPanelOpen && (
         <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border-2 border-purple-200 rounded-xl p-6">
           <h3 className="text-xl font-bold text-purple-800 mb-4 text-center">⚡ Award Experience Points</h3>
           
@@ -93,10 +199,11 @@ const StudentsTab = ({
                 type="number"
                 min="1"
                 max="10"
-                value={bulkXpAmount}
+                value={currentXpAmount}
                 onChange={(e) => {
-                  console.log('Setting XP amount:', e.target.value);
-                  setBulkXpAmount(parseInt(e.target.value) || 1);
+                  console.log('XP Amount input changed to:', e.target.value);
+                  const value = parseInt(e.target.value) || 1;
+                  updateXpAmount(value);
                 }}
                 className="w-full px-3 py-2 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
               />
@@ -104,10 +211,10 @@ const StudentsTab = ({
             <div>
               <label className="block text-sm font-bold text-purple-700 mb-2">Category</label>
               <select
-                value={bulkXpCategory}
+                value={currentXpCategory}
                 onChange={(e) => {
-                  console.log('Setting XP category:', e.target.value);
-                  setBulkXpCategory(e.target.value);
+                  console.log('Category changed to:', e.target.value);
+                  updateXpCategory(e.target.value);
                 }}
                 className="w-full px-3 py-2 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
               >
@@ -118,41 +225,35 @@ const StudentsTab = ({
             </div>
             <div className="md:col-span-2 flex items-end space-x-2">
               <button
-                onClick={() => {
-                  console.log('Select All clicked');
-                  handleSelectAll();
+                onClick={(e) => {
+                  e.preventDefault();
+                  console.log('Select All button clicked');
+                  selectAllStudents();
                 }}
                 className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 font-bold transition-all"
               >
                 Select All
               </button>
               <button
-                onClick={() => {
-                  console.log('Clear clicked');
-                  handleDeselectAll();
+                onClick={(e) => {
+                  e.preventDefault();
+                  console.log('Clear button clicked');
+                  clearAllStudents();
                 }}
                 className="px-4 py-2 bg-gradient-to-r from-gray-400 to-gray-500 text-white rounded-lg hover:from-gray-500 hover:to-gray-600 font-bold transition-all"
               >
                 Clear
               </button>
               <button
-                onClick={() => {
-                  console.log('Award XP clicked', { 
-                    selectedStudents, 
-                    bulkXpAmount, 
-                    bulkXpCategory,
-                    selectedCount: selectedStudents.length 
-                  });
-                  if (selectedStudents.length === 0) {
-                    showToast('Please select at least one student first!', 'error');
-                    return;
-                  }
-                  handleBulkXpAward();
+                onClick={(e) => {
+                  e.preventDefault();
+                  console.log('Award XP final button clicked');
+                  awardXpToSelected();
                 }}
-                disabled={selectedStudents.length === 0}
+                disabled={currentSelectedStudents.length === 0}
                 className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed font-bold transition-all"
               >
-                Award XP ({selectedStudents.length} heroes)
+                Award XP ({currentSelectedStudents.length} heroes)
               </button>
             </div>
           </div>
@@ -163,23 +264,23 @@ const StudentsTab = ({
               <label 
                 key={student.id} 
                 className={`flex items-center space-x-2 text-sm rounded-lg p-2 border transition-colors cursor-pointer ${
-                  selectedStudents.includes(student.id)
+                  currentSelectedStudents.includes(student.id)
                     ? 'bg-purple-100 border-purple-400 text-purple-800'
                     : 'bg-white border-purple-200 text-gray-700 hover:bg-purple-50'
                 }`}
                 onClick={(e) => {
                   e.preventDefault();
-                  console.log('Student checkbox clicked:', student.firstName, student.id);
-                  handleStudentSelect(student.id);
+                  console.log('Student label clicked:', student.firstName, student.id);
+                  selectStudent(student.id);
                 }}
               >
                 <input
                   type="checkbox"
-                  checked={selectedStudents.includes(student.id)}
+                  checked={currentSelectedStudents.includes(student.id)}
                   onChange={(e) => {
                     e.stopPropagation();
                     console.log('Checkbox changed for:', student.firstName);
-                    handleStudentSelect(student.id);
+                    selectStudent(student.id);
                   }}
                   className="rounded text-purple-600 focus:ring-purple-500"
                 />
@@ -199,9 +300,12 @@ const StudentsTab = ({
             </div>
             <div className="flex space-x-3">
               <button
-                onClick={() => setShowBulkXpPanel(!showBulkXpPanel)}
+                onClick={() => {
+                  console.log('Award XP button clicked');
+                  toggleXpPanel();
+                }}
                 className={`px-6 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center space-x-2 transition-all duration-200 ${
-                  showBulkXpPanel 
+                  isXpPanelOpen 
                     ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white' 
                     : 'bg-gradient-to-r from-purple-400 to-indigo-500 text-white hover:from-purple-500 hover:to-indigo-600'
                 }`}
