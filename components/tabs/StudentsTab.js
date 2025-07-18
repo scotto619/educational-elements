@@ -29,39 +29,12 @@ const StudentsTab = ({
   setBulkXpCategory,
   handleBulkXpAward
 }) => {
-  const [showXPSelector, setShowXPSelector] = useState(null);
   const [hoveredStudent, setHoveredStudent] = useState(null);
 
   // Calculate quest progress for a student
   const getStudentQuestProgress = (student) => {
     const availableQuests = getAvailableQuests ? getAvailableQuests(student) : [];
     return availableQuests.length;
-  };
-
-  // Handle XP click to show quick selector
-  const handleXPClick = (studentId, event) => {
-    event.stopPropagation();
-    event.preventDefault();
-    setShowXPSelector(showXPSelector === studentId ? null : studentId);
-  };
-
-  // Handle quick XP award - Fixed function with better error handling
-  const handleQuickXP = (studentId, category, amount, event) => {
-    if (event) {
-      event.stopPropagation();
-      event.preventDefault();
-    }
-    
-    console.log('Awarding XP:', { studentId, category, amount }); // Debug log
-    
-    try {
-      handleAwardXP(studentId, category, amount);
-      setShowXPSelector(null);
-      showToast(`+${amount} ${category} XP awarded to ${students.find(s => s.id === studentId)?.firstName}!`);
-    } catch (error) {
-      console.error('Error awarding XP:', error);
-      showToast('Error awarding XP. Please try again.', 'error');
-    }
   };
 
   // Handle coins click - go to shop with student selected
@@ -107,10 +80,10 @@ const StudentsTab = ({
           <div className="text-8xl opacity-10">🏰</div>
         </div>
 
-      {/* Bulk XP Panel */}
+      {/* Award XP Panel */}
       {showBulkXpPanel && (
         <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border-2 border-purple-200 rounded-xl p-6">
-          <h3 className="text-xl font-bold text-purple-800 mb-4 text-center">⚡ Mass XP Distribution</h3>
+          <h3 className="text-xl font-bold text-purple-800 mb-4 text-center">⚡ Award Experience Points</h3>
           
           {/* XP Configuration */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
@@ -121,7 +94,10 @@ const StudentsTab = ({
                 min="1"
                 max="10"
                 value={bulkXpAmount}
-                onChange={(e) => setBulkXpAmount(parseInt(e.target.value))}
+                onChange={(e) => {
+                  console.log('Setting XP amount:', e.target.value);
+                  setBulkXpAmount(parseInt(e.target.value) || 1);
+                }}
                 className="w-full px-3 py-2 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
               />
             </div>
@@ -129,7 +105,10 @@ const StudentsTab = ({
               <label className="block text-sm font-bold text-purple-700 mb-2">Category</label>
               <select
                 value={bulkXpCategory}
-                onChange={(e) => setBulkXpCategory(e.target.value)}
+                onChange={(e) => {
+                  console.log('Setting XP category:', e.target.value);
+                  setBulkXpCategory(e.target.value);
+                }}
                 className="w-full px-3 py-2 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
               >
                 <option value="Respectful">👍 Respectful</option>
@@ -139,19 +118,37 @@ const StudentsTab = ({
             </div>
             <div className="md:col-span-2 flex items-end space-x-2">
               <button
-                onClick={handleSelectAll}
+                onClick={() => {
+                  console.log('Select All clicked');
+                  handleSelectAll();
+                }}
                 className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 font-bold transition-all"
               >
                 Select All
               </button>
               <button
-                onClick={handleDeselectAll}
+                onClick={() => {
+                  console.log('Clear clicked');
+                  handleDeselectAll();
+                }}
                 className="px-4 py-2 bg-gradient-to-r from-gray-400 to-gray-500 text-white rounded-lg hover:from-gray-500 hover:to-gray-600 font-bold transition-all"
               >
                 Clear
               </button>
               <button
-                onClick={handleBulkXpAward}
+                onClick={() => {
+                  console.log('Award XP clicked', { 
+                    selectedStudents, 
+                    bulkXpAmount, 
+                    bulkXpCategory,
+                    selectedCount: selectedStudents.length 
+                  });
+                  if (selectedStudents.length === 0) {
+                    showToast('Please select at least one student first!', 'error');
+                    return;
+                  }
+                  handleBulkXpAward();
+                }}
                 disabled={selectedStudents.length === 0}
                 className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed font-bold transition-all"
               >
@@ -163,14 +160,30 @@ const StudentsTab = ({
           {/* Student Selection Grid */}
           <div className="grid grid-cols-3 md:grid-cols-6 lg:grid-cols-8 gap-2">
             {students.map(student => (
-              <label key={student.id} className="flex items-center space-x-2 text-sm bg-white rounded-lg p-2 border border-purple-200 hover:bg-purple-50 transition-colors cursor-pointer">
+              <label 
+                key={student.id} 
+                className={`flex items-center space-x-2 text-sm rounded-lg p-2 border transition-colors cursor-pointer ${
+                  selectedStudents.includes(student.id)
+                    ? 'bg-purple-100 border-purple-400 text-purple-800'
+                    : 'bg-white border-purple-200 text-gray-700 hover:bg-purple-50'
+                }`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  console.log('Student checkbox clicked:', student.firstName, student.id);
+                  handleStudentSelect(student.id);
+                }}
+              >
                 <input
                   type="checkbox"
                   checked={selectedStudents.includes(student.id)}
-                  onChange={() => handleStudentSelect(student.id)}
+                  onChange={(e) => {
+                    e.stopPropagation();
+                    console.log('Checkbox changed for:', student.firstName);
+                    handleStudentSelect(student.id);
+                  }}
                   className="rounded text-purple-600 focus:ring-purple-500"
                 />
-                <span className="truncate font-medium text-gray-700">{student.firstName}</span>
+                <span className="truncate font-medium">{student.firstName}</span>
               </label>
             ))}
           </div>
@@ -194,7 +207,7 @@ const StudentsTab = ({
                 }`}
               >
                 <span className="text-lg">⚡</span>
-                <span>Bulk XP</span>
+                <span>Award XP</span>
               </button>
               <button
                 onClick={() => setShowAddStudentModal(true)}
@@ -429,67 +442,25 @@ const StudentsTab = ({
                     )}
                   </div>
                 </div>
-
-                {/* XP Selector Dropdown - Enhanced */}
-                {showXPSelector === student.id && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-white border-2 border-purple-300 rounded-xl shadow-2xl z-50 p-3 min-w-max">
-                    <div className="text-xs font-bold text-center mb-2 text-purple-700">⚡ Award Experience Points</div>
-                    {['Respectful', 'Responsible', 'Learner'].map(category => (
-                      <div key={category} className="space-y-2 mb-3 last:mb-0">
-                        <div className="text-xs font-bold text-gray-700">
-                          {category === 'Respectful' ? '👍 Respectful' : 
-                           category === 'Responsible' ? '💼 Responsible' : 
-                           '📚 Learner'}
-                        </div>
-                        <div className="flex space-x-1">
-                          {[1, 2, 5].map(amount => (
-                            <button
-                              key={amount}
-                              onClick={(e) => {
-                                console.log('XP Button clicked:', { studentId: student.id, category, amount }); // Debug log
-                                handleQuickXP(student.id, category, amount, e);
-                              }}
-                              className={`px-3 py-2 text-xs font-bold rounded-lg transition-all duration-200 transform hover:scale-105 ${
-                                category === 'Respectful' ? 'bg-gradient-to-r from-green-400 to-green-500 text-white hover:from-green-500 hover:to-green-600' :
-                                category === 'Responsible' ? 'bg-gradient-to-r from-blue-400 to-blue-500 text-white hover:from-blue-500 hover:to-blue-600' :
-                                'bg-gradient-to-r from-purple-400 to-purple-500 text-white hover:from-purple-500 hover:to-purple-600'
-                              } shadow-lg`}
-                            >
-                              +{amount}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
             );
           })}
         </div>
       )}
 
-      {/* Click outside to close XP selector */}
-      {showXPSelector && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={() => setShowXPSelector(null)}
-        />
-      )}
-
       {/* Epic Helper Guide */}
       <div className="bg-gradient-to-r from-indigo-100 to-purple-100 border-2 border-indigo-200 rounded-xl p-4">
         <h4 className="font-bold text-indigo-800 mb-3 text-center">🏆 Hero Management Guide</h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
           <div className="bg-white rounded-lg p-3 text-center shadow-sm">
             <div className="text-lg mb-1">👤</div>
             <div className="font-bold text-gray-800">Avatar</div>
             <div className="text-gray-600 text-xs">Character Sheet</div>
           </div>
           <div className="bg-white rounded-lg p-3 text-center shadow-sm">
-            <div className="text-lg mb-1">⭐</div>
-            <div className="font-bold text-blue-800">XP Button</div>
-            <div className="text-blue-600 text-xs">Award 1, 2, or 5 XP</div>
+            <div className="text-lg mb-1">⚡</div>
+            <div className="font-bold text-purple-800">Award XP</div>
+            <div className="text-purple-600 text-xs">Use panel above</div>
           </div>
           <div className="bg-white rounded-lg p-3 text-center shadow-sm">
             <div className="text-lg mb-1">💎</div>
