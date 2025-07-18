@@ -1,10 +1,9 @@
-// StudentsTab.js - Ultra Compact View
+// StudentsTab.js - Engaging RPG-Style Design
 import React, { useState } from 'react';
 
 const StudentsTab = ({
   students,
   handleAwardXP,
-  handleAvatarClick,
   setSelectedStudent,
   animatingXP,
   setShowAddStudentModal,
@@ -12,13 +11,13 @@ const StudentsTab = ({
   // Quest System Props
   activeQuests,
   getAvailableQuests,
-  attendanceData,
   // Shop Props
   calculateCoins,
   // Navigation
   setActiveTab
 }) => {
-  const [showXPSelector, setShowXPSelector] = useState(null); // studentId when showing XP selector
+  const [showXPSelector, setShowXPSelector] = useState(null);
+  const [hoveredStudent, setHoveredStudent] = useState(null);
 
   // Calculate quest progress for a student
   const getStudentQuestProgress = (student) => {
@@ -29,18 +28,23 @@ const StudentsTab = ({
   // Handle XP click to show quick selector
   const handleXPClick = (studentId, event) => {
     event.stopPropagation();
+    event.preventDefault();
     setShowXPSelector(showXPSelector === studentId ? null : studentId);
   };
 
-  // Handle quick XP award
-  const handleQuickXP = (studentId, category, amount) => {
+  // Handle quick XP award - Fixed function
+  const handleQuickXP = (studentId, category, amount, event) => {
+    event.stopPropagation();
+    event.preventDefault();
     handleAwardXP(studentId, category, amount);
     setShowXPSelector(null);
+    showToast(`+${amount} ${category} XP awarded!`);
   };
 
   // Handle coins click - go to shop with student selected
   const handleCoinsClick = (student, event) => {
     event.stopPropagation();
+    event.preventDefault();
     setSelectedStudent(student);
     setActiveTab('shop');
   };
@@ -48,89 +52,146 @@ const StudentsTab = ({
   // Handle quests click - go to quest tab
   const handleQuestsClick = (event) => {
     event.stopPropagation();
+    event.preventDefault();
     setActiveTab('quests');
   };
 
   // Handle avatar click to open character sheet
   const handleAvatarClickWrapper = (student, event) => {
     event.stopPropagation();
+    event.preventDefault();
     setSelectedStudent(student);
   };
 
+  // Get XP progress to next level
+  const getXPProgress = (student) => {
+    const currentLevel = student.avatarLevel || 1;
+    const currentXP = student.totalPoints || 0;
+    const xpForCurrentLevel = (currentLevel - 1) * 100;
+    const xpForNextLevel = currentLevel * 100;
+    const progressXP = currentXP - xpForCurrentLevel;
+    const neededXP = xpForNextLevel - xpForCurrentLevel;
+    const percentage = Math.min((progressXP / neededXP) * 100, 100);
+    return { percentage, progressXP, neededXP };
+  };
+
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h2 className="text-3xl font-bold text-gray-800">Class Overview</h2>
-          <p className="text-gray-600">{students.length} students in your class</p>
+    <div className="space-y-6">
+      {/* Epic Header */}
+      <div className="relative bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-800 rounded-2xl p-6 text-white overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20"></div>
+        <div className="absolute top-0 right-0 transform translate-x-4 -translate-y-4">
+          <div className="text-8xl opacity-10">🏰</div>
         </div>
-        
-        <button
-          onClick={() => setShowAddStudentModal(true)}
-          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center space-x-2"
-        >
-          <span>➕</span>
-          <span>Add Student</span>
-        </button>
-      </div>
-
-      {/* Quick Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-blue-50 p-3 rounded-lg text-center">
-          <div className="text-xl font-bold text-blue-600">
-            {Math.round(students.reduce((acc, s) => acc + (s.totalPoints || 0), 0) / students.length) || 0}
+        <div className="relative z-10">
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="text-4xl font-bold mb-2 bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent">
+                ⚔️ Champions Guild
+              </h2>
+              <p className="text-indigo-100 text-lg">{students.length} brave adventurers ready for battle!</p>
+            </div>
+            <button
+              onClick={() => setShowAddStudentModal(true)}
+              className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all duration-200 font-bold shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center space-x-2"
+            >
+              <span className="text-lg">⚡</span>
+              <span>Recruit Hero</span>
+            </button>
           </div>
-          <div className="text-xs text-blue-700">Average XP</div>
-        </div>
-        <div className="bg-yellow-50 p-3 rounded-lg text-center">
-          <div className="text-xl font-bold text-yellow-600">
-            {Math.round(students.reduce((acc, s) => acc + calculateCoins(s), 0) / students.length) || 0}
-          </div>
-          <div className="text-xs text-yellow-700">Average Coins</div>
-        </div>
-        <div className="bg-green-50 p-3 rounded-lg text-center">
-          <div className="text-xl font-bold text-green-600">
-            {students.filter(s => s.pet?.image).length}
-          </div>
-          <div className="text-xs text-green-700">Have Pets</div>
-        </div>
-        <div className="bg-purple-50 p-3 rounded-lg text-center">
-          <div className="text-xl font-bold text-purple-600">
-            {students.filter(s => getStudentQuestProgress(s) > 0).length}
-          </div>
-          <div className="text-xs text-purple-700">Have Quests</div>
         </div>
       </div>
 
-      {/* Students Grid */}
+      {/* Guild Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          {
+            title: 'Guild Power',
+            value: Math.round(students.reduce((acc, s) => acc + (s.totalPoints || 0), 0) / students.length) || 0,
+            icon: '⚡',
+            gradient: 'from-blue-500 to-cyan-500',
+            bgGradient: 'from-blue-50 to-cyan-50'
+          },
+          {
+            title: 'Treasury',
+            value: Math.round(students.reduce((acc, s) => acc + calculateCoins(s), 0) / students.length) || 0,
+            icon: '💎',
+            gradient: 'from-yellow-500 to-orange-500',
+            bgGradient: 'from-yellow-50 to-orange-50'
+          },
+          {
+            title: 'Companions',
+            value: students.filter(s => s.pet?.image).length,
+            icon: '🐲',
+            gradient: 'from-green-500 to-emerald-500',
+            bgGradient: 'from-green-50 to-emerald-50'
+          },
+          {
+            title: 'Active Quests',
+            value: students.filter(s => getStudentQuestProgress(s) > 0).length,
+            icon: '🗡️',
+            gradient: 'from-purple-500 to-pink-500',
+            bgGradient: 'from-purple-50 to-pink-50'
+          }
+        ].map((stat, index) => (
+          <div key={index} className={`bg-gradient-to-br ${stat.bgGradient} rounded-xl p-4 border border-white shadow-lg`}>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className={`text-2xl font-bold bg-gradient-to-r ${stat.gradient} bg-clip-text text-transparent`}>
+                  {stat.value}
+                </div>
+                <div className="text-sm font-medium text-gray-600">{stat.title}</div>
+              </div>
+              <div className="text-3xl">{stat.icon}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Heroes Grid */}
       {students.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-lg p-12 text-center">
-          <div className="text-6xl mb-4">👥</div>
-          <h3 className="text-2xl font-bold text-gray-600 mb-4">No Students Added</h3>
-          <p className="text-gray-500 mb-6">Get started by adding your first student!</p>
+        <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl shadow-xl p-12 text-center border border-gray-200">
+          <div className="text-8xl mb-6">🏰</div>
+          <h3 className="text-3xl font-bold text-gray-700 mb-4">Empty Guild Hall</h3>
+          <p className="text-gray-500 mb-8 text-lg">Your guild awaits its first brave heroes!</p>
           <button
             onClick={() => setShowAddStudentModal(true)}
-            className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold"
+            className="px-8 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:from-purple-700 hover:to-indigo-700 transition-all duration-200 font-bold shadow-lg hover:shadow-xl transform hover:scale-105 text-lg"
           >
-            Add Your First Student
+            🌟 Recruit Your First Hero
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 2xl:grid-cols-10 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
           {students.map(student => {
             const questCount = getStudentQuestProgress(student);
             const coins = calculateCoins(student);
             const xp = student.totalPoints || 0;
+            const xpProgress = getXPProgress(student);
+            const isHovered = hoveredStudent === student.id;
+            const isAnimating = animatingXP[student.id];
 
             return (
               <div
                 key={student.id}
-                className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-200 relative"
+                className={`relative bg-gradient-to-b from-white to-gray-50 rounded-2xl shadow-lg border-2 overflow-hidden transition-all duration-300 transform ${
+                  isHovered ? 'scale-105 shadow-2xl border-purple-400' : 'border-gray-200 hover:shadow-xl'
+                }`}
+                onMouseEnter={() => setHoveredStudent(student.id)}
+                onMouseLeave={() => setHoveredStudent(null)}
               >
-                {/* Student Card */}
-                <div className="p-3 space-y-2">
-                  {/* Avatar and Action Buttons */}
+                {/* Hero Card Background Pattern */}
+                <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5"></div>
+                <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-yellow-300/20 to-transparent rounded-bl-full"></div>
+                
+                {/* Level Badge */}
+                <div className="absolute top-2 left-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg">
+                  Lv.{student.avatarLevel || 1}
+                </div>
+
+                {/* Hero Card Content */}
+                <div className="relative z-10 p-4 space-y-3">
+                  {/* Avatar Section */}
                   <div className="flex flex-col items-center">
                     <div className="relative">
                       <button
@@ -138,24 +199,31 @@ const StudentsTab = ({
                         className="relative group"
                       >
                         {student.avatar ? (
-                          <img
-                            src={student.avatar}
-                            alt={`${student.firstName}'s avatar`}
-                            className="w-12 h-12 rounded-full border-2 border-gray-300 group-hover:border-blue-500 transition-colors"
-                          />
+                          <div className="relative">
+                            <img
+                              src={student.avatar}
+                              alt={`${student.firstName}'s avatar`}
+                              className={`w-16 h-16 rounded-full border-3 transition-all duration-300 ${
+                                isHovered ? 'border-purple-400 shadow-lg' : 'border-gray-300'
+                              }`}
+                            />
+                            <div className="absolute inset-0 rounded-full bg-gradient-to-t from-purple-600/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                          </div>
                         ) : (
-                          <div className="w-12 h-12 rounded-full border-2 border-gray-300 bg-gray-100 flex items-center justify-center group-hover:border-blue-500 transition-colors">
-                            <span className="text-lg">👤</span>
+                          <div className={`w-16 h-16 rounded-full border-3 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center transition-all duration-300 ${
+                            isHovered ? 'border-purple-400' : 'border-gray-300'
+                          }`}>
+                            <span className="text-2xl">👤</span>
                           </div>
                         )}
                       </button>
                       
-                      {/* Action buttons positioned around avatar */}
-                      <div className="absolute -top-1 -right-1">
+                      {/* Action Buttons */}
+                      <div className="absolute -top-1 -right-2">
                         <button
                           onClick={(e) => handleXPClick(student.id, e)}
-                          className={`w-5 h-5 bg-blue-600 text-white text-xs rounded-full flex items-center justify-center font-bold hover:bg-blue-700 transition-colors ${
-                            animatingXP[student.id] ? 'animate-pulse' : ''
+                          className={`w-7 h-7 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-sm rounded-full flex items-center justify-center font-bold hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg transform hover:scale-110 ${
+                            isAnimating ? 'animate-pulse scale-110' : ''
                           }`}
                           title={`${xp} XP - Click to award more`}
                         >
@@ -163,23 +231,23 @@ const StudentsTab = ({
                         </button>
                       </div>
                       
-                      <div className="absolute -bottom-1 -right-1">
+                      <div className="absolute -bottom-1 -right-2">
                         <button
                           onClick={(e) => handleCoinsClick(student, e)}
-                          className="w-5 h-5 bg-yellow-600 text-white text-xs rounded-full flex items-center justify-center font-bold hover:bg-yellow-700 transition-colors"
+                          className="w-7 h-7 bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-sm rounded-full flex items-center justify-center font-bold hover:from-yellow-600 hover:to-orange-600 transition-all duration-200 shadow-lg transform hover:scale-110"
                           title={`${coins} Coins - Click for shop`}
                         >
-                          💰
+                          💎
                         </button>
                       </div>
                       
-                      <div className="absolute -bottom-1 -left-1">
+                      <div className="absolute -bottom-1 -left-2">
                         <button
                           onClick={handleQuestsClick}
-                          className={`w-5 h-5 text-white text-xs rounded-full flex items-center justify-center font-bold transition-colors ${
+                          className={`w-7 h-7 text-white text-sm rounded-full flex items-center justify-center font-bold transition-all duration-200 shadow-lg transform hover:scale-110 ${
                             questCount > 0 
-                              ? 'bg-orange-600 hover:bg-orange-700' 
-                              : 'bg-gray-400 hover:bg-gray-500'
+                              ? 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600' 
+                              : 'bg-gradient-to-r from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600'
                           }`}
                           title={`${questCount} Quests - Click for quest tab`}
                         >
@@ -188,55 +256,71 @@ const StudentsTab = ({
                       </div>
                     </div>
                     
-                    {/* Name */}
-                    <h3 className="font-bold text-gray-800 text-center mt-2 text-sm leading-tight">
+                    {/* Hero Name */}
+                    <h3 className="font-bold text-gray-800 text-center mt-2 text-sm bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
                       {student.firstName}
                     </h3>
                   </div>
 
-                  {/* Stats Row */}
-                  <div className="text-center space-y-1">
-                    <div className="text-xs text-gray-600">
-                      <span className="font-medium">Lv.{student.avatarLevel || 1}</span>
+                  {/* XP Progress Bar */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-600">XP Progress</span>
+                      <span className="text-blue-600 font-bold">{xp}</span>
                     </div>
-                    <div className="flex justify-center items-center space-x-2 text-xs">
-                      <span className="bg-blue-100 text-blue-800 px-1 rounded">{xp}</span>
-                      <span className="bg-yellow-100 text-yellow-800 px-1 rounded">{coins}</span>
-                      <span className={`px-1 rounded ${
-                        questCount > 0 ? 'bg-orange-100 text-orange-800' : 'bg-gray-100 text-gray-600'
-                      }`}>
-                        {questCount}
-                      </span>
+                    <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                      <div
+                        className="h-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-500"
+                        style={{ width: `${student.avatarLevel >= 4 ? 100 : xpProgress.percentage}%` }}
+                      ></div>
                     </div>
                   </div>
 
-                  {/* Pet Section */}
+                  {/* Stats Row */}
+                  <div className="flex justify-center space-x-2">
+                    <div className="bg-blue-100 text-blue-800 px-2 py-1 rounded-lg text-xs font-bold">
+                      {xp} XP
+                    </div>
+                    <div className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-lg text-xs font-bold">
+                      {coins} 💎
+                    </div>
+                    <div className={`px-2 py-1 rounded-lg text-xs font-bold ${
+                      questCount > 0 ? 'bg-orange-100 text-orange-800' : 'bg-gray-100 text-gray-600'
+                    }`}>
+                      {questCount} ⚔️
+                    </div>
+                  </div>
+
+                  {/* Pet Companion */}
                   <div className="text-center">
                     {student.pet?.image ? (
-                      <div className="flex items-center justify-center space-x-1 bg-green-50 px-2 py-1 rounded">
-                        <img
-                          src={student.pet.image}
-                          alt={student.pet.name}
-                          className="w-4 h-4 rounded"
-                        />
-                        <span className="text-xs font-medium text-green-800">
-                          {student.pet.name}
-                        </span>
+                      <div className="bg-gradient-to-r from-green-100 to-emerald-100 border border-green-200 px-3 py-2 rounded-lg">
+                        <div className="flex items-center justify-center space-x-2">
+                          <img
+                            src={student.pet.image}
+                            alt={student.pet.name}
+                            className="w-5 h-5 rounded"
+                          />
+                          <span className="text-xs font-bold text-green-800">
+                            {student.pet.name}
+                          </span>
+                        </div>
                       </div>
                     ) : (
-                      <div className="text-xs text-gray-400">
-                        No Pet
+                      <div className="text-xs text-gray-400 bg-gray-100 px-3 py-2 rounded-lg border border-gray-200">
+                        No Companion
                       </div>
                     )}
                   </div>
                 </div>
 
-                {/* XP Selector Dropdown - Fixed positioning */}
+                {/* XP Selector Dropdown - Enhanced */}
                 {showXPSelector === student.id && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 p-2 space-y-1 min-w-max">
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-white border-2 border-purple-300 rounded-xl shadow-2xl z-50 p-3 min-w-max">
+                    <div className="text-xs font-bold text-center mb-2 text-purple-700">⚡ Award Experience Points</div>
                     {['Respectful', 'Responsible', 'Learner'].map(category => (
-                      <div key={category} className="space-y-1">
-                        <div className="text-xs font-medium text-gray-600 whitespace-nowrap">
+                      <div key={category} className="space-y-2 mb-3 last:mb-0">
+                        <div className="text-xs font-bold text-gray-700">
                           {category === 'Respectful' ? '👍 Respectful' : 
                            category === 'Responsible' ? '💼 Responsible' : 
                            '📚 Learner'}
@@ -245,12 +329,12 @@ const StudentsTab = ({
                           {[1, 2, 5].map(amount => (
                             <button
                               key={amount}
-                              onClick={() => handleQuickXP(student.id, category, amount)}
-                              className={`px-2 py-1 text-xs rounded transition-colors ${
-                                category === 'Respectful' ? 'bg-green-100 text-green-700 hover:bg-green-200' :
-                                category === 'Responsible' ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' :
-                                'bg-purple-100 text-purple-700 hover:bg-purple-200'
-                              }`}
+                              onClick={(e) => handleQuickXP(student.id, category, amount, e)}
+                              className={`px-3 py-2 text-xs font-bold rounded-lg transition-all duration-200 transform hover:scale-105 ${
+                                category === 'Respectful' ? 'bg-gradient-to-r from-green-400 to-green-500 text-white hover:from-green-500 hover:to-green-600' :
+                                category === 'Responsible' ? 'bg-gradient-to-r from-blue-400 to-blue-500 text-white hover:from-blue-500 hover:to-blue-600' :
+                                'bg-gradient-to-r from-purple-400 to-purple-500 text-white hover:from-purple-500 hover:to-purple-600'
+                              } shadow-lg`}
                             >
                               +{amount}
                             </button>
@@ -274,21 +358,29 @@ const StudentsTab = ({
         />
       )}
 
-      {/* Helper Text */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
-        <h4 className="font-bold text-blue-800 mb-2 text-sm">Quick Actions:</h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 text-xs text-blue-700">
-          <div>
-            <span className="font-medium">📸 Avatar:</span> Character sheet
+      {/* Epic Helper Guide */}
+      <div className="bg-gradient-to-r from-indigo-100 to-purple-100 border-2 border-indigo-200 rounded-xl p-4">
+        <h4 className="font-bold text-indigo-800 mb-3 text-center">🏆 Hero Management Guide</h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
+          <div className="bg-white rounded-lg p-3 text-center shadow-sm">
+            <div className="text-lg mb-1">👤</div>
+            <div className="font-bold text-gray-800">Avatar</div>
+            <div className="text-gray-600 text-xs">Character Sheet</div>
           </div>
-          <div>
-            <span className="font-medium">⭐ Blue button:</span> Award XP (1,2,5)
+          <div className="bg-white rounded-lg p-3 text-center shadow-sm">
+            <div className="text-lg mb-1">⭐</div>
+            <div className="font-bold text-blue-800">XP Button</div>
+            <div className="text-blue-600 text-xs">Award 1, 2, or 5 XP</div>
           </div>
-          <div>
-            <span className="font-medium">💰 Yellow button:</span> Open shop
+          <div className="bg-white rounded-lg p-3 text-center shadow-sm">
+            <div className="text-lg mb-1">💎</div>
+            <div className="font-bold text-yellow-800">Coins Button</div>
+            <div className="text-yellow-600 text-xs">Open Shop</div>
           </div>
-          <div>
-            <span className="font-medium">⚔️ Orange button:</span> Quest tab
+          <div className="bg-white rounded-lg p-3 text-center shadow-sm">
+            <div className="text-lg mb-1">⚔️</div>
+            <div className="font-bold text-orange-800">Quest Button</div>
+            <div className="text-orange-600 text-xs">Quest Tab</div>
           </div>
         </div>
       </div>
