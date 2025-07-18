@@ -1,603 +1,449 @@
-// DashboardTab.js - Enhanced Dashboard with Quest Integration
+// DashboardTab.js - Completely Revamped Modern Dashboard
 import React, { useState, useEffect } from 'react';
 
 const DashboardTab = ({
   students,
   handleAwardXP,
-  handleAvatarClick,
   setSelectedStudent,
   animatingXP,
   setShowAddStudentModal,
   showToast,
+  setActiveTab,
   // Quest System Props
   activeQuests,
-  QUEST_GIVERS,
   getAvailableQuests,
   attendanceData,
   markAttendance,
   // Bulk XP Props
   selectedStudents,
   setSelectedStudents,
-  handleStudentSelect,
-  handleSelectAll,
-  handleDeselectAll,
   showBulkXpPanel,
   setShowBulkXpPanel,
-  bulkXpAmount,
-  setBulkXpAmount,
-  bulkXpCategory,
-  setBulkXpCategory,
-  handleBulkXpAward
+  calculateCoins
 }) => {
-  const [showAttendanceWidget, setShowAttendanceWidget] = useState(false);
-  const [currentTip, setCurrentTip] = useState(null);
+  const [timeOfDay, setTimeOfDay] = useState('');
+  const [recentActivity, setRecentActivity] = useState([]);
+  const [classInsights, setClassInsights] = useState({});
 
-  // Get today's date for attendance
+  // Set greeting based on time
+  useEffect(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) setTimeOfDay('Good morning');
+    else if (hour < 17) setTimeOfDay('Good afternoon');
+    else setTimeOfDay('Good evening');
+  }, []);
+
+  // Calculate today's date and stats
   const today = new Date().toISOString().split('T')[0];
   const todayAttendance = attendanceData[today] || {};
-
-  // Calculate class statistics
   const totalStudents = students.length;
   const presentToday = Object.values(todayAttendance).filter(status => status === 'present').length;
-  const absentToday = Object.values(todayAttendance).filter(status => status === 'absent').length;
-  const lateToday = Object.values(todayAttendance).filter(status => status === 'late').length;
   const attendanceRate = totalStudents > 0 ? Math.round((presentToday / totalStudents) * 100) : 0;
 
-  // Calculate quest completion statistics
-  const totalActiveQuests = activeQuests.length;
-  const totalQuestCompletions = activeQuests.reduce((acc, quest) => acc + (quest.completedBy?.length || 0), 0);
-  const studentsWithAvailableQuests = students.filter(student => 
-    getAvailableQuests ? getAvailableQuests(student).length > 0 : false
-  ).length;
-
-  // Get quest completion rate
-  const questCompletionRate = totalActiveQuests > 0 && totalStudents > 0 ? 
-    Math.round((totalQuestCompletions / (totalActiveQuests * totalStudents)) * 100) : 0;
-
-  // Get today's completed quests
-  const todayCompletedQuests = activeQuests.reduce((acc, quest) => {
-    const todayCompletions = (quest.completedBy || []).filter(studentId => {
-      // For now, we'll assume any completion is from today
-      // In a real implementation, you'd track completion dates
-      return true;
-    });
-    return acc + todayCompletions.length;
-  }, 0);
-
-  // Calculate class XP stats
+  // Calculate advanced class metrics
   const totalClassXP = students.reduce((acc, student) => acc + (student.totalPoints || 0), 0);
   const averageXP = totalStudents > 0 ? Math.round(totalClassXP / totalStudents) : 0;
-  const topPerformer = students.reduce((top, student) => 
-    (student.totalPoints || 0) > (top.totalPoints || 0) ? student : top, 
-    students[0] || {}
-  );
+  const studentsWithPets = students.filter(s => s.pet?.image).length;
+  const totalCoins = students.reduce((acc, student) => acc + calculateCoins(student), 0);
+  
+  // Get top performers
+  const topXpStudent = students.reduce((top, student) => 
+    (student.totalPoints || 0) > (top.totalPoints || 0) ? student : top, students[0] || null);
+  
+  const topCoinStudent = students.reduce((top, student) => 
+    calculateCoins(student) > calculateCoins(top) ? student : top, students[0] || null);
 
-  // Get students who need attention (low XP, absent, no quests completed)
-  const studentsNeedingAttention = students.filter(student => {
-    const attendance = todayAttendance[student.id];
-    const xp = student.totalPoints || 0;
-    const availableQuests = getAvailableQuests ? getAvailableQuests(student).length : 0;
-    
-    return attendance === 'absent' || xp < averageXP * 0.7 || availableQuests > 2;
-  });
+  // Weekly trend calculation
+  const thisWeekXP = students.reduce((acc, student) => acc + (student.weeklyPoints || 0), 0);
+  const weeklyAverage = totalStudents > 0 ? Math.round(thisWeekXP / totalStudents) : 0;
 
-  // Handle quick attendance marking
-  const handleQuickAttendance = (studentId, status) => {
-    markAttendance(studentId, status);
+  // Class health indicators
+  const getClassHealth = () => {
+    if (attendanceRate >= 95 && averageXP >= 100) return { status: 'excellent', color: 'green', emoji: '🌟' };
+    if (attendanceRate >= 85 && averageXP >= 75) return { status: 'good', color: 'blue', emoji: '👍' };
+    if (attendanceRate >= 70 && averageXP >= 50) return { status: 'fair', color: 'yellow', emoji: '⚡' };
+    return { status: 'needs attention', color: 'orange', emoji: '🎯' };
   };
 
-  // Show random tip from quest givers
-  const showRandomQuestGiverTip = () => {
-    const randomGiver = QUEST_GIVERS[Math.floor(Math.random() * QUEST_GIVERS.length)];
-    const randomTip = randomGiver.tips[Math.floor(Math.random() * randomGiver.tips.length)];
-    setCurrentTip({ giver: randomGiver, tip: randomTip });
+  const classHealth = getClassHealth();
+
+  // Quick actions that teachers actually use
+  const quickActions = [
+    {
+      title: 'Award Class XP',
+      icon: '⚡',
+      action: () => setShowBulkXpPanel(true),
+      color: 'purple',
+      enabled: students.length > 0
+    },
+    {
+      title: 'Mark Attendance',
+      icon: '📋',
+      action: () => setActiveTab('attendance'),
+      color: 'blue',
+      enabled: students.length > 0
+    },
+    {
+      title: 'Start Pet Race',
+      icon: '🏁',
+      action: () => setActiveTab('race'),
+      color: 'green',
+      enabled: studentsWithPets > 0
+    },
+    {
+      title: 'View Shop',
+      icon: '🛍️',
+      action: () => setActiveTab('shop'),
+      color: 'yellow',
+      enabled: totalCoins > 0
+    },
+    {
+      title: 'Teacher Tools',
+      icon: '🛠️',
+      action: () => setActiveTab('toolkit'),
+      color: 'gray',
+      enabled: true
+    },
+    {
+      title: 'Add Students',
+      icon: '👥',
+      action: () => setShowAddStudentModal(true),
+      color: 'indigo',
+      enabled: true
+    }
+  ];
+
+  // Simulate recent activity (in real app, this would come from logs)
+  const getRecentActivity = () => {
+    const activities = [];
     
-    setTimeout(() => setCurrentTip(null), 5000);
+    // Add some sample recent activities
+    if (students.length > 0) {
+      const recentStudent = students[Math.floor(Math.random() * students.length)];
+      activities.push({
+        type: 'xp_awarded',
+        student: recentStudent.firstName,
+        detail: '5 XP for excellent behavior',
+        time: '2 minutes ago',
+        icon: '⭐'
+      });
+    }
+
+    if (studentsWithPets > 0) {
+      const petOwner = students.find(s => s.pet?.image);
+      if (petOwner) {
+        activities.push({
+          type: 'pet_unlocked',
+          student: petOwner.firstName,
+          detail: `unlocked ${petOwner.pet.name}`,
+          time: '15 minutes ago',
+          icon: '🐾'
+        });
+      }
+    }
+
+    return activities.slice(0, 3);
   };
 
-  useEffect(() => {
-    // Show a random tip every 30 seconds
-    const tipInterval = setInterval(showRandomQuestGiverTip, 30000);
-    return () => clearInterval(tipInterval);
-  }, []);
+  // At-a-glance insights
+  const insights = [
+    {
+      text: `${students.filter(s => (s.totalPoints || 0) >= 100).length} students have reached 100+ XP`,
+      type: 'milestone',
+      icon: '🎯'
+    },
+    {
+      text: studentsWithPets > 0 ? `${studentsWithPets} students have companion pets` : 'No students have pets yet',
+      type: studentsWithPets > 0 ? 'achievement' : 'opportunity',
+      icon: studentsWithPets > 0 ? '🐲' : '🥚'
+    },
+    {
+      text: attendanceRate >= 90 ? 'Excellent attendance this week!' : 'Room for attendance improvement',
+      type: attendanceRate >= 90 ? 'achievement' : 'attention',
+      icon: attendanceRate >= 90 ? '🌟' : '📈'
+    }
+  ];
+
+  if (students.length === 0) {
+    return (
+      <div className="min-h-[600px] flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <div className="text-8xl mb-6">🚀</div>
+          <h2 className="text-3xl font-bold text-gray-800 mb-4">Welcome to Your Kingdom!</h2>
+          <p className="text-gray-600 mb-8 text-lg">
+            Ready to transform your classroom into an epic adventure? Let's start by adding your first heroes!
+          </p>
+          <button
+            onClick={() => setShowAddStudentModal(true)}
+            className="px-8 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-bold text-lg hover:from-purple-700 hover:to-indigo-700 transform hover:scale-105 transition-all shadow-lg"
+          >
+            🌟 Add Your First Heroes
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Welcome Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl p-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h2 className="text-3xl font-bold mb-2">Welcome to Your Classroom!</h2>
-            <p className="text-blue-100">
-              {totalStudents} brave adventurers ready for learning quests
-            </p>
-          </div>
-          <div className="text-6xl">🏫</div>
-        </div>
-      </div>
-
-      {/* Quest Giver Tip */}
-      {currentTip && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 animate-fade-in">
-          <div className="flex items-start space-x-3">
-            <img
-              src={currentTip.giver.image}
-              alt={currentTip.giver.name}
-              className="w-12 h-12 rounded-full border-2 border-yellow-300"
-            />
-            <div className="flex-1">
-              <div className="font-bold text-yellow-800">{currentTip.giver.name} says:</div>
-              <div className="text-yellow-700">{currentTip.tip}</div>
+      {/* Hero Welcome Header */}
+      <div className="bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 rounded-2xl p-6 text-white relative overflow-hidden">
+        <div className="absolute inset-0 bg-black/10"></div>
+        <div className="absolute top-0 right-0 text-9xl opacity-10">⚔️</div>
+        <div className="relative z-10">
+          <h1 className="text-3xl font-bold mb-2">
+            {timeOfDay}, Champion! 👑
+          </h1>
+          <p className="text-purple-100 text-lg mb-4">
+            Your guild of {totalStudents} heroes awaits your leadership
+          </p>
+          
+          {/* Class Health Status */}
+          <div className="flex items-center space-x-4">
+            <div className={`flex items-center space-x-2 bg-${classHealth.color}-500/20 backdrop-blur px-4 py-2 rounded-lg border border-white/20`}>
+              <span className="text-2xl">{classHealth.emoji}</span>
+              <span className="font-bold">Guild Status: {classHealth.status}</span>
             </div>
-            <button
-              onClick={() => setCurrentTip(null)}
-              className="text-yellow-600 hover:text-yellow-800"
-            >
-              ×
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Quick Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Attendance Stats */}
-        <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-blue-600 text-sm font-medium">Attendance Today</p>
-              <p className="text-3xl font-bold text-gray-900">{attendanceRate}%</p>
-              <p className="text-gray-500 text-sm">{presentToday}/{totalStudents} present</p>
+            <div className="bg-white/20 backdrop-blur px-4 py-2 rounded-lg border border-white/20">
+              <span className="font-bold">{attendanceRate}% Present Today</span>
             </div>
-            <div className="text-4xl text-blue-500">📅</div>
-          </div>
-        </div>
-
-        {/* Quest Stats */}
-        <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-purple-600 text-sm font-medium">Quest Activity</p>
-              <p className="text-3xl font-bold text-gray-900">{totalQuestCompletions}</p>
-              <p className="text-gray-500 text-sm">{totalActiveQuests} active quests</p>
-            </div>
-            <div className="text-4xl text-purple-500">⚔️</div>
-          </div>
-        </div>
-
-        {/* Class XP */}
-        <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-green-600 text-sm font-medium">Average XP</p>
-              <p className="text-3xl font-bold text-gray-900">{averageXP}</p>
-              <p className="text-gray-500 text-sm">{totalClassXP} total XP</p>
-            </div>
-            <div className="text-4xl text-green-500">⭐</div>
-          </div>
-        </div>
-
-        {/* Students with Pets */}
-        <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-orange-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-orange-600 text-sm font-medium">Students with Pets</p>
-              <p className="text-3xl font-bold text-gray-900">
-                {students.filter(s => s.pet?.image).length}
-              </p>
-              <p className="text-gray-500 text-sm">out of {totalStudents}</p>
-            </div>
-            <div className="text-4xl text-orange-500">🐾</div>
           </div>
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="bg-white rounded-xl shadow-lg p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-bold text-gray-800">Quick Actions</h3>
-          <button
-            onClick={() => setShowBulkXpPanel(!showBulkXpPanel)}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              showBulkXpPanel 
-                ? 'bg-purple-600 text-white' 
-                : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
-            }`}
-          >
-            ⚡ Bulk XP
-          </button>
+      {/* Key Metrics Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-white rounded-xl p-4 shadow-lg border border-blue-100 hover:shadow-xl transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-blue-600 text-sm font-bold">Total Guild Power</p>
+              <p className="text-2xl font-bold text-gray-900">{totalClassXP.toLocaleString()}</p>
+              <p className="text-xs text-gray-500">{averageXP} avg per hero</p>
+            </div>
+            <div className="text-3xl">⚡</div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <button
-            onClick={() => setShowAttendanceWidget(!showAttendanceWidget)}
-            className="p-4 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-center"
-          >
-            <div className="text-2xl mb-2">📋</div>
-            <div className="font-semibold">Take Attendance</div>
-          </button>
-          
-          <button
-            onClick={() => setShowAddStudentModal(true)}
-            className="p-4 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors text-center"
-          >
-            <div className="text-2xl mb-2">👤</div>
-            <div className="font-semibold">Add Student</div>
-          </button>
-          
-          <button
-            onClick={showRandomQuestGiverTip}
-            className="p-4 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 transition-colors text-center"
-          >
-            <div className="text-2xl mb-2">💡</div>
-            <div className="font-semibold">Get Tip</div>
-          </button>
-          
-          <button
-            onClick={() => {
-              const randomStudent = students[Math.floor(Math.random() * students.length)];
-              if (randomStudent) setSelectedStudent(randomStudent);
-            }}
-            className="p-4 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 transition-colors text-center"
-            disabled={students.length === 0}
-          >
-            <div className="text-2xl mb-2">🎲</div>
-            <div className="font-semibold">Random Student</div>
-          </button>
+        <div className="bg-white rounded-xl p-4 shadow-lg border border-yellow-100 hover:shadow-xl transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-yellow-600 text-sm font-bold">Guild Treasury</p>
+              <p className="text-2xl font-bold text-gray-900">{totalCoins}</p>
+              <p className="text-xs text-gray-500">coins available</p>
+            </div>
+            <div className="text-3xl">💰</div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl p-4 shadow-lg border border-green-100 hover:shadow-xl transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-green-600 text-sm font-bold">Companions</p>
+              <p className="text-2xl font-bold text-gray-900">{studentsWithPets}</p>
+              <p className="text-xs text-gray-500">of {totalStudents} heroes</p>
+            </div>
+            <div className="text-3xl">🐲</div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl p-4 shadow-lg border border-purple-100 hover:shadow-xl transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-purple-600 text-sm font-bold">This Week</p>
+              <p className="text-2xl font-bold text-gray-900">{thisWeekXP}</p>
+              <p className="text-xs text-gray-500">{weeklyAverage} avg XP</p>
+            </div>
+            <div className="text-3xl">📈</div>
+          </div>
         </div>
       </div>
 
-      {/* Bulk XP Panel */}
-      {showBulkXpPanel && (
-        <div className="bg-purple-50 border border-purple-200 rounded-xl p-6">
-          <h3 className="text-lg font-bold text-purple-800 mb-4">Award XP to Multiple Students</h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-            <div>
-              <label className="block text-sm font-medium text-purple-700 mb-1">XP Amount</label>
-              <input
-                type="number"
-                min="1"
-                max="10"
-                value={bulkXpAmount}
-                onChange={(e) => setBulkXpAmount(parseInt(e.target.value))}
-                className="w-full px-3 py-2 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-purple-700 mb-1">Category</label>
-              <select
-                value={bulkXpCategory}
-                onChange={(e) => setBulkXpCategory(e.target.value)}
-                className="w-full px-3 py-2 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-              >
-                <option value="Respectful">👍 Respectful</option>
-                <option value="Responsible">💼 Responsible</option>
-                <option value="Learner">📚 Learner</option>
-              </select>
-            </div>
-            <div className="md:col-span-2 flex items-end space-x-2">
+      {/* Quick Actions & Champions */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Quick Actions */}
+        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+          <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
+            <span className="mr-2">⚡</span>
+            Quick Actions
+          </h3>
+          <div className="grid grid-cols-2 gap-3">
+            {quickActions.map((action, index) => (
               <button
-                onClick={handleSelectAll}
-                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium"
+                key={index}
+                onClick={action.action}
+                disabled={!action.enabled}
+                className={`p-4 rounded-lg border-2 transition-all duration-200 text-left ${
+                  action.enabled
+                    ? `border-${action.color}-200 hover:border-${action.color}-400 hover:bg-${action.color}-50 bg-gradient-to-br from-${action.color}-50 to-${action.color}-100 hover:shadow-md transform hover:scale-105`
+                    : 'border-gray-200 bg-gray-50 cursor-not-allowed opacity-50'
+                }`}
               >
-                Select All
+                <div className="flex items-center space-x-3">
+                  <span className="text-2xl">{action.icon}</span>
+                  <span className="font-bold text-gray-800">{action.title}</span>
+                </div>
               </button>
-              <button
-                onClick={handleDeselectAll}
-                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 font-medium"
-              >
-                Clear
-              </button>
-              <button
-                onClick={handleBulkXpAward}
-                disabled={selectedStudents.length === 0}
-                className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium"
-              >
-                Award XP ({selectedStudents.length} students)
-              </button>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-3 md:grid-cols-6 gap-2 max-h-32 overflow-y-auto">
-            {students.map(student => (
-              <label key={student.id} className="flex items-center space-x-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={selectedStudents.includes(student.id)}
-                  onChange={() => handleStudentSelect(student.id)}
-                  className="rounded"
-                />
-                <span className="truncate">{student.firstName}</span>
-              </label>
             ))}
           </div>
         </div>
-      )}
 
-      {/* Quick Attendance Widget */}
-      {showAttendanceWidget && (
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-bold text-gray-800">Quick Attendance - {new Date().toLocaleDateString()}</h3>
-            <button
-              onClick={() => setShowAttendanceWidget(false)}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              ×
-            </button>
-          </div>
+        {/* Top Champions */}
+        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+          <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
+            <span className="mr-2">🏆</span>
+            Guild Champions
+          </h3>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {students.map(student => {
-              const attendance = todayAttendance[student.id];
-              
-              return (
-                <div key={student.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    {student.avatar ? (
-                      <img
-                        src={student.avatar}
-                        alt={student.firstName}
-                        className="w-8 h-8 rounded-full"
-                      />
-                    ) : (
-                      <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
-                        <span className="text-xs">👤</span>
-                      </div>
-                    )}
-                    <span className="font-medium">{student.firstName}</span>
-                  </div>
-                  <div className="flex space-x-1">
-                    <button
-                      onClick={() => handleQuickAttendance(student.id, 'present')}
-                      className={`p-1 rounded text-xs ${
-                        attendance === 'present'
-                          ? 'bg-green-600 text-white'
-                          : 'bg-gray-200 text-gray-600 hover:bg-green-200'
-                      }`}
-                    >
-                      ✓
-                    </button>
-                    <button
-                      onClick={() => handleQuickAttendance(student.id, 'absent')}
-                      className={`p-1 rounded text-xs ${
-                        attendance === 'absent'
-                          ? 'bg-red-600 text-white'
-                          : 'bg-gray-200 text-gray-600 hover:bg-red-200'
-                      }`}
-                    >
-                      ❌
-                    </button>
-                    <button
-                      onClick={() => handleQuickAttendance(student.id, 'late')}
-                      className={`p-1 rounded text-xs ${
-                        attendance === 'late'
-                          ? 'bg-yellow-600 text-white'
-                          : 'bg-gray-200 text-gray-600 hover:bg-yellow-200'
-                      }`}
-                    >
-                      ⏰
-                    </button>
-                  </div>
+          {topXpStudent && (
+            <div className="space-y-3">
+              <div className="flex items-center space-x-3 p-3 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg border border-yellow-200">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 flex items-center justify-center text-white font-bold text-lg">
+                  👑
                 </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Today's Quest Overview */}
-      {totalActiveQuests > 0 && (
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-bold text-gray-800">Today's Quest Activity</h3>
-            <div className="flex items-center space-x-4 text-sm">
-              <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full">
-                {totalActiveQuests} Active Quests
-              </span>
-              <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full">
-                {totalQuestCompletions} Completions
-              </span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Quest Completion Progress */}
-            <div className="space-y-3">
-              <h4 className="font-bold text-gray-700">Completion Rate</h4>
-              <div className="w-full bg-gray-200 rounded-full h-4">
-                <div
-                  className="bg-purple-600 h-4 rounded-full transition-all duration-300"
-                  style={{ width: `${questCompletionRate}%` }}
-                ></div>
+                <div className="flex-1">
+                  <div className="font-bold text-gray-800">{topXpStudent.firstName}</div>
+                  <div className="text-sm text-yellow-700">XP Champion • {topXpStudent.totalPoints || 0} XP</div>
+                </div>
+                <button
+                  onClick={() => setSelectedStudent(topXpStudent)}
+                  className="px-3 py-1 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 text-sm font-bold"
+                >
+                  View
+                </button>
               </div>
-              <div className="text-center text-sm text-gray-600">
-                {questCompletionRate}% of possible completions
-              </div>
-            </div>
 
-            {/* Students with Available Quests */}
-            <div className="space-y-3">
-              <h4 className="font-bold text-gray-700">Students with Quests</h4>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-orange-600">{studentsWithAvailableQuests}</div>
-                <div className="text-sm text-gray-600">have available quests</div>
-              </div>
-            </div>
-
-            {/* Most Active Quest Givers */}
-            <div className="space-y-3">
-              <h4 className="font-bold text-gray-700">Active Quest Givers</h4>
-              <div className="flex -space-x-2">
-                {QUEST_GIVERS.slice(0, 3).map(giver => (
-                  <img
-                    key={giver.id}
-                    src={giver.image}
-                    alt={giver.name}
-                    className="w-10 h-10 rounded-full border-2 border-white"
-                    title={giver.name}
-                  />
-                ))}
-                {QUEST_GIVERS.length > 3 && (
-                  <div className="w-10 h-10 rounded-full border-2 border-white bg-gray-200 flex items-center justify-center text-xs font-bold">
-                    +{QUEST_GIVERS.length - 3}
+              {topCoinStudent && topCoinStudent.id !== topXpStudent.id && (
+                <div className="flex items-center space-x-3 p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-r from-green-400 to-emerald-500 flex items-center justify-center text-white font-bold text-lg">
+                    💰
                   </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Students Needing Attention */}
-      {studentsNeedingAttention.length > 0 && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6">
-          <h3 className="text-xl font-bold text-yellow-800 mb-4">Students Needing Attention</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {studentsNeedingAttention.map(student => {
-              const attendance = todayAttendance[student.id];
-              const availableQuests = getAvailableQuests ? getAvailableQuests(student).length : 0;
-              const reasons = [];
-              
-              if (attendance === 'absent') reasons.push('Absent today');
-              if ((student.totalPoints || 0) < averageXP * 0.7) reasons.push('Below average XP');
-              if (availableQuests > 2) reasons.push(`${availableQuests} pending quests`);
-
-              return (
-                <div key={student.id} className="bg-white border border-yellow-300 rounded-lg p-4">
-                  <div className="flex items-center space-x-3 mb-2">
-                    {student.avatar ? (
-                      <img
-                        src={student.avatar}
-                        alt={student.firstName}
-                        className="w-10 h-10 rounded-full"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center">
-                        <span className="text-sm">👤</span>
-                      </div>
-                    )}
-                    <div>
-                      <h4 className="font-bold text-gray-800">{student.firstName}</h4>
-                      <div className="text-sm text-gray-600">{student.totalPoints || 0} XP</div>
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    {reasons.map((reason, index) => (
-                      <div key={index} className="text-xs text-yellow-700 bg-yellow-100 px-2 py-1 rounded">
-                        {reason}
-                      </div>
-                    ))}
+                  <div className="flex-1">
+                    <div className="font-bold text-gray-800">{topCoinStudent.firstName}</div>
+                    <div className="text-sm text-green-700">Coin Master • {calculateCoins(topCoinStudent)} coins</div>
                   </div>
                   <button
-                    onClick={() => setSelectedStudent(student)}
-                    className="mt-2 w-full bg-yellow-600 text-white px-3 py-1 rounded text-sm hover:bg-yellow-700 transition-colors"
+                    onClick={() => setSelectedStudent(topCoinStudent)}
+                    className="px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 text-sm font-bold"
                   >
-                    Check Progress
+                    View
                   </button>
                 </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+              )}
 
-      {/* Top Performers */}
-      {students.length > 0 && (
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <h3 className="text-xl font-bold text-gray-800 mb-6">Class Leaders</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Top XP Earner */}
-            <div className="text-center">
-              <div className="text-6xl mb-2">🏆</div>
-              <h4 className="font-bold text-gray-800">XP Champion</h4>
-              {topPerformer.firstName && (
-                <div className="mt-2">
-                  <div className="font-bold text-lg text-gold-600">{topPerformer.firstName}</div>
-                  <div className="text-gray-600">{topPerformer.totalPoints || 0} XP</div>
+              {studentsWithPets > 0 && (
+                <div className="p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-2xl">🐾</span>
+                      <span className="font-bold text-gray-800">Pet Companions</span>
+                    </div>
+                    <span className="text-purple-700 font-bold">{studentsWithPets} heroes</span>
+                  </div>
                 </div>
               )}
             </div>
+          )}
+        </div>
+      </div>
 
-            {/* Most Quests Completed */}
-            <div className="text-center">
-              <div className="text-6xl mb-2">⚔️</div>
-              <h4 className="font-bold text-gray-800">Quest Master</h4>
-              {(() => {
-                const questMaster = students.reduce((top, student) => {
-                  const studentCompletions = activeQuests.filter(quest => 
-                    quest.completedBy?.includes(student.id)
-                  ).length;
-                  const topCompletions = activeQuests.filter(quest => 
-                    quest.completedBy?.includes(top.id)
-                  ).length;
-                  return studentCompletions > topCompletions ? student : top;
-                }, students[0] || {});
-                
-                const completions = activeQuests.filter(quest => 
-                  quest.completedBy?.includes(questMaster.id)
-                ).length;
+      {/* Insights & Recent Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Class Insights */}
+        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+          <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
+            <span className="mr-2">🎯</span>
+            Class Insights
+          </h3>
+          <div className="space-y-3">
+            {insights.map((insight, index) => (
+              <div key={index} className={`flex items-start space-x-3 p-3 rounded-lg ${
+                insight.type === 'achievement' ? 'bg-green-50 border border-green-200' :
+                insight.type === 'milestone' ? 'bg-blue-50 border border-blue-200' :
+                insight.type === 'opportunity' ? 'bg-yellow-50 border border-yellow-200' :
+                'bg-orange-50 border border-orange-200'
+              }`}>
+                <span className="text-xl">{insight.icon}</span>
+                <span className="text-gray-700 font-medium">{insight.text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
 
-                return questMaster.firstName ? (
-                  <div className="mt-2">
-                    <div className="font-bold text-lg text-purple-600">{questMaster.firstName}</div>
-                    <div className="text-gray-600">{completions} quests completed</div>
-                  </div>
-                ) : (
-                  <div className="text-gray-500 mt-2">No quests completed yet</div>
-                );
-              })()}
+        {/* Quick Class Overview */}
+        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+          <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
+            <span className="mr-2">📊</span>
+            Class Overview
+          </h3>
+          
+          {/* XP Distribution */}
+          <div className="space-y-4">
+            <div>
+              <div className="flex justify-between text-sm mb-1">
+                <span className="text-gray-600">XP Distribution</span>
+                <span className="text-blue-600 font-bold">{averageXP} avg</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div
+                  className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full"
+                  style={{ width: `${Math.min((averageXP / 200) * 100, 100)}%` }}
+                ></div>
+              </div>
             </div>
 
-            {/* Perfect Attendance */}
-            <div className="text-center">
-              <div className="text-6xl mb-2">⭐</div>
-              <h4 className="font-bold text-gray-800">Perfect Attendance</h4>
-              {(() => {
-                const perfectAttendees = students.filter(student => {
-                  // Check last 5 days for perfect attendance
-                  const last5Days = Array.from({length: 5}, (_, i) => {
-                    const date = new Date();
-                    date.setDate(date.getDate() - i);
-                    return date.toISOString().split('T')[0];
-                  });
-                  
-                  return last5Days.every(date => 
-                    attendanceData[date]?.[student.id] === 'present'
-                  );
-                });
+            <div>
+              <div className="flex justify-between text-sm mb-1">
+                <span className="text-gray-600">Pet Adoption Rate</span>
+                <span className="text-green-600 font-bold">{Math.round((studentsWithPets / totalStudents) * 100)}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div
+                  className="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full"
+                  style={{ width: `${(studentsWithPets / totalStudents) * 100}%` }}
+                ></div>
+              </div>
+            </div>
 
-                return perfectAttendees.length > 0 ? (
-                  <div className="mt-2">
-                    <div className="font-bold text-lg text-blue-600">
-                      {perfectAttendees.length} Student{perfectAttendees.length !== 1 ? 's' : ''}
-                    </div>
-                    <div className="text-gray-600">Perfect this week!</div>
-                  </div>
-                ) : (
-                  <div className="text-gray-500 mt-2">Keep working on it!</div>
-                );
-              })()}
+            <div>
+              <div className="flex justify-between text-sm mb-1">
+                <span className="text-gray-600">Attendance Rate</span>
+                <span className="text-blue-600 font-bold">{attendanceRate}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div
+                  className="bg-gradient-to-r from-blue-500 to-cyan-500 h-2 rounded-full"
+                  style={{ width: `${attendanceRate}%` }}
+                ></div>
+              </div>
             </div>
           </div>
         </div>
-      )}
+      </div>
 
-      {/* Empty State */}
-      {students.length === 0 && (
-        <div className="bg-white rounded-xl shadow-lg p-12 text-center">
-          <div className="text-6xl mb-4">🚀</div>
-          <h3 className="text-2xl font-bold text-gray-600 mb-4">Ready to Start Your Adventure?</h3>
-          <p className="text-gray-500 mb-6">Add your first students to begin the quest for knowledge!</p>
-          <button
-            onClick={() => setShowAddStudentModal(true)}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
-          >
-            Add Your First Student
-          </button>
+      {/* Navigation Shortcuts */}
+      <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-6 border border-indigo-200">
+        <h3 className="text-lg font-bold text-indigo-800 mb-4 flex items-center">
+          <span className="mr-2">🧭</span>
+          Quick Navigation
+        </h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+          {[
+            { tab: 'students', label: 'View All Heroes', icon: '👥' },
+            { tab: 'shop', label: 'Guild Shop', icon: '🛍️' },
+            { tab: 'race', label: 'Pet Racing', icon: '🏁' },
+            { tab: 'toolkit', label: 'Teacher Tools', icon: '🛠️' }
+          ].map((nav, index) => (
+            <button
+              key={index}
+              onClick={() => setActiveTab(nav.tab)}
+              className="flex items-center space-x-2 p-3 bg-white rounded-lg border border-indigo-200 hover:border-indigo-400 hover:bg-indigo-50 transition-all font-medium text-gray-700 hover:text-indigo-700"
+            >
+              <span>{nav.icon}</span>
+              <span>{nav.label}</span>
+            </button>
+          ))}
         </div>
-      )}
+      </div>
     </div>
   );
 };
