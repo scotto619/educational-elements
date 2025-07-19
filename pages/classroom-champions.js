@@ -11,6 +11,7 @@ const StudentsTab = React.lazy(() => import('../components/tabs/StudentsTab'));
 const QuestTab = React.lazy(() => import('../components/tabs/QuestTab'));
 const ShopTab = React.lazy(() => import('../components/tabs/ShopTab'));
 const PetRaceTab = React.lazy(() => import('../components/tabs/PetRaceTab'));
+const FishingGameTab = React.lazy(() => import('../components/tabs/FishingGameTab'));
 const GamesTab = React.lazy(() => import('../components/tabs/GamesTab'));
 const ClassesTab = React.lazy(() => import('../components/tabs/ClassesTab'));
 const SettingsTab = React.lazy(() => import('../components/tabs/SettingsTab'));
@@ -343,7 +344,7 @@ const migrateClassData = async (cls) => {
 // Enhanced speed calculation for racing
 const calculateSpeed = (pet) => {
   const baseSpeed = 1;
-  const winBoost = (pet.wins || 0); // Each win adds 2% speed
+  const winBoost = (pet.wins || 0) * 0.02; // Each win adds 2% speed
   const randomFactor = 0.8 + (Math.random() * 0.4); // 80-120% of base speed
   return (baseSpeed + winBoost) * randomFactor;
 };
@@ -1722,8 +1723,8 @@ export default function ClassroomChampions() {
           if (!student?.pet) continue;
 
           const speed = calculateSpeed(student.pet);
-          const baseStep = speed * 0.01; // Reduced step size for better visuals
-          const randomMultiplier = 0.8 + Math.random() * 0.4;
+          const baseStep = speed * 0.005; // Reduced step size for better visuals
+          const randomMultiplier = 0.4 + Math.random() * 0.2;
           const step = baseStep * randomMultiplier;
           
           const currentPosition = updated[id] || 0;
@@ -1973,6 +1974,7 @@ export default function ClassroomChampions() {
             { id: 'quests', label: 'Quests', icon: '⚔️' },
             { id: 'shop', label: 'Shop', icon: '🏪' },
             { id: 'race', label: 'Pet Race', icon: '🏁' },
+            { id: 'fishing', label: 'Fishing', icon: '🎣' },
             { id: 'games', label: 'Games', icon: '🎮' },
             ...(userData?.subscription === 'pro' ? [{ id: 'toolkit', label: 'Teachers Toolkit', icon: '🛠️', isPro: true }] : []),
             { id: 'classes', label: 'My Classes', icon: '📚' },
@@ -2010,6 +2012,7 @@ export default function ClassroomChampions() {
             {activeTab === 'quests' && <QuestTab {...tabProps} />}
             {activeTab === 'shop' && <ShopTab {...tabProps} />}
             {activeTab === 'race' && <PetRaceTab {...tabProps} />}
+            {activeTab === 'fishing' && <FishingGameTab {...tabProps} />}
             {activeTab === 'games' && <GamesTab {...tabProps} />}
             {activeTab === 'toolkit' && <TeachersToolkitTab {...tabProps} />}
             {activeTab === 'classes' && (
