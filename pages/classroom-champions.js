@@ -343,7 +343,7 @@ const migrateClassData = async (cls) => {
 // Enhanced speed calculation for racing
 const calculateSpeed = (pet) => {
   const baseSpeed = 1;
-  const winBoost = (pet.wins || 0) * 0.02; // Each win adds 2% speed
+  const winBoost = (pet.wins || 0); // Each win adds 2% speed
   const randomFactor = 0.8 + (Math.random() * 0.4); // 80-120% of base speed
   return (baseSpeed + winBoost) * randomFactor;
 };
@@ -1722,7 +1722,7 @@ export default function ClassroomChampions() {
           if (!student?.pet) continue;
 
           const speed = calculateSpeed(student.pet);
-          const baseStep = speed * 0.02; // Reduced step size for better visuals
+          const baseStep = speed * 0.01; // Reduced step size for better visuals
           const randomMultiplier = 0.8 + Math.random() * 0.4;
           const step = baseStep * randomMultiplier;
           

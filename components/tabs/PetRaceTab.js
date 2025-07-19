@@ -144,7 +144,7 @@ const PetRaceTab = ({
         pet: {
           ...student.pet,
           wins: (student.pet.wins || 0) + 1,
-          speed: (student.pet.speed || 1) + 0.02
+          speed: (student.pet.speed || 1) + 0
         }
       };
 
