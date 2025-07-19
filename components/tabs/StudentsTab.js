@@ -1,7 +1,6 @@
 // StudentsTab.js - Compact, One-Screen Design
 import React, { useState } from 'react';
 import XPAwardPopup from '../XPAwardPopup';
-import HoverImagePreview from '../HoverImagePreview';
 
 const StudentsTab = ({
   students,
@@ -32,6 +31,16 @@ const StudentsTab = ({
   handleBulkXpAward
 }) => {
   const [hoveredStudent, setHoveredStudent] = useState(null);
+  
+  // Image hover preview state
+  const [hoverPreview, setHoverPreview] = useState({
+    show: false,
+    imageSrc: '',
+    title: '',
+    subtitle: '',
+    x: 0,
+    y: 0
+  });
   
   // XP Award Popup state
   const [showXPPopup, setShowXPPopup] = useState(false);
@@ -174,6 +183,40 @@ const StudentsTab = ({
   // Close XP popup
   const closeXPPopup = () => {
     setShowXPPopup(false);
+  };
+
+  // Handle image hover
+  const handleImageHover = (e, imageSrc, title, subtitle) => {
+    const rect = e.target.getBoundingClientRect();
+    setHoverPreview({
+      show: true,
+      imageSrc,
+      title,
+      subtitle,
+      x: e.clientX,
+      y: e.clientY
+    });
+  };
+
+  const handleImageLeave = () => {
+    setHoverPreview({
+      show: false,
+      imageSrc: '',
+      title: '',
+      subtitle: '',
+      x: 0,
+      y: 0
+    });
+  };
+
+  const handleMouseMove = (e) => {
+    if (hoverPreview.show) {
+      setHoverPreview(prev => ({
+        ...prev,
+        x: e.clientX,
+        y: e.clientY
+      }));
+    }
   };
 
   // Update XP amount
@@ -418,24 +461,20 @@ const StudentsTab = ({
                         onClick={(e) => handleAvatarClickWrapper(student, e)}
                         className="relative"
                       >
-                        <HoverImagePreview
-                          imageSrc={student.avatar}
-                          title={`${student.firstName}'s Avatar`}
-                          subtitle={`Level ${student.avatarLevel || 1} Hero`}
-                          previewSize="large"
-                        >
-                          {student.avatar ? (
-                            <img
-                              src={student.avatar}
-                              alt={`${student.firstName}'s avatar`}
-                              className="w-8 h-8 rounded-full border-2 border-gray-300 hover:border-purple-400 transition-all"
-                            />
-                          ) : (
-                            <div className="w-8 h-8 rounded-full border-2 border-gray-300 bg-gray-100 flex items-center justify-center">
-                              <span className="text-xs">👤</span>
-                            </div>
-                          )}
-                        </HoverImagePreview>
+                        {student.avatar ? (
+                          <img
+                            src={student.avatar}
+                            alt={`${student.firstName}'s avatar`}
+                            className="w-8 h-8 rounded-full border-2 border-gray-300 hover:border-purple-400 transition-all cursor-pointer"
+                            onMouseEnter={(e) => handleImageHover(e, student.avatar, `${student.firstName}'s Avatar`, `Level ${student.avatarLevel || 1} Hero`)}
+                            onMouseLeave={handleImageLeave}
+                            onMouseMove={handleMouseMove}
+                          />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full border-2 border-gray-300 bg-gray-100 flex items-center justify-center">
+                            <span className="text-xs">👤</span>
+                          </div>
+                        )}
                       </button>
                     </div>
 
@@ -507,6 +546,29 @@ const StudentsTab = ({
           Click avatar for character sheet • ⭐ for quick XP • 💎 for shop • ⚔️ for quests • Use Award XP panel for bulk actions
         </span>
       </div>
+
+      {/* Hover Image Preview */}
+      {hoverPreview.show && (
+        <div
+          className="fixed z-50 pointer-events-none"
+          style={{
+            left: `${Math.min(hoverPreview.x + 20, window.innerWidth - 220)}px`,
+            top: `${Math.min(hoverPreview.y + 20, window.innerHeight - 280)}px`
+          }}
+        >
+          <div className="bg-white rounded-xl shadow-2xl border-4 border-white overflow-hidden animate-in fade-in duration-200">
+            <img
+              src={hoverPreview.imageSrc}
+              alt={hoverPreview.title}
+              className="w-48 h-48 object-cover"
+            />
+            <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white">
+              <div className="font-bold text-sm">{hoverPreview.title}</div>
+              <div className="text-xs opacity-90">{hoverPreview.subtitle}</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* XP Award Popup */}
       <XPAwardPopup
