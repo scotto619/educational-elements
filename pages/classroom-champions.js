@@ -1,4 +1,4 @@
-// classroom-champions.js - COMPLETE WITH ALL FEATURES + TIMER INTEGRATION
+// classroom-champions.js - COMPLETE WITH ENHANCED PET RACE SYSTEM
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
@@ -230,7 +230,7 @@ const AVAILABLE_AVATARS = [
 // Constants
 const MAX_LEVEL = 4;
 const COINS_PER_XP = 5;
-const FINISH_LINE_POSITION = 100;
+const RACE_DISTANCE = 0.8; // 80% of track width is the race distance
 
 // ===============================================
 // UTILITY FUNCTIONS
@@ -340,12 +340,12 @@ const migrateClassData = async (cls) => {
   };
 };
 
-// Speed calculation for racing
+// Enhanced speed calculation for racing
 const calculateSpeed = (pet) => {
   const baseSpeed = 1;
-  const speedBoost = (pet.wins || 0) * 0.02;
-  const randomFactor = 0.8 + (Math.random() * 0.4);
-  return (baseSpeed + speedBoost) * randomFactor;
+  const winBoost = (pet.wins || 0) * 0.02; // Each win adds 2% speed
+  const randomFactor = 0.8 + (Math.random() * 0.4); // 80-120% of base speed
+  return (baseSpeed + winBoost) * randomFactor;
 };
 
 // Loading components
@@ -427,13 +427,13 @@ export default function ClassroomChampions() {
   const [showAvatarSelectionModal, setShowAvatarSelectionModal] = useState(false);
   const [studentForAvatarChange, setStudentForAvatarChange] = useState(null);
 
-  // Race states
+  // Enhanced Race states
   const [raceInProgress, setRaceInProgress] = useState(false);
   const [raceFinished, setRaceFinished] = useState(false);
   const [racePositions, setRacePositions] = useState({});
   const [raceWinner, setRaceWinner] = useState(null);
-  const [selectedPrize, setSelectedPrize] = useState('XP');
-  const [xpAmount, setXpAmount] = useState(1);
+  const [selectedPrize, setSelectedPrize] = useState('xp');
+  const [prizeDetails, setPrizeDetails] = useState({ amount: 5, category: 'Respectful' });
   const [selectedPets, setSelectedPets] = useState([]);
   const [showRaceSetup, setShowRaceSetup] = useState(false);
 
@@ -472,6 +472,9 @@ export default function ClassroomChampions() {
 
   // Attendance data
   const [attendanceData, setAttendanceData] = useState({});
+
+  // Teacher rewards for race prizes
+  const [teacherRewards, setTeacherRewards] = useState([]);
 
   // ===============================================
   // TIMER STATE MANAGEMENT
@@ -554,6 +557,112 @@ export default function ClassroomChampions() {
         ? { ...student, coinsSpent: (student.coinsSpent || 0) + amount }
         : student
     ));
+  };
+
+  // ===============================================
+  // ENHANCED RACE FUNCTIONS
+  // ===============================================
+
+  // Award race prize to winner
+  const awardRacePrize = async (winner) => {
+    let prizeAwarded = '';
+    
+    setStudents(prev => {
+      const updatedStudents = prev.map(student => {
+        if (student.id !== winner.id) return student;
+
+        let updated = {
+          ...student,
+          pet: {
+            ...student.pet,
+            wins: (student.pet.wins || 0) + 1,
+            speed: (student.pet.speed || 1) + 0.02
+          }
+        };
+
+        switch (selectedPrize) {
+          case 'xp':
+            updated.totalPoints = (updated.totalPoints || 0) + prizeDetails.amount;
+            updated.categoryTotal = {
+              ...updated.categoryTotal,
+              [prizeDetails.category]: (updated.categoryTotal[prizeDetails.category] || 0) + prizeDetails.amount
+            };
+            updated.logs = [
+              ...(updated.logs || []),
+              {
+                type: prizeDetails.category,
+                amount: prizeDetails.amount,
+                date: new Date().toISOString(),
+                source: 'race_win'
+              }
+            ];
+            prizeAwarded = `${prizeDetails.amount} ${prizeDetails.category} XP`;
+            updated = checkForLevelUp(updated);
+            break;
+
+          case 'coins':
+            updated.coins = (updated.coins || 0) + prizeDetails.amount;
+            updated.logs = [
+              ...(updated.logs || []),
+              {
+                type: 'bonus_coins',
+                amount: prizeDetails.amount,
+                date: new Date().toISOString(),
+                source: 'race_win'
+              }
+            ];
+            prizeAwarded = `${prizeDetails.amount} coins`;
+            break;
+
+          case 'shop_item':
+            if (prizeDetails.item.category === 'avatars') {
+              updated.ownedAvatars = [...(updated.ownedAvatars || []), prizeDetails.item.id];
+            } else if (prizeDetails.item.category === 'pets') {
+              updated.ownedPets = [...(updated.ownedPets || []), {
+                id: `pet_${Date.now()}`,
+                name: prizeDetails.item.name,
+                image: prizeDetails.item.image,
+                type: 'race_prize'
+              }];
+            } else {
+              updated.inventory = [...(updated.inventory || []), {
+                id: `item_${Date.now()}`,
+                name: prizeDetails.item.name,
+                description: prizeDetails.item.description,
+                source: 'race_win',
+                acquired: new Date().toISOString()
+              }];
+            }
+            prizeAwarded = prizeDetails.item.name;
+            break;
+
+          case 'loot_box':
+            const rewards = generateLootBoxRewards(prizeDetails.lootBox);
+            updated.inventory = [...(updated.inventory || []), ...rewards];
+            prizeAwarded = `${prizeDetails.lootBox.name} with ${rewards.length} items`;
+            break;
+
+          case 'classroom_reward':
+            updated.inventory = [...(updated.inventory || []), {
+              id: `reward_${Date.now()}`,
+              name: prizeDetails.reward.name,
+              description: prizeDetails.reward.description,
+              source: 'race_win',
+              acquired: new Date().toISOString(),
+              category: 'classroom_reward'
+            }];
+            prizeAwarded = prizeDetails.reward.name;
+            break;
+        }
+
+        return updated;
+      });
+
+      saveStudentsToFirebase(updatedStudents);
+      return updatedStudents;
+    });
+
+    showToast(`🏆 ${winner.firstName} wins and earns ${prizeAwarded}!`, 'success');
   };
 
   // ===============================================
@@ -1547,6 +1656,7 @@ export default function ClassroomChampions() {
     setActiveQuests(cls.activeQuests || []);
     setQuestTemplates(cls.questTemplates || QUEST_TEMPLATES);
     setAttendanceData(cls.attendanceData || {});
+    setTeacherRewards(cls.teacherRewards || []);
     
     setSelectedStudents([]);
     setShowBulkXpPanel(false);
@@ -1581,70 +1691,43 @@ export default function ClassroomChampions() {
   // EFFECTS
   // ===============================================
 
-  // Pet racing effect
+  // Enhanced Pet racing effect with proper distance calculation
   useEffect(() => {
     if (!raceInProgress || raceFinished) return;
 
     const interval = setInterval(() => {
       setRacePositions(prev => {
         const updated = { ...prev };
-        let hasWinner = false;
 
-        // Check if race should finish
-        if (Object.values(updated).some(pos => pos >= FINISH_LINE_POSITION)) {
+        // Check if race should finish (when any pet reaches the finish line)
+        if (Object.values(updated).some(pos => pos >= RACE_DISTANCE)) {
           setRaceInProgress(false);
           setRaceFinished(true);
 
-          // Find winner
+          // Find winner - pet that traveled the furthest
           const maxPosition = Math.max(...Object.values(updated));
           const winnerId = Object.keys(updated).find(id => updated[id] === maxPosition);
           const winnerStudent = students.find(s => s.id === winnerId);
           
           if (winnerStudent) {
             setRaceWinner(winnerStudent);
-
-            // Update winner's pet stats and award prize
-            setStudents(prev => {
-              const updatedStudents = prev.map(s => {
-                if (s.id === winnerId) {
-                  let updated = {
-                    ...s,
-                    pet: {
-                      ...s.pet,
-                      wins: (s.pet.wins || 0) + 1,
-                      speed: (s.pet.speed || 1) + 0.02
-                    },
-                  };
-
-                  if (selectedPrize === 'XP') {
-                    updated.totalPoints = (updated.totalPoints || 0) + xpAmount;
-                    return checkForLevelUp(updated);
-                  }
-
-                  return updated;
-                }
-                return s;
-              });
-
-              saveStudentsToFirebase(updatedStudents);
-              return updatedStudents;
-            });
           }
 
           return updated;
         }
 
+        // Move each pet forward
         for (const id of selectedPets) {
           const student = students.find((s) => s.id === id);
           if (!student?.pet) continue;
 
           const speed = calculateSpeed(student.pet);
-          const baseStep = speed * 2;
+          const baseStep = speed * 0.02; // Reduced step size for better visuals
           const randomMultiplier = 0.8 + Math.random() * 0.4;
           const step = baseStep * randomMultiplier;
           
           const currentPosition = updated[id] || 0;
-          const newPosition = Math.min(currentPosition + step, FINISH_LINE_POSITION);
+          const newPosition = Math.min(currentPosition + step, RACE_DISTANCE);
           
           updated[id] = newPosition;
         }
@@ -1654,7 +1737,7 @@ export default function ClassroomChampions() {
     }, 100);
 
     return () => clearInterval(interval);
-  }, [raceInProgress, students, selectedPets, selectedPrize, xpAmount, raceFinished]);
+  }, [raceInProgress, students, selectedPets, raceFinished]);
 
   // Authentication and user data management with data migration
   useEffect(() => {
@@ -1693,7 +1776,7 @@ export default function ClassroomChampions() {
                 ...data, 
                 classes: migratedClasses 
               });
-              showToast('Data updated for new shop features!');
+              showToast('Data updated for new features!');
             }
 
             setTeacherClasses(migratedClasses);
@@ -1711,6 +1794,7 @@ export default function ClassroomChampions() {
                 setActiveQuests(activeClass.activeQuests || []);
                 setQuestTemplates(activeClass.questTemplates || QUEST_TEMPLATES);
                 setAttendanceData(activeClass.attendanceData || {});
+                setTeacherRewards(activeClass.teacherRewards || []);
               }
             }
           }
@@ -1832,7 +1916,7 @@ export default function ClassroomChampions() {
     saveGroupDataToFirebase,
     // Classroom Management
     saveClassroomDataToFirebase,
-    // Pet Race Props
+    // Enhanced Pet Race Props
     raceInProgress,
     setRaceInProgress,
     raceFinished,
@@ -1843,14 +1927,16 @@ export default function ClassroomChampions() {
     setRaceWinner,
     selectedPrize,
     setSelectedPrize,
-    xpAmount,
-    setXpAmount,
+    prizeDetails,
+    setPrizeDetails,
     selectedPets,
     setSelectedPets,
     showRaceSetup,
     setShowRaceSetup,
     calculateSpeed,
-    FINISH_LINE_POSITION,
+    RACE_DISTANCE,
+    awardRacePrize,
+    teacherRewards,
     // Timer Props
     timerState,
     setTimerState,
@@ -2059,8 +2145,9 @@ export default function ClassroomChampions() {
         {raceFinished && raceWinner && (
           <RaceWinnerModal
             winner={raceWinner}
-            prize={selectedPrize}
-            xpAmount={xpAmount}
+            selectedPrize={selectedPrize}
+            prizeDetails={prizeDetails}
+            awardPrize={awardRacePrize}
             onClose={() => {
               setRaceFinished(false);
               setRaceWinner(null);
@@ -2077,17 +2164,33 @@ export default function ClassroomChampions() {
             setSelectedPets={setSelectedPets}
             selectedPrize={selectedPrize}
             setSelectedPrize={setSelectedPrize}
-            xpAmount={xpAmount}
-            setXpAmount={setXpAmount}
+            prizeDetails={prizeDetails}
+            setPrizeDetails={setPrizeDetails}
+            SHOP_ITEMS={SHOP_ITEMS}
+            LOOT_BOX_ITEMS={LOOT_BOX_ITEMS}
+            teacherRewards={teacherRewards}
             onStartRace={() => {
               if (selectedPets.length < 2) {
                 alert('Please select at least 2 pets to race!');
                 return;
               }
               
+              if (!selectedPrize || !prizeDetails) {
+                alert('Please select a prize for the winner!');
+                return;
+              }
+              
               setShowRaceSetup(false);
-              setRacePositions(Object.fromEntries(selectedPets.map(id => [id, 0])));
+              
+              // Initialize race positions
+              const initialPositions = {};
+              selectedPets.forEach(id => {
+                initialPositions[id] = 0;
+              });
+              setRacePositions(initialPositions);
               setRaceInProgress(true);
+              setRaceFinished(false);
+              setRaceWinner(null);
             }}
             onClose={() => setShowRaceSetup(false)}
           />
