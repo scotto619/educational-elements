@@ -1,4 +1,4 @@
-// classroom-champions.js - COMPLETE WITH ALL FEATURES + NEW QUEST SYSTEM
+// classroom-champions.js - COMPLETE WITH ALL FEATURES + TIMER INTEGRATION
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
@@ -8,7 +8,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 // Lazy load components
 const DashboardTab = React.lazy(() => import('../components/tabs/DashboardTab'));
 const StudentsTab = React.lazy(() => import('../components/tabs/StudentsTab'));
-const QuestTab = React.lazy(() => import('../components/tabs/QuestTab')); // NEW: Quest Tab
+const QuestTab = React.lazy(() => import('../components/tabs/QuestTab'));
 const ShopTab = React.lazy(() => import('../components/tabs/ShopTab'));
 const PetRaceTab = React.lazy(() => import('../components/tabs/PetRaceTab'));
 const GamesTab = React.lazy(() => import('../components/tabs/GamesTab'));
@@ -25,6 +25,9 @@ const AddStudentModal = React.lazy(() => import('../components/modals/AddStudent
 const RaceWinnerModal = React.lazy(() => import('../components/modals/RaceWinnerModal'));
 const RaceSetupModal = React.lazy(() => import('../components/modals/RaceSetupModal'));
 const QuestCompletionModal = React.lazy(() => import('../components/modals/QuestCompletionModal'));
+
+// Timer Components
+const PersistentTimer = React.lazy(() => import('../components/PersistentTimer'));
 
 // ===============================================
 // QUEST SYSTEM - QUEST GIVERS & DATA
@@ -469,6 +472,52 @@ export default function ClassroomChampions() {
 
   // Attendance data
   const [attendanceData, setAttendanceData] = useState({});
+
+  // ===============================================
+  // TIMER STATE MANAGEMENT
+  // ===============================================
+
+  // Timer states
+  const [timerState, setTimerState] = useState({
+    isActive: false,
+    time: 300, // 5 minutes default
+    originalTime: 300,
+    isRunning: false,
+    isPaused: false,
+    type: 'countdown'
+  });
+  const [showFullTimerModal, setShowFullTimerModal] = useState(false);
+
+  // Timer callback functions
+  const handleTimerComplete = () => {
+    showToast('⏰ Timer completed!', 'success');
+    setTimerState(prev => ({
+      ...prev,
+      isActive: false,
+      isRunning: false,
+      isPaused: false,
+      time: 0
+    }));
+  };
+
+  const handleTimerUpdate = (updatedTimerData) => {
+    setTimerState(prev => ({
+      ...prev,
+      ...updatedTimerData,
+      isActive: updatedTimerData.isRunning || updatedTimerData.time > 0
+    }));
+  };
+
+  const handleShowFullTimer = () => {
+    setActiveTab('toolkit');
+    // Small delay to ensure tab loads then scroll to timer
+    setTimeout(() => {
+      const timerElement = document.querySelector('[data-timer-tools]');
+      if (timerElement) {
+        timerElement.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 100);
+  };
 
   // ===============================================
   // CORE FUNCTIONS
@@ -1802,6 +1851,12 @@ export default function ClassroomChampions() {
     setShowRaceSetup,
     calculateSpeed,
     FINISH_LINE_POSITION,
+    // Timer Props
+    timerState,
+    setTimerState,
+    handleTimerComplete,
+    handleTimerUpdate,
+    handleShowFullTimer,
     // Utility Functions
     getAvatarImage,
     getRandomPet,
@@ -1829,7 +1884,7 @@ export default function ClassroomChampions() {
           {[
             { id: 'dashboard', label: 'Dashboard', icon: '📊' },
             { id: 'students', label: 'Students', icon: '👥' },
-            { id: 'quests', label: 'Quests', icon: '⚔️' }, // NEW: Quest Tab
+            { id: 'quests', label: 'Quests', icon: '⚔️' },
             { id: 'shop', label: 'Shop', icon: '🏪' },
             { id: 'race', label: 'Pet Race', icon: '🏁' },
             { id: 'games', label: 'Games', icon: '🎮' },
@@ -1866,7 +1921,7 @@ export default function ClassroomChampions() {
           <Suspense fallback={<TabLoadingSpinner />}>
             {activeTab === 'dashboard' && <DashboardTab {...tabProps} />}
             {activeTab === 'students' && <StudentsTab {...tabProps} />}
-            {activeTab === 'quests' && <QuestTab {...tabProps} />} {/* NEW: Quest Tab */}
+            {activeTab === 'quests' && <QuestTab {...tabProps} />}
             {activeTab === 'shop' && <ShopTab {...tabProps} />}
             {activeTab === 'race' && <PetRaceTab {...tabProps} />}
             {activeTab === 'games' && <GamesTab {...tabProps} />}
@@ -1889,6 +1944,19 @@ export default function ClassroomChampions() {
           </Suspense>
         </div>
       </div>
+
+      {/* Persistent Timer - Shows when timer is active */}
+      <Suspense fallback={null}>
+        {timerState.isActive && (
+          <PersistentTimer
+            isVisible={timerState.isActive}
+            timerData={timerState}
+            onTimerComplete={handleTimerComplete}
+            onTimerUpdate={handleTimerUpdate}
+            onShowFullTimer={handleShowFullTimer}
+          />
+        )}
+      </Suspense>
 
       {/* Modals */}
       <Suspense fallback={null}>
@@ -2092,6 +2160,23 @@ export default function ClassroomChampions() {
       {savingData && (
         <div className="fixed top-4 right-4 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg z-50">
           Saving...
+        </div>
+      )}
+
+      {/* Quest Giver Tip Popup */}
+      {showQuestGiverTip && (
+        <div className="fixed top-20 right-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white p-4 rounded-xl shadow-2xl z-50 max-w-sm animate-fade-in">
+          <div className="flex items-start space-x-3">
+            <img
+              src={showQuestGiverTip.giver.image}
+              alt={showQuestGiverTip.giver.name}
+              className="w-12 h-12 rounded-full border-2 border-yellow-300"
+            />
+            <div>
+              <div className="font-bold text-yellow-300">{showQuestGiverTip.giver.name}</div>
+              <div className="text-sm">{showQuestGiverTip.tip}</div>
+            </div>
+          </div>
         </div>
       )}
     </div>

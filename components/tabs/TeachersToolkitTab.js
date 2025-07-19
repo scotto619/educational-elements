@@ -29,7 +29,10 @@ const TeachersToolkitTab = ({
   setShowQuestManagement,
   // Additional Props for Analytics
   questTemplates,
-  setSelectedQuestGiver
+  setSelectedQuestGiver,
+  // Timer Props
+  timerState,
+  setTimerState
 }) => {
   const [activeToolkitTab, setActiveToolkitTab] = useState('help-queue');
   const [showQuestAnalytics, setShowQuestAnalytics] = useState(false);
@@ -487,7 +490,12 @@ const TeachersToolkitTab = ({
           )}
 
           {activeToolkitTab === 'timer' && (
-            <TimerTools showToast={showToast} />
+            <TimerTools 
+              showToast={showToast} 
+              students={students}
+              timerState={timerState}
+              setTimerState={setTimerState}
+            />
           )}
 
           {activeToolkitTab === 'dice' && (
