@@ -21,14 +21,18 @@ const FishingGameTab = ({
 
   // Load fishing stats from students
   useEffect(() => {
+    if (!students || !Array.isArray(students)) return;
+    
     const stats = {};
     students.forEach(student => {
-      stats[student.id] = {
-        gamesPlayed: student.fishingStats?.gamesPlayed || 0,
-        totalCatches: student.fishingStats?.totalCatches || 0,
-        bestCatch: student.fishingStats?.bestCatch || null,
-        totalValue: student.fishingStats?.totalValue || 0
-      };
+      if (student && student.id) {
+        stats[student.id] = {
+          gamesPlayed: student.fishingStats?.gamesPlayed || 0,
+          totalCatches: student.fishingStats?.totalCatches || 0,
+          bestCatch: student.fishingStats?.bestCatch || null,
+          totalValue: student.fishingStats?.totalValue || 0
+        };
+      }
     });
     setFishingStats(stats);
   }, [students]);
@@ -214,7 +218,10 @@ const FishingGameTab = ({
 
   // Select random student
   const selectRandomStudent = () => {
-    if (students.length === 0) return;
+    if (!students || students.length === 0) {
+      showToast('No students available!', 'error');
+      return;
+    }
     const randomIndex = Math.floor(Math.random() * students.length);
     setSelectedStudent(students[randomIndex]);
   };
@@ -339,13 +346,38 @@ const FishingGameTab = ({
 
   // Get leaderboard
   const getLeaderboard = () => {
+    if (!students || !Array.isArray(students)) return [];
+    
     return students
-      .filter(s => s.fishingStats?.totalCatches > 0)
+      .filter(s => s && s.fishingStats && s.fishingStats.totalCatches > 0)
       .sort((a, b) => (b.fishingStats?.totalValue || 0) - (a.fishingStats?.totalValue || 0))
       .slice(0, 5);
   };
 
   const leaderboard = getLeaderboard();
+
+  // Loading state
+  if (!students) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
+          <p className="text-xl font-semibold text-gray-700">Loading fishing adventure...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // No students state
+  if (!Array.isArray(students) || students.length === 0) {
+    return (
+      <div className="text-center py-16">
+        <div className="text-6xl mb-4">🎣</div>
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">Epic Fishing Adventure</h2>
+        <p className="text-gray-700">Add students to your class to start the fishing adventure!</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -389,7 +421,9 @@ const FishingGameTab = ({
             
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-60 overflow-y-auto">
               {students.map(student => {
-                const stats = fishingStats[student.id];
+                if (!student || !student.id) return null;
+                
+                const stats = fishingStats[student.id] || { totalCatches: 0, gamesPlayed: 0 };
                 const isSelected = selectedStudent?.id === student.id;
                 
                 return (
@@ -612,7 +646,28 @@ const FishingGameModal = ({
     if (gameState === 'waiting') {
       setCurrentFish(generateFish());
     }
-  }, [gameState]);
+  }, [gameState, prizeFish]);
+
+  // Keyboard controls
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      if (gameState === 'waiting') {
+        if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+          moveBoat(-1);
+        }
+        if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+          moveBoat(1);
+        }
+        if (e.key === ' ' || e.key === 'Enter') {
+          e.preventDefault();
+          castLine();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [gameState, boatPosition]);
 
   // Fish movement animation
   useEffect(() => {
@@ -920,12 +975,11 @@ const FishingGameModal = ({
       </div>
 
       {/* Keyboard controls */}
-      <div className="fixed bottom-4 right-4 bg-black bg-opacity-75 text-white p-4 rounded-lg">
-        <div className="text-sm">
-          <div>🎮 Controls:</div>
-          <div>← → : Move boat</div>
-          <div>Click: Cast line</div>
-        </div>
+      <div className="fixed bottom-4 right-4 bg-black bg-opacity-75 text-white p-4 rounded-lg text-sm">
+        <div className="font-bold mb-2">🎮 Controls:</div>
+        <div>← → Arrow Keys: Move boat</div>
+        <div>Space/Enter: Cast line</div>
+        <div>Click: Cast line</div>
       </div>
 
       <style jsx>{`
