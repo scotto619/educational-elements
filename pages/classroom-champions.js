@@ -1849,6 +1849,11 @@ export default function ClassroomChampions() {
     currentClassId,
     savingData,
     setSavingData,
+    // Fishing
+    setStudents,
+    saveStudentsToFirebase,
+    checkForLevelUp,
+    generateLootBoxRewards,
     // Quest System Props
     activeQuests,
     questTemplates,

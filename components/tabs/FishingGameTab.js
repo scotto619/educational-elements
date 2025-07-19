@@ -2,16 +2,16 @@
 import React, { useState, useEffect } from 'react';
 
 const FishingGameTab = ({
-  students,
-  showToast,
-  SHOP_ITEMS,
-  LOOT_BOX_ITEMS,
+  students = [],
+  showToast = () => {},
+  SHOP_ITEMS = {},
+  LOOT_BOX_ITEMS = {},
   teacherRewards = [],
-  setStudents,
-  saveStudentsToFirebase,
-  checkForLevelUp,
-  generateLootBoxRewards,
-  calculateCoins
+  setStudents = () => {},
+  saveStudentsToFirebase = () => {},
+  checkForLevelUp = (student) => student,
+  generateLootBoxRewards = () => [],
+  calculateCoins = () => 0
 }) => {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [showFishingGame, setShowFishingGame] = useState(false);
@@ -21,7 +21,10 @@ const FishingGameTab = ({
 
   // Load fishing stats from students
   useEffect(() => {
-    if (!students || !Array.isArray(students)) return;
+    if (!students || !Array.isArray(students) || students.length === 0) {
+      setFishingStats({});
+      return;
+    }
     
     const stats = {};
     students.forEach(student => {
@@ -218,7 +221,7 @@ const FishingGameTab = ({
 
   // Select random student
   const selectRandomStudent = () => {
-    if (!students || students.length === 0) {
+    if (!students || !Array.isArray(students) || students.length === 0) {
       showToast('No students available!', 'error');
       return;
     }
@@ -241,16 +244,18 @@ const FishingGameTab = ({
 
     // Update student stats
     setStudents(prev => {
+      if (!Array.isArray(prev)) return prev;
+      
       const updatedStudents = prev.map(student => {
-        if (student.id !== selectedStudent.id) return student;
+        if (!student || student.id !== selectedStudent.id) return student;
 
         let updated = {
           ...student,
           fishingStats: {
             gamesPlayed: (student.fishingStats?.gamesPlayed || 0) + 1,
             totalCatches: (student.fishingStats?.totalCatches || 0) + (caughtFish ? 1 : 0),
-            bestCatch: !student.fishingStats?.bestCatch || (caughtFish && prize.value > student.fishingStats.bestCatch.value) 
-              ? { name: caughtFish?.name, value: prize.value || 0, date: new Date().toISOString() }
+            bestCatch: !student.fishingStats?.bestCatch || (caughtFish && prize.value > (student.fishingStats.bestCatch?.value || 0))
+              ? { name: caughtFish?.name || 'Unknown', value: prize.value || 0, date: new Date().toISOString() }
               : student.fishingStats.bestCatch,
             totalValue: (student.fishingStats?.totalValue || 0) + (prize.value || 0)
           }
@@ -262,7 +267,7 @@ const FishingGameTab = ({
             updated.totalPoints = (updated.totalPoints || 0) + prize.amount;
             updated.categoryTotal = {
               ...updated.categoryTotal,
-              [prize.category]: (updated.categoryTotal[prize.category] || 0) + prize.amount
+              [prize.category]: (updated.categoryTotal?.[prize.category] || 0) + prize.amount
             };
             updated.logs = [
               ...(updated.logs || []),
@@ -290,20 +295,20 @@ const FishingGameTab = ({
             break;
 
           case 'shop_item':
-            if (prize.item.category === 'avatars') {
+            if (prize.item && prize.item.category === 'avatars') {
               updated.ownedAvatars = [...(updated.ownedAvatars || []), prize.item.id];
-            } else if (prize.item.category === 'pets') {
+            } else if (prize.item && prize.item.category === 'pets') {
               updated.ownedPets = [...(updated.ownedPets || []), {
                 id: `pet_${Date.now()}`,
-                name: prize.item.name,
-                image: prize.item.image,
+                name: prize.item.name || 'Mystery Pet',
+                image: prize.item.image || '',
                 type: 'fishing_prize'
               }];
-            } else {
+            } else if (prize.item) {
               updated.inventory = [...(updated.inventory || []), {
                 id: `item_${Date.now()}`,
-                name: prize.item.name,
-                description: prize.item.description,
+                name: prize.item.name || 'Mystery Item',
+                description: prize.item.description || 'Item from fishing',
                 source: 'fishing_game',
                 acquired: new Date().toISOString()
               }];
@@ -316,21 +321,25 @@ const FishingGameTab = ({
             break;
 
           case 'classroom_reward':
-            updated.inventory = [...(updated.inventory || []), {
-              id: `reward_${Date.now()}`,
-              name: prize.reward.name,
-              description: prize.reward.description,
-              source: 'fishing_game',
-              acquired: new Date().toISOString(),
-              category: 'classroom_reward'
-            }];
+            if (prize.reward) {
+              updated.inventory = [...(updated.inventory || []), {
+                id: `reward_${Date.now()}`,
+                name: prize.reward.name || 'Special Reward',
+                description: prize.reward.description || 'Classroom reward from fishing',
+                source: 'fishing_game',
+                acquired: new Date().toISOString(),
+                category: 'classroom_reward'
+              }];
+            }
             break;
         }
 
         return updated;
       });
 
-      saveStudentsToFirebase(updatedStudents);
+      if (typeof saveStudentsToFirebase === 'function') {
+        saveStudentsToFirebase(updatedStudents);
+      }
       return updatedStudents;
     });
 
@@ -349,7 +358,7 @@ const FishingGameTab = ({
     if (!students || !Array.isArray(students)) return [];
     
     return students
-      .filter(s => s && s.fishingStats && s.fishingStats.totalCatches > 0)
+      .filter(s => s && s.fishingStats && (s.fishingStats.totalCatches || 0) > 0)
       .sort((a, b) => (b.fishingStats?.totalValue || 0) - (a.fishingStats?.totalValue || 0))
       .slice(0, 5);
   };
@@ -441,7 +450,7 @@ const FishingGameTab = ({
                       {student.avatar ? (
                         <img
                           src={student.avatar}
-                          alt={student.firstName}
+                          alt={student.firstName || 'Student'}
                           className={`w-12 h-12 rounded-full mx-auto border-2 ${
                             isSelected ? 'border-blue-400' : 'border-gray-300'
                           }`}
@@ -461,7 +470,7 @@ const FishingGameTab = ({
                     </div>
                     
                     {/* Student Info */}
-                    <div className="font-bold text-gray-800 text-sm">{student.firstName}</div>
+                    <div className="font-bold text-gray-800 text-sm">{student.firstName || 'Student'}</div>
                     <div className="text-xs text-gray-600">
                       {stats.totalCatches} catches
                     </div>
@@ -482,7 +491,7 @@ const FishingGameTab = ({
                   {selectedStudent.avatar ? (
                     <img
                       src={selectedStudent.avatar}
-                      alt={selectedStudent.firstName}
+                      alt={selectedStudent.firstName || 'Student'}
                       className="w-20 h-20 rounded-full mx-auto border-4 border-blue-400 shadow-lg mb-3"
                     />
                   ) : (
@@ -490,7 +499,7 @@ const FishingGameTab = ({
                       👤
                     </div>
                   )}
-                  <div className="text-2xl font-bold text-gray-800">{selectedStudent.firstName}</div>
+                  <div className="text-2xl font-bold text-gray-800">{selectedStudent.firstName || 'Student'}</div>
                   <div className="text-gray-600">the Angler</div>
                 </div>
 
@@ -570,7 +579,7 @@ const FishingGameTab = ({
                 {student.avatar ? (
                   <img
                     src={student.avatar}
-                    alt={student.firstName}
+                    alt={student.firstName || 'Student'}
                     className="w-12 h-12 rounded-full mx-auto border-2 border-white shadow-lg mb-2"
                   />
                 ) : (
@@ -578,8 +587,8 @@ const FishingGameTab = ({
                     👤
                   </div>
                 )}
-                <div className="font-bold text-sm">{student.firstName}</div>
-                <div className="text-xs opacity-90">{student.fishingStats?.totalCatches} catches</div>
+                <div className="font-bold text-sm">{student.firstName || 'Student'}</div>
+                <div className="text-xs opacity-90">{student.fishingStats?.totalCatches || 0} catches</div>
                 <div className="text-xs font-bold">Value: {student.fishingStats?.totalValue || 0}</div>
               </div>
             ))}
@@ -605,11 +614,11 @@ const FishingGameTab = ({
 // Separate Fishing Game Modal Component
 const FishingGameModal = ({ 
   student, 
-  prizeFish, 
-  shopItems, 
-  fishingRewards, 
-  onComplete, 
-  onClose 
+  prizeFish = [], 
+  shopItems = {}, 
+  fishingRewards = [], 
+  onComplete = () => {}, 
+  onClose = () => {} 
 }) => {
   const [gameState, setGameState] = useState('waiting'); // waiting, casting, fishing, caught, missed
   const [turnsLeft, setTurnsLeft] = useState(3);
@@ -623,7 +632,7 @@ const FishingGameModal = ({
   const generateFish = () => {
     const fish = [];
     prizeFish.forEach(fishType => {
-      if (Math.random() < fishType.spawnRate) {
+      if (fishType && Math.random() < (fishType.spawnRate || 0.1)) {
         fish.push({
           ...fishType,
           id: `${fishType.id}_${Date.now()}_${Math.random()}`,
@@ -675,8 +684,8 @@ const FishingGameModal = ({
       const interval = setInterval(() => {
         setCurrentFish(prev => prev.map(fish => ({
           ...fish,
-          x: fish.x + fish.speed * fish.direction,
-          direction: fish.x <= 5 || fish.x >= 95 ? -fish.direction : fish.direction
+          x: fish.x + (fish.speed || 0.5) * (fish.direction || 1),
+          direction: fish.x <= 5 || fish.x >= 95 ? -(fish.direction || 1) : (fish.direction || 1)
         })));
       }, 100);
       
@@ -716,8 +725,9 @@ const FishingGameModal = ({
     
     // Find fish within catch range
     const catchablefish = currentFish.filter(fish => {
+      if (!fish) return false;
       const distance = Math.sqrt(
-        Math.pow(fish.x - hookX, 2) + Math.pow(fish.y - hookY, 2)
+        Math.pow((fish.x || 0) - hookX, 2) + Math.pow((fish.y || 0) - hookY, 2)
       );
       return distance < 8; // Catch radius
     });
@@ -725,7 +735,7 @@ const FishingGameModal = ({
     if (catchablefish.length > 0) {
       // Determine if catch is successful based on fish catch chance
       const targetFish = catchablefish[0];
-      const catchSuccess = Math.random() < targetFish.catchChance;
+      const catchSuccess = Math.random() < (targetFish.catchChance || 0.5);
       
       if (catchSuccess) {
         setCaughtFish(targetFish);
@@ -767,18 +777,22 @@ const FishingGameModal = ({
 
   // Generate prize based on fish
   const generatePrize = (fish) => {
+    if (!fish || !fish.prize) {
+      return { type: 'coins', amount: 5, description: '5 Coins', value: 5 };
+    }
+
     const prizeData = fish.prize;
     let prize = { ...prizeData, value: 0 };
 
     switch (prizeData.type) {
       case 'xp':
         prize.description = `${prizeData.amount} ${prizeData.category} XP`;
-        prize.value = prizeData.amount * 10;
+        prize.value = (prizeData.amount || 1) * 10;
         break;
       
       case 'coins':
         prize.description = `${prizeData.amount} Coins`;
-        prize.value = prizeData.amount;
+        prize.value = prizeData.amount || 10;
         break;
       
       case 'shop_item':
@@ -786,28 +800,36 @@ const FishingGameModal = ({
         if (items.length > 0) {
           const randomItem = items[Math.floor(Math.random() * items.length)];
           prize.item = randomItem;
-          prize.description = randomItem.name;
+          prize.description = randomItem.name || 'Mystery Item';
           prize.value = randomItem.price || 50;
+        } else {
+          prize = { type: 'coins', amount: 20, description: '20 Coins', value: 20 };
         }
         break;
       
       case 'loot_box':
         prize.lootBox = { 
-          id: `${prizeData.box}_box`, 
-          name: `${prizeData.box.charAt(0).toUpperCase() + prizeData.box.slice(1)} Loot Box` 
+          id: `${prizeData.box || 'basic'}_box`, 
+          name: `${(prizeData.box || 'basic').charAt(0).toUpperCase() + (prizeData.box || 'basic').slice(1)} Loot Box` 
         };
         prize.description = prize.lootBox.name;
         prize.value = prizeData.box === 'basic' ? 25 : prizeData.box === 'premium' ? 50 : 100;
         break;
       
       case 'classroom_reward':
-        const rewards = fishingRewards.filter(r => r.difficulty === prizeData.difficulty);
+        const rewards = fishingRewards.filter(r => r && r.difficulty === prizeData.difficulty);
         if (rewards.length > 0) {
           const randomReward = rewards[Math.floor(Math.random() * rewards.length)];
           prize.reward = randomReward;
-          prize.description = randomReward.name;
+          prize.description = randomReward.name || 'Special Reward';
           prize.value = prizeData.difficulty === 'easy' ? 15 : prizeData.difficulty === 'medium' ? 30 : 50;
+        } else {
+          prize = { type: 'coins', amount: 15, description: '15 Coins', value: 15 };
         }
+        break;
+
+      default:
+        prize = { type: 'coins', amount: 10, description: '10 Coins', value: 10 };
         break;
     }
 
@@ -823,6 +845,10 @@ const FishingGameModal = ({
       return Math.max(15, Math.min(85, newPos));
     });
   };
+
+  if (!student) {
+    return null;
+  }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
@@ -851,12 +877,12 @@ const FishingGameModal = ({
         <div className="bg-gradient-to-r from-blue-600 to-teal-600 text-white p-4 flex justify-between items-center">
           <div className="flex items-center space-x-4">
             {student.avatar ? (
-              <img src={student.avatar} alt={student.firstName} className="w-12 h-12 rounded-full border-2 border-white" />
+              <img src={student.avatar} alt={student.firstName || 'Student'} className="w-12 h-12 rounded-full border-2 border-white" />
             ) : (
               <div className="w-12 h-12 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-2xl">👤</div>
             )}
             <div>
-              <h3 className="text-xl font-bold">{student.firstName}'s Fishing Adventure</h3>
+              <h3 className="text-xl font-bold">{student.firstName || 'Student'}'s Fishing Adventure</h3>
               <p className="text-blue-100">Turns left: {turnsLeft} • {gameState.charAt(0).toUpperCase() + gameState.slice(1)}</p>
             </div>
           </div>
@@ -895,13 +921,13 @@ const FishingGameModal = ({
               key={fish.id}
               className="absolute transition-all duration-100"
               style={{
-                left: `${fish.x}%`,
-                top: `${fish.y}%`,
+                left: `${fish.x || 50}%`,
+                top: `${fish.y || 50}%`,
                 transform: 'translateX(-50%)',
                 fontSize: fish.size === 'small' ? '20px' : 
                           fish.size === 'medium' ? '30px' :
                           fish.size === 'large' ? '40px' : '50px',
-                color: fish.color,
+                color: fish.color || '#3B82F6',
                 filter: 'drop-shadow(2px 2px 4px rgba(0,0,0,0.3))'
               }}
             >
