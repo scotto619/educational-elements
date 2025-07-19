@@ -1,434 +1,1110 @@
-// VocabularyCenter.js - Interactive Vocabulary Building Tool
-import React, { useState, useEffect } from 'react';
+// VocabularyCenter.js - Enhanced Interactive Vocabulary Center with API Integration
+import React, { useState, useEffect, useRef } from 'react';
 
-const VocabularyCenter = ({ showToast, displayMode = 'teacher' }) => {
-  const [activeVocabTab, setActiveVocabTab] = useState('word-wall');
+const VocabularyCenter = ({ showToast, saveVocabularyDataToFirebase, currentClassId }) => {
+  const [activeTab, setActiveTab] = useState('word-wall');
+  const [wordWall, setWordWall] = useState([]);
+  const [newWord, setNewWord] = useState('');
+  const [isLoadingWord, setIsLoadingWord] = useState(false);
   const [selectedWord, setSelectedWord] = useState(null);
-  const [gradeLevel, setGradeLevel] = useState('grade-3');
-  const [wordOfTheDay, setWordOfTheDay] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterCategory, setFilterCategory] = useState('all');
+  const [viewMode, setViewMode] = useState('grid'); // grid, list, cards
+  const [editingWord, setEditingWord] = useState(null);
 
-  // Grade-level vocabulary sets
-  const vocabularyByGrade = {
-    'grade-1': [
-      { word: 'happy', definition: 'feeling joy or pleasure', synonyms: ['glad', 'joyful'], antonyms: ['sad', 'unhappy'], sentence: 'The dog was happy to see his owner.', emoji: '😊' },
-      { word: 'big', definition: 'large in size', synonyms: ['large', 'huge'], antonyms: ['small', 'tiny'], sentence: 'The elephant is a big animal.', emoji: '🐘' },
-      { word: 'fast', definition: 'moving quickly', synonyms: ['quick', 'speedy'], antonyms: ['slow', 'sluggish'], sentence: 'The cheetah runs very fast.', emoji: '🏃‍♂️' },
-      { word: 'cold', definition: 'having a low temperature', synonyms: ['chilly', 'freezing'], antonyms: ['hot', 'warm'], sentence: 'Ice cream is cold and delicious.', emoji: '🧊' },
-      { word: 'bright', definition: 'giving off light', synonyms: ['shiny', 'brilliant'], antonyms: ['dark', 'dim'], sentence: 'The sun is very bright today.', emoji: '☀️' }
-    ],
-    'grade-2': [
-      { word: 'explore', definition: 'to travel and discover new places', synonyms: ['discover', 'investigate'], antonyms: ['ignore', 'avoid'], sentence: 'We will explore the forest today.', emoji: '🗺️' },
-      { word: 'create', definition: 'to make something new', synonyms: ['build', 'construct'], antonyms: ['destroy', 'demolish'], sentence: 'Let\'s create a beautiful picture.', emoji: '🎨' },
-      { word: 'courage', definition: 'bravery in facing danger', synonyms: ['bravery', 'valor'], antonyms: ['fear', 'cowardice'], sentence: 'The firefighter showed great courage.', emoji: '🦸‍♂️' },
-      { word: 'friendship', definition: 'a close relationship between friends', synonyms: ['companionship', 'bond'], antonyms: ['rivalry', 'hostility'], sentence: 'Their friendship lasted many years.', emoji: '👫' },
-      { word: 'adventure', definition: 'an exciting and unusual experience', synonyms: ['journey', 'expedition'], antonyms: ['routine', 'boredom'], sentence: 'Reading is like going on an adventure.', emoji: '🗺️' }
-    ],
-    'grade-3': [
-      { word: 'magnificent', definition: 'extremely beautiful or impressive', synonyms: ['spectacular', 'splendid'], antonyms: ['ordinary', 'plain'], sentence: 'The castle looked magnificent in the sunlight.', emoji: '🏰' },
-      { word: 'persevere', definition: 'to continue despite difficulties', synonyms: ['persist', 'endure'], antonyms: ['quit', 'surrender'], sentence: 'You must persevere to achieve your goals.', emoji: '💪' },
-      { word: 'compassion', definition: 'feeling concern for others\' suffering', synonyms: ['empathy', 'kindness'], antonyms: ['cruelty', 'indifference'], sentence: 'She showed compassion for the injured bird.', emoji: '❤️' },
-      { word: 'analyze', definition: 'to examine something carefully', synonyms: ['examine', 'study'], antonyms: ['ignore', 'overlook'], sentence: 'Let\'s analyze this math problem together.', emoji: '🔍' },
-      { word: 'tremendous', definition: 'very great in amount or size', synonyms: ['enormous', 'immense'], antonyms: ['tiny', 'minimal'], sentence: 'The waves were tremendous during the storm.', emoji: '🌊' }
-    ],
-    'grade-4': [
-      { word: 'elaborate', definition: 'involving many carefully arranged parts', synonyms: ['detailed', 'complex'], antonyms: ['simple', 'basic'], sentence: 'She created an elaborate plan for the project.', emoji: '🏗️' },
-      { word: 'hypothesis', definition: 'a proposed explanation for something', synonyms: ['theory', 'prediction'], antonyms: ['fact', 'certainty'], sentence: 'Our hypothesis about plant growth was correct.', emoji: '🔬' },
-      { word: 'collaborate', definition: 'to work together with others', synonyms: ['cooperate', 'partner'], antonyms: ['compete', 'oppose'], sentence: 'Students collaborate on the science project.', emoji: '🤝' },
-      { word: 'resilient', definition: 'able to recover quickly from difficulties', synonyms: ['strong', 'tough'], antonyms: ['fragile', 'weak'], sentence: 'The resilient plant survived the drought.', emoji: '🌱' },
-      { word: 'perspective', definition: 'a particular way of viewing things', synonyms: ['viewpoint', 'outlook'], antonyms: ['blindness', 'ignorance'], sentence: 'Each character has a different perspective.', emoji: '👁️' }
-    ],
-    'grade-5': [
-      { word: 'comprehension', definition: 'the ability to understand something', synonyms: ['understanding', 'grasp'], antonyms: ['confusion', 'misunderstanding'], sentence: 'Reading comprehension improved with practice.', emoji: '🧠' },
-      { word: 'significance', definition: 'the quality of being important', synonyms: ['importance', 'meaning'], antonyms: ['insignificance', 'triviality'], sentence: 'The discovery had great significance for science.', emoji: '⭐' },
-      { word: 'transparent', definition: 'easy to see through or understand', synonyms: ['clear', 'obvious'], antonyms: ['opaque', 'hidden'], sentence: 'The glass window is completely transparent.', emoji: '🪟' },
-      { word: 'consequence', definition: 'a result that follows from an action', synonyms: ['result', 'outcome'], antonyms: ['cause', 'origin'], sentence: 'Every choice has a consequence.', emoji: '⚖️' },
-      { word: 'extraordinary', definition: 'very unusual or remarkable', synonyms: ['exceptional', 'amazing'], antonyms: ['ordinary', 'common'], sentence: 'Her artistic talent is extraordinary.', emoji: '✨' }
-    ]
-  };
-
-  const vocabTabs = [
-    { id: 'word-wall', name: 'Word Wall', icon: '🧱' },
-    { id: 'word-explorer', name: 'Word Explorer', icon: '🔍' },
-    { id: 'synonyms-antonyms', name: 'Synonyms & Antonyms', icon: '↔️' },
-    { id: 'context-clues', name: 'Context Clues', icon: '🕵️' },
-    { id: 'word-building', name: 'Word Building', icon: '🏗️' },
-    { id: 'vocabulary-games', name: 'Vocabulary Games', icon: '🎮' }
+  // Word Categories for organization
+  const categories = [
+    'all', 'noun', 'verb', 'adjective', 'adverb', 'academic', 'science', 
+    'math', 'social-studies', 'literature', 'tier-2', 'tier-3', 'custom'
   ];
 
-  const currentVocabulary = vocabularyByGrade[gradeLevel] || [];
-
-  // Set word of the day on component mount
+  // Load saved word wall data
   useEffect(() => {
-    if (currentVocabulary.length > 0) {
-      const today = new Date().getDate();
-      const wordIndex = today % currentVocabulary.length;
-      setWordOfTheDay(currentVocabulary[wordIndex]);
+    // In a real app, this would load from Firebase
+    const savedWords = localStorage.getItem(`wordWall_${currentClassId}`);
+    if (savedWords) {
+      setWordWall(JSON.parse(savedWords));
     }
-  }, [gradeLevel]);
+  }, [currentClassId]);
 
-  const handleWordClick = (word) => {
-    setSelectedWord(word);
-    if (showToast) {
-      showToast(`Exploring word: ${word.word}`, 'info');
+  // Save to Firebase whenever wordWall changes
+  useEffect(() => {
+    if (wordWall.length > 0) {
+      localStorage.setItem(`wordWall_${currentClassId}`, JSON.stringify(wordWall));
+      if (saveVocabularyDataToFirebase) {
+        saveVocabularyDataToFirebase({ wordWall });
+      }
+    }
+  }, [wordWall, currentClassId, saveVocabularyDataToFirebase]);
+
+  // Dictionary API Integration
+  const fetchWordData = async (word) => {
+    try {
+      const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word.toLowerCase()}`);
+      
+      if (!response.ok) {
+        throw new Error('Word not found in dictionary');
+      }
+
+      const data = await response.json();
+      const entry = data[0];
+
+      // Extract comprehensive word data
+      const meanings = entry.meanings || [];
+      const definitions = [];
+      const synonyms = new Set();
+      const antonyms = new Set();
+      const examples = new Set();
+
+      meanings.forEach(meaning => {
+        meaning.definitions.forEach(def => {
+          definitions.push({
+            partOfSpeech: meaning.partOfSpeech,
+            definition: def.definition,
+            example: def.example || null
+          });
+
+          if (def.example) {
+            examples.add(def.example);
+          }
+
+          // Collect synonyms and antonyms
+          if (def.synonyms) def.synonyms.forEach(syn => synonyms.add(syn));
+          if (def.antonyms) def.antonyms.forEach(ant => antonyms.add(ant));
+        });
+
+        // Also check meaning-level synonyms/antonyms
+        if (meaning.synonyms) meaning.synonyms.forEach(syn => synonyms.add(syn));
+        if (meaning.antonyms) meaning.antonyms.forEach(ant => antonyms.add(ant));
+      });
+
+      // Extract phonetics
+      const phonetics = entry.phonetics?.find(p => p.text)?.text || '';
+
+      return {
+        word: entry.word,
+        phonetics,
+        definitions,
+        synonyms: Array.from(synonyms).slice(0, 8), // Limit to 8 most relevant
+        antonyms: Array.from(antonyms).slice(0, 8),
+        examples: Array.from(examples).slice(0, 3), // Limit to 3 examples
+        etymology: entry.origin || '',
+        partOfSpeech: meanings[0]?.partOfSpeech || 'unknown'
+      };
+    } catch (error) {
+      console.error('Dictionary API error:', error);
+      throw error;
     }
   };
 
-  const filteredWords = currentVocabulary.filter(word =>
-    word.word.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    word.definition.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Add new word to word wall
+  const handleAddWord = async () => {
+    if (!newWord.trim()) {
+      showToast('Please enter a word', 'error');
+      return;
+    }
 
-  if (displayMode === 'presentation') {
-    return (
-      <div className="min-h-screen p-8">
-        {activeVocabTab === 'word-wall' && (
-          <div className="space-y-8">
-            {selectedWord ? (
-              // Individual Word Display
-              <div className="text-center">
-                <button
-                  onClick={() => setSelectedWord(null)}
-                  className="mb-8 px-6 py-3 bg-white/20 backdrop-blur rounded-xl hover:bg-white/30 transition-all"
-                >
-                  ← Back to Word Wall
-                </button>
-                <div className="bg-white/10 backdrop-blur rounded-3xl p-16 max-w-5xl mx-auto">
-                  <div className="text-8xl mb-8">{selectedWord.emoji}</div>
-                  <div className="text-7xl font-bold mb-6 text-yellow-300">{selectedWord.word}</div>
-                  <div className="text-3xl mb-8 text-blue-300 italic">"{selectedWord.definition}"</div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-                    <div className="bg-green-500/20 rounded-2xl p-6">
-                      <h3 className="text-2xl font-bold text-green-300 mb-4">Synonyms (Similar Words)</h3>
-                      <div className="space-y-2">
-                        {selectedWord.synonyms.map((synonym, index) => (
-                          <div key={index} className="text-xl text-green-100">• {synonym}</div>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    <div className="bg-red-500/20 rounded-2xl p-6">
-                      <h3 className="text-2xl font-bold text-red-300 mb-4">Antonyms (Opposite Words)</h3>
-                      <div className="space-y-2">
-                        {selectedWord.antonyms.map((antonym, index) => (
-                          <div key={index} className="text-xl text-red-100">• {antonym}</div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-8 bg-purple-500/20 rounded-2xl p-6">
-                    <h3 className="text-2xl font-bold text-purple-300 mb-4">Example Sentence</h3>
-                    <div className="text-2xl text-purple-100 italic">"{selectedWord.sentence}"</div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              // Word Wall Grid
-              <div>
-                <div className="flex justify-between items-center mb-12">
-                  <h2 className="text-6xl font-bold text-white">Word Wall</h2>
-                  <div className="text-right">
-                    <div className="text-2xl text-blue-300 mb-2">Grade Level: {gradeLevel.replace('-', ' ').toUpperCase()}</div>
-                    {wordOfTheDay && (
-                      <div className="bg-yellow-500/20 backdrop-blur rounded-xl p-4 border border-yellow-400">
-                        <div className="text-lg text-yellow-300">Word of the Day</div>
-                        <div className="text-3xl font-bold text-yellow-100 flex items-center">
-                          {wordOfTheDay.emoji} {wordOfTheDay.word}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 max-w-7xl mx-auto">
-                  {currentVocabulary.map((word, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleWordClick(word)}
-                      className={`p-6 rounded-2xl border-4 transition-all duration-300 hover:scale-110 ${
-                        wordOfTheDay && word.word === wordOfTheDay.word
-                          ? 'border-yellow-400 bg-yellow-500/30 shadow-lg shadow-yellow-500/20'
-                          : 'border-blue-400 bg-blue-500/20 hover:bg-blue-500/30'
-                      }`}
-                    >
-                      <div className="text-4xl mb-2">{word.emoji}</div>
-                      <div className="text-xl font-bold text-white">{word.word}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+    const wordExists = wordWall.find(w => w.word.toLowerCase() === newWord.toLowerCase());
+    if (wordExists) {
+      showToast('Word already exists in word wall', 'error');
+      return;
+    }
 
-        {activeVocabTab === 'synonyms-antonyms' && (
-          <div className="space-y-8">
-            <h2 className="text-6xl font-bold text-center text-white mb-12">Synonyms & Antonyms</h2>
-            
-            {selectedWord ? (
-              <div className="max-w-6xl mx-auto">
-                <button
-                  onClick={() => setSelectedWord(null)}
-                  className="mb-8 px-6 py-3 bg-white/20 backdrop-blur rounded-xl hover:bg-white/30 transition-all"
-                >
-                  ← Choose Another Word
-                </button>
-                
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                  {/* Main Word */}
-                  <div className="bg-white/10 backdrop-blur rounded-3xl p-8 text-center">
-                    <div className="text-6xl mb-4">{selectedWord.emoji}</div>
-                    <div className="text-4xl font-bold text-yellow-300">{selectedWord.word}</div>
-                    <div className="text-xl text-blue-200 mt-4 italic">"{selectedWord.definition}"</div>
-                  </div>
+    setIsLoadingWord(true);
 
-                  {/* Synonyms */}
-                  <div className="bg-green-500/20 backdrop-blur rounded-3xl p-8">
-                    <h3 className="text-3xl font-bold text-green-300 mb-6 text-center">Synonyms</h3>
-                    <div className="space-y-4">
-                      {selectedWord.synonyms.map((synonym, index) => (
-                        <div key={index} className="text-2xl text-green-100 text-center p-3 bg-green-600/20 rounded-xl">
-                          {synonym}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+    try {
+      // Try to fetch from dictionary API first
+      const apiData = await fetchWordData(newWord);
+      
+      const wordData = {
+        id: Date.now(),
+        word: apiData.word,
+        phonetics: apiData.phonetics,
+        definitions: apiData.definitions,
+        synonyms: apiData.synonyms,
+        antonyms: apiData.antonyms,
+        examples: apiData.examples,
+        etymology: apiData.etymology,
+        partOfSpeech: apiData.partOfSpeech,
+        category: determineCategory(apiData.partOfSpeech),
+        dateAdded: new Date().toISOString(),
+        isCustom: false,
+        notes: '',
+        difficulty: 'medium'
+      };
 
-                  {/* Antonyms */}
-                  <div className="bg-red-500/20 backdrop-blur rounded-3xl p-8">
-                    <h3 className="text-3xl font-bold text-red-300 mb-6 text-center">Antonyms</h3>
-                    <div className="space-y-4">
-                      {selectedWord.antonyms.map((antonym, index) => (
-                        <div key={index} className="text-2xl text-red-100 text-center p-3 bg-red-600/20 rounded-xl">
-                          {antonym}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center">
-                <div className="text-4xl text-blue-300 mb-8">Choose a word to explore synonyms and antonyms</div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
-                  {currentVocabulary.slice(0, 8).map((word, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleWordClick(word)}
-                      className="p-4 bg-white/20 backdrop-blur rounded-xl hover:bg-white/30 transition-all border border-white/30"
-                    >
-                      <div className="text-3xl mb-2">{word.emoji}</div>
-                      <div className="text-lg font-bold text-white">{word.word}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    );
-  }
+      setWordWall(prev => [...prev, wordData]);
+      setNewWord('');
+      showToast(`Added "${apiData.word}" with dictionary data!`, 'success');
+      
+    } catch (error) {
+      // If API fails, create a basic word entry for manual editing
+      const basicWordData = {
+        id: Date.now(),
+        word: newWord.toLowerCase(),
+        phonetics: '',
+        definitions: [{ partOfSpeech: '', definition: '', example: '' }],
+        synonyms: [],
+        antonyms: [],
+        examples: [],
+        etymology: '',
+        partOfSpeech: '',
+        category: 'custom',
+        dateAdded: new Date().toISOString(),
+        isCustom: true,
+        notes: '',
+        difficulty: 'medium'
+      };
 
-  // Teacher Mode
+      setWordWall(prev => [...prev, basicWordData]);
+      setEditingWord(basicWordData);
+      setNewWord('');
+      showToast(`Added "${newWord}" - please add definition manually`, 'info');
+    } finally {
+      setIsLoadingWord(false);
+    }
+  };
+
+  // Determine category based on part of speech
+  const determineCategory = (partOfSpeech) => {
+    const categoryMap = {
+      'noun': 'noun',
+      'verb': 'verb',
+      'adjective': 'adjective',
+      'adverb': 'adverb'
+    };
+    return categoryMap[partOfSpeech] || 'custom';
+  };
+
+  // Filter words based on search and category
+  const filteredWords = wordWall.filter(word => {
+    const matchesSearch = word.word.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         word.definitions.some(def => def.definition.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesCategory = filterCategory === 'all' || word.category === filterCategory;
+    return matchesSearch && matchesCategory;
+  });
+
+  // Update word data
+  const handleUpdateWord = (wordId, updatedData) => {
+    setWordWall(prev => prev.map(word => 
+      word.id === wordId ? { ...word, ...updatedData } : word
+    ));
+    setEditingWord(null);
+    showToast('Word updated successfully!', 'success');
+  };
+
+  // Delete word
+  const handleDeleteWord = (wordId) => {
+    setWordWall(prev => prev.filter(word => word.id !== wordId));
+    showToast('Word removed from word wall', 'success');
+  };
+
+  // Refresh word data from API
+  const handleRefreshWord = async (word) => {
+    setIsLoadingWord(true);
+    try {
+      const apiData = await fetchWordData(word.word);
+      const updatedWord = {
+        ...word,
+        phonetics: apiData.phonetics,
+        definitions: apiData.definitions,
+        synonyms: apiData.synonyms,
+        antonyms: apiData.antonyms,
+        examples: apiData.examples,
+        etymology: apiData.etymology,
+        partOfSpeech: apiData.partOfSpeech,
+        category: determineCategory(apiData.partOfSpeech),
+        isCustom: false
+      };
+      
+      setWordWall(prev => prev.map(w => w.id === word.id ? updatedWord : w));
+      showToast(`Updated "${word.word}" with latest dictionary data!`, 'success');
+    } catch (error) {
+      showToast(`Could not refresh "${word.word}" - dictionary data unavailable`, 'error');
+    } finally {
+      setIsLoadingWord(false);
+    }
+  };
+
+  // Export word wall data
+  const exportWordWall = () => {
+    const dataStr = JSON.stringify(wordWall, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `word-wall-${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    showToast('Word wall exported!', 'success');
+  };
+
+  // Import word wall data
+  const importWordWall = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const importedWords = JSON.parse(e.target.result);
+        if (Array.isArray(importedWords)) {
+          setWordWall(prev => [...prev, ...importedWords]);
+          showToast(`Imported ${importedWords.length} words!`, 'success');
+        }
+      } catch (error) {
+        showToast('Invalid file format', 'error');
+      }
+    };
+    reader.readAsText(file);
+  };
+
   return (
-    <div className="p-6">
-      {/* Grade Level Selector */}
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center space-x-4">
-          <label className="font-bold text-gray-700">Grade Level:</label>
-          <select
-            value={gradeLevel}
-            onChange={(e) => setGradeLevel(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="grade-1">Grade 1</option>
-            <option value="grade-2">Grade 2</option>
-            <option value="grade-3">Grade 3</option>
-            <option value="grade-4">Grade 4</option>
-            <option value="grade-5">Grade 5</option>
-          </select>
-        </div>
-
-        {/* Word of the Day */}
-        {wordOfTheDay && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-            <div className="text-sm text-yellow-700 font-bold">Word of the Day</div>
-            <div className="text-lg font-bold text-yellow-800 flex items-center">
-              {wordOfTheDay.emoji} {wordOfTheDay.word}
-            </div>
-          </div>
-        )}
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="text-center">
+        <h2 className="text-3xl font-bold text-gray-800 mb-2">📚 Vocabulary Center</h2>
+        <p className="text-gray-600">Build and manage your interactive classroom word wall</p>
       </div>
 
-      {/* Vocabulary Navigation */}
-      <div className="flex flex-wrap gap-2 mb-6 border-b border-gray-200 pb-4">
-        {vocabTabs.map(tab => (
+      {/* Navigation Tabs */}
+      <div className="flex justify-center space-x-4 mb-6">
+        {[
+          { id: 'word-wall', label: 'Word Wall', icon: '🧱' },
+          { id: 'word-games', label: 'Word Games', icon: '🎮' },
+          { id: 'vocabulary-builder', label: 'Vocab Builder', icon: '🏗️' }
+        ].map(tab => (
           <button
             key={tab.id}
-            onClick={() => setActiveVocabTab(tab.id)}
-            className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 ${
-              activeVocabTab === tab.id
-                ? 'bg-green-600 text-white shadow-lg'
-                : 'text-gray-600 hover:text-green-600 hover:bg-green-50'
+            onClick={() => setActiveTab(tab.id)}
+            className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center space-x-2 ${
+              activeTab === tab.id
+                ? "bg-green-600 text-white shadow-lg transform scale-105"
+                : "bg-white text-gray-700 hover:bg-gray-50 shadow-md hover:shadow-lg"
             }`}
           >
             <span>{tab.icon}</span>
-            <span>{tab.name}</span>
+            <span>{tab.label}</span>
           </button>
         ))}
       </div>
 
       {/* Word Wall Tab */}
-      {activeVocabTab === 'word-wall' && (
+      {activeTab === 'word-wall' && (
         <div className="space-y-6">
-          <div className="flex justify-between items-center">
-            <h3 className="text-2xl font-bold text-gray-800">Interactive Word Wall</h3>
-            <input
-              type="text"
-              placeholder="Search words..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {filteredWords.map((word, index) => (
-              <button
-                key={index}
-                onClick={() => handleWordClick(word)}
-                className={`p-4 rounded-xl border-2 transition-all duration-200 hover:scale-105 ${
-                  wordOfTheDay && word.word === wordOfTheDay.word
-                    ? 'border-yellow-400 bg-yellow-50 shadow-lg'
-                    : 'border-green-300 bg-green-50 hover:bg-green-100'
-                }`}
-              >
-                <div className="text-3xl mb-2">{word.emoji}</div>
-                <div className="text-sm font-bold text-gray-800">{word.word}</div>
-              </button>
-            ))}
-          </div>
-
-          {selectedWord && (
-            <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-6 border border-green-200">
-              <div className="flex items-start space-x-6">
-                <div className="text-6xl">{selectedWord.emoji}</div>
-                <div className="flex-1">
-                  <h4 className="text-3xl font-bold text-gray-800 mb-2">{selectedWord.word}</h4>
-                  <p className="text-lg text-blue-600 mb-4 italic">"{selectedWord.definition}"</p>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div>
-                      <h5 className="font-bold text-green-700 mb-2">Synonyms:</h5>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedWord.synonyms.map((synonym, index) => (
-                          <span key={index} className="px-2 py-1 bg-green-100 text-green-800 rounded text-sm">
-                            {synonym}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <h5 className="font-bold text-red-700 mb-2">Antonyms:</h5>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedWord.antonyms.map((antonym, index) => (
-                          <span key={index} className="px-2 py-1 bg-red-100 text-red-800 rounded text-sm">
-                            {antonym}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="bg-purple-50 p-4 rounded-lg">
-                    <h5 className="font-bold text-purple-700 mb-2">Example Sentence:</h5>
-                    <p className="text-purple-800 italic">"{selectedWord.sentence}"</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setSelectedWord(null)}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
-                >
-                  Close
-                </button>
+          {/* Add New Word */}
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <h3 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+              <span className="mr-3">➕</span>
+              Add New Word
+            </h3>
+            
+            <div className="flex space-x-4">
+              <div className="flex-1">
+                <input
+                  type="text"
+                  value={newWord}
+                  onChange={(e) => setNewWord(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleAddWord()}
+                  placeholder="Enter a word to add to the word wall..."
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                  disabled={isLoadingWord}
+                />
               </div>
+              <button
+                onClick={handleAddWord}
+                disabled={isLoadingWord}
+                className="px-8 py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {isLoadingWord ? (
+                  <div className="flex items-center space-x-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                    <span>Adding...</span>
+                  </div>
+                ) : (
+                  'Add Word'
+                )}
+              </button>
             </div>
-          )}
-        </div>
-      )}
+            
+            <p className="text-sm text-gray-500 mt-2">
+              💡 Words are automatically enriched with definitions, synonyms, antonyms, and examples from our dictionary API
+            </p>
+          </div>
 
-      {/* Synonyms & Antonyms Tab */}
-      {activeVocabTab === 'synonyms-antonyms' && (
-        <div className="space-y-6">
-          <h3 className="text-2xl font-bold text-gray-800">Synonyms & Antonyms Explorer</h3>
-          
-          {!selectedWord ? (
-            <div className="text-center py-8">
-              <div className="text-4xl mb-4">🔍</div>
-              <p className="text-gray-600 mb-6">Select a word to explore its synonyms and antonyms</p>
-              <div className="grid grid-cols-3 md:grid-cols-5 gap-3 max-w-4xl mx-auto">
-                {currentVocabulary.slice(0, 10).map((word, index) => (
+          {/* Controls */}
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              {/* Search */}
+              <div className="flex-1 min-w-64">
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search words or definitions..."
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+
+              {/* Category Filter */}
+              <select
+                value={filterCategory}
+                onChange={(e) => setFilterCategory(e.target.value)}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              >
+                {categories.map(cat => (
+                  <option key={cat} value={cat}>
+                    {cat === 'all' ? 'All Categories' : cat.charAt(0).toUpperCase() + cat.slice(1)}
+                  </option>
+                ))}
+              </select>
+
+              {/* View Mode */}
+              <div className="flex space-x-2">
+                {[
+                  { mode: 'grid', icon: '⊞', label: 'Grid' },
+                  { mode: 'list', icon: '☰', label: 'List' },
+                  { mode: 'cards', icon: '🃏', label: 'Cards' }
+                ].map(({ mode, icon, label }) => (
                   <button
-                    key={index}
-                    onClick={() => handleWordClick(word)}
-                    className="p-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-all"
+                    key={mode}
+                    onClick={() => setViewMode(mode)}
+                    className={`px-3 py-2 rounded-lg font-medium transition-colors ${
+                      viewMode === mode 
+                        ? 'bg-green-600 text-white' 
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                    title={label}
                   >
-                    <div className="text-2xl mb-1">{word.emoji}</div>
-                    <div className="text-sm font-bold">{word.word}</div>
+                    {icon}
                   </button>
                 ))}
               </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Main Word */}
-              <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-200 text-center">
-                <div className="text-5xl mb-4">{selectedWord.emoji}</div>
-                <h4 className="text-2xl font-bold text-blue-800 mb-2">{selectedWord.word}</h4>
-                <p className="text-blue-600 italic mb-4">"{selectedWord.definition}"</p>
+
+              {/* Export/Import */}
+              <div className="flex space-x-2">
                 <button
-                  onClick={() => setSelectedWord(null)}
-                  className="px-4 py-2 bg-blue-200 text-blue-800 rounded-lg hover:bg-blue-300 text-sm"
+                  onClick={exportWordWall}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
-                  Choose Different Word
+                  📤 Export
                 </button>
+                <label className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors cursor-pointer">
+                  📥 Import
+                  <input
+                    type="file"
+                    accept=".json"
+                    onChange={importWordWall}
+                    className="hidden"
+                  />
+                </label>
               </div>
+            </div>
 
-              {/* Synonyms */}
-              <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 border border-green-200">
-                <h5 className="text-xl font-bold text-green-800 mb-4 text-center">
-                  Synonyms (Similar Meaning)
-                </h5>
-                <div className="space-y-3">
-                  {selectedWord.synonyms.map((synonym, index) => (
-                    <div key={index} className="p-3 bg-green-100 rounded-lg text-center">
-                      <div className="font-bold text-green-800">{synonym}</div>
-                    </div>
-                  ))}
-                </div>
+            {/* Stats */}
+            <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-200">
+              <div className="text-sm text-gray-600">
+                Showing {filteredWords.length} of {wordWall.length} words
               </div>
+              <div className="flex space-x-4 text-sm text-gray-600">
+                <span>📖 {wordWall.filter(w => w.category === 'noun').length} Nouns</span>
+                <span>⚡ {wordWall.filter(w => w.category === 'verb').length} Verbs</span>
+                <span>🎨 {wordWall.filter(w => w.category === 'adjective').length} Adjectives</span>
+                <span>🏃 {wordWall.filter(w => w.category === 'adverb').length} Adverbs</span>
+              </div>
+            </div>
+          </div>
 
-              {/* Antonyms */}
-              <div className="bg-gradient-to-br from-red-50 to-pink-50 rounded-xl p-6 border border-red-200">
-                <h5 className="text-xl font-bold text-red-800 mb-4 text-center">
-                  Antonyms (Opposite Meaning)
-                </h5>
-                <div className="space-y-3">
-                  {selectedWord.antonyms.map((antonym, index) => (
-                    <div key={index} className="p-3 bg-red-100 rounded-lg text-center">
-                      <div className="font-bold text-red-800">{antonym}</div>
-                    </div>
-                  ))}
-                </div>
+          {/* Word Wall Display */}
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+              <span className="mr-3">🧱</span>
+              Word Wall ({filteredWords.length} words)
+            </h3>
+
+            {filteredWords.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="text-6xl mb-4">📚</div>
+                <h3 className="text-xl font-bold text-gray-600 mb-2">No words yet</h3>
+                <p className="text-gray-500">Add your first word to get started!</p>
               </div>
+            ) : (
+              <>
+                {/* Grid View */}
+                {viewMode === 'grid' && (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                    {filteredWords.map(word => (
+                      <WordCard
+                        key={word.id}
+                        word={word}
+                        onSelect={() => setSelectedWord(word)}
+                        onEdit={() => setEditingWord(word)}
+                        onDelete={() => handleDeleteWord(word.id)}
+                        onRefresh={() => handleRefreshWord(word)}
+                        isLoading={isLoadingWord}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {/* List View */}
+                {viewMode === 'list' && (
+                  <div className="space-y-2">
+                    {filteredWords.map(word => (
+                      <WordListItem
+                        key={word.id}
+                        word={word}
+                        onSelect={() => setSelectedWord(word)}
+                        onEdit={() => setEditingWord(word)}
+                        onDelete={() => handleDeleteWord(word.id)}
+                        onRefresh={() => handleRefreshWord(word)}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {/* Cards View */}
+                {viewMode === 'cards' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredWords.map(word => (
+                      <DetailedWordCard
+                        key={word.id}
+                        word={word}
+                        onEdit={() => setEditingWord(word)}
+                        onDelete={() => handleDeleteWord(word.id)}
+                        onRefresh={() => handleRefreshWord(word)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Word Games Tab Placeholder */}
+      {activeTab === 'word-games' && (
+        <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+          <div className="text-6xl mb-4">🎮</div>
+          <h3 className="text-2xl font-bold text-gray-800 mb-4">Word Games</h3>
+          <p className="text-gray-600 mb-6">Interactive vocabulary games using your word wall</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="p-6 border border-gray-200 rounded-xl">
+              <div className="text-3xl mb-2">🎯</div>
+              <h4 className="font-bold text-gray-800">Word Matching</h4>
+              <p className="text-sm text-gray-600">Match words with definitions</p>
+            </div>
+            <div className="p-6 border border-gray-200 rounded-xl">
+              <div className="text-3xl mb-2">🧩</div>
+              <h4 className="font-bold text-gray-800">Synonym Hunt</h4>
+              <p className="text-sm text-gray-600">Find words with similar meanings</p>
+            </div>
+            <div className="p-6 border border-gray-200 rounded-xl">
+              <div className="text-3xl mb-2">📝</div>
+              <h4 className="font-bold text-gray-800">Fill the Blank</h4>
+              <p className="text-sm text-gray-600">Complete sentences with vocabulary words</p>
+            </div>
+          </div>
+          <p className="text-gray-500 mt-6">Coming soon in the next update!</p>
+        </div>
+      )}
+
+      {/* Vocabulary Builder Tab Placeholder */}
+      {activeTab === 'vocabulary-builder' && (
+        <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+          <div className="text-6xl mb-4">🏗️</div>
+          <h3 className="text-2xl font-bold text-gray-800 mb-4">Vocabulary Builder</h3>
+          <p className="text-gray-600 mb-6">Advanced tools for building student vocabulary</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="p-6 border border-gray-200 rounded-xl">
+              <div className="text-3xl mb-2">📊</div>
+              <h4 className="font-bold text-gray-800">Word Frequency Analysis</h4>
+              <p className="text-sm text-gray-600">Analyze which words students struggle with most</p>
+            </div>
+            <div className="p-6 border border-gray-200 rounded-xl">
+              <div className="text-3xl mb-2">🎓</div>
+              <h4 className="font-bold text-gray-800">Tiered Vocabulary</h4>
+              <p className="text-sm text-gray-600">Organize words by academic tier and complexity</p>
+            </div>
+          </div>
+          <p className="text-gray-500 mt-6">Coming soon in the next update!</p>
+        </div>
+      )}
+
+      {/* Word Detail Modal */}
+      {selectedWord && (
+        <WordDetailModal
+          word={selectedWord}
+          onClose={() => setSelectedWord(null)}
+          onEdit={() => {
+            setEditingWord(selectedWord);
+            setSelectedWord(null);
+          }}
+        />
+      )}
+
+      {/* Edit Word Modal */}
+      {editingWord && (
+        <EditWordModal
+          word={editingWord}
+          onSave={(updatedData) => handleUpdateWord(editingWord.id, updatedData)}
+          onCancel={() => setEditingWord(null)}
+        />
+      )}
+    </div>
+  );
+};
+
+// Word Card Component for Grid View
+const WordCard = ({ word, onSelect, onEdit, onDelete, onRefresh, isLoading }) => {
+  const categoryColors = {
+    noun: 'bg-blue-100 border-blue-300 text-blue-800',
+    verb: 'bg-green-100 border-green-300 text-green-800',
+    adjective: 'bg-purple-100 border-purple-300 text-purple-800',
+    adverb: 'bg-orange-100 border-orange-300 text-orange-800',
+    custom: 'bg-gray-100 border-gray-300 text-gray-800'
+  };
+
+  return (
+    <div className={`relative border-2 rounded-xl p-4 cursor-pointer transition-all hover:shadow-lg group ${
+      categoryColors[word.category] || categoryColors.custom
+    }`}>
+      {/* Word */}
+      <div className="text-center mb-2">
+        <h4 className="text-lg font-bold truncate" title={word.word}>
+          {word.word}
+        </h4>
+        {word.phonetics && (
+          <p className="text-xs opacity-70">{word.phonetics}</p>
+        )}
+      </div>
+
+      {/* Quick Info */}
+      <div className="text-xs text-center space-y-1">
+        <div className="font-medium">{word.partOfSpeech}</div>
+        {word.definitions[0]?.definition && (
+          <div className="truncate opacity-70" title={word.definitions[0].definition}>
+            {word.definitions[0].definition}
+          </div>
+        )}
+      </div>
+
+      {/* Action Buttons (show on hover) */}
+      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex space-x-1">
+          <button
+            onClick={(e) => { e.stopPropagation(); onSelect(); }}
+            className="w-6 h-6 bg-blue-600 text-white rounded-full text-xs hover:bg-blue-700"
+            title="View Details"
+          >
+            👁️
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onEdit(); }}
+            className="w-6 h-6 bg-yellow-600 text-white rounded-full text-xs hover:bg-yellow-700"
+            title="Edit"
+          >
+            ✏️
+          </button>
+          {!word.isCustom && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onRefresh(); }}
+              className="w-6 h-6 bg-green-600 text-white rounded-full text-xs hover:bg-green-700"
+              title="Refresh from Dictionary"
+              disabled={isLoading}
+            >
+              🔄
+            </button>
+          )}
+          <button
+            onClick={(e) => { e.stopPropagation(); onDelete(); }}
+            className="w-6 h-6 bg-red-600 text-white rounded-full text-xs hover:bg-red-700"
+            title="Delete"
+          >
+            🗑️
+          </button>
+        </div>
+      </div>
+
+      {/* Custom Word Indicator */}
+      {word.isCustom && (
+        <div className="absolute top-2 left-2">
+          <span className="bg-yellow-400 text-yellow-900 text-xs px-2 py-1 rounded-full font-bold">
+            CUSTOM
+          </span>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Word List Item Component
+const WordListItem = ({ word, onSelect, onEdit, onDelete, onRefresh }) => {
+  return (
+    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+      <div className="flex-1 cursor-pointer" onClick={onSelect}>
+        <div className="flex items-center space-x-4">
+          <div>
+            <h4 className="text-lg font-bold">{word.word}</h4>
+            {word.phonetics && <p className="text-sm text-gray-500">{word.phonetics}</p>}
+          </div>
+          <div className="text-sm text-gray-600">
+            <span className="bg-gray-100 px-2 py-1 rounded">{word.partOfSpeech}</span>
+          </div>
+          <div className="flex-1 text-sm text-gray-700 truncate">
+            {word.definitions[0]?.definition}
+          </div>
+        </div>
+      </div>
+      <div className="flex space-x-2">
+        <button
+          onClick={onEdit}
+          className="px-3 py-1 text-sm bg-yellow-600 text-white rounded hover:bg-yellow-700"
+        >
+          Edit
+        </button>
+        {!word.isCustom && (
+          <button
+            onClick={onRefresh}
+            className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
+          >
+            Refresh
+          </button>
+        )}
+        <button
+          onClick={onDelete}
+          className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700"
+        >
+          Delete
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// Detailed Word Card Component
+const DetailedWordCard = ({ word, onEdit, onDelete, onRefresh }) => {
+  return (
+    <div className="border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow">
+      <div className="flex justify-between items-start mb-4">
+        <div>
+          <h4 className="text-2xl font-bold text-gray-800">{word.word}</h4>
+          {word.phonetics && (
+            <p className="text-gray-500 italic">{word.phonetics}</p>
+          )}
+        </div>
+        <div className="flex space-x-2">
+          <button
+            onClick={onEdit}
+            className="text-blue-600 hover:text-blue-800"
+            title="Edit"
+          >
+            ✏️
+          </button>
+          {!word.isCustom && (
+            <button
+              onClick={onRefresh}
+              className="text-green-600 hover:text-green-800"
+              title="Refresh"
+            >
+              🔄
+            </button>
+          )}
+          <button
+            onClick={onDelete}
+            className="text-red-600 hover:text-red-800"
+            title="Delete"
+          >
+            🗑️
+          </button>
+        </div>
+      </div>
+
+      {/* Part of Speech */}
+      <div className="mb-3">
+        <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm font-medium">
+          {word.partOfSpeech}
+        </span>
+      </div>
+
+      {/* Definitions */}
+      <div className="mb-4">
+        <h5 className="font-semibold text-gray-700 mb-2">Definitions:</h5>
+        {word.definitions.slice(0, 2).map((def, index) => (
+          <div key={index} className="mb-2">
+            <p className="text-gray-800">{def.definition}</p>
+            {def.example && (
+              <p className="text-gray-600 italic text-sm mt-1">
+                Example: "{def.example}"
+              </p>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Synonyms */}
+      {word.synonyms.length > 0 && (
+        <div className="mb-3">
+          <h5 className="font-semibold text-gray-700 mb-1">Synonyms:</h5>
+          <div className="flex flex-wrap gap-1">
+            {word.synonyms.slice(0, 4).map((synonym, index) => (
+              <span key={index} className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">
+                {synonym}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Antonyms */}
+      {word.antonyms.length > 0 && (
+        <div className="mb-3">
+          <h5 className="font-semibold text-gray-700 mb-1">Antonyms:</h5>
+          <div className="flex flex-wrap gap-1">
+            {word.antonyms.slice(0, 4).map((antonym, index) => (
+              <span key={index} className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">
+                {antonym}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Word Detail Modal
+const WordDetailModal = ({ word, onClose, onEdit }) => {
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          {/* Header */}
+          <div className="flex justify-between items-start mb-6">
+            <div>
+              <h2 className="text-4xl font-bold text-gray-800">{word.word}</h2>
+              {word.phonetics && (
+                <p className="text-xl text-gray-500 italic mt-1">{word.phonetics}</p>
+              )}
+              <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium mt-2 inline-block">
+                {word.partOfSpeech}
+              </span>
+            </div>
+            <div className="flex space-x-2">
+              <button
+                onClick={onEdit}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Edit Word
+              </button>
+              <button
+                onClick={onClose}
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Definitions */}
+            <div>
+              <h3 className="text-xl font-bold text-gray-800 mb-3">📖 Definitions</h3>
+              <div className="space-y-3">
+                {word.definitions.map((def, index) => (
+                  <div key={index} className="p-4 bg-gray-50 rounded-lg">
+                    <p className="text-gray-800 font-medium">{def.definition}</p>
+                    {def.example && (
+                      <p className="text-gray-600 italic mt-2">
+                        <strong>Example:</strong> "{def.example}"
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Synonyms & Antonyms */}
+            <div className="space-y-6">
+              {word.synonyms.length > 0 && (
+                <div>
+                  <h3 className="text-xl font-bold text-gray-800 mb-3">🔗 Synonyms</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {word.synonyms.map((synonym, index) => (
+                      <span key={index} className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                        {synonym}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {word.antonyms.length > 0 && (
+                <div>
+                  <h3 className="text-xl font-bold text-gray-800 mb-3">⚡ Antonyms</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {word.antonyms.map((antonym, index) => (
+                      <span key={index} className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium">
+                        {antonym}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {word.examples.length > 0 && (
+                <div>
+                  <h3 className="text-xl font-bold text-gray-800 mb-3">💡 Example Sentences</h3>
+                  <div className="space-y-2">
+                    {word.examples.map((example, index) => (
+                      <p key={index} className="text-gray-700 italic p-3 bg-blue-50 rounded-lg">
+                        "{example}"
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {word.etymology && (
+                <div>
+                  <h3 className="text-xl font-bold text-gray-800 mb-3">🏛️ Etymology</h3>
+                  <p className="text-gray-700 p-3 bg-purple-50 rounded-lg">
+                    {word.etymology}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {word.notes && (
+            <div className="mt-6">
+              <h3 className="text-xl font-bold text-gray-800 mb-3">📝 Teacher Notes</h3>
+              <p className="text-gray-700 p-4 bg-yellow-50 rounded-lg">
+                {word.notes}
+              </p>
             </div>
           )}
         </div>
-      )}
+      </div>
+    </div>
+  );
+};
+
+// Edit Word Modal
+const EditWordModal = ({ word, onSave, onCancel }) => {
+  const [editData, setEditData] = useState({
+    word: word.word,
+    phonetics: word.phonetics,
+    partOfSpeech: word.partOfSpeech,
+    category: word.category,
+    definitions: word.definitions.length ? word.definitions : [{ partOfSpeech: '', definition: '', example: '' }],
+    synonyms: word.synonyms.join(', '),
+    antonyms: word.antonyms.join(', '),
+    notes: word.notes || '',
+    difficulty: word.difficulty || 'medium'
+  });
+
+  const handleSave = () => {
+    const updatedData = {
+      ...editData,
+      synonyms: editData.synonyms.split(',').map(s => s.trim()).filter(s => s),
+      antonyms: editData.antonyms.split(',').map(s => s.trim()).filter(s => s),
+      isCustom: true // Mark as custom when manually edited
+    };
+    onSave(updatedData);
+  };
+
+  const addDefinition = () => {
+    setEditData(prev => ({
+      ...prev,
+      definitions: [...prev.definitions, { partOfSpeech: '', definition: '', example: '' }]
+    }));
+  };
+
+  const updateDefinition = (index, field, value) => {
+    setEditData(prev => ({
+      ...prev,
+      definitions: prev.definitions.map((def, i) => 
+        i === index ? { ...def, [field]: value } : def
+      )
+    }));
+  };
+
+  const removeDefinition = (index) => {
+    if (editData.definitions.length > 1) {
+      setEditData(prev => ({
+        ...prev,
+        definitions: prev.definitions.filter((_, i) => i !== index)
+      }));
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">Edit Word: {word.word}</h2>
+
+          <div className="space-y-6">
+            {/* Basic Info */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Word</label>
+                <input
+                  type="text"
+                  value={editData.word}
+                  onChange={(e) => setEditData(prev => ({ ...prev, word: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phonetics</label>
+                <input
+                  type="text"
+                  value={editData.phonetics}
+                  onChange={(e) => setEditData(prev => ({ ...prev, phonetics: e.target.value }))}
+                  placeholder="/fəˈnɛtɪks/"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Part of Speech</label>
+                <select
+                  value={editData.partOfSpeech}
+                  onChange={(e) => setEditData(prev => ({ ...prev, partOfSpeech: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select...</option>
+                  <option value="noun">Noun</option>
+                  <option value="verb">Verb</option>
+                  <option value="adjective">Adjective</option>
+                  <option value="adverb">Adverb</option>
+                  <option value="pronoun">Pronoun</option>
+                  <option value="preposition">Preposition</option>
+                  <option value="conjunction">Conjunction</option>
+                  <option value="interjection">Interjection</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                <select
+                  value={editData.category}
+                  onChange={(e) => setEditData(prev => ({ ...prev, category: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="custom">Custom</option>
+                  <option value="academic">Academic</option>
+                  <option value="science">Science</option>
+                  <option value="math">Math</option>
+                  <option value="social-studies">Social Studies</option>
+                  <option value="literature">Literature</option>
+                  <option value="tier-2">Tier 2</option>
+                  <option value="tier-3">Tier 3</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Definitions */}
+            <div>
+              <div className="flex justify-between items-center mb-3">
+                <label className="text-sm font-medium text-gray-700">Definitions</label>
+                <button
+                  onClick={addDefinition}
+                  className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
+                >
+                  Add Definition
+                </button>
+              </div>
+              <div className="space-y-3">
+                {editData.definitions.map((def, index) => (
+                  <div key={index} className="p-4 border border-gray-200 rounded-lg">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-medium text-gray-700">Definition {index + 1}</span>
+                      {editData.definitions.length > 1 && (
+                        <button
+                          onClick={() => removeDefinition(index)}
+                          className="text-red-600 hover:text-red-800 text-sm"
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <textarea
+                        value={def.definition}
+                        onChange={(e) => updateDefinition(index, 'definition', e.target.value)}
+                        placeholder="Definition..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        rows="2"
+                      />
+                      <textarea
+                        value={def.example || ''}
+                        onChange={(e) => updateDefinition(index, 'example', e.target.value)}
+                        placeholder="Example sentence..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        rows="1"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Synonyms and Antonyms */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Synonyms</label>
+                <textarea
+                  value={editData.synonyms}
+                  onChange={(e) => setEditData(prev => ({ ...prev, synonyms: e.target.value }))}
+                  placeholder="Similar words (comma separated)"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows="3"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Antonyms</label>
+                <textarea
+                  value={editData.antonyms}
+                  onChange={(e) => setEditData(prev => ({ ...prev, antonyms: e.target.value }))}
+                  placeholder="Opposite words (comma separated)"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows="3"
+                />
+              </div>
+            </div>
+
+            {/* Teacher Notes */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Teacher Notes</label>
+              <textarea
+                value={editData.notes}
+                onChange={(e) => setEditData(prev => ({ ...prev, notes: e.target.value }))}
+                placeholder="Notes for teaching this word..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                rows="3"
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={onCancel}
+                className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

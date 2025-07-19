@@ -22,12 +22,12 @@ const LiteracyCompanion = ({ showToast }) => {
       component: PhonicsCenter
     },
     {
-      id: 'vocabulary',
-      name: 'Vocabulary',
-      icon: '📖',
-      color: 'green',
-      description: 'Word meanings, synonyms, antonyms, and word building',
-      component: VocabularyCenter
+  id: 'vocabulary',
+  name: 'Vocabulary',
+  icon: '📖',
+  color: 'green',
+  description: 'Interactive word wall with automatic dictionary data',
+  component: VocabularyCenter // Your new enhanced component
     },
     {
       id: 'comprehension',

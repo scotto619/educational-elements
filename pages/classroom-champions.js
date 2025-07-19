@@ -337,7 +337,8 @@ const migrateClassData = async (cls) => {
     activeQuests: cls.activeQuests || [],
     questTemplates: cls.questTemplates || QUEST_TEMPLATES,
     attendanceData: cls.attendanceData || {},
-    teacherRewards: cls.teacherRewards || []
+    teacherRewards: cls.teacherRewards || [],
+    vocabularyData: cls.vocabularyData || { wordWall: [] } 
   };
 };
 
@@ -812,6 +813,35 @@ export default function ClassroomChampions() {
       console.error("Error saving classroom data:", error);
     }
   };
+
+  const saveVocabularyDataToFirebase = async (vocabularyData) => {
+  if (!user || !currentClassId) return;
+
+  try {
+    const docRef = doc(firestore, 'users', user.uid);
+    const snap = await getDoc(docRef);
+    
+    if (snap.exists()) {
+      const data = snap.data();
+      const updatedClasses = data.classes.map(cls => 
+        cls.id === currentClassId 
+          ? { 
+              ...cls, 
+              vocabularyData,
+              lastUpdated: new Date().toISOString()
+            }
+          : cls
+      );
+      
+      await setDoc(docRef, { 
+        ...data, 
+        classes: updatedClasses 
+      });
+    }
+  } catch (error) {
+    console.error("Error saving vocabulary data:", error);
+  }
+};
 
   // ===============================================
   // QUEST MANAGEMENT FUNCTIONS
@@ -1607,7 +1637,8 @@ export default function ClassroomChampions() {
       activeQuests: [],
       questTemplates: QUEST_TEMPLATES,
       attendanceData: {},
-      teacherRewards: []
+      teacherRewards: [],
+      vocabularyData: { wordWall: [] }
     };
 
     try {
@@ -1663,6 +1694,8 @@ export default function ClassroomChampions() {
     setShowBulkXpPanel(false);
     showToast(`${cls.name} loaded successfully!`);
   };
+
+  
 
   // ===============================================
   // ATTENDANCE MANAGEMENT
@@ -1922,6 +1955,12 @@ export default function ClassroomChampions() {
     saveGroupDataToFirebase,
     // Classroom Management
     saveClassroomDataToFirebase,
+    // Group Management
+saveGroupDataToFirebase,
+// Classroom Management
+saveClassroomDataToFirebase,
+// Vocabulary Management
+saveVocabularyDataToFirebase,
     // Enhanced Pet Race Props
     raceInProgress,
     setRaceInProgress,
