@@ -1,5 +1,6 @@
 // StudentsTab.js - Compact, One-Screen Design
 import React, { useState } from 'react';
+import XPAwardPopup from '../XPAwardPopup';
 
 const StudentsTab = ({
   students,
@@ -31,6 +32,14 @@ const StudentsTab = ({
 }) => {
   const [hoveredStudent, setHoveredStudent] = useState(null);
   
+  // XP Award Popup state
+  const [showXPPopup, setShowXPPopup] = useState(false);
+  const [xpPopupData, setXpPopupData] = useState({
+    studentName: '',
+    xpAmount: 0,
+    category: 'Respectful'
+  });
+  
   // Simplified local state - only used if props aren't provided
   const [localSelectedStudents, setLocalSelectedStudents] = useState([]);
   const [localXpAmount, setLocalXpAmount] = useState(1);
@@ -47,8 +56,22 @@ const StudentsTab = ({
   const handleXPClick = (studentId, event) => {
     event.stopPropagation();
     event.preventDefault();
-    handleAwardXP(studentId, 'Respectful', 1);
-    showToast(`Awarded 1 XP to ${students.find(s => s.id === studentId)?.firstName}!`);
+    
+    const student = students.find(s => s.id === studentId);
+    const xpAmount = 1;
+    const category = 'Respectful';
+    
+    // Show XP popup with sound
+    setXpPopupData({
+      studentName: student?.firstName || 'Student',
+      xpAmount: xpAmount,
+      category: category
+    });
+    setShowXPPopup(true);
+    
+    // Award the XP
+    handleAwardXP(studentId, category, xpAmount);
+    showToast(`Awarded ${xpAmount} XP to ${student?.firstName}!`);
   };
 
   // Toggle XP panel
@@ -118,7 +141,25 @@ const StudentsTab = ({
       
       // Clear selections
       clearAllStudents();
+      
+      // Show popup for bulk award (using first selected student's name or "Multiple Students")
+      const firstStudent = students.find(s => s.id === currentSelectedStudents[0]);
+      const displayName = currentSelectedStudents.length === 1 
+        ? firstStudent?.firstName 
+        : `${currentSelectedStudents.length} Heroes`;
+        
+      setXpPopupData({
+        studentName: displayName,
+        xpAmount: currentXpAmount,
+        category: currentXpCategory
+      });
+      setShowXPPopup(true);
     }
+  };
+
+  // Close XP popup
+  const closeXPPopup = () => {
+    setShowXPPopup(false);
   };
 
   // Update XP amount
@@ -445,6 +486,16 @@ const StudentsTab = ({
           Click avatar for character sheet • ⭐ for quick XP • 💎 for shop • ⚔️ for quests • Use Award XP panel for bulk actions
         </span>
       </div>
+
+      {/* XP Award Popup */}
+      <XPAwardPopup
+        show={showXPPopup}
+        studentName={xpPopupData.studentName}
+        xpAmount={xpPopupData.xpAmount}
+        category={xpPopupData.category}
+        onClose={closeXPPopup}
+        playSound={true}
+      />
     </div>
   );
 };
