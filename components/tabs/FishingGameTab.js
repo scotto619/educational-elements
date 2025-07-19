@@ -1,4 +1,4 @@
-// FishingGameTab.js - Epic Fishing Mini-Game Reward System
+// FishingGameTab.js - Epic Fishing Mini-Game Reward System (FIXED VERSION)
 import React, { useState, useEffect } from 'react';
 
 const FishingGameTab = ({
@@ -54,174 +54,114 @@ const FishingGameTab = ({
 
   // Prize fish configuration - organized by difficulty/rarity
   const PRIZE_FISH = [
-    // Easy Catches (60% spawn rate) - XP and Small Coins
+    // Common Fish (70% spawn rate)
     {
-      id: 'xp_fish_small',
+      id: 'school_fish',
       name: 'School Fish',
-      color: '#10B981', // Green
-      size: 'large',
-      speed: 'slow',
-      depth: 'shallow',
-      catchChance: 0.8,
-      spawnRate: 0.25,
+      emoji: '🐟',
+      color: '#10B981',
+      size: 'medium',
+      speed: 1.5,
+      catchChance: 0.9,
+      spawnRate: 0.4,
       prize: { type: 'xp', amount: 3, category: 'Learner' },
       description: '3 Learner XP'
     },
     {
-      id: 'xp_fish_respect',
+      id: 'kindness_carp',
       name: 'Kindness Carp',
-      color: '#3B82F6', // Blue
-      size: 'large',
-      speed: 'slow',
-      depth: 'shallow',
-      catchChance: 0.8,
-      spawnRate: 0.2,
+      emoji: '🐠',
+      color: '#3B82F6',
+      size: 'medium',
+      speed: 1.2,
+      catchChance: 0.85,
+      spawnRate: 0.3,
       prize: { type: 'xp', amount: 3, category: 'Respectful' },
       description: '3 Respectful XP'
     },
+
+    // Uncommon Fish (20% spawn rate)
     {
-      id: 'coin_fish_small',
-      name: 'Penny Perch',
-      color: '#F59E0B', // Yellow/Gold
-      size: 'medium',
-      speed: 'medium',
-      depth: 'shallow',
+      id: 'wisdom_whale',
+      name: 'Wisdom Whale',
+      emoji: '🐋',
+      color: '#8B5CF6',
+      size: 'large',
+      speed: 0.8,
       catchChance: 0.7,
       spawnRate: 0.15,
-      prize: { type: 'coins', amount: 10 },
-      description: '10 Coins'
-    },
-
-    // Medium Catches (25% spawn rate) - Better XP, Classroom Rewards
-    {
-      id: 'xp_fish_big',
-      name: 'Wisdom Whale',
-      color: '#8B5CF6', // Purple
-      size: 'large',
-      speed: 'medium',
-      depth: 'medium',
-      catchChance: 0.6,
-      spawnRate: 0.08,
       prize: { type: 'xp', amount: 8, category: 'Learner' },
       description: '8 Learner XP'
     },
     {
-      id: 'coin_fish_medium',
-      name: 'Silver Salmon',
-      color: '#6B7280', // Silver
-      size: 'medium',
-      speed: 'fast',
-      depth: 'medium',
-      catchChance: 0.5,
+      id: 'coin_fish',
+      name: 'Golden Fish',
+      emoji: '🐡',
+      color: '#F59E0B',
+      size: 'small',
+      speed: 2.0,
+      catchChance: 0.6,
       spawnRate: 0.1,
       prize: { type: 'coins', amount: 25 },
       description: '25 Coins'
     },
+
+    // Rare Fish (8% spawn rate)
     {
-      id: 'classroom_reward_easy',
+      id: 'treasure_trout',
       name: 'Treasure Trout',
-      color: '#F97316', // Orange
+      emoji: '🎣',
+      color: '#F97316',
       size: 'medium',
-      speed: 'medium',
-      depth: 'medium',
-      catchChance: 0.6,
-      spawnRate: 0.07,
+      speed: 1.8,
+      catchChance: 0.5,
+      spawnRate: 0.05,
       prize: { type: 'classroom_reward', difficulty: 'easy' },
       description: 'Easy Classroom Reward'
     },
-
-    // Hard Catches (12% spawn rate) - Shop Items, Better Rewards
     {
-      id: 'loot_fish',
+      id: 'mystery_manta',
       name: 'Mystery Manta',
-      color: '#EC4899', // Pink
+      emoji: '🐙',
+      color: '#EC4899',
       size: 'large',
-      speed: 'fast',
-      depth: 'deep',
+      speed: 1.0,
       catchChance: 0.4,
-      spawnRate: 0.04,
+      spawnRate: 0.03,
       prize: { type: 'loot_box', box: 'basic' },
       description: 'Basic Loot Box'
     },
-    {
-      id: 'shop_item_consumable',
-      name: 'Potion Pike',
-      color: '#06B6D4', // Cyan
-      size: 'small',
-      speed: 'fast',
-      depth: 'deep',
-      catchChance: 0.3,
-      spawnRate: 0.03,
-      prize: { type: 'shop_item', category: 'consumables' },
-      description: 'Shop Consumable'
-    },
-    {
-      id: 'classroom_reward_medium',
-      name: 'Royal Ray',
-      color: '#7C3AED', // Violet
-      size: 'large',
-      speed: 'medium',
-      depth: 'deep',
-      catchChance: 0.45,
-      spawnRate: 0.05,
-      prize: { type: 'classroom_reward', difficulty: 'medium' },
-      description: 'Medium Classroom Reward'
-    },
 
-    // Ultra Rare Catches (3% spawn rate) - Avatars, Pets, Best Rewards
+    // Ultra Rare Fish (2% spawn rate)
     {
-      id: 'avatar_fish',
+      id: 'legendary_leviathan',
       name: 'Legendary Leviathan',
-      color: '#DC2626', // Red
+      emoji: '🦈',
+      color: '#DC2626',
       size: 'huge',
-      speed: 'very_fast',
-      depth: 'very_deep',
-      catchChance: 0.15,
+      speed: 0.5,
+      catchChance: 0.2,
       spawnRate: 0.008,
       prize: { type: 'shop_item', category: 'avatars' },
       description: 'Rare Avatar!'
     },
     {
-      id: 'pet_fish',
+      id: 'dragon_fish',
       name: 'Dragon Fish',
-      color: '#7C2D12', // Dark Red
+      emoji: '🐲',
+      color: '#7C2D12',
       size: 'huge',
-      speed: 'very_fast',
-      depth: 'very_deep',
-      catchChance: 0.1,
+      speed: 0.6,
+      catchChance: 0.15,
       spawnRate: 0.005,
       prize: { type: 'shop_item', category: 'pets' },
       description: 'Epic Pet!'
-    },
-    {
-      id: 'premium_loot',
-      name: 'Cosmic Coelacanth',
-      color: '#1F2937', // Dark Gray with shimmer
-      size: 'huge',
-      speed: 'very_fast',
-      depth: 'very_deep',
-      catchChance: 0.12,
-      spawnRate: 0.003,
-      prize: { type: 'loot_box', box: 'premium' },
-      description: 'Premium Loot Box!'
-    },
-    {
-      id: 'classroom_reward_hard',
-      name: 'Phoenix Fish',
-      color: '#B91C1C', // Dark Red
-      size: 'huge',
-      speed: 'fast',
-      depth: 'very_deep',
-      catchChance: 0.2,
-      spawnRate: 0.004,
-      prize: { type: 'classroom_reward', difficulty: 'hard' },
-      description: 'Epic Classroom Reward!'
     }
   ];
 
-  // Select random student
+  // Rest of the component logic stays the same...
   const selectRandomStudent = () => {
-    if (!students || !Array.isArray(students) || students.length === 0) {
+    if (!students || students.length === 0) {
       showToast('No students available!', 'error');
       return;
     }
@@ -229,7 +169,6 @@ const FishingGameTab = ({
     setSelectedStudent(students[randomIndex]);
   };
 
-  // Start fishing game
   const startFishingGame = () => {
     if (!selectedStudent) {
       showToast('Please select a student first!', 'error');
@@ -238,7 +177,6 @@ const FishingGameTab = ({
     setShowFishingGame(true);
   };
 
-  // Handle fishing game completion
   const handleFishingComplete = (caughtFish, prize) => {
     if (!selectedStudent || !prize) return;
 
@@ -353,7 +291,6 @@ const FishingGameTab = ({
     setShowFishingGame(false);
   };
 
-  // Get leaderboard
   const getLeaderboard = () => {
     if (!students || !Array.isArray(students)) return [];
     
@@ -542,14 +479,14 @@ const FishingGameTab = ({
         </h3>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {PRIZE_FISH.filter(fish => ['avatar_fish', 'pet_fish', 'premium_loot', 'classroom_reward_hard'].includes(fish.id)).map(fish => (
+          {PRIZE_FISH.filter(fish => ['legendary_leviathan', 'dragon_fish', 'mystery_manta', 'treasure_trout'].includes(fish.id)).map(fish => (
             <div key={fish.id} className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-4 border border-purple-200">
               <div className="text-center">
-                <div className="text-3xl mb-2">🐟</div>
+                <div className="text-3xl mb-2">{fish.emoji}</div>
                 <div className="font-bold text-gray-800 text-sm mb-1">{fish.name}</div>
                 <div className="text-xs text-purple-600 mb-2">{fish.description}</div>
                 <div className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full">
-                  Ultra Rare
+                  {fish.spawnRate < 0.01 ? 'Ultra Rare' : 'Rare'}
                 </div>
               </div>
             </div>
@@ -598,7 +535,7 @@ const FishingGameTab = ({
 
       {/* Fishing Game Modal */}
       {showFishingGame && selectedStudent && (
-        <FishingGameModal
+        <ImprovedFishingGameModal
           student={selectedStudent}
           prizeFish={PRIZE_FISH}
           shopItems={SHOP_ITEMS}
@@ -611,8 +548,8 @@ const FishingGameTab = ({
   );
 };
 
-// Separate Fishing Game Modal Component
-const FishingGameModal = ({ 
+// COMPLETELY REWRITTEN FISHING GAME MODAL WITH PROPER MECHANICS
+const ImprovedFishingGameModal = ({ 
   student, 
   prizeFish = [], 
   shopItems = {}, 
@@ -620,162 +557,194 @@ const FishingGameModal = ({
   onComplete = () => {}, 
   onClose = () => {} 
 }) => {
-  const [gameState, setGameState] = useState('waiting'); // waiting, casting, fishing, caught, missed
-  const [turnsLeft, setTurnsLeft] = useState(3);
-  const [caughtFish, setCaughtFish] = useState(null);
+  const [gameState, setGameState] = useState('ready'); // ready, casting, fishing, catching, caught, missed, finished
   const [currentFish, setCurrentFish] = useState([]);
-  const [hookPosition, setHookPosition] = useState({ x: 50, y: 10 });
-  const [boatPosition, setBoatPosition] = useState(50);
-  const [showCelebration, setShowCelebration] = useState(false);
+  const [hookPosition, setHookPosition] = useState({ x: 50, y: 15 });
+  const [lineLength, setLineLength] = useState(0);
+  const [caughtFish, setCaughtFish] = useState(null);
+  const [turnsLeft, setTurnsLeft] = useState(3);
+  const [fishingResult, setFishingResult] = useState(null);
 
-  // Generate random fish for this round
-  const generateFish = () => {
-    const fish = [];
-    prizeFish.forEach(fishType => {
-      if (fishType && Math.random() < (fishType.spawnRate || 0.1)) {
-        fish.push({
-          ...fishType,
-          id: `${fishType.id}_${Date.now()}_${Math.random()}`,
-          x: Math.random() * 80 + 10, // 10-90% of screen width
-          y: fishType.depth === 'shallow' ? 30 + Math.random() * 20 :
-              fishType.depth === 'medium' ? 40 + Math.random() * 25 :
-              fishType.depth === 'deep' ? 55 + Math.random() * 25 : 70 + Math.random() * 20,
-          direction: Math.random() < 0.5 ? 1 : -1,
-          speed: fishType.speed === 'slow' ? 0.3 : 
-                 fishType.speed === 'medium' ? 0.6 :
-                 fishType.speed === 'fast' ? 1.2 : 2.0
-        });
+  // Initialize fish when game starts
+  useEffect(() => {
+    generateNewFishSchool();
+  }, []);
+
+  // Generate multiple fish swimming around
+  const generateNewFishSchool = () => {
+    const newFish = [];
+    const fishCount = 8 + Math.floor(Math.random() * 6); // 8-13 fish
+
+    for (let i = 0; i < fishCount; i++) {
+      // Pick random fish type based on spawn rates
+      let selectedFishType = null;
+      const rand = Math.random();
+      let cumulativeRate = 0;
+
+      for (const fishType of prizeFish) {
+        cumulativeRate += fishType.spawnRate;
+        if (rand <= cumulativeRate) {
+          selectedFishType = fishType;
+          break;
+        }
       }
-    });
-    return fish;
+
+      if (!selectedFishType) {
+        selectedFishType = prizeFish[0]; // Fallback to first fish
+      }
+
+      const fish = {
+        id: `fish_${i}_${Date.now()}`,
+        ...selectedFishType,
+        x: Math.random() * 80 + 10, // 10-90% of screen width
+        y: 40 + Math.random() * 40, // Swimming in middle-bottom area
+        direction: Math.random() < 0.5 ? 1 : -1, // Random initial direction
+        baseSpeed: selectedFishType.speed || 1,
+        currentSpeed: (selectedFishType.speed || 1) * (0.5 + Math.random() * 0.5), // Vary speed
+        depth: Math.random() * 3 + 1, // For layering effect
+        bobOffset: Math.random() * Math.PI * 2 // For natural swimming motion
+      };
+
+      newFish.push(fish);
+    }
+
+    setCurrentFish(newFish);
   };
 
-  // Start new round
+  // Fish swimming animation
   useEffect(() => {
-    if (gameState === 'waiting') {
-      setCurrentFish(generateFish());
-    }
-  }, [gameState, prizeFish]);
-
-  // Keyboard controls
-  useEffect(() => {
-    const handleKeyPress = (e) => {
-      if (gameState === 'waiting') {
-        if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
-          moveBoat(-1);
-        }
-        if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
-          moveBoat(1);
-        }
-        if (e.key === ' ' || e.key === 'Enter') {
-          e.preventDefault();
-          castLine();
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [gameState, boatPosition]);
-
-  // Fish movement animation
-  useEffect(() => {
-    if (gameState === 'fishing') {
+    if (gameState === 'fishing' || gameState === 'ready') {
       const interval = setInterval(() => {
-        setCurrentFish(prev => prev.map(fish => ({
-          ...fish,
-          x: fish.x + (fish.speed || 0.5) * (fish.direction || 1),
-          direction: fish.x <= 5 || fish.x >= 95 ? -(fish.direction || 1) : (fish.direction || 1)
-        })));
-      }, 100);
-      
+        setCurrentFish(prev => prev.map(fish => {
+          let newX = fish.x + fish.direction * fish.currentSpeed * 0.3;
+          let newDirection = fish.direction;
+          
+          // Bounce off walls
+          if (newX <= 5) {
+            newX = 5;
+            newDirection = 1;
+          } else if (newX >= 95) {
+            newX = 95;
+            newDirection = -1;
+          }
+
+          // Occasionally change direction randomly
+          if (Math.random() < 0.005) {
+            newDirection = -newDirection;
+          }
+
+          // Natural bobbing motion
+          const bobY = Math.sin(Date.now() * 0.001 + fish.bobOffset) * 2;
+
+          return {
+            ...fish,
+            x: newX,
+            y: fish.y + bobY * 0.1,
+            direction: newDirection
+          };
+        }));
+      }, 50);
+
       return () => clearInterval(interval);
     }
   }, [gameState]);
 
-  // Cast line
+  // Cast fishing line
   const castLine = () => {
-    if (gameState !== 'waiting' || turnsLeft <= 0) return;
-    
+    if (gameState !== 'ready' || turnsLeft <= 0) return;
+
     setGameState('casting');
-    setHookPosition({ x: boatPosition, y: 10 });
-    
-    // Animate hook going down
-    const dropInterval = setInterval(() => {
-      setHookPosition(prev => {
-        const newY = prev.y + 2;
-        if (newY >= 80) {
-          clearInterval(dropInterval);
+    setLineLength(0);
+
+    // Animate line going down
+    const castInterval = setInterval(() => {
+      setLineLength(prev => {
+        const newLength = prev + 3;
+        if (newLength >= 250) { // Full line length
+          clearInterval(castInterval);
           setGameState('fishing');
           
-          // Check for catch after a delay
+          // Auto check for catch after 2 seconds
           setTimeout(() => {
             checkForCatch();
           }, 2000);
         }
-        return { ...prev, y: newY };
+        return newLength;
       });
-    }, 50);
+    }, 30);
   };
 
-  // Check if fish is caught
+  // Check if hook caught any fish
   const checkForCatch = () => {
     const hookX = hookPosition.x;
-    const hookY = hookPosition.y;
-    
-    // Find fish within catch range
-    const catchablefish = currentFish.filter(fish => {
-      if (!fish) return false;
+    const hookY = 15 + (lineLength / 250) * 60; // Convert line length to Y position
+
+    // Find fish within catching distance
+    const nearbyFish = currentFish.filter(fish => {
       const distance = Math.sqrt(
-        Math.pow((fish.x || 0) - hookX, 2) + Math.pow((fish.y || 0) - hookY, 2)
+        Math.pow(fish.x - hookX, 2) + Math.pow(fish.y - hookY, 2)
       );
       return distance < 8; // Catch radius
     });
 
-    if (catchablefish.length > 0) {
-      // Determine if catch is successful based on fish catch chance
-      const targetFish = catchablefish[0];
-      const catchSuccess = Math.random() < (targetFish.catchChance || 0.5);
-      
+    if (nearbyFish.length > 0) {
+      // Try to catch the closest fish
+      const targetFish = nearbyFish[0];
+      const catchSuccess = Math.random() < targetFish.catchChance;
+
       if (catchSuccess) {
+        setGameState('catching');
         setCaughtFish(targetFish);
-        setGameState('caught');
-        setShowCelebration(true);
         
-        // Award prize
+        // Generate prize
         const prize = generatePrize(targetFish);
+        setFishingResult({ success: true, fish: targetFish, prize });
+
+        // Reel in animation
+        setTimeout(() => {
+          setGameState('caught');
+        }, 1500);
+
+        // Auto-complete after showing result
         setTimeout(() => {
           onComplete(targetFish, prize);
-        }, 3000);
+        }, 4000);
+
       } else {
+        // Fish got away
         setGameState('missed');
         setTurnsLeft(prev => prev - 1);
-        
         setTimeout(() => {
           if (turnsLeft - 1 <= 0) {
             onComplete(null, null);
           } else {
-            setGameState('waiting');
-            setHookPosition({ x: 50, y: 10 });
+            resetForNextTurn();
           }
         }, 2000);
       }
     } else {
+      // No fish nearby
       setGameState('missed');
       setTurnsLeft(prev => prev - 1);
-      
       setTimeout(() => {
         if (turnsLeft - 1 <= 0) {
           onComplete(null, null);
         } else {
-          setGameState('waiting');
-          setHookPosition({ x: 50, y: 10 });
+          resetForNextTurn();
         }
       }, 2000);
     }
   };
 
-  // Generate prize based on fish
+  // Reset for next turn
+  const resetForNextTurn = () => {
+    setGameState('ready');
+    setLineLength(0);
+    setCaughtFish(null);
+    generateNewFishSchool(); // New fish for next attempt
+  };
+
+  // Generate prize from fish
   const generatePrize = (fish) => {
     if (!fish || !fish.prize) {
       return { type: 'coins', amount: 5, description: '5 Coins', value: 5 };
@@ -836,43 +805,42 @@ const FishingGameModal = ({
     return prize;
   };
 
-  // Move boat left/right
-  const moveBoat = (direction) => {
-    if (gameState !== 'waiting') return;
+  // Move boat/hook left/right
+  const moveHook = (direction) => {
+    if (gameState !== 'ready') return;
     
-    setBoatPosition(prev => {
-      const newPos = prev + (direction * 10);
-      return Math.max(15, Math.min(85, newPos));
-    });
+    setHookPosition(prev => ({
+      ...prev,
+      x: Math.max(10, Math.min(90, prev.x + direction * 5))
+    }));
   };
 
-  if (!student) {
-    return null;
-  }
+  // Keyboard controls
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+        e.preventDefault();
+        moveHook(-1);
+      }
+      if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+        e.preventDefault();
+        moveHook(1);
+      }
+      if (e.key === ' ' || e.key === 'Enter') {
+        e.preventDefault();
+        castLine();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [gameState]);
+
+  if (!student) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-      {/* Celebration Effect */}
-      {showCelebration && (
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {[...Array(30)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute animate-float text-2xl"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 3}s`,
-                animationDuration: `${2 + Math.random() * 3}s`
-              }}
-            >
-              {['🎉', '🎊', '🐟', '⭐', '💫', '🎁', '👑', '🌟'][Math.floor(Math.random() * 8)]}
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl h-5/6 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-5/6 overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-teal-600 text-white p-4 flex justify-between items-center">
           <div className="flex items-center space-x-4">
@@ -891,82 +859,128 @@ const FishingGameModal = ({
 
         {/* Game Area */}
         <div className="relative h-full bg-gradient-to-b from-blue-300 via-blue-400 to-blue-800 overflow-hidden">
-          {/* Water surface */}
-          <div className="absolute top-0 left-0 right-0 h-20 bg-gradient-to-b from-blue-200 to-blue-400 opacity-80"></div>
-          
+          {/* Water surface animation */}
+          <div className="absolute top-0 left-0 right-0 h-20 bg-gradient-to-b from-blue-200 to-blue-400 opacity-80">
+            <div className="absolute inset-0 bg-white opacity-20 animate-pulse"></div>
+          </div>
+
           {/* Boat */}
           <div 
-            className="absolute transition-all duration-300"
-            style={{ left: `${boatPosition}%`, top: '40px', transform: 'translateX(-50%)' }}
+            className="absolute transition-all duration-300 z-20"
+            style={{ left: `${hookPosition.x}%`, top: '20px', transform: 'translateX(-50%)' }}
           >
             <div className="text-6xl">🚤</div>
           </div>
 
           {/* Fishing Line */}
-          {gameState !== 'waiting' && (
-            <div className="absolute bg-gray-800" style={{
+          <div 
+            className="absolute bg-gray-800 z-10"
+            style={{
               left: `${hookPosition.x}%`,
-              top: '80px',
-              width: '2px',
-              height: `${hookPosition.y * 4}px`,
-              transform: 'translateX(-50%)'
-            }}>
-              <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-red-500 rounded-full border-2 border-white"></div>
+              top: '60px',
+              width: '3px',
+              height: `${lineLength}px`,
+              transform: 'translateX(-50%)',
+              transition: gameState === 'catching' ? 'height 1.5s ease-in-out' : 'none'
+            }}
+          >
+            {/* Fishing Hook */}
+            <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-6 h-6 bg-red-500 rounded-full border-2 border-white shadow-lg">
+              <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-red-600 rounded-full"></div>
             </div>
-          )}
+          </div>
 
-          {/* Fish */}
+          {/* Fish Swimming */}
           {currentFish.map(fish => (
             <div
               key={fish.id}
-              className="absolute transition-all duration-100"
+              className="absolute transition-all duration-100 z-5"
               style={{
-                left: `${fish.x || 50}%`,
-                top: `${fish.y || 50}%`,
-                transform: 'translateX(-50%)',
+                left: `${fish.x}%`,
+                top: `${fish.y}%`,
+                transform: `translateX(-50%) scaleX(${fish.direction > 0 ? 1 : -1})`,
                 fontSize: fish.size === 'small' ? '20px' : 
                           fish.size === 'medium' ? '30px' :
                           fish.size === 'large' ? '40px' : '50px',
-                color: fish.color || '#3B82F6',
-                filter: 'drop-shadow(2px 2px 4px rgba(0,0,0,0.3))'
+                opacity: fish.depth > 2 ? 0.7 : 1,
+                filter: `drop-shadow(2px 2px 4px rgba(0,0,0,0.3)) brightness(${0.8 + fish.depth * 0.1})`
               }}
             >
-              🐟
+              {fish.emoji}
             </div>
           ))}
 
+          {/* Caught Fish Animation */}
+          {caughtFish && gameState === 'catching' && (
+            <div 
+              className="absolute text-6xl z-30 animate-bounce"
+              style={{
+                left: `${hookPosition.x}%`,
+                top: '100px',
+                transform: 'translateX(-50%)',
+                animation: 'float-up 1.5s ease-out forwards'
+              }}
+            >
+              {caughtFish.emoji}
+            </div>
+          )}
+
           {/* Game State Messages */}
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
-            {gameState === 'waiting' && (
-              <div className="bg-white bg-opacity-90 rounded-xl p-6 shadow-lg">
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center z-40">
+            {gameState === 'ready' && (
+              <div className="bg-white bg-opacity-95 rounded-xl p-6 shadow-lg max-w-md">
                 <h4 className="text-2xl font-bold text-gray-800 mb-4">Ready to Cast!</h4>
-                <p className="text-gray-600 mb-4">Use arrow keys to move your boat, then click to cast your line!</p>
-                <button
-                  onClick={castLine}
-                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold"
-                >
-                  🎣 Cast Line!
-                </button>
+                <p className="text-gray-600 mb-4">Use arrow keys or A/D to move your hook, then press SPACE to cast!</p>
+                <div className="flex justify-center space-x-4">
+                  <button
+                    onClick={() => moveHook(-1)}
+                    className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 font-bold"
+                  >
+                    ← Left
+                  </button>
+                  <button
+                    onClick={castLine}
+                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold"
+                  >
+                    🎣 Cast Line!
+                  </button>
+                  <button
+                    onClick={() => moveHook(1)}
+                    className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 font-bold"
+                  >
+                    Right →
+                  </button>
+                </div>
               </div>
             )}
             
             {gameState === 'casting' && (
-              <div className="bg-white bg-opacity-90 rounded-xl p-4 shadow-lg">
+              <div className="bg-blue-50 border-2 border-blue-500 rounded-xl p-4 shadow-lg">
                 <h4 className="text-xl font-bold text-blue-600">Casting line...</h4>
+                <div className="text-blue-500">🎣</div>
               </div>
             )}
             
             {gameState === 'fishing' && (
-              <div className="bg-white bg-opacity-90 rounded-xl p-4 shadow-lg">
-                <h4 className="text-xl font-bold text-blue-600">Waiting for a bite...</h4>
+              <div className="bg-yellow-50 border-2 border-yellow-500 rounded-xl p-4 shadow-lg">
+                <h4 className="text-xl font-bold text-yellow-600">Waiting for a bite...</h4>
+                <div className="text-yellow-500 animate-pulse">🐟</div>
+              </div>
+            )}
+
+            {gameState === 'catching' && (
+              <div className="bg-green-50 border-2 border-green-500 rounded-xl p-4 shadow-lg">
+                <h4 className="text-xl font-bold text-green-600">Fish on the line!</h4>
+                <div className="text-green-500 animate-bounce">🎣</div>
               </div>
             )}
             
-            {gameState === 'caught' && caughtFish && (
+            {gameState === 'caught' && caughtFish && fishingResult && (
               <div className="bg-green-50 border-2 border-green-500 rounded-xl p-6 shadow-lg">
                 <h4 className="text-3xl font-bold text-green-600 mb-2">🎉 Amazing Catch! 🎉</h4>
+                <div className="text-4xl mb-2">{caughtFish.emoji}</div>
                 <p className="text-xl text-gray-800 mb-2">You caught a {caughtFish.name}!</p>
-                <p className="text-lg text-green-600 font-semibold">{generatePrize(caughtFish).description}</p>
+                <p className="text-lg text-green-600 font-semibold">{fishingResult.prize.description}</p>
               </div>
             )}
             
@@ -976,52 +990,29 @@ const FishingGameModal = ({
                 <p className="text-gray-600">
                   {turnsLeft > 1 ? `${turnsLeft - 1} turns left` : 'Last chance!'}
                 </p>
+                <div className="text-red-500">😔</div>
               </div>
             )}
           </div>
-
-          {/* Controls */}
-          {gameState === 'waiting' && (
-            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-4">
-              <button
-                onClick={() => moveBoat(-1)}
-                className="px-4 py-2 bg-white bg-opacity-90 rounded-lg hover:bg-opacity-100 font-bold"
-              >
-                ← Move Left
-              </button>
-              <button
-                onClick={() => moveBoat(1)}
-                className="px-4 py-2 bg-white bg-opacity-90 rounded-lg hover:bg-opacity-100 font-bold"
-              >
-                Move Right →
-              </button>
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Keyboard controls */}
+      {/* Controls Hint */}
       <div className="fixed bottom-4 right-4 bg-black bg-opacity-75 text-white p-4 rounded-lg text-sm">
         <div className="font-bold mb-2">🎮 Controls:</div>
-        <div>← → Arrow Keys: Move boat</div>
+        <div>← → or A/D: Move hook</div>
         <div>Space/Enter: Cast line</div>
-        <div>Click: Cast line</div>
+        <div>Watch the fish swim and try to get your hook near them!</div>
       </div>
 
       <style jsx>{`
-        @keyframes float {
+        @keyframes float-up {
           0% {
-            transform: translateY(100vh) rotate(0deg);
-            opacity: 1;
+            transform: translateX(-50%) translateY(0);
           }
           100% {
-            transform: translateY(-100px) rotate(360deg);
-            opacity: 0;
+            transform: translateX(-50%) translateY(-150px);
           }
-        }
-        
-        .animate-float {
-          animation: float linear infinite;
         }
       `}</style>
     </div>
