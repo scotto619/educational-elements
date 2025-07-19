@@ -1,4 +1,4 @@
-// VocabularyCenter.js - Enhanced Interactive Vocabulary Center with API Integration
+// VocabularyCenter.js - Complete Enhanced Version with Wikimedia Images
 import React, { useState, useEffect, useRef } from 'react';
 
 const VocabularyCenter = ({ showToast, saveVocabularyDataToFirebase, currentClassId }) => {
@@ -11,6 +11,7 @@ const VocabularyCenter = ({ showToast, saveVocabularyDataToFirebase, currentClas
   const [filterCategory, setFilterCategory] = useState('all');
   const [viewMode, setViewMode] = useState('grid'); // grid, list, cards
   const [editingWord, setEditingWord] = useState(null);
+  const [isLoadingImage, setIsLoadingImage] = useState(false);
 
   // Word Categories for organization
   const categories = [
@@ -20,7 +21,6 @@ const VocabularyCenter = ({ showToast, saveVocabularyDataToFirebase, currentClas
 
   // Load saved word wall data
   useEffect(() => {
-    // In a real app, this would load from Firebase
     const savedWords = localStorage.getItem(`wordWall_${currentClassId}`);
     if (savedWords) {
       setWordWall(JSON.parse(savedWords));
@@ -37,7 +37,7 @@ const VocabularyCenter = ({ showToast, saveVocabularyDataToFirebase, currentClas
     }
   }, [wordWall, currentClassId, saveVocabularyDataToFirebase]);
 
-  // Dictionary API Integration
+  // Dictionary API Integration (KEPT EXACTLY THE SAME)
   const fetchWordData = async (word) => {
     try {
       const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word.toLowerCase()}`);
@@ -97,7 +97,49 @@ const VocabularyCenter = ({ showToast, saveVocabularyDataToFirebase, currentClas
     }
   };
 
-  // Add new word to word wall
+  // Wikimedia Image API (Simple and Free)
+  const fetchWikimediaImage = async (word) => {
+    try {
+      // Try direct page lookup first
+      const response = await fetch(
+        `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(word)}`
+      );
+      const data = await response.json();
+      
+      if (data.thumbnail?.source) {
+        return data.thumbnail.source;
+      }
+
+      // If no direct match, try search
+      const searchResponse = await fetch(
+        `https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&list=search&srsearch=${encodeURIComponent(word)}&srlimit=3`
+      );
+      const searchData = await searchResponse.json();
+      
+      // Try the first few search results
+      for (const result of searchData.query?.search || []) {
+        try {
+          const pageResponse = await fetch(
+            `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(result.title)}`
+          );
+          const pageData = await pageResponse.json();
+          
+          if (pageData.thumbnail?.source) {
+            return pageData.thumbnail.source;
+          }
+        } catch (e) {
+          continue; // Try next result
+        }
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Wikimedia API error:', error);
+      return null;
+    }
+  };
+
+  // Add new word to word wall (ENHANCED with images)
   const handleAddWord = async () => {
     if (!newWord.trim()) {
       showToast('Please enter a word', 'error');
@@ -113,53 +155,64 @@ const VocabularyCenter = ({ showToast, saveVocabularyDataToFirebase, currentClas
     setIsLoadingWord(true);
 
     try {
-      // Try to fetch from dictionary API first
-      const apiData = await fetchWordData(newWord);
-      
-      const wordData = {
-        id: Date.now(),
-        word: apiData.word,
-        phonetics: apiData.phonetics,
-        definitions: apiData.definitions,
-        synonyms: apiData.synonyms,
-        antonyms: apiData.antonyms,
-        examples: apiData.examples,
-        etymology: apiData.etymology,
-        partOfSpeech: apiData.partOfSpeech,
-        category: determineCategory(apiData.partOfSpeech),
-        dateAdded: new Date().toISOString(),
-        isCustom: false,
-        notes: '',
-        difficulty: 'medium'
-      };
+      // Fetch dictionary data and image simultaneously
+      const [apiData, imageUrl] = await Promise.all([
+        fetchWordData(newWord).catch(() => null),
+        fetchWikimediaImage(newWord).catch(() => null)
+      ]);
 
-      setWordWall(prev => [...prev, wordData]);
-      setNewWord('');
-      showToast(`Added "${apiData.word}" with dictionary data!`, 'success');
+      if (apiData) {
+        // Got dictionary data
+        const wordData = {
+          id: Date.now(),
+          word: apiData.word,
+          phonetics: apiData.phonetics,
+          definitions: apiData.definitions,
+          synonyms: apiData.synonyms,
+          antonyms: apiData.antonyms,
+          examples: apiData.examples,
+          etymology: apiData.etymology,
+          partOfSpeech: apiData.partOfSpeech,
+          category: determineCategory(apiData.partOfSpeech),
+          dateAdded: new Date().toISOString(),
+          isCustom: false,
+          notes: '',
+          difficulty: 'medium',
+          imageUrl: imageUrl
+        };
+
+        setWordWall(prev => [...prev, wordData]);
+        setNewWord('');
+        showToast(`Added "${apiData.word}" with dictionary data${imageUrl ? ' and image' : ''}!`, 'success');
+        
+      } else {
+        // Create basic word entry for manual editing
+        const basicWordData = {
+          id: Date.now(),
+          word: newWord.toLowerCase(),
+          phonetics: '',
+          definitions: [{ partOfSpeech: '', definition: '', example: '' }],
+          synonyms: [],
+          antonyms: [],
+          examples: [],
+          etymology: '',
+          partOfSpeech: '',
+          category: 'custom',
+          dateAdded: new Date().toISOString(),
+          isCustom: true,
+          notes: '',
+          difficulty: 'medium',
+          imageUrl: imageUrl
+        };
+
+        setWordWall(prev => [...prev, basicWordData]);
+        setEditingWord(basicWordData);
+        setNewWord('');
+        showToast(`Added "${newWord}"${imageUrl ? ' with image' : ''} - please add definition manually`, 'info');
+      }
       
     } catch (error) {
-      // If API fails, create a basic word entry for manual editing
-      const basicWordData = {
-        id: Date.now(),
-        word: newWord.toLowerCase(),
-        phonetics: '',
-        definitions: [{ partOfSpeech: '', definition: '', example: '' }],
-        synonyms: [],
-        antonyms: [],
-        examples: [],
-        etymology: '',
-        partOfSpeech: '',
-        category: 'custom',
-        dateAdded: new Date().toISOString(),
-        isCustom: true,
-        notes: '',
-        difficulty: 'medium'
-      };
-
-      setWordWall(prev => [...prev, basicWordData]);
-      setEditingWord(basicWordData);
-      setNewWord('');
-      showToast(`Added "${newWord}" - please add definition manually`, 'info');
+      showToast('Error adding word. Please try again.', 'error');
     } finally {
       setIsLoadingWord(false);
     }
@@ -203,26 +256,60 @@ const VocabularyCenter = ({ showToast, saveVocabularyDataToFirebase, currentClas
   const handleRefreshWord = async (word) => {
     setIsLoadingWord(true);
     try {
-      const apiData = await fetchWordData(word.word);
-      const updatedWord = {
-        ...word,
-        phonetics: apiData.phonetics,
-        definitions: apiData.definitions,
-        synonyms: apiData.synonyms,
-        antonyms: apiData.antonyms,
-        examples: apiData.examples,
-        etymology: apiData.etymology,
-        partOfSpeech: apiData.partOfSpeech,
-        category: determineCategory(apiData.partOfSpeech),
-        isCustom: false
-      };
-      
-      setWordWall(prev => prev.map(w => w.id === word.id ? updatedWord : w));
-      showToast(`Updated "${word.word}" with latest dictionary data!`, 'success');
+      const [apiData, imageUrl] = await Promise.all([
+        fetchWordData(word.word).catch(() => null),
+        fetchWikimediaImage(word.word).catch(() => null)
+      ]);
+
+      if (apiData) {
+        const updatedWord = {
+          ...word,
+          phonetics: apiData.phonetics,
+          definitions: apiData.definitions,
+          synonyms: apiData.synonyms,
+          antonyms: apiData.antonyms,
+          examples: apiData.examples,
+          etymology: apiData.etymology,
+          partOfSpeech: apiData.partOfSpeech,
+          category: determineCategory(apiData.partOfSpeech),
+          isCustom: false,
+          imageUrl: imageUrl || word.imageUrl // Keep existing image if new one not found
+        };
+        
+        setWordWall(prev => prev.map(w => w.id === word.id ? updatedWord : w));
+        showToast(`Updated "${word.word}" with latest dictionary data!`, 'success');
+      } else {
+        showToast(`Could not refresh "${word.word}" - dictionary data unavailable`, 'error');
+      }
     } catch (error) {
       showToast(`Could not refresh "${word.word}" - dictionary data unavailable`, 'error');
     } finally {
       setIsLoadingWord(false);
+    }
+  };
+
+  // Add/Change image for existing word
+  const handleAddImageToWord = async (wordId) => {
+    const word = wordWall.find(w => w.id === wordId);
+    if (!word) return;
+
+    setIsLoadingImage(true);
+    try {
+      const imageUrl = await fetchWikimediaImage(word.word);
+      if (imageUrl) {
+        setWordWall(prev => prev.map(w => 
+          w.id === wordId 
+            ? { ...w, imageUrl }
+            : w
+        ));
+        showToast(`Image added to "${word.word}"!`, 'success');
+      } else {
+        showToast(`No image found for "${word.word}" on Wikipedia`, 'info');
+      }
+    } catch (error) {
+      showToast('Error fetching image', 'error');
+    } finally {
+      setIsLoadingImage(false);
     }
   };
 
@@ -264,7 +351,7 @@ const VocabularyCenter = ({ showToast, saveVocabularyDataToFirebase, currentClas
       {/* Header */}
       <div className="text-center">
         <h2 className="text-3xl font-bold text-gray-800 mb-2">📚 Vocabulary Center</h2>
-        <p className="text-gray-600">Build and manage your interactive classroom word wall</p>
+        <p className="text-gray-600">Build and manage your interactive classroom word wall with automatic images</p>
       </div>
 
       {/* Navigation Tabs */}
@@ -322,13 +409,13 @@ const VocabularyCenter = ({ showToast, saveVocabularyDataToFirebase, currentClas
                     <span>Adding...</span>
                   </div>
                 ) : (
-                  'Add Word'
+                  'Add Word + Image'
                 )}
               </button>
             </div>
             
             <p className="text-sm text-gray-500 mt-2">
-              💡 Words are automatically enriched with definitions, synonyms, antonyms, and examples from our dictionary API
+              💡 Words are automatically enriched with definitions, synonyms, antonyms, examples, and Wikipedia images
             </p>
           </div>
 
@@ -407,6 +494,7 @@ const VocabularyCenter = ({ showToast, saveVocabularyDataToFirebase, currentClas
                 Showing {filteredWords.length} of {wordWall.length} words
               </div>
               <div className="flex space-x-4 text-sm text-gray-600">
+                <span>🖼️ {wordWall.filter(w => w.imageUrl).length} with images</span>
                 <span>📖 {wordWall.filter(w => w.category === 'noun').length} Nouns</span>
                 <span>⚡ {wordWall.filter(w => w.category === 'verb').length} Verbs</span>
                 <span>🎨 {wordWall.filter(w => w.category === 'adjective').length} Adjectives</span>
@@ -441,7 +529,8 @@ const VocabularyCenter = ({ showToast, saveVocabularyDataToFirebase, currentClas
                         onEdit={() => setEditingWord(word)}
                         onDelete={() => handleDeleteWord(word.id)}
                         onRefresh={() => handleRefreshWord(word)}
-                        isLoading={isLoadingWord}
+                        onAddImage={() => handleAddImageToWord(word.id)}
+                        isLoadingImage={isLoadingImage}
                       />
                     ))}
                   </div>
@@ -458,6 +547,7 @@ const VocabularyCenter = ({ showToast, saveVocabularyDataToFirebase, currentClas
                         onEdit={() => setEditingWord(word)}
                         onDelete={() => handleDeleteWord(word.id)}
                         onRefresh={() => handleRefreshWord(word)}
+                        onAddImage={() => handleAddImageToWord(word.id)}
                       />
                     ))}
                   </div>
@@ -473,6 +563,7 @@ const VocabularyCenter = ({ showToast, saveVocabularyDataToFirebase, currentClas
                         onEdit={() => setEditingWord(word)}
                         onDelete={() => handleDeleteWord(word.id)}
                         onRefresh={() => handleRefreshWord(word)}
+                        onAddImage={() => handleAddImageToWord(word.id)}
                       />
                     ))}
                   </div>
@@ -556,8 +647,8 @@ const VocabularyCenter = ({ showToast, saveVocabularyDataToFirebase, currentClas
   );
 };
 
-// Word Card Component for Grid View
-const WordCard = ({ word, onSelect, onEdit, onDelete, onRefresh, isLoading }) => {
+// Enhanced Word Card Component with Image
+const WordCard = ({ word, onSelect, onEdit, onDelete, onRefresh, onAddImage, isLoadingImage }) => {
   const categoryColors = {
     noun: 'bg-blue-100 border-blue-300 text-blue-800',
     verb: 'bg-green-100 border-green-300 text-green-800',
@@ -570,6 +661,24 @@ const WordCard = ({ word, onSelect, onEdit, onDelete, onRefresh, isLoading }) =>
     <div className={`relative border-2 rounded-xl p-4 cursor-pointer transition-all hover:shadow-lg group ${
       categoryColors[word.category] || categoryColors.custom
     }`}>
+      {/* Word Image */}
+      {word.imageUrl ? (
+        <div className="mb-3">
+          <img
+            src={word.imageUrl}
+            alt={word.word}
+            className="w-full h-20 object-cover rounded-lg border border-gray-200"
+            onError={(e) => {
+              e.target.style.display = 'none';
+            }}
+          />
+        </div>
+      ) : (
+        <div className="mb-3 h-20 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center">
+          <span className="text-gray-400 text-sm">📷</span>
+        </div>
+      )}
+
       {/* Word */}
       <div className="text-center mb-2">
         <h4 className="text-lg font-bold truncate" title={word.word}>
@@ -592,7 +701,7 @@ const WordCard = ({ word, onSelect, onEdit, onDelete, onRefresh, isLoading }) =>
 
       {/* Action Buttons (show on hover) */}
       <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-        <div className="flex space-x-1">
+        <div className="flex flex-col space-y-1">
           <button
             onClick={(e) => { e.stopPropagation(); onSelect(); }}
             className="w-6 h-6 bg-blue-600 text-white rounded-full text-xs hover:bg-blue-700"
@@ -607,12 +716,19 @@ const WordCard = ({ word, onSelect, onEdit, onDelete, onRefresh, isLoading }) =>
           >
             ✏️
           </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onAddImage(); }}
+            className="w-6 h-6 bg-green-600 text-white rounded-full text-xs hover:bg-green-700"
+            title="Add/Change Image"
+            disabled={isLoadingImage}
+          >
+            {isLoadingImage ? '⏳' : '🖼️'}
+          </button>
           {!word.isCustom && (
             <button
               onClick={(e) => { e.stopPropagation(); onRefresh(); }}
-              className="w-6 h-6 bg-green-600 text-white rounded-full text-xs hover:bg-green-700"
+              className="w-6 h-6 bg-purple-600 text-white rounded-full text-xs hover:bg-purple-700"
               title="Refresh from Dictionary"
-              disabled={isLoading}
             >
               🔄
             </button>
@@ -639,22 +755,36 @@ const WordCard = ({ word, onSelect, onEdit, onDelete, onRefresh, isLoading }) =>
   );
 };
 
-// Word List Item Component
-const WordListItem = ({ word, onSelect, onEdit, onDelete, onRefresh }) => {
+// Word List Item Component with Image
+const WordListItem = ({ word, onSelect, onEdit, onDelete, onRefresh, onAddImage }) => {
   return (
     <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-      <div className="flex-1 cursor-pointer" onClick={onSelect}>
-        <div className="flex items-center space-x-4">
-          <div>
-            <h4 className="text-lg font-bold">{word.word}</h4>
-            {word.phonetics && <p className="text-sm text-gray-500">{word.phonetics}</p>}
+      <div className="flex items-center space-x-4 flex-1 cursor-pointer" onClick={onSelect}>
+        {/* Image */}
+        {word.imageUrl ? (
+          <img
+            src={word.imageUrl}
+            alt={word.word}
+            className="w-12 h-12 object-cover rounded border border-gray-200"
+            onError={(e) => {
+              e.target.style.display = 'none';
+            }}
+          />
+        ) : (
+          <div className="w-12 h-12 bg-gray-100 rounded border border-gray-200 flex items-center justify-center">
+            <span className="text-gray-400 text-xs">📷</span>
           </div>
-          <div className="text-sm text-gray-600">
-            <span className="bg-gray-100 px-2 py-1 rounded">{word.partOfSpeech}</span>
-          </div>
-          <div className="flex-1 text-sm text-gray-700 truncate">
-            {word.definitions[0]?.definition}
-          </div>
+        )}
+        
+        <div>
+          <h4 className="text-lg font-bold">{word.word}</h4>
+          {word.phonetics && <p className="text-sm text-gray-500">{word.phonetics}</p>}
+        </div>
+        <div className="text-sm text-gray-600">
+          <span className="bg-gray-100 px-2 py-1 rounded">{word.partOfSpeech}</span>
+        </div>
+        <div className="flex-1 text-sm text-gray-700 truncate">
+          {word.definitions[0]?.definition}
         </div>
       </div>
       <div className="flex space-x-2">
@@ -664,10 +794,16 @@ const WordListItem = ({ word, onSelect, onEdit, onDelete, onRefresh }) => {
         >
           Edit
         </button>
+        <button
+          onClick={onAddImage}
+          className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
+        >
+          🖼️
+        </button>
         {!word.isCustom && (
           <button
             onClick={onRefresh}
-            className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
+            className="px-3 py-1 text-sm bg-purple-600 text-white rounded hover:bg-purple-700"
           >
             Refresh
           </button>
@@ -683,10 +819,24 @@ const WordListItem = ({ word, onSelect, onEdit, onDelete, onRefresh }) => {
   );
 };
 
-// Detailed Word Card Component
-const DetailedWordCard = ({ word, onEdit, onDelete, onRefresh }) => {
+// Detailed Word Card Component with Image
+const DetailedWordCard = ({ word, onEdit, onDelete, onRefresh, onAddImage }) => {
   return (
     <div className="border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow">
+      {/* Image */}
+      {word.imageUrl && (
+        <div className="mb-4">
+          <img
+            src={word.imageUrl}
+            alt={word.word}
+            className="w-full h-32 object-cover rounded-lg border border-gray-200"
+            onError={(e) => {
+              e.target.style.display = 'none';
+            }}
+          />
+        </div>
+      )}
+
       <div className="flex justify-between items-start mb-4">
         <div>
           <h4 className="text-2xl font-bold text-gray-800">{word.word}</h4>
@@ -702,10 +852,17 @@ const DetailedWordCard = ({ word, onEdit, onDelete, onRefresh }) => {
           >
             ✏️
           </button>
+          <button
+            onClick={onAddImage}
+            className="text-green-600 hover:text-green-800"
+            title="Add/Change Image"
+          >
+            🖼️
+          </button>
           {!word.isCustom && (
             <button
               onClick={onRefresh}
-              className="text-green-600 hover:text-green-800"
+              className="text-purple-600 hover:text-purple-800"
               title="Refresh"
             >
               🔄
@@ -774,12 +931,27 @@ const DetailedWordCard = ({ word, onEdit, onDelete, onRefresh }) => {
   );
 };
 
-// Word Detail Modal
+// Word Detail Modal (COMPLETE VERSION)
 const WordDetailModal = ({ word, onClose, onEdit }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
+          {/* Image at top */}
+          {word.imageUrl && (
+            <div className="mb-6">
+              <img
+                src={word.imageUrl}
+                alt={word.word}
+                className="w-full max-h-48 object-cover rounded-lg border border-gray-200"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
+              />
+              <p className="text-xs text-gray-500 mt-1">Image from Wikipedia</p>
+            </div>
+          )}
+          
           {/* Header */}
           <div className="flex justify-between items-start mb-6">
             <div>
@@ -891,7 +1063,7 @@ const WordDetailModal = ({ word, onClose, onEdit }) => {
   );
 };
 
-// Edit Word Modal
+// Edit Word Modal (COMPLETE VERSION)
 const EditWordModal = ({ word, onSave, onCancel }) => {
   const [editData, setEditData] = useState({
     word: word.word,
