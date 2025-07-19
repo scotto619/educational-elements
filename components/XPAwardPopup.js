@@ -1,5 +1,5 @@
 // XPAwardPopup.js - Animated XP Award Notification with Sound
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 
 const XPAwardPopup = ({ 
   show, 
@@ -7,14 +7,19 @@ const XPAwardPopup = ({
   xpAmount, 
   category, 
   onClose,
-  playSound = true 
+  playSound = true,
+  timestamp = 0  // Add timestamp prop
 }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const hasPlayedSound = useRef(false);
+  const timerRef = useRef(null);
+  const lastTimestamp = useRef(0);
 
   // Play sound effect
   const playXPSound = () => {
-    if (playSound) {
+    if (playSound && !hasPlayedSound.current) {
+      hasPlayedSound.current = true;
       try {
         const audio = new Audio('/sounds/ding.wav');
         audio.volume = 0.5; // Adjust volume (0.0 to 1.0)
@@ -41,24 +46,40 @@ const XPAwardPopup = ({
   const config = categoryConfig[category] || categoryConfig['Respectful'];
 
   useEffect(() => {
-    if (show) {
+    // Clear any existing timer
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
+
+    // Only show if timestamp is new (prevents re-triggering on mouse events)
+    if (show && !isVisible && timestamp !== lastTimestamp.current) {
+      lastTimestamp.current = timestamp;
+      
+      // Reset sound flag and show popup
+      hasPlayedSound.current = false;
       setIsVisible(true);
       setIsAnimating(true);
       playXPSound();
 
       // Auto-close after 3 seconds
-      const timer = setTimeout(() => {
+      timerRef.current = setTimeout(() => {
         setIsAnimating(false);
         // Small delay for exit animation
         setTimeout(() => {
           setIsVisible(false);
+          hasPlayedSound.current = false;
           onClose();
         }, 300);
       }, 3000);
-
-      return () => clearTimeout(timer);
     }
-  }, [show, onClose]);
+
+    // Cleanup on unmount
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, [show, timestamp]); // Depend on both show and timestamp
 
   if (!isVisible) return null;
 

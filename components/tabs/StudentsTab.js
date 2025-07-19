@@ -1,6 +1,7 @@
 // StudentsTab.js - Compact, One-Screen Design
 import React, { useState } from 'react';
 import XPAwardPopup from '../XPAwardPopup';
+import HoverImagePreview from '../HoverImagePreview';
 
 const StudentsTab = ({
   students,
@@ -37,7 +38,8 @@ const StudentsTab = ({
   const [xpPopupData, setXpPopupData] = useState({
     studentName: '',
     xpAmount: 0,
-    category: 'Respectful'
+    category: 'Respectful',
+    timestamp: 0  // Add timestamp to prevent re-triggering
   });
   
   // Simplified local state - only used if props aren't provided
@@ -61,13 +63,19 @@ const StudentsTab = ({
     const xpAmount = 1;
     const category = 'Respectful';
     
-    // Show XP popup with sound
-    setXpPopupData({
-      studentName: student?.firstName || 'Student',
-      xpAmount: xpAmount,
-      category: category
-    });
-    setShowXPPopup(true);
+    // Close any existing popup first
+    setShowXPPopup(false);
+    
+    // Small delay then show new popup with timestamp
+    setTimeout(() => {
+      setXpPopupData({
+        studentName: student?.firstName || 'Student',
+        xpAmount: xpAmount,
+        category: category,
+        timestamp: Date.now()
+      });
+      setShowXPPopup(true);
+    }, 50);
     
     // Award the XP
     handleAwardXP(studentId, category, xpAmount);
@@ -142,18 +150,24 @@ const StudentsTab = ({
       // Clear selections
       clearAllStudents();
       
-      // Show popup for bulk award (using first selected student's name or "Multiple Students")
-      const firstStudent = students.find(s => s.id === currentSelectedStudents[0]);
-      const displayName = currentSelectedStudents.length === 1 
-        ? firstStudent?.firstName 
-        : `${currentSelectedStudents.length} Heroes`;
-        
-      setXpPopupData({
-        studentName: displayName,
-        xpAmount: currentXpAmount,
-        category: currentXpCategory
-      });
-      setShowXPPopup(true);
+      // Close any existing popup first
+      setShowXPPopup(false);
+      
+      // Show popup for bulk award with timestamp
+      setTimeout(() => {
+        const firstStudent = students.find(s => s.id === currentSelectedStudents[0]);
+        const displayName = currentSelectedStudents.length === 1 
+          ? firstStudent?.firstName 
+          : `${currentSelectedStudents.length} Heroes`;
+          
+        setXpPopupData({
+          studentName: displayName,
+          xpAmount: currentXpAmount,
+          category: currentXpCategory,
+          timestamp: Date.now()
+        });
+        setShowXPPopup(true);
+      }, 50);
     }
   };
 
@@ -404,17 +418,24 @@ const StudentsTab = ({
                         onClick={(e) => handleAvatarClickWrapper(student, e)}
                         className="relative"
                       >
-                        {student.avatar ? (
-                          <img
-                            src={student.avatar}
-                            alt={`${student.firstName}'s avatar`}
-                            className="w-8 h-8 rounded-full border-2 border-gray-300 hover:border-purple-400 transition-all"
-                          />
-                        ) : (
-                          <div className="w-8 h-8 rounded-full border-2 border-gray-300 bg-gray-100 flex items-center justify-center">
-                            <span className="text-xs">👤</span>
-                          </div>
-                        )}
+                        <HoverImagePreview
+                          imageSrc={student.avatar}
+                          title={`${student.firstName}'s Avatar`}
+                          subtitle={`Level ${student.avatarLevel || 1} Hero`}
+                          previewSize="large"
+                        >
+                          {student.avatar ? (
+                            <img
+                              src={student.avatar}
+                              alt={`${student.firstName}'s avatar`}
+                              className="w-8 h-8 rounded-full border-2 border-gray-300 hover:border-purple-400 transition-all"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full border-2 border-gray-300 bg-gray-100 flex items-center justify-center">
+                              <span className="text-xs">👤</span>
+                            </div>
+                          )}
+                        </HoverImagePreview>
                       </button>
                     </div>
 
@@ -493,6 +514,7 @@ const StudentsTab = ({
         studentName={xpPopupData.studentName}
         xpAmount={xpPopupData.xpAmount}
         category={xpPopupData.category}
+        timestamp={xpPopupData.timestamp}
         onClose={closeXPPopup}
         playSound={true}
       />
