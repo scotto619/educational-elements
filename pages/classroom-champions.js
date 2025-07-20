@@ -13,7 +13,7 @@ const ShopTab = React.lazy(() => import('../components/tabs/ShopTab'));
 const PetRaceTab = React.lazy(() => import('../components/tabs/PetRaceTab'));
 const FishingGameTab = React.lazy(() => import('../components/tabs/FishingGameTab'));
 const GamesTab = React.lazy(() => import('../components/tabs/GamesTab'));
-const GeographyTab = React.lazy(() => import('../components/tabs/GeographyTab'));
+const CurriculumCornerTab = React.lazy(() => import('../components/tabs/CurriculumCornerTab'));
 const ClassesTab = React.lazy(() => import('../components/tabs/ClassesTab'));
 const SettingsTab = React.lazy(() => import('../components/tabs/SettingsTab'));
 const TeachersToolkitTab = React.lazy(() => import('../components/tabs/TeachersToolkitTab'));
@@ -1796,7 +1796,7 @@ export default function ClassroomChampions() {
             { id: 'race', label: 'Pet Race', icon: '🏁' },
             { id: 'fishing', label: 'Fishing', icon: '🎣' },
             { id: 'games', label: 'Games', icon: '🎮' },
-            { id: 'geography', label: 'Geography', icon: '🌍' },
+            { id: 'curriculum', label: 'Curriculum Corner', icon: '📖' },
             ...(userData?.subscription === 'pro' ? [{ id: 'toolkit', label: 'Teachers Toolkit', icon: '🛠️', isPro: true }] : []),
             { id: 'classes', label: 'My Classes', icon: '📚' },
             { id: 'settings', label: 'Settings', icon: '⚙️' }
@@ -1835,7 +1835,7 @@ export default function ClassroomChampions() {
             {activeTab === 'race' && <PetRaceTab {...tabProps} />}
             {activeTab === 'fishing' && <FishingGameTab {...tabProps} />}
             {activeTab === 'games' && <GamesTab {...tabProps} />}
-            {activeTab === 'geography' && <GeographyTab {...tabProps} />}
+            {activeTab === 'curriculum' && <CurriculumCornerTab {...tabProps} />}
             {activeTab === 'toolkit' && <TeachersToolkitTab {...tabProps} />}
             {activeTab === 'classes' && (
               <ClassesTab 
