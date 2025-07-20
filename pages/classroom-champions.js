@@ -1,4 +1,4 @@
-// classroom-champions.js - COMPLETE WITH ENHANCED PET RACE SYSTEM
+// classroom-champions.js - COMPLETE WITH ENHANCED PET RACE SYSTEM + GEOGRAPHY TAB
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
@@ -13,6 +13,7 @@ const ShopTab = React.lazy(() => import('../components/tabs/ShopTab'));
 const PetRaceTab = React.lazy(() => import('../components/tabs/PetRaceTab'));
 const FishingGameTab = React.lazy(() => import('../components/tabs/FishingGameTab'));
 const GamesTab = React.lazy(() => import('../components/tabs/GamesTab'));
+const GeographyTab = React.lazy(() => import('../components/tabs/GeographyTab'));
 const ClassesTab = React.lazy(() => import('../components/tabs/ClassesTab'));
 const SettingsTab = React.lazy(() => import('../components/tabs/SettingsTab'));
 const TeachersToolkitTab = React.lazy(() => import('../components/tabs/TeachersToolkitTab'));
@@ -56,59 +57,59 @@ const QUEST_GIVERS = [
   },
   {
     id: 'guide2',
-    name: 'Captain Clockwork',
+    name: 'Captain Compass',
     image: '/Guides/Guide 2.png',
-    personality: 'punctual',
-    role: 'Organization Quest Giver',
-    specialty: 'responsibility',
+    personality: 'adventurous',
+    role: 'Behavior Quest Giver',
+    specialty: 'social',
     greetings: [
-      "Time for responsibility training! ⏰",
-      "A well-organized student is a successful student!",
-      "Ready to master the art of responsibility?"
+      "Ahoy there, champion! Ready to navigate new waters? ⚓",
+      "Adventure awaits those with brave hearts!",
+      "Chart your course to greatness!"
     ],
-    questTypes: ['organization', 'punctuality', 'homework'],
+    questTypes: ['behavior', 'teamwork', 'leadership'],
     tips: [
-      "⏰ Tip: Being on time shows respect for others!",
-      "📝 Remember: Organization is the key to success!",
-      "🎯 Focus: Small habits create big achievements!"
+      "⚓ Tip: Great leaders help others succeed too!",
+      "🗺️ Remember: The best adventures are shared with friends!",
+      "🧭 Focus on being the hero others look up to!"
     ]
   },
   {
     id: 'guide3',
-    name: 'Sage Sparkle',
+    name: 'Sir Responsibility',
     image: '/Guides/Guide 3.png',
-    personality: 'encouraging',
-    role: 'Behavior Quest Giver',
-    specialty: 'behavior',
+    personality: 'noble',
+    role: 'Responsibility Quest Giver',
+    specialty: 'character',
     greetings: [
-      "Kindness is the greatest magic! ✨",
-      "Ready to spread some positive energy?",
-      "Let's make the world brighter together!"
+      "Honor and duty call to you, young knight! 🛡️",
+      "True champions take responsibility for their actions!",
+      "Your quest for character begins now!"
     ],
-    questTypes: ['kindness', 'helping', 'teamwork'],
+    questTypes: ['responsibility', 'organization', 'leadership'],
     tips: [
-      "✨ Tip: A smile can change someone's entire day!",
-      "🤝 Remember: Teamwork makes the dream work!",
-      "💫 Focus: Be the reason someone believes in good!"
+      "🛡️ Tip: Responsibility is the armor of true heroes!",
+      "⚔️ Remember: Small acts of responsibility build great character!",
+      "🏰 Focus on keeping your promises and commitments!"
     ]
   },
   {
     id: 'guide4',
-    name: 'Master Craft',
+    name: 'Artisan Spark',
     image: '/Guides/Guide 4.png',
     personality: 'creative',
     role: 'Creative Quest Giver',
     specialty: 'creative',
     greetings: [
-      "Let your imagination soar! 🎨",
-      "Ready to create something amazing?",
-      "Art and creativity know no bounds!"
+      "Let your imagination soar like a rainbow! 🎨",
+      "Creativity is the magic that makes the world beautiful!",
+      "Express yourself and inspire others!"
     ],
-    questTypes: ['art', 'writing', 'projects'],
+    questTypes: ['art', 'writing', 'music'],
     tips: [
-      "🎨 Tip: Every masterpiece starts with a single stroke!",
-      "💭 Remember: There are no mistakes, only discoveries!",
-      "🌟 Focus: Express yourself fearlessly!"
+      "🎨 Tip: There's no wrong way to be creative!",
+      "✨ Remember: Your unique perspective is your superpower!",
+      "🌈 Focus: Creativity grows when you share it with others!"
     ]
   },
   {
@@ -315,61 +316,40 @@ const generateLootBoxRewards = (lootBox) => {
 const migrateClassData = async (cls) => {
   console.log(`Migrating class: ${cls.name}`);
   
-  const migratedStudents = cls.students.map(student => {
-    const migrated = updateStudentWithCurrency(student);
-    
-    // Migrate pet if exists
-    if (student.pet && !migrated.ownedPets.length) {
-      migrated.ownedPets = [{
-        id: `migrated_pet_${Date.now()}`,
-        name: student.pet.name || 'Companion',
-        image: student.pet.image,
-        type: 'migrated'
-      }];
-    }
-    
-    return migrated;
-  });
-
+  // Migrate students to new structure
+  const migratedStudents = cls.students.map(student => updateStudentWithCurrency(student));
+  
   return {
     ...cls,
     students: migratedStudents,
     activeQuests: cls.activeQuests || [],
     questTemplates: cls.questTemplates || QUEST_TEMPLATES,
     attendanceData: cls.attendanceData || {},
-    teacherRewards: cls.teacherRewards || [],
-    vocabularyData: cls.vocabularyData || { wordWall: [] } 
+    teacherRewards: cls.teacherRewards || []
   };
 };
 
-// Enhanced speed calculation for racing
-const calculateSpeed = (pet) => {
-  const baseSpeed = 1;
-  const winBoost = (pet.wins || 0) * 0.02; // Each win adds 2% speed
-  const randomFactor = 0.8 + (Math.random() * 0.4); // 80-120% of base speed
-  return (baseSpeed + winBoost) * randomFactor;
-};
+// ===============================================
+// UTILITY COMPONENTS
+// ===============================================
 
-// Loading components
 const LoadingSpinner = () => (
-  <div className="animate-fade-in">
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+  <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="flex items-center justify-center min-h-screen">
       <div className="text-center">
-        <div className="animate-spin rounded-full h-20 w-20 border-4 border-blue-600 border-t-transparent mx-auto mb-6"></div>
-        <h2 className="text-3xl font-bold text-gray-800 mb-4">Classroom Champions</h2>
-        <p className="text-gray-500">Preparing your adventure...</p>
+        <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">Loading Classroom Champions...</h2>
+        <p className="text-gray-600">Preparing your adventure!</p>
       </div>
     </div>
   </div>
 );
 
 const TabLoadingSpinner = () => (
-  <div className="animate-fade-in">
-    <div className="flex items-center justify-center py-20">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
-        <p className="text-xl font-semibold text-gray-700">Loading tab content...</p>
-      </div>
+  <div className="flex items-center justify-center py-20">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
+      <p className="text-xl font-semibold text-gray-700">Loading tab content...</p>
     </div>
   </div>
 );
@@ -412,7 +392,9 @@ export default function ClassroomChampions() {
   const [user, setUser] = useState(null);
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showToast, setShowToast] = useState(() => (message) => alert(message));
 
+  // Core tab and student states
   const [activeTab, setActiveTab] = useState('dashboard');
   const [students, setStudents] = useState([]);
 
@@ -495,538 +477,16 @@ export default function ClassroomChampions() {
 
   // Timer callback functions
   const handleTimerComplete = () => {
-    showToast('⏰ Timer completed!', 'success');
-    setTimerState(prev => ({
-      ...prev,
-      isActive: false,
-      isRunning: false,
-      isPaused: false,
-      time: 0
-    }));
+    showToast('⏰ Timer completed!');
+    setTimerState(prev => ({ ...prev, isActive: false }));
   };
 
-  const handleTimerUpdate = (updatedTimerData) => {
-    setTimerState(prev => ({
-      ...prev,
-      ...updatedTimerData,
-      isActive: updatedTimerData.isRunning || updatedTimerData.time > 0
-    }));
+  const handleTimerUpdate = (time) => {
+    setTimerState(prev => ({ ...prev, time }));
   };
 
   const handleShowFullTimer = () => {
-    setActiveTab('toolkit');
-    // Small delay to ensure tab loads then scroll to timer
-    setTimeout(() => {
-      const timerElement = document.querySelector('[data-timer-tools]');
-      if (timerElement) {
-        timerElement.scrollIntoView({ behavior: 'smooth' });
-      }
-    }, 100);
-  };
-
-  // ===============================================
-  // CORE FUNCTIONS
-  // ===============================================
-
-  // Toast notification system
-  const [toasts, setToasts] = useState([]);
-
-  const showToast = (message, type = 'success') => {
-    const id = Date.now();
-    setToasts(prev => [...prev, { id, message, type }]);
-    setTimeout(() => {
-      setToasts(prev => prev.filter(toast => toast.id !== id));
-    }, 3000);
-  };
-
-  // Calculate coins for a student
-  const calculateCoins = (student) => {
-    const xpCoins = Math.floor((student?.totalPoints || 0) / COINS_PER_XP);
-    const bonusCoins = student?.coins || 0;
-    const coinsSpent = student?.coinsSpent || 0;
-    return Math.max(0, xpCoins + bonusCoins - coinsSpent);
-  };
-
-  // Check if student can afford an item
-  const canAfford = (student, price) => {
-    return calculateCoins(student) >= price;
-  };
-
-  // Spend coins function
-  const spendCoins = (studentId, amount) => {
-    setStudents(prev => prev.map(student => 
-      student.id === studentId 
-        ? { ...student, coinsSpent: (student.coinsSpent || 0) + amount }
-        : student
-    ));
-  };
-
-  // ===============================================
-  // ENHANCED RACE FUNCTIONS
-  // ===============================================
-
-  // Award race prize to winner
-  const awardRacePrize = async (winner) => {
-    let prizeAwarded = '';
-    
-    setStudents(prev => {
-      const updatedStudents = prev.map(student => {
-        if (student.id !== winner.id) return student;
-
-        let updated = {
-          ...student,
-          pet: {
-            ...student.pet,
-            wins: (student.pet.wins || 0) + 1,
-            speed: (student.pet.speed || 1) + 0.02
-          }
-        };
-
-        switch (selectedPrize) {
-          case 'xp':
-            updated.totalPoints = (updated.totalPoints || 0) + prizeDetails.amount;
-            updated.categoryTotal = {
-              ...updated.categoryTotal,
-              [prizeDetails.category]: (updated.categoryTotal[prizeDetails.category] || 0) + prizeDetails.amount
-            };
-            updated.logs = [
-              ...(updated.logs || []),
-              {
-                type: prizeDetails.category,
-                amount: prizeDetails.amount,
-                date: new Date().toISOString(),
-                source: 'race_win'
-              }
-            ];
-            prizeAwarded = `${prizeDetails.amount} ${prizeDetails.category} XP`;
-            updated = checkForLevelUp(updated);
-            break;
-
-          case 'coins':
-            updated.coins = (updated.coins || 0) + prizeDetails.amount;
-            updated.logs = [
-              ...(updated.logs || []),
-              {
-                type: 'bonus_coins',
-                amount: prizeDetails.amount,
-                date: new Date().toISOString(),
-                source: 'race_win'
-              }
-            ];
-            prizeAwarded = `${prizeDetails.amount} coins`;
-            break;
-
-          case 'shop_item':
-            if (prizeDetails.item.category === 'avatars') {
-              updated.ownedAvatars = [...(updated.ownedAvatars || []), prizeDetails.item.id];
-            } else if (prizeDetails.item.category === 'pets') {
-              updated.ownedPets = [...(updated.ownedPets || []), {
-                id: `pet_${Date.now()}`,
-                name: prizeDetails.item.name,
-                image: prizeDetails.item.image,
-                type: 'race_prize'
-              }];
-            } else {
-              updated.inventory = [...(updated.inventory || []), {
-                id: `item_${Date.now()}`,
-                name: prizeDetails.item.name,
-                description: prizeDetails.item.description,
-                source: 'race_win',
-                acquired: new Date().toISOString()
-              }];
-            }
-            prizeAwarded = prizeDetails.item.name;
-            break;
-
-          case 'loot_box':
-            const rewards = generateLootBoxRewards(prizeDetails.lootBox);
-            updated.inventory = [...(updated.inventory || []), ...rewards];
-            prizeAwarded = `${prizeDetails.lootBox.name} with ${rewards.length} items`;
-            break;
-
-          case 'classroom_reward':
-            updated.inventory = [...(updated.inventory || []), {
-              id: `reward_${Date.now()}`,
-              name: prizeDetails.reward.name,
-              description: prizeDetails.reward.description,
-              source: 'race_win',
-              acquired: new Date().toISOString(),
-              category: 'classroom_reward'
-            }];
-            prizeAwarded = prizeDetails.reward.name;
-            break;
-        }
-
-        return updated;
-      });
-
-      saveStudentsToFirebase(updatedStudents);
-      return updatedStudents;
-    });
-
-    showToast(`🏆 ${winner.firstName} wins and earns ${prizeAwarded}!`, 'success');
-  };
-
-  // ===============================================
-  // FIREBASE FUNCTIONS
-  // ===============================================
-
-  // Save students to Firebase
-  const saveStudentsToFirebase = async (studentsToSave) => {
-    if (!user || !currentClassId) return;
-
-    try {
-      setSavingData(true);
-      const docRef = doc(firestore, 'users', user.uid);
-      const snap = await getDoc(docRef);
-      
-      if (snap.exists()) {
-        const data = snap.data();
-        const updatedClasses = data.classes.map(cls => 
-          cls.id === currentClassId 
-            ? { 
-                ...cls, 
-                students: studentsToSave,
-                lastUpdated: new Date().toISOString()
-              }
-            : cls
-        );
-        
-        await setDoc(docRef, { 
-          ...data, 
-          classes: updatedClasses 
-        });
-      }
-    } catch (error) {
-      console.error("Error saving to Firebase:", error);
-    } finally {
-      setSavingData(false);
-    }
-  };
-
-  // Save quest data to Firebase
-  const saveQuestDataToFirebase = async (questData) => {
-    if (!user || !currentClassId) return;
-
-    try {
-      const docRef = doc(firestore, 'users', user.uid);
-      const snap = await getDoc(docRef);
-      
-      if (snap.exists()) {
-        const data = snap.data();
-        const updatedClasses = data.classes.map(cls => 
-          cls.id === currentClassId 
-            ? { 
-                ...cls, 
-                ...questData,
-                lastUpdated: new Date().toISOString()
-              }
-            : cls
-        );
-        
-        await setDoc(docRef, { 
-          ...data, 
-          classes: updatedClasses 
-        });
-      }
-    } catch (error) {
-      console.error("Error saving quest data:", error);
-    }
-  };
-
-  // Save active class to Firebase
-  const saveActiveClassToFirebase = async (classId) => {
-    if (!user) return;
-
-    try {
-      const docRef = doc(firestore, 'users', user.uid);
-      const snap = await getDoc(docRef);
-      
-      if (snap.exists()) {
-        const data = snap.data();
-        await setDoc(docRef, { 
-          ...data, 
-          activeClassId: classId 
-        });
-      }
-    } catch (error) {
-      console.error("Error saving active class:", error);
-    }
-  };
-
-  // Save group data to Firebase (for toolkit)
-  const saveGroupDataToFirebase = async (groupData) => {
-    if (!user || !currentClassId) return;
-
-    try {
-      const docRef = doc(firestore, 'users', user.uid);
-      const snap = await getDoc(docRef);
-      
-      if (snap.exists()) {
-        const data = snap.data();
-        const updatedClasses = data.classes.map(cls => 
-          cls.id === currentClassId 
-            ? { 
-                ...cls, 
-                groupData,
-                lastUpdated: new Date().toISOString()
-              }
-            : cls
-        );
-        
-        await setDoc(docRef, { 
-          ...data, 
-          classes: updatedClasses 
-        });
-      }
-    } catch (error) {
-      console.error("Error saving group data:", error);
-    }
-  };
-
-  // Save classroom data to Firebase (for toolkit)
-  const saveClassroomDataToFirebase = async (classroomData) => {
-    if (!user || !currentClassId) return;
-
-    try {
-      const docRef = doc(firestore, 'users', user.uid);
-      const snap = await getDoc(docRef);
-      
-      if (snap.exists()) {
-        const data = snap.data();
-        const updatedClasses = data.classes.map(cls => 
-          cls.id === currentClassId 
-            ? { 
-                ...cls, 
-                classroomData,
-                lastUpdated: new Date().toISOString()
-              }
-            : cls
-        );
-        
-        await setDoc(docRef, { 
-          ...data, 
-          classes: updatedClasses 
-        });
-      }
-    } catch (error) {
-      console.error("Error saving classroom data:", error);
-    }
-  };
-
-  const saveVocabularyDataToFirebase = async (vocabularyData) => {
-  if (!user || !currentClassId) return;
-
-  try {
-    const docRef = doc(firestore, 'users', user.uid);
-    const snap = await getDoc(docRef);
-    
-    if (snap.exists()) {
-      const data = snap.data();
-      const updatedClasses = data.classes.map(cls => 
-        cls.id === currentClassId 
-          ? { 
-              ...cls, 
-              vocabularyData,
-              lastUpdated: new Date().toISOString()
-            }
-          : cls
-      );
-      
-      await setDoc(docRef, { 
-        ...data, 
-        classes: updatedClasses 
-      });
-    }
-  } catch (error) {
-    console.error("Error saving vocabulary data:", error);
-  }
-};
-
-  // ===============================================
-  // QUEST MANAGEMENT FUNCTIONS
-  // ===============================================
-
-  // Create a new quest
-  const handleCreateQuest = (questData) => {
-    const newQuest = {
-      ...questData,
-      id: `quest_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
-      createdAt: new Date().toISOString(),
-      completedBy: []
-    };
-
-    setActiveQuests(prev => {
-      const updated = [...prev, newQuest];
-      saveQuestDataToFirebase({ activeQuests: updated });
-      return updated;
-    });
-
-    showToast(`Quest "${questData.title}" created successfully!`);
-  };
-
-  // Edit an existing quest
-  const handleEditQuest = (questId, updatedData) => {
-    setActiveQuests(prev => {
-      const updated = prev.map(quest => 
-        quest.id === questId ? { ...quest, ...updatedData } : quest
-      );
-      saveQuestDataToFirebase({ activeQuests: updated });
-      return updated;
-    });
-
-    showToast('Quest updated successfully!');
-  };
-
-  // Delete a quest
-  const handleDeleteQuest = (questId) => {
-    setActiveQuests(prev => {
-      const updated = prev.filter(quest => quest.id !== questId);
-      saveQuestDataToFirebase({ activeQuests: updated });
-      return updated;
-    });
-
-    showToast('Quest deleted successfully!');
-  };
-
-  // Complete a quest for a student
-  const handleCompleteQuest = (questId, studentId, reward) => {
-    // Update quest completion
-    setActiveQuests(prev => {
-      const updated = prev.map(quest => 
-        quest.id === questId 
-          ? { ...quest, completedBy: [...(quest.completedBy || []), studentId] }
-          : quest
-      );
-      saveQuestDataToFirebase({ activeQuests: updated });
-      return updated;
-    });
-
-    // Award the reward to the student
-    setStudents(prev => {
-      const updatedStudents = prev.map(student => {
-        if (student.id !== studentId) return student;
-
-        let updated = { ...student };
-
-        switch (reward.type) {
-          case 'xp':
-            const newTotal = updated.totalPoints + reward.amount;
-            updated = {
-              ...updated,
-              totalPoints: newTotal,
-              weeklyPoints: (updated.weeklyPoints || 0) + reward.amount,
-              categoryTotal: {
-                ...updated.categoryTotal,
-                [reward.category]: (updated.categoryTotal[reward.category] || 0) + reward.amount,
-              },
-              categoryWeekly: {
-                ...updated.categoryWeekly,
-                [reward.category]: (updated.categoryWeekly[reward.category] || 0) + reward.amount,
-              },
-              logs: [
-                ...(updated.logs || []),
-                {
-                  type: reward.category,
-                  amount: reward.amount,
-                  date: new Date().toISOString(),
-                  source: "quest",
-                },
-              ],
-            };
-
-            // Check for pet unlock
-            if (!updated.pet?.image && newTotal >= 50) {
-              const newPet = getRandomPet();
-              setPetNameInput(getRandomPetName());
-              setPetUnlockData({
-                studentId: updated.id,
-                firstName: updated.firstName,
-                pet: newPet,
-              });
-            }
-
-            // Check for level up
-            updated = checkForLevelUp(updated);
-            break;
-
-          case 'coins':
-            updated = {
-              ...updated,
-              coins: (updated.coins || 0) + reward.amount,
-              logs: [
-                ...(updated.logs || []),
-                {
-                  type: "bonus_coins",
-                  amount: reward.amount,
-                  date: new Date().toISOString(),
-                  source: "quest",
-                },
-              ],
-            };
-            break;
-
-          case 'item':
-            updated = {
-              ...updated,
-              inventory: [
-                ...(updated.inventory || []),
-                {
-                  id: `item_${Date.now()}`,
-                  name: reward.item,
-                  source: 'quest',
-                  acquired: new Date().toISOString()
-                }
-              ],
-              logs: [
-                ...(updated.logs || []),
-                {
-                  type: "item_received",
-                  item: reward.item,
-                  date: new Date().toISOString(),
-                  source: "quest",
-                },
-              ],
-            };
-            break;
-        }
-
-        return updated;
-      });
-
-      saveStudentsToFirebase(updatedStudents);
-      return updatedStudents;
-    });
-
-    const student = students.find(s => s.id === studentId);
-    const rewardText = reward.type === 'xp' ? `${reward.amount} ${reward.category} XP` :
-                     reward.type === 'coins' ? `${reward.amount} coins` :
-                     `item: ${reward.item}`;
-    
-    showToast(`${student?.firstName} completed quest and earned ${rewardText}!`);
-  };
-
-  // Get available quests for a student
-  const getAvailableQuests = (student) => {
-    return activeQuests.filter(quest => {
-      if (quest.completedBy?.includes(student.id)) return false;
-      if (quest.assignedTo && quest.assignedTo.length > 0 && !quest.assignedTo.includes(student.id)) return false;
-      return true;
-    });
-  };
-
-  // Safe quest completion check
-  const checkQuestCompletionSafely = (studentId, studentsArray) => {
-    try {
-      // Check if any quests can be auto-completed
-      const student = studentsArray.find(s => s.id === studentId);
-      if (!student) return;
-
-      // Auto-complete logic would go here
-      // For now, this is just a placeholder
-    } catch (error) {
-      console.error('Error checking quest completion:', error);
-    }
+    setShowFullTimerModal(true);
   };
 
   // ===============================================
@@ -1436,381 +896,700 @@ export default function ClassroomChampions() {
     }
   };
 
-  const handleSubscriptionManagement = async () => {
-    if (!userData?.stripeCustomerId) {
-      router.push('/pricing');
-      return;
-    }
+  const handleSubscriptionManagement = () => {
+    router.push('/subscription-management');
+  };
 
-    try {
-      const response = await fetch('/api/create-portal-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ customerId: userData.stripeCustomerId })
+  // ===============================================
+  // QUEST MANAGEMENT FUNCTIONS
+  // ===============================================
+
+  // Create a new quest
+  const handleCreateQuest = (questData) => {
+    const newQuest = {
+      ...questData,
+      id: `quest_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
+      createdAt: new Date().toISOString(),
+      completedBy: []
+    };
+
+    setActiveQuests(prev => {
+      const updated = [...prev, newQuest];
+      saveQuestDataToFirebase({ activeQuests: updated });
+      return updated;
+    });
+
+    showToast(`Quest "${questData.title}" created successfully!`);
+  };
+
+  // Edit an existing quest
+  const handleEditQuest = (questId, updatedData) => {
+    setActiveQuests(prev => {
+      const updated = prev.map(quest => 
+        quest.id === questId ? { ...quest, ...updatedData } : quest
+      );
+      saveQuestDataToFirebase({ activeQuests: updated });
+      return updated;
+    });
+
+    showToast('Quest updated successfully!');
+  };
+
+  // Delete a quest
+  const handleDeleteQuest = (questId) => {
+    setActiveQuests(prev => {
+      const updated = prev.filter(quest => quest.id !== questId);
+      saveQuestDataToFirebase({ activeQuests: updated });
+      return updated;
+    });
+
+    showToast('Quest deleted successfully!');
+  };
+
+  // Complete a quest for a student
+  const handleCompleteQuest = (questId, studentId, reward) => {
+    // Update quest completion
+    setActiveQuests(prev => {
+      const updated = prev.map(quest => 
+        quest.id === questId 
+          ? { ...quest, completedBy: [...(quest.completedBy || []), studentId] }
+          : quest
+      );
+      saveQuestDataToFirebase({ activeQuests: updated });
+      return updated;
+    });
+
+    // Award the reward to the student
+    setStudents(prev => {
+      const updatedStudents = prev.map(student => {
+        if (student.id !== studentId) return student;
+
+        let updated = { ...student };
+
+        switch (reward.type) {
+          case 'xp':
+            const newTotal = updated.totalPoints + reward.amount;
+            updated = {
+              ...updated,
+              totalPoints: newTotal,
+              weeklyPoints: (updated.weeklyPoints || 0) + reward.amount,
+              categoryTotal: {
+                ...updated.categoryTotal,
+                [reward.category]: (updated.categoryTotal[reward.category] || 0) + reward.amount,
+              },
+              categoryWeekly: {
+                ...updated.categoryWeekly,
+                [reward.category]: (updated.categoryWeekly[reward.category] || 0) + reward.amount,
+              },
+              logs: [
+                ...(updated.logs || []),
+                {
+                  type: reward.category,
+                  amount: reward.amount,
+                  date: new Date().toISOString(),
+                  source: "quest",
+                },
+              ],
+            };
+
+            // Check for pet unlock
+            if (!updated.pet?.image && newTotal >= 50) {
+              const newPet = getRandomPet();
+              setPetNameInput(getRandomPetName());
+              setPetUnlockData({
+                studentId: updated.id,
+                firstName: updated.firstName,
+                pet: newPet,
+              });
+            }
+
+            // Check for level up
+            updated = checkForLevelUp(updated);
+            break;
+
+          case 'coins':
+            updated = {
+              ...updated,
+              coins: (updated.coins || 0) + reward.amount,
+              logs: [
+                ...(updated.logs || []),
+                {
+                  type: "bonus_coins",
+                  amount: reward.amount,
+                  date: new Date().toISOString(),
+                  source: "quest",
+                },
+              ],
+            };
+            break;
+
+          case 'item':
+            updated = {
+              ...updated,
+              inventory: [
+                ...(updated.inventory || []),
+                {
+                  id: `item_${Date.now()}`,
+                  name: reward.item,
+                  source: 'quest',
+                  acquired: new Date().toISOString()
+                }
+              ],
+              logs: [
+                ...(updated.logs || []),
+                {
+                  type: "item_received",
+                  item: reward.item,
+                  date: new Date().toISOString(),
+                  source: "quest",
+                },
+              ],
+            };
+            break;
+        }
+
+        return updated;
       });
 
-      const { url } = await response.json();
-      window.open(url, '_blank');
+      saveStudentsToFirebase(updatedStudents);
+      return updatedStudents;
+    });
+
+    const student = students.find(s => s.id === studentId);
+    const rewardText = reward.type === 'xp' ? `${reward.amount} ${reward.category} XP` :
+                     reward.type === 'coins' ? `${reward.amount} coins` :
+                     `item: ${reward.item}`;
+    
+    showToast(`${student?.firstName} completed quest and earned ${rewardText}!`);
+  };
+
+  // Get available quests for a student
+  const getAvailableQuests = (student) => {
+    return activeQuests.filter(quest => {
+      if (quest.completedBy?.includes(student.id)) return false;
+      if (quest.assignedTo && quest.assignedTo.length > 0 && !quest.assignedTo.includes(student.id)) return false;
+      return true;
+    });
+  };
+
+  // Safe quest completion check
+  const checkQuestCompletionSafely = (studentId, studentsArray) => {
+    try {
+      // Check if any quests can be auto-completed
+      const student = studentsArray.find(s => s.id === studentId);
+      if (!student) return;
+
+      // Auto-complete logic would go here
+      // For now, this is just a placeholder
     } catch (error) {
-      console.error('Error opening billing portal:', error);
-      alert('Error opening billing portal. Please try again.');
+      console.error('Error checking quest completion:', error);
     }
   };
 
-  // Quest template management functions
-  const handleAddQuestTemplate = (questData) => {
-    const newTemplate = {
-      ...questData,
-      id: `template_${Date.now()}`,
-      isCustom: true
-    };
-    
-    setQuestTemplates(prev => {
-      const updated = [...prev, newTemplate];
-      saveQuestDataToFirebase({ questTemplates: updated });
-      return updated;
-    });
-    
+  // Quest template functions
+  const handleAddQuestTemplate = (newTemplate) => {
+    setQuestTemplates(prev => [...prev, { ...newTemplate, id: `template_${Date.now()}` }]);
     showToast('Quest template added successfully!');
   };
 
-  const handleEditQuestTemplate = (templateId, questData) => {
-    setQuestTemplates(prev => {
-      const updated = prev.map(template => 
-        template.id === templateId ? { ...template, ...questData } : template
-      );
-      saveQuestDataToFirebase({ questTemplates: updated });
-      return updated;
-    });
-    
+  const handleEditQuestTemplate = (templateId, updatedTemplate) => {
+    setQuestTemplates(prev => 
+      prev.map(template => 
+        template.id === templateId ? { ...template, ...updatedTemplate } : template
+      )
+    );
     showToast('Quest template updated successfully!');
   };
 
   const handleDeleteQuestTemplate = (templateId) => {
-    setQuestTemplates(prev => {
-      const updated = prev.filter(template => template.id !== templateId);
-      saveQuestDataToFirebase({ questTemplates: updated });
-      return updated;
-    });
-    
+    setQuestTemplates(prev => prev.filter(template => template.id !== templateId));
     showToast('Quest template deleted successfully!');
   };
 
   const handleResetQuestTemplates = () => {
     setQuestTemplates(QUEST_TEMPLATES);
-    saveQuestDataToFirebase({ questTemplates: QUEST_TEMPLATES });
-    showToast('Quest templates reset to defaults!');
+    showToast('Quest templates reset to default!');
   };
 
-  // Random quest giver tip function
   const showRandomQuestGiverTip = () => {
-    const randomGiver = QUEST_GIVERS[Math.floor(Math.random() * QUEST_GIVERS.length)];
-    const randomTip = randomGiver.tips[Math.floor(Math.random() * randomGiver.tips.length)];
-    setShowQuestGiverTip({ giver: randomGiver, tip: randomTip });
-    
-    setTimeout(() => setShowQuestGiverTip(null), 5000);
+    const allTips = QUEST_GIVERS.flatMap(giver => giver.tips);
+    const randomTip = allTips[Math.floor(Math.random() * allTips.length)];
+    showToast(randomTip);
   };
 
   // ===============================================
   // SHOP FUNCTIONS
   // ===============================================
 
+  const calculateCoins = (student) => {
+    return Math.max(0, Math.floor((student?.totalPoints || 0) / COINS_PER_XP) + (student?.coins || 0) - (student?.coinsSpent || 0));
+  };
+
+  const canAfford = (student, price) => {
+    return calculateCoins(student) >= price;
+  };
+
+  const spendCoins = (student, amount) => {
+    return {
+      ...student,
+      coinsSpent: (student.coinsSpent || 0) + amount
+    };
+  };
+
   const handleShopStudentSelect = (student) => {
     setSelectedStudent(student);
   };
 
   const handleShopPurchase = (student, item) => {
-    const coins = calculateCoins(student);
-    const cost = item.price;
-    
-    if (!canAfford(student, cost)) {
-      alert(`${student.firstName} doesn't have enough coins!`);
+    if (!canAfford(student, item.price)) {
+      showToast('Not enough coins!');
       return;
     }
 
-    spendCoins(student.id, cost);
+    let updatedStudent = spendCoins(student, item.price);
+
+    // Handle different item types
+    switch (item.category) {
+      case 'avatars':
+        updatedStudent.avatarBase = item.id;
+        updatedStudent.avatar = getAvatarImage(item.id, updatedStudent.avatarLevel);
+        break;
+      case 'pets':
+        if (!updatedStudent.ownedPets) updatedStudent.ownedPets = [];
+        updatedStudent.ownedPets.push({
+          id: `pet_${Date.now()}`,
+          name: getRandomPetName(),
+          image: item.image,
+          type: 'purchased'
+        });
+        break;
+      case 'consumables':
+        // Handle consumable effects
+        if (item.id === 'xp_boost') {
+          updatedStudent.totalPoints = (updatedStudent.totalPoints || 0) + 5;
+        } else if (item.id === 'luck_charm') {
+          updatedStudent.coins = (updatedStudent.coins || 0) + 3;
+        }
+        break;
+    }
+
+    const updatedStudents = students.map(s => 
+      s.id === student.id ? updatedStudent : s
+    );
+
+    setStudents(updatedStudents);
+    setSelectedStudent(updatedStudent);
+    saveStudentsToFirebase(updatedStudents);
     
-    // Add item to student's owned items
-    setStudents(prev => prev.map(s => {
-      if (s.id !== student.id) return s;
-      
-      if (item.category === 'avatars') {
-        return {
-          ...s,
-          ownedAvatars: [...(s.ownedAvatars || []), item.id],
-          rewardsPurchased: [...(s.rewardsPurchased || []), item.name]
-        };
-      } else if (item.category === 'pets') {
-        return {
-          ...s,
-          ownedPets: [...(s.ownedPets || []), {
-            id: `pet_${Date.now()}`,
-            name: item.name,
-            image: item.image,
-            type: 'purchased'
-          }],
-          rewardsPurchased: [...(s.rewardsPurchased || []), item.name]
-        };
-      } else {
-        return {
-          ...s,
-          inventory: [...(s.inventory || []), {
-            id: `item_${Date.now()}`,
-            name: item.name,
-            description: item.description,
-            source: 'shop',
-            acquired: new Date().toISOString()
-          }],
-          rewardsPurchased: [...(s.rewardsPurchased || []), item.name]
-        };
-      }
-    }));
-    
-    showToast(`${student.firstName} purchased ${item.name}!`);
+    showToast(`${item.name} purchased!`);
   };
 
   const handleLootBoxPurchase = (student, lootBox) => {
-    const coins = calculateCoins(student);
-    const cost = lootBox.price;
-    
-    if (!canAfford(student, cost)) {
-      alert(`${student.firstName} doesn't have enough coins!`);
+    if (!canAfford(student, lootBox.price)) {
+      showToast('Not enough coins!');
       return;
     }
 
     const rewards = generateLootBoxRewards(lootBox);
-    spendCoins(student.id, cost);
+    let updatedStudent = spendCoins(student, lootBox.price);
     
-    // Add rewards to student inventory
-    setStudents(prev => prev.map(s => 
-      s.id === student.id 
-        ? { ...s, inventory: [...(s.inventory || []), ...rewards] }
-        : s
-    ));
+    // Add rewards to inventory
+    if (!updatedStudent.inventory) updatedStudent.inventory = [];
+    updatedStudent.inventory.push(...rewards);
 
-    const rewardNames = rewards.map(r => r.name).join(', ');
-    showToast(`${student.firstName} opened ${lootBox.name} and got: ${rewardNames}!`);
+    const updatedStudents = students.map(s => 
+      s.id === student.id ? updatedStudent : s
+    );
+
+    setStudents(updatedStudents);
+    setSelectedStudent(updatedStudent);
+    saveStudentsToFirebase(updatedStudents);
+    
+    showToast(`${lootBox.name} opened! Got ${rewards.length} items!`);
   };
 
   // ===============================================
-  // CLASS MANAGEMENT FUNCTIONS
+  // ATTENDANCE FUNCTIONS
   // ===============================================
 
-  const handleClassImport = async () => {
-    if (!newClassName.trim() || !newClassStudents.trim()) {
-      alert("Please fill in both class name and student names");
-      return;
-    }
-
-    setSavingData(true);
-
-    const studentsArray = newClassStudents
-      .split('\n')
-      .map((name) => name.trim())
-      .filter((name) => name.length > 0)
-      .map((name) => {
-        return updateStudentWithCurrency({
-          id: Date.now().toString() + Math.random().toString(36).substring(2, 8),
-          firstName: name,
-          avatarBase: '',
-          avatarLevel: 1,
-          avatar: '',
-          totalPoints: 0,
-          weeklyPoints: 0,
-          categoryTotal: {},
-          categoryWeekly: {},
-          coins: 0,
-          logs: [],
-          pet: null,
-          ownedAvatars: [],
-          ownedPets: [],
-          rewardsPurchased: [],
-          inventory: [],
-          coinsSpent: 0
-        });
-      });
-
-    const newClass = {
-      id: 'class-' + Date.now(),
-      name: newClassName,
-      students: studentsArray,
-      activeQuests: [],
-      questTemplates: QUEST_TEMPLATES,
-      attendanceData: {},
-      teacherRewards: [],
-      vocabularyData: { wordWall: [] }
-    };
-
-    try {
-      const docRef = doc(firestore, 'users', user.uid);
-      const snap = await getDoc(docRef);
-      const existingData = snap.exists() ? snap.data() : { subscription: 'basic', classes: [] };
-      const maxAllowed = existingData.subscription === 'pro' ? 5 : 1;
-
-      if (existingData.classes.length >= maxAllowed) {
-        alert(`Your plan only allows up to ${maxAllowed} class${maxAllowed > 1 ? 'es' : ''}.`);
-        return;
+  const markAttendance = (studentId, status, date = new Date().toISOString().split('T')[0]) => {
+    setAttendanceData(prev => ({
+      ...prev,
+      [date]: {
+        ...prev[date],
+        [studentId]: status
       }
-
-      const updatedClasses = [...existingData.classes, newClass];
-      
-      await setDoc(docRef, { 
-        ...existingData, 
-        classes: updatedClasses,
-        activeClassId: newClass.id
-      });
-
-      setTeacherClasses(updatedClasses);
-      setStudents(newClass.students);
-      setCurrentClassId(newClass.id);
-      setActiveQuests([]);
-      setQuestTemplates(QUEST_TEMPLATES);
-      setAttendanceData({});
-      setNewClassName('');
-      setNewClassStudents('');
-      showToast('Class imported successfully!');
-    } catch (error) {
-      console.error("Error importing class:", error);
-      alert("Error importing class. Please try again.");
-    } finally {
-      setSavingData(false);
-    }
-  };
-
-  const loadClass = async (cls) => {
-    await saveActiveClassToFirebase(cls.id);
+    }));
     
-    const studentsWithCurrency = cls.students.map(student => updateStudentWithCurrency(student));
-    setStudents(studentsWithCurrency);
-    setCurrentClassId(cls.id);
-    
-    // Load quest and attendance data
-    setActiveQuests(cls.activeQuests || []);
-    setQuestTemplates(cls.questTemplates || QUEST_TEMPLATES);
-    setAttendanceData(cls.attendanceData || {});
-    setTeacherRewards(cls.teacherRewards || []);
-    
-    setSelectedStudents([]);
-    setShowBulkXpPanel(false);
-    showToast(`${cls.name} loaded successfully!`);
-  };
-
-  
-
-  // ===============================================
-  // ATTENDANCE MANAGEMENT
-  // ===============================================
-
-  const markAttendance = (studentId, status, date = null) => {
-    const targetDate = date || new Date().toISOString().split('T')[0];
-    
-    setAttendanceData(prev => {
-      const updated = {
-        ...prev,
-        [targetDate]: {
-          ...prev[targetDate],
-          [studentId]: status
-        }
-      };
-      
-      saveQuestDataToFirebase({ attendanceData: updated });
-      return updated;
-    });
-
     const student = students.find(s => s.id === studentId);
     showToast(`${student?.firstName} marked as ${status}`);
   };
 
   // ===============================================
-  // EFFECTS
+  // RACE FUNCTIONS
   // ===============================================
 
-  // Enhanced Pet racing effect with proper distance calculation
-  useEffect(() => {
-    if (!raceInProgress || raceFinished) return;
+  const calculateSpeed = (pet) => {
+    if (!pet) return 1;
+    const baseSpeed = 1;
+    const levelBonus = ((pet.level || 1) - 1) * 0.2;
+    const winBonus = (pet.wins || 0) * 0.1;
+    return Math.min(baseSpeed + levelBonus + winBonus, 3);
+  };
 
-    const interval = setInterval(() => {
-      setRacePositions(prev => {
-        const updated = { ...prev };
-
-        // Check if race should finish (when any pet reaches the finish line)
-        if (Object.values(updated).some(pos => pos >= RACE_DISTANCE)) {
-          setRaceInProgress(false);
-          setRaceFinished(true);
-
-          // Find winner - pet that traveled the furthest
-          const maxPosition = Math.max(...Object.values(updated));
-          const winnerId = Object.keys(updated).find(id => updated[id] === maxPosition);
-          const winnerStudent = students.find(s => s.id === winnerId);
-          
-          if (winnerStudent) {
-            setRaceWinner(winnerStudent);
-          }
-
-          return updated;
-        }
-
-        // Move each pet forward
-        for (const id of selectedPets) {
-          const student = students.find((s) => s.id === id);
-          if (!student?.pet) continue;
-
-          const speed = calculateSpeed(student.pet);
-          const baseStep = speed * 0.005; // Reduced step size for better visuals
-          const randomMultiplier = 0.4 + Math.random() * 0.2;
-          const step = baseStep * randomMultiplier;
-          
-          const currentPosition = updated[id] || 0;
-          const newPosition = Math.min(currentPosition + step, RACE_DISTANCE);
-          
-          updated[id] = newPosition;
-        }
-
-        return updated;
+  const awardRacePrize = (winner) => {
+    const prizeText = selectedPrize === 'xp' 
+      ? `${prizeDetails.amount} ${prizeDetails.category} XP` 
+      : `${prizeDetails.amount} coins`;
+    
+    showToast(`🏆 ${winner.firstName} wins the race and earns ${prizeText}!`);
+    
+    if (selectedPrize === 'xp') {
+      handleAwardXP(winner.id, prizeDetails.category, prizeDetails.amount);
+    } else {
+      setStudents(prev => {
+        const updatedStudents = prev.map(s => 
+          s.id === winner.id 
+            ? { ...s, coins: (s.coins || 0) + prizeDetails.amount }
+            : s
+        );
+        saveStudentsToFirebase(updatedStudents);
+        return updatedStudents;
       });
-    }, 100);
+    }
 
-    return () => clearInterval(interval);
-  }, [raceInProgress, students, selectedPets, raceFinished]);
+    // Update pet wins
+    setStudents(prev => {
+      const updatedStudents = prev.map(s => 
+        s.id === winner.id && s.pet
+          ? { ...s, pet: { ...s.pet, wins: (s.pet.wins || 0) + 1 } }
+          : s
+      );
+      saveStudentsToFirebase(updatedStudents);
+      return updatedStudents;
+    });
+  };
 
-  // Authentication and user data management with data migration
+  // ===============================================
+  // FIREBASE FUNCTIONS
+  // ===============================================
+
+  // Save students to Firebase
+  const saveStudentsToFirebase = async (studentsToSave) => {
+    if (!user || !currentClassId || savingData) return;
+
+    try {
+      setSavingData(true);
+      const docRef = doc(firestore, 'users', user.uid);
+      const snap = await getDoc(docRef);
+      
+      if (snap.exists()) {
+        const data = snap.data();
+        const updatedClasses = data.classes.map(cls => 
+          cls.id === currentClassId 
+            ? { 
+                ...cls, 
+                students: studentsToSave,
+                lastUpdated: new Date().toISOString()
+              }
+            : cls
+        );
+        
+        await setDoc(docRef, { 
+          ...data, 
+          classes: updatedClasses 
+        });
+      }
+    } catch (error) {
+      console.error("Error saving to Firebase:", error);
+    } finally {
+      setSavingData(false);
+    }
+  };
+
+  // Save quest data to Firebase
+  const saveQuestDataToFirebase = async (questData) => {
+    if (!user || !currentClassId) return;
+
+    try {
+      const docRef = doc(firestore, 'users', user.uid);
+      const snap = await getDoc(docRef);
+      
+      if (snap.exists()) {
+        const data = snap.data();
+        const updatedClasses = data.classes.map(cls => 
+          cls.id === currentClassId 
+            ? { 
+                ...cls, 
+                activeQuests: questData.activeQuests || cls.activeQuests,
+                questTemplates: questTemplates,
+                attendanceData: attendanceData,
+                lastUpdated: new Date().toISOString()
+              }
+            : cls
+        );
+        
+        await setDoc(docRef, { 
+          ...data, 
+          classes: updatedClasses 
+        });
+      }
+    } catch (error) {
+      console.error("Error saving quest data:", error);
+    }
+  };
+
+  const saveGroupDataToFirebase = async (groupData) => {
+    if (!user || !currentClassId) return;
+
+    try {
+      const docRef = doc(firestore, 'users', user.uid);
+      const snap = await getDoc(docRef);
+      
+      if (snap.exists()) {
+        const data = snap.data();
+        const updatedClasses = data.classes.map(cls => 
+          cls.id === currentClassId 
+            ? { 
+                ...cls, 
+                groupData: groupData,
+                lastUpdated: new Date().toISOString()
+              }
+            : cls
+        );
+        
+        await setDoc(docRef, { 
+          ...data, 
+          classes: updatedClasses 
+        });
+      }
+    } catch (error) {
+      console.error("Error saving group data:", error);
+    }
+  };
+
+  const saveClassroomDataToFirebase = async (classroomData) => {
+    if (!user || !currentClassId) return;
+
+    try {
+      const docRef = doc(firestore, 'users', user.uid);
+      const snap = await getDoc(docRef);
+      
+      if (snap.exists()) {
+        const data = snap.data();
+        const updatedClasses = data.classes.map(cls => 
+          cls.id === currentClassId 
+            ? { 
+                ...cls, 
+                classroomData: classroomData,
+                lastUpdated: new Date().toISOString()
+              }
+            : cls
+        );
+        
+        await setDoc(docRef, { 
+          ...data, 
+          classes: updatedClasses 
+        });
+      }
+    } catch (error) {
+      console.error("Error saving classroom data:", error);
+    }
+  };
+
+  const saveVocabularyDataToFirebase = async (vocabularyData) => {
+    if (!user || !currentClassId) return;
+
+    try {
+      const docRef = doc(firestore, 'users', user.uid);
+      const snap = await getDoc(docRef);
+      
+      if (snap.exists()) {
+        const data = snap.data();
+        const updatedClasses = data.classes.map(cls => 
+          cls.id === currentClassId 
+            ? { 
+                ...cls, 
+                vocabularyData,
+                lastUpdated: new Date().toISOString()
+              }
+            : cls
+        );
+        
+        await setDoc(docRef, { 
+          ...data, 
+          classes: updatedClasses 
+        });
+      }
+    } catch (error) {
+      console.error("Error saving vocabulary data:", error);
+    }
+  };
+
+  // ===============================================
+  // CLASS MANAGEMENT
+  // ===============================================
+
+  const loadClass = async (classData) => {
+    try {
+      setSavingData(true);
+      const studentsWithCurrency = classData.students.map(student => updateStudentWithCurrency(student));
+      
+      setStudents(studentsWithCurrency);
+      setCurrentClassId(classData.id);
+      setActiveQuests(classData.activeQuests || []);
+      setQuestTemplates(classData.questTemplates || QUEST_TEMPLATES);
+      setAttendanceData(classData.attendanceData || {});
+      setTeacherRewards(classData.teacherRewards || []);
+      
+      // Update active class in Firebase
+      if (user) {
+        const docRef = doc(firestore, 'users', user.uid);
+        const snap = await getDoc(docRef);
+        
+        if (snap.exists()) {
+          const data = snap.data();
+          await setDoc(docRef, { 
+            ...data, 
+            activeClassId: classData.id 
+          });
+        }
+      }
+      
+      showToast(`Loaded class: ${classData.name}`);
+    } catch (error) {
+      console.error("Error loading class:", error);
+      showToast('Error loading class');
+    } finally {
+      setSavingData(false);
+    }
+  };
+
+  const handleClassImport = async () => {
+    if (!newClassName.trim() || !newClassStudents.trim()) {
+      showToast('Please enter a class name and student list!');
+      return;
+    }
+
+    try {
+      setSavingData(true);
+      
+      const studentNames = newClassStudents
+        .split('\n')
+        .map(name => name.trim())
+        .filter(name => name.length > 0);
+
+      const newStudents = studentNames.map((name, index) => {
+        const [firstName, ...lastNameParts] = name.split(' ');
+        const lastName = lastNameParts.join(' ');
+        const randomAvatar = AVAILABLE_AVATARS[Math.floor(Math.random() * AVAILABLE_AVATARS.length)];
+        
+        return {
+          id: `student_${Date.now()}_${index}`,
+          firstName: firstName || 'Student',
+          lastName: lastName || '',
+          avatarBase: randomAvatar,
+          avatarLevel: 1,
+          avatar: getAvatarImage(randomAvatar, 1),
+          totalPoints: 0,
+          weeklyPoints: 0,
+          categoryTotal: {},
+          categoryWeekly: {},
+          coins: 0,
+          coinsSpent: 0,
+          pet: null,
+          inventory: [],
+          ownedPets: [],
+          logs: []
+        };
+      });
+
+      const newClass = {
+        id: `class_${Date.now()}`,
+        name: newClassName.trim(),
+        students: newStudents,
+        activeQuests: [],
+        questTemplates: QUEST_TEMPLATES,
+        attendanceData: {},
+        teacherRewards: [],
+        createdAt: new Date().toISOString(),
+        lastUpdated: new Date().toISOString()
+      };
+
+      // Save to Firebase
+      if (user) {
+        const docRef = doc(firestore, 'users', user.uid);
+        const snap = await getDoc(docRef);
+        
+        if (snap.exists()) {
+          const data = snap.data();
+          const updatedClasses = [...(data.classes || []), newClass];
+          
+          await setDoc(docRef, { 
+            ...data, 
+            classes: updatedClasses,
+            activeClassId: newClass.id
+          });
+          
+          setTeacherClasses(updatedClasses);
+          await loadClass(newClass);
+        }
+      }
+
+      setNewClassName('');
+      setNewClassStudents('');
+      showToast(`Class "${newClass.name}" created with ${newStudents.length} students!`);
+      
+    } catch (error) {
+      console.error("Error creating class:", error);
+      showToast('Error creating class');
+    } finally {
+      setSavingData(false);
+    }
+  };
+
+  // ===============================================
+  // AUTHENTICATION & DATA LOADING
+  // ===============================================
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      try {
-        if (user) {
-          setUser(user);
-
+      setUser(user);
+      
+      if (user) {
+        try {
           const docRef = doc(firestore, 'users', user.uid);
-          const snap = await getDoc(docRef);
-
-          if (snap.exists()) {
-            const data = snap.data();
+          const docSnap = await getDoc(docRef);
+          
+          if (docSnap.exists()) {
+            const data = docSnap.data();
             setUserData(data);
 
-            let savedClasses = data.classes || [];
+            // Migrate old data structure to new classes system
+            let migratedClasses = data.classes || [];
             
-            // Migration: Migrate existing classes to new data structure
-            let needsUpdate = false;
-            const migratedClasses = await Promise.all(
-              savedClasses.map(async (cls) => {
-                const hasOldData = cls.students.some(s => s.ownedAvatars === undefined);
-                if (hasOldData) {
-                  needsUpdate = true;
-                  console.log(`Migrating class: ${cls.name}`);
-                  return await migrateClassData(cls);
-                }
-                return cls;
-              })
-            );
-
-            // Save migrated data back to Firebase if needed
-            if (needsUpdate) {
-              console.log('Saving migrated data to Firebase...');
+            // If old students array exists, create a default class
+            if (data.students && !data.classes) {
+              const defaultClass = {
+                id: 'default_class',
+                name: 'My Class',
+                students: data.students.map(student => updateStudentWithCurrency(student)),
+                activeQuests: data.activeQuests || [],
+                questTemplates: data.questTemplates || QUEST_TEMPLATES,
+                attendanceData: data.attendanceData || {},
+                teacherRewards: data.teacherRewards || [],
+                createdAt: new Date().toISOString(),
+                lastUpdated: new Date().toISOString()
+              };
+              
+              migratedClasses = [defaultClass];
+              
+              // Save migrated data
               await setDoc(docRef, { 
                 ...data, 
-                classes: migratedClasses 
+                classes: migratedClasses,
+                activeClassId: defaultClass.id
               });
-              showToast('Data updated for new features!');
             }
 
             setTeacherClasses(migratedClasses);
@@ -1832,13 +1611,14 @@ export default function ClassroomChampions() {
               }
             }
           }
-        } else {
+        } catch (error) {
+          console.error("Error loading user data:", error);
           router.push('/');
+        } finally {
+          setLoading(false);
         }
-      } catch (error) {
-        console.error("Error loading user data:", error);
+      } else {
         router.push('/');
-      } finally {
         setLoading(false);
       }
     });
@@ -1882,7 +1662,7 @@ export default function ClassroomChampions() {
     currentClassId,
     savingData,
     setSavingData,
-    // Fishing
+    // Fishing Game Props
     setStudents,
     saveStudentsToFirebase,
     checkForLevelUp,
@@ -1955,12 +1735,8 @@ export default function ClassroomChampions() {
     saveGroupDataToFirebase,
     // Classroom Management
     saveClassroomDataToFirebase,
-    // Group Management
-saveGroupDataToFirebase,
-// Classroom Management
-saveClassroomDataToFirebase,
-// Vocabulary Management
-saveVocabularyDataToFirebase,
+    // Vocabulary Management
+    saveVocabularyDataToFirebase,
     // Enhanced Pet Race Props
     raceInProgress,
     setRaceInProgress,
@@ -2020,6 +1796,7 @@ saveVocabularyDataToFirebase,
             { id: 'race', label: 'Pet Race', icon: '🏁' },
             { id: 'fishing', label: 'Fishing', icon: '🎣' },
             { id: 'games', label: 'Games', icon: '🎮' },
+            { id: 'geography', label: 'Geography', icon: '🌍' },
             ...(userData?.subscription === 'pro' ? [{ id: 'toolkit', label: 'Teachers Toolkit', icon: '🛠️', isPro: true }] : []),
             { id: 'classes', label: 'My Classes', icon: '📚' },
             { id: 'settings', label: 'Settings', icon: '⚙️' }
@@ -2058,6 +1835,7 @@ saveVocabularyDataToFirebase,
             {activeTab === 'race' && <PetRaceTab {...tabProps} />}
             {activeTab === 'fishing' && <FishingGameTab {...tabProps} />}
             {activeTab === 'games' && <GamesTab {...tabProps} />}
+            {activeTab === 'geography' && <GeographyTab {...tabProps} />}
             {activeTab === 'toolkit' && <TeachersToolkitTab {...tabProps} />}
             {activeTab === 'classes' && (
               <ClassesTab 
@@ -2097,9 +1875,15 @@ saveVocabularyDataToFirebase,
           <CharacterSheetModal
             student={selectedStudent}
             onClose={() => setSelectedStudent(null)}
-            QUEST_GIVERS={QUEST_GIVERS}
+            onAvatarChange={() => {
+              setStudentForAvatarChange(selectedStudent);
+              setShowAvatarSelectionModal(true);
+            }}
+            getAvatarImage={getAvatarImage}
+            calculateCoins={calculateCoins}
+            CurrencyDisplay={CurrencyDisplay}
             activeQuests={activeQuests}
-            availableQuests={getAvailableQuests(selectedStudent)}
+            getAvailableQuests={getAvailableQuests}
             onCompleteQuest={handleCompleteQuest}
             showToast={showToast}
           />
@@ -2107,100 +1891,82 @@ saveVocabularyDataToFirebase,
 
         {showAvatarSelectionModal && (
           <AvatarSelectionModal
-            isOpen={showAvatarSelectionModal}
-            onClose={() => setShowAvatarSelectionModal(false)}
-            onSelectAvatar={handleAvatarChange}
+            student={studentForAvatarChange}
+            onClose={() => {
+              setShowAvatarSelectionModal(false);
+              setStudentForAvatarChange(null);
+            }}
+            onSelectAvatar={(avatarBase) => {
+              handleAvatarChange(avatarBase);
+            }}
             availableAvatars={AVAILABLE_AVATARS}
-            currentAvatar={studentForAvatarChange?.avatarBase}
-            showToast={showToast}
+            getAvatarImage={getAvatarImage}
           />
         )}
 
         {levelUpData && (
           <LevelUpModal
-            data={levelUpData}
+            student={levelUpData.student}
+            newLevel={levelUpData.newLevel}
             onClose={() => setLevelUpData(null)}
+            getAvatarImage={getAvatarImage}
           />
         )}
 
         {petUnlockData && (
           <PetUnlockModal
-            data={petUnlockData}
-            petName={petNameInput}
-            onPetNameChange={setPetNameInput}
-            onConfirm={() => {
-              if (!petNameInput.trim()) {
-                alert('Please enter a name for your pet!');
-                return;
-              }
-
-              setStudents(prev => prev.map(student => 
-                student.id === petUnlockData.studentId 
-                  ? { 
-                      ...student, 
-                      pet: { 
-                        ...petUnlockData.pet, 
-                        name: petNameInput,
-                        speed: 1,
-                        wins: 0
-                      }
-                    }
-                  : student
-              ));
-
-              showToast(`${petUnlockData.firstName} unlocked ${petNameInput}!`);
-              setPetUnlockData(null);
-              setPetNameInput('');
-            }}
+            student={petUnlockData}
             onClose={() => setPetUnlockData(null)}
+            onNamePet={(name) => {
+              const updatedStudent = {
+                ...petUnlockData,
+                pet: { ...petUnlockData.pet, name }
+              };
+              const updatedStudents = students.map(s => 
+                s.id === petUnlockData.studentId ? updatedStudent : s
+              );
+              setStudents(updatedStudents);
+              saveStudentsToFirebase(updatedStudents);
+              setPetUnlockData(null);
+              showToast(`${name} is now ${updatedStudent.firstName}'s pet!`);
+            }}
+            petNameInput={petNameInput}
+            setPetNameInput={setPetNameInput}
           />
         )}
 
         {showAddStudentModal && (
           <AddStudentModal
-            isOpen={showAddStudentModal}
-            onClose={() => setShowAddStudentModal(false)}
-            onAddStudent={(name, avatar) => {
-              const newStudent = updateStudentWithCurrency({
-                id: Date.now().toString() + Math.random().toString(36).substring(2, 8),
-                firstName: name,
-                avatarBase: avatar,
-                avatarLevel: 1,
-                avatar: getAvatarImage(avatar, 1),
-                totalPoints: 0,
-                weeklyPoints: 0,
-                categoryTotal: {},
-                categoryWeekly: {},
-                coins: 0,
-                logs: [],
-                pet: null
-              });
-
-              setStudents(prev => {
-                const updated = [...prev, newStudent];
-                saveStudentsToFirebase(updated);
-                return updated;
-              });
-
-              showToast(`${name} added to class!`);
-            }}
-            availableAvatars={AVAILABLE_AVATARS}
+            showAddStudentModal={showAddStudentModal}
+            setShowAddStudentModal={setShowAddStudentModal}
+            newStudentName={newStudentName}
+            setNewStudentName={setNewStudentName}
+            newStudentAvatar={newStudentAvatar}
+            setNewStudentAvatar={setNewStudentAvatar}
+            AVAILABLE_AVATARS={AVAILABLE_AVATARS.map(avatar => ({
+              base: avatar,
+              path: getAvatarImage(avatar, 1)
+            }))}
+            getAvatarImage={getAvatarImage}
+            students={students}
+            setStudents={setStudents}
+            saveStudentsToFirebase={saveStudentsToFirebase}
             showToast={showToast}
+            handleDeselectAll={handleDeselectAll}
           />
         )}
 
-        {raceFinished && raceWinner && (
+        {raceWinner && (
           <RaceWinnerModal
             winner={raceWinner}
-            selectedPrize={selectedPrize}
-            prizeDetails={prizeDetails}
-            awardPrize={awardRacePrize}
             onClose={() => {
-              setRaceFinished(false);
               setRaceWinner(null);
+              setRaceFinished(false);
+              setRaceInProgress(false);
               setRacePositions({});
               setSelectedPets([]);
             }}
+            getAvatarImage={getAvatarImage}
           />
         )}
 
@@ -2213,122 +1979,29 @@ saveVocabularyDataToFirebase,
             setSelectedPrize={setSelectedPrize}
             prizeDetails={prizeDetails}
             setPrizeDetails={setPrizeDetails}
-            SHOP_ITEMS={SHOP_ITEMS}
-            LOOT_BOX_ITEMS={LOOT_BOX_ITEMS}
             teacherRewards={teacherRewards}
-            onStartRace={() => {
-              if (selectedPets.length < 2) {
-                alert('Please select at least 2 pets to race!');
-                return;
-              }
-              
-              if (!selectedPrize || !prizeDetails) {
-                alert('Please select a prize for the winner!');
-                return;
-              }
-              
-              setShowRaceSetup(false);
-              
-              // Initialize race positions
-              const initialPositions = {};
-              selectedPets.forEach(id => {
-                initialPositions[id] = 0;
-              });
-              setRacePositions(initialPositions);
-              setRaceInProgress(true);
-              setRaceFinished(false);
-              setRaceWinner(null);
-            }}
             onClose={() => setShowRaceSetup(false)}
+            onStartRace={() => {
+              setShowRaceSetup(false);
+              setRaceInProgress(true);
+            }}
+            calculateSpeed={calculateSpeed}
+            showToast={showToast}
           />
         )}
 
-        {showQuestCompletion && questCompletionData && (
+        {questCompletionData && (
           <QuestCompletionModal
-            data={questCompletionData}
-            onClose={() => {
-              setShowQuestCompletion(false);
+            questData={questCompletionData}
+            onClose={() => setQuestCompletionData(null)}
+            onConfirm={(questId, studentId, reward) => {
+              handleCompleteQuest(questId, studentId, reward);
               setQuestCompletionData(null);
             }}
+            showToast={showToast}
           />
         )}
       </Suspense>
-
-      {/* Confirm Dialog */}
-      {showConfirmDialog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
-            <div className="p-6">
-              <div className="flex items-center space-x-3 mb-4">
-                <span className="text-3xl">{showConfirmDialog.icon}</span>
-                <h3 className="text-xl font-bold text-gray-800">{showConfirmDialog.title}</h3>
-              </div>
-              <p className="text-gray-600 mb-6">{showConfirmDialog.message}</p>
-              <div className="flex space-x-3">
-                <button
-                  onClick={() => {
-                    showConfirmDialog.onConfirm();
-                    setShowConfirmDialog(null);
-                  }}
-                  className={`flex-1 px-4 py-2 rounded-lg font-medium ${
-                    showConfirmDialog.type === 'danger' 
-                      ? 'bg-red-600 text-white hover:bg-red-700' 
-                      : 'bg-blue-600 text-white hover:bg-blue-700'
-                  }`}
-                >
-                  {showConfirmDialog.confirmText}
-                </button>
-                <button
-                  onClick={() => setShowConfirmDialog(null)}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Toast Notifications */}
-      <div className="fixed bottom-4 right-4 space-y-2 z-50">
-        {toasts.map(toast => (
-          <div
-            key={toast.id}
-            className={`px-6 py-3 rounded-lg shadow-lg animate-fade-in ${
-              toast.type === 'success' ? 'bg-green-600 text-white' :
-              toast.type === 'error' ? 'bg-red-600 text-white' :
-              'bg-blue-600 text-white'
-            }`}
-          >
-            {toast.message}
-          </div>
-        ))}
-      </div>
-
-      {/* Saving Indicator */}
-      {savingData && (
-        <div className="fixed top-4 right-4 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg z-50">
-          Saving...
-        </div>
-      )}
-
-      {/* Quest Giver Tip Popup */}
-      {showQuestGiverTip && (
-        <div className="fixed top-20 right-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white p-4 rounded-xl shadow-2xl z-50 max-w-sm animate-fade-in">
-          <div className="flex items-start space-x-3">
-            <img
-              src={showQuestGiverTip.giver.image}
-              alt={showQuestGiverTip.giver.name}
-              className="w-12 h-12 rounded-full border-2 border-yellow-300"
-            />
-            <div>
-              <div className="font-bold text-yellow-300">{showQuestGiverTip.giver.name}</div>
-              <div className="text-sm">{showQuestGiverTip.tip}</div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
