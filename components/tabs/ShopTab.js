@@ -46,6 +46,106 @@ const ShopTab = ({
     type: 'classic'
   }));
 
+  // NEW: Basic Avatars - Regular shop avatars
+  const BASIC_AVATARS = [
+    {
+      id: 'banana_basic',
+      name: 'Banana Character',
+      image: '/shop/Basic/Banana.png',
+      price: 15,
+      base: 'Banana',
+      description: 'A fun banana character!'
+    },
+    {
+      id: 'goblin1_basic',
+      name: 'Goblin Warrior',
+      image: '/shop/Basic/Goblin1.png',
+      price: 20,
+      base: 'Goblin1',
+      description: 'A fierce goblin warrior'
+    },
+    {
+      id: 'goblingirl1_basic',
+      name: 'Goblin Girl',
+      image: '/shop/Basic/GoblinGirl1.png',
+      price: 20,
+      base: 'GoblinGirl1',
+      description: 'A clever goblin girl'
+    },
+    {
+      id: 'guard1_basic',
+      name: 'Royal Guard',
+      image: '/shop/Basic/Guard1.png',
+      price: 22,
+      base: 'Guard1',
+      description: 'A loyal royal guard'
+    },
+    {
+      id: 'guardgirl1_basic',
+      name: 'Guard Girl',
+      image: '/shop/Basic/GuardGirl1.png',
+      price: 22,
+      base: 'GuardGirl1',
+      description: 'A brave guard girl'
+    },
+    {
+      id: 'soccerboy_basic',
+      name: 'Soccer Boy',
+      image: '/shop/Basic/SoccerBoy.png',
+      price: 18,
+      base: 'SoccerBoy',
+      description: 'Ready for the game!'
+    },
+    {
+      id: 'soccerboy2_basic',
+      name: 'Soccer Boy 2',
+      image: '/shop/Basic/SoccerBoy2.png',
+      price: 18,
+      base: 'SoccerBoy2',
+      description: 'Another soccer champion!'
+    },
+    {
+      id: 'soccergirl_basic',
+      name: 'Soccer Girl',
+      image: '/shop/Basic/SoccerGirl.png',
+      price: 18,
+      base: 'SoccerGirl',
+      description: 'A skilled soccer player!'
+    },
+    {
+      id: 'streetboy1_basic',
+      name: 'Street Boy',
+      image: '/shop/Basic/Streetboy1.png',
+      price: 16,
+      base: 'Streetboy1',
+      description: 'Cool street style character'
+    },
+    {
+      id: 'streetgirl1_basic',
+      name: 'Street Girl',
+      image: '/shop/Basic/Streetgirl1.png',
+      price: 16,
+      base: 'Streetgirl1',
+      description: 'Hip street style character'
+    },
+    {
+      id: 'vampire1_basic',
+      name: 'Vampire',
+      image: '/shop/Basic/Vampire1.png',
+      price: 25,
+      base: 'Vampire1',
+      description: 'A mysterious vampire'
+    },
+    {
+      id: 'vampiregirl1_basic',
+      name: 'Vampire Girl',
+      image: '/shop/Basic/VampireGirl1.png',
+      price: 25,
+      base: 'VampireGirl1',
+      description: 'An elegant vampire girl'
+    }
+  ];
+
   // NEW: Basic Pets - Regular shop pets
   const BASIC_PETS = [
     {
@@ -91,6 +191,42 @@ const ShopTab = ({
       type: 'premium',
       rarity: 'epic',
       description: 'A loyal vampire companion'
+    }
+  ];
+
+  // NEW: Premium Avatars - Basic Level 2 versions for loot boxes only
+  const PREMIUM_BASIC_AVATARS = [
+    {
+      id: 'goblin2_premium',
+      name: 'Elite Goblin Warrior',
+      image: '/shop/Premium/Goblin2.png',
+      base: 'Goblin2',
+      rarity: 'rare',
+      description: 'An upgraded goblin warrior'
+    },
+    {
+      id: 'goblingirl2_premium',
+      name: 'Elite Goblin Girl',
+      image: '/shop/Premium/GoblinGirl2.png',
+      base: 'GoblinGirl2',
+      rarity: 'rare',
+      description: 'An enhanced goblin girl'
+    },
+    {
+      id: 'vampire2_premium',
+      name: 'Vampire Lord',
+      image: '/shop/Premium/Vampire2.png',
+      base: 'Vampire2',
+      rarity: 'epic',
+      description: 'A powerful vampire lord'
+    },
+    {
+      id: 'vampiregirl2_premium',
+      name: 'Vampire Queen',
+      image: '/shop/Premium/VampireGirl2.png',
+      base: 'VampireGirl2',
+      rarity: 'epic',
+      description: 'An elegant vampire queen'
     }
   ];
 
@@ -152,20 +288,23 @@ const ShopTab = ({
     rare: [
       { id: 'loot_r_1', name: 'Enchanted Bow', image: '/Loot/Rare/Loot 1.png', rarity: 'rare', type: 'weapon' },
       { id: 'loot_r_2', name: 'Power Crystal', image: '/Loot/Rare/Loot 2.png', rarity: 'rare', type: 'artifact' },
-      // NEW: Add premium snake pet to rare loot
-      ...PREMIUM_PETS.filter(pet => pet.rarity === 'rare')
+      // NEW: Add premium snake pet and rare premium avatars to rare loot
+      ...PREMIUM_PETS.filter(pet => pet.rarity === 'rare'),
+      ...PREMIUM_BASIC_AVATARS.filter(avatar => avatar.rarity === 'rare')
     ],
     epic: [
       { id: 'loot_e_1', name: 'Dragon Sword', image: '/Loot/Epic/Loot 1.png', rarity: 'epic', type: 'weapon' },
       { id: 'loot_e_2', name: 'Phoenix Armor', image: '/Loot/Epic/Loot 2.png', rarity: 'epic', type: 'armor' },
-      // NEW: Add premium vampire pet to epic loot
-      ...PREMIUM_PETS.filter(pet => pet.rarity === 'epic')
+      // NEW: Add premium vampire pet and epic premium avatars to epic loot
+      ...PREMIUM_PETS.filter(pet => pet.rarity === 'epic'),
+      ...PREMIUM_BASIC_AVATARS.filter(avatar => avatar.rarity === 'epic')
     ],
     legendary: [
       { id: 'loot_l_1', name: 'Excalibur', image: '/Loot/Legendary/Loot 1.png', rarity: 'legendary', type: 'weapon' },
       { id: 'loot_l_2', name: 'Crystal Staff of Power', image: '/Loot/Legendary/Loot 2.png', rarity: 'legendary', type: 'artifact' },
-      // NEW: Add any legendary premium pets
-      ...PREMIUM_PETS.filter(pet => pet.rarity === 'legendary')
+      // NEW: Add any legendary premium pets and avatars
+      ...PREMIUM_PETS.filter(pet => pet.rarity === 'legendary'),
+      ...PREMIUM_BASIC_AVATARS.filter(avatar => avatar.rarity === 'legendary')
     ]
   };
 
@@ -493,11 +632,12 @@ const ShopTab = ({
     if (stored) {
       setFeaturedItem(JSON.parse(stored));
     } else {
-      // Include premium avatars and basic pets in featured selection
+      // Include premium avatars, basic avatars, and basic pets in featured selection
       const allItems = [
         ...CONSUMABLES,
-        ...PREMIUM_AVATARS, // Now includes higher level avatars
-        ...BASIC_PETS, // NEW: Include basic pets in featured
+        ...PREMIUM_AVATARS, // Themed higher level avatars
+        ...BASIC_AVATARS, // NEW: Include basic avatars in featured
+        ...BASIC_PETS, // Include basic pets in featured
         ...Object.values(AVATAR_SETS).flatMap(set => [...set.pets]),
         ...EXISTING_PETS,
         ...LOOT_BOXES
@@ -549,7 +689,7 @@ const ShopTab = ({
       
       rewards.forEach(reward => {
         if (reward.base) {
-          // Avatar from loot box
+          // Avatar from loot box (including premium basic avatars)
           const ownedAvatars = updatedStudent.ownedAvatars || [];
           if (!ownedAvatars.includes(reward.base)) {
             updatedStudent.ownedAvatars = [...ownedAvatars, reward.base];
@@ -909,9 +1049,59 @@ const ShopTab = ({
             ))}
           </div>
 
-          {/* Avatars Category - Only Level 1 */}
+          {/* Avatars Category - Basic + Themed Level 1 */}
           {activeChampsCategory === 'avatars' && (
             <div className="space-y-8">
+              {/* NEW: Basic Avatars Section */}
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <h3 className="text-2xl font-bold text-gray-800 mb-4 text-center">
+                  ⭐ Basic Avatar Collection
+                </h3>
+                <p className="text-center text-gray-600 mb-6">
+                  Unique character avatars • Premium versions available in Loot Boxes
+                </p>
+                
+                <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
+                  {BASIC_AVATARS.map(avatar => {
+                    const isOwned = selectedStudent.ownedAvatars?.includes(avatar.base);
+                    
+                    return (
+                      <div 
+                        key={avatar.id} 
+                        className="bg-gradient-to-b from-blue-50 to-purple-50 rounded-lg p-3 text-center cursor-pointer border-2 border-blue-200"
+                        onMouseEnter={(e) => handleMouseEnter(e, avatar)}
+                        onMouseLeave={handleMouseLeave}
+                      >
+                        <img 
+                          src={avatar.image} 
+                          alt={avatar.name} 
+                          className="w-16 h-16 mx-auto rounded-lg mb-2"
+                        />
+                        <div className="text-sm font-semibold mb-1">{avatar.name}</div>
+                        <div className="text-xs text-gray-600 mb-2">{avatar.description}</div>
+                        {isOwned ? (
+                          <button
+                            onClick={() => handleSwitchAvatar(avatar.base)}
+                            className="w-full px-2 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600"
+                          >
+                            Use Avatar
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => setShowPurchaseModal(avatar)}
+                            disabled={!canAfford(selectedStudent, avatar.price)}
+                            className="w-full px-2 py-1 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded text-xs hover:from-blue-600 hover:to-purple-600 disabled:bg-gray-400"
+                          >
+                            {avatar.price} 💰
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Themed Avatar Sets */}
               {Object.entries(AVATAR_SETS).map(([setKey, avatarSet]) => (
                 <div key={setKey} className="bg-white rounded-xl shadow-lg p-6">
                   <h3 className="text-2xl font-bold text-gray-800 mb-4 text-center">
@@ -1175,7 +1365,7 @@ const ShopTab = ({
             <div className="bg-white rounded-xl shadow-lg p-6">
               <h3 className="text-2xl font-bold text-gray-800 mb-6 text-center">📦 Mystery Loot Boxes</h3>
               <p className="text-center text-gray-600 mb-6">
-                Open loot boxes to discover rare avatars, exclusive premium pets, and powerful items!
+                Open loot boxes to discover rare avatars, exclusive premium pets, premium avatar upgrades, and powerful items!
               </p>
               
               <div className="grid md:grid-cols-3 gap-6">
@@ -1213,6 +1403,9 @@ const ShopTab = ({
                       const previewImage = getAvatarPreview(avatarBase, studentLevel);
                       const isActive = selectedStudent.avatarBase === avatarBase;
                       
+                      // Check if this is a premium avatar to show rarity
+                      const premiumAvatar = PREMIUM_BASIC_AVATARS.find(pa => pa.base === avatarBase);
+                      
                       return (
                         <div key={avatarBase} className={`text-center ${isActive ? 'ring-2 ring-blue-500' : ''}`}>
                           <img 
@@ -1221,6 +1414,12 @@ const ShopTab = ({
                             className="w-16 h-16 mx-auto rounded-lg mb-1"
                           />
                           <div className="text-xs font-semibold">{avatarBase}</div>
+                          {/* NEW: Show rarity for premium avatars */}
+                          {premiumAvatar?.rarity && (
+                            <div className={`text-xs px-1 rounded ${RARITY_STYLES[premiumAvatar.rarity].textColor} ${RARITY_STYLES[premiumAvatar.rarity].bgColor}`}>
+                              {RARITY_STYLES[premiumAvatar.rarity].name}
+                            </div>
+                          )}
                           {isActive ? (
                             <div className="text-xs text-blue-600 font-bold">Active</div>
                           ) : (
