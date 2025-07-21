@@ -1,4 +1,4 @@
-// classroom-champions.js - COMPLETE WITH ALL FEATURES + FIXED AVATAR SYSTEM
+// classroom-champions.js - COMPLETE WITH FIXED LEVEL THRESHOLDS AND AVATAR LOADING
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
@@ -264,26 +264,26 @@ const LOOT_BOX_ITEMS = [
 // Shop Items
 const SHOP_ITEMS = {
   avatars: [
-    { id: 'Wizard F', name: 'Wizard (Female)', price: 25, category: 'avatars', image: '/Avatars/Wizard F/Level 1.png' },
-    { id: 'Wizard M', name: 'Wizard (Male)', price: 25, category: 'avatars', image: '/Avatars/Wizard M/Level 1.png' },
-    { id: 'Knight F', name: 'Knight (Female)', price: 30, category: 'avatars', image: '/Avatars/Knight F/Level 1.png' },
-    { id: 'Knight M', name: 'Knight (Male)', price: 30, category: 'avatars', image: '/Avatars/Knight M/Level 1.png' },
-    { id: 'Archer F', name: 'Archer (Female)', price: 25, category: 'avatars', image: '/Avatars/Archer F/Level 1.png' },
-    { id: 'Archer M', name: 'Archer (Male)', price: 25, category: 'avatars', image: '/Avatars/Archer M/Level 1.png' },
-    { id: 'Rogue F', name: 'Rogue (Female)', price: 35, category: 'avatars', image: '/Avatars/Rogue F/Level 1.png' },
-    { id: 'Rogue M', name: 'Rogue (Male)', price: 35, category: 'avatars', image: '/Avatars/Rogue M/Level 1.png' }
+    { id: 'Wizard F', name: 'Wizard (Female)', price: 25, category: 'avatars', image: '/Avatars/Wizard F/Level 1.png', rarity: 'common' },
+    { id: 'Wizard M', name: 'Wizard (Male)', price: 25, category: 'avatars', image: '/Avatars/Wizard M/Level 1.png', rarity: 'common' },
+    { id: 'Knight F', name: 'Knight (Female)', price: 30, category: 'avatars', image: '/Avatars/Knight F/Level 1.png', rarity: 'common' },
+    { id: 'Knight M', name: 'Knight (Male)', price: 30, category: 'avatars', image: '/Avatars/Knight M/Level 1.png', rarity: 'common' },
+    { id: 'Archer F', name: 'Archer (Female)', price: 25, category: 'avatars', image: '/Avatars/Archer F/Level 1.png', rarity: 'common' },
+    { id: 'Archer M', name: 'Archer (Male)', price: 25, category: 'avatars', image: '/Avatars/Archer M/Level 1.png', rarity: 'common' },
+    { id: 'Rogue F', name: 'Rogue (Female)', price: 35, category: 'avatars', image: '/Avatars/Rogue F/Level 1.png', rarity: 'common' },
+    { id: 'Rogue M', name: 'Rogue (Male)', price: 35, category: 'avatars', image: '/Avatars/Rogue M/Level 1.png', rarity: 'common' }
   ],
   pets: [
-    { id: 'Alchemist', name: 'Alchemist Companion', price: 40, category: 'pets', image: '/Pets/Alchemist.png' },
-    { id: 'Barbarian', name: 'Barbarian Beast', price: 45, category: 'pets', image: '/Pets/Barbarian.png' },
-    { id: 'Bard', name: 'Bard Bird', price: 35, category: 'pets', image: '/Pets/Bard.png' },
-    { id: 'Crystal Knight', name: 'Crystal Knight', price: 50, category: 'pets', image: '/Pets/Crystal Knight.png' },
-    { id: 'Dream', name: 'Dream Guardian', price: 60, category: 'pets', image: '/Pets/Dream.png' }
+    { id: 'Alchemist', name: 'Alchemist Companion', price: 40, category: 'pets', image: '/Pets/Alchemist.png', rarity: 'common' },
+    { id: 'Barbarian', name: 'Barbarian Beast', price: 45, category: 'pets', image: '/Pets/Barbarian.png', rarity: 'common' },
+    { id: 'Bard', name: 'Bard Bird', price: 35, category: 'pets', image: '/Pets/Bard.png', rarity: 'common' },
+    { id: 'Crystal Knight', name: 'Crystal Knight', price: 50, category: 'pets', image: '/Pets/Crystal Knight.png', rarity: 'common' },
+    { id: 'Dream', name: 'Dream Guardian', price: 60, category: 'pets', image: '/Pets/Dream.png', rarity: 'common' }
   ],
   consumables: [
-    { id: 'xp_boost', name: 'XP Boost Potion', price: 10, category: 'consumables', effect: '+5 XP' },
-    { id: 'luck_charm', name: 'Lucky Charm', price: 15, category: 'consumables', effect: '+3 Bonus Coins' },
-    { id: 'speed_boost', name: 'Pet Speed Boost', price: 20, category: 'consumables', effect: 'Pet +0.5 Speed' }
+    { id: 'xp_boost', name: 'XP Boost Potion', price: 10, category: 'consumables', effect: '+5 XP', rarity: 'common' },
+    { id: 'luck_charm', name: 'Lucky Charm', price: 15, category: 'consumables', effect: '+3 Bonus Coins', rarity: 'common' },
+    { id: 'speed_boost', name: 'Pet Speed Boost', price: 20, category: 'consumables', effect: 'Pet +0.5 Speed', rarity: 'uncommon' }
   ],
   lootboxes: [
     { id: 'basic_box', name: 'Basic Loot Box', price: 25, category: 'lootboxes', rarity: 'common' },
@@ -340,9 +340,23 @@ const updateStudentWithCurrency = (student) => {
   };
 };
 
+// FIXED AVATAR IMAGE LOADING
 const getAvatarImage = (avatarBase, level) => {
-  if (!avatarBase) return '';
-  return `/Avatars/${avatarBase}/Level ${level}.png`;
+  // Handle missing or undefined avatarBase
+  if (!avatarBase) {
+    console.warn('No avatarBase provided, using default Wizard F');
+    return '/Avatars/Wizard F/Level 1.png'; // Default fallback
+  }
+  
+  // Ensure level is valid (1-4)
+  const validLevel = Math.max(1, Math.min(level || 1, MAX_LEVEL));
+  
+  // Construct the path - this should match your folder structure exactly
+  const imagePath = `/Avatars/${avatarBase}/Level ${validLevel}.png`;
+  
+  console.log(`Loading avatar: ${avatarBase} Level ${validLevel} -> ${imagePath}`);
+  
+  return imagePath;
 };
 
 const getRandomPet = () => {
@@ -744,17 +758,22 @@ export default function ClassroomChampions() {
   }, [raceInProgress, selectedPets]);
 
   // ===============================================
-  // LEVEL UP SYSTEM
+  // FIXED LEVEL UP SYSTEM WITH CORRECT THRESHOLDS
   // ===============================================
 
   const checkForLevelUp = (student) => {
     const currentLevel = student.avatarLevel || 1;
     const totalXP = student.totalPoints || 0;
 
+    // CORRECT LEVEL THRESHOLDS:
+    // Level 1: 0-99 XP
+    // Level 2: 100-199 XP
+    // Level 3: 200-299 XP  
+    // Level 4: 300-400 XP
     let newLevel = 1;
-    if (totalXP >= 200) newLevel = 4;
-    else if (totalXP >= 100) newLevel = 3;
-    else if (totalXP >= 50) newLevel = 2;
+    if (totalXP >= 300) newLevel = 4;        // Level 4: 300+ XP  
+    else if (totalXP >= 200) newLevel = 3;   // Level 3: 200-299 XP
+    else if (totalXP >= 100) newLevel = 2;   // Level 2: 100-199 XP
 
     if (newLevel > currentLevel && newLevel <= MAX_LEVEL) {
       const updatedStudent = {
@@ -776,6 +795,51 @@ export default function ClassroomChampions() {
     }
 
     return student;
+  };
+
+  // FUNCTION TO FIX EXISTING STUDENTS WITH WRONG LEVELS
+  const fixAllStudentLevels = () => {
+    console.log('🔧 Fixing all student levels and avatars...');
+    
+    setStudents(prev => {
+      const fixedStudents = prev.map(student => {
+        const totalXP = student.totalPoints || 0;
+        
+        // Recalculate correct level based on FIXED XP thresholds
+        let correctLevel = 1;
+        if (totalXP >= 300) correctLevel = 4;        // Level 4: 300+ XP
+        else if (totalXP >= 200) correctLevel = 3;   // Level 3: 200-299 XP
+        else if (totalXP >= 100) correctLevel = 2;   // Level 2: 100-199 XP
+        
+        // Fix avatar if it's missing or incorrect
+        let fixedAvatarBase = student.avatarBase;
+        if (!fixedAvatarBase) {
+          // Assign a random avatar if missing
+          fixedAvatarBase = AVAILABLE_AVATARS[Math.floor(Math.random() * AVAILABLE_AVATARS.length)];
+          console.log(`🎭 Assigned random avatar to ${student.firstName}: ${fixedAvatarBase}`);
+        }
+        
+        const updatedStudent = {
+          ...student,
+          avatarLevel: correctLevel,
+          avatarBase: fixedAvatarBase,
+          avatar: getAvatarImage(fixedAvatarBase, correctLevel)
+        };
+        
+        // Log the fix
+        if (student.avatarLevel !== correctLevel) {
+          console.log(`📊 Fixed ${student.firstName}: ${totalXP} XP -> Level ${correctLevel} (was Level ${student.avatarLevel})`);
+        }
+        
+        return updatedStudent;
+      });
+      
+      // Save the fixes to Firebase
+      saveStudentsToFirebase(fixedStudents);
+      return fixedStudents;
+    });
+    
+    showToast('✅ Student levels and avatars have been fixed!', 'success');
   };
 
   // ===============================================
@@ -1907,6 +1971,9 @@ export default function ClassroomChampions() {
     showFeedbackModal,
     handleDeductXP,
     handleDeductCurrency,
+    
+    // ADMIN FUNCTIONS - Add these to settings
+    fixAllStudentLevels,  // <-- Add this for the fix button
     
     // Group Management
     saveGroupDataToFirebase,
