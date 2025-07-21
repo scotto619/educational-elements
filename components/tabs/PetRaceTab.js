@@ -1,4 +1,4 @@
-// PetRaceTab.js - Epic Enhanced Pet Racing with Working Movement
+// PetRaceTab.js - Fixed Pet Racing with Working Movement
 import React, { useRef, useEffect, useState } from 'react';
 
 const PetRaceTab = ({
@@ -36,21 +36,23 @@ const PetRaceTab = ({
   const [photoFinish, setPhotoFinish] = useState(false);
   const [leaderboard, setLeaderboard] = useState([]);
 
-  // Track dimensions - start 10% from left, finish 90% of track width
-  const START_POSITION_PERCENT = 0.1;
-  const FINISH_POSITION_PERCENT = 0.9;
-  const RACE_DISTANCE = FINISH_POSITION_PERCENT - START_POSITION_PERCENT; // 80% of track
+  // Track dimensions - pets move from 5% to 90% of track width
+  const START_POSITION_PERCENT = 5;
+  const FINISH_POSITION_PERCENT = 90;
+  const RACE_DISTANCE = 100; // Total race distance in "units"
 
   // Calculate track dimensions on mount and resize
   useEffect(() => {
     const updateTrackDimensions = () => {
       if (raceTrackRef.current) {
         const rect = raceTrackRef.current.getBoundingClientRect();
-        setTrackWidth(rect.width);
+        setTrackWidth(rect.width || 800);
+        console.log('Track width updated:', rect.width);
       }
     };
 
-    updateTrackDimensions();
+    // Initial setup
+    setTimeout(updateTrackDimensions, 100);
     window.addEventListener('resize', updateTrackDimensions);
     return () => window.removeEventListener('resize', updateTrackDimensions);
   }, []);
@@ -71,66 +73,74 @@ const PetRaceTab = ({
     }
   }, [countdown, setRaceInProgress]);
 
-  // Simple race animation - this is the core race logic
+  // Main race animation - FIXED VERSION
   useEffect(() => {
-    if (!raceStarted || !raceInProgress) return;
+    if (!raceStarted || !raceInProgress || selectedPets.length === 0) return;
 
-    console.log('Race started! Pets should be moving...');
+    console.log('🏁 Race animation starting with pets:', selectedPets.length);
 
     const animationInterval = setInterval(() => {
       setRacePositions(prevPositions => {
         const newPositions = { ...prevPositions };
         let hasWinner = false;
         let winner = null;
+        let maxPosition = 0;
 
         // Move each pet
         selectedPets.forEach(petId => {
           const student = students.find(s => s.id === petId);
           if (!student?.pet) return;
 
-          // Simple speed calculation
-          const petSpeed = (student.pet.speed || 1);
-          const randomBoost = 0.8 + Math.random() * 0.4; // 0.8 to 1.2
-          const moveDistance = (petSpeed * randomBoost * 0.003); // Adjust this for race duration
+          // Calculate movement - INCREASED SPEED
+          const petSpeed = Math.max(1, student.pet.speed || 1);
+          const randomBoost = 0.7 + Math.random() * 0.6; // 0.7 to 1.3 for variety
+          const baseSpeed = 0.8; // Base movement per frame (much faster than before)
+          const moveDistance = baseSpeed * petSpeed * randomBoost;
 
           // Update position
           const currentPos = newPositions[petId] || 0;
           const newPos = Math.min(currentPos + moveDistance, RACE_DISTANCE);
           newPositions[petId] = newPos;
+          
+          // Track max position
+          maxPosition = Math.max(maxPosition, newPos);
 
-          console.log(`Pet ${petId} (${student.firstName}): ${currentPos.toFixed(3)} -> ${newPos.toFixed(3)}`);
+          console.log(`🐕 Pet ${student.firstName}: ${currentPos.toFixed(1)} -> ${newPos.toFixed(1)} (speed: ${petSpeed}, boost: ${randomBoost.toFixed(2)})`);
 
           // Check for winner
           if (newPos >= RACE_DISTANCE && !hasWinner) {
             hasWinner = true;
             winner = student;
-            console.log(`Winner found: ${student.firstName}!`);
+            console.log(`🏆 WINNER: ${student.firstName}!`);
           }
         });
 
         // Handle race completion
         if (hasWinner && winner) {
           setTimeout(() => {
+            console.log('🏁 Race completed, setting winner:', winner.firstName);
             setRaceInProgress(false);
             setRaceFinished(true);
             setRaceWinner(winner);
             awardPrize(winner);
             
-            // Reset after 4 seconds
+            // Reset after 5 seconds
             setTimeout(() => {
               setRaceFinished(false);
               setRaceWinner(null);
               setRaceStarted(false);
-            }, 4000);
+              setRaceProgress(0);
+              setLeaderboard([]);
+            }, 5000);
           }, 100);
         }
 
         return newPositions;
       });
-    }, 50);
+    }, 100); // Increased interval from 50ms to 100ms for smoother animation
 
     return () => {
-      console.log('Cleaning up race animation');
+      console.log('🛑 Cleaning up race animation');
       clearInterval(animationInterval);
     };
   }, [raceStarted, raceInProgress, selectedPets, students]);
@@ -237,19 +247,20 @@ const PetRaceTab = ({
     if (raceInProgress && Object.keys(racePositions).length > 0) {
       const maxProgress = Math.max(...Object.values(racePositions));
       const progressPercent = (maxProgress / RACE_DISTANCE) * 100;
-      setRaceProgress(progressPercent);
+      setRaceProgress(Math.min(100, progressPercent));
 
       // Update leaderboard
       const currentStandings = selectedPets
         .map(id => {
           const student = students.find(s => s.id === id);
+          const position = racePositions[id] || 0;
           return {
             id,
             name: student?.firstName,
             petName: student?.pet?.name,
             petImage: student?.pet?.image,
-            position: racePositions[id] || 0,
-            progress: ((racePositions[id] || 0) / RACE_DISTANCE) * 100
+            position,
+            progress: Math.min(100, (position / RACE_DISTANCE) * 100)
           };
         })
         .sort((a, b) => b.position - a.position);
@@ -257,20 +268,20 @@ const PetRaceTab = ({
       setLeaderboard(currentStandings);
 
       // Check for photo finish
-      if (progressPercent > 90) {
+      if (progressPercent > 85) {
         const positions = Object.values(racePositions);
         const maxPos = Math.max(...positions);
         const minPos = Math.min(...positions);
-        if ((maxPos - minPos) / RACE_DISTANCE < 0.05) {
+        if ((maxPos - minPos) < 5 && positions.length > 1) {
           setPhotoFinish(true);
         }
       }
     }
-  }, [racePositions, raceInProgress, selectedPets, students, RACE_DISTANCE]);
+  }, [racePositions, raceInProgress, selectedPets, students]);
 
   // Start race with countdown
   const handleStartRace = () => {
-    console.log('Starting race setup...');
+    console.log('🚀 Starting race setup with pets:', selectedPets);
     setCountdown(3);
     setRaceStarted(false);
     setRaceProgress(0);
@@ -286,13 +297,18 @@ const PetRaceTab = ({
     console.log('Initial positions set:', initialPositions);
   };
 
-  // Convert race position to screen position
+  // Convert race position to screen pixel position - FIXED CALCULATION
   const getScreenPosition = (racePosition) => {
-    const startPixel = trackWidth * START_POSITION_PERCENT;
-    const finishPixel = trackWidth * FINISH_POSITION_PERCENT;
-    const raceDistance = finishPixel - startPixel;
+    if (!trackWidth || trackWidth <= 0) return 50; // Fallback position
     
-    return startPixel + (racePosition / RACE_DISTANCE) * raceDistance;
+    const startPixel = (trackWidth * START_POSITION_PERCENT) / 100;
+    const endPixel = (trackWidth * FINISH_POSITION_PERCENT) / 100;
+    const racePixelDistance = endPixel - startPixel;
+    
+    // Convert race position (0 to RACE_DISTANCE) to pixel position
+    const pixelPosition = startPixel + (racePosition / RACE_DISTANCE) * racePixelDistance;
+    
+    return Math.max(startPixel, Math.min(endPixel, pixelPosition));
   };
 
   return (
@@ -367,16 +383,6 @@ const PetRaceTab = ({
         </div>
       </div>
 
-      {/* Debug Info - Remove this later */}
-      {raceInProgress && (
-        <div className="bg-red-100 border border-red-400 rounded-lg p-3 text-sm">
-          <div>Race Started: {raceStarted ? 'Yes' : 'No'}</div>
-          <div>Race In Progress: {raceInProgress ? 'Yes' : 'No'}</div>
-          <div>Selected Pets: {selectedPets.length}</div>
-          <div>Positions: {JSON.stringify(racePositions)}</div>
-        </div>
-      )}
-
       {/* Countdown Overlay */}
       {countdown > 0 && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
@@ -416,9 +422,10 @@ const PetRaceTab = ({
       <div className="bg-white rounded-xl shadow-2xl p-6">
         <div 
           ref={raceTrackRef}
-          className="relative h-96 border-4 border-gray-400 bg-gradient-to-r from-green-200 via-yellow-100 to-green-300 overflow-hidden rounded-xl shadow-inner"
+          className="relative w-full h-96 border-4 border-gray-400 bg-gradient-to-r from-green-200 via-yellow-100 to-green-300 overflow-hidden rounded-xl shadow-inner"
           style={{
-            background: 'linear-gradient(90deg, #10B981 0%, #34D399 10%, #FEF3C7 20%, #FDE68A 80%, #34D399 90%, #10B981 100%)'
+            background: 'linear-gradient(90deg, #10B981 0%, #34D399 10%, #FEF3C7 20%, #FDE68A 80%, #34D399 90%, #10B981 100%)',
+            minWidth: '600px'
           }}
         >
           {/* Sky background with clouds */}
@@ -435,9 +442,10 @@ const PetRaceTab = ({
             </div>
           </div>
 
-          {/* Track lanes with dynamic heights */}
+          {/* Track lanes */}
           {Array.from({ length: Math.min(6, Math.max(2, selectedPets.length)) }, (_, i) => {
-            const laneHeight = (350 - 50) / Math.min(6, Math.max(2, selectedPets.length));
+            const laneCount = Math.min(6, Math.max(2, selectedPets.length));
+            const laneHeight = (380 - 60) / laneCount; // Track height minus header
             const isOddLane = i % 2 === 1;
             
             return (
@@ -447,7 +455,7 @@ const PetRaceTab = ({
                   isOddLane ? 'bg-green-100 bg-opacity-30' : 'bg-yellow-50 bg-opacity-30'
                 }`}
                 style={{ 
-                  top: `${50 + i * laneHeight}px`,
+                  top: `${60 + i * laneHeight}px`,
                   height: `${laneHeight}px`
                 }}
               >
@@ -462,7 +470,7 @@ const PetRaceTab = ({
           {/* Starting line */}
           <div 
             className="absolute top-12 bottom-0 w-4 bg-gradient-to-b from-white via-red-500 to-white shadow-lg z-20 rounded"
-            style={{ left: `${trackWidth * START_POSITION_PERCENT - 8}px` }}
+            style={{ left: `${START_POSITION_PERCENT}%` }}
           >
             <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded">
               START
@@ -470,16 +478,16 @@ const PetRaceTab = ({
           </div>
 
           {/* Progress markers */}
-          {[0.25, 0.5, 0.75].map((percent, index) => (
+          {[25, 50, 75].map((percent, index) => (
             <div
               key={index}
               className="absolute top-12 bottom-0 w-1 bg-gray-400 z-10"
               style={{ 
-                left: `${trackWidth * START_POSITION_PERCENT + (trackWidth * RACE_DISTANCE * percent)}px` 
+                left: `${START_POSITION_PERCENT + ((FINISH_POSITION_PERCENT - START_POSITION_PERCENT) * percent / 100)}%` 
               }}
             >
               <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-gray-600 text-xs font-bold bg-white px-1 rounded shadow">
-                {Math.round(percent * 100)}%
+                {percent}%
               </div>
             </div>
           ))}
@@ -488,7 +496,7 @@ const PetRaceTab = ({
           <div 
             className="absolute top-12 bottom-0 w-6 z-20 rounded shadow-lg"
             style={{ 
-              left: `${trackWidth * FINISH_POSITION_PERCENT - 12}px`,
+              left: `${FINISH_POSITION_PERCENT}%`,
               background: 'repeating-linear-gradient(90deg, black 0px, black 10px, white 10px, white 20px)'
             }}
           >
@@ -498,26 +506,27 @@ const PetRaceTab = ({
             <div className="absolute -top-6 -right-8 text-2xl animate-wave">🏁</div>
           </div>
 
-          {/* Racing pets */}
+          {/* Racing pets - FIXED POSITIONING */}
           {selectedPets.map((id, i) => {
             const student = students.find(stu => stu.id === id);
             if (!student?.pet) return null;
             
             const racePosition = racePositions[id] || 0;
             const screenPosition = getScreenPosition(racePosition);
-            const laneHeight = (350 - 50) / Math.min(6, Math.max(2, selectedPets.length));
-            const laneTop = 50 + i * laneHeight;
+            const laneCount = Math.min(6, Math.max(2, selectedPets.length));
+            const laneHeight = (380 - 60) / laneCount;
+            const laneTop = 60 + i * laneHeight;
             const isLeading = leaderboard[0]?.id === id;
             const position = leaderboard.findIndex(p => p.id === id) + 1;
 
             return (
               <div
                 key={id}
-                className="absolute flex items-center transition-all duration-200 z-30"
+                className="absolute flex items-center z-30"
                 style={{
                   top: `${laneTop + laneHeight/2 - 20}px`,
                   left: `${screenPosition - 20}px`,
-                  transform: raceInProgress ? 'translateX(0)' : 'translateX(-10px)'
+                  transition: 'none' // Remove transitions for instant movement
                 }}
               >
                 {/* Pet with enhanced effects */}
@@ -525,9 +534,9 @@ const PetRaceTab = ({
                   <img 
                     src={student.pet.image} 
                     alt="Racing Pet" 
-                    className={`w-12 h-12 rounded-full border-3 shadow-lg transition-all duration-200 ${
+                    className={`w-12 h-12 rounded-full border-4 shadow-lg ${
                       raceInProgress 
-                        ? `animate-bounce ${isLeading ? 'border-yellow-400 shadow-yellow-400' : 'border-white'}` 
+                        ? `${isLeading ? 'border-yellow-400 shadow-yellow-400 animate-bounce' : 'border-white animate-pulse'}` 
                         : 'border-gray-300'
                     }`}
                     style={{
@@ -542,7 +551,7 @@ const PetRaceTab = ({
                   )}
                   
                   {/* Position indicator */}
-                  {raceInProgress && (
+                  {raceInProgress && position <= selectedPets.length && (
                     <div className={`absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white ${
                       position === 1 ? 'bg-yellow-500' : 
                       position === 2 ? 'bg-gray-400' : 
@@ -574,7 +583,12 @@ const PetRaceTab = ({
               <div className="bg-white p-8 rounded-xl shadow-2xl text-center transform animate-bounce">
                 <div className="text-6xl mb-4">🏆</div>
                 <h3 className="text-3xl font-bold text-green-600 mb-2">Race Complete!</h3>
-                <p className="text-gray-600 text-lg">Checking the photo finish...</p>
+                {raceWinner && (
+                  <div>
+                    <p className="text-xl text-gray-700 mb-2">Winner: <strong>{raceWinner.firstName}</strong></p>
+                    <p className="text-lg text-gray-600">🎉 Congratulations! 🎉</p>
+                  </div>
+                )}
               </div>
             </div>
           )}
