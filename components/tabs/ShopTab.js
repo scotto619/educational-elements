@@ -1,4 +1,4 @@
-// ShopTab.js - Enhanced Shop with Hover Preview, Firebase Rewards, and Pet Renaming
+// ShopTab.js - Enhanced Shop with Hover Preview, Firebase Rewards, Premium Pets, and Pet Renaming
 import React, { useState, useEffect } from 'react';
 
 const ShopTab = ({ 
@@ -45,6 +45,54 @@ const ShopTab = ({
     price: 15 + (index % 5) * 3, // Varied pricing 15-27 coins
     type: 'classic'
   }));
+
+  // NEW: Basic Pets - Regular shop pets
+  const BASIC_PETS = [
+    {
+      id: 'goblin_pet_basic',
+      name: 'Goblin Companion',
+      image: '/shop/BasicPets/GoblinPet.png',
+      price: 18,
+      type: 'basic',
+      description: 'A mischievous goblin friend'
+    },
+    {
+      id: 'soccer_pet_basic',
+      name: 'Soccer Buddy',
+      image: '/shop/BasicPets/SoccerPet.png',
+      price: 20,
+      type: 'basic',
+      description: 'Ready to play ball!'
+    },
+    {
+      id: 'unicorn_pet_basic',
+      name: 'Unicorn Friend',
+      image: '/shop/BasicPets/UnicornPet.png',
+      price: 25,
+      type: 'basic',
+      description: 'A magical unicorn companion'
+    }
+  ];
+
+  // NEW: Premium Pets - Only available in loot boxes
+  const PREMIUM_PETS = [
+    {
+      id: 'snake_pet_premium',
+      name: 'Mystical Snake',
+      image: '/shop/PremiumPets/SnakePet.png',
+      type: 'premium',
+      rarity: 'rare',
+      description: 'A powerful serpent ally'
+    },
+    {
+      id: 'vampire_pet_premium',
+      name: 'Vampire Bat',
+      image: '/shop/PremiumPets/VampirePet.png',
+      type: 'premium',
+      rarity: 'epic',
+      description: 'A loyal vampire companion'
+    }
+  ];
 
   // Rarity colors with borders
   const RARITY_STYLES = {
@@ -103,15 +151,21 @@ const ShopTab = ({
     ],
     rare: [
       { id: 'loot_r_1', name: 'Enchanted Bow', image: '/Loot/Rare/Loot 1.png', rarity: 'rare', type: 'weapon' },
-      { id: 'loot_r_2', name: 'Power Crystal', image: '/Loot/Rare/Loot 2.png', rarity: 'rare', type: 'artifact' }
+      { id: 'loot_r_2', name: 'Power Crystal', image: '/Loot/Rare/Loot 2.png', rarity: 'rare', type: 'artifact' },
+      // NEW: Add premium snake pet to rare loot
+      ...PREMIUM_PETS.filter(pet => pet.rarity === 'rare')
     ],
     epic: [
       { id: 'loot_e_1', name: 'Dragon Sword', image: '/Loot/Epic/Loot 1.png', rarity: 'epic', type: 'weapon' },
-      { id: 'loot_e_2', name: 'Phoenix Armor', image: '/Loot/Epic/Loot 2.png', rarity: 'epic', type: 'armor' }
+      { id: 'loot_e_2', name: 'Phoenix Armor', image: '/Loot/Epic/Loot 2.png', rarity: 'epic', type: 'armor' },
+      // NEW: Add premium vampire pet to epic loot
+      ...PREMIUM_PETS.filter(pet => pet.rarity === 'epic')
     ],
     legendary: [
       { id: 'loot_l_1', name: 'Excalibur', image: '/Loot/Legendary/Loot 1.png', rarity: 'legendary', type: 'weapon' },
-      { id: 'loot_l_2', name: 'Crystal Staff of Power', image: '/Loot/Legendary/Loot 2.png', rarity: 'legendary', type: 'artifact' }
+      { id: 'loot_l_2', name: 'Crystal Staff of Power', image: '/Loot/Legendary/Loot 2.png', rarity: 'legendary', type: 'artifact' },
+      // NEW: Add any legendary premium pets
+      ...PREMIUM_PETS.filter(pet => pet.rarity === 'legendary')
     ]
   };
 
@@ -393,6 +447,44 @@ const ShopTab = ({
     setHoverPreview({ show: false, image: '', name: '', x: 0, y: 0 });
   };
 
+  // NEW: Generate loot box rewards including premium pets
+  const generateLootBoxRewards = (lootBox) => {
+    const rewards = [];
+    
+    for (let i = 0; i < lootBox.contents.count; i++) {
+      let selectedRarity = 'common';
+      
+      if (lootBox.contents.guaranteedRare && i === 0) {
+        // First item guaranteed rare or higher
+        const rarities = ['rare', 'epic'];
+        if (lootBox.contents.legendaryChance && Math.random() < 0.1) {
+          rarities.push('legendary');
+        }
+        selectedRarity = rarities[Math.floor(Math.random() * rarities.length)];
+      } else {
+        // Normal rarity distribution
+        const rand = Math.random() * 100;
+        if (rand <= 1) selectedRarity = 'legendary';
+        else if (rand <= 5) selectedRarity = 'epic';
+        else if (rand <= 20) selectedRarity = 'rare';
+        else if (rand <= 50) selectedRarity = 'uncommon';
+        else selectedRarity = 'common';
+      }
+      
+      const availableItems = LOOT_ITEMS[selectedRarity] || LOOT_ITEMS.common;
+      if (availableItems.length > 0) {
+        const randomItem = availableItems[Math.floor(Math.random() * availableItems.length)];
+        rewards.push({
+          ...randomItem,
+          id: `loot_${Date.now()}_${i}`,
+          acquired: new Date().toISOString()
+        });
+      }
+    }
+    
+    return rewards;
+  };
+
   // Generate daily featured item
   const generateDailyFeaturedItem = () => {
     const today = new Date().toDateString();
@@ -401,10 +493,11 @@ const ShopTab = ({
     if (stored) {
       setFeaturedItem(JSON.parse(stored));
     } else {
-      // Include premium avatars in featured selection
+      // Include premium avatars and basic pets in featured selection
       const allItems = [
         ...CONSUMABLES,
         ...PREMIUM_AVATARS, // Now includes higher level avatars
+        ...BASIC_PETS, // NEW: Include basic pets in featured
         ...Object.values(AVATAR_SETS).flatMap(set => [...set.pets]),
         ...EXISTING_PETS,
         ...LOOT_BOXES
@@ -450,12 +543,44 @@ const ShopTab = ({
     const updatedStudent = spendCoins(selectedStudent, item.price);
     
     // Handle different item types
-    if (item.base) {
+    if (item.id?.includes('box')) {
+      // Loot box purchase
+      const rewards = generateLootBoxRewards(item);
+      
+      rewards.forEach(reward => {
+        if (reward.base) {
+          // Avatar from loot box
+          const ownedAvatars = updatedStudent.ownedAvatars || [];
+          if (!ownedAvatars.includes(reward.base)) {
+            updatedStudent.ownedAvatars = [...ownedAvatars, reward.base];
+          }
+        } else if (reward.type === 'premium' || reward.type && reward.type !== 'consumable') {
+          // Pet from loot box (including premium pets)
+          const ownedPets = updatedStudent.ownedPets || [];
+          const newPet = {
+            id: reward.id,
+            name: reward.name,
+            image: reward.image,
+            type: reward.type,
+            rarity: reward.rarity,
+            purchaseDate: new Date().toISOString()
+          };
+          updatedStudent.ownedPets = [...ownedPets, newPet];
+        } else {
+          // Other items
+          const inventory = updatedStudent.inventory || [];
+          updatedStudent.inventory = [...inventory, { ...reward, purchaseDate: new Date().toISOString() }];
+        }
+      });
+      
+      showToast(`${item.name} opened! Got ${rewards.length} items!`, 'success');
+    } else if (item.base) {
       // Avatar purchase
       const ownedAvatars = updatedStudent.ownedAvatars || [];
       if (!ownedAvatars.includes(item.base)) {
         updatedStudent.ownedAvatars = [...ownedAvatars, item.base];
       }
+      showToast(`${item.name} purchased!`, 'success');
     } else if (item.type && item.type !== 'consumable') {
       // Pet purchase
       const ownedPets = updatedStudent.ownedPets || [];
@@ -467,10 +592,12 @@ const ShopTab = ({
         purchaseDate: new Date().toISOString()
       };
       updatedStudent.ownedPets = [...ownedPets, newPet];
+      showToast(`${item.name} purchased!`, 'success');
     } else {
       // Consumable or other item
       const inventory = updatedStudent.inventory || [];
       updatedStudent.inventory = [...inventory, { ...item, purchaseDate: new Date().toISOString() }];
+      showToast(`${item.name} purchased!`, 'success');
     }
 
     // Update students array
@@ -481,8 +608,6 @@ const ShopTab = ({
     setStudents(updatedStudents);
     setSelectedStudent(updatedStudent);
     saveStudentsToFirebase(updatedStudents);
-    
-    showToast(`${item.name} purchased!`, 'success');
     setShowPurchaseModal(null);
   };
 
@@ -888,9 +1013,51 @@ const ShopTab = ({
             </div>
           )}
 
-          {/* Pets Category - Themed + Classic Pets */}
+          {/* Pets Category - Basic Pets + Themed + Classic Pets */}
           {activeChampsCategory === 'pets' && (
             <div className="space-y-8">
+              {/* NEW: Basic Pets Section */}
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <h3 className="text-2xl font-bold text-gray-800 mb-4 text-center">
+                  🌟 Basic Pet Companions
+                </h3>
+                <p className="text-center text-gray-600 mb-6">
+                  Special pet companions with unique abilities!
+                </p>
+                
+                <div className="grid grid-cols-3 gap-6">
+                  {BASIC_PETS.map(pet => {
+                    const isOwned = selectedStudent.ownedPets?.some(p => p.id === pet.id);
+                    
+                    return (
+                      <div 
+                        key={pet.id} 
+                        className="bg-gradient-to-b from-blue-50 to-purple-50 rounded-xl p-4 text-center cursor-pointer border-2 border-blue-200"
+                        onMouseEnter={(e) => handleMouseEnter(e, pet)}
+                        onMouseLeave={handleMouseLeave}
+                      >
+                        <img src={pet.image} alt={pet.name} className="w-20 h-20 mx-auto rounded-lg mb-3" />
+                        <div className="text-lg font-bold text-gray-800 mb-1">{pet.name}</div>
+                        <div className="text-sm text-gray-600 mb-3">{pet.description}</div>
+                        {isOwned ? (
+                          <div className="px-4 py-2 bg-green-100 text-green-700 rounded-lg font-semibold">
+                            Owned ✓
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setShowPurchaseModal(pet)}
+                            disabled={!canAfford(selectedStudent, pet.price)}
+                            className="w-full px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 disabled:bg-gray-400 font-semibold"
+                          >
+                            {pet.price} 💰
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* Classic Pets Section */}
               <div className="bg-white rounded-xl shadow-lg p-6">
                 <h3 className="text-2xl font-bold text-gray-800 mb-4 text-center">
@@ -1008,7 +1175,7 @@ const ShopTab = ({
             <div className="bg-white rounded-xl shadow-lg p-6">
               <h3 className="text-2xl font-bold text-gray-800 mb-6 text-center">📦 Mystery Loot Boxes</h3>
               <p className="text-center text-gray-600 mb-6">
-                Open loot boxes to discover rare avatars, powerful items, and exclusive rewards!
+                Open loot boxes to discover rare avatars, exclusive premium pets, and powerful items!
               </p>
               
               <div className="grid md:grid-cols-3 gap-6">
@@ -1084,6 +1251,12 @@ const ShopTab = ({
                           <img src={pet.image} alt={pet.name} className="w-16 h-16 mx-auto rounded-lg mb-1" />
                           <div className="text-xs font-semibold">{pet.name}</div>
                           <div className="text-xs text-gray-500">{pet.type}</div>
+                          {/* NEW: Show rarity for premium pets */}
+                          {pet.rarity && (
+                            <div className={`text-xs px-1 rounded ${RARITY_STYLES[pet.rarity].textColor} ${RARITY_STYLES[pet.rarity].bgColor}`}>
+                              {RARITY_STYLES[pet.rarity].name}
+                            </div>
+                          )}
                           {isActivePet ? (
                             <div className="text-xs text-green-600 font-bold mt-1">Active Pet</div>
                           ) : (
@@ -1116,6 +1289,12 @@ const ShopTab = ({
                       <div key={`${item.id}_${index}`} className="text-center bg-purple-50 rounded-lg p-2">
                         <img src={item.image} alt={item.name} className="w-16 h-16 mx-auto rounded-lg mb-1" />
                         <div className="text-xs font-semibold">{item.name}</div>
+                        {/* Show rarity if available */}
+                        {item.rarity && (
+                          <div className={`text-xs px-1 rounded ${RARITY_STYLES[item.rarity].textColor} ${RARITY_STYLES[item.rarity].bgColor}`}>
+                            {RARITY_STYLES[item.rarity].name}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -1194,6 +1373,9 @@ const ShopTab = ({
                 <div className="text-4xl mb-2">{showPurchaseModal.image || '🎁'}</div>
               )}
               <h4 className="font-bold">{showPurchaseModal.name}</h4>
+              {showPurchaseModal.description && (
+                <p className="text-sm text-gray-600 mt-1">{showPurchaseModal.description}</p>
+              )}
               <p className="text-2xl font-bold text-purple-600">{showPurchaseModal.price} 💰</p>
             </div>
             <div className="flex space-x-3">
