@@ -1,137 +1,65 @@
-// RaceSetupModal.js - Enhanced with Comprehensive Prize Selection
-import React, { useState, useEffect } from 'react';
+// RaceSetupModal.js - Complete with Prize Selection System
+import React, { useState } from 'react';
 
-const RaceSetupModal = ({
-  students,
-  selectedPets,
+const RaceSetupModal = ({ 
+  students, 
+  selectedPets, 
   setSelectedPets,
   selectedPrize,
   setSelectedPrize,
   prizeDetails,
   setPrizeDetails,
+  teacherRewards,
+  onClose, 
   onStartRace,
-  onClose,
-  SHOP_ITEMS,
-  LOOT_BOX_ITEMS,
-  teacherRewards = []
+  calculateSpeed,
+  showToast
 }) => {
-  const [activeTab, setActiveTab] = useState('pets');
-  const [showPrizePreview, setShowPrizePreview] = useState(false);
-
-  // Default classroom rewards if none provided
-  const DEFAULT_CLASSROOM_REWARDS = [
-    { id: 'tech_time', name: 'Technology Time', description: '10 minutes of educational technology', icon: '💻', category: 'privileges' },
-    { id: 'move_seat', name: 'Move Seat for a Day', description: 'Choose where to sit for one day', icon: '🪑', category: 'privileges' },
-    { id: 'homework_pass', name: 'Homework Pass', description: 'Skip one homework assignment', icon: '📝', category: 'privileges' },
-    { id: 'line_leader', name: 'Line Leader', description: 'Be the line leader for a week', icon: '👑', category: 'privileges' },
-    { id: 'extra_play', name: 'Extra Playtime', description: '5 minutes extra recess', icon: '⚽', category: 'privileges' },
-    { id: 'teacher_helper', name: 'Teacher Helper', description: 'Be the teacher\'s special helper for a day', icon: '🌟', category: 'privileges' },
-    { id: 'free_draw', name: 'Free Drawing Time', description: '15 minutes of free drawing', icon: '🎨', category: 'activities' },
-    { id: 'sweet_treat', name: 'Sweet Treat', description: 'A special sweet treat', icon: '🍭', category: 'treats' }
-  ];
-
-  const classroomRewards = teacherRewards.length > 0 ? teacherRewards : DEFAULT_CLASSROOM_REWARDS;
-
-  // Loot boxes
-  const LOOT_BOXES = [
-    {
-      id: 'basic_box',
-      name: 'Basic Loot Box',
-      description: 'Contains 3 random items',
-      image: '📦',
-      contents: { count: 3, guaranteedRare: false }
-    },
-    {
-      id: 'premium_box',
-      name: 'Premium Loot Box',
-      description: 'Contains 5 items with guaranteed rare+',
-      image: '✨',
-      contents: { count: 5, guaranteedRare: true }
-    },
-    {
-      id: 'legendary_box',
-      name: 'Legendary Loot Box',
-      description: 'Contains 3 rare+ items with chance of legendary',
-      image: '🏆',
-      contents: { count: 3, guaranteedRare: true, legendaryChance: true }
-    }
-  ];
-
-  // Initialize default prize details
-  useEffect(() => {
-    if (!prizeDetails) {
-      setPrizeDetails({
-        amount: 5,
-        category: 'Respectful'
-      });
-    }
-  }, [prizeDetails, setPrizeDetails]);
-
-  // Handle pet selection
-  const handlePetToggle = (studentId) => {
-    setSelectedPets(prev => {
-      if (prev.includes(studentId)) {
-        return prev.filter(id => id !== studentId);
-      } else {
-        if (prev.length >= 6) {
-          alert('Maximum 6 pets can race at once!');
-          return prev;
-        }
-        return [...prev, studentId];
-      }
-    });
-  };
-
-  // Handle prize selection
-  const handlePrizeChange = (prizeType, details = {}) => {
-    setSelectedPrize(prizeType);
-    setPrizeDetails(details);
-    setShowPrizePreview(true);
-    setTimeout(() => setShowPrizePreview(false), 2000);
-  };
-
-  // Get students with pets
-  const studentsWithPets = students.filter(s => s.pet?.image);
+  const [activeTab, setActiveTab] = useState('pets'); // 'pets' or 'prize'
 
   const handleStartRace = () => {
-    if (selectedPets.length < 2) {
-      alert('Please select at least 2 pets to race!');
+    if (selectedPets.length === 0) {
+      showToast('Please select at least one pet to race!', 'error');
       return;
     }
-    
-    if (!selectedPrize || !prizeDetails) {
-      alert('Please select a prize for the winner!');
+
+    if (selectedPrize === 'xp' && (!prizeDetails.amount || !prizeDetails.category)) {
+      showToast('Please set XP amount and category!', 'error');
       return;
     }
-    
+
+    if (selectedPrize === 'coins' && !prizeDetails.amount) {
+      showToast('Please set coin amount!', 'error');
+      return;
+    }
+
     onStartRace();
   };
 
+  const handlePetToggle = (studentId) => {
+    if (selectedPets.includes(studentId)) {
+      setSelectedPets(prev => prev.filter(id => id !== studentId));
+    } else if (selectedPets.length < 5) {
+      setSelectedPets(prev => [...prev, studentId]);
+    } else {
+      showToast('Maximum 5 pets can race at once!', 'warning');
+    }
+  };
+
+  const studentsWithPets = students.filter(s => s.pet?.image);
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h2 className="text-3xl font-bold mb-2">🏁 Epic Race Setup</h2>
-              <p className="text-blue-100">Configure your championship race!</p>
-            </div>
-            <button
-              onClick={onClose}
-              className="text-white hover:text-red-300 text-3xl"
-            >
-              ×
-            </button>
-          </div>
+          <h2 className="text-3xl font-bold flex items-center justify-center">
+            <span className="mr-3">🏁</span>
+            Race Setup
+            <span className="ml-3">🐾</span>
+          </h2>
+          <p className="text-center text-blue-100 mt-2">Configure your exciting pet race!</p>
         </div>
-
-        {/* Prize Preview Notification */}
-        {showPrizePreview && (
-          <div className="absolute top-20 right-6 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-10 animate-bounce">
-            Prize Selected! ✅
-          </div>
-        )}
 
         {/* Tab Navigation */}
         <div className="flex border-b border-gray-200">
@@ -140,22 +68,20 @@ const RaceSetupModal = ({
             className={`flex-1 py-4 px-6 font-semibold transition-colors ${
               activeTab === 'pets'
                 ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-600'
-                : 'text-gray-600 hover:text-blue-600'
+                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
             }`}
           >
-            <span className="mr-2">🐾</span>
-            Select Racers ({selectedPets.length}/6)
+            🐾 Select Racing Pets ({selectedPets.length}/5)
           </button>
           <button
-            onClick={() => setActiveTab('prizes')}
+            onClick={() => setActiveTab('prize')}
             className={`flex-1 py-4 px-6 font-semibold transition-colors ${
-              activeTab === 'prizes'
+              activeTab === 'prize'
                 ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-600'
-                : 'text-gray-600 hover:text-blue-600'
+                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
             }`}
           >
-            <span className="mr-2">🎁</span>
-            Choose Prize
+            🎁 Choose Prize
           </button>
         </div>
 
@@ -163,260 +89,229 @@ const RaceSetupModal = ({
           {/* Pet Selection Tab */}
           {activeTab === 'pets' && (
             <div className="space-y-4">
-              <div className="text-center mb-6">
-                <h3 className="text-xl font-bold text-gray-800 mb-2">Select Racing Pets</h3>
-                <p className="text-gray-600">Choose 2-6 pets to compete in the championship race!</p>
+              <div className="text-center">
+                <p className="text-gray-600 mb-4">Choose up to 5 students with pets to compete:</p>
+                {studentsWithPets.length === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    <div className="text-4xl mb-2">🐾</div>
+                    <p>No students have pets yet.</p>
+                    <p className="text-sm">Students unlock pets at 50 XP!</p>
+                  </div>
+                )}
               </div>
 
-              {studentsWithPets.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="text-6xl mb-4">🐾</div>
-                  <h3 className="text-xl font-bold text-gray-800 mb-2">No Pets Available</h3>
-                  <p className="text-gray-600">Students unlock pets at 50 XP!</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {studentsWithPets.map(student => {
-                    const isSelected = selectedPets.includes(student.id);
-                    const wins = student.pet?.wins || 0;
-                    const speed = ((student.pet?.speed || 1) * 10).toFixed(1);
-
-                    return (
-                      <button
-                        key={student.id}
-                        onClick={() => handlePetToggle(student.id)}
-                        className={`p-4 rounded-xl border-2 transition-all text-center hover:scale-105 ${
-                          isSelected
-                            ? 'border-blue-500 bg-blue-50 shadow-lg'
-                            : 'border-gray-200 hover:border-blue-300 bg-white'
-                        }`}
-                      >
-                        {/* Pet Image */}
-                        <div className="relative mb-3">
-                          <img
-                            src={student.pet.image}
-                            alt="Pet"
-                            className={`w-16 h-16 rounded-full mx-auto border-3 ${
-                              isSelected ? 'border-blue-400' : 'border-gray-300'
-                            }`}
-                          />
-                          {isSelected && (
-                            <div className="absolute -top-1 -right-1 bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
-                              ✓
-                            </div>
-                          )}
-                          {wins > 0 && (
-                            <div className="absolute -top-2 -left-2 bg-yellow-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
-                              {wins}
-                            </div>
-                          )}
+              <div className="grid grid-cols-1 gap-3">
+                {studentsWithPets.map(student => {
+                  const isSelected = selectedPets.includes(student.id);
+                  const speed = calculateSpeed ? calculateSpeed(student.pet) : 1;
+                  
+                  return (
+                    <div
+                      key={student.id}
+                      className={`flex items-center gap-4 p-4 border-2 rounded-xl cursor-pointer transition-all duration-300 hover:shadow-md ${
+                        isSelected
+                          ? 'bg-blue-50 border-blue-400 shadow-md transform scale-[1.02]'
+                          : 'hover:bg-gray-50 border-gray-300 hover:border-gray-400'
+                      }`}
+                      onClick={() => handlePetToggle(student.id)}
+                    >
+                      <img 
+                        src={student.pet.image} 
+                        alt={student.pet.name || 'Pet'}
+                        className="w-16 h-16 rounded-full border-3 border-gray-300 shadow-lg" 
+                      />
+                      <div className="flex-1">
+                        <div className="font-bold text-gray-800 text-lg">{student.firstName}</div>
+                        <div className="text-gray-600">{student.pet.name || 'Unnamed Pet'}</div>
+                        <div className="flex items-center space-x-4 text-sm text-gray-500 mt-1">
+                          <span>🏃‍♂️ Speed: {speed.toFixed(1)}</span>
+                          <span>🏆 Wins: {student.pet.wins || 0}</span>
+                          <span>⭐ Level: {student.pet.level || 1}</span>
                         </div>
-
-                        {/* Student & Pet Info */}
-                        <div className="font-bold text-gray-800">{student.firstName}</div>
-                        <div className="text-sm text-gray-600 mb-2">{student.pet.name}</div>
-                        
-                        {/* Pet Stats */}
-                        <div className="flex justify-center space-x-3 text-xs">
-                          <div className="bg-green-100 text-green-800 px-2 py-1 rounded">
-                            Speed: {speed}
-                          </div>
-                          <div className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
-                            Wins: {wins}
-                          </div>
+                      </div>
+                      {isSelected && (
+                        <div className="text-blue-500 text-2xl animate-pulse">
+                          ✓
                         </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
 
           {/* Prize Selection Tab */}
-          {activeTab === 'prizes' && (
+          {activeTab === 'prize' && (
             <div className="space-y-6">
-              <div className="text-center mb-6">
-                <h3 className="text-xl font-bold text-gray-800 mb-2">Choose Victory Prize</h3>
-                <p className="text-gray-600">Select an awesome reward for the race winner!</p>
+              <div className="text-center">
+                <h3 className="text-xl font-bold text-gray-800 mb-2">🏆 Winner's Prize</h3>
+                <p className="text-gray-600">Choose what the winning student will receive:</p>
               </div>
 
-              {/* Current Prize Display */}
-              {selectedPrize && prizeDetails && (
-                <div className="bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-300 rounded-xl p-4 mb-6">
-                  <div className="flex items-center space-x-3">
-                    <div className="text-3xl">🏆</div>
-                    <div>
-                      <div className="font-bold text-green-800">Current Prize:</div>
-                      <div className="text-gray-700">
-                        {selectedPrize === 'xp' && `${prizeDetails.amount} ${prizeDetails.category} XP`}
-                        {selectedPrize === 'coins' && `${prizeDetails.amount} Coins 💰`}
-                        {selectedPrize === 'shop_item' && `${prizeDetails.item?.name} from shop`}
-                        {selectedPrize === 'loot_box' && `${prizeDetails.lootBox?.name}`}
-                        {selectedPrize === 'classroom_reward' && `${prizeDetails.reward?.name}`}
+              {/* Prize Type Selection */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div
+                  onClick={() => setSelectedPrize('xp')}
+                  className={`p-4 rounded-xl border-2 cursor-pointer transition-all duration-300 text-center ${
+                    selectedPrize === 'xp'
+                      ? 'bg-green-50 border-green-400 shadow-md transform scale-105'
+                      : 'border-gray-300 hover:border-green-300 hover:bg-green-50'
+                  }`}
+                >
+                  <div className="text-3xl mb-2">⭐</div>
+                  <h4 className="font-bold text-green-700">XP Points</h4>
+                  <p className="text-sm text-green-600">Award experience points</p>
+                </div>
+
+                <div
+                  onClick={() => setSelectedPrize('coins')}
+                  className={`p-4 rounded-xl border-2 cursor-pointer transition-all duration-300 text-center ${
+                    selectedPrize === 'coins'
+                      ? 'bg-yellow-50 border-yellow-400 shadow-md transform scale-105'
+                      : 'border-gray-300 hover:border-yellow-300 hover:bg-yellow-50'
+                  }`}
+                >
+                  <div className="text-3xl mb-2">💰</div>
+                  <h4 className="font-bold text-yellow-700">Coins</h4>
+                  <p className="text-sm text-yellow-600">Award bonus coins</p>
+                </div>
+
+                <div
+                  onClick={() => setSelectedPrize('reward')}
+                  className={`p-4 rounded-xl border-2 cursor-pointer transition-all duration-300 text-center ${
+                    selectedPrize === 'reward'
+                      ? 'bg-purple-50 border-purple-400 shadow-md transform scale-105'
+                      : 'border-gray-300 hover:border-purple-300 hover:bg-purple-50'
+                  }`}
+                >
+                  <div className="text-3xl mb-2">🎁</div>
+                  <h4 className="font-bold text-purple-700">Classroom Reward</h4>
+                  <p className="text-sm text-purple-600">Custom classroom prize</p>
+                </div>
+              </div>
+
+              {/* Prize Configuration */}
+              <div className="bg-gray-50 rounded-xl p-6">
+                {selectedPrize === 'xp' && (
+                  <div className="space-y-4">
+                    <h4 className="font-bold text-gray-800">Configure XP Award:</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Amount:</label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="100"
+                          value={prizeDetails.amount || 5}
+                          onChange={(e) => setPrizeDetails(prev => ({ ...prev, amount: parseInt(e.target.value) }))}
+                          className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 transition-colors"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Category:</label>
+                        <select
+                          value={prizeDetails.category || 'Respectful'}
+                          onChange={(e) => setPrizeDetails(prev => ({ ...prev, category: e.target.value }))}
+                          className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 transition-colors"
+                        >
+                          <option value="Respectful">Respectful</option>
+                          <option value="Responsible">Responsible</option>
+                          <option value="Learner">Learner</option>
+                        </select>
                       </div>
                     </div>
+                    <div className="bg-green-100 p-3 rounded-lg">
+                      <p className="text-green-800 font-semibold">
+                        Winner receives: {prizeDetails.amount || 5} {prizeDetails.category || 'Respectful'} XP
+                      </p>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Prize Categories */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                
-                {/* XP Prizes */}
-                <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
-                  <h4 className="font-bold text-blue-800 mb-3 flex items-center">
-                    <span className="mr-2">⭐</span>
-                    XP Rewards
-                  </h4>
-                  <div className="space-y-2">
-                    {[
-                      { amount: 5, category: 'Respectful' },
-                      { amount: 5, category: 'Responsible' },
-                      { amount: 5, category: 'Learner' },
-                      { amount: 10, category: 'Respectful' },
-                      { amount: 15, category: 'Learner' }
-                    ].map((xp, index) => (
-                      <button
-                        key={index}
-                        onClick={() => handlePrizeChange('xp', xp)}
-                        className={`w-full p-3 rounded-lg border-2 transition-all hover:scale-105 ${
-                          selectedPrize === 'xp' && prizeDetails?.amount === xp.amount && prizeDetails?.category === xp.category
-                            ? 'border-blue-500 bg-blue-100'
-                            : 'border-blue-200 bg-white hover:border-blue-400'
-                        }`}
-                      >
-                        <div className="font-semibold">{xp.amount} {xp.category} XP</div>
-                      </button>
-                    ))}
+                {selectedPrize === 'coins' && (
+                  <div className="space-y-4">
+                    <h4 className="font-bold text-gray-800">Configure Coin Reward:</h4>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Coin Amount:</label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="100"
+                        value={prizeDetails.amount || 10}
+                        onChange={(e) => setPrizeDetails(prev => ({ ...prev, amount: parseInt(e.target.value) }))}
+                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-yellow-500 transition-colors"
+                      />
+                    </div>
+                    <div className="bg-yellow-100 p-3 rounded-lg">
+                      <p className="text-yellow-800 font-semibold">
+                        Winner receives: {prizeDetails.amount || 10} bonus coins 💰
+                      </p>
+                    </div>
                   </div>
-                </div>
+                )}
 
-                {/* Coin Prizes */}
-                <div className="bg-yellow-50 rounded-xl p-4 border border-yellow-200">
-                  <h4 className="font-bold text-yellow-800 mb-3 flex items-center">
-                    <span className="mr-2">💰</span>
-                    Coin Rewards
-                  </h4>
-                  <div className="space-y-2">
-                    {[10, 15, 25, 50, 100].map(amount => (
-                      <button
-                        key={amount}
-                        onClick={() => handlePrizeChange('coins', { amount })}
-                        className={`w-full p-3 rounded-lg border-2 transition-all hover:scale-105 ${
-                          selectedPrize === 'coins' && prizeDetails?.amount === amount
-                            ? 'border-yellow-500 bg-yellow-100'
-                            : 'border-yellow-200 bg-white hover:border-yellow-400'
-                        }`}
-                      >
-                        <div className="font-semibold">{amount} Coins 💰</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Shop Item Prizes */}
-                <div className="bg-purple-50 rounded-xl p-4 border border-purple-200">
-                  <h4 className="font-bold text-purple-800 mb-3 flex items-center">
-                    <span className="mr-2">🏪</span>
-                    Shop Items
-                  </h4>
-                  <div className="space-y-2 max-h-40 overflow-y-auto">
-                    {/* Avatar Prizes */}
-                    {SHOP_ITEMS.avatars?.slice(0, 3).map(item => (
-                      <button
-                        key={item.id}
-                        onClick={() => handlePrizeChange('shop_item', { item })}
-                        className={`w-full p-2 rounded-lg border-2 transition-all text-left flex items-center space-x-2 hover:scale-105 ${
-                          selectedPrize === 'shop_item' && prizeDetails?.item?.id === item.id
-                            ? 'border-purple-500 bg-purple-100'
-                            : 'border-purple-200 bg-white hover:border-purple-400'
-                        }`}
-                      >
-                        <img src={item.image} alt={item.name} className="w-8 h-8 rounded" />
-                        <div className="text-sm font-semibold">{item.name}</div>
-                      </button>
-                    ))}
+                {selectedPrize === 'reward' && (
+                  <div className="space-y-4">
+                    <h4 className="font-bold text-gray-800">Custom Classroom Reward:</h4>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Reward Description:</label>
+                      <input
+                        type="text"
+                        placeholder="e.g., Extra recess time, Choose classroom music, etc."
+                        value={prizeDetails.description || ''}
+                        onChange={(e) => setPrizeDetails(prev => ({ ...prev, description: e.target.value }))}
+                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-purple-500 transition-colors"
+                      />
+                    </div>
                     
-                    {/* Pet Prizes */}
-                    {SHOP_ITEMS.pets?.slice(0, 2).map(item => (
-                      <button
-                        key={item.id}
-                        onClick={() => handlePrizeChange('shop_item', { item })}
-                        className={`w-full p-2 rounded-lg border-2 transition-all text-left flex items-center space-x-2 hover:scale-105 ${
-                          selectedPrize === 'shop_item' && prizeDetails?.item?.id === item.id
-                            ? 'border-purple-500 bg-purple-100'
-                            : 'border-purple-200 bg-white hover:border-purple-400'
-                        }`}
-                      >
-                        <img src={item.image} alt={item.name} className="w-8 h-8 rounded" />
-                        <div className="text-sm font-semibold">{item.name}</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                    {/* Pre-set reward options */}
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Or choose from popular rewards:</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          "Extra recess time",
+                          "Choose classroom music",
+                          "Line leader for the day", 
+                          "Teacher's helper",
+                          "Free homework pass",
+                          "Special seat privilege",
+                          "Show and tell time",
+                          "Choose class activity"
+                        ].map(reward => (
+                          <button
+                            key={reward}
+                            onClick={() => setPrizeDetails(prev => ({ ...prev, description: reward }))}
+                            className="text-left p-2 text-sm bg-white border border-gray-300 rounded hover:bg-purple-50 hover:border-purple-300 transition-colors"
+                          >
+                            {reward}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
 
-                {/* Loot Box Prizes */}
-                <div className="bg-orange-50 rounded-xl p-4 border border-orange-200">
-                  <h4 className="font-bold text-orange-800 mb-3 flex items-center">
-                    <span className="mr-2">📦</span>
-                    Loot Boxes
-                  </h4>
-                  <div className="space-y-2">
-                    {LOOT_BOXES.map(lootBox => (
-                      <button
-                        key={lootBox.id}
-                        onClick={() => handlePrizeChange('loot_box', { lootBox })}
-                        className={`w-full p-3 rounded-lg border-2 transition-all text-left hover:scale-105 ${
-                          selectedPrize === 'loot_box' && prizeDetails?.lootBox?.id === lootBox.id
-                            ? 'border-orange-500 bg-orange-100'
-                            : 'border-orange-200 bg-white hover:border-orange-400'
-                        }`}
-                      >
-                        <div className="flex items-center space-x-2">
-                          <span className="text-2xl">{lootBox.image}</span>
-                          <div>
-                            <div className="font-semibold">{lootBox.name}</div>
-                            <div className="text-xs text-gray-600">{lootBox.description}</div>
-                          </div>
-                        </div>
-                      </button>
-                    ))}
+                    {prizeDetails.description && (
+                      <div className="bg-purple-100 p-3 rounded-lg">
+                        <p className="text-purple-800 font-semibold">
+                          Winner receives: {prizeDetails.description}
+                        </p>
+                      </div>
+                    )}
                   </div>
-                </div>
-
-                {/* Classroom Reward Prizes */}
-                <div className="bg-green-50 rounded-xl p-4 border border-green-200 md:col-span-2">
-                  <h4 className="font-bold text-green-800 mb-3 flex items-center">
-                    <span className="mr-2">🎁</span>
-                    Classroom Rewards
-                  </h4>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    {classroomRewards.slice(0, 8).map(reward => (
-                      <button
-                        key={reward.id}
-                        onClick={() => handlePrizeChange('classroom_reward', { reward })}
-                        className={`p-3 rounded-lg border-2 transition-all text-center hover:scale-105 ${
-                          selectedPrize === 'classroom_reward' && prizeDetails?.reward?.id === reward.id
-                            ? 'border-green-500 bg-green-100'
-                            : 'border-green-200 bg-white hover:border-green-400'
-                        }`}
-                      >
-                        <div className="text-2xl mb-1">{reward.icon}</div>
-                        <div className="text-xs font-semibold">{reward.name}</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                )}
               </div>
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="bg-gray-50 px-6 py-4 flex justify-between items-center">
+        <div className="bg-gray-50 px-6 py-4 flex justify-between items-center border-t border-gray-200">
           <div className="text-sm text-gray-600">
-            {selectedPets.length} pets selected • Prize: {selectedPrize ? '✅' : '❌'}
+            {selectedPets.length > 0 ? (
+              <span>✅ {selectedPets.length} pet{selectedPets.length > 1 ? 's' : ''} selected</span>
+            ) : (
+              <span>⚠️ Select pets to race</span>
+            )}
           </div>
           
           <div className="flex gap-3">
@@ -427,11 +322,11 @@ const RaceSetupModal = ({
               Cancel
             </button>
             <button
-              disabled={selectedPets.length < 2 || !selectedPrize}
+              disabled={selectedPets.length === 0}
               onClick={handleStartRace}
-              className="px-8 py-2 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg hover:from-green-600 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-semibold shadow-lg transform hover:scale-105"
+              className="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-semibold shadow-lg transform hover:scale-105"
             >
-              🚀 Start Epic Race!
+              Start Race! 🏁
             </button>
           </div>
         </div>
