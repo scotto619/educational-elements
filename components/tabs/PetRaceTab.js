@@ -41,6 +41,61 @@ const PetRaceTab = ({
   const FINISH_POSITION_PERCENT = 0.9;
   const RACE_DISTANCE = FINISH_POSITION_PERCENT - START_POSITION_PERCENT; // 80% of track
 
+  // Race animation logic - this updates pet positions during the race
+  useEffect(() => {
+    if (!raceInProgress || !raceStarted) return;
+
+    const raceInterval = setInterval(() => {
+      setRacePositions(currentPositions => {
+        const newPositions = { ...currentPositions };
+        let raceComplete = false;
+        let winner = null;
+
+        selectedPets.forEach(petId => {
+          const student = students.find(s => s.id === petId);
+          if (!student?.pet) return;
+
+          // Calculate pet speed - base speed with some randomness for excitement
+          const basePetSpeed = (student.pet.speed || 1) * 0.8;
+          const randomVariation = 0.5 + Math.random() * 1; // 0.5 to 1.5 multiplier
+          const currentSpeed = (basePetSpeed * randomVariation) / 100; // Adjusted for 20-30 second races
+
+          // Update position
+          const currentPosition = newPositions[petId] || 0;
+          const newPosition = Math.min(currentPosition + currentSpeed, RACE_DISTANCE);
+          newPositions[petId] = newPosition;
+
+          // Check if this pet finished the race
+          if (newPosition >= RACE_DISTANCE && !raceComplete) {
+            raceComplete = true;
+            winner = student;
+          }
+        });
+
+        // End race if someone won
+        if (raceComplete && winner) {
+          setTimeout(() => {
+            setRaceInProgress(false);
+            setRaceFinished(true);
+            setRaceWinner(winner);
+            awardPrize(winner);
+            
+            // Reset after showing results
+            setTimeout(() => {
+              setRaceFinished(false);
+              setRaceWinner(null);
+              setRaceStarted(false);
+            }, 4000);
+          }, 100);
+        }
+
+        return newPositions;
+      });
+    }, 50); // Update every 50ms for smooth animation
+
+    return () => clearInterval(raceInterval);
+  }, [raceInProgress, raceStarted, selectedPets, students, RACE_DISTANCE, setRaceInProgress, setRaceFinished, setRaceWinner]);
+
   // Calculate track dimensions on mount and resize
   useEffect(() => {
     const updateTrackDimensions = () => {
@@ -132,7 +187,7 @@ const PetRaceTab = ({
     return startPixel + (racePosition / RACE_DISTANCE) * raceDistance;
   };
 
-  // Award prizes to winner
+  // Award prizes to winner (removed speed increase)
   const awardPrize = async (winner) => {
     let prizeAwarded = '';
     
@@ -143,8 +198,8 @@ const PetRaceTab = ({
         ...student,
         pet: {
           ...student.pet,
-          wins: (student.pet.wins || 0) + 1,
-          speed: (student.pet.speed || 1) + 0
+          wins: (student.pet.wins || 0) + 1
+          // Removed speed increase
         }
       };
 
