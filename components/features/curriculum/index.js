@@ -634,14 +634,3 @@ export const CurriculumTab = () => {
     </div>
   );
 };
-
-// Export all components
-export {
-  SubjectSelector,
-  WritingStructuresDisplay,
-  MathOperationsDisplay,
-  ReadingStrategiesDisplay,
-  CrossCurricularProjects,
-  AssessmentToolsDisplay,
-  CurriculumTab
-};
