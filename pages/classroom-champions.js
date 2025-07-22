@@ -24,8 +24,8 @@ import {
 } from '../hooks';
 
 // Import services
-import firebaseService from '../services/firebaseService';
-import soundService from '../services/soundService';
+import firebaseService from '../config/services/firebaseService';
+import soundService from '../config/services/soundService';
 
 // ===============================================
 // PLACEHOLDER COMPONENTS FOR REMAINING TABS

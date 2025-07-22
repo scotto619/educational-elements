@@ -18,7 +18,7 @@ import {
 } from '../../shared';
 import { useStudents, useModals, useLocalStorage } from '../../../hooks';
 import { ALL_SHOP_ITEMS, RARITY_CONFIG, calculateCoins } from '../../../config/gameData';
-import studentService from '../../../services/studentService';
+import studentService from '../../../config/services/studentService';
 
 // ===============================================
 // SHOP ITEM CARD COMPONENT

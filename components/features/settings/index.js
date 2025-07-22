@@ -14,7 +14,7 @@ import {
   Toast
 } from '../../shared';
 import { useAuth, useToast } from '../../../hooks';
-import firebaseService from '../../../services/firebaseService';
+import firebaseService from '../../../config/services/firebaseService';
 import { downloadJSON, copyToClipboard } from '../../shared/ErrorBoundary';
 
 // ===============================================

@@ -17,7 +17,7 @@ import {
 } from '../../shared';
 import { useQuests, useModals, useStudents } from '../../../hooks';
 import { QUEST_GIVERS, GAME_CONFIG } from '../../../config/gameData';
-import questService from '../../../services/questService';
+import questService from '../../../config/services/questService';
 
 // ===============================================
 // QUEST GIVER COMPONENT

@@ -5,11 +5,11 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../utils/firebase';
-import firebaseService from '../services/firebaseService';
-import studentService from '../services/studentService';
-import questService from '../services/questService';
-import gameLogic from '../services/gameLogic';
-import soundService from '../services/soundService';
+import firebaseService from '../config/services/firebaseService';
+import studentService from '../config/services/studentService';
+import questService from '../config/services/questService';
+import gameLogic from '../config/services/gameLogic';
+import soundService from '../config/services/soundService';
 
 // ===============================================
 // AUTHENTICATION HOOKS
