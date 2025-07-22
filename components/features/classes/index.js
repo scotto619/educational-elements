@@ -787,12 +787,3 @@ export const ClassesTab = ({ userId }) => {
     </div>
   );
 };
-
-// Export all components
-export {
-  ClassCard,
-  ClassModal,
-  ClassSearchFilter,
-  ClassesOverview,
-  ClassesTab
-};

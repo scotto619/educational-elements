@@ -699,8 +699,3 @@ export const FishingTab = ({ userId, classId }) => {
 };
 
 // Export all components
-export {
-  FishingPond,
-  FishingStudentSelector,
-  FishingTab
-};

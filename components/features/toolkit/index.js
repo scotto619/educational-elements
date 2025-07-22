@@ -677,9 +677,3 @@ export const ToolkitTab = ({ userId, classId }) => {
 };
 
 // Export all components
-export {
-  ClassroomTimer,
-  StudentPicker,
-  SeatingChart,
-  ToolkitTab
-};

@@ -608,10 +608,3 @@ export const PetRaceTab = ({ userId, classId }) => {
 };
 
 // Export all components
-export {
-  RaceTrack,
-  PetSelection,
-  RacePrizes,
-  RaceController,
-  PetRaceTab
-};

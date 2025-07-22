@@ -817,10 +817,3 @@ export const GamesTab = ({ userId, classId }) => {
 };
 
 // Export all components
-export {
-  MemoryGame,
-  QuizGame,
-  WordScrambleGame,
-  GameSelector,
-  GamesTab
-};

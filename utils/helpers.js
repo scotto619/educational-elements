@@ -359,30 +359,3 @@ export const validateForm = (data, rules) => {
 };
 
 // Export everything as default
-export default {
-  formatDate,
-  formatTime,
-  formatRelativeTime,
-  capitalizeFirst,
-  truncateText,
-  generateId,
-  debounce,
-  throttle,
-  arrayMove,
-  groupBy,
-  sortBy,
-  filterBySearch,
-  validateEmail,
-  validateStudentName,
-  safeParseJSON,
-  copyToClipboard,
-  downloadJSON,
-  readFileAsText,
-  withRetry,
-  memoize,
-  localStorage,
-  animateValue,
-  slideIn,
-  validationRules,
-  validateForm
-};

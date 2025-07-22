@@ -508,10 +508,3 @@ export const DashboardTab = ({ userId, classId, currentClass, onTabChange }) => 
 };
 
 // Export all components
-export {
-  GuildChampions,
-  ClassStatsOverview,
-  RecentActivity,
-  QuickActions,
-  DashboardTab
-};

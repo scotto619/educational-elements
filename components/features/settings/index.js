@@ -626,10 +626,3 @@ export const SettingsTab = ({ userId, userData, onUpdate }) => {
   );
 };
 
-// Export all components
-export {
-  AccountSettings,
-  DataManagement,
-  SubscriptionManagement,
-  SettingsTab
-};
