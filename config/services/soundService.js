@@ -238,8 +238,5 @@ class SoundService {
 const soundService = new SoundService();
 
 // Auto-resume audio context on user interaction
-document.addEventListener('click', () => {
-  soundService.resumeAudioContext();
-}, { once: true });
 
 export default soundService;
