@@ -787,3 +787,4 @@ export const ClassesTab = ({ userId }) => {
     </div>
   );
 };
+export { ClassesTab };

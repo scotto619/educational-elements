@@ -714,3 +714,4 @@ export const ShopTab = ({ userId, classId }) => {
 };
 
 // Export all components
+export { ShopTab };

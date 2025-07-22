@@ -677,3 +677,4 @@ export const ToolkitTab = ({ userId, classId }) => {
 };
 
 // Export all components
+export { ToolkitTab };

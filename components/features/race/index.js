@@ -608,3 +608,4 @@ export const PetRaceTab = ({ userId, classId }) => {
 };
 
 // Export all components
+export { PetRaceTab };

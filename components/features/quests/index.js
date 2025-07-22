@@ -814,3 +814,4 @@ export const QuestsTab = ({ userId, classId }) => {
 };
 
 // Export all components
+export { QuestsTab };

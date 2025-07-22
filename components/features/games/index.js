@@ -817,3 +817,4 @@ export const GamesTab = ({ userId, classId }) => {
 };
 
 // Export all components
+export { GamesTab };

@@ -687,3 +687,4 @@ export const StudentsTab = ({
 };
 
 // Export all components
+export { StudentsTab };

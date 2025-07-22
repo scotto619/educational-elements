@@ -699,3 +699,4 @@ export const FishingTab = ({ userId, classId }) => {
 };
 
 // Export all components
+export { FishingTab };

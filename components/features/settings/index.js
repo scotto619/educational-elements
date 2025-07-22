@@ -625,4 +625,4 @@ export const SettingsTab = ({ userId, userData, onUpdate }) => {
     </div>
   );
 };
-
+export { SettingsTab };

@@ -508,3 +508,4 @@ export const DashboardTab = ({ userId, classId, currentClass, onTabChange }) => 
 };
 
 // Export all components
+export { DashboardTab };
