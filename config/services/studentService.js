@@ -5,12 +5,12 @@ import {
   getAllAvatars, 
   getAvatarImagePath, 
   getRandomPetName 
-} from '../config/assets.js';
+} from '../assets.js';
 import { 
   GAME_CONFIG, 
   calculateLevel, 
   calculateCoins 
-} from '../config/gameData.js';
+} from '../gameData.js';
 import gameLogic from './gameLogic.js';
 import firebaseService from './firebaseService.js';
 import soundService from './soundService.js';

@@ -1,7 +1,7 @@
 // services/soundService.js - Centralized Sound Management
 // This service handles all audio generation and playback for the app
 
-import { SOUND_CONFIG, SOUND_TYPES } from '../config/assets.js';
+import { SOUND_CONFIG, SOUND_TYPES } from '../assets.js';
 
 class SoundService {
   constructor() {

@@ -9,12 +9,12 @@ import {
   calculateCoins,
   ACHIEVEMENTS,
   generateLootBoxRewards
-} from '../config/gameData.js';
+} from '../gameData.js';
 import { 
   getAvatarImagePath, 
   getRandomPetName, 
   getAllPets 
-} from '../config/assets.js';
+} from '../assets.js';
 import soundService from './soundService.js';
 
 class GameLogicService {

@@ -2,7 +2,7 @@
 // This service handles all Firebase database operations
 
 import { doc, getDoc, setDoc, collection, query, where, getDocs } from 'firebase/firestore';
-import { firestore } from '../utils/firebase';
+import { firestore } from '../../utils/firebase';
 
 class FirebaseService {
   constructor() {

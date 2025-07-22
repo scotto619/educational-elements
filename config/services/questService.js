@@ -1,7 +1,7 @@
 // services/questService.js - Centralized Quest Management
 // This service handles quest creation, completion, tracking, and quest giver interactions
 
-import { QUEST_GIVERS, DEFAULT_QUEST_TEMPLATES } from '../config/gameData.js';
+import { QUEST_GIVERS, DEFAULT_QUEST_TEMPLATES } from '../gameData.js';
 import studentService from './studentService.js';
 import firebaseService from './firebaseService.js';
 import soundService from './soundService.js';
