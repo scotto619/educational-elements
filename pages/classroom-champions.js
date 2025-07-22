@@ -25,7 +25,6 @@ import {
 
 // Import services
 import firebaseService from '../config/services/firebaseService';
-import soundService from '../config/services/soundService';
 
 // ===============================================
 // PLACEHOLDER COMPONENTS FOR REMAINING TABS
@@ -121,7 +120,9 @@ const ClassroomChampions = () => {
   // Handle tab changes with sound feedback
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
-    soundService.playClickSound();
+  import('../config/services/soundService').then((module) => {
+  module.default.playClickSound();
+});
     
     // Show helpful migration tips
     if (['race', 'fishing', 'games', 'classes', 'settings'].includes(tabId)) {
