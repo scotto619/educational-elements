@@ -662,23 +662,3 @@ export const EmptyState = ({
 };
 
 // Export all components
-export default {
-  LoadingSpinner,
-  Toast,
-  ConfirmDialog,
-  Modal,
-  InputField,
-  SelectField,
-  TextareaField,
-  Button,
-  IconButton,
-  XPBadge,
-  LevelProgressBar,
-  CoinDisplay,
-  RarityBorder,
-  AchievementBadge,
-  PageHeader,
-  Card,
-  StatsCard,
-  EmptyState
-};

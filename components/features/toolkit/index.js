@@ -13,7 +13,7 @@ import {
   EmptyState
 } from '../../shared';
 import { useStudents } from '../../../hooks';
-import soundService from '../../../services/soundService';
+import soundService from '../../../config/services/soundService';
 
 // ===============================================
 // TIMER COMPONENTS

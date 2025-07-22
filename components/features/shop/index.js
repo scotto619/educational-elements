@@ -714,12 +714,3 @@ export const ShopTab = ({ userId, classId }) => {
 };
 
 // Export all components
-export {
-  ShopItemCard,
-  ShopCategoryTabs,
-  ShopStudentSelector,
-  ShopFilter,
-  ItemPreview,
-  PurchaseConfirmModal,
-  ShopTab
-};

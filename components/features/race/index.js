@@ -12,8 +12,8 @@ import {
 } from '../../shared';
 import { useStudents } from '../../../hooks';
 import { GAME_CONFIG } from '../../../config/gameData';
-import gameLogic from '../../../services/gameLogic';
-import soundService from '../../../services/soundService';
+import gameLogic from '../../..//config/services/gameLogic';
+import soundService from '../../../config/services/soundService';
 
 // ===============================================
 // RACE TRACK COMPONENT

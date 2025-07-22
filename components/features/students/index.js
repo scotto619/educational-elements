@@ -687,11 +687,3 @@ export const StudentsTab = ({
 };
 
 // Export all components
-export {
-  StudentCard,
-  StudentGrid,
-  BulkXPPanel,
-  StudentSearchFilter,
-  StudentStats,
-  StudentsTab
-};

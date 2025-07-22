@@ -814,10 +814,3 @@ export const QuestsTab = ({ userId, classId }) => {
 };
 
 // Export all components
-export {
-  QuestGiver,
-  QuestCard,
-  CreateQuestModal,
-  QuestFilter,
-  QuestsTab
-};
