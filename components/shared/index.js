@@ -2,7 +2,22 @@
 // These components are used across multiple features and maintain consistent styling
 
 import React, { useState, useEffect } from 'react';
-import { RARITY_CONFIG } from '../../config/gameData';
+
+// Try to import game data, fallback if not available
+let RARITY_CONFIG = {};
+try {
+  const gameData = require('../../config/gameData');
+  RARITY_CONFIG = gameData.RARITY_CONFIG || {};
+} catch (error) {
+  // Fallback rarity config if gameData not available
+  RARITY_CONFIG = {
+    common: { borderColor: 'border-gray-300', bgColor: 'bg-gray-50' },
+    uncommon: { borderColor: 'border-green-300', bgColor: 'bg-green-50' },
+    rare: { borderColor: 'border-blue-300', bgColor: 'bg-blue-50' },
+    epic: { borderColor: 'border-purple-300', bgColor: 'bg-purple-50' },
+    legendary: { borderColor: 'border-yellow-300', bgColor: 'bg-yellow-50' }
+  };
+}
 
 // ===============================================
 // BASIC UI COMPONENTS
@@ -19,8 +34,15 @@ const LoadingSpinner = ({ size = 'md', color = 'blue' }) => {
     xl: 'w-16 h-16'
   };
 
+  const colorClasses = {
+    blue: 'border-blue-200 border-t-blue-600',
+    green: 'border-green-200 border-t-green-600',
+    purple: 'border-purple-200 border-t-purple-600',
+    white: 'border-gray-200 border-t-white'
+  };
+
   return (
-    <div className={`${sizeClasses[size]} animate-spin rounded-full border-2 border-${color}-200 border-t-${color}-600`} />
+    <div className={`${sizeClasses[size]} animate-spin rounded-full border-2 ${colorClasses[color] || colorClasses.blue}`} />
   );
 };
 
@@ -398,7 +420,9 @@ const XPBadge = ({ amount, category, isAnimating = false }) => {
   const categoryColors = {
     Respectful: 'bg-green-500',
     Responsible: 'bg-blue-500',
-    Learner: 'bg-purple-500'
+    Learner: 'bg-purple-500',
+    Participation: 'bg-yellow-500',
+    Homework: 'bg-orange-500'
   };
 
   return (
@@ -414,34 +438,143 @@ const XPBadge = ({ amount, category, isAnimating = false }) => {
 };
 
 /**
- * Level Progress Bar Component
+ * Enhanced Level Progress Bar Component - FIXED AND IMPROVED
  */
-const LevelProgressBar = ({ currentXP, nextLevelXP, level, maxLevel = 4 }) => {
-  const progressPercent = nextLevelXP > 0 ? Math.round((currentXP / nextLevelXP) * 100) : 100;
-  const isMaxLevel = level >= maxLevel;
+const LevelProgressBar = ({ 
+  currentXP = 0, 
+  currentLevel = 1, 
+  showLabel = true,
+  size = 'medium',
+  animated = true,
+  color = 'blue'
+}) => {
+  // Calculate XP thresholds (every 100 XP = 1 level)
+  const xpPerLevel = 100;
+  const maxLevel = 4;
+  
+  // Calculate current level progress
+  const xpInCurrentLevel = currentXP % xpPerLevel;
+  const progressPercentage = (xpInCurrentLevel / xpPerLevel) * 100;
+  
+  // Calculate next level XP requirement
+  const xpToNextLevel = xpPerLevel - xpInCurrentLevel;
+  const nextLevel = Math.min(currentLevel + 1, maxLevel);
+  
+  // Size variations
+  const sizeClasses = {
+    small: 'h-2',
+    medium: 'h-3',
+    large: 'h-4'
+  };
+  
+  const textSizeClasses = {
+    small: 'text-xs',
+    medium: 'text-sm',
+    large: 'text-base'
+  };
+
+  // Color variations
+  const getColorClasses = () => {
+    switch (color) {
+      case 'green':
+        return {
+          bg: 'bg-green-500',
+          bgLight: 'bg-green-100',
+          text: 'text-green-700'
+        };
+      case 'blue':
+        return {
+          bg: 'bg-blue-500',
+          bgLight: 'bg-blue-100',
+          text: 'text-blue-700'
+        };
+      case 'purple':
+        return {
+          bg: 'bg-purple-500',
+          bgLight: 'bg-purple-100',
+          text: 'text-purple-700'
+        };
+      case 'gold':
+        return {
+          bg: 'bg-yellow-500',
+          bgLight: 'bg-yellow-100',
+          text: 'text-yellow-700'
+        };
+      default:
+        return {
+          bg: 'bg-blue-500',
+          bgLight: 'bg-blue-100',
+          text: 'text-blue-700'
+        };
+    }
+  };
+
+  const colors = getColorClasses();
+  
+  // Max level reached
+  if (currentLevel >= maxLevel) {
+    return (
+      <div className="w-full">
+        {showLabel && (
+          <div className={`flex justify-between items-center mb-1 ${textSizeClasses[size]}`}>
+            <span className="font-bold text-yellow-600">MAX LEVEL! 🏆</span>
+            <span className="text-yellow-500 font-semibold">Level {currentLevel}</span>
+          </div>
+        )}
+        <div className={`w-full ${sizeClasses[size]} bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full overflow-hidden relative shadow-inner`}>
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-40 animate-pulse"></div>
+        </div>
+        {showLabel && (
+          <div className={`text-center mt-1 ${textSizeClasses[size]} text-yellow-600 font-medium`}>
+            Champion Status! ⭐
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between text-sm">
-        <span className="font-medium">Level {level}</span>
-        {!isMaxLevel && (
-          <span className="text-gray-600">
-            {currentXP} / {nextLevelXP} XP
+    <div className="w-full">
+      {showLabel && (
+        <div className={`flex justify-between items-center mb-1 ${textSizeClasses[size]}`}>
+          <span className={`font-bold ${colors.text}`}>
+            Level {currentLevel}
           </span>
-        )}
-        {isMaxLevel && (
-          <span className="text-gold-600 font-bold">MAX LEVEL</span>
+          <span className="text-gray-500 font-medium">
+            {xpToNextLevel} XP to Level {nextLevel}
+          </span>
+        </div>
+      )}
+      
+      <div className={`w-full ${sizeClasses[size]} ${colors.bgLight} rounded-full overflow-hidden relative shadow-inner`}>
+        {/* Progress fill */}
+        <div 
+          className={`${sizeClasses[size]} ${colors.bg} rounded-full ${animated ? 'transition-all duration-700 ease-out' : ''} relative overflow-hidden`}
+          style={{ width: `${progressPercentage}%` }}
+        >
+          {/* Animated shimmer effect */}
+          {animated && progressPercentage > 0 && (
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-50 animate-pulse"></div>
+          )}
+        </div>
+        
+        {/* XP text overlay for larger sizes */}
+        {size !== 'small' && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className={`${textSizeClasses[size]} font-bold text-gray-700`}>
+              {xpInCurrentLevel}/{xpPerLevel} XP
+            </span>
+          </div>
         )}
       </div>
       
-      <div className="w-full bg-gray-200 rounded-full h-3">
-        <div 
-          className={`h-3 rounded-full transition-all duration-500 ${
-            isMaxLevel ? 'bg-gold-500' : 'bg-blue-500'
-          }`}
-          style={{ width: `${progressPercent}%` }}
-        />
-      </div>
+      {/* Additional info for larger sizes */}
+      {showLabel && size === 'large' && (
+        <div className={`flex justify-between mt-1 ${textSizeClasses[size]} text-gray-600`}>
+          <span>Total XP: {currentXP}</span>
+          <span>{progressPercentage.toFixed(0)}% Complete</span>
+        </div>
+      )}
     </div>
   );
 };
@@ -643,7 +776,7 @@ const StatsCard = ({
 /**
  * Empty State Component
  */
- const EmptyState = ({ 
+const EmptyState = ({ 
   icon = '📭', 
   title = 'No items found', 
   description = '',
@@ -661,21 +794,59 @@ const StatsCard = ({
   );
 };
 
-// Export all components
+// ===============================================
+// EXPORT ALL COMPONENTS - FIXED!
+// ===============================================
+
+// Export all components (FIXED: Added missing exports)
 export {
+  // Basic UI Components
+  LoadingSpinner,
+  Toast,
+  ConfirmDialog,
+  Modal,
+  
+  // Form Components
+  InputField,
+  SelectField,
+  TextareaField,
+  
+  // Button Components
   Button,
   IconButton,
+  
+  // Game-specific Components
+  XPBadge,
+  LevelProgressBar,  // ← THIS WAS MISSING! 
+  CoinDisplay,
+  RarityBorder,
+  AchievementBadge,
+  
+  // Layout Components
+  PageHeader,
   Card,
+  StatsCard,
+  EmptyState
+};
+
+// Default export for convenience
+export default {
+  LoadingSpinner,
+  Toast,
+  ConfirmDialog,
   Modal,
   InputField,
   SelectField,
   TextareaField,
+  Button,
+  IconButton,
   XPBadge,
+  LevelProgressBar,
   CoinDisplay,
   RarityBorder,
+  AchievementBadge,
+  PageHeader,
+  Card,
   StatsCard,
-  LoadingSpinner,
-  EmptyState,
-  ConfirmDialog,
-  Toast
+  EmptyState
 };

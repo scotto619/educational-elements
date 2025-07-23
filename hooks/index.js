@@ -6,73 +6,100 @@ import { useRouter } from 'next/router';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../utils/firebase';
 
-// Service imports with error handling
+// Service imports with static fallbacks to avoid dynamic import warnings
 let firebaseService = null;
 let studentService = null;
 let questService = null;
 let gameLogic = null;
 let soundService = null;
 
-// Dynamic service loading to handle missing services gracefully
-const loadService = async (serviceName, servicePath) => {
-  try {
-    const module = await import(servicePath);
-    return module.default;
-  } catch (error) {
-    console.warn(`Service ${serviceName} not found at ${servicePath}, using fallback`);
-    return null;
+// Fallback services for when the actual services aren't available
+const fallbackServices = {
+  firebaseService: {
+    getUserData: async () => ({}),
+    getClassData: async () => ({ students: [], activeQuests: [], questTemplates: [] }),
+    saveStudents: async () => {},
+    saveQuestData: async () => {},
+    setActiveClass: async () => {},
+    updateUserData: async () => {}
+  },
+  studentService: {
+    createStudent: (first, last, avatar) => ({ 
+      id: Date.now(), 
+      firstName: first, 
+      lastName: last, 
+      avatarBase: avatar,
+      totalPoints: 0,
+      weeklyPoints: 0,
+      categoryTotal: {},
+      categoryWeekly: {},
+      coins: 0,
+      coinsSpent: 0,
+      inventory: [],
+      ownedAvatars: [avatar],
+      ownedPets: []
+    }),
+    updateStudent: (student, updates) => ({ ...student, ...updates }),
+    awardXP: async (student, category, amount) => ({ 
+      ...student, 
+      totalPoints: (student.totalPoints || 0) + amount,
+      categoryTotal: {
+        ...student.categoryTotal,
+        [category]: (student.categoryTotal?.[category] || 0) + amount
+      }
+    }),
+    bulkAwardXP: async (students, ids, category, amount) => 
+      students.map(student => 
+        ids.includes(student.id) 
+          ? { 
+              ...student, 
+              totalPoints: (student.totalPoints || 0) + amount,
+              categoryTotal: {
+                ...student.categoryTotal,
+                [category]: (student.categoryTotal?.[category] || 0) + amount
+              }
+            }
+          : student
+      )
+  },
+  questService: {
+    getDefaultTemplates: () => [],
+    createQuest: (data) => ({ id: Date.now(), ...data }),
+    completeQuest: (quest, student) => ({ quest, student }),
+    getAvailableQuests: () => []
+  },
+  gameLogic: {
+    validateStudentData: (student) => ({
+      id: student.id || Date.now(),
+      firstName: student.firstName || 'Student',
+      lastName: student.lastName || '',
+      avatarBase: student.avatarBase || 'Wizard M',
+      totalPoints: student.totalPoints || 0,
+      weeklyPoints: student.weeklyPoints || 0,
+      categoryTotal: student.categoryTotal || {},
+      categoryWeekly: student.categoryWeekly || {},
+      coins: student.coins || 0,
+      coinsSpent: student.coinsSpent || 0,
+      inventory: student.inventory || [],
+      ownedAvatars: student.ownedAvatars || [student.avatarBase || 'Wizard M'],
+      ownedPets: student.ownedPets || [],
+      ...student
+    }),
+    calculateLevel: (xp) => Math.min(Math.floor((xp || 0) / 100) + 1, 4)
+  },
+  soundService: {
+    setEnabled: () => {},
+    setVolume: () => {},
+    playSound: () => {}
   }
 };
 
-// Initialize services
-const initializeServices = async () => {
-  if (!firebaseService) {
-    firebaseService = await loadService('firebaseService', '../config/services/firebaseService') || {
-      getUserData: async () => ({}),
-      getClassData: async () => ({}),
-      saveStudents: async () => {},
-      saveQuestData: async () => {},
-      setActiveClass: async () => {},
-      updateUserData: async () => {}
-    };
-  }
-  
-  if (!studentService) {
-    studentService = await loadService('studentService', '../config/services/studentService') || {
-      createStudent: (first, last, avatar) => ({ id: Date.now(), firstName: first, lastName: last, avatarBase: avatar }),
-      updateStudent: (student, updates) => ({ ...student, ...updates }),
-      awardXP: async (student, category, amount) => ({ ...student, totalPoints: (student.totalPoints || 0) + amount }),
-      bulkAwardXP: async (students, ids, category, amount) => students
-    };
-  }
-  
-  if (!questService) {
-    questService = await loadService('questService', '../config/services/questService') || {
-      getDefaultTemplates: () => [],
-      createQuest: (data) => ({ id: Date.now(), ...data }),
-      completeQuest: (quest, student) => ({ quest, student }),
-      getAvailableQuests: () => []
-    };
-  }
-  
-  if (!gameLogic) {
-    gameLogic = await loadService('gameLogic', '../config/services/gameLogic') || {
-      validateStudentData: (student) => student,
-      calculateLevel: (xp) => Math.floor((xp || 0) / 100) + 1
-    };
-  }
-  
-  if (!soundService) {
-    soundService = await loadService('soundService', '../config/services/soundService') || {
-      setEnabled: () => {},
-      setVolume: () => {},
-      playSound: () => {}
-    };
-  }
-};
-
-// Initialize services on module load
-initializeServices();
+// Initialize services with fallbacks
+firebaseService = fallbackServices.firebaseService;
+studentService = fallbackServices.studentService;
+questService = fallbackServices.questService;
+gameLogic = fallbackServices.gameLogic;
+soundService = fallbackServices.soundService;
 
 // ===============================================
 // AUTHENTICATION HOOKS
