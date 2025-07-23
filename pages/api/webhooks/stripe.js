@@ -1,9 +1,8 @@
-// pages/api/webhooks/stripe.js - FIXED VERSION (no micro dependency)
-import Stripe from 'stripe';
-import { firestore } from '../../../utils/firebase';
-import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
+// pages/api/webhooks/stripe.js - FIXED VERSION with consistent imports
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const { firestore } = require('../../../utils/firebase');
+const { doc, setDoc, getDoc, updateDoc } = require('firebase/firestore');
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
 export const config = {
@@ -160,8 +159,8 @@ async function handleSubscriptionUpdated(subscription) {
     let plan = 'basic';
     if (subscription.items.data[0]) {
       const priceId = subscription.items.data[0].price.id;
-      // Replace with your actual Pro price ID
-      if (priceId === 'price_1Rh1hBEN0uIK7BDCgkPiM6xm') {
+      // Update with your actual Pro price ID
+      if (priceId === 'price_1RhLfRCkfn6vIQTWRXsduvSu') {
         plan = 'pro';
       }
     }

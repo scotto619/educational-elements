@@ -1,9 +1,11 @@
+// pages/checkout/[plan].js - Fixed with better error handling
 import { loadStripe } from '@stripe/stripe-js';
 import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import { auth } from '../../utils/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 
+// Initialize Stripe
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
 
 export default function Checkout() {
@@ -11,8 +13,10 @@ export default function Checkout() {
   const { plan } = router.query;
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [processing, setProcessing] = useState(false);
   const [promoCode, setPromoCode] = useState('');
   const [showPromoInput, setShowPromoInput] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -30,7 +34,14 @@ export default function Checkout() {
   const handleCheckout = async () => {
     if (!plan || !user) return;
 
-    setLoading(true);
+    // Validate plan
+    if (!['basic', 'pro'].includes(plan)) {
+      setError('Invalid plan selected');
+      return;
+    }
+
+    setProcessing(true);
+    setError('');
 
     try {
       const res = await fetch('/api/create-checkout-session', {
@@ -51,11 +62,15 @@ export default function Checkout() {
       }
 
       const stripe = await stripePromise;
-      await stripe.redirectToCheckout({ sessionId: data.sessionId });
+      const { error } = await stripe.redirectToCheckout({ sessionId: data.sessionId });
+      
+      if (error) {
+        throw new Error(error.message);
+      }
     } catch (error) {
       console.error('Checkout error:', error);
-      alert('Error: ' + error.message);
-      setLoading(false);
+      setError(error.message);
+      setProcessing(false);
     }
   };
 
@@ -70,27 +85,69 @@ export default function Checkout() {
     );
   }
 
+  // Plan configuration
   const planDetails = {
-    basic: { name: 'Basic', price: '$6.99', features: '1 Classroom' },
-    pro: { name: 'Pro', price: '$11.99', features: 'Up to 5 Classrooms' }
+    basic: { 
+      name: 'Basic', 
+      price: '$6.99', 
+      features: ['1 Classroom', 'XP Tracking', 'Basic Analytics', 'Pet System'],
+      popular: false
+    },
+    pro: { 
+      name: 'Pro', 
+      price: '$11.99', 
+      features: ['Up to 5 Classrooms', 'Advanced Analytics', 'Custom Rewards', 'Priority Support'],
+      popular: true
+    }
   };
 
   const currentPlan = planDetails[plan];
+
+  if (!currentPlan) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-6">
+        <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full text-center">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">Invalid Plan</h1>
+          <p className="text-gray-600 mb-6">The selected plan is not available.</p>
+          <button
+            onClick={() => router.push('/pricing')}
+            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Back to Pricing
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-6">
       <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800 mb-2">Complete Your Order</h1>
-          <p className="text-gray-600">You're about to subscribe to our {currentPlan?.name} plan</p>
+          <p className="text-gray-600">You're about to subscribe to our {currentPlan.name} plan</p>
+          {currentPlan.popular && (
+            <div className="inline-block bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-medium mt-2">
+              Most Popular
+            </div>
+          )}
         </div>
 
+        {/* Plan Summary */}
         <div className="bg-gray-50 rounded-lg p-6 mb-6">
           <div className="flex justify-between items-center mb-4">
-            <span className="text-lg font-semibold text-gray-800">{currentPlan?.name} Plan</span>
-            <span className="text-lg font-bold text-blue-600">{currentPlan?.price}/month</span>
+            <span className="text-lg font-semibold text-gray-800">{currentPlan.name} Plan</span>
+            <span className="text-lg font-bold text-blue-600">{currentPlan.price}/month</span>
           </div>
-          <p className="text-gray-600 text-sm">{currentPlan?.features}</p>
+          
+          <ul className="text-sm text-gray-600 space-y-2">
+            {currentPlan.features.map((feature, index) => (
+              <li key={index} className="flex items-center">
+                <span className="text-green-500 mr-2">✓</span>
+                {feature}
+              </li>
+            ))}
+          </ul>
           
           {promoCode && (
             <div className="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
@@ -102,6 +159,7 @@ export default function Checkout() {
           )}
         </div>
 
+        {/* Promo Code */}
         {!showPromoInput ? (
           <button
             onClick={() => setShowPromoInput(true)}
@@ -132,17 +190,41 @@ export default function Checkout() {
           </div>
         )}
 
+        {/* Error Message */}
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-600 text-sm">{error}</p>
+          </div>
+        )}
+
+        {/* Checkout Button */}
         <button
           onClick={handleCheckout}
-          disabled={loading}
-          className="w-full bg-blue-600 text-white px-6 py-4 rounded-lg hover:bg-blue-700 font-semibold text-lg transition-colors shadow-lg disabled:opacity-50"
+          disabled={processing}
+          className="w-full bg-blue-600 text-white px-6 py-4 rounded-lg hover:bg-blue-700 font-semibold text-lg transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {loading ? 'Processing...' : `Subscribe to ${currentPlan?.name}`}
+          {processing ? (
+            <div className="flex items-center justify-center">
+              <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-2"></div>
+              Processing...
+            </div>
+          ) : (
+            `Subscribe to ${currentPlan.name}`
+          )}
         </button>
 
         <p className="text-center text-sm text-gray-500 mt-4">
           Secure payment powered by Stripe. Cancel anytime.
         </p>
+
+        <div className="text-center mt-4">
+          <button
+            onClick={() => router.push('/pricing')}
+            className="text-gray-500 hover:text-gray-700 text-sm underline"
+          >
+            ← Back to pricing
+          </button>
+        </div>
       </div>
     </div>
   );
