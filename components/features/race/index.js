@@ -22,7 +22,7 @@ import soundService from '../../../config/services/soundService';
 /**
  * Animated race track with pets racing
  */
-export const RaceTrack = ({ 
+const RaceTrack = ({ 
   racingPets, 
   isRacing, 
   raceProgress, 
@@ -156,7 +156,7 @@ export const RaceTrack = ({
 /**
  * Interface for selecting pets for the race
  */
-export const PetSelection = ({ 
+const PetSelection = ({ 
   students, 
   selectedPets, 
   onPetSelect, 
@@ -263,7 +263,7 @@ export const PetSelection = ({
 /**
  * Prize selection and distribution interface
  */
-export const RacePrizes = ({ 
+const RacePrizes = ({ 
   prizes, 
   onPrizeChange, 
   winnerPet,
@@ -356,7 +356,7 @@ export const RacePrizes = ({
 /**
  * Main race control logic and state management
  */
-export const RaceController = ({ 
+const RaceController = ({ 
   selectedPets, 
   selectedPrize,
   onRaceComplete 
@@ -529,7 +529,7 @@ export const RaceController = ({
 /**
  * Complete Pet Race tab using smaller components
  */
-export const PetRaceTab = ({ userId, classId }) => {
+const PetRaceTab = ({ userId, classId }) => {
   const { students, loading } = useStudents(userId, classId);
   const [selectedPets, setSelectedPets] = useState([]);
   const [selectedPrize, setSelectedPrize] = useState(null);
@@ -608,4 +608,10 @@ export const PetRaceTab = ({ userId, classId }) => {
 };
 
 // Export all components
-export { PetRaceTab };
+export {
+  RaceTrack,
+  PetSelection,
+  RacePrizes,
+  RaceController,
+  PetRaceTab
+};

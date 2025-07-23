@@ -23,7 +23,7 @@ import { formatDate, formatRelativeTime } from '../../shared/ErrorBoundary';
 /**
  * Individual class display card
  */
-export const ClassCard = ({ 
+const ClassCard = ({ 
   classData, 
   isActive, 
   onSelect, 
@@ -138,7 +138,7 @@ export const ClassCard = ({
 /**
  * Modal for creating new classes or editing existing ones
  */
-export const ClassModal = ({ 
+const ClassModal = ({ 
   isOpen, 
   onClose, 
   onSave,
@@ -302,7 +302,7 @@ export const ClassModal = ({
 /**
  * Search and filter controls for classes
  */
-export const ClassSearchFilter = ({ 
+const ClassSearchFilter = ({ 
   classes,
   searchTerm,
   onSearchChange,
@@ -391,7 +391,7 @@ export const ClassSearchFilter = ({
 /**
  * Overview statistics for all classes
  */
-export const ClassesOverview = ({ classes, activeClassId }) => {
+const ClassesOverview = ({ classes, activeClassId }) => {
   const stats = {
     totalClasses: classes.length,
     totalStudents: classes.reduce((sum, cls) => sum + (cls.students?.length || 0), 0),
@@ -472,7 +472,7 @@ export const ClassesOverview = ({ classes, activeClassId }) => {
 /**
  * Complete Classes management tab using smaller components
  */
-export const ClassesTab = ({ userId }) => {
+const ClassesTab = ({ userId }) => {
   const { user } = useAuth();
   const { showToast } = useToast();
   
@@ -787,4 +787,10 @@ export const ClassesTab = ({ userId }) => {
     </div>
   );
 };
-export { ClassesTab };
+export {
+  ClassCard,
+  ClassModal,
+  ClassSearchFilter,
+  ClassesOverview,
+  ClassesTab
+};

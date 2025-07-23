@@ -22,7 +22,7 @@ import soundService from '../../../config/services/soundService';
 /**
  * Classroom Timer with multiple modes
  */
-export const ClassroomTimer = () => {
+const ClassroomTimer = () => {
   const [minutes, setMinutes] = useState(5);
   const [seconds, setSeconds] = useState(0);
   const [isActive, setIsActive] = useState(false);
@@ -197,7 +197,7 @@ export const ClassroomTimer = () => {
 /**
  * Random student selector for fair participation
  */
-export const StudentPicker = ({ students }) => {
+const StudentPicker = ({ students }) => {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [isSpinning, setIsSpinning] = useState(false);
   const [excludedStudents, setExcludedStudents] = useState([]);
@@ -360,7 +360,7 @@ export const StudentPicker = ({ students }) => {
 /**
  * Drag-and-drop seating arrangement tool
  */
-export const SeatingChart = ({ students }) => {
+const SeatingChart = ({ students }) => {
   const [layout, setLayout] = useState('grid'); // 'grid', 'groups', 'horseshoe'
   const [seatingArrangement, setSeatingArrangement] = useState({});
   const [draggedStudent, setDraggedStudent] = useState(null);
@@ -595,7 +595,7 @@ export const SeatingChart = ({ students }) => {
 /**
  * Complete Teacher Toolkit using smaller utility components
  */
-export const ToolkitTab = ({ userId, classId }) => {
+const ToolkitTab = ({ userId, classId }) => {
   const { students, loading } = useStudents(userId, classId);
   const [activetool, setActiveTool] = useState('timer');
 
@@ -677,4 +677,9 @@ export const ToolkitTab = ({ userId, classId }) => {
 };
 
 // Export all components
-export { ToolkitTab };
+export {
+  ClassroomTimer,
+  StudentPicker,
+  SeatingChart,
+  ToolkitTab
+};

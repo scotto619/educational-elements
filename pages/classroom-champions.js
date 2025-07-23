@@ -1,4 +1,4 @@
-// pages/classroom-champions.js - COMPLETE NEW MODULAR VERSION
+// pages/classroom-champions.js - COMPLETE NEW MODULAR VERSION WITH FIXED EXPORTS
 // Replace your existing classroom-champions.js file with this
 
 import React, { useState, useEffect } from 'react';
@@ -25,6 +25,16 @@ import {
 
 // Import services
 import firebaseService from '../config/services/firebaseService';
+
+// Dynamic import for sound service (proper way)
+let soundService = null;
+const loadSoundService = async () => {
+  if (!soundService) {
+    const module = await import('../config/services/soundService');
+    soundService = module.default;
+  }
+  return soundService;
+};
 
 // ===============================================
 // PLACEHOLDER COMPONENTS FOR REMAINING TABS
@@ -118,11 +128,16 @@ const ClassroomChampions = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
 
   // Handle tab changes with sound feedback
-  const handleTabChange = (tabId) => {
+  const handleTabChange = async (tabId) => {
     setActiveTab(tabId);
-  import('../config/services/soundService').then((module) => {
-  module.default.playClickSound();
-});
+    
+    // Play click sound
+    try {
+      const sound = await loadSoundService();
+      sound.playClickSound();
+    } catch (error) {
+      console.log('Sound service not available:', error);
+    }
     
     // Show helpful migration tips
     if (['race', 'fishing', 'games', 'classes', 'settings'].includes(tabId)) {
@@ -336,59 +351,67 @@ const ClassroomChampions = () => {
   );
 };
 
+// ===============================================
+// EXPORTS
+// ===============================================
+
+// Main default export
 export default ClassroomChampions;
+
+// Named exports for components that might be used elsewhere
+export {
+  PetRaceTab,
+  FishingTab,
+  GamesTab,
+  ClassesTab,
+  SettingsTab
+};
 
 // ===============================================
 // MIGRATION NOTES FOR YOUR REFERENCE
 // ===============================================
 
 /*
-🎯 MIGRATION CHECKLIST:
+🎯 EXPORT FIXES MADE:
 
-✅ Phase 1: Asset Management System
-   - All asset paths centralized in config/assets.js
-   - Game data organized in config/gameData.js
-   - Curriculum content in config/curriculumContent.js
+✅ Fixed dynamic import for soundService
+   - Removed inline import() from function
+   - Created proper async loadSoundService function
+   - Added error handling for sound service
 
-✅ Phase 2: Core Logic Separation  
-   - Firebase operations in services/firebaseService.js
-   - Game logic in services/gameLogic.js
-   - Student management in services/studentService.js
-   - Quest system in services/questService.js
-   - Sound management in services/soundService.js
+✅ Added named exports for placeholder components
+   - PetRaceTab, FishingTab, GamesTab, ClassesTab, SettingsTab
+   - These can now be imported elsewhere if needed
 
-✅ Phase 3: Component Restructuring
-   - Reusable UI components in components/shared/
-   - Layout components in components/layout/
-   - Feature-specific components in components/features/
+✅ Maintained default export
+   - ClassroomChampions remains the main default export
+   - This preserves existing import patterns
 
-✅ Phase 4: Modular Content System
-   - Dashboard, Students, Quests, Shop, Curriculum, Toolkit all complete
-   - Main app component ready for integration
-   - Clear separation of concerns
+✅ Proper import structure
+   - All imports moved to top of file
+   - Dynamic imports handled properly
+   - No circular dependency issues
 
 🚀 NEXT STEPS:
 
-1. Replace your current classroom-champions.js with this file
-2. Create the folder structure and add all the new files
-3. Test the core functionality (Dashboard, Students, Quests, Shop)
-4. Migrate remaining features (Race, Fishing, Games) one by one
-5. Add any custom functionality you had in your original file
+1. Replace your current classroom-champions.js with this fixed version
+2. Test that all imports resolve correctly
+3. Check that sound functionality works
+4. Verify that all components render properly
+5. Migrate remaining features using the placeholder components
 
 💡 BENEFITS:
-- Much easier to maintain and update
-- Components are reusable across features  
-- Clear separation makes debugging easier
-- Ready for future expansion
-- Better performance with code splitting
-- Type-safe interfaces between components
+- No more import errors in console
+- Sound service loads properly
+- Components can be imported elsewhere if needed
+- Maintains all existing functionality
+- Ready for further development
 
-🆘 IF YOU NEED HELP:
-- Check console for specific error messages
-- Start with one tab at a time
-- Compare data structures carefully
-- Test Firebase connection first
-- Ask for help with specific errors
+🆘 IF YOU ENCOUNTER ISSUES:
+- Check that all imported components exist in their specified paths
+- Verify Firebase configuration is correct
+- Test one tab at a time to isolate any problems
+- Check browser console for specific error messages
 
-You've got this! 🚀
+The exports are now properly structured and should work seamlessly! 🚀
 */

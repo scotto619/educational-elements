@@ -27,7 +27,7 @@ import studentService from '../../../config/services/studentService';
 /**
  * Individual Shop Item Card
  */
-export const ShopItemCard = ({ 
+const ShopItemCard = ({ 
   item, 
   student = null,
   onPurchase,
@@ -172,7 +172,7 @@ export const ShopItemCard = ({
 /**
  * Shop Category Navigation
  */
-export const ShopCategoryTabs = ({ 
+const ShopCategoryTabs = ({ 
   activeCategory, 
   onCategoryChange,
   itemCounts = {} 
@@ -222,7 +222,7 @@ export const ShopCategoryTabs = ({
 /**
  * Student Selection for Shop Purchases
  */
-export const ShopStudentSelector = ({ 
+const ShopStudentSelector = ({ 
   students, 
   selectedStudent, 
   onStudentSelect 
@@ -289,7 +289,7 @@ export const ShopStudentSelector = ({
 /**
  * Shop Search and Filter Controls
  */
-export const ShopFilter = ({
+const ShopFilter = ({
   searchTerm,
   onSearchChange,
   sortBy,
@@ -369,7 +369,7 @@ export const ShopFilter = ({
 /**
  * Hover Preview for Shop Items
  */
-export const ItemPreview = ({ preview }) => {
+const ItemPreview = ({ preview }) => {
   if (!preview.show) return null;
 
   return (
@@ -408,7 +408,7 @@ export const ItemPreview = ({ preview }) => {
 /**
  * Purchase Confirmation Dialog
  */
-export const PurchaseConfirmModal = ({ 
+const PurchaseConfirmModal = ({ 
   isOpen, 
   onClose, 
   onConfirm,
@@ -515,7 +515,7 @@ export const PurchaseConfirmModal = ({
 /**
  * Complete Shop Tab using smaller components
  */
-export const ShopTab = ({ userId, classId }) => {
+const ShopTab = ({ userId, classId }) => {
   const { students, loading } = useStudents(userId, classId);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [activeCategory, setActiveCategory] = useState('avatars');
@@ -714,4 +714,12 @@ export const ShopTab = ({ userId, classId }) => {
 };
 
 // Export all components
-export { ShopTab };
+export {
+  ShopItemCard,
+  ShopCategoryTabs,
+  ShopStudentSelector,
+  ShopFilter,
+  ItemPreview,
+  PurchaseConfirmModal,
+  ShopTab
+};

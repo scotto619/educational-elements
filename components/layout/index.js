@@ -18,7 +18,7 @@ import { useAuth, useClassNavigation, useToast, useSound } from '../../hooks';
 /**
  * Main Navigation Tabs
  */
-export const NavigationTabs = ({ 
+const NavigationTabs = ({ 
   activeTab, 
   onTabChange, 
   userPlan = 'basic' 
@@ -79,7 +79,7 @@ export const NavigationTabs = ({
 /**
  * Class Selector Component
  */
-export const ClassSelector = ({ 
+const ClassSelector = ({ 
   currentClass, 
   availableClasses, 
   onClassChange,
@@ -130,7 +130,7 @@ export const ClassSelector = ({
 /**
  * Main App Header
  */
-export const AppHeader = ({ 
+const AppHeader = ({ 
   user, 
   userData, 
   currentClass,
@@ -224,7 +224,7 @@ export const AppHeader = ({
 /**
  * Tab Content Wrapper with Suspense
  */
-export const TabContentWrapper = ({ children, loading = false }) => {
+const TabContentWrapper = ({ children, loading = false }) => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -255,7 +255,7 @@ export const TabContentWrapper = ({ children, loading = false }) => {
 /**
  * Main Content Area
  */
-export const ContentArea = ({ children, className = '' }) => {
+const ContentArea = ({ children, className = '' }) => {
   return (
     <main className={`flex-1 overflow-auto bg-gray-50 ${className}`}>
       <div className="bg-white rounded-xl shadow-lg m-6 min-h-[calc(100vh-200px)]">
@@ -274,7 +274,7 @@ export const ContentArea = ({ children, className = '' }) => {
 /**
  * Toast Notification Container
  */
-export const ToastContainer = () => {
+const ToastContainer = () => {
   const { toasts, removeToast } = useToast();
 
   return (
@@ -299,7 +299,7 @@ export const ToastContainer = () => {
 /**
  * Global Modal Container for App-wide Modals
  */
-export const ModalContainer = ({ 
+const ModalContainer = ({ 
   modals, 
   modalData, 
   onCloseModal,
@@ -399,7 +399,7 @@ export const ModalContainer = ({
 /**
  * App Loading Screen
  */
-export const AppLoadingScreen = () => {
+const AppLoadingScreen = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
       <div className="text-center text-white space-y-6">
@@ -417,7 +417,7 @@ export const AppLoadingScreen = () => {
 /**
  * Error Boundary Fallback
  */
-export const ErrorFallback = ({ error, resetError }) => {
+const ErrorFallback = ({ error, resetError }) => {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
       <div className="text-center space-y-6 max-w-md">
@@ -449,7 +449,7 @@ export const ErrorFallback = ({ error, resetError }) => {
 /**
  * Main App Layout Component
  */
-export const AppLayout = ({ 
+const AppLayout = ({ 
   user,
   userData,
   currentClass,
@@ -509,9 +509,14 @@ export const AppLayout = ({
 
 // Export all components
 export {
-  AppLayout,
+  NavigationTabs,
+  ClassSelector,
+  AppHeader,
+  TabContentWrapper,
+  ContentArea,
+  ToastContainer,
+  ModalContainer,
   AppLoadingScreen,
   ErrorFallback,
-  Navigation,
-  ClassSelector
+  AppLayout
 };

@@ -21,7 +21,7 @@ import soundService from '../../../config/services/soundService';
 /**
  * Memory card matching game
  */
-export const MemoryGame = ({ 
+const MemoryGame = ({ 
   students, 
   onGameComplete 
 }) => {
@@ -197,7 +197,7 @@ export const MemoryGame = ({
 /**
  * Interactive quiz game with customizable questions
  */
-export const QuizGame = ({ 
+const QuizGame = ({ 
   students, 
   onGameComplete 
 }) => {
@@ -440,7 +440,7 @@ export const QuizGame = ({
 /**
  * Word scrambling game for vocabulary practice
  */
-export const WordScrambleGame = ({ onGameComplete }) => {
+const WordScrambleGame = ({ onGameComplete }) => {
   const [words] = useState([
     'CLASSROOM', 'LEARNING', 'STUDENT', 'TEACHER', 'HOMEWORK',
     'READING', 'WRITING', 'SCIENCE', 'HISTORY', 'MATHEMATICS'
@@ -617,7 +617,7 @@ export const WordScrambleGame = ({ onGameComplete }) => {
 /**
  * Interface for selecting which game to play
  */
-export const GameSelector = ({ 
+const GameSelector = ({ 
   selectedGame, 
   onGameSelect 
 }) => {
@@ -705,7 +705,7 @@ export const GameSelector = ({
 /**
  * Complete Games tab using smaller game components
  */
-export const GamesTab = ({ userId, classId }) => {
+const GamesTab = ({ userId, classId }) => {
   const { students, loading } = useStudents(userId, classId);
   const [selectedGame, setSelectedGame] = useState(null);
   const [gameResults, setGameResults] = useState(null);
@@ -817,4 +817,10 @@ export const GamesTab = ({ userId, classId }) => {
 };
 
 // Export all components
-export { GamesTab };
+export {
+  MemoryGame,
+  QuizGame,
+  WordScrambleGame,
+  GameSelector,
+  GamesTab
+};

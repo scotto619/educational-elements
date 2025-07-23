@@ -23,7 +23,7 @@ import { calculateLevel, calculateCoins, GAME_CONFIG } from '../../../config/gam
 /**
  * Individual Student Card Component
  */
-export const StudentCard = ({ 
+const StudentCard = ({ 
   student, 
   onAwardXP, 
   onStudentClick,
@@ -174,7 +174,7 @@ export const StudentCard = ({
 /**
  * Grid Layout for Student Cards
  */
-export const StudentGrid = ({ 
+const StudentGrid = ({ 
   students, 
   onAwardXP, 
   onStudentClick,
@@ -230,7 +230,7 @@ export const StudentGrid = ({
 /**
  * Bulk XP Award Panel
  */
-export const BulkXPPanel = ({ 
+const BulkXPPanel = ({ 
   selectedStudents = [],
   students = [],
   onAwardBulkXP,
@@ -337,7 +337,7 @@ export const BulkXPPanel = ({
 /**
  * Search and Filter Controls
  */
-export const StudentSearchFilter = ({ 
+const StudentSearchFilter = ({ 
   students,
   searchTerm,
   onSearchChange,
@@ -459,7 +459,7 @@ export const StudentSearchFilter = ({
 /**
  * Class Statistics Overview
  */
-export const StudentStats = ({ students }) => {
+const StudentStats = ({ students }) => {
   const stats = useMemo(() => {
     if (!students.length) return null;
 
@@ -535,7 +535,7 @@ export const StudentStats = ({ students }) => {
 /**
  * Complete Students Tab using smaller components
  */
-export const StudentsTab = ({ 
+const StudentsTab = ({ 
   userId, 
   classId, 
   onStudentClick,
@@ -687,4 +687,11 @@ export const StudentsTab = ({
 };
 
 // Export all components
-export { StudentsTab };
+export {
+  StudentCard,
+  StudentGrid,
+  BulkXPPanel,
+  StudentSearchFilter,
+  StudentStats,
+  StudentsTab
+};

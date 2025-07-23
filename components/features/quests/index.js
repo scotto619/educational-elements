@@ -26,7 +26,7 @@ import questService from '../../../config/services/questService';
 /**
  * Quest Giver Display with Personality
  */
-export const QuestGiver = ({ 
+const QuestGiver = ({ 
   questGiver, 
   isSelected = false, 
   onClick,
@@ -106,7 +106,7 @@ export const QuestGiver = ({
 /**
  * Individual Quest Card
  */
-export const QuestCard = ({ 
+const QuestCard = ({ 
   quest, 
   students = [],
   onComplete,
@@ -308,7 +308,7 @@ export const QuestCard = ({
 /**
  * Modal for Creating New Quests
  */
-export const CreateQuestModal = ({ 
+const CreateQuestModal = ({ 
   isOpen, 
   onClose, 
   onCreateQuest,
@@ -573,7 +573,7 @@ export const CreateQuestModal = ({
 /**
  * Quest Search and Filter Controls
  */
-export const QuestFilter = ({
+const QuestFilter = ({
   quests,
   searchTerm,
   onSearchChange,
@@ -663,7 +663,7 @@ export const QuestFilter = ({
 /**
  * Complete Quests Tab using smaller components
  */
-export const QuestsTab = ({ userId, classId }) => {
+const QuestsTab = ({ userId, classId }) => {
   const { activeQuests, questTemplates, loading, createQuest, completeQuest } = useQuests(userId, classId);
   const { students } = useStudents(userId, classId);
   const { modals, openModal, closeModal } = useModals();
@@ -814,4 +814,10 @@ export const QuestsTab = ({ userId, classId }) => {
 };
 
 // Export all components
-export { QuestsTab };
+export {
+  QuestGiver,
+  QuestCard,
+  CreateQuestModal,
+  QuestFilter,
+  QuestsTab
+};

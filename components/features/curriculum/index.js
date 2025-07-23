@@ -27,7 +27,7 @@ import {
 /**
  * Navigation between different curriculum subjects
  */
-export const SubjectSelector = ({ activeSubject, onSubjectChange }) => {
+const SubjectSelector = ({ activeSubject, onSubjectChange }) => {
   const subjects = [
     { id: 'literacy', name: 'Literacy', icon: '📚', color: 'bg-blue-500' },
     { id: 'mathematics', name: 'Mathematics', icon: '🔢', color: 'bg-green-500' },
@@ -65,7 +65,7 @@ export const SubjectSelector = ({ activeSubject, onSubjectChange }) => {
 /**
  * Interactive writing structure guide
  */
-export const WritingStructuresDisplay = ({ structures }) => {
+const WritingStructuresDisplay = ({ structures }) => {
   const [selectedStructure, setSelectedStructure] = useState(null);
 
   return (
@@ -136,7 +136,7 @@ export const WritingStructuresDisplay = ({ structures }) => {
 /**
  * Interactive math operations guide
  */
-export const MathOperationsDisplay = ({ operations }) => {
+const MathOperationsDisplay = ({ operations }) => {
   const [selectedOperation, setSelectedOperation] = useState(null);
   const [selectedLevel, setSelectedLevel] = useState(null);
 
@@ -234,7 +234,7 @@ export const MathOperationsDisplay = ({ operations }) => {
 /**
  * Reading comprehension strategies guide
  */
-export const ReadingStrategiesDisplay = ({ strategies }) => {
+const ReadingStrategiesDisplay = ({ strategies }) => {
   const [selectedStrategy, setSelectedStrategy] = useState(null);
 
   return (
@@ -292,7 +292,7 @@ export const ReadingStrategiesDisplay = ({ strategies }) => {
 /**
  * Integrated project displays
  */
-export const CrossCurricularProjects = ({ projects }) => {
+const CrossCurricularProjects = ({ projects }) => {
   const [selectedProject, setSelectedProject] = useState(null);
 
   return (
@@ -390,7 +390,7 @@ export const CrossCurricularProjects = ({ projects }) => {
 /**
  * Rubrics and assessment tools
  */
-export const AssessmentToolsDisplay = ({ tools }) => {
+const AssessmentToolsDisplay = ({ tools }) => {
   const [selectedTool, setSelectedTool] = useState(null);
   const [selectedRubric, setSelectedRubric] = useState(null);
 
@@ -502,7 +502,7 @@ export const AssessmentToolsDisplay = ({ tools }) => {
 /**
  * Complete Curriculum Corner using modular content
  */
-export const CurriculumTab = () => {
+const CurriculumTab = () => {
   const [activeSubject, setActiveSubject] = useState('literacy');
 
   const renderSubjectContent = () => {
@@ -634,4 +634,12 @@ export const CurriculumTab = () => {
     </div>
   );
 };
-export { CurriculumTab };
+export {
+  SubjectSelector,
+  WritingStructuresDisplay,
+  MathOperationsDisplay,
+  ReadingStrategiesDisplay,
+  CrossCurricularProjects,
+  AssessmentToolsDisplay,
+  CurriculumTab
+};

@@ -19,7 +19,7 @@ import { calculateLevel, calculateCoins } from '../../../config/gameData';
 /**
  * Top performing students display
  */
-export const GuildChampions = ({ students, limit = 5 }) => {
+const GuildChampions = ({ students, limit = 5 }) => {
   const topStudents = useMemo(() => {
     return [...students]
       .sort((a, b) => (b.totalPoints || 0) - (a.totalPoints || 0))
@@ -103,7 +103,7 @@ export const GuildChampions = ({ students, limit = 5 }) => {
 /**
  * Class-wide statistics display
  */
-export const ClassStatsOverview = ({ students }) => {
+const ClassStatsOverview = ({ students }) => {
   const stats = useStudentStats(students);
 
   if (!stats) {
@@ -159,7 +159,7 @@ export const ClassStatsOverview = ({ students }) => {
 /**
  * Display recent student activities
  */
-export const RecentActivity = ({ students, limit = 10 }) => {
+const RecentActivity = ({ students, limit = 10 }) => {
   const recentActivities = useMemo(() => {
     const activities = [];
 
@@ -279,7 +279,7 @@ export const RecentActivity = ({ students, limit = 10 }) => {
 /**
  * Quick action buttons for common tasks
  */
-export const QuickActions = ({ onTabChange, currentClass }) => {
+const QuickActions = ({ onTabChange, currentClass }) => {
   const quickActionButtons = [
     {
       id: 'students',
@@ -367,7 +367,7 @@ export const QuickActions = ({ onTabChange, currentClass }) => {
 /**
  * Complete Dashboard using smaller components
  */
-export const DashboardTab = ({ userId, classId, currentClass, onTabChange }) => {
+const DashboardTab = ({ userId, classId, currentClass, onTabChange }) => {
   const { students, loading } = useStudents(userId, classId);
   const { activeQuests } = useQuests(userId, classId);
 
@@ -508,4 +508,10 @@ export const DashboardTab = ({ userId, classId, currentClass, onTabChange }) => 
 };
 
 // Export all components
-export { DashboardTab };
+export {
+  GuildChampions,
+  ClassStatsOverview,
+  RecentActivity,
+  QuickActions,
+  DashboardTab
+};

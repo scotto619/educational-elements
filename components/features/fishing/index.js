@@ -250,7 +250,7 @@ const FishingLure = ({
 /**
  * Main fishing pond with fish and interaction
  */
-export const FishingPond = ({ 
+const FishingPond = ({ 
   selectedStudent,
   isPlaying,
   onCatch,
@@ -510,7 +510,7 @@ export const FishingPond = ({
 /**
  * Interface for selecting which student goes fishing
  */
-export const FishingStudentSelector = ({ 
+const FishingStudentSelector = ({ 
   students, 
   selectedStudent, 
   onStudentSelect 
@@ -565,7 +565,7 @@ export const FishingStudentSelector = ({
 /**
  * Complete Fishing Game tab using smaller components
  */
-export const FishingTab = ({ userId, classId }) => {
+const FishingTab = ({ userId, classId }) => {
   const { students, loading } = useStudents(userId, classId);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -699,4 +699,10 @@ export const FishingTab = ({ userId, classId }) => {
 };
 
 // Export all components
-export { FishingTab };
+export {
+  Fish,
+  FishingLure,
+  FishingPond,
+  FishingStudentSelector,
+  FishingTab
+};

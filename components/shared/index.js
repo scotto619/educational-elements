@@ -11,7 +11,7 @@ import { RARITY_CONFIG } from '../../config/gameData';
 /**
  * Loading Spinner Component
  */
-export const LoadingSpinner = ({ size = 'md', color = 'blue' }) => {
+const LoadingSpinner = ({ size = 'md', color = 'blue' }) => {
   const sizeClasses = {
     sm: 'w-4 h-4',
     md: 'w-8 h-8', 
@@ -27,7 +27,7 @@ export const LoadingSpinner = ({ size = 'md', color = 'blue' }) => {
 /**
  * Toast Notification Component
  */
-export const Toast = ({ message, type = 'info', onClose, duration = 3000 }) => {
+const Toast = ({ message, type = 'info', onClose, duration = 3000 }) => {
   const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
@@ -79,7 +79,7 @@ export const Toast = ({ message, type = 'info', onClose, duration = 3000 }) => {
 /**
  * Confirmation Dialog Component
  */
-export const ConfirmDialog = ({ 
+const ConfirmDialog = ({ 
   isOpen, 
   title, 
   message, 
@@ -125,7 +125,7 @@ export const ConfirmDialog = ({
 /**
  * Modal Wrapper Component
  */
-export const Modal = ({ 
+const Modal = ({ 
   isOpen, 
   onClose, 
   title, 
@@ -174,7 +174,7 @@ export const Modal = ({
 /**
  * Input Field Component
  */
-export const InputField = ({ 
+const InputField = ({ 
   label, 
   value, 
   onChange, 
@@ -215,7 +215,7 @@ export const InputField = ({
 /**
  * Select Field Component
  */
-export const SelectField = ({ 
+const SelectField = ({ 
   label, 
   value, 
   onChange, 
@@ -261,7 +261,7 @@ export const SelectField = ({
 /**
  * Textarea Field Component
  */
-export const TextareaField = ({ 
+const TextareaField = ({ 
   label, 
   value, 
   onChange, 
@@ -307,7 +307,7 @@ export const TextareaField = ({
 /**
  * Primary Button Component
  */
-export const Button = ({ 
+const Button = ({ 
   children, 
   onClick, 
   type = 'button',
@@ -350,7 +350,7 @@ export const Button = ({
 /**
  * Icon Button Component
  */
-export const IconButton = ({ 
+const IconButton = ({ 
   icon, 
   onClick, 
   variant = 'ghost', // 'ghost', 'filled'
@@ -394,7 +394,7 @@ export const IconButton = ({
 /**
  * XP Badge Component
  */
-export const XPBadge = ({ amount, category, isAnimating = false }) => {
+const XPBadge = ({ amount, category, isAnimating = false }) => {
   const categoryColors = {
     Respectful: 'bg-green-500',
     Responsible: 'bg-blue-500',
@@ -416,7 +416,7 @@ export const XPBadge = ({ amount, category, isAnimating = false }) => {
 /**
  * Level Progress Bar Component
  */
-export const LevelProgressBar = ({ currentXP, nextLevelXP, level, maxLevel = 4 }) => {
+const LevelProgressBar = ({ currentXP, nextLevelXP, level, maxLevel = 4 }) => {
   const progressPercent = nextLevelXP > 0 ? Math.round((currentXP / nextLevelXP) * 100) : 100;
   const isMaxLevel = level >= maxLevel;
 
@@ -449,7 +449,7 @@ export const LevelProgressBar = ({ currentXP, nextLevelXP, level, maxLevel = 4 }
 /**
  * Coin Display Component
  */
-export const CoinDisplay = ({ amount, size = 'md', showIcon = true }) => {
+const CoinDisplay = ({ amount, size = 'md', showIcon = true }) => {
   const sizes = {
     sm: 'text-sm',
     md: 'text-base',
@@ -467,7 +467,7 @@ export const CoinDisplay = ({ amount, size = 'md', showIcon = true }) => {
 /**
  * Rarity Border Component
  */
-export const RarityBorder = ({ rarity, children, className = '' }) => {
+const RarityBorder = ({ rarity, children, className = '' }) => {
   const rarityConfig = RARITY_CONFIG[rarity] || RARITY_CONFIG.common;
   
   return (
@@ -483,7 +483,7 @@ export const RarityBorder = ({ rarity, children, className = '' }) => {
 /**
  * Achievement Badge Component
  */
-export const AchievementBadge = ({ achievement, size = 'md' }) => {
+const AchievementBadge = ({ achievement, size = 'md' }) => {
   const sizes = {
     sm: 'w-8 h-8 text-xs',
     md: 'w-12 h-12 text-sm',
@@ -511,7 +511,7 @@ export const AchievementBadge = ({ achievement, size = 'md' }) => {
 /**
  * Page Header Component
  */
-export const PageHeader = ({ 
+const PageHeader = ({ 
   title, 
   subtitle = '', 
   actions = null, 
@@ -563,7 +563,7 @@ export const PageHeader = ({
 /**
  * Card Component
  */
-export const Card = ({ 
+const Card = ({ 
   title = '', 
   children, 
   actions = null,
@@ -595,7 +595,7 @@ export const Card = ({
 /**
  * Stats Card Component
  */
-export const StatsCard = ({ 
+const StatsCard = ({ 
   title, 
   value, 
   icon, 
@@ -643,7 +643,7 @@ export const StatsCard = ({
 /**
  * Empty State Component
  */
-export const EmptyState = ({ 
+ const EmptyState = ({ 
   icon = '📭', 
   title = 'No items found', 
   description = '',

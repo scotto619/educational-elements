@@ -24,7 +24,7 @@ import { downloadJSON, copyToClipboard } from '../../shared/ErrorBoundary';
 /**
  * User account information and preferences
  */
-export const AccountSettings = ({ user, userData, onUpdate }) => {
+const AccountSettings = ({ user, userData, onUpdate }) => {
   const [settings, setSettings] = useState({
     email: user?.email || '',
     displayName: userData?.displayName || '',
@@ -195,7 +195,7 @@ export const AccountSettings = ({ user, userData, onUpdate }) => {
 /**
  * Export, import, and backup data management
  */
-export const DataManagement = ({ user, userData }) => {
+const DataManagement = ({ user, userData }) => {
   const [isExporting, setIsExporting] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
@@ -351,7 +351,7 @@ export const DataManagement = ({ user, userData }) => {
 /**
  * Subscription and billing information
  */
-export const SubscriptionManagement = ({ userData }) => {
+const SubscriptionManagement = ({ userData }) => {
   const currentPlan = userData?.subscription || 'basic';
 
   const plans = [
@@ -496,7 +496,7 @@ export const SubscriptionManagement = ({ userData }) => {
 /**
  * Complete Settings tab using smaller components
  */
-export const SettingsTab = ({ userId, userData, onUpdate }) => {
+const SettingsTab = ({ userId, userData, onUpdate }) => {
   const { user } = useAuth();
   const [activeSection, setActiveSection] = useState('account');
 
@@ -625,4 +625,9 @@ export const SettingsTab = ({ userId, userData, onUpdate }) => {
     </div>
   );
 };
-export { SettingsTab };
+export {
+  AccountSettings,
+  DataManagement,
+  SubscriptionManagement,
+  SettingsTab
+};
