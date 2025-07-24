@@ -1,584 +1,381 @@
-// StudentsTab.js - Compact, One-Screen Design
-import React, { useState } from 'react';
-import XPAwardPopup from '../XPAwardPopup';
+// components/tabs/StudentsTab.js - UPDATED WITH PHASE 2 FIXES
+import React, { useState, useEffect } from 'react';
 
-const StudentsTab = ({
-  students,
-  handleAwardXP,
-  setSelectedStudent,
-  animatingXP,
-  setShowAddStudentModal,
+// Import the Phase 2 fixes
+import { 
+  getAvatarImage, 
+  calculateAvatarLevel, 
+  migrateStudentData, 
+  fixAllStudentLevels,
+  StudentCard,
+  CoinEditModal 
+} from '../../utils/avatarFixes';
+
+const StudentsTab = ({ 
+  students, 
+  setStudents, 
+  handleAddStudent, 
+  handleAwardXP, 
+  handleViewStudent, 
+  saveStudentsToFirebase,
   showToast,
-  // Quest System Props
-  activeQuests,
-  getAvailableQuests,
-  // Shop Props
-  calculateCoins,
-  // Navigation
-  setActiveTab,
-  // Bulk XP Props - simplified
-  selectedStudents = [],
-  setSelectedStudents,
-  handleStudentSelect,
-  handleSelectAll,
-  handleDeselectAll,
-  showBulkXpPanel = false,
-  setShowBulkXpPanel,
-  bulkXpAmount = 1,
-  setBulkXpAmount,
-  bulkXpCategory = 'Respectful',
-  setBulkXpCategory,
-  handleBulkXpAward
+  selectedStudent,
+  setSelectedStudent,
+  currentClassId
 }) => {
-  const [hoveredStudent, setHoveredStudent] = useState(null);
+  // State for bulk operations
+  const [selectedStudents, setSelectedStudents] = useState([]);
+  const [bulkXPAmount, setBulkXPAmount] = useState(1);
+  const [showBulkModal, setShowBulkModal] = useState(false);
   
-  // Image hover preview state
-  const [hoverPreview, setHoverPreview] = useState({
-    show: false,
-    imageSrc: '',
-    title: '',
-    subtitle: '',
-    x: 0,
-    y: 0
-  });
+  // State for coin management
+  const [showCoinModal, setShowCoinModal] = useState(false);
+  const [coinEditStudent, setCoinEditStudent] = useState(null);
   
-  // XP Award Popup state
-  const [showXPPopup, setShowXPPopup] = useState(false);
-  const [xpPopupData, setXpPopupData] = useState({
-    studentName: '',
-    xpAmount: 0,
-    category: 'Respectful',
-    timestamp: 0  // Add timestamp to prevent re-triggering
-  });
-  
-  // Simplified local state - only used if props aren't provided
-  const [localSelectedStudents, setLocalSelectedStudents] = useState([]);
-  const [localXpAmount, setLocalXpAmount] = useState(1);
-  const [localXpCategory, setLocalXpCategory] = useState('Respectful');
-  const [localShowPanel, setLocalShowPanel] = useState(false);
+  // State for XP rewards customization
+  const [xpRewards, setXPRewards] = useState([
+    { id: 1, label: 'Respectful', amount: 1, color: 'bg-blue-500' },
+    { id: 2, label: 'Responsible', amount: 1, color: 'bg-green-500' },
+    { id: 3, label: 'Safe', amount: 1, color: 'bg-yellow-500' },
+    { id: 4, label: 'Learner', amount: 1, color: 'bg-purple-500' },
+    { id: 5, label: 'Star Award', amount: 5, color: 'bg-gold-500' }
+  ]);
 
-  // Use props if available, otherwise use local state
-  const currentSelectedStudents = setSelectedStudents ? selectedStudents : localSelectedStudents;
-  const currentXpAmount = setBulkXpAmount ? bulkXpAmount : localXpAmount;
-  const currentXpCategory = setBulkXpCategory ? bulkXpCategory : localXpCategory;
-  const isXpPanelOpen = setShowBulkXpPanel ? showBulkXpPanel : localShowPanel;
+  // Migrate student data on component mount
+  useEffect(() => {
+    if (students.length > 0) {
+      const migratedStudents = students.map(migrateStudentData);
+      const hasChanges = JSON.stringify(students) !== JSON.stringify(migratedStudents);
+      
+      if (hasChanges) {
+        console.log('📊 Migrating student data...');
+        setStudents(migratedStudents);
+        if (saveStudentsToFirebase) {
+          saveStudentsToFirebase(migratedStudents);
+        }
+      }
+    }
+  }, []);
 
-  // Handle individual XP award (fix for missing handleXPClick)
-  const handleXPClick = (studentId, event) => {
-    event.stopPropagation();
-    event.preventDefault();
+  // Handle bulk student fixes
+  const handleFixAllStudents = () => {
+    const fixedStudents = fixAllStudentLevels(students, (fixed) => {
+      setStudents(fixed);
+      if (saveStudentsToFirebase) {
+        saveStudentsToFirebase(fixed);
+      }
+    });
     
-    const student = students.find(s => s.id === studentId);
-    const xpAmount = 1;
-    const category = 'Respectful';
-    
-    // Close any existing popup first
-    setShowXPPopup(false);
-    
-    // Small delay then show new popup with timestamp
-    setTimeout(() => {
-      setXpPopupData({
-        studentName: student?.firstName || 'Student',
-        xpAmount: xpAmount,
-        category: category,
-        timestamp: Date.now()
-      });
-      setShowXPPopup(true);
-    }, 50);
-    
-    // Award the XP
-    handleAwardXP(studentId, category, xpAmount);
-    showToast(`Awarded ${xpAmount} XP to ${student?.firstName}!`);
-  };
-
-  // Toggle XP panel
-  const toggleXpPanel = () => {
-    if (setShowBulkXpPanel) {
-      setShowBulkXpPanel(!showBulkXpPanel);
-    } else {
-      setLocalShowPanel(!localShowPanel);
+    if (showToast) {
+      showToast('✅ All student levels and avatars have been fixed!', 'success');
     }
   };
 
-  // Handle student selection
-  const selectStudent = (studentId) => {
-    if (setSelectedStudents) {
-      const newSelection = selectedStudents.includes(studentId)
-        ? selectedStudents.filter(id => id !== studentId)
-        : [...selectedStudents, studentId];
-      setSelectedStudents(newSelection);
-    } else {
-      setLocalSelectedStudents(prev => 
-        prev.includes(studentId) 
-          ? prev.filter(id => id !== studentId)
-          : [...prev, studentId]
-      );
+  // Handle individual XP award with custom amount
+  const handleCustomXPAward = (student, rewardType) => {
+    const reward = xpRewards.find(r => r.id === rewardType) || xpRewards[0];
+    const updatedStudents = students.map(s => {
+      if (s.id === student.id) {
+        const newTotalXP = (s.totalPoints || 0) + reward.amount;
+        const newLevel = calculateAvatarLevel(newTotalXP);
+        
+        return {
+          ...s,
+          totalPoints: newTotalXP,
+          avatarLevel: newLevel,
+          avatar: getAvatarImage(s.avatarBase, newLevel),
+          behaviorPoints: {
+            ...s.behaviorPoints,
+            [reward.label.toLowerCase()]: (s.behaviorPoints?.[reward.label.toLowerCase()] || 0) + 1
+          }
+        };
+      }
+      return s;
+    });
+    
+    setStudents(updatedStudents);
+    if (saveStudentsToFirebase) {
+      saveStudentsToFirebase(updatedStudents);
     }
+    
+    if (showToast) {
+      showToast(`🌟 ${student.firstName} earned ${reward.amount} XP for being ${reward.label}!`, 'success');
+    }
+  };
+
+  // Handle bulk XP award
+  const handleBulkXPAward = () => {
+    if (selectedStudents.length === 0) {
+      if (showToast) {
+        showToast('Please select students first', 'warning');
+      }
+      return;
+    }
+
+    const updatedStudents = students.map(student => {
+      if (selectedStudents.includes(student.id)) {
+        const newTotalXP = (student.totalPoints || 0) + bulkXPAmount;
+        const newLevel = calculateAvatarLevel(newTotalXP);
+        
+        return {
+          ...student,
+          totalPoints: newTotalXP,
+          avatarLevel: newLevel,
+          avatar: getAvatarImage(student.avatarBase, newLevel)
+        };
+      }
+      return student;
+    });
+
+    setStudents(updatedStudents);
+    if (saveStudentsToFirebase) {
+      saveStudentsToFirebase(updatedStudents);
+    }
+    
+    setSelectedStudents([]);
+    setShowBulkModal(false);
+    
+    if (showToast) {
+      showToast(`🎉 Awarded ${bulkXPAmount} XP to ${selectedStudents.length} students!`, 'success');
+    }
+  };
+
+  // Handle coin editing
+  const handleEditCoins = (student) => {
+    setCoinEditStudent(student);
+    setShowCoinModal(true);
+  };
+
+  const handleSaveCoins = (studentId, newCoinAmount) => {
+    const updatedStudents = students.map(student => 
+      student.id === studentId 
+        ? { ...student, currency: newCoinAmount }
+        : student
+    );
+    
+    setStudents(updatedStudents);
+    if (saveStudentsToFirebase) {
+      saveStudentsToFirebase(updatedStudents);
+    }
+    
+    if (showToast) {
+      const student = students.find(s => s.id === studentId);
+      showToast(`💰 Updated coins for ${student?.firstName}!`, 'success');
+    }
+  };
+
+  // Toggle student selection for bulk operations
+  const toggleStudentSelection = (studentId) => {
+    setSelectedStudents(prev => 
+      prev.includes(studentId) 
+        ? prev.filter(id => id !== studentId)
+        : [...prev, studentId]
+    );
   };
 
   // Select all students
   const selectAllStudents = () => {
-    const allIds = students.map(s => s.id);
-    if (setSelectedStudents) {
-      setSelectedStudents(allIds);
-    } else {
-      setLocalSelectedStudents(allIds);
-    }
+    setSelectedStudents(students.map(s => s.id));
   };
 
-  // Clear all selections
-  const clearAllStudents = () => {
-    if (setSelectedStudents) {
-      setSelectedStudents([]);
-    } else {
-      setLocalSelectedStudents([]);
-    }
-  };
-
-  // Award XP to selected students
-  const awardXpToSelected = () => {
-    if (currentSelectedStudents.length === 0) {
-      showToast('Please select at least one student first!', 'error');
-      return;
-    }
-
-    if (handleBulkXpAward) {
-      handleBulkXpAward();
-    } else {
-      // Award XP to each selected student
-      currentSelectedStudents.forEach(studentId => {
-        handleAwardXP(studentId, currentXpCategory, currentXpAmount);
-      });
-
-      const studentNames = currentSelectedStudents.length === students.length 
-        ? 'the entire class'
-        : `${currentSelectedStudents.length} students`;
-      
-      showToast(`Awarded ${currentXpAmount} ${currentXpCategory} XP to ${studentNames}!`);
-      
-      // Clear selections
-      clearAllStudents();
-      
-      // Close any existing popup first
-      setShowXPPopup(false);
-      
-      // Show popup for bulk award with timestamp
-      setTimeout(() => {
-        const firstStudent = students.find(s => s.id === currentSelectedStudents[0]);
-        const displayName = currentSelectedStudents.length === 1 
-          ? firstStudent?.firstName 
-          : `${currentSelectedStudents.length} Heroes`;
-          
-        setXpPopupData({
-          studentName: displayName,
-          xpAmount: currentXpAmount,
-          category: currentXpCategory,
-          timestamp: Date.now()
-        });
-        setShowXPPopup(true);
-      }, 50);
-    }
-  };
-
-  // Close XP popup
-  const closeXPPopup = () => {
-    setShowXPPopup(false);
-  };
-
-  // Handle image hover
-  const handleImageHover = (e, imageSrc, title, subtitle) => {
-    const rect = e.target.getBoundingClientRect();
-    setHoverPreview({
-      show: true,
-      imageSrc,
-      title,
-      subtitle,
-      x: e.clientX,
-      y: e.clientY
-    });
-  };
-
-  const handleImageLeave = () => {
-    setHoverPreview({
-      show: false,
-      imageSrc: '',
-      title: '',
-      subtitle: '',
-      x: 0,
-      y: 0
-    });
-  };
-
-  const handleMouseMove = (e) => {
-    if (hoverPreview.show) {
-      setHoverPreview(prev => ({
-        ...prev,
-        x: e.clientX,
-        y: e.clientY
-      }));
-    }
-  };
-
-  // Update XP amount
-  const updateXpAmount = (amount) => {
-    if (setBulkXpAmount) {
-      setBulkXpAmount(amount);
-    } else {
-      setLocalXpAmount(amount);
-    }
-  };
-
-  // Update XP category
-  const updateXpCategory = (category) => {
-    if (setBulkXpCategory) {
-      setBulkXpCategory(category);
-    } else {
-      setLocalXpCategory(category);
-    }
-  };
-
-  // Calculate quest progress for a student
-  const getStudentQuestProgress = (student) => {
-    const availableQuests = getAvailableQuests ? getAvailableQuests(student) : [];
-    return availableQuests.length;
-  };
-
-  // Handle coins click - go to shop with student selected
-  const handleCoinsClick = (student, event) => {
-    event.stopPropagation();
-    event.preventDefault();
-    setSelectedStudent(student);
-    setActiveTab('shop');
-  };
-
-  // Handle quests click - go to quest tab
-  const handleQuestsClick = (event) => {
-    event.stopPropagation();
-    event.preventDefault();
-    setActiveTab('quests');
-  };
-
-  // Handle avatar click to open character sheet
-  const handleAvatarClickWrapper = (student, event) => {
-    event.stopPropagation();
-    event.preventDefault();
-    setSelectedStudent(student);
-  };
-
-  // Get XP progress to next level
-  const getXPProgress = (student) => {
-    const currentLevel = student.avatarLevel || 1;
-    const currentXP = student.totalPoints || 0;
-    const xpForCurrentLevel = (currentLevel - 1) * 100;
-    const xpForNextLevel = currentLevel * 100;
-    const progressXP = currentXP - xpForCurrentLevel;
-    const neededXP = xpForNextLevel - xpForCurrentLevel;
-    const percentage = Math.min((progressXP / neededXP) * 100, 100);
-    return { percentage, progressXP, neededXP };
+  // Clear selection
+  const clearSelection = () => {
+    setSelectedStudents([]);
   };
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
-      {/* Compact Header */}
-      <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-800 rounded-xl p-4 text-white mb-4 flex-shrink-0">
-        <div className="flex justify-between items-center">
-          <div>
-            <h2 className="text-2xl font-bold bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent">
-              ⚔️ Champions Guild
-            </h2>
-            <p className="text-indigo-100">{students.length} heroes ready for adventure!</p>
+    <div className="space-y-6">
+      {/* Header with Controls */}
+      <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold text-gray-800">
+            👥 Class Champions ({students.length} students)
+          </h2>
+          
+          <div className="flex space-x-3">
+            <button
+              onClick={handleAddStudent}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center space-x-2"
+            >
+              <span>➕</span>
+              <span>Add Student</span>
+            </button>
+            
+            <button
+              onClick={handleFixAllStudents}
+              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center space-x-2"
+            >
+              <span>🔧</span>
+              <span>Fix All Data</span>
+            </button>
           </div>
-          <div className="flex space-x-2">
+        </div>
+
+        {/* Bulk Operations */}
+        <div className="flex items-center justify-between bg-gray-50 rounded-lg p-4">
+          <div className="flex items-center space-x-4">
+            <span className="text-sm font-semibold text-gray-600">Bulk Actions:</span>
+            
             <button
-              onClick={toggleXpPanel}
-              className={`px-4 py-2 rounded-lg font-bold transition-all flex items-center space-x-1 ${
-                isXpPanelOpen 
-                  ? 'bg-purple-500 text-white' 
-                  : 'bg-white/20 text-white hover:bg-white/30'
-              }`}
+              onClick={selectAllStudents}
+              className="text-blue-600 hover:text-blue-800 text-sm font-semibold"
             >
-              <span>⚡</span>
-              <span>Award XP</span>
+              Select All
             </button>
+            
             <button
-              onClick={() => setShowAddStudentModal(true)}
-              className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all font-bold flex items-center space-x-1"
+              onClick={clearSelection}
+              className="text-gray-600 hover:text-gray-800 text-sm font-semibold"
             >
-              <span>👤</span>
-              <span>Add Hero</span>
+              Clear ({selectedStudents.length})
             </button>
+            
+            {selectedStudents.length > 0 && (
+              <button
+                onClick={() => setShowBulkModal(true)}
+                className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm font-semibold"
+              >
+                Award XP to {selectedStudents.length} students
+              </button>
+            )}
+          </div>
+
+          {/* XP Reward Customization */}
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-gray-600">Quick Awards:</span>
+            {xpRewards.slice(0, 4).map(reward => (
+              <div
+                key={reward.id}
+                className={`${reward.color} text-white px-2 py-1 rounded text-xs font-semibold cursor-help`}
+                title={`${reward.label}: ${reward.amount} XP`}
+              >
+                {reward.label} (+{reward.amount})
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Award XP Panel - Compact */}
-      {isXpPanelOpen && (
-        <div className="bg-purple-50 border-2 border-purple-200 rounded-xl p-4 mb-4 flex-shrink-0">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center space-x-2">
-              <label className="text-sm font-bold text-purple-700">XP:</label>
+      {/* Student Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {students.map(student => (
+          <div key={student.id} className="relative">
+            {/* Selection Checkbox */}
+            <div className="absolute top-2 left-2 z-10">
               <input
-                type="number"
-                min="1"
-                max="10"
-                value={currentXpAmount}
-                onChange={(e) => updateXpAmount(parseInt(e.target.value) || 1)}
-                className="w-16 px-2 py-1 border border-purple-300 rounded focus:ring-purple-500 focus:border-purple-500"
+                type="checkbox"
+                checked={selectedStudents.includes(student.id)}
+                onChange={() => toggleStudentSelection(student.id)}
+                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
               />
             </div>
-            
-            <div className="flex items-center space-x-2">
-              <label className="text-sm font-bold text-purple-700">Type:</label>
-              <select
-                value={currentXpCategory}
-                onChange={(e) => updateXpCategory(e.target.value)}
-                className="px-2 py-1 border border-purple-300 rounded focus:ring-purple-500 focus:border-purple-500"
-              >
-                <option value="Respectful">👍 Respectful</option>
-                <option value="Responsible">💼 Responsible</option>
-                <option value="Learner">📚 Learner</option>
-              </select>
+
+            {/* Student Card */}
+            <div className={`transition-all duration-200 ${
+              selectedStudents.includes(student.id) 
+                ? 'ring-2 ring-blue-500 ring-offset-2' 
+                : ''
+            }`}>
+              <StudentCard
+                student={student}
+                onAwardXP={(student) => {
+                  // Show XP reward options
+                  const rewardId = window.confirm('Use quick +1 XP award?') ? 1 : 5;
+                  handleCustomXPAward(student, rewardId);
+                }}
+                onViewDetails={handleViewStudent}
+                onEditCoins={handleEditCoins}
+              />
             </div>
 
-            <div className="flex space-x-2">
-              <button
-                onClick={selectAllStudents}
-                className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm font-bold"
-              >
-                Select All
-              </button>
-              <button
-                onClick={clearAllStudents}
-                className="px-3 py-1 bg-gray-400 text-white rounded hover:bg-gray-500 text-sm font-bold"
-              >
-                Clear
-              </button>
+            {/* XP Award Buttons Overlay */}
+            <div className="absolute bottom-4 left-4 right-4 opacity-0 hover:opacity-100 transition-opacity duration-200">
+              <div className="bg-white bg-opacity-95 rounded-lg p-2 shadow-lg">
+                <div className="grid grid-cols-2 gap-1">
+                  {xpRewards.slice(0, 4).map(reward => (
+                    <button
+                      key={reward.id}
+                      onClick={() => handleCustomXPAward(student, reward.id)}
+                      className={`${reward.color} hover:opacity-80 text-white px-2 py-1 rounded text-xs font-semibold transition-all`}
+                      title={`Award ${reward.amount} XP for ${reward.label}`}
+                    >
+                      +{reward.amount}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
-
-            <button
-              onClick={awardXpToSelected}
-              disabled={currentSelectedStudents.length === 0}
-              className="px-4 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-bold text-sm"
-            >
-              Award to {currentSelectedStudents.length} heroes
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Quick Stats - Compact */}
-      <div className="grid grid-cols-4 gap-2 mb-4 flex-shrink-0">
-        {[
-          {
-            title: 'Avg XP',
-            value: Math.round(students.reduce((acc, s) => acc + (s.totalPoints || 0), 0) / students.length) || 0,
-            icon: '⚡',
-            color: 'blue'
-          },
-          {
-            title: 'Avg Coins',
-            value: Math.round(students.reduce((acc, s) => acc + calculateCoins(s), 0) / students.length) || 0,
-            icon: '💎',
-            color: 'yellow'
-          },
-          {
-            title: 'With Pets',
-            value: students.filter(s => s.pet?.image).length,
-            icon: '🐲',
-            color: 'green'
-          },
-          {
-            title: 'Questing',
-            value: students.filter(s => getStudentQuestProgress(s) > 0).length,
-            icon: '⚔️',
-            color: 'purple'
-          }
-        ].map((stat, index) => (
-          <div key={index} className={`bg-${stat.color}-50 rounded-lg p-2 text-center border border-${stat.color}-200`}>
-            <div className="text-lg">{stat.icon}</div>
-            <div className={`text-lg font-bold text-${stat.color}-600`}>{stat.value}</div>
-            <div className="text-xs text-gray-600">{stat.title}</div>
           </div>
         ))}
       </div>
 
-      {/* Students Grid - Compact and Scrollable */}
-      <div className="flex-1 overflow-auto">
-        {students.length === 0 ? (
-          <div className="bg-gray-50 rounded-xl p-8 text-center border border-gray-200">
-            <div className="text-6xl mb-4">🏰</div>
-            <h3 className="text-xl font-bold text-gray-700 mb-2">Empty Guild Hall</h3>
-            <p className="text-gray-500 mb-4">Your guild awaits its first heroes!</p>
-            <button
-              onClick={() => setShowAddStudentModal(true)}
-              className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-bold"
-            >
-              🌟 Recruit Your First Hero
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 2xl:grid-cols-12 gap-2">
-            {students.map(student => {
-              const questCount = getStudentQuestProgress(student);
-              const coins = calculateCoins(student);
-              const xp = student.totalPoints || 0;
-              const xpProgress = getXPProgress(student);
-              const isHovered = hoveredStudent === student.id;
-              const isAnimating = animatingXP[student.id];
-              const isSelected = currentSelectedStudents.includes(student.id);
+      {/* Empty State */}
+      {students.length === 0 && (
+        <div className="text-center py-12">
+          <div className="text-6xl mb-4">🎓</div>
+          <h3 className="text-2xl font-bold text-gray-600 mb-2">No Students Yet</h3>
+          <p className="text-gray-500 mb-6">Add your first student to get started!</p>
+          <button
+            onClick={handleAddStudent}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
+          >
+            Add Your First Student
+          </button>
+        </div>
+      )}
 
-              return (
-                <div
-                  key={student.id}
-                  className={`relative bg-white rounded-xl shadow-sm border-2 overflow-hidden transition-all duration-200 cursor-pointer ${
-                    isSelected 
-                      ? 'border-purple-500 bg-purple-50 transform scale-105' 
-                      : isHovered 
-                        ? 'border-purple-300 shadow-md transform scale-105' 
-                        : 'border-gray-200 hover:shadow-md'
-                  }`}
-                  onMouseEnter={() => setHoveredStudent(student.id)}
-                  onMouseLeave={() => setHoveredStudent(null)}
-                  onClick={() => isXpPanelOpen && selectStudent(student.id)}
-                >
-                  {/* Level Badge */}
-                  <div className="absolute top-1 left-1 bg-blue-600 text-white text-xs font-bold px-1 py-0.5 rounded">
-                    {student.avatarLevel || 1}
-                  </div>
+      {/* Bulk XP Modal */}
+      {showBulkModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-96 max-w-90vw">
+            <h3 className="text-xl font-bold mb-4 text-center">
+              🌟 Bulk XP Award
+            </h3>
+            <p className="text-gray-600 mb-4 text-center">
+              Award XP to {selectedStudents.length} selected students
+            </p>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                XP Amount:
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="50"
+                value={bulkXPAmount}
+                onChange={(e) => setBulkXPAmount(parseInt(e.target.value) || 1)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-center text-lg"
+              />
+            </div>
 
-                  {/* Selection Indicator */}
-                  {isSelected && (
-                    <div className="absolute top-1 right-1 bg-purple-600 text-white text-xs font-bold px-1 py-0.5 rounded">
-                      ✓
-                    </div>
-                  )}
-
-                  {/* Main Content */}
-                  <div className="p-2 space-y-2">
-                    {/* Avatar */}
-                    <div className="flex justify-center">
-                      <button
-                        onClick={(e) => handleAvatarClickWrapper(student, e)}
-                        className="relative"
-                      >
-                        {student.avatar ? (
-                          <img
-                            src={student.avatar}
-                            alt={`${student.firstName}'s avatar`}
-                            className="w-8 h-8 rounded-full border-2 border-gray-300 hover:border-purple-400 transition-all cursor-pointer"
-                            onMouseEnter={(e) => handleImageHover(e, student.avatar, `${student.firstName}'s Avatar`, `Level ${student.avatarLevel || 1} Hero`)}
-                            onMouseLeave={handleImageLeave}
-                            onMouseMove={handleMouseMove}
-                          />
-                        ) : (
-                          <div className="w-8 h-8 rounded-full border-2 border-gray-300 bg-gray-100 flex items-center justify-center">
-                            <span className="text-xs">👤</span>
-                          </div>
-                        )}
-                      </button>
-                    </div>
-
-                    {/* Name */}
-                    <h3 className="text-xs font-bold text-gray-800 text-center truncate">
-                      {student.firstName}
-                    </h3>
-
-                    {/* XP Progress */}
-                    <div className="w-full bg-gray-200 rounded-full h-1">
-                      <div
-                        className="h-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-300"
-                        style={{ width: `${student.avatarLevel >= 4 ? 100 : xpProgress.percentage}%` }}
-                      ></div>
-                    </div>
-
-                    {/* Action Buttons - Compact Row */}
-                    <div className="flex justify-center space-x-1">
-                      <button
-                        onClick={(e) => handleXPClick(student.id, e)}
-                        className={`w-5 h-5 bg-blue-500 text-white text-xs rounded flex items-center justify-center font-bold hover:bg-blue-600 transition-all ${
-                          isAnimating ? 'animate-pulse' : ''
-                        }`}
-                        title={`${xp} XP`}
-                      >
-                        ⭐
-                      </button>
-                      <button
-                        onClick={(e) => handleCoinsClick(student, e)}
-                        className="w-5 h-5 bg-yellow-500 text-white text-xs rounded flex items-center justify-center font-bold hover:bg-yellow-600 transition-all"
-                        title={`${coins} Coins`}
-                      >
-                        💎
-                      </button>
-                      <button
-                        onClick={handleQuestsClick}
-                        className={`w-5 h-5 text-white text-xs rounded flex items-center justify-center font-bold transition-all ${
-                          questCount > 0 
-                            ? 'bg-orange-500 hover:bg-orange-600' 
-                            : 'bg-gray-400 hover:bg-gray-500'
-                        }`}
-                        title={`${questCount} Quests`}
-                      >
-                        ⚔️
-                      </button>
-                    </div>
-
-                    {/* Stats - Compact */}
-                    <div className="text-center text-xs space-y-1">
-                      <div className="text-blue-600 font-bold">{xp}</div>
-                      {student.pet?.image && (
-                        <div className="text-green-600 text-xs truncate" title={student.pet.name}>
-                          🐲 {student.pet.name}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* Help Guide - Compact */}
-      <div className="mt-4 bg-indigo-50 border border-indigo-200 rounded-lg p-2 text-xs text-center flex-shrink-0">
-        <span className="font-bold text-indigo-800">Quick Guide:</span>
-        <span className="text-indigo-600 ml-1">
-          Click avatar for character sheet • ⭐ for quick XP • 💎 for shop • ⚔️ for quests • Use Award XP panel for bulk actions
-        </span>
-      </div>
-
-      {/* Hover Image Preview */}
-      {hoverPreview.show && (
-        <div
-          className="fixed z-50 pointer-events-none"
-          style={{
-            left: `${Math.min(hoverPreview.x + 20, window.innerWidth - 220)}px`,
-            top: `${Math.min(hoverPreview.y + 20, window.innerHeight - 280)}px`
-          }}
-        >
-          <div className="bg-white rounded-xl shadow-2xl border-4 border-white overflow-hidden animate-in fade-in duration-200">
-            <img
-              src={hoverPreview.imageSrc}
-              alt={hoverPreview.title}
-              className="w-48 h-48 object-cover"
-            />
-            <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white">
-              <div className="font-bold text-sm">{hoverPreview.title}</div>
-              <div className="text-xs opacity-90">{hoverPreview.subtitle}</div>
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setShowBulkModal(false)}
+                className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-4 rounded-lg font-semibold transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBulkXPAward}
+                className="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg font-semibold transition-colors"
+              >
+                Award XP
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* XP Award Popup */}
-      <XPAwardPopup
-        show={showXPPopup}
-        studentName={xpPopupData.studentName}
-        xpAmount={xpPopupData.xpAmount}
-        category={xpPopupData.category}
-        timestamp={xpPopupData.timestamp}
-        onClose={closeXPPopup}
-        playSound={true}
+      {/* Coin Edit Modal */}
+      <CoinEditModal
+        student={coinEditStudent}
+        isOpen={showCoinModal}
+        onClose={() => {
+          setShowCoinModal(false);
+          setCoinEditStudent(null);
+        }}
+        onSave={handleSaveCoins}
       />
     </div>
   );

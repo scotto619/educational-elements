@@ -1,56 +1,231 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* Custom CSS for Classroom Champions */
+html,
+body {
+  padding: 0;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
+    Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
 }
 
-/* COMMENT OUT THIS SECTION TEMPORARILY */
-/*
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+a {
+  color: inherit;
+  text-decoration: none;
 }
-*/
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+* {
+  box-sizing: border-box;
+}
+
+/* Ensure images don't break layout */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Custom animations for the classroom theme */
+@keyframes bounce-slow {
+  0%, 100% {
+    transform: translateY(-25%);
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+  }
+  50% {
+    transform: none;
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: .5;
+  }
 }
 
-/* ===== CONTRAST FIX FOR CLASSROOM CHAMPIONS ===== */
-input, select, textarea {
-  color: #1f2937 !important;
-  background-color: #ffffff !important;
-  font-weight: 500 !important;
+@keyframes wiggle {
+  0%, 100% { 
+    transform: rotate(-3deg); 
+  }
+  50% { 
+    transform: rotate(3deg); 
+  }
 }
 
-input::placeholder, textarea::placeholder {
-  color: #6b7280 !important;
-  opacity: 1 !important;
+@keyframes float {
+  0%, 100% { 
+    transform: translatey(0px); 
+  }
+  50% { 
+    transform: translatey(-10px); 
+  }
 }
 
-select option {
-  color: #1f2937 !important;
-  background-color: #ffffff !important;
+@keyframes glow {
+  0% { 
+    box-shadow: 0 0 5px rgba(59, 130, 246, 0.5); 
+  }
+  100% { 
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.8); 
+  }
 }
 
-.quest-giver-name, 
-[class*="quest"] h3, 
-[class*="quest"] h4,
-[class*="modal"] h3,
-[class*="modal"] h4 {
-  color: #1f2937 !important;
-  font-weight: 600 !important;
+@keyframes shimmer {
+  0% { 
+    transform: translateX(-100%); 
+  }
+  100% { 
+    transform: translateX(100%); 
+  }
 }
-/* ===== END CONTRAST FIX ===== */
+
+@keyframes modalAppear {
+  0% { 
+    opacity: 0; 
+    transform: scale(0.9); 
+  }
+  100% { 
+    opacity: 1; 
+    transform: scale(1); 
+  }
+}
+
+@keyframes slideUp {
+  0% { 
+    opacity: 0; 
+    transform: translateY(20px); 
+  }
+  100% { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+@keyframes fadeIn {
+  0% { 
+    opacity: 0; 
+  }
+  100% { 
+    opacity: 1; 
+  }
+}
+
+/* Custom scrollbar for better UX */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
+
+/* Loading spinner styles */
+.loading-spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive image containers */
+.avatar-container {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.avatar-container img {
+  transition: transform 0.3s ease;
+}
+
+.avatar-container:hover img {
+  transform: scale(1.05);
+}
+
+/* Card hover effects */
+.student-card {
+  transition: all 0.3s ease;
+}
+
+.student-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Modal backdrop */
+.modal-backdrop {
+  backdrop-filter: blur(4px);
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* Toast notifications */
+.toast {
+  z-index: 9999;
+  max-width: 400px;
+}
+
+/* Game elements */
+.pet-race-track {
+  background: linear-gradient(90deg, 
+    #48cc6c 0%, 
+    #48cc6c 10%, 
+    #ffffff 10%, 
+    #ffffff 20%, 
+    #48cc6c 20%, 
+    #48cc6c 30%, 
+    #ffffff 30%, 
+    #ffffff 40%, 
+    #48cc6c 40%, 
+    #48cc6c 50%, 
+    #ffffff 50%, 
+    #ffffff 60%, 
+    #48cc6c 60%, 
+    #48cc6c 70%, 
+    #ffffff 70%, 
+    #ffffff 80%, 
+    #48cc6c 80%, 
+    #48cc6c 90%, 
+    #ffffff 90%, 
+    #ffffff 100%
+  );
+  background-size: 40px 100%;
+  animation: trackMove 2s linear infinite;
+}
+
+@keyframes trackMove {
+  0% { background-position: 0 0; }
+  100% { background-position: 40px 0; }
+}
+
+/* Fishing game water effect */
+.water-effect {
+  background: linear-gradient(45deg, #4dabf7, #339af0, #228be6, #1c7ed6);
+  background-size: 400% 400%;
+  animation: wave 4s ease-in-out infinite;
+}
+
+@keyframes wave {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
