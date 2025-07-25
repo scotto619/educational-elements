@@ -49,15 +49,12 @@ const DEFAULT_XP_CATEGORIES = [
 const getAvatarImage = (avatarBase, level) => {
   if (!avatarBase) {
     console.warn('No avatarBase provided, using default Wizard F');
-    return '/avatars/Wizard%20F/Level%201.png';
+    return '/Avatars/Wizard F/Level 1.png';
   }
   
   const validLevel = Math.max(1, Math.min(level || 1, 4));
-  // Fix: Use lowercase 'avatars' and URL encode spaces
-  const encodedAvatarBase = avatarBase.replaceAll(" ", "%20");
-  const imagePath = `/avatars/${encodedAvatarBase}/Level%20${validLevel}.png`;
+  const imagePath = `/Avatars/${avatarBase}/Level ${validLevel}.png`;
   
-  console.log(`Loading avatar: ${avatarBase} Level ${validLevel} -> ${imagePath}`);
   return imagePath;
 };
 
@@ -303,7 +300,7 @@ const StudentsTab = ({
               className="w-16 h-16 rounded-full border-3 border-blue-400 shadow-lg group-hover:border-blue-600 transition-all"
               onError={(e) => {
                 console.warn(`Avatar failed to load for ${student.firstName}: ${e.target.src}`);
-                e.target.src = '/avatars/Wizard%20F/Level%201.png';
+                e.target.src = '/Avatars/Wizard F/Level 1.png';
               }}
             />
             <div className="absolute -bottom-1 -right-1 bg-blue-600 text-white text-xs px-2 py-1 rounded-full font-bold">
@@ -716,9 +713,6 @@ const StudentsTab = ({
               src={getAvatarImage(levelUpData.student.avatarBase, levelUpData.newLevel)}
               alt="New Avatar"
               className="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-white shadow-lg"
-              onError={(e) => {
-                e.target.src = '/avatars/Wizard%20F/Level%201.png';
-              }}
             />
             <button
               onClick={() => setLevelUpData(null)}
