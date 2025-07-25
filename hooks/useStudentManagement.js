@@ -1,10 +1,10 @@
-// hooks/useStudentManagement.js - ENHANCED with Pet Unlock & Level Up Logic
+// hooks/useStudentManagement.js - ENHANCED with All Required Functions for StudentsTab
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { firestore } from '../utils/firebase';
 
-// Import our enhanced utilities
+// Import utilities
 import { 
   updateStudentWithCurrency, 
   calculateCoins, 
@@ -17,10 +17,9 @@ import {
   validateStudentData,
   calculateStudentStats,
   shouldReceivePet,
-  checkLevelUpThresholds,
   createNewPet,
-  resolveAvatarBase,
-  studentOwnsAvatar
+  studentOwnsAvatar,
+  calculateClassStats
 } from '../utils/gameUtils';
 
 import { 
@@ -32,6 +31,9 @@ import {
 
 import { 
   showToast, 
+  showSuccessToast, 
+  showErrorToast, 
+  showWarningToast,
   handleError, 
   withAsyncErrorHandling, 
   ERROR_TYPES 
@@ -87,8 +89,11 @@ export const useStudentManagement = (user, currentClassId) => {
           classes: updatedClasses 
         });
         
-        showToast('Student data saved successfully!', 'success');
+        console.log('Student data saved successfully to Firebase');
       }
+    } catch (error) {
+      console.error('Error saving students:', error);
+      throw error;
     } finally {
       setSavingData(false);
     }
@@ -98,357 +103,317 @@ export const useStudentManagement = (user, currentClassId) => {
   // STUDENT MANAGEMENT OPERATIONS
   // ===============================================
 
-  const addStudent = useCallback(withAsyncErrorHandling(async () => {
-    if (!newStudentName.trim()) {
-      showToast('Please enter a student name!', 'warning');
-      return;
-    }
-
+  const addStudent = useCallback(withAsyncErrorHandling(async (studentData) => {
     const newStudent = {
       id: `student_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      firstName: newStudentName.trim(),
-      lastName: '',
+      firstName: studentData.firstName || studentData.name || 'New Student',
+      lastName: studentData.lastName || '',
       totalPoints: 0,
+      avatarLevel: 1,
+      avatarBase: studentData.avatarBase || 'Wizard F',
+      avatar: getAvatarImage(studentData.avatarBase || 'Wizard F', 1),
       currency: 0,
-      avatarLevel: 1,
-      avatarBase: newStudentAvatar || getRandomAvatar(),
-      hasReceivedFirstPet: false,
-      lastLevelUpCheck: 0,
-      createdAt: new Date().toISOString()
-    };
-
-    // Validate student data
-    const validation = validateStudentData(newStudent);
-    if (!validation.isValid) {
-      throw new Error(`Invalid student data: ${validation.errors.join(', ')}`);
-    }
-
-    // Apply migration to ensure all fields are properly set
-    const migratedStudent = migrateStudentData(newStudent);
-    
-    const updatedStudents = [...students, migratedStudent];
-    setStudents(updatedStudents);
-    await saveStudentsToFirebase(updatedStudents);
-    
-    // Reset modal
-    setNewStudentName('');
-    setNewStudentAvatar('');
-    setShowAddStudentModal(false);
-    
-    showToast(`✨ Welcome ${migratedStudent.firstName} to the class!`, 'success');
-    
-    return migratedStudent;
-  }, 'addStudent'), [students, newStudentName, newStudentAvatar, saveStudentsToFirebase]);
-
-  const removeStudent = useCallback(withAsyncErrorHandling(async (studentId) => {
-    const updatedStudents = students.filter(student => student.id !== studentId);
-    setStudents(updatedStudents);
-    await saveStudentsToFirebase(updatedStudents);
-    
-    // Clear selected student if it was the removed one
-    if (selectedStudent?.id === studentId) {
-      setSelectedStudent(null);
-    }
-    
-    showToast('Student removed successfully!', 'success');
-  }, 'removeStudent'), [students, selectedStudent, saveStudentsToFirebase]);
-
-  // ENHANCED: XP awarding with pet unlock and level up detection
-  const awardXP = useCallback(withAsyncErrorHandling(async (student, amount = 1, category = 'general') => {
-    const updatedStudents = students.map(s => {
-      if (s.id === student.id) {
-        const newTotalXP = (s.totalPoints || 0) + amount;
-        const newLevel = calculateAvatarLevel(newTotalXP);
-        const oldLevel = s.avatarLevel || 1;
-        
-        const updatedStudent = {
-          ...s,
-          totalPoints: newTotalXP,
-          avatarLevel: newLevel,
-          avatar: getAvatarImage(s.avatarBase, newLevel),
-          lastLevelUpCheck: newTotalXP,
-          behaviorPoints: {
-            ...s.behaviorPoints,
-            [category.toLowerCase()]: (s.behaviorPoints?.[category.toLowerCase()] || 0) + 1
-          }
-        };
-
-        // Check for level up (every 100 XP)
-        if (newLevel > oldLevel) {
-          setLevelUpData({
-            student: updatedStudent,
-            oldLevel,
-            newLevel,
-            totalXP: newTotalXP
-          });
-          showToast(`🎉 ${s.firstName} leveled up to Level ${newLevel}!`, 'success');
-        }
-
-        // NEW: Check for pet unlock at 50 XP
-        if (shouldReceivePet(updatedStudent)) {
-          const newPet = createNewPet();
-          updatedStudent.ownedPets = [...(updatedStudent.ownedPets || []), newPet];
-          updatedStudent.hasReceivedFirstPet = true;
-          
-          setPetUnlockData({
-            student: updatedStudent,
-            pet: newPet
-          });
-          
-          playPetUnlockSound();
-          showToast(`🐾 ${s.firstName} unlocked their first pet: ${newPet.name}!`, 'success');
-        } else if (newLevel === oldLevel) {
-          showToast(`${s.firstName} earned ${amount} XP!`, 'success');
-        }
-
-        return updatedStudent;
-      }
-      return s;
-    });
-
-    setStudents(updatedStudents);
-    await saveStudentsToFirebase(updatedStudents);
-    
-    // Play sound effect
-    playXPSound();
-    
-  }, 'awardXP'), [students, saveStudentsToFirebase]);
-
-  const deductXP = useCallback(withAsyncErrorHandling(async (student, amount) => {
-    const updatedStudents = students.map(s => {
-      if (s.id === student.id) {
-        const newTotalXP = Math.max(0, (s.totalPoints || 0) - amount);
-        const newLevel = calculateAvatarLevel(newTotalXP);
-        
-        return {
-          ...s,
-          totalPoints: newTotalXP,
-          avatarLevel: newLevel,
-          avatar: getAvatarImage(s.avatarBase, newLevel),
-          lastLevelUpCheck: newTotalXP
-        };
-      }
-      return s;
-    });
-
-    setStudents(updatedStudents);
-    await saveStudentsToFirebase(updatedStudents);
-    showToast(`Deducted ${amount} XP from ${student.firstName}`, 'warning');
-  }, 'deductXP'), [students, saveStudentsToFirebase]);
-
-  const awardCoins = useCallback(withAsyncErrorHandling(async (student, amount) => {
-    const updatedStudents = students.map(s =>
-      s.id === student.id
-        ? { ...s, currency: (s.currency || 0) + amount }
-        : s
-    );
-    
-    setStudents(updatedStudents);
-    await saveStudentsToFirebase(updatedStudents);
-    showToast(`${student.firstName} earned ${amount} coins!`, 'success');
-  }, 'awardCoins'), [students, saveStudentsToFirebase]);
-
-  const spendCoins = useCallback(withAsyncErrorHandling(async (studentId, amount) => {
-    const updatedStudents = students.map(student => {
-      if (student.id === studentId) {
-        return {
-          ...student,
-          coinsSpent: (student.coinsSpent || 0) + amount
-        };
-      }
-      return student;
-    });
-    
-    setStudents(updatedStudents);
-    await saveStudentsToFirebase(updatedStudents);
-  }, 'spendCoins'), [students, saveStudentsToFirebase]);
-
-  // ===============================================
-  // BULK OPERATIONS
-  // ===============================================
-
-  const awardBulkXP = useCallback(withAsyncErrorHandling(async (studentIds, amount, category = 'general') => {
-    if (studentIds.length === 0) {
-      showToast('Please select students first', 'warning');
-      return;
-    }
-
-    let levelUpsTriggered = [];
-    let petUnlocksTriggered = [];
-
-    const updatedStudents = students.map(student => {
-      if (studentIds.includes(student.id)) {
-        const newTotalXP = (student.totalPoints || 0) + amount;
-        const newLevel = calculateAvatarLevel(newTotalXP);
-        const oldLevel = student.avatarLevel || 1;
-        
-        const updatedStudent = {
-          ...student,
-          totalPoints: newTotalXP,
-          avatarLevel: newLevel,
-          avatar: getAvatarImage(student.avatarBase, newLevel),
-          lastLevelUpCheck: newTotalXP,
-          behaviorPoints: {
-            ...student.behaviorPoints,
-            [category.toLowerCase()]: (student.behaviorPoints?.[category.toLowerCase()] || 0) + 1
-          }
-        };
-
-        // Track level ups
-        if (newLevel > oldLevel) {
-          levelUpsTriggered.push(updatedStudent);
-        }
-
-        // Track pet unlocks
-        if (shouldReceivePet(updatedStudent)) {
-          const newPet = createNewPet();
-          updatedStudent.ownedPets = [...(updatedStudent.ownedPets || []), newPet];
-          updatedStudent.hasReceivedFirstPet = true;
-          petUnlocksTriggered.push({ student: updatedStudent, pet: newPet });
-        }
-
-        return updatedStudent;
-      }
-      return student;
-    });
-
-    setStudents(updatedStudents);
-    await saveStudentsToFirebase(updatedStudents);
-    
-    // Show summary notifications
-    showToast(`🎉 Awarded ${amount} XP to ${studentIds.length} students!`, 'success');
-    
-    if (levelUpsTriggered.length > 0) {
-      showToast(`🎊 ${levelUpsTriggered.length} students leveled up!`, 'success');
-    }
-    
-    if (petUnlocksTriggered.length > 0) {
-      showToast(`🐾 ${petUnlocksTriggered.length} students unlocked pets!`, 'success');
-      playPetUnlockSound();
-    }
-    
-    setSelectedStudents([]); // Clear selection
-  }, 'awardBulkXP'), [students, saveStudentsToFirebase]);
-
-  const awardBulkCoins = useCallback(withAsyncErrorHandling(async (studentIds, amount) => {
-    if (studentIds.length === 0) {
-      showToast('Please select students first', 'warning');
-      return;
-    }
-
-    const updatedStudents = students.map(student => 
-      studentIds.includes(student.id)
-        ? { ...student, currency: (student.currency || 0) + amount }
-        : student
-    );
-
-    setStudents(updatedStudents);
-    await saveStudentsToFirebase(updatedStudents);
-    
-    showToast(`💰 Awarded ${amount} coins to ${studentIds.length} students!`, 'success');
-    setSelectedStudents([]); // Clear selection
-  }, 'awardBulkCoins'), [students, saveStudentsToFirebase]);
-
-  const resetAllPoints = useCallback(withAsyncErrorHandling(async () => {
-    const updatedStudents = students.map(student => ({
-      ...student,
-      totalPoints: 0,
-      avatarLevel: 1,
-      avatar: getAvatarImage(student.avatarBase, 1),
-      lastLevelUpCheck: 0,
+      coinsSpent: 0,
+      ownedAvatars: [studentData.avatarBase || 'Wizard F'],
+      ownedPets: [],
+      questsCompleted: [],
+      rewardsPurchased: [],
       behaviorPoints: {
         respectful: 0,
         responsible: 0,
         safe: 0,
         learner: 0
+      },
+      createdAt: new Date().toISOString(),
+      lastUpdated: new Date().toISOString()
+    };
+
+    const updatedStudents = [...students, newStudent];
+    setStudents(updatedStudents);
+    await saveStudentsToFirebase(updatedStudents);
+    
+    showSuccessToast(`${newStudent.firstName} added to class!`);
+    return newStudent;
+  }, 'addStudent'), [students, saveStudentsToFirebase]);
+
+  const removeStudent = useCallback(withAsyncErrorHandling(async (studentId) => {
+    const student = students.find(s => s.id === studentId);
+    if (!student) {
+      showWarningToast('Student not found');
+      return;
+    }
+
+    const updatedStudents = students.filter(s => s.id !== studentId);
+    setStudents(updatedStudents);
+    await saveStudentsToFirebase(updatedStudents);
+    
+    showSuccessToast(`${student.firstName} removed from class`);
+  }, 'removeStudent'), [students, saveStudentsToFirebase]);
+
+  // ===============================================
+  // XP MANAGEMENT
+  // ===============================================
+
+  const awardXP = useCallback(withAsyncErrorHandling(async (studentId, amount, category = 'general') => {
+    const updatedStudents = students.map(student => {
+      if (student.id === studentId) {
+        const newTotalXP = (student.totalPoints || 0) + amount;
+        const newLevel = calculateAvatarLevel(newTotalXP);
+        const oldLevel = student.avatarLevel || calculateAvatarLevel(student.totalPoints || 0);
+        
+        const updatedStudent = {
+          ...student,
+          totalPoints: newTotalXP,
+          avatarLevel: newLevel,
+          avatar: getAvatarImage(student.avatarBase || 'Wizard F', newLevel),
+          behaviorPoints: {
+            ...student.behaviorPoints,
+            [category.toLowerCase()]: (student.behaviorPoints?.[category.toLowerCase()] || 0) + amount
+          },
+          lastUpdated: new Date().toISOString()
+        };
+
+        // Check for level up
+        if (newLevel > oldLevel) {
+          setLevelUpData({
+            student: updatedStudent,
+            oldLevel,
+            newLevel
+          });
+        }
+
+        // Check for pet unlock
+        if (shouldReceivePet(updatedStudent)) {
+          const newPet = createNewPet();
+          updatedStudent.ownedPets = [newPet];
+          setPetUnlockData({
+            student: updatedStudent,
+            pet: newPet
+          });
+        }
+
+        return updatedStudent;
       }
-    }));
-    
+      return student;
+    });
+
     setStudents(updatedStudents);
     await saveStudentsToFirebase(updatedStudents);
-    showToast('All student points reset!', 'success');
-  }, 'resetAllPoints'), [students, saveStudentsToFirebase]);
-
-  const resetStudentPoints = useCallback(withAsyncErrorHandling(async (studentId) => {
-    const updatedStudents = students.map(student =>
-      student.id === studentId
-        ? { 
-            ...student, 
-            totalPoints: 0, 
-            avatarLevel: 1,
-            avatar: getAvatarImage(student.avatarBase, 1),
-            lastLevelUpCheck: 0,
-            behaviorPoints: {
-              respectful: 0,
-              responsible: 0,
-              safe: 0,
-              learner: 0
-            }
-          }
-        : student
-    );
     
+    // Play sound
+    playXPSound();
+    
+  }, 'awardXP'), [students, saveStudentsToFirebase]);
+
+  const awardBulkXP = useCallback(withAsyncErrorHandling(async (studentIds, amount, category = 'general') => {
+    let levelUps = [];
+    let petUnlocks = [];
+
+    const updatedStudents = students.map(student => {
+      if (studentIds.includes(student.id)) {
+        const newTotalXP = (student.totalPoints || 0) + amount;
+        const newLevel = calculateAvatarLevel(newTotalXP);
+        const oldLevel = student.avatarLevel || calculateAvatarLevel(student.totalPoints || 0);
+        
+        const updatedStudent = {
+          ...student,
+          totalPoints: newTotalXP,
+          avatarLevel: newLevel,
+          avatar: getAvatarImage(student.avatarBase || 'Wizard F', newLevel),
+          behaviorPoints: {
+            ...student.behaviorPoints,
+            [category.toLowerCase()]: (student.behaviorPoints?.[category.toLowerCase()] || 0) + amount
+          },
+          lastUpdated: new Date().toISOString()
+        };
+
+        if (newLevel > oldLevel) {
+          levelUps.push({ student: updatedStudent, oldLevel, newLevel });
+        }
+
+        if (shouldReceivePet(updatedStudent)) {
+          const newPet = createNewPet();
+          updatedStudent.ownedPets = [newPet];
+          petUnlocks.push({ student: updatedStudent, pet: newPet });
+        }
+
+        return updatedStudent;
+      }
+      return student;
+    });
+
     setStudents(updatedStudents);
     await saveStudentsToFirebase(updatedStudents);
-    showToast('Student points reset!', 'success');
-  }, 'resetStudentPoints'), [students, saveStudentsToFirebase]);
+
+    // Handle notifications
+    if (levelUps.length > 0) {
+      setLevelUpData(levelUps[0]); // Show first level up
+    }
+    if (petUnlocks.length > 0) {
+      setPetUnlockData(petUnlocks[0]); // Show first pet unlock
+    }
+
+    showSuccessToast(`${amount} XP awarded to ${studentIds.length} students!`);
+  }, 'awardBulkXP'), [students, saveStudentsToFirebase]);
+
+  const deductXP = useCallback(withAsyncErrorHandling(async (studentId, amount) => {
+    const updatedStudents = students.map(student => {
+      if (student.id === studentId) {
+        const newTotalXP = Math.max(0, (student.totalPoints || 0) - amount);
+        const newLevel = calculateAvatarLevel(newTotalXP);
+        
+        return {
+          ...student,
+          totalPoints: newTotalXP,
+          avatarLevel: newLevel,
+          avatar: getAvatarImage(student.avatarBase || 'Wizard F', newLevel),
+          lastUpdated: new Date().toISOString()
+        };
+      }
+      return student;
+    });
+
+    setStudents(updatedStudents);
+    await saveStudentsToFirebase(updatedStudents);
+  }, 'deductXP'), [students, saveStudentsToFirebase]);
 
   // ===============================================
-  // AVATAR MANAGEMENT - ENHANCED FOR SHOP ITEMS
+  // COIN MANAGEMENT
   // ===============================================
 
-  const changeAvatar = useCallback(withAsyncErrorHandling(async (student, avatarIdentifier) => {
-    // Resolve the actual avatar base from shop ID or direct base name
-    const avatarBase = resolveAvatarBase(avatarIdentifier, student);
-    const newAvatar = getAvatarImage(avatarBase, student.avatarLevel || 1);
+  const awardCoins = useCallback(withAsyncErrorHandling(async (studentId, amount) => {
+    const updatedStudents = students.map(student => {
+      if (student.id === studentId) {
+        return {
+          ...student,
+          currency: (student.currency || 0) + amount,
+          lastUpdated: new Date().toISOString()
+        };
+      }
+      return student;
+    });
+
+    setStudents(updatedStudents);
+    await saveStudentsToFirebase(updatedStudents);
+  }, 'awardCoins'), [students, saveStudentsToFirebase]);
+
+  const awardBulkCoins = useCallback(withAsyncErrorHandling(async (studentIds, amount) => {
+    const updatedStudents = students.map(student => {
+      if (studentIds.includes(student.id)) {
+        return {
+          ...student,
+          currency: (student.currency || 0) + amount,
+          lastUpdated: new Date().toISOString()
+        };
+      }
+      return student;
+    });
+
+    setStudents(updatedStudents);
+    await saveStudentsToFirebase(updatedStudents);
+    
+    showSuccessToast(`${amount} coins awarded to ${studentIds.length} students!`);
+  }, 'awardBulkCoins'), [students, saveStudentsToFirebase]);
+
+  const spendCoins = useCallback(withAsyncErrorHandling(async (studentId, amount) => {
+    const student = students.find(s => s.id === studentId);
+    if (!student || !canAfford(student, amount)) {
+      showWarningToast('Not enough coins!');
+      return false;
+    }
+
+    const updatedStudents = students.map(s => {
+      if (s.id === studentId) {
+        return {
+          ...s,
+          coinsSpent: (s.coinsSpent || 0) + amount,
+          lastUpdated: new Date().toISOString()
+        };
+      }
+      return s;
+    });
+
+    setStudents(updatedStudents);
+    await saveStudentsToFirebase(updatedStudents);
+    return true;
+  }, 'spendCoins'), [students, saveStudentsToFirebase]);
+
+  // ===============================================
+  // AVATAR MANAGEMENT
+  // ===============================================
+
+  const changeAvatar = useCallback(withAsyncErrorHandling(async (studentId, avatarBase) => {
+    const newAvatar = getAvatarImage(avatarBase, 1);
     
     const updatedStudents = students.map(s => 
-      s.id === student.id 
+      s.id === studentId 
         ? { 
             ...s, 
             avatarBase, 
             avatar: newAvatar,
             ownedAvatars: s.ownedAvatars?.includes(avatarBase) 
               ? s.ownedAvatars 
-              : [...(s.ownedAvatars || []), avatarBase]
+              : [...(s.ownedAvatars || []), avatarBase],
+            lastUpdated: new Date().toISOString()
           }
         : s
     );
     
     setStudents(updatedStudents);
     await saveStudentsToFirebase(updatedStudents);
-    showToast('Avatar changed successfully!', 'success');
+    showSuccessToast('Avatar changed successfully!');
   }, 'changeAvatar'), [students, saveStudentsToFirebase]);
 
-  // NEW: Function to handle shop avatar purchases
-  const purchaseShopAvatar = useCallback(withAsyncErrorHandling(async (student, shopItem) => {
-    if (!canAfford(student, shopItem.price)) {
-      showToast(`${student.firstName} doesn't have enough coins!`, 'warning');
-      return false;
-    }
+  // ===============================================
+  // BULK OPERATIONS
+  // ===============================================
 
-    const avatarBase = resolveAvatarBase(shopItem.id, student);
-    
-    const updatedStudents = students.map(s => {
-      if (s.id === student.id) {
-        return {
-          ...s,
-          coinsSpent: (s.coinsSpent || 0) + shopItem.price,
-          ownedAvatars: [...(s.ownedAvatars || []), avatarBase],
-          inventory: [...(s.inventory || []), {
-            ...shopItem,
-            purchaseDate: new Date().toISOString()
-          }]
-        };
-      }
-      return s;
-    });
-    
+  const resetAllPoints = useCallback(withAsyncErrorHandling(async () => {
+    const updatedStudents = students.map(student => ({
+      ...student,
+      totalPoints: 0,
+      avatarLevel: 1,
+      avatar: getAvatarImage(student.avatarBase || 'Wizard F', 1),
+      behaviorPoints: {
+        respectful: 0,
+        responsible: 0,
+        safe: 0,
+        learner: 0
+      },
+      lastUpdated: new Date().toISOString()
+    }));
+
     setStudents(updatedStudents);
     await saveStudentsToFirebase(updatedStudents);
-    showToast(`${student.firstName} purchased ${shopItem.name}!`, 'success');
-    return true;
-  }, 'purchaseShopAvatar'), [students, saveStudentsToFirebase]);
+    showSuccessToast('All student points reset!');
+  }, 'resetAllPoints'), [students, saveStudentsToFirebase]);
+
+  const resetStudentPoints = useCallback(withAsyncErrorHandling(async (studentId) => {
+    const updatedStudents = students.map(student => {
+      if (student.id === studentId) {
+        return {
+          ...student,
+          totalPoints: 0,
+          avatarLevel: 1,
+          avatar: getAvatarImage(student.avatarBase || 'Wizard F', 1),
+          behaviorPoints: {
+            respectful: 0,
+            responsible: 0,
+            safe: 0,
+            learner: 0
+          },
+          lastUpdated: new Date().toISOString()
+        };
+      }
+      return student;
+    });
+
+    setStudents(updatedStudents);
+    await saveStudentsToFirebase(updatedStudents);
+    
+    const student = students.find(s => s.id === studentId);
+    showSuccessToast(`${student?.firstName}'s points reset!`);
+  }, 'resetStudentPoints'), [students, saveStudentsToFirebase]);
 
   // ===============================================
   // DATA FIXES & MAINTENANCE
@@ -460,7 +425,7 @@ export const useStudentManagement = (user, currentClassId) => {
       saveStudentsToFirebase(fixed);
     });
     
-    showToast('✅ All student levels and avatars have been fixed!', 'success');
+    showSuccessToast('✅ All student levels and avatars have been fixed!');
     return fixedStudents;
   }, [students, saveStudentsToFirebase]);
 
@@ -471,7 +436,7 @@ export const useStudentManagement = (user, currentClassId) => {
     if (hasChanges) {
       setStudents(migratedStudents);
       saveStudentsToFirebase(migratedStudents);
-      showToast('Student data migrated successfully!', 'success');
+      showSuccessToast('Student data migrated successfully!');
     } else {
       showToast('All student data is already up to date!', 'info');
     }
@@ -502,30 +467,7 @@ export const useStudentManagement = (user, currentClassId) => {
   // ===============================================
 
   const classStats = useCallback(() => {
-    if (!students.length) {
-      return {
-        totalStudents: 0,
-        averageXP: 0,
-        totalXP: 0,
-        highestLevel: 0,
-        totalCoins: 0,
-        studentsWithPets: 0
-      };
-    }
-
-    const totalXP = students.reduce((sum, student) => sum + (student.totalPoints || 0), 0);
-    const totalCoins = students.reduce((sum, student) => sum + calculateCoins(student), 0);
-    const highestLevel = Math.max(...students.map(student => student.avatarLevel || 1));
-    const studentsWithPets = students.filter(student => student.ownedPets?.length > 0).length;
-    
-    return {
-      totalStudents: students.length,
-      averageXP: Math.round(totalXP / students.length),
-      totalXP,
-      highestLevel,
-      totalCoins,
-      studentsWithPets
-    };
+    return calculateClassStats(students);
   }, [students]);
 
   const getStudentById = useCallback((id) => {
@@ -580,11 +522,10 @@ export const useStudentManagement = (user, currentClassId) => {
     awardCoins,
     spendCoins,
     changeAvatar,
-    purchaseShopAvatar, // NEW
     
     // Bulk operations
     awardBulkXP,
-    awardBulkCoins, // NEW
+    awardBulkCoins,
     resetAllPoints,
     resetStudentPoints,
     
@@ -603,13 +544,13 @@ export const useStudentManagement = (user, currentClassId) => {
     getStudentById,
     getStudentsByLevel,
     getTopStudents,
-    getStudentsNeedingPets, // NEW
+    getStudentsNeedingPets,
     
     // Utility functions for components
     calculateCoins,
     canAfford,
     calculateStudentStats,
     shouldReceivePet,
-    studentOwnsAvatar // NEW
+    studentOwnsAvatar
   };
 };

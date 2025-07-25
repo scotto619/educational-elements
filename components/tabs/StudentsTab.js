@@ -1,38 +1,96 @@
-// components/tabs/StudentsTab.js - COMPLETELY REDESIGNED for Enhanced Experience
+// components/tabs/StudentsTab.js - FIXED COMPLETE IMPLEMENTATION
 import React, { useState, useEffect } from 'react';
 
-// Import Phase 3 utilities and constants
-import { 
-  DEFAULT_XP_CATEGORIES, 
-  GAME_CONFIG, 
-  AVAILABLE_AVATARS 
-} from '../../constants/gameData';
+// Constants
+const DEFAULT_XP_CATEGORIES = [
+  { 
+    id: 1, 
+    label: 'Respectful', 
+    amount: 1, 
+    color: 'bg-blue-500', 
+    icon: '🤝',
+    description: 'Showing respect to others and the classroom'
+  },
+  { 
+    id: 2, 
+    label: 'Responsible', 
+    amount: 1, 
+    color: 'bg-green-500', 
+    icon: '✅',
+    description: 'Taking responsibility for actions and tasks'
+  },
+  { 
+    id: 3, 
+    label: 'Safe', 
+    amount: 1, 
+    color: 'bg-yellow-500', 
+    icon: '🛡️',
+    description: 'Following safety rules and helping others stay safe'
+  },
+  { 
+    id: 4, 
+    label: 'Learner', 
+    amount: 1, 
+    color: 'bg-purple-500', 
+    icon: '📚',
+    description: 'Actively participating in learning activities'
+  },
+  { 
+    id: 5, 
+    label: 'Star Award', 
+    amount: 5, 
+    color: 'bg-yellow-600', 
+    icon: '⭐',
+    description: 'Outstanding achievement or exceptional behavior'
+  }
+];
 
-import { 
-  calculateCoins, 
-  getGridClasses, 
-  calculateOptimalGrid,
-  shouldReceivePet,
-  studentOwnsAvatar,
-  createNewPet,
-  playPetUnlockSound
-} from '../../utils/gameUtils';
+// Utility Functions
+const getAvatarImage = (avatarBase, level) => {
+  if (!avatarBase) {
+    console.warn('No avatarBase provided, using default Wizard F');
+    return '/Avatars/Wizard F/Level 1.png';
+  }
+  
+  const validLevel = Math.max(1, Math.min(level || 1, 4));
+  const imagePath = `/Avatars/${avatarBase}/Level ${validLevel}.png`;
+  
+  return imagePath;
+};
 
-import { 
-  getAvatarImage, 
-  calculateAvatarLevel 
-} from '../../utils/avatarFixes';
+const calculateAvatarLevel = (totalXP) => {
+  if (totalXP >= 300) return 4;
+  if (totalXP >= 200) return 3;  
+  if (totalXP >= 100) return 2;
+  return 1;
+};
 
-import { useImagePreview } from '../modals/ImagePreviewModal';
-import XPAwardModal from '../modals/XPAwardModal';
+const calculateCoins = (student) => {
+  const xpCoins = Math.floor((student?.totalPoints || 0) / 5);
+  const bonusCoins = student?.currency || 0;
+  const coinsSpent = student?.coinsSpent || 0;
+  return Math.max(0, xpCoins + bonusCoins - coinsSpent);
+};
 
+const shouldReceivePet = (student) => {
+  return (student?.totalPoints || 0) >= 50 && (!student?.ownedPets || student.ownedPets.length === 0);
+};
+
+const getGridClasses = (studentCount) => {
+  if (studentCount <= 4) return 'grid grid-cols-2 lg:grid-cols-4 gap-4';
+  if (studentCount <= 8) return 'grid grid-cols-2 lg:grid-cols-4 gap-3';
+  if (studentCount <= 12) return 'grid grid-cols-3 lg:grid-cols-6 gap-3';
+  if (studentCount <= 20) return 'grid grid-cols-4 lg:grid-cols-8 gap-2';
+  return 'grid grid-cols-5 lg:grid-cols-10 gap-1';
+};
+
+// Main Component
 const StudentsTab = ({ 
-  // Student management from hook
   students, 
   setStudents,
   selectedStudent,
   setSelectedStudent,
-  selectedStudents,
+  selectedStudents = [],
   setSelectedStudents,
   toggleStudentSelection,
   selectAllStudents,
@@ -43,132 +101,161 @@ const StudentsTab = ({
   awardBulkCoins,
   addStudent,
   fixAllStudentData,
-  
-  // Modal states
   showAddStudentModal,
   setShowAddStudentModal,
   levelUpData,
   setLevelUpData,
   petUnlockData,
   setPetUnlockData,
-  
-  // Utility functions
   saveStudentsToFirebase,
-  showToast,
-  showSuccessToast,
-  showErrorToast,
-  showWarningToast,
-  
-  // Other required props
+  showToast = () => {},
+  showSuccessToast = () => {},
+  showErrorToast = () => {},
+  showWarningToast = () => {},
   currentClassId,
   user
 }) => {
-  // Local state
+  // State
   const [xpCategories, setXpCategories] = useState(DEFAULT_XP_CATEGORIES);
   const [showXPModal, setShowXPModal] = useState(false);
   const [showBulkCoinsModal, setShowBulkCoinsModal] = useState(false);
   const [bulkCoinAmount, setBulkCoinAmount] = useState(5);
-  const [viewMode, setViewMode] = useState('cards'); // 'cards' or 'compact'
-  const [filterLevel, setFilterLevel] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterLevel, setFilterLevel] = useState('all');
+  const [showCharacterSheet, setShowCharacterSheet] = useState(false);
+  const [showXPCategoryEditor, setShowXPCategoryEditor] = useState(false);
+  
+  // Image preview state
+  const [previewImage, setPreviewImage] = useState(null);
+  const [previewPosition, setPreviewPosition] = useState({ x: 0, y: 0 });
 
-  // Image preview hook
-  const { 
-    showPreview, 
-    hidePreview, 
-    PreviewComponent 
-  } = useImagePreview();
+  // Ensure students is always an array
+  const safeStudents = Array.isArray(students) ? students : [];
 
-  // ===============================================
-  // STUDENT FILTERING AND SORTING
-  // ===============================================
-
-  const filteredStudents = students.filter(student => {
-    const matchesSearch = student.firstName.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesLevel = filterLevel === 'all' || (student.avatarLevel || 1) === parseInt(filterLevel);
+  // Filter and sort students
+  const filteredStudents = safeStudents.filter(student => {
+    const matchesSearch = searchTerm === '' || 
+      student.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.lastName?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesLevel = filterLevel === 'all' || 
+      (student.avatarLevel || calculateAvatarLevel(student.totalPoints || 0)) === parseInt(filterLevel);
+    
     return matchesSearch && matchesLevel;
   });
 
-  const sortedStudents = [...filteredStudents].sort((a, b) => {
-    return (b.totalPoints || 0) - (a.totalPoints || 0);
-  });
+  const sortedStudents = [...filteredStudents].sort((a, b) => 
+    (b.totalPoints || 0) - (a.totalPoints || 0)
+  );
 
-  // ===============================================
-  // XP AND COIN AWARD HANDLERS
-  // ===============================================
+  // Grid calculation
+  const gridClasses = getGridClasses(sortedStudents.length);
 
-  const handleQuickXPAward = (student, amount = 1) => {
-    // For single student quick awards, use default category
-    const defaultCategory = xpCategories.find(cat => cat.label === 'Star Award') || xpCategories[0];
-    awardXP(student, amount, defaultCategory.label);
-  };
-
-  const handleBulkXPAward = (studentIds, amount, category) => {
-    awardBulkXP(studentIds, amount, category);
-    setShowXPModal(false);
-  };
-
-  const handleBulkCoinsAward = () => {
-    if (selectedStudents.length === 0) {
-      showWarningToast('Please select students first');
-      return;
-    }
-    
-    awardBulkCoins(selectedStudents, bulkCoinAmount);
-    setShowBulkCoinsModal(false);
-  };
-
-  const handleSingleCoinAward = (student, amount = 5) => {
-    awardCoins(student, amount);
-  };
-
-  // ===============================================
-  // AVATAR AND PET PREVIEW HANDLERS
-  // ===============================================
-
+  // Handle avatar hover
   const handleAvatarHover = (event, student) => {
-    const avatarData = {
-      image: student.avatar || getAvatarImage(student.avatarBase, student.avatarLevel),
+    const rect = event.currentTarget.getBoundingClientRect();
+    setPreviewPosition({
+      x: event.clientX + 15,
+      y: event.clientY - 50
+    });
+    setPreviewImage({
+      src: student.avatar || getAvatarImage(student.avatarBase, student.avatarLevel),
       name: `${student.firstName}'s Avatar`,
-      type: 'avatar',
-      level: student.avatarLevel || 1,
-      description: `Level ${student.avatarLevel || 1} ${student.avatarBase || 'Character'}`
-    };
-    showPreview(avatarData, event);
+      level: student.avatarLevel || calculateAvatarLevel(student.totalPoints || 0),
+      type: 'avatar'
+    });
   };
 
   const handlePetHover = (event, pet, student) => {
-    const petData = {
-      image: pet.image,
+    const rect = event.currentTarget.getBoundingClientRect();
+    setPreviewPosition({
+      x: event.clientX + 15,
+      y: event.clientY - 50
+    });
+    setPreviewImage({
+      src: pet.image,
       name: pet.name,
-      type: 'pet',
-      species: pet.species || 'Companion',
-      speed: pet.speed,
-      wins: pet.wins || 0,
-      description: `${student.firstName}'s faithful companion`
-    };
-    showPreview(petData, event);
+      owner: student.firstName,
+      type: 'pet'
+    });
   };
 
-  // ===============================================
-  // RESPONSIVE GRID CALCULATION
-  // ===============================================
+  const hidePreview = () => {
+    setPreviewImage(null);
+  };
 
-  const gridConfig = calculateOptimalGrid(sortedStudents.length);
-  const gridClasses = getGridClasses(sortedStudents.length);
+  // XP Award Function
+  const handleAwardXP = async (studentId, amount, category) => {
+    try {
+      await awardXP(studentId, amount, category);
+      
+      // Check for level up
+      const student = safeStudents.find(s => s.id === studentId);
+      if (student) {
+        const newXP = (student.totalPoints || 0) + amount;
+        const oldLevel = student.avatarLevel || calculateAvatarLevel(student.totalPoints || 0);
+        const newLevel = calculateAvatarLevel(newXP);
+        
+        if (newLevel > oldLevel) {
+          setLevelUpData({
+            student: { ...student, totalPoints: newXP, avatarLevel: newLevel },
+            oldLevel,
+            newLevel
+          });
+        }
+        
+        // Check for pet unlock
+        if (newXP >= 50 && (!student.ownedPets || student.ownedPets.length === 0)) {
+          setPetUnlockData({
+            student: { ...student, totalPoints: newXP }
+          });
+        }
+      }
+      
+      showSuccessToast(`${amount} XP awarded for ${category}!`);
+    } catch (error) {
+      showErrorToast('Failed to award XP');
+    }
+  };
 
-  // ===============================================
-  // STUDENT CARD COMPONENT
-  // ===============================================
+  // Fix student data function
+  const handleFixData = () => {
+    try {
+      const fixedStudents = safeStudents.map(student => {
+        const totalXP = student.totalPoints || 0;
+        const correctLevel = calculateAvatarLevel(totalXP);
+        const avatarBase = student.avatarBase || 'Wizard F';
+        
+        return {
+          ...student,
+          avatarLevel: correctLevel,
+          avatarBase: avatarBase,
+          avatar: getAvatarImage(avatarBase, correctLevel),
+          currency: student.currency || 0,
+          ownedAvatars: student.ownedAvatars || [avatarBase],
+          ownedPets: student.ownedPets || [],
+          lastUpdated: new Date().toISOString()
+        };
+      });
+      
+      setStudents(fixedStudents);
+      saveStudentsToFirebase(fixedStudents);
+      showSuccessToast('Student data fixed successfully!');
+    } catch (error) {
+      showErrorToast('Failed to fix student data');
+    }
+  };
 
+  // Student Card Component
   const StudentCard = ({ student, isSelected, onToggleSelect }) => {
     const coins = calculateCoins(student);
+    const currentLevel = student.avatarLevel || calculateAvatarLevel(student.totalPoints || 0);
     const progressToNext = (student.totalPoints || 0) % 100;
-    const nextLevelXP = 100;
-    const progressPercentage = (progressToNext / nextLevelXP) * 100;
-    
-    // Check if student needs pet
+    const progressPercentage = (progressToNext / 100) * 100;
     const needsPet = shouldReceivePet(student);
+    
+    // Get equipped pet
+    const equippedPet = student.ownedPets?.[0];
     
     return (
       <div 
@@ -176,9 +263,9 @@ const StudentsTab = ({
           relative bg-white rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105
           border-2 ${isSelected ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200 hover:border-blue-300'}
           ${needsPet ? 'ring-2 ring-orange-300 border-orange-300' : ''}
-          p-4 cursor-pointer group
+          p-3 cursor-pointer group
         `}
-        onClick={() => setSelectedStudent(student)}
+        onClick={() => setShowCharacterSheet(student)}
       >
         {/* Selection Checkbox */}
         <div className="absolute top-2 left-2 z-10">
@@ -208,7 +295,7 @@ const StudentsTab = ({
             onMouseLeave={hidePreview}
           >
             <img 
-              src={student.avatar || getAvatarImage(student.avatarBase, student.avatarLevel)}
+              src={student.avatar || getAvatarImage(student.avatarBase || 'Wizard F', currentLevel)}
               alt={`${student.firstName}'s Avatar`}
               className="w-16 h-16 rounded-full border-3 border-blue-400 shadow-lg group-hover:border-blue-600 transition-all"
               onError={(e) => {
@@ -217,18 +304,18 @@ const StudentsTab = ({
               }}
             />
             <div className="absolute -bottom-1 -right-1 bg-blue-600 text-white text-xs px-2 py-1 rounded-full font-bold">
-              L{student.avatarLevel || 1}
+              L{currentLevel}
             </div>
           </div>
           
-          <h3 className="text-lg font-bold text-gray-800 mt-2 text-center leading-tight">
+          <h3 className="text-sm font-bold text-gray-800 mt-2 text-center leading-tight">
             {student.firstName}
           </h3>
         </div>
 
         {/* Stats Section */}
         <div className="space-y-2 mb-3">
-          <div className="flex items-center justify-between text-sm">
+          <div className="flex items-center justify-between text-xs">
             <span className="text-blue-600 font-semibold flex items-center">
               ⭐ {student.totalPoints || 0}
             </span>
@@ -240,52 +327,44 @@ const StudentsTab = ({
           {/* XP Progress Bar */}
           <div>
             <div className="flex justify-between text-xs text-gray-600 mb-1">
-              <span>Level {(student.avatarLevel || 1) + 1}</span>
-              <span>{progressToNext}/{nextLevelXP}</span>
+              <span>Level {currentLevel + 1}</span>
+              <span>{progressToNext}/100</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div 
                 className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-500"
                 style={{ width: `${progressPercentage}%` }}
-              ></div>
+              />
             </div>
           </div>
         </div>
 
-        {/* Pets Section */}
-        {student.ownedPets && student.ownedPets.length > 0 && (
-          <div className="mb-3">
-            <div className="text-xs text-gray-600 mb-1">Pets:</div>
-            <div className="flex space-x-1 justify-center">
-              {student.ownedPets.slice(0, 3).map((pet, index) => (
-                <div
-                  key={pet.id || index}
-                  className="relative"
-                  onMouseEnter={(e) => handlePetHover(e, pet, student)}
-                  onMouseLeave={hidePreview}
-                >
-                  <img
-                    src={pet.image}
-                    alt={pet.name}
-                    className="w-6 h-6 rounded-full border border-purple-300 hover:border-purple-500 cursor-pointer transition-all hover:scale-110"
-                  />
-                </div>
-              ))}
-              {student.ownedPets.length > 3 && (
-                <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600">
-                  +{student.ownedPets.length - 3}
-                </div>
-              )}
+        {/* Pet Section */}
+        {equippedPet && (
+          <div className="flex justify-center mb-3">
+            <div 
+              className="relative cursor-pointer"
+              onMouseEnter={(e) => handlePetHover(e, equippedPet, student)}
+              onMouseLeave={hidePreview}
+            >
+              <img 
+                src={equippedPet.image}
+                alt={equippedPet.name}
+                className="w-8 h-8 rounded-full border-2 border-green-400 shadow-md hover:border-green-600 transition-all"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
+              />
             </div>
           </div>
         )}
 
-        {/* Quick Action Buttons */}
+        {/* Action Buttons */}
         <div className="flex space-x-1">
           <button
             onClick={(e) => {
               e.stopPropagation();
-              handleQuickXPAward(student, 1);
+              setShowXPModal(student);
             }}
             className="flex-1 bg-green-500 hover:bg-green-600 text-white text-xs py-2 rounded font-semibold transition-colors"
           >
@@ -294,16 +373,7 @@ const StudentsTab = ({
           <button
             onClick={(e) => {
               e.stopPropagation();
-              handleQuickXPAward(student, 5);
-            }}
-            className="flex-1 bg-blue-500 hover:bg-blue-600 text-white text-xs py-2 rounded font-semibold transition-colors"
-          >
-            +5 XP
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleSingleCoinAward(student, 5);
+              handleAwardCoins(student.id, 5);
             }}
             className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white text-xs py-2 rounded font-semibold transition-colors"
           >
@@ -314,9 +384,31 @@ const StudentsTab = ({
     );
   };
 
-  // ===============================================
-  // RENDER MAIN COMPONENT
-  // ===============================================
+  // Bulk action functions
+  const handleBulkXP = () => {
+    if (selectedStudents.length === 0) {
+      showWarningToast('Please select students first');
+      return;
+    }
+    setShowXPModal({ bulk: true, studentIds: selectedStudents });
+  };
+
+  const handleBulkCoins = () => {
+    if (selectedStudents.length === 0) {
+      showWarningToast('Please select students first');
+      return;
+    }
+    setShowBulkCoinsModal(true);
+  };
+
+  const handleAwardCoins = async (studentId, amount) => {
+    try {
+      await awardCoins(studentId, amount);
+      showSuccessToast(`${amount} coins awarded!`);
+    } catch (error) {
+      showErrorToast('Failed to award coins');
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -328,7 +420,7 @@ const StudentsTab = ({
               👥 Class Champions
             </h2>
             <p className="text-blue-100 mt-1">
-              {students.length} students • {selectedStudents.length} selected
+              {safeStudents.length} students • {selectedStudents.length} selected
             </p>
           </div>
           
@@ -342,7 +434,7 @@ const StudentsTab = ({
             </button>
             
             <button
-              onClick={fixAllStudentData}
+              onClick={handleFixData}
               className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center space-x-2"
             >
               <span>🔧</span>
@@ -354,24 +446,24 @@ const StudentsTab = ({
         {/* Quick Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-white bg-opacity-20 rounded-lg p-3 text-center">
-            <div className="text-2xl font-bold">{students.length}</div>
+            <div className="text-2xl font-bold">{safeStudents.length}</div>
             <div className="text-sm text-blue-100">Total Students</div>
           </div>
           <div className="bg-white bg-opacity-20 rounded-lg p-3 text-center">
             <div className="text-2xl font-bold">
-              {students.reduce((sum, s) => sum + (s.totalPoints || 0), 0)}
+              {safeStudents.reduce((sum, s) => sum + (s.totalPoints || 0), 0)}
             </div>
             <div className="text-sm text-blue-100">Total XP</div>
           </div>
           <div className="bg-white bg-opacity-20 rounded-lg p-3 text-center">
             <div className="text-2xl font-bold">
-              {students.reduce((sum, s) => sum + calculateCoins(s), 0)}
+              {safeStudents.reduce((sum, s) => sum + calculateCoins(s), 0)}
             </div>
             <div className="text-sm text-blue-100">Total Coins</div>
           </div>
           <div className="bg-white bg-opacity-20 rounded-lg p-3 text-center">
             <div className="text-2xl font-bold">
-              {students.filter(s => s.ownedPets?.length > 0).length}
+              {safeStudents.filter(s => s.ownedPets?.length > 0).length}
             </div>
             <div className="text-sm text-blue-100">Have Pets</div>
           </div>
@@ -380,74 +472,23 @@ const StudentsTab = ({
 
       {/* Controls Section */}
       <div className="bg-white rounded-xl shadow-lg p-6">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
-          
-          {/* Selection Controls */}
-          <div className="flex items-center space-x-4">
-            <span className="text-sm font-semibold text-gray-600">Quick Select:</span>
-            
-            <button
-              onClick={selectAllStudents}
-              className="text-blue-600 hover:text-blue-800 text-sm font-semibold"
-            >
-              All ({students.length})
-            </button>
-            
-            <button
-              onClick={clearSelection}
-              className="text-gray-600 hover:text-gray-800 text-sm font-semibold"
-            >
-              None
-            </button>
-            
-            <div className="text-sm text-gray-500">
-              {selectedStudents.length} selected
+        <div className="flex flex-wrap gap-4 items-center justify-between">
+          {/* Search and Filter */}
+          <div className="flex space-x-4 flex-1">
+            <div className="flex-1 max-w-md">
+              <input
+                type="text"
+                placeholder="Search students..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
             </div>
-          </div>
-
-          {/* Bulk Actions */}
-          <div className="flex items-center space-x-2">
-            {selectedStudents.length > 0 && (
-              <>
-                <button
-                  onClick={() => setShowXPModal(true)}
-                  className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center space-x-2"
-                >
-                  <span>⭐</span>
-                  <span>Award XP ({selectedStudents.length})</span>
-                </button>
-                
-                <button
-                  onClick={() => setShowBulkCoinsModal(true)}
-                  className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center space-x-2"
-                >
-                  <span>🪙</span>
-                  <span>Award Coins</span>
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 mt-4 pt-4 border-t">
-          <div className="flex items-center space-x-2">
-            <label className="text-sm font-medium text-gray-700">Search:</label>
-            <input
-              type="text"
-              placeholder="Student name..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="px-3 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 text-sm"
-            />
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <label className="text-sm font-medium text-gray-700">Level:</label>
+            
             <select
               value={filterLevel}
               onChange={(e) => setFilterLevel(e.target.value)}
-              className="px-3 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 text-sm"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="all">All Levels</option>
               <option value="1">Level 1</option>
@@ -456,26 +497,42 @@ const StudentsTab = ({
               <option value="4">Level 4</option>
             </select>
           </div>
-          
-          <div className="flex items-center space-x-2">
-            <label className="text-sm font-medium text-gray-700">View:</label>
+
+          {/* Selection Controls */}
+          <div className="flex space-x-2">
             <button
-              onClick={() => setViewMode('cards')}
-              className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-                viewMode === 'cards' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
+              onClick={selectAllStudents}
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
             >
-              Cards
+              Select All
             </button>
             <button
-              onClick={() => setViewMode('compact')}
-              className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-                viewMode === 'compact' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
+              onClick={clearSelection}
+              className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
             >
-              Compact
+              Clear Selection
             </button>
           </div>
+
+          {/* Bulk Actions */}
+          {selectedStudents.length > 0 && (
+            <div className="flex space-x-2">
+              <button
+                onClick={handleBulkXP}
+                className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center space-x-2"
+              >
+                <span>⭐</span>
+                <span>Award XP ({selectedStudents.length})</span>
+              </button>
+              <button
+                onClick={handleBulkCoins}
+                className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors flex items-center space-x-2"
+              >
+                <span>🪙</span>
+                <span>Award Coins ({selectedStudents.length})</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -503,10 +560,10 @@ const StudentsTab = ({
               : 'Add your first student to get started!'
             }
           </p>
-          {!searchTerm && filterLevel === 'all' && (
+          {(!searchTerm && filterLevel === 'all') && (
             <button
               onClick={() => setShowAddStudentModal(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
             >
               Add Your First Student
             </button>
@@ -514,64 +571,176 @@ const StudentsTab = ({
         </div>
       )}
 
+      {/* Image Preview */}
+      {previewImage && (
+        <div 
+          className="fixed z-50 pointer-events-none animate-fade-in"
+          style={{ 
+            left: previewPosition.x, 
+            top: previewPosition.y,
+            zIndex: 9999
+          }}
+        >
+          <div className="bg-white border-3 border-blue-300 rounded-xl shadow-2xl p-4 max-w-xs">
+            <img
+              src={previewImage.src}
+              alt={previewImage.name}
+              className="w-32 h-32 rounded-lg object-cover border-2 border-gray-200 mx-auto"
+            />
+            <div className="text-center mt-2">
+              <div className="font-bold text-gray-800">{previewImage.name}</div>
+              {previewImage.level && (
+                <div className="text-sm text-gray-600">Level {previewImage.level}</div>
+              )}
+              {previewImage.owner && (
+                <div className="text-sm text-gray-600">{previewImage.owner}'s Pet</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* XP Award Modal */}
-      <XPAwardModal
-        isOpen={showXPModal}
-        onClose={() => setShowXPModal(false)}
-        onAward={handleBulkXPAward}
-        selectedStudents={selectedStudents}
-        students={students}
-        customCategories={xpCategories}
-      />
+      {showXPModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+            <h3 className="text-xl font-bold mb-4">
+              {showXPModal.bulk ? `Award XP to ${selectedStudents.length} Students` : `Award XP to ${showXPModal.firstName}`}
+            </h3>
+            
+            <div className="space-y-3">
+              {xpCategories.map(category => (
+                <button
+                  key={category.id}
+                  onClick={() => {
+                    if (showXPModal.bulk) {
+                      selectedStudents.forEach(id => handleAwardXP(id, category.amount, category.label));
+                    } else {
+                      handleAwardXP(showXPModal.id, category.amount, category.label);
+                    }
+                    setShowXPModal(false);
+                  }}
+                  className={`w-full p-3 rounded-lg text-white font-semibold hover:opacity-90 transition-opacity flex items-center space-x-2 ${category.color}`}
+                >
+                  <span>{category.icon}</span>
+                  <span>{category.label} (+{category.amount} XP)</span>
+                </button>
+              ))}
+            </div>
+            
+            <button
+              onClick={() => setShowXPModal(false)}
+              className="w-full mt-4 px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Bulk Coins Modal */}
       {showBulkCoinsModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-96 max-w-90vw">
-            <h3 className="text-xl font-bold mb-4 text-center">
-              💰 Award Coins to {selectedStudents.length} Students
-            </h3>
+          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+            <h3 className="text-xl font-bold mb-4">Award Coins to {selectedStudents.length} Students</h3>
             
             <div className="mb-4">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Coins per student:
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Coin Amount
               </label>
               <input
                 type="number"
-                min="1"
-                max="100"
                 value={bulkCoinAmount}
                 onChange={(e) => setBulkCoinAmount(parseInt(e.target.value) || 1)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-center text-lg"
+                min="1"
+                max="100"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
-              
-              <p className="text-sm text-gray-600 mt-2 text-center">
-                Total: <span className="font-bold text-yellow-600">
-                  {bulkCoinAmount * selectedStudents.length} coins
-                </span>
-              </p>
             </div>
-
+            
             <div className="flex space-x-3">
               <button
-                onClick={() => setShowBulkCoinsModal(false)}
-                className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-4 rounded-lg font-semibold transition-colors"
+                onClick={() => {
+                  selectedStudents.forEach(id => handleAwardCoins(id, bulkCoinAmount));
+                  setShowBulkCoinsModal(false);
+                }}
+                className="flex-1 bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition-colors font-medium"
               >
-                Cancel
+                Award {bulkCoinAmount} Coins
               </button>
               <button
-                onClick={handleBulkCoinsAward}
-                className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded-lg font-semibold transition-colors"
+                onClick={() => setShowBulkCoinsModal(false)}
+                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
               >
-                Award Coins
+                Cancel
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Image Preview Component */}
-      <PreviewComponent />
+      {/* Character Sheet Modal Placeholder */}
+      {showCharacterSheet && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-2xl font-bold">{showCharacterSheet.firstName}'s Character Sheet</h3>
+              <button
+                onClick={() => setShowCharacterSheet(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="text-center py-8">
+              <div className="text-6xl mb-4">🚧</div>
+              <p className="text-gray-600">Character sheet functionality will be implemented here</p>
+              <p className="text-sm text-gray-500 mt-2">This will show stats, inventory, pets, and avatar customization</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Level Up Modal */}
+      {levelUpData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gradient-to-br from-yellow-400 via-orange-500 to-red-500 rounded-xl p-8 max-w-md w-full mx-4 text-white text-center">
+            <div className="text-6xl mb-4 animate-bounce">🎉</div>
+            <h3 className="text-3xl font-bold mb-2">LEVEL UP!</h3>
+            <p className="text-xl mb-4">{levelUpData.student.firstName} reached Level {levelUpData.newLevel}!</p>
+            <img 
+              src={getAvatarImage(levelUpData.student.avatarBase, levelUpData.newLevel)}
+              alt="New Avatar"
+              className="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-white shadow-lg"
+            />
+            <button
+              onClick={() => setLevelUpData(null)}
+              className="bg-white text-orange-500 px-6 py-3 rounded-lg font-bold hover:bg-gray-100 transition-colors"
+            >
+              Awesome!
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Pet Unlock Modal */}
+      {petUnlockData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gradient-to-br from-green-400 via-blue-500 to-purple-500 rounded-xl p-8 max-w-md w-full mx-4 text-white text-center">
+            <div className="text-6xl mb-4 animate-bounce">🐾</div>
+            <h3 className="text-3xl font-bold mb-2">PET UNLOCKED!</h3>
+            <p className="text-xl mb-4">{petUnlockData.student.firstName} earned their first pet!</p>
+            <div className="text-4xl mb-4">🐕</div>
+            <button
+              onClick={() => setPetUnlockData(null)}
+              className="bg-white text-blue-500 px-6 py-3 rounded-lg font-bold hover:bg-gray-100 transition-colors"
+            >
+              Amazing!
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

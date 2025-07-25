@@ -1,13 +1,21 @@
-// utils/gameUtils.js - ENHANCED with Pet Unlock & Shop Avatar Support
+// utils/gameUtils.js - ENHANCED with Missing Functions for StudentsTab
 
-import { 
-  GAME_CONFIG, 
-  PET_NAMES, 
-  PET_SPECIES, 
-  SOUND_FILES, 
-  AVAILABLE_AVATARS,
-  SHOP_AVATAR_MAPPING
-} from '../constants/gameData';
+// ===============================================
+// CONSTANTS FOR GAME CALCULATIONS
+// ===============================================
+
+const GAME_CONFIG = {
+  MAX_LEVEL: 4,
+  COINS_PER_XP: 5,
+  RACE_DISTANCE: 0.8,
+  PET_UNLOCK_XP: 50,
+  XP_THRESHOLDS: {
+    LEVEL_1: 0,
+    LEVEL_2: 100,
+    LEVEL_3: 200,
+    LEVEL_4: 300
+  }
+};
 
 // ===============================================
 // STUDENT DATA UTILITIES
@@ -22,69 +30,75 @@ export const updateStudentWithCurrency = (student) => {
     categoryWeekly: student.categoryWeekly || {},
     coins: student.coins || 0,
     coinsSpent: student.coinsSpent || 0,
-    currency: student.currency || 0, // Ensure currency field exists
+    currency: student.currency || 0,
     inventory: student.inventory || [],
     lootBoxes: student.lootBoxes || [],
     achievements: student.achievements || [],
     lastXpDate: student.lastXpDate || null,
     ownedAvatars: student.ownedAvatars || (student.avatarBase ? [student.avatarBase] : []),
-    ownedPets: student.ownedPets || (student.pet ? [{
-      id: `migrated_pet_${Date.now()}`,
-      name: student.pet.name || 'Companion',
-      image: student.pet.image,
-      type: 'migrated'
-    }] : []),
+    ownedPets: student.ownedPets || [],
     rewardsPurchased: student.rewardsPurchased || [],
-    // NEW: Add tracking fields
-    hasReceivedFirstPet: student.hasReceivedFirstPet || false,
-    lastLevelUpCheck: student.lastLevelUpCheck || 0
+    questsCompleted: student.questsCompleted || [],
+    behaviorPoints: student.behaviorPoints || {
+      respectful: 0,
+      responsible: 0,
+      safe: 0,
+      learner: 0
+    },
+    createdAt: student.createdAt || new Date().toISOString(),
+    lastUpdated: new Date().toISOString()
   };
 };
 
 export const calculateCoins = (student) => {
   const xpCoins = Math.floor((student?.totalPoints || 0) / GAME_CONFIG.COINS_PER_XP);
-  const bonusCoins = student?.coins || 0;
+  const bonusCoins = student?.currency || 0;
   const coinsSpent = student?.coinsSpent || 0;
   return Math.max(0, xpCoins + bonusCoins - coinsSpent);
 };
 
-export const canAfford = (student, price) => {
-  return calculateCoins(student) >= price;
+export const canAfford = (student, cost) => {
+  const availableCoins = calculateCoins(student);
+  return availableCoins >= cost;
 };
 
-// NEW: Check if student should receive pet at 50 XP
-export const shouldReceivePet = (student) => {
-  const totalXP = student?.totalPoints || 0;
-  const hasReceivedFirstPet = student?.hasReceivedFirstPet || false;
-  const hasAnyPets = (student?.ownedPets || []).length > 0;
-  
-  return totalXP >= GAME_CONFIG.PET_UNLOCK_XP && !hasReceivedFirstPet && !hasAnyPets;
+// ===============================================
+// GRID LAYOUT UTILITIES - NEW FOR STUDENTSTAB
+// ===============================================
+
+export const calculateOptimalGrid = (studentCount) => {
+  if (studentCount <= 4) return { cols: 2, lgCols: 4, gap: 'gap-4' };
+  if (studentCount <= 8) return { cols: 2, lgCols: 4, gap: 'gap-3' };
+  if (studentCount <= 12) return { cols: 3, lgCols: 6, gap: 'gap-3' };
+  if (studentCount <= 20) return { cols: 4, lgCols: 8, gap: 'gap-2' };
+  return { cols: 5, lgCols: 10, gap: 'gap-1' };
 };
 
-// NEW: Check for level up at 100 XP intervals
-export const checkLevelUpThresholds = (student) => {
-  const totalXP = student?.totalPoints || 0;
-  const lastCheck = student?.lastLevelUpCheck || 0;
-  
-  // Check each 100 XP threshold
-  const thresholds = Object.values(GAME_CONFIG.XP_THRESHOLDS).sort((a, b) => a - b);
-  
-  for (const threshold of thresholds) {
-    if (totalXP >= threshold && lastCheck < threshold) {
-      return {
-        shouldLevelUp: true,
-        newLevel: Math.floor(threshold / 100) + 1,
-        threshold
-      };
-    }
-  }
-  
-  return { shouldLevelUp: false };
+export const getGridClasses = (studentCount) => {
+  const config = calculateOptimalGrid(studentCount);
+  return `grid grid-cols-${config.cols} lg:grid-cols-${config.lgCols} ${config.gap}`;
 };
 
 // ===============================================
 // PET SYSTEM UTILITIES
 // ===============================================
+
+const PET_SPECIES = [
+  { name: 'Dragon', image: '/Pets/Dragon.png', speed: 1.2 },
+  { name: 'Phoenix', image: '/Pets/Phoenix.png', speed: 1.5 },
+  { name: 'Wolf', image: '/Pets/Wolf.png', speed: 1.3 },
+  { name: 'Cat', image: '/Pets/Cat.png', speed: 1.0 },
+  { name: 'Owl', image: '/Pets/Owl.png', speed: 1.1 },
+  { name: 'Bear', image: '/Pets/Bear.png', speed: 0.9 },
+  { name: 'Eagle', image: '/Pets/Eagle.png', speed: 1.4 },
+  { name: 'Lion', image: '/Pets/Lion.png', speed: 1.3 }
+];
+
+const PET_NAMES = [
+  'Buddy', 'Shadow', 'Luna', 'Max', 'Bella', 'Charlie', 'Daisy', 'Rocky',
+  'Zoe', 'Jack', 'Molly', 'Duke', 'Sadie', 'Bear', 'Maggie', 'Zeus',
+  'Lucy', 'Cooper', 'Sophie', 'Tucker', 'Chloe', 'Oliver', 'Lola', 'Oscar'
+];
 
 export const getRandomPet = () => {
   return PET_SPECIES[Math.floor(Math.random() * PET_SPECIES.length)];
@@ -101,7 +115,6 @@ export const calculatePetSpeed = (pet) => {
   return Math.max(0.5, baseSpeed + bonusSpeed) * randomFactor;
 };
 
-// NEW: Create a proper pet object for unlocking
 export const createNewPet = (petSpecies = null, customName = null) => {
   const species = petSpecies || getRandomPet();
   const name = customName || getRandomPetName();
@@ -119,41 +132,31 @@ export const createNewPet = (petSpecies = null, customName = null) => {
   };
 };
 
+export const shouldReceivePet = (student) => {
+  const hasReachedXP = (student?.totalPoints || 0) >= GAME_CONFIG.PET_UNLOCK_XP;
+  const hasNoPets = !student?.ownedPets || student.ownedPets.length === 0;
+  return hasReachedXP && hasNoPets;
+};
+
 // ===============================================
 // AVATAR SYSTEM UTILITIES
 // ===============================================
+
+const AVAILABLE_AVATARS = [
+  'Alchemist F', 'Archer F', 'Barbarian F', 'Bard F', 'Beastmaster F', 'Cleric F', 
+  'Crystal Sage F', 'Druid F', 'Engineer F', 'Ice Mage F', 'Illusionist F', 'Knight F', 
+  'Monk F', 'Necromancer F', 'Orc F', 'Paladin F', 'Rogue F', 'Sky Knight F', 
+  'Time Mage F', 'Wizard F',
+  'Alchemist M', 'Archer M', 'Barbarian M', 'Bard M', 'Beastmaster M', 'Cleric M',
+  'Crystal Sage M', 'Druid M', 'Engineer M', 'Ice Mage M', 'Illusionist M', 'Knight M',
+  'Monk M', 'Necromancer M', 'Orc M', 'Paladin M', 'Rogue M', 'Sky Knight M', 
+  'Time Mage M', 'Wizard M'
+];
 
 export const getRandomAvatar = () => {
   return AVAILABLE_AVATARS[Math.floor(Math.random() * AVAILABLE_AVATARS.length)];
 };
 
-// NEW: Enhanced avatar resolution for shop items
-export const resolveAvatarBase = (avatarId, student) => {
-  // Check if it's a shop item ID
-  if (SHOP_AVATAR_MAPPING[avatarId]) {
-    return SHOP_AVATAR_MAPPING[avatarId].base;
-  }
-  
-  // Check if it's already a base name
-  if (AVAILABLE_AVATARS.includes(avatarId)) {
-    return avatarId;
-  }
-  
-  // Check student's owned avatars for shop purchases
-  if (student?.inventory) {
-    const purchasedAvatar = student.inventory.find(item => 
-      item.id === avatarId && item.avatarBase
-    );
-    if (purchasedAvatar) {
-      return purchasedAvatar.avatarBase;
-    }
-  }
-  
-  // Fallback to student's current avatar base or default
-  return student?.avatarBase || 'Wizard F';
-};
-
-// NEW: Check if student owns an avatar (including shop purchases)
 export const studentOwnsAvatar = (student, avatarBase) => {
   // Check direct ownership
   if (student?.ownedAvatars?.includes(avatarBase)) {
@@ -164,7 +167,7 @@ export const studentOwnsAvatar = (student, avatarBase) => {
   if (student?.inventory) {
     return student.inventory.some(item => 
       item.avatarBase === avatarBase || 
-      (SHOP_AVATAR_MAPPING[item.id]?.base === avatarBase)
+      item.id?.includes(avatarBase?.toLowerCase())
     );
   }
   
@@ -177,7 +180,17 @@ export const studentOwnsAvatar = (student, avatarBase) => {
 
 export const playSound = (soundType, volume = 0.7) => {
   try {
-    const soundFile = SOUND_FILES[soundType];
+    const soundFiles = {
+      XP_AWARD: '/sounds/xp-award.wav',
+      LEVEL_UP: '/sounds/level-up.wav',
+      COIN_COLLECT: '/sounds/coin.wav',
+      PET_UNLOCK: '/sounds/pet-unlock.wav',
+      SUCCESS: '/sounds/success.wav',
+      ERROR: '/sounds/error.wav',
+      BUTTON_CLICK: '/sounds/click.wav'
+    };
+
+    const soundFile = soundFiles[soundType];
     if (!soundFile) {
       console.warn(`Sound type ${soundType} not found`);
       return;
@@ -187,7 +200,6 @@ export const playSound = (soundType, volume = 0.7) => {
     audio.volume = volume;
     audio.play().catch(error => {
       console.log(`Could not play ${soundType} sound:`, error);
-      // Fallback to system beep
       playSystemBeep();
     });
   } catch (error) {
@@ -220,33 +232,16 @@ export const playXPSound = () => {
   }
 };
 
-// NEW: Play pet unlock sound
 export const playPetUnlockSound = () => {
   try {
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-    
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-    
-    // Pet unlock melody
-    oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // A4
-    oscillator.frequency.setValueAtTime(554.37, audioContext.currentTime + 0.15); // C#5
-    oscillator.frequency.setValueAtTime(659.25, audioContext.currentTime + 0.3); // E5
-    oscillator.frequency.setValueAtTime(880, audioContext.currentTime + 0.45); // A5
-    
-    gainNode.gain.setValueAtTime(0.4, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.6);
-    
-    oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.6);
+    playSound('PET_UNLOCK', 0.8);
   } catch (error) {
     console.log('Pet unlock sound not available:', error);
   }
 };
 
-export const playSystemBeep = () => {
+const playSystemBeep = () => {
+  // Fallback system beep
   try {
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     const oscillator = audioContext.createOscillator();
@@ -255,32 +250,65 @@ export const playSystemBeep = () => {
     oscillator.connect(gainNode);
     gainNode.connect(audioContext.destination);
     
-    oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+    oscillator.frequency.value = 800;
     gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
     
     oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.2);
+    oscillator.stop(audioContext.currentTime + 0.1);
   } catch (error) {
     console.log('System beep not available:', error);
   }
 };
 
 // ===============================================
-// LOOT BOX UTILITIES
+// STUDENT STATISTICS
 // ===============================================
 
-export const generateLootBoxRewards = (boxType, lootBoxItems) => {
-  const rewards = [];
-  const numRewards = boxType === 'legendary_box' ? 3 : boxType === 'rare_box' ? 2 : 1;
+export const calculateStudentStats = (student) => {
+  const totalXP = student?.totalPoints || 0;
+  const availableCoins = calculateCoins(student);
+  const coinsSpent = student?.coinsSpent || 0;
+  const totalCoinsEarned = availableCoins + coinsSpent;
   
-  for (let i = 0; i < numRewards; i++) {
-    const allItems = [...lootBoxItems.avatars, ...lootBoxItems.pets];
-    const item = allItems[Math.floor(Math.random() * allItems.length)];
-    rewards.push(item);
+  return {
+    totalXP,
+    availableCoins,
+    coinsSpent,
+    totalCoinsEarned,
+    level: Math.max(1, Math.min(4, Math.floor(totalXP / 100) + 1)),
+    progressToNextLevel: totalXP % 100,
+    questsCompleted: student?.questsCompleted?.length || 0,
+    petsOwned: student?.ownedPets?.length || 0,
+    avatarsOwned: student?.ownedAvatars?.length || 0
+  };
+};
+
+export const calculateClassStats = (students) => {
+  if (!students?.length) {
+    return {
+      totalStudents: 0,
+      averageXP: 0,
+      totalXP: 0,
+      highestLevel: 0,
+      totalCoins: 0,
+      studentsWithPets: 0
+    };
   }
+
+  const totalXP = students.reduce((sum, student) => sum + (student.totalPoints || 0), 0);
+  const totalCoins = students.reduce((sum, student) => sum + calculateCoins(student), 0);
+  const highestLevel = Math.max(...students.map(student => Math.floor((student.totalPoints || 0) / 100) + 1));
+  const studentsWithPets = students.filter(student => student.ownedPets?.length > 0).length;
   
-  return rewards;
+  return {
+    totalStudents: students.length,
+    averageXP: Math.round(totalXP / students.length),
+    totalXP,
+    highestLevel: Math.min(4, highestLevel),
+    totalCoins,
+    studentsWithPets
+  };
 };
 
 // ===============================================
@@ -293,21 +321,6 @@ export const validateStudentData = (student) => {
   if (!student.id) errors.push('Student ID is required');
   if (!student.firstName?.trim()) errors.push('Student first name is required');
   if (typeof student.totalPoints !== 'number') errors.push('Total points must be a number');
-  if (typeof student.avatarLevel !== 'number') errors.push('Avatar level must be a number');
-  if (!student.avatarBase) errors.push('Avatar base is required');
-  
-  return {
-    isValid: errors.length === 0,
-    errors
-  };
-};
-
-export const validateClassData = (classData) => {
-  const errors = [];
-  
-  if (!classData.name?.trim()) errors.push('Class name is required');
-  if (!Array.isArray(classData.students)) errors.push('Students must be an array');
-  if (!classData.id) errors.push('Class ID is required');
   
   return {
     isValid: errors.length === 0,
@@ -358,186 +371,31 @@ export const getRandomItems = (array, count) => {
 };
 
 // ===============================================
-// DATE UTILITIES
+// SHOP SYSTEM UTILITIES
 // ===============================================
 
-export const isToday = (dateString) => {
-  const today = new Date().toISOString().split('T')[0];
-  const date = dateString?.split('T')[0];
-  return today === date;
-};
-
-export const formatDate = (dateString) => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  });
-};
-
-export const getWeekStart = (date = new Date()) => {
-  const d = new Date(date);
-  const day = d.getDay();
-  const diff = d.getDate() - day;
-  return new Date(d.setDate(diff));
-};
-
-// ===============================================
-// LOCAL STORAGE UTILITIES (For client-side caching)
-// ===============================================
-
-export const saveToLocalStorage = (key, data) => {
-  try {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(key, JSON.stringify(data));
-    }
-  } catch (error) {
-    console.warn('Could not save to localStorage:', error);
+export const generateLootBoxRewards = (boxType = 'common_box') => {
+  const rewards = [];
+  const numRewards = boxType === 'legendary_box' ? 3 : boxType === 'rare_box' ? 2 : 1;
+  
+  const lootBoxItems = {
+    avatars: [
+      { id: 'rare_wizard', name: 'Mystic Wizard', type: 'avatar', rarity: 'rare' },
+      { id: 'rare_knight', name: 'Golden Knight', type: 'avatar', rarity: 'rare' },
+      { id: 'legendary_dragon', name: 'Dragon Lord', type: 'avatar', rarity: 'legendary' }
+    ],
+    pets: [
+      { id: 'rare_phoenix', name: 'Fire Phoenix', type: 'pet', rarity: 'rare' },
+      { id: 'rare_unicorn', name: 'Rainbow Unicorn', type: 'pet', rarity: 'rare' },
+      { id: 'legendary_griffin', name: 'Golden Griffin', type: 'pet', rarity: 'legendary' }
+    ]
+  };
+  
+  for (let i = 0; i < numRewards; i++) {
+    const allItems = [...lootBoxItems.avatars, ...lootBoxItems.pets];
+    const item = allItems[Math.floor(Math.random() * allItems.length)];
+    rewards.push(item);
   }
-};
-
-export const loadFromLocalStorage = (key, defaultValue = null) => {
-  try {
-    if (typeof window !== 'undefined') {
-      const item = localStorage.getItem(key);
-      return item ? JSON.parse(item) : defaultValue;
-    }
-  } catch (error) {
-    console.warn('Could not load from localStorage:', error);
-  }
-  return defaultValue;
-};
-
-export const removeFromLocalStorage = (key) => {
-  try {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem(key);
-    }
-  } catch (error) {
-    console.warn('Could not remove from localStorage:', error);
-  }
-};
-
-// ===============================================
-// ANALYTICS UTILITIES
-// ===============================================
-
-export const calculateStudentStats = (student) => {
-  const totalXP = student.totalPoints || 0;
-  const level = student.avatarLevel || 1;
-  const coins = calculateCoins(student);
-  const ownedAvatars = student.ownedAvatars?.length || 0;
-  const ownedPets = student.ownedPets?.length || 0;
-  const questsCompleted = student.questsCompleted?.length || 0;
   
-  return {
-    totalXP,
-    level,
-    coins,
-    ownedAvatars,
-    ownedPets,
-    questsCompleted,
-    coinsSpent: student.coinsSpent || 0,
-    averageXPPerDay: totalXP / Math.max(1, getDaysSinceCreation(student.createdAt)),
-    progressToNextLevel: totalXP % 100, // Progress within current 100 XP block
-    xpUntilNextLevel: 100 - (totalXP % 100),
-    hasReceivedFirstPet: student.hasReceivedFirstPet || false
-  };
-};
-
-export const calculateClassStats = (students) => {
-  if (!students.length) {
-    return {
-      totalStudents: 0,
-      averageXP: 0,
-      totalXP: 0,
-      highestLevel: 0,
-      totalCoins: 0
-    };
-  }
-
-  const totalXP = students.reduce((sum, student) => sum + (student.totalPoints || 0), 0);
-  const totalCoins = students.reduce((sum, student) => sum + calculateCoins(student), 0);
-  const highestLevel = Math.max(...students.map(student => student.avatarLevel || 1));
-  
-  return {
-    totalStudents: students.length,
-    averageXP: Math.round(totalXP / students.length),
-    totalXP,
-    highestLevel,
-    totalCoins
-  };
-};
-
-const getDaysSinceCreation = (createdAt) => {
-  if (!createdAt) return 1;
-  const created = new Date(createdAt);
-  const now = new Date();
-  const diffTime = Math.abs(now - created);
-  return Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
-};
-
-// ===============================================
-// ERROR HANDLING UTILITIES
-// ===============================================
-
-export const handleError = (error, context = 'Unknown') => {
-  console.error(`Error in ${context}:`, error);
-  
-  // You can expand this to send errors to a logging service
-  const errorData = {
-    message: error.message,
-    stack: error.stack,
-    context,
-    timestamp: new Date().toISOString(),
-    userAgent: typeof window !== 'undefined' ? window.navigator?.userAgent : 'Server'
-  };
-  
-  // Future: Send to error tracking service
-  // sendToErrorTracking(errorData);
-  
-  return errorData;
-};
-
-export const withErrorHandling = (fn, context = 'Function') => {
-  return async (...args) => {
-    try {
-      return await fn(...args);
-    } catch (error) {
-      handleError(error, context);
-      throw error; // Re-throw so the UI can handle it
-    }
-  };
-};
-
-// ===============================================
-// RESPONSIVE GRID CALCULATIONS
-// ===============================================
-
-export const calculateOptimalGrid = (studentCount, screenWidth) => {
-  // Calculate best grid layout to fit all students without scrolling
-  if (studentCount <= 4) return { cols: studentCount, rows: 1 };
-  if (studentCount <= 8) return { cols: 4, rows: 2 };
-  if (studentCount <= 12) return { cols: 4, rows: 3 };
-  if (studentCount <= 16) return { cols: 4, rows: 4 };
-  if (studentCount <= 20) return { cols: 5, rows: 4 };
-  if (studentCount <= 25) return { cols: 5, rows: 5 };
-  
-  // For larger classes, use scrolling
-  return { cols: 5, rows: Math.ceil(studentCount / 5) };
-};
-
-export const getGridClasses = (studentCount) => {
-  const { cols } = calculateOptimalGrid(studentCount);
-  
-  const gridClasses = {
-    1: 'grid-cols-1',
-    2: 'grid-cols-2', 
-    3: 'grid-cols-3',
-    4: 'grid-cols-4',
-    5: 'grid-cols-5'
-  };
-  
-  return `grid ${gridClasses[cols] || 'grid-cols-4'} gap-4`;
+  return rewards;
 };
