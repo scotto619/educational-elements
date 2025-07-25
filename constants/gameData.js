@@ -1,5 +1,4 @@
-// constants/gameData.js - PHASE 3: Centralized Game Constants & Data
-// This consolidates all the scattered constants from classroom-champions.js
+// constants/gameData.js - ENHANCED with Pet Unlock & Editable XP Criteria
 
 // ===============================================
 // CORE GAME CONSTANTS
@@ -9,6 +8,7 @@ export const GAME_CONFIG = {
   MAX_LEVEL: 4,
   COINS_PER_XP: 5,
   RACE_DISTANCE: 0.8, // 80% of track width
+  PET_UNLOCK_XP: 50, // NEW: Students get a pet at 50 XP
   XP_THRESHOLDS: {
     LEVEL_1: 0,
     LEVEL_2: 100,
@@ -16,6 +16,56 @@ export const GAME_CONFIG = {
     LEVEL_4: 300
   }
 };
+
+// ===============================================
+// EDITABLE XP REWARD CATEGORIES
+// ===============================================
+
+export const DEFAULT_XP_CATEGORIES = [
+  { 
+    id: 1, 
+    label: 'Respectful', 
+    amount: 1, 
+    color: 'bg-blue-500', 
+    icon: '🤝',
+    description: 'Showing respect to others and the classroom'
+  },
+  { 
+    id: 2, 
+    label: 'Responsible', 
+    amount: 1, 
+    color: 'bg-green-500', 
+    icon: '✅',
+    description: 'Taking responsibility for actions and tasks'
+  },
+  { 
+    id: 3, 
+    label: 'Safe', 
+    amount: 1, 
+    color: 'bg-yellow-500', 
+    icon: '🛡️',
+    description: 'Following safety rules and helping others stay safe'
+  },
+  { 
+    id: 4, 
+    label: 'Learner', 
+    amount: 1, 
+    color: 'bg-purple-500', 
+    icon: '📚',
+    description: 'Actively participating in learning activities'
+  },
+  { 
+    id: 5, 
+    label: 'Star Award', 
+    amount: 5, 
+    color: 'bg-yellow-600', 
+    icon: '⭐',
+    description: 'Outstanding achievement or exceptional behavior'
+  }
+];
+
+// Legacy support for old XP_REWARDS constant
+export const XP_REWARDS = DEFAULT_XP_CATEGORIES;
 
 // ===============================================
 // AVAILABLE AVATARS
@@ -216,18 +266,6 @@ export const PET_SPECIES = [
 ];
 
 // ===============================================
-// XP REWARD CATEGORIES
-// ===============================================
-
-export const XP_REWARDS = [
-  { id: 1, label: 'Respectful', amount: 1, color: 'bg-blue-500' },
-  { id: 2, label: 'Responsible', amount: 1, color: 'bg-green-500' },
-  { id: 3, label: 'Safe', amount: 1, color: 'bg-yellow-500' },
-  { id: 4, label: 'Learner', amount: 1, color: 'bg-purple-500' },
-  { id: 5, label: 'Star Award', amount: 5, color: 'bg-yellow-500' }
-];
-
-// ===============================================
 // SOUND FILE PATHS
 // ===============================================
 
@@ -286,3 +324,26 @@ export const NAVIGATION_TABS = [
   { id: 'classes', label: 'My Classes', icon: '📚' },
   { id: 'settings', label: 'Settings', icon: '⚙️' }
 ];
+
+// ===============================================
+// SHOP AVATAR BASES - FOR PROPER LOADING
+// ===============================================
+
+export const SHOP_AVATAR_MAPPING = {
+  // Basic shop avatars
+  'basic_wizard': { base: 'Wizard F', category: 'basic' },
+  'basic_knight': { base: 'Knight M', category: 'basic' },
+  'basic_archer': { base: 'Archer F', category: 'basic' },
+  
+  // Premium shop avatars (from themed sets)
+  'pirate_f_1': { base: 'Pirate F', category: 'themed' },
+  'pirate_m_1': { base: 'Pirate M', category: 'themed' },
+  'ninja_f_1': { base: 'Ninja F', category: 'themed' },
+  'ninja_m_1': { base: 'Ninja M', category: 'themed' },
+  
+  // Premium avatars (from loot boxes)
+  'goblin2_premium': { base: 'Goblin2', category: 'premium' },
+  'goblingirl2_premium': { base: 'GoblinGirl2', category: 'premium' },
+  'vampire2_premium': { base: 'Vampire2', category: 'premium' },
+  'vampiregirl2_premium': { base: 'VampireGirl2', category: 'premium' }
+};

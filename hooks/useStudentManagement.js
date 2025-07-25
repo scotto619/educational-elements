@@ -1,11 +1,10 @@
-// hooks/useStudentManagement.js - PHASE 3: Custom Hook for Student Management
-// This consolidates all student-related state and functions from classroom-champions.js
+// hooks/useStudentManagement.js - ENHANCED with Pet Unlock & Level Up Logic
 
 import { useState, useCallback } from 'react';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { firestore } from '../utils/firebase';
 
-// Import our new utilities
+// Import our enhanced utilities
 import { 
   updateStudentWithCurrency, 
   calculateCoins, 
@@ -14,8 +13,14 @@ import {
   getRandomPetName, 
   getRandomAvatar,
   playXPSound,
+  playPetUnlockSound,
   validateStudentData,
-  calculateStudentStats
+  calculateStudentStats,
+  shouldReceivePet,
+  checkLevelUpThresholds,
+  createNewPet,
+  resolveAvatarBase,
+  studentOwnsAvatar
 } from '../utils/gameUtils';
 
 import { 
@@ -107,6 +112,8 @@ export const useStudentManagement = (user, currentClassId) => {
       currency: 0,
       avatarLevel: 1,
       avatarBase: newStudentAvatar || getRandomAvatar(),
+      hasReceivedFirstPet: false,
+      lastLevelUpCheck: 0,
       createdAt: new Date().toISOString()
     };
 
@@ -146,6 +153,7 @@ export const useStudentManagement = (user, currentClassId) => {
     showToast('Student removed successfully!', 'success');
   }, 'removeStudent'), [students, selectedStudent, saveStudentsToFirebase]);
 
+  // ENHANCED: XP awarding with pet unlock and level up detection
   const awardXP = useCallback(withAsyncErrorHandling(async (student, amount = 1, category = 'general') => {
     const updatedStudents = students.map(s => {
       if (s.id === student.id) {
@@ -158,13 +166,14 @@ export const useStudentManagement = (user, currentClassId) => {
           totalPoints: newTotalXP,
           avatarLevel: newLevel,
           avatar: getAvatarImage(s.avatarBase, newLevel),
+          lastLevelUpCheck: newTotalXP,
           behaviorPoints: {
             ...s.behaviorPoints,
             [category.toLowerCase()]: (s.behaviorPoints?.[category.toLowerCase()] || 0) + 1
           }
         };
 
-        // Check for level up
+        // Check for level up (every 100 XP)
         if (newLevel > oldLevel) {
           setLevelUpData({
             student: updatedStudent,
@@ -172,18 +181,23 @@ export const useStudentManagement = (user, currentClassId) => {
             newLevel,
             totalXP: newTotalXP
           });
-          
-          // Check for pet unlock at level 4
-          if (newLevel >= 4 && (!s.ownedPets || s.ownedPets.length === 0)) {
-            const newPet = getRandomPet();
-            setPetUnlockData({
-              student: updatedStudent,
-              pet: { ...newPet, name: getRandomPetName() }
-            });
-          }
-          
           showToast(`🎉 ${s.firstName} leveled up to Level ${newLevel}!`, 'success');
-        } else {
+        }
+
+        // NEW: Check for pet unlock at 50 XP
+        if (shouldReceivePet(updatedStudent)) {
+          const newPet = createNewPet();
+          updatedStudent.ownedPets = [...(updatedStudent.ownedPets || []), newPet];
+          updatedStudent.hasReceivedFirstPet = true;
+          
+          setPetUnlockData({
+            student: updatedStudent,
+            pet: newPet
+          });
+          
+          playPetUnlockSound();
+          showToast(`🐾 ${s.firstName} unlocked their first pet: ${newPet.name}!`, 'success');
+        } else if (newLevel === oldLevel) {
           showToast(`${s.firstName} earned ${amount} XP!`, 'success');
         }
 
@@ -210,7 +224,8 @@ export const useStudentManagement = (user, currentClassId) => {
           ...s,
           totalPoints: newTotalXP,
           avatarLevel: newLevel,
-          avatar: getAvatarImage(s.avatarBase, newLevel)
+          avatar: getAvatarImage(s.avatarBase, newLevel),
+          lastLevelUpCheck: newTotalXP
         };
       }
       return s;
@@ -252,23 +267,47 @@ export const useStudentManagement = (user, currentClassId) => {
   // BULK OPERATIONS
   // ===============================================
 
-  const awardBulkXP = useCallback(withAsyncErrorHandling(async (studentIds, amount) => {
+  const awardBulkXP = useCallback(withAsyncErrorHandling(async (studentIds, amount, category = 'general') => {
     if (studentIds.length === 0) {
       showToast('Please select students first', 'warning');
       return;
     }
 
+    let levelUpsTriggered = [];
+    let petUnlocksTriggered = [];
+
     const updatedStudents = students.map(student => {
       if (studentIds.includes(student.id)) {
         const newTotalXP = (student.totalPoints || 0) + amount;
         const newLevel = calculateAvatarLevel(newTotalXP);
+        const oldLevel = student.avatarLevel || 1;
         
-        return {
+        const updatedStudent = {
           ...student,
           totalPoints: newTotalXP,
           avatarLevel: newLevel,
-          avatar: getAvatarImage(student.avatarBase, newLevel)
+          avatar: getAvatarImage(student.avatarBase, newLevel),
+          lastLevelUpCheck: newTotalXP,
+          behaviorPoints: {
+            ...student.behaviorPoints,
+            [category.toLowerCase()]: (student.behaviorPoints?.[category.toLowerCase()] || 0) + 1
+          }
         };
+
+        // Track level ups
+        if (newLevel > oldLevel) {
+          levelUpsTriggered.push(updatedStudent);
+        }
+
+        // Track pet unlocks
+        if (shouldReceivePet(updatedStudent)) {
+          const newPet = createNewPet();
+          updatedStudent.ownedPets = [...(updatedStudent.ownedPets || []), newPet];
+          updatedStudent.hasReceivedFirstPet = true;
+          petUnlocksTriggered.push({ student: updatedStudent, pet: newPet });
+        }
+
+        return updatedStudent;
       }
       return student;
     });
@@ -276,9 +315,39 @@ export const useStudentManagement = (user, currentClassId) => {
     setStudents(updatedStudents);
     await saveStudentsToFirebase(updatedStudents);
     
+    // Show summary notifications
     showToast(`🎉 Awarded ${amount} XP to ${studentIds.length} students!`, 'success');
+    
+    if (levelUpsTriggered.length > 0) {
+      showToast(`🎊 ${levelUpsTriggered.length} students leveled up!`, 'success');
+    }
+    
+    if (petUnlocksTriggered.length > 0) {
+      showToast(`🐾 ${petUnlocksTriggered.length} students unlocked pets!`, 'success');
+      playPetUnlockSound();
+    }
+    
     setSelectedStudents([]); // Clear selection
   }, 'awardBulkXP'), [students, saveStudentsToFirebase]);
+
+  const awardBulkCoins = useCallback(withAsyncErrorHandling(async (studentIds, amount) => {
+    if (studentIds.length === 0) {
+      showToast('Please select students first', 'warning');
+      return;
+    }
+
+    const updatedStudents = students.map(student => 
+      studentIds.includes(student.id)
+        ? { ...student, currency: (student.currency || 0) + amount }
+        : student
+    );
+
+    setStudents(updatedStudents);
+    await saveStudentsToFirebase(updatedStudents);
+    
+    showToast(`💰 Awarded ${amount} coins to ${studentIds.length} students!`, 'success');
+    setSelectedStudents([]); // Clear selection
+  }, 'awardBulkCoins'), [students, saveStudentsToFirebase]);
 
   const resetAllPoints = useCallback(withAsyncErrorHandling(async () => {
     const updatedStudents = students.map(student => ({
@@ -286,6 +355,7 @@ export const useStudentManagement = (user, currentClassId) => {
       totalPoints: 0,
       avatarLevel: 1,
       avatar: getAvatarImage(student.avatarBase, 1),
+      lastLevelUpCheck: 0,
       behaviorPoints: {
         respectful: 0,
         responsible: 0,
@@ -307,6 +377,7 @@ export const useStudentManagement = (user, currentClassId) => {
             totalPoints: 0, 
             avatarLevel: 1,
             avatar: getAvatarImage(student.avatarBase, 1),
+            lastLevelUpCheck: 0,
             behaviorPoints: {
               respectful: 0,
               responsible: 0,
@@ -323,10 +394,12 @@ export const useStudentManagement = (user, currentClassId) => {
   }, 'resetStudentPoints'), [students, saveStudentsToFirebase]);
 
   // ===============================================
-  // AVATAR MANAGEMENT
+  // AVATAR MANAGEMENT - ENHANCED FOR SHOP ITEMS
   // ===============================================
 
-  const changeAvatar = useCallback(withAsyncErrorHandling(async (student, avatarBase) => {
+  const changeAvatar = useCallback(withAsyncErrorHandling(async (student, avatarIdentifier) => {
+    // Resolve the actual avatar base from shop ID or direct base name
+    const avatarBase = resolveAvatarBase(avatarIdentifier, student);
     const newAvatar = getAvatarImage(avatarBase, student.avatarLevel || 1);
     
     const updatedStudents = students.map(s => 
@@ -346,6 +419,36 @@ export const useStudentManagement = (user, currentClassId) => {
     await saveStudentsToFirebase(updatedStudents);
     showToast('Avatar changed successfully!', 'success');
   }, 'changeAvatar'), [students, saveStudentsToFirebase]);
+
+  // NEW: Function to handle shop avatar purchases
+  const purchaseShopAvatar = useCallback(withAsyncErrorHandling(async (student, shopItem) => {
+    if (!canAfford(student, shopItem.price)) {
+      showToast(`${student.firstName} doesn't have enough coins!`, 'warning');
+      return false;
+    }
+
+    const avatarBase = resolveAvatarBase(shopItem.id, student);
+    
+    const updatedStudents = students.map(s => {
+      if (s.id === student.id) {
+        return {
+          ...s,
+          coinsSpent: (s.coinsSpent || 0) + shopItem.price,
+          ownedAvatars: [...(s.ownedAvatars || []), avatarBase],
+          inventory: [...(s.inventory || []), {
+            ...shopItem,
+            purchaseDate: new Date().toISOString()
+          }]
+        };
+      }
+      return s;
+    });
+    
+    setStudents(updatedStudents);
+    await saveStudentsToFirebase(updatedStudents);
+    showToast(`${student.firstName} purchased ${shopItem.name}!`, 'success');
+    return true;
+  }, 'purchaseShopAvatar'), [students, saveStudentsToFirebase]);
 
   // ===============================================
   // DATA FIXES & MAINTENANCE
@@ -405,20 +508,23 @@ export const useStudentManagement = (user, currentClassId) => {
         averageXP: 0,
         totalXP: 0,
         highestLevel: 0,
-        totalCoins: 0
+        totalCoins: 0,
+        studentsWithPets: 0
       };
     }
 
     const totalXP = students.reduce((sum, student) => sum + (student.totalPoints || 0), 0);
     const totalCoins = students.reduce((sum, student) => sum + calculateCoins(student), 0);
     const highestLevel = Math.max(...students.map(student => student.avatarLevel || 1));
+    const studentsWithPets = students.filter(student => student.ownedPets?.length > 0).length;
     
     return {
       totalStudents: students.length,
       averageXP: Math.round(totalXP / students.length),
       totalXP,
       highestLevel,
-      totalCoins
+      totalCoins,
+      studentsWithPets
     };
   }, [students]);
 
@@ -434,6 +540,10 @@ export const useStudentManagement = (user, currentClassId) => {
     return [...students]
       .sort((a, b) => (b.totalPoints || 0) - (a.totalPoints || 0))
       .slice(0, count);
+  }, [students]);
+
+  const getStudentsNeedingPets = useCallback(() => {
+    return students.filter(student => shouldReceivePet(student));
   }, [students]);
 
   // ===============================================
@@ -470,9 +580,11 @@ export const useStudentManagement = (user, currentClassId) => {
     awardCoins,
     spendCoins,
     changeAvatar,
+    purchaseShopAvatar, // NEW
     
     // Bulk operations
     awardBulkXP,
+    awardBulkCoins, // NEW
     resetAllPoints,
     resetStudentPoints,
     
@@ -491,10 +603,13 @@ export const useStudentManagement = (user, currentClassId) => {
     getStudentById,
     getStudentsByLevel,
     getTopStudents,
+    getStudentsNeedingPets, // NEW
     
     // Utility functions for components
     calculateCoins,
     canAfford,
-    calculateStudentStats
+    calculateStudentStats,
+    shouldReceivePet,
+    studentOwnsAvatar // NEW
   };
 };

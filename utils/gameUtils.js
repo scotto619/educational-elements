@@ -1,12 +1,12 @@
-// utils/gameUtils.js - PHASE 3: Consolidated Game Utility Functions
-// This consolidates all the scattered utility functions from classroom-champions.js
+// utils/gameUtils.js - ENHANCED with Pet Unlock & Shop Avatar Support
 
 import { 
   GAME_CONFIG, 
   PET_NAMES, 
   PET_SPECIES, 
   SOUND_FILES, 
-  AVAILABLE_AVATARS 
+  AVAILABLE_AVATARS,
+  SHOP_AVATAR_MAPPING
 } from '../constants/gameData';
 
 // ===============================================
@@ -34,7 +34,10 @@ export const updateStudentWithCurrency = (student) => {
       image: student.pet.image,
       type: 'migrated'
     }] : []),
-    rewardsPurchased: student.rewardsPurchased || []
+    rewardsPurchased: student.rewardsPurchased || [],
+    // NEW: Add tracking fields
+    hasReceivedFirstPet: student.hasReceivedFirstPet || false,
+    lastLevelUpCheck: student.lastLevelUpCheck || 0
   };
 };
 
@@ -47,6 +50,36 @@ export const calculateCoins = (student) => {
 
 export const canAfford = (student, price) => {
   return calculateCoins(student) >= price;
+};
+
+// NEW: Check if student should receive pet at 50 XP
+export const shouldReceivePet = (student) => {
+  const totalXP = student?.totalPoints || 0;
+  const hasReceivedFirstPet = student?.hasReceivedFirstPet || false;
+  const hasAnyPets = (student?.ownedPets || []).length > 0;
+  
+  return totalXP >= GAME_CONFIG.PET_UNLOCK_XP && !hasReceivedFirstPet && !hasAnyPets;
+};
+
+// NEW: Check for level up at 100 XP intervals
+export const checkLevelUpThresholds = (student) => {
+  const totalXP = student?.totalPoints || 0;
+  const lastCheck = student?.lastLevelUpCheck || 0;
+  
+  // Check each 100 XP threshold
+  const thresholds = Object.values(GAME_CONFIG.XP_THRESHOLDS).sort((a, b) => a - b);
+  
+  for (const threshold of thresholds) {
+    if (totalXP >= threshold && lastCheck < threshold) {
+      return {
+        shouldLevelUp: true,
+        newLevel: Math.floor(threshold / 100) + 1,
+        threshold
+      };
+    }
+  }
+  
+  return { shouldLevelUp: false };
 };
 
 // ===============================================
@@ -68,12 +101,74 @@ export const calculatePetSpeed = (pet) => {
   return Math.max(0.5, baseSpeed + bonusSpeed) * randomFactor;
 };
 
+// NEW: Create a proper pet object for unlocking
+export const createNewPet = (petSpecies = null, customName = null) => {
+  const species = petSpecies || getRandomPet();
+  const name = customName || getRandomPetName();
+  
+  return {
+    id: `pet_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    name,
+    image: species.image,
+    species: species.name,
+    speed: species.speed || 1.0,
+    wins: 0,
+    level: 1,
+    type: 'earned',
+    dateObtained: new Date().toISOString()
+  };
+};
+
 // ===============================================
 // AVATAR SYSTEM UTILITIES
 // ===============================================
 
 export const getRandomAvatar = () => {
   return AVAILABLE_AVATARS[Math.floor(Math.random() * AVAILABLE_AVATARS.length)];
+};
+
+// NEW: Enhanced avatar resolution for shop items
+export const resolveAvatarBase = (avatarId, student) => {
+  // Check if it's a shop item ID
+  if (SHOP_AVATAR_MAPPING[avatarId]) {
+    return SHOP_AVATAR_MAPPING[avatarId].base;
+  }
+  
+  // Check if it's already a base name
+  if (AVAILABLE_AVATARS.includes(avatarId)) {
+    return avatarId;
+  }
+  
+  // Check student's owned avatars for shop purchases
+  if (student?.inventory) {
+    const purchasedAvatar = student.inventory.find(item => 
+      item.id === avatarId && item.avatarBase
+    );
+    if (purchasedAvatar) {
+      return purchasedAvatar.avatarBase;
+    }
+  }
+  
+  // Fallback to student's current avatar base or default
+  return student?.avatarBase || 'Wizard F';
+};
+
+// NEW: Check if student owns an avatar (including shop purchases)
+export const studentOwnsAvatar = (student, avatarBase) => {
+  // Check direct ownership
+  if (student?.ownedAvatars?.includes(avatarBase)) {
+    return true;
+  }
+  
+  // Check inventory for shop purchases
+  if (student?.inventory) {
+    return student.inventory.some(item => 
+      item.avatarBase === avatarBase || 
+      (SHOP_AVATAR_MAPPING[item.id]?.base === avatarBase)
+    );
+  }
+  
+  return false;
 };
 
 // ===============================================
@@ -122,6 +217,32 @@ export const playXPSound = () => {
     oscillator.stop(audioContext.currentTime + 0.3);
   } catch (error) {
     console.log('Sound not available:', error);
+  }
+};
+
+// NEW: Play pet unlock sound
+export const playPetUnlockSound = () => {
+  try {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    // Pet unlock melody
+    oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // A4
+    oscillator.frequency.setValueAtTime(554.37, audioContext.currentTime + 0.15); // C#5
+    oscillator.frequency.setValueAtTime(659.25, audioContext.currentTime + 0.3); // E5
+    oscillator.frequency.setValueAtTime(880, audioContext.currentTime + 0.45); // A5
+    
+    gainNode.gain.setValueAtTime(0.4, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.6);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.6);
+  } catch (error) {
+    console.log('Pet unlock sound not available:', error);
   }
 };
 
@@ -318,7 +439,10 @@ export const calculateStudentStats = (student) => {
     ownedPets,
     questsCompleted,
     coinsSpent: student.coinsSpent || 0,
-    averageXPPerDay: totalXP / Math.max(1, getDaysSinceCreation(student.createdAt))
+    averageXPPerDay: totalXP / Math.max(1, getDaysSinceCreation(student.createdAt)),
+    progressToNextLevel: totalXP % 100, // Progress within current 100 XP block
+    xpUntilNextLevel: 100 - (totalXP % 100),
+    hasReceivedFirstPet: student.hasReceivedFirstPet || false
   };
 };
 
@@ -385,4 +509,35 @@ export const withErrorHandling = (fn, context = 'Function') => {
       throw error; // Re-throw so the UI can handle it
     }
   };
+};
+
+// ===============================================
+// RESPONSIVE GRID CALCULATIONS
+// ===============================================
+
+export const calculateOptimalGrid = (studentCount, screenWidth) => {
+  // Calculate best grid layout to fit all students without scrolling
+  if (studentCount <= 4) return { cols: studentCount, rows: 1 };
+  if (studentCount <= 8) return { cols: 4, rows: 2 };
+  if (studentCount <= 12) return { cols: 4, rows: 3 };
+  if (studentCount <= 16) return { cols: 4, rows: 4 };
+  if (studentCount <= 20) return { cols: 5, rows: 4 };
+  if (studentCount <= 25) return { cols: 5, rows: 5 };
+  
+  // For larger classes, use scrolling
+  return { cols: 5, rows: Math.ceil(studentCount / 5) };
+};
+
+export const getGridClasses = (studentCount) => {
+  const { cols } = calculateOptimalGrid(studentCount);
+  
+  const gridClasses = {
+    1: 'grid-cols-1',
+    2: 'grid-cols-2', 
+    3: 'grid-cols-3',
+    4: 'grid-cols-4',
+    5: 'grid-cols-5'
+  };
+  
+  return `grid ${gridClasses[cols] || 'grid-cols-4'} gap-4`;
 };
