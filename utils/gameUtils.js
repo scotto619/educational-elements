@@ -1,21 +1,23 @@
-// utils/gameUtils.js - ENHANCED with Missing Functions for StudentsTab
+// utils/gameUtils.js - ENHANCED with Complete Shop System Functions
+
+import { 
+  GAME_CONFIG, 
+  PET_SPECIES, 
+  PET_NAMES, 
+  AVAILABLE_AVATARS,
+  BASIC_PETS,
+  EXISTING_PETS,
+  PREMIUM_PETS,
+  PREMIUM_BASIC_AVATARS,
+  THEMED_AVATARS,
+  SOUND_FILES
+} from '../constants/gameData';
 
 // ===============================================
 // CONSTANTS FOR GAME CALCULATIONS
 // ===============================================
 
-const GAME_CONFIG = {
-  MAX_LEVEL: 4,
-  COINS_PER_XP: 5,
-  RACE_DISTANCE: 0.8,
-  PET_UNLOCK_XP: 50,
-  XP_THRESHOLDS: {
-    LEVEL_1: 0,
-    LEVEL_2: 100,
-    LEVEL_3: 200,
-    LEVEL_4: 300
-  }
-};
+const { MAX_LEVEL, COINS_PER_XP, RACE_DISTANCE, PET_UNLOCK_XP, XP_THRESHOLDS } = GAME_CONFIG;
 
 // ===============================================
 // STUDENT DATA UTILITIES
@@ -51,7 +53,7 @@ export const updateStudentWithCurrency = (student) => {
 };
 
 export const calculateCoins = (student) => {
-  const xpCoins = Math.floor((student?.totalPoints || 0) / GAME_CONFIG.COINS_PER_XP);
+  const xpCoins = Math.floor((student?.totalPoints || 0) / COINS_PER_XP);
   const bonusCoins = student?.currency || 0;
   const coinsSpent = student?.coinsSpent || 0;
   return Math.max(0, xpCoins + bonusCoins - coinsSpent);
@@ -63,7 +65,7 @@ export const canAfford = (student, cost) => {
 };
 
 // ===============================================
-// GRID LAYOUT UTILITIES - NEW FOR STUDENTSTAB
+// GRID LAYOUT UTILITIES - FOR STUDENTSTAB
 // ===============================================
 
 export const calculateOptimalGrid = (studentCount) => {
@@ -82,23 +84,6 @@ export const getGridClasses = (studentCount) => {
 // ===============================================
 // PET SYSTEM UTILITIES
 // ===============================================
-
-const PET_SPECIES = [
-  { name: 'Dragon', image: '/Pets/Dragon.png', speed: 1.2 },
-  { name: 'Phoenix', image: '/Pets/Phoenix.png', speed: 1.5 },
-  { name: 'Wolf', image: '/Pets/Wolf.png', speed: 1.3 },
-  { name: 'Cat', image: '/Pets/Cat.png', speed: 1.0 },
-  { name: 'Owl', image: '/Pets/Owl.png', speed: 1.1 },
-  { name: 'Bear', image: '/Pets/Bear.png', speed: 0.9 },
-  { name: 'Eagle', image: '/Pets/Eagle.png', speed: 1.4 },
-  { name: 'Lion', image: '/Pets/Lion.png', speed: 1.3 }
-];
-
-const PET_NAMES = [
-  'Buddy', 'Shadow', 'Luna', 'Max', 'Bella', 'Charlie', 'Daisy', 'Rocky',
-  'Zoe', 'Jack', 'Molly', 'Duke', 'Sadie', 'Bear', 'Maggie', 'Zeus',
-  'Lucy', 'Cooper', 'Sophie', 'Tucker', 'Chloe', 'Oliver', 'Lola', 'Oscar'
-];
 
 export const getRandomPet = () => {
   return PET_SPECIES[Math.floor(Math.random() * PET_SPECIES.length)];
@@ -133,7 +118,7 @@ export const createNewPet = (petSpecies = null, customName = null) => {
 };
 
 export const shouldReceivePet = (student) => {
-  const hasReachedXP = (student?.totalPoints || 0) >= GAME_CONFIG.PET_UNLOCK_XP;
+  const hasReachedXP = (student?.totalPoints || 0) >= PET_UNLOCK_XP;
   const hasNoPets = !student?.ownedPets || student.ownedPets.length === 0;
   return hasReachedXP && hasNoPets;
 };
@@ -142,163 +127,190 @@ export const shouldReceivePet = (student) => {
 // AVATAR SYSTEM UTILITIES
 // ===============================================
 
-const AVAILABLE_AVATARS = [
-  'Alchemist F', 'Archer F', 'Barbarian F', 'Bard F', 'Beastmaster F', 'Cleric F', 
-  'Crystal Sage F', 'Druid F', 'Engineer F', 'Ice Mage F', 'Illusionist F', 'Knight F', 
-  'Monk F', 'Necromancer F', 'Orc F', 'Paladin F', 'Rogue F', 'Sky Knight F', 
-  'Time Mage F', 'Wizard F',
-  'Alchemist M', 'Archer M', 'Barbarian M', 'Bard M', 'Beastmaster M', 'Cleric M',
-  'Crystal Sage M', 'Druid M', 'Engineer M', 'Ice Mage M', 'Illusionist M', 'Knight M',
-  'Monk M', 'Necromancer M', 'Orc M', 'Paladin M', 'Rogue M', 'Sky Knight M', 
-  'Time Mage M', 'Wizard M'
-];
-
 export const getRandomAvatar = () => {
   return AVAILABLE_AVATARS[Math.floor(Math.random() * AVAILABLE_AVATARS.length)];
 };
 
 export const studentOwnsAvatar = (student, avatarBase) => {
-  // Check direct ownership
-  if (student?.ownedAvatars?.includes(avatarBase)) {
-    return true;
-  }
-  
-  // Check inventory for shop purchases
-  if (student?.inventory) {
-    return student.inventory.some(item => 
-      item.avatarBase === avatarBase || 
-      item.id?.includes(avatarBase?.toLowerCase())
-    );
-  }
-  
-  return false;
+  return student?.ownedAvatars?.includes(avatarBase) || false;
+};
+
+export const getAvatarLevel = (student) => {
+  const xp = student?.totalPoints || 0;
+  if (xp >= XP_THRESHOLDS.LEVEL_4) return 4;
+  if (xp >= XP_THRESHOLDS.LEVEL_3) return 3;
+  if (xp >= XP_THRESHOLDS.LEVEL_2) return 2;
+  return 1;
+};
+
+export const getNextLevelXP = (currentXP) => {
+  if (currentXP < XP_THRESHOLDS.LEVEL_2) return XP_THRESHOLDS.LEVEL_2;
+  if (currentXP < XP_THRESHOLDS.LEVEL_3) return XP_THRESHOLDS.LEVEL_3;
+  if (currentXP < XP_THRESHOLDS.LEVEL_4) return XP_THRESHOLDS.LEVEL_4;
+  return null; // Max level reached
 };
 
 // ===============================================
-// SOUND SYSTEM UTILITIES
+// SHOP SYSTEM UTILITIES
 // ===============================================
 
-export const playSound = (soundType, volume = 0.7) => {
-  try {
-    const soundFiles = {
-      XP_AWARD: '/sounds/xp-award.wav',
-      LEVEL_UP: '/sounds/level-up.wav',
-      COIN_COLLECT: '/sounds/coin.wav',
-      PET_UNLOCK: '/sounds/pet-unlock.wav',
-      SUCCESS: '/sounds/success.wav',
-      ERROR: '/sounds/error.wav',
-      BUTTON_CLICK: '/sounds/click.wav'
-    };
-
-    const soundFile = soundFiles[soundType];
-    if (!soundFile) {
-      console.warn(`Sound type ${soundType} not found`);
-      return;
+export const generateLootBoxRewards = (boxType = 'common_box') => {
+  const rewards = [];
+  const numRewards = boxType === 'legendary_box' ? 3 : boxType === 'premium_box' ? 5 : 3;
+  
+  for (let i = 0; i < numRewards; i++) {
+    const randomNum = Math.random();
+    let rarity = 'common';
+    
+    // Determine rarity based on box type
+    if (boxType === 'legendary_box') {
+      rarity = randomNum < 0.1 ? 'legendary' : randomNum < 0.4 ? 'epic' : 'rare';
+    } else if (boxType === 'premium_box') {
+      rarity = randomNum < 0.05 ? 'legendary' : randomNum < 0.2 ? 'epic' : 'rare';
+    } else {
+      rarity = randomNum < 0.2 ? 'rare' : 'common';
     }
+    
+    const isAvatar = Math.random() < 0.6; // 60% chance for avatar, 40% for pet
+    
+    if (isAvatar && rarity !== 'common') {
+      // Add premium avatar
+      const premiumAvatars = PREMIUM_BASIC_AVATARS.filter(a => a.rarity === rarity);
+      if (premiumAvatars.length > 0) {
+        const randomAvatar = premiumAvatars[Math.floor(Math.random() * premiumAvatars.length)];
+        rewards.push({
+          ...randomAvatar,
+          type: 'avatar'
+        });
+      }
+    } else {
+      // Add pet
+      const petPool = rarity === 'common' ? BASIC_PETS : PREMIUM_PETS.filter(p => p.rarity === rarity);
+      
+      if (petPool.length === 0 && rarity !== 'common') {
+        // Fallback to existing pets for common rarity
+        const fallbackPets = EXISTING_PETS;
+        if (fallbackPets.length > 0) {
+          const randomPet = fallbackPets[Math.floor(Math.random() * fallbackPets.length)];
+          rewards.push({
+            ...randomPet,
+            type: 'pet',
+            rarity: 'common'
+          });
+        }
+      } else if (petPool.length > 0) {
+        const randomPet = petPool[Math.floor(Math.random() * petPool.length)];
+        rewards.push({
+          ...randomPet,
+          type: 'pet'
+        });
+      }
+    }
+  }
+  
+  return rewards;
+};
 
-    const audio = new Audio(soundFile);
-    audio.volume = volume;
+export const getShopItemById = (itemId) => {
+  // Search through all shop categories
+  const allAvatars = [...BASIC_AVATARS, ...PREMIUM_BASIC_AVATARS, ...THEMED_AVATARS];
+  const allPets = [...BASIC_PETS, ...EXISTING_PETS, ...PREMIUM_PETS];
+  
+  return allAvatars.find(item => item.id === itemId) || 
+         allPets.find(item => item.id === itemId) || 
+         null;
+};
+
+export const getItemRarity = (item) => {
+  if (item.rarity) return item.rarity;
+  if (item.price >= 50) return 'legendary';
+  if (item.price >= 30) return 'epic';
+  if (item.price >= 20) return 'rare';
+  return 'common';
+};
+
+// ===============================================
+// SOUND UTILITIES
+// ===============================================
+
+export const playSound = (soundPath, volume = 1.0) => {
+  if (typeof window === 'undefined') return;
+  
+  try {
+    const audio = new Audio(soundPath);
+    audio.volume = Math.max(0, Math.min(1, volume));
     audio.play().catch(error => {
-      console.log(`Could not play ${soundType} sound:`, error);
-      playSystemBeep();
+      // Silently fail if sound can't play (user hasn't interacted with page yet)
+      console.debug('Sound play failed:', error);
     });
   } catch (error) {
-    console.log('Audio not supported:', error);
-    playSystemBeep();
+    console.debug('Sound creation failed:', error);
   }
 };
 
-export const playXPSound = () => {
-  try {
-    // Create and play XP award sound
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-    
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-    
-    oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime); // C5
-    oscillator.frequency.setValueAtTime(659.25, audioContext.currentTime + 0.1); // E5
-    oscillator.frequency.setValueAtTime(783.99, audioContext.currentTime + 0.2); // G5
-    
-    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-    
-    oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.3);
-  } catch (error) {
-    console.log('Sound not available:', error);
-  }
+export const playXPSound = (volume = 0.5) => {
+  playSound(SOUND_FILES.XP_AWARD, volume);
 };
 
-export const playPetUnlockSound = () => {
-  try {
-    playSound('PET_UNLOCK', 0.8);
-  } catch (error) {
-    console.log('Pet unlock sound not available:', error);
-  }
+export const playLevelUpSound = (volume = 0.7) => {
+  playSound(SOUND_FILES.LEVEL_UP, volume);
 };
 
-const playSystemBeep = () => {
-  // Fallback system beep
-  try {
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-    
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-    
-    oscillator.frequency.value = 800;
-    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-    
-    oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.1);
-  } catch (error) {
-    console.log('System beep not available:', error);
-  }
+export const playPetUnlockSound = (volume = 0.6) => {
+  playSound(SOUND_FILES.PET_UNLOCK, volume);
+};
+
+export const playCoinSound = (volume = 0.4) => {
+  playSound(SOUND_FILES.COIN_COLLECT, volume);
+};
+
+export const playSuccessSound = (volume = 0.5) => {
+  playSound(SOUND_FILES.SUCCESS, volume);
+};
+
+export const playErrorSound = (volume = 0.3) => {
+  playSound(SOUND_FILES.ERROR, volume);
 };
 
 // ===============================================
-// STUDENT STATISTICS
+// STATISTICS UTILITIES
 // ===============================================
 
 export const calculateStudentStats = (student) => {
   const totalXP = student?.totalPoints || 0;
-  const availableCoins = calculateCoins(student);
+  const level = getAvatarLevel(student);
+  const coins = calculateCoins(student);
   const coinsSpent = student?.coinsSpent || 0;
-  const totalCoinsEarned = availableCoins + coinsSpent;
+  const totalCoinsEarned = coins + coinsSpent;
   
   return {
+    level,
     totalXP,
-    availableCoins,
+    coins,
     coinsSpent,
     totalCoinsEarned,
-    level: Math.max(1, Math.min(4, Math.floor(totalXP / 100) + 1)),
-    progressToNextLevel: totalXP % 100,
+    ownedAvatars: student?.ownedAvatars?.length || 0,
+    ownedPets: student?.ownedPets?.length || 0,
     questsCompleted: student?.questsCompleted?.length || 0,
-    petsOwned: student?.ownedPets?.length || 0,
-    avatarsOwned: student?.ownedAvatars?.length || 0
+    rewardsPurchased: student?.rewardsPurchased?.length || 0
   };
 };
 
 export const calculateClassStats = (students) => {
-  if (!students?.length) {
+  if (!students || students.length === 0) {
     return {
       totalStudents: 0,
       averageXP: 0,
       totalXP: 0,
-      highestLevel: 0,
+      highestLevel: 1,
       totalCoins: 0,
       studentsWithPets: 0
     };
   }
-
-  const totalXP = students.reduce((sum, student) => sum + (student.totalPoints || 0), 0);
+  
+  const totalXP = students.reduce((sum, student) => sum + (student?.totalPoints || 0), 0);
   const totalCoins = students.reduce((sum, student) => sum + calculateCoins(student), 0);
-  const highestLevel = Math.max(...students.map(student => Math.floor((student.totalPoints || 0) / 100) + 1));
+  const highestLevel = Math.max(...students.map(student => Math.min(4, Math.floor(((student?.totalPoints || 0) / 100) + 1))));
   const studentsWithPets = students.filter(student => student.ownedPets?.length > 0).length;
   
   return {
@@ -321,6 +333,24 @@ export const validateStudentData = (student) => {
   if (!student.id) errors.push('Student ID is required');
   if (!student.firstName?.trim()) errors.push('Student first name is required');
   if (typeof student.totalPoints !== 'number') errors.push('Total points must be a number');
+  
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
+};
+
+export const validatePurchase = (student, item) => {
+  const errors = [];
+  
+  if (!student) errors.push('Student is required');
+  if (!item) errors.push('Item is required');
+  if (!canAfford(student, item.price)) errors.push('Insufficient coins');
+  
+  // Check if student already owns the item
+  if (item.type === 'avatar' && student.ownedAvatars?.includes(item.base)) {
+    errors.push('Student already owns this avatar');
+  }
   
   return {
     isValid: errors.length === 0,
@@ -352,6 +382,33 @@ export const formatCoins = (coins) => {
   return coins.toString();
 };
 
+export const formatDate = (dateString) => {
+  if (!dateString) return '';
+  
+  try {
+    return new Date(dateString).toLocaleDateString();
+  } catch (error) {
+    return '';
+  }
+};
+
+export const formatRelativeTime = (dateString) => {
+  if (!dateString) return '';
+  
+  try {
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffInMinutes = Math.floor((now - date) / (1000 * 60));
+    
+    if (diffInMinutes < 1) return 'Just now';
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`;
+    return `${Math.floor(diffInMinutes / 1440)}d ago`;
+  } catch (error) {
+    return '';
+  }
+};
+
 // ===============================================
 // ARRAY UTILITIES
 // ===============================================
@@ -370,32 +427,186 @@ export const getRandomItems = (array, count) => {
   return shuffled.slice(0, count);
 };
 
+export const chunkArray = (array, chunkSize) => {
+  const chunks = [];
+  for (let i = 0; i < array.length; i += chunkSize) {
+    chunks.push(array.slice(i, i + chunkSize));
+  }
+  return chunks;
+};
+
 // ===============================================
-// SHOP SYSTEM UTILITIES
+// XP AND LEVEL UTILITIES
 // ===============================================
 
-export const generateLootBoxRewards = (boxType = 'common_box') => {
-  const rewards = [];
-  const numRewards = boxType === 'legendary_box' ? 3 : boxType === 'rare_box' ? 2 : 1;
-  
-  const lootBoxItems = {
-    avatars: [
-      { id: 'rare_wizard', name: 'Mystic Wizard', type: 'avatar', rarity: 'rare' },
-      { id: 'rare_knight', name: 'Golden Knight', type: 'avatar', rarity: 'rare' },
-      { id: 'legendary_dragon', name: 'Dragon Lord', type: 'avatar', rarity: 'legendary' }
-    ],
-    pets: [
-      { id: 'rare_phoenix', name: 'Fire Phoenix', type: 'pet', rarity: 'rare' },
-      { id: 'rare_unicorn', name: 'Rainbow Unicorn', type: 'pet', rarity: 'rare' },
-      { id: 'legendary_griffin', name: 'Golden Griffin', type: 'pet', rarity: 'legendary' }
-    ]
+export const calculateXPForLevel = (level) => {
+  const levels = {
+    1: XP_THRESHOLDS.LEVEL_1,
+    2: XP_THRESHOLDS.LEVEL_2,
+    3: XP_THRESHOLDS.LEVEL_3,
+    4: XP_THRESHOLDS.LEVEL_4
   };
+  return levels[level] || 0;
+};
+
+export const getXPProgress = (student) => {
+  const currentXP = student?.totalPoints || 0;
+  const currentLevel = getAvatarLevel(student);
+  const nextLevelXP = getNextLevelXP(currentXP);
   
-  for (let i = 0; i < numRewards; i++) {
-    const allItems = [...lootBoxItems.avatars, ...lootBoxItems.pets];
-    const item = allItems[Math.floor(Math.random() * allItems.length)];
-    rewards.push(item);
+  if (!nextLevelXP) {
+    return { progress: 100, isMaxLevel: true };
   }
   
-  return rewards;
+  const currentLevelXP = calculateXPForLevel(currentLevel);
+  const xpNeeded = nextLevelXP - currentLevelXP;
+  const xpProgress = currentXP - currentLevelXP;
+  const progress = Math.floor((xpProgress / xpNeeded) * 100);
+  
+  return {
+    progress: Math.max(0, Math.min(100, progress)),
+    isMaxLevel: false,
+    currentXP,
+    nextLevelXP,
+    xpNeeded: Math.max(0, nextLevelXP - currentXP)
+  };
+};
+
+// ===============================================
+// CURRENCY UTILITIES
+// ===============================================
+
+export const calculatePurchasingPower = (student) => {
+  const coins = calculateCoins(student);
+  const affordableBasicAvatars = BASIC_AVATARS.filter(avatar => avatar.price <= coins).length;
+  const affordableBasicPets = BASIC_PETS.filter(pet => pet.price <= coins).length;
+  const affordableExistingPets = EXISTING_PETS.filter(pet => pet.price <= coins).length;
+  
+  return {
+    totalCoins: coins,
+    affordableBasicAvatars,
+    affordableBasicPets,
+    affordableExistingPets,
+    canAffordLootBox: coins >= 25, // Basic loot box price
+    canAffordPremiumBox: coins >= 50,
+    canAffordLegendaryBox: coins >= 100
+  };
+};
+
+export const getRecommendedPurchases = (student) => {
+  const coins = calculateCoins(student);
+  const recommendations = [];
+  
+  // Recommend based on what student doesn't have
+  if (!student.ownedPets || student.ownedPets.length === 0) {
+    const affordablePets = [...BASIC_PETS, ...EXISTING_PETS]
+      .filter(pet => pet.price <= coins)
+      .sort((a, b) => a.price - b.price);
+    
+    if (affordablePets.length > 0) {
+      recommendations.push({
+        type: 'pet',
+        item: affordablePets[0],
+        reason: 'Get your first pet companion!'
+      });
+    }
+  }
+  
+  if (student.ownedAvatars?.length <= 2) {
+    const affordableAvatars = BASIC_AVATARS
+      .filter(avatar => avatar.price <= coins && !student.ownedAvatars?.includes(avatar.base))
+      .sort((a, b) => a.price - b.price);
+    
+    if (affordableAvatars.length > 0) {
+      recommendations.push({
+        type: 'avatar',
+        item: affordableAvatars[0],
+        reason: 'Expand your avatar collection!'
+      });
+    }
+  }
+  
+  if (coins >= 25 && recommendations.length === 0) {
+    recommendations.push({
+      type: 'lootbox',
+      item: { name: 'Basic Loot Box', price: 25 },
+      reason: 'Try your luck with a mystery box!'
+    });
+  }
+  
+  return recommendations.slice(0, 3); // Limit to 3 recommendations
+};
+
+// ===============================================
+// ACHIEVEMENT UTILITIES
+// ===============================================
+
+export const checkShopAchievements = (student) => {
+  const achievements = [];
+  const ownedAvatars = student?.ownedAvatars?.length || 0;
+  const ownedPets = student?.ownedPets?.length || 0;
+  const coinsSpent = student?.coinsSpent || 0;
+  
+  if (ownedAvatars >= 5) achievements.push('Avatar Collector');
+  if (ownedAvatars >= 10) achievements.push('Avatar Master');
+  if (ownedPets >= 3) achievements.push('Pet Trainer');
+  if (ownedPets >= 6) achievements.push('Pet Master');
+  if (coinsSpent >= 100) achievements.push('Big Spender');
+  if (coinsSpent >= 500) achievements.push('Shopping Champion');
+  
+  return achievements;
+};
+
+// ===============================================
+// INVENTORY MANAGEMENT
+// ===============================================
+
+export const organizeInventory = (student) => {
+  const avatars = student?.ownedAvatars || [];
+  const pets = student?.ownedPets || [];
+  const rewards = student?.rewardsPurchased || [];
+  
+  return {
+    avatars: {
+      count: avatars.length,
+      active: student?.avatarBase || null,
+      collection: avatars
+    },
+    pets: {
+      count: pets.length,
+      active: student?.pet || null,
+      collection: pets
+    },
+    rewards: {
+      count: rewards.length,
+      recent: rewards.slice(-5),
+      collection: rewards
+    }
+  };
+};
+
+export const getInventoryValue = (student) => {
+  let totalValue = 0;
+  
+  // Calculate avatar values
+  const avatars = student?.ownedAvatars || [];
+  avatars.forEach(avatarBase => {
+    const avatar = [...BASIC_AVATARS, ...PREMIUM_BASIC_AVATARS, ...THEMED_AVATARS]
+      .find(a => a.base === avatarBase);
+    if (avatar) totalValue += avatar.price;
+  });
+  
+  // Calculate pet values (estimated)
+  const pets = student?.ownedPets || [];
+  pets.forEach(pet => {
+    const petItem = [...BASIC_PETS, ...EXISTING_PETS, ...PREMIUM_PETS]
+      .find(p => p.name === pet.name || p.species === pet.species);
+    if (petItem) {
+      totalValue += petItem.price;
+    } else {
+      totalValue += 15; // Default pet value
+    }
+  });
+  
+  return totalValue;
 };

@@ -1,4 +1,4 @@
-// constants/gameData.js - ENHANCED with Missing Constants for StudentsTab
+// constants/gameData.js - ENHANCED with Complete Shop System Constants
 
 // ===============================================
 // CORE GAME CONSTANTS
@@ -101,25 +101,24 @@ export const PET_SPECIES = [
   { name: 'Druid Stag', image: '/Pets/Druid.png', speed: 1.2, wins: 0, level: 1 },
   { name: 'Engineer Bot', image: '/Pets/Engineer.png', speed: 1.1, wins: 0, level: 1 },
   { name: 'Frost Companion', image: '/Pets/Frost Mage.png', speed: 0.8, wins: 0, level: 1 },
-  { name: 'Illusionist Fox', image: '/Pets/Illusionist.png', speed: 1.6, wins: 0, level: 1 },
-  { name: 'Knight Horse', image: '/Pets/Knight.png', speed: 1.3, wins: 0, level: 1 },
-  { name: 'Lightning Sprite', image: '/Pets/Lightning.png', speed: 1.8, wins: 0, level: 1 },
-  { name: 'Monk Tiger', image: '/Pets/Monk.png', speed: 1.1, wins: 0, level: 1 },
-  { name: 'Necromancer Raven', image: '/Pets/Necromancer.png', speed: 1.0, wins: 0, level: 1 },
-  { name: 'Orc Wolf', image: '/Pets/Orc.png', speed: 1.4, wins: 0, level: 1 },
-  { name: 'Paladin Lion', image: '/Pets/Paladin.png', speed: 1.3, wins: 0, level: 1 },
-  { name: 'Rogue Shadow', image: '/Pets/Rogue.png', speed: 1.5, wins: 0, level: 1 },
-  { name: 'Stealth Cat', image: '/Pets/Stealth.png', speed: 1.7, wins: 0, level: 1 },
-  { name: 'Time Knight Turtle', image: '/Pets/Time Knight.png', speed: 0.6, wins: 0, level: 1 },
-  { name: 'Warrior Hawk', image: '/Pets/Warrior.png', speed: 1.2, wins: 0, level: 1 },
-  { name: 'Wizard Familiar', image: '/Pets/Wizard.png', speed: 1.0, wins: 0, level: 1 }
+  { name: 'Illusionist Fox', image: '/Pets/Illusionist.png', speed: 1.5, wins: 0, level: 1 },
+  { name: 'Knight Stallion', image: '/Pets/Knight.png', speed: 1.0, wins: 0, level: 1 },
+  { name: 'Lightning Sprite', image: '/Pets/Lightning.png', speed: 1.6, wins: 0, level: 1 },
+  { name: 'Monk Panda', image: '/Pets/Monk.png', speed: 1.1, wins: 0, level: 1 },
+  { name: 'Necromancer Raven', image: '/Pets/Necromancer.png', speed: 1.2, wins: 0, level: 1 },
+  { name: 'Orc Boar', image: '/Pets/Orc.png', speed: 0.9, wins: 0, level: 1 },
+  { name: 'Paladin Lion', image: '/Pets/Paladin.png', speed: 1.1, wins: 0, level: 1 },
+  { name: 'Rogue Shadow', image: '/Pets/Rogue.png', speed: 1.4, wins: 0, level: 1 },
+  { name: 'Stealth Cat', image: '/Pets/Stealth.png', speed: 1.3, wins: 0, level: 1 },
+  { name: 'Time Keeper', image: '/Pets/Time Knight.png', speed: 1.0, wins: 0, level: 1 },
+  { name: 'Warrior Eagle', image: '/Pets/Warrior.png', speed: 1.2, wins: 0, level: 1 },
+  { name: 'Wizard Owl', image: '/Pets/Wizard.png', speed: 1.0, wins: 0, level: 1 }
 ];
 
 export const PET_NAMES = [
-  'Buddy', 'Shadow', 'Luna', 'Max', 'Bella', 'Charlie', 'Daisy', 'Rocky',
+  'Buddy', 'Shadow', 'Storm', 'Luna', 'Max', 'Bella', 'Charlie', 'Daisy', 'Rocky',
   'Zoe', 'Jack', 'Molly', 'Duke', 'Sadie', 'Bear', 'Maggie', 'Zeus',
-  'Lucy', 'Cooper', 'Sophie', 'Tucker', 'Chloe', 'Oliver', 'Lola', 'Oscar',
-  'Ruby', 'Milo', 'Penny', 'Leo', 'Nala', 'Finn', 'Rosie', 'Gus'
+  'Lucy', 'Cooper', 'Sophie', 'Tucker', 'Chloe', 'Oliver', 'Lola', 'Oscar'
 ];
 
 // ===============================================
@@ -129,31 +128,31 @@ export const PET_NAMES = [
 export const QUEST_GIVERS = [
   {
     id: 'guide1',
-    name: 'Professor Hoot',
+    name: 'Sage the Wise',
     image: '/Guides/Guide 1.png',
     personality: 'wise',
-    role: 'Learning Quest Giver',
-    specialty: 'academic',
+    role: 'Academic Quest Giver',
+    specialty: 'learning',
     greetings: [
-      "Wisdom comes to those who seek knowledge! 🦉",
-      "Ready for your next learning adventure?",
-      "Books and quests await, young scholar!"
+      "Knowledge is the greatest treasure of all! 📚",
+      "Ready to embark on a learning adventure?",
+      "Every question is the beginning of wisdom!"
     ],
     tips: [
-      "Remember, every expert was once a beginner!",
-      "The best time to plant a tree was 20 years ago. The second best time is now!",
-      "Knowledge is the only treasure that grows when shared."
+      "The more you learn, the more you realize how much you don't know.",
+      "Curiosity is the engine of achievement.",
+      "Education is the most powerful weapon to change the world."
     ]
   },
   {
     id: 'guide2',
-    name: 'Captain Valor',
+    name: 'Valor the Brave',
     image: '/Guides/Guide 2.png',
     personality: 'brave',
-    role: 'Courage Quest Giver',
-    specialty: 'bravery',
+    role: 'Challenge Quest Giver',
+    specialty: 'courage',
     greetings: [
-      "Courage isn't the absence of fear, it's acting despite it! ⚔️",
+      "Courage isn't the absence of fear, it's facing your fears! ⚔️",
       "Ready to face your challenges head-on?",
       "Every hero starts with a single brave step!"
     ],
@@ -217,52 +216,365 @@ export const QUEST_TEMPLATES = [
 ];
 
 // ===============================================
-// SHOP SYSTEM DATA
+// COMPLETE SHOP SYSTEM DATA
 // ===============================================
 
+// Basic Shop Avatars - Regular purchasable avatars
+export const BASIC_AVATARS = [
+  {
+    id: 'banana_basic',
+    name: 'Banana Character',
+    image: '/shop/Basic/Banana.png',
+    price: 15,
+    base: 'Banana',
+    description: 'A fun banana character!'
+  },
+  {
+    id: 'goblin1_basic',
+    name: 'Goblin Warrior',
+    image: '/shop/Basic/Goblin1.png',
+    price: 20,
+    base: 'Goblin1',
+    description: 'A fierce goblin warrior'
+  },
+  {
+    id: 'goblingirl1_basic',
+    name: 'Goblin Girl',
+    image: '/shop/Basic/GoblinGirl1.png',
+    price: 20,
+    base: 'GoblinGirl1',
+    description: 'A clever goblin girl'
+  },
+  {
+    id: 'guard1_basic',
+    name: 'Royal Guard',
+    image: '/shop/Basic/Guard1.png',
+    price: 22,
+    base: 'Guard1',
+    description: 'A loyal royal guard'
+  },
+  {
+    id: 'guardgirl1_basic',
+    name: 'Guard Girl',
+    image: '/shop/Basic/GuardGirl1.png',
+    price: 22,
+    base: 'GuardGirl1',
+    description: 'A brave guard girl'
+  },
+  {
+    id: 'soccerboy_basic',
+    name: 'Soccer Boy',
+    image: '/shop/Basic/SoccerBoy.png',
+    price: 18,
+    base: 'SoccerBoy',
+    description: 'Ready for the game!'
+  },
+  {
+    id: 'soccerboy2_basic',
+    name: 'Soccer Boy 2',
+    image: '/shop/Basic/SoccerBoy2.png',
+    price: 18,
+    base: 'SoccerBoy2',
+    description: 'Another soccer champion!'
+  },
+  {
+    id: 'soccergirl_basic',
+    name: 'Soccer Girl',
+    image: '/shop/Basic/SoccerGirl.png',
+    price: 18,
+    base: 'SoccerGirl',
+    description: 'A skilled soccer player!'
+  },
+  {
+    id: 'streetboy1_basic',
+    name: 'Street Boy',
+    image: '/shop/Basic/Streetboy1.png',
+    price: 16,
+    base: 'Streetboy1',
+    description: 'Cool street style character'
+  },
+  {
+    id: 'streetgirl1_basic',
+    name: 'Street Girl',
+    image: '/shop/Basic/Streetgirl1.png',
+    price: 16,
+    base: 'Streetgirl1',
+    description: 'Hip street style character'
+  },
+  {
+    id: 'vampire1_basic',
+    name: 'Vampire',
+    image: '/shop/Basic/Vampire1.png',
+    price: 25,
+    base: 'Vampire1',
+    description: 'A mysterious vampire'
+  },
+  {
+    id: 'vampiregirl1_basic',
+    name: 'Vampire Girl',
+    image: '/shop/Basic/VampireGirl1.png',
+    price: 25,
+    base: 'VampireGirl1',
+    description: 'An elegant vampire girl'
+  }
+];
+
+// Basic Shop Pets - Regular purchasable pets
+export const BASIC_PETS = [
+  {
+    id: 'goblin_pet_basic',
+    name: 'Goblin Companion',
+    image: '/shop/BasicPets/GoblinPet.png',
+    price: 18,
+    type: 'basic',
+    description: 'A mischievous goblin friend'
+  },
+  {
+    id: 'soccer_pet_basic',
+    name: 'Soccer Buddy',
+    image: '/shop/BasicPets/SoccerPet.png',
+    price: 20,
+    type: 'basic',
+    description: 'Ready to play ball!'
+  },
+  {
+    id: 'unicorn_pet_basic',
+    name: 'Unicorn Friend',
+    image: '/shop/BasicPets/UnicornPet.png',
+    price: 25,
+    type: 'basic',
+    description: 'A magical unicorn companion'
+  }
+];
+
+// Existing Pets from the game (to be added to shop)
+export const EXISTING_PETS = [
+  "Alchemist", "Barbarian", "Bard", "Beastmaster", "Cleric", "Crystal Knight",
+  "Crystal Sage", "Dream", "Druid", "Engineer", "Frost Mage", "Illusionist",
+  "Knight", "Lightning", "Monk", "Necromancer", "Orc", "Paladin", "Rogue",
+  "Stealth", "Time Knight", "Warrior", "Wizard"
+].map((pet, index) => ({
+  id: `classic_pet_${pet.toLowerCase().replace(' ', '_')}`,
+  name: `${pet} Companion`,
+  image: `/Pets/${pet}.png`,
+  price: 15 + (index % 5) * 3, // Varied pricing 15-27 coins
+  type: 'classic'
+}));
+
+// Premium Pets - Only available in loot boxes
+export const PREMIUM_PETS = [
+  {
+    id: 'snake_pet_premium',
+    name: 'Mystical Snake',
+    image: '/shop/PremiumPets/SnakePet.png',
+    type: 'premium',
+    rarity: 'rare',
+    description: 'A powerful serpent ally'
+  },
+  {
+    id: 'vampire_pet_premium',
+    name: 'Vampire Bat',
+    image: '/shop/PremiumPets/VampirePet.png',
+    type: 'premium',
+    rarity: 'epic',
+    description: 'A loyal vampire companion'
+  }
+];
+
+// Premium Avatars - Basic Level 2 versions for loot boxes only
+export const PREMIUM_BASIC_AVATARS = [
+  {
+    id: 'goblin2_premium',
+    name: 'Elite Goblin Warrior',
+    image: '/shop/Premium/Goblin2.png',
+    base: 'Goblin2',
+    rarity: 'rare',
+    description: 'An upgraded goblin warrior'
+  },
+  {
+    id: 'goblingirl2_premium',
+    name: 'Elite Goblin Girl',
+    image: '/shop/Premium/GoblinGirl2.png',
+    base: 'GoblinGirl2',
+    rarity: 'rare',
+    description: 'An enhanced goblin girl'
+  },
+  {
+    id: 'vampire2_premium',
+    name: 'Vampire Lord',
+    image: '/shop/Premium/Vampire2.png',
+    base: 'Vampire2',
+    rarity: 'epic',
+    description: 'A powerful vampire lord'
+  },
+  {
+    id: 'vampiregirl2_premium',
+    name: 'Vampire Queen',
+    image: '/shop/Premium/VampireGirl2.png',
+    base: 'VampireGirl2',
+    rarity: 'epic',
+    description: 'An elegant vampire queen'
+  }
+];
+
+// Themed Avatars - Multi-level progression sets
+export const THEMED_AVATARS = [
+  // Pirate Themed Level 2-4
+  ...Array.from({length: 3}, (_, i) => ({
+    id: `pirate_f_${i+2}`,
+    name: `Pirate Captain F`,
+    level: i + 2,
+    image: `/shop/Themed/Pirate/F Level ${i + 2}.png`,
+    price: 25 + (i * 12),
+    base: 'Pirate F',
+    rarity: i === 0 ? 'rare' : i === 1 ? 'epic' : 'legendary'
+  })),
+  ...Array.from({length: 3}, (_, i) => ({
+    id: `pirate_m_${i+2}`,
+    name: `Pirate Captain M`,
+    level: i + 2,
+    image: `/shop/Themed/Pirate/M Level ${i + 2}.png`,
+    price: 25 + (i * 12),
+    base: 'Pirate M',
+    rarity: i === 0 ? 'rare' : i === 1 ? 'epic' : 'legendary'
+  })),
+  // Farm Themed Level 2-4
+  ...Array.from({length: 3}, (_, i) => ({
+    id: `farm_f_${i+2}`,
+    name: `Master Farmer F`,
+    level: i + 2,
+    image: `/shop/Themed/Farm/F Level ${i + 2}.png`,
+    price: 30 + (i * 15),
+    base: 'Farm F',
+    rarity: i === 0 ? 'rare' : i === 1 ? 'epic' : 'legendary'
+  })),
+  ...Array.from({length: 3}, (_, i) => ({
+    id: `farm_m_${i+2}`,
+    name: `Master Farmer M`,
+    level: i + 2,
+    image: `/shop/Themed/Farm/M Level ${i + 2}.png`,
+    price: 30 + (i * 15),
+    base: 'Farm M',
+    rarity: i === 0 ? 'rare' : i === 1 ? 'epic' : 'legendary'
+  })),
+  // Robot Themed Level 2-4
+  ...Array.from({length: 3}, (_, i) => ({
+    id: `robot_f_${i+2}`,
+    name: `Advanced Robot F`,
+    level: i + 2,
+    image: `/shop/Themed/Robot/F Level ${i + 2}.png`,
+    price: 35 + (i * 18),
+    base: 'Robot F',
+    rarity: i === 0 ? 'rare' : i === 1 ? 'epic' : 'legendary'
+  })),
+  ...Array.from({length: 3}, (_, i) => ({
+    id: `robot_m_${i+2}`,
+    name: `Advanced Robot M`,
+    level: i + 2,
+    image: `/shop/Themed/Robot/M Level ${i + 2}.png`,
+    price: 35 + (i * 18),
+    base: 'Robot M',
+    rarity: i === 0 ? 'rare' : i === 1 ? 'epic' : 'legendary'
+  }))
+];
+
+// Loot Boxes
+export const LOOT_BOXES = [
+  {
+    id: 'basic_box',
+    name: 'Basic Loot Box',
+    description: 'Contains 3 random items',
+    image: '📦',
+    price: 25,
+    contents: { count: 3, guaranteedRare: false }
+  },
+  {
+    id: 'premium_box',
+    name: 'Premium Loot Box',
+    description: 'Contains 5 items with guaranteed rare+',
+    image: '✨',
+    price: 50,
+    contents: { count: 5, guaranteedRare: true }
+  },
+  {
+    id: 'legendary_box',
+    name: 'Legendary Loot Box',
+    description: 'Contains 3 rare+ items with chance of legendary',
+    image: '🏆',
+    price: 100,
+    contents: { count: 3, guaranteedRare: true, legendaryChance: true }
+  }
+];
+
+// Default teacher rewards (now deletable)
+export const DEFAULT_TEACHER_REWARDS = [
+  { id: 'tech_time', name: 'Technology Time', description: '10 minutes of educational technology', price: 15, category: 'privileges', icon: '💻' },
+  { id: 'move_seat', name: 'Move Seat for a Day', description: 'Choose where to sit for one day', price: 10, category: 'privileges', icon: '🪑' },
+  { id: 'lollies', name: 'Sweet Treat', description: 'A special sweet treat', price: 8, category: 'treats', icon: '🍭' },
+  { id: 'homework_pass', name: 'Homework Pass', description: 'Skip one homework assignment', price: 25, category: 'privileges', icon: '📝' },
+  { id: 'line_leader', name: 'Line Leader', description: 'Be the line leader for a week', price: 12, category: 'privileges', icon: '👑' },
+  { id: 'extra_play', name: 'Extra Playtime', description: '5 minutes extra recess', price: 18, category: 'privileges', icon: '⚽' },
+  { id: 'teacher_helper', name: 'Teacher Helper', description: 'Be the teacher\'s special helper for a day', price: 20, category: 'privileges', icon: '🌟' },
+  { id: 'free_draw', name: 'Free Drawing Time', description: '15 minutes of free drawing', price: 12, category: 'activities', icon: '🎨' }
+];
+
+// Rarity styling and metadata
+export const RARITY_STYLES = {
+  common: {
+    name: 'Common',
+    borderColor: 'border-gray-400',
+    bgColor: 'bg-gray-50',
+    textColor: 'text-gray-700',
+    glowColor: 'shadow-gray-200',
+    chance: 50
+  },
+  uncommon: {
+    name: 'Uncommon',
+    borderColor: 'border-green-400',
+    bgColor: 'bg-green-50',
+    textColor: 'text-green-700',
+    glowColor: 'shadow-green-200',
+    chance: 30
+  },
+  rare: {
+    name: 'Rare',
+    borderColor: 'border-blue-400',
+    bgColor: 'bg-blue-50',
+    textColor: 'text-blue-700',
+    glowColor: 'shadow-blue-300',
+    chance: 15
+  },
+  epic: {
+    name: 'Epic',
+    borderColor: 'border-purple-400',
+    bgColor: 'bg-purple-50',
+    textColor: 'text-purple-700',
+    glowColor: 'shadow-purple-300',
+    chance: 4
+  },
+  legendary: {
+    name: 'Legendary',
+    borderColor: 'border-orange-400',
+    bgColor: 'bg-orange-50',
+    textColor: 'text-orange-700',
+    glowColor: 'shadow-orange-300',
+    chance: 1
+  }
+};
+
+// Combined shop items structure
 export const SHOP_ITEMS = {
   avatars: {
-    basic: [
-      {
-        id: 'basic_wizard_f',
-        name: 'Apprentice Wizard',
-        image: '/Avatars/Wizard F/Level 1.png',
-        price: 10,
-        base: 'Wizard F',
-        category: 'basic'
-      },
-      {
-        id: 'basic_knight_m',
-        name: 'Young Knight',
-        image: '/Avatars/Knight M/Level 1.png',
-        price: 12,
-        base: 'Knight M',
-        category: 'basic'
-      }
-    ],
-    premium: [
-      {
-        id: 'premium_dragon_lord',
-        name: 'Dragon Lord',
-        image: '/shop/Premium/Dragon_Lord.png',
-        price: 50,
-        base: 'Dragon Lord',
-        category: 'premium'
-      }
-    ]
+    basic: BASIC_AVATARS,
+    premium: PREMIUM_BASIC_AVATARS,
+    themed: THEMED_AVATARS
   },
   pets: {
-    basic: [
-      {
-        id: 'basic_companion',
-        name: 'Loyal Companion',
-        image: '/Pets/Wizard.png',
-        price: 15,
-        species: 'Wizard Familiar',
-        speed: 1.0
-      }
-    ]
-  }
+    basic: [...BASIC_PETS, ...EXISTING_PETS],
+    premium: PREMIUM_PETS
+  },
+  lootBoxes: LOOT_BOXES,
+  teacherRewards: DEFAULT_TEACHER_REWARDS
 };
 
 export const LOOT_BOX_ITEMS = {
