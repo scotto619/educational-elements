@@ -3,10 +3,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import CharacterSheetModal from '../modals/CharacterSheetModal';
 
 // ===============================================
-// HARDCODED CONSTANTS AND UTILITIES
+// XP CATEGORIES (editable)
 // ===============================================
 
-// Hardcoded XP Categories (editable)
 const DEFAULT_XP_CATEGORIES = [
   { 
     id: 1, 
@@ -48,22 +47,6 @@ const DEFAULT_XP_CATEGORIES = [
     icon: '⭐',
     description: 'Outstanding achievement or exceptional behavior'
   }
-];
-
-// Hardcoded Avatar Paths
-const AVATAR_BASES = [
-  'Alchemist F', 'Alchemist M', 'Archer F', 'Archer M', 'Assassin F', 'Assassin M',
-  'Barbarian F', 'Barbarian M', 'Cleric F', 'Cleric M', 'Fighter F', 'Fighter M',
-  'Mage F', 'Mage M', 'Paladin F', 'Paladin M', 'Ranger F', 'Ranger M',
-  'Rogue F', 'Rogue M', 'Sorcerer F', 'Sorcerer M', 'Warlock F', 'Warlock M',
-  'Wizard F', 'Wizard M'
-];
-
-// Hardcoded Pet Data
-const BASIC_PETS = [
-  { id: 'goblin', name: 'Goblin Pet', image: '/shop/BasicPets/GoblinPet.png', speed: 3 },
-  { id: 'soccer', name: 'Soccer Pet', image: '/shop/BasicPets/SoccerPet.png', speed: 4 },
-  { id: 'unicorn', name: 'Unicorn Pet', image: '/shop/BasicPets/UnicornPet.png', speed: 5 }
 ];
 
 // ===============================================
@@ -109,24 +92,8 @@ const getGridClasses = (studentCount) => {
 };
 
 const playSound = (soundType) => {
-  try {
-    const soundFiles = {
-      'xp': '/sounds/xp-award.wav',
-      'levelup': '/sounds/level-up.wav',
-      'coin': '/sounds/coin.wav',
-      'pet': '/sounds/pet-unlock.wav',
-      'success': '/sounds/success.wav'
-    };
-    
-    const audio = new Audio(soundFiles[soundType] || soundFiles.success);
-    audio.volume = 0.7;
-    audio.play().catch(() => {
-      // Fallback to system beep
-      console.log('Audio playback failed, using fallback');
-    });
-  } catch (error) {
-    console.log('Audio not supported');
-  }
+  // Remove fake sound files - just use simple feedback or nothing
+  console.log(`Sound: ${soundType}`);
 };
 
 // ===============================================
@@ -240,7 +207,14 @@ const StudentsTab = ({
           
           // Check for pet unlock
           if (shouldReceivePet({ ...student, totalPoints: newTotalXP })) {
-            const randomPet = BASIC_PETS[Math.floor(Math.random() * BASIC_PETS.length)];
+            // Give student a random pet - use any pet from their available pets or a default one
+            const randomPet = {
+              id: `pet_${Date.now()}`,
+              name: 'Companion Pet',
+              image: '/shop/BasicPets/GoblinPet.png', // Use existing pet image
+              speed: 3
+            };
+            
             setTimeout(() => {
               setPetUnlockData({
                 student: { ...student, totalPoints: newTotalXP },

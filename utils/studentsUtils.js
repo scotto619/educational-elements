@@ -52,36 +52,13 @@ export const getGridClasses = (studentCount) => {
 };
 
 // ===============================================
-// SOUND UTILITIES
+// SOUND UTILITIES (simplified - no fake files)
 // ===============================================
 
 export const playSound = (soundType, volume = 0.7) => {
-  try {
-    const soundFiles = {
-      'xp': '/sounds/xp-award.wav',
-      'levelup': '/sounds/level-up.wav',
-      'coin': '/sounds/coin.wav',
-      'pet': '/sounds/pet-unlock.wav',
-      'success': '/sounds/success.wav',
-      'error': '/sounds/error.wav',
-      'click': '/sounds/click.wav'
-    };
-    
-    const soundFile = soundFiles[soundType];
-    if (!soundFile) {
-      console.warn(`Sound type ${soundType} not found`);
-      return;
-    }
-
-    const audio = new Audio(soundFile);
-    audio.volume = volume;
-    audio.play().catch(error => {
-      console.log(`Could not play ${soundType} sound:`, error);
-      // Fallback to system beep or silent fail
-    });
-  } catch (error) {
-    console.log('Audio not supported:', error);
-  }
+  // Simple console log instead of fake audio files
+  console.log(`Sound would play: ${soundType}`);
+  // If you have actual sound files later, you can add them here
 };
 
 // ===============================================
@@ -114,17 +91,18 @@ export const validateStudentData = (student) => {
 };
 
 // ===============================================
-// PET DATA UTILITIES
+// PET DATA UTILITIES (use existing pet data)
 // ===============================================
 
 export const getRandomPet = () => {
-  const BASIC_PETS = [
-    { id: 'goblin', name: 'Goblin Pet', image: '/shop/BasicPets/GoblinPet.png', speed: 3, rarity: 'common' },
-    { id: 'soccer', name: 'Soccer Pet', image: '/shop/BasicPets/SoccerPet.png', speed: 4, rarity: 'common' },
-    { id: 'unicorn', name: 'Unicorn Pet', image: '/shop/BasicPets/UnicornPet.png', speed: 5, rarity: 'uncommon' }
-  ];
-  
-  return BASIC_PETS[Math.floor(Math.random() * BASIC_PETS.length)];
+  // Simple default pet - will be replaced with actual pet system later
+  return {
+    id: `pet_${Date.now()}`,
+    name: 'Companion Pet',
+    image: '/shop/BasicPets/GoblinPet.png', // Use existing image
+    speed: 3,
+    rarity: 'common'
+  };
 };
 
 // ===============================================
