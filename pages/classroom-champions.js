@@ -12,6 +12,7 @@ import QuestsTab from '../components/tabs/QuestsTab';
 import GamesTab from '../components/tabs/GamesTab';
 import SettingsTab from '../components/tabs/SettingsTab';
 import TeachersToolkitTab from '../components/tabs/TeachersToolkitTab';
+import CurriculumCornerTab from '../components/tabs/CurriculumCornerTab';
 
 // ===============================================
 // CORE GAME CONSTANTS (INLINE TO AVOID IMPORT ISSUES)
@@ -231,10 +232,17 @@ const NAVIGATION_TABS = [
     description: 'Fun classroom activities'
   },
   { 
+    id: 'curriculum', 
+    name: 'Curriculum Corner', 
+    icon: '📖', 
+    color: 'from-indigo-500 to-purple-600',
+    description: 'Subject-based teaching tools'
+  },
+  { 
     id: 'toolkit', 
     name: 'Teachers Toolkit', 
     icon: '🛠️', 
-    color: 'from-indigo-500 to-indigo-600',
+    color: 'from-teal-500 to-teal-600',
     description: 'Professional classroom management tools'
   },
   { 
@@ -455,6 +463,8 @@ const ClassroomChampions = () => {
         return renderShopTab();
       case 'games':
         return renderGamesTab();
+      case 'curriculum':
+        return renderCurriculumTab();
       case 'toolkit':
         return renderToolkitTab();
       case 'settings':
@@ -581,6 +591,14 @@ const ClassroomChampions = () => {
     />
   );
 
+  const renderCurriculumTab = () => (
+    <CurriculumCornerTab
+      students={students}
+      showToast={showToast}
+      userData={{}} // You can pass real userData if you have it
+    />
+  );
+
   const renderToolkitTab = () => (
     <TeachersToolkitTab
       students={students}
@@ -637,7 +655,7 @@ const ClassroomChampions = () => {
             </div>
             
             <div className="flex items-center space-x-4">
-              {(activeTab === 'students' || activeTab === 'toolkit') && (
+              {(activeTab === 'students' || activeTab === 'toolkit' || activeTab === 'curriculum') && (
                 <button
                   onClick={() => setShowAddStudentModal(true)}
                   className="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all font-semibold"

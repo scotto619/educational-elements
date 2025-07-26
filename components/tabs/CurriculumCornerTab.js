@@ -1,28 +1,423 @@
-// CurriculumCornerTab.js - Complete Subject-Based Educational Tools
+// components/tabs/CurriculumCornerTab.js - Subject-Based Educational Tools
 import React, { useState } from 'react';
 
-// Import all educational components
-import LiteracyCompanion from '../LiteracyCompanion';
-import WordStudy from '../WordStudy';
-import HundredsBoard from '../HundredsBoard';
-import NumberMat from '../NumberMat';
-import DiceRoller from '../DiceRoller';
-import GeographyTab from './GeographyTab';
+// ===============================================
+// EDUCATIONAL TOOL COMPONENTS
+// ===============================================
+
+// Simplified Literacy Companion
+const LiteracyCompanion = ({ showToast }) => {
+  const [currentWord, setCurrentWord] = useState('');
+  const [wordBank, setWordBank] = useState(['apple', 'book', 'cat', 'dog', 'elephant']);
+  const [customWords, setCustomWords] = useState([]);
+
+  const getRandomWord = () => {
+    const allWords = [...wordBank, ...customWords];
+    const randomWord = allWords[Math.floor(Math.random() * allWords.length)];
+    setCurrentWord(randomWord);
+    showToast(`New word: ${randomWord}`, 'success');
+  };
+
+  const addCustomWord = () => {
+    const word = prompt('Enter a new word:');
+    if (word && word.trim()) {
+      setCustomWords([...customWords, word.trim().toLowerCase()]);
+      showToast(`Added "${word}" to word bank!`, 'success');
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="text-center bg-blue-50 rounded-lg p-8">
+        <h4 className="text-2xl font-bold text-blue-800 mb-4">Word of the Moment</h4>
+        <div className="text-6xl font-bold text-blue-600 mb-4">
+          {currentWord || 'Click to start!'}
+        </div>
+        <button
+          onClick={getRandomWord}
+          className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-all font-semibold"
+        >
+          🎲 Get Random Word
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-green-50 rounded-lg p-6">
+          <h5 className="font-bold text-green-800 mb-4">📖 Word Bank</h5>
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            {[...wordBank, ...customWords].map((word, index) => (
+              <div key={index} className="bg-white p-2 rounded text-center text-sm border">
+                {word}
+              </div>
+            ))}
+          </div>
+          <button
+            onClick={addCustomWord}
+            className="w-full bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 transition-all"
+          >
+            + Add Word
+          </button>
+        </div>
+
+        <div className="bg-purple-50 rounded-lg p-6">
+          <h5 className="font-bold text-purple-800 mb-4">📝 Word Activities</h5>
+          <div className="space-y-3">
+            <button
+              onClick={() => showToast('Spell the word aloud!', 'info')}
+              className="w-full bg-purple-100 text-purple-700 py-2 rounded-lg hover:bg-purple-200 transition-all"
+            >
+              🔤 Spelling Practice
+            </button>
+            <button
+              onClick={() => showToast('Use the word in a sentence!', 'info')}
+              className="w-full bg-purple-100 text-purple-700 py-2 rounded-lg hover:bg-purple-200 transition-all"
+            >
+              📝 Sentence Building
+            </button>
+            <button
+              onClick={() => showToast('Find words that rhyme!', 'info')}
+              className="w-full bg-purple-100 text-purple-700 py-2 rounded-lg hover:bg-purple-200 transition-all"
+            >
+              🎵 Rhyming Game
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Simplified Numbers Board
+const NumbersBoard = ({ showToast }) => {
+  const [selectedNumber, setSelectedNumber] = useState(null);
+  const [highlightedNumbers, setHighlightedNumbers] = useState([]);
+
+  const handleNumberClick = (num) => {
+    setSelectedNumber(num);
+    showToast(`Selected number: ${num}`, 'info');
+  };
+
+  const highlightEvens = () => {
+    const evens = Array.from({length: 100}, (_, i) => i + 1).filter(n => n % 2 === 0);
+    setHighlightedNumbers(evens);
+    showToast('Highlighted all even numbers!', 'success');
+  };
+
+  const highlightOdds = () => {
+    const odds = Array.from({length: 100}, (_, i) => i + 1).filter(n => n % 2 === 1);
+    setHighlightedNumbers(odds);
+    showToast('Highlighted all odd numbers!', 'success');
+  };
+
+  const clearHighlights = () => {
+    setHighlightedNumbers([]);
+    showToast('Cleared all highlights!', 'info');
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-center space-x-4 mb-6">
+        <button
+          onClick={highlightEvens}
+          className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-all"
+        >
+          📊 Even Numbers
+        </button>
+        <button
+          onClick={highlightOdds}
+          className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-all"
+        >
+          📈 Odd Numbers
+        </button>
+        <button
+          onClick={clearHighlights}
+          className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-all"
+        >
+          🧹 Clear
+        </button>
+      </div>
+
+      <div className="bg-white rounded-lg p-6 border-2 border-gray-200">
+        <div className="grid grid-cols-10 gap-1">
+          {Array.from({length: 100}, (_, i) => i + 1).map(num => (
+            <button
+              key={num}
+              onClick={() => handleNumberClick(num)}
+              className={`
+                w-8 h-8 text-xs font-semibold rounded border transition-all
+                ${selectedNumber === num 
+                  ? 'bg-red-500 text-white border-red-600' 
+                  : highlightedNumbers.includes(num)
+                  ? 'bg-yellow-200 text-gray-800 border-yellow-300'
+                  : 'bg-gray-100 text-gray-800 border-gray-300 hover:bg-gray-200'
+                }
+              `}
+            >
+              {num}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {selectedNumber && (
+        <div className="bg-blue-50 rounded-lg p-4 text-center">
+          <h5 className="font-bold text-blue-800 mb-2">Selected Number: {selectedNumber}</h5>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div>
+              <strong>Even/Odd:</strong><br />
+              {selectedNumber % 2 === 0 ? 'Even' : 'Odd'}
+            </div>
+            <div>
+              <strong>+ 10:</strong><br />
+              {selectedNumber + 10}
+            </div>
+            <div>
+              <strong>- 10:</strong><br />
+              {Math.max(0, selectedNumber - 10)}
+            </div>
+            <div>
+              <strong>× 2:</strong><br />
+              {selectedNumber * 2}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Simplified Dice Roller
+const DiceRoller = ({ showToast }) => {
+  const [diceResults, setDiceResults] = useState([]);
+  const [numDice, setNumDice] = useState(2);
+  const [diceType, setDiceType] = useState(6);
+
+  const rollDice = () => {
+    const results = Array.from({length: numDice}, () => 
+      Math.floor(Math.random() * diceType) + 1
+    );
+    setDiceResults(results);
+    const sum = results.reduce((a, b) => a + b, 0);
+    showToast(`Rolled: ${results.join(', ')} (Sum: ${sum})`, 'success');
+  };
+
+  const getDiceEmoji = (value, type) => {
+    if (type === 6) {
+      const emojis = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+      return emojis[value - 1] || value;
+    }
+    return value;
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-green-50 rounded-lg p-6">
+        <h5 className="font-bold text-green-800 mb-4">🎲 Dice Settings</h5>
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Number of Dice</label>
+            <select
+              value={numDice}
+              onChange={(e) => setNumDice(parseInt(e.target.value))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+            >
+              {[1, 2, 3, 4, 5, 6].map(n => (
+                <option key={n} value={n}>{n} dice</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Dice Type</label>
+            <select
+              value={diceType}
+              onChange={(e) => setDiceType(parseInt(e.target.value))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+            >
+              <option value={4}>4-sided</option>
+              <option value={6}>6-sided</option>
+              <option value={8}>8-sided</option>
+              <option value={10}>10-sided</option>
+              <option value={12}>12-sided</option>
+              <option value={20}>20-sided</option>
+            </select>
+          </div>
+        </div>
+        
+        <button
+          onClick={rollDice}
+          className="w-full bg-green-500 text-white py-3 rounded-lg hover:bg-green-600 transition-all font-bold text-lg"
+        >
+          🎲 Roll Dice!
+        </button>
+      </div>
+
+      {diceResults.length > 0 && (
+        <div className="bg-white rounded-lg p-6 border-2 border-green-200">
+          <h5 className="font-bold text-gray-800 mb-4 text-center">Results</h5>
+          <div className="flex justify-center space-x-4 mb-4">
+            {diceResults.map((result, index) => (
+              <div key={index} className="text-center">
+                <div className="text-4xl mb-2">
+                  {getDiceEmoji(result, diceType)}
+                </div>
+                <div className="text-sm font-semibold">{result}</div>
+              </div>
+            ))}
+          </div>
+          
+          <div className="text-center bg-green-50 rounded-lg p-4">
+            <div className="text-2xl font-bold text-green-800">
+              Sum: {diceResults.reduce((a, b) => a + b, 0)}
+            </div>
+            <div className="text-sm text-gray-600 mt-2">
+              Average: {(diceResults.reduce((a, b) => a + b, 0) / diceResults.length).toFixed(1)}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Simplified Geography Explorer
+const GeographyExplorer = ({ showToast }) => {
+  const [selectedContinent, setSelectedContinent] = useState('North America');
+  const [showCountries, setShowCountries] = useState(false);
+
+  const continents = {
+    'North America': {
+      emoji: '🌎',
+      countries: ['United States', 'Canada', 'Mexico', 'Guatemala', 'Cuba'],
+      facts: ['Third largest continent', 'Home to 580 million people', 'Contains the longest cave system']
+    },
+    'South America': {
+      emoji: '🌎',
+      countries: ['Brazil', 'Argentina', 'Peru', 'Colombia', 'Chile'],
+      facts: ['Home to Amazon rainforest', 'Contains Angel Falls', 'Andes Mountains run through it']
+    },
+    'Europe': {
+      emoji: '🌍',
+      countries: ['Germany', 'France', 'Italy', 'Spain', 'United Kingdom'],
+      facts: ['Smallest continent by land area', '44 countries', 'Rich in history and culture']
+    },
+    'Asia': {
+      emoji: '🌏',
+      countries: ['China', 'India', 'Japan', 'Thailand', 'Philippines'],
+      facts: ['Largest continent', 'Most populous continent', 'Home to Mount Everest']
+    },
+    'Africa': {
+      emoji: '🌍',
+      countries: ['Nigeria', 'Kenya', 'Egypt', 'South Africa', 'Morocco'],
+      facts: ['Cradle of humanity', 'Home to Sahara Desert', '54 countries']
+    },
+    'Australia': {
+      emoji: '🌏',
+      countries: ['Australia', 'New Zealand', 'Fiji', 'Papua New Guinea', 'Samoa'],
+      facts: ['Smallest continent', 'Unique wildlife', 'Great Barrier Reef located here']
+    }
+  };
+
+  const exploreContinent = (continent) => {
+    setSelectedContinent(continent);
+    setShowCountries(true);
+    showToast(`Exploring ${continent}!`, 'success');
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        {Object.entries(continents).map(([name, data]) => (
+          <button
+            key={name}
+            onClick={() => exploreContinent(name)}
+            className={`p-4 rounded-lg border-2 transition-all text-center ${
+              selectedContinent === name
+                ? 'border-blue-500 bg-blue-50'
+                : 'border-gray-200 hover:border-gray-300 bg-white'
+            }`}
+          >
+            <div className="text-3xl mb-2">{data.emoji}</div>
+            <div className="font-semibold text-sm">{name}</div>
+          </button>
+        ))}
+      </div>
+
+      {selectedContinent && (
+        <div className="bg-white rounded-lg p-6 border-2 border-blue-200">
+          <div className="text-center mb-6">
+            <div className="text-6xl mb-2">{continents[selectedContinent].emoji}</div>
+            <h4 className="text-2xl font-bold text-gray-800">{selectedContinent}</h4>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h5 className="font-bold text-gray-800 mb-3">🏛️ Countries</h5>
+              <div className="space-y-2">
+                {continents[selectedContinent].countries.map((country, index) => (
+                  <div key={index} className="bg-gray-50 p-2 rounded text-sm">
+                    {country}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h5 className="font-bold text-gray-800 mb-3">📚 Fun Facts</h5>
+              <div className="space-y-2">
+                {continents[selectedContinent].facts.map((fact, index) => (
+                  <div key={index} className="bg-blue-50 p-2 rounded text-sm">
+                    • {fact}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 text-center">
+            <button
+              onClick={() => showToast(`Let's learn more about ${selectedContinent}!`, 'info')}
+              className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-all"
+            >
+              🔍 Explore More
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Coming Soon Component
+const ComingSoon = ({ toolName, subjectName }) => (
+  <div className="text-center py-16">
+    <div className="text-6xl mb-4">🚧</div>
+    <h3 className="text-2xl font-bold text-gray-800 mb-4">{toolName}</h3>
+    <p className="text-gray-600 mb-6">
+      Exciting {subjectName.toLowerCase()} tools are being developed and will be available soon!
+    </p>
+    <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 max-w-md mx-auto">
+      <h4 className="font-bold text-blue-800 mb-2">🌟 What's Coming:</h4>
+      <ul className="text-blue-700 text-sm text-left space-y-1">
+        <li>• Interactive learning activities</li>
+        <li>• Student progress tracking</li>
+        <li>• XP and rewards integration</li>
+        <li>• Engaging visual content</li>
+      </ul>
+    </div>
+    <p className="text-gray-500 mt-6 text-sm">
+      💡 Have suggestions for {subjectName.toLowerCase()} tools? Send us feedback!
+    </p>
+  </div>
+);
+
+// ===============================================
+// MAIN CURRICULUM CORNER COMPONENT
+// ===============================================
 
 const CurriculumCornerTab = ({ 
-  students, 
-  showToast,
-  userData,
-  saveGroupDataToFirebase,
-  saveClassroomDataToFirebase,
-  saveVocabularyDataToFirebase,
-  currentClassId,
-  // All props needed for GeographyTab
-  handleAwardXP,
-  setStudents,
-  saveStudentsToFirebase,
-  // All other props to pass through
-  ...otherProps
+  students = [],
+  showToast = () => {},
+  userData = {}
 }) => {
   const [activeSubject, setActiveSubject] = useState('literacy');
   const [activeSubjectTool, setActiveSubjectTool] = useState('literacy-companion');
@@ -48,7 +443,7 @@ const CurriculumCornerTab = ({
           name: 'Word Study',
           icon: '🔤',
           description: 'Interactive word analysis tools',
-          component: WordStudy
+          component: ComingSoon
         }
       ]
     },
@@ -60,18 +455,11 @@ const CurriculumCornerTab = ({
       description: 'Math tools and number activities',
       tools: [
         {
-          id: 'hundreds-board',
+          id: 'numbers-board',
           name: 'Numbers Board',
           icon: '💯',
           description: 'Interactive hundreds board',
-          component: HundredsBoard
-        },
-        {
-          id: 'number-mat',
-          name: 'Number Mat',
-          icon: '🧮',
-          description: 'Visual number learning tool',
-          component: NumberMat
+          component: NumbersBoard
         },
         {
           id: 'dice-roller',
@@ -94,7 +482,7 @@ const CurriculumCornerTab = ({
           name: 'Geography Explorer',
           icon: '🗺️',
           description: 'Interactive world geography learning',
-          component: GeographyTab
+          component: GeographyExplorer
         }
       ]
     },
@@ -106,11 +494,11 @@ const CurriculumCornerTab = ({
       description: 'Science exploration and experiments',
       tools: [
         {
-          id: 'coming-soon-science',
+          id: 'science-tools',
           name: 'Science Tools',
           icon: '⚗️',
           description: 'Interactive science activities',
-          component: null // Placeholder for future science tools
+          component: ComingSoon
         }
       ]
     },
@@ -122,11 +510,11 @@ const CurriculumCornerTab = ({
       description: 'History, civics, and culture',
       tools: [
         {
-          id: 'coming-soon-social',
+          id: 'history-explorer',
           name: 'History Explorer',
           icon: '📜',
           description: 'Historical timelines and events',
-          component: null // Placeholder for future social studies tools
+          component: ComingSoon
         }
       ]
     },
@@ -138,11 +526,11 @@ const CurriculumCornerTab = ({
       description: 'Creative expression and arts',
       tools: [
         {
-          id: 'coming-soon-arts',
+          id: 'art-studio',
           name: 'Art Studio',
           icon: '🖌️',
           description: 'Digital art and creativity tools',
-          component: null // Placeholder for future arts tools
+          component: ComingSoon
         }
       ]
     }
@@ -160,29 +548,6 @@ const CurriculumCornerTab = ({
       setActiveSubjectTool(subject.tools[0].id);
     }
   };
-
-  // Coming Soon Component for placeholder tools
-  const ComingSoon = ({ toolName, subjectName }) => (
-    <div className="text-center py-16">
-      <div className="text-6xl mb-4">🚧</div>
-      <h3 className="text-2xl font-bold text-gray-800 mb-4">{toolName}</h3>
-      <p className="text-gray-600 mb-6">
-        Exciting {subjectName.toLowerCase()} tools are being developed and will be available soon!
-      </p>
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 max-w-md mx-auto">
-        <h4 className="font-bold text-blue-800 mb-2">🌟 What's Coming:</h4>
-        <ul className="text-blue-700 text-sm text-left space-y-1">
-          <li>• Interactive learning activities</li>
-          <li>• Student progress tracking</li>
-          <li>• XP and rewards integration</li>
-          <li>• Engaging visual content</li>
-        </ul>
-      </div>
-      <p className="text-gray-500 mt-6 text-sm">
-        💡 Have suggestions for {subjectName.toLowerCase()} tools? Send us feedback!
-      </p>
-    </div>
-  );
 
   return (
     <div className="space-y-6">
@@ -267,7 +632,7 @@ const CurriculumCornerTab = ({
 
           {/* Tool Content */}
           <div className="p-6">
-            {currentTool && currentTool.component ? (
+            {currentTool && (
               <>
                 {/* Tool Header */}
                 <div className="mb-6 pb-4 border-b border-gray-200">
@@ -279,25 +644,19 @@ const CurriculumCornerTab = ({
                 </div>
 
                 {/* Render the actual component */}
-                <currentTool.component
-                  students={students}
-                  showToast={showToast}
-                  userData={userData}
-                  saveGroupDataToFirebase={saveGroupDataToFirebase}
-                  saveClassroomDataToFirebase={saveClassroomDataToFirebase}
-                  saveVocabularyDataToFirebase={saveVocabularyDataToFirebase}
-                  currentClassId={currentClassId}
-                  handleAwardXP={handleAwardXP}
-                  setStudents={setStudents}
-                  saveStudentsToFirebase={saveStudentsToFirebase}
-                  {...otherProps}
-                />
+                {currentTool.component === ComingSoon ? (
+                  <ComingSoon 
+                    toolName={currentTool.name} 
+                    subjectName={currentSubject.name}
+                  />
+                ) : (
+                  <currentTool.component
+                    students={students}
+                    showToast={showToast}
+                    userData={userData}
+                  />
+                )}
               </>
-            ) : (
-              <ComingSoon 
-                toolName={currentTool?.name || 'New Tools'} 
-                subjectName={currentSubject.name}
-              />
             )}
           </div>
         </div>
@@ -308,7 +667,7 @@ const CurriculumCornerTab = ({
         <h3 className="text-xl font-bold text-gray-800 mb-4">📊 Curriculum Overview</h3>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {subjects.map(subject => {
-            const availableTools = subject.tools.filter(tool => tool.component !== null).length;
+            const availableTools = subject.tools.filter(tool => tool.component !== ComingSoon).length;
             const totalTools = subject.tools.length;
             
             return (
@@ -331,55 +690,53 @@ const CurriculumCornerTab = ({
       </div>
 
       {/* Pro Feature Notice */}
-      {userData?.subscription !== 'pro' && (
-        <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-xl p-6">
-          <div className="flex items-start space-x-4">
-            <span className="text-3xl">⭐</span>
-            <div>
-              <h4 className="font-bold text-yellow-800 mb-2">Unlock More Curriculum Tools</h4>
-              <p className="text-yellow-700 mb-4">
-                Get access to advanced teaching tools, unlimited classes, and new subject areas with Classroom Champions PRO!
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-yellow-700 text-sm">
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <span>🔬</span>
-                    <span>Interactive Science Experiments</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span>🎨</span>
-                    <span>Digital Art & Music Studio</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span>📜</span>
-                    <span>Historical Timeline Builder</span>
-                  </div>
+      <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-xl p-6">
+        <div className="flex items-start space-x-4">
+          <span className="text-3xl">⭐</span>
+          <div>
+            <h4 className="font-bold text-yellow-800 mb-2">Unlock More Curriculum Tools</h4>
+            <p className="text-yellow-700 mb-4">
+              Get access to advanced teaching tools, unlimited classes, and new subject areas with Classroom Champions PRO!
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-yellow-700 text-sm">
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <span>🔬</span>
+                  <span>Interactive Science Experiments</span>
                 </div>
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <span>🌐</span>
-                    <span>Extended Geography Adventures</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span>📊</span>
-                    <span>Advanced Analytics Dashboard</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span>🎯</span>
-                    <span>Custom Learning Pathways</span>
-                  </div>
+                <div className="flex items-center space-x-2">
+                  <span>🎨</span>
+                  <span>Digital Art & Music Studio</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span>📜</span>
+                  <span>Historical Timeline Builder</span>
                 </div>
               </div>
-              <button
-                onClick={() => window.open('/pricing', '_blank')}
-                className="mt-4 bg-yellow-600 text-white px-6 py-2 rounded-lg hover:bg-yellow-700 transition-colors font-semibold text-sm"
-              >
-                Upgrade to PRO
-              </button>
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <span>🌐</span>
+                  <span>Extended Geography Adventures</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span>📊</span>
+                  <span>Advanced Analytics Dashboard</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span>🎯</span>
+                  <span>Custom Learning Pathways</span>
+                </div>
+              </div>
             </div>
+            <button
+              onClick={() => showToast('Upgrade feature coming soon!', 'info')}
+              className="mt-4 bg-yellow-600 text-white px-6 py-2 rounded-lg hover:bg-yellow-700 transition-colors font-semibold text-sm"
+            >
+              Upgrade to PRO
+            </button>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };
