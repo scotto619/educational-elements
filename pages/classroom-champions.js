@@ -5,6 +5,13 @@ import { auth, firestore } from '../utils/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
+// Import components
+import StudentsTab from '../components/tabs/StudentsTab';
+import ShopTab from '../components/tabs/ShopTab';
+import QuestsTab from '../components/tabs/QuestsTab';
+import GamesTab from '../components/tabs/GamesTab';
+import SettingsTab from '../components/tabs/SettingsTab';
+
 // ===============================================
 // CORE GAME CONSTANTS (INLINE TO AVOID IMPORT ISSUES)
 // ===============================================
@@ -183,6 +190,55 @@ const StudentCard = ({ student, onAwardXP, onViewDetails }) => {
 };
 
 // ===============================================
+// TAB CONFIGURATION
+// ===============================================
+
+const NAVIGATION_TABS = [
+  { 
+    id: 'dashboard', 
+    name: 'Dashboard', 
+    icon: '🏠', 
+    color: 'from-blue-500 to-blue-600',
+    description: 'Class overview and quick stats'
+  },
+  { 
+    id: 'students', 
+    name: 'Students', 
+    icon: '👥', 
+    color: 'from-green-500 to-green-600',
+    description: 'Manage student progress and awards'
+  },
+  { 
+    id: 'quests', 
+    name: 'Quests', 
+    icon: '📜', 
+    color: 'from-purple-500 to-purple-600',
+    description: 'Create and manage class quests'
+  },
+  { 
+    id: 'shop', 
+    name: 'Shop', 
+    icon: '🏪', 
+    color: 'from-yellow-500 to-yellow-600',
+    description: 'Avatar and pet marketplace'
+  },
+  { 
+    id: 'games', 
+    name: 'Games', 
+    icon: '🎮', 
+    color: 'from-red-500 to-red-600',
+    description: 'Fun classroom activities'
+  },
+  { 
+    id: 'settings', 
+    name: 'Settings', 
+    icon: '⚙️', 
+    color: 'from-gray-500 to-gray-600',
+    description: 'Class and account settings'
+  }
+];
+
+// ===============================================
 // MAIN COMPONENT
 // ===============================================
 
@@ -355,6 +411,14 @@ const ClassroomChampions = () => {
     showToast(`${newStudent.firstName} has been added to the class!`, 'success');
   };
 
+  const updateStudent = async (updatedStudent) => {
+    const updatedStudents = students.map(s => 
+      s.id === updatedStudent.id ? updatedStudent : s
+    );
+    setStudents(updatedStudents);
+    await saveStudentsToFirebase(updatedStudents);
+  };
+
   // ===============================================
   // GRID LAYOUT CALCULATION
   // ===============================================
@@ -366,6 +430,157 @@ const ClassroomChampions = () => {
     if (studentCount <= 20) return 'grid grid-cols-4 lg:grid-cols-8 gap-2';
     return 'grid grid-cols-5 lg:grid-cols-10 gap-1';
   };
+
+  // ===============================================
+  // TAB CONTENT RENDERING
+  // ===============================================
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'dashboard':
+        return renderDashboard();
+      case 'students':
+        return renderStudentsTab();
+      case 'quests':
+        return renderQuestsTab();
+      case 'shop':
+        return renderShopTab();
+      case 'games':
+        return renderGamesTab();
+      case 'settings':
+        return renderSettingsTab();
+      default:
+        return renderStudentsTab();
+    }
+  };
+
+  const renderDashboard = () => (
+    <div className="space-y-6">
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="bg-white rounded-xl p-6 shadow-lg border-l-4 border-blue-500">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-500 text-sm">Total Champions</p>
+              <p className="text-2xl font-bold text-blue-600">{students.length}</p>
+            </div>
+            <div className="text-3xl">👥</div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl p-6 shadow-lg border-l-4 border-yellow-500">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-500 text-sm">Total XP Earned</p>
+              <p className="text-2xl font-bold text-yellow-600">
+                {students.reduce((sum, student) => sum + (student.totalPoints || 0), 0)}
+              </p>
+            </div>
+            <div className="text-3xl">⭐</div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl p-6 shadow-lg border-l-4 border-green-500">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-500 text-sm">Average Level</p>
+              <p className="text-2xl font-bold text-green-600">
+                {students.length > 0 
+                  ? (students.reduce((sum, student) => sum + calculateAvatarLevel(student.totalPoints || 0), 0) / students.length).toFixed(1)
+                  : '0'
+                }
+              </p>
+            </div>
+            <div className="text-3xl">📈</div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl p-6 shadow-lg border-l-4 border-purple-500">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-500 text-sm">Champions with Pets</p>
+              <p className="text-2xl font-bold text-purple-600">
+                {students.filter(s => s.ownedPets && s.ownedPets.length > 0).length}
+              </p>
+            </div>
+            <div className="text-3xl">🐾</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Top Performers */}
+      <div className="bg-white rounded-xl p-6 shadow-lg">
+        <h3 className="text-xl font-bold text-gray-800 mb-4">🏆 Top Champions</h3>
+        <div className="space-y-3">
+          {[...students]
+            .sort((a, b) => (b.totalPoints || 0) - (a.totalPoints || 0))
+            .slice(0, 5)
+            .map((student, index) => (
+              <div key={student.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="text-lg font-bold text-gray-500">#{index + 1}</div>
+                  <img 
+                    src={getAvatarImage(student.avatarBase || 'Wizard F', calculateAvatarLevel(student.totalPoints || 0))}
+                    alt={`${student.firstName}'s Avatar`}
+                    className="w-10 h-10 rounded-full border-2 border-gray-300"
+                  />
+                  <div>
+                    <p className="font-semibold">{student.firstName} {student.lastName}</p>
+                    <p className="text-sm text-gray-500">Level {calculateAvatarLevel(student.totalPoints || 0)}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="font-bold text-blue-600">{student.totalPoints || 0} XP</p>
+                  <p className="text-sm text-gray-500">{calculateCoins(student)} coins</p>
+                </div>
+              </div>
+            ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderStudentsTab = () => (
+    <StudentsTab
+      students={students}
+      onAwardXP={awardXP}
+      onViewDetails={setSelectedStudent}
+      onAddStudent={() => setShowAddStudentModal(true)}
+    />
+  );
+
+  const renderQuestsTab = () => (
+    <QuestsTab
+      students={students}
+      updateStudent={updateStudent}
+      showToast={showToast}
+    />
+  );
+
+  const renderShopTab = () => (
+    <ShopTab
+      students={students}
+      updateStudent={updateStudent}
+      showToast={showToast}
+    />
+  );
+
+  const renderGamesTab = () => (
+    <GamesTab
+      showToast={showToast}
+    />
+  );
+
+  const renderSettingsTab = () => (
+    <SettingsTab
+      user={user}
+      currentClassId={currentClassId}
+      students={students}
+      setStudents={setStudents}
+      saveStudentsToFirebase={saveStudentsToFirebase}
+      showToast={showToast}
+    />
+  );
 
   // ===============================================
   // RENDER
@@ -403,12 +618,14 @@ const ClassroomChampions = () => {
             </div>
             
             <div className="flex items-center space-x-4">
-              <button
-                onClick={() => setShowAddStudentModal(true)}
-                className="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all font-semibold"
-              >
-                + Add Student
-              </button>
+              {activeTab === 'students' && (
+                <button
+                  onClick={() => setShowAddStudentModal(true)}
+                  className="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all font-semibold"
+                >
+                  + Add Student
+                </button>
+              )}
               
               <button
                 onClick={() => auth.signOut()}
@@ -421,34 +638,31 @@ const ClassroomChampions = () => {
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        {/* Students Grid */}
-        <div className={getGridClasses(students.length)}>
-          {students.map(student => (
-            <StudentCard
-              key={student.id}
-              student={student}
-              onAwardXP={awardXP}
-              onViewDetails={setSelectedStudent}
-            />
-          ))}
-        </div>
-
-        {/* Empty State */}
-        {students.length === 0 && (
-          <div className="text-center py-20">
-            <div className="text-6xl mb-4">🏰</div>
-            <h2 className="text-2xl font-bold text-gray-600 mb-2">No Champions Yet!</h2>
-            <p className="text-gray-500 mb-6">Add your first student to begin the adventure.</p>
-            <button
-              onClick={() => setShowAddStudentModal(true)}
-              className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all font-semibold"
-            >
-              Add Your First Champion
-            </button>
+      {/* Tab Navigation */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex overflow-x-auto">
+            {NAVIGATION_TABS.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center space-x-2 px-6 py-4 whitespace-nowrap transition-all duration-200 ${
+                  activeTab === tab.id
+                    ? `bg-gradient-to-r ${tab.color} text-white shadow-lg`
+                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                }`}
+              >
+                <span className="text-lg">{tab.icon}</span>
+                <span className="font-medium">{tab.name}</span>
+              </button>
+            ))}
           </div>
-        )}
+        </div>
+      </div>
+
+      {/* Tab Content */}
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        {renderTabContent()}
       </div>
 
       {/* Add Student Modal */}
