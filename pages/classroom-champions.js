@@ -11,6 +11,7 @@ import ShopTab from '../components/tabs/ShopTab';
 import QuestsTab from '../components/tabs/QuestsTab';
 import GamesTab from '../components/tabs/GamesTab';
 import SettingsTab from '../components/tabs/SettingsTab';
+import TeachersToolkitTab from '../components/tabs/TeachersToolkitTab';
 
 // ===============================================
 // CORE GAME CONSTANTS (INLINE TO AVOID IMPORT ISSUES)
@@ -230,6 +231,13 @@ const NAVIGATION_TABS = [
     description: 'Fun classroom activities'
   },
   { 
+    id: 'toolkit', 
+    name: 'Teachers Toolkit', 
+    icon: '🛠️', 
+    color: 'from-indigo-500 to-indigo-600',
+    description: 'Professional classroom management tools'
+  },
+  { 
     id: 'settings', 
     name: 'Settings', 
     icon: '⚙️', 
@@ -447,6 +455,8 @@ const ClassroomChampions = () => {
         return renderShopTab();
       case 'games':
         return renderGamesTab();
+      case 'toolkit':
+        return renderToolkitTab();
       case 'settings':
         return renderSettingsTab();
       default:
@@ -571,6 +581,15 @@ const ClassroomChampions = () => {
     />
   );
 
+  const renderToolkitTab = () => (
+    <TeachersToolkitTab
+      students={students}
+      user={user}
+      showToast={showToast}
+      userData={{}} // You can pass real userData if you have it
+    />
+  );
+
   const renderSettingsTab = () => (
     <SettingsTab
       user={user}
@@ -618,7 +637,7 @@ const ClassroomChampions = () => {
             </div>
             
             <div className="flex items-center space-x-4">
-              {activeTab === 'students' && (
+              {(activeTab === 'students' || activeTab === 'toolkit') && (
                 <button
                   onClick={() => setShowAddStudentModal(true)}
                   className="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all font-semibold"
