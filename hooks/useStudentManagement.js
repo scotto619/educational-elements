@@ -1,52 +1,148 @@
 // hooks/useStudentManagement.js - ENHANCED with All Required Functions for StudentsTab
-
 import { useState, useCallback, useEffect } from 'react';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { firestore } from '../utils/firebase';
 
-// Import utilities
-import { 
-  updateStudentWithCurrency, 
-  calculateCoins, 
-  canAfford, 
-  getRandomPet, 
-  getRandomPetName, 
-  getRandomAvatar,
-  playXPSound,
-  playPetUnlockSound,
-  validateStudentData,
-  calculateStudentStats,
-  shouldReceivePet,
-  createNewPet,
-  studentOwnsAvatar,
-  calculateClassStats
-} from '../utils/gameUtils';
+// Utility functions
+const getAvatarImage = (avatarBase, level) => {
+  if (!avatarBase) {
+    console.warn('No avatarBase provided, using default Wizard F');
+    return '/Avatars/Wizard F/Level 1.png';
+  }
+  
+  const validLevel = Math.max(1, Math.min(level || 1, 4));
+  const imagePath = `/Avatars/${avatarBase}/Level ${validLevel}.png`;
+  
+  console.log(`Loading avatar: ${avatarBase} Level ${validLevel} -> ${imagePath}`);
+  return imagePath;
+};
 
-import { 
-  getAvatarImage, 
-  calculateAvatarLevel, 
-  migrateStudentData, 
-  fixAllStudentLevels 
-} from '../utils/avatarFixes';
+const calculateAvatarLevel = (totalXP) => {
+  if (totalXP >= 300) return 4;  // Level 4: 300+ XP
+  if (totalXP >= 200) return 3;  // Level 3: 200-299 XP  
+  if (totalXP >= 100) return 2;  // Level 2: 100-199 XP
+  return 1;                      // Level 1: 0-99 XP
+};
 
-import { 
-  showToast, 
-  showSuccessToast, 
-  showErrorToast, 
-  showWarningToast,
-  handleError, 
-  withAsyncErrorHandling, 
-  ERROR_TYPES 
-} from '../utils/errorHandling';
+const migrateStudentData = (student) => {
+  const totalXP = student.totalPoints || 0;
+  const correctLevel = calculateAvatarLevel(totalXP);
+  
+  return {
+    ...student,
+    // Ensure all required fields exist
+    id: student.id || `student_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    firstName: student.firstName || 'Student',
+    lastName: student.lastName || '',
+    totalPoints: totalXP,
+    currency: student.currency || 0,
+    
+    // Fix avatar data
+    avatarLevel: correctLevel,
+    avatarBase: student.avatarBase || 'Wizard F',
+    avatar: getAvatarImage(student.avatarBase || 'Wizard F', correctLevel),
+    
+    // Ensure arrays exist
+    ownedAvatars: student.ownedAvatars || (student.avatarBase ? [student.avatarBase] : ['Wizard F']),
+    ownedPets: student.ownedPets || (student.pet ? [{
+      id: `migrated_pet_${Date.now()}`,
+      name: student.pet.name || 'Companion',
+      image: student.pet.image,
+      type: 'migrated'
+    }] : []),
+    rewardsPurchased: student.rewardsPurchased || [],
+    
+    // Quest and behavior tracking
+    questsCompleted: student.questsCompleted || [],
+    behaviorPoints: student.behaviorPoints || {
+      respectful: 0,
+      responsible: 0,
+      safe: 0,
+      learner: 0,
+      helper: 0,
+      creative: 0
+    },
+    
+    // Coin tracking
+    coinsSpent: student.coinsSpent || 0,
+    
+    // Timestamps
+    createdAt: student.createdAt || new Date().toISOString(),
+    lastUpdated: new Date().toISOString()
+  };
+};
 
-import { GAME_CONFIG, AVAILABLE_AVATARS } from '../constants/gameData';
+const shouldReceivePet = (student) => {
+  return (student.totalPoints || 0) >= 50 && (!student.ownedPets || student.ownedPets.length === 0);
+};
+
+const createNewPet = () => {
+  const AVAILABLE_PETS = [
+    'Alchemist', 'Barbarian', 'Bard', 'Beastmaster', 'Cleric', 'Crystal Knight',
+    'Crystal Sage', 'Dream', 'Druid', 'Engineer', 'Frost Mage', 'Illusionist',
+    'Knight', 'Lightning', 'Monk', 'Necromancer', 'Orc', 'Paladin', 'Rogue',
+    'Stealth', 'Time Knight', 'Warrior'
+  ];
+  
+  const randomPet = AVAILABLE_PETS[Math.floor(Math.random() * AVAILABLE_PETS.length)];
+  
+  return {
+    id: `pet_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    name: `${randomPet} Companion`,
+    type: randomPet,
+    image: `/Pets/${randomPet}.png`,
+    unlockedAt: new Date().toISOString()
+  };
+};
+
+const playXPSound = () => {
+  try {
+    const audio = new Audio('/sounds/xp-gain.mp3');
+    audio.volume = 0.3;
+    audio.play().catch(e => console.log('Sound play failed:', e));
+  } catch (e) {
+    console.log('Sound loading failed:', e);
+  }
+};
+
+const playLevelUpSound = () => {
+  try {
+    const audio = new Audio('/sounds/level-up.mp3');
+    audio.volume = 0.5;
+    audio.play().catch(e => console.log('Sound play failed:', e));
+  } catch (e) {
+    console.log('Sound loading failed:', e);
+  }
+};
+
+const playPetUnlockSound = () => {
+  try {
+    const audio = new Audio('/sounds/pet-unlock.mp3');
+    audio.volume = 0.4;
+    audio.play().catch(e => console.log('Sound play failed:', e));
+  } catch (e) {
+    console.log('Sound loading failed:', e);
+  }
+};
+
+// Error handling wrapper
+const withAsyncErrorHandling = (fn, operation = 'operation') => {
+  return async (...args) => {
+    try {
+      return await fn(...args);
+    } catch (error) {
+      console.error(`Error in ${operation}:`, error);
+      throw error;
+    }
+  };
+};
 
 export const useStudentManagement = (user, currentClassId) => {
-  // Core student state
+  // Core state
   const [students, setStudents] = useState([]);
   const [savingData, setSavingData] = useState(false);
   
-  // Student interaction state
+  // Student selection state
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [selectedStudents, setSelectedStudents] = useState([]);
   
@@ -88,67 +184,75 @@ export const useStudentManagement = (user, currentClassId) => {
           ...data, 
           classes: updatedClasses 
         });
-        
-        console.log('Student data saved successfully to Firebase');
       }
-    } catch (error) {
-      console.error('Error saving students:', error);
-      throw error;
     } finally {
       setSavingData(false);
     }
   }, 'saveStudentsToFirebase'), [user, currentClassId]);
 
   // ===============================================
-  // STUDENT MANAGEMENT OPERATIONS
+  // STUDENT SELECTION MANAGEMENT
+  // ===============================================
+
+  const toggleStudentSelection = useCallback((studentId) => {
+    setSelectedStudents(prev => 
+      prev.includes(studentId)
+        ? prev.filter(id => id !== studentId)
+        : [...prev, studentId]
+    );
+  }, []);
+
+  const selectAllStudents = useCallback(() => {
+    setSelectedStudents(students.map(s => s.id));
+  }, [students]);
+
+  const clearSelection = useCallback(() => {
+    setSelectedStudents([]);
+  }, []);
+
+  // ===============================================
+  // STUDENT CRUD OPERATIONS
   // ===============================================
 
   const addStudent = useCallback(withAsyncErrorHandling(async (studentData) => {
-    const newStudent = {
+    const newStudent = migrateStudentData({
       id: `student_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      firstName: studentData.firstName || studentData.name || 'New Student',
-      lastName: studentData.lastName || '',
-      totalPoints: 0,
-      avatarLevel: 1,
-      avatarBase: studentData.avatarBase || 'Wizard F',
-      avatar: getAvatarImage(studentData.avatarBase || 'Wizard F', 1),
-      currency: 0,
-      coinsSpent: 0,
-      ownedAvatars: [studentData.avatarBase || 'Wizard F'],
-      ownedPets: [],
-      questsCompleted: [],
-      rewardsPurchased: [],
-      behaviorPoints: {
-        respectful: 0,
-        responsible: 0,
-        safe: 0,
-        learner: 0
-      },
-      createdAt: new Date().toISOString(),
-      lastUpdated: new Date().toISOString()
-    };
+      ...studentData,
+      createdAt: new Date().toISOString()
+    });
 
     const updatedStudents = [...students, newStudent];
     setStudents(updatedStudents);
     await saveStudentsToFirebase(updatedStudents);
     
-    showSuccessToast(`${newStudent.firstName} added to class!`);
     return newStudent;
   }, 'addStudent'), [students, saveStudentsToFirebase]);
 
   const removeStudent = useCallback(withAsyncErrorHandling(async (studentId) => {
     const student = students.find(s => s.id === studentId);
-    if (!student) {
-      showWarningToast('Student not found');
-      return;
-    }
+    if (!student) return;
 
     const updatedStudents = students.filter(s => s.id !== studentId);
     setStudents(updatedStudents);
     await saveStudentsToFirebase(updatedStudents);
     
-    showSuccessToast(`${student.firstName} removed from class`);
+    return student;
   }, 'removeStudent'), [students, saveStudentsToFirebase]);
+
+  const updateStudent = useCallback(withAsyncErrorHandling(async (studentId, updateData) => {
+    const updatedStudents = students.map(student => 
+      student.id === studentId 
+        ? { 
+            ...student, 
+            ...updateData, 
+            lastUpdated: new Date().toISOString() 
+          }
+        : student
+    );
+
+    setStudents(updatedStudents);
+    await saveStudentsToFirebase(updatedStudents);
+  }, 'updateStudent'), [students, saveStudentsToFirebase]);
 
   // ===============================================
   // XP MANAGEMENT
@@ -175,6 +279,7 @@ export const useStudentManagement = (user, currentClassId) => {
 
         // Check for level up
         if (newLevel > oldLevel) {
+          playLevelUpSound();
           setLevelUpData({
             student: updatedStudent,
             oldLevel,
@@ -186,6 +291,7 @@ export const useStudentManagement = (user, currentClassId) => {
         if (shouldReceivePet(updatedStudent)) {
           const newPet = createNewPet();
           updatedStudent.ownedPets = [newPet];
+          playPetUnlockSound();
           setPetUnlockData({
             student: updatedStudent,
             pet: newPet
@@ -200,7 +306,7 @@ export const useStudentManagement = (user, currentClassId) => {
     setStudents(updatedStudents);
     await saveStudentsToFirebase(updatedStudents);
     
-    // Play sound
+    // Play XP sound
     playXPSound();
     
   }, 'awardXP'), [students, saveStudentsToFirebase]);
@@ -245,15 +351,17 @@ export const useStudentManagement = (user, currentClassId) => {
     setStudents(updatedStudents);
     await saveStudentsToFirebase(updatedStudents);
 
-    // Handle notifications
+    // Play sounds
+    playXPSound();
     if (levelUps.length > 0) {
+      playLevelUpSound();
       setLevelUpData(levelUps[0]); // Show first level up
     }
     if (petUnlocks.length > 0) {
+      playPetUnlockSound();
       setPetUnlockData(petUnlocks[0]); // Show first pet unlock
     }
 
-    showSuccessToast(`${amount} XP awarded to ${studentIds.length} students!`);
   }, 'awardBulkXP'), [students, saveStudentsToFirebase]);
 
   const deductXP = useCallback(withAsyncErrorHandling(async (studentId, amount) => {
@@ -311,16 +419,14 @@ export const useStudentManagement = (user, currentClassId) => {
 
     setStudents(updatedStudents);
     await saveStudentsToFirebase(updatedStudents);
-    
-    showSuccessToast(`${amount} coins awarded to ${studentIds.length} students!`);
   }, 'awardBulkCoins'), [students, saveStudentsToFirebase]);
 
   const spendCoins = useCallback(withAsyncErrorHandling(async (studentId, amount) => {
     const student = students.find(s => s.id === studentId);
-    if (!student || !canAfford(student, amount)) {
-      showWarningToast('Not enough coins!');
-      return false;
-    }
+    if (!student) return false;
+
+    const currentCoins = (student.currency || 0) + Math.floor((student.totalPoints || 0) / 10) - (student.coinsSpent || 0);
+    if (currentCoins < amount) return false;
 
     const updatedStudents = students.map(s => {
       if (s.id === studentId) {
@@ -339,69 +445,36 @@ export const useStudentManagement = (user, currentClassId) => {
   }, 'spendCoins'), [students, saveStudentsToFirebase]);
 
   // ===============================================
-  // AVATAR MANAGEMENT
+  // AVATAR & PET MANAGEMENT
   // ===============================================
 
-  const changeAvatar = useCallback(withAsyncErrorHandling(async (studentId, avatarBase) => {
-    const newAvatar = getAvatarImage(avatarBase, 1);
-    
-    const updatedStudents = students.map(s => 
-      s.id === studentId 
-        ? { 
-            ...s, 
-            avatarBase, 
-            avatar: newAvatar,
-            ownedAvatars: s.ownedAvatars?.includes(avatarBase) 
-              ? s.ownedAvatars 
-              : [...(s.ownedAvatars || []), avatarBase],
-            lastUpdated: new Date().toISOString()
-          }
-        : s
-    );
-    
-    setStudents(updatedStudents);
-    await saveStudentsToFirebase(updatedStudents);
-    showSuccessToast('Avatar changed successfully!');
-  }, 'changeAvatar'), [students, saveStudentsToFirebase]);
-
-  // ===============================================
-  // BULK OPERATIONS
-  // ===============================================
-
-  const resetAllPoints = useCallback(withAsyncErrorHandling(async () => {
-    const updatedStudents = students.map(student => ({
-      ...student,
-      totalPoints: 0,
-      avatarLevel: 1,
-      avatar: getAvatarImage(student.avatarBase || 'Wizard F', 1),
-      behaviorPoints: {
-        respectful: 0,
-        responsible: 0,
-        safe: 0,
-        learner: 0
-      },
-      lastUpdated: new Date().toISOString()
-    }));
-
-    setStudents(updatedStudents);
-    await saveStudentsToFirebase(updatedStudents);
-    showSuccessToast('All student points reset!');
-  }, 'resetAllPoints'), [students, saveStudentsToFirebase]);
-
-  const resetStudentPoints = useCallback(withAsyncErrorHandling(async (studentId) => {
+  const unlockAvatar = useCallback(withAsyncErrorHandling(async (studentId, avatarBase) => {
     const updatedStudents = students.map(student => {
       if (student.id === studentId) {
+        const ownedAvatars = student.ownedAvatars || [];
+        if (!ownedAvatars.includes(avatarBase)) {
+          return {
+            ...student,
+            ownedAvatars: [...ownedAvatars, avatarBase],
+            lastUpdated: new Date().toISOString()
+          };
+        }
+      }
+      return student;
+    });
+
+    setStudents(updatedStudents);
+    await saveStudentsToFirebase(updatedStudents);
+  }, 'unlockAvatar'), [students, saveStudentsToFirebase]);
+
+  const changeAvatar = useCallback(withAsyncErrorHandling(async (studentId, avatarBase) => {
+    const updatedStudents = students.map(student => {
+      if (student.id === studentId) {
+        const level = student.avatarLevel || calculateAvatarLevel(student.totalPoints || 0);
         return {
           ...student,
-          totalPoints: 0,
-          avatarLevel: 1,
-          avatar: getAvatarImage(student.avatarBase || 'Wizard F', 1),
-          behaviorPoints: {
-            respectful: 0,
-            responsible: 0,
-            safe: 0,
-            learner: 0
-          },
+          avatarBase: avatarBase,
+          avatar: getAvatarImage(avatarBase, level),
           lastUpdated: new Date().toISOString()
         };
       }
@@ -410,83 +483,131 @@ export const useStudentManagement = (user, currentClassId) => {
 
     setStudents(updatedStudents);
     await saveStudentsToFirebase(updatedStudents);
-    
-    const student = students.find(s => s.id === studentId);
-    showSuccessToast(`${student?.firstName}'s points reset!`);
-  }, 'resetStudentPoints'), [students, saveStudentsToFirebase]);
+  }, 'changeAvatar'), [students, saveStudentsToFirebase]);
 
-  // ===============================================
-  // DATA FIXES & MAINTENANCE
-  // ===============================================
-
-  const fixAllStudentData = useCallback(() => {
-    const fixedStudents = fixAllStudentLevels(students, (fixed) => {
-      setStudents(fixed);
-      saveStudentsToFirebase(fixed);
+  const addPet = useCallback(withAsyncErrorHandling(async (studentId, petData) => {
+    const updatedStudents = students.map(student => {
+      if (student.id === studentId) {
+        const newPet = {
+          id: `pet_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          ...petData,
+          unlockedAt: new Date().toISOString()
+        };
+        
+        return {
+          ...student,
+          ownedPets: [...(student.ownedPets || []), newPet],
+          lastUpdated: new Date().toISOString()
+        };
+      }
+      return student;
     });
-    
-    showSuccessToast('✅ All student levels and avatars have been fixed!');
+
+    setStudents(updatedStudents);
+    await saveStudentsToFirebase(updatedStudents);
+  }, 'addPet'), [students, saveStudentsToFirebase]);
+
+  // ===============================================
+  // DATA MIGRATION & FIXES
+  // ===============================================
+
+  const fixAllStudentData = useCallback(withAsyncErrorHandling(async () => {
+    const fixedStudents = students.map(migrateStudentData);
+    setStudents(fixedStudents);
+    await saveStudentsToFirebase(fixedStudents);
     return fixedStudents;
-  }, [students, saveStudentsToFirebase]);
+  }, 'fixAllStudentData'), [students, saveStudentsToFirebase]);
 
-  const migrateAllStudents = useCallback(() => {
-    const migratedStudents = students.map(migrateStudentData);
-    const hasChanges = JSON.stringify(students) !== JSON.stringify(migratedStudents);
-    
-    if (hasChanges) {
-      setStudents(migratedStudents);
-      saveStudentsToFirebase(migratedStudents);
-      showSuccessToast('Student data migrated successfully!');
-    } else {
-      showToast('All student data is already up to date!', 'info');
-    }
-  }, [students, saveStudentsToFirebase]);
+  const resetStudentData = useCallback(withAsyncErrorHandling(async (studentId) => {
+    const updatedStudents = students.map(student => {
+      if (student.id === studentId) {
+        return {
+          ...student,
+          totalPoints: 0,
+          currency: 0,
+          avatarLevel: 1,
+          avatar: getAvatarImage(student.avatarBase || 'Wizard F', 1),
+          behaviorPoints: {
+            respectful: 0,
+            responsible: 0,
+            safe: 0,
+            learner: 0,
+            helper: 0,
+            creative: 0
+          },
+          questsCompleted: [],
+          rewardsPurchased: [],
+          coinsSpent: 0,
+          lastUpdated: new Date().toISOString()
+        };
+      }
+      return student;
+    });
 
-  // ===============================================
-  // SELECTION MANAGEMENT
-  // ===============================================
-
-  const toggleStudentSelection = useCallback((studentId) => {
-    setSelectedStudents(prev => 
-      prev.includes(studentId) 
-        ? prev.filter(id => id !== studentId)
-        : [...prev, studentId]
-    );
-  }, []);
-
-  const selectAllStudents = useCallback(() => {
-    setSelectedStudents(students.map(s => s.id));
-  }, [students]);
-
-  const clearSelection = useCallback(() => {
-    setSelectedStudents([]);
-  }, []);
+    setStudents(updatedStudents);
+    await saveStudentsToFirebase(updatedStudents);
+  }, 'resetStudentData'), [students, saveStudentsToFirebase]);
 
   // ===============================================
-  // COMPUTED VALUES
+  // UTILITY FUNCTIONS
   // ===============================================
 
-  const classStats = useCallback(() => {
-    return calculateClassStats(students);
-  }, [students]);
-
-  const getStudentById = useCallback((id) => {
-    return students.find(student => student.id === id);
+  const getStudentById = useCallback((studentId) => {
+    return students.find(s => s.id === studentId);
   }, [students]);
 
   const getStudentsByLevel = useCallback((level) => {
-    return students.filter(student => (student.avatarLevel || 1) === level);
+    return students.filter(s => (s.avatarLevel || calculateAvatarLevel(s.totalPoints || 0)) === level);
   }, [students]);
 
-  const getTopStudents = useCallback((count = 5) => {
+  const getTopStudents = useCallback((limit = 5) => {
     return [...students]
       .sort((a, b) => (b.totalPoints || 0) - (a.totalPoints || 0))
-      .slice(0, count);
+      .slice(0, limit);
   }, [students]);
 
-  const getStudentsNeedingPets = useCallback(() => {
-    return students.filter(student => shouldReceivePet(student));
-  }, [students]);
+  const calculateClassStats = useCallback(() => {
+    const totalStudents = students.length;
+    const totalXP = students.reduce((sum, s) => sum + (s.totalPoints || 0), 0);
+    const averageXP = totalStudents > 0 ? Math.round(totalXP / totalStudents) : 0;
+    
+    const levelDistribution = {
+      1: students.filter(s => (s.avatarLevel || calculateAvatarLevel(s.totalPoints || 0)) === 1).length,
+      2: students.filter(s => (s.avatarLevel || calculateAvatarLevel(s.totalPoints || 0)) === 2).length,
+      3: students.filter(s => (s.avatarLevel || calculateAvatarLevel(s.totalPoints || 0)) === 3).length,
+      4: students.filter(s => (s.avatarLevel || calculateAvatarLevel(s.totalPoints || 0)) === 4).length
+    };
+
+    return {
+      totalStudents,
+      totalXP,
+      averageXP,
+      levelDistribution,
+      topStudent: students.length > 0 ? getTopStudents(1)[0] : null
+    };
+  }, [students, getTopStudents]);
+
+  // ===============================================
+  // DATA SYNC EFFECT
+  // ===============================================
+
+  useEffect(() => {
+    // Ensure all students have proper data structure
+    if (students.length > 0) {
+      const needsFix = students.some(student => 
+        !student.avatar || 
+        !student.avatarLevel || 
+        !student.behaviorPoints ||
+        !student.ownedAvatars ||
+        !student.ownedPets
+      );
+
+      if (needsFix) {
+        console.log('Fixing student data...');
+        fixAllStudentData();
+      }
+    }
+  }, [students, fixAllStudentData]);
 
   // ===============================================
   // RETURN HOOK INTERFACE
@@ -495,62 +616,66 @@ export const useStudentManagement = (user, currentClassId) => {
   return {
     // State
     students,
-    setStudents,
     savingData,
     selectedStudent,
-    setSelectedStudent,
     selectedStudents,
-    setSelectedStudents,
-    
-    // Modal state
     showAddStudentModal,
-    setShowAddStudentModal,
     newStudentName,
-    setNewStudentName,
     newStudentAvatar,
-    setNewStudentAvatar,
     levelUpData,
-    setLevelUpData,
     petUnlockData,
+    
+    // State setters
+    setStudents,
+    setSelectedStudent,
+    setSelectedStudents,
+    setShowAddStudentModal,
+    setNewStudentName,
+    setNewStudentAvatar,
+    setLevelUpData,
     setPetUnlockData,
     
-    // Core operations
-    addStudent,
-    removeStudent,
-    awardXP,
-    deductXP,
-    awardCoins,
-    spendCoins,
-    changeAvatar,
-    
-    // Bulk operations
-    awardBulkXP,
-    awardBulkCoins,
-    resetAllPoints,
-    resetStudentPoints,
-    
-    // Selection management
+    // Student selection
     toggleStudentSelection,
     selectAllStudents,
     clearSelection,
     
-    // Data maintenance
-    fixAllStudentData,
-    migrateAllStudents,
-    saveStudentsToFirebase,
+    // CRUD operations
+    addStudent,
+    removeStudent,
+    updateStudent,
     
-    // Computed values
-    classStats: classStats(),
+    // XP management
+    awardXP,
+    awardBulkXP,
+    deductXP,
+    
+    // Coin management
+    awardCoins,
+    awardBulkCoins,
+    spendCoins,
+    
+    // Avatar & Pet management
+    unlockAvatar,
+    changeAvatar,
+    addPet,
+    
+    // Data management
+    saveStudentsToFirebase,
+    fixAllStudentData,
+    resetStudentData,
+    
+    // Utility functions
     getStudentById,
     getStudentsByLevel,
     getTopStudents,
-    getStudentsNeedingPets,
+    calculateClassStats,
     
-    // Utility functions for components
-    calculateCoins,
-    canAfford,
-    calculateStudentStats,
+    // Helper functions
+    migrateStudentData,
+    calculateAvatarLevel,
+    getAvatarImage,
     shouldReceivePet,
-    studentOwnsAvatar
+    createNewPet
   };
 };
