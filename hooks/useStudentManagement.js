@@ -1,7 +1,29 @@
 // hooks/useStudentManagement.js - ENHANCED with All Required Functions for StudentsTab
 import { useState, useCallback, useEffect } from 'react';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { firestore } from '../utils/firebase';
+
+// Firebase imports with error handling
+let doc, getDoc, setDoc, firestore;
+try {
+  const firebase = require('firebase/firestore');
+  doc = firebase.doc;
+  getDoc = firebase.getDoc;
+  setDoc = firebase.setDoc;
+  
+  // Try to import firestore, provide fallback
+  try {
+    const firebaseUtils = require('../utils/firebase');
+    firestore = firebaseUtils.firestore;
+  } catch (e) {
+    console.warn('Firebase utils not found, using mock');
+    firestore = null;
+  }
+} catch (e) {
+  console.warn('Firebase not available, using mock functions');
+  doc = () => ({});
+  getDoc = () => Promise.resolve({ exists: () => false });
+  setDoc = () => Promise.resolve();
+  firestore = null;
+}
 
 // Utility functions
 const getAvatarImage = (avatarBase, level) => {

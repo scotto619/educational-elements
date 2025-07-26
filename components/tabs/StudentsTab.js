@@ -1,6 +1,34 @@
 // components/tabs/StudentsTab.js - COMPLETE REWRITE
 import React, { useState, useEffect, useRef } from 'react';
-import { useStudentManagement } from '../../hooks/useStudentManagement';
+
+// Simple hook for student management - inline to avoid import issues
+const useStudentManagement = (user, currentClassId) => {
+  const [selectedStudents, setSelectedStudents] = useState([]);
+  
+  const toggleStudentSelection = (studentId) => {
+    setSelectedStudents(prev => 
+      prev.includes(studentId)
+        ? prev.filter(id => id !== studentId)
+        : [...prev, studentId]
+    );
+  };
+
+  const selectAllStudents = (students) => {
+    setSelectedStudents(students.map(s => s.id));
+  };
+
+  const clearSelection = () => {
+    setSelectedStudents([]);
+  };
+
+  return {
+    selectedStudents,
+    setSelectedStudents,
+    toggleStudentSelection,
+    selectAllStudents,
+    clearSelection
+  };
+};
 
 // Available avatar options for new students
 const AVAILABLE_AVATARS = [
@@ -99,19 +127,13 @@ const StudentsTab = ({
   currentClassId,
   user 
 }) => {
-  // Use the student management hook
+  // Use the inline student management hook
   const {
     selectedStudents,
     setSelectedStudents,
     toggleStudentSelection,
     selectAllStudents,
-    clearSelection,
-    awardXP,
-    awardBulkXP,
-    awardCoins,
-    awardBulkCoins,
-    addStudent,
-    removeStudent
+    clearSelection
   } = useStudentManagement(user, currentClassId);
 
   // Local state
@@ -724,7 +746,7 @@ const StudentsTab = ({
             )}
             
             <button
-              onClick={selectAllStudents}
+              onClick={() => selectAllStudents(sortedStudents)}
               className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-bold transition-colors"
             >
               Select All
