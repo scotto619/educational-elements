@@ -1,6 +1,6 @@
 // components/tabs/StudentsTab.js - COMPLETE ENHANCED IMPLEMENTATION
 import React, { useState, useEffect, useRef } from 'react';
-import CharacterSheetModal from '../CharacterSheetModal';
+import CharacterSheetModal from '../modals/CharacterSheetModal';
 
 // ===============================================
 // HARDCODED CONSTANTS AND UTILITIES

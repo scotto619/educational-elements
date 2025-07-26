@@ -1,4 +1,4 @@
-// components/CharacterSheetModal.js - COMPLETE CHARACTER SHEET IMPLEMENTATION
+// components/modals/CharacterSheetModal.js - COMPLETE CHARACTER SHEET IMPLEMENTATION
 import React, { useState, useEffect } from 'react';
 
 // ===============================================
