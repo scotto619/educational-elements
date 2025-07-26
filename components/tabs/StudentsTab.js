@@ -1,7 +1,12 @@
-// components/tabs/StudentsTab.js - FIXED COMPLETE IMPLEMENTATION
-import React, { useState, useEffect } from 'react';
+// components/tabs/StudentsTab.js - COMPLETE ENHANCED IMPLEMENTATION
+import React, { useState, useEffect, useRef } from 'react';
+import CharacterSheetModal from '../CharacterSheetModal';
 
-// Constants
+// ===============================================
+// HARDCODED CONSTANTS AND UTILITIES
+// ===============================================
+
+// Hardcoded XP Categories (editable)
 const DEFAULT_XP_CATEGORIES = [
   { 
     id: 1, 
@@ -45,7 +50,26 @@ const DEFAULT_XP_CATEGORIES = [
   }
 ];
 
-// Utility Functions
+// Hardcoded Avatar Paths
+const AVATAR_BASES = [
+  'Alchemist F', 'Alchemist M', 'Archer F', 'Archer M', 'Assassin F', 'Assassin M',
+  'Barbarian F', 'Barbarian M', 'Cleric F', 'Cleric M', 'Fighter F', 'Fighter M',
+  'Mage F', 'Mage M', 'Paladin F', 'Paladin M', 'Ranger F', 'Ranger M',
+  'Rogue F', 'Rogue M', 'Sorcerer F', 'Sorcerer M', 'Warlock F', 'Warlock M',
+  'Wizard F', 'Wizard M'
+];
+
+// Hardcoded Pet Data
+const BASIC_PETS = [
+  { id: 'goblin', name: 'Goblin Pet', image: '/shop/BasicPets/GoblinPet.png', speed: 3 },
+  { id: 'soccer', name: 'Soccer Pet', image: '/shop/BasicPets/SoccerPet.png', speed: 4 },
+  { id: 'unicorn', name: 'Unicorn Pet', image: '/shop/BasicPets/UnicornPet.png', speed: 5 }
+];
+
+// ===============================================
+// UTILITY FUNCTIONS
+// ===============================================
+
 const getAvatarImage = (avatarBase, level) => {
   if (!avatarBase) {
     console.warn('No avatarBase provided, using default Wizard F');
@@ -84,169 +108,251 @@ const getGridClasses = (studentCount) => {
   return 'grid grid-cols-5 lg:grid-cols-10 gap-1';
 };
 
-// Main Component
+const playSound = (soundType) => {
+  try {
+    const soundFiles = {
+      'xp': '/sounds/xp-award.wav',
+      'levelup': '/sounds/level-up.wav',
+      'coin': '/sounds/coin.wav',
+      'pet': '/sounds/pet-unlock.wav',
+      'success': '/sounds/success.wav'
+    };
+    
+    const audio = new Audio(soundFiles[soundType] || soundFiles.success);
+    audio.volume = 0.7;
+    audio.play().catch(() => {
+      // Fallback to system beep
+      console.log('Audio playback failed, using fallback');
+    });
+  } catch (error) {
+    console.log('Audio not supported');
+  }
+};
+
+// ===============================================
+// MAIN COMPONENT
+// ===============================================
+
 const StudentsTab = ({ 
-  students, 
+  students = [], 
   setStudents,
   selectedStudent,
   setSelectedStudent,
-  selectedStudents = [],
-  setSelectedStudents,
-  toggleStudentSelection,
-  selectAllStudents,
-  clearSelection,
-  awardXP,
-  awardBulkXP,
-  awardCoins,
-  awardBulkCoins,
-  addStudent,
-  fixAllStudentData,
-  showAddStudentModal,
-  setShowAddStudentModal,
-  levelUpData,
-  setLevelUpData,
-  petUnlockData,
-  setPetUnlockData,
-  saveStudentsToFirebase,
   showToast = () => {},
-  showSuccessToast = () => {},
-  showErrorToast = () => {},
-  showWarningToast = () => {},
-  currentClassId,
+  saveStudentsToFirebase = () => {},
+  userData,
   user
 }) => {
-  // State
-  const [xpCategories, setXpCategories] = useState(DEFAULT_XP_CATEGORIES);
-  const [showXPModal, setShowXPModal] = useState(false);
-  const [showBulkCoinsModal, setShowBulkCoinsModal] = useState(false);
-  const [bulkCoinAmount, setBulkCoinAmount] = useState(5);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterLevel, setFilterLevel] = useState('all');
-  const [showCharacterSheet, setShowCharacterSheet] = useState(false);
-  const [showXPCategoryEditor, setShowXPCategoryEditor] = useState(false);
+  // ===============================================
+  // STATE MANAGEMENT
+  // ===============================================
   
-  // Image preview state
-  const [previewImage, setPreviewImage] = useState(null);
-  const [previewPosition, setPreviewPosition] = useState({ x: 0, y: 0 });
+  const [selectedStudents, setSelectedStudents] = useState(new Set());
+  const [showXPModal, setShowXPModal] = useState(false);
+  const [showCoinModal, setShowCoinModal] = useState(false);
+  const [showCharacterSheet, setShowCharacterSheet] = useState(null);
+  const [levelUpData, setLevelUpData] = useState(null);
+  const [petUnlockData, setPetUnlockData] = useState(null);
+  const [showCategoryEditor, setShowCategoryEditor] = useState(false);
+  const [xpCategories, setXpCategories] = useState(DEFAULT_XP_CATEGORIES);
+  const [hoverPreview, setHoverPreview] = useState({ show: false, image: '', name: '', x: 0, y: 0 });
+  
+  // Form states
+  const [xpAmount, setXpAmount] = useState(1);
+  const [selectedCategory, setSelectedCategory] = useState(1);
+  const [coinAmount, setCoinAmount] = useState(1);
+  const [customReason, setCustomReason] = useState('');
 
-  // Ensure students is always an array
-  const safeStudents = Array.isArray(students) ? students : [];
+  // ===============================================
+  // HOVER PREVIEW SYSTEM
+  // ===============================================
 
-  // Filter and sort students
-  const filteredStudents = safeStudents.filter(student => {
-    const matchesSearch = searchTerm === '' || 
-      student.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.lastName?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesLevel = filterLevel === 'all' || 
-      (student.avatarLevel || calculateAvatarLevel(student.totalPoints || 0)) === parseInt(filterLevel);
-    
-    return matchesSearch && matchesLevel;
-  });
-
-  const sortedStudents = [...filteredStudents].sort((a, b) => 
-    (b.totalPoints || 0) - (a.totalPoints || 0)
-  );
-
-  // Grid calculation
-  const gridClasses = getGridClasses(sortedStudents.length);
-
-  // Handle avatar hover
-  const handleAvatarHover = (event, student) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    setPreviewPosition({
-      x: event.clientX + 15,
-      y: event.clientY - 50
-    });
-    setPreviewImage({
-      src: student.avatar || getAvatarImage(student.avatarBase, student.avatarLevel),
-      name: `${student.firstName}'s Avatar`,
-      level: student.avatarLevel || calculateAvatarLevel(student.totalPoints || 0),
-      type: 'avatar'
-    });
-  };
-
-  const handlePetHover = (event, pet, student) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    setPreviewPosition({
-      x: event.clientX + 15,
-      y: event.clientY - 50
-    });
-    setPreviewImage({
-      src: pet.image,
-      name: pet.name,
-      owner: student.firstName,
-      type: 'pet'
+  const handleImageHover = (e, imageData) => {
+    const rect = e.target.getBoundingClientRect();
+    setHoverPreview({
+      show: true,
+      image: imageData.image,
+      name: imageData.name,
+      type: imageData.type || 'avatar',
+      x: rect.right + 10,
+      y: rect.top
     });
   };
 
   const hidePreview = () => {
-    setPreviewImage(null);
+    setHoverPreview({ show: false, image: '', name: '', x: 0, y: 0 });
   };
 
-  // XP Award Function
-  const handleAwardXP = async (studentId, amount, category) => {
-    try {
-      await awardXP(studentId, amount, category);
-      
-      // Check for level up
-      const student = safeStudents.find(s => s.id === studentId);
-      if (student) {
-        const newXP = (student.totalPoints || 0) + amount;
-        const oldLevel = student.avatarLevel || calculateAvatarLevel(student.totalPoints || 0);
-        const newLevel = calculateAvatarLevel(newXP);
-        
-        if (newLevel > oldLevel) {
-          setLevelUpData({
-            student: { ...student, totalPoints: newXP, avatarLevel: newLevel },
-            oldLevel,
-            newLevel
-          });
-        }
-        
-        // Check for pet unlock
-        if (newXP >= 50 && (!student.ownedPets || student.ownedPets.length === 0)) {
-          setPetUnlockData({
-            student: { ...student, totalPoints: newXP }
-          });
-        }
+  // ===============================================
+  // STUDENT SELECTION MANAGEMENT
+  // ===============================================
+
+  const toggleStudentSelection = (studentId) => {
+    setSelectedStudents(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(studentId)) {
+        newSet.delete(studentId);
+      } else {
+        newSet.add(studentId);
       }
-      
-      showSuccessToast(`${amount} XP awarded for ${category}!`);
-    } catch (error) {
-      showErrorToast('Failed to award XP');
-    }
+      return newSet;
+    });
   };
 
-  // Fix student data function
-  const handleFixData = () => {
-    try {
-      const fixedStudents = safeStudents.map(student => {
-        const totalXP = student.totalPoints || 0;
-        const correctLevel = calculateAvatarLevel(totalXP);
-        const avatarBase = student.avatarBase || 'Wizard F';
-        
-        return {
-          ...student,
-          avatarLevel: correctLevel,
-          avatarBase: avatarBase,
-          avatar: getAvatarImage(avatarBase, correctLevel),
-          currency: student.currency || 0,
-          ownedAvatars: student.ownedAvatars || [avatarBase],
-          ownedPets: student.ownedPets || [],
-          lastUpdated: new Date().toISOString()
-        };
+  const selectAllStudents = () => {
+    setSelectedStudents(new Set(students.map(s => s.id)));
+  };
+
+  const deselectAllStudents = () => {
+    setSelectedStudents(new Set());
+  };
+
+  // ===============================================
+  // XP AND COIN AWARD SYSTEM
+  // ===============================================
+
+  const handleAwardXP = () => {
+    if (selectedStudents.size === 0) {
+      showToast('Please select at least one student');
+      return;
+    }
+
+    const category = xpCategories.find(cat => cat.id === selectedCategory);
+    const finalAmount = xpAmount || category?.amount || 1;
+    
+    setStudents(prevStudents => {
+      const updatedStudents = prevStudents.map(student => {
+        if (selectedStudents.has(student.id)) {
+          const newTotalXP = (student.totalPoints || 0) + finalAmount;
+          const oldLevel = calculateAvatarLevel(student.totalPoints || 0);
+          const newLevel = calculateAvatarLevel(newTotalXP);
+          
+          // Check for level up
+          if (newLevel > oldLevel) {
+            setTimeout(() => {
+              setLevelUpData({
+                student: { ...student, totalPoints: newTotalXP },
+                newLevel
+              });
+              playSound('levelup');
+            }, 500);
+          }
+          
+          // Check for pet unlock
+          if (shouldReceivePet({ ...student, totalPoints: newTotalXP })) {
+            const randomPet = BASIC_PETS[Math.floor(Math.random() * BASIC_PETS.length)];
+            setTimeout(() => {
+              setPetUnlockData({
+                student: { ...student, totalPoints: newTotalXP },
+                pet: randomPet
+              });
+              playSound('pet');
+            }, newLevel > oldLevel ? 2000 : 500);
+            
+            // Add pet to student
+            return {
+              ...student,
+              totalPoints: newTotalXP,
+              avatarLevel: newLevel,
+              avatar: getAvatarImage(student.avatarBase || 'Wizard F', newLevel),
+              ownedPets: [...(student.ownedPets || []), randomPet],
+              categoryTotal: {
+                ...student.categoryTotal,
+                [category.label]: (student.categoryTotal?.[category.label] || 0) + finalAmount
+              },
+              logs: [
+                ...(student.logs || []),
+                {
+                  type: category.label,
+                  points: finalAmount,
+                  timestamp: new Date().toISOString(),
+                  reason: customReason || category.description
+                }
+              ]
+            };
+          }
+          
+          return {
+            ...student,
+            totalPoints: newTotalXP,
+            avatarLevel: newLevel,
+            avatar: getAvatarImage(student.avatarBase || 'Wizard F', newLevel),
+            categoryTotal: {
+              ...student.categoryTotal,
+              [category.label]: (student.categoryTotal?.[category.label] || 0) + finalAmount
+            },
+            logs: [
+              ...(student.logs || []),
+              {
+                type: category.label,
+                points: finalAmount,
+                timestamp: new Date().toISOString(),
+                reason: customReason || category.description
+              }
+            ]
+          };
+        }
+        return student;
       });
       
-      setStudents(fixedStudents);
-      saveStudentsToFirebase(fixedStudents);
-      showSuccessToast('Student data fixed successfully!');
-    } catch (error) {
-      showErrorToast('Failed to fix student data');
-    }
+      saveStudentsToFirebase(updatedStudents);
+      return updatedStudents;
+    });
+
+    // Play sound and show success
+    playSound('xp');
+    showToast(`Awarded ${finalAmount} XP to ${selectedStudents.size} student${selectedStudents.size > 1 ? 's' : ''}`);
+    
+    // Reset form
+    setShowXPModal(false);
+    setXpAmount(1);
+    setCustomReason('');
+    setSelectedStudents(new Set());
   };
 
-  // Student Card Component
+  const handleAwardCoins = () => {
+    if (selectedStudents.size === 0) {
+      showToast('Please select at least one student');
+      return;
+    }
+
+    setStudents(prevStudents => {
+      const updatedStudents = prevStudents.map(student => {
+        if (selectedStudents.has(student.id)) {
+          return {
+            ...student,
+            currency: (student.currency || 0) + coinAmount,
+            logs: [
+              ...(student.logs || []),
+              {
+                type: 'Coin Award',
+                points: coinAmount,
+                timestamp: new Date().toISOString(),
+                reason: customReason || 'Bonus coins awarded'
+              }
+            ]
+          };
+        }
+        return student;
+      });
+      
+      saveStudentsToFirebase(updatedStudents);
+      return updatedStudents;
+    });
+
+    playSound('coin');
+    showToast(`Awarded ${coinAmount} coin${coinAmount > 1 ? 's' : ''} to ${selectedStudents.size} student${selectedStudents.size > 1 ? 's' : ''}`);
+    
+    setShowCoinModal(false);
+    setCoinAmount(1);
+    setCustomReason('');
+    setSelectedStudents(new Set());
+  };
+
+  // ===============================================
+  // STUDENT CARD COMPONENT
+  // ===============================================
+
   const StudentCard = ({ student, isSelected, onToggleSelect }) => {
     const coins = calculateCoins(student);
     const currentLevel = student.avatarLevel || calculateAvatarLevel(student.totalPoints || 0);
@@ -254,13 +360,13 @@ const StudentsTab = ({
     const progressPercentage = (progressToNext / 100) * 100;
     const needsPet = shouldReceivePet(student);
     
-    // Get equipped pet
+    // Get equipped pet (first owned pet)
     const equippedPet = student.ownedPets?.[0];
     
     return (
       <div 
         className={`
-          relative bg-white rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105
+          relative bg-gradient-to-br from-white to-blue-50 rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105
           border-2 ${isSelected ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200 hover:border-blue-300'}
           ${needsPet ? 'ring-2 ring-orange-300 border-orange-300' : ''}
           p-3 cursor-pointer group
@@ -291,7 +397,11 @@ const StudentsTab = ({
         <div className="flex flex-col items-center mb-3">
           <div 
             className="relative group cursor-pointer"
-            onMouseEnter={(e) => handleAvatarHover(e, student)}
+            onMouseEnter={(e) => handleImageHover(e, {
+              image: student.avatar || getAvatarImage(student.avatarBase || 'Wizard F', currentLevel),
+              name: `${student.firstName} (Level ${currentLevel})`,
+              type: 'avatar'
+            })}
             onMouseLeave={hidePreview}
           >
             <img 
@@ -332,270 +442,129 @@ const StudentsTab = ({
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div 
-                className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-500"
+                className="bg-gradient-to-r from-blue-400 to-blue-600 h-2 rounded-full transition-all duration-500"
                 style={{ width: `${progressPercentage}%` }}
-              />
+              ></div>
             </div>
           </div>
         </div>
 
         {/* Pet Section */}
         {equippedPet && (
-          <div className="flex justify-center mb-3">
+          <div className="flex items-center justify-center">
             <div 
               className="relative cursor-pointer"
-              onMouseEnter={(e) => handlePetHover(e, equippedPet, student)}
+              onMouseEnter={(e) => handleImageHover(e, {
+                image: equippedPet.image,
+                name: equippedPet.name,
+                type: 'pet'
+              })}
               onMouseLeave={hidePreview}
             >
               <img 
                 src={equippedPet.image}
                 alt={equippedPet.name}
-                className="w-8 h-8 rounded-full border-2 border-green-400 shadow-md hover:border-green-600 transition-all"
+                className="w-8 h-8 rounded-lg border border-gray-300 hover:border-purple-400 transition-colors"
                 onError={(e) => {
+                  console.warn(`Pet image failed to load: ${e.target.src}`);
                   e.target.style.display = 'none';
                 }}
               />
             </div>
           </div>
         )}
-
-        {/* Action Buttons */}
-        <div className="flex space-x-1">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowXPModal(student);
-            }}
-            className="flex-1 bg-green-500 hover:bg-green-600 text-white text-xs py-2 rounded font-semibold transition-colors"
-          >
-            +1 XP
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleAwardCoins(student.id, 5);
-            }}
-            className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white text-xs py-2 rounded font-semibold transition-colors"
-          >
-            +5 🪙
-          </button>
-        </div>
       </div>
     );
   };
 
-  // Bulk action functions
-  const handleBulkXP = () => {
-    if (selectedStudents.length === 0) {
-      showWarningToast('Please select students first');
-      return;
-    }
-    setShowXPModal({ bulk: true, studentIds: selectedStudents });
-  };
-
-  const handleBulkCoins = () => {
-    if (selectedStudents.length === 0) {
-      showWarningToast('Please select students first');
-      return;
-    }
-    setShowBulkCoinsModal(true);
-  };
-
-  const handleAwardCoins = async (studentId, amount) => {
-    try {
-      await awardCoins(studentId, amount);
-      showSuccessToast(`${amount} coins awarded!`);
-    } catch (error) {
-      showErrorToast('Failed to award coins');
-    }
-  };
+  // ===============================================
+  // RENDER MAIN COMPONENT
+  // ===============================================
 
   return (
-    <div className="space-y-6">
-      {/* Header Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl shadow-lg p-6 text-white">
-        <div className="flex justify-between items-center mb-4">
-          <div>
-            <h2 className="text-3xl font-bold">
-              👥 Class Champions
-            </h2>
-            <p className="text-blue-100 mt-1">
-              {safeStudents.length} students • {selectedStudents.length} selected
-            </p>
-          </div>
+    <div className="animate-fade-in p-6 bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-800 flex items-center">
+            <span className="text-3xl mr-3">👨‍🎓</span>
+            Students ({students.length})
+          </h2>
+          <p className="text-gray-600 mt-1">Click students to view character sheets • Hover over avatars and pets for previews</p>
+        </div>
+        
+        {/* Action Buttons */}
+        <div className="flex flex-wrap gap-2 mt-4 md:mt-0">
+          <button
+            onClick={() => setShowCategoryEditor(true)}
+            className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm"
+          >
+            ⚙️ Edit Categories
+          </button>
           
-          <div className="flex space-x-3">
-            <button
-              onClick={() => setShowAddStudentModal(true)}
-              className="bg-white text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg font-semibold transition-colors flex items-center space-x-2"
-            >
-              <span>➕</span>
-              <span>Add Student</span>
-            </button>
-            
-            <button
-              onClick={handleFixData}
-              className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center space-x-2"
-            >
-              <span>🔧</span>
-              <span>Fix Data</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Quick Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white bg-opacity-20 rounded-lg p-3 text-center">
-            <div className="text-2xl font-bold">{safeStudents.length}</div>
-            <div className="text-sm text-blue-100">Total Students</div>
-          </div>
-          <div className="bg-white bg-opacity-20 rounded-lg p-3 text-center">
-            <div className="text-2xl font-bold">
-              {safeStudents.reduce((sum, s) => sum + (s.totalPoints || 0), 0)}
-            </div>
-            <div className="text-sm text-blue-100">Total XP</div>
-          </div>
-          <div className="bg-white bg-opacity-20 rounded-lg p-3 text-center">
-            <div className="text-2xl font-bold">
-              {safeStudents.reduce((sum, s) => sum + calculateCoins(s), 0)}
-            </div>
-            <div className="text-sm text-blue-100">Total Coins</div>
-          </div>
-          <div className="bg-white bg-opacity-20 rounded-lg p-3 text-center">
-            <div className="text-2xl font-bold">
-              {safeStudents.filter(s => s.ownedPets?.length > 0).length}
-            </div>
-            <div className="text-sm text-blue-100">Have Pets</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Controls Section */}
-      <div className="bg-white rounded-xl shadow-lg p-6">
-        <div className="flex flex-wrap gap-4 items-center justify-between">
-          {/* Search and Filter */}
-          <div className="flex space-x-4 flex-1">
-            <div className="flex-1 max-w-md">
-              <input
-                type="text"
-                placeholder="Search students..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            
-            <select
-              value={filterLevel}
-              onChange={(e) => setFilterLevel(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="all">All Levels</option>
-              <option value="1">Level 1</option>
-              <option value="2">Level 2</option>
-              <option value="3">Level 3</option>
-              <option value="4">Level 4</option>
-            </select>
-          </div>
-
-          {/* Selection Controls */}
-          <div className="flex space-x-2">
-            <button
-              onClick={selectAllStudents}
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-            >
-              Select All
-            </button>
-            <button
-              onClick={clearSelection}
-              className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
-            >
-              Clear Selection
-            </button>
-          </div>
-
-          {/* Bulk Actions */}
-          {selectedStudents.length > 0 && (
-            <div className="flex space-x-2">
-              <button
-                onClick={handleBulkXP}
-                className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center space-x-2"
-              >
-                <span>⭐</span>
-                <span>Award XP ({selectedStudents.length})</span>
-              </button>
-              <button
-                onClick={handleBulkCoins}
-                className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors flex items-center space-x-2"
-              >
-                <span>🪙</span>
-                <span>Award Coins ({selectedStudents.length})</span>
-              </button>
-            </div>
-          )}
+          <button
+            onClick={selectedStudents.size > 0 ? deselectAllStudents : selectAllStudents}
+            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm"
+          >
+            {selectedStudents.size > 0 ? '❌ Deselect All' : '✅ Select All'}
+          </button>
+          
+          <button
+            onClick={() => setShowXPModal(true)}
+            disabled={selectedStudents.size === 0}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+          >
+            ⭐ Award XP ({selectedStudents.size})
+          </button>
+          
+          <button
+            onClick={() => setShowCoinModal(true)}
+            disabled={selectedStudents.size === 0}
+            className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+          >
+            🪙 Award Coins ({selectedStudents.size})
+          </button>
         </div>
       </div>
 
       {/* Students Grid */}
-      {sortedStudents.length > 0 ? (
-        <div className={gridClasses}>
-          {sortedStudents.map(student => (
+      {students.length === 0 ? (
+        <div className="text-center py-16 bg-white rounded-xl shadow-lg">
+          <div className="text-6xl mb-4">👨‍🎓</div>
+          <h3 className="text-xl font-semibold text-gray-600 mb-2">No Students Yet</h3>
+          <p className="text-gray-500">Add students to your class to get started!</p>
+        </div>
+      ) : (
+        <div className={`${getGridClasses(students.length)} mb-6`}>
+          {students.map((student) => (
             <StudentCard
               key={student.id}
               student={student}
-              isSelected={selectedStudents.includes(student.id)}
+              isSelected={selectedStudents.has(student.id)}
               onToggleSelect={toggleStudentSelection}
             />
           ))}
         </div>
-      ) : (
-        <div className="text-center py-12">
-          <div className="text-6xl mb-4">🎓</div>
-          <h3 className="text-2xl font-bold text-gray-600 mb-2">
-            {searchTerm || filterLevel !== 'all' ? 'No students match your filters' : 'No Students Yet'}
-          </h3>
-          <p className="text-gray-500 mb-6">
-            {searchTerm || filterLevel !== 'all' 
-              ? 'Try adjusting your search or filter settings' 
-              : 'Add your first student to get started!'
-            }
-          </p>
-          {(!searchTerm && filterLevel === 'all') && (
-            <button
-              onClick={() => setShowAddStudentModal(true)}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
-            >
-              Add Your First Student
-            </button>
-          )}
-        </div>
       )}
 
-      {/* Image Preview */}
-      {previewImage && (
+      {/* Hover Preview */}
+      {hoverPreview.show && (
         <div 
-          className="fixed z-50 pointer-events-none animate-fade-in"
+          className="fixed z-50 pointer-events-none"
           style={{ 
-            left: previewPosition.x, 
-            top: previewPosition.y,
-            zIndex: 9999
+            left: `${hoverPreview.x}px`, 
+            top: `${hoverPreview.y}px`,
+            transform: 'translateY(-50%)'
           }}
         >
-          <div className="bg-white border-3 border-blue-300 rounded-xl shadow-2xl p-4 max-w-xs">
-            <img
-              src={previewImage.src}
-              alt={previewImage.name}
-              className="w-32 h-32 rounded-lg object-cover border-2 border-gray-200 mx-auto"
+          <div className="bg-white rounded-xl shadow-2xl border-2 border-gray-200 p-4 max-w-xs">
+            <img 
+              src={hoverPreview.image}
+              alt={hoverPreview.name}
+              className="w-32 h-32 mx-auto rounded-lg border border-gray-300 mb-2"
             />
-            <div className="text-center mt-2">
-              <div className="font-bold text-gray-800">{previewImage.name}</div>
-              {previewImage.level && (
-                <div className="text-sm text-gray-600">Level {previewImage.level}</div>
-              )}
-              {previewImage.owner && (
-                <div className="text-sm text-gray-600">{previewImage.owner}'s Pet</div>
-              )}
-            </div>
+            <h4 className="text-center font-bold text-gray-800">{hoverPreview.name}</h4>
+            <p className="text-center text-sm text-gray-600 capitalize">{hoverPreview.type}</p>
           </div>
         </div>
       )}
@@ -604,73 +573,58 @@ const StudentsTab = ({
       {showXPModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
-            <h3 className="text-xl font-bold mb-4">
-              {showXPModal.bulk ? `Award XP to ${selectedStudents.length} Students` : `Award XP to ${showXPModal.firstName}`}
-            </h3>
+            <h3 className="text-xl font-bold text-gray-800 mb-4">Award XP Points</h3>
             
-            <div className="space-y-3">
-              {xpCategories.map(category => (
-                <button
-                  key={category.id}
-                  onClick={() => {
-                    if (showXPModal.bulk) {
-                      selectedStudents.forEach(id => handleAwardXP(id, category.amount, category.label));
-                    } else {
-                      handleAwardXP(showXPModal.id, category.amount, category.label);
-                    }
-                    setShowXPModal(false);
-                  }}
-                  className={`w-full p-3 rounded-lg text-white font-semibold hover:opacity-90 transition-opacity flex items-center space-x-2 ${category.color}`}
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Category</label>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(parseInt(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
-                  <span>{category.icon}</span>
-                  <span>{category.label} (+{category.amount} XP)</span>
-                </button>
-              ))}
+                  {xpCategories.map(category => (
+                    <option key={category.id} value={category.id}>
+                      {category.icon} {category.label} ({category.amount} XP)
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">XP Amount</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="50"
+                  value={xpAmount}
+                  onChange={(e) => setXpAmount(parseInt(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Custom Reason (Optional)</label>
+                <input
+                  type="text"
+                  value={customReason}
+                  onChange={(e) => setCustomReason(e.target.value)}
+                  placeholder="Enter custom reason..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
             </div>
             
-            <button
-              onClick={() => setShowXPModal(false)}
-              className="w-full mt-4 px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Bulk Coins Modal */}
-      {showBulkCoinsModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
-            <h3 className="text-xl font-bold mb-4">Award Coins to {selectedStudents.length} Students</h3>
-            
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Coin Amount
-              </label>
-              <input
-                type="number"
-                value={bulkCoinAmount}
-                onChange={(e) => setBulkCoinAmount(parseInt(e.target.value) || 1)}
-                min="1"
-                max="100"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            
-            <div className="flex space-x-3">
+            <div className="flex space-x-3 mt-6">
               <button
-                onClick={() => {
-                  selectedStudents.forEach(id => handleAwardCoins(id, bulkCoinAmount));
-                  setShowBulkCoinsModal(false);
-                }}
-                className="flex-1 bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition-colors font-medium"
+                onClick={handleAwardXP}
+                className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
               >
-                Award {bulkCoinAmount} Coins
+                Award XP
               </button>
               <button
-                onClick={() => setShowBulkCoinsModal(false)}
-                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                onClick={() => setShowXPModal(false)}
+                className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors"
               >
                 Cancel
               </button>
@@ -679,24 +633,50 @@ const StudentsTab = ({
         </div>
       )}
 
-      {/* Character Sheet Modal Placeholder */}
-      {showCharacterSheet && (
+      {/* Coin Award Modal */}
+      {showCoinModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-2xl font-bold">{showCharacterSheet.firstName}'s Character Sheet</h3>
-              <button
-                onClick={() => setShowCharacterSheet(false)}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
-              >
-                ×
-              </button>
+          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+            <h3 className="text-xl font-bold text-gray-800 mb-4">Award Coins</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Coin Amount</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="100"
+                  value={coinAmount}
+                  onChange={(e) => setCoinAmount(parseInt(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Reason (Optional)</label>
+                <input
+                  type="text"
+                  value={customReason}
+                  onChange={(e) => setCustomReason(e.target.value)}
+                  placeholder="Enter reason for coins..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500"
+                />
+              </div>
             </div>
             
-            <div className="text-center py-8">
-              <div className="text-6xl mb-4">🚧</div>
-              <p className="text-gray-600">Character sheet functionality will be implemented here</p>
-              <p className="text-sm text-gray-500 mt-2">This will show stats, inventory, pets, and avatar customization</p>
+            <div className="flex space-x-3 mt-6">
+              <button
+                onClick={handleAwardCoins}
+                className="flex-1 bg-yellow-600 text-white py-2 px-4 rounded-lg hover:bg-yellow-700 transition-colors font-semibold"
+              >
+                Award Coins
+              </button>
+              <button
+                onClick={() => setShowCoinModal(false)}
+                className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors"
+              >
+                Cancel
+              </button>
             </div>
           </div>
         </div>
@@ -731,16 +711,142 @@ const StudentsTab = ({
             <div className="text-6xl mb-4 animate-bounce">🐾</div>
             <h3 className="text-3xl font-bold mb-2">PET UNLOCKED!</h3>
             <p className="text-xl mb-4">{petUnlockData.student.firstName} earned their first pet!</p>
-            <div className="text-4xl mb-4">🐕</div>
+            <img 
+              src={petUnlockData.pet.image}
+              alt={petUnlockData.pet.name}
+              className="w-16 h-16 rounded-lg mx-auto mb-4 border-4 border-white shadow-lg"
+            />
+            <p className="text-lg font-semibold">{petUnlockData.pet.name}</p>
             <button
               onClick={() => setPetUnlockData(null)}
-              className="bg-white text-blue-500 px-6 py-3 rounded-lg font-bold hover:bg-gray-100 transition-colors"
+              className="bg-white text-blue-500 px-6 py-3 rounded-lg font-bold hover:bg-gray-100 transition-colors mt-4"
             >
               Amazing!
             </button>
           </div>
         </div>
       )}
+
+      {/* Category Editor Modal */}
+      {showCategoryEditor && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-2xl w-full mx-4 max-h-screen overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold">Edit XP Categories</h3>
+              <button
+                onClick={() => setShowCategoryEditor(false)}
+                className="text-gray-500 hover:text-gray-700 text-xl"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="space-y-4 mb-6">
+              {xpCategories.map((category, index) => (
+                <div key={category.id} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
+                  <span className="text-2xl">{category.icon}</span>
+                  <div className="flex-1">
+                    <input
+                      type="text"
+                      value={category.label}
+                      onChange={(e) => {
+                        const newCategories = [...xpCategories];
+                        newCategories[index].label = e.target.value;
+                        setXpCategories(newCategories);
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div className="w-20">
+                    <input
+                      type="number"
+                      min="1"
+                      max="10"
+                      value={category.amount}
+                      onChange={(e) => {
+                        const newCategories = [...xpCategories];
+                        newCategories[index].amount = parseInt(e.target.value);
+                        setXpCategories(newCategories);
+                      }}
+                      className="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (xpCategories.length > 1) {
+                        setXpCategories(xpCategories.filter((_, i) => i !== index));
+                      }
+                    }}
+                    disabled={xpCategories.length <= 1}
+                    className="text-red-600 hover:text-red-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    🗑️
+                  </button>
+                </div>
+              ))}
+            </div>
+            
+            <div className="flex space-x-3">
+              <button
+                onClick={() => {
+                  const newId = Math.max(...xpCategories.map(c => c.id)) + 1;
+                  setXpCategories([
+                    ...xpCategories,
+                    {
+                      id: newId,
+                      label: 'New Category',
+                      amount: 1,
+                      color: 'bg-blue-500',
+                      icon: '⭐',
+                      description: 'New behavior category'
+                    }
+                  ]);
+                }}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                ➕ Add Category
+              </button>
+              
+              <button
+                onClick={() => {
+                  showToast('XP categories updated successfully!');
+                  setShowCategoryEditor(false);
+                }}
+                className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Save Changes
+              </button>
+              
+              <button
+                onClick={() => {
+                  setXpCategories(DEFAULT_XP_CATEGORIES);
+                  setShowCategoryEditor(false);
+                }}
+                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+              >
+                Reset to Default
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Character Sheet Modal */}
+      <CharacterSheetModal
+        student={showCharacterSheet}
+        isOpen={!!showCharacterSheet}
+        onClose={() => setShowCharacterSheet(null)}
+        onUpdateStudent={(updatedStudent) => {
+          setStudents(prevStudents => {
+            const updatedStudents = prevStudents.map(student => 
+              student.id === updatedStudent.id ? updatedStudent : student
+            );
+            saveStudentsToFirebase(updatedStudents);
+            return updatedStudents;
+          });
+        }}
+        showToast={showToast}
+      />
     </div>
   );
 };
