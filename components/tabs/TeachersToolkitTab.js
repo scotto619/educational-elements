@@ -8,7 +8,8 @@ import NamePicker from '../tools/NamePicker';
 import TimerTools from '../tools/TimerTools';
 import ClassroomDesigner from '../tools/ClassroomDesigner';
 import DiceRoller from '../tools/DiceRoller';
-import ClassroomJobs from '../tools/ClassroomJobs'; // NEW: Import ClassroomJobs
+import ClassroomJobs from '../tools/ClassroomJobs'; // Classroom Jobs
+import TimetableCreator from '../tools/TimetableCreator'; // NEW: Import TimetableCreator
 
 // ===============================================
 // TEACHERS TOOLKIT TAB COMPONENT
@@ -30,7 +31,7 @@ const TeachersToolkitTab = ({
   completeQuest,
   setShowQuestManagement
 }) => {
-  const [activeToolkitTab, setActiveToolkitTab] = useState('classroom-jobs'); // NEW: Default to jobs
+  const [activeToolkitTab, setActiveToolkitTab] = useState('timetable'); // NEW: Default to timetable
   const [attendanceState, setAttendanceState] = useState(attendanceData);
   const [timerSettings, setTimerSettings] = useState({ 
     minutes: 5, 
@@ -144,6 +145,10 @@ const TeachersToolkitTab = ({
                 <span>Interactive Classroom Jobs System</span>
               </div>
               <div className="flex items-center space-x-2">
+                <span>📅</span>
+                <span>Visual Timetable Creator</span>
+              </div>
+              <div className="flex items-center space-x-2">
                 <span>🎫</span>
                 <span>Student Help Queue System</span>
               </div>
@@ -170,7 +175,7 @@ const TeachersToolkitTab = ({
             </div>
             <div className="space-y-2">
               <div className="flex items-center space-x-2">
-                <span>📅</span>
+                <span>✅</span>
                 <span>Advanced Attendance Tracking</span>
               </div>
               <div className="flex items-center space-x-2">
@@ -215,11 +220,12 @@ const TeachersToolkitTab = ({
   const questAnalytics = calculateQuestAnalytics();
   const attendanceStats = calculateAttendanceStats();
 
-  // Updated toolkit tabs to include classroom jobs
+  // Updated toolkit tabs to include classroom jobs and timetable
   const toolkitTabs = [
-    { id: 'classroom-jobs', label: 'Classroom Jobs', icon: '💼' }, // NEW: Added classroom jobs
+    { id: 'classroom-jobs', label: 'Classroom Jobs', icon: '💼' },
+    { id: 'timetable', label: 'Timetable', icon: '📅' }, // NEW: Added timetable
     { id: 'help-queue', label: 'Help Queue', icon: '🎫' },
-    { id: 'attendance', label: 'Attendance', icon: '📅' },
+    { id: 'attendance', label: 'Attendance', icon: '✅' }, // Changed icon to avoid conflict
     { id: 'analytics', label: 'Analytics', icon: '📊' },
     { id: 'group-maker', label: 'Group Maker', icon: '👥' },
     { id: 'name-picker', label: 'Name Picker', icon: '🎯' },
@@ -268,7 +274,7 @@ const TeachersToolkitTab = ({
       </div>
 
       {/* Quick Action Dashboard */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <button
           onClick={() => setActiveToolkitTab('classroom-jobs')}
           className="p-4 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors text-center"
@@ -276,6 +282,15 @@ const TeachersToolkitTab = ({
           <div className="text-2xl mb-2">💼</div>
           <div className="font-semibold">Classroom Jobs</div>
           <div className="text-sm text-purple-600">Assign & pay students</div>
+        </button>
+        
+        <button
+          onClick={() => setActiveToolkitTab('timetable')}
+          className="p-4 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 transition-colors text-center"
+        >
+          <div className="text-2xl mb-2">📅</div>
+          <div className="font-semibold">Timetable</div>
+          <div className="text-sm text-indigo-600">Schedule & reminders</div>
         </button>
         
         <button
@@ -289,11 +304,11 @@ const TeachersToolkitTab = ({
         
         <button
           onClick={() => setActiveToolkitTab('attendance')}
-          className="p-4 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-center"
+          className="p-4 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors text-center"
         >
-          <div className="text-2xl mb-2">📅</div>
+          <div className="text-2xl mb-2">✅</div>
           <div className="font-semibold">Take Attendance</div>
-          <div className="text-sm text-blue-600">{attendanceStats.averageAttendance}% avg</div>
+          <div className="text-sm text-green-600">{attendanceStats.averageAttendance}% avg</div>
         </button>
         
         <button
@@ -349,7 +364,7 @@ const TeachersToolkitTab = ({
           {activeToolkitTab === 'attendance' && (
             <div>
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-bold text-gray-800">📅 Daily Attendance</h3>
+                <h3 className="text-2xl font-bold text-gray-800">✅ Daily Attendance</h3>
                 <div className="text-sm text-gray-600">
                   {new Date().toLocaleDateString('en-US', { 
                     weekday: 'long', 
