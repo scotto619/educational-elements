@@ -1,4 +1,4 @@
-// pages/classroom-champions.js - UPDATED WITH INVENTORY MANAGEMENT
+// pages/classroom-champions.js - FIXED PET IMAGE LOADING
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
@@ -90,6 +90,49 @@ const calculateCoins = (student) => {
   return Math.max(0, xpCoins + bonusCoins - coinsSpent);
 };
 
+// FIXED: Proper pet image mapping function
+const getPetImage = (petType, petName) => {
+  // Handle both old and new pet naming systems
+  const petImageMap = {
+    // New class-based system
+    'alchemist': '/Pets/Alchemist.png',
+    'barbarian': '/Pets/Barbarian.png',
+    'bard': '/Pets/Bard.png',
+    'beastmaster': '/Pets/Beastmaster.png',
+    'cleric': '/Pets/Cleric.png',
+    'crystal knight': '/Pets/Crystal Knight.png',
+    'crystal sage': '/Pets/Crystal Sage.png',
+    'engineer': '/Pets/Engineer.png',
+    'frost mage': '/Pets/Frost Mage.png',
+    'illusionist': '/Pets/Illusionist.png',
+    'knight': '/Pets/Knight.png',
+    'lightning': '/Pets/Lightning.png',
+    'monk': '/Pets/Monk.png',
+    'necromancer': '/Pets/Necromancer.png',
+    'rogue': '/Pets/Rogue.png',
+    'stealth': '/Pets/Stealth.png',
+    'time knight': '/Pets/Time Knight.png',
+    'warrior': '/Pets/Warrior.png',
+    'wizard': '/Pets/Wizard.png',
+    
+    // Legacy fantasy system mapping to new files
+    'dragon': '/Pets/Lightning.png',      // Map dragon to Lightning (legendary)
+    'phoenix': '/Pets/Crystal Sage.png',  // Map phoenix to Crystal Sage (epic)
+    'unicorn': '/Pets/Time Knight.png',   // Map unicorn to Time Knight (legendary)
+    'wolf': '/Pets/Warrior.png',          // Map wolf to Warrior
+    'owl': '/Pets/Wizard.png',            // Map owl to Wizard
+    'cat': '/Pets/Rogue.png',             // Map cat to Rogue
+    'tiger': '/Pets/Barbarian.png',       // Map tiger to Barbarian
+    'bear': '/Pets/Beastmaster.png',      // Map bear to Beastmaster
+    'lion': '/Pets/Knight.png',           // Map lion to Knight
+    'eagle': '/Pets/Stealth.png'          // Map eagle to Stealth
+  };
+  
+  // Try petType first, then petName, then default
+  const key = (petType || petName || '').toLowerCase();
+  return petImageMap[key] || '/Pets/Wizard.png';
+};
+
 const getRandomPet = () => {
   const pet = PET_SPECIES[Math.floor(Math.random() * PET_SPECIES.length)];
   return {
@@ -124,10 +167,10 @@ const showToast = (message, type = 'info') => {
 };
 
 // ===============================================
-// STUDENT CARD COMPONENT
+// FIXED STUDENT CARD COMPONENT FOR DASHBOARD
 // ===============================================
 
-const StudentCard = ({ student, onAwardXP, onViewDetails }) => {
+const DashboardStudentCard = ({ student, onAwardXP, onViewDetails }) => {
   const currentLevel = calculateAvatarLevel(student.totalPoints || 0);
   const coins = calculateCoins(student);
   const progressToNext = (student.totalPoints || 0) % 100;
@@ -182,12 +225,13 @@ const StudentCard = ({ student, onAwardXP, onViewDetails }) => {
         </div>
       </div>
 
-      {/* Pet Display */}
+      {/* Pet Display - FIXED */}
       {student.ownedPets && student.ownedPets.length > 0 && (
         <div className="flex justify-center mb-3">
-          <div className="text-2xl" title={student.ownedPets[0].name || student.ownedPets[0].displayName}>
+          <div className="cursor-pointer hover:scale-110 transition-transform" 
+               title={student.ownedPets[0].name || student.ownedPets[0].displayName}>
             <img 
-              src={`/Pets/${student.ownedPets[0].name || 'Wizard'}.png`}
+              src={getPetImage(student.ownedPets[0].type || student.ownedPets[0].imageType, student.ownedPets[0].name)}
               alt={student.ownedPets[0].name || student.ownedPets[0].displayName}
               className="w-8 h-8 rounded-full border-2 border-purple-300"
               onError={(e) => {
@@ -582,6 +626,33 @@ const ClassroomChampions = () => {
             ))}
         </div>
       </div>
+
+      {/* Student Grid Preview */}
+      {students.length > 0 && (
+        <div className="bg-white rounded-xl p-6 shadow-lg">
+          <h3 className="text-xl font-bold text-gray-800 mb-4">📊 Class Overview</h3>
+          <div className={getGridClasses(students.length)}>
+            {students.slice(0, 12).map(student => (
+              <DashboardStudentCard
+                key={student.id}
+                student={student}
+                onAwardXP={awardXP}
+                onViewDetails={setSelectedStudent}
+              />
+            ))}
+          </div>
+          {students.length > 12 && (
+            <div className="mt-4 text-center">
+              <button
+                onClick={() => setActiveTab('students')}
+                className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-all"
+              >
+                View All {students.length} Champions
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 
@@ -815,7 +886,7 @@ const ClassroomChampions = () => {
         </div>
       )}
 
-      {/* Pet Unlock Modal */}
+      {/* Pet Unlock Modal - FIXED */}
       {petUnlockData && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md text-center">
@@ -830,7 +901,7 @@ const ClassroomChampions = () => {
               </h3>
               <div className="mb-4">
                 <img 
-                  src={`/Pets/${petUnlockData.pet.name}.png`}
+                  src={getPetImage(petUnlockData.pet.type, petUnlockData.pet.name)}
                   alt={petUnlockData.pet.name}
                   className="w-24 h-24 mx-auto rounded-full border-4 border-purple-400 shadow-lg"
                   onError={(e) => {
@@ -857,7 +928,7 @@ const ClassroomChampions = () => {
         </div>
       )}
 
-      {/* Student Details Modal */}
+      {/* Student Details Modal - FIXED */}
       {selectedStudent && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -907,7 +978,7 @@ const ClassroomChampions = () => {
                       <h4 className="font-semibold text-purple-800 mb-2">Companion</h4>
                       <div className="flex items-center space-x-2">
                         <img 
-                          src={`/Pets/${selectedStudent.ownedPets[0].name || 'Wizard'}.png`}
+                          src={getPetImage(selectedStudent.ownedPets[0].type || selectedStudent.ownedPets[0].imageType, selectedStudent.ownedPets[0].name)}
                           alt={selectedStudent.ownedPets[0].name || selectedStudent.ownedPets[0].displayName}
                           className="w-8 h-8 rounded-full border-2 border-purple-300"
                           onError={(e) => {
