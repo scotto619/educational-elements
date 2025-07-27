@@ -564,4 +564,160 @@ const TeachersToolkitTab = ({
   );
 };
 
+// ===============================================
+// TIME SLOT EDITOR COMPONENT
+// ===============================================
+
+const TimeSlotEditor = ({ timeSlots, onSave, onCancel }) => {
+  const [editableSlots, setEditableSlots] = useState(timeSlots.map(slot => ({ ...slot })));
+
+  const addTimeSlot = () => {
+    const newSlot = {
+      id: `slot${editableSlots.length + 1}`,
+      start: '09:00',
+      end: '09:50',
+      label: `Period ${editableSlots.length + 1}`
+    };
+    setEditableSlots([...editableSlots, newSlot]);
+  };
+
+  const removeTimeSlot = (index) => {
+    if (editableSlots.length > 1) {
+      setEditableSlots(editableSlots.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateTimeSlot = (index, field, value) => {
+    const updated = editableSlots.map((slot, i) => 
+      i === index ? { ...slot, [field]: value } : slot
+    );
+    setEditableSlots(updated);
+  };
+
+  const validateTimeSlots = () => {
+    // Check for valid time format and no overlaps
+    for (let i = 0; i < editableSlots.length; i++) {
+      const slot = editableSlots[i];
+      
+      // Check time format
+      const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+      if (!timeRegex.test(slot.start) || !timeRegex.test(slot.end)) {
+        return `Invalid time format in ${slot.label}`;
+      }
+      
+      // Check start < end
+      const startMinutes = parseTime(slot.start);
+      const endMinutes = parseTime(slot.end);
+      if (startMinutes >= endMinutes) {
+        return `Start time must be before end time in ${slot.label}`;
+      }
+    }
+    return null;
+  };
+
+  const handleSave = () => {
+    const error = validateTimeSlots();
+    if (error) {
+      alert(error);
+      return;
+    }
+    onSave(editableSlots);
+  };
+
+  // Helper function to parse time (copied from parent component)
+  const parseTime = (timeString) => {
+    const [hours, minutes] = timeString.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="max-h-96 overflow-y-auto">
+        {editableSlots.map((slot, index) => (
+          <div key={index} className="grid grid-cols-4 gap-4 items-center p-4 bg-gray-50 rounded-lg mb-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Label</label>
+              <input
+                type="text"
+                value={slot.label}
+                onChange={(e) => updateTimeSlot(index, 'label', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                placeholder="Period 1"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
+              <input
+                type="time"
+                value={slot.start}
+                onChange={(e) => updateTimeSlot(index, 'start', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
+              <input
+                type="time"
+                value={slot.end}
+                onChange={(e) => updateTimeSlot(index, 'end', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+            </div>
+            
+            <div className="flex items-end">
+              <button
+                onClick={() => removeTimeSlot(index)}
+                disabled={editableSlots.length === 1}
+                className="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Remove time slot"
+              >
+                🗑️
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex justify-between items-center pt-4 border-t border-gray-200">
+        <button
+          onClick={addTimeSlot}
+          className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all font-semibold"
+        >
+          ➕ Add Time Slot
+        </button>
+        
+        <div className="flex space-x-3">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all font-semibold"
+          >
+            Save Time Slots
+          </button>
+        </div>
+      </div>
+      
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-center space-x-2 text-blue-700">
+          <span>💡</span>
+          <span className="font-semibold">Tips:</span>
+        </div>
+        <ul className="mt-2 text-sm text-blue-600 space-y-1">
+          <li>• Use 24-hour format (e.g., 14:30 for 2:30 PM)</li>
+          <li>• Make sure start time is before end time</li>
+          <li>• Consider breaks between periods</li>
+          <li>• You can add as many periods as needed</li>
+        </ul>
+      </div>
+    </div>
+  );
+};
+
 export default TeachersToolkitTab;
