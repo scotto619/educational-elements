@@ -46,16 +46,18 @@ const SettingsTab = ({
     showToast('All student data has been reset', 'success');
   };
 
-  // UPDATED: Reset student XP and progress (now includes pets)
+  // UPDATED: Reset student XP and progress (now includes pets and avatars)
   const resetStudentXP = async () => {
     const resetStudents = students.map(student => ({
       ...student,
       totalPoints: 0,
       avatarLevel: 1,
-      avatar: `/avatars/${student.avatarBase || 'Wizard F'}/Level 1.png`,
+      avatarBase: 'Wizard F', // ADDED: Reset avatar to default
+      avatar: `/avatars/Wizard F/Level 1.png`,
+      ownedAvatars: ['Wizard F'], // ADDED: Reset owned avatars
       currency: 0,
       coinsSpent: 0,
-      ownedPets: [], // ADDED: Reset pets too
+      ownedPets: [], // Reset pets too
       questsCompleted: [],
       rewardsPurchased: [],
       behaviorPoints: { respectful: 0, responsible: 0, safe: 0, learner: 0 },
@@ -65,7 +67,7 @@ const SettingsTab = ({
     setStudents(resetStudents);
     await saveStudentsToFirebase(resetStudents);
     setShowConfirmDialog(null);
-    showToast('All student XP, progress, and pets have been reset', 'success');
+    showToast('All student XP, progress, pets, and avatars have been reset', 'success');
   };
 
   // Submit feedback
@@ -255,7 +257,7 @@ const SettingsTab = ({
                   <div className="space-y-3">
                     <div>
                       <p className="text-sm text-gray-600 mb-2">
-                        <strong>UPDATED:</strong> Reset XP, coins, progress, and pets while keeping student names and avatars.
+                        <strong>UPDATED:</strong> Reset XP, coins, progress, pets, and avatars back to default (Wizard F).
                       </p>
                       <button
                         onClick={() => setShowConfirmDialog('resetXP')}
@@ -353,7 +355,7 @@ const SettingsTab = ({
               <p className="text-gray-800 mb-4">
                 {showConfirmDialog === 'resetAll' 
                   ? 'Are you sure you want to reset ALL student data? This will permanently delete all students, their progress, and cannot be undone.'
-                  : 'Are you sure you want to reset all student progress? This will reset XP, coins, quests, purchases, AND PETS but keep student names and avatars.'
+                  : 'Are you sure you want to reset all student progress? This will reset XP, coins, quests, purchases, pets, AND avatars back to default (Wizard F). Only student names will be kept.'
                 }
               </p>
               <p className="text-sm text-red-600 font-semibold">This action cannot be undone!</p>
@@ -370,7 +372,7 @@ const SettingsTab = ({
                 onClick={showConfirmDialog === 'resetAll' ? resetAllData : resetStudentXP}
                 className="flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all"
               >
-                {showConfirmDialog === 'resetAll' ? '🗑️ Reset Everything' : '🔄 Reset Progress & Pets'}
+                {showConfirmDialog === 'resetAll' ? '🗑️ Reset Everything' : '🔄 Reset Progress & Avatars'}
               </button>
             </div>
           </div>

@@ -46,6 +46,8 @@ const StudentsTab = ({
   const [showInventoryModal, setShowInventoryModal] = useState(false);
   const [inventoryStudent, setInventoryStudent] = useState(null);
   const [showPetResetModal, setShowPetResetModal] = useState(false);
+  const [showAvatarModal, setShowAvatarModal] = useState(false); // NEW: Avatar selection modal
+  const [avatarStudent, setAvatarStudent] = useState(null); // NEW: Student for avatar change
   
   // Available avatars for selection
   const AVAILABLE_AVATARS = [
@@ -259,6 +261,28 @@ const StudentsTab = ({
   const openInventoryModal = (student) => {
     setInventoryStudent(student);
     setShowInventoryModal(true);
+  };
+
+  // NEW: Avatar selection functions
+  const openAvatarModal = (student) => {
+    setAvatarStudent(student);
+    setShowAvatarModal(true);
+  };
+
+  const changeStudentAvatar = (student, newAvatarBase) => {
+    const newLevel = calculateAvatarLevel(student.totalPoints || 0);
+    const updatedStudent = {
+      ...student,
+      avatarBase: newAvatarBase,
+      avatar: getAvatarImage(newAvatarBase, newLevel),
+      avatarLevel: newLevel,
+      ownedAvatars: [...(student.ownedAvatars || []), newAvatarBase].filter((v, i, a) => a.indexOf(v) === i)
+    };
+    
+    onUpdateStudent && onUpdateStudent(updatedStudent);
+    setAvatarStudent(updatedStudent);
+    alert(`${student.firstName}'s avatar changed to ${newAvatarBase}!`);
+    setShowAvatarModal(false);
   };
 
   // ===============================================
@@ -553,6 +577,7 @@ const StudentsTab = ({
               setShowIndividualXPModal(true);
             }}
             openInventoryModal={openInventoryModal}
+            openAvatarModal={openAvatarModal} // NEW: Pass avatar modal function
             isSelected={selectedStudents.includes(student.id)}
             onToggleSelection={() => toggleStudentSelection(student.id)}
             xpCategories={xpCategories}
@@ -1190,6 +1215,80 @@ const StudentsTab = ({
           </div>
         </div>
       )}
+
+      {/* NEW: Quick Avatar Selection Modal */}
+      {showAvatarModal && avatarStudent && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-6 rounded-t-2xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold">
+                    🎭 Choose Avatar for {avatarStudent.firstName}
+                  </h2>
+                  <p className="text-blue-100">Click an avatar to select it</p>
+                </div>
+                <button
+                  onClick={() => setShowAvatarModal(false)}
+                  className="text-white hover:text-red-200 text-2xl font-bold"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6">
+              {/* Current Avatar Display */}
+              <div className="mb-6 text-center">
+                <h3 className="text-lg font-bold text-gray-800 mb-4">Current Avatar</h3>
+                <div className="flex items-center justify-center space-x-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <img 
+                    src={getAvatarImage(avatarStudent.avatarBase || 'Wizard F', calculateAvatarLevel(avatarStudent.totalPoints || 0))}
+                    alt={`${avatarStudent.firstName}'s Current Avatar`}
+                    className="w-24 h-24 rounded-full border-4 border-blue-400 shadow-lg"
+                  />
+                  <div>
+                    <h4 className="text-xl font-bold text-gray-800">{avatarStudent.avatarBase || 'Wizard F'}</h4>
+                    <p className="text-gray-600">Level {calculateAvatarLevel(avatarStudent.totalPoints || 0)}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Avatar Selection Grid */}
+              <div>
+                <h3 className="text-lg font-bold text-gray-800 mb-4">Select New Avatar</h3>
+                <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 max-h-96 overflow-y-auto p-2 border border-gray-200 rounded-lg">
+                  {AVAILABLE_AVATARS.map(avatarBase => (
+                    <button
+                      key={avatarBase}
+                      onClick={() => changeStudentAvatar(avatarStudent, avatarBase)}
+                      className={`p-3 rounded-lg border-2 transition-all hover:scale-105 hover:shadow-lg ${
+                        avatarStudent.avatarBase === avatarBase
+                          ? 'border-blue-500 bg-blue-50 shadow-md'
+                          : 'border-gray-200 hover:border-blue-300'
+                      }`}
+                      title={`Change to ${avatarBase}`}
+                    >
+                      <img 
+                        src={getAvatarImage(avatarBase, calculateAvatarLevel(avatarStudent.totalPoints || 0))}
+                        alt={avatarBase}
+                        className="w-16 h-16 rounded-full mx-auto mb-2"
+                        onError={(e) => {
+                          e.target.src = '/avatars/Wizard F/Level 1.png';
+                        }}
+                      />
+                      <p className="text-xs font-semibold text-gray-700 text-center truncate">{avatarBase}</p>
+                      {avatarStudent.avatarBase === avatarBase && (
+                        <p className="text-xs text-blue-600 font-bold text-center">Current</p>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -1204,6 +1303,7 @@ const StudentCard = ({
   onViewDetails, 
   onShowIndividualXP,
   openInventoryModal,
+  openAvatarModal, // NEW: Avatar modal function
   isSelected = false, 
   onToggleSelection,
   xpCategories = [],
@@ -1232,13 +1332,18 @@ const StudentCard = ({
 
       {/* Main Card Content */}
       <div className="p-3">
-        {/* Avatar Section with Click to Select */}
+        {/* Avatar Section with Click to Select / Double-Click to Change Avatar */}
         <div className="flex flex-col items-center mb-3">
           <div 
             className="relative group/avatar cursor-pointer"
             onClick={onToggleSelection}
+            onDoubleClick={(e) => {
+              e.stopPropagation();
+              openAvatarModal(student);
+            }}
             onMouseEnter={() => onAvatarHover(student, true)}
             onMouseLeave={() => onAvatarHover(student, false)}
+            title="Click to select • Double-click to change avatar"
           >
             <img 
               src={getAvatarImage(student.avatarBase || 'Wizard F', currentLevel)}
@@ -1260,9 +1365,14 @@ const StudentCard = ({
             
             {/* Selection hint */}
             <div className="absolute inset-0 bg-black bg-opacity-20 rounded-full opacity-0 group-hover/avatar:opacity-100 transition-all flex items-center justify-center">
-              <span className="text-white text-xs font-bold">
-                {isSelected ? 'Selected' : 'Select'}
-              </span>
+              <div className="text-center">
+                <div className="text-white text-xs font-bold">
+                  {isSelected ? 'Selected' : 'Select'}
+                </div>
+                <div className="text-white text-xs opacity-75">
+                  Double-click for avatar
+                </div>
+              </div>
             </div>
           </div>
           
@@ -1353,6 +1463,18 @@ const StudentCard = ({
             🎯 Custom XP
           </button>
 
+          {/* Change Avatar button */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              openAvatarModal(student);
+            }}
+            className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-xs py-1 px-2 rounded-lg hover:shadow-md transition-all font-bold"
+            title="Change student's avatar"
+          >
+            🎭 Change Avatar
+          </button>
+
           {/* Inventory button */}
           <button
             onClick={(e) => {
@@ -1360,9 +1482,9 @@ const StudentCard = ({
               openInventoryModal(student);
             }}
             className="w-full bg-gradient-to-r from-purple-500 to-indigo-500 text-white text-xs py-1 px-2 rounded-lg hover:shadow-md transition-all font-bold mt-1"
-            title="View student inventory and change avatar"
+            title="View student inventory and manage pets"
           >
-            👜 Inventory
+            👜 Full Inventory
           </button>
         </div>
       </div>
