@@ -1,4 +1,4 @@
-// pages/classroom-champions.js - UPDATED WITH CORRECT PET SYSTEM
+// pages/classroom-champions.js - UPDATED WITH INVENTORY MANAGEMENT
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
@@ -97,7 +97,9 @@ const getRandomPet = () => {
     name: pet.name,
     type: pet.type,
     rarity: pet.rarity,
-    speed: Math.random() * 0.5 + 0.5
+    speed: Math.random() * 0.5 + 0.5,
+    displayName: pet.name,
+    imageType: pet.type
   };
 };
 
@@ -183,14 +185,14 @@ const StudentCard = ({ student, onAwardXP, onViewDetails }) => {
       {/* Pet Display */}
       {student.ownedPets && student.ownedPets.length > 0 && (
         <div className="flex justify-center mb-3">
-          <div className="text-2xl" title={student.ownedPets[0].name}>
+          <div className="text-2xl" title={student.ownedPets[0].name || student.ownedPets[0].displayName}>
             <img 
-              src={`/Pets/${student.ownedPets[0].name}.png`}
-              alt={student.ownedPets[0].name}
+              src={`/Pets/${student.ownedPets[0].name || 'Wizard'}.png`}
+              alt={student.ownedPets[0].name || student.ownedPets[0].displayName}
               className="w-8 h-8 rounded-full border-2 border-purple-300"
               onError={(e) => {
                 console.warn(`Pet image failed to load: ${e.target.src}`);
-                e.target.style.display = 'none';
+                e.target.src = '/Pets/Wizard.png';
               }}
             />
           </div>
@@ -589,6 +591,7 @@ const ClassroomChampions = () => {
       onAwardXP={awardXP}
       onViewDetails={setSelectedStudent}
       onAddStudent={() => setShowAddStudentModal(true)}
+      onUpdateStudent={updateStudent}
     />
   );
 
@@ -832,7 +835,7 @@ const ClassroomChampions = () => {
                   className="w-24 h-24 mx-auto rounded-full border-4 border-purple-400 shadow-lg"
                   onError={(e) => {
                     console.warn(`Pet image failed to load: ${e.target.src}`);
-                    e.target.style.display = 'none';
+                    e.target.src = '/Pets/Wizard.png';
                   }}
                 />
               </div>
@@ -904,15 +907,15 @@ const ClassroomChampions = () => {
                       <h4 className="font-semibold text-purple-800 mb-2">Companion</h4>
                       <div className="flex items-center space-x-2">
                         <img 
-                          src={`/Pets/${selectedStudent.ownedPets[0].name}.png`}
-                          alt={selectedStudent.ownedPets[0].name}
+                          src={`/Pets/${selectedStudent.ownedPets[0].name || 'Wizard'}.png`}
+                          alt={selectedStudent.ownedPets[0].name || selectedStudent.ownedPets[0].displayName}
                           className="w-8 h-8 rounded-full border-2 border-purple-300"
                           onError={(e) => {
                             console.warn(`Pet image failed to load: ${e.target.src}`);
-                            e.target.style.display = 'none';
+                            e.target.src = '/Pets/Wizard.png';
                           }}
                         />
-                        <span className="font-semibold">{selectedStudent.ownedPets[0].name}</span>
+                        <span className="font-semibold">{selectedStudent.ownedPets[0].name || selectedStudent.ownedPets[0].displayName}</span>
                       </div>
                     </div>
                   )}

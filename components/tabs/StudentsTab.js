@@ -10,6 +10,7 @@ const StudentsTab = ({
   onAwardXP, 
   onViewDetails,
   onAddStudent,
+  onUpdateStudent, // New prop for updating student data
   userSettings = {} // For storing user's custom XP categories
 }) => {
   // State management
@@ -41,9 +42,148 @@ const StudentsTab = ({
     { id: 6, label: 'Teamwork', amount: 2, color: 'bg-pink-500', icon: '🤝' }
   ]);
 
+  // State for inventory management
+  const [showInventoryModal, setShowInventoryModal] = useState(false);
+  const [inventoryStudent, setInventoryStudent] = useState(null);
+  const [showPetResetModal, setShowPetResetModal] = useState(false);
+  
+  // Available avatars for selection
+  const AVAILABLE_AVATARS = [
+    'Alchemist F', 'Alchemist M', 'Archer F', 'Archer M', 'Barbarian F', 'Barbarian M',
+    'Bard F', 'Bard M', 'Beastmaster F', 'Beastmaster M', 'Cleric F', 'Cleric M',
+    'Crystal Sage F', 'Crystal Sage M', 'Druid F', 'Druid M', 'Engineer F', 'Engineer M',
+    'Ice Mage F', 'Ice Mage M', 'Illusionist F', 'Illusionist M', 'Knight F', 'Knight M',
+    'Monk F', 'Monk M', 'Necromancer F', 'Necromancer M', 'Orc F', 'Orc M',
+    'Paladin F', 'Paladin M', 'Rogue F', 'Rogue M', 'Sky Knight F', 'Sky Knight M',
+    'Time Mage F', 'Time Mage M', 'Wizard F', 'Wizard M'
+  ];
+
+  // Available pets for selection
+  const AVAILABLE_PETS = [
+    { name: 'Alchemist', type: 'alchemist', rarity: 'common' },
+    { name: 'Barbarian', type: 'barbarian', rarity: 'common' },
+    { name: 'Bard', type: 'bard', rarity: 'common' },
+    { name: 'Beastmaster', type: 'beastmaster', rarity: 'rare' },
+    { name: 'Cleric', type: 'cleric', rarity: 'common' },
+    { name: 'Crystal Knight', type: 'crystal knight', rarity: 'epic' },
+    { name: 'Crystal Sage', type: 'crystal sage', rarity: 'epic' },
+    { name: 'Engineer', type: 'engineer', rarity: 'rare' },
+    { name: 'Frost Mage', type: 'frost mage', rarity: 'rare' },
+    { name: 'Illusionist', type: 'illusionist', rarity: 'epic' },
+    { name: 'Knight', type: 'knight', rarity: 'common' },
+    { name: 'Lightning', type: 'lightning', rarity: 'legendary' },
+    { name: 'Monk', type: 'monk', rarity: 'common' },
+    { name: 'Necromancer', type: 'necromancer', rarity: 'epic' },
+    { name: 'Rogue', type: 'rogue', rarity: 'common' },
+    { name: 'Stealth', type: 'stealth', rarity: 'rare' },
+    { name: 'Time Knight', type: 'time knight', rarity: 'legendary' },
+    { name: 'Warrior', type: 'warrior', rarity: 'common' },
+    { name: 'Wizard', type: 'wizard', rarity: 'common' }
+  ];
+
   // Category editing state
   const [editingCategory, setEditingCategory] = useState(null);
   const [newCategory, setNewCategory] = useState({ label: '', amount: 1, color: 'bg-blue-500', icon: '🌟' });
+
+  // ===============================================
+  // INVENTORY MANAGEMENT FUNCTIONS
+  // ===============================================
+
+  const refreshAllStudentPets = () => {
+    const updatedStudents = students.map(student => {
+      if (student.ownedPets && student.ownedPets.length > 0) {
+        const updatedPets = student.ownedPets.map(pet => ({
+          ...pet,
+          // Ensure we have the right properties for display
+          displayName: pet.name || pet.displayName,
+          imageType: pet.type || pet.name?.toLowerCase() || 'wizard'
+        }));
+        return { ...student, ownedPets: updatedPets };
+      }
+      return student;
+    });
+    
+    // Update students through the parent component's handler
+    updatedStudents.forEach(student => {
+      if (onViewDetails) {
+        // This will trigger the update in the parent component
+        onUpdateStudent && onUpdateStudent(student);
+      }
+    });
+    
+    alert('Pet images refreshed! If pets still don\'t appear, they may need to be reset.');
+  };
+
+  const resetAllStudentPets = () => {
+    if (!window.confirm('This will remove ALL pets from ALL students. This cannot be undone. Are you sure?')) {
+      return;
+    }
+    
+    const updatedStudents = students.map(student => ({
+      ...student,
+      ownedPets: []
+    }));
+    
+    updatedStudents.forEach(student => {
+      onUpdateStudent && onUpdateStudent(student);
+    });
+    
+    alert('All student pets have been reset!');
+    setShowPetResetModal(false);
+  };
+
+  const updateStudentAvatar = (student, newAvatarBase) => {
+    const newLevel = calculateAvatarLevel(student.totalPoints || 0);
+    const updatedStudent = {
+      ...student,
+      avatarBase: newAvatarBase,
+      avatar: getAvatarImage(newAvatarBase, newLevel),
+      avatarLevel: newLevel,
+      ownedAvatars: [...(student.ownedAvatars || []), newAvatarBase].filter((v, i, a) => a.indexOf(v) === i)
+    };
+    
+    onUpdateStudent && onUpdateStudent(updatedStudent);
+    setInventoryStudent(updatedStudent);
+    alert(`Avatar updated to ${newAvatarBase}!`);
+  };
+
+  const addPetToStudent = (student, petData) => {
+    const newPet = {
+      id: `pet_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      name: petData.name,
+      type: petData.type,
+      rarity: petData.rarity,
+      displayName: petData.name,
+      imageType: petData.type
+    };
+
+    const updatedStudent = {
+      ...student,
+      ownedPets: [...(student.ownedPets || []), newPet]
+    };
+    
+    onUpdateStudent && onUpdateStudent(updatedStudent);
+    setInventoryStudent(updatedStudent);
+    alert(`${petData.name} pet added!`);
+  };
+
+  const removePetFromStudent = (student, petId) => {
+    if (!window.confirm('Remove this pet from the student?')) return;
+    
+    const updatedStudent = {
+      ...student,
+      ownedPets: (student.ownedPets || []).filter(pet => pet.id !== petId)
+    };
+    
+    onUpdateStudent && onUpdateStudent(updatedStudent);
+    setInventoryStudent(updatedStudent);
+    alert('Pet removed!');
+  };
+
+  const openInventoryModal = (student) => {
+    setInventoryStudent(student);
+    setShowInventoryModal(true);
+  };
 
   // ===============================================
   // UTILITY FUNCTIONS
@@ -78,9 +218,10 @@ const StudentsTab = ({
     return 'grid grid-cols-6 lg:grid-cols-12 gap-1';
   };
 
-  const getPetImage = (petType) => {
-    // Map pet types to actual image files based on the available pet names
+  const getPetImage = (petType, petName) => {
+    // Handle both old and new pet naming systems
     const petImageMap = {
+      // New class-based system
       'alchemist': '/Pets/Alchemist.png',
       'barbarian': '/Pets/Barbarian.png',
       'bard': '/Pets/Bard.png',
@@ -99,10 +240,24 @@ const StudentsTab = ({
       'stealth': '/Pets/Stealth.png',
       'time knight': '/Pets/Time Knight.png',
       'warrior': '/Pets/Warrior.png',
-      'wizard': '/Pets/Wizard.png'
+      'wizard': '/Pets/Wizard.png',
+      
+      // Legacy fantasy system mapping to new files
+      'dragon': '/Pets/Lightning.png',      // Map dragon to Lightning (legendary)
+      'phoenix': '/Pets/Crystal Sage.png',  // Map phoenix to Crystal Sage (epic)
+      'unicorn': '/Pets/Time Knight.png',   // Map unicorn to Time Knight (legendary)
+      'wolf': '/Pets/Warrior.png',          // Map wolf to Warrior
+      'owl': '/Pets/Wizard.png',            // Map owl to Wizard
+      'cat': '/Pets/Rogue.png',             // Map cat to Rogue
+      'tiger': '/Pets/Barbarian.png',       // Map tiger to Barbarian
+      'bear': '/Pets/Beastmaster.png',      // Map bear to Beastmaster
+      'lion': '/Pets/Knight.png',           // Map lion to Knight
+      'eagle': '/Pets/Stealth.png'          // Map eagle to Stealth
     };
     
-    return petImageMap[petType?.toLowerCase()] || '/Pets/Wizard.png';
+    // Try petType first, then petName, then default
+    const key = (petType || petName || '').toLowerCase();
+    return petImageMap[key] || '/Pets/Wizard.png';
   };
 
   // ===============================================
@@ -306,6 +461,20 @@ const StudentsTab = ({
               className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all font-semibold"
             >
               ⚙️ Edit Categories
+            </button>
+
+            <button
+              onClick={refreshAllStudentPets}
+              className="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all font-semibold"
+            >
+              🔄 Refresh Pets
+            </button>
+
+            <button
+              onClick={() => setShowPetResetModal(true)}
+              className="bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all font-semibold"
+            >
+              🗑️ Reset All Pets
             </button>
           </div>
 
@@ -818,6 +987,207 @@ const StudentsTab = ({
           </div>
         </div>
       )}
+
+      {/* Pet Reset Confirmation Modal */}
+      {showPetResetModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-6 rounded-t-2xl">
+              <h2 className="text-2xl font-bold">⚠️ Reset All Pets</h2>
+            </div>
+            
+            <div className="p-6">
+              <p className="text-gray-800 mb-4">
+                This will remove <strong>ALL pets</strong> from <strong>ALL students</strong> in your class. 
+                This action cannot be undone.
+              </p>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                <p className="text-yellow-700 text-sm">
+                  <strong>Why might you need this?</strong><br/>
+                  If pet images aren't loading properly due to old data formats, 
+                  resetting pets allows students to earn new ones with the correct image files.
+                </p>
+              </div>
+              <p className="text-gray-600 text-sm">
+                Students can earn new pets by reaching 50 XP again after the reset.
+              </p>
+            </div>
+            
+            <div className="flex space-x-3 p-6 pt-0">
+              <button
+                onClick={() => setShowPetResetModal(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={resetAllStudentPets}
+                className="flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all"
+              >
+                ⚠️ Reset All Pets
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Student Inventory Modal */}
+      {showInventoryModal && inventoryStudent && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white p-6 rounded-t-2xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold">
+                    👜 {inventoryStudent.firstName}'s Inventory
+                  </h2>
+                  <p className="text-purple-100">Manage avatars and pets</p>
+                </div>
+                <button
+                  onClick={() => setShowInventoryModal(false)}
+                  className="text-white hover:text-red-200 text-2xl font-bold"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6 space-y-6">
+              {/* Current Avatar */}
+              <div>
+                <h3 className="text-xl font-bold text-gray-800 mb-4">🎭 Current Avatar</h3>
+                <div className="flex items-center space-x-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <img 
+                    src={getAvatarImage(inventoryStudent.avatarBase || 'Wizard F', calculateAvatarLevel(inventoryStudent.totalPoints || 0))}
+                    alt={`${inventoryStudent.firstName}'s Avatar`}
+                    className="w-20 h-20 rounded-full border-4 border-blue-400 shadow-lg"
+                  />
+                  <div>
+                    <h4 className="text-lg font-bold text-gray-800">{inventoryStudent.avatarBase || 'Wizard F'}</h4>
+                    <p className="text-gray-600">Level {calculateAvatarLevel(inventoryStudent.totalPoints || 0)}</p>
+                    <p className="text-sm text-gray-500">{inventoryStudent.totalPoints || 0} XP</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Avatar Selection */}
+              <div>
+                <h3 className="text-xl font-bold text-gray-800 mb-4">🎨 Change Avatar</h3>
+                <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 max-h-64 overflow-y-auto p-2 border border-gray-200 rounded-lg">
+                  {AVAILABLE_AVATARS.map(avatarBase => (
+                    <button
+                      key={avatarBase}
+                      onClick={() => updateStudentAvatar(inventoryStudent, avatarBase)}
+                      className={`p-2 rounded-lg border-2 transition-all hover:scale-105 ${
+                        inventoryStudent.avatarBase === avatarBase
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 hover:border-blue-300'
+                      }`}
+                      title={avatarBase}
+                    >
+                      <img 
+                        src={getAvatarImage(avatarBase, 1)}
+                        alt={avatarBase}
+                        className="w-12 h-12 rounded-full mx-auto"
+                        onError={(e) => {
+                          e.target.src = '/avatars/Wizard F/Level 1.png';
+                        }}
+                      />
+                      <p className="text-xs mt-1 font-semibold text-gray-700 truncate">{avatarBase}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Current Pets */}
+              <div>
+                <h3 className="text-xl font-bold text-gray-800 mb-4">🐾 Current Pets ({(inventoryStudent.ownedPets || []).length})</h3>
+                {!inventoryStudent.ownedPets || inventoryStudent.ownedPets.length === 0 ? (
+                  <div className="text-center py-8 bg-gray-50 rounded-lg">
+                    <div className="text-4xl mb-2">🐾</div>
+                    <p className="text-gray-600">No pets yet!</p>
+                    <p className="text-sm text-gray-500">Students get their first pet at 50 XP</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {inventoryStudent.ownedPets.map(pet => (
+                      <div key={pet.id} className="p-3 bg-purple-50 rounded-lg border border-purple-200">
+                        <div className="text-center mb-2">
+                          <img 
+                            src={getPetImage(pet.type || pet.imageType, pet.name)}
+                            alt={pet.name || pet.displayName}
+                            className="w-16 h-16 rounded-full mx-auto border-2 border-purple-300"
+                            onError={(e) => {
+                              e.target.src = '/Pets/Wizard.png';
+                            }}
+                          />
+                        </div>
+                        <h4 className="font-bold text-sm text-center text-gray-800">{pet.name || pet.displayName}</h4>
+                        <p className="text-xs text-center text-gray-600 capitalize">{pet.rarity} Pet</p>
+                        <button
+                          onClick={() => removePetFromStudent(inventoryStudent, pet.id)}
+                          className="w-full mt-2 bg-red-500 text-white text-xs py-1 rounded hover:bg-red-600 transition-colors"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Add Pet */}
+              <div>
+                <h3 className="text-xl font-bold text-gray-800 mb-4">➕ Add Pet</h3>
+                <div className="grid grid-cols-3 md:grid-cols-6 gap-3 max-h-64 overflow-y-auto p-2 border border-gray-200 rounded-lg">
+                  {AVAILABLE_PETS.map(pet => (
+                    <button
+                      key={pet.name}
+                      onClick={() => addPetToStudent(inventoryStudent, pet)}
+                      className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-all hover:scale-105"
+                      title={`${pet.name} (${pet.rarity})`}
+                    >
+                      <img 
+                        src={getPetImage(pet.type, pet.name)}
+                        alt={pet.name}
+                        className="w-12 h-12 rounded-full mx-auto border-2 border-gray-300"
+                        onError={(e) => {
+                          e.target.src = '/Pets/Wizard.png';
+                        }}
+                      />
+                      <p className="text-xs mt-1 font-semibold text-gray-700 truncate">{pet.name}</p>
+                      <p className="text-xs text-gray-500 capitalize">{pet.rarity}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Student Stats */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="text-lg font-bold text-gray-800 mb-3">📊 Student Stats</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-blue-600">{inventoryStudent.totalPoints || 0}</div>
+                    <div className="text-sm text-gray-600">Total XP</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-yellow-600">{calculateCoins(inventoryStudent)}</div>
+                    <div className="text-sm text-gray-600">Coins</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-purple-600">{calculateAvatarLevel(inventoryStudent.totalPoints || 0)}</div>
+                    <div className="text-sm text-gray-600">Level</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-600">{(inventoryStudent.ownedPets || []).length}</div>
+                    <div className="text-sm text-gray-600">Pets</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -935,13 +1305,13 @@ const StudentCard = ({
               onMouseLeave={() => onPetHover(student.ownedPets[0], false)}
             >
               <img 
-                src={getPetImage(student.ownedPets[0].type || student.ownedPets[0].name?.toLowerCase())}
-                alt={student.ownedPets[0].name}
+                src={getPetImage(student.ownedPets[0].type || student.ownedPets[0].imageType, student.ownedPets[0].name)}
+                alt={student.ownedPets[0].name || student.ownedPets[0].displayName}
                 className="w-8 h-8 rounded-full border-2 border-purple-300"
-                title={student.ownedPets[0].name}
+                title={student.ownedPets[0].name || student.ownedPets[0].displayName}
                 onError={(e) => {
                   console.warn(`Pet image failed to load: ${e.target.src}`);
-                  e.target.style.display = 'none';
+                  e.target.src = '/Pets/Wizard.png'; // Fallback to default
                 }}
               />
             </div>
@@ -977,6 +1347,18 @@ const StudentCard = ({
             title="Award custom XP amount"
           >
             🎯 Custom XP
+          </button>
+
+          {/* Inventory button */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              openInventoryModal(student);
+            }}
+            className="w-full bg-gradient-to-r from-purple-500 to-indigo-500 text-white text-xs py-1 px-2 rounded-lg hover:shadow-md transition-all font-bold mt-1"
+            title="View student inventory and change avatar"
+          >
+            👜 Inventory
           </button>
         </div>
       </div>
