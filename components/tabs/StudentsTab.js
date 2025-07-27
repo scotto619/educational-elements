@@ -79,21 +79,30 @@ const StudentsTab = ({
   };
 
   const getPetImage = (petType) => {
-    // Map pet types to actual image files based on the structure
+    // Map pet types to actual image files based on the available pet names
     const petImageMap = {
-      'dragon': '/Pets/Dragon.png',
-      'phoenix': '/Pets/Phoenix.png',
-      'unicorn': '/Pets/Unicorn.png',
-      'wolf': '/Pets/Wolf.png',
-      'owl': '/Pets/Owl.png',
-      'cat': '/Pets/Cat.png',
-      'tiger': '/Pets/Tiger.png',
-      'bear': '/Pets/Bear.png',
-      'lion': '/Pets/Lion.png',
-      'eagle': '/Pets/Eagle.png'
+      'alchemist': '/Pets/Alchemist.png',
+      'barbarian': '/Pets/Barbarian.png',
+      'bard': '/Pets/Bard.png',
+      'beastmaster': '/Pets/Beastmaster.png',
+      'cleric': '/Pets/Cleric.png',
+      'crystal knight': '/Pets/Crystal Knight.png',
+      'crystal sage': '/Pets/Crystal Sage.png',
+      'engineer': '/Pets/Engineer.png',
+      'frost mage': '/Pets/Frost Mage.png',
+      'illusionist': '/Pets/Illusionist.png',
+      'knight': '/Pets/Knight.png',
+      'lightning': '/Pets/Lightning.png',
+      'monk': '/Pets/Monk.png',
+      'necromancer': '/Pets/Necromancer.png',
+      'rogue': '/Pets/Rogue.png',
+      'stealth': '/Pets/Stealth.png',
+      'time knight': '/Pets/Time Knight.png',
+      'warrior': '/Pets/Warrior.png',
+      'wizard': '/Pets/Wizard.png'
     };
     
-    return petImageMap[petType?.toLowerCase()] || '/Pets/Dragon.png';
+    return petImageMap[petType?.toLowerCase()] || '/Pets/Wizard.png';
   };
 
   // ===============================================
@@ -434,10 +443,10 @@ const StudentsTab = ({
               <img 
                 src={hoveredAvatar.image}
                 alt={hoveredAvatar.name}
-                className="w-24 h-24 rounded-lg mb-2 border-2 border-blue-400"
+                className="w-56 h-56 rounded-lg mb-2 border-2 border-blue-400"
               />
-              <p className="text-sm font-semibold text-gray-800">{hoveredAvatar.name}</p>
-              <p className="text-xs text-blue-600">Level {hoveredAvatar.level}</p>
+              <p className="text-lg font-semibold text-gray-800">{hoveredAvatar.name}</p>
+              <p className="text-sm text-blue-600">Level {hoveredAvatar.level}</p>
             </div>
           )}
           {hoveredPet && (
@@ -445,10 +454,10 @@ const StudentsTab = ({
               <img 
                 src={hoveredPet.image}
                 alt={hoveredPet.name}
-                className="w-20 h-20 rounded-lg mb-2 border-2 border-purple-400"
+                className="w-48 h-48 rounded-lg mb-2 border-2 border-purple-400"
               />
-              <p className="text-sm font-semibold text-gray-800">{hoveredPet.name}</p>
-              <p className="text-xs text-purple-600 capitalize">{hoveredPet.rarity} Pet</p>
+              <p className="text-lg font-semibold text-gray-800">{hoveredPet.name}</p>
+              <p className="text-sm text-purple-600 capitalize">{hoveredPet.rarity} Pet</p>
             </div>
           )}
         </div>
@@ -926,10 +935,14 @@ const StudentCard = ({
               onMouseLeave={() => onPetHover(student.ownedPets[0], false)}
             >
               <img 
-                src={getPetImage(student.ownedPets[0].type)}
+                src={getPetImage(student.ownedPets[0].type || student.ownedPets[0].name?.toLowerCase())}
                 alt={student.ownedPets[0].name}
                 className="w-8 h-8 rounded-full border-2 border-purple-300"
                 title={student.ownedPets[0].name}
+                onError={(e) => {
+                  console.warn(`Pet image failed to load: ${e.target.src}`);
+                  e.target.style.display = 'none';
+                }}
               />
             </div>
           </div>

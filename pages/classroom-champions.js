@@ -1,4 +1,4 @@
-// pages/classroom-champions.js - SIMPLIFIED AND FIXED VERSION
+// pages/classroom-champions.js - UPDATED WITH CORRECT PET SYSTEM
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
@@ -15,7 +15,7 @@ import TeachersToolkitTab from '../components/tabs/TeachersToolkitTab';
 import CurriculumCornerTab from '../components/tabs/CurriculumCornerTab';
 
 // ===============================================
-// CORE GAME CONSTANTS (INLINE TO AVOID IMPORT ISSUES)
+// CORE GAME CONSTANTS
 // ===============================================
 
 const GAME_CONFIG = {
@@ -34,26 +34,42 @@ const DEFAULT_XP_CATEGORIES = [
 ];
 
 const AVAILABLE_AVATARS = [
-  'Alchemist F', 'Archer F', 'Archer M', 'Bard F', 'Bard M', 'Druid F', 'Druid M',
-  'Knight F', 'Knight M', 'Mage F', 'Mage M', 'Paladin F', 'Paladin M', 
-  'Ranger F', 'Ranger M', 'Rogue F', 'Rogue M', 'Warrior F', 'Warrior M', 'Wizard F', 'Wizard M'
+  'Alchemist F', 'Alchemist M', 'Archer F', 'Archer M', 'Barbarian F', 'Barbarian M',
+  'Bard F', 'Bard M', 'Beastmaster F', 'Beastmaster M', 'Cleric F', 'Cleric M',
+  'Crystal Sage F', 'Crystal Sage M', 'Druid F', 'Druid M', 'Engineer F', 'Engineer M',
+  'Ice Mage F', 'Ice Mage M', 'Illusionist F', 'Illusionist M', 'Knight F', 'Knight M',
+  'Monk F', 'Monk M', 'Necromancer F', 'Necromancer M', 'Orc F', 'Orc M',
+  'Paladin F', 'Paladin M', 'Rogue F', 'Rogue M', 'Sky Knight F', 'Sky Knight M',
+  'Time Mage F', 'Time Mage M', 'Wizard F', 'Wizard M'
 ];
 
+// Updated PET_SPECIES to match available files
 const PET_SPECIES = [
-  { name: 'Dragon', emoji: '🐉', rarity: 'rare' },
-  { name: 'Phoenix', emoji: '🔥', rarity: 'epic' },
-  { name: 'Unicorn', emoji: '🦄', rarity: 'legendary' },
-  { name: 'Wolf', emoji: '🐺', rarity: 'common' },
-  { name: 'Owl', emoji: '🦉', rarity: 'common' },
-  { name: 'Cat', emoji: '🐱', rarity: 'common' },
-  { name: 'Tiger', emoji: '🐅', rarity: 'rare' }
+  { name: 'Alchemist', type: 'alchemist', rarity: 'common' },
+  { name: 'Barbarian', type: 'barbarian', rarity: 'common' },
+  { name: 'Bard', type: 'bard', rarity: 'common' },
+  { name: 'Beastmaster', type: 'beastmaster', rarity: 'rare' },
+  { name: 'Cleric', type: 'cleric', rarity: 'common' },
+  { name: 'Crystal Knight', type: 'crystal knight', rarity: 'epic' },
+  { name: 'Crystal Sage', type: 'crystal sage', rarity: 'epic' },
+  { name: 'Engineer', type: 'engineer', rarity: 'rare' },
+  { name: 'Frost Mage', type: 'frost mage', rarity: 'rare' },
+  { name: 'Illusionist', type: 'illusionist', rarity: 'epic' },
+  { name: 'Knight', type: 'knight', rarity: 'common' },
+  { name: 'Lightning', type: 'lightning', rarity: 'legendary' },
+  { name: 'Monk', type: 'monk', rarity: 'common' },
+  { name: 'Necromancer', type: 'necromancer', rarity: 'epic' },
+  { name: 'Rogue', type: 'rogue', rarity: 'common' },
+  { name: 'Stealth', type: 'stealth', rarity: 'rare' },
+  { name: 'Time Knight', type: 'time knight', rarity: 'legendary' },
+  { name: 'Warrior', type: 'warrior', rarity: 'common' },
+  { name: 'Wizard', type: 'wizard', rarity: 'common' }
 ];
 
 // ===============================================
-// UTILITY FUNCTIONS (INLINE TO AVOID IMPORT ISSUES)
+// UTILITY FUNCTIONS
 // ===============================================
 
-// FIXED: Use lowercase 'avatars' to match your file structure
 const getAvatarImage = (avatarBase, level) => {
   if (!avatarBase) return '/avatars/Wizard F/Level 1.png';
   const validLevel = Math.max(1, Math.min(level || 1, 4));
@@ -78,9 +94,8 @@ const getRandomPet = () => {
   const pet = PET_SPECIES[Math.floor(Math.random() * PET_SPECIES.length)];
   return {
     id: `pet_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    name: `${pet.name} ${Math.floor(Math.random() * 100)}`,
-    emoji: pet.emoji,
-    type: pet.name.toLowerCase(),
+    name: pet.name,
+    type: pet.type,
     rarity: pet.rarity,
     speed: Math.random() * 0.5 + 0.5
   };
@@ -93,7 +108,7 @@ const shouldReceivePet = (student) => {
 
 const playXPSound = () => {
   try {
-    const audio = new Audio('/sounds/xp-gain.mp3');
+    const audio = new Audio('/sounds/ding.mp3');
     audio.volume = 0.3;
     audio.play().catch(e => console.log('Audio play failed:', e));
   } catch (e) {
@@ -169,7 +184,15 @@ const StudentCard = ({ student, onAwardXP, onViewDetails }) => {
       {student.ownedPets && student.ownedPets.length > 0 && (
         <div className="flex justify-center mb-3">
           <div className="text-2xl" title={student.ownedPets[0].name}>
-            {student.ownedPets[0].emoji}
+            <img 
+              src={`/Pets/${student.ownedPets[0].name}.png`}
+              alt={student.ownedPets[0].name}
+              className="w-8 h-8 rounded-full border-2 border-purple-300"
+              onError={(e) => {
+                console.warn(`Pet image failed to load: ${e.target.src}`);
+                e.target.style.display = 'none';
+              }}
+            />
           </div>
         </div>
       )}
@@ -802,11 +825,21 @@ const ClassroomChampions = () => {
               <h3 className="text-xl font-bold text-gray-800 mb-2">
                 {petUnlockData.student.firstName} found a companion!
               </h3>
-              <div className="text-8xl mb-4">{petUnlockData.pet.emoji}</div>
+              <div className="mb-4">
+                <img 
+                  src={`/Pets/${petUnlockData.pet.name}.png`}
+                  alt={petUnlockData.pet.name}
+                  className="w-24 h-24 mx-auto rounded-full border-4 border-purple-400 shadow-lg"
+                  onError={(e) => {
+                    console.warn(`Pet image failed to load: ${e.target.src}`);
+                    e.target.style.display = 'none';
+                  }}
+                />
+              </div>
               <h4 className="text-lg font-semibold text-purple-600 mb-2">
                 {petUnlockData.pet.name}
               </h4>
-              <p className="text-gray-600">Your new pet will accompany you on adventures!</p>
+              <p className="text-gray-600">Your new pet companion will accompany you on adventures!</p>
             </div>
             
             <div className="p-6 pt-0">
@@ -870,7 +903,15 @@ const ClassroomChampions = () => {
                     <div className="bg-purple-50 p-4 rounded-lg">
                       <h4 className="font-semibold text-purple-800 mb-2">Companion</h4>
                       <div className="flex items-center space-x-2">
-                        <span className="text-2xl">{selectedStudent.ownedPets[0].emoji}</span>
+                        <img 
+                          src={`/Pets/${selectedStudent.ownedPets[0].name}.png`}
+                          alt={selectedStudent.ownedPets[0].name}
+                          className="w-8 h-8 rounded-full border-2 border-purple-300"
+                          onError={(e) => {
+                            console.warn(`Pet image failed to load: ${e.target.src}`);
+                            e.target.style.display = 'none';
+                          }}
+                        />
                         <span className="font-semibold">{selectedStudent.ownedPets[0].name}</span>
                       </div>
                     </div>
