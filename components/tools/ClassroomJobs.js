@@ -76,7 +76,7 @@ const ClassroomJobs = ({
 
   const createJob = () => {
     if (!newJob.title.trim()) {
-      showToast('Please enter a job title', 'error');
+      // Don't create job without title - form validation should prevent this
       return;
     }
 
@@ -98,12 +98,12 @@ const ClassroomJobs = ({
       icon: '📋'
     });
     setShowCreateJobModal(false);
-    showToast(`${job.title} job created!`, 'success');
+    // Removed notification - job creation is visually obvious
   };
 
   const updateJob = () => {
     if (!editingJob.title.trim()) {
-      showToast('Please enter a job title', 'error');
+      // Don't update job without title - form validation should prevent this
       return;
     }
 
@@ -113,7 +113,7 @@ const ClassroomJobs = ({
     setJobs(updatedJobs);
     setEditingJob(null);
     setShowEditJobModal(false);
-    showToast('Job updated!', 'success');
+    // Removed notification - job update is visually obvious
   };
 
   const deleteJob = (jobId) => {
@@ -121,7 +121,7 @@ const ClassroomJobs = ({
     
     const updatedJobs = jobs.filter(job => job.id !== jobId);
     setJobs(updatedJobs);
-    showToast('Job deleted', 'success');
+    // Removed notification - job deletion is visually obvious
   };
 
   // ===============================================
@@ -148,7 +148,7 @@ const ClassroomJobs = ({
 
     // Check if job is at capacity
     if (targetJob.assignedStudents.length >= targetJob.maxStudents) {
-      showToast(`${targetJob.title} is at maximum capacity (${targetJob.maxStudents} students)`, 'error');
+      // Job at capacity - visual feedback is sufficient
       setDraggedStudent(null);
       setDraggedFrom(null);
       return;
@@ -177,7 +177,7 @@ const ClassroomJobs = ({
     });
 
     setJobs(finalJobs);
-    showToast(`${draggedStudent.firstName} assigned to ${targetJob.title}`, 'success');
+    // Removed notification - student assignment is visually obvious
     setDraggedStudent(null);
     setDraggedFrom(null);
   };
@@ -200,7 +200,7 @@ const ClassroomJobs = ({
     });
 
     setJobs(updatedJobs);
-    showToast(`${draggedStudent.firstName} removed from job`, 'success');
+    // Removed notification - student removal is visually obvious
     setDraggedStudent(null);
     setDraggedFrom(null);
   };
@@ -211,7 +211,7 @@ const ClassroomJobs = ({
 
   const payJob = (job) => {
     if (job.assignedStudents.length === 0) {
-      showToast(`No students assigned to ${job.title}`, 'error');
+      // No students assigned - button should be disabled anyway
       return;
     }
 
@@ -226,11 +226,7 @@ const ClassroomJobs = ({
       }
     });
 
-    const paymentText = job.payType === 'xp' 
-      ? `${job.payAmount} XP` 
-      : `${job.payAmount} coins (${job.payAmount * 5} XP)`;
-    
-    showToast(`Paid ${job.assignedStudents.length} student(s) ${paymentText} for ${job.title}`, 'success');
+    // Removed notification - payment is handled by the XP system
   };
 
   const payAllJobs = () => {
@@ -250,11 +246,7 @@ const ClassroomJobs = ({
       }
     });
 
-    if (totalPayments === 0) {
-      showToast('No students assigned to any jobs', 'error');
-    } else {
-      showToast(`Paid all ${totalPayments} job assignments!`, 'success');
-    }
+    // Removed notifications - payment is handled by the XP system
     setShowPayAllModal(false);
   };
 

@@ -35,7 +35,7 @@ const SettingsTab = ({
     link.download = `classroom-champions-data-${new Date().toISOString().split('T')[0]}.json`;
     link.click();
     URL.revokeObjectURL(url);
-    showToast('Student data exported successfully!', 'success');
+    // Data exported - download initiated
   };
 
   // Reset all student data
@@ -43,7 +43,7 @@ const SettingsTab = ({
     setStudents([]);
     await saveStudentsToFirebase([]);
     setShowConfirmDialog(null);
-    showToast('All student data has been reset', 'success');
+    // All data reset - visual update is sufficient
   };
 
   // UPDATED: Reset student XP and progress (now includes pets and avatars)
@@ -67,13 +67,13 @@ const SettingsTab = ({
     setStudents(resetStudents);
     await saveStudentsToFirebase(resetStudents);
     setShowConfirmDialog(null);
-    showToast('All student XP, progress, pets, and avatars have been reset', 'success');
+    // Student progress reset - visual update is sufficient
   };
 
   // Submit feedback
   const submitFeedback = async () => {
     if (!feedbackForm.subject.trim() || !feedbackForm.message.trim()) {
-      showToast('Please fill in all feedback fields', 'error');
+      // Form validation - required fields should be highlighted instead
       return;
     }
 
@@ -88,7 +88,7 @@ const SettingsTab = ({
       email: user?.email || ''
     });
     
-    showToast('Thank you for your feedback!', 'success');
+    // Feedback submitted - modal closure is sufficient feedback
   };
 
   // Section navigation

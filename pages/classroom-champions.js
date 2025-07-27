@@ -381,7 +381,7 @@ const ClassroomChampions = () => {
       }
     } catch (error) {
       console.error('Error loading user data:', error);
-      showToast('Error loading class data', 'error');
+      // Error logged to console - no user notification needed
     } finally {
       setLoading(false);
     }
@@ -410,7 +410,7 @@ const ClassroomChampions = () => {
       }
     } catch (error) {
       console.error('Error saving students:', error);
-      showToast('Error saving student data', 'error');
+      // Error logged to console - no user notification needed
     }
   };
 
@@ -457,12 +457,12 @@ const ClassroomChampions = () => {
     await saveStudentsToFirebase(updatedStudents);
     
     playXPSound();
-    showToast(`${student.firstName} earned ${amount} XP for ${category}!`, 'success');
+    // XP awarded - visual animation and sound are sufficient feedback
   }, [students]);
 
   const addStudent = async () => {
     if (!newStudentFirstName.trim()) {
-      showToast('Please enter a first name', 'error');
+      // Form validation - highlight required field instead
       return;
     }
 
@@ -493,7 +493,7 @@ const ClassroomChampions = () => {
     setNewStudentLastName('');
     setShowAddStudentModal(false);
     
-    showToast(`${newStudent.firstName} has been added to the class!`, 'success');
+    // Student added - visual update is sufficient
   };
 
   const updateStudent = async (updatedStudent) => {

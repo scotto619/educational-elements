@@ -189,7 +189,7 @@ const StudentsTab = ({
       }
     });
     
-    alert('Pet images refreshed! If pets still don\'t appear, they may need to be reset.');
+    // Pet images refreshed - visual update is sufficient
   };
 
   const resetAllStudentPets = () => {
@@ -206,7 +206,7 @@ const StudentsTab = ({
       onUpdateStudent && onUpdateStudent(student);
     });
     
-    alert('All student pets have been reset!');
+    // All student pets have been reset - visual update is sufficient
     setShowPetResetModal(false);
   };
 
@@ -222,7 +222,7 @@ const StudentsTab = ({
     
     onUpdateStudent && onUpdateStudent(updatedStudent);
     setInventoryStudent(updatedStudent);
-    alert(`Avatar updated to ${newAvatarBase}!`);
+    // Avatar updated - visual change is sufficient
   };
 
   const addPetToStudent = (student, petData) => {
@@ -242,7 +242,7 @@ const StudentsTab = ({
     
     onUpdateStudent && onUpdateStudent(updatedStudent);
     setInventoryStudent(updatedStudent);
-    alert(`${petData.name} pet added!`);
+    // Pet added - visual update is sufficient
   };
 
   const removePetFromStudent = (student, petId) => {
@@ -255,7 +255,7 @@ const StudentsTab = ({
     
     onUpdateStudent && onUpdateStudent(updatedStudent);
     setInventoryStudent(updatedStudent);
-    alert('Pet removed!');
+    // Pet removed - visual update is sufficient
   };
 
   const openInventoryModal = (student) => {
@@ -281,7 +281,7 @@ const StudentsTab = ({
     
     onUpdateStudent && onUpdateStudent(updatedStudent);
     setAvatarStudent(updatedStudent);
-    alert(`${student.firstName}'s avatar changed to ${newAvatarBase}!`);
+    // Avatar changed - visual update is sufficient
     setShowAvatarModal(false);
   };
 
