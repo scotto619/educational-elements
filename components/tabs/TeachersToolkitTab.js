@@ -1,5 +1,13 @@
-// components/tabs/TeachersToolkitTab.js - Professional Classroom Management Tools
+// components/tabs/TeachersToolkitTab.js - Professional Classroom Management Tools with Separate Components
 import React, { useState } from 'react';
+
+// Import tool components from the tools folder
+import StudentHelpQueue from '../tools/StudentHelpQueue';
+import GroupMaker from '../tools/GroupMaker';
+import NamePicker from '../tools/NamePicker';
+import TimerTools from '../tools/TimerTools';
+import ClassroomDesigner from '../tools/ClassroomDesigner';
+import DiceRoller from '../tools/DiceRoller';
 
 // ===============================================
 // TEACHERS TOOLKIT TAB COMPONENT
@@ -9,15 +17,31 @@ const TeachersToolkitTab = ({
   students = [],
   user,
   showToast = () => {},
-  userData = {}
+  userData = {},
+  saveGroupDataToFirebase,
+  saveClassroomDataToFirebase,
+  currentClassId,
+  // Quest System Props (if available)
+  activeQuests = [],
+  attendanceData = {},
+  markAttendance,
+  completeQuest,
+  setShowQuestManagement
 }) => {
   const [activeToolkitTab, setActiveToolkitTab] = useState('help-queue');
-  const [attendanceData, setAttendanceData] = useState({});
-  const [helpQueue, setHelpQueue] = useState([]);
-  const [timerSettings, setTimerSettings] = useState({ minutes: 5, seconds: 0, isRunning: false });
-  const [groupSettings, setGroupSettings] = useState({ groupSize: 4, method: 'random' });
+  const [attendanceState, setAttendanceState] = useState(attendanceData);
+  const [timerSettings, setTimerSettings] = useState({ 
+    minutes: 5, 
+    seconds: 0, 
+    isRunning: false,
+    isActive: false,
+    time: 300,
+    originalTime: 300,
+    isPaused: false,
+    type: 'countdown'
+  });
 
-  // Check if user has PRO access (simplified check)
+  // Check if user has PRO access (simplified check for demo)
   const isPro = userData?.subscription === 'pro' || true; // Set to true for demo
 
   // Calculate basic analytics
@@ -31,90 +55,74 @@ const TeachersToolkitTab = ({
     };
   };
 
-  // Get today's attendance
-  const getTodaysAttendance = () => {
-    const today = new Date().toISOString().split('T')[0];
-    return attendanceData[today] || {};
+  // Calculate quest analytics (if quest system is available)
+  const calculateQuestAnalytics = () => {
+    if (!activeQuests || activeQuests.length === 0) {
+      return {
+        totalQuests: 0,
+        totalCompletions: 0,
+        completionRate: 0
+      };
+    }
+
+    const analytics = {
+      totalQuests: activeQuests.length,
+      totalCompletions: activeQuests.reduce((acc, quest) => acc + (quest.completedBy?.length || 0), 0),
+    };
+
+    // Calculate completion rate
+    const possibleCompletions = analytics.totalQuests * students.length;
+    analytics.completionRate = possibleCompletions > 0 ? 
+      Math.round((analytics.totalCompletions / possibleCompletions) * 100) : 0;
+
+    return analytics;
   };
 
-  // Mark attendance
-  const markAttendance = (studentId, status) => {
+  // Calculate attendance statistics
+  const calculateAttendanceStats = () => {
+    const dates = Object.keys(attendanceState);
+    if (dates.length === 0) return { averageAttendance: 0, totalDaysTracked: 0, perfectAttendanceStudents: 0 };
+
+    const totalStudentDays = dates.length * students.length;
+    const totalPresentCount = dates.reduce((acc, date) => {
+      return acc + Object.values(attendanceState[date] || {}).filter(status => status === 'present').length;
+    }, 0);
+
+    const averageAttendance = totalStudentDays > 0 ? 
+      Math.round((totalPresentCount / totalStudentDays) * 100) : 0;
+
+    // Calculate perfect attendance students
+    const perfectAttendanceStudents = students.filter(student => {
+      return dates.every(date => attendanceState[date]?.[student.id] === 'present');
+    }).length;
+
+    return {
+      averageAttendance,
+      totalDaysTracked: dates.length,
+      perfectAttendanceStudents,
+      attendanceTrend: 'stable'
+    };
+  };
+
+  // Handle attendance marking
+  const handleMarkAttendance = (studentId, status) => {
     const today = new Date().toISOString().split('T')[0];
-    setAttendanceData(prev => ({
-      ...prev,
+    const newAttendanceState = {
+      ...attendanceState,
       [today]: {
-        ...prev[today],
+        ...attendanceState[today],
         [studentId]: status
       }
-    }));
-    showToast(`Attendance marked for student`, 'success');
-  };
-
-  // Help Queue Functions
-  const addToHelpQueue = (studentId) => {
-    const student = students.find(s => s.id === studentId);
-    if (!student) return;
-    
-    const queueItem = {
-      id: `help_${Date.now()}`,
-      studentId,
-      studentName: `${student.firstName} ${student.lastName}`,
-      timestamp: new Date().toISOString(),
-      status: 'waiting'
     };
     
-    setHelpQueue(prev => [...prev, queueItem]);
-    showToast(`${student.firstName} added to help queue`, 'info');
-  };
-
-  const removeFromHelpQueue = (helpId) => {
-    setHelpQueue(prev => prev.filter(item => item.id !== helpId));
-    showToast('Student removed from help queue', 'success');
-  };
-
-  // Group Maker Functions
-  const createRandomGroups = () => {
-    if (students.length === 0) {
-      showToast('No students available for grouping', 'error');
-      return [];
-    }
-
-    const shuffled = [...students].sort(() => Math.random() - 0.5);
-    const groups = [];
+    setAttendanceState(newAttendanceState);
     
-    for (let i = 0; i < shuffled.length; i += groupSettings.groupSize) {
-      groups.push(shuffled.slice(i, i + groupSettings.groupSize));
+    // Call external handler if provided
+    if (markAttendance) {
+      markAttendance(studentId, status);
     }
     
-    return groups;
-  };
-
-  // Name Picker Functions
-  const pickRandomStudent = () => {
-    if (students.length === 0) {
-      showToast('No students available', 'error');
-      return null;
-    }
-    
-    const randomStudent = students[Math.floor(Math.random() * students.length)];
-    showToast(`Selected: ${randomStudent.firstName} ${randomStudent.lastName}!`, 'success');
-    return randomStudent;
-  };
-
-  // Timer Functions
-  const startTimer = () => {
-    setTimerSettings(prev => ({ ...prev, isRunning: true }));
-    showToast('Timer started!', 'success');
-  };
-
-  const stopTimer = () => {
-    setTimerSettings(prev => ({ ...prev, isRunning: false }));
-    showToast('Timer stopped!', 'info');
-  };
-
-  const resetTimer = () => {
-    setTimerSettings(prev => ({ ...prev, minutes: 5, seconds: 0, isRunning: false }));
-    showToast('Timer reset!', 'info');
+    showToast(`Attendance marked for student`, 'success');
   };
 
   if (!isPro) {
@@ -135,26 +143,57 @@ const TeachersToolkitTab = ({
               </div>
               <div className="flex items-center space-x-2">
                 <span>👥</span>
-                <span>Smart Group Maker</span>
+                <span>Smart Group Maker with Constraints</span>
               </div>
               <div className="flex items-center space-x-2">
                 <span>🎯</span>
-                <span>Random Name Picker</span>
+                <span>Smart Name Picker Wheel</span>
               </div>
               <div className="flex items-center space-x-2">
                 <span>⏰</span>
-                <span>Class Timer Tools</span>
+                <span>Epic Timer Tools with Animations</span>
               </div>
               <div className="flex items-center space-x-2">
+                <span>🏫</span>
+                <span>Interactive Classroom Designer</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span>🎲</span>
+                <span>Advanced Dice Roller System</span>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
                 <span>📅</span>
-                <span>Attendance Tracking</span>
+                <span>Advanced Attendance Tracking</span>
               </div>
               <div className="flex items-center space-x-2">
                 <span>📊</span>
-                <span>Class Analytics</span>
+                <span>Quest Analytics & Reports</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span>🎮</span>
+                <span>Gamification Features</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span>🌍</span>
+                <span>Geography & Science Activities</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span>✨</span>
+                <span>New Tools Added Monthly!</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span>🎨</span>
+                <span>Creative Arts & Expression</span>
               </div>
             </div>
           </div>
+        </div>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 max-w-2xl mx-auto">
+          <p className="text-blue-700 text-sm">
+            💡 <strong>Note:</strong> Subject-specific tools like Math, Literacy, and Geography are organized in the "Curriculum Corner" tab for better classroom workflow!
+          </p>
         </div>
         <button
           onClick={() => showToast('Upgrade feature coming soon!', 'info')}
@@ -167,16 +206,19 @@ const TeachersToolkitTab = ({
   }
 
   const analytics = calculateBasicAnalytics();
-  const todaysAttendance = getTodaysAttendance();
+  const questAnalytics = calculateQuestAnalytics();
+  const attendanceStats = calculateAttendanceStats();
 
-  // Toolkit tabs
+  // Updated toolkit tabs to include all tools
   const toolkitTabs = [
     { id: 'help-queue', label: 'Help Queue', icon: '🎫' },
     { id: 'attendance', label: 'Attendance', icon: '📅' },
     { id: 'analytics', label: 'Analytics', icon: '📊' },
     { id: 'group-maker', label: 'Group Maker', icon: '👥' },
     { id: 'name-picker', label: 'Name Picker', icon: '🎯' },
-    { id: 'timer', label: 'Timer', icon: '⏰' }
+    { id: 'timer', label: 'Timer Tools', icon: '⏰' },
+    { id: 'dice-roller', label: 'Dice Roller', icon: '🎲' },
+    { id: 'classroom-designer', label: 'Room Designer', icon: '🏫' }
   ];
 
   return (
@@ -192,47 +234,83 @@ const TeachersToolkitTab = ({
           </h2>
           <p className="text-xl opacity-90">Professional classroom management tools</p>
         </div>
+        
+        {/* Floating decorations */}
+        <div className="absolute top-4 right-4 text-2xl animate-bounce" style={{ animationDelay: '0.5s' }}>🎯</div>
+        <div className="absolute bottom-4 left-4 text-2xl animate-bounce" style={{ animationDelay: '1s' }}>📊</div>
+        <div className="absolute top-1/2 right-1/4 text-xl animate-bounce" style={{ animationDelay: '1.5s' }}>👥</div>
       </div>
 
-      {/* Quick Stats Dashboard */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Curriculum Corner Notice */}
+      <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-xl p-6">
+        <div className="flex items-start space-x-4">
+          <span className="text-3xl">📖</span>
+          <div>
+            <h4 className="font-bold text-green-800 mb-2">📚 Looking for Subject Tools?</h4>
+            <p className="text-green-700 mb-3">
+              Math, Literacy, Geography, and Science tools have been organized in the <strong>Curriculum Corner</strong> tab for better subject-based teaching!
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-green-700 text-sm">
+              <div className="flex items-center space-x-2">
+                <span>📚</span>
+                <span>Literacy Tools</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span>🔢</span>
+                <span>Math Activities</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span>🌍</span>
+                <span>Geography Explorer</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span>🔬</span>
+                <span>Science Tools</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Enhanced Dashboard */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-4 rounded-xl">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-purple-100 text-sm">Active Quests</p>
+              <p className="text-2xl font-bold">{questAnalytics.totalQuests}</p>
+            </div>
+            <div className="text-3xl">⚔️</div>
+          </div>
+        </div>
+        
         <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 rounded-xl">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-blue-100 text-sm">Total Students</p>
-              <p className="text-2xl font-bold">{analytics.totalStudents}</p>
+              <p className="text-blue-100 text-sm">Quest Completion</p>
+              <p className="text-2xl font-bold">{questAnalytics.completionRate}%</p>
             </div>
-            <div className="text-3xl">👥</div>
+            <div className="text-3xl">📈</div>
           </div>
         </div>
         
         <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 rounded-xl">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-green-100 text-sm">Average XP</p>
-              <p className="text-2xl font-bold">{analytics.averageXP}</p>
+              <p className="text-green-100 text-sm">Attendance Rate</p>
+              <p className="text-2xl font-bold">{attendanceStats.averageAttendance}%</p>
             </div>
-            <div className="text-3xl">⭐</div>
-          </div>
-        </div>
-        
-        <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-4 rounded-xl">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-purple-100 text-sm">High Performers</p>
-              <p className="text-2xl font-bold">{analytics.highPerformers}</p>
-            </div>
-            <div className="text-3xl">🏆</div>
+            <div className="text-3xl">📅</div>
           </div>
         </div>
         
         <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-4 rounded-xl">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-orange-100 text-sm">Help Queue</p>
-              <p className="text-2xl font-bold">{helpQueue.length}</p>
+              <p className="text-orange-100 text-sm">Average XP</p>
+              <p className="text-2xl font-bold">{analytics.averageXP}</p>
             </div>
-            <div className="text-3xl">🎫</div>
+            <div className="text-3xl">⭐</div>
           </div>
         </div>
       </div>
@@ -242,12 +320,12 @@ const TeachersToolkitTab = ({
         <h3 className="text-xl font-bold text-gray-800 mb-6">🚀 Quick Access</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <button
-            onClick={() => setActiveToolkitTab('help-queue')}
-            className="p-4 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors text-center"
+            onClick={() => setShowQuestManagement && setShowQuestManagement(true)}
+            className="p-4 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors text-center"
           >
-            <div className="text-2xl mb-2">🎫</div>
-            <div className="font-semibold">Help Queue</div>
-            <div className="text-sm text-orange-600">{helpQueue.length} waiting</div>
+            <div className="text-2xl mb-2">⚔️</div>
+            <div className="font-semibold">Manage Quests</div>
+            <div className="text-sm text-purple-600">{questAnalytics.totalQuests} active</div>
           </button>
           
           <button
@@ -255,26 +333,26 @@ const TeachersToolkitTab = ({
             className="p-4 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-center"
           >
             <div className="text-2xl mb-2">📅</div>
-            <div className="font-semibold">Attendance</div>
-            <div className="text-sm text-blue-600">Today: {Object.keys(todaysAttendance).length}/{students.length}</div>
+            <div className="font-semibold">Take Attendance</div>
+            <div className="text-sm text-blue-600">{attendanceStats.averageAttendance}% avg</div>
           </button>
           
           <button
-            onClick={() => setActiveToolkitTab('group-maker')}
+            onClick={() => setActiveToolkitTab('help-queue')}
+            className="p-4 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors text-center"
+          >
+            <div className="text-2xl mb-2">🎫</div>
+            <div className="font-semibold">Help Queue</div>
+            <div className="text-sm text-orange-600">Manage assistance</div>
+          </button>
+          
+          <button
+            onClick={() => setActiveToolkitTab('timer')}
             className="p-4 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors text-center"
           >
-            <div className="text-2xl mb-2">👥</div>
-            <div className="font-semibold">Make Groups</div>
-            <div className="text-sm text-green-600">Size: {groupSettings.groupSize}</div>
-          </button>
-          
-          <button
-            onClick={pickRandomStudent}
-            className="p-4 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors text-center"
-          >
-            <div className="text-2xl mb-2">🎯</div>
-            <div className="font-semibold">Pick Name</div>
-            <div className="text-sm text-purple-600">Random select</div>
+            <div className="text-2xl mb-2">⏰</div>
+            <div className="font-semibold">Epic Timer</div>
+            <div className="text-sm text-green-600">With animations</div>
           </button>
         </div>
       </div>
@@ -301,72 +379,15 @@ const TeachersToolkitTab = ({
 
         {/* Tab Content */}
         <div className="min-h-[400px]">
-          {/* Help Queue Tab */}
+          {/* Student Help Queue */}
           {activeToolkitTab === 'help-queue' && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold text-gray-800">🎫 Student Help Queue</h3>
-                <div className="text-sm text-gray-600">
-                  {helpQueue.length} student(s) in queue
-                </div>
-              </div>
-
-              {/* Add to Queue */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="font-semibold text-gray-800 mb-3">Add Student to Queue</h4>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                  {students.map(student => (
-                    <button
-                      key={student.id}
-                      onClick={() => addToHelpQueue(student.id)}
-                      disabled={helpQueue.some(item => item.studentId === student.id)}
-                      className={`p-2 rounded-lg text-sm transition-all ${
-                        helpQueue.some(item => item.studentId === student.id)
-                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                          : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                      }`}
-                    >
-                      {student.firstName}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Queue Display */}
-              <div className="space-y-3">
-                {helpQueue.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <div className="text-4xl mb-2">✅</div>
-                    <p>No students need help right now!</p>
-                  </div>
-                ) : (
-                  helpQueue.map((item, index) => (
-                    <div key={item.id} className="flex items-center justify-between p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <div className="bg-yellow-500 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold">
-                          {index + 1}
-                        </div>
-                        <div>
-                          <p className="font-semibold text-gray-800">{item.studentName}</p>
-                          <p className="text-sm text-gray-600">
-                            Waiting since {new Date(item.timestamp).toLocaleTimeString()}
-                          </p>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => removeFromHelpQueue(item.id)}
-                        className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-all"
-                      >
-                        Helped ✓
-                      </button>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
+            <StudentHelpQueue 
+              students={students} 
+              showToast={showToast} 
+            />
           )}
 
-          {/* Attendance Tab */}
+          {/* Attendance Tracker */}
           {activeToolkitTab === 'attendance' && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
@@ -378,7 +399,8 @@ const TeachersToolkitTab = ({
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {students.map(student => {
-                  const status = todaysAttendance[student.id] || 'not-marked';
+                  const today = new Date().toISOString().split('T')[0];
+                  const status = attendanceState[today]?.[student.id] || 'not-marked';
                   
                   return (
                     <div key={student.id} className="border border-gray-200 rounded-lg p-4">
@@ -397,7 +419,7 @@ const TeachersToolkitTab = ({
                       
                       <div className="flex space-x-2">
                         <button
-                          onClick={() => markAttendance(student.id, 'present')}
+                          onClick={() => handleMarkAttendance(student.id, 'present')}
                           className={`flex-1 py-2 px-3 rounded-lg transition-all ${
                             status === 'present'
                               ? 'bg-green-500 text-white'
@@ -407,7 +429,7 @@ const TeachersToolkitTab = ({
                           ✓ Present
                         </button>
                         <button
-                          onClick={() => markAttendance(student.id, 'absent')}
+                          onClick={() => handleMarkAttendance(student.id, 'absent')}
                           className={`flex-1 py-2 px-3 rounded-lg transition-all ${
                             status === 'absent'
                               ? 'bg-red-500 text-white'
@@ -427,19 +449,19 @@ const TeachersToolkitTab = ({
                 <div className="grid grid-cols-3 gap-4 text-center">
                   <div>
                     <div className="text-2xl font-bold text-green-600">
-                      {Object.values(todaysAttendance).filter(s => s === 'present').length}
+                      {Object.values(attendanceState[new Date().toISOString().split('T')[0]] || {}).filter(s => s === 'present').length}
                     </div>
                     <div className="text-sm text-gray-600">Present</div>
                   </div>
                   <div>
                     <div className="text-2xl font-bold text-red-600">
-                      {Object.values(todaysAttendance).filter(s => s === 'absent').length}
+                      {Object.values(attendanceState[new Date().toISOString().split('T')[0]] || {}).filter(s => s === 'absent').length}
                     </div>
                     <div className="text-sm text-gray-600">Absent</div>
                   </div>
                   <div>
                     <div className="text-2xl font-bold text-gray-600">
-                      {students.length - Object.keys(todaysAttendance).length}
+                      {students.length - Object.keys(attendanceState[new Date().toISOString().split('T')[0]] || {}).length}
                     </div>
                     <div className="text-sm text-gray-600">Not Marked</div>
                   </div>
@@ -448,7 +470,7 @@ const TeachersToolkitTab = ({
             </div>
           )}
 
-          {/* Analytics Tab */}
+          {/* Analytics */}
           {activeToolkitTab === 'analytics' && (
             <div className="space-y-6">
               <h3 className="text-xl font-bold text-gray-800">📊 Class Analytics</h3>
@@ -519,160 +541,50 @@ const TeachersToolkitTab = ({
             </div>
           )}
 
-          {/* Group Maker Tab */}
+          {/* Group Maker */}
           {activeToolkitTab === 'group-maker' && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold text-gray-800">👥 Group Maker</h3>
-              </div>
-
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="font-semibold text-gray-800 mb-3">Group Settings</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Group Size</label>
-                    <select
-                      value={groupSettings.groupSize}
-                      onChange={(e) => setGroupSettings(prev => ({ ...prev, groupSize: parseInt(e.target.value) }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value={2}>2 students</option>
-                      <option value={3}>3 students</option>
-                      <option value={4}>4 students</option>
-                      <option value={5}>5 students</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Method</label>
-                    <select
-                      value={groupSettings.method}
-                      onChange={(e) => setGroupSettings(prev => ({ ...prev, method: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="random">Random</option>
-                      <option value="balanced">Balanced by XP</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <button
-                onClick={() => {
-                  const groups = createRandomGroups();
-                  showToast(`Created ${groups.length} groups!`, 'success');
-                }}
-                className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-3 rounded-lg hover:shadow-lg transition-all font-semibold"
-              >
-                🎲 Create Random Groups
-              </button>
-
-              <div className="text-center text-gray-500">
-                <p>Groups will be displayed here after creation</p>
-                <p className="text-sm">Estimated {Math.ceil(students.length / groupSettings.groupSize)} groups</p>
-              </div>
-            </div>
+            <GroupMaker 
+              students={students} 
+              showToast={showToast}
+              saveGroupDataToFirebase={saveGroupDataToFirebase}
+              userData={userData}
+              currentClassId={currentClassId}
+            />
           )}
 
-          {/* Name Picker Tab */}
+          {/* Name Picker */}
           {activeToolkitTab === 'name-picker' && (
-            <div className="space-y-6">
-              <div className="text-center">
-                <h3 className="text-xl font-bold text-gray-800 mb-4">🎯 Random Name Picker</h3>
-                
-                <div className="bg-gradient-to-r from-purple-100 to-blue-100 rounded-xl p-8 mb-6">
-                  <div className="text-6xl mb-4">🎲</div>
-                  <button
-                    onClick={pickRandomStudent}
-                    className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-8 py-4 rounded-xl hover:shadow-lg transition-all font-bold text-lg"
-                  >
-                    Pick a Student!
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
-                  {students.map(student => (
-                    <div
-                      key={student.id}
-                      className="p-3 bg-white border border-gray-200 rounded-lg text-center hover:shadow-lg transition-all cursor-pointer"
-                      onClick={() => showToast(`Selected ${student.firstName}!`, 'success')}
-                    >
-                      <img 
-                        src={`/avatars/${student.avatarBase || 'Wizard F'}/Level ${student.avatarLevel || 1}.png`}
-                        alt={`${student.firstName}'s Avatar`}
-                        className="w-12 h-12 rounded-full mx-auto mb-2"
-                        onError={(e) => { e.target.src = '/avatars/Wizard F/Level 1.png'; }}
-                      />
-                      <p className="text-sm font-semibold">{student.firstName}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
+            <NamePicker 
+              students={students} 
+              showToast={showToast} 
+            />
           )}
 
-          {/* Timer Tab */}
+          {/* Timer Tools */}
           {activeToolkitTab === 'timer' && (
-            <div className="space-y-6">
-              <div className="text-center">
-                <h3 className="text-xl font-bold text-gray-800 mb-4">⏰ Class Timer</h3>
-                
-                <div className="bg-gradient-to-r from-blue-100 to-purple-100 rounded-xl p-8 mb-6">
-                  <div className="text-6xl font-mono font-bold mb-4 text-gray-800">
-                    {String(timerSettings.minutes).padStart(2, '0')}:{String(timerSettings.seconds).padStart(2, '0')}
-                  </div>
-                  
-                  <div className="flex justify-center space-x-4 mb-6">
-                    <button
-                      onClick={() => setTimerSettings(prev => ({ ...prev, minutes: Math.max(0, prev.minutes - 1) }))}
-                      className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-all"
-                    >
-                      -1 Min
-                    </button>
-                    <button
-                      onClick={() => setTimerSettings(prev => ({ ...prev, minutes: prev.minutes + 1 }))}
-                      className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-all"
-                    >
-                      +1 Min
-                    </button>
-                  </div>
-                  
-                  <div className="flex justify-center space-x-4">
-                    <button
-                      onClick={startTimer}
-                      disabled={timerSettings.isRunning}
-                      className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      ▶️ Start
-                    </button>
-                    <button
-                      onClick={stopTimer}
-                      disabled={!timerSettings.isRunning}
-                      className="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      ⏸️ Stop
-                    </button>
-                    <button
-                      onClick={resetTimer}
-                      className="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition-all font-semibold"
-                    >
-                      🔄 Reset
-                    </button>
-                  </div>
-                </div>
+            <TimerTools 
+              showToast={showToast}
+              students={students}
+              timerState={timerSettings}
+              setTimerState={setTimerSettings}
+            />
+          )}
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {[1, 2, 5, 10].map(minutes => (
-                    <button
-                      key={minutes}
-                      onClick={() => setTimerSettings(prev => ({ ...prev, minutes, seconds: 0 }))}
-                      className="p-3 bg-white border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-all"
-                    >
-                      {minutes} min
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
+          {/* Dice Roller */}
+          {activeToolkitTab === 'dice-roller' && (
+            <DiceRoller 
+              showToast={showToast}
+            />
+          )}
+
+          {/* Classroom Designer */}
+          {activeToolkitTab === 'classroom-designer' && (
+            <ClassroomDesigner 
+              students={students} 
+              showToast={showToast}
+              saveClassroomDataToFirebase={saveClassroomDataToFirebase}
+              currentClassId={currentClassId}
+            />
           )}
         </div>
       </div>
