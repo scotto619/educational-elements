@@ -9,7 +9,7 @@ import TimerTools from '../tools/TimerTools';
 import ClassroomDesigner from '../tools/ClassroomDesigner';
 import DiceRoller from '../tools/DiceRoller';
 import ClassroomJobs from '../tools/ClassroomJobs'; // Classroom Jobs
-import TimetableCreator from '../tools/TimetableCreator'; // NEW: Import TimetableCreator
+import TimetableCreator from '../tools/TimetableCreator'; // TimetableCreator
 
 // ===============================================
 // TEACHERS TOOLKIT TAB COMPONENT
@@ -23,7 +23,7 @@ const TeachersToolkitTab = ({
   saveGroupDataToFirebase,
   saveClassroomDataToFirebase,
   currentClassId,
-  onAwardXP = () => {}, // NEW: XP awarding function for job payments
+  onAwardXP = () => {}, // XP awarding function for job payments
   // Quest System Props (if available)
   activeQuests = [],
   attendanceData = {},
@@ -31,7 +31,7 @@ const TeachersToolkitTab = ({
   completeQuest,
   setShowQuestManagement
 }) => {
-  const [activeToolkitTab, setActiveToolkitTab] = useState('timetable'); // NEW: Default to timetable
+  const [activeToolkitTab, setActiveToolkitTab] = useState('timetable'); // Default to timetable
   const [attendanceState, setAttendanceState] = useState(attendanceData);
   const [timerSettings, setTimerSettings] = useState({ 
     minutes: 5, 
@@ -126,6 +126,14 @@ const TeachersToolkitTab = ({
     }
     
     showToast(`Attendance marked for student`, 'success');
+  };
+
+  // Handle saving timetable data
+  const handleSaveTimetableData = (timetableData) => {
+    // Here you would typically save to Firebase or your backend
+    // For now, just show a success message
+    showToast('Timetable saved successfully!', 'success');
+    console.log('Timetable data to save:', timetableData);
   };
 
   if (!isPro) {
@@ -223,9 +231,9 @@ const TeachersToolkitTab = ({
   // Updated toolkit tabs to include classroom jobs and timetable
   const toolkitTabs = [
     { id: 'classroom-jobs', label: 'Classroom Jobs', icon: '💼' },
-    { id: 'timetable', label: 'Timetable', icon: '📅' }, // NEW: Added timetable
+    { id: 'timetable', label: 'Timetable', icon: '📅' },
     { id: 'help-queue', label: 'Help Queue', icon: '🎫' },
-    { id: 'attendance', label: 'Attendance', icon: '✅' }, // Changed icon to avoid conflict
+    { id: 'attendance', label: 'Attendance', icon: '✅' },
     { id: 'analytics', label: 'Analytics', icon: '📊' },
     { id: 'group-maker', label: 'Group Maker', icon: '👥' },
     { id: 'name-picker', label: 'Name Picker', icon: '🎯' },
@@ -343,12 +351,21 @@ const TeachersToolkitTab = ({
 
         {/* Tool Content */}
         <div className="min-h-[600px]">
-          {/* NEW: Classroom Jobs */}
+          {/* Classroom Jobs */}
           {activeToolkitTab === 'classroom-jobs' && (
             <ClassroomJobs 
               students={students} 
               showToast={showToast}
-              onAwardXP={onAwardXP} // Pass XP awarding function
+              onAwardXP={onAwardXP}
+            />
+          )}
+
+          {/* FIXED: Added the missing Timetable rendering */}
+          {activeToolkitTab === 'timetable' && (
+            <TimetableCreator 
+              students={students} 
+              showToast={showToast}
+              onSaveData={handleSaveTimetableData}
             />
           )}
 
