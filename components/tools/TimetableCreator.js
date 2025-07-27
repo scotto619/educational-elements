@@ -1,4 +1,4 @@
-// components/tools/TimetableCreator.js - Interactive Timetable Creator with Reminders
+// components/tools/TimetableCreator.js - Interactive Timetable Creator (Fixed)
 import React, { useState, useEffect } from 'react';
 
 // ===============================================
@@ -8,11 +8,21 @@ import React, { useState, useEffect } from 'react';
 const TimetableCreator = ({ 
   students = [], 
   showToast = () => {},
-  onSaveData = () => {} // Function to save timetable data
+  onSaveData = () => {}
 }) => {
   // State management
   const [timetable, setTimetable] = useState({});
-  const [timeSlots, setTimeSlots] = useState([
+  const [currentWeek, setCurrentWeek] = useState('2024-01-01');
+  
+  // Modal states
+  const [showActivityModal, setShowActivityModal] = useState(false);
+  const [showSubjectModal, setShowSubjectModal] = useState(false);
+  const [showTeacherModal, setShowTeacherModal] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState(null);
+  const [selectedDay, setSelectedDay] = useState(null);
+
+  // Default time slots
+  const [timeSlots] = useState([
     { id: 'slot1', start: '09:00', end: '09:50', label: 'Period 1' },
     { id: 'slot2', start: '09:50', end: '10:40', label: 'Period 2' },
     { id: 'slot3', start: '10:40', end: '11:00', label: 'Morning Tea' },
@@ -22,8 +32,9 @@ const TimetableCreator = ({
     { id: 'slot7', start: '13:20', end: '14:10', label: 'Period 5' },
     { id: 'slot8', start: '14:10', end: '15:00', label: 'Period 6' }
   ]);
-  
-  const [subjects, setSubjects] = useState([
+
+  // Default subjects
+  const [subjects] = useState([
     { id: 'math', name: 'Mathematics', color: 'bg-blue-500', icon: '🧮' },
     { id: 'english', name: 'English', color: 'bg-green-500', icon: '📚' },
     { id: 'science', name: 'Science', color: 'bg-purple-500', icon: '🔬' },
@@ -31,70 +42,41 @@ const TimetableCreator = ({
     { id: 'pe', name: 'Physical Education', color: 'bg-red-500', icon: '⚽' },
     { id: 'art', name: 'Art', color: 'bg-pink-500', icon: '🎨' },
     { id: 'music', name: 'Music', color: 'bg-indigo-500', icon: '🎵' },
-    { id: 'break', name: 'Break', color: 'bg-gray-400', icon: '☕' },
-    { id: 'lunch', name: 'Lunch', color: 'bg-orange-500', icon: '🍎' }
+    { id: 'break', name: 'Break', color: 'bg-gray-400', icon: '☕' }
   ]);
 
-  const [teachers, setTeachers] = useState([
+  // Default teachers
+  const [teachers] = useState([
     { id: 'teacher1', name: 'Ms. Johnson', specialties: ['math', 'science'] },
     { id: 'teacher2', name: 'Mr. Smith', specialties: ['english', 'history'] },
     { id: 'teacher3', name: 'Mrs. Davis', specialties: ['art', 'music'] },
     { id: 'teacher4', name: 'Coach Wilson', specialties: ['pe'] }
   ]);
 
-  const [currentWeek, setCurrentWeek] = useState(getCurrentWeek());
-  
-  // Modal states
-  const [showActivityModal, setShowActivityModal] = useState(false);
-  const [showSubjectModal, setShowSubjectModal] = useState(false);
-  const [showTeacherModal, setShowTeacherModal] = useState(false);
-  const [showTimeSlotModal, setShowTimeSlotModal] = useState(false);
-  const [showReminderModal, setShowReminderModal] = useState(false);
-  const [selectedSlot, setSelectedSlot] = useState(null);
-  const [selectedDay, setSelectedDay] = useState(null);
-
   // Activity form state
   const [newActivity, setNewActivity] = useState({
-    id: '',
     subject: '',
     teacher: '',
-    students: [], // 'all' or array of student IDs
+    students: [],
     location: '',
     notes: '',
-    reminder: 0, // minutes before
-    type: 'main' // 'main' or 'parallel'
+    reminder: 0,
+    type: 'main'
   });
 
   // Days of the week
   const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
-  // Reminder system
-  const [activeReminders, setActiveReminders] = useState([]);
-
   // ===============================================
   // UTILITY FUNCTIONS
   // ===============================================
-
-  function getCurrentWeek() {
-    const today = new Date();
-    const startOfWeek = new Date(today.setDate(today.getDate() - today.getDay() + 1));
-    return startOfWeek.toISOString().split('T')[0];
-  }
 
   function getTimetableKey(day, slotId) {
     return `${currentWeek}-${day}-${slotId}`;
   }
 
-  function parseTime(timeString) {
-    const [hours, minutes] = timeString.split(':').map(Number);
-    return hours * 60 + minutes;
-  }
-
-  function formatTime(minutes) {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
-  }
+  const getSubjectById = (id) => subjects.find(s => s.id === id);
+  const getTeacherById = (id) => teachers.find(t => t.id === id);
 
   // ===============================================
   // TIMETABLE MANAGEMENT FUNCTIONS
@@ -112,7 +94,6 @@ const TimetableCreator = ({
       createdAt: new Date().toISOString()
     };
 
-    // Handle multiple activities in same slot
     const existingActivities = timetable[key] || [];
     const updatedActivities = [...existingActivities, activity];
 
@@ -121,14 +102,8 @@ const TimetableCreator = ({
       [key]: updatedActivities
     });
 
-    // Set up reminder if specified
-    if (activity.reminder > 0) {
-      setupReminder(activity);
-    }
-
     // Reset form
     setNewActivity({
-      id: '',
       subject: '',
       teacher: '',
       students: [],
@@ -154,16 +129,12 @@ const TimetableCreator = ({
         [key]: updatedActivities
       });
     }
-
-    // Remove any associated reminders
-    setActiveReminders(prev => prev.filter(reminder => reminder.activityId !== activityId));
   };
 
   const openActivityModal = (day, slot) => {
     setSelectedDay(day);
     setSelectedSlot(slot);
     setNewActivity({
-      id: '',
       subject: '',
       teacher: '',
       students: [],
@@ -176,109 +147,8 @@ const TimetableCreator = ({
   };
 
   // ===============================================
-  // REMINDER SYSTEM
-  // ===============================================
-
-  const setupReminder = (activity) => {
-    const now = new Date();
-    const activityDate = new Date(currentWeek);
-    const dayIndex = DAYS.indexOf(activity.day);
-    activityDate.setDate(activityDate.getDate() + dayIndex);
-    
-    const [hours, minutes] = activity.slot.start.split(':').map(Number);
-    activityDate.setHours(hours, minutes, 0, 0);
-    
-    const reminderTime = new Date(activityDate.getTime() - (activity.reminder * 60 * 1000));
-    
-    if (reminderTime > now) {
-      const timeoutId = setTimeout(() => {
-        showReminderNotification(activity);
-        setActiveReminders(prev => prev.filter(r => r.id !== `reminder_${activity.id}`));
-      }, reminderTime.getTime() - now.getTime());
-
-      setActiveReminders(prev => [...prev, {
-        id: `reminder_${activity.id}`,
-        activityId: activity.id,
-        timeoutId,
-        activity,
-        reminderTime
-      }]);
-    }
-  };
-
-  const showReminderNotification = (activity) => {
-    // Create a visual reminder notification
-    const reminderDiv = document.createElement('div');
-    reminderDiv.className = 'fixed top-4 right-4 bg-yellow-500 text-white p-4 rounded-lg shadow-lg z-50 max-w-sm';
-    reminderDiv.innerHTML = `
-      <div class="flex items-center space-x-3">
-        <div class="text-2xl">⏰</div>
-        <div>
-          <div class="font-bold">Upcoming Activity!</div>
-          <div class="text-sm">${activity.subject} in ${activity.reminder} minutes</div>
-          <div class="text-xs opacity-90">${activity.slot.start} - ${activity.slot.end}</div>
-        </div>
-      </div>
-    `;
-    
-    document.body.appendChild(reminderDiv);
-    
-    // Play reminder sound
-    try {
-      const audio = new Audio('/sounds/reminder.mp3');
-      audio.volume = 0.5;
-      audio.play().catch(() => {
-        // Fallback beep if no audio file
-        const context = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = context.createOscillator();
-        const gainNode = context.createGain();
-        oscillator.connect(gainNode);
-        gainNode.connect(context.destination);
-        oscillator.frequency.value = 800;
-        gainNode.gain.value = 0.3;
-        oscillator.start();
-        setTimeout(() => oscillator.stop(), 200);
-      });
-    } catch (e) {
-      console.log('Audio not available');
-    }
-
-    // Remove notification after 5 seconds
-    setTimeout(() => {
-      if (document.body.contains(reminderDiv)) {
-        document.body.removeChild(reminderDiv);
-      }
-    }, 5000);
-  };
-
-  // ===============================================
-  // SUBJECT AND TEACHER MANAGEMENT
-  // ===============================================
-
-  const addSubject = (subjectData) => {
-    const subject = {
-      id: `subject_${Date.now()}`,
-      ...subjectData
-    };
-    setSubjects([...subjects, subject]);
-    setShowSubjectModal(false);
-  };
-
-  const addTeacher = (teacherData) => {
-    const teacher = {
-      id: `teacher_${Date.now()}`,
-      ...teacherData
-    };
-    setTeachers([...teachers, teacher]);
-    setShowTeacherModal(false);
-  };
-
-  // ===============================================
   // RENDER FUNCTIONS
   // ===============================================
-
-  const getSubjectById = (id) => subjects.find(s => s.id === id);
-  const getTeacherById = (id) => teachers.find(t => t.id === id);
 
   const renderActivityCard = (activity, isParallel = false) => {
     const subject = getSubjectById(activity.subject);
@@ -308,7 +178,7 @@ const TimetableCreator = ({
           <div className="text-xs opacity-90 mb-1">👩‍🏫 {teacher.name}</div>
         )}
         
-        {activity.students.length > 0 && activity.students[0] !== 'all' && (
+        {activity.students.length > 0 && (
           <div className="text-xs opacity-90 mb-1">
             👥 {activity.students.length} student{activity.students.length !== 1 ? 's' : ''}
           </div>
@@ -320,12 +190,6 @@ const TimetableCreator = ({
         
         {activity.reminder > 0 && (
           <div className="text-xs opacity-90">⏰ {activity.reminder}min reminder</div>
-        )}
-        
-        {isParallel && (
-          <div className="absolute top-1 right-6 text-xs bg-white bg-opacity-20 px-1 rounded">
-            Parallel
-          </div>
         )}
       </div>
     );
@@ -364,18 +228,11 @@ const TimetableCreator = ({
             >
               👩‍🏫 Add Teacher
             </button>
-            
-            <button
-              onClick={() => setShowTimeSlotModal(true)}
-              className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all font-semibold"
-            >
-              ⏰ Edit Time Slots
-            </button>
           </div>
 
           <div className="flex items-center space-x-4">
             <div className="text-sm text-gray-600">
-              <span className="font-semibold">Active Reminders:</span> {activeReminders.length}
+              <span className="font-semibold">Total Activities:</span> {Object.keys(timetable).length}
             </div>
             
             <button
@@ -443,7 +300,7 @@ const TimetableCreator = ({
         </div>
       </div>
 
-      {/* Legend */}
+      {/* Subject Legend */}
       <div className="bg-white rounded-xl p-6 shadow-lg">
         <h3 className="text-lg font-bold text-gray-800 mb-4">📋 Subject Legend</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
@@ -453,27 +310,6 @@ const TimetableCreator = ({
               <span className="text-sm">{subject.icon} {subject.name}</span>
             </div>
           ))}
-        </div>
-        
-        <div className="mt-4 pt-4 border-t border-gray-200">
-          <div className="flex items-center space-x-6 text-sm text-gray-600">
-            <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 border-2 border-gray-400 border-dashed rounded"></div>
-              <span>Parallel Activity</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span>⏰</span>
-              <span>Has Reminder</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span>👩‍🏫</span>
-              <span>Specialist Teacher</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span>👥</span>
-              <span>Specific Students</span>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -525,24 +361,11 @@ const TimetableCreator = ({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Students</label>
-                <select
-                  value={newActivity.students.length === 0 ? 'all' : 'specific'}
-                  onChange={(e) => {
-                    if (e.target.value === 'all') {
-                      setNewActivity({...newActivity, students: []});
-                    } else {
-                      setNewActivity({...newActivity, students: []});
-                    }
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent mb-2"
-                >
-                  <option value="all">Whole Class</option>
-                  <option value="specific">Specific Students</option>
-                </select>
-
-                {newActivity.students.length === 0 && (
+                <div className="text-sm text-gray-600 mb-2">
+                  Select students for this activity (leave empty for whole class):
+                </div>
+                {students.length > 0 ? (
                   <div className="max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-3">
-                    <div className="text-sm text-gray-600 mb-2">Select students for this activity:</div>
                     {students.map(student => (
                       <label key={student.id} className="flex items-center space-x-2 mb-1">
                         <input
@@ -566,6 +389,10 @@ const TimetableCreator = ({
                         <span className="text-sm">{student.firstName} {student.lastName}</span>
                       </label>
                     ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-4 text-gray-500 text-sm">
+                    No students available. Add students to assign them to activities.
                   </div>
                 )}
               </div>
@@ -640,209 +467,6 @@ const TimetableCreator = ({
           </div>
         </div>
       )}
-
-      {/* Add Subject Modal */}
-      {showSubjectModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-            <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-t-2xl">
-              <h2 className="text-2xl font-bold">➕ Add Subject</h2>
-            </div>
-            
-            <div className="p-6">
-              <SubjectForm onSubmit={addSubject} onCancel={() => setShowSubjectModal(false)} />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Add Teacher Modal */}
-      {showTeacherModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-            <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-t-2xl">
-              <h2 className="text-2xl font-bold">👩‍🏫 Add Teacher</h2>
-            </div>
-            
-            <div className="p-6">
-              <TeacherForm 
-                subjects={subjects}
-                onSubmit={addTeacher} 
-                onCancel={() => setShowTeacherModal(false)} 
-              />
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// ===============================================
-// SUBJECT FORM COMPONENT
-// ===============================================
-
-const SubjectForm = ({ onSubmit, onCancel }) => {
-  const [formData, setFormData] = useState({
-    name: '',
-    color: 'bg-blue-500',
-    icon: '📚'
-  });
-
-  const COLORS = [
-    'bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-red-500',
-    'bg-yellow-500', 'bg-indigo-500', 'bg-pink-500', 'bg-teal-500',
-    'bg-orange-500', 'bg-gray-500'
-  ];
-
-  const ICONS = [
-    '📚', '🧮', '🔬', '🎨', '🎵', '⚽', '🏛️', '🌍', '💻', '🎭',
-    '📝', '🔍', '🎯', '🏆', '💡', '⭐'
-  ];
-
-  const handleSubmit = () => {
-    if (!formData.name.trim()) return;
-    onSubmit(formData);
-  };
-
-  return (
-    <div className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Subject Name *</label>
-        <input
-          type="text"
-          value={formData.name}
-          onChange={(e) => setFormData({...formData, name: e.target.value})}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          placeholder="e.g., Mathematics"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Color</label>
-        <div className="flex flex-wrap gap-2">
-          {COLORS.map(color => (
-            <button
-              key={color}
-              onClick={() => setFormData({...formData, color})}
-              className={`w-8 h-8 rounded-full ${color} ${
-                formData.color === color ? 'ring-4 ring-gray-400' : ''
-              }`}
-            />
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Icon</label>
-        <div className="flex flex-wrap gap-2">
-          {ICONS.map(icon => (
-            <button
-              key={icon}
-              onClick={() => setFormData({...formData, icon})}
-              className={`p-2 text-xl rounded-lg border-2 ${
-                formData.icon === icon ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
-              }`}
-            >
-              {icon}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="flex space-x-3 pt-4">
-        <button
-          onClick={onCancel}
-          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={handleSubmit}
-          disabled={!formData.name.trim()}
-          className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all disabled:opacity-50"
-        >
-          Add Subject
-        </button>
-      </div>
-    </div>
-  );
-};
-
-// ===============================================
-// TEACHER FORM COMPONENT
-// ===============================================
-
-const TeacherForm = ({ subjects, onSubmit, onCancel }) => {
-  const [formData, setFormData] = useState({
-    name: '',
-    specialties: []
-  });
-
-  const handleSubmit = () => {
-    if (!formData.name.trim()) return;
-    onSubmit(formData);
-  };
-
-  const toggleSpecialty = (subjectId) => {
-    if (formData.specialties.includes(subjectId)) {
-      setFormData({
-        ...formData,
-        specialties: formData.specialties.filter(id => id !== subjectId)
-      });
-    } else {
-      setFormData({
-        ...formData,
-        specialties: [...formData.specialties, subjectId]
-      });
-    }
-  };
-
-  return (
-    <div className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Teacher Name *</label>
-        <input
-          type="text"
-          value={formData.name}
-          onChange={(e) => setFormData({...formData, name: e.target.value})}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-          placeholder="e.g., Ms. Johnson"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Specialties</label>
-        <div className="space-y-2 max-h-32 overflow-y-auto">
-          {subjects.map(subject => (
-            <label key={subject.id} className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                checked={formData.specialties.includes(subject.id)}
-                onChange={() => toggleSpecialty(subject.id)}
-                className="rounded"
-              />
-              <span className="text-sm">{subject.icon} {subject.name}</span>
-            </label>
-          ))}
-        </div>
-      </div>
-
-      <div className="flex space-x-3 pt-4">
-        <button
-          onClick={onCancel}
-          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={handleSubmit}
-          disabled={!formData.name.trim()}
-          className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all disabled:opacity-50"
-        >
-          Add Teacher
-        </button>
-      </div>
     </div>
   );
 };
