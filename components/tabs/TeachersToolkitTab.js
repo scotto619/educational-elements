@@ -1,4 +1,4 @@
-// components/tabs/TeachersToolkitTab.js - Professional Classroom Management Tools with Separate Components
+// components/tabs/TeachersToolkitTab.js - Professional Classroom Management Tools with Classroom Jobs
 import React, { useState } from 'react';
 
 // Import tool components from the tools folder
@@ -8,6 +8,7 @@ import NamePicker from '../tools/NamePicker';
 import TimerTools from '../tools/TimerTools';
 import ClassroomDesigner from '../tools/ClassroomDesigner';
 import DiceRoller from '../tools/DiceRoller';
+import ClassroomJobs from '../tools/ClassroomJobs'; // NEW: Import ClassroomJobs
 
 // ===============================================
 // TEACHERS TOOLKIT TAB COMPONENT
@@ -21,6 +22,7 @@ const TeachersToolkitTab = ({
   saveGroupDataToFirebase,
   saveClassroomDataToFirebase,
   currentClassId,
+  onAwardXP = () => {}, // NEW: XP awarding function for job payments
   // Quest System Props (if available)
   activeQuests = [],
   attendanceData = {},
@@ -28,7 +30,7 @@ const TeachersToolkitTab = ({
   completeQuest,
   setShowQuestManagement
 }) => {
-  const [activeToolkitTab, setActiveToolkitTab] = useState('help-queue');
+  const [activeToolkitTab, setActiveToolkitTab] = useState('classroom-jobs'); // NEW: Default to jobs
   const [attendanceState, setAttendanceState] = useState(attendanceData);
   const [timerSettings, setTimerSettings] = useState({ 
     minutes: 5, 
@@ -72,7 +74,7 @@ const TeachersToolkitTab = ({
 
     // Calculate completion rate
     const possibleCompletions = analytics.totalQuests * students.length;
-    analytics.completionRate = possibleCompletions > 0 ? 
+    analytics.completionRate = possibleCompletions > 0 ?
       Math.round((analytics.totalCompletions / possibleCompletions) * 100) : 0;
 
     return analytics;
@@ -137,6 +139,10 @@ const TeachersToolkitTab = ({
           <p className="text-yellow-700 font-semibold mb-3">🌟 PRO Teaching Tools Include:</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-yellow-600 text-sm">
             <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <span>💼</span>
+                <span>Interactive Classroom Jobs System</span>
+              </div>
               <div className="flex items-center space-x-2">
                 <span>🎫</span>
                 <span>Student Help Queue System</span>
@@ -209,8 +215,9 @@ const TeachersToolkitTab = ({
   const questAnalytics = calculateQuestAnalytics();
   const attendanceStats = calculateAttendanceStats();
 
-  // Updated toolkit tabs to include all tools
+  // Updated toolkit tabs to include classroom jobs
   const toolkitTabs = [
+    { id: 'classroom-jobs', label: 'Classroom Jobs', icon: '💼' }, // NEW: Added classroom jobs
     { id: 'help-queue', label: 'Help Queue', icon: '🎫' },
     { id: 'attendance', label: 'Attendance', icon: '📅' },
     { id: 'analytics', label: 'Analytics', icon: '📊' },
@@ -250,111 +257,53 @@ const TeachersToolkitTab = ({
             <p className="text-green-700 mb-3">
               Math, Literacy, Geography, and Science tools have been organized in the <strong>Curriculum Corner</strong> tab for better subject-based teaching!
             </p>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-green-700 text-sm">
-              <div className="flex items-center space-x-2">
-                <span>📚</span>
-                <span>Literacy Tools</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span>🔢</span>
-                <span>Math Activities</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span>🌍</span>
-                <span>Geography Explorer</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span>🔬</span>
-                <span>Science Tools</span>
-              </div>
+            <div className="flex flex-wrap gap-2">
+              <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm">🧮 Math Tools</span>
+              <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm">📝 Literacy Games</span>
+              <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm">🌍 Geography</span>
+              <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-sm">🔬 Science</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Enhanced Dashboard */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-4 rounded-xl">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-purple-100 text-sm">Active Quests</p>
-              <p className="text-2xl font-bold">{questAnalytics.totalQuests}</p>
-            </div>
-            <div className="text-3xl">⚔️</div>
-          </div>
-        </div>
+      {/* Quick Action Dashboard */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <button
+          onClick={() => setActiveToolkitTab('classroom-jobs')}
+          className="p-4 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors text-center"
+        >
+          <div className="text-2xl mb-2">💼</div>
+          <div className="font-semibold">Classroom Jobs</div>
+          <div className="text-sm text-purple-600">Assign & pay students</div>
+        </button>
         
-        <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 rounded-xl">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-blue-100 text-sm">Quest Completion</p>
-              <p className="text-2xl font-bold">{questAnalytics.completionRate}%</p>
-            </div>
-            <div className="text-3xl">📈</div>
-          </div>
-        </div>
+        <button
+          onClick={() => setActiveToolkitTab('analytics')}
+          className="p-4 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-center"
+        >
+          <div className="text-2xl mb-2">📊</div>
+          <div className="font-semibold">Class Analytics</div>
+          <div className="text-sm text-blue-600">{analytics.averageXP} avg XP</div>
+        </button>
         
-        <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 rounded-xl">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-green-100 text-sm">Attendance Rate</p>
-              <p className="text-2xl font-bold">{attendanceStats.averageAttendance}%</p>
-            </div>
-            <div className="text-3xl">📅</div>
-          </div>
-        </div>
+        <button
+          onClick={() => setActiveToolkitTab('attendance')}
+          className="p-4 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-center"
+        >
+          <div className="text-2xl mb-2">📅</div>
+          <div className="font-semibold">Take Attendance</div>
+          <div className="text-sm text-blue-600">{attendanceStats.averageAttendance}% avg</div>
+        </button>
         
-        <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-4 rounded-xl">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-orange-100 text-sm">Average XP</p>
-              <p className="text-2xl font-bold">{analytics.averageXP}</p>
-            </div>
-            <div className="text-3xl">⭐</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Quick Access Tools */}
-      <div className="bg-white rounded-xl shadow-lg p-6">
-        <h3 className="text-xl font-bold text-gray-800 mb-6">🚀 Quick Access</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <button
-            onClick={() => setShowQuestManagement && setShowQuestManagement(true)}
-            className="p-4 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors text-center"
-          >
-            <div className="text-2xl mb-2">⚔️</div>
-            <div className="font-semibold">Manage Quests</div>
-            <div className="text-sm text-purple-600">{questAnalytics.totalQuests} active</div>
-          </button>
-          
-          <button
-            onClick={() => setActiveToolkitTab('attendance')}
-            className="p-4 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-center"
-          >
-            <div className="text-2xl mb-2">📅</div>
-            <div className="font-semibold">Take Attendance</div>
-            <div className="text-sm text-blue-600">{attendanceStats.averageAttendance}% avg</div>
-          </button>
-          
-          <button
-            onClick={() => setActiveToolkitTab('help-queue')}
-            className="p-4 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors text-center"
-          >
-            <div className="text-2xl mb-2">🎫</div>
-            <div className="font-semibold">Help Queue</div>
-            <div className="text-sm text-orange-600">Manage assistance</div>
-          </button>
-          
-          <button
-            onClick={() => setActiveToolkitTab('timer')}
-            className="p-4 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors text-center"
-          >
-            <div className="text-2xl mb-2">⏰</div>
-            <div className="font-semibold">Epic Timer</div>
-            <div className="text-sm text-green-600">With animations</div>
-          </button>
-        </div>
+        <button
+          onClick={() => setActiveToolkitTab('help-queue')}
+          className="p-4 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors text-center"
+        >
+          <div className="text-2xl mb-2">🎫</div>
+          <div className="font-semibold">Help Queue</div>
+          <div className="text-sm text-orange-600">Manage assistance</div>
+        </button>
       </div>
 
       {/* Main Toolkit Interface */}
@@ -367,19 +316,28 @@ const TeachersToolkitTab = ({
               onClick={() => setActiveToolkitTab(tab.id)}
               className={`px-4 py-2 rounded-t-lg font-medium transition-all duration-200 flex items-center space-x-2 ${
                 activeToolkitTab === tab.id
-                  ? 'bg-blue-600 text-white shadow-lg'
-                  : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
+                  ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg'
+                  : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
               }`}
             >
-              <span>{tab.icon}</span>
+              <span className="text-lg">{tab.icon}</span>
               <span>{tab.label}</span>
             </button>
           ))}
         </div>
 
-        {/* Tab Content */}
-        <div className="min-h-[400px]">
-          {/* Student Help Queue */}
+        {/* Tool Content */}
+        <div className="min-h-[600px]">
+          {/* NEW: Classroom Jobs */}
+          {activeToolkitTab === 'classroom-jobs' && (
+            <ClassroomJobs 
+              students={students} 
+              showToast={showToast}
+              onAwardXP={onAwardXP} // Pass XP awarding function
+            />
+          )}
+
+          {/* Help Queue */}
           {activeToolkitTab === 'help-queue' && (
             <StudentHelpQueue 
               students={students} 
@@ -389,153 +347,135 @@ const TeachersToolkitTab = ({
 
           {/* Attendance Tracker */}
           {activeToolkitTab === 'attendance' && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold text-gray-800">📅 Daily Attendance</h3>
+            <div>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-bold text-gray-800">📅 Daily Attendance</h3>
                 <div className="text-sm text-gray-600">
-                  {new Date().toLocaleDateString()}
+                  {new Date().toLocaleDateString('en-US', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                  })}
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {students.map(student => {
-                  const today = new Date().toISOString().split('T')[0];
-                  const status = attendanceState[today]?.[student.id] || 'not-marked';
-                  
-                  return (
-                    <div key={student.id} className="border border-gray-200 rounded-lg p-4">
-                      <div className="flex items-center space-x-3 mb-3">
-                        <img 
-                          src={`/avatars/${student.avatarBase || 'Wizard F'}/Level ${student.avatarLevel || 1}.png`}
-                          alt={`${student.firstName}'s Avatar`}
-                          className="w-10 h-10 rounded-full"
-                          onError={(e) => { e.target.src = '/avatars/Wizard F/Level 1.png'; }}
-                        />
-                        <div>
-                          <p className="font-semibold">{student.firstName} {student.lastName}</p>
-                          <p className="text-sm text-gray-500">Level {student.avatarLevel || 1}</p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => handleMarkAttendance(student.id, 'present')}
-                          className={`flex-1 py-2 px-3 rounded-lg transition-all ${
-                            status === 'present'
-                              ? 'bg-green-500 text-white'
-                              : 'bg-gray-100 text-gray-700 hover:bg-green-100'
-                          }`}
-                        >
-                          ✓ Present
-                        </button>
-                        <button
-                          onClick={() => handleMarkAttendance(student.id, 'absent')}
-                          className={`flex-1 py-2 px-3 rounded-lg transition-all ${
-                            status === 'absent'
-                              ? 'bg-red-500 text-white'
-                              : 'bg-gray-100 text-gray-700 hover:bg-red-100'
-                          }`}
-                        >
-                          ✗ Absent
-                        </button>
+                {students.map(student => (
+                  <div key={student.id} className="bg-gray-50 rounded-lg p-4">
+                    <div className="flex items-center space-x-3 mb-3">
+                      <img 
+                        src={`/avatars/${student.avatarBase || 'Wizard F'}/Level 1.png`}
+                        alt={`${student.firstName}'s Avatar`}
+                        className="w-10 h-10 rounded-full border-2 border-gray-300"
+                        onError={(e) => {
+                          e.target.src = '/avatars/Wizard F/Level 1.png';
+                        }}
+                      />
+                      <div>
+                        <div className="font-semibold">{student.firstName} {student.lastName}</div>
+                        <div className="text-sm text-gray-500">{student.totalPoints || 0} XP</div>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-
-              <div className="bg-blue-50 rounded-lg p-4">
-                <h4 className="font-semibold text-blue-800 mb-2">Today's Summary</h4>
-                <div className="grid grid-cols-3 gap-4 text-center">
-                  <div>
-                    <div className="text-2xl font-bold text-green-600">
-                      {Object.values(attendanceState[new Date().toISOString().split('T')[0]] || {}).filter(s => s === 'present').length}
+                    
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => handleMarkAttendance(student.id, 'present')}
+                        className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          attendanceState[new Date().toISOString().split('T')[0]]?.[student.id] === 'present'
+                            ? 'bg-green-500 text-white'
+                            : 'bg-green-100 text-green-700 hover:bg-green-200'
+                        }`}
+                      >
+                        ✓ Present
+                      </button>
+                      <button
+                        onClick={() => handleMarkAttendance(student.id, 'absent')}
+                        className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          attendanceState[new Date().toISOString().split('T')[0]]?.[student.id] === 'absent'
+                            ? 'bg-red-500 text-white'
+                            : 'bg-red-100 text-red-700 hover:bg-red-200'
+                        }`}
+                      >
+                        ✗ Absent
+                      </button>
                     </div>
-                    <div className="text-sm text-gray-600">Present</div>
                   </div>
-                  <div>
-                    <div className="text-2xl font-bold text-red-600">
-                      {Object.values(attendanceState[new Date().toISOString().split('T')[0]] || {}).filter(s => s === 'absent').length}
-                    </div>
-                    <div className="text-sm text-gray-600">Absent</div>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-gray-600">
-                      {students.length - Object.keys(attendanceState[new Date().toISOString().split('T')[0]] || {}).length}
-                    </div>
-                    <div className="text-sm text-gray-600">Not Marked</div>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
           )}
 
-          {/* Analytics */}
+          {/* Analytics Dashboard */}
           {activeToolkitTab === 'analytics' && (
-            <div className="space-y-6">
-              <h3 className="text-xl font-bold text-gray-800">📊 Class Analytics</h3>
+            <div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-6">📊 Class Analytics Dashboard</h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-6 border border-blue-200">
-                  <h4 className="font-bold text-blue-800 mb-4">📈 Performance Overview</h4>
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Total Students:</span>
-                      <span className="font-bold">{analytics.totalStudents}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Average XP:</span>
-                      <span className="font-bold">{analytics.averageXP}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">High Performers:</span>
-                      <span className="font-bold text-green-600">{analytics.highPerformers}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Needs Support:</span>
-                      <span className="font-bold text-orange-600">{analytics.needsAttention}</span>
-                    </div>
+              {/* Overview Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div className="bg-blue-50 rounded-xl p-6 border border-blue-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-semibold text-blue-800">Total Students</h4>
+                    <span className="text-2xl">👥</span>
                   </div>
+                  <div className="text-3xl font-bold text-blue-600">{analytics.totalStudents}</div>
+                  <div className="text-sm text-blue-600 mt-2">Active learners</div>
                 </div>
 
-                <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-lg p-6 border border-green-200">
-                  <h4 className="font-bold text-green-800 mb-4">🏆 Top Performers</h4>
-                  <div className="space-y-2">
-                    {[...students]
-                      .sort((a, b) => (b.totalPoints || 0) - (a.totalPoints || 0))
-                      .slice(0, 5)
-                      .map((student, index) => (
-                        <div key={student.id} className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2">
-                            <span className="text-sm font-bold text-gray-500">#{index + 1}</span>
-                            <span className="text-sm">{student.firstName}</span>
+                <div className="bg-green-50 rounded-xl p-6 border border-green-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-semibold text-green-800">Average XP</h4>
+                    <span className="text-2xl">⭐</span>
+                  </div>
+                  <div className="text-3xl font-bold text-green-600">{analytics.averageXP}</div>
+                  <div className="text-sm text-green-600 mt-2">Class performance</div>
+                </div>
+
+                <div className="bg-purple-50 rounded-xl p-6 border border-purple-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-semibold text-purple-800">High Performers</h4>
+                    <span className="text-2xl">🏆</span>
+                  </div>
+                  <div className="text-3xl font-bold text-purple-600">{analytics.highPerformers}</div>
+                  <div className="text-sm text-purple-600 mt-2">200+ XP students</div>
+                </div>
+
+                <div className="bg-yellow-50 rounded-xl p-6 border border-yellow-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-semibold text-yellow-800">Need Support</h4>
+                    <span className="text-2xl">📈</span>
+                  </div>
+                  <div className="text-3xl font-bold text-yellow-600">{analytics.needsAttention}</div>
+                  <div className="text-sm text-yellow-600 mt-2">Under 50 XP</div>
+                </div>
+              </div>
+
+              {/* Student Performance Breakdown */}
+              <div className="bg-gray-50 rounded-xl p-6 mb-6">
+                <h4 className="font-semibold text-gray-800 mb-4">📈 Student Performance Levels</h4>
+                <div className="space-y-2">
+                  {[
+                    { range: '300+ XP', label: 'Level 4 Champions', color: 'bg-purple-500', count: students.filter(s => (s.totalPoints || 0) >= 300).length },
+                    { range: '200-299 XP', label: 'Level 3 Achievers', color: 'bg-blue-500', count: students.filter(s => (s.totalPoints || 0) >= 200 && (s.totalPoints || 0) < 300).length },
+                    { range: '100-199 XP', label: 'Level 2 Learners', color: 'bg-green-500', count: students.filter(s => (s.totalPoints || 0) >= 100 && (s.totalPoints || 0) < 200).length },
+                    { range: '0-99 XP', label: 'Level 1 Beginners', color: 'bg-yellow-500', count: students.filter(s => (s.totalPoints || 0) < 100).length }
+                  ].map(level => {
+                    const percentage = students.length > 0 ? (level.count / students.length) * 100 : 0;
+                    return (
+                      <div key={level.range} className="flex items-center space-x-4">
+                        <div className="w-32 text-sm font-medium text-gray-700">{level.range}:</div>
+                        <div className="flex-1 bg-gray-200 rounded-full h-6 relative">
+                          <div 
+                            className={`${level.color} h-6 rounded-full transition-all duration-500`}
+                            style={{ width: `${percentage}%` }}
+                          ></div>
+                          <div className="absolute inset-0 flex items-center justify-center text-white text-sm font-bold">
+                            {level.count} students ({percentage.toFixed(0)}%)
                           </div>
-                          <span className="text-sm font-bold text-green-600">{student.totalPoints || 0} XP</span>
                         </div>
-                      ))}
-                  </div>
-                </div>
-
-                <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg p-6 border border-purple-200">
-                  <h4 className="font-bold text-purple-800 mb-4">📊 Level Distribution</h4>
-                  <div className="space-y-2">
-                    {[1, 2, 3, 4].map(level => {
-                      const count = students.filter(s => {
-                        const xp = s.totalPoints || 0;
-                        if (level === 1) return xp < 100;
-                        if (level === 2) return xp >= 100 && xp < 200;
-                        if (level === 3) return xp >= 200 && xp < 300;
-                        return xp >= 300;
-                      }).length;
-                      
-                      return (
-                        <div key={level} className="flex items-center justify-between">
-                          <span className="text-sm">Level {level}:</span>
-                          <span className="text-sm font-bold">{count} students</span>
-                        </div>
-                      );
-                    })}
-                  </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>

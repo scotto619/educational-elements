@@ -702,6 +702,7 @@ const ClassroomChampions = () => {
       user={user}
       showToast={showToast}
       userData={{}} // You can pass real userData if you have it
+      onAwardXP={awardXP} // NEW: Pass the XP awarding function for job payments
     />
   );
 
