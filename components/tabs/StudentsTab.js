@@ -1,4 +1,4 @@
-// components/tabs/StudentsTab.js - Enhanced Students Management with All Features
+// components/tabs/StudentsTab.js - FIXED PET IMAGES AND LEVEL DISPLAY
 import React, { useState, useEffect } from 'react';
 
 // ===============================================
@@ -84,6 +84,82 @@ const StudentsTab = ({
   // Category editing state
   const [editingCategory, setEditingCategory] = useState(null);
   const [newCategory, setNewCategory] = useState({ label: '', amount: 1, color: 'bg-blue-500', icon: '🌟' });
+
+  // ===============================================
+  // UTILITY FUNCTIONS - FIXED
+  // ===============================================
+
+  const getAvatarImage = (avatarBase, level) => {
+    if (!avatarBase) return '/avatars/Wizard F/Level 1.png';
+    const validLevel = Math.max(1, Math.min(level || 1, 4));
+    return `/avatars/${avatarBase}/Level ${validLevel}.png`;
+  };
+
+  const calculateAvatarLevel = (totalXP) => {
+    if (totalXP >= 300) return 4;
+    if (totalXP >= 200) return 3;  
+    if (totalXP >= 100) return 2;
+    return 1;
+  };
+
+  const calculateCoins = (student) => {
+    const xpCoins = Math.floor((student?.totalPoints || 0) / 5);
+    const bonusCoins = student?.currency || 0;
+    const coinsSpent = student?.coinsSpent || 0;
+    return Math.max(0, xpCoins + bonusCoins - coinsSpent);
+  };
+
+  const getGridClasses = (studentCount) => {
+    if (studentCount <= 4) return 'grid grid-cols-2 lg:grid-cols-4 gap-4';
+    if (studentCount <= 8) return 'grid grid-cols-2 lg:grid-cols-4 gap-3';
+    if (studentCount <= 12) return 'grid grid-cols-3 lg:grid-cols-6 gap-3';
+    if (studentCount <= 20) return 'grid grid-cols-4 lg:grid-cols-8 gap-2';
+    if (studentCount <= 30) return 'grid grid-cols-5 lg:grid-cols-10 gap-1';
+    return 'grid grid-cols-6 lg:grid-cols-12 gap-1';
+  };
+
+  // FIXED: Complete pet image mapping function
+  const getPetImage = (petType, petName) => {
+    // Handle both old and new pet naming systems
+    const petImageMap = {
+      // New class-based system
+      'alchemist': '/Pets/Alchemist.png',
+      'barbarian': '/Pets/Barbarian.png',
+      'bard': '/Pets/Bard.png',
+      'beastmaster': '/Pets/Beastmaster.png',
+      'cleric': '/Pets/Cleric.png',
+      'crystal knight': '/Pets/Crystal Knight.png',
+      'crystal sage': '/Pets/Crystal Sage.png',
+      'engineer': '/Pets/Engineer.png',
+      'frost mage': '/Pets/Frost Mage.png',
+      'illusionist': '/Pets/Illusionist.png',
+      'knight': '/Pets/Knight.png',
+      'lightning': '/Pets/Lightning.png',
+      'monk': '/Pets/Monk.png',
+      'necromancer': '/Pets/Necromancer.png',
+      'rogue': '/Pets/Rogue.png',
+      'stealth': '/Pets/Stealth.png',
+      'time knight': '/Pets/Time Knight.png',
+      'warrior': '/Pets/Warrior.png',
+      'wizard': '/Pets/Wizard.png',
+      
+      // Legacy fantasy system mapping to new files
+      'dragon': '/Pets/Lightning.png',      // Map dragon to Lightning (legendary)
+      'phoenix': '/Pets/Crystal Sage.png',  // Map phoenix to Crystal Sage (epic)
+      'unicorn': '/Pets/Time Knight.png',   // Map unicorn to Time Knight (legendary)
+      'wolf': '/Pets/Warrior.png',          // Map wolf to Warrior
+      'owl': '/Pets/Wizard.png',            // Map owl to Wizard
+      'cat': '/Pets/Rogue.png',             // Map cat to Rogue
+      'tiger': '/Pets/Barbarian.png',       // Map tiger to Barbarian
+      'bear': '/Pets/Beastmaster.png',      // Map bear to Beastmaster
+      'lion': '/Pets/Knight.png',           // Map lion to Knight
+      'eagle': '/Pets/Stealth.png'          // Map eagle to Stealth
+    };
+    
+    // Try petType first, then petName, then default
+    const key = (petType || petName || '').toLowerCase();
+    return petImageMap[key] || '/Pets/Wizard.png';
+  };
 
   // ===============================================
   // INVENTORY MANAGEMENT FUNCTIONS
@@ -183,81 +259,6 @@ const StudentsTab = ({
   const openInventoryModal = (student) => {
     setInventoryStudent(student);
     setShowInventoryModal(true);
-  };
-
-  // ===============================================
-  // UTILITY FUNCTIONS
-  // ===============================================
-
-  const getAvatarImage = (avatarBase, level) => {
-    if (!avatarBase) return '/avatars/Wizard F/Level 1.png';
-    const validLevel = Math.max(1, Math.min(level || 1, 4));
-    return `/avatars/${avatarBase}/Level ${validLevel}.png`;
-  };
-
-  const calculateAvatarLevel = (totalXP) => {
-    if (totalXP >= 300) return 4;
-    if (totalXP >= 200) return 3;  
-    if (totalXP >= 100) return 2;
-    return 1;
-  };
-
-  const calculateCoins = (student) => {
-    const xpCoins = Math.floor((student?.totalPoints || 0) / 5);
-    const bonusCoins = student?.currency || 0;
-    const coinsSpent = student?.coinsSpent || 0;
-    return Math.max(0, xpCoins + bonusCoins - coinsSpent);
-  };
-
-  const getGridClasses = (studentCount) => {
-    if (studentCount <= 4) return 'grid grid-cols-2 lg:grid-cols-4 gap-4';
-    if (studentCount <= 8) return 'grid grid-cols-2 lg:grid-cols-4 gap-3';
-    if (studentCount <= 12) return 'grid grid-cols-3 lg:grid-cols-6 gap-3';
-    if (studentCount <= 20) return 'grid grid-cols-4 lg:grid-cols-8 gap-2';
-    if (studentCount <= 30) return 'grid grid-cols-5 lg:grid-cols-10 gap-1';
-    return 'grid grid-cols-6 lg:grid-cols-12 gap-1';
-  };
-
-  const getPetImage = (petType, petName) => {
-    // Handle both old and new pet naming systems
-    const petImageMap = {
-      // New class-based system
-      'alchemist': '/Pets/Alchemist.png',
-      'barbarian': '/Pets/Barbarian.png',
-      'bard': '/Pets/Bard.png',
-      'beastmaster': '/Pets/Beastmaster.png',
-      'cleric': '/Pets/Cleric.png',
-      'crystal knight': '/Pets/Crystal Knight.png',
-      'crystal sage': '/Pets/Crystal Sage.png',
-      'engineer': '/Pets/Engineer.png',
-      'frost mage': '/Pets/Frost Mage.png',
-      'illusionist': '/Pets/Illusionist.png',
-      'knight': '/Pets/Knight.png',
-      'lightning': '/Pets/Lightning.png',
-      'monk': '/Pets/Monk.png',
-      'necromancer': '/Pets/Necromancer.png',
-      'rogue': '/Pets/Rogue.png',
-      'stealth': '/Pets/Stealth.png',
-      'time knight': '/Pets/Time Knight.png',
-      'warrior': '/Pets/Warrior.png',
-      'wizard': '/Pets/Wizard.png',
-      
-      // Legacy fantasy system mapping to new files
-      'dragon': '/Pets/Lightning.png',      // Map dragon to Lightning (legendary)
-      'phoenix': '/Pets/Crystal Sage.png',  // Map phoenix to Crystal Sage (epic)
-      'unicorn': '/Pets/Time Knight.png',   // Map unicorn to Time Knight (legendary)
-      'wolf': '/Pets/Warrior.png',          // Map wolf to Warrior
-      'owl': '/Pets/Wizard.png',            // Map owl to Wizard
-      'cat': '/Pets/Rogue.png',             // Map cat to Rogue
-      'tiger': '/Pets/Barbarian.png',       // Map tiger to Barbarian
-      'bear': '/Pets/Beastmaster.png',      // Map bear to Beastmaster
-      'lion': '/Pets/Knight.png',           // Map lion to Knight
-      'eagle': '/Pets/Stealth.png'          // Map eagle to Stealth
-    };
-    
-    // Try petType first, then petName, then default
-    const key = (petType || petName || '').toLowerCase();
-    return petImageMap[key] || '/Pets/Wizard.png';
   };
 
   // ===============================================
@@ -413,7 +414,7 @@ const StudentsTab = ({
   const handlePetHover = (pet, isHovering) => {
     if (isHovering && pet) {
       setHoveredPet({
-        image: getPetImage(pet.type),
+        image: getPetImage(pet.type, pet.name),
         name: pet.name,
         rarity: pet.rarity
       });
@@ -551,6 +552,7 @@ const StudentsTab = ({
               setSelectedStudent(student);
               setShowIndividualXPModal(true);
             }}
+            openInventoryModal={openInventoryModal}
             isSelected={selectedStudents.includes(student.id)}
             onToggleSelection={() => toggleStudentSelection(student.id)}
             xpCategories={xpCategories}
@@ -1193,7 +1195,7 @@ const StudentsTab = ({
 };
 
 // ===============================================
-// ENHANCED STUDENT CARD COMPONENT
+// FIXED STUDENT CARD COMPONENT
 // ===============================================
 
 const StudentCard = ({ 
@@ -1201,6 +1203,7 @@ const StudentCard = ({
   onQuickXP, 
   onViewDetails, 
   onShowIndividualXP,
+  openInventoryModal,
   isSelected = false, 
   onToggleSelection,
   xpCategories = [],
@@ -1248,6 +1251,7 @@ const StudentCard = ({
                 e.target.src = '/avatars/Wizard F/Level 1.png';
               }}
             />
+            {/* FIXED: Show current level, not next level */}
             <div className={`absolute -bottom-1 -right-1 text-white text-xs px-2 py-1 rounded-full font-bold ${
               isSelected ? 'bg-purple-600' : 'bg-blue-600'
             }`}>
@@ -1281,10 +1285,10 @@ const StudentCard = ({
             </span>
           </div>
           
-          {/* XP Progress Bar */}
+          {/* XP Progress Bar - FIXED: Show progress to next level */}
           <div>
             <div className="flex justify-between text-xs text-gray-600 mb-1">
-              <span>Level {currentLevel + 1}</span>
+              <span>To Level {currentLevel + 1}</span>
               <span>{progressToNext}/100</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
@@ -1296,7 +1300,7 @@ const StudentCard = ({
           </div>
         </div>
 
-        {/* Pet Display */}
+        {/* Pet Display - FIXED */}
         {student.ownedPets && student.ownedPets.length > 0 && (
           <div className="flex justify-center mb-3">
             <div 
