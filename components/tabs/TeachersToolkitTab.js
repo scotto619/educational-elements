@@ -18,11 +18,11 @@ import TimetableCreator from '../tools/TimetableCreator'; // TimetableCreator
 const TeachersToolkitTab = ({ 
   students = [],
   user,
-  currentClassId,
   showToast = () => {},
   userData = {},
   saveGroupDataToFirebase,
   saveClassroomDataToFirebase,
+  currentClassId,
   onAwardXP = () => {}, // XP awarding function for job payments
   // Quest System Props (if available)
   activeQuests = [],
@@ -357,19 +357,15 @@ const TeachersToolkitTab = ({
               students={students} 
               showToast={showToast}
               onAwardXP={onAwardXP}
-              user={user}
-              currentClassId={currentClassId}
             />
           )}
 
-          {/* Timetable Creator */}
+          {/* FIXED: Added the missing Timetable rendering */}
           {activeToolkitTab === 'timetable' && (
             <TimetableCreator 
               students={students} 
               showToast={showToast}
               onSaveData={handleSaveTimetableData}
-              user={user}
-              currentClassId={currentClassId}
             />
           )}
 
