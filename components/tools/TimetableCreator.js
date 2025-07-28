@@ -1,14 +1,18 @@
-// components/tools/TimetableCreator.js - Interactive Timetable Creator with Reminders
+// components/tools/TimetableCreator.js - Interactive Timetable Creator with Firebase Persistence
 import React, { useState, useEffect } from 'react';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { firestore } from '../../firebase/config';
 
 // ===============================================
-// TIMETABLE CREATOR COMPONENT
+// TIMETABLE CREATOR COMPONENT WITH FIREBASE
 // ===============================================
 
 const TimetableCreator = ({ 
   students = [], 
   showToast = () => {},
-  onSaveData = () => {} // Function to save timetable data
+  onSaveData = () => {},
+  user,
+  currentClassId
 }) => {
   // State management
   const [timetable, setTimetable] = useState({});
@@ -43,13 +47,13 @@ const TimetableCreator = ({
   ]);
 
   const [currentWeek, setCurrentWeek] = useState(getCurrentWeek());
+  const [loading, setLoading] = useState(true);
   
   // Modal states
   const [showActivityModal, setShowActivityModal] = useState(false);
   const [showSubjectModal, setShowSubjectModal] = useState(false);
   const [showTeacherModal, setShowTeacherModal] = useState(false);
   const [showTimeSlotModal, setShowTimeSlotModal] = useState(false);
-  const [showReminderModal, setShowReminderModal] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [selectedDay, setSelectedDay] = useState(null);
 
@@ -58,11 +62,11 @@ const TimetableCreator = ({
     id: '',
     subject: '',
     teacher: '',
-    students: [], // 'all' or array of student IDs
+    students: ['all'],
     location: '',
     notes: '',
-    reminder: 0, // minutes before
-    type: 'main' // 'main' or 'parallel'
+    reminder: 0,
+    type: 'main'
   });
 
   // Days of the week
@@ -70,6 +74,97 @@ const TimetableCreator = ({
 
   // Reminder system
   const [activeReminders, setActiveReminders] = useState([]);
+
+  // ===============================================
+  // FIREBASE FUNCTIONS
+  // ===============================================
+
+  // Load timetable data from Firebase
+  const loadTimetableFromFirebase = async () => {
+    if (!user || !currentClassId) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const docRef = doc(firestore, 'users', user.uid);
+      const docSnap = await getDoc(docRef);
+      
+      if (docSnap.exists()) {
+        const userData = docSnap.data();
+        const timetableData = userData.timetableData?.[currentClassId];
+        
+        if (timetableData) {
+          // Load saved data
+          if (timetableData.timetable) setTimetable(timetableData.timetable);
+          if (timetableData.timeSlots) setTimeSlots(timetableData.timeSlots);
+          if (timetableData.subjects) setSubjects(timetableData.subjects);
+          if (timetableData.teachers) setTeachers(timetableData.teachers);
+          if (timetableData.currentWeek) setCurrentWeek(timetableData.currentWeek);
+          
+          showToast('Timetable data loaded successfully!', 'success');
+        }
+      }
+    } catch (error) {
+      console.error('Error loading timetable:', error);
+      showToast('Error loading timetable data', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Save timetable data to Firebase
+  const saveTimetableToFirebase = async () => {
+    if (!user || !currentClassId) return;
+
+    try {
+      const docRef = doc(firestore, 'users', user.uid);
+      const docSnap = await getDoc(docRef);
+      
+      if (docSnap.exists()) {
+        const userData = docSnap.data();
+        
+        const timetableData = {
+          timetable,
+          timeSlots,
+          subjects,
+          teachers,
+          currentWeek,
+          lastUpdated: new Date().toISOString()
+        };
+
+        const updatedData = {
+          ...userData,
+          timetableData: {
+            ...userData.timetableData,
+            [currentClassId]: timetableData
+          }
+        };
+        
+        await setDoc(docRef, updatedData);
+        showToast('Timetable saved successfully!', 'success');
+      }
+    } catch (error) {
+      console.error('Error saving timetable:', error);
+      showToast('Error saving timetable data', 'error');
+    }
+  };
+
+  // Auto-save when important data changes
+  useEffect(() => {
+    if (!loading && user && currentClassId) {
+      const timeoutId = setTimeout(() => {
+        saveTimetableToFirebase();
+      }, 2000); // Auto-save 2 seconds after changes
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [timetable, timeSlots, subjects, teachers, loading, user, currentClassId]);
+
+  // Load data on component mount
+  useEffect(() => {
+    loadTimetableFromFirebase();
+  }, [user, currentClassId]);
 
   // ===============================================
   // UTILITY FUNCTIONS
@@ -90,17 +185,11 @@ const TimetableCreator = ({
     return hours * 60 + minutes;
   }
 
-  function formatTime(minutes) {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
-  }
-
   // ===============================================
   // TIMETABLE MANAGEMENT FUNCTIONS
   // ===============================================
 
-  const addActivityToSlot = () => {
+  const addActivityToSlot = async () => {
     if (!newActivity.subject || !selectedDay || !selectedSlot) return;
 
     const key = getTimetableKey(selectedDay, selectedSlot.id);
@@ -112,51 +201,50 @@ const TimetableCreator = ({
       createdAt: new Date().toISOString()
     };
 
-    // Handle multiple activities in same slot
     const existingActivities = timetable[key] || [];
     const updatedActivities = [...existingActivities, activity];
 
-    setTimetable({
+    const newTimetable = {
       ...timetable,
       [key]: updatedActivities
-    });
+    };
 
-    // Set up reminder if specified
-    if (activity.reminder > 0) {
-      setupReminder(activity);
-    }
+    setTimetable(newTimetable);
 
     // Reset form
     setNewActivity({
       id: '',
       subject: '',
       teacher: '',
-      students: [],
+      students: ['all'],
       location: '',
       notes: '',
       reminder: 0,
       type: 'main'
     });
     setShowActivityModal(false);
+    
+    showToast('Activity added successfully!', 'success');
   };
 
-  const removeActivity = (day, slotId, activityId) => {
+  const removeActivity = async (day, slotId, activityId) => {
     const key = getTimetableKey(day, slotId);
     const activities = timetable[key] || [];
     const updatedActivities = activities.filter(activity => activity.id !== activityId);
     
+    let newTimetable;
     if (updatedActivities.length === 0) {
       const { [key]: removed, ...remainingTimetable } = timetable;
-      setTimetable(remainingTimetable);
+      newTimetable = remainingTimetable;
     } else {
-      setTimetable({
+      newTimetable = {
         ...timetable,
         [key]: updatedActivities
-      });
+      };
     }
 
-    // Remove any associated reminders
-    setActiveReminders(prev => prev.filter(reminder => reminder.activityId !== activityId));
+    setTimetable(newTimetable);
+    showToast('Activity removed successfully!', 'success');
   };
 
   const openActivityModal = (day, slot) => {
@@ -166,7 +254,7 @@ const TimetableCreator = ({
       id: '',
       subject: '',
       teacher: '',
-      students: [],
+      students: ['all'],
       location: '',
       notes: '',
       reminder: 0,
@@ -176,101 +264,29 @@ const TimetableCreator = ({
   };
 
   // ===============================================
-  // REMINDER SYSTEM
-  // ===============================================
-
-  const setupReminder = (activity) => {
-    const now = new Date();
-    const activityDate = new Date(currentWeek);
-    const dayIndex = DAYS.indexOf(activity.day);
-    activityDate.setDate(activityDate.getDate() + dayIndex);
-    
-    const [hours, minutes] = activity.slot.start.split(':').map(Number);
-    activityDate.setHours(hours, minutes, 0, 0);
-    
-    const reminderTime = new Date(activityDate.getTime() - (activity.reminder * 60 * 1000));
-    
-    if (reminderTime > now) {
-      const timeoutId = setTimeout(() => {
-        showReminderNotification(activity);
-        setActiveReminders(prev => prev.filter(r => r.id !== `reminder_${activity.id}`));
-      }, reminderTime.getTime() - now.getTime());
-
-      setActiveReminders(prev => [...prev, {
-        id: `reminder_${activity.id}`,
-        activityId: activity.id,
-        timeoutId,
-        activity,
-        reminderTime
-      }]);
-    }
-  };
-
-  const showReminderNotification = (activity) => {
-    // Create a visual reminder notification
-    const reminderDiv = document.createElement('div');
-    reminderDiv.className = 'fixed top-4 right-4 bg-yellow-500 text-white p-4 rounded-lg shadow-lg z-50 max-w-sm';
-    reminderDiv.innerHTML = `
-      <div class="flex items-center space-x-3">
-        <div class="text-2xl">⏰</div>
-        <div>
-          <div class="font-bold">Upcoming Activity!</div>
-          <div class="text-sm">${activity.subject} in ${activity.reminder} minutes</div>
-          <div class="text-xs opacity-90">${activity.slot.start} - ${activity.slot.end}</div>
-        </div>
-      </div>
-    `;
-    
-    document.body.appendChild(reminderDiv);
-    
-    // Play reminder sound
-    try {
-      const audio = new Audio('/sounds/reminder.mp3');
-      audio.volume = 0.5;
-      audio.play().catch(() => {
-        // Fallback beep if no audio file
-        const context = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = context.createOscillator();
-        const gainNode = context.createGain();
-        oscillator.connect(gainNode);
-        gainNode.connect(context.destination);
-        oscillator.frequency.value = 800;
-        gainNode.gain.value = 0.3;
-        oscillator.start();
-        setTimeout(() => oscillator.stop(), 200);
-      });
-    } catch (e) {
-      console.log('Audio not available');
-    }
-
-    // Remove notification after 5 seconds
-    setTimeout(() => {
-      if (document.body.contains(reminderDiv)) {
-        document.body.removeChild(reminderDiv);
-      }
-    }, 5000);
-  };
-
-  // ===============================================
   // SUBJECT AND TEACHER MANAGEMENT
   // ===============================================
 
-  const addSubject = (subjectData) => {
+  const addSubject = async (subjectData) => {
     const subject = {
       id: `subject_${Date.now()}`,
       ...subjectData
     };
-    setSubjects([...subjects, subject]);
+    const newSubjects = [...subjects, subject];
+    setSubjects(newSubjects);
     setShowSubjectModal(false);
+    showToast('Subject added successfully!', 'success');
   };
 
-  const addTeacher = (teacherData) => {
+  const addTeacher = async (teacherData) => {
     const teacher = {
       id: `teacher_${Date.now()}`,
       ...teacherData
     };
-    setTeachers([...teachers, teacher]);
+    const newTeachers = [...teachers, teacher];
+    setTeachers(newTeachers);
     setShowTeacherModal(false);
+    showToast('Teacher added successfully!', 'success');
   };
 
   // ===============================================
@@ -308,11 +324,13 @@ const TimetableCreator = ({
           <div className="text-xs opacity-90 mb-1">👩‍🏫 {teacher.name}</div>
         )}
         
-        {activity.students.length > 0 && activity.students[0] !== 'all' && (
+        {activity.students.includes('all') ? (
+          <div className="text-xs opacity-90 mb-1">👥 Whole Class</div>
+        ) : activity.students.length > 0 ? (
           <div className="text-xs opacity-90 mb-1">
             👥 {activity.students.length} student{activity.students.length !== 1 ? 's' : ''}
           </div>
-        )}
+        ) : null}
         
         {activity.location && (
           <div className="text-xs opacity-90 mb-1">📍 {activity.location}</div>
@@ -331,6 +349,17 @@ const TimetableCreator = ({
     );
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-600 border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your timetable...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -343,6 +372,9 @@ const TimetableCreator = ({
           <div className="text-right">
             <div className="text-sm text-indigo-200">Week Starting</div>
             <div className="text-xl font-bold">{new Date(currentWeek).toLocaleDateString()}</div>
+            <div className="text-xs text-indigo-200 mt-1">
+              💾 Auto-saves to cloud
+            </div>
           </div>
         </div>
       </div>
@@ -379,10 +411,10 @@ const TimetableCreator = ({
             </div>
             
             <button
-              onClick={() => onSaveData(timetable)}
+              onClick={saveTimetableToFirebase}
               className="bg-gradient-to-r from-gray-500 to-gray-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all font-semibold"
             >
-              💾 Save Timetable
+              💾 Save Now
             </button>
           </div>
         </div>
@@ -470,8 +502,8 @@ const TimetableCreator = ({
               <span>Specialist Teacher</span>
             </div>
             <div className="flex items-center space-x-2">
-              <span>👥</span>
-              <span>Specific Students</span>
+              <span>💾</span>
+              <span>Auto-saved to Cloud</span>
             </div>
           </div>
         </div>
@@ -526,10 +558,10 @@ const TimetableCreator = ({
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Students</label>
                 <select
-                  value={newActivity.students.length === 0 ? 'all' : 'specific'}
+                  value={newActivity.students.includes('all') ? 'all' : 'specific'}
                   onChange={(e) => {
                     if (e.target.value === 'all') {
-                      setNewActivity({...newActivity, students: []});
+                      setNewActivity({...newActivity, students: ['all']});
                     } else {
                       setNewActivity({...newActivity, students: []});
                     }
@@ -540,7 +572,7 @@ const TimetableCreator = ({
                   <option value="specific">Specific Students</option>
                 </select>
 
-                {newActivity.students.length === 0 && (
+                {!newActivity.students.includes('all') && (
                   <div className="max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-3">
                     <div className="text-sm text-gray-600 mb-2">Select students for this activity:</div>
                     {students.map(student => (
@@ -552,7 +584,7 @@ const TimetableCreator = ({
                             if (e.target.checked) {
                               setNewActivity({
                                 ...newActivity,
-                                students: [...newActivity.students, student.id]
+                                students: [...newActivity.students.filter(id => id !== 'all'), student.id]
                               });
                             } else {
                               setNewActivity({
@@ -593,21 +625,6 @@ const TimetableCreator = ({
                     <option value="parallel">Parallel Activity</option>
                   </select>
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Reminder (minutes before)</label>
-                <select
-                  value={newActivity.reminder}
-                  onChange={(e) => setNewActivity({...newActivity, reminder: parseInt(e.target.value)})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                >
-                  <option value={0}>No reminder</option>
-                  <option value={5}>5 minutes</option>
-                  <option value={10}>10 minutes</option>
-                  <option value={15}>15 minutes</option>
-                  <option value={30}>30 minutes</option>
-                </select>
               </div>
 
               <div>
@@ -674,6 +691,182 @@ const TimetableCreator = ({
           </div>
         </div>
       )}
+
+      {/* Edit Time Slots Modal */}
+      {showTimeSlotModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-6 rounded-t-2xl">
+              <h2 className="text-2xl font-bold">⏰ Edit Time Slots</h2>
+              <p className="text-purple-100">Customize your daily schedule</p>
+            </div>
+            
+            <div className="p-6">
+              <TimeSlotEditor 
+                timeSlots={timeSlots}
+                onSave={(newTimeSlots) => {
+                  setTimeSlots(newTimeSlots);
+                  setShowTimeSlotModal(false);
+                  showToast('Time slots updated successfully!', 'success');
+                }}
+                onCancel={() => setShowTimeSlotModal(false)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ===============================================
+// TIME SLOT EDITOR COMPONENT
+// ===============================================
+
+const TimeSlotEditor = ({ timeSlots, onSave, onCancel }) => {
+  const [editableSlots, setEditableSlots] = useState(timeSlots.map(slot => ({ ...slot })));
+
+  const addTimeSlot = () => {
+    const newSlot = {
+      id: `slot${editableSlots.length + 1}`,
+      start: '09:00',
+      end: '09:50',
+      label: `Period ${editableSlots.length + 1}`
+    };
+    setEditableSlots([...editableSlots, newSlot]);
+  };
+
+  const removeTimeSlot = (index) => {
+    if (editableSlots.length > 1) {
+      setEditableSlots(editableSlots.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateTimeSlot = (index, field, value) => {
+    const updated = editableSlots.map((slot, i) => 
+      i === index ? { ...slot, [field]: value } : slot
+    );
+    setEditableSlots(updated);
+  };
+
+  const validateTimeSlots = () => {
+    for (let i = 0; i < editableSlots.length; i++) {
+      const slot = editableSlots[i];
+      
+      const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+      if (!timeRegex.test(slot.start) || !timeRegex.test(slot.end)) {
+        return `Invalid time format in ${slot.label}`;
+      }
+      
+      const startMinutes = parseTime(slot.start);
+      const endMinutes = parseTime(slot.end);
+      if (startMinutes >= endMinutes) {
+        return `Start time must be before end time in ${slot.label}`;
+      }
+    }
+    return null;
+  };
+
+  const parseTime = (timeString) => {
+    const [hours, minutes] = timeString.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
+
+  const handleSave = () => {
+    const error = validateTimeSlots();
+    if (error) {
+      alert(error);
+      return;
+    }
+    onSave(editableSlots);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="max-h-96 overflow-y-auto">
+        {editableSlots.map((slot, index) => (
+          <div key={index} className="grid grid-cols-4 gap-4 items-center p-4 bg-gray-50 rounded-lg mb-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Label</label>
+              <input
+                type="text"
+                value={slot.label}
+                onChange={(e) => updateTimeSlot(index, 'label', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                placeholder="Period 1"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
+              <input
+                type="time"
+                value={slot.start}
+                onChange={(e) => updateTimeSlot(index, 'start', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
+              <input
+                type="time"
+                value={slot.end}
+                onChange={(e) => updateTimeSlot(index, 'end', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+            </div>
+            
+            <div className="flex items-end">
+              <button
+                onClick={() => removeTimeSlot(index)}
+                disabled={editableSlots.length === 1}
+                className="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Remove time slot"
+              >
+                🗑️
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex justify-between items-center pt-4 border-t border-gray-200">
+        <button
+          onClick={addTimeSlot}
+          className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all font-semibold"
+        >
+          ➕ Add Time Slot
+        </button>
+        
+        <div className="flex space-x-3">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all font-semibold"
+          >
+            Save Time Slots
+          </button>
+        </div>
+      </div>
+      
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-center space-x-2 text-blue-700">
+          <span>💡</span>
+          <span className="font-semibold">Tips:</span>
+        </div>
+        <ul className="mt-2 text-sm text-blue-600 space-y-1">
+          <li>• Use 24-hour format (e.g., 14:30 for 2:30 PM)</li>
+          <li>• Make sure start time is before end time</li>
+          <li>• Consider breaks between periods</li>
+          <li>• Changes are automatically saved</li>
+        </ul>
+      </div>
     </div>
   );
 };
