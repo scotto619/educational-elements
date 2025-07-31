@@ -1,4 +1,4 @@
-// components/tabs/StudentsTab.js - HOVER PREVIEW RESTORED (COMPLETE FILE)
+// components/tabs/StudentsTab.js - FIXED XP AWARDING ISSUE (COMPLETE FILE)
 import React, { useState, useEffect, useRef } from 'react';
 
 // ===============================================
@@ -74,7 +74,7 @@ const StudentsTab = ({ students = [], xpCategories = [], onUpdateCategories, onB
     const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0, student: null });
     const [draggedStudentId, setDraggedStudentId] = useState(null);
     const [showCategoriesModal, setShowCategoriesModal] = useState(false);
-    const [awardModal, setAwardModal] = useState({ visible: false, isBulk: false, type: 'xp' });
+    const [awardModal, setAwardModal] = useState({ visible: false, isBulk: false, type: 'xp', studentId: null, student: null });
     const [hoverPreview, setHoverPreview] = useState(null);
     const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
     
@@ -105,10 +105,10 @@ const StudentsTab = ({ students = [], xpCategories = [], onUpdateCategories, onB
 
     const handleAwardSubmit = (amount, reason, type) => {
         try {
-            const targetIds = awardModal.isBulk ? selectedStudents : [contextMenu.student.id];
+            const targetIds = awardModal.isBulk ? selectedStudents : [awardModal.studentId];
             onBulkAward(targetIds, amount, type);
         } finally {
-            setAwardModal({ visible: false, isBulk: false, type: 'xp' });
+            setAwardModal({ visible: false, isBulk: false, type: 'xp', studentId: null, student: null });
             if (awardModal.isBulk) setSelectedStudents([]);
         }
     };
@@ -122,7 +122,7 @@ const StudentsTab = ({ students = [], xpCategories = [], onUpdateCategories, onB
                 </div>
                 <div className="text-gray-600 font-semibold">{selectedStudents.length > 0 ? `${selectedStudents.length} student(s) selected` : 'Click an avatar for options or drag to reorder'}</div>
                 <div className="flex items-center gap-2">
-                    {selectedStudents.length > 0 && (<button onClick={() => setAwardModal({ visible: true, isBulk: true, type: 'xp' })} className="bg-purple-600 text-white font-bold px-4 py-2 rounded-lg">Award Bulk</button>)}
+                    {selectedStudents.length > 0 && (<button onClick={() => setAwardModal({ visible: true, isBulk: true, type: 'xp', studentId: null, student: null })} className="bg-purple-600 text-white font-bold px-4 py-2 rounded-lg">Award Bulk</button>)}
                     <button onClick={() => setShowCategoriesModal(true)} className="bg-indigo-500 text-white px-4 py-2 rounded-lg">⚙️ Categories</button>
                     <button onClick={onAddStudent} className="bg-green-500 text-white px-4 py-2 rounded-lg">+ Add Student</button>
                 </div>
@@ -147,8 +147,8 @@ const StudentsTab = ({ students = [], xpCategories = [], onUpdateCategories, onB
             </div>
 
             <HoverPreview preview={hoverPreview} position={mousePosition} />
-            {contextMenu.visible && <ContextMenu student={contextMenu.student} position={{ x: contextMenu.x, y: contextMenu.y }} onAward={() => { setAwardModal({ visible: true, isBulk: false, type: 'xp' }); closeContextMenu(); }} onView={() => { onViewDetails(contextMenu.student); closeContextMenu(); }} onAvatar={() => { /* Avatar modal logic */ closeContextMenu(); }} onClose={closeContextMenu} />}
-            {awardModal.visible && <AwardModal isBulk={awardModal.isBulk} awardType={awardModal.type} onTypeChange={(newType) => setAwardModal(prev => ({ ...prev, type: newType }))} studentCount={selectedStudents.length} student={contextMenu.student} onSubmit={handleAwardSubmit} onClose={() => setAwardModal({ visible: false, isBulk: false, type: 'xp' })} />}
+            {contextMenu.visible && <ContextMenu student={contextMenu.student} position={{ x: contextMenu.x, y: contextMenu.y }} onAward={() => { setAwardModal({ visible: true, isBulk: false, type: 'xp', studentId: contextMenu.student.id, student: contextMenu.student }); closeContextMenu(); }} onView={() => { onViewDetails(contextMenu.student); closeContextMenu(); }} onAvatar={() => { /* Avatar modal logic */ closeContextMenu(); }} onClose={closeContextMenu} />}
+            {awardModal.visible && <AwardModal isBulk={awardModal.isBulk} awardType={awardModal.type} onTypeChange={(newType) => setAwardModal(prev => ({ ...prev, type: newType }))} studentCount={selectedStudents.length} student={awardModal.student} onSubmit={handleAwardSubmit} onClose={() => setAwardModal({ visible: false, isBulk: false, type: 'xp', studentId: null, student: null })} />}
             {showCategoriesModal && <CategoriesModal categories={xpCategories} onSave={onUpdateCategories} onClose={() => setShowCategoriesModal(false)} />}
         </div>
     );
