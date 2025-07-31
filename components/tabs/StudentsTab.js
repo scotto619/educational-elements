@@ -1,4 +1,4 @@
-// components/tabs/StudentsTab.js - FIXED XP AWARDING ISSUE (COMPLETE FILE)
+// components/tabs/StudentsTab.js - FIXED STATE SYNCHRONIZATION (COMPLETE FILE)
 import React, { useState, useEffect, useRef } from 'react';
 
 // ===============================================
@@ -7,9 +7,12 @@ import React, { useState, useEffect, useRef } from 'react';
 const getAvatarImage = (avatarBase, level) => `/avatars/${avatarBase || 'Wizard F'}/Level ${Math.max(1, Math.min(level || 1, 4))}.png`;
 const calculateAvatarLevel = (xp) => (xp >= 300 ? 4 : xp >= 200 ? 3 : xp >= 100 ? 2 : 1);
 const calculateCoins = (student) => Math.max(0, Math.floor((student?.totalPoints || 0) / 5) + (student?.currency || 0) - (student?.coinsSpent || 0));
-const getPetImage = (petType, petName) => {
-    const key = (petType || petName || '').toLowerCase();
-    const map = { 'alchemist': '/Pets/Alchemist.png', 'barbarian': '/Pets/Barbarian.png', 'bard': '/Pets/Bard.png', 'beastmaster': '/Pets/Beastmaster.png', 'cleric': '/Pets/Cleric.png', 'crystal knight': '/Pets/Crystal Knight.png', 'crystal sage': '/Pets/Crystal Sage.png', 'engineer': '/Pets/Engineer.png', 'frost mage': '/Pets/Frost Mage.png', 'illusionist': '/Pets/Illusionist.png', 'knight': '/Pets/Knight.png', 'lightning': '/Pets/Lightning.png', 'monk': '/Pets/Monk.png', 'necromancer': '/Pets/Necromancer.png', 'rogue': '/Pets/Rogue.png', 'stealth': '/Pets/Stealth.png', 'time knight': '/Pets/Time Knight.png', 'warrior': '/Pets/Warrior.png', 'wizard': '/Pets/Wizard.png', 'dragon': '/Pets/Lightning.png', 'phoenix': '/Pets/Crystal Sage.png', 'unicorn': '/Pets/Time Knight.png', 'wolf': '/Pets/Warrior.png', 'owl': '/Pets/Wizard.png', 'cat': '/Pets/Rogue.png', 'tiger': '/Pets/Barbarian.png', 'bear': '/Pets/Beastmaster.png', 'lion': '/Pets/Knight.png', 'eagle': '/Pets/Stealth.png' };
+const getPetImage = (pet) => {
+    if (!pet || !pet.name) return '/Pets/Wizard.png';
+    // This logic needs to be passed down or duplicated if you have shop pets vs regular pets
+    // For now, assuming a simple name-to-file mapping for standard pets
+    const key = (pet.type || pet.name).toLowerCase();
+    const map = { 'alchemist': '/Pets/Alchemist.png', 'barbarian': '/Pets/Barbarian.png', 'bard': '/Pets/Bard.png', 'beastmaster': '/Pets/Beastmaster.png', 'cleric': '/Pets/Cleric.png', 'crystal knight': '/Pets/Crystal Knight.png', 'crystal sage': '/Pets/Crystal Sage.png', 'engineer': '/Pets/Engineer.png', 'frost mage': '/Pets/Frost Mage.png', 'illusionist': '/Pets/Illusionist.png', 'knight': '/Pets/Knight.png', 'lightning': '/Pets/Lightning.png', 'monk': '/Pets/Monk.png', 'necromancer': '/Pets/Necromancer.png', 'rogue': '/Pets/Rogue.png', 'stealth': '/Pets/Stealth.png', 'time knight': '/Pets/Time Knight.png', 'warrior': '/Pets/Warrior.png', 'wizard': '/Pets/Wizard.png', 'goblin pet': '/shop/BasicPets/GoblinPet.png', 'soccer pet': '/shop/BasicPets/SoccerPet.png', 'unicorn pet': '/shop/BasicPets/UnicornPet.png', 'snake pet': '/shop/PremiumPets/SnakePet.png', 'vampire pet': '/shop/PremiumPets/VampirePet.png' };
     return map[key] || '/Pets/Wizard.png';
 };
 const getGridClasses = (studentCount) => {
@@ -74,10 +77,12 @@ const StudentsTab = ({ students = [], xpCategories = [], onUpdateCategories, onB
     const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0, student: null });
     const [draggedStudentId, setDraggedStudentId] = useState(null);
     const [showCategoriesModal, setShowCategoriesModal] = useState(false);
-    const [awardModal, setAwardModal] = useState({ visible: false, isBulk: false, type: 'xp', studentId: null, student: null });
+    const [awardModal, setAwardModal] = useState({ visible: false, isBulk: false, type: 'xp' });
     const [hoverPreview, setHoverPreview] = useState(null);
     const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
     
+    // **THE FIX**: Calculate filteredStudents directly on each render.
+    // This removes the stale state issue and guarantees the UI is always in sync with props.
     const filteredStudents = students.filter(student =>
         student.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         student.lastName?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -105,10 +110,10 @@ const StudentsTab = ({ students = [], xpCategories = [], onUpdateCategories, onB
 
     const handleAwardSubmit = (amount, reason, type) => {
         try {
-            const targetIds = awardModal.isBulk ? selectedStudents : [awardModal.studentId];
+            const targetIds = awardModal.isBulk ? selectedStudents : [contextMenu.student.id];
             onBulkAward(targetIds, amount, type);
         } finally {
-            setAwardModal({ visible: false, isBulk: false, type: 'xp', studentId: null, student: null });
+            setAwardModal({ visible: false, isBulk: false, type: 'xp' });
             if (awardModal.isBulk) setSelectedStudents([]);
         }
     };
@@ -122,7 +127,7 @@ const StudentsTab = ({ students = [], xpCategories = [], onUpdateCategories, onB
                 </div>
                 <div className="text-gray-600 font-semibold">{selectedStudents.length > 0 ? `${selectedStudents.length} student(s) selected` : 'Click an avatar for options or drag to reorder'}</div>
                 <div className="flex items-center gap-2">
-                    {selectedStudents.length > 0 && (<button onClick={() => setAwardModal({ visible: true, isBulk: true, type: 'xp', studentId: null, student: null })} className="bg-purple-600 text-white font-bold px-4 py-2 rounded-lg">Award Bulk</button>)}
+                    {selectedStudents.length > 0 && (<button onClick={() => setAwardModal({ visible: true, isBulk: true, type: 'xp' })} className="bg-purple-600 text-white font-bold px-4 py-2 rounded-lg">Award Bulk</button>)}
                     <button onClick={() => setShowCategoriesModal(true)} className="bg-indigo-500 text-white px-4 py-2 rounded-lg">⚙️ Categories</button>
                     <button onClick={onAddStudent} className="bg-green-500 text-white px-4 py-2 rounded-lg">+ Add Student</button>
                 </div>
@@ -147,8 +152,8 @@ const StudentsTab = ({ students = [], xpCategories = [], onUpdateCategories, onB
             </div>
 
             <HoverPreview preview={hoverPreview} position={mousePosition} />
-            {contextMenu.visible && <ContextMenu student={contextMenu.student} position={{ x: contextMenu.x, y: contextMenu.y }} onAward={() => { setAwardModal({ visible: true, isBulk: false, type: 'xp', studentId: contextMenu.student.id, student: contextMenu.student }); closeContextMenu(); }} onView={() => { onViewDetails(contextMenu.student); closeContextMenu(); }} onAvatar={() => { /* Avatar modal logic */ closeContextMenu(); }} onClose={closeContextMenu} />}
-            {awardModal.visible && <AwardModal isBulk={awardModal.isBulk} awardType={awardModal.type} onTypeChange={(newType) => setAwardModal(prev => ({ ...prev, type: newType }))} studentCount={selectedStudents.length} student={awardModal.student} onSubmit={handleAwardSubmit} onClose={() => setAwardModal({ visible: false, isBulk: false, type: 'xp', studentId: null, student: null })} />}
+            {contextMenu.visible && <ContextMenu student={contextMenu.student} position={{ x: contextMenu.x, y: contextMenu.y }} onAward={() => { setAwardModal({ visible: true, isBulk: false, type: 'xp' }); closeContextMenu(); }} onView={() => { onViewDetails(contextMenu.student); closeContextMenu(); }} onAvatar={() => { /* Avatar modal logic */ closeContextMenu(); }} onClose={closeContextMenu} />}
+            {awardModal.visible && <AwardModal isBulk={awardModal.isBulk} awardType={awardModal.type} onTypeChange={(newType) => setAwardModal(prev => ({ ...prev, type: newType }))} studentCount={selectedStudents.length} student={contextMenu.student} onSubmit={handleAwardSubmit} onClose={() => setAwardModal({ visible: false, isBulk: false, type: 'xp' })} />}
             {showCategoriesModal && <CategoriesModal categories={xpCategories} onSave={onUpdateCategories} onClose={() => setShowCategoriesModal(false)} />}
         </div>
     );
@@ -163,7 +168,7 @@ const StudentCard = ({ student, isSelected, isDragged, onClick, onDragStart, onD
     const xpForNextLevel = (student.totalPoints || 0) % 100;
     const avatarImg = getAvatarImage(student.avatarBase, level);
     const pet = student.ownedPets?.[0];
-    const petImg = pet ? getPetImage(pet.type, pet.name) : null;
+    const petImg = pet ? getPetImage(pet) : null;
 
     return (
         <div draggable="true" onDragStart={onDragStart} onDragOver={onDragOver} onDrop={onDrop} onClick={onClick} className={`p-3 rounded-2xl shadow-lg border-2 transition-all duration-300 cursor-pointer ${isSelected ? 'border-purple-500 bg-purple-100 scale-105' : 'border-transparent bg-white hover:border-blue-400'} ${isDragged ? 'opacity-30 ring-2 ring-blue-500' : ''}`}>
@@ -171,7 +176,7 @@ const StudentCard = ({ student, isSelected, isDragged, onClick, onDragStart, onD
                 <div className="relative">
                     <img src={avatarImg} alt={student.firstName} className="w-20 h-20 rounded-full border-4 border-white shadow-md" onMouseEnter={() => onAvatarHover(avatarImg, `${student.firstName}'s Avatar`)} onMouseLeave={onHoverEnd} />
                     <div className="absolute -bottom-1 -right-1 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full font-bold shadow-sm">L{level}</div>
-                    {pet && <img src={petImg} className="w-8 h-8 rounded-full absolute -bottom-1 -left-1 border-2 border-white shadow-sm" onMouseEnter={() => onPetHover(petImg, pet.name)} onMouseLeave={onHoverEnd}/>}
+                    {pet && <img src={petImg} alt={pet.name} className="w-8 h-8 rounded-full absolute -bottom-1 -left-1 border-2 border-white shadow-sm" onMouseEnter={() => onPetHover(petImg, pet.name)} onMouseLeave={onHoverEnd}/>}
                 </div>
                 <h3 className="text-md font-bold text-gray-800 mt-2 truncate w-full">{student.firstName}</h3>
                 <div className="flex items-center justify-around w-full mt-2 text-xs"><span className="font-semibold text-blue-600">⭐ {student.totalPoints || 0}</span><span className="font-semibold text-yellow-600">💰 {coins}</span></div>
@@ -190,21 +195,7 @@ const AwardModal = ({ isBulk, awardType, onTypeChange, studentCount, student, on
     const title = isBulk ? `Award to ${studentCount} Students` : `Award to ${student?.firstName || ''}`;
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-                <div className="p-6 border-b"><h2 className="text-2xl font-bold text-gray-800">{title}</h2></div>
-                <div className="p-6 space-y-6">
-                    <div className="grid grid-cols-2 gap-2 p-1 bg-gray-200 rounded-lg">
-                        <button onClick={() => onTypeChange('xp')} className={`px-4 py-2 rounded-md font-semibold transition ${awardType === 'xp' ? 'bg-blue-500 text-white shadow' : 'text-gray-600'}`}>Award XP ⭐</button>
-                        <button onClick={() => onTypeChange('coins')} className={`px-4 py-2 rounded-md font-semibold transition ${awardType === 'coins' ? 'bg-yellow-500 text-white shadow' : 'text-gray-600'}`}>Award Coins 💰</button>
-                    </div>
-                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Amount</label><input type="number" min="1" value={amount} onChange={(e) => setAmount(Number(e.target.value))} className="w-full px-3 py-2 border border-gray-300 rounded-lg"/></div>
-                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Reason (Optional)</label><input type="text" value={reason} onChange={(e) => setReason(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg"/></div>
-                </div>
-                <div className="flex space-x-3 p-6 bg-gray-50 rounded-b-2xl">
-                    <button onClick={onClose} className="flex-1 px-4 py-3 border rounded-lg bg-white hover:bg-gray-100 font-semibold">Cancel</button>
-                    <button onClick={() => onSubmit(amount, reason, awardType)} className="flex-1 px-4 py-3 rounded-lg bg-green-500 hover:bg-green-600 font-semibold text-white">Confirm Award</button>
-                </div>
-            </div>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md"><div className="p-6 border-b"><h2 className="text-2xl font-bold text-gray-800">{title}</h2></div><div className="p-6 space-y-6"><div className="grid grid-cols-2 gap-2 p-1 bg-gray-200 rounded-lg"><button onClick={() => onTypeChange('xp')} className={`px-4 py-2 rounded-md font-semibold transition ${awardType === 'xp' ? 'bg-blue-500 text-white shadow' : 'text-gray-600'}`}>Award XP ⭐</button><button onClick={() => onTypeChange('coins')} className={`px-4 py-2 rounded-md font-semibold transition ${awardType === 'coins' ? 'bg-yellow-500 text-white shadow' : 'text-gray-600'}`}>Award Coins 💰</button></div><div><label className="block text-sm font-medium text-gray-700 mb-1">Amount</label><input type="number" min="1" value={amount} onChange={(e) => setAmount(Number(e.target.value))} className="w-full px-3 py-2 border border-gray-300 rounded-lg"/></div><div><label className="block text-sm font-medium text-gray-700 mb-1">Reason (Optional)</label><input type="text" value={reason} onChange={(e) => setReason(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg"/></div></div><div className="flex space-x-3 p-6 bg-gray-50 rounded-b-2xl"><button onClick={onClose} className="flex-1 px-4 py-3 border rounded-lg bg-white hover:bg-gray-100 font-semibold">Cancel</button><button onClick={() => onSubmit(amount, reason, awardType)} className="flex-1 px-4 py-3 rounded-lg bg-green-500 hover:bg-green-600 font-semibold text-white">Confirm Award</button></div></div>
         </div>
     );
 };
@@ -216,24 +207,7 @@ const CategoriesModal = ({ categories, onSave, onClose }) => {
     const handleDelete = (id) => setLocalCategories(localCategories.filter(cat => cat.id !== id));
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
-                <div className="p-6 border-b"><h2 className="text-2xl font-bold text-gray-800">Manage XP Categories</h2></div>
-                <div className="p-6 space-y-3 overflow-y-auto flex-grow">
-                    {localCategories.map(cat => (
-                        <div key={cat.id} className="grid grid-cols-12 gap-2 items-center">
-                            <input value={cat.icon} onChange={e => handleUpdate(cat.id, 'icon', e.target.value)} className="col-span-1 p-2 border rounded-lg"/>
-                            <input value={cat.label} onChange={e => handleUpdate(cat.id, 'label', e.target.value)} className="col-span-6 p-2 border rounded-lg"/>
-                            <input type="number" value={cat.amount} onChange={e => handleUpdate(cat.id, 'amount', Number(e.target.value))} className="col-span-2 p-2 border rounded-lg"/>
-                            <button onClick={() => handleDelete(cat.id)} className="col-span-3 bg-red-500 text-white rounded-lg py-2 text-sm">Delete</button>
-                        </div>
-                    ))}
-                    <button onClick={handleAdd} className="w-full mt-2 border-2 border-dashed border-gray-300 text-gray-500 rounded-lg py-2 hover:bg-gray-100">Add Category</button>
-                </div>
-                <div className="flex space-x-3 p-6 bg-gray-50 rounded-b-2xl">
-                    <button onClick={onClose} className="flex-1 py-3 border rounded-lg">Cancel</button>
-                    <button onClick={() => { onSave(localCategories); onClose(); }} className="flex-1 py-3 bg-blue-500 text-white rounded-lg">Save Changes</button>
-                </div>
-            </div>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col"><div className="p-6 border-b"><h2 className="text-2xl font-bold text-gray-800">Manage XP Categories</h2></div><div className="p-6 space-y-3 overflow-y-auto flex-grow">{localCategories.map(cat => (<div key={cat.id} className="grid grid-cols-12 gap-2 items-center"><input value={cat.icon} onChange={e => handleUpdate(cat.id, 'icon', e.target.value)} className="col-span-1 p-2 border rounded-lg"/><input value={cat.label} onChange={e => handleUpdate(cat.id, 'label', e.target.value)} className="col-span-6 p-2 border rounded-lg"/><input type="number" value={cat.amount} onChange={e => handleUpdate(cat.id, 'amount', Number(e.target.value))} className="col-span-2 p-2 border rounded-lg"/><button onClick={() => handleDelete(cat.id)} className="col-span-3 bg-red-500 text-white rounded-lg py-2 text-sm">Delete</button></div>))}<button onClick={handleAdd} className="w-full mt-2 border-2 border-dashed border-gray-300 text-gray-500 rounded-lg py-2 hover:bg-gray-100">Add Category</button></div><div className="flex space-x-3 p-6 bg-gray-50 rounded-b-2xl"><button onClick={onClose} className="flex-1 py-3 border rounded-lg">Cancel</button><button onClick={() => { onSave(localCategories); onClose(); }} className="flex-1 py-3 bg-blue-500 text-white rounded-lg">Save Changes</button></div></div>
         </div>
     );
 };
