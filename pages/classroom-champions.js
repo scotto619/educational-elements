@@ -191,7 +191,20 @@ const ClassroomChampions = () => {
   const renderTabContent = () => {
     switch (activeTab) {
       case 'students':
-        return <StudentsTab students={students} onUpdateCategories={handleUpdateCategories} onBulkAward={handleBulkAward} onUpdateStudent={handleUpdateStudent} onReorderStudents={handleReorderStudents} onViewDetails={setSelectedStudent} onAddStudent={() => setShowAddStudentModal(true)} />;
+        return <StudentsTab 
+                  students={students} 
+                  xpCategories={xpCategories}
+                  onUpdateCategories={handleUpdateCategories} 
+                  onBulkAward={handleBulkAward} 
+                  onUpdateStudent={handleUpdateStudent} 
+                  onReorderStudents={handleReorderStudents} 
+                  onViewDetails={setSelectedStudent} 
+                  onAddStudent={() => setShowAddStudentModal(true)}
+                  getAvatarImage={getAvatarImage}
+                  getPetImage={getPetImage}
+                  calculateCoins={calculateCoins}
+                  calculateAvatarLevel={calculateAvatarLevel}
+                />;
       case 'shop':
         return <ShopTab
                   students={students}
