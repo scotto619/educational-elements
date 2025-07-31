@@ -1,6 +1,5 @@
-// components/tabs/StudentsTab.js - FINAL VERSION
+// components/tabs/StudentsTab.js - DEFINITIVE FINAL VERSION
 import React, { useState, useEffect, useRef } from 'react';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 
 // ===============================================
 // HELPER FUNCTIONS
@@ -60,17 +59,12 @@ const StudentsTab = ({ students = [], xpCategories = [], onUpdateCategories, onB
     const [showBulkModal, setShowBulkModal] = useState(false);
     const [showIndividualModal, setShowIndividualModal] = useState(false);
     const [showCategoriesModal, setShowCategoriesModal] = useState(false);
-    
-    const [filteredStudents, setFilteredStudents] = useState([]);
+    const [draggedStudentId, setDraggedStudentId] = useState(null);
 
-    useEffect(() => {
-        setFilteredStudents(
-            students.filter(student =>
-                student.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                student.lastName?.toLowerCase().includes(searchTerm.toLowerCase())
-            )
-        );
-    }, [students, searchTerm]);
+    const filteredStudents = students.filter(student =>
+        student.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.lastName?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
     const handleStudentClick = (e, student) => {
         e.preventDefault();
@@ -86,18 +80,22 @@ const StudentsTab = ({ students = [], xpCategories = [], onUpdateCategories, onB
     };
     
     const closeModals = () => {
-        setContextMenu({ visible: false });
+        setContextMenu({ visible: false, x: 0, y: 0, student: null });
         setShowIndividualModal(false);
         setShowBulkModal(false);
     };
 
-    const onDragEnd = (result) => {
-        const { source, destination } = result;
-        if (!destination) return;
-        const reordered = Array.from(students);
-        const [reorderedItem] = reordered.splice(source.index, 1);
-        reordered.splice(destination.index, 0, reorderedItem);
-        onReorderStudents(reordered);
+    const handleDragStart = (e, studentId) => setDraggedStudentId(studentId);
+    const handleDragOver = (e) => e.preventDefault();
+    const handleDrop = (e, targetStudentId) => {
+        if (draggedStudentId === targetStudentId) return;
+        const fromIndex = students.findIndex(s => s.id === draggedStudentId);
+        const toIndex = students.findIndex(s => s.id === targetStudentId);
+        let newStudents = [...students];
+        const [draggedItem] = newStudents.splice(fromIndex, 1);
+        newStudents.splice(toIndex, 0, draggedItem);
+        onReorderStudents(newStudents);
+        setDraggedStudentId(null);
     };
     
     return (
@@ -115,27 +113,25 @@ const StudentsTab = ({ students = [], xpCategories = [], onUpdateCategories, onB
                 </div>
             </div>
 
-            <DragDropContext onDragEnd={onDragEnd}>
-                <Droppable droppableId="students-grid" direction="horizontal">
-                    {(provided) => (
-                        <div {...provided.droppableProps} ref={provided.innerRef} className={`grid ${getGridClasses(filteredStudents.length)} gap-4`}>
-                            {filteredStudents.map((student, index) => (
-                                <Draggable key={student.id} draggableId={student.id} index={index}>
-                                    {(provided, snapshot) => (
-                                        <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
-                                            <StudentCard student={student} isSelected={selectedStudents.includes(student.id)} isDragging={snapshot.isDragging} onClick={(e) => handleStudentClick(e, student)} />
-                                        </div>
-                                    )}
-                                </Draggable>
-                            ))}
-                            {provided.placeholder}
-                        </div>
-                    )}
-                </Droppable>
-            </DragDropContext>
+            <div className={`grid ${getGridClasses(filteredStudents.length)} gap-4`}>
+                {filteredStudents.map((student) => (
+                    <StudentCard key={student.id} student={student} isSelected={selectedStudents.includes(student.id)} isDragged={draggedStudentId === student.id} onClick={(e) => handleStudentClick(e, student)} onDragStart={(e) => handleDragStart(e, student.id)} onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, student.id)} />
+                ))}
+            </div>
 
-            {contextMenu.visible && <ContextMenu student={contextMenu.student} position={contextMenu.position} onAward={() => setShowIndividualModal(true)} onView={() => { onViewDetails(contextMenu.student); closeModals(); }} onAvatar={() => { /* Your avatar modal logic can be triggered here */ closeModals(); }} onClose={closeModals} />}
-            {(showIndividualModal || showBulkModal) && <AwardModal isBulk={showBulkModal} studentCount={selectedStudents.length} student={contextMenu.student} onSubmit={showBulkModal ? (a,r,t) => onBulkAward(selectedStudents, a, t) : (a,r,t) => onBulkAward([contextMenu.student.id], a, t)} onClose={closeModals} />}
+            {contextMenu.visible && (
+                <ContextMenu
+                    student={contextMenu.student}
+                    // **THE FIX IS HERE**: Correctly creating the position object
+                    position={{ x: contextMenu.x, y: contextMenu.y }}
+                    onAward={() => setShowIndividualModal(true)}
+                    onView={() => { onViewDetails(contextMenu.student); closeModals(); }}
+                    onAvatar={() => { /* Avatar modal logic from parent would be called here */ closeModals(); }}
+                    onClose={closeModals}
+                />
+            )}
+
+            {(showIndividualModal || showBulkModal) && <AwardModal isBulk={showBulkModal} studentCount={selectedStudents.length} student={contextMenu.student} onSubmit={showBulkModal ? (a,r,t) => { onBulkAward(selectedStudents, a, t); closeModals(); setSelectedStudents([]); } : (a,r,t) => { onBulkAward([contextMenu.student.id], a, t); closeModals(); }} onClose={closeModals} />}
             {showCategoriesModal && <CategoriesModal categories={xpCategories} onSave={onUpdateCategories} onClose={() => setShowCategoriesModal(false)} />}
         </div>
     );
@@ -144,30 +140,22 @@ const StudentsTab = ({ students = [], xpCategories = [], onUpdateCategories, onB
 // ===============================================
 // STUDENT CARD COMPONENT
 // ===============================================
-const StudentCard = ({ student, isSelected, isDragging, onClick }) => {
+const StudentCard = ({ student, isSelected, isDragged, onClick, onDragStart, onDragOver, onDrop }) => {
     const level = calculateAvatarLevel(student.totalPoints);
     const coins = calculateCoins(student);
     const xpForNextLevel = (student.totalPoints || 0) % 100;
 
     return (
-        <div onClick={onClick} className={`p-3 rounded-2xl shadow-lg border-2 transition-all duration-300 cursor-pointer ${isSelected ? 'border-purple-500 bg-purple-100 scale-105' : 'border-transparent bg-white hover:border-blue-400'} ${isDragging ? 'opacity-50 shadow-2xl' : ''}`}>
+        <div draggable="true" onDragStart={onDragStart} onDragOver={onDragOver} onDrop={onDrop} onClick={onClick} className={`p-3 rounded-2xl shadow-lg border-2 transition-all duration-300 cursor-pointer ${isSelected ? 'border-purple-500 bg-purple-100 scale-105' : 'border-transparent bg-white hover:border-blue-400'} ${isDragged ? 'opacity-30 ring-2 ring-blue-500' : ''}`}>
             <div className="flex flex-col items-center text-center">
-                <div className="relative">
-                    <img src={getAvatarImage(student.avatarBase, level)} alt={student.firstName} className="w-20 h-20 rounded-full border-4 border-white shadow-md"/>
-                    <div className="absolute -bottom-1 -right-1 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full font-bold shadow-sm">L{level}</div>
-                    {student.ownedPets?.[0] && <img src={getPetImage(student.ownedPets[0].type, student.ownedPets[0].name)} className="w-8 h-8 rounded-full absolute -bottom-1 -left-1 border-2 border-white shadow-sm"/>}
-                </div>
+                <div className="relative"><img src={getAvatarImage(student.avatarBase, level)} alt={student.firstName} className="w-20 h-20 rounded-full border-4 border-white shadow-md"/><div className="absolute -bottom-1 -right-1 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full font-bold shadow-sm">L{level}</div>{student.ownedPets?.[0] && <img src={getPetImage(student.ownedPets[0].type, student.ownedPets[0].name)} className="w-8 h-8 rounded-full absolute -bottom-1 -left-1 border-2 border-white shadow-sm"/>}</div>
                 <h3 className="text-md font-bold text-gray-800 mt-2 truncate w-full">{student.firstName}</h3>
-                <div className="flex items-center justify-around w-full mt-2 text-xs">
-                    <span className="font-semibold text-blue-600">⭐ {student.totalPoints || 0}</span>
-                    <span className="font-semibold text-yellow-600">🪙 {coins}</span>
-                </div>
+                <div className="flex items-center justify-around w-full mt-2 text-xs"><span className="font-semibold text-blue-600">⭐ {student.totalPoints || 0}</span><span className="font-semibold text-yellow-600">🪙 {coins}</span></div>
                 <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1.5"><div className="bg-gradient-to-r from-blue-400 to-purple-500 h-1.5 rounded-full" style={{ width: `${xpForNextLevel}%` }}></div></div>
             </div>
         </div>
     );
 };
-
 
 // ===============================================
 // MODAL COMPONENTS
@@ -195,5 +183,6 @@ const CategoriesModal = ({ categories, onSave, onClose }) => {
         </div>
     );
 };
+
 
 export default StudentsTab;
