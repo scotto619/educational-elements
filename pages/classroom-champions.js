@@ -1,5 +1,5 @@
 // pages/classroom-champions.js - DEFINITIVE FINAL VERSION
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -27,10 +27,6 @@ const DEFAULT_XP_CATEGORIES = [
   { id: 5, label: 'Star Award', amount: 5, color: 'bg-yellow-600', icon: '⭐' }
 ];
 
-const AVAILABLE_AVATARS = [
-  'Alchemist F', 'Alchemist M', 'Archer F', 'Archer M', 'Barbarian F', 'Barbarian M', 'Bard F', 'Bard M', 'Beastmaster F', 'Beastmaster M', 'Cleric F', 'Cleric M', 'Crystal Sage F', 'Crystal Sage M', 'Druid F', 'Druid M', 'Engineer F', 'Engineer M', 'Ice Mage F', 'Ice Mage M', 'Illusionist F', 'Illusionist M', 'Knight F', 'Knight M', 'Monk F', 'Monk M', 'Necromancer F', 'Necromancer M', 'Orc F', 'Orc M', 'Paladin F', 'Paladin M', 'Rogue F', 'Rogue M', 'Sky Knight F', 'Sky Knight M', 'Time Mage F', 'Time Mage M', 'Wizard F', 'Wizard M'
-];
-
 const PET_SPECIES = [
   { name: 'Alchemist', type: 'alchemist', rarity: 'common' }, { name: 'Barbarian', type: 'barbarian', rarity: 'common' },
   { name: 'Bard', type: 'bard', rarity: 'common' }, { name: 'Beastmaster', type: 'beastmaster', rarity: 'rare' },
@@ -54,7 +50,6 @@ const getPetImage = (petType, petName) => {
 };
 const playSound = (sound = 'ding') => { try { const audio = new Audio(`/sounds/${sound}.mp3`); audio.volume = 0.3; audio.play().catch(e => {}); } catch(e) {} };
 const shouldReceivePet = (student) => (student?.totalPoints || 0) >= GAME_CONFIG.PET_UNLOCK_XP && (!student?.ownedPets || student.ownedPets.length === 0);
-
 const getRandomPet = () => {
     try {
         const pet = PET_SPECIES[Math.floor(Math.random() * PET_SPECIES.length)];
@@ -97,8 +92,10 @@ const ClassroomChampions = () => {
   const [newStudentFirstName, setNewStudentFirstName] = useState('');
   const [newStudentLastName, setNewStudentLastName] = useState('');
 
+  const isInitialMount = useRef(true);
+
   // ===============================================
-  // AUTH & DATA MANAGEMENT
+  // AUTH & DATA LOADING
   // ===============================================
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -114,6 +111,7 @@ const ClassroomChampions = () => {
 
   const loadUserData = async (user) => {
     setLoading(true);
+    isInitialMount.current = true;
     const docRef = doc(firestore, 'users', user.uid);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
@@ -129,81 +127,83 @@ const ClassroomChampions = () => {
     setLoading(false);
   };
 
-  const saveClassData = async (updatedStudents, updatedCategories) => {
-      if (!user || !currentClassId) return;
+  // ===============================================
+  // CENTRALIZED FIREBASE SAVING
+  // ===============================================
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    if (!user || !currentClassId || loading) return;
+
+    const saveData = async () => {
+      console.log("Saving updated data to Firebase...");
       const docRef = doc(firestore, 'users', user.uid);
       try {
           const userData = (await getDoc(docRef)).data();
           const updatedClasses = userData.classes.map(cls =>
               cls.id === currentClassId
-                  ? { ...cls, students: updatedStudents, xpCategories: updatedCategories || cls.xpCategories }
+                  ? { ...cls, students: students, xpCategories: xpCategories }
                   : cls
           );
           await updateDoc(docRef, { classes: updatedClasses });
       } catch (error) {
           console.error("Error saving class data:", error);
       }
-  };
+    };
     
+    const debounceTimer = setTimeout(() => {
+        saveData();
+    }, 1000);
+
+    return () => clearTimeout(debounceTimer);
+  }, [students, xpCategories, user, currentClassId, loading]);
+
+
   // ===============================================
-  // NEW STATE HANDLERS
+  // SIMPLIFIED STATE HANDLERS
   // ===============================================
-  const handleReorderStudents = async (reorderedStudents) => {
-      setStudents(reorderedStudents);
-      await saveClassData(reorderedStudents, xpCategories);
+  const handleReorderStudents = (reorderedStudents) => {
+    setStudents(reorderedStudents);
   };
 
   const handleUpdateStudent = (updatedStudent) => {
-      const newStudents = students.map(s => s.id === updatedStudent.id ? updatedStudent : s);
-      setStudents(newStudents);
-      saveClassData(newStudents, xpCategories);
+    setStudents(prev => prev.map(s => s.id === updatedStudent.id ? updatedStudent : s));
   };
     
-  const handleUpdateCategories = async (newCategories) => {
-      setXpCategories(newCategories);
-      await saveClassData(students, newCategories);
+  const handleUpdateCategories = (newCategories) => {
+    setXpCategories(newCategories);
   };
     
-  // ===============================================
-  // STUDENT ACTIONS (XP, COINS, ETC.)
-  // ===============================================
   const handleBulkAward = (studentIds, amount, type) => {
-      let finalStudents;
-      setStudents(currentStudents => {
-          const updatedStudents = currentStudents.map(student => {
-              if (studentIds.includes(student.id)) {
-                  let updatedStudent = { ...student };
-                  if (type === 'xp') {
-                      const oldLevel = calculateAvatarLevel(updatedStudent.totalPoints || 0);
-                      updatedStudent.totalPoints = (updatedStudent.totalPoints || 0) + amount;
-                      const newLevel = calculateAvatarLevel(updatedStudent.totalPoints);
-                      if (newLevel > oldLevel) setLevelUpData({ student: updatedStudent, oldLevel, newLevel });
-                      if (shouldReceivePet(updatedStudent)) {
-                          const newPet = getRandomPet();
-                          updatedStudent.ownedPets = [...(updatedStudent.ownedPets || []), newPet];
-                          setPetUnlockData({ student: updatedStudent, pet: newPet });
-                      }
-                      playSound('ding');
-                  } else {
-                      updatedStudent.currency = (updatedStudent.currency || 0) + amount;
-                      playSound('coins');
-                  }
-                  return updatedStudent;
-              }
-              return student;
-          });
-          finalStudents = updatedStudents;
-          return updatedStudents;
-      });
-
-      setTimeout(() => {
-          if (finalStudents) {
-              saveClassData(finalStudents, xpCategories);
-          }
-      }, 100);
+      setStudents(currentStudents => 
+        currentStudents.map(student => {
+            if (studentIds.includes(student.id)) {
+                let updatedStudent = { ...student };
+                if (type === 'xp') {
+                    const oldLevel = calculateAvatarLevel(updatedStudent.totalPoints || 0);
+                    updatedStudent.totalPoints = (updatedStudent.totalPoints || 0) + amount;
+                    const newLevel = calculateAvatarLevel(updatedStudent.totalPoints);
+                    if (newLevel > oldLevel) setLevelUpData({ student: updatedStudent, oldLevel, newLevel });
+                    if (shouldReceivePet(updatedStudent)) {
+                        const newPet = getRandomPet();
+                        updatedStudent.ownedPets = [...(updatedStudent.ownedPets || []), newPet];
+                        setPetUnlockData({ student: updatedStudent, pet: newPet });
+                    }
+                    playSound('ding');
+                } else { // 'coins'
+                    updatedStudent.currency = (updatedStudent.currency || 0) + amount;
+                    playSound('coins');
+                }
+                return updatedStudent;
+            }
+            return student;
+        })
+      );
   };
   
-  const addStudent = async () => {
+  const addStudent = () => {
     if (!newStudentFirstName.trim()) return;
     const newStudent = {
       id: `student_${Date.now()}`, firstName: newStudentFirstName.trim(), lastName: newStudentLastName.trim(),
@@ -211,9 +211,7 @@ const ClassroomChampions = () => {
       avatar: getAvatarImage('Wizard F', 1), ownedAvatars: ['Wizard F'], ownedPets: [],
       createdAt: new Date().toISOString()
     };
-    const updatedStudents = [...students, newStudent];
-    setStudents(updatedStudents);
-    await saveClassData(updatedStudents, xpCategories);
+    setStudents(prev => [...prev, newStudent]);
     setNewStudentFirstName(''); setNewStudentLastName(''); setShowAddStudentModal(false);
   };
 
@@ -257,10 +255,75 @@ const ClassroomChampions = () => {
         </div>
         <main className="max-w-screen-2xl mx-auto px-4 py-6">{renderTabContent()}</main>
         
-        {showAddStudentModal && <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"><div className="bg-white rounded-2xl shadow-2xl w-full max-w-md"><div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-t-2xl"><h2 className="text-2xl font-bold">Add New Champion</h2></div><div className="p-6 space-y-4"><input type="text" value={newStudentFirstName} onChange={(e) => setNewStudentFirstName(e.target.value)} placeholder="First Name" className="w-full px-3 py-2 border border-gray-300 rounded-lg"/><input type="text" value={newStudentLastName} onChange={(e) => setNewStudentLastName(e.target.value)} placeholder="Last Name (Optional)" className="w-full px-3 py-2 border border-gray-300 rounded-lg"/></div><div className="flex space-x-3 p-6 pt-0"><button onClick={() => setShowAddStudentModal(false)} className="flex-1 px-4 py-2 border rounded-lg">Cancel</button><button onClick={addStudent} className="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg">Add Champion</button></div></div></div>}
-        {levelUpData && <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"><div className="bg-white rounded-2xl shadow-2xl w-full max-w-md text-center p-6"><div className="text-6xl mb-2">🎉</div><h2 className="text-2xl font-bold">LEVEL UP!</h2><h3 className="text-xl font-bold text-gray-800 my-2">{levelUpData.student.firstName} reached Level {levelUpData.newLevel}!</h3><img src={getAvatarImage(levelUpData.student.avatarBase, levelUpData.newLevel)} alt="New Avatar" className="w-32 h-32 mx-auto rounded-full border-4 border-yellow-400"/><button onClick={() => setLevelUpData(null)} className="mt-4 w-full bg-yellow-500 text-white py-2 rounded">Awesome!</button></div></div>}
-        {petUnlockData && <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"><div className="bg-white rounded-2xl shadow-2xl w-full max-w-md text-center p-6"><div className="text-6xl mb-2">🐾</div><h2 className="text-2xl font-bold">PET UNLOCKED!</h2><h3 className="text-xl font-bold text-gray-800 my-2">{petUnlockData.student.firstName} found a companion!</h3><img src={getPetImage(petUnlockData.pet.type, petUnlockData.pet.name)} alt={petUnlockData.pet.name} className="w-24 h-24 mx-auto rounded-full border-4 border-purple-400"/><h4 className="text-lg font-semibold text-purple-600 mt-2">{petUnlockData.pet.name}</h4><button onClick={() => setPetUnlockData(null)} className="mt-4 w-full bg-purple-500 text-white py-2 rounded">Meet My Pet!</button></div></div>}
-        {selectedStudent && <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"><div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"><div className="p-6"><button onClick={() => setSelectedStudent(null)} className="float-right text-2xl font-bold">×</button><h2 className="text-2xl font-bold">{selectedStudent.firstName} {selectedStudent.lastName}</h2><p>Level {calculateAvatarLevel(selectedStudent.totalPoints || 0)} Champion</p><div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6"><div><img src={getAvatarImage(selectedStudent.avatarBase, calculateAvatarLevel(selectedStudent.totalPoints))} className="w-32 h-32 rounded-full border-4 border-blue-400" /></div><div className="space-y-4"><p><strong>XP:</strong> {selectedStudent.totalPoints || 0}</p><p><strong>Coins:</strong> {calculateCoins(selectedStudent)}</p>{selectedStudent.ownedPets?.[0] && (<div><p><strong>Companion:</strong> {selectedStudent.ownedPets[0].name}</p><img src={getPetImage(selectedStudent.ownedPets[0].type, selectedStudent.ownedPets[0].name)} className="w-16 h-16 rounded-full border-2 border-purple-300"/></div>)}</div></div></div></div></div>}
+        {showAddStudentModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+                    <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-t-2xl">
+                        <h2 className="text-2xl font-bold">Add New Champion</h2>
+                    </div>
+                    <div className="p-6 space-y-4">
+                        <input type="text" value={newStudentFirstName} onChange={(e) => setNewStudentFirstName(e.target.value)} placeholder="First Name" className="w-full px-3 py-2 border border-gray-300 rounded-lg"/>
+                        <input type="text" value={newStudentLastName} onChange={(e) => setNewStudentLastName(e.target.value)} placeholder="Last Name (Optional)" className="w-full px-3 py-2 border border-gray-300 rounded-lg"/>
+                    </div>
+                    <div className="flex space-x-3 p-6 pt-0">
+                        <button onClick={() => setShowAddStudentModal(false)} className="flex-1 px-4 py-2 border rounded-lg">Cancel</button>
+                        <button onClick={addStudent} className="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg">Add Champion</button>
+                    </div>
+                </div>
+            </div>
+        )}
+        
+        {levelUpData && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md text-center p-6">
+                    <div className="text-6xl mb-2">🎉</div>
+                    <h2 className="text-2xl font-bold">LEVEL UP!</h2>
+                    <h3 className="text-xl font-bold text-gray-800 my-2">{levelUpData.student.firstName} reached Level {levelUpData.newLevel}!</h3>
+                    <img src={getAvatarImage(levelUpData.student.avatarBase, levelUpData.newLevel)} alt="New Avatar" className="w-32 h-32 mx-auto rounded-full border-4 border-yellow-400"/>
+                    <button onClick={() => setLevelUpData(null)} className="mt-4 w-full bg-yellow-500 text-white py-2 rounded">Awesome!</button>
+                </div>
+            </div>
+        )}
+
+        {petUnlockData && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md text-center p-6">
+                    <div className="text-6xl mb-2">🐾</div>
+                    <h2 className="text-2xl font-bold">PET UNLOCKED!</h2>
+                    <h3 className="text-xl font-bold text-gray-800 my-2">{petUnlockData.student.firstName} found a companion!</h3>
+                    <img src={getPetImage(petUnlockData.pet.type, petUnlockData.pet.name)} alt={petUnlockData.pet.name} className="w-24 h-24 mx-auto rounded-full border-4 border-purple-400"/>
+                    <h4 className="text-lg font-semibold text-purple-600 mt-2">{petUnlockData.pet.name}</h4>
+                    <button onClick={() => setPetUnlockData(null)} className="mt-4 w-full bg-purple-500 text-white py-2 rounded">Meet My Pet!</button>
+                </div>
+            </div>
+        )}
+
+        {selectedStudent && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <div className="p-6">
+                        <button onClick={() => setSelectedStudent(null)} className="float-right text-2xl font-bold">×</button>
+                        <h2 className="text-2xl font-bold">{selectedStudent.firstName} {selectedStudent.lastName}</h2>
+                        <p>Level {calculateAvatarLevel(selectedStudent.totalPoints || 0)} Champion</p>
+                        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <img src={getAvatarImage(selectedStudent.avatarBase, calculateAvatarLevel(selectedStudent.totalPoints))} className="w-32 h-32 rounded-full border-4 border-blue-400" />
+                            </div>
+                            <div className="space-y-4">
+                                <p><strong>XP:</strong> {selectedStudent.totalPoints || 0}</p>
+                                <p><strong>Coins:</strong> {calculateCoins(selectedStudent)}</p>
+                                {selectedStudent.ownedPets?.[0] && (
+                                    <div>
+                                        <p><strong>Companion:</strong> {selectedStudent.ownedPets[0].name}</p>
+                                        <img src={getPetImage(selectedStudent.ownedPets[0].type, selectedStudent.ownedPets[0].name)} className="w-16 h-16 rounded-full border-2 border-purple-300"/>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )}
     </div>
   );
 };
