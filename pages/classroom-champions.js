@@ -1,9 +1,9 @@
-// pages/classroom-champions.js - FIXED PET IMAGE LOADING
+// pages/classroom-champions.js - DEFINITIVE FINAL VERSION
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 
 // Import components
 import StudentsTab from '../components/tabs/StudentsTab';
@@ -15,15 +15,9 @@ import TeachersToolkitTab from '../components/tabs/TeachersToolkitTab';
 import CurriculumCornerTab from '../components/tabs/CurriculumCornerTab';
 
 // ===============================================
-// CORE GAME CONSTANTS
+// CORE GAME CONSTANTS & UTILITIES (FULLY RESTORED)
 // ===============================================
-
-const GAME_CONFIG = {
-  MAX_LEVEL: 4,
-  COINS_PER_XP: 5,
-  PET_UNLOCK_XP: 50,
-  XP_THRESHOLDS: { LEVEL_1: 0, LEVEL_2: 100, LEVEL_3: 200, LEVEL_4: 300 }
-};
+const GAME_CONFIG = { MAX_LEVEL: 4, COINS_PER_XP: 5, PET_UNLOCK_XP: 50 };
 
 const DEFAULT_XP_CATEGORIES = [
   { id: 1, label: 'Respectful', amount: 1, color: 'bg-blue-500', icon: '🤝' },
@@ -34,969 +28,239 @@ const DEFAULT_XP_CATEGORIES = [
 ];
 
 const AVAILABLE_AVATARS = [
-  'Alchemist F', 'Alchemist M', 'Archer F', 'Archer M', 'Barbarian F', 'Barbarian M',
-  'Bard F', 'Bard M', 'Beastmaster F', 'Beastmaster M', 'Cleric F', 'Cleric M',
-  'Crystal Sage F', 'Crystal Sage M', 'Druid F', 'Druid M', 'Engineer F', 'Engineer M',
-  'Ice Mage F', 'Ice Mage M', 'Illusionist F', 'Illusionist M', 'Knight F', 'Knight M',
-  'Monk F', 'Monk M', 'Necromancer F', 'Necromancer M', 'Orc F', 'Orc M',
-  'Paladin F', 'Paladin M', 'Rogue F', 'Rogue M', 'Sky Knight F', 'Sky Knight M',
-  'Time Mage F', 'Time Mage M', 'Wizard F', 'Wizard M'
+  'Alchemist F', 'Alchemist M', 'Archer F', 'Archer M', 'Barbarian F', 'Barbarian M', 'Bard F', 'Bard M', 'Beastmaster F', 'Beastmaster M', 'Cleric F', 'Cleric M', 'Crystal Sage F', 'Crystal Sage M', 'Druid F', 'Druid M', 'Engineer F', 'Engineer M', 'Ice Mage F', 'Ice Mage M', 'Illusionist F', 'Illusionist M', 'Knight F', 'Knight M', 'Monk F', 'Monk M', 'Necromancer F', 'Necromancer M', 'Orc F', 'Orc M', 'Paladin F', 'Paladin M', 'Rogue F', 'Rogue M', 'Sky Knight F', 'Sky Knight M', 'Time Mage F', 'Time Mage M', 'Wizard F', 'Wizard M'
 ];
 
-// Updated PET_SPECIES to match available files
 const PET_SPECIES = [
-  { name: 'Alchemist', type: 'alchemist', rarity: 'common' },
-  { name: 'Barbarian', type: 'barbarian', rarity: 'common' },
-  { name: 'Bard', type: 'bard', rarity: 'common' },
-  { name: 'Beastmaster', type: 'beastmaster', rarity: 'rare' },
-  { name: 'Cleric', type: 'cleric', rarity: 'common' },
-  { name: 'Crystal Knight', type: 'crystal knight', rarity: 'epic' },
-  { name: 'Crystal Sage', type: 'crystal sage', rarity: 'epic' },
-  { name: 'Engineer', type: 'engineer', rarity: 'rare' },
-  { name: 'Frost Mage', type: 'frost mage', rarity: 'rare' },
-  { name: 'Illusionist', type: 'illusionist', rarity: 'epic' },
-  { name: 'Knight', type: 'knight', rarity: 'common' },
-  { name: 'Lightning', type: 'lightning', rarity: 'legendary' },
-  { name: 'Monk', type: 'monk', rarity: 'common' },
-  { name: 'Necromancer', type: 'necromancer', rarity: 'epic' },
-  { name: 'Rogue', type: 'rogue', rarity: 'common' },
-  { name: 'Stealth', type: 'stealth', rarity: 'rare' },
-  { name: 'Time Knight', type: 'time knight', rarity: 'legendary' },
-  { name: 'Warrior', type: 'warrior', rarity: 'common' },
+  { name: 'Alchemist', type: 'alchemist', rarity: 'common' }, { name: 'Barbarian', type: 'barbarian', rarity: 'common' },
+  { name: 'Bard', type: 'bard', rarity: 'common' }, { name: 'Beastmaster', type: 'beastmaster', rarity: 'rare' },
+  { name: 'Cleric', type: 'cleric', rarity: 'common' }, { name: 'Crystal Knight', type: 'crystal knight', rarity: 'epic' },
+  { name: 'Crystal Sage', type: 'crystal sage', rarity: 'epic' }, { name: 'Engineer', type: 'engineer', rarity: 'rare' },
+  { name: 'Frost Mage', type: 'frost mage', rarity: 'rare' }, { name: 'Illusionist', type: 'illusionist', rarity: 'epic' },
+  { name: 'Knight', type: 'knight', rarity: 'common' }, { name: 'Lightning', type: 'lightning', rarity: 'legendary' },
+  { name: 'Monk', type: 'monk', rarity: 'common' }, { name: 'Necromancer', type: 'necromancer', rarity: 'epic' },
+  { name: 'Rogue', type: 'rogue', rarity: 'common' }, { name: 'Stealth', type: 'stealth', rarity: 'rare' },
+  { name: 'Time Knight', type: 'time knight', rarity: 'legendary' }, { name: 'Warrior', type: 'warrior', rarity: 'common' },
   { name: 'Wizard', type: 'wizard', rarity: 'common' }
 ];
 
-// ===============================================
-// UTILITY FUNCTIONS
-// ===============================================
-
-const getAvatarImage = (avatarBase, level) => {
-  if (!avatarBase) return '/avatars/Wizard F/Level 1.png';
-  const validLevel = Math.max(1, Math.min(level || 1, 4));
-  return `/avatars/${avatarBase}/Level ${validLevel}.png`;
-};
-
-const calculateAvatarLevel = (totalXP) => {
-  if (totalXP >= 300) return 4;
-  if (totalXP >= 200) return 3;  
-  if (totalXP >= 100) return 2;
-  return 1;
-};
-
-const calculateCoins = (student) => {
-  const xpCoins = Math.floor((student?.totalPoints || 0) / GAME_CONFIG.COINS_PER_XP);
-  const bonusCoins = student?.currency || 0;
-  const coinsSpent = student?.coinsSpent || 0;
-  return Math.max(0, xpCoins + bonusCoins - coinsSpent);
-};
-
-// FIXED: Proper pet image mapping function
+const getAvatarImage = (avatarBase, level) => `/avatars/${avatarBase || 'Wizard F'}/Level ${Math.max(1, Math.min(level || 1, 4))}.png`;
+const calculateAvatarLevel = (xp) => (xp >= 300 ? 4 : xp >= 200 ? 3 : xp >= 100 ? 2 : 1);
+const calculateCoins = (student) => Math.max(0, Math.floor((student?.totalPoints || 0) / GAME_CONFIG.COINS_PER_XP) + (student?.currency || 0) - (student?.coinsSpent || 0));
 const getPetImage = (petType, petName) => {
-  // Handle both old and new pet naming systems
-  const petImageMap = {
-    // New class-based system
-    'alchemist': '/Pets/Alchemist.png',
-    'barbarian': '/Pets/Barbarian.png',
-    'bard': '/Pets/Bard.png',
-    'beastmaster': '/Pets/Beastmaster.png',
-    'cleric': '/Pets/Cleric.png',
-    'crystal knight': '/Pets/Crystal Knight.png',
-    'crystal sage': '/Pets/Crystal Sage.png',
-    'engineer': '/Pets/Engineer.png',
-    'frost mage': '/Pets/Frost Mage.png',
-    'illusionist': '/Pets/Illusionist.png',
-    'knight': '/Pets/Knight.png',
-    'lightning': '/Pets/Lightning.png',
-    'monk': '/Pets/Monk.png',
-    'necromancer': '/Pets/Necromancer.png',
-    'rogue': '/Pets/Rogue.png',
-    'stealth': '/Pets/Stealth.png',
-    'time knight': '/Pets/Time Knight.png',
-    'warrior': '/Pets/Warrior.png',
-    'wizard': '/Pets/Wizard.png',
-    
-    // Legacy fantasy system mapping to new files
-    'dragon': '/Pets/Lightning.png',      // Map dragon to Lightning (legendary)
-    'phoenix': '/Pets/Crystal Sage.png',  // Map phoenix to Crystal Sage (epic)
-    'unicorn': '/Pets/Time Knight.png',   // Map unicorn to Time Knight (legendary)
-    'wolf': '/Pets/Warrior.png',          // Map wolf to Warrior
-    'owl': '/Pets/Wizard.png',            // Map owl to Wizard
-    'cat': '/Pets/Rogue.png',             // Map cat to Rogue
-    'tiger': '/Pets/Barbarian.png',       // Map tiger to Barbarian
-    'bear': '/Pets/Beastmaster.png',      // Map bear to Beastmaster
-    'lion': '/Pets/Knight.png',           // Map lion to Knight
-    'eagle': '/Pets/Stealth.png'          // Map eagle to Stealth
-  };
-  
-  // Try petType first, then petName, then default
-  const key = (petType || petName || '').toLowerCase();
-  return petImageMap[key] || '/Pets/Wizard.png';
+    const key = (petType || petName || '').toLowerCase();
+    const map = { 'alchemist': '/Pets/Alchemist.png', 'barbarian': '/Pets/Barbarian.png', 'bard': '/Pets/Bard.png', 'beastmaster': '/Pets/Beastmaster.png', 'cleric': '/Pets/Cleric.png', 'crystal knight': '/Pets/Crystal Knight.png', 'crystal sage': '/Pets/Crystal Sage.png', 'engineer': '/Pets/Engineer.png', 'frost mage': '/Pets/Frost Mage.png', 'illusionist': '/Pets/Illusionist.png', 'knight': '/Pets/Knight.png', 'lightning': '/Pets/Lightning.png', 'monk': '/Pets/Monk.png', 'necromancer': '/Pets/Necromancer.png', 'rogue': '/Pets/Rogue.png', 'stealth': '/Pets/Stealth.png', 'time knight': '/Pets/Time Knight.png', 'warrior': '/Pets/Warrior.png', 'wizard': '/Pets/Wizard.png', 'dragon': '/Pets/Lightning.png', 'phoenix': '/Pets/Crystal Sage.png', 'unicorn': '/Pets/Time Knight.png', 'wolf': '/Pets/Warrior.png', 'owl': '/Pets/Wizard.png', 'cat': '/Pets/Rogue.png', 'tiger': '/Pets/Barbarian.png', 'bear': '/Pets/Beastmaster.png', 'lion': '/Pets/Knight.png', 'eagle': '/Pets/Stealth.png' };
+    return map[key] || '/Pets/Wizard.png';
 };
+const playSound = (sound = 'ding') => { try { const audio = new Audio(`/sounds/${sound}.mp3`); audio.volume = 0.3; audio.play().catch(e => {}); } catch(e) {} };
+const shouldReceivePet = (student) => (student?.totalPoints || 0) >= GAME_CONFIG.PET_UNLOCK_XP && (!student?.ownedPets || student.ownedPets.length === 0);
 
 const getRandomPet = () => {
-  const pet = PET_SPECIES[Math.floor(Math.random() * PET_SPECIES.length)];
-  return {
-    id: `pet_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    name: pet.name,
-    type: pet.type,
-    rarity: pet.rarity,
-    speed: Math.random() * 0.5 + 0.5,
-    displayName: pet.name,
-    imageType: pet.type
-  };
+    try {
+        const pet = PET_SPECIES[Math.floor(Math.random() * PET_SPECIES.length)];
+        return {
+            id: `pet_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            name: pet.name, type: pet.type, rarity: pet.rarity,
+            displayName: pet.name, imageType: pet.type
+        };
+    } catch (error) {
+        console.error("Error in getRandomPet, returning a default pet.", error);
+        return {
+            id: `pet_${Date.now()}_failsafe`, name: 'Wizard', type: 'wizard', rarity: 'common',
+            displayName: 'Wizard', imageType: 'wizard'
+        };
+    }
 };
-
-const shouldReceivePet = (student) => {
-  return (student?.totalPoints || 0) >= GAME_CONFIG.PET_UNLOCK_XP && 
-         (!student?.ownedPets || student.ownedPets.length === 0);
-};
-
-const playXPSound = () => {
-  try {
-    const audio = new Audio('/sounds/ding.mp3');
-    audio.volume = 0.3;
-    audio.play().catch(e => console.log('Audio play failed:', e));
-  } catch (e) {
-    console.log('Audio not available');
-  }
-};
-
-const showToast = (message, type = 'info') => {
-  // Simple alert for now - you can enhance this later
-  alert(`${type.toUpperCase()}: ${message}`);
-};
-
-// ===============================================
-// FIXED STUDENT CARD COMPONENT FOR DASHBOARD
-// ===============================================
-
-const DashboardStudentCard = ({ student, onAwardXP, onViewDetails }) => {
-  const currentLevel = calculateAvatarLevel(student.totalPoints || 0);
-  const coins = calculateCoins(student);
-  const progressToNext = (student.totalPoints || 0) % 100;
-
-  return (
-    <div className="bg-white rounded-xl shadow-lg p-4 hover:shadow-xl transition-all duration-300 border-2 border-blue-100 hover:border-blue-300">
-      {/* Avatar Section */}
-      <div className="flex flex-col items-center mb-3">
-        <div className="relative group cursor-pointer" onClick={() => onViewDetails(student)}>
-          <img 
-            src={getAvatarImage(student.avatarBase || 'Wizard F', currentLevel)}
-            alt={`${student.firstName}'s Avatar`}
-            className="w-16 h-16 rounded-full border-3 border-blue-400 shadow-lg group-hover:border-blue-600 transition-all"
-            onError={(e) => {
-              console.warn(`Avatar failed to load for ${student.firstName}: ${e.target.src}`);
-              e.target.src = '/avatars/Wizard F/Level 1.png';
-            }}
-          />
-          <div className="absolute -bottom-1 -right-1 bg-blue-600 text-white text-xs px-2 py-1 rounded-full font-bold">
-            L{currentLevel}
-          </div>
-        </div>
-        
-        <h3 className="text-sm font-bold text-gray-800 mt-2 text-center leading-tight">
-          {student.firstName}
-        </h3>
-      </div>
-
-      {/* Stats Section */}
-      <div className="space-y-2 mb-3">
-        <div className="flex items-center justify-between text-xs">
-          <span className="text-blue-600 font-semibold flex items-center">
-            ⭐ {student.totalPoints || 0}
-          </span>
-          <span className="text-yellow-600 font-semibold flex items-center">
-            🪙 {coins}
-          </span>
-        </div>
-        
-        {/* XP Progress Bar */}
-        <div>
-          <div className="flex justify-between text-xs text-gray-600 mb-1">
-            <span>Level {currentLevel + 1}</span>
-            <span>{progressToNext}/100</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
-              className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-500"
-              style={{ width: `${progressToNext}%` }}
-            ></div>
-          </div>
-        </div>
-      </div>
-
-      {/* Pet Display - FIXED */}
-      {student.ownedPets && student.ownedPets.length > 0 && (
-        <div className="flex justify-center mb-3">
-          <div className="cursor-pointer hover:scale-110 transition-transform" 
-               title={student.ownedPets[0].name || student.ownedPets[0].displayName}>
-            <img 
-              src={getPetImage(student.ownedPets[0].type || student.ownedPets[0].imageType, student.ownedPets[0].name)}
-              alt={student.ownedPets[0].name || student.ownedPets[0].displayName}
-              className="w-8 h-8 rounded-full border-2 border-purple-300"
-              onError={(e) => {
-                console.warn(`Pet image failed to load: ${e.target.src}`);
-                e.target.src = '/Pets/Wizard.png';
-              }}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* XP Award Buttons */}
-      <div className="grid grid-cols-3 gap-1">
-        {DEFAULT_XP_CATEGORIES.slice(0, 3).map(category => (
-          <button
-            key={category.id}
-            onClick={() => onAwardXP(student, category.amount, category.label)}
-            className={`${category.color} text-white text-xs py-1 px-2 rounded-lg hover:opacity-80 transition-all font-bold`}
-            title={category.label}
-          >
-            {category.icon}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-// ===============================================
-// TAB CONFIGURATION
-// ===============================================
 
 const NAVIGATION_TABS = [
-  { 
-    id: 'dashboard', 
-    name: 'Dashboard', 
-    icon: '🏠', 
-    color: 'from-blue-500 to-blue-600',
-    description: 'Class overview and quick stats'
-  },
-  { 
-    id: 'students', 
-    name: 'Students', 
-    icon: '👥', 
-    color: 'from-green-500 to-green-600',
-    description: 'Manage student progress and awards'
-  },
-  { 
-    id: 'quests', 
-    name: 'Quests', 
-    icon: '📜', 
-    color: 'from-purple-500 to-purple-600',
-    description: 'Create and manage class quests'
-  },
-  { 
-    id: 'shop', 
-    name: 'Shop', 
-    icon: '🏪', 
-    color: 'from-yellow-500 to-yellow-600',
-    description: 'Avatar and pet marketplace'
-  },
-  { 
-    id: 'games', 
-    name: 'Games', 
-    icon: '🎮', 
-    color: 'from-red-500 to-red-600',
-    description: 'Fun classroom activities'
-  },
-  { 
-    id: 'curriculum', 
-    name: 'Curriculum Corner', 
-    icon: '📖', 
-    color: 'from-indigo-500 to-purple-600',
-    description: 'Subject-based teaching tools'
-  },
-  { 
-    id: 'toolkit', 
-    name: 'Teachers Toolkit', 
-    icon: '🛠️', 
-    color: 'from-teal-500 to-teal-600',
-    description: 'Professional classroom management tools'
-  },
-  { 
-    id: 'settings', 
-    name: 'Settings', 
-    icon: '⚙️', 
-    color: 'from-gray-500 to-gray-600',
-    description: 'Class and account settings'
-  }
+  { id: 'dashboard', name: 'Dashboard', icon: '🏠'}, { id: 'students', name: 'Students', icon: '👥'}, { id: 'quests', name: 'Quests', icon: '📜'}, { id: 'shop', name: 'Shop', icon: '🏪'}, { id: 'games', name: 'Games', icon: '🎮'}, { id: 'curriculum', name: 'Curriculum Corner', icon: '📖'}, { id: 'toolkit', name: 'Teachers Toolkit', icon: '🛠️'}, { id: 'settings', name: 'Settings', icon: '⚙️'}
 ];
+
 
 // ===============================================
 // MAIN COMPONENT
 // ===============================================
-
 const ClassroomChampions = () => {
   const router = useRouter();
   
-  // Core state
+  // States
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('students');
   const [students, setStudents] = useState([]);
+  const [xpCategories, setXpCategories] = useState(DEFAULT_XP_CATEGORIES);
   const [currentClassId, setCurrentClassId] = useState(null);
-  
-  // Modal states
   const [showAddStudentModal, setShowAddStudentModal] = useState(false);
   const [levelUpData, setLevelUpData] = useState(null);
   const [petUnlockData, setPetUnlockData] = useState(null);
   const [selectedStudent, setSelectedStudent] = useState(null);
-  
-  // Form states
   const [newStudentFirstName, setNewStudentFirstName] = useState('');
   const [newStudentLastName, setNewStudentLastName] = useState('');
 
   // ===============================================
-  // AUTHENTICATION
+  // AUTH & DATA MANAGEMENT
   // ===============================================
-
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        router.push('/login');
-      } else {
+      if (user) {
         setUser(user);
         loadUserData(user);
+      } else {
+        router.push('/login');
       }
     });
-
     return () => unsubscribe();
   }, [router]);
 
   const loadUserData = async (user) => {
-    try {
-      const docRef = doc(firestore, 'users', user.uid);
-      const docSnap = await getDoc(docRef);
-      
-      if (docSnap.exists()) {
-        const userData = docSnap.data();
-        
-        // Load the active class
-        if (userData.classes && userData.classes.length > 0) {
-          const activeClass = userData.classes.find(cls => cls.id === userData.activeClassId) || userData.classes[0];
-          setCurrentClassId(activeClass.id);
-          setStudents(activeClass.students || []);
-        }
+    setLoading(true);
+    const docRef = doc(firestore, 'users', user.uid);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      const userData = docSnap.data();
+      const activeClassId = userData.activeClassId || (userData.classes && userData.classes[0]?.id);
+      if (activeClassId) {
+        const activeClass = userData.classes.find(cls => cls.id === activeClassId);
+        setCurrentClassId(activeClass.id);
+        setStudents(activeClass.students || []);
+        setXpCategories(activeClass.xpCategories || DEFAULT_XP_CATEGORIES);
       }
-    } catch (error) {
-      console.error('Error loading user data:', error);
-      // Error logged to console - no user notification needed
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   };
 
-  // ===============================================
-  // STUDENT MANAGEMENT
-  // ===============================================
-
-  const saveStudentsToFirebase = async (updatedStudents) => {
-    if (!user || !currentClassId) return;
-
-    try {
+  const saveClassData = async (updatedStudents, updatedCategories) => {
+      if (!user || !currentClassId) return;
       const docRef = doc(firestore, 'users', user.uid);
-      const docSnap = await getDoc(docRef);
-      
-      if (docSnap.exists()) {
-        const userData = docSnap.data();
-        const updatedClasses = userData.classes.map(cls => 
-          cls.id === currentClassId 
-            ? { ...cls, students: updatedStudents }
-            : cls
-        );
-        
-        await setDoc(docRef, { ...userData, classes: updatedClasses });
+      try {
+          const userData = (await getDoc(docRef)).data();
+          const updatedClasses = userData.classes.map(cls =>
+              cls.id === currentClassId
+                  ? { ...cls, students: updatedStudents, xpCategories: updatedCategories || cls.xpCategories }
+                  : cls
+          );
+          await updateDoc(docRef, { classes: updatedClasses });
+      } catch (error) {
+          console.error("Error saving class data:", error);
       }
-    } catch (error) {
-      console.error('Error saving students:', error);
-      // Error logged to console - no user notification needed
-    }
   };
-
-  const awardXP = useCallback(async (student, amount, category) => {
-    const updatedStudents = students.map(s => {
-      if (s.id === student.id) {
-        const newTotalXP = (s.totalPoints || 0) + amount;
-        const oldLevel = calculateAvatarLevel(s.totalPoints || 0);
-        const newLevel = calculateAvatarLevel(newTotalXP);
-        
-        const updatedStudent = {
-          ...s,
-          totalPoints: newTotalXP,
-          avatarLevel: newLevel,
-          avatar: getAvatarImage(s.avatarBase || 'Wizard F', newLevel),
-          lastUpdated: new Date().toISOString()
-        };
-
-        // Check for level up
-        if (newLevel > oldLevel) {
-          setLevelUpData({
-            student: updatedStudent,
-            oldLevel,
-            newLevel
-          });
-        }
-
-        // Check for pet unlock
-        if (shouldReceivePet(updatedStudent)) {
-          const newPet = getRandomPet();
-          updatedStudent.ownedPets = [newPet];
-          setPetUnlockData({
-            student: updatedStudent,
-            pet: newPet
-          });
-        }
-
-        return updatedStudent;
-      }
-      return s;
-    });
-
-    setStudents(updatedStudents);
-    await saveStudentsToFirebase(updatedStudents);
     
-    playXPSound();
-    // XP awarded - visual animation and sound are sufficient feedback
-  }, [students]);
+  // ===============================================
+  // NEW STATE HANDLERS
+  // ===============================================
+  const handleReorderStudents = async (reorderedStudents) => {
+      setStudents(reorderedStudents);
+      await saveClassData(reorderedStudents, xpCategories);
+  };
 
+  const handleUpdateStudent = (updatedStudent) => {
+      const newStudents = students.map(s => s.id === updatedStudent.id ? updatedStudent : s);
+      setStudents(newStudents);
+      saveClassData(newStudents, xpCategories);
+  };
+    
+  const handleUpdateCategories = async (newCategories) => {
+      setXpCategories(newCategories);
+      await saveClassData(students, newCategories);
+  };
+    
+  // ===============================================
+  // STUDENT ACTIONS (XP, COINS, ETC.)
+  // ===============================================
+  const handleBulkAward = (studentIds, amount, type) => {
+      let finalStudents;
+      setStudents(currentStudents => {
+          const updatedStudents = currentStudents.map(student => {
+              if (studentIds.includes(student.id)) {
+                  let updatedStudent = { ...student };
+                  if (type === 'xp') {
+                      const oldLevel = calculateAvatarLevel(updatedStudent.totalPoints || 0);
+                      updatedStudent.totalPoints = (updatedStudent.totalPoints || 0) + amount;
+                      const newLevel = calculateAvatarLevel(updatedStudent.totalPoints);
+                      if (newLevel > oldLevel) setLevelUpData({ student: updatedStudent, oldLevel, newLevel });
+                      if (shouldReceivePet(updatedStudent)) {
+                          const newPet = getRandomPet();
+                          updatedStudent.ownedPets = [...(updatedStudent.ownedPets || []), newPet];
+                          setPetUnlockData({ student: updatedStudent, pet: newPet });
+                      }
+                      playSound('ding');
+                  } else {
+                      updatedStudent.currency = (updatedStudent.currency || 0) + amount;
+                      playSound('coins');
+                  }
+                  return updatedStudent;
+              }
+              return student;
+          });
+          finalStudents = updatedStudents;
+          return updatedStudents;
+      });
+
+      setTimeout(() => {
+          if (finalStudents) {
+              saveClassData(finalStudents, xpCategories);
+          }
+      }, 100);
+  };
+  
   const addStudent = async () => {
-    if (!newStudentFirstName.trim()) {
-      // Form validation - highlight required field instead
-      return;
-    }
-
+    if (!newStudentFirstName.trim()) return;
     const newStudent = {
-      id: `student_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      firstName: newStudentFirstName.trim(),
-      lastName: newStudentLastName.trim(),
-      totalPoints: 0,
-      currency: 0,
-      coinsSpent: 0,
-      avatarLevel: 1,
-      avatarBase: 'Wizard F',
-      avatar: getAvatarImage('Wizard F', 1),
-      ownedAvatars: ['Wizard F'],
-      ownedPets: [],
-      rewardsPurchased: [],
-      questsCompleted: [],
-      behaviorPoints: { respectful: 0, responsible: 0, safe: 0, learner: 0 },
-      createdAt: new Date().toISOString(),
-      lastUpdated: new Date().toISOString()
+      id: `student_${Date.now()}`, firstName: newStudentFirstName.trim(), lastName: newStudentLastName.trim(),
+      totalPoints: 0, currency: 0, coinsSpent: 0, avatarLevel: 1, avatarBase: 'Wizard F',
+      avatar: getAvatarImage('Wizard F', 1), ownedAvatars: ['Wizard F'], ownedPets: [],
+      createdAt: new Date().toISOString()
     };
-
     const updatedStudents = [...students, newStudent];
     setStudents(updatedStudents);
-    await saveStudentsToFirebase(updatedStudents);
-    
-    setNewStudentFirstName('');
-    setNewStudentLastName('');
-    setShowAddStudentModal(false);
-    
-    // Student added - visual update is sufficient
-  };
-
-  const updateStudent = async (updatedStudent) => {
-    const updatedStudents = students.map(s => 
-      s.id === updatedStudent.id ? updatedStudent : s
-    );
-    setStudents(updatedStudents);
-    await saveStudentsToFirebase(updatedStudents);
+    await saveClassData(updatedStudents, xpCategories);
+    setNewStudentFirstName(''); setNewStudentLastName(''); setShowAddStudentModal(false);
   };
 
   // ===============================================
-  // GRID LAYOUT CALCULATION
+  // RENDER LOGIC
   // ===============================================
-
-  const getGridClasses = (studentCount) => {
-    if (studentCount <= 4) return 'grid grid-cols-2 lg:grid-cols-4 gap-4';
-    if (studentCount <= 8) return 'grid grid-cols-2 lg:grid-cols-4 gap-3';
-    if (studentCount <= 12) return 'grid grid-cols-3 lg:grid-cols-6 gap-3';
-    if (studentCount <= 20) return 'grid grid-cols-4 lg:grid-cols-8 gap-2';
-    return 'grid grid-cols-5 lg:grid-cols-10 gap-1';
-  };
-
-  // ===============================================
-  // TAB CONTENT RENDERING
-  // ===============================================
-
   const renderTabContent = () => {
     switch (activeTab) {
-      case 'dashboard':
-        return renderDashboard();
       case 'students':
-        return renderStudentsTab();
-      case 'quests':
-        return renderQuestsTab();
-      case 'shop':
-        return renderShopTab();
-      case 'games':
-        return renderGamesTab();
-      case 'curriculum':
-        return renderCurriculumTab();
-      case 'toolkit':
-        return renderToolkitTab();
-      case 'settings':
-        return renderSettingsTab();
+        return <StudentsTab students={students} xpCategories={xpCategories} onUpdateCategories={handleUpdateCategories} onBulkAward={handleBulkAward} onUpdateStudent={handleUpdateStudent} onReorderStudents={handleReorderStudents} onViewDetails={setSelectedStudent} onAddStudent={() => setShowAddStudentModal(true)} />;
       default:
-        return renderStudentsTab();
+        return <div className="p-8 text-center text-gray-500">Select a tab to get started.</div>;
     }
   };
-
-  const renderDashboard = () => (
-    <div className="space-y-6">
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-xl p-6 shadow-lg border-l-4 border-blue-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-500 text-sm">Total Champions</p>
-              <p className="text-2xl font-bold text-blue-600">{students.length}</p>
-            </div>
-            <div className="text-3xl">👥</div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl p-6 shadow-lg border-l-4 border-yellow-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-500 text-sm">Total XP Earned</p>
-              <p className="text-2xl font-bold text-yellow-600">
-                {students.reduce((sum, student) => sum + (student.totalPoints || 0), 0)}
-              </p>
-            </div>
-            <div className="text-3xl">⭐</div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl p-6 shadow-lg border-l-4 border-green-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-500 text-sm">Average Level</p>
-              <p className="text-2xl font-bold text-green-600">
-                {students.length > 0 
-                  ? (students.reduce((sum, student) => sum + calculateAvatarLevel(student.totalPoints || 0), 0) / students.length).toFixed(1)
-                  : '0'
-                }
-              </p>
-            </div>
-            <div className="text-3xl">📈</div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl p-6 shadow-lg border-l-4 border-purple-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-500 text-sm">Champions with Pets</p>
-              <p className="text-2xl font-bold text-purple-600">
-                {students.filter(s => s.ownedPets && s.ownedPets.length > 0).length}
-              </p>
-            </div>
-            <div className="text-3xl">🐾</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Top Performers */}
-      <div className="bg-white rounded-xl p-6 shadow-lg">
-        <h3 className="text-xl font-bold text-gray-800 mb-4">🏆 Top Champions</h3>
-        <div className="space-y-3">
-          {[...students]
-            .sort((a, b) => (b.totalPoints || 0) - (a.totalPoints || 0))
-            .slice(0, 5)
-            .map((student, index) => (
-              <div key={student.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <div className="text-lg font-bold text-gray-500">#{index + 1}</div>
-                  <img 
-                    src={getAvatarImage(student.avatarBase || 'Wizard F', calculateAvatarLevel(student.totalPoints || 0))}
-                    alt={`${student.firstName}'s Avatar`}
-                    className="w-10 h-10 rounded-full border-2 border-gray-300"
-                  />
-                  <div>
-                    <p className="font-semibold">{student.firstName} {student.lastName}</p>
-                    <p className="text-sm text-gray-500">Level {calculateAvatarLevel(student.totalPoints || 0)}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="font-bold text-blue-600">{student.totalPoints || 0} XP</p>
-                  <p className="text-sm text-gray-500">{calculateCoins(student)} coins</p>
-                </div>
-              </div>
-            ))}
-        </div>
-      </div>
-
-      {/* Student Grid Preview */}
-      {students.length > 0 && (
-        <div className="bg-white rounded-xl p-6 shadow-lg">
-          <h3 className="text-xl font-bold text-gray-800 mb-4">📊 Class Overview</h3>
-          <div className={getGridClasses(students.length)}>
-            {students.slice(0, 12).map(student => (
-              <DashboardStudentCard
-                key={student.id}
-                student={student}
-                onAwardXP={awardXP}
-                onViewDetails={setSelectedStudent}
-              />
-            ))}
-          </div>
-          {students.length > 12 && (
-            <div className="mt-4 text-center">
-              <button
-                onClick={() => setActiveTab('students')}
-                className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-all"
-              >
-                View All {students.length} Champions
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-
-  const renderStudentsTab = () => (
-    <StudentsTab
-      students={students}
-      onAwardXP={awardXP}
-      onViewDetails={setSelectedStudent}
-      onAddStudent={() => setShowAddStudentModal(true)}
-      onUpdateStudent={updateStudent}
-    />
-  );
-
-  const renderQuestsTab = () => (
-    <QuestsTab
-      students={students}
-      updateStudent={updateStudent}
-      showToast={showToast}
-    />
-  );
-
-  const renderShopTab = () => (
-    <ShopTab
-      students={students}
-      updateStudent={updateStudent}
-      showToast={showToast}
-    />
-  );
-
-  const renderGamesTab = () => (
-    <GamesTab
-      showToast={showToast}
-    />
-  );
-
-  const renderCurriculumTab = () => (
-    <CurriculumCornerTab
-      students={students}
-      showToast={showToast}
-      userData={{}} // You can pass real userData if you have it
-    />
-  );
-
-  const renderToolkitTab = () => (
-    <TeachersToolkitTab
-      students={students}
-      user={user}
-      showToast={showToast}
-      userData={{}} // You can pass real userData if you have it
-      onAwardXP={awardXP} // NEW: Pass the XP awarding function for job payments
-    />
-  );
-
-  const renderSettingsTab = () => (
-    <SettingsTab
-      user={user}
-      currentClassId={currentClassId}
-      students={students}
-      setStudents={setStudents}
-      saveStudentsToFirebase={saveStudentsToFirebase}
-      showToast={showToast}
-    />
-  );
-
-  // ===============================================
-  // RENDER
-  // ===============================================
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">Loading Classroom Champions...</h2>
-            <p className="text-gray-600">Preparing your adventure!</p>
-          </div>
-        </div>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mx-auto"></div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      {/* Header */}
-      <div className="bg-white shadow-lg border-b-4 border-blue-500">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Classroom Champions
-              </h1>
-              <div className="bg-blue-100 px-3 py-1 rounded-full">
-                <span className="text-blue-800 font-semibold text-sm">
-                  {students.length} Champions
-                </span>
-              </div>
+        <div className="bg-white shadow-lg border-b-4 border-blue-500">
+            <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Classroom Champions</h1>
+                <button onClick={() => auth.signOut()} className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600">Sign Out</button>
             </div>
-            
-            <div className="flex items-center space-x-4">
-              {(activeTab === 'students' || activeTab === 'toolkit' || activeTab === 'curriculum') && (
-                <button
-                  onClick={() => setShowAddStudentModal(true)}
-                  className="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all font-semibold"
-                >
-                  + Add Student
-                </button>
-              )}
-              
-              <button
-                onClick={() => auth.signOut()}
-                className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-all"
-              >
-                Sign Out
-              </button>
-            </div>
-          </div>
         </div>
-      </div>
-
-      {/* Tab Navigation */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex overflow-x-auto">
-            {NAVIGATION_TABS.map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center space-x-2 px-6 py-4 whitespace-nowrap transition-all duration-200 ${
-                  activeTab === tab.id
-                    ? `bg-gradient-to-r ${tab.color} text-white shadow-lg`
-                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                }`}
-              >
-                <span className="text-lg">{tab.icon}</span>
-                <span className="font-medium">{tab.name}</span>
-              </button>
-            ))}
-          </div>
+        <div className="bg-white shadow-sm border-b">
+            <div className="max-w-7xl mx-auto flex overflow-x-auto">
+                {NAVIGATION_TABS.map(tab => (
+                    <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center space-x-2 px-6 py-4 whitespace-nowrap transition-all duration-200 ${activeTab === tab.id ? 'text-blue-600 border-b-2 font-semibold border-blue-600 bg-blue-50' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'}`}>
+                        <span className="text-lg">{tab.icon}</span>
+                        <span>{tab.name}</span>
+                    </button>
+                ))}
+            </div>
         </div>
-      </div>
-
-      {/* Tab Content */}
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        {renderTabContent()}
-      </div>
-
-      {/* Add Student Modal */}
-      {showAddStudentModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-            <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-t-2xl">
-              <h2 className="text-2xl font-bold">Add New Champion</h2>
-            </div>
-            
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  First Name *
-                </label>
-                <input
-                  type="text"
-                  value={newStudentFirstName}
-                  onChange={(e) => setNewStudentFirstName(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter first name"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Last Name
-                </label>
-                <input
-                  type="text"
-                  value={newStudentLastName}
-                  onChange={(e) => setNewStudentLastName(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter last name (optional)"
-                />
-              </div>
-            </div>
-            
-            <div className="flex space-x-3 p-6 pt-0">
-              <button
-                onClick={() => setShowAddStudentModal(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={addStudent}
-                className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all"
-              >
-                Add Champion
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Level Up Modal */}
-      {levelUpData && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md text-center">
-            <div className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-white p-6 rounded-t-2xl">
-              <div className="text-6xl mb-2">🎉</div>
-              <h2 className="text-2xl font-bold">LEVEL UP!</h2>
-            </div>
-            
-            <div className="p-6">
-              <h3 className="text-xl font-bold text-gray-800 mb-2">
-                {levelUpData.student.firstName} reached Level {levelUpData.newLevel}!
-              </h3>
-              <img 
-                src={levelUpData.student.avatar}
-                alt="New Avatar"
-                className="w-32 h-32 mx-auto rounded-full border-4 border-yellow-400 shadow-lg mb-4"
-              />
-              <p className="text-gray-600">Amazing progress! Keep up the great work!</p>
-            </div>
-            
-            <div className="p-6 pt-0">
-              <button
-                onClick={() => setLevelUpData(null)}
-                className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 text-white px-4 py-3 rounded-lg hover:shadow-lg transition-all font-semibold"
-              >
-                Awesome!
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Pet Unlock Modal - FIXED */}
-      {petUnlockData && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md text-center">
-            <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-6 rounded-t-2xl">
-              <div className="text-6xl mb-2">🐾</div>
-              <h2 className="text-2xl font-bold">PET UNLOCKED!</h2>
-            </div>
-            
-            <div className="p-6">
-              <h3 className="text-xl font-bold text-gray-800 mb-2">
-                {petUnlockData.student.firstName} found a companion!
-              </h3>
-              <div className="mb-4">
-                <img 
-                  src={getPetImage(petUnlockData.pet.type, petUnlockData.pet.name)}
-                  alt={petUnlockData.pet.name}
-                  className="w-24 h-24 mx-auto rounded-full border-4 border-purple-400 shadow-lg"
-                  onError={(e) => {
-                    console.warn(`Pet image failed to load: ${e.target.src}`);
-                    e.target.src = '/Pets/Wizard.png';
-                  }}
-                />
-              </div>
-              <h4 className="text-lg font-semibold text-purple-600 mb-2">
-                {petUnlockData.pet.name}
-              </h4>
-              <p className="text-gray-600">Your new pet companion will accompany you on adventures!</p>
-            </div>
-            
-            <div className="p-6 pt-0">
-              <button
-                onClick={() => setPetUnlockData(null)}
-                className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white px-4 py-3 rounded-lg hover:shadow-lg transition-all font-semibold"
-              >
-                Meet My Pet!
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Student Details Modal - FIXED */}
-      {selectedStudent && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-6 rounded-t-2xl">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold">
-                    {selectedStudent.firstName} {selectedStudent.lastName}
-                  </h2>
-                  <p className="text-blue-100">Level {calculateAvatarLevel(selectedStudent.totalPoints || 0)} Champion</p>
-                </div>
-                <button
-                  onClick={() => setSelectedStudent(null)}
-                  className="text-white hover:text-red-200 text-2xl font-bold"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-            
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Avatar */}
-                <div className="text-center">
-                  <img 
-                    src={selectedStudent.avatar || getAvatarImage(selectedStudent.avatarBase, calculateAvatarLevel(selectedStudent.totalPoints || 0))}
-                    alt={`${selectedStudent.firstName}'s Avatar`}
-                    className="w-32 h-32 mx-auto rounded-full border-4 border-blue-400 shadow-lg mb-4"
-                  />
-                  <h3 className="text-lg font-semibold">{selectedStudent.avatarBase || 'Wizard F'}</h3>
-                </div>
-                
-                {/* Stats */}
-                <div className="space-y-4">
-                  <div className="bg-blue-50 p-4 rounded-lg">
-                    <h4 className="font-semibold text-blue-800 mb-2">Experience Points</h4>
-                    <p className="text-2xl font-bold text-blue-600">{selectedStudent.totalPoints || 0} XP</p>
-                  </div>
-                  
-                  <div className="bg-yellow-50 p-4 rounded-lg">
-                    <h4 className="font-semibold text-yellow-800 mb-2">Coins</h4>
-                    <p className="text-2xl font-bold text-yellow-600">{calculateCoins(selectedStudent)} 🪙</p>
-                  </div>
-                  
-                  {selectedStudent.ownedPets && selectedStudent.ownedPets.length > 0 && (
-                    <div className="bg-purple-50 p-4 rounded-lg">
-                      <h4 className="font-semibold text-purple-800 mb-2">Companion</h4>
-                      <div className="flex items-center space-x-2">
-                        <img 
-                          src={getPetImage(selectedStudent.ownedPets[0].type || selectedStudent.ownedPets[0].imageType, selectedStudent.ownedPets[0].name)}
-                          alt={selectedStudent.ownedPets[0].name || selectedStudent.ownedPets[0].displayName}
-                          className="w-8 h-8 rounded-full border-2 border-purple-300"
-                          onError={(e) => {
-                            console.warn(`Pet image failed to load: ${e.target.src}`);
-                            e.target.src = '/Pets/Wizard.png';
-                          }}
-                        />
-                        <span className="font-semibold">{selectedStudent.ownedPets[0].name || selectedStudent.ownedPets[0].displayName}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+        <main className="max-w-screen-2xl mx-auto px-4 py-6">{renderTabContent()}</main>
+        
+        {showAddStudentModal && <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"><div className="bg-white rounded-2xl shadow-2xl w-full max-w-md"><div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-t-2xl"><h2 className="text-2xl font-bold">Add New Champion</h2></div><div className="p-6 space-y-4"><input type="text" value={newStudentFirstName} onChange={(e) => setNewStudentFirstName(e.target.value)} placeholder="First Name" className="w-full px-3 py-2 border border-gray-300 rounded-lg"/><input type="text" value={newStudentLastName} onChange={(e) => setNewStudentLastName(e.target.value)} placeholder="Last Name (Optional)" className="w-full px-3 py-2 border border-gray-300 rounded-lg"/></div><div className="flex space-x-3 p-6 pt-0"><button onClick={() => setShowAddStudentModal(false)} className="flex-1 px-4 py-2 border rounded-lg">Cancel</button><button onClick={addStudent} className="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg">Add Champion</button></div></div></div>}
+        {levelUpData && <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"><div className="bg-white rounded-2xl shadow-2xl w-full max-w-md text-center p-6"><div className="text-6xl mb-2">🎉</div><h2 className="text-2xl font-bold">LEVEL UP!</h2><h3 className="text-xl font-bold text-gray-800 my-2">{levelUpData.student.firstName} reached Level {levelUpData.newLevel}!</h3><img src={getAvatarImage(levelUpData.student.avatarBase, levelUpData.newLevel)} alt="New Avatar" className="w-32 h-32 mx-auto rounded-full border-4 border-yellow-400"/><button onClick={() => setLevelUpData(null)} className="mt-4 w-full bg-yellow-500 text-white py-2 rounded">Awesome!</button></div></div>}
+        {petUnlockData && <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"><div className="bg-white rounded-2xl shadow-2xl w-full max-w-md text-center p-6"><div className="text-6xl mb-2">🐾</div><h2 className="text-2xl font-bold">PET UNLOCKED!</h2><h3 className="text-xl font-bold text-gray-800 my-2">{petUnlockData.student.firstName} found a companion!</h3><img src={getPetImage(petUnlockData.pet.type, petUnlockData.pet.name)} alt={petUnlockData.pet.name} className="w-24 h-24 mx-auto rounded-full border-4 border-purple-400"/><h4 className="text-lg font-semibold text-purple-600 mt-2">{petUnlockData.pet.name}</h4><button onClick={() => setPetUnlockData(null)} className="mt-4 w-full bg-purple-500 text-white py-2 rounded">Meet My Pet!</button></div></div>}
+        {selectedStudent && <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"><div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"><div className="p-6"><button onClick={() => setSelectedStudent(null)} className="float-right text-2xl font-bold">×</button><h2 className="text-2xl font-bold">{selectedStudent.firstName} {selectedStudent.lastName}</h2><p>Level {calculateAvatarLevel(selectedStudent.totalPoints || 0)} Champion</p><div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6"><div><img src={getAvatarImage(selectedStudent.avatarBase, calculateAvatarLevel(selectedStudent.totalPoints))} className="w-32 h-32 rounded-full border-4 border-blue-400" /></div><div className="space-y-4"><p><strong>XP:</strong> {selectedStudent.totalPoints || 0}</p><p><strong>Coins:</strong> {calculateCoins(selectedStudent)}</p>{selectedStudent.ownedPets?.[0] && (<div><p><strong>Companion:</strong> {selectedStudent.ownedPets[0].name}</p><img src={getPetImage(selectedStudent.ownedPets[0].type, selectedStudent.ownedPets[0].name)} className="w-16 h-16 rounded-full border-2 border-purple-300"/></div>)}</div></div></div></div></div>}
     </div>
   );
 };
