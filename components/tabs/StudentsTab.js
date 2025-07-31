@@ -190,7 +190,21 @@ const AwardModal = ({ isBulk, awardType, onTypeChange, studentCount, student, on
     const title = isBulk ? `Award to ${studentCount} Students` : `Award to ${student?.firstName || ''}`;
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md"><div className="p-6 border-b"><h2 className="text-2xl font-bold text-gray-800">{title}</h2></div><div className="p-6 space-y-6"><div className="grid grid-cols-2 gap-2 p-1 bg-gray-200 rounded-lg"><button onClick={() => onTypeChange('xp')} className={`px-4 py-2 rounded-md font-semibold transition ${awardType === 'xp' ? 'bg-blue-500 text-white shadow' : 'text-gray-600'}`}>Award XP ⭐</button><button onClick={() => onTypeChange('coins')} className={`px-4 py-2 rounded-md font-semibold transition ${awardType === 'coins' ? 'bg-yellow-500 text-white shadow' : 'text-gray-600'}`}>Award Coins 💰</button></div><div><label className="block text-sm font-medium text-gray-700 mb-1">Amount</label><input type="number" min="1" value={amount} onChange={(e) => setAmount(Number(e.target.value))} className="w-full px-3 py-2 border border-gray-300 rounded-lg"/></div><div><label className="block text-sm font-medium text-gray-700 mb-1">Reason (Optional)</label><input type="text" value={reason} onChange={(e) => setReason(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg"/></div></div><div className="flex space-x-3 p-6 bg-gray-50 rounded-b-2xl"><button onClick={onClose} className="flex-1 px-4 py-3 border rounded-lg bg-white hover:bg-gray-100 font-semibold">Cancel</button><button onClick={() => onSubmit(amount, reason, awardType)} className="flex-1 px-4 py-3 rounded-lg bg-green-500 hover:bg-green-600 font-semibold text-white">Confirm Award</button></div></div>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+                <div className="p-6 border-b"><h2 className="text-2xl font-bold text-gray-800">{title}</h2></div>
+                <div className="p-6 space-y-6">
+                    <div className="grid grid-cols-2 gap-2 p-1 bg-gray-200 rounded-lg">
+                        <button onClick={() => onTypeChange('xp')} className={`px-4 py-2 rounded-md font-semibold transition ${awardType === 'xp' ? 'bg-blue-500 text-white shadow' : 'text-gray-600'}`}>Award XP ⭐</button>
+                        <button onClick={() => onTypeChange('coins')} className={`px-4 py-2 rounded-md font-semibold transition ${awardType === 'coins' ? 'bg-yellow-500 text-white shadow' : 'text-gray-600'}`}>Award Coins 💰</button>
+                    </div>
+                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Amount</label><input type="number" min="1" value={amount} onChange={(e) => setAmount(Number(e.target.value))} className="w-full px-3 py-2 border border-gray-300 rounded-lg"/></div>
+                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Reason (Optional)</label><input type="text" value={reason} onChange={(e) => setReason(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg"/></div>
+                </div>
+                <div className="flex space-x-3 p-6 bg-gray-50 rounded-b-2xl">
+                    <button onClick={onClose} className="flex-1 px-4 py-3 border rounded-lg bg-white hover:bg-gray-100 font-semibold">Cancel</button>
+                    <button onClick={() => onSubmit(amount, reason, awardType)} className="flex-1 px-4 py-3 rounded-lg bg-green-500 hover:bg-green-600 font-semibold text-white">Confirm Award</button>
+                </div>
+            </div>
         </div>
     );
 };
@@ -202,7 +216,24 @@ const CategoriesModal = ({ categories, onSave, onClose }) => {
     const handleDelete = (id) => setLocalCategories(localCategories.filter(cat => cat.id !== id));
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col"><div className="p-6 border-b"><h2 className="text-2xl font-bold text-gray-800">Manage XP Categories</h2></div><div className="p-6 space-y-3 overflow-y-auto flex-grow">{localCategories.map(cat => (<div key={cat.id} className="grid grid-cols-12 gap-2 items-center"><input value={cat.icon} onChange={e => handleUpdate(cat.id, 'icon', e.target.value)} className="col-span-1 p-2 border rounded-lg"/><input value={cat.label} onChange={e => handleUpdate(cat.id, 'label', e.target.value)} className="col-span-6 p-2 border rounded-lg"/><input type="number" value={cat.amount} onChange={e => handleUpdate(cat.id, 'amount', Number(e.target.value))} className="col-span-2 p-2 border rounded-lg"/><button onClick={() => handleDelete(cat.id)} className="col-span-3 bg-red-500 text-white rounded-lg py-2 text-sm">Delete</button></div>))}<button onClick={handleAdd} className="w-full mt-2 border-2 border-dashed border-gray-300 text-gray-500 rounded-lg py-2 hover:bg-gray-100">Add Category</button></div><div className="flex space-x-3 p-6 bg-gray-50 rounded-b-2xl"><button onClick={onClose} className="flex-1 py-3 border rounded-lg">Cancel</button><button onClick={() => { onSave(localCategories); onClose(); }} className="flex-1 py-3 bg-blue-500 text-white rounded-lg">Save Changes</button></div></div>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+                <div className="p-6 border-b"><h2 className="text-2xl font-bold text-gray-800">Manage XP Categories</h2></div>
+                <div className="p-6 space-y-3 overflow-y-auto flex-grow">
+                    {localCategories.map(cat => (
+                        <div key={cat.id} className="grid grid-cols-12 gap-2 items-center">
+                            <input value={cat.icon} onChange={e => handleUpdate(cat.id, 'icon', e.target.value)} className="col-span-1 p-2 border rounded-lg"/>
+                            <input value={cat.label} onChange={e => handleUpdate(cat.id, 'label', e.target.value)} className="col-span-6 p-2 border rounded-lg"/>
+                            <input type="number" value={cat.amount} onChange={e => handleUpdate(cat.id, 'amount', Number(e.target.value))} className="col-span-2 p-2 border rounded-lg"/>
+                            <button onClick={() => handleDelete(cat.id)} className="col-span-3 bg-red-500 text-white rounded-lg py-2 text-sm">Delete</button>
+                        </div>
+                    ))}
+                    <button onClick={handleAdd} className="w-full mt-2 border-2 border-dashed border-gray-300 text-gray-500 rounded-lg py-2 hover:bg-gray-100">Add Category</button>
+                </div>
+                <div className="flex space-x-3 p-6 bg-gray-50 rounded-b-2xl">
+                    <button onClick={onClose} className="flex-1 py-3 border rounded-lg">Cancel</button>
+                    <button onClick={() => { onSave(localCategories); onClose(); }} className="flex-1 py-3 bg-blue-500 text-white rounded-lg">Save Changes</button>
+                </div>
+            </div>
         </div>
     );
 };
