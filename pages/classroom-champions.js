@@ -1,4 +1,4 @@
-// pages/classroom-champions.js - DEFINITIVE FINAL VERSION
+// pages/classroom-champions.js - DEFINITIVE FINAL VERSION (COMPLETE FILE)
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
@@ -15,31 +15,11 @@ import TeachersToolkitTab from '../components/tabs/TeachersToolkitTab';
 import CurriculumCornerTab from '../components/tabs/CurriculumCornerTab';
 
 // ===============================================
-// CORE GAME CONSTANTS & UTILITIES (FULLY RESTORED)
+// CORE GAME CONSTANTS & UTILITIES
 // ===============================================
 const GAME_CONFIG = { MAX_LEVEL: 4, COINS_PER_XP: 5, PET_UNLOCK_XP: 50 };
-
-const DEFAULT_XP_CATEGORIES = [
-  { id: 1, label: 'Respectful', amount: 1, color: 'bg-blue-500', icon: '🤝' },
-  { id: 2, label: 'Responsible', amount: 1, color: 'bg-green-500', icon: '✅' },
-  { id: 3, label: 'Safe', amount: 1, color: 'bg-yellow-500', icon: '🛡️' },
-  { id: 4, label: 'Learner', amount: 1, color: 'bg-purple-500', icon: '📚' },
-  { id: 5, label: 'Star Award', amount: 5, color: 'bg-yellow-600', icon: '⭐' }
-];
-
-const PET_SPECIES = [
-  { name: 'Alchemist', type: 'alchemist', rarity: 'common' }, { name: 'Barbarian', type: 'barbarian', rarity: 'common' },
-  { name: 'Bard', type: 'bard', rarity: 'common' }, { name: 'Beastmaster', type: 'beastmaster', rarity: 'rare' },
-  { name: 'Cleric', type: 'cleric', rarity: 'common' }, { name: 'Crystal Knight', type: 'crystal knight', rarity: 'epic' },
-  { name: 'Crystal Sage', type: 'crystal sage', rarity: 'epic' }, { name: 'Engineer', type: 'engineer', rarity: 'rare' },
-  { name: 'Frost Mage', type: 'frost mage', rarity: 'rare' }, { name: 'Illusionist', type: 'illusionist', rarity: 'epic' },
-  { name: 'Knight', type: 'knight', rarity: 'common' }, { name: 'Lightning', type: 'lightning', rarity: 'legendary' },
-  { name: 'Monk', type: 'monk', rarity: 'common' }, { name: 'Necromancer', type: 'necromancer', rarity: 'epic' },
-  { name: 'Rogue', type: 'rogue', rarity: 'common' }, { name: 'Stealth', type: 'stealth', rarity: 'rare' },
-  { name: 'Time Knight', type: 'time knight', rarity: 'legendary' }, { name: 'Warrior', type: 'warrior', rarity: 'common' },
-  { name: 'Wizard', type: 'wizard', rarity: 'common' }
-];
-
+const DEFAULT_XP_CATEGORIES = [ { id: 1, label: 'Respectful', amount: 1, color: 'bg-blue-500', icon: '🤝' }, { id: 2, label: 'Responsible', amount: 1, color: 'bg-green-500', icon: '✅' }, { id: 3, label: 'Safe', amount: 1, color: 'bg-yellow-500', icon: '🛡️' }, { id: 4, label: 'Learner', amount: 1, color: 'bg-purple-500', icon: '📚' }, { id: 5, label: 'Star Award', amount: 5, color: 'bg-yellow-600', icon: '⭐' } ];
+const PET_SPECIES = [ { name: 'Alchemist', type: 'alchemist', rarity: 'common' }, { name: 'Barbarian', type: 'barbarian', rarity: 'common' }, { name: 'Bard', type: 'bard', rarity: 'common' }, { name: 'Beastmaster', type: 'beastmaster', rarity: 'rare' }, { name: 'Cleric', type: 'cleric', rarity: 'common' }, { name: 'Crystal Knight', type: 'crystal knight', rarity: 'epic' }, { name: 'Crystal Sage', type: 'crystal sage', rarity: 'epic' }, { name: 'Engineer', type: 'engineer', rarity: 'rare' }, { name: 'Frost Mage', type: 'frost mage', rarity: 'rare' }, { name: 'Illusionist', type: 'illusionist', rarity: 'epic' }, { name: 'Knight', type: 'knight', rarity: 'common' }, { name: 'Lightning', type: 'lightning', rarity: 'legendary' }, { name: 'Monk', type: 'monk', rarity: 'common' }, { name: 'Necromancer', type: 'necromancer', rarity: 'epic' }, { name: 'Rogue', type: 'rogue', rarity: 'common' }, { name: 'Stealth', type: 'stealth', rarity: 'rare' }, { name: 'Time Knight', type: 'time knight', rarity: 'legendary' }, { name: 'Warrior', type: 'warrior', rarity: 'common' }, { name: 'Wizard', type: 'wizard', rarity: 'common' } ];
 const getAvatarImage = (avatarBase, level) => `/avatars/${avatarBase || 'Wizard F'}/Level ${Math.max(1, Math.min(level || 1, 4))}.png`;
 const calculateAvatarLevel = (xp) => (xp >= 300 ? 4 : xp >= 200 ? 3 : xp >= 100 ? 2 : 1);
 const calculateCoins = (student) => Math.max(0, Math.floor((student?.totalPoints || 0) / GAME_CONFIG.COINS_PER_XP) + (student?.currency || 0) - (student?.coinsSpent || 0));
@@ -92,26 +72,19 @@ const ClassroomChampions = () => {
   const [newStudentFirstName, setNewStudentFirstName] = useState('');
   const [newStudentLastName, setNewStudentLastName] = useState('');
 
-  const isInitialMount = useRef(true);
-
   // ===============================================
   // AUTH & DATA LOADING
   // ===============================================
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setUser(user);
-        loadUserData(user);
-      } else {
-        router.push('/login');
-      }
+      if (user) { setUser(user); loadUserData(user); } 
+      else { router.push('/login'); }
     });
     return () => unsubscribe();
   }, [router]);
 
   const loadUserData = async (user) => {
     setLoading(true);
-    isInitialMount.current = true;
     const docRef = doc(firestore, 'users', user.uid);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
@@ -128,90 +101,80 @@ const ClassroomChampions = () => {
   };
 
   // ===============================================
-  // CENTRALIZED FIREBASE SAVING
+  // DIRECT FIREBASE SAVING FUNCTION
   // ===============================================
-  useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
+  const saveClassData = async (updatedData) => {
+    if (!user || !currentClassId) return;
+    console.log("Attempting to save data to Firebase...");
+    const docRef = doc(firestore, 'users', user.uid);
+    try {
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            const userData = docSnap.data();
+            const updatedClasses = userData.classes.map(cls =>
+                cls.id === currentClassId ? { ...cls, ...updatedData } : cls
+            );
+            await updateDoc(docRef, { classes: updatedClasses });
+            console.log("Firebase save successful!");
+        }
+    } catch (error) {
+        console.error("Error saving class data:", error);
     }
-    if (!user || !currentClassId || loading) return;
-
-    const saveData = async () => {
-      console.log("Saving updated data to Firebase...");
-      const docRef = doc(firestore, 'users', user.uid);
-      try {
-          const userData = (await getDoc(docRef)).data();
-          const updatedClasses = userData.classes.map(cls =>
-              cls.id === currentClassId
-                  ? { ...cls, students: students, xpCategories: xpCategories }
-                  : cls
-          );
-          await updateDoc(docRef, { classes: updatedClasses });
-      } catch (error) {
-          console.error("Error saving class data:", error);
-      }
-    };
+  };
     
-    const debounceTimer = setTimeout(() => {
-        saveData();
-    }, 1000);
-
-    return () => clearTimeout(debounceTimer);
-  }, [students, xpCategories, user, currentClassId, loading]);
-
-
   // ===============================================
-  // SIMPLIFIED STATE HANDLERS
+  // STATE HANDLERS NOW CALL THE SAVE FUNCTION DIRECTLY
   // ===============================================
   const handleReorderStudents = (reorderedStudents) => {
     setStudents(reorderedStudents);
+    saveClassData({ students: reorderedStudents });
   };
 
   const handleUpdateStudent = (updatedStudent) => {
-    setStudents(prev => prev.map(s => s.id === updatedStudent.id ? updatedStudent : s));
+    const newStudents = students.map(s => s.id === updatedStudent.id ? updatedStudent : s);
+    setStudents(newStudents);
+    saveClassData({ students: newStudents });
   };
     
   const handleUpdateCategories = (newCategories) => {
     setXpCategories(newCategories);
+    saveClassData({ xpCategories: newCategories });
   };
     
   const handleBulkAward = (studentIds, amount, type) => {
-      setStudents(currentStudents => 
-        currentStudents.map(student => {
-            if (studentIds.includes(student.id)) {
-                let updatedStudent = { ...student };
-                if (type === 'xp') {
-                    const oldLevel = calculateAvatarLevel(updatedStudent.totalPoints || 0);
-                    updatedStudent.totalPoints = (updatedStudent.totalPoints || 0) + amount;
-                    const newLevel = calculateAvatarLevel(updatedStudent.totalPoints);
-                    if (newLevel > oldLevel) setLevelUpData({ student: updatedStudent, oldLevel, newLevel });
-                    if (shouldReceivePet(updatedStudent)) {
-                        const newPet = getRandomPet();
-                        updatedStudent.ownedPets = [...(updatedStudent.ownedPets || []), newPet];
-                        setPetUnlockData({ student: updatedStudent, pet: newPet });
-                    }
-                    playSound('ding');
-                } else { // 'coins'
-                    updatedStudent.currency = (updatedStudent.currency || 0) + amount;
-                    playSound('coins');
-                }
-                return updatedStudent;
-            }
-            return student;
-        })
-      );
+      const newStudents = students.map(student => {
+          if (studentIds.includes(student.id)) {
+              let updatedStudent = { ...student, lastUpdated: new Date().toISOString() };
+              if (type === 'xp') {
+                  const oldLevel = calculateAvatarLevel(updatedStudent.totalPoints || 0);
+                  updatedStudent.totalPoints = (updatedStudent.totalPoints || 0) + amount;
+                  const newLevel = calculateAvatarLevel(updatedStudent.totalPoints);
+                  if (newLevel > oldLevel) setLevelUpData({ student: updatedStudent, oldLevel, newLevel });
+                  if (shouldReceivePet(updatedStudent)) {
+                      const newPet = getRandomPet();
+                      updatedStudent.ownedPets = [...(updatedStudent.ownedPets || []), newPet];
+                      setPetUnlockData({ student: updatedStudent, pet: newPet });
+                  }
+                  playSound('ding');
+              } else { // 'coins'
+                  updatedStudent.currency = (updatedStudent.currency || 0) + amount;
+                  playSound('coins');
+              }
+              return updatedStudent;
+          }
+          return student;
+      });
+      // **FIX**: Update state AND save to Firebase immediately.
+      setStudents(newStudents);
+      saveClassData({ students: newStudents });
   };
   
   const addStudent = () => {
     if (!newStudentFirstName.trim()) return;
-    const newStudent = {
-      id: `student_${Date.now()}`, firstName: newStudentFirstName.trim(), lastName: newStudentLastName.trim(),
-      totalPoints: 0, currency: 0, coinsSpent: 0, avatarLevel: 1, avatarBase: 'Wizard F',
-      avatar: getAvatarImage('Wizard F', 1), ownedAvatars: ['Wizard F'], ownedPets: [],
-      createdAt: new Date().toISOString()
-    };
-    setStudents(prev => [...prev, newStudent]);
+    const newStudent = { id: `student_${Date.now()}`, firstName: newStudentFirstName.trim(), lastName: newStudentLastName.trim(), totalPoints: 0, currency: 0, coinsSpent: 0, avatarLevel: 1, avatarBase: 'Wizard F', avatar: getAvatarImage('Wizard F', 1), ownedAvatars: ['Wizard F'], ownedPets: [], createdAt: new Date().toISOString() };
+    const newStudents = [...students, newStudent];
+    setStudents(newStudents);
+    saveClassData({ students: newStudents });
     setNewStudentFirstName(''); setNewStudentLastName(''); setShowAddStudentModal(false);
   };
 
@@ -223,10 +186,10 @@ const ClassroomChampions = () => {
       case 'students':
         return <StudentsTab students={students} xpCategories={xpCategories} onUpdateCategories={handleUpdateCategories} onBulkAward={handleBulkAward} onUpdateStudent={handleUpdateStudent} onReorderStudents={handleReorderStudents} onViewDetails={setSelectedStudent} onAddStudent={() => setShowAddStudentModal(true)} />;
       default:
-        return <div className="p-8 text-center text-gray-500">Select a tab to get started.</div>;
+        return <div className="p-8 text-center text-gray-500">This tab is under construction.</div>;
     }
   };
-
+  
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
@@ -234,7 +197,7 @@ const ClassroomChampions = () => {
       </div>
     );
   }
-
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="bg-white shadow-lg border-b-4 border-blue-500">

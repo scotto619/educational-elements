@@ -1,4 +1,4 @@
-// components/tabs/StudentsTab.js - DEFINITIVE FINAL VERSION
+// components/tabs/StudentsTab.js - HOVER PREVIEW RESTORED (COMPLETE FILE)
 import React, { useState, useEffect, useRef } from 'react';
 
 // ===============================================
@@ -50,6 +50,22 @@ const ContextMenu = ({ student, position, onAward, onView, onAvatar, onClose }) 
 };
 
 // ===============================================
+// HOVER PREVIEW COMPONENT
+// ===============================================
+const HoverPreview = ({ preview, position }) => {
+    if (!preview) return null;
+    return (
+        <div
+            className="fixed pointer-events-none z-[100] bg-white rounded-lg shadow-2xl p-3 border-2 border-blue-300 transition-transform duration-200 ease-out"
+            style={{ left: position.x + 20, top: position.y - 100, transform: 'scale(1)' }}
+        >
+            <img src={preview.image} alt="Preview" className="w-48 h-48 rounded-lg" />
+            <p className="text-center font-bold mt-2 text-gray-800">{preview.text}</p>
+        </div>
+    );
+};
+
+// ===============================================
 // MAIN STUDENTS TAB COMPONENT
 // ===============================================
 const StudentsTab = ({ students = [], xpCategories = [], onUpdateCategories, onBulkAward, onUpdateStudent, onReorderStudents, onViewDetails, onAddStudent }) => {
@@ -59,23 +75,21 @@ const StudentsTab = ({ students = [], xpCategories = [], onUpdateCategories, onB
     const [draggedStudentId, setDraggedStudentId] = useState(null);
     const [showCategoriesModal, setShowCategoriesModal] = useState(false);
     const [awardModal, setAwardModal] = useState({ visible: false, isBulk: false, type: 'xp' });
-
+    const [hoverPreview, setHoverPreview] = useState(null);
+    const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+    
     const filteredStudents = students.filter(student =>
         student.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         student.lastName?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    const handleMouseMove = (e) => setMousePosition({ x: e.clientX, y: e.clientY });
     const handleStudentClick = (e, student) => {
         e.preventDefault();
         setContextMenu({ visible: true, x: e.clientX, y: e.clientY, student });
     };
-    
-    const handleSelectAll = () => {
-        setSelectedStudents(prev => prev.length === filteredStudents.length ? [] : filteredStudents.map(s => s.id));
-    };
-    
+    const handleSelectAll = () => setSelectedStudents(prev => prev.length === filteredStudents.length ? [] : filteredStudents.map(s => s.id));
     const closeContextMenu = () => setContextMenu({ visible: false, x: 0, y: 0, student: null });
-
     const handleDragStart = (e, studentId) => setDraggedStudentId(studentId);
     const handleDragOver = (e) => e.preventDefault();
     const handleDrop = (e, targetStudentId) => {
@@ -93,18 +107,14 @@ const StudentsTab = ({ students = [], xpCategories = [], onUpdateCategories, onB
         try {
             const targetIds = awardModal.isBulk ? selectedStudents : [contextMenu.student.id];
             onBulkAward(targetIds, amount, type);
-        } catch (error) {
-            console.error("Failed to submit award:", error);
         } finally {
             setAwardModal({ visible: false, isBulk: false, type: 'xp' });
-            if (awardModal.isBulk) {
-                setSelectedStudents([]);
-            }
+            if (awardModal.isBulk) setSelectedStudents([]);
         }
     };
     
     return (
-        <div className="space-y-6">
+        <div className="space-y-6" onMouseMove={handleMouseMove}>
             <div className="bg-white rounded-xl p-4 shadow-md border border-gray-200 flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                     <input type="text" placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full md:w-auto pl-4 pr-4 py-2 border rounded-lg" />
@@ -120,24 +130,25 @@ const StudentsTab = ({ students = [], xpCategories = [], onUpdateCategories, onB
 
             <div className={`grid ${getGridClasses(filteredStudents.length)} gap-4`}>
                 {filteredStudents.map((student) => (
-                    <StudentCard key={student.id} student={student} isSelected={selectedStudents.includes(student.id)} isDragged={draggedStudentId === student.id} onClick={(e) => handleStudentClick(e, student)} onDragStart={(e) => handleDragStart(e, student.id)} onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, student.id)} />
+                    <StudentCard
+                        key={student.id}
+                        student={student}
+                        isSelected={selectedStudents.includes(student.id)}
+                        isDragged={draggedStudentId === student.id}
+                        onClick={(e) => handleStudentClick(e, student)}
+                        onDragStart={(e) => handleDragStart(e, student.id)}
+                        onDragOver={handleDragOver}
+                        onDrop={(e) => handleDrop(e, student.id)}
+                        onAvatarHover={(img, text) => setHoverPreview({ image: img, text: text })}
+                        onPetHover={(img, text) => setHoverPreview({ image: img, text: text })}
+                        onHoverEnd={() => setHoverPreview(null)}
+                    />
                 ))}
             </div>
 
+            <HoverPreview preview={hoverPreview} position={mousePosition} />
             {contextMenu.visible && <ContextMenu student={contextMenu.student} position={{ x: contextMenu.x, y: contextMenu.y }} onAward={() => { setAwardModal({ visible: true, isBulk: false, type: 'xp' }); closeContextMenu(); }} onView={() => { onViewDetails(contextMenu.student); closeContextMenu(); }} onAvatar={() => { /* Avatar modal logic */ closeContextMenu(); }} onClose={closeContextMenu} />}
-            
-            {awardModal.visible && (
-                <AwardModal
-                    isBulk={awardModal.isBulk}
-                    awardType={awardModal.type}
-                    onTypeChange={(newType) => setAwardModal(prev => ({ ...prev, type: newType }))}
-                    studentCount={selectedStudents.length}
-                    student={contextMenu.student}
-                    onSubmit={handleAwardSubmit}
-                    onClose={() => setAwardModal({ visible: false, isBulk: false, type: 'xp' })}
-                />
-            )}
-
+            {awardModal.visible && <AwardModal isBulk={awardModal.isBulk} awardType={awardModal.type} onTypeChange={(newType) => setAwardModal(prev => ({ ...prev, type: newType }))} studentCount={selectedStudents.length} student={contextMenu.student} onSubmit={handleAwardSubmit} onClose={() => setAwardModal({ visible: false, isBulk: false, type: 'xp' })} />}
             {showCategoriesModal && <CategoriesModal categories={xpCategories} onSave={onUpdateCategories} onClose={() => setShowCategoriesModal(false)} />}
         </div>
     );
@@ -146,27 +157,25 @@ const StudentsTab = ({ students = [], xpCategories = [], onUpdateCategories, onB
 // ===============================================
 // STUDENT CARD COMPONENT
 // ===============================================
-const StudentCard = ({ student, isSelected, isDragged, onClick, onDragStart, onDragOver, onDrop }) => {
+const StudentCard = ({ student, isSelected, isDragged, onClick, onDragStart, onDragOver, onDrop, onAvatarHover, onPetHover, onHoverEnd }) => {
     const level = calculateAvatarLevel(student.totalPoints);
     const coins = calculateCoins(student);
     const xpForNextLevel = (student.totalPoints || 0) % 100;
+    const avatarImg = getAvatarImage(student.avatarBase, level);
+    const pet = student.ownedPets?.[0];
+    const petImg = pet ? getPetImage(pet.type, pet.name) : null;
 
     return (
         <div draggable="true" onDragStart={onDragStart} onDragOver={onDragOver} onDrop={onDrop} onClick={onClick} className={`p-3 rounded-2xl shadow-lg border-2 transition-all duration-300 cursor-pointer ${isSelected ? 'border-purple-500 bg-purple-100 scale-105' : 'border-transparent bg-white hover:border-blue-400'} ${isDragged ? 'opacity-30 ring-2 ring-blue-500' : ''}`}>
             <div className="flex flex-col items-center text-center">
                 <div className="relative">
-                    <img src={getAvatarImage(student.avatarBase, level)} alt={student.firstName} className="w-20 h-20 rounded-full border-4 border-white shadow-md"/>
+                    <img src={avatarImg} alt={student.firstName} className="w-20 h-20 rounded-full border-4 border-white shadow-md" onMouseEnter={() => onAvatarHover(avatarImg, `${student.firstName}'s Avatar`)} onMouseLeave={onHoverEnd} />
                     <div className="absolute -bottom-1 -right-1 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full font-bold shadow-sm">L{level}</div>
-                    {student.ownedPets?.[0] && <img src={getPetImage(student.ownedPets[0].type, student.ownedPets[0].name)} className="w-8 h-8 rounded-full absolute -bottom-1 -left-1 border-2 border-white shadow-sm"/>}
+                    {pet && <img src={petImg} className="w-8 h-8 rounded-full absolute -bottom-1 -left-1 border-2 border-white shadow-sm" onMouseEnter={() => onPetHover(petImg, pet.name)} onMouseLeave={onHoverEnd}/>}
                 </div>
                 <h3 className="text-md font-bold text-gray-800 mt-2 truncate w-full">{student.firstName}</h3>
-                <div className="flex items-center justify-around w-full mt-2 text-xs">
-                    <span className="font-semibold text-blue-600">⭐ {student.totalPoints || 0}</span>
-                    <span className="font-semibold text-yellow-600">💰 {coins}</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1.5">
-                    <div className="bg-gradient-to-r from-blue-400 to-purple-500 h-1.5 rounded-full" style={{ width: `${xpForNextLevel}%` }}></div>
-                </div>
+                <div className="flex items-center justify-around w-full mt-2 text-xs"><span className="font-semibold text-blue-600">⭐ {student.totalPoints || 0}</span><span className="font-semibold text-yellow-600">💰 {coins}</span></div>
+                <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1.5"><div className="bg-gradient-to-r from-blue-400 to-purple-500 h-1.5 rounded-full" style={{ width: `${xpForNextLevel}%` }}></div></div>
             </div>
         </div>
     );
@@ -178,34 +187,10 @@ const StudentCard = ({ student, isSelected, isDragged, onClick, onDragStart, onD
 const AwardModal = ({ isBulk, awardType, onTypeChange, studentCount, student, onSubmit, onClose }) => {
     const [amount, setAmount] = useState(10);
     const [reason, setReason] = useState('Good Work');
-    
     const title = isBulk ? `Award to ${studentCount} Students` : `Award to ${student?.firstName || ''}`;
-
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-                <div className="p-6 border-b">
-                    <h2 className="text-2xl font-bold text-gray-800">{title}</h2>
-                </div>
-                <div className="p-6 space-y-6">
-                    <div className="grid grid-cols-2 gap-2 p-1 bg-gray-200 rounded-lg">
-                        <button onClick={() => onTypeChange('xp')} className={`px-4 py-2 rounded-md font-semibold transition ${awardType === 'xp' ? 'bg-blue-500 text-white shadow' : 'text-gray-600'}`}>Award XP ⭐</button>
-                        <button onClick={() => onTypeChange('coins')} className={`px-4 py-2 rounded-md font-semibold transition ${awardType === 'coins' ? 'bg-yellow-500 text-white shadow' : 'text-gray-600'}`}>Award Coins 💰</button>
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Amount</label>
-                        <input type="number" min="1" value={amount} onChange={(e) => setAmount(Number(e.target.value))} className="w-full px-3 py-2 border border-gray-300 rounded-lg"/>
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Reason (Optional)</label>
-                        <input type="text" value={reason} onChange={(e) => setReason(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg"/>
-                    </div>
-                </div>
-                <div className="flex space-x-3 p-6 bg-gray-50 rounded-b-2xl">
-                    <button onClick={onClose} className="flex-1 px-4 py-3 border rounded-lg bg-white hover:bg-gray-100 font-semibold">Cancel</button>
-                    <button onClick={() => onSubmit(amount, reason, awardType)} className="flex-1 px-4 py-3 rounded-lg bg-green-500 hover:bg-green-600 font-semibold text-white">Confirm Award</button>
-                </div>
-            </div>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md"><div className="p-6 border-b"><h2 className="text-2xl font-bold text-gray-800">{title}</h2></div><div className="p-6 space-y-6"><div className="grid grid-cols-2 gap-2 p-1 bg-gray-200 rounded-lg"><button onClick={() => onTypeChange('xp')} className={`px-4 py-2 rounded-md font-semibold transition ${awardType === 'xp' ? 'bg-blue-500 text-white shadow' : 'text-gray-600'}`}>Award XP ⭐</button><button onClick={() => onTypeChange('coins')} className={`px-4 py-2 rounded-md font-semibold transition ${awardType === 'coins' ? 'bg-yellow-500 text-white shadow' : 'text-gray-600'}`}>Award Coins 💰</button></div><div><label className="block text-sm font-medium text-gray-700 mb-1">Amount</label><input type="number" min="1" value={amount} onChange={(e) => setAmount(Number(e.target.value))} className="w-full px-3 py-2 border border-gray-300 rounded-lg"/></div><div><label className="block text-sm font-medium text-gray-700 mb-1">Reason (Optional)</label><input type="text" value={reason} onChange={(e) => setReason(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg"/></div></div><div className="flex space-x-3 p-6 bg-gray-50 rounded-b-2xl"><button onClick={onClose} className="flex-1 px-4 py-3 border rounded-lg bg-white hover:bg-gray-100 font-semibold">Cancel</button><button onClick={() => onSubmit(amount, reason, awardType)} className="flex-1 px-4 py-3 rounded-lg bg-green-500 hover:bg-green-600 font-semibold text-white">Confirm Award</button></div></div>
         </div>
     );
 };
@@ -217,26 +202,7 @@ const CategoriesModal = ({ categories, onSave, onClose }) => {
     const handleDelete = (id) => setLocalCategories(localCategories.filter(cat => cat.id !== id));
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
-                <div className="p-6 border-b">
-                    <h2 className="text-2xl font-bold text-gray-800">Manage XP Categories</h2>
-                </div>
-                <div className="p-6 space-y-3 overflow-y-auto flex-grow">
-                    {localCategories.map(cat => (
-                        <div key={cat.id} className="grid grid-cols-12 gap-2 items-center">
-                            <input value={cat.icon} onChange={e => handleUpdate(cat.id, 'icon', e.target.value)} className="col-span-1 p-2 border rounded-lg"/>
-                            <input value={cat.label} onChange={e => handleUpdate(cat.id, 'label', e.target.value)} className="col-span-6 p-2 border rounded-lg"/>
-                            <input type="number" value={cat.amount} onChange={e => handleUpdate(cat.id, 'amount', Number(e.target.value))} className="col-span-2 p-2 border rounded-lg"/>
-                            <button onClick={() => handleDelete(cat.id)} className="col-span-3 bg-red-500 text-white rounded-lg py-2 text-sm">Delete</button>
-                        </div>
-                    ))}
-                    <button onClick={handleAdd} className="w-full mt-2 border-2 border-dashed border-gray-300 text-gray-500 rounded-lg py-2 hover:bg-gray-100">Add Category</button>
-                </div>
-                <div className="flex space-x-3 p-6 bg-gray-50 rounded-b-2xl">
-                    <button onClick={onClose} className="flex-1 py-3 border rounded-lg">Cancel</button>
-                    <button onClick={() => { onSave(localCategories); onClose(); }} className="flex-1 py-3 bg-blue-500 text-white rounded-lg">Save Changes</button>
-                </div>
-            </div>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col"><div className="p-6 border-b"><h2 className="text-2xl font-bold text-gray-800">Manage XP Categories</h2></div><div className="p-6 space-y-3 overflow-y-auto flex-grow">{localCategories.map(cat => (<div key={cat.id} className="grid grid-cols-12 gap-2 items-center"><input value={cat.icon} onChange={e => handleUpdate(cat.id, 'icon', e.target.value)} className="col-span-1 p-2 border rounded-lg"/><input value={cat.label} onChange={e => handleUpdate(cat.id, 'label', e.target.value)} className="col-span-6 p-2 border rounded-lg"/><input type="number" value={cat.amount} onChange={e => handleUpdate(cat.id, 'amount', Number(e.target.value))} className="col-span-2 p-2 border rounded-lg"/><button onClick={() => handleDelete(cat.id)} className="col-span-3 bg-red-500 text-white rounded-lg py-2 text-sm">Delete</button></div>))}<button onClick={handleAdd} className="w-full mt-2 border-2 border-dashed border-gray-300 text-gray-500 rounded-lg py-2 hover:bg-gray-100">Add Category</button></div><div className="flex space-x-3 p-6 bg-gray-50 rounded-b-2xl"><button onClick={onClose} className="flex-1 py-3 border rounded-lg">Cancel</button><button onClick={() => { onSave(localCategories); onClose(); }} className="flex-1 py-3 bg-blue-500 text-white rounded-lg">Save Changes</button></div></div>
         </div>
     );
 };
