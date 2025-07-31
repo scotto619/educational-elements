@@ -1,4 +1,4 @@
-// pages/classroom-champions.js - CORRECTED AND FINAL VERSION
+// pages/classroom-champions.js - CORRECTED FINAL VERSION WITH FULLY RESTORED FUNCTIONS
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
@@ -27,7 +27,6 @@ const DEFAULT_XP_CATEGORIES = [
   { id: 5, label: 'Star Award', amount: 5, color: 'bg-yellow-600', icon: '⭐' }
 ];
 
-// **FIXED**: Restored PET_SPECIES array
 const PET_SPECIES = [
   { name: 'Alchemist', type: 'alchemist', rarity: 'common' }, { name: 'Barbarian', type: 'barbarian', rarity: 'common' },
   { name: 'Bard', type: 'bard', rarity: 'common' }, { name: 'Beastmaster', type: 'beastmaster', rarity: 'rare' },
@@ -41,14 +40,17 @@ const PET_SPECIES = [
   { name: 'Wizard', type: 'wizard', rarity: 'common' }
 ];
 
-// **FIXED**: Restored getRandomPet function
+// **FIXED**: Restored the FULL getRandomPet function implementation
 const getRandomPet = () => {
-  const pet = PET_SPECIES[Math.floor(Math.random() * PET_SPECIES.length)];
-  return {
-    id: `pet_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    name: pet.name, type: pet.type, rarity: pet.rarity,
-    displayName: pet.name, imageType: pet.type
-  };
+    const pet = PET_SPECIES[Math.floor(Math.random() * PET_SPECIES.length)];
+    return {
+        id: `pet_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        name: pet.name,
+        type: pet.type,
+        rarity: pet.rarity,
+        displayName: pet.name,
+        imageType: pet.type
+    };
 };
 
 const getAvatarImage = (avatarBase, level) => `/avatars/${avatarBase || 'Wizard F'}/Level ${Math.max(1, Math.min(level || 1, 4))}.png`;
