@@ -190,6 +190,8 @@ const WritingTool = ({ prompt }) => (
 const LiteracyWarmup = ({ showToast = () => {}, students = [] }) => {
   const [selectedWeek, setSelectedWeek] = useState('week1');
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const fullscreenRef = useRef(null);
 
   const WARMUP_STEPS = [
     { id: 'graph_review', title: 'Graph Review', icon: '🔤' },
@@ -211,6 +213,52 @@ const LiteracyWarmup = ({ showToast = () => {}, students = [] }) => {
   
   const currentStep = WARMUP_STEPS[currentStepIndex];
 
+  // Fullscreen functionality
+  const toggleFullscreen = async () => {
+    try {
+      if (!isFullscreen) {
+        if (fullscreenRef.current.requestFullscreen) {
+          await fullscreenRef.current.requestFullscreen();
+        } else if (fullscreenRef.current.webkitRequestFullscreen) {
+          await fullscreenRef.current.webkitRequestFullscreen();
+        } else if (fullscreenRef.current.msRequestFullscreen) {
+          await fullscreenRef.current.msRequestFullscreen();
+        }
+        setIsFullscreen(true);
+        showToast('Entered fullscreen mode - perfect for classroom display!', 'success');
+      } else {
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+          await document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) {
+          await document.msExitFullscreen();
+        }
+        setIsFullscreen(false);
+        showToast('Exited fullscreen mode', 'info');
+      }
+    } catch (error) {
+      console.error('Fullscreen error:', error);
+    }
+  };
+
+  // Listen for fullscreen changes (e.g., ESC key)
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement));
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('msfullscreenchange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('msfullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
   const goToNextStep = () => setCurrentStepIndex(prev => Math.min(prev + 1, WARMUP_STEPS.length - 1));
   const goToPrevStep = () => setCurrentStepIndex(prev => Math.max(prev - 1, 0));
   const goToStep = (stepIndex) => setCurrentStepIndex(stepIndex);
@@ -218,68 +266,95 @@ const LiteracyWarmup = ({ showToast = () => {}, students = [] }) => {
   const renderCurrentStep = () => {
     switch(currentStep.id) {
         case 'graph_review':
-            return <GraphReviewTool title="Review Digraphs" items={weeklyContent.graphReview.digraphs} words={weeklyContent.soundWords} />;
+            return <GraphReviewTool title="Review Digraphs" items={weeklyContent.graphReview.digraphs} words={weeklyContent.soundWords} isFullscreen={isFullscreen} />;
         case 'sound_of_week':
-            return <SoundOfTheWeekTool content={weeklyContent} />;
+            return <SoundOfTheWeekTool content={weeklyContent} isFullscreen={isFullscreen} />;
         case 'reading':
-            return <ReadingPassageTool passage={weeklyContent.readingPassage} />;
+            return <ReadingPassageTool passage={weeklyContent.readingPassage} isFullscreen={isFullscreen} />;
         case 'language':
-            return <LanguageTool language={weeklyContent.language} />;
+            return <LanguageTool language={weeklyContent.language} isFullscreen={isFullscreen} />;
         case 'writing':
-            return <WritingTool prompt={weeklyContent.writingPrompt} />;
+            return <WritingTool prompt={weeklyContent.writingPrompt} isFullscreen={isFullscreen} />;
         default:
             return <div className="text-center text-gray-500 p-8">Step not found</div>;
     }
   };
 
   return (
-    <div className="space-y-6">
+    <div 
+      ref={fullscreenRef}
+      className={`space-y-6 ${isFullscreen ? 'bg-gradient-to-br from-blue-50 to-purple-50 min-h-screen p-8' : ''}`}
+    >
       {/* Warmup Header */}
       <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl p-6 shadow-lg">
-        <h3 className="text-3xl font-bold mb-2 flex items-center">
-          <span className="mr-3">🔥</span>
-          Literacy Warmup
-        </h3>
-        <p className="opacity-90 text-lg">Interactive phonics and literacy lessons</p>
-      </div>
-
-      {/* Week Selection */}
-      <div className="bg-white rounded-xl shadow-lg p-6 flex flex-col md:flex-row items-center justify-between gap-4">
-        <h4 className="text-xl font-bold text-gray-800">Select Teaching Week</h4>
-        <div className="flex items-center gap-4">
-          <label htmlFor="week-select" className="font-semibold text-gray-700">Week:</label>
-          <select 
-            id="week-select" 
-            value={selectedWeek} 
-            onChange={e => { 
-              setSelectedWeek(e.target.value); 
-              setCurrentStepIndex(0); 
-              showToast(`Switched to ${e.target.value.replace('week', 'Week ')} - Focus: ${literacyWarmupContent[e.target.value].focusSound.toUpperCase()}`, 'info');
-            }} 
-            className="p-3 border-2 border-gray-300 rounded-lg font-semibold bg-white shadow-sm"
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className={`font-bold mb-2 flex items-center ${isFullscreen ? 'text-4xl' : 'text-3xl'}`}>
+              <span className="mr-3">🔥</span>
+              Literacy Warmup
+            </h3>
+            <p className={`opacity-90 ${isFullscreen ? 'text-xl' : 'text-lg'}`}>Interactive phonics and literacy lessons</p>
+          </div>
+          <button
+            onClick={toggleFullscreen}
+            className={`bg-white bg-opacity-20 text-white rounded-lg font-semibold hover:bg-opacity-30 transition-all ${isFullscreen ? 'px-8 py-4 text-xl' : 'px-6 py-3'}`}
           >
-            {Object.keys(literacyWarmupContent).map(weekKey => (
-              <option key={weekKey} value={weekKey}>
-                {weekKey.replace('week', 'Week ')} - Focus: {literacyWarmupContent[weekKey].focusSound.toUpperCase()}
-              </option>
-            ))}
-          </select>
+            {isFullscreen ? '🔲 Exit Fullscreen' : '⛶ Fullscreen'}
+          </button>
         </div>
       </div>
 
+      {/* Week Selection */}
+      {!isFullscreen && (
+        <div className="bg-white rounded-xl shadow-lg p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+          <h4 className="text-xl font-bold text-gray-800">Select Teaching Week</h4>
+          <div className="flex items-center gap-4">
+            <label htmlFor="week-select" className="font-semibold text-gray-700">Week:</label>
+            <select 
+              id="week-select" 
+              value={selectedWeek} 
+              onChange={e => { 
+                setSelectedWeek(e.target.value); 
+                setCurrentStepIndex(0); 
+                showToast(`Switched to ${e.target.value.replace('week', 'Week ')} - Focus: ${literacyWarmupContent[e.target.value].focusSound.toUpperCase()}`, 'info');
+              }} 
+              className="p-3 border-2 border-gray-300 rounded-lg font-semibold bg-white shadow-sm"
+            >
+              {Object.keys(literacyWarmupContent).map(weekKey => (
+                <option key={weekKey} value={weekKey}>
+                  {weekKey.replace('week', 'Week ')} - Focus: {literacyWarmupContent[weekKey].focusSound.toUpperCase()}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
+
+      {/* Fullscreen Week Display */}
+      {isFullscreen && (
+        <div className="bg-white rounded-xl shadow-lg p-6 text-center">
+          <h4 className="text-2xl font-bold text-gray-800">
+            Week {selectedWeek.replace('week', '')} - Focus Sound: 
+            <span className="text-4xl font-mono bg-purple-100 px-4 py-2 ml-3 rounded-lg text-purple-700">
+              {weeklyContent.focusSound.toUpperCase()}
+            </span>
+          </h4>
+        </div>
+      )}
+
       {/* Lesson Steps Navigation */}
       <div className="bg-white rounded-xl shadow-lg p-6">
-        <h4 className="text-lg font-bold text-gray-800 mb-4">Lesson Steps</h4>
-        <div className="flex flex-wrap gap-2">
+        <h4 className={`font-bold text-gray-800 mb-4 ${isFullscreen ? 'text-2xl' : 'text-lg'}`}>Lesson Steps</h4>
+        <div className={`flex flex-wrap gap-3 ${isFullscreen ? 'gap-4' : ''}`}>
           {WARMUP_STEPS.map((step, index) => (
             <button
               key={step.id}
               onClick={() => goToStep(index)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all ${
+              className={`flex items-center gap-2 rounded-lg font-semibold transition-all ${
                 currentStepIndex === index
                   ? 'bg-blue-500 text-white shadow-lg'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+              } ${isFullscreen ? 'px-6 py-4 text-xl' : 'px-4 py-2'}`}
             >
               <span>{step.icon}</span>
               <span>{step.title}</span>
@@ -290,60 +365,60 @@ const LiteracyWarmup = ({ showToast = () => {}, students = [] }) => {
 
       {/* Current Step Content */}
       <div className="bg-white rounded-xl shadow-lg">
-        <div className="p-6 border-b-2 border-gray-100 bg-gradient-to-r from-blue-50 to-purple-50">
+        <div className={`border-b-2 border-gray-100 bg-gradient-to-r from-blue-50 to-purple-50 ${isFullscreen ? 'p-8' : 'p-6'}`}>
             <div className="flex items-center justify-between">
                 <div>
-                    <h4 className="text-2xl font-bold text-blue-600 flex items-center gap-2">
+                    <h4 className={`font-bold text-blue-600 flex items-center gap-2 ${isFullscreen ? 'text-4xl' : 'text-2xl'}`}>
                         <span>{currentStep.icon}</span>
                         {currentStep.title}
                     </h4>
-                    <p className="text-gray-600">
+                    <p className={`text-gray-600 ${isFullscreen ? 'text-xl' : ''}`}>
                         Step {currentStepIndex + 1} of {WARMUP_STEPS.length} • Focus Sound: 
                         <span className="font-bold text-purple-600 ml-1">{weeklyContent.focusSound.toUpperCase()}</span>
                     </p>
                 </div>
                 <div className="text-right">
-                    <p className="text-sm text-gray-500">Week {selectedWeek.replace('week', '')}</p>
-                    <div className="flex items-center gap-1 mt-1">
+                    <p className={`text-gray-500 ${isFullscreen ? 'text-lg' : 'text-sm'}`}>Week {selectedWeek.replace('week', '')}</p>
+                    <div className={`flex items-center gap-1 mt-1 ${isFullscreen ? 'gap-2' : ''}`}>
                         {WARMUP_STEPS.map((_, index) => (
                             <div 
                                 key={index} 
-                                className={`w-3 h-3 rounded-full transition-colors ${
+                                className={`rounded-full transition-colors ${
                                     currentStepIndex === index ? 'bg-blue-500' : 
                                     currentStepIndex > index ? 'bg-green-500' : 'bg-gray-300'
-                                }`}
+                                } ${isFullscreen ? 'w-4 h-4' : 'w-3 h-3'}`}
                             ></div>
                         ))}
                     </div>
                 </div>
             </div>
         </div>
-        <div className="p-6">
+        <div className={`${isFullscreen ? 'p-12' : 'p-6'}`}>
             {renderCurrentStep()}
         </div>
       </div>
       
       {/* Navigation Controls */}
-      <div className="flex justify-between items-center bg-white rounded-xl shadow-lg p-6">
+      <div className={`flex justify-between items-center bg-white rounded-xl shadow-lg ${isFullscreen ? 'p-8' : 'p-6'}`}>
         <button 
           onClick={goToPrevStep} 
           disabled={currentStepIndex === 0} 
-          className="flex items-center gap-2 px-6 py-3 bg-white border-2 border-gray-300 rounded-lg shadow font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-all"
+          className={`flex items-center gap-2 bg-white border-2 border-gray-300 rounded-lg shadow font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-all ${isFullscreen ? 'px-10 py-6 text-2xl' : 'px-6 py-3'}`}
         >
           <span>⬅️</span>
           Previous
         </button>
         
         <div className="text-center">
-          <p className="text-sm text-gray-600 mb-2">Lesson Progress</p>
-          <div className="flex items-center gap-2">
+          <p className={`text-gray-600 mb-2 ${isFullscreen ? 'text-xl' : 'text-sm'}`}>Lesson Progress</p>
+          <div className={`flex items-center gap-2 ${isFullscreen ? 'gap-3' : ''}`}>
               {WARMUP_STEPS.map((step, index) => (
                   <div 
                       key={step.id} 
-                      className={`w-4 h-4 rounded-full transition-colors ${
+                      className={`rounded-full transition-colors ${
                           currentStepIndex === index ? 'bg-blue-500' : 
                           currentStepIndex > index ? 'bg-green-500' : 'bg-gray-300'
-                      }`}
+                      } ${isFullscreen ? 'w-6 h-6' : 'w-4 h-4'}`}
                   ></div>
               ))}
           </div>
@@ -352,26 +427,35 @@ const LiteracyWarmup = ({ showToast = () => {}, students = [] }) => {
         <button 
           onClick={goToNextStep} 
           disabled={currentStepIndex === WARMUP_STEPS.length - 1} 
-          className="flex items-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-lg shadow font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-600 transition-all"
+          className={`flex items-center gap-2 bg-blue-500 text-white rounded-lg shadow font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-600 transition-all ${isFullscreen ? 'px-10 py-6 text-2xl' : 'px-6 py-3'}`}
         >
           Next
           <span>➡️</span>
         </button>
       </div>
 
-      {/* Teaching Tips */}
-      <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-xl p-6">
-        <div className="flex items-start space-x-4">
-          <span className="text-3xl">💡</span>
-          <div>
-            <h4 className="font-bold text-green-800 mb-2">Teaching Tip</h4>
-            <p className="text-green-700">
-              Use the step-by-step approach to guide your literacy lesson. Each step builds on the previous one to reinforce phonics learning.
-              Students can participate by calling out answers, writing on whiteboards, or working in pairs.
-            </p>
+      {/* Teaching Tips - Hidden in fullscreen for cleaner display */}
+      {!isFullscreen && (
+        <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-xl p-6">
+          <div className="flex items-start space-x-4">
+            <span className="text-3xl">💡</span>
+            <div>
+              <h4 className="font-bold text-green-800 mb-2">Teaching Tip</h4>
+              <p className="text-green-700">
+                Use the step-by-step approach to guide your literacy lesson. Click the fullscreen button for an immersive classroom experience!
+                Each step builds on the previous one to reinforce phonics learning.
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Fullscreen Exit Notice */}
+      {isFullscreen && (
+        <div className="fixed bottom-4 right-4 bg-black bg-opacity-70 text-white px-4 py-2 rounded-lg text-sm">
+          Press ESC or click Exit Fullscreen to return
+        </div>
+      )}
     </div>
   );
 };
