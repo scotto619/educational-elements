@@ -28,7 +28,7 @@ const PET_SPECIES = [ { name: 'Alchemist', type: 'alchemist', rarity: 'common' }
 // ===============================================
 // NEW: CENTRALIZED SHOP ITEM DEFINITIONS
 // ===============================================
-const SHOP_BASIC_AVATARS = [ { name: 'Banana', price: 10, path: '/shop/Basic/Banana.png' }, { name: 'Goblin1', price: 15, path: '/shop/Basic/Goblin1.png' }, { name: 'GoblinGirl1', price: 15, path: '/shop/Basic/GoblinGirl1.png' }, { name: 'Guard1', price: 20, path: '/shop/Basic/Guard1.png' }, { name: 'GuardGirl1', price: 20, path: '/shop/Basic/GuardGirl1.png' }, { name: 'SoccerBoy', price: 10, path: '/shop/Basic/SoccerBoy.png' }, { name: 'SoccerBoy2', price: 10, path: '/shop/Basic/SoccerBoy2.png' }, { name: 'SoccerGirl', price: 10, path: '/shop/Basic/SoccerGirl.png' }, { name: 'StreetBoy1', price: 15, path: '/shop/Basic/Streetboy1.png' }, { name: 'StreetGirl1', price: 15, path: '/shop/Basic/Streetgirl1.png' }, { name: 'Vampire1', price: 20, path: '/shop/Basic/Vampire1.png' } ];
+const SHOP_BASIC_AVATARS = [ { name: 'Banana', price: 10, path: '/shop/Basic/Banana.png' }, { name: 'Goblin1', price: 15, path: '/shop/Basic/Goblin1.png' }, { name: 'GoblinGirl1', price: 15, path: '/shop/Basic/GoblinGirl1.png' }, { name: 'Guard1', price: 20, path: '/shop/Basic/Guard1.png' }, { name: 'GuardGirl1', price: 20, path: '/shop/Basic/GuardGirl1.png' }, { name: 'SoccerBoy', price: 10, path: '/shop/Basic/SoccerBoy.png' }, { name: 'SoccerBoy2', price: 10, path: '/shop/Basic/SoccerBoy2.png' }, { name: 'SoccerGirl', price: 10, path: '/shop/Basic/SoccerGirl.png' }, { name: 'StreetBoy1', price: 15, path: '/shop/Basic/StreetBoy1.png' }, { name: 'StreetGirl1', price: 15, path: '/shop/Basic/StreetGirl1.png' }, { name: 'Vampire1', price: 20, path: '/shop/Basic/Vampire1.png' } ];
 const SHOP_PREMIUM_AVATARS = [ { name: 'Goblin2', price: 30, path: '/shop/Premium/Goblin2.png' }, { name: 'GoblinGirl2', price: 30, path: '/shop/Premium/GoblinGirl2.png' }, { name: 'Vampire2', price: 40, path: '/shop/Premium/Vampire2.png' }, { name: 'VampireGirl2', price: 40, path: '/shop/Premium/VampireGirl2.png' } ];
 const SHOP_BASIC_PETS = [ { name: 'Goblin Pet', price: 25, path: '/shop/BasicPets/GoblinPet.png' }, { name: 'Soccer Pet', price: 20, path: '/shop/BasicPets/SoccerPet.png' }, { name: 'Unicorn Pet', price: 35, path: '/shop/BasicPets/UnicornPet.png' } ];
 const SHOP_PREMIUM_PETS = [ { name: 'Snake Pet', price: 50, path: '/shop/PremiumPets/SnakePet.png' }, { name: 'Vampire Pet', price: 50, path: '/shop/PremiumPets/VampirePet.png' } ];
@@ -218,6 +218,11 @@ const ClassroomChampions = () => {
                   getPetImage={getPetImage}
                   calculateCoins={calculateCoins}
                   calculateAvatarLevel={calculateAvatarLevel}
+                />;
+      case 'curriculum':
+        return <CurriculumCornerTab 
+                  students={students}
+                  showToast={showToast}
                 />;
       default:
         return <div className="p-8 text-center text-gray-500">This tab is under construction.</div>;
