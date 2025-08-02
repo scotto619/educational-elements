@@ -1,4 +1,4 @@
-// components/tabs/StudentsTab.js - FIXED XP AWARDING ISSUE (COMPLETE FILE)
+// components/tabs/StudentsTab.js - FIXED PET DISPLAY ISSUE (COMPLETE FILE)
 import React, { useState, useEffect, useRef } from 'react';
 
 // ===============================================
@@ -76,11 +76,15 @@ const StudentsTab = ({
 }) => {
     // Use passed functions or fallback to local ones
     const getAvatarImageFunc = propGetAvatarImage || ((avatarBase, level) => `/avatars/${avatarBase || 'Wizard F'}/Level ${Math.max(1, Math.min(level || 1, 4))}.png`);
-    const getPetImageFunc = propGetPetImage || ((petType, petName) => {
-        const key = (petType || petName || '').toLowerCase();
+    
+    // FIXED: Use the proper function signature for getPetImage - expecting a pet object, not separate parameters
+    const getPetImageFunc = propGetPetImage || ((pet) => {
+        if (!pet) return '/Pets/Wizard.png';
+        const key = (pet.type || pet.name || '').toLowerCase();
         const map = { 'alchemist': '/Pets/Alchemist.png', 'barbarian': '/Pets/Barbarian.png', 'bard': '/Pets/Bard.png', 'beastmaster': '/Pets/Beastmaster.png', 'cleric': '/Pets/Cleric.png', 'crystal knight': '/Pets/Crystal Knight.png', 'crystal sage': '/Pets/Crystal Sage.png', 'engineer': '/Pets/Engineer.png', 'frost mage': '/Pets/Frost Mage.png', 'illusionist': '/Pets/Illusionist.png', 'knight': '/Pets/Knight.png', 'lightning': '/Pets/Lightning.png', 'monk': '/Pets/Monk.png', 'necromancer': '/Pets/Necromancer.png', 'rogue': '/Pets/Rogue.png', 'stealth': '/Pets/Stealth.png', 'time knight': '/Pets/Time Knight.png', 'warrior': '/Pets/Warrior.png', 'wizard': '/Pets/Wizard.png', 'dragon': '/Pets/Lightning.png', 'phoenix': '/Pets/Crystal Sage.png', 'unicorn': '/Pets/Time Knight.png', 'wolf': '/Pets/Warrior.png', 'owl': '/Pets/Wizard.png', 'cat': '/Pets/Rogue.png', 'tiger': '/Pets/Barbarian.png', 'bear': '/Pets/Beastmaster.png', 'lion': '/Pets/Knight.png', 'eagle': '/Pets/Stealth.png' };
         return map[key] || '/Pets/Wizard.png';
     });
+    
     const calculateCoinsFunc = propCalculateCoins || ((student) => Math.max(0, Math.floor((student?.totalPoints || 0) / 5) + (student?.currency || 0) - (student?.coinsSpent || 0)));
     const calculateAvatarLevelFunc = propCalculateAvatarLevel || ((xp) => (xp >= 300 ? 4 : xp >= 200 ? 3 : xp >= 100 ? 2 : 1));
     const [searchTerm, setSearchTerm] = useState('');
@@ -181,7 +185,9 @@ const StudentCard = ({ student, isSelected, isDragged, onClick, onDragStart, onD
     const xpForNextLevel = (student.totalPoints || 0) % 100;
     const avatarImg = getAvatarImage(student.avatarBase, level);
     const pet = student.ownedPets?.[0];
-    const petImg = pet ? getPetImage(pet.type, pet.name) : null;
+    
+    // FIXED: Pass the entire pet object to getPetImage, not separate parameters
+    const petImg = pet ? getPetImage(pet) : null;
 
     return (
         <div draggable="true" onDragStart={onDragStart} onDragOver={onDragOver} onDrop={onDrop} onClick={onClick} className={`p-3 rounded-2xl shadow-lg border-2 transition-all duration-300 cursor-pointer ${isSelected ? 'border-purple-500 bg-purple-100 scale-105' : 'border-transparent bg-white hover:border-blue-400'} ${isDragged ? 'opacity-30 ring-2 ring-blue-500' : ''}`}>
