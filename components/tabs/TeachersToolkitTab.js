@@ -1,5 +1,5 @@
-// components/tabs/TeachersToolkitTab.js - Professional Classroom Management Tools with Classroom Jobs
-import React, { useState } from 'react';
+// components/tabs/TeachersToolkitTab.js - Enhanced with Birthday Wall
+import React, { useState, useEffect } from 'react';
 
 // Import tool components from the tools folder
 import StudentHelpQueue from '../tools/StudentHelpQueue';
@@ -8,14 +8,236 @@ import NamePicker from '../tools/NamePicker';
 import TimerTools from '../tools/TimerTools';
 import ClassroomDesigner from '../tools/ClassroomDesigner';
 import DiceRoller from '../tools/DiceRoller';
-import ClassroomJobs from '../tools/ClassroomJobs'; // Classroom Jobs
-import TimetableCreator from '../tools/TimetableCreator'; // TimetableCreator
+import ClassroomJobs from '../tools/ClassroomJobs';
+import TimetableCreator from '../tools/TimetableCreator';
+
+// ===============================================
+// BIRTHDAY WALL COMPONENT
+// ===============================================
+const BirthdayWall = ({ students, showToast, saveClassroomDataToFirebase, currentClassId, getAvatarImage, calculateAvatarLevel }) => {
+  const [editingStudentId, setEditingStudentId] = useState(null);
+  const [birthdayInput, setBirthdayInput] = useState('');
+  const [assignBirthdayAvatar, setAssignBirthdayAvatar] = useState(false);
+  const today = new Date().toISOString().split('T')[0];
+  const oneWeekFromNow = new Date();
+  oneWeekFromNow.setDate(oneWeekFromNow.getDate() + 7);
+  const oneWeekFromNowStr = oneWeekFromNow.toISOString().split('T')[0];
+
+  // Available Birthday Avatars (from file structure)
+  const BIRTHDAY_AVATARS = [
+    { name: 'Birthday Cake', path: '/shop/Themed/Birthday/BirthdayCake.png' },
+    { name: 'Party Hat', path: '/shop/Themed/Birthday/PartyHat.png' },
+    { name: 'Balloon Hero', path: '/shop/Themed/Birthday/BalloonHero.png' },
+  ];
+
+  // Filter students with birthdays today or within 7 days
+  const getUpcomingBirthdays = () => {
+    return students
+      .filter(student => student.birthday)
+      .map(student => {
+        const birthDate = new Date(student.birthday);
+        const todayDate = new Date(today);
+        // Adjust birth year to current year for comparison
+        birthDate.setFullYear(todayDate.getFullYear());
+        const isToday = birthDate.toISOString().split('T')[0] === today;
+        const isUpcoming = birthDate >= todayDate && birthDate <= new Date(oneWeekFromNowStr);
+        return { ...student, isToday, isUpcoming };
+      })
+      .sort((a, b) => new Date(a.birthday) - new Date(b.birthday));
+  };
+
+  // Handle birthday date change
+  const handleSetBirthday = (studentId) => {
+    if (!birthdayInput) {
+      showToast('Please select a valid date', 'error');
+      return;
+    }
+    const updatedStudents = students.map(student =>
+      student.id === studentId
+        ? {
+            ...student,
+            birthday: birthdayInput,
+            birthdayAvatar: assignBirthdayAvatar
+              ? BIRTHDAY_AVATARS[Math.floor(Math.random() * BIRTHDAY_AVATARS.length)].name
+              : student.birthdayAvatar || null,
+          }
+        : student
+    );
+    saveClassroomDataToFirebase(updatedStudents, currentClassId);
+    showToast('Birthday updated successfully!', 'success');
+    setEditingStudentId(null);
+    setBirthdayInput('');
+    setAssignBirthdayAvatar(false);
+  };
+
+  // Notify about today's birthdays on mount
+  useEffect(() => {
+    const todayBirthdays = students.filter(
+      student => student.birthday && new Date(student.birthday).toISOString().split('T')[0] === today
+    );
+    if (todayBirthdays.length > 0) {
+      showToast(`Happy Birthday to ${todayBirthdays.map(s => s.firstName).join(', ')}! 🎉`, 'success');
+    }
+  }, [students, today, showToast]);
+
+  const upcomingBirthdays = getUpcomingBirthdays();
+
+  return (
+    <div className="space-y-6">
+      <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+        🎂 Birthday Wall
+      </h3>
+
+      {/* Upcoming Birthdays Section */}
+      <div className="bg-gradient-to-r from-pink-50 to-yellow-50 rounded-xl p-6 shadow-lg">
+        <h4 className="font-bold text-lg text-pink-800 mb-4">Upcoming Birthdays</h4>
+        {upcomingBirthdays.length === 0 ? (
+          <p className="text-gray-600">No birthdays in the next 7 days.</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {upcomingBirthdays.map(student => (
+              <div
+                key={student.id}
+                className={`p-4 rounded-lg shadow-md flex items-center space-x-4 transition-all duration-300 ${
+                  student.isToday ? 'bg-yellow-100 border-2 border-yellow-400 animate-pulse' : 'bg-white'
+                }`}
+              >
+                <img
+                  src={
+                    student.isToday && student.birthdayAvatar
+                      ? BIRTHDAY_AVATARS.find(a => a.name === student.birthdayAvatar)?.path ||
+                        getAvatarImage(student.avatarBase, calculateAvatarLevel(student.totalPoints))
+                      : getAvatarImage(student.avatarBase, calculateAvatarLevel(student.totalPoints))
+                  }
+                  alt={`${student.firstName}'s Avatar`}
+                  className="w-12 h-12 rounded-full border-2 border-gray-300"
+                  onError={(e) => (e.target.src = '/avatars/Wizard F/Level 1.png')}
+                />
+                <div>
+                  <p className="font-semibold text-gray-800">
+                    {student.firstName} {student.lastName}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    {new Date(student.birthday).toLocaleDateString('en-US', {
+                      month: 'long',
+                      day: 'numeric',
+                    })}
+                    {student.isToday && (
+                      <span className="ml-2 text-yellow-600 font-bold">🎉 Today!</span>
+                    )}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Manage Birthdays Section */}
+      <div className="bg-white rounded-xl p-6 shadow-lg">
+        <h4 className="font-bold text-lg text-gray-800 mb-4">Manage Student Birthdays</h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {students.map(student => (
+            <div key={student.id} className="bg-gray-50 rounded-lg p-4">
+              <div className="flex items-center space-x-3 mb-3">
+                <img
+                  src={getAvatarImage(student.avatarBase, calculateAvatarLevel(student.totalPoints))}
+                  alt={`${student.firstName}'s Avatar`}
+                  className="w-10 h-10 rounded-full border-2 border-gray-300"
+                  onError={(e) => (e.target.src = '/avatars/Wizard F/Level 1.png')}
+                />
+                <div>
+                  <div className="font-semibold">{student.firstName} {student.lastName}</div>
+                  <div className="text-sm text-gray-500">
+                    {student.birthday
+                      ? new Date(student.birthday).toLocaleDateString('en-US', {
+                          month: 'long',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })
+                      : 'No birthday set'}
+                  </div>
+                </div>
+              </div>
+              {editingStudentId === student.id ? (
+                <div className="space-y-3">
+                  <input
+                    type="date"
+                    value={birthdayInput}
+                    onChange={(e) => setBirthdayInput(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                    max={today}
+                  />
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      checked={assignBirthdayAvatar}
+                      onChange={(e) => setAssignBirthdayAvatar(e.target.checked)}
+                      className="h-4 w-4 text-purple-600 focus:ring-purple-500"
+                    />
+                    <label className="text-sm text-gray-700">Assign Birthday Avatar</label>
+                  </div>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => handleSetBirthday(student.id)}
+                      className="flex-1 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={() => {
+                        setEditingStudentId(null);
+                        setBirthdayInput('');
+                        setAssignBirthdayAvatar(false);
+                      }}
+                      className="flex-1 px-3 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => {
+                    setEditingStudentId(student.id);
+                    setBirthdayInput(student.birthday || '');
+                    setAssignBirthdayAvatar(!!student.birthdayAvatar);
+                  }}
+                  className="w-full px-3 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600"
+                >
+                  {student.birthday ? 'Edit Birthday' : 'Set Birthday'}
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Birthday Avatars Preview */}
+      <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 shadow-lg">
+        <h4 className="font-bold text-lg text-gray-800 mb-4">Birthday Avatars</h4>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {BIRTHDAY_AVATARS.map(avatar => (
+            <div key={avatar.name} className="text-center p-4 bg-white rounded-lg shadow-md">
+              <img
+                src={avatar.path}
+                alt={avatar.name}
+                className="w-16 h-16 rounded-full mx-auto mb-2"
+                onError={(e) => (e.target.src = '/avatars/Wizard F/Level 1.png')}
+              />
+              <p className="font-semibold text-gray-800">{avatar.name}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // ===============================================
 // TEACHERS TOOLKIT TAB COMPONENT
 // ===============================================
-
-const TeachersToolkitTab = ({ 
+const TeachersToolkitTab = ({
   students = [],
   user,
   showToast = () => {},
@@ -23,48 +245,47 @@ const TeachersToolkitTab = ({
   saveGroupDataToFirebase,
   saveClassroomDataToFirebase,
   currentClassId,
-  onAwardXP = () => {}, // XP awarding function for job payments
-  // Quest System Props (if available)
+  onAwardXP = () => {},
   activeQuests = [],
   attendanceData = {},
   markAttendance,
   completeQuest,
-  setShowQuestManagement
+  setShowQuestManagement,
+  getAvatarImage,
+  calculateAvatarLevel,
 }) => {
-  const [activeToolkitTab, setActiveToolkitTab] = useState('timetable'); // Default to timetable
+  const [activeToolkitTab, setActiveToolkitTab] = useState('timetable');
   const [attendanceState, setAttendanceState] = useState(attendanceData);
-  const [timerSettings, setTimerSettings] = useState({ 
-    minutes: 5, 
-    seconds: 0, 
+  const [timerSettings, setTimerSettings] = useState({
+    minutes: 5,
+    seconds: 0,
     isRunning: false,
     isActive: false,
     time: 300,
     originalTime: 300,
     isPaused: false,
-    type: 'countdown'
+    type: 'countdown',
   });
 
-  // Check if user has PRO access (simplified check for demo)
-  const isPro = userData?.subscription === 'pro' || true; // Set to true for demo
+  const isPro = userData?.subscription === 'pro' || true;
 
-  // Calculate basic analytics
   const calculateBasicAnalytics = () => {
     return {
       totalStudents: students.length,
-      averageXP: students.length > 0 ? 
-        Math.round(students.reduce((sum, s) => sum + (s.totalPoints || 0), 0) / students.length) : 0,
+      averageXP: students.length > 0
+        ? Math.round(students.reduce((sum, s) => sum + (s.totalPoints || 0), 0) / students.length)
+        : 0,
       highPerformers: students.filter(s => (s.totalPoints || 0) >= 200).length,
-      needsAttention: students.filter(s => (s.totalPoints || 0) < 50).length
+      needsAttention: students.filter(s => (s.totalPoints || 0) < 50).length,
     };
   };
 
-  // Calculate quest analytics (if quest system is available)
   const calculateQuestAnalytics = () => {
     if (!activeQuests || activeQuests.length === 0) {
       return {
         totalQuests: 0,
         totalCompletions: 0,
-        completionRate: 0
+        completionRate: 0,
       };
     }
 
@@ -73,15 +294,14 @@ const TeachersToolkitTab = ({
       totalCompletions: activeQuests.reduce((acc, quest) => acc + (quest.completedBy?.length || 0), 0),
     };
 
-    // Calculate completion rate
     const possibleCompletions = analytics.totalQuests * students.length;
-    analytics.completionRate = possibleCompletions > 0 ?
-      Math.round((analytics.totalCompletions / possibleCompletions) * 100) : 0;
+    analytics.completionRate = possibleCompletions > 0
+      ? Math.round((analytics.totalCompletions / possibleCompletions) * 100)
+      : 0;
 
     return analytics;
   };
 
-  // Calculate attendance statistics
   const calculateAttendanceStats = () => {
     const dates = Object.keys(attendanceState);
     if (dates.length === 0) return { averageAttendance: 0, totalDaysTracked: 0, perfectAttendanceStudents: 0 };
@@ -91,10 +311,10 @@ const TeachersToolkitTab = ({
       return acc + Object.values(attendanceState[date] || {}).filter(status => status === 'present').length;
     }, 0);
 
-    const averageAttendance = totalStudentDays > 0 ? 
-      Math.round((totalPresentCount / totalStudentDays) * 100) : 0;
+    const averageAttendance = totalStudentDays > 0
+      ? Math.round((totalPresentCount / totalStudentDays) * 100)
+      : 0;
 
-    // Calculate perfect attendance students
     const perfectAttendanceStudents = students.filter(student => {
       return dates.every(date => attendanceState[date]?.[student.id] === 'present');
     }).length;
@@ -103,35 +323,30 @@ const TeachersToolkitTab = ({
       averageAttendance,
       totalDaysTracked: dates.length,
       perfectAttendanceStudents,
-      attendanceTrend: 'stable'
+      attendanceTrend: 'stable',
     };
   };
 
-  // Handle attendance marking
   const handleMarkAttendance = (studentId, status) => {
     const today = new Date().toISOString().split('T')[0];
     const newAttendanceState = {
       ...attendanceState,
       [today]: {
         ...attendanceState[today],
-        [studentId]: status
-      }
+        [studentId]: status,
+      },
     };
-    
+
     setAttendanceState(newAttendanceState);
-    
-    // Call external handler if provided
+
     if (markAttendance) {
       markAttendance(studentId, status);
     }
-    
+
     showToast(`Attendance marked for student`, 'success');
   };
 
-  // Handle saving timetable data
   const handleSaveTimetableData = (timetableData) => {
-    // Here you would typically save to Firebase or your backend
-    // For now, just show a success message
     showToast('Timetable saved successfully!', 'success');
     console.log('Timetable data to save:', timetableData);
   };
@@ -157,6 +372,10 @@ const TeachersToolkitTab = ({
                 <span>Visual Timetable Creator</span>
               </div>
               <div className="flex items-center space-x-2">
+                <span>🎂</span>
+                <span>Birthday Wall & Reminders</span>
+              </div>
+              <div className="flex items-center space-x-2">
                 <span>🎫</span>
                 <span>Student Help Queue System</span>
               </div>
@@ -164,6 +383,8 @@ const TeachersToolkitTab = ({
                 <span>👥</span>
                 <span>Smart Group Maker with Constraints</span>
               </div>
+            </div>
+            <div className="space-y-2">
               <div className="flex items-center space-x-2">
                 <span>🎯</span>
                 <span>Smart Name Picker Wheel</span>
@@ -180,39 +401,12 @@ const TeachersToolkitTab = ({
                 <span>🎲</span>
                 <span>Advanced Dice Roller System</span>
               </div>
-            </div>
-            <div className="space-y-2">
               <div className="flex items-center space-x-2">
                 <span>✅</span>
                 <span>Advanced Attendance Tracking</span>
               </div>
-              <div className="flex items-center space-x-2">
-                <span>📊</span>
-                <span>Quest Analytics & Reports</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span>🎮</span>
-                <span>Gamification Features</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span>🌍</span>
-                <span>Geography & Science Activities</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span>✨</span>
-                <span>New Tools Added Monthly!</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span>🎨</span>
-                <span>Creative Arts & Expression</span>
-              </div>
             </div>
           </div>
-        </div>
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 max-w-2xl mx-auto">
-          <p className="text-blue-700 text-sm">
-            💡 <strong>Note:</strong> Subject-specific tools like Math, Literacy, and Geography are organized in the "Curriculum Corner" tab for better classroom workflow!
-          </p>
         </div>
         <button
           onClick={() => showToast('Upgrade feature coming soon!', 'info')}
@@ -228,10 +422,10 @@ const TeachersToolkitTab = ({
   const questAnalytics = calculateQuestAnalytics();
   const attendanceStats = calculateAttendanceStats();
 
-  // Updated toolkit tabs to include classroom jobs and timetable
   const toolkitTabs = [
     { id: 'classroom-jobs', label: 'Classroom Jobs', icon: '💼' },
     { id: 'timetable', label: 'Timetable', icon: '📅' },
+    { id: 'birthday-wall', label: 'Birthday Wall', icon: '🎂' },
     { id: 'help-queue', label: 'Help Queue', icon: '🎫' },
     { id: 'attendance', label: 'Attendance', icon: '✅' },
     { id: 'analytics', label: 'Analytics', icon: '📊' },
@@ -239,7 +433,7 @@ const TeachersToolkitTab = ({
     { id: 'name-picker', label: 'Name Picker', icon: '🎯' },
     { id: 'timer', label: 'Timer Tools', icon: '⏰' },
     { id: 'dice-roller', label: 'Dice Roller', icon: '🎲' },
-    { id: 'classroom-designer', label: 'Room Designer', icon: '🏫' }
+    { id: 'classroom-designer', label: 'Room Designer', icon: '🏫' },
   ];
 
   return (
@@ -255,11 +449,15 @@ const TeachersToolkitTab = ({
           </h2>
           <p className="text-xl opacity-90">Professional classroom management tools</p>
         </div>
-        
-        {/* Floating decorations */}
-        <div className="absolute top-4 right-4 text-2xl animate-bounce" style={{ animationDelay: '0.5s' }}>🎯</div>
-        <div className="absolute bottom-4 left-4 text-2xl animate-bounce" style={{ animationDelay: '1s' }}>📊</div>
-        <div className="absolute top-1/2 right-1/4 text-xl animate-bounce" style={{ animationDelay: '1.5s' }}>👥</div>
+        <div className="absolute top-4 right-4 text-2xl animate-bounce" style={{ animationDelay: '0.5s' }}>
+          🎯
+        </div>
+        <div className="absolute bottom-4 left-4 text-2xl animate-bounce" style={{ animationDelay: '1s' }}>
+          📊
+        </div>
+        <div className="absolute top-1/2 right-1/4 text-xl animate-bounce" style={{ animationDelay: '1.5s' }}>
+          👥
+        </div>
       </div>
 
       {/* Curriculum Corner Notice */}
@@ -269,7 +467,8 @@ const TeachersToolkitTab = ({
           <div>
             <h4 className="font-bold text-green-800 mb-2">📚 Looking for Subject Tools?</h4>
             <p className="text-green-700 mb-3">
-              Math, Literacy, Geography, and Science tools have been organized in the <strong>Curriculum Corner</strong> tab for better subject-based teaching!
+              Math, Literacy, Geography, and Science tools have been organized in the{' '}
+              <strong>Curriculum Corner</strong> tab for better subject-based teaching!
             </p>
             <div className="flex flex-wrap gap-2">
               <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm">🧮 Math Tools</span>
@@ -291,7 +490,6 @@ const TeachersToolkitTab = ({
           <div className="font-semibold">Classroom Jobs</div>
           <div className="text-sm text-purple-600">Assign & pay students</div>
         </button>
-        
         <button
           onClick={() => setActiveToolkitTab('timetable')}
           className="p-4 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 transition-colors text-center"
@@ -300,7 +498,14 @@ const TeachersToolkitTab = ({
           <div className="font-semibold">Timetable</div>
           <div className="text-sm text-indigo-600">Schedule & reminders</div>
         </button>
-        
+        <button
+          onClick={() => setActiveToolkitTab('birthday-wall')}
+          className="p-4 bg-pink-100 text-pink-700 rounded-lg hover:bg-pink-200 transition-colors text-center"
+        >
+          <div className="text-2xl mb-2">🎂</div>
+          <div className="font-semibold">Birthday Wall</div>
+          <div className="text-sm text-pink-600">Celebrate & manage</div>
+        </button>
         <button
           onClick={() => setActiveToolkitTab('analytics')}
           className="p-4 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-center"
@@ -309,7 +514,6 @@ const TeachersToolkitTab = ({
           <div className="font-semibold">Class Analytics</div>
           <div className="text-sm text-blue-600">{analytics.averageXP} avg XP</div>
         </button>
-        
         <button
           onClick={() => setActiveToolkitTab('attendance')}
           className="p-4 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors text-center"
@@ -317,15 +521,6 @@ const TeachersToolkitTab = ({
           <div className="text-2xl mb-2">✅</div>
           <div className="font-semibold">Take Attendance</div>
           <div className="text-sm text-green-600">{attendanceStats.averageAttendance}% avg</div>
-        </button>
-        
-        <button
-          onClick={() => setActiveToolkitTab('help-queue')}
-          className="p-4 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors text-center"
-        >
-          <div className="text-2xl mb-2">🎫</div>
-          <div className="font-semibold">Help Queue</div>
-          <div className="text-sm text-orange-600">Manage assistance</div>
         </button>
       </div>
 
@@ -351,65 +546,51 @@ const TeachersToolkitTab = ({
 
         {/* Tool Content */}
         <div className="min-h-[600px]">
-          {/* Classroom Jobs */}
           {activeToolkitTab === 'classroom-jobs' && (
-            <ClassroomJobs 
-              students={students} 
-              showToast={showToast}
-              onAwardXP={onAwardXP}
-            />
+            <ClassroomJobs students={students} showToast={showToast} onAwardXP={onAwardXP} />
           )}
-
-          {/* FIXED: Added the missing Timetable rendering */}
           {activeToolkitTab === 'timetable' && (
-            <TimetableCreator 
-              students={students} 
+            <TimetableCreator students={students} showToast={showToast} onSaveData={handleSaveTimetableData} />
+          )}
+          {activeToolkitTab === 'birthday-wall' && (
+            <BirthdayWall
+              students={students}
               showToast={showToast}
-              onSaveData={handleSaveTimetableData}
+              saveClassroomDataToFirebase={saveClassroomDataToFirebase}
+              currentClassId={currentClassId}
+              getAvatarImage={getAvatarImage}
+              calculateAvatarLevel={calculateAvatarLevel}
             />
           )}
-
-          {/* Help Queue */}
-          {activeToolkitTab === 'help-queue' && (
-            <StudentHelpQueue 
-              students={students} 
-              showToast={showToast} 
-            />
-          )}
-
-          {/* Attendance Tracker */}
+          {activeToolkitTab === 'help-queue' && <StudentHelpQueue students={students} showToast={showToast} />}
           {activeToolkitTab === 'attendance' && (
             <div>
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-2xl font-bold text-gray-800">✅ Daily Attendance</h3>
                 <div className="text-sm text-gray-600">
-                  {new Date().toLocaleDateString('en-US', { 
-                    weekday: 'long', 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
+                  {new Date().toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
                   })}
                 </div>
               </div>
-
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {students.map(student => (
                   <div key={student.id} className="bg-gray-50 rounded-lg p-4">
                     <div className="flex items-center space-x-3 mb-3">
-                      <img 
-                        src={`/avatars/${student.avatarBase || 'Wizard F'}/Level 1.png`}
+                      <img
+                        src={getAvatarImage(student.avatarBase, calculateAvatarLevel(student.totalPoints))}
                         alt={`${student.firstName}'s Avatar`}
                         className="w-10 h-10 rounded-full border-2 border-gray-300"
-                        onError={(e) => {
-                          e.target.src = '/avatars/Wizard F/Level 1.png';
-                        }}
+                        onError={(e) => (e.target.src = '/avatars/Wizard F/Level 1.png')}
                       />
                       <div>
                         <div className="font-semibold">{student.firstName} {student.lastName}</div>
                         <div className="text-sm text-gray-500">{student.totalPoints || 0} XP</div>
                       </div>
                     </div>
-                    
                     <div className="flex space-x-2">
                       <button
                         onClick={() => handleMarkAttendance(student.id, 'present')}
@@ -437,13 +618,9 @@ const TeachersToolkitTab = ({
               </div>
             </div>
           )}
-
-          {/* Analytics Dashboard */}
           {activeToolkitTab === 'analytics' && (
             <div>
               <h3 className="text-2xl font-bold text-gray-800 mb-6">📊 Class Analytics Dashboard</h3>
-              
-              {/* Overview Cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <div className="bg-blue-50 rounded-xl p-6 border border-blue-200">
                   <div className="flex items-center justify-between mb-4">
@@ -453,7 +630,6 @@ const TeachersToolkitTab = ({
                   <div className="text-3xl font-bold text-blue-600">{analytics.totalStudents}</div>
                   <div className="text-sm text-blue-600 mt-2">Active learners</div>
                 </div>
-
                 <div className="bg-green-50 rounded-xl p-6 border border-green-200">
                   <div className="flex items-center justify-between mb-4">
                     <h4 className="font-semibold text-green-800">Average XP</h4>
@@ -462,7 +638,6 @@ const TeachersToolkitTab = ({
                   <div className="text-3xl font-bold text-green-600">{analytics.averageXP}</div>
                   <div className="text-sm text-green-600 mt-2">Class performance</div>
                 </div>
-
                 <div className="bg-purple-50 rounded-xl p-6 border border-purple-200">
                   <div className="flex items-center justify-between mb-4">
                     <h4 className="font-semibold text-purple-800">High Performers</h4>
@@ -471,7 +646,6 @@ const TeachersToolkitTab = ({
                   <div className="text-3xl font-bold text-purple-600">{analytics.highPerformers}</div>
                   <div className="text-sm text-purple-600 mt-2">200+ XP students</div>
                 </div>
-
                 <div className="bg-yellow-50 rounded-xl p-6 border border-yellow-200">
                   <div className="flex items-center justify-between mb-4">
                     <h4 className="font-semibold text-yellow-800">Need Support</h4>
@@ -481,8 +655,6 @@ const TeachersToolkitTab = ({
                   <div className="text-sm text-yellow-600 mt-2">Under 50 XP</div>
                 </div>
               </div>
-
-              {/* Student Performance Breakdown */}
               <div className="bg-gray-50 rounded-xl p-6 mb-6">
                 <h4 className="font-semibold text-gray-800 mb-4">📈 Student Performance Levels</h4>
                 <div className="space-y-2">
@@ -490,17 +662,14 @@ const TeachersToolkitTab = ({
                     { range: '300+ XP', label: 'Level 4 Champions', color: 'bg-purple-500', count: students.filter(s => (s.totalPoints || 0) >= 300).length },
                     { range: '200-299 XP', label: 'Level 3 Achievers', color: 'bg-blue-500', count: students.filter(s => (s.totalPoints || 0) >= 200 && (s.totalPoints || 0) < 300).length },
                     { range: '100-199 XP', label: 'Level 2 Learners', color: 'bg-green-500', count: students.filter(s => (s.totalPoints || 0) >= 100 && (s.totalPoints || 0) < 200).length },
-                    { range: '0-99 XP', label: 'Level 1 Beginners', color: 'bg-yellow-500', count: students.filter(s => (s.totalPoints || 0) < 100).length }
+                    { range: '0-99 XP', label: 'Level 1 Beginners', color: 'bg-yellow-500', count: students.filter(s => (s.totalPoints || 0) < 100).length },
                   ].map(level => {
                     const percentage = students.length > 0 ? (level.count / students.length) * 100 : 0;
                     return (
                       <div key={level.range} className="flex items-center space-x-4">
                         <div className="w-32 text-sm font-medium text-gray-700">{level.range}:</div>
                         <div className="flex-1 bg-gray-200 rounded-full h-6 relative">
-                          <div 
-                            className={`${level.color} h-6 rounded-full transition-all duration-500`}
-                            style={{ width: `${percentage}%` }}
-                          ></div>
+                          <div className={`${level.color} h-6 rounded-full transition-all duration-500`} style={{ width: `${percentage}%` }}></div>
                           <div className="absolute inset-0 flex items-center justify-center text-white text-sm font-bold">
                             {level.count} students ({percentage.toFixed(0)}%)
                           </div>
@@ -512,47 +681,23 @@ const TeachersToolkitTab = ({
               </div>
             </div>
           )}
-
-          {/* Group Maker */}
           {activeToolkitTab === 'group-maker' && (
-            <GroupMaker 
-              students={students} 
+            <GroupMaker
+              students={students}
               showToast={showToast}
               saveGroupDataToFirebase={saveGroupDataToFirebase}
               userData={userData}
               currentClassId={currentClassId}
             />
           )}
-
-          {/* Name Picker */}
-          {activeToolkitTab === 'name-picker' && (
-            <NamePicker 
-              students={students} 
-              showToast={showToast} 
-            />
-          )}
-
-          {/* Timer Tools */}
+          {activeToolkitTab === 'name-picker' && <NamePicker students={students} showToast={showToast} />}
           {activeToolkitTab === 'timer' && (
-            <TimerTools 
-              showToast={showToast}
-              students={students}
-              timerState={timerSettings}
-              setTimerState={setTimerSettings}
-            />
+            <TimerTools showToast={showToast} students={students} timerState={timerSettings} setTimerState={setTimerSettings} />
           )}
-
-          {/* Dice Roller */}
-          {activeToolkitTab === 'dice-roller' && (
-            <DiceRoller 
-              showToast={showToast}
-            />
-          )}
-
-          {/* Classroom Designer */}
+          {activeToolkitTab === 'dice-roller' && <DiceRoller showToast={showToast} />}
           {activeToolkitTab === 'classroom-designer' && (
-            <ClassroomDesigner 
-              students={students} 
+            <ClassroomDesigner
+              students={students}
               showToast={showToast}
               saveClassroomDataToFirebase={saveClassroomDataToFirebase}
               currentClassId={currentClassId}
@@ -567,7 +712,6 @@ const TeachersToolkitTab = ({
 // ===============================================
 // TIME SLOT EDITOR COMPONENT
 // ===============================================
-
 const TimeSlotEditor = ({ timeSlots, onSave, onCancel }) => {
   const [editableSlots, setEditableSlots] = useState(timeSlots.map(slot => ({ ...slot })));
 
@@ -576,7 +720,7 @@ const TimeSlotEditor = ({ timeSlots, onSave, onCancel }) => {
       id: `slot${editableSlots.length + 1}`,
       start: '09:00',
       end: '09:50',
-      label: `Period ${editableSlots.length + 1}`
+      label: `Period ${editableSlots.length + 1}`,
     };
     setEditableSlots([...editableSlots, newSlot]);
   };
@@ -588,24 +732,17 @@ const TimeSlotEditor = ({ timeSlots, onSave, onCancel }) => {
   };
 
   const updateTimeSlot = (index, field, value) => {
-    const updated = editableSlots.map((slot, i) => 
-      i === index ? { ...slot, [field]: value } : slot
-    );
+    const updated = editableSlots.map((slot, i) => (i === index ? { ...slot, [field]: value } : slot));
     setEditableSlots(updated);
   };
 
   const validateTimeSlots = () => {
-    // Check for valid time format and no overlaps
     for (let i = 0; i < editableSlots.length; i++) {
       const slot = editableSlots[i];
-      
-      // Check time format
       const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
       if (!timeRegex.test(slot.start) || !timeRegex.test(slot.end)) {
         return `Invalid time format in ${slot.label}`;
       }
-      
-      // Check start < end
       const startMinutes = parseTime(slot.start);
       const endMinutes = parseTime(slot.end);
       if (startMinutes >= endMinutes) {
@@ -624,7 +761,6 @@ const TimeSlotEditor = ({ timeSlots, onSave, onCancel }) => {
     onSave(editableSlots);
   };
 
-  // Helper function to parse time (copied from parent component)
   const parseTime = (timeString) => {
     const [hours, minutes] = timeString.split(':').map(Number);
     return hours * 60 + minutes;
@@ -645,7 +781,6 @@ const TimeSlotEditor = ({ timeSlots, onSave, onCancel }) => {
                 placeholder="Period 1"
               />
             </div>
-            
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
               <input
@@ -655,7 +790,6 @@ const TimeSlotEditor = ({ timeSlots, onSave, onCancel }) => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               />
             </div>
-            
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
               <input
@@ -665,7 +799,6 @@ const TimeSlotEditor = ({ timeSlots, onSave, onCancel }) => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               />
             </div>
-            
             <div className="flex items-end">
               <button
                 onClick={() => removeTimeSlot(index)}
@@ -679,7 +812,6 @@ const TimeSlotEditor = ({ timeSlots, onSave, onCancel }) => {
           </div>
         ))}
       </div>
-
       <div className="flex justify-between items-center pt-4 border-t border-gray-200">
         <button
           onClick={addTimeSlot}
@@ -687,7 +819,6 @@ const TimeSlotEditor = ({ timeSlots, onSave, onCancel }) => {
         >
           ➕ Add Time Slot
         </button>
-        
         <div className="flex space-x-3">
           <button
             onClick={onCancel}
@@ -703,7 +834,6 @@ const TimeSlotEditor = ({ timeSlots, onSave, onCancel }) => {
           </button>
         </div>
       </div>
-      
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <div className="flex items-center space-x-2 text-blue-700">
           <span>💡</span>
