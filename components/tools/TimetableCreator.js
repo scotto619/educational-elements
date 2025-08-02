@@ -1,4 +1,4 @@
-// components/tools/TimetableCreator.js - Interactive Timetable Creator with Reminders
+// components/tools/TimetableCreator.js - Interactive Timetable Creator with Firebase Persistence
 import React, { useState, useEffect } from 'react';
 
 // ===============================================
@@ -8,7 +8,8 @@ import React, { useState, useEffect } from 'react';
 const TimetableCreator = ({ 
   students = [], 
   showToast = () => {},
-  onSaveData = () => {} // Function to save timetable data
+  saveData = () => {}, // Function to save data to Firebase
+  loadedData = {} // Pre-loaded data from Firebase
 }) => {
   // State management
   const [timetable, setTimetable] = useState({});
@@ -53,12 +54,12 @@ const TimetableCreator = ({
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [selectedDay, setSelectedDay] = useState(null);
 
-  // Activity form state - FIXED: Default to ['all'] instead of empty array
+  // Activity form state
   const [newActivity, setNewActivity] = useState({
     id: '',
     subject: '',
     teacher: '',
-    students: ['all'], // FIXED: Default to 'all' students
+    students: ['all'],
     location: '',
     notes: '',
     reminder: 0, // minutes before
@@ -70,6 +71,38 @@ const TimetableCreator = ({
 
   // Reminder system
   const [activeReminders, setActiveReminders] = useState([]);
+
+  // ===============================================
+  // FIREBASE DATA LOADING
+  // ===============================================
+
+  useEffect(() => {
+    // Load saved data from Firebase
+    if (loadedData.timetableData) {
+      const { timetable: savedTimetable, timeSlots: savedTimeSlots, subjects: savedSubjects, teachers: savedTeachers } = loadedData.timetableData;
+      
+      if (savedTimetable) setTimetable(savedTimetable);
+      if (savedTimeSlots) setTimeSlots(savedTimeSlots);
+      if (savedSubjects) setSubjects(savedSubjects);
+      if (savedTeachers) setTeachers(savedTeachers);
+    }
+  }, [loadedData]);
+
+  // Save data to Firebase whenever key state changes
+  useEffect(() => {
+    const timetableData = {
+      timetable,
+      timeSlots,
+      subjects,
+      teachers,
+      currentWeek,
+      lastUpdated: new Date().toISOString()
+    };
+    
+    if (Object.keys(timetable).length > 0 || timeSlots.length > 0 || subjects.length > 0 || teachers.length > 0) {
+      saveData({ timetableData });
+    }
+  }, [timetable, timeSlots, subjects, teachers, currentWeek, saveData]);
 
   // ===============================================
   // UTILITY FUNCTIONS
@@ -101,7 +134,10 @@ const TimetableCreator = ({
   // ===============================================
 
   const addActivityToSlot = () => {
-    if (!newActivity.subject || !selectedDay || !selectedSlot) return;
+    if (!newActivity.subject || !selectedDay || !selectedSlot) {
+      showToast('Please fill in all required fields!', 'error');
+      return;
+    }
 
     const key = getTimetableKey(selectedDay, selectedSlot.id);
     const activity = {
@@ -126,18 +162,19 @@ const TimetableCreator = ({
       setupReminder(activity);
     }
 
-    // FIXED: Reset form with proper default values
+    // Reset form
     setNewActivity({
       id: '',
       subject: '',
       teacher: '',
-      students: ['all'], // FIXED: Reset to all students
+      students: ['all'],
       location: '',
       notes: '',
       reminder: 0,
       type: 'main'
     });
     setShowActivityModal(false);
+    showToast('Activity added to timetable!', 'success');
   };
 
   const removeActivity = (day, slotId, activityId) => {
@@ -157,17 +194,17 @@ const TimetableCreator = ({
 
     // Remove any associated reminders
     setActiveReminders(prev => prev.filter(reminder => reminder.activityId !== activityId));
+    showToast('Activity removed from timetable!', 'success');
   };
 
   const openActivityModal = (day, slot) => {
     setSelectedDay(day);
     setSelectedSlot(slot);
-    // FIXED: Reset form with proper default values
     setNewActivity({
       id: '',
       subject: '',
       teacher: '',
-      students: ['all'], // FIXED: Default to all students
+      students: ['all'],
       location: '',
       notes: '',
       reminder: 0,
@@ -263,6 +300,7 @@ const TimetableCreator = ({
     };
     setSubjects([...subjects, subject]);
     setShowSubjectModal(false);
+    showToast('Subject added successfully!', 'success');
   };
 
   const addTeacher = (teacherData) => {
@@ -272,6 +310,31 @@ const TimetableCreator = ({
     };
     setTeachers([...teachers, teacher]);
     setShowTeacherModal(false);
+    showToast('Teacher added successfully!', 'success');
+  };
+
+  const updateTimeSlots = (newTimeSlots) => {
+    setTimeSlots(newTimeSlots);
+    setShowTimeSlotModal(false);
+    showToast('Time slots updated successfully!', 'success');
+  };
+
+  // ===============================================
+  // MANUAL SAVE FUNCTION
+  // ===============================================
+
+  const manualSave = () => {
+    const timetableData = {
+      timetable,
+      timeSlots,
+      subjects,
+      teachers,
+      currentWeek,
+      lastUpdated: new Date().toISOString()
+    };
+    
+    saveData({ timetableData });
+    showToast('Timetable saved successfully!', 'success');
   };
 
   // ===============================================
@@ -309,7 +372,6 @@ const TimetableCreator = ({
           <div className="text-xs opacity-90 mb-1">👩‍🏫 {teacher.name}</div>
         )}
         
-        {/* FIXED: Proper student display logic */}
         {activity.students.includes('all') ? (
           <div className="text-xs opacity-90 mb-1">👥 Whole Class</div>
         ) : activity.students.length > 0 ? (
@@ -379,14 +441,17 @@ const TimetableCreator = ({
 
           <div className="flex items-center space-x-4">
             <div className="text-sm text-gray-600">
+              <span className="font-semibold">Auto-saves:</span> ✅ Enabled
+            </div>
+            <div className="text-sm text-gray-600">
               <span className="font-semibold">Active Reminders:</span> {activeReminders.length}
             </div>
             
             <button
-              onClick={() => onSaveData(timetable)}
+              onClick={manualSave}
               className="bg-gradient-to-r from-gray-500 to-gray-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all font-semibold"
             >
-              💾 Save Timetable
+              💾 Save Now
             </button>
           </div>
         </div>
@@ -527,7 +592,6 @@ const TimetableCreator = ({
                 </div>
               </div>
 
-              {/* FIXED: Student selection logic */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Students</label>
                 <select
@@ -545,7 +609,6 @@ const TimetableCreator = ({
                   <option value="specific">Specific Students</option>
                 </select>
 
-                {/* FIXED: Show student checkboxes only when NOT "all" */}
                 {!newActivity.students.includes('all') && (
                   <div className="max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-3">
                     <div className="text-sm text-gray-600 mb-2">Select students for this activity:</div>
@@ -681,7 +744,7 @@ const TimetableCreator = ({
         </div>
       )}
 
-      {/* FIXED: Add the missing Edit Time Slots Modal */}
+      {/* Edit Time Slots Modal */}
       {showTimeSlotModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -693,11 +756,7 @@ const TimetableCreator = ({
             <div className="p-6">
               <TimeSlotEditor 
                 timeSlots={timeSlots}
-                onSave={(newTimeSlots) => {
-                  setTimeSlots(newTimeSlots);
-                  setShowTimeSlotModal(false);
-                  showToast('Time slots updated successfully!', 'success');
-                }}
+                onSave={updateTimeSlots}
                 onCancel={() => setShowTimeSlotModal(false)}
               />
             </div>
@@ -739,17 +798,14 @@ const TimeSlotEditor = ({ timeSlots, onSave, onCancel }) => {
   };
 
   const validateTimeSlots = () => {
-    // Check for valid time format and no overlaps
     for (let i = 0; i < editableSlots.length; i++) {
       const slot = editableSlots[i];
       
-      // Check time format
       const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
       if (!timeRegex.test(slot.start) || !timeRegex.test(slot.end)) {
         return `Invalid time format in ${slot.label}`;
       }
       
-      // Check start < end
       const startMinutes = parseTime(slot.start);
       const endMinutes = parseTime(slot.end);
       if (startMinutes >= endMinutes) {
@@ -768,7 +824,6 @@ const TimeSlotEditor = ({ timeSlots, onSave, onCancel }) => {
     onSave(editableSlots);
   };
 
-  // Helper function to parse time
   const parseTime = (timeString) => {
     const [hours, minutes] = timeString.split(':').map(Number);
     return hours * 60 + minutes;

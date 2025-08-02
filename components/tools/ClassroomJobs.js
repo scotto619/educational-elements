@@ -1,4 +1,4 @@
-// components/tools/ClassroomJobs.js - Interactive Classroom Job Management with Drag & Drop
+// components/tools/ClassroomJobs.js - Interactive Classroom Job Management with Firebase Persistence
 import React, { useState, useEffect } from 'react';
 
 // ===============================================
@@ -9,7 +9,9 @@ const ClassroomJobs = ({
   students = [], 
   showToast = () => {},
   onAwardXP = () => {}, // Function to award XP to students
-  onAwardCoins = () => {} // Function to award coins to students
+  onAwardCoins = () => {}, // Function to award coins to students
+  saveData = () => {}, // Function to save data to Firebase
+  loadedData = {} // Pre-loaded data from Firebase
 }) => {
   // State management
   const [jobs, setJobs] = useState([]);
@@ -60,15 +62,27 @@ const ClassroomJobs = ({
 
   // Initialize jobs and unassigned students
   useEffect(() => {
-    if (jobs.length === 0) {
+    // Load saved jobs from Firebase or use defaults
+    if (loadedData.classroomJobs && loadedData.classroomJobs.length > 0) {
+      setJobs(loadedData.classroomJobs);
+    } else if (jobs.length === 0) {
       setJobs(DEFAULT_JOBS);
     }
-    
+  }, [loadedData]);
+
+  useEffect(() => {
     // Calculate unassigned students
     const assignedStudentIds = jobs.flatMap(job => job.assignedStudents?.map(s => s.id) || []);
     const unassigned = students.filter(student => !assignedStudentIds.includes(student.id));
     setUnassignedStudents(unassigned);
   }, [students, jobs]);
+
+  // Save jobs to Firebase whenever jobs change
+  useEffect(() => {
+    if (jobs.length > 0) {
+      saveData({ classroomJobs: jobs });
+    }
+  }, [jobs, saveData]);
 
   // ===============================================
   // JOB MANAGEMENT FUNCTIONS
@@ -76,7 +90,6 @@ const ClassroomJobs = ({
 
   const createJob = () => {
     if (!newJob.title.trim()) {
-      // Don't create job without title - form validation should prevent this
       return;
     }
 
@@ -87,7 +100,8 @@ const ClassroomJobs = ({
       assignedStudents: []
     };
 
-    setJobs([...jobs, job]);
+    const updatedJobs = [...jobs, job];
+    setJobs(updatedJobs);
     setNewJob({
       title: '',
       description: '',
@@ -98,12 +112,11 @@ const ClassroomJobs = ({
       icon: '📋'
     });
     setShowCreateJobModal(false);
-    // Removed notification - job creation is visually obvious
+    showToast('Job created successfully!', 'success');
   };
 
   const updateJob = () => {
     if (!editingJob.title.trim()) {
-      // Don't update job without title - form validation should prevent this
       return;
     }
 
@@ -113,7 +126,7 @@ const ClassroomJobs = ({
     setJobs(updatedJobs);
     setEditingJob(null);
     setShowEditJobModal(false);
-    // Removed notification - job update is visually obvious
+    showToast('Job updated successfully!', 'success');
   };
 
   const deleteJob = (jobId) => {
@@ -121,7 +134,7 @@ const ClassroomJobs = ({
     
     const updatedJobs = jobs.filter(job => job.id !== jobId);
     setJobs(updatedJobs);
-    // Removed notification - job deletion is visually obvious
+    showToast('Job deleted successfully!', 'success');
   };
 
   // ===============================================
@@ -148,7 +161,7 @@ const ClassroomJobs = ({
 
     // Check if job is at capacity
     if (targetJob.assignedStudents.length >= targetJob.maxStudents) {
-      // Job at capacity - visual feedback is sufficient
+      showToast('Job is at maximum capacity!', 'error');
       setDraggedStudent(null);
       setDraggedFrom(null);
       return;
@@ -177,7 +190,7 @@ const ClassroomJobs = ({
     });
 
     setJobs(finalJobs);
-    // Removed notification - student assignment is visually obvious
+    showToast(`${draggedStudent.firstName} assigned to ${targetJob.title}!`, 'success');
     setDraggedStudent(null);
     setDraggedFrom(null);
   };
@@ -200,7 +213,7 @@ const ClassroomJobs = ({
     });
 
     setJobs(updatedJobs);
-    // Removed notification - student removal is visually obvious
+    showToast(`${draggedStudent.firstName} removed from job!`, 'success');
     setDraggedStudent(null);
     setDraggedFrom(null);
   };
@@ -211,42 +224,46 @@ const ClassroomJobs = ({
 
   const payJob = (job) => {
     if (job.assignedStudents.length === 0) {
-      // No students assigned - button should be disabled anyway
+      showToast('No students assigned to this job!', 'error');
       return;
     }
 
+    let paymentCount = 0;
     job.assignedStudents.forEach(student => {
       if (job.payType === 'xp') {
-        onAwardXP(student, job.payAmount, `Job: ${job.title}`);
+        onAwardXP(student.id, job.payAmount, `Job: ${job.title}`);
       } else {
         // For coins, we'll award XP equivalent and let the coin calculation happen automatically
         // Since coins = totalXP / 5, awarding 5 XP = 1 coin
         const xpEquivalent = job.payAmount * 5; // Convert coins to XP
-        onAwardXP(student, xpEquivalent, `Job Payment: ${job.title}`);
+        onAwardXP(student.id, xpEquivalent, `Job Payment: ${job.title}`);
       }
+      paymentCount++;
     });
 
-    // Removed notification - payment is handled by the XP system
+    showToast(`Paid ${paymentCount} student(s) for ${job.title}!`, 'success');
   };
 
   const payAllJobs = () => {
     let totalPayments = 0;
+    let totalStudents = 0;
     
     jobs.forEach(job => {
       if (job.assignedStudents.length > 0) {
         job.assignedStudents.forEach(student => {
           if (job.payType === 'xp') {
-            onAwardXP(student, job.payAmount, `Job: ${job.title}`);
+            onAwardXP(student.id, job.payAmount, `Job: ${job.title}`);
           } else {
             const xpEquivalent = job.payAmount * 5;
-            onAwardXP(student, xpEquivalent, `Job Payment: ${job.title}`);
+            onAwardXP(student.id, xpEquivalent, `Job Payment: ${job.title}`);
           }
-          totalPayments++;
+          totalStudents++;
         });
+        totalPayments++;
       }
     });
 
-    // Removed notifications - payment is handled by the XP system
+    showToast(`Paid all jobs! ${totalStudents} students received payments for ${totalPayments} different jobs.`, 'success');
     setShowPayAllModal(false);
   };
 
@@ -550,7 +567,8 @@ const ClassroomJobs = ({
               </button>
               <button
                 onClick={createJob}
-                className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all"
+                disabled={!newJob.title.trim()}
+                className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Create Job
               </button>
@@ -671,7 +689,8 @@ const ClassroomJobs = ({
               </button>
               <button
                 onClick={updateJob}
-                className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all"
+                disabled={!editingJob.title.trim()}
+                className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Update Job
               </button>

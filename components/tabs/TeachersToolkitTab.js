@@ -1,4 +1,4 @@
-// components/tabs/TeachersToolkitTab.js - Enhanced with Birthday Wall
+// components/tabs/TeachersToolkitTab.js - Enhanced with Firebase Persistence for Jobs and Timetables
 import React, { useState, useEffect } from 'react';
 
 // Import tool components from the tools folder
@@ -267,6 +267,31 @@ const TeachersToolkitTab = ({
     type: 'countdown',
   });
 
+  // ADDED: Firebase data management for toolkit tools
+  const [toolkitData, setToolkitData] = useState({});
+
+  // Load toolkit data from Firebase via parent component
+  useEffect(() => {
+    // This would be loaded from the parent component's userData
+    if (userData?.classes) {
+      const currentClass = userData.classes.find(cls => cls.id === currentClassId);
+      if (currentClass?.toolkitData) {
+        setToolkitData(currentClass.toolkitData);
+      }
+    }
+  }, [userData, currentClassId]);
+
+  // ADDED: Save function for toolkit data
+  const saveToolkitData = async (updates) => {
+    const updatedToolkitData = { ...toolkitData, ...updates };
+    setToolkitData(updatedToolkitData);
+    
+    // Save to Firebase via parent component
+    if (saveClassroomDataToFirebase) {
+      saveClassroomDataToFirebase({ toolkitData: updatedToolkitData }, currentClassId);
+    }
+  };
+
   const isPro = userData?.subscription === 'pro' || true;
 
   const calculateBasicAnalytics = () => {
@@ -447,7 +472,7 @@ const TeachersToolkitTab = ({
             Teachers Toolkit
             <span className="text-4xl ml-4 animate-bounce">⚙️</span>
           </h2>
-          <p className="text-xl opacity-90">Professional classroom management tools</p>
+          <p className="text-xl opacity-90">Professional classroom management tools with auto-save</p>
         </div>
         <div className="absolute top-4 right-4 text-2xl animate-bounce" style={{ animationDelay: '0.5s' }}>
           🎯
@@ -477,6 +502,18 @@ const TeachersToolkitTab = ({
               <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-sm">🔬 Science</span>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Auto-Save Status Notice */}
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4">
+        <div className="flex items-center justify-center space-x-3">
+          <span className="text-2xl">💾</span>
+          <div className="text-center">
+            <p className="font-semibold text-blue-800">Auto-Save Enabled</p>
+            <p className="text-sm text-blue-600">Your classroom jobs and timetables are automatically saved to the cloud!</p>
+          </div>
+          <span className="text-green-500 text-xl">✅</span>
         </div>
       </div>
 
@@ -547,10 +584,21 @@ const TeachersToolkitTab = ({
         {/* Tool Content */}
         <div className="min-h-[600px]">
           {activeToolkitTab === 'classroom-jobs' && (
-            <ClassroomJobs students={students} showToast={showToast} onAwardXP={onAwardXP} />
+            <ClassroomJobs 
+              students={students} 
+              showToast={showToast} 
+              onAwardXP={onAwardXP}
+              saveData={saveToolkitData}
+              loadedData={toolkitData}
+            />
           )}
           {activeToolkitTab === 'timetable' && (
-            <TimetableCreator students={students} showToast={showToast} onSaveData={handleSaveTimetableData} />
+            <TimetableCreator 
+              students={students} 
+              showToast={showToast}
+              saveData={saveToolkitData}
+              loadedData={toolkitData}
+            />
           )}
           {activeToolkitTab === 'birthday-wall' && (
             <BirthdayWall
@@ -704,147 +752,6 @@ const TeachersToolkitTab = ({
             />
           )}
         </div>
-      </div>
-    </div>
-  );
-};
-
-// ===============================================
-// TIME SLOT EDITOR COMPONENT
-// ===============================================
-const TimeSlotEditor = ({ timeSlots, onSave, onCancel }) => {
-  const [editableSlots, setEditableSlots] = useState(timeSlots.map(slot => ({ ...slot })));
-
-  const addTimeSlot = () => {
-    const newSlot = {
-      id: `slot${editableSlots.length + 1}`,
-      start: '09:00',
-      end: '09:50',
-      label: `Period ${editableSlots.length + 1}`,
-    };
-    setEditableSlots([...editableSlots, newSlot]);
-  };
-
-  const removeTimeSlot = (index) => {
-    if (editableSlots.length > 1) {
-      setEditableSlots(editableSlots.filter((_, i) => i !== index));
-    }
-  };
-
-  const updateTimeSlot = (index, field, value) => {
-    const updated = editableSlots.map((slot, i) => (i === index ? { ...slot, [field]: value } : slot));
-    setEditableSlots(updated);
-  };
-
-  const validateTimeSlots = () => {
-    for (let i = 0; i < editableSlots.length; i++) {
-      const slot = editableSlots[i];
-      const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
-      if (!timeRegex.test(slot.start) || !timeRegex.test(slot.end)) {
-        return `Invalid time format in ${slot.label}`;
-      }
-      const startMinutes = parseTime(slot.start);
-      const endMinutes = parseTime(slot.end);
-      if (startMinutes >= endMinutes) {
-        return `Start time must be before end time in ${slot.label}`;
-      }
-    }
-    return null;
-  };
-
-  const handleSave = () => {
-    const error = validateTimeSlots();
-    if (error) {
-      alert(error);
-      return;
-    }
-    onSave(editableSlots);
-  };
-
-  const parseTime = (timeString) => {
-    const [hours, minutes] = timeString.split(':').map(Number);
-    return hours * 60 + minutes;
-  };
-
-  return (
-    <div className="space-y-4">
-      <div className="max-h-96 overflow-y-auto">
-        {editableSlots.map((slot, index) => (
-          <div key={index} className="grid grid-cols-4 gap-4 items-center p-4 bg-gray-50 rounded-lg mb-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Label</label>
-              <input
-                type="text"
-                value={slot.label}
-                onChange={(e) => updateTimeSlot(index, 'label', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder="Period 1"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
-              <input
-                type="time"
-                value={slot.start}
-                onChange={(e) => updateTimeSlot(index, 'start', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
-              <input
-                type="time"
-                value={slot.end}
-                onChange={(e) => updateTimeSlot(index, 'end', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              />
-            </div>
-            <div className="flex items-end">
-              <button
-                onClick={() => removeTimeSlot(index)}
-                disabled={editableSlots.length === 1}
-                className="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Remove time slot"
-              >
-                🗑️
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="flex justify-between items-center pt-4 border-t border-gray-200">
-        <button
-          onClick={addTimeSlot}
-          className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all font-semibold"
-        >
-          ➕ Add Time Slot
-        </button>
-        <div className="flex space-x-3">
-          <button
-            onClick={onCancel}
-            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all font-semibold"
-          >
-            Save Time Slots
-          </button>
-        </div>
-      </div>
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <div className="flex items-center space-x-2 text-blue-700">
-          <span>💡</span>
-          <span className="font-semibold">Tips:</span>
-        </div>
-        <ul className="mt-2 text-sm text-blue-600 space-y-1">
-          <li>• Use 24-hour format (e.g., 14:30 for 2:30 PM)</li>
-          <li>• Make sure start time is before end time</li>
-          <li>• Consider breaks between periods</li>
-          <li>• You can add as many periods as needed</li>
-        </ul>
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-// pages/classroom-champions.js - COMPLETE FILE WITH TOOLKIT INTEGRATION AND PET FIX
+// pages/classroom-champions.js - COMPLETE FILE WITH TOOLKIT DATA PERSISTENCE
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
@@ -22,6 +22,7 @@ const DEFAULT_XP_CATEGORIES = [ { id: 1, label: 'Respectful', amount: 1, color: 
 
 // Standard Level-Up Avatars
 const AVAILABLE_AVATARS = [ 'Alchemist F', 'Alchemist M', 'Archer F', 'Archer M', 'Barbarian F', 'Barbarian M', 'Bard F', 'Bard M', 'Beastmaster F', 'Beastmaster M', 'Cleric F', 'Cleric M', 'Crystal Sage F', 'Crystal Sage M', 'Druid F', 'Druid M', 'Engineer F', 'Engineer M', 'Ice Mage F', 'Ice Mage M', 'Illusionist F', 'Illusionist M', 'Knight F', 'Knight M', 'Monk F', 'Monk M', 'Necromancer F', 'Necromancer M', 'Orc F', 'Orc M', 'Paladin F', 'Paladin M', 'Rogue F', 'Rogue M', 'Sky Knight F', 'Sky Knight M', 'Time Mage F', 'Time Mage M', 'Wizard F', 'Wizard M' ];
+
 // Standard Pets (Unlocked with XP)
 const PET_SPECIES = [ { name: 'Alchemist', type: 'alchemist', rarity: 'common' }, { name: 'Barbarian', type: 'barbarian', rarity: 'common' }, { name: 'Bard', type: 'bard', rarity: 'common' }, { name: 'Beastmaster', type: 'beastmaster', rarity: 'rare' }, { name: 'Cleric', type: 'cleric', rarity: 'common' }, { name: 'Crystal Knight', type: 'crystal knight', rarity: 'epic' }, { name: 'Crystal Sage', type: 'crystal sage', rarity: 'epic' }, { name: 'Engineer', type: 'engineer', rarity: 'rare' }, { name: 'Frost Mage', type: 'frost mage', rarity: 'rare' }, { name: 'Illusionist', type: 'illusionist', rarity: 'epic' }, { name: 'Knight', type: 'knight', rarity: 'common' }, { name: 'Lightning', type: 'lightning', rarity: 'legendary' }, { name: 'Monk', type: 'monk', rarity: 'common' }, { name: 'Necromancer', type: 'necromancer', rarity: 'epic' }, { name: 'Rogue', type: 'rogue', rarity: 'common' }, { name: 'Stealth', type: 'stealth', rarity: 'rare' }, { name: 'Time Knight', type: 'time knight', rarity: 'legendary' }, { name: 'Warrior', type: 'warrior', rarity: 'common' }, { name: 'Wizard', type: 'wizard', rarity: 'common' } ];
 
@@ -111,27 +112,36 @@ const ClassroomChampions = () => {
 
   const loadUserData = async (user) => {
     setLoading(true);
-    const docRef = doc(firestore, 'users', user.uid);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      const loadedUserData = docSnap.data();
-      setUserData(loadedUserData);
-      const activeClassId = loadedUserData.activeClassId || (loadedUserData.classes && loadedUserData.classes[0]?.id);
-      if (activeClassId) {
-        const activeClass = loadedUserData.classes.find(cls => cls.id === activeClassId);
-        setCurrentClassId(activeClass.id);
-        setStudents(activeClass.students || []);
-        setXpCategories(activeClass.xpCategories || DEFAULT_XP_CATEGORIES);
-        // Load additional data if available
-        setAttendanceData(activeClass.attendanceData || {});
-        setActiveQuests(activeClass.activeQuests || []);
+    try {
+      const docRef = doc(firestore, 'users', user.uid);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const loadedUserData = docSnap.data();
+        setUserData(loadedUserData);
+        const activeClassId = loadedUserData.activeClassId || (loadedUserData.classes && loadedUserData.classes[0]?.id);
+        if (activeClassId) {
+          const activeClass = loadedUserData.classes.find(cls => cls.id === activeClassId);
+          setCurrentClassId(activeClass.id);
+          setStudents(activeClass.students || []);
+          setXpCategories(activeClass.xpCategories || DEFAULT_XP_CATEGORIES);
+          // Load additional data if available
+          setAttendanceData(activeClass.attendanceData || {});
+          setActiveQuests(activeClass.activeQuests || []);
+        }
       }
+    } catch (error) {
+      console.error("Error loading user data:", error);
+      showToast('Error loading class data', 'error');
     }
     setLoading(false);
   };
 
-  // ROBUST FIREBASE SAVING
-  const updateAndSaveClass = async (updatedStudents, updatedCategories) => {
+  // ===============================================
+  // ROBUST FIREBASE SAVING FUNCTIONS
+  // ===============================================
+
+  // Main function to update and save class data
+  const updateAndSaveClass = async (updatedStudents, updatedCategories, additionalUpdates = {}) => {
     if (!user || !currentClassId) return;
     const docRef = doc(firestore, 'users', user.uid);
     try {
@@ -140,15 +150,23 @@ const ClassroomChampions = () => {
             const loadedUserData = docSnap.data();
             const updatedClasses = loadedUserData.classes.map(cls =>
                 cls.id === currentClassId 
-                    ? { ...cls, students: updatedStudents, xpCategories: updatedCategories || cls.xpCategories } 
+                    ? { 
+                        ...cls, 
+                        students: updatedStudents || cls.students, 
+                        xpCategories: updatedCategories || cls.xpCategories,
+                        ...additionalUpdates
+                      } 
                     : cls
             );
             await updateDoc(docRef, { classes: updatedClasses });
         }
-    } catch (error) { console.error("Error saving class data:", error); }
+    } catch (error) { 
+      console.error("Error saving class data:", error); 
+      showToast('Error saving data', 'error');
+    }
   };
 
-  // General save for tool data
+  // General save for tool data - ENHANCED for toolkit components
   const saveClassData = async (updates) => {
     if (!user || !currentClassId) return;
     const docRef = doc(firestore, 'users', user.uid);
@@ -160,10 +178,18 @@ const ClassroomChampions = () => {
           cls.id === currentClassId ? { ...cls, ...updates } : cls
         );
         await updateDoc(docRef, { classes: updatedClasses });
-        showToast('Data saved successfully!', 'success');
+        
+        // Update local userData state to reflect changes
+        setUserData({
+          ...loadedUserData,
+          classes: updatedClasses
+        });
+        
+        console.log('Toolkit data saved successfully!', updates);
       }
     } catch (error) {
       console.error("Error saving tool data:", error);
+      showToast('Error saving toolkit data', 'error');
     }
   };
 
@@ -181,7 +207,49 @@ const ClassroomChampions = () => {
     }
   };
 
+  // ENHANCED: Save toolkit data (jobs, timetables, etc.)
+  const saveToolkitDataToFirebase = async (toolkitUpdates) => {
+    if (!user || !currentClassId) return;
+    
+    try {
+      const docRef = doc(firestore, 'users', user.uid);
+      const docSnap = await getDoc(docRef);
+      
+      if (docSnap.exists()) {
+        const loadedUserData = docSnap.data();
+        const updatedClasses = loadedUserData.classes.map(cls => {
+          if (cls.id === currentClassId) {
+            return {
+              ...cls,
+              toolkitData: {
+                ...cls.toolkitData,
+                ...toolkitUpdates,
+                lastUpdated: new Date().toISOString()
+              }
+            };
+          }
+          return cls;
+        });
+        
+        await updateDoc(docRef, { classes: updatedClasses });
+        
+        // Update local state
+        setUserData({
+          ...loadedUserData,
+          classes: updatedClasses
+        });
+        
+        console.log('Toolkit data saved:', toolkitUpdates);
+      }
+    } catch (error) {
+      console.error("Error saving toolkit data:", error);
+      showToast('Error saving toolkit data', 'error');
+    }
+  };
+
+  // ===============================================
   // STATE HANDLERS
+  // ===============================================
   const handleReorderStudents = (reorderedStudents) => {
     setStudents(reorderedStudents);
     updateAndSaveClass(reorderedStudents, xpCategories);
@@ -250,6 +318,42 @@ const ClassroomChampions = () => {
     showToast('Attendance updated!', 'success');
   };
 
+  // ENHANCED: Award XP function for toolkit components (especially classroom jobs)
+  const handleAwardXPFromToolkit = (studentId, amount, reason = '') => {
+    const student = students.find(s => s.id === studentId);
+    if (!student) return;
+
+    const oldLevel = calculateAvatarLevel(student.totalPoints || 0);
+    const newTotalPoints = (student.totalPoints || 0) + amount;
+    const newLevel = calculateAvatarLevel(newTotalPoints);
+    
+    const updatedStudent = {
+      ...student,
+      totalPoints: newTotalPoints,
+      lastUpdated: new Date().toISOString()
+    };
+
+    // Check for level up
+    if (newLevel > oldLevel) {
+      setLevelUpData({ student: updatedStudent, oldLevel, newLevel });
+    }
+
+    // Check for pet unlock
+    if (shouldReceivePet(updatedStudent)) {
+      const newPet = getRandomPet();
+      updatedStudent.ownedPets = [...(updatedStudent.ownedPets || []), newPet];
+      setPetUnlockData({ student: updatedStudent, pet: newPet });
+    }
+
+    // Update students array
+    const newStudents = students.map(s => s.id === studentId ? updatedStudent : s);
+    setStudents(newStudents);
+    updateAndSaveClass(newStudents, xpCategories);
+    
+    playSound('ding');
+    showToast(`${student.firstName} earned ${amount} XP${reason ? ` for ${reason}` : ''}!`, 'success');
+  };
+
   // RENDER LOGIC
   const renderTabContent = () => {
     switch (activeTab) {
@@ -296,7 +400,7 @@ const ClassroomChampions = () => {
                   saveGroupDataToFirebase={saveGroupDataToFirebase}
                   saveClassroomDataToFirebase={saveClassroomDataToFirebase}
                   currentClassId={currentClassId}
-                  onAwardXP={(studentId, amount) => handleBulkAward([studentId], amount, 'xp')}
+                  onAwardXP={handleAwardXPFromToolkit}
                   activeQuests={activeQuests}
                   attendanceData={attendanceData}
                   markAttendance={markAttendance}
