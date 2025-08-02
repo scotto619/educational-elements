@@ -214,48 +214,68 @@ const LiteracyWarmup = ({ showToast = () => {}, students = [] }) => {
   const currentStep = WARMUP_STEPS[currentStepIndex];
 
   // Fullscreen functionality
-  const toggleFullscreen = async () => {
-    try {
-      if (!isFullscreen) {
-        if (fullscreenRef.current.requestFullscreen) {
-          await fullscreenRef.current.requestFullscreen();
-        } else if (fullscreenRef.current.webkitRequestFullscreen) {
-          await fullscreenRef.current.webkitRequestFullscreen();
-        } else if (fullscreenRef.current.msRequestFullscreen) {
-          await fullscreenRef.current.msRequestFullscreen();
+  const toggleFullscreen = () => {
+    if (!isFullscreen) {
+      // Enter fullscreen
+      const element = fullscreenRef.current;
+      if (element) {
+        const requestFullscreen = element.requestFullscreen || 
+                                 element.webkitRequestFullscreen || 
+                                 element.msRequestFullscreen;
+        
+        if (requestFullscreen) {
+          requestFullscreen.call(element).then(() => {
+            setIsFullscreen(true);
+            showToast('Entered fullscreen mode - perfect for classroom display!', 'success');
+          }).catch((error) => {
+            console.error('Fullscreen error:', error);
+            showToast('Fullscreen not supported in this browser', 'error');
+          });
+        } else {
+          showToast('Fullscreen not supported in this browser', 'error');
         }
-        setIsFullscreen(true);
-        showToast('Entered fullscreen mode - perfect for classroom display!', 'success');
-      } else {
-        if (document.exitFullscreen) {
-          await document.exitFullscreen();
-        } else if (document.webkitExitFullscreen) {
-          await document.webkitExitFullscreen();
-        } else if (document.msExitFullscreen) {
-          await document.msExitFullscreen();
-        }
-        setIsFullscreen(false);
-        showToast('Exited fullscreen mode', 'info');
       }
-    } catch (error) {
-      console.error('Fullscreen error:', error);
+    } else {
+      // Exit fullscreen
+      const exitFullscreen = document.exitFullscreen || 
+                            document.webkitExitFullscreen || 
+                            document.msExitFullscreen;
+      
+      if (exitFullscreen) {
+        exitFullscreen.call(document).then(() => {
+          setIsFullscreen(false);
+          showToast('Exited fullscreen mode', 'info');
+        }).catch((error) => {
+          console.error('Exit fullscreen error:', error);
+          setIsFullscreen(false); // Force state reset
+        });
+      }
     }
   };
 
   // Listen for fullscreen changes (e.g., ESC key)
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setIsFullscreen(Boolean(document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement));
+      const isCurrentlyFullscreen = Boolean(
+        document.fullscreenElement || 
+        document.webkitFullscreenElement || 
+        document.msFullscreenElement ||
+        document.mozFullScreenElement
+      );
+      setIsFullscreen(isCurrentlyFullscreen);
     };
 
+    // Add event listeners for different browsers
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
     document.addEventListener('msfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
 
     return () => {
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
       document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
       document.removeEventListener('msfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
     };
   }, []);
 
