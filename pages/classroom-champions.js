@@ -1,5 +1,5 @@
-// pages/classroom-champions.js - COMPLETE FILE WITH CENTRALIZED SHOP DATA
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+// pages/classroom-champions.js - UPDATED WITH TEACHERS TOOLKIT INTEGRATION AND PET DISPLAY FIX
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -37,17 +37,24 @@ const SHOP_PREMIUM_PETS = [ { name: 'Snake Pet', price: 50, path: '/shop/Premium
 // SMART IMAGE HELPER FUNCTIONS
 // ===============================================
 const getAvatarImage = (avatarBase, level) => {
-    const shopItem = [...SHOP_BASIC_AVATARS, ...SHOP_PREMIUM_AVATARS].find(a => a.name === avatarBase);
+    const shopItem = [...SHOP_BASIC_AVATARS, ...SHOP_PREMIUM_AVATARS].find(a => a.name.toLowerCase() === avatarBase?.toLowerCase());
     if (shopItem) return shopItem.path;
     return `/avatars/${avatarBase || 'Wizard F'}/Level ${Math.max(1, Math.min(level || 1, 4))}.png`;
 };
 
 const getPetImage = (pet) => {
     if (!pet || !pet.name) return '/Pets/Wizard.png';
-    const shopItem = [...SHOP_BASIC_PETS, ...SHOP_PREMIUM_PETS].find(p => p.name === pet.name);
+
+    // First, check if pet has a direct path (for shop pets)
+    if (pet.path) return pet.path;
+
+    // Then, check shop items (case insensitive)
+    const shopItem = [...SHOP_BASIC_PETS, ...SHOP_PREMIUM_PETS].find(p => p.name.toLowerCase() === pet.name.toLowerCase());
     if (shopItem) return shopItem.path;
-    const key = (pet.type || pet.name).toLowerCase();
-    const map = { 'alchemist': '/Pets/Alchemist.png', 'barbarian': '/Pets/Barbarian.png', 'bard': '/Pets/Bard.png', 'beastmaster': '/Pets/Beastmaster.png', 'cleric': '/Pets/Cleric.png', 'crystal knight': '/Pets/Crystal Knight.png', 'crystal sage': '/Pets/Crystal Sage.png', 'engineer': '/Pets/Engineer.png', 'frost mage': '/Pets/Frost Mage.png', 'illusionist': '/Pets/Illusionist.png', 'knight': '/Pets/Knight.png', 'lightning': '/Pets/Lightning.png', 'monk': '/Pets/Monk.png', 'necromancer': '/Pets/Necromancer.png', 'rogue': '/Pets/Rogue.png', 'stealth': '/Pets/Stealth.png', 'time knight': '/Pets/Time Knight.png', 'warrior': '/Pets/Warrior.png', 'wizard': '/Pets/Wizard.png' };
+
+    // For standard pets
+    const key = (pet.type || pet.name || '').toLowerCase();
+    const map = { 'alchemist': '/Pets/Alchemist.png', 'barbarian': '/Pets/Barbarian.png', 'bard': '/Pets/Bard.png', 'beastmaster': '/Pets/Beastmaster.png', 'cleric': '/Pets/Cleric.png', 'crystal knight': '/Pets/Crystal Knight.png', 'crystal sage': '/Pets/Crystal Sage.png', 'engineer': '/Pets/Engineer.png', 'frost mage': '/Pets/Frost Mage.png', 'illusionist': '/Pets/Illusionist.png', 'knight': '/Pets/Knight.png', 'lightning': '/Pets/Lightning.png', 'monk': '/Pets/Monk.png', 'necromancer': '/Pets/Necromancer.png', 'rogue': '/Pets/Rogue.png', 'stealth': '/Pets/Stealth.png', 'time knight': '/Pets/Time Knight.png', 'warrior': '/Pets/Warrior.png', 'wizard': '/Pets/Wizard.png', 'dragon': '/Pets/Lightning.png', 'phoenix': '/Pets/Crystal Sage.png', 'unicorn': '/Pets/Time Knight.png', 'wolf': '/Pets/Warrior.png', 'owl': '/Pets/Wizard.png', 'cat': '/Pets/Rogue.png', 'tiger': '/Pets/Barbarian.png', 'bear': '/Pets/Beastmaster.png', 'lion': '/Pets/Knight.png', 'eagle': '/Pets/Stealth.png' };
     return map[key] || '/Pets/Wizard.png';
 };
 
@@ -78,6 +85,7 @@ const ClassroomChampions = () => {
   
   // States
   const [user, setUser] = useState(null);
+  const [userData, setUserData] = useState({});
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('students');
   const [students, setStudents] = useState([]);
@@ -89,6 +97,8 @@ const ClassroomChampions = () => {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [newStudentFirstName, setNewStudentFirstName] = useState('');
   const [newStudentLastName, setNewStudentLastName] = useState('');
+  const [attendanceData, setAttendanceData] = useState({});
+  const [activeQuests, setActiveQuests] = useState([]);
 
   // AUTH & DATA LOADING
   useEffect(() => {
@@ -104,13 +114,17 @@ const ClassroomChampions = () => {
     const docRef = doc(firestore, 'users', user.uid);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
-      const userData = docSnap.data();
-      const activeClassId = userData.activeClassId || (userData.classes && userData.classes[0]?.id);
+      const loadedUserData = docSnap.data();
+      setUserData(loadedUserData);
+      const activeClassId = loadedUserData.activeClassId || (loadedUserData.classes && loadedUserData.classes[0]?.id);
       if (activeClassId) {
-        const activeClass = userData.classes.find(cls => cls.id === activeClassId);
+        const activeClass = loadedUserData.classes.find(cls => cls.id === activeClassId);
         setCurrentClassId(activeClass.id);
         setStudents(activeClass.students || []);
         setXpCategories(activeClass.xpCategories || DEFAULT_XP_CATEGORIES);
+        // Load additional data if available
+        setAttendanceData(activeClass.attendanceData || {});
+        setActiveQuests(activeClass.activeQuests || []);
       }
     }
     setLoading(false);
@@ -123,8 +137,8 @@ const ClassroomChampions = () => {
     try {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-            const userData = docSnap.data();
-            const updatedClasses = userData.classes.map(cls =>
+            const loadedUserData = docSnap.data();
+            const updatedClasses = loadedUserData.classes.map(cls =>
                 cls.id === currentClassId 
                     ? { ...cls, students: updatedStudents, xpCategories: updatedCategories || cls.xpCategories } 
                     : cls
@@ -133,7 +147,40 @@ const ClassroomChampions = () => {
         }
     } catch (error) { console.error("Error saving class data:", error); }
   };
-    
+
+  // General save for tool data
+  const saveClassData = async (updates) => {
+    if (!user || !currentClassId) return;
+    const docRef = doc(firestore, 'users', user.uid);
+    try {
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const loadedUserData = docSnap.data();
+        const updatedClasses = loadedUserData.classes.map(cls =>
+          cls.id === currentClassId ? { ...cls, ...updates } : cls
+        );
+        await updateDoc(docRef, { classes: updatedClasses });
+        showToast('Data saved successfully!', 'success');
+      }
+    } catch (error) {
+      console.error("Error saving tool data:", error);
+    }
+  };
+
+  // Tool-specific save functions
+  const saveGroupDataToFirebase = async (groupData) => {
+    await saveClassData({ groupData });
+  };
+
+  const saveClassroomDataToFirebase = async (data, classId) => {
+    // Handle both students array (e.g., for birthday updates) and object (e.g., layout)
+    if (Array.isArray(data)) {
+      await updateAndSaveClass(data, xpCategories);
+    } else {
+      await saveClassData({ classroomData: data });
+    }
+  };
+
   // STATE HANDLERS
   const handleReorderStudents = (reorderedStudents) => {
     setStudents(reorderedStudents);
@@ -187,6 +234,22 @@ const ClassroomChampions = () => {
     setNewStudentFirstName(''); setNewStudentLastName(''); setShowAddStudentModal(false);
   };
 
+  // Mark attendance handler
+  const markAttendance = (studentId, status) => {
+    const today = new Date().toISOString().split('T')[0];
+    const updatedAttendance = {
+      ...attendanceData,
+      [today]: {
+        ...(attendanceData[today] || {}),
+        [studentId]: status,
+      },
+    };
+    setAttendanceData(updatedAttendance);
+    // Save to Firebase
+    saveClassData({ attendanceData: updatedAttendance });
+    showToast('Attendance updated!', 'success');
+  };
+
   // RENDER LOGIC
   const renderTabContent = () => {
     switch (activeTab) {
@@ -223,6 +286,22 @@ const ClassroomChampions = () => {
         return <CurriculumCornerTab 
                   students={students}
                   showToast={showToast}
+                />;
+      case 'toolkit':
+        return <TeachersToolkitTab 
+                  students={students}
+                  user={user}
+                  showToast={showToast}
+                  userData={userData}
+                  saveGroupDataToFirebase={saveGroupDataToFirebase}
+                  saveClassroomDataToFirebase={saveClassroomDataToFirebase}
+                  currentClassId={currentClassId}
+                  onAwardXP={(studentId, amount) => handleBulkAward([studentId], amount, 'xp')}
+                  activeQuests={activeQuests}
+                  attendanceData={attendanceData}
+                  markAttendance={markAttendance}
+                  completeQuest={() => showToast('Quest completed!', 'success')} // Dummy if no quests
+                  setShowQuestManagement={() => showToast('Quest management opened!', 'info')} // Dummy
                 />;
       default:
         return <div className="p-8 text-center text-gray-500">This tab is under construction.</div>;
