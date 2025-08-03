@@ -1,4 +1,4 @@
-// pages/classroom-champions.js - COMPLETE FILE WITH TOOLKIT DATA PERSISTENCE
+// pages/classroom-champions.js - FIXED FILE WITH CORRECT TOOLKIT DATA PERSISTENCE
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
@@ -159,6 +159,12 @@ const ClassroomChampions = () => {
                     : cls
             );
             await updateDoc(docRef, { classes: updatedClasses });
+            
+            // FIXED: Update local userData state to reflect changes
+            setUserData({
+              ...loadedUserData,
+              classes: updatedClasses
+            });
         }
     } catch (error) { 
       console.error("Error saving class data:", error); 
@@ -179,11 +185,11 @@ const ClassroomChampions = () => {
         );
         await updateDoc(docRef, { classes: updatedClasses });
         
-        // Update local userData state to reflect changes
-        const newUserData = { ...loadedUserData, classes: updatedClasses };
-        setUserData(newUserData);
-        
-        console.log('Class data saved successfully!', updates);
+        // FIXED: Update local userData state to reflect changes
+        setUserData({
+          ...loadedUserData,
+          classes: updatedClasses
+        });
       }
     } catch (error) {
       console.error("Error saving tool data:", error);
@@ -197,7 +203,7 @@ const ClassroomChampions = () => {
   };
 
   const saveClassroomDataToFirebase = async (data, classId) => {
-    // This function can now correctly handle student array updates or other specific data objects
+    // Handle both students array (e.g., for birthday updates) and object (e.g., layout)
     if (Array.isArray(data)) {
       await updateAndSaveClass(data, xpCategories);
     } else {
@@ -205,10 +211,12 @@ const ClassroomChampions = () => {
     }
   };
 
-  // CORRECTED: This is the dedicated function for saving all toolkit data.
-  // It merges new data with existing toolkit data, ensuring nothing is overwritten.
+  // FIXED: Enhanced toolkit data save function with better error handling and debugging
   const saveToolkitDataToFirebase = async (toolkitUpdates) => {
-    if (!user || !currentClassId) return;
+    if (!user || !currentClassId) {
+      console.error('Cannot save toolkit data: missing user or currentClassId');
+      return;
+    }
     
     try {
       const docRef = doc(firestore, 'users', user.uid);
@@ -216,32 +224,42 @@ const ClassroomChampions = () => {
       
       if (docSnap.exists()) {
         const loadedUserData = docSnap.data();
-        
         const updatedClasses = loadedUserData.classes.map(cls => {
           if (cls.id === currentClassId) {
-            // Merge new updates with existing toolkitData
-            const updatedToolkitData = {
-              ...cls.toolkitData, // Keep existing toolkit data
-              ...toolkitUpdates,  // Add or overwrite with new updates
-              lastUpdated: new Date().toISOString()
+            return {
+              ...cls,
+              toolkitData: {
+                ...cls.toolkitData,
+                ...toolkitUpdates,
+                lastUpdated: new Date().toISOString()
+              }
             };
-            return { ...cls, toolkitData: updatedToolkitData };
           }
           return cls;
         });
         
         await updateDoc(docRef, { classes: updatedClasses });
         
-        // Update local state to ensure UI consistency
-        const newUserData = { ...loadedUserData, classes: updatedClasses };
-        setUserData(newUserData);
+        // FIXED: Update local state immediately
+        setUserData({
+          ...loadedUserData,
+          classes: updatedClasses
+        });
         
-        console.log('Toolkit data saved:', toolkitUpdates);
+        console.log('✅ Toolkit data saved successfully:', toolkitUpdates);
       }
     } catch (error) {
-      console.error("Error saving toolkit data:", error);
+      console.error("❌ Error saving toolkit data:", error);
       showToast('Error saving toolkit data', 'error');
     }
+  };
+
+  // FIXED: Get current class toolkit data for passing to components
+  const getCurrentClassToolkitData = () => {
+    if (!userData.classes || !currentClassId) return {};
+    
+    const currentClass = userData.classes.find(cls => cls.id === currentClassId);
+    return currentClass?.toolkitData || {};
   };
 
   // ===============================================
@@ -315,7 +333,7 @@ const ClassroomChampions = () => {
     showToast('Attendance updated!', 'success');
   };
 
-  // Award XP function for toolkit components (especially classroom jobs)
+  // ENHANCED: Award XP function for toolkit components (especially classroom jobs)
   const handleAwardXPFromToolkit = (studentId, amount, reason = '') => {
     const student = students.find(s => s.id === studentId);
     if (!student) return;
@@ -353,9 +371,6 @@ const ClassroomChampions = () => {
 
   // RENDER LOGIC
   const renderTabContent = () => {
-    // ADDED: Find the current class data to pass down
-    const currentClass = userData.classes?.find(cls => cls.id === currentClassId);
-
     switch (activeTab) {
       case 'students':
         return <StudentsTab 
@@ -397,19 +412,20 @@ const ClassroomChampions = () => {
                   user={user}
                   showToast={showToast}
                   userData={userData}
-                  // REMOVED: saveGroupDataToFirebase and saveClassroomDataToFirebase to avoid confusion
+                  saveGroupDataToFirebase={saveGroupDataToFirebase}
+                  saveClassroomDataToFirebase={saveClassroomDataToFirebase}
                   currentClassId={currentClassId}
                   onAwardXP={handleAwardXPFromToolkit}
                   activeQuests={activeQuests}
                   attendanceData={attendanceData}
                   markAttendance={markAttendance}
-                  completeQuest={() => showToast('Quest completed!', 'success')}
-                  setShowQuestManagement={() => showToast('Quest management opened!', 'info')}
+                  completeQuest={() => showToast('Quest completed!', 'success')} // Fallback if no quests
+                  setShowQuestManagement={() => showToast('Quest management opened!', 'info')} // Fallback
                   getAvatarImage={getAvatarImage}
                   calculateAvatarLevel={calculateAvatarLevel}
-                  // CHANGED: Pass the dedicated save function and the correctly loaded data for the toolkit.
+                  // FIXED: Pass the correct toolkit save function and loaded data
                   saveToolkitData={saveToolkitDataToFirebase}
-                  loadedData={currentClass?.toolkitData || {}}
+                  loadedData={getCurrentClassToolkitData()}
                 />;
       default:
         return <div className="p-8 text-center text-gray-500">This tab is under construction.</div>;

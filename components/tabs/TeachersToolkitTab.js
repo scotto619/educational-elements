@@ -1,5 +1,5 @@
-// components/tabs/TeachersToolkitTab.js - Enhanced with Firebase Persistence for Jobs and Timetables
-import React, { useState } from 'react'; // REMOVED useEffect
+// components/tabs/TeachersToolkitTab.js - FIXED with correct prop passing for Toolkit Data Persistence
+import React, { useState } from 'react';
 
 // Import tool components from the tools folder
 import StudentHelpQueue from '../tools/StudentHelpQueue';
@@ -204,15 +204,15 @@ const BirthdayWall = ({ students, showToast, saveClassroomDataToFirebase, curren
 };
 
 // ===============================================
-// TEACHERS TOOLKIT TAB COMPONENT
+// TEACHERS TOOLKIT TAB COMPONENT - FIXED
 // ===============================================
 const TeachersToolkitTab = ({
   students = [],
   user,
   showToast = () => {},
   userData = {},
-  // REMOVED: saveGroupDataToFirebase (now handled by saveToolkitData)
-  // REMOVED: saveClassroomDataToFirebase for toolkit context
+  saveGroupDataToFirebase,
+  saveClassroomDataToFirebase,
   currentClassId,
   onAwardXP = () => {},
   activeQuests = [],
@@ -222,11 +222,11 @@ const TeachersToolkitTab = ({
   setShowQuestManagement,
   getAvatarImage,
   calculateAvatarLevel,
-  // ADDED: Props for the new standardized saving mechanism
-  saveToolkitData,
-  loadedData,
+  // FIXED: Added the missing props that were causing the saving issues
+  saveToolkitData, // This is the function to save toolkit-specific data
+  loadedData, // This contains the loaded toolkit data
 }) => {
-  const [activeToolkitTab, setActiveToolkitTab] = useState('timetable');
+  const [activeToolkitTab, setActiveToolkitTab] = useState('classroom-jobs');
   const [attendanceState, setAttendanceState] = useState(attendanceData);
   const [timerSettings, setTimerSettings] = useState({
     minutes: 5,
@@ -238,8 +238,6 @@ const TeachersToolkitTab = ({
     isPaused: false,
     type: 'countdown',
   });
-
-  // REMOVED: local toolkitData state and useEffect, as this is now managed by the parent component.
 
   const isPro = userData?.subscription === 'pro' || true;
 
@@ -295,10 +293,17 @@ const TeachersToolkitTab = ({
     showToast(`Attendance marked for student`, 'success');
   };
 
-  // REMOVED: handleSaveTimetableData (now handled by the generic `saveData` prop in TimetableCreator)
-
   if (!isPro) {
-    // ... (No changes in the PRO user check section)
+    return (
+      <div className="text-center bg-gradient-to-r from-orange-100 to-red-100 border border-orange-300 rounded-xl p-8">
+        <div className="text-6xl mb-4">🔒</div>
+        <h2 className="text-3xl font-bold text-gray-800 mb-4">Teachers Toolkit - Pro Feature</h2>
+        <p className="text-gray-600 mb-6">Unlock powerful classroom management tools with a Pro subscription!</p>
+        <button className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-3 rounded-lg font-semibold hover:shadow-lg transition-all">
+          Upgrade to Pro
+        </button>
+      </div>
+    );
   }
 
   const analytics = calculateBasicAnalytics();
@@ -321,7 +326,7 @@ const TeachersToolkitTab = ({
 
   return (
     <div className="space-y-6">
-       {/* ... (No changes in header, notices, or dashboard sections) */}
+      {/* Header */}
       <div className="text-center bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 text-white rounded-2xl p-8 shadow-2xl relative overflow-hidden">
         <div className="absolute inset-0 bg-black bg-opacity-10"></div>
         <div className="relative z-10">
@@ -333,6 +338,8 @@ const TeachersToolkitTab = ({
           <p className="text-xl opacity-90">Professional classroom management tools with auto-save</p>
         </div>
       </div>
+
+      {/* Auto-save notice */}
       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4">
         <div className="flex items-center justify-center space-x-3">
           <span className="text-2xl">💾</span>
@@ -343,9 +350,53 @@ const TeachersToolkitTab = ({
           <span className="text-green-500 text-xl">✅</span>
         </div>
       </div>
-       {/* ... (No changes in Quick Action Dashboard section) */}
+
+      {/* Quick Action Dashboard */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        {/*...buttons...*/}
+        <button
+          onClick={() => setActiveToolkitTab('classroom-jobs')}
+          className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-4 rounded-xl hover:shadow-lg transition-all text-center"
+        >
+          <div className="text-3xl mb-2">💼</div>
+          <div className="font-semibold">Classroom Jobs</div>
+          <div className="text-sm opacity-90">Assign responsibilities</div>
+        </button>
+        
+        <button
+          onClick={() => setActiveToolkitTab('timetable')}
+          className="bg-gradient-to-r from-indigo-500 to-indigo-600 text-white p-4 rounded-xl hover:shadow-lg transition-all text-center"
+        >
+          <div className="text-3xl mb-2">📅</div>
+          <div className="font-semibold">Timetable</div>
+          <div className="text-sm opacity-90">Schedule management</div>
+        </button>
+
+        <button
+          onClick={() => setActiveToolkitTab('attendance')}
+          className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 rounded-xl hover:shadow-lg transition-all text-center"
+        >
+          <div className="text-3xl mb-2">✅</div>
+          <div className="font-semibold">Attendance</div>
+          <div className="text-sm opacity-90">{attendanceStats.averageAttendance}% avg</div>
+        </button>
+
+        <button
+          onClick={() => setActiveToolkitTab('analytics')}
+          className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 rounded-xl hover:shadow-lg transition-all text-center"
+        >
+          <div className="text-3xl mb-2">📊</div>
+          <div className="font-semibold">Analytics</div>
+          <div className="text-sm opacity-90">{analytics.totalStudents} students</div>
+        </button>
+
+        <button
+          onClick={() => setActiveToolkitTab('group-maker')}
+          className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white p-4 rounded-xl hover:shadow-lg transition-all text-center"
+        >
+          <div className="text-3xl mb-2">👥</div>
+          <div className="font-semibold">Group Maker</div>
+          <div className="text-sm opacity-90">Create teams</div>
+        </button>
       </div>
 
       {/* Main Toolkit Interface */}
@@ -375,7 +426,7 @@ const TeachersToolkitTab = ({
               students={students} 
               showToast={showToast} 
               onAwardXP={onAwardXP}
-              // CHANGED: Pass down the correct save function and loaded data
+              // FIXED: Pass the correct save function and loaded data
               saveData={saveToolkitData}
               loadedData={loadedData}
             />
@@ -384,7 +435,7 @@ const TeachersToolkitTab = ({
             <TimetableCreator 
               students={students} 
               showToast={showToast}
-              // CHANGED: Pass down the correct save function and loaded data
+              // FIXED: Pass the correct save function and loaded data
               saveData={saveToolkitData}
               loadedData={loadedData}
             />
@@ -400,18 +451,258 @@ const TeachersToolkitTab = ({
               calculateAvatarLevel={calculateAvatarLevel}
             />
           )}
-          {/* ... (No changes needed for other tools like Help Queue, Analytics, etc.) */}
+
+          {/* Help Queue */}
+          {activeToolkitTab === 'help-queue' && (
+            <StudentHelpQueue 
+              students={students} 
+              showToast={showToast} 
+            />
+          )}
+
+          {/* Attendance */}
+          {activeToolkitTab === 'attendance' && (
+            <div className="space-y-6">
+              <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                <span className="text-3xl mr-3">✅</span>
+                Attendance Tracker
+              </h3>
+              
+              <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-6">
+                <h4 className="font-bold text-lg text-green-800 mb-4">Today's Attendance</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {students.map(student => {
+                    const today = new Date().toISOString().split('T')[0];
+                    const todayStatus = attendanceState[today]?.[student.id];
+                    
+                    return (
+                      <div key={student.id} className="bg-white rounded-lg p-4 shadow-md">
+                        <div className="flex items-center space-x-3 mb-3">
+                          <img
+                            src={getAvatarImage(student.avatarBase, calculateAvatarLevel(student.totalPoints))}
+                            alt={`${student.firstName}'s Avatar`}
+                            className="w-10 h-10 rounded-full border-2 border-gray-300"
+                          />
+                          <div>
+                            <div className="font-semibold">{student.firstName} {student.lastName}</div>
+                            <div className="text-sm text-gray-500">
+                              Status: <span className={`font-semibold ${
+                                todayStatus === 'present' ? 'text-green-600' :
+                                todayStatus === 'absent' ? 'text-red-600' :
+                                todayStatus === 'late' ? 'text-yellow-600' : 'text-gray-500'
+                              }`}>
+                                {todayStatus || 'Not marked'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleMarkAttendance(student.id, 'present')}
+                            className={`flex-1 px-3 py-2 rounded text-sm font-medium transition-all ${
+                              todayStatus === 'present' 
+                                ? 'bg-green-500 text-white' 
+                                : 'bg-green-100 text-green-700 hover:bg-green-200'
+                            }`}
+                          >
+                            Present
+                          </button>
+                          <button
+                            onClick={() => handleMarkAttendance(student.id, 'late')}
+                            className={`flex-1 px-3 py-2 rounded text-sm font-medium transition-all ${
+                              todayStatus === 'late' 
+                                ? 'bg-yellow-500 text-white' 
+                                : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                            }`}
+                          >
+                            Late
+                          </button>
+                          <button
+                            onClick={() => handleMarkAttendance(student.id, 'absent')}
+                            className={`flex-1 px-3 py-2 rounded text-sm font-medium transition-all ${
+                              todayStatus === 'absent' 
+                                ? 'bg-red-500 text-white' 
+                                : 'bg-red-100 text-red-700 hover:bg-red-200'
+                            }`}
+                          >
+                            Absent
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Analytics */}
+          {activeToolkitTab === 'analytics' && (
+            <div className="space-y-6">
+              <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                <span className="text-3xl mr-3">📊</span>
+                Class Analytics
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="bg-blue-50 rounded-xl p-6 border-l-4 border-blue-500">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-blue-600 text-sm font-medium">Total Students</p>
+                      <p className="text-3xl font-bold text-blue-800">{analytics.totalStudents}</p>
+                    </div>
+                    <div className="text-4xl">👥</div>
+                  </div>
+                </div>
+
+                <div className="bg-green-50 rounded-xl p-6 border-l-4 border-green-500">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-green-600 text-sm font-medium">Average XP</p>
+                      <p className="text-3xl font-bold text-green-800">{analytics.averageXP}</p>
+                    </div>
+                    <div className="text-4xl">⭐</div>
+                  </div>
+                </div>
+
+                <div className="bg-purple-50 rounded-xl p-6 border-l-4 border-purple-500">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-purple-600 text-sm font-medium">High Performers</p>
+                      <p className="text-3xl font-bold text-purple-800">{analytics.highPerformers}</p>
+                    </div>
+                    <div className="text-4xl">🏆</div>
+                  </div>
+                </div>
+
+                <div className="bg-orange-50 rounded-xl p-6 border-l-4 border-orange-500">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-orange-600 text-sm font-medium">Needs Support</p>
+                      <p className="text-3xl font-bold text-orange-800">{analytics.needsAttention}</p>
+                    </div>
+                    <div className="text-4xl">📈</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Attendance Analytics */}
+              <div className="bg-white rounded-xl p-6 shadow-lg">
+                <h4 className="text-xl font-bold text-gray-800 mb-4">📊 Attendance Overview</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-green-600">{attendanceStats.averageAttendance}%</div>
+                    <div className="text-sm text-gray-600">Average Attendance</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-blue-600">{attendanceStats.totalDaysTracked}</div>
+                    <div className="text-sm text-gray-600">Days Tracked</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-purple-600">{attendanceStats.perfectAttendanceStudents}</div>
+                    <div className="text-sm text-gray-600">Perfect Attendance</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quest Analytics */}
+              <div className="bg-white rounded-xl p-6 shadow-lg">
+                <h4 className="text-xl font-bold text-gray-800 mb-4">🎯 Quest Progress</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-indigo-600">{questAnalytics.totalQuests}</div>
+                    <div className="text-sm text-gray-600">Active Quests</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-green-600">{questAnalytics.totalCompletions}</div>
+                    <div className="text-sm text-gray-600">Total Completions</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-yellow-600">{questAnalytics.completionRate}%</div>
+                    <div className="text-sm text-gray-600">Completion Rate</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* XP Distribution */}
+              <div className="bg-white rounded-xl p-6 shadow-lg">
+                <h4 className="text-xl font-bold text-gray-800 mb-4">📈 XP Distribution</h4>
+                <div className="space-y-3">
+                  {[
+                    { range: '300+ XP', color: 'bg-purple-500', count: students.filter(s => (s.totalPoints || 0) >= 300).length },
+                    { range: '200-299 XP', color: 'bg-blue-500', count: students.filter(s => (s.totalPoints || 0) >= 200 && (s.totalPoints || 0) < 300).length },
+                    { range: '100-199 XP', color: 'bg-green-500', count: students.filter(s => (s.totalPoints || 0) >= 100 && (s.totalPoints || 0) < 200).length },
+                    { range: '50-99 XP', color: 'bg-yellow-500', count: students.filter(s => (s.totalPoints || 0) >= 50 && (s.totalPoints || 0) < 100).length },
+                    { range: '0-49 XP', color: 'bg-red-500', count: students.filter(s => (s.totalPoints || 0) < 50).length },
+                  ].map(({ range, color, count }) => {
+                    const percentage = students.length > 0 ? Math.round((count / students.length) * 100) : 0;
+                    return (
+                      <div key={range} className="flex items-center space-x-4">
+                        <div className="w-24 text-sm font-medium text-gray-700">{range}:</div>
+                        <div className="flex-1 bg-gray-200 rounded-full h-4 relative">
+                          <div 
+                            className={`${color} h-4 rounded-full transition-all duration-300`}
+                            style={{ width: `${percentage}%` }}
+                          ></div>
+                        </div>
+                        <div className="w-16 text-right">
+                          <span className="text-sm font-semibold">{percentage}%</span>
+                          <span className="text-sm font-bold">{count} students</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Group Maker */}
           {activeToolkitTab === 'group-maker' && (
-            <GroupMaker
-              students={students}
+            <GroupMaker 
+              students={students} 
               showToast={showToast}
-              // This tool saves to a different part of the database, so its save function is also correct.
               saveGroupDataToFirebase={saveGroupDataToFirebase}
               userData={userData}
               currentClassId={currentClassId}
             />
           )}
-          {/* ... (No other changes in this component) */}
+
+          {/* Name Picker */}
+          {activeToolkitTab === 'name-picker' && (
+            <NamePicker 
+              students={students} 
+              showToast={showToast} 
+            />
+          )}
+
+          {/* Timer Tools */}
+          {activeToolkitTab === 'timer' && (
+            <TimerTools 
+              showToast={showToast}
+              students={students}
+              timerState={timerSettings}
+              setTimerState={setTimerSettings}
+            />
+          )}
+
+          {/* Dice Roller */}
+          {activeToolkitTab === 'dice-roller' && (
+            <DiceRoller 
+              showToast={showToast}
+            />
+          )}
+
+          {/* Classroom Designer */}
+          {activeToolkitTab === 'classroom-designer' && (
+            <ClassroomDesigner 
+              students={students} 
+              showToast={showToast}
+              saveClassroomDataToFirebase={saveClassroomDataToFirebase}
+              currentClassId={currentClassId}
+            />
+          )}
         </div>
       </div>
     </div>
