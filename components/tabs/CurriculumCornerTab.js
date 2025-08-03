@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 
 // Import activity components (you'll create these files)
 import LiteracyWarmup from '../curriculum/literacy/LiteracyWarmup';
+import AreaPerimeterTool from '../curriculum/mathematics/AreaPerimeterTool';
 // import SpellingBee from '../curriculum/literacy/SpellingBee';
 // import NumbersBoard from '../curriculum/mathematics/NumbersBoard';
 // import VirtualExperiments from '../curriculum/science/VirtualExperiments';
@@ -71,6 +72,13 @@ const subjects = [
     color: 'from-green-500 to-green-600',
     description: 'Math tools and number activities',
     activities: [
+      {
+        id: 'area-perimeter',
+        name: 'Area & Perimeter',
+        icon: '📐',
+        description: 'Interactive tool for exploring area and perimeter concepts',
+        component: AreaPerimeterTool
+      },
       {
         id: 'numbers-board',
         name: 'Numbers Board',
