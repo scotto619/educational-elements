@@ -1,8 +1,8 @@
-// components/tools/ClassroomJobs.js - FIXED with Debouncing and Better Error Handling
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+// components/tools/ClassroomJobs.js - Manual Save Version (No Auto-Save)
+import React, { useState, useEffect } from 'react';
 
 // ===============================================
-// CLASSROOM JOBS COMPONENT - FIXED VERSION
+// CLASSROOM JOBS COMPONENT - MANUAL SAVE VERSION
 // ===============================================
 
 const ClassroomJobs = ({ 
@@ -22,12 +22,8 @@ const ClassroomJobs = ({
   const [draggedStudent, setDraggedStudent] = useState(null);
   const [draggedFrom, setDraggedFrom] = useState(null);
   const [showPayAllModal, setShowPayAllModal] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [lastSaveTime, setLastSaveTime] = useState(0);
-
-  // Refs for debouncing
-  const saveTimeoutRef = useRef(null);
-  const isInitialLoadRef = useRef(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // New job form state
   const [newJob, setNewJob] = useState({
@@ -67,45 +63,21 @@ const ClassroomJobs = ({
   ];
 
   // ===============================================
-  // DEBOUNCED SAVE FUNCTION
+  // MANUAL SAVE FUNCTION
   // ===============================================
-  const debouncedSave = useCallback((jobsToSave) => {
-    // Clear existing timeout
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-
-    // Don't save too frequently (minimum 1 second between saves)
-    const now = Date.now();
-    const timeSinceLastSave = now - lastSaveTime;
-    const minSaveInterval = 1000; // 1 second
-
-    if (timeSinceLastSave < minSaveInterval && !isInitialLoadRef.current) {
-      // Debounce the save
-      saveTimeoutRef.current = setTimeout(() => {
-        performSave(jobsToSave);
-      }, minSaveInterval - timeSinceLastSave);
-    } else {
-      // Save immediately
-      performSave(jobsToSave);
-    }
-  }, [lastSaveTime]);
-
-  const performSave = useCallback(async (jobsToSave) => {
-    if (isInitialLoadRef.current) return; // Don't save during initial load
-    
-    setIsLoading(true);
+  const handleManualSave = async () => {
+    setIsSaving(true);
     try {
-      await saveData({ classroomJobs: jobsToSave });
-      setLastSaveTime(Date.now());
-      console.log('✅ Jobs saved successfully');
+      await saveData({ classroomJobs: jobs });
+      setHasUnsavedChanges(false);
+      showToast('Classroom jobs saved successfully!', 'success');
     } catch (error) {
       console.error('❌ Error saving jobs:', error);
-      showToast('Error saving jobs data', 'error');
+      showToast('Error saving jobs. Please try again.', 'error');
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
-  }, [saveData, showToast]);
+  };
 
   // ===============================================
   // INITIALIZATION
@@ -117,11 +89,6 @@ const ClassroomJobs = ({
     } else if (jobs.length === 0) {
       setJobs(DEFAULT_JOBS);
     }
-    
-    // Mark initial load as complete after a short delay
-    setTimeout(() => {
-      isInitialLoadRef.current = false;
-    }, 500);
   }, [loadedData]);
 
   useEffect(() => {
@@ -130,22 +97,6 @@ const ClassroomJobs = ({
     const unassigned = students.filter(student => !assignedStudentIds.includes(student.id));
     setUnassignedStudents(unassigned);
   }, [students, jobs]);
-
-  // FIXED: Only save when jobs change and it's not the initial load
-  useEffect(() => {
-    if (jobs.length > 0 && !isInitialLoadRef.current) {
-      debouncedSave(jobs);
-    }
-  }, [jobs, debouncedSave]);
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-    };
-  }, []);
 
   // ===============================================
   // JOB MANAGEMENT FUNCTIONS
@@ -165,6 +116,7 @@ const ClassroomJobs = ({
 
     const updatedJobs = [...jobs, job];
     setJobs(updatedJobs);
+    setHasUnsavedChanges(true);
     setNewJob({
       title: '',
       description: '',
@@ -175,7 +127,7 @@ const ClassroomJobs = ({
       icon: '📋'
     });
     setShowCreateJobModal(false);
-    showToast('Job created successfully!', 'success');
+    showToast('Job created! Click "Save Changes" to save.', 'info');
   };
 
   const updateJob = () => {
@@ -187,9 +139,10 @@ const ClassroomJobs = ({
       job.id === editingJob.id ? { ...editingJob, title: editingJob.title.trim() } : job
     );
     setJobs(updatedJobs);
+    setHasUnsavedChanges(true);
     setEditingJob(null);
     setShowEditJobModal(false);
-    showToast('Job updated successfully!', 'success');
+    showToast('Job updated! Click "Save Changes" to save.', 'info');
   };
 
   const deleteJob = (jobId) => {
@@ -197,11 +150,12 @@ const ClassroomJobs = ({
     
     const updatedJobs = jobs.filter(job => job.id !== jobId);
     setJobs(updatedJobs);
-    showToast('Job deleted successfully!', 'success');
+    setHasUnsavedChanges(true);
+    showToast('Job deleted! Click "Save Changes" to save.', 'info');
   };
 
   // ===============================================
-  // DRAG AND DROP FUNCTIONS - OPTIMIZED
+  // DRAG AND DROP FUNCTIONS
   // ===============================================
 
   const handleDragStart = (e, student, source) => {
@@ -215,10 +169,9 @@ const ClassroomJobs = ({
     e.dataTransfer.dropEffect = 'move';
   };
 
-  // FIXED: Optimized drop handler with immediate local state update
   const handleDropOnJob = (e, targetJobId) => {
     e.preventDefault();
-    if (!draggedStudent || isLoading) return;
+    if (!draggedStudent) return;
 
     const targetJob = jobs.find(job => job.id === targetJobId);
     if (!targetJob) return;
@@ -231,7 +184,7 @@ const ClassroomJobs = ({
       return;
     }
 
-    // OPTIMIZED: Single state update for better performance
+    // Single state update for better performance
     setJobs(prevJobs => {
       let updatedJobs = [...prevJobs];
 
@@ -263,19 +216,19 @@ const ClassroomJobs = ({
       return updatedJobs;
     });
 
+    setHasUnsavedChanges(true);
     showToast(`${draggedStudent.firstName} assigned to ${targetJob.title}!`, 'success');
     setDraggedStudent(null);
     setDraggedFrom(null);
   };
 
-  // FIXED: Optimized unassigned drop handler
   const handleDropOnUnassigned = (e) => {
     e.preventDefault();
-    if (!draggedStudent || !draggedFrom || !draggedFrom.startsWith('job-') || isLoading) return;
+    if (!draggedStudent || !draggedFrom || !draggedFrom.startsWith('job-')) return;
 
     const sourceJobId = draggedFrom.replace('job-', '');
     
-    // OPTIMIZED: Single state update
+    // Single state update
     setJobs(prevJobs => 
       prevJobs.map(job => {
         if (job.id === sourceJobId) {
@@ -288,6 +241,7 @@ const ClassroomJobs = ({
       })
     );
 
+    setHasUnsavedChanges(true);
     showToast(`${draggedStudent.firstName} removed from job!`, 'success');
     setDraggedStudent(null);
     setDraggedFrom(null);
@@ -358,7 +312,7 @@ const ClassroomJobs = ({
           <div className="text-right">
             <div className="text-2xl font-bold">{jobs.reduce((sum, job) => sum + job.assignedStudents.length, 0)}</div>
             <div className="text-blue-100 text-sm">Students Working</div>
-            {isLoading && <div className="text-yellow-200 text-xs animate-pulse">Saving...</div>}
+            {hasUnsavedChanges && <div className="text-yellow-200 text-xs">Unsaved changes</div>}
           </div>
         </div>
       </div>
@@ -369,24 +323,41 @@ const ClassroomJobs = ({
           <div className="flex gap-3">
             <button
               onClick={() => setShowCreateJobModal(true)}
-              disabled={isLoading}
-              className="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all font-semibold disabled:opacity-50"
+              className="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all font-semibold"
             >
               ➕ Create New Job
             </button>
             
             <button
               onClick={() => setShowPayAllModal(true)}
-              disabled={isLoading}
-              className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all font-semibold disabled:opacity-50"
+              className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all font-semibold"
             >
               💰 Pay All Jobs
+            </button>
+
+            <button
+              onClick={handleManualSave}
+              disabled={isSaving || !hasUnsavedChanges}
+              className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+                hasUnsavedChanges 
+                  ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:shadow-lg'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              } ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              {isSaving ? (
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>Saving...</span>
+                </div>
+              ) : (
+                <>💾 Save Changes</>
+              )}
             </button>
           </div>
 
           <div className="text-sm text-gray-600">
             <span className="font-semibold">💡 Tip:</span> Drag students between jobs to reassign them
-            {isLoading && <span className="ml-2 text-blue-600 animate-pulse">• Saving changes...</span>}
+            {hasUnsavedChanges && <span className="ml-2 text-orange-600 font-semibold">• Click "Save Changes" to save your work</span>}
           </div>
         </div>
       </div>
@@ -396,7 +367,7 @@ const ClassroomJobs = ({
         
         {/* Unassigned Students */}
         <div 
-          className={`bg-white rounded-xl p-4 shadow-lg border-2 border-dashed border-gray-300 min-h-[400px] ${isLoading ? 'opacity-75' : ''}`}
+          className="bg-white rounded-xl p-4 shadow-lg border-2 border-dashed border-gray-300 min-h-[400px]"
           onDragOver={handleDragOver}
           onDrop={handleDropOnUnassigned}
         >
@@ -409,11 +380,9 @@ const ClassroomJobs = ({
             {unassignedStudents.map(student => (
               <div
                 key={student.id}
-                draggable={!isLoading}
+                draggable
                 onDragStart={(e) => handleDragStart(e, student, 'unassigned')}
-                className={`flex items-center space-x-3 p-3 bg-gray-50 rounded-lg transition-colors border border-gray-200 ${
-                  isLoading ? 'cursor-not-allowed opacity-50' : 'cursor-move hover:bg-gray-100'
-                }`}
+                className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg cursor-move hover:bg-gray-100 transition-colors border border-gray-200"
               >
                 <img 
                   src={`/avatars/${student.avatarBase || 'Wizard F'}/Level ${Math.min(Math.max(Math.floor((student.totalPoints || 0) / 100) + 1, 1), 4)}.png`}
@@ -444,7 +413,7 @@ const ClassroomJobs = ({
           {jobs.map(job => (
             <div
               key={job.id}
-              className={`${job.color} rounded-xl p-4 text-white shadow-lg min-h-[300px] relative ${isLoading ? 'opacity-75' : ''}`}
+              className={`${job.color} rounded-xl p-4 text-white shadow-lg min-h-[300px] relative`}
               onDragOver={handleDragOver}
               onDrop={(e) => handleDropOnJob(e, job.id)}
             >
@@ -467,16 +436,14 @@ const ClassroomJobs = ({
                       setEditingJob(job);
                       setShowEditJobModal(true);
                     }}
-                    disabled={isLoading}
-                    className="bg-white bg-opacity-20 hover:bg-opacity-30 p-1 rounded text-xs disabled:opacity-50"
+                    className="bg-white bg-opacity-20 hover:bg-opacity-30 p-1 rounded text-xs"
                     title="Edit Job"
                   >
                     ✏️
                   </button>
                   <button
                     onClick={() => deleteJob(job.id)}
-                    disabled={isLoading}
-                    className="bg-white bg-opacity-20 hover:bg-opacity-30 p-1 rounded text-xs disabled:opacity-50"
+                    className="bg-white bg-opacity-20 hover:bg-opacity-30 p-1 rounded text-xs"
                     title="Delete Job"
                   >
                     🗑️
@@ -489,11 +456,9 @@ const ClassroomJobs = ({
                 {job.assignedStudents.map(student => (
                   <div
                     key={student.id}
-                    draggable={!isLoading}
+                    draggable
                     onDragStart={(e) => handleDragStart(e, student, `job-${job.id}`)}
-                    className={`flex items-center space-x-3 p-2 bg-white bg-opacity-20 rounded-lg transition-all ${
-                      isLoading ? 'cursor-not-allowed opacity-50' : 'cursor-move hover:bg-opacity-30'
-                    }`}
+                    className="flex items-center space-x-3 p-2 bg-white bg-opacity-20 rounded-lg cursor-move hover:bg-opacity-30 transition-all"
                   >
                     <img 
                       src={`/avatars/${student.avatarBase || 'Wizard F'}/Level ${Math.min(Math.max(Math.floor((student.totalPoints || 0) / 100) + 1, 1), 4)}.png`}
@@ -516,7 +481,7 @@ const ClassroomJobs = ({
                     key={`empty-${index}`}
                     className="p-3 border-2 border-dashed border-white border-opacity-50 rounded-lg text-center text-sm opacity-75"
                   >
-                    {isLoading ? 'Loading...' : 'Drop student here'}
+                    Drop student here
                   </div>
                 ))}
               </div>
@@ -524,9 +489,9 @@ const ClassroomJobs = ({
               {/* Pay Button */}
               <button
                 onClick={() => payJob(job)}
-                disabled={job.assignedStudents.length === 0 || isLoading}
+                disabled={job.assignedStudents.length === 0}
                 className={`w-full py-2 px-4 rounded-lg font-semibold text-sm transition-all ${
-                  job.assignedStudents.length === 0 || isLoading
+                  job.assignedStudents.length === 0
                     ? 'bg-white bg-opacity-20 text-white opacity-50 cursor-not-allowed'
                     : 'bg-white bg-opacity-30 hover:bg-opacity-40 text-white'
                 }`}
@@ -538,7 +503,6 @@ const ClassroomJobs = ({
         </div>
       </div>
 
-      {/* All the modals remain the same... */}
       {/* Create Job Modal */}
       {showCreateJobModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -653,7 +617,7 @@ const ClassroomJobs = ({
               </button>
               <button
                 onClick={createJob}
-                disabled={!newJob.title.trim() || isLoading}
+                disabled={!newJob.title.trim()}
                 className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Create Job
@@ -663,7 +627,173 @@ const ClassroomJobs = ({
         </div>
       )}
 
-      {/* Other modals... (Edit Job Modal, Pay All Modal) remain the same */}
+      {/* Edit Job Modal */}
+      {showEditJobModal && editingJob && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-t-2xl">
+              <h2 className="text-2xl font-bold">✏️ Edit Job</h2>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Job Title *</label>
+                <input
+                  type="text"
+                  value={editingJob.title}
+                  onChange={(e) => setEditingJob({...editingJob, title: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                <input
+                  type="text"
+                  value={editingJob.description}
+                  onChange={(e) => setEditingJob({...editingJob, description: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Max Students</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={editingJob.maxStudents}
+                    onChange={(e) => setEditingJob({...editingJob, maxStudents: parseInt(e.target.value) || 1})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Payment Type</label>
+                  <select
+                    value={editingJob.payType}
+                    onChange={(e) => setEditingJob({...editingJob, payType: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="coins">Coins</option>
+                    <option value="xp">XP</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Pay Amount ({editingJob.payType === 'xp' ? 'XP' : 'Coins'})
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="50"
+                  value={editingJob.payAmount}
+                  onChange={(e) => setEditingJob({...editingJob, payAmount: parseInt(e.target.value) || 1})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Job Color</label>
+                <div className="flex flex-wrap gap-2">
+                  {JOB_COLORS.map(color => (
+                    <button
+                      key={color.class}
+                      onClick={() => setEditingJob({...editingJob, color: color.class})}
+                      className={`w-8 h-8 rounded-full ${color.class} ${
+                        editingJob.color === color.class ? 'ring-4 ring-gray-400' : ''
+                      }`}
+                      title={color.name}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Job Icon</label>
+                <div className="flex flex-wrap gap-2">
+                  {JOB_ICONS.map(icon => (
+                    <button
+                      key={icon}
+                      onClick={() => setEditingJob({...editingJob, icon})}
+                      className={`p-2 text-xl rounded-lg border-2 ${
+                        editingJob.icon === icon ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      {icon}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex space-x-3 p-6 pt-0">
+              <button
+                onClick={() => setShowEditJobModal(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={updateJob}
+                disabled={!editingJob.title.trim()}
+                className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Update Job
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Pay All Jobs Confirmation Modal */}
+      {showPayAllModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            <div className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white p-6 rounded-t-2xl">
+              <h2 className="text-2xl font-bold">💰 Pay All Jobs</h2>
+            </div>
+            
+            <div className="p-6">
+              <p className="text-gray-800 mb-4">
+                This will pay all students currently assigned to jobs. Are you sure you want to proceed?
+              </p>
+              
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                <h4 className="font-semibold text-yellow-800 mb-2">Payment Summary:</h4>
+                <div className="space-y-1 text-sm">
+                  {jobs.filter(job => job.assignedStudents.length > 0).map(job => (
+                    <div key={job.id} className="flex justify-between">
+                      <span>{job.title}: {job.assignedStudents.length} student(s)</span>
+                      <span className="font-semibold">
+                        {job.payAmount} {job.payType === 'xp' ? 'XP' : 'coins'} each
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex space-x-3 p-6 pt-0">
+              <button
+                onClick={() => setShowPayAllModal(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={payAllJobs}
+                className="flex-1 bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all"
+              >
+                💰 Pay All Jobs
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

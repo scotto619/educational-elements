@@ -1,8 +1,8 @@
-// components/tools/TimetableCreator.js - FIXED with Debouncing and Better Error Handling
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+// components/tools/TimetableCreator.js - Manual Save Version (No Auto-Save)
+import React, { useState, useEffect } from 'react';
 
 // ===============================================
-// TIMETABLE CREATOR COMPONENT - FIXED VERSION
+// TIMETABLE CREATOR COMPONENT - MANUAL SAVE VERSION
 // ===============================================
 
 const TimetableCreator = ({ 
@@ -44,8 +44,8 @@ const TimetableCreator = ({
   ]);
 
   const [currentWeek, setCurrentWeek] = useState(getCurrentWeek());
-  const [isLoading, setIsLoading] = useState(false);
-  const [lastSaveTime, setLastSaveTime] = useState(0);
+  const [isSaving, setIsSaving] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   
   // Modal states
   const [showActivityModal, setShowActivityModal] = useState(false);
@@ -55,10 +55,6 @@ const TimetableCreator = ({
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [selectedDay, setSelectedDay] = useState(null);
-
-  // Refs for debouncing
-  const saveTimeoutRef = useRef(null);
-  const isInitialLoadRef = useRef(true);
 
   // Activity form state
   const [newActivity, setNewActivity] = useState({
@@ -79,45 +75,30 @@ const TimetableCreator = ({
   const [activeReminders, setActiveReminders] = useState([]);
 
   // ===============================================
-  // DEBOUNCED SAVE FUNCTION
+  // MANUAL SAVE FUNCTION
   // ===============================================
-  const debouncedSave = useCallback((dataToSave) => {
-    // Clear existing timeout
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-
-    // Don't save too frequently (minimum 1 second between saves)
-    const now = Date.now();
-    const timeSinceLastSave = now - lastSaveTime;
-    const minSaveInterval = 1000; // 1 second
-
-    if (timeSinceLastSave < minSaveInterval && !isInitialLoadRef.current) {
-      // Debounce the save
-      saveTimeoutRef.current = setTimeout(() => {
-        performSave(dataToSave);
-      }, minSaveInterval - timeSinceLastSave);
-    } else {
-      // Save immediately
-      performSave(dataToSave);
-    }
-  }, [lastSaveTime]);
-
-  const performSave = useCallback(async (dataToSave) => {
-    if (isInitialLoadRef.current) return; // Don't save during initial load
-    
-    setIsLoading(true);
+  const handleManualSave = async () => {
+    setIsSaving(true);
     try {
-      await saveData({ timetableData: dataToSave });
-      setLastSaveTime(Date.now());
-      console.log('✅ Timetable saved successfully');
+      const timetableData = {
+        timetable,
+        timeSlots,
+        subjects,
+        teachers,
+        currentWeek,
+        lastUpdated: new Date().toISOString()
+      };
+      
+      await saveData({ timetableData });
+      setHasUnsavedChanges(false);
+      showToast('Timetable saved successfully!', 'success');
     } catch (error) {
-      console.error('❌ Error saving timetable:', error);
-      showToast('Error saving timetable data', 'error');
+      console.error('Error saving timetable:', error);
+      showToast('Error saving timetable. Please try again.', 'error');
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
-  }, [saveData, showToast]);
+  };
 
   // ===============================================
   // FIREBASE DATA LOADING
@@ -133,39 +114,7 @@ const TimetableCreator = ({
       if (savedSubjects) setSubjects(savedSubjects);
       if (savedTeachers) setTeachers(savedTeachers);
     }
-    
-    // Mark initial load as complete after a short delay
-    setTimeout(() => {
-      isInitialLoadRef.current = false;
-    }, 500);
   }, [loadedData]);
-
-  // FIXED: Debounced save to Firebase whenever key state changes
-  useEffect(() => {
-    if (!isInitialLoadRef.current) {
-      const timetableData = {
-        timetable,
-        timeSlots,
-        subjects,
-        teachers,
-        currentWeek,
-        lastUpdated: new Date().toISOString()
-      };
-      
-      if (Object.keys(timetable).length > 0 || timeSlots.length > 0 || subjects.length > 0 || teachers.length > 0) {
-        debouncedSave(timetableData);
-      }
-    }
-  }, [timetable, timeSlots, subjects, teachers, currentWeek, debouncedSave]);
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-    };
-  }, []);
 
   // ===============================================
   // UTILITY FUNCTIONS
@@ -202,11 +151,6 @@ const TimetableCreator = ({
       return;
     }
 
-    if (isLoading) {
-      showToast('Please wait for current operation to complete', 'error');
-      return;
-    }
-
     const key = getTimetableKey(selectedDay, selectedSlot.id);
     const activity = {
       ...newActivity,
@@ -220,11 +164,12 @@ const TimetableCreator = ({
     const existingActivities = timetable[key] || [];
     const updatedActivities = [...existingActivities, activity];
 
-    // OPTIMIZED: Single state update
     setTimetable(prevTimetable => ({
       ...prevTimetable,
       [key]: updatedActivities
     }));
+
+    setHasUnsavedChanges(true);
 
     // Set up reminder if specified
     if (activity.reminder > 0) {
@@ -243,21 +188,15 @@ const TimetableCreator = ({
       type: 'main'
     });
     setShowActivityModal(false);
-    showToast('Activity added to timetable!', 'success');
+    showToast('Activity added! Click "Save Timetable" to save.', 'info');
   };
 
   const removeActivity = (day, slotId, activityId) => {
-    if (isLoading) {
-      showToast('Please wait for current operation to complete', 'error');
-      return;
-    }
-
     const key = getTimetableKey(day, slotId);
     const activities = timetable[key] || [];
     const updatedActivities = activities.filter(activity => activity.id !== activityId);
     
     if (updatedActivities.length === 0) {
-      // OPTIMIZED: Remove the key entirely if no activities left
       setTimetable(prevTimetable => {
         const { [key]: removed, ...remainingTimetable } = prevTimetable;
         return remainingTimetable;
@@ -269,17 +208,14 @@ const TimetableCreator = ({
       }));
     }
 
+    setHasUnsavedChanges(true);
+
     // Remove any associated reminders
     setActiveReminders(prev => prev.filter(reminder => reminder.activityId !== activityId));
-    showToast('Activity removed from timetable!', 'success');
+    showToast('Activity removed! Click "Save Timetable" to save.', 'info');
   };
 
   const openActivityModal = (day, slot) => {
-    if (isLoading) {
-      showToast('Please wait for current operation to complete', 'error');
-      return;
-    }
-
     setSelectedDay(day);
     setSelectedSlot(slot);
     setNewActivity({
@@ -381,8 +317,9 @@ const TimetableCreator = ({
       ...subjectData
     };
     setSubjects(prevSubjects => [...prevSubjects, subject]);
+    setHasUnsavedChanges(true);
     setShowSubjectModal(false);
-    showToast('Subject added successfully!', 'success');
+    showToast('Subject added! Click "Save Timetable" to save.', 'info');
   };
 
   const addTeacher = (teacherData) => {
@@ -391,41 +328,16 @@ const TimetableCreator = ({
       ...teacherData
     };
     setTeachers(prevTeachers => [...prevTeachers, teacher]);
+    setHasUnsavedChanges(true);
     setShowTeacherModal(false);
-    showToast('Teacher added successfully!', 'success');
+    showToast('Teacher added! Click "Save Timetable" to save.', 'info');
   };
 
   const updateTimeSlots = (newTimeSlots) => {
     setTimeSlots(newTimeSlots);
+    setHasUnsavedChanges(true);
     setShowTimeSlotModal(false);
-    showToast('Time slots updated successfully!', 'success');
-  };
-
-  // ===============================================
-  // MANUAL SAVE FUNCTION
-  // ===============================================
-
-  const manualSave = async () => {
-    const timetableData = {
-      timetable,
-      timeSlots,
-      subjects,
-      teachers,
-      currentWeek,
-      lastUpdated: new Date().toISOString()
-    };
-    
-    setIsLoading(true);
-    try {
-      await saveData({ timetableData });
-      setLastSaveTime(Date.now());
-      showToast('Timetable saved successfully!', 'success');
-    } catch (error) {
-      console.error('Error manually saving timetable:', error);
-      showToast('Error saving timetable', 'error');
-    } finally {
-      setIsLoading(false);
-    }
+    showToast('Time slots updated! Click "Save Timetable" to save.', 'info');
   };
 
   // ===============================================
@@ -444,7 +356,7 @@ const TimetableCreator = ({
         key={activity.id}
         className={`${subject?.color || 'bg-gray-500'} text-white p-2 rounded-lg mb-1 text-xs relative ${
           isParallel ? 'opacity-80 border-2 border-white border-dashed' : ''
-        } ${isLoading ? 'opacity-50' : ''}`}
+        }`}
       >
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center space-x-1">
@@ -453,8 +365,7 @@ const TimetableCreator = ({
           </div>
           <button
             onClick={() => removeActivity(activity.day, activity.slot.id, activity.id)}
-            disabled={isLoading}
-            className="text-white hover:text-red-200 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+            className="text-white hover:text-red-200 text-xs"
           >
             ✕
           </button>
@@ -501,7 +412,7 @@ const TimetableCreator = ({
           <div className="text-right">
             <div className="text-sm text-indigo-200">Week Starting</div>
             <div className="text-xl font-bold">{new Date(currentWeek).toLocaleDateString()}</div>
-            {isLoading && <div className="text-yellow-200 text-xs animate-pulse">Saving...</div>}
+            {hasUnsavedChanges && <div className="text-yellow-200 text-xs">Unsaved changes</div>}
           </div>
         </div>
       </div>
@@ -512,24 +423,21 @@ const TimetableCreator = ({
           <div className="flex gap-3">
             <button
               onClick={() => setShowSubjectModal(true)}
-              disabled={isLoading}
-              className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all font-semibold disabled:opacity-50"
+              className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all font-semibold"
             >
               ➕ Add Subject
             </button>
             
             <button
               onClick={() => setShowTeacherModal(true)}
-              disabled={isLoading}
-              className="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all font-semibold disabled:opacity-50"
+              className="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all font-semibold"
             >
               👩‍🏫 Add Teacher
             </button>
             
             <button
               onClick={() => setShowTimeSlotModal(true)}
-              disabled={isLoading}
-              className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all font-semibold disabled:opacity-50"
+              className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all font-semibold"
             >
               ⏰ Edit Time Slots
             </button>
@@ -537,19 +445,27 @@ const TimetableCreator = ({
 
           <div className="flex items-center space-x-4">
             <div className="text-sm text-gray-600">
-              <span className="font-semibold">Auto-saves:</span> ✅ Enabled
-              {isLoading && <span className="ml-2 text-blue-600 animate-pulse">• Saving changes...</span>}
-            </div>
-            <div className="text-sm text-gray-600">
               <span className="font-semibold">Active Reminders:</span> {activeReminders.length}
+              {hasUnsavedChanges && <span className="ml-2 text-orange-600 font-semibold">• Click "Save Timetable" to save your work</span>}
             </div>
             
             <button
-              onClick={manualSave}
-              disabled={isLoading}
-              className="bg-gradient-to-r from-gray-500 to-gray-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all font-semibold disabled:opacity-50"
+              onClick={handleManualSave}
+              disabled={isSaving || !hasUnsavedChanges}
+              className={`px-6 py-2 rounded-lg font-semibold transition-all ${
+                hasUnsavedChanges 
+                  ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:shadow-lg'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              } ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              💾 Save Now
+              {isSaving ? (
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>Saving...</span>
+                </div>
+              ) : (
+                <>💾 Save Timetable</>
+              )}
             </button>
           </div>
         </div>
@@ -587,11 +503,9 @@ const TimetableCreator = ({
                 return (
                   <div
                     key={day}
-                    className={`bg-gray-50 p-2 rounded-lg min-h-[80px] border-2 border-dashed border-gray-200 hover:border-blue-300 transition-colors ${
-                      isLoading ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
-                    }`}
+                    className="bg-gray-50 p-2 rounded-lg min-h-[80px] border-2 border-dashed border-gray-200 hover:border-blue-300 transition-colors cursor-pointer"
                     onClick={() => openActivityModal(day, slot)}
-                    title={isLoading ? 'Please wait...' : `Add activity to ${day} ${slot.label}`}
+                    title={`Add activity to ${day} ${slot.label}`}
                   >
                     {/* Main Activities */}
                     {mainActivities.map(activity => renderActivityCard(activity, false))}
@@ -601,7 +515,7 @@ const TimetableCreator = ({
                     
                     {activities.length === 0 && (
                       <div className="flex items-center justify-center h-full text-gray-400 text-xs">
-                        {isLoading ? 'Saving...' : 'Click to add activity'}
+                        Click to add activity
                       </div>
                     )}
                   </div>
@@ -665,7 +579,6 @@ const TimetableCreator = ({
                     value={newActivity.subject}
                     onChange={(e) => setNewActivity({...newActivity, subject: e.target.value})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    disabled={isLoading}
                   >
                     <option value="">Select subject...</option>
                     {subjects.map(subject => (
@@ -682,7 +595,6 @@ const TimetableCreator = ({
                     value={newActivity.teacher}
                     onChange={(e) => setNewActivity({...newActivity, teacher: e.target.value})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    disabled={isLoading}
                   >
                     <option value="">No specialist teacher</option>
                     {teachers.map(teacher => (
@@ -706,7 +618,6 @@ const TimetableCreator = ({
                     }
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent mb-2"
-                  disabled={isLoading}
                 >
                   <option value="all">Whole Class</option>
                   <option value="specific">Specific Students</option>
@@ -734,7 +645,6 @@ const TimetableCreator = ({
                             }
                           }}
                           className="rounded"
-                          disabled={isLoading}
                         />
                         <span className="text-sm">{student.firstName} {student.lastName}</span>
                       </label>
@@ -752,7 +662,6 @@ const TimetableCreator = ({
                     onChange={(e) => setNewActivity({...newActivity, location: e.target.value})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     placeholder="e.g., Library, Gym, Room 12"
-                    disabled={isLoading}
                   />
                 </div>
 
@@ -762,7 +671,6 @@ const TimetableCreator = ({
                     value={newActivity.type}
                     onChange={(e) => setNewActivity({...newActivity, type: e.target.value})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    disabled={isLoading}
                   >
                     <option value="main">Main Activity</option>
                     <option value="parallel">Parallel Activity</option>
@@ -776,7 +684,6 @@ const TimetableCreator = ({
                   value={newActivity.reminder}
                   onChange={(e) => setNewActivity({...newActivity, reminder: parseInt(e.target.value)})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  disabled={isLoading}
                 >
                   <option value={0}>No reminder</option>
                   <option value={5}>5 minutes</option>
@@ -794,7 +701,6 @@ const TimetableCreator = ({
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   placeholder="Additional notes about this activity..."
-                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -802,45 +708,345 @@ const TimetableCreator = ({
             <div className="flex space-x-3 p-6 pt-0">
               <button
                 onClick={() => setShowActivityModal(false)}
-                disabled={isLoading}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all disabled:opacity-50"
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all"
               >
                 Cancel
               </button>
               <button
                 onClick={addActivityToSlot}
-                disabled={!newActivity.subject || isLoading}
+                disabled={!newActivity.subject}
                 className="flex-1 bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? 'Adding...' : 'Add Activity'}
+                Add Activity
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Other modals remain the same but should have isLoading checks... */}
+      {/* Subject Modal */}
+      {showSubjectModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-t-2xl">
+              <h2 className="text-2xl font-bold">➕ Add Subject</h2>
+            </div>
+            
+            <div className="p-6">
+              <SubjectForm onSubmit={addSubject} onCancel={() => setShowSubjectModal(false)} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Teacher Modal */}
+      {showTeacherModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-t-2xl">
+              <h2 className="text-2xl font-bold">👩‍🏫 Add Teacher</h2>
+            </div>
+            
+            <div className="p-6">
+              <TeacherForm 
+                subjects={subjects}
+                onSubmit={addTeacher} 
+                onCancel={() => setShowTeacherModal(false)} 
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Time Slots Modal */}
+      {showTimeSlotModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-6 rounded-t-2xl">
+              <h2 className="text-2xl font-bold">⏰ Edit Time Slots</h2>
+              <p className="text-purple-100">Customize your daily schedule</p>
+            </div>
+            
+            <div className="p-6">
+              <TimeSlotEditor 
+                timeSlots={timeSlots}
+                onSave={updateTimeSlots}
+                onCancel={() => setShowTimeSlotModal(false)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
 // ===============================================
-// SUB-COMPONENTS REMAIN THE SAME
+// SUB-COMPONENTS (Simplified for manual save version)
 // ===============================================
 
 const TimeSlotEditor = ({ timeSlots, onSave, onCancel }) => {
-  // ... (same as before)
-  return <div>Time Slot Editor Component</div>;
+  const [editableSlots, setEditableSlots] = useState(timeSlots.map(slot => ({ ...slot })));
+
+  const addTimeSlot = () => {
+    const newSlot = {
+      id: `slot${editableSlots.length + 1}`,
+      start: '09:00',
+      end: '09:50',
+      label: `Period ${editableSlots.length + 1}`
+    };
+    setEditableSlots([...editableSlots, newSlot]);
+  };
+
+  const removeTimeSlot = (index) => {
+    if (editableSlots.length > 1) {
+      setEditableSlots(editableSlots.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateTimeSlot = (index, field, value) => {
+    const updated = editableSlots.map((slot, i) => 
+      i === index ? { ...slot, [field]: value } : slot
+    );
+    setEditableSlots(updated);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="max-h-96 overflow-y-auto">
+        {editableSlots.map((slot, index) => (
+          <div key={index} className="grid grid-cols-4 gap-4 items-center p-4 bg-gray-50 rounded-lg mb-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Label</label>
+              <input
+                type="text"
+                value={slot.label}
+                onChange={(e) => updateTimeSlot(index, 'label', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                placeholder="Period 1"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
+              <input
+                type="time"
+                value={slot.start}
+                onChange={(e) => updateTimeSlot(index, 'start', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
+              <input
+                type="time"
+                value={slot.end}
+                onChange={(e) => updateTimeSlot(index, 'end', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              />
+            </div>
+            
+            <div className="flex items-end">
+              <button
+                onClick={() => removeTimeSlot(index)}
+                disabled={editableSlots.length === 1}
+                className="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50"
+                title="Remove time slot"
+              >
+                🗑️
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex justify-between items-center pt-4 border-t border-gray-200">
+        <button
+          onClick={addTimeSlot}
+          className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all font-semibold"
+        >
+          ➕ Add Time Slot
+        </button>
+        
+        <div className="flex space-x-3">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => onSave(editableSlots)}
+            className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all font-semibold"
+          >
+            Save Time Slots
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 const SubjectForm = ({ onSubmit, onCancel }) => {
-  // ... (same as before)
-  return <div>Subject Form Component</div>;
+  const [formData, setFormData] = useState({
+    name: '',
+    color: 'bg-blue-500',
+    icon: '📚'
+  });
+
+  const COLORS = [
+    'bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-red-500',
+    'bg-yellow-500', 'bg-indigo-500', 'bg-pink-500', 'bg-teal-500',
+    'bg-orange-500', 'bg-gray-500'
+  ];
+
+  const ICONS = [
+    '📚', '🧮', '🔬', '🎨', '🎵', '⚽', '🏛️', '🌍', '💻', '🎭',
+    '📝', '🔍', '🎯', '🏆', '💡', '⭐'
+  ];
+
+  const handleSubmit = () => {
+    if (!formData.name.trim()) return;
+    onSubmit(formData);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Subject Name *</label>
+        <input
+          type="text"
+          value={formData.name}
+          onChange={(e) => setFormData({...formData, name: e.target.value})}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+          placeholder="e.g., Mathematics"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Color</label>
+        <div className="flex flex-wrap gap-2">
+          {COLORS.map(color => (
+            <button
+              key={color}
+              onClick={() => setFormData({...formData, color})}
+              className={`w-8 h-8 rounded-full ${color} ${
+                formData.color === color ? 'ring-4 ring-gray-400' : ''
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Icon</label>
+        <div className="flex flex-wrap gap-2">
+          {ICONS.map(icon => (
+            <button
+              key={icon}
+              onClick={() => setFormData({...formData, icon})}
+              className={`p-2 text-xl rounded-lg border-2 ${
+                formData.icon === icon ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              {icon}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex space-x-3 pt-4">
+        <button
+          onClick={onCancel}
+          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleSubmit}
+          disabled={!formData.name.trim()}
+          className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all disabled:opacity-50"
+        >
+          Add Subject
+        </button>
+      </div>
+    </div>
+  );
 };
 
 const TeacherForm = ({ subjects, onSubmit, onCancel }) => {
-  // ... (same as before)
-  return <div>Teacher Form Component</div>;
+  const [formData, setFormData] = useState({
+    name: '',
+    specialties: []
+  });
+
+  const handleSubmit = () => {
+    if (!formData.name.trim()) return;
+    onSubmit(formData);
+  };
+
+  const toggleSpecialty = (subjectId) => {
+    if (formData.specialties.includes(subjectId)) {
+      setFormData({
+        ...formData,
+        specialties: formData.specialties.filter(id => id !== subjectId)
+      });
+    } else {
+      setFormData({
+        ...formData,
+        specialties: [...formData.specialties, subjectId]
+      });
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Teacher Name *</label>
+        <input
+          type="text"
+          value={formData.name}
+          onChange={(e) => setFormData({...formData, name: e.target.value})}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+          placeholder="e.g., Ms. Johnson"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Specialties</label>
+        <div className="space-y-2 max-h-32 overflow-y-auto">
+          {subjects.map(subject => (
+            <label key={subject.id} className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={formData.specialties.includes(subject.id)}
+                onChange={() => toggleSpecialty(subject.id)}
+                className="rounded"
+              />
+              <span className="text-sm">{subject.icon} {subject.name}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex space-x-3 pt-4">
+        <button
+          onClick={onCancel}
+          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleSubmit}
+          disabled={!formData.name.trim()}
+          className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all disabled:opacity-50"
+        >
+          Add Teacher
+        </button>
+      </div>
+    </div>
+  );
 };
 
 export default TimetableCreator;

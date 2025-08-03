@@ -1,5 +1,5 @@
-// pages/classroom-champions.js - CLEAN FIXED VERSION with No Duplicate Declarations
-import React, { useState, useEffect, useRef } from 'react';
+// pages/classroom-champions.js - MANUAL SAVE VERSION (No Auto-Save)
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -84,7 +84,7 @@ const NAVIGATION_TABS = [ { id: 'dashboard', name: 'Dashboard', icon: '🏠'}, {
 const ClassroomChampions = () => {
   const router = useRouter();
   
-  // States (ALL declared here once to avoid duplicates)
+  // States
   const [user, setUser] = useState(null);
   const [userData, setUserData] = useState({});
   const [loading, setLoading] = useState(true);
@@ -100,10 +100,6 @@ const ClassroomChampions = () => {
   const [newStudentLastName, setNewStudentLastName] = useState('');
   const [attendanceData, setAttendanceData] = useState({});
   const [activeQuests, setActiveQuests] = useState([]);
-  const [isSaving, setIsSaving] = useState(false);
-  
-  // Refs for save management
-  const saveTimeoutRef = useRef(null);
 
   // AUTH & DATA LOADING
   useEffect(() => {
@@ -113,15 +109,6 @@ const ClassroomChampions = () => {
     });
     return () => unsubscribe();
   }, [router]);
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-    };
-  }, []);
 
   const loadUserData = async (user) => {
     setLoading(true);
@@ -150,82 +137,46 @@ const ClassroomChampions = () => {
   };
 
   // ===============================================
-  // ROBUST FIREBASE SAVING FUNCTIONS WITH RATE LIMITING
+  // SIMPLIFIED FIREBASE SAVING FUNCTIONS (For Student Management Only)
   // ===============================================
 
-  // Enhanced save function with rate limiting and error handling
-  const performSaveWithRetry = async (saveOperation, retryCount = 0) => {
-    const maxRetries = 3;
-    const retryDelay = Math.pow(2, retryCount) * 1000; // Exponential backoff
-
-    try {
-      await saveOperation();
-      return true;
-    } catch (error) {
-      console.error(`Save attempt ${retryCount + 1} failed:`, error);
-      
-      // Check if it's a rate limiting error (429) or temporary error
-      if (error.code === 'resource-exhausted' || error.code === 'unavailable') {
-        if (retryCount < maxRetries) {
-          console.log(`Retrying save in ${retryDelay}ms...`);
-          await new Promise(resolve => setTimeout(resolve, retryDelay));
-          return performSaveWithRetry(saveOperation, retryCount + 1);
-        }
-      }
-      
-      throw error;
-    }
-  };
-
-  // Main function to update and save class data
+  // Main function to update and save class data (for student management)
   const updateAndSaveClass = async (updatedStudents, updatedCategories, additionalUpdates = {}) => {
-    if (!user || !currentClassId || isSaving) return;
-    
-    setIsSaving(true);
+    if (!user || !currentClassId) return;
     const docRef = doc(firestore, 'users', user.uid);
-    
-    const saveOperation = async () => {
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const loadedUserData = docSnap.data();
-        const updatedClasses = loadedUserData.classes.map(cls =>
-          cls.id === currentClassId 
-            ? { 
-                ...cls, 
-                students: updatedStudents || cls.students, 
-                xpCategories: updatedCategories || cls.xpCategories,
-                ...additionalUpdates
-              } 
-            : cls
-        );
-        await updateDoc(docRef, { classes: updatedClasses });
-        
-        // Update local userData state to reflect changes
-        setUserData({
-          ...loadedUserData,
-          classes: updatedClasses
-        });
-      }
-    };
-
     try {
-      await performSaveWithRetry(saveOperation);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            const loadedUserData = docSnap.data();
+            const updatedClasses = loadedUserData.classes.map(cls =>
+                cls.id === currentClassId 
+                    ? { 
+                        ...cls, 
+                        students: updatedStudents || cls.students, 
+                        xpCategories: updatedCategories || cls.xpCategories,
+                        ...additionalUpdates
+                      } 
+                    : cls
+            );
+            await updateDoc(docRef, { classes: updatedClasses });
+            
+            // Update local userData state to reflect changes
+            setUserData({
+              ...loadedUserData,
+              classes: updatedClasses
+            });
+        }
     } catch (error) { 
-      console.error("❌ Error saving class data after retries:", error); 
-      showToast('Error saving data. Please try again.', 'error');
-    } finally {
-      setIsSaving(false);
+      console.error("Error saving class data:", error); 
+      showToast('Error saving data', 'error');
     }
   };
 
-  // General save for tool data with improved error handling
+  // General save for tool data
   const saveClassData = async (updates) => {
-    if (!user || !currentClassId || isSaving) return;
-    
-    setIsSaving(true);
+    if (!user || !currentClassId) return;
     const docRef = doc(firestore, 'users', user.uid);
-    
-    const saveOperation = async () => {
+    try {
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         const loadedUserData = docSnap.data();
@@ -240,15 +191,9 @@ const ClassroomChampions = () => {
           classes: updatedClasses
         });
       }
-    };
-
-    try {
-      await performSaveWithRetry(saveOperation);
     } catch (error) {
-      console.error("❌ Error saving tool data after retries:", error);
-      showToast('Error saving data. Please try again.', 'error');
-    } finally {
-      setIsSaving(false);
+      console.error("Error saving tool data:", error);
+      showToast('Error saving data', 'error');
     }
   };
 
@@ -266,30 +211,15 @@ const ClassroomChampions = () => {
     }
   };
 
-  // Debounced toolkit data save function
+  // Manual toolkit data save function for the toolkit components
   const saveToolkitDataToFirebase = async (toolkitUpdates) => {
     if (!user || !currentClassId) {
       console.error('Cannot save toolkit data: missing user or currentClassId');
       return;
     }
-
-    if (isSaving) {
-      console.log('Save already in progress, will retry...');
-      // Clear existing timeout and set a new one
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-      
-      saveTimeoutRef.current = setTimeout(() => {
-        saveToolkitDataToFirebase(toolkitUpdates);
-      }, 1000);
-      return;
-    }
     
-    setIsSaving(true);
-    const docRef = doc(firestore, 'users', user.uid);
-    
-    const saveOperation = async () => {
+    try {
+      const docRef = doc(firestore, 'users', user.uid);
       const docSnap = await getDoc(docRef);
       
       if (docSnap.exists()) {
@@ -315,17 +245,12 @@ const ClassroomChampions = () => {
           ...loadedUserData,
           classes: updatedClasses
         });
-      }
-    };
 
-    try {
-      await performSaveWithRetry(saveOperation);
-      console.log('✅ Toolkit data saved successfully');
+        console.log('✅ Toolkit data saved successfully');
+      }
     } catch (error) {
-      console.error("❌ Error saving toolkit data after retries:", error);
-      showToast('Error saving toolkit data. Please try again.', 'error');
-    } finally {
-      setIsSaving(false);
+      console.error("❌ Error saving toolkit data:", error);
+      throw error; // Re-throw to let the component handle it
     }
   };
 
@@ -338,29 +263,25 @@ const ClassroomChampions = () => {
   };
 
   // ===============================================
-  // STATE HANDLERS WITH SAVE PROTECTION
+  // STATE HANDLERS
   // ===============================================
   const handleReorderStudents = (reorderedStudents) => {
-    if (isSaving) return;
     setStudents(reorderedStudents);
     updateAndSaveClass(reorderedStudents, xpCategories);
   };
 
   const handleUpdateStudent = (updatedStudent) => {
-    if (isSaving) return;
     const newStudents = students.map(s => s.id === updatedStudent.id ? updatedStudent : s);
     setStudents(newStudents);
     updateAndSaveClass(newStudents, xpCategories);
   };
     
   const handleUpdateCategories = (newCategories) => {
-    if (isSaving) return;
     setXpCategories(newCategories);
     updateAndSaveClass(students, newCategories);
   };
     
   const handleBulkAward = (studentIds, amount, type) => {
-      if (isSaving) return;
       const newStudents = students.map(student => {
           if (studentIds.includes(student.id)) {
               let updatedStudent = { ...student, lastUpdated: new Date().toISOString() };
@@ -388,7 +309,7 @@ const ClassroomChampions = () => {
   };
   
   const addStudent = () => {
-    if (!newStudentFirstName.trim() || isSaving) return;
+    if (!newStudentFirstName.trim()) return;
     const newStudent = { id: `student_${Date.now()}`, firstName: newStudentFirstName.trim(), lastName: newStudentLastName.trim(), totalPoints: 0, currency: 0, coinsSpent: 0, avatarLevel: 1, avatarBase: 'Wizard F', avatar: getAvatarImage('Wizard F', 1), ownedAvatars: ['Wizard F'], ownedPets: [], createdAt: new Date().toISOString() };
     const newStudents = [...students, newStudent];
     setStudents(newStudents);
@@ -398,7 +319,6 @@ const ClassroomChampions = () => {
 
   // Mark attendance handler
   const markAttendance = (studentId, status) => {
-    if (isSaving) return;
     const today = new Date().toISOString().split('T')[0];
     const updatedAttendance = {
       ...attendanceData,
@@ -415,7 +335,6 @@ const ClassroomChampions = () => {
 
   // Award XP function for toolkit components (especially classroom jobs)
   const handleAwardXPFromToolkit = (studentId, amount, reason = '') => {
-    if (isSaving) return;
     const student = students.find(s => s.id === studentId);
     if (!student) return;
 
@@ -519,7 +438,6 @@ const ClassroomChampions = () => {
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
           <p className="text-gray-600">Loading Classroom Champions...</p>
-          {isSaving && <p className="text-blue-600 text-sm">Saving data...</p>}
         </div>
       </div>
     ); 
@@ -532,21 +450,12 @@ const ClassroomChampions = () => {
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                   Classroom Champions
                 </h1>
-                <div className="flex items-center space-x-4">
-                  {isSaving && (
-                    <div className="flex items-center space-x-2 text-blue-600">
-                      <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                      <span className="text-sm">Saving...</span>
-                    </div>
-                  )}
-                  <button 
+                <button 
                     onClick={() => auth.signOut()} 
-                    disabled={isSaving}
-                    className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
                   >
                     Sign Out
                   </button>
-                </div>
             </div>
         </div>
         <div className="bg-white shadow-sm border-b">
@@ -555,8 +464,7 @@ const ClassroomChampions = () => {
                     <button 
                       key={tab.id} 
                       onClick={() => setActiveTab(tab.id)} 
-                      disabled={isSaving}
-                      className={`flex items-center space-x-2 px-6 py-4 whitespace-nowrap transition-all duration-200 disabled:opacity-50 ${activeTab === tab.id ? 'text-blue-600 border-b-2 font-semibold border-blue-600 bg-blue-50' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'}`}
+                      className={`flex items-center space-x-2 px-6 py-4 whitespace-nowrap transition-all duration-200 ${activeTab === tab.id ? 'text-blue-600 border-b-2 font-semibold border-blue-600 bg-blue-50' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'}`}
                     >
                         <span className="text-lg">{tab.icon}</span>
                         <span>{tab.name}</span>
@@ -566,7 +474,7 @@ const ClassroomChampions = () => {
         </div>
         <main className="max-w-screen-2xl mx-auto px-4 py-6">{renderTabContent()}</main>
         
-        {showAddStudentModal && <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"><div className="bg-white rounded-2xl shadow-2xl w-full max-w-md"><div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-t-2xl"><h2 className="text-2xl font-bold">Add New Champion</h2></div><div className="p-6 space-y-4"><input type="text" value={newStudentFirstName} onChange={(e) => setNewStudentFirstName(e.target.value)} placeholder="First Name" className="w-full px-3 py-2 border border-gray-300 rounded-lg" disabled={isSaving}/><input type="text" value={newStudentLastName} onChange={(e) => setNewStudentLastName(e.target.value)} placeholder="Last Name (Optional)" className="w-full px-3 py-2 border border-gray-300 rounded-lg" disabled={isSaving}/></div><div className="flex space-x-3 p-6 pt-0"><button onClick={() => setShowAddStudentModal(false)} disabled={isSaving} className="flex-1 px-4 py-2 border rounded-lg disabled:opacity-50">Cancel</button><button onClick={addStudent} disabled={isSaving} className="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg disabled:opacity-50">Add Champion</button></div></div></div>}
+        {showAddStudentModal && <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"><div className="bg-white rounded-2xl shadow-2xl w-full max-w-md"><div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-t-2xl"><h2 className="text-2xl font-bold">Add New Champion</h2></div><div className="p-6 space-y-4"><input type="text" value={newStudentFirstName} onChange={(e) => setNewStudentFirstName(e.target.value)} placeholder="First Name" className="w-full px-3 py-2 border border-gray-300 rounded-lg"/><input type="text" value={newStudentLastName} onChange={(e) => setNewStudentLastName(e.target.value)} placeholder="Last Name (Optional)" className="w-full px-3 py-2 border border-gray-300 rounded-lg"/></div><div className="flex space-x-3 p-6 pt-0"><button onClick={() => setShowAddStudentModal(false)} className="flex-1 px-4 py-2 border rounded-lg">Cancel</button><button onClick={addStudent} className="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg">Add Champion</button></div></div></div>}
         {levelUpData && <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"><div className="bg-white rounded-2xl shadow-2xl w-full max-w-md text-center p-6"><div className="text-6xl mb-2">🎉</div><h2 className="text-2xl font-bold">LEVEL UP!</h2><h3 className="text-xl font-bold text-gray-800 my-2">{levelUpData.student.firstName} reached Level {levelUpData.newLevel}!</h3><img src={getAvatarImage(levelUpData.student.avatarBase, levelUpData.newLevel)} alt="New Avatar" className="w-32 h-32 mx-auto rounded-full border-4 border-yellow-400"/><button onClick={() => setLevelUpData(null)} className="mt-4 w-full bg-yellow-500 text-white py-2 rounded">Awesome!</button></div></div>}
         {petUnlockData && <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"><div className="bg-white rounded-2xl shadow-2xl w-full max-w-md text-center p-6"><div className="text-6xl mb-2">🐾</div><h2 className="text-2xl font-bold">PET UNLOCKED!</h2><h3 className="text-xl font-bold text-gray-800 my-2">{petUnlockData.student.firstName} found a companion!</h3><img src={getPetImage(petUnlockData.pet)} alt={petUnlockData.pet.name} className="w-24 h-24 mx-auto rounded-full border-4 border-purple-400"/><h4 className="text-lg font-semibold text-purple-600 mt-2">{petUnlockData.pet.name}</h4><button onClick={() => setPetUnlockData(null)} className="mt-4 w-full bg-purple-500 text-white py-2 rounded">Meet My Pet!</button></div></div>}
         {selectedStudent && <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"><div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"><div className="p-6"><button onClick={() => setSelectedStudent(null)} className="float-right text-2xl font-bold">×</button><h2 className="text-2xl font-bold">{selectedStudent.firstName} {selectedStudent.lastName}</h2><p>Level {calculateAvatarLevel(selectedStudent.totalPoints || 0)} Champion</p><div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6"><div><img src={getAvatarImage(selectedStudent.avatarBase, calculateAvatarLevel(selectedStudent.totalPoints))} className="w-32 h-32 rounded-full border-4 border-blue-400" /></div><div className="space-y-4"><p><strong>XP:</strong> {selectedStudent.totalPoints || 0}</p><p><strong>Coins:</strong> {calculateCoins(selectedStudent)}</p>{selectedStudent.ownedPets?.[0] && (<div><p><strong>Companion:</strong> {selectedStudent.ownedPets[0].name}</p><img src={getPetImage(selectedStudent.ownedPets[0])} className="w-16 h-16 rounded-full border-2 border-purple-300"/></div>)}</div></div></div></div></div>}
