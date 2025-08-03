@@ -9,6 +9,8 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import StudentsTab from '../components/tabs/StudentsTab';
 import ShopTab from '../components/tabs/ShopTab';
 import QuestsTab from '../components/tabs/QuestsTab';
+import PetRaceTab from '../components/tabs/PetRaceTab';
+import FishingTab from '../components/tabs/FishingTab';
 import GamesTab from '../components/tabs/GamesTab';
 import SettingsTab from '../components/tabs/SettingsTab';
 import TeachersToolkitTab from '../components/tabs/TeachersToolkitTab';
@@ -76,7 +78,18 @@ const showToast = (message, type = 'info') => {
   alert(`${type.toUpperCase()}: ${message}`);
 };
 
-const NAVIGATION_TABS = [ { id: 'dashboard', name: 'Dashboard', icon: '🏠'}, { id: 'students', name: 'Students', icon: '👥'}, { id: 'quests', name: 'Quests', icon: '📜'}, { id: 'shop', name: 'Shop', icon: '🏪'}, { id: 'games', name: 'Games', icon: '🎮'}, { id: 'curriculum', name: 'Curriculum Corner', icon: '📖'}, { id: 'toolkit', name: 'Teachers Toolkit', icon: '🛠️'}, { id: 'settings', name: 'Settings', icon: '⚙️'} ];
+const NAVIGATION_TABS = [ 
+  { id: 'dashboard', name: 'Dashboard', icon: '🏠'}, 
+  { id: 'students', name: 'Students', icon: '👥'}, 
+  { id: 'quests', name: 'Quests', icon: '📜'}, 
+  { id: 'shop', name: 'Shop', icon: '🏪'}, 
+  { id: 'petrace', name: 'Pet Race', icon: '🏁'}, 
+  { id: 'fishing', name: 'Fishing', icon: '🎣'}, 
+  { id: 'games', name: 'Games', icon: '🎮'}, 
+  { id: 'curriculum', name: 'Curriculum Corner', icon: '📖'}, 
+  { id: 'toolkit', name: 'Teachers Toolkit', icon: '🛠️'}, 
+  { id: 'settings', name: 'Settings', icon: '⚙️'} 
+];
 
 // ===============================================
 // MAIN COMPONENT
@@ -270,7 +283,16 @@ const ClassroomChampions = () => {
     updateAndSaveClass(reorderedStudents, xpCategories);
   };
 
-  const handleUpdateStudent = (updatedStudent) => {
+  const handleUpdateStudent = (studentId, updatedStudentData) => {
+    const newStudents = students.map(s => 
+      s.id === studentId ? { ...s, ...updatedStudentData } : s
+    );
+    setStudents(newStudents);
+    updateAndSaveClass(newStudents, xpCategories);
+  };
+
+  // Legacy support for old handleUpdateStudent signature
+  const handleUpdateStudentLegacy = (updatedStudent) => {
     const newStudents = students.map(s => s.id === updatedStudent.id ? updatedStudent : s);
     setStudents(newStudents);
     updateAndSaveClass(newStudents, xpCategories);
@@ -378,7 +400,7 @@ const ClassroomChampions = () => {
                   xpCategories={xpCategories}
                   onUpdateCategories={handleUpdateCategories} 
                   onBulkAward={handleBulkAward} 
-                  onUpdateStudent={handleUpdateStudent} 
+                  onUpdateStudent={handleUpdateStudentLegacy} 
                   onReorderStudents={handleReorderStudents} 
                   onViewDetails={setSelectedStudent} 
                   onAddStudent={() => setShowAddStudentModal(true)}
@@ -390,7 +412,7 @@ const ClassroomChampions = () => {
       case 'shop':
         return <ShopTab
                   students={students}
-                  onUpdateStudent={handleUpdateStudent}
+                  onUpdateStudent={handleUpdateStudentLegacy}
                   SHOP_BASIC_AVATARS={SHOP_BASIC_AVATARS}
                   SHOP_PREMIUM_AVATARS={SHOP_PREMIUM_AVATARS}
                   SHOP_BASIC_PETS={SHOP_BASIC_PETS}
@@ -400,6 +422,18 @@ const ClassroomChampions = () => {
                   getPetImage={getPetImage}
                   calculateCoins={calculateCoins}
                   calculateAvatarLevel={calculateAvatarLevel}
+                />;
+      case 'petrace':
+        return <PetRaceTab
+                  students={students}
+                  updateStudent={handleUpdateStudent}
+                  showToast={showToast}
+                />;
+      case 'fishing':
+        return <FishingTab
+                  students={students}
+                  updateStudent={handleUpdateStudent}
+                  showToast={showToast}
                 />;
       case 'curriculum':
         return <CurriculumCornerTab 
