@@ -1,33 +1,21 @@
 // components/curriculum/literacy/LiteracyWarmup.js
-// GREATLY IMPROVED LITERACY WARMUP COMPONENT
+// GREATLY IMPROVED LITERACY WARMUP COMPONENT WITH PROGRESSIVE COMPLEXITY
 import React, { useState, useEffect, useRef } from 'react';
-import { literacyWarmupContent } from './data/literacy-warmup-content';
+import { literacyWarmupContent, getProgressiveGraphs } from './data/literacy-warmup-content';
 
 // ===============================================
-// GRAPH REVIEW TOOL - WITH RANDOM HIGHLIGHTING
+// GRAPH REVIEW TOOL - WITH TRUE RANDOM HIGHLIGHTING
 // ===============================================
 const GraphReviewTool = ({ title, items, words, isPresentationMode }) => {
     const [highlightedIndex, setHighlightedIndex] = useState(-1);
-    const [randomOrder, setRandomOrder] = useState([]);
-    const [currentOrderIndex, setCurrentOrderIndex] = useState(0);
     const intervalRef = useRef(null);
-
-    useEffect(() => {
-        // Create randomized order of indices
-        const indices = Array.from({ length: items.length }, (_, i) => i);
-        const shuffled = [...indices].sort(() => Math.random() - 0.5);
-        setRandomOrder(shuffled);
-    }, [items]);
 
     const startHighlighting = () => {
         stopHighlighting();
-        setCurrentOrderIndex(0);
         intervalRef.current = setInterval(() => {
-            setCurrentOrderIndex(prev => {
-                const nextIndex = (prev + 1) % randomOrder.length;
-                setHighlightedIndex(randomOrder[nextIndex]);
-                return nextIndex;
-            });
+            // Truly random index each time
+            const randomIndex = Math.floor(Math.random() * items.length);
+            setHighlightedIndex(randomIndex);
         }, 1500);
     };
 
@@ -35,7 +23,6 @@ const GraphReviewTool = ({ title, items, words, isPresentationMode }) => {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
         setHighlightedIndex(-1);
-        setCurrentOrderIndex(0);
     };
 
     useEffect(() => () => stopHighlighting(), []);
@@ -44,7 +31,7 @@ const GraphReviewTool = ({ title, items, words, isPresentationMode }) => {
         <div className="space-y-6">
             <h3 className={`font-bold text-center text-gray-800 ${isPresentationMode ? 'text-6xl animate-pulse' : 'text-2xl'}`}>{title}</h3>
             <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
-                <div className={`grid gap-2 mb-4 ${isPresentationMode ? 'grid-cols-4 text-6xl p-8' : 'grid-cols-8 text-2xl p-3'}`}>
+                <div className={`grid gap-2 mb-4 ${isPresentationMode ? 'grid-cols-6 text-4xl p-8' : 'grid-cols-8 text-xl p-3'}`}>
                     {items.map((item, index) => (
                         <div key={index} className={`flex items-center justify-center font-bold rounded-lg transition-all duration-500 aspect-square ${highlightedIndex === index ? 'bg-yellow-400 text-black scale-110 shadow-lg animate-pulse' : 'bg-white text-gray-800 hover:bg-gray-50'}`}>
                             {item}
@@ -308,19 +295,156 @@ const WritingTool = ({ prompt, isPresentationMode }) => (
 );
 
 // ===============================================
+// NEW LESSON STEPS
+// ===============================================
+
+// Riddle of the Week Tool
+const RiddleOfTheWeekTool = ({ riddle, isPresentationMode }) => {
+    const [showAnswer, setShowAnswer] = useState(false);
+    const [showHint, setShowHint] = useState(false);
+
+    return (
+        <div className="bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 rounded-xl p-8 text-center">
+            <h3 className={`font-bold text-purple-800 mb-6 ${isPresentationMode ? 'text-6xl animate-pulse' : 'text-2xl'}`}>🧩 Riddle of the Week</h3>
+            
+            <div className="bg-white p-6 rounded-lg border-2 border-purple-200 shadow-md mb-6">
+                <p className={`text-purple-700 font-semibold ${isPresentationMode ? 'text-4xl leading-relaxed' : 'text-xl'}`}>{riddle.riddle}</p>
+            </div>
+
+            <div className="flex justify-center gap-4 mb-6">
+                <button 
+                    onClick={() => setShowHint(!showHint)}
+                    className={`bg-yellow-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-yellow-600 transition-all ${isPresentationMode ? 'px-12 py-6 text-3xl transform hover:scale-105' : ''}`}
+                >
+                    💡 {showHint ? 'Hide Hint' : 'Show Hint'}
+                </button>
+                <button 
+                    onClick={() => setShowAnswer(!showAnswer)}
+                    className={`bg-green-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-600 transition-all ${isPresentationMode ? 'px-12 py-6 text-3xl transform hover:scale-105' : ''}`}
+                >
+                    🎯 {showAnswer ? 'Hide Answer' : 'Show Answer'}
+                </button>
+            </div>
+
+            {showHint && (
+                <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4 mb-4">
+                    <p className={`text-yellow-700 font-semibold ${isPresentationMode ? 'text-3xl' : 'text-lg'}`}>
+                        💡 Hint: {riddle.hint}
+                    </p>
+                </div>
+            )}
+
+            {showAnswer && (
+                <div className="bg-green-50 border-2 border-green-300 rounded-lg p-4 animate-pulse">
+                    <p className={`text-green-700 font-bold ${isPresentationMode ? 'text-4xl' : 'text-xl'}`}>
+                        🎉 Answer: {riddle.answer}
+                    </p>
+                </div>
+            )}
+        </div>
+    );
+};
+
+// Fun Fact of the Week Tool
+const FunFactOfTheWeekTool = ({ funFact, isPresentationMode }) => (
+    <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-xl p-8 text-center">
+        <h3 className={`font-bold text-blue-800 mb-6 ${isPresentationMode ? 'text-6xl animate-pulse' : 'text-2xl'}`}>🌟 Fun Fact of the Week</h3>
+        
+        <div className="bg-white p-6 rounded-lg border-2 border-blue-200 shadow-md">
+            <p className={`text-blue-700 font-semibold ${isPresentationMode ? 'text-4xl leading-relaxed' : 'text-xl'}`}>{funFact}</p>
+        </div>
+
+        <p className={`text-blue-600 mt-4 ${isPresentationMode ? 'text-3xl' : 'text-lg'}`}>
+            🧠 Share this amazing fact with someone today!
+        </p>
+    </div>
+);
+
+// Focus Words Tool (Teacher Editable)
+const FocusWordsOfTheWeekTool = ({ focusWords, onUpdateWords, isPresentationMode }) => {
+    const [isEditing, setIsEditing] = useState(false);
+    const [editedWords, setEditedWords] = useState([...focusWords]);
+
+    const handleSaveWords = () => {
+        onUpdateWords(editedWords);
+        setIsEditing(false);
+    };
+
+    const handleWordChange = (index, newWord) => {
+        const updated = [...editedWords];
+        updated[index] = newWord;
+        setEditedWords(updated);
+    };
+
+    return (
+        <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-200 rounded-xl p-8">
+            <div className="flex justify-between items-center mb-6">
+                <h3 className={`font-bold text-emerald-800 ${isPresentationMode ? 'text-6xl' : 'text-2xl'}`}>📝 Focus Words of the Week</h3>
+                {!isPresentationMode && (
+                    <button 
+                        onClick={() => setIsEditing(!isEditing)}
+                        className="bg-emerald-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-emerald-600 transition-all"
+                    >
+                        {isEditing ? '❌ Cancel' : '✏️ Edit Words'}
+                    </button>
+                )}
+            </div>
+
+            <div className={`grid gap-4 ${isPresentationMode ? 'grid-cols-2 md:grid-cols-3 text-4xl' : 'grid-cols-3 md:grid-cols-5 text-xl'}`}>
+                {isEditing ? (
+                    editedWords.map((word, index) => (
+                        <input
+                            key={index}
+                            value={word}
+                            onChange={(e) => handleWordChange(index, e.target.value)}
+                            className="bg-white px-3 py-2 rounded-lg shadow-md font-semibold border-2 border-emerald-200 text-center focus:border-emerald-500 focus:outline-none"
+                        />
+                    ))
+                ) : (
+                    focusWords.map((word, index) => (
+                        <div key={index} className="bg-white px-4 py-3 rounded-lg shadow-md font-semibold border-2 border-emerald-200 text-center hover:shadow-lg transition-shadow">
+                            {word}
+                        </div>
+                    ))
+                )}
+            </div>
+
+            {isEditing && (
+                <div className="text-center mt-6">
+                    <button 
+                        onClick={handleSaveWords}
+                        className="bg-green-500 text-white px-8 py-3 rounded-lg font-semibold hover:bg-green-600 shadow-lg transition-all"
+                    >
+                        💾 Save Words
+                    </button>
+                </div>
+            )}
+
+            <p className={`text-emerald-600 mt-4 text-center ${isPresentationMode ? 'text-3xl' : 'text-lg'}`}>
+                🎯 Practice reading and spelling these important words!
+            </p>
+        </div>
+    );
+};
+
+// ===============================================
 // MAIN LITERACY WARMUP COMPONENT
 // ===============================================
 const LiteracyWarmup = ({ showToast = () => {}, students = [] }) => {
   const [selectedWeek, setSelectedWeek] = useState('week1');
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [isPresentationMode, setIsPresentationMode] = useState(false);
+  const [customFocusWords, setCustomFocusWords] = useState({});
 
   const WARMUP_STEPS = [
     { id: 'graph_review', title: 'Graph Review', icon: '🔤' },
     { id: 'sound_of_week', title: 'Sound of the Week', icon: '🔊' },
     { id: 'reading', title: 'Reading Passage', icon: '📖' },
     { id: 'language', title: 'Language Activities', icon: '📝' },
-    { id: 'writing', title: 'Writing Prompt', icon: '✍️' }
+    { id: 'writing', title: 'Writing Prompt', icon: '✍️' },
+    { id: 'riddle', title: 'Riddle of the Week', icon: '🧩' },
+    { id: 'fun_fact', title: 'Fun Fact', icon: '🌟' },
+    { id: 'focus_words', title: 'Focus Words', icon: '📝' }
   ];
 
   const weeklyContent = literacyWarmupContent[selectedWeek];
@@ -349,10 +473,24 @@ const LiteracyWarmup = ({ showToast = () => {}, students = [] }) => {
   const goToPrevStep = () => setCurrentStepIndex(prev => Math.max(prev - 1, 0));
   const goToStep = (stepIndex) => setCurrentStepIndex(stepIndex);
 
+  const handleUpdateFocusWords = (newWords) => {
+    setCustomFocusWords(prev => ({
+      ...prev,
+      [selectedWeek]: newWords
+    }));
+    showToast('Focus words updated!', 'success');
+  };
+
+  const getCurrentFocusWords = () => {
+    return customFocusWords[selectedWeek] || weeklyContent.focusWords;
+  };
+
   const renderCurrentStep = () => {
+    const progressiveGraphs = getProgressiveGraphs(selectedWeek);
+    
     switch(currentStep.id) {
         case 'graph_review':
-            return <GraphReviewTool title="📚 Review Digraphs" items={weeklyContent.graphReview.digraphs} words={weeklyContent.soundWords} isPresentationMode={isPresentationMode} />;
+            return <GraphReviewTool title="📚 Review Letters, Digraphs & More" items={progressiveGraphs} words={weeklyContent.soundWords} isPresentationMode={isPresentationMode} />;
         case 'sound_of_week':
             return <SoundOfTheWeekTool content={weeklyContent} isPresentationMode={isPresentationMode} />;
         case 'reading':
@@ -361,6 +499,12 @@ const LiteracyWarmup = ({ showToast = () => {}, students = [] }) => {
             return <LanguageTool language={weeklyContent.language} isPresentationMode={isPresentationMode} />;
         case 'writing':
             return <WritingTool prompt={weeklyContent.writingPrompt} isPresentationMode={isPresentationMode} />;
+        case 'riddle':
+            return <RiddleOfTheWeekTool riddle={weeklyContent.riddleOfTheWeek} isPresentationMode={isPresentationMode} />;
+        case 'fun_fact':
+            return <FunFactOfTheWeekTool funFact={weeklyContent.funFact} isPresentationMode={isPresentationMode} />;
+        case 'focus_words':
+            return <FocusWordsOfTheWeekTool focusWords={getCurrentFocusWords()} onUpdateWords={handleUpdateFocusWords} isPresentationMode={isPresentationMode} />;
         default:
             return <div className="text-center text-gray-500 p-8">Step not found</div>;
     }
@@ -437,7 +581,7 @@ const LiteracyWarmup = ({ showToast = () => {}, students = [] }) => {
                 currentStepIndex === index
                   ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg transform hover:scale-105'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              } ${isPresentationMode ? 'px-10 py-6 text-3xl' : 'px-4 py-2'}`}
+              } ${isPresentationMode ? 'px-8 py-4 text-2xl' : 'px-4 py-2'}`}
             >
               <span>{step.icon}</span>
               <span>{step.title}</span>
@@ -525,8 +669,8 @@ const LiteracyWarmup = ({ showToast = () => {}, students = [] }) => {
             <div>
               <h4 className="font-bold text-green-800 mb-2">🎯 Teaching Tip</h4>
               <p className="text-green-700">
-                Use the step-by-step approach to guide your literacy lesson. Click "Presentation Mode" for an immersive classroom experience!
-                Each step builds on the previous one to reinforce phonics learning.
+                The lesson complexity increases with each week! Notice how more graph types are introduced progressively. 
+                Use "Presentation Mode" for an immersive classroom experience with 8 engaging activities!
               </p>
             </div>
           </div>
