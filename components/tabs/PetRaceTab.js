@@ -1,4 +1,6 @@
-// components/tabs/PetRaceTab.js - REBUILT PET RACE SYSTEM WITH SMOOTH ANIMATION AND ENGAGING DESIGN
+// components/tabs/PetRaceTab.js - REBUILT PET RACE SYSTEM WITH CLIENT-SIDE CSS
+'use client'; // Mark as client-side component
+
 import React, { useState, useEffect, useRef } from 'react';
 
 const PetRaceTab = ({ 
@@ -11,7 +13,6 @@ const PetRaceTab = ({
   const [selectedPets, setSelectedPets] = useState([]);
   const [prizeType, setPrizeType] = useState('xp');
   const [prizeAmount, setPrizeAmount] = useState(10);
-  const [prizeCategory, setPrizeCategory] = useState('Respectful');
   const [customPrize, setCustomPrize] = useState('');
 
   // Race Animation States
@@ -619,46 +620,42 @@ const PetRaceTab = ({
           )}
         </div>
       )}
+
+      {/* Inline CSS for Animations */}
+      <style jsx>{`
+        @keyframes run {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-5px); }
+        }
+        @keyframes winner {
+          0%, 100% { transform: scale(1) rotate(0deg); }
+          50% { transform: scale(1.2) rotate(10deg); }
+        }
+        @keyframes pan-left {
+          from { background-position: 0 0; }
+          to { background-position: -200px 0; }
+        }
+        @keyframes spin-slow {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.6; }
+        }
+        @keyframes bounce {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
+        }
+        .animate-run { animation: run 0.6s infinite; }
+        .animate-winner { animation: winner 1s infinite; }
+        .animate-pan-left { animation: pan-left 10s infinite linear; }
+        .animate-pulse { animation: pulse 2s infinite; }
+        .animate-bounce { animation: bounce 1s infinite; }
+        .animate-spin-slow { animation: spin-slow 10s linear infinite; }
+      `}</style>
     </div>
   );
 };
-
-// CSS Animations
-const styles = `
-  @keyframes run {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-5px); }
-  }
-  @keyframes winner {
-    0%, 100% { transform: scale(1) rotate(0deg); }
-    50% { transform: scale(1.2) rotate(10deg); }
-  }
-  @keyframes pan-left {
-    from { background-position: 0 0; }
-    to { background-position: -200px 0; }
-  }
-  @keyframes spin-slow {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-  .animate-run { animation: run 0.6s infinite; }
-  .animate-winner { animation: winner 1s infinite; }
-  .animate-pan-left { animation: pan-left 10s infinite linear; }
-  .animate-pulse { animation: pulse 2s infinite; }
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.6; }
-  }
-  .animate-bounce { animation: bounce 1s infinite; }
-  @keyframes bounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
-  }
-  .animate-spin-slow { animation: spin-slow 10s linear infinite; }
-`;
-
-const styleSheet = new CSSStyleSheet();
-styleSheet.replaceSync(styles);
-document.adoptedStyleSheets = [styleSheet];
 
 export default PetRaceTab;
