@@ -1,5 +1,5 @@
 // components/curriculum/literacy/data/literacy-warmup-content.js
-// LITERACY WARMUP CONTENT DATA - SEPARATED FOR MAINTAINABILITY
+// IMPROVED LITERACY WARMUP CONTENT DATA WITH INCOMPLETE EXAMPLES
 
 export const literacyWarmupContent = {
   "week1": {
@@ -24,6 +24,8 @@ export const literacyWarmupContent = {
     "language": {
       "synonyms": [["happy", "joyful"], ["big", "large"]],
       "antonyms": [["hot", "cold"], ["fast", "slow"]],
+      "incompleteSynonyms": ["small", "glad"],
+      "incompleteAntonyms": ["up", "wet"],
       "grammarTask": "Underline the verbs in the passage.",
       "punctuationTask": "Fix the punctuation in: 'can we go now she asked'"
     },
@@ -51,6 +53,8 @@ export const literacyWarmupContent = {
     "language": {
       "synonyms": [["choose", "pick"], ["cheerful", "happy"]],
       "antonyms": [["big", "small"], ["favorite", "least liked"]],
+      "incompleteSynonyms": ["think", "smile"],
+      "incompleteAntonyms": ["first", "careful"],
       "grammarTask": "Circle all the nouns in the passage.",
       "punctuationTask": "Add commas where needed: 'Charlie ate cake pie and cookies'"
     },
@@ -78,6 +82,8 @@ export const literacyWarmupContent = {
     "language": {
       "synonyms": [["think", "ponder"], ["important", "vital"]],
       "antonyms": [["first", "last"], ["kind", "mean"]],
+      "incompleteSynonyms": ["brush", "thank"],
+      "incompleteAntonyms": ["everything", "after"],
       "grammarTask": "Find all the words with 'th' in the passage.",
       "punctuationTask": "Add capital letters: 'thomas thought about three things'"
     },
@@ -105,6 +111,8 @@ export const literacyWarmupContent = {
     "language": {
       "synonyms": [["wondered", "thought"], ["magnificent", "amazing"]],
       "antonyms": [["white", "black"], ["sets", "rises"]],
+      "incompleteSynonyms": ["find", "watch"],
+      "incompleteAntonyms": ["asked", "waited"],
       "grammarTask": "Find all the question words in the passage.",
       "punctuationTask": "Add question marks: 'What time will we see it asked one sailor'"
     },
@@ -132,12 +140,101 @@ export const literacyWarmupContent = {
     "language": {
       "synonyms": [["photo", "picture"], ["funny", "amusing"]],
       "antonyms": [["excitedly", "calmly"], ["laugh", "cry"]],
+      "incompleteSynonyms": ["call", "look"],
+      "incompleteAntonyms": ["began", "friend"],
       "grammarTask": "Circle the verbs that show action in the passage.",
       "punctuationTask": "Add exclamation marks: 'Look at this photograph he said'"
     },
     "writingPrompt": "Write about a time you took a special photo using 'ph' words."
+  },
+  "week6": {
+    "focusSound": "ck",
+    "graphReview": {
+      "graphs": ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"],
+      "digraphs": ["sh", "ch", "th", "wh", "ph", "ck", "ng"],
+      "trigraphs": ["tch", "dge", "igh", "sch"],
+      "quadgraphs": ["ough", "eigh", "augh", "tion"]
+    },
+    "soundWords": ["back", "clock", "duck", "truck", "stick"],
+    "boggleLetters": ["c", "k", "a", "u", "i", "t", "r"],
+    "extraActivities": [
+      "Write 3 more words with 'ck'",
+      "Listen for the 'ck' sound in words",
+      "Find objects that end with 'ck'"
+    ],
+    "readingPassage": {
+      "title": "The Lucky Duck",
+      "text": "There was a lucky duck who lived by the clock tower. Every morning, she would pick up sticks and stack them in a neat pile. When the clock struck twelve, she would quack loudly and flick her tail. The other ducks thought she was quite a character with her thick feathers and quick movements."
+    },
+    "language": {
+      "synonyms": [["lucky", "fortunate"], ["quick", "fast"]],
+      "antonyms": [["neat", "messy"], ["thick", "thin"]],
+      "incompleteSynonyms": ["pick", "stack"],
+      "incompleteAntonyms": ["morning", "loudly"],
+      "grammarTask": "Find all the words ending in 'ck' in the passage.",
+      "punctuationTask": "Add periods where needed: 'The duck was lucky She lived by the clock'"
+    },
+    "writingPrompt": "Write a story about an animal using words that end with 'ck'."
+  },
+  "week7": {
+    "focusSound": "ng",
+    "graphReview": {
+      "graphs": ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"],
+      "digraphs": ["sh", "ch", "th", "wh", "ph", "ck", "ng"],
+      "trigraphs": ["tch", "dge", "igh", "sch"],
+      "quadgraphs": ["ough", "eigh", "augh", "tion"]
+    },
+    "soundWords": ["ring", "sing", "long", "strong", "bring"],
+    "boggleLetters": ["n", "g", "i", "o", "r", "s", "a"],
+    "extraActivities": [
+      "Write 3 more words with 'ng'",
+      "Practice the 'ng' sound at the end of words",
+      "Sing a song with 'ng' words"
+    ],
+    "readingPassage": {
+      "title": "The Singing King",
+      "text": "Once upon a time, there was a king who loved singing. He would ring a bell every morning and sing a long song. His voice was so strong that birds would bring their young ones to listen. The king wore a golden ring and would swing on a rope in his garden while humming."
+    },
+    "language": {
+      "synonyms": [["strong", "powerful"], ["long", "lengthy"]],
+      "antonyms": [["young", "old"], ["morning", "evening"]],
+      "incompleteSynonyms": ["sing", "bring"],
+      "incompleteAntonyms": ["loved", "golden"],
+      "grammarTask": "Circle all the words ending in 'ng' in the passage.",
+      "punctuationTask": "Fix the sentence: 'the king loved singing he had a strong voice'"
+    },
+    "writingPrompt": "Write about something you love doing using words ending in 'ng'."
+  },
+  "week8": {
+    "focusSound": "tch",
+    "graphReview": {
+      "graphs": ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"],
+      "digraphs": ["sh", "ch", "th", "wh", "ph", "ck", "ng"],
+      "trigraphs": ["tch", "dge", "igh", "sch"],
+      "quadgraphs": ["ough", "eigh", "augh", "tion"]
+    },
+    "soundWords": ["catch", "match", "watch", "patch", "stretch"],
+    "boggleLetters": ["t", "c", "h", "a", "e", "w", "m"],
+    "extraActivities": [
+      "Write 3 more words with 'tch'",
+      "Practice writing the 'tch' trigraph",
+      "Play catch using 'tch' words"
+    ],
+    "readingPassage": {
+      "title": "The Match That Wouldn't Catch",
+      "text": "Katie tried to catch the butterfly with her net, but it was too quick. She decided to watch it instead as it landed on a patch of flowers. The butterfly's wings would stretch and flutter like they were trying to match the colors of the garden. Katie sat and watched, thinking it was better to admire than to catch."
+    },
+    "language": {
+      "synonyms": [["catch", "grab"], ["quick", "speedy"]],
+      "antonyms": [["stretch", "shrink"], ["admire", "ignore"]],
+      "incompleteSynonyms": ["watch", "flutter"],
+      "incompleteAntonyms": ["better", "tried"],
+      "grammarTask": "Find all the words with 'tch' in the passage.",
+      "punctuationTask": "Add apostrophes: 'The butterflys wings wouldnt stop moving'"
+    },
+    "writingPrompt": "Write about watching something interesting using 'tch' words."
   }
 };
 
-// You can add more weeks here...
-// This file can grow to include all 40 weeks without cluttering other files
+// You can add more weeks here as needed...
+// This structure now includes incomplete examples for student practice
