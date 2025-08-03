@@ -10,7 +10,6 @@ import StudentsTab from '../components/tabs/StudentsTab';
 import ShopTab from '../components/tabs/ShopTab';
 import QuestsTab from '../components/tabs/QuestsTab';
 import PetRaceTab from '../components/tabs/PetRaceTab';
-import FishingTab from '../components/tabs/FishingTab';
 import GamesTab from '../components/tabs/GamesTab';
 import SettingsTab from '../components/tabs/SettingsTab';
 import TeachersToolkitTab from '../components/tabs/TeachersToolkitTab';
@@ -84,7 +83,6 @@ const NAVIGATION_TABS = [
   { id: 'quests', name: 'Quests', icon: '📜'}, 
   { id: 'shop', name: 'Shop', icon: '🏪'}, 
   { id: 'petrace', name: 'Pet Race', icon: '🏁'}, 
-  { id: 'fishing', name: 'Fishing', icon: '🎣'}, 
   { id: 'games', name: 'Games', icon: '🎮'}, 
   { id: 'curriculum', name: 'Curriculum Corner', icon: '📖'}, 
   { id: 'toolkit', name: 'Teachers Toolkit', icon: '🛠️'}, 
@@ -425,12 +423,6 @@ const ClassroomChampions = () => {
                 />;
       case 'petrace':
         return <PetRaceTab
-                  students={students}
-                  updateStudent={handleUpdateStudent}
-                  showToast={showToast}
-                />;
-      case 'fishing':
-        return <FishingTab
                   students={students}
                   updateStudent={handleUpdateStudent}
                   showToast={showToast}
