@@ -351,10 +351,15 @@ const TimetableCreator = ({
     const subject = getSubjectById(activity.subject);
     const teacher = getTeacherById(activity.teacher);
     
+    // Get assigned students for tooltip
+    const assignedStudents = activity.students.includes('all') 
+      ? [] 
+      : activity.students.map(studentId => students.find(s => s.id === studentId)).filter(Boolean);
+    
     return (
       <div 
         key={activity.id}
-        className={`${subject?.color || 'bg-gray-500'} text-white p-2 rounded-lg mb-1 text-xs relative ${
+        className={`${subject?.color || 'bg-gray-500'} text-white p-2 rounded-lg mb-1 text-xs relative group ${
           isParallel ? 'opacity-80 border-2 border-white border-dashed' : ''
         }`}
       >
@@ -378,7 +383,7 @@ const TimetableCreator = ({
         {activity.students.includes('all') ? (
           <div className="text-xs opacity-90 mb-1">👥 Whole Class</div>
         ) : activity.students.length > 0 ? (
-          <div className="text-xs opacity-90 mb-1">
+          <div className="text-xs opacity-90 mb-1 cursor-help">
             👥 {activity.students.length} student{activity.students.length !== 1 ? 's' : ''}
           </div>
         ) : null}
@@ -394,6 +399,32 @@ const TimetableCreator = ({
         {isParallel && (
           <div className="absolute top-1 right-6 text-xs bg-white bg-opacity-20 px-1 rounded">
             Parallel
+          </div>
+        )}
+
+        {/* Student Tooltip - Only show if specific students are selected */}
+        {!activity.students.includes('all') && assignedStudents.length > 0 && (
+          <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-50">
+            <div className="bg-gray-900 text-white text-xs rounded-lg p-3 shadow-lg min-w-max">
+              <div className="font-semibold mb-2 text-yellow-300">👥 Assigned Students:</div>
+              <div className="space-y-1">
+                {assignedStudents.map(student => (
+                  <div key={student.id} className="flex items-center space-x-2">
+                    <img 
+                      src={`/avatars/${student.avatarBase || 'Wizard F'}/Level ${Math.min(Math.max(Math.floor((student.totalPoints || 0) / 100) + 1, 1), 4)}.png`}
+                      alt={`${student.firstName}'s Avatar`}
+                      className="w-4 h-4 rounded-full border border-gray-500"
+                      onError={(e) => {
+                        e.target.src = '/avatars/Wizard F/Level 1.png';
+                      }}
+                    />
+                    <span>{student.firstName} {student.lastName}</span>
+                  </div>
+                ))}
+              </div>
+              {/* Tooltip arrow */}
+              <div className="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-900"></div>
+            </div>
           </div>
         )}
       </div>
