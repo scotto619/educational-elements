@@ -16,22 +16,35 @@ const PetRaceTab = ({
   
   // Race Animation States
   const [racePositions, setRacePositions] = useState({});
-  const [raceProgress, setRaceProgress] = useState(0);
   const [raceWinner, setRaceWinner] = useState(null);
   const [isRacing, setIsRacing] = useState(false);
+  const [raceProgress, setRaceProgress] = useState(0);
   
-  // Track Dimensions
+  // Track and Animation
   const trackRef = useRef(null);
+  const animationRef = useRef(null);
+  const raceDataRef = useRef({});
   const [trackWidth, setTrackWidth] = useState(800);
   
-  // Get students with pets
-  const studentsWithPets = students.filter(student => student.pet?.image);
+  // Get students with pets (current pets only)
+  const studentsWithPets = students.filter(student => {
+    // Make sure student has a pet with proper image data
+    return student.pet && 
+           (student.pet.image || student.pet.path || student.pet.name) &&
+           student.pet.name; // Must have a name
+  });
   
+  console.log('Students with valid pets:', studentsWithPets.map(s => ({
+    name: s.firstName,
+    pet: s.pet
+  })));
+
   // Track resize handling
   useEffect(() => {
     const updateTrackWidth = () => {
       if (trackRef.current) {
-        setTrackWidth(trackRef.current.offsetWidth - 120); // Account for padding and finish line
+        const rect = trackRef.current.getBoundingClientRect();
+        setTrackWidth(rect.width - 160); // Account for padding and finish line
       }
     };
     
@@ -63,10 +76,48 @@ const PetRaceTab = ({
     setRacePhase('prize');
   };
 
-  // Start Race Handler
+  // Get pet image with fallback
+  const getPetImage = (pet) => {
+    if (!pet) return '/Pets/Wizard.png';
+    
+    // Direct path first
+    if (pet.image) return pet.image;
+    if (pet.path) return pet.path;
+    
+    // Fallback based on pet name/type
+    const petName = (pet.name || pet.type || 'wizard').toLowerCase();
+    const petMap = {
+      'wizard': '/Pets/Wizard.png',
+      'knight': '/Pets/Knight.png',
+      'rogue': '/Pets/Rogue.png',
+      'barbarian': '/Pets/Barbarian.png',
+      'cleric': '/Pets/Cleric.png',
+      'alchemist': '/Pets/Alchemist.png',
+      'bard': '/Pets/Bard.png',
+      'monk': '/Pets/Monk.png',
+      'engineer': '/Pets/Engineer.png',
+      'necromancer': '/Pets/Necromancer.png'
+    };
+    
+    return petMap[petName] || '/Pets/Wizard.png';
+  };
+
+  // Start Race with Smooth Animation
   const startRace = () => {
     if (!prizeAmount || prizeAmount < 1) {
       showToast('Please set a valid prize amount!', 'warning');
+      return;
+    }
+    
+    // Validate selected pets still exist
+    const validSelectedPets = selectedPets.filter(petId => {
+      const student = studentsWithPets.find(s => s.id === petId);
+      return student && student.pet;
+    });
+    
+    if (validSelectedPets.length < 2) {
+      showToast('Some selected pets are no longer available. Please reselect.', 'error');
+      setSelectedPets(validSelectedPets);
       return;
     }
     
@@ -75,86 +126,127 @@ const PetRaceTab = ({
     setRaceProgress(0);
     setRaceWinner(null);
     
-    // Initialize random positions and speeds for each pet
+    // Initialize race data
+    const raceData = {};
     const initialPositions = {};
-    const speeds = {};
     
-    selectedPets.forEach(petId => {
+    validSelectedPets.forEach(petId => {
       initialPositions[petId] = 0;
-      speeds[petId] = 0.8 + Math.random() * 0.4; // Random speed between 0.8 and 1.2
+      raceData[petId] = {
+        speed: 0.5 + Math.random() * 1.0, // Random speed between 0.5 and 1.5
+        position: 0,
+        finished: false
+      };
     });
     
     setRacePositions(initialPositions);
+    raceDataRef.current = raceData;
     
-    // Run race animation
-    runRaceAnimation(speeds);
+    // Start smooth animation
+    runSmoothRace(validSelectedPets);
     showToast('🏁 Race Started! Go pets go!', 'success');
   };
 
-  // Race Animation System
-  const runRaceAnimation = (speeds) => {
-    let progress = 0;
-    const animationDuration = 5000; // 5 seconds race
-    const updateInterval = 50; // Update every 50ms
-    const steps = animationDuration / updateInterval;
+  // Smooth Race Animation using requestAnimationFrame
+  const runSmoothRace = (racingPets) => {
+    const startTime = Date.now();
+    const raceDuration = 6000; // 6 seconds
+    const finishLine = trackWidth * 0.85; // 85% of track width
+    let winner = null;
+    let raceCompleted = false;
     
-    const interval = setInterval(() => {
-      progress += 1;
-      setRaceProgress(progress / steps);
+    const animate = () => {
+      if (raceCompleted) return;
       
-      setRacePositions(prev => {
-        const newPositions = {};
-        let winner = null;
-        let maxPosition = 0;
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / raceDuration, 1);
+      
+      setRaceProgress(progress);
+      
+      const newPositions = {};
+      let maxPosition = 0;
+      let leadingPet = null;
+      
+      racingPets.forEach(petId => {
+        const raceData = raceDataRef.current[petId];
+        if (!raceData || raceData.finished) return;
         
-        selectedPets.forEach(petId => {
-          // Add some randomness to make race exciting
-          const randomFactor = 0.95 + Math.random() * 0.1;
-          const baseProgress = (progress / steps) * speeds[petId] * randomFactor;
-          newPositions[petId] = Math.min(baseProgress * trackWidth * 0.85, trackWidth * 0.85);
+        // Add some randomness to make it exciting
+        const randomFactor = 0.9 + Math.random() * 0.2; // 0.9 to 1.1
+        const basePosition = progress * raceData.speed * finishLine * randomFactor;
+        
+        // Ensure pets don't go past finish line until one wins
+        const position = Math.min(basePosition, finishLine);
+        newPositions[petId] = position;
+        raceData.position = position;
+        
+        // Check if this pet crossed the finish line first
+        if (position >= finishLine && !winner && !raceCompleted) {
+          winner = students.find(s => s.id === petId);
+          raceCompleted = true;
+          raceData.finished = true;
           
-          if (newPositions[petId] > maxPosition) {
-            maxPosition = newPositions[petId];
-            const student = students.find(s => s.id === petId);
-            if (student) winner = student;
-          }
-        });
+          // Stop all other pets from advancing
+          racingPets.forEach(id => {
+            if (id !== petId) {
+              raceDataRef.current[id].finished = true;
+            }
+          });
+        }
         
-        return newPositions;
+        if (position > maxPosition) {
+          maxPosition = position;
+          leadingPet = students.find(s => s.id === petId);
+        }
       });
       
-      // Check if race is finished
-      if (progress >= steps) {
-        clearInterval(interval);
-        setIsRacing(false);
-        
-        // Determine winner (pet with highest position)
-        let winner = null;
-        let maxPosition = 0;
-        
-        selectedPets.forEach(petId => {
-          const position = racePositions[petId] || 0;
-          if (position > maxPosition) {
-            maxPosition = position;
-            winner = students.find(s => s.id === petId);
-          }
-        });
+      setRacePositions(newPositions);
+      
+      // Continue animation until race is complete or time is up
+      if (!raceCompleted && progress < 1) {
+        animationRef.current = requestAnimationFrame(animate);
+      } else {
+        // Race finished
+        if (!winner && leadingPet) {
+          winner = leadingPet; // Fallback to leading pet if no clear winner
+        }
         
         if (winner) {
           finishRace(winner);
+        } else {
+          // Fallback - pick random winner if something goes wrong
+          const randomWinner = students.find(s => racingPets.includes(s.id));
+          if (randomWinner) finishRace(randomWinner);
         }
       }
-    }, updateInterval);
+    };
+    
+    animationRef.current = requestAnimationFrame(animate);
   };
+
+  // Cleanup animation on unmount
+  useEffect(() => {
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, []);
 
   // Finish Race and Award Prize
   const finishRace = (winner) => {
+    setIsRacing(false);
     setRaceWinner(winner);
     setRacePhase('finished');
     
+    // Cancel any ongoing animation
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
+    }
+    
     // Update winner's pet wins
-    const updatedWinner = {
-      ...winner,
+    const updatedWinnerData = {
       pet: {
         ...winner.pet,
         wins: (winner.pet.wins || 0) + 1
@@ -162,21 +254,21 @@ const PetRaceTab = ({
     };
     
     // Award prize to winner
-    let updatedStudent = { ...updatedWinner };
-    
     if (prizeType === 'xp') {
-      const currentXP = updatedStudent.xp?.[prizeCategory] || 0;
-      updatedStudent.xp = {
-        ...updatedStudent.xp,
+      const currentXP = winner.xp?.[prizeCategory] || 0;
+      updatedWinnerData.xp = {
+        ...winner.xp,
         [prizeCategory]: currentXP + prizeAmount
       };
-      updatedStudent.totalXP = (updatedStudent.totalXP || 0) + prizeAmount;
+      updatedWinnerData.totalXP = (winner.totalXP || 0) + prizeAmount;
+      updatedWinnerData.totalPoints = (winner.totalPoints || 0) + prizeAmount;
     } else if (prizeType === 'coins') {
-      updatedStudent.coins = (updatedStudent.coins || 0) + prizeAmount;
+      updatedWinnerData.coins = (winner.coins || 0) + prizeAmount;
+      updatedWinnerData.currency = (winner.currency || 0) + prizeAmount;
     }
     
     // Update student in the system
-    updateStudent(updatedStudent.id, updatedStudent);
+    updateStudent(winner.id, updatedWinnerData);
     
     // Show celebration
     showToast(
@@ -187,6 +279,12 @@ const PetRaceTab = ({
 
   // Reset Race
   const resetRace = () => {
+    // Cancel any ongoing animation
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
+    }
+    
     setRacePhase('setup');
     setSelectedPets([]);
     setRacePositions({});
@@ -195,6 +293,7 @@ const PetRaceTab = ({
     setIsRacing(false);
     setPrizeAmount(10);
     setCustomPrize('');
+    raceDataRef.current = {};
   };
 
   // Get prize description
@@ -227,8 +326,8 @@ const PetRaceTab = ({
         <div className="text-center py-16 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
           <div className="text-8xl mb-6">🐾</div>
           <h3 className="text-3xl font-bold text-gray-600 mb-4">No Racing Pets Available!</h3>
-          <p className="text-xl text-gray-500 mb-2">Students need to reach 50 total XP to unlock their pets.</p>
-          <p className="text-lg text-gray-500">Award XP in the Students tab to help them get their companions!</p>
+          <p className="text-xl text-gray-500 mb-2">Students need pets to participate in races.</p>
+          <p className="text-lg text-gray-500">Students can get pets by reaching 50 XP or purchasing them in the shop!</p>
         </div>
       )}
 
@@ -253,11 +352,15 @@ const PetRaceTab = ({
                 >
                   <div className="flex items-center space-x-4">
                     <img 
-                      src={student.pet.image} 
+                      src={getPetImage(student.pet)} 
                       alt={student.pet.name}
-                      className={`w-16 h-16 rounded-full border-3 ${
+                      className={`w-16 h-16 rounded-full border-3 object-cover ${
                         selectedPets.includes(student.id) ? 'border-green-400' : 'border-gray-300'
                       }`}
+                      onError={(e) => {
+                        console.log(`Failed to load pet image for ${student.firstName}:`, student.pet);
+                        e.target.src = '/Pets/Wizard.png';
+                      }}
                     />
                     <div className="text-left">
                       <h4 className="font-bold text-lg text-gray-800">{student.firstName}</h4>
@@ -416,13 +519,19 @@ const PetRaceTab = ({
           <div className="bg-gradient-to-r from-green-400 to-blue-500 text-white rounded-xl p-6 text-center">
             <h3 className="text-3xl font-bold mb-2 animate-pulse">🏃‍♂️ RACE IN PROGRESS! 🏃‍♀️</h3>
             <p className="text-xl">Winner gets: {getPrizeDescription()}</p>
+            <div className="mt-4 bg-white bg-opacity-20 rounded-full h-4">
+              <div 
+                className="bg-white h-4 rounded-full transition-all duration-300"
+                style={{ width: `${raceProgress * 100}%` }}
+              ></div>
+            </div>
           </div>
 
           {/* Race Track */}
           <div 
             ref={trackRef}
             className="relative bg-gradient-to-r from-green-200 via-green-100 to-green-200 border-4 border-gray-400 rounded-xl overflow-hidden shadow-inner"
-            style={{ height: `${selectedPets.length * 80 + 40}px`, minHeight: '200px' }}
+            style={{ height: `${selectedPets.length * 90 + 40}px`, minHeight: '250px' }}
           >
             {/* Track Lanes */}
             {selectedPets.map((_, index) => (
@@ -432,51 +541,72 @@ const PetRaceTab = ({
                   index % 2 === 0 ? 'bg-white bg-opacity-20' : 'bg-green-50 bg-opacity-40'
                 }`}
                 style={{
-                  top: `${index * 80 + 20}px`,
-                  height: '80px'
+                  top: `${index * 90 + 20}px`,
+                  height: '90px'
                 }}
               />
             ))}
 
             {/* Start Line */}
-            <div className="absolute top-0 bottom-0 left-4 w-3 bg-green-600 rounded">
-              <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-white px-2 py-1 rounded text-xs font-bold text-green-800">
+            <div className="absolute top-0 bottom-0 left-8 w-4 bg-green-600 rounded shadow-lg">
+              <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-white px-3 py-1 rounded shadow text-sm font-bold text-green-800">
                 START
               </div>
             </div>
 
+            {/* Progress Markers */}
+            {[0.25, 0.5, 0.75].map((percent, index) => (
+              <div
+                key={index}
+                className="absolute top-0 bottom-0 w-1 bg-gray-400 opacity-60"
+                style={{ left: `${8 + (trackWidth * 0.85 * percent) + 32}px` }}
+              />
+            ))}
+
             {/* Finish Line */}
             <div 
-              className="absolute top-0 bottom-0 w-4 bg-gradient-to-b from-red-500 via-white to-red-500 rounded"
-              style={{ left: `${trackWidth * 0.85 + 20}px` }}
+              className="absolute top-0 bottom-0 w-4 bg-gradient-to-b from-red-500 via-white to-red-500 rounded shadow-lg z-10"
+              style={{ left: `${trackWidth * 0.85 + 40}px` }}
             >
-              <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-white px-2 py-1 rounded text-xs font-bold text-red-800">
+              <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-white px-3 py-1 rounded shadow text-sm font-bold text-red-800">
                 FINISH
               </div>
             </div>
 
             {/* Racing Pets */}
             {selectedPets.map((petId, index) => {
-              const student = students.find(s => s.id === petId);
+              const student = studentsWithPets.find(s => s.id === petId);
+              if (!student) return null;
+              
               const position = racePositions[petId] || 0;
               
               return (
                 <div
                   key={petId}
-                  className="absolute flex items-center space-x-3 transition-all duration-100"
+                  className="absolute flex items-center space-x-3 z-20"
                   style={{
-                    top: `${index * 80 + 40}px`,
-                    left: `${20 + position}px`,
-                    transform: 'translateY(-50%)'
+                    top: `${index * 90 + 50}px`,
+                    left: `${40 + position}px`,
+                    transform: 'translateY(-50%)',
+                    transition: isRacing ? 'none' : 'left 0.3s ease-out'
                   }}
                 >
                   <img 
-                    src={student.pet.image}
+                    src={getPetImage(student.pet)}
                     alt={student.pet.name}
-                    className="w-12 h-12 rounded-full border-2 border-white shadow-lg animate-bounce"
+                    className={`w-14 h-14 rounded-full border-3 border-white shadow-lg object-cover ${
+                      isRacing ? 'animate-bounce' : ''
+                    }`}
+                    style={{
+                      animationDuration: isRacing ? '0.6s' : '0s'
+                    }}
+                    onError={(e) => {
+                      e.target.src = '/Pets/Wizard.png';
+                    }}
                   />
-                  <div className="bg-white px-3 py-1 rounded-lg shadow-lg text-sm font-bold">
-                    {student.firstName}
+                  <div className="bg-white px-4 py-2 rounded-lg shadow-lg text-sm font-bold min-w-0">
+                    <div className="truncate">{student.firstName}</div>
+                    <div className="text-xs text-gray-500 truncate">{student.pet.name}</div>
                   </div>
                 </div>
               );
@@ -533,9 +663,12 @@ const PetRaceTab = ({
                       {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🏆'}
                     </div>
                     <img 
-                      src={student.pet.image} 
+                      src={getPetImage(student.pet)} 
                       alt={student.pet.name}
-                      className="w-14 h-14 rounded-full border-3 border-purple-300 shadow-lg"
+                      className="w-14 h-14 rounded-full border-3 border-purple-300 shadow-lg object-cover"
+                      onError={(e) => {
+                        e.target.src = '/Pets/Wizard.png';
+                      }}
                     />
                     <div>
                       <h4 className="font-bold text-gray-800 text-lg">{student.firstName}</h4>
