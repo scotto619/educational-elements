@@ -1,4 +1,4 @@
-// components/tabs/PetRaceTab.js - Completely Redesigned Pet Race System
+// components/tabs/PetRaceTab.js - COMPLETELY FIXED PET RACE SYSTEM
 import React, { useState, useEffect, useRef } from 'react';
 
 const PetRaceTab = ({ 
@@ -26,17 +26,16 @@ const PetRaceTab = ({
   const raceDataRef = useRef({});
   const [trackWidth, setTrackWidth] = useState(800);
   
-  // Get students with pets (current pets only)
+  // FIXED: Get students with pets (from ownedPets array, not pet property)
   const studentsWithPets = students.filter(student => {
-    // Make sure student has a pet with proper image data
-    return student.pet && 
-           (student.pet.image || student.pet.path || student.pet.name) &&
-           student.pet.name; // Must have a name
+    // Check if student has any pets in ownedPets array
+    const firstPet = student.ownedPets?.[0];
+    return firstPet && firstPet.name; // Must have a pet with a name
   });
   
   console.log('Students with valid pets:', studentsWithPets.map(s => ({
     name: s.firstName,
-    pet: s.pet
+    pet: s.ownedPets?.[0]
   })));
 
   // Track resize handling
@@ -44,7 +43,7 @@ const PetRaceTab = ({
     const updateTrackWidth = () => {
       if (trackRef.current) {
         const rect = trackRef.current.getBoundingClientRect();
-        setTrackWidth(rect.width - 160); // Account for padding and finish line
+        setTrackWidth(rect.width - 100); // Account for padding and finish line
       }
     };
     
@@ -76,11 +75,12 @@ const PetRaceTab = ({
     setRacePhase('prize');
   };
 
-  // Get pet image with fallback
-  const getPetImage = (pet) => {
+  // FIXED: Get pet image with proper fallback using ownedPets
+  const getPetImage = (student) => {
+    const pet = student.ownedPets?.[0];
     if (!pet) return '/Pets/Wizard.png';
     
-    // Direct path first
+    // Direct path first (for shop pets)
     if (pet.image) return pet.image;
     if (pet.path) return pet.path;
     
@@ -96,13 +96,33 @@ const PetRaceTab = ({
       'bard': '/Pets/Bard.png',
       'monk': '/Pets/Monk.png',
       'engineer': '/Pets/Engineer.png',
-      'necromancer': '/Pets/Necromancer.png'
+      'necromancer': '/Pets/Necromancer.png',
+      'beastmaster': '/Pets/Beastmaster.png',
+      'crystal knight': '/Pets/Crystal Knight.png',
+      'crystal sage': '/Pets/Crystal Sage.png',
+      'frost mage': '/Pets/Frost Mage.png',
+      'illusionist': '/Pets/Illusionist.png',
+      'lightning': '/Pets/Lightning.png',
+      'stealth': '/Pets/Stealth.png',
+      'time knight': '/Pets/Time Knight.png',
+      'warrior': '/Pets/Warrior.png',
+      // Common pet type mappings
+      'dragon': '/Pets/Lightning.png',
+      'phoenix': '/Pets/Crystal Sage.png',
+      'unicorn': '/Pets/Time Knight.png',
+      'wolf': '/Pets/Warrior.png',
+      'owl': '/Pets/Wizard.png',
+      'cat': '/Pets/Rogue.png',
+      'tiger': '/Pets/Barbarian.png',
+      'bear': '/Pets/Beastmaster.png',
+      'lion': '/Pets/Knight.png',
+      'eagle': '/Pets/Stealth.png'
     };
     
     return petMap[petName] || '/Pets/Wizard.png';
   };
 
-  // Start Race with Smooth Animation
+  // FIXED: Start Race with Proper Smooth Animation
   const startRace = () => {
     if (!prizeAmount || prizeAmount < 1) {
       showToast('Please set a valid prize amount!', 'warning');
@@ -112,7 +132,7 @@ const PetRaceTab = ({
     // Validate selected pets still exist
     const validSelectedPets = selectedPets.filter(petId => {
       const student = studentsWithPets.find(s => s.id === petId);
-      return student && student.pet;
+      return student && student.ownedPets?.[0];
     });
     
     if (validSelectedPets.length < 2) {
@@ -133,9 +153,10 @@ const PetRaceTab = ({
     validSelectedPets.forEach(petId => {
       initialPositions[petId] = 0;
       raceData[petId] = {
-        speed: 0.5 + Math.random() * 1.0, // Random speed between 0.5 and 1.5
+        speed: 0.3 + Math.random() * 0.4, // Random speed between 0.3 and 0.7 (slower)
         position: 0,
-        finished: false
+        finished: false,
+        progress: 0
       };
     });
     
@@ -147,11 +168,11 @@ const PetRaceTab = ({
     showToast('🏁 Race Started! Go pets go!', 'success');
   };
 
-  // Smooth Race Animation using requestAnimationFrame
+  // FIXED: Smooth Race Animation with proper finish line
   const runSmoothRace = (racingPets) => {
     const startTime = Date.now();
-    const raceDuration = 6000; // 6 seconds
-    const finishLine = trackWidth * 0.85; // 85% of track width
+    const raceDuration = 12000; // 12 seconds for slower, more exciting race
+    const finishLine = trackWidth * 0.92; // FIXED: 92% instead of 85% to reach actual end
     let winner = null;
     let raceCompleted = false;
     
@@ -159,9 +180,9 @@ const PetRaceTab = ({
       if (raceCompleted) return;
       
       const elapsed = Date.now() - startTime;
-      const progress = Math.min(elapsed / raceDuration, 1);
+      const baseProgress = Math.min(elapsed / raceDuration, 1);
       
-      setRaceProgress(progress);
+      setRaceProgress(baseProgress);
       
       const newPositions = {};
       let maxPosition = 0;
@@ -171,28 +192,46 @@ const PetRaceTab = ({
         const raceData = raceDataRef.current[petId];
         if (!raceData || raceData.finished) return;
         
-        // Add some randomness to make it exciting
-        const randomFactor = 0.9 + Math.random() * 0.2; // 0.9 to 1.1
-        const basePosition = progress * raceData.speed * finishLine * randomFactor;
+        // Add gentle randomness and variance for exciting race
+        const speedVariance = 0.85 + Math.random() * 0.3; // 0.85 to 1.15
+        const progressWithVariance = baseProgress * raceData.speed * speedVariance;
         
-        // Ensure pets don't go past finish line until one wins
-        const position = Math.min(basePosition, finishLine);
-        newPositions[petId] = position;
-        raceData.position = position;
+        // Calculate position but don't let pets cross finish line until one wins
+        let position = progressWithVariance * finishLine;
+        
+        // Add small random movements for liveliness
+        position += Math.sin(elapsed * 0.01) * 2;
+        
+        // Ensure no negative positions
+        position = Math.max(0, position);
         
         // Check if this pet crossed the finish line first
         if (position >= finishLine && !winner && !raceCompleted) {
           winner = students.find(s => s.id === petId);
           raceCompleted = true;
           raceData.finished = true;
+          position = finishLine; // Set exactly at finish line
           
-          // Stop all other pets from advancing
+          // Stop all other pets from advancing past their current position
           racingPets.forEach(id => {
             if (id !== petId) {
-              raceDataRef.current[id].finished = true;
+              const otherData = raceDataRef.current[id];
+              if (otherData) {
+                otherData.finished = true;
+                // Keep other pets slightly behind
+                if (newPositions[id] >= finishLine) {
+                  newPositions[id] = finishLine - 10;
+                }
+              }
             }
           });
+        } else if (raceCompleted && petId !== winner?.id) {
+          // Keep non-winners behind the finish line
+          position = Math.min(position, finishLine - 5);
         }
+        
+        newPositions[petId] = position;
+        raceData.position = position;
         
         if (position > maxPosition) {
           maxPosition = position;
@@ -202,21 +241,21 @@ const PetRaceTab = ({
       
       setRacePositions(newPositions);
       
-      // Continue animation until race is complete or time is up
-      if (!raceCompleted && progress < 1) {
+      // Continue animation until race is complete or max time is reached
+      if (!raceCompleted && baseProgress < 1) {
         animationRef.current = requestAnimationFrame(animate);
       } else {
-        // Race finished
+        // Race finished - ensure we have a winner
         if (!winner && leadingPet) {
-          winner = leadingPet; // Fallback to leading pet if no clear winner
+          winner = leadingPet; // Fallback to leading pet
         }
         
         if (winner) {
-          finishRace(winner);
+          setTimeout(() => finishRace(winner), 500); // Small delay for dramatic effect
         } else {
-          // Fallback - pick random winner if something goes wrong
+          // Ultimate fallback - pick random winner
           const randomWinner = students.find(s => racingPets.includes(s.id));
-          if (randomWinner) finishRace(randomWinner);
+          if (randomWinner) setTimeout(() => finishRace(randomWinner), 500);
         }
       }
     };
@@ -233,7 +272,7 @@ const PetRaceTab = ({
     };
   }, []);
 
-  // Finish Race and Award Prize
+  // FIXED: Finish Race and Award Prize (using proper pet structure)
   const finishRace = (winner) => {
     setIsRacing(false);
     setRaceWinner(winner);
@@ -245,34 +284,34 @@ const PetRaceTab = ({
       animationRef.current = null;
     }
     
-    // Update winner's pet wins
-    const updatedWinnerData = {
-      pet: {
-        ...winner.pet,
-        wins: (winner.pet.wins || 0) + 1
-      }
-    };
-    
-    // Award prize to winner
-    if (prizeType === 'xp') {
-      const currentXP = winner.xp?.[prizeCategory] || 0;
-      updatedWinnerData.xp = {
-        ...winner.xp,
-        [prizeCategory]: currentXP + prizeAmount
+    // FIXED: Update winner's pet wins (using ownedPets structure)
+    const winnerPet = winner.ownedPets?.[0];
+    if (winnerPet) {
+      const updatedOwnedPets = [...(winner.ownedPets || [])];
+      updatedOwnedPets[0] = {
+        ...winnerPet,
+        wins: (winnerPet.wins || 0) + 1
       };
-      updatedWinnerData.totalXP = (winner.totalXP || 0) + prizeAmount;
-      updatedWinnerData.totalPoints = (winner.totalPoints || 0) + prizeAmount;
-    } else if (prizeType === 'coins') {
-      updatedWinnerData.coins = (winner.coins || 0) + prizeAmount;
-      updatedWinnerData.currency = (winner.currency || 0) + prizeAmount;
+      
+      const updatedWinnerData = {
+        ownedPets: updatedOwnedPets
+      };
+      
+      // Award prize to winner
+      if (prizeType === 'xp') {
+        const currentPoints = winner.totalPoints || 0;
+        updatedWinnerData.totalPoints = currentPoints + prizeAmount;
+      } else if (prizeType === 'coins') {
+        updatedWinnerData.currency = (winner.currency || 0) + prizeAmount;
+      }
+      
+      // Update student in the system
+      updateStudent(winner.id, updatedWinnerData);
     }
-    
-    // Update student in the system
-    updateStudent(winner.id, updatedWinnerData);
     
     // Show celebration
     showToast(
-      `🎉 ${winner.firstName} wins with ${winner.pet.name}! Prize awarded!`, 
+      `🎉 ${winner.firstName} wins with ${winnerPet?.name || 'their pet'}! Prize awarded!`, 
       'success'
     );
   };
@@ -299,7 +338,7 @@ const PetRaceTab = ({
   // Get prize description
   const getPrizeDescription = () => {
     if (prizeType === 'xp') {
-      return `${prizeAmount} ${prizeCategory} XP`;
+      return `${prizeAmount} XP Points`;
     } else if (prizeType === 'coins') {
       return `${prizeAmount} Coins`;
     } else {
@@ -340,41 +379,44 @@ const PetRaceTab = ({
             </h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {studentsWithPets.map(student => (
-                <button
-                  key={student.id}
-                  onClick={() => togglePetSelection(student.id)}
-                  className={`p-6 rounded-xl border-3 transition-all duration-300 transform hover:scale-105 ${
-                    selectedPets.includes(student.id)
-                      ? 'border-green-500 bg-green-50 shadow-lg'
-                      : 'border-gray-300 bg-white hover:border-blue-400'
-                  }`}
-                >
-                  <div className="flex items-center space-x-4">
-                    <img 
-                      src={getPetImage(student.pet)} 
-                      alt={student.pet.name}
-                      className={`w-16 h-16 rounded-full border-3 object-cover ${
-                        selectedPets.includes(student.id) ? 'border-green-400' : 'border-gray-300'
-                      }`}
-                      onError={(e) => {
-                        console.log(`Failed to load pet image for ${student.firstName}:`, student.pet);
-                        e.target.src = '/Pets/Wizard.png';
-                      }}
-                    />
-                    <div className="text-left">
-                      <h4 className="font-bold text-lg text-gray-800">{student.firstName}</h4>
-                      <p className="text-gray-600">{student.pet.name || 'Unnamed Pet'}</p>
-                      <p className="text-sm text-gray-500">
-                        🏆 {student.pet.wins || 0} wins
-                      </p>
+              {studentsWithPets.map(student => {
+                const pet = student.ownedPets[0];
+                return (
+                  <button
+                    key={student.id}
+                    onClick={() => togglePetSelection(student.id)}
+                    className={`p-6 rounded-xl border-3 transition-all duration-300 transform hover:scale-105 ${
+                      selectedPets.includes(student.id)
+                        ? 'border-green-500 bg-green-50 shadow-lg'
+                        : 'border-gray-300 bg-white hover:border-blue-400'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-4">
+                      <img 
+                        src={getPetImage(student)} 
+                        alt={pet.name}
+                        className={`w-16 h-16 rounded-full border-3 object-cover ${
+                          selectedPets.includes(student.id) ? 'border-green-400' : 'border-gray-300'
+                        }`}
+                        onError={(e) => {
+                          console.log(`Failed to load pet image for ${student.firstName}:`, pet);
+                          e.target.src = '/Pets/Wizard.png';
+                        }}
+                      />
+                      <div className="text-left">
+                        <h4 className="font-bold text-lg text-gray-800">{student.firstName}</h4>
+                        <p className="text-gray-600">{pet.name || 'Unnamed Pet'}</p>
+                        <p className="text-sm text-gray-500">
+                          🏆 {pet.wins || 0} wins
+                        </p>
+                      </div>
+                      {selectedPets.includes(student.id) && (
+                        <div className="ml-auto text-green-500 text-2xl">✓</div>
+                      )}
                     </div>
-                    {selectedPets.includes(student.id) && (
-                      <div className="ml-auto text-green-500 text-2xl">✓</div>
-                    )}
-                  </div>
-                </button>
-              ))}
+                  </button>
+                );
+              })}
             </div>
 
             <div className="text-center mt-8">
@@ -432,30 +474,16 @@ const PetRaceTab = ({
 
             {/* Prize Details */}
             {prizeType === 'xp' && (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-lg font-bold text-gray-700 mb-2">XP Amount:</label>
-                  <input
-                    type="number"
-                    value={prizeAmount}
-                    onChange={(e) => setPrizeAmount(parseInt(e.target.value) || 0)}
-                    className="w-full p-3 border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:outline-none text-lg"
-                    min="1"
-                    max="50"
-                  />
-                </div>
-                <div>
-                  <label className="block text-lg font-bold text-gray-700 mb-2">XP Category:</label>
-                  <select
-                    value={prizeCategory}
-                    onChange={(e) => setPrizeCategory(e.target.value)}
-                    className="w-full p-3 border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:outline-none text-lg"
-                  >
-                    <option value="Respectful">Respectful</option>
-                    <option value="Responsible">Responsible</option>
-                    <option value="Learner">Learner</option>
-                  </select>
-                </div>
+              <div>
+                <label className="block text-lg font-bold text-gray-700 mb-2">XP Amount:</label>
+                <input
+                  type="number"
+                  value={prizeAmount}
+                  onChange={(e) => setPrizeAmount(parseInt(e.target.value) || 0)}
+                  className="w-full p-3 border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:outline-none text-lg"
+                  min="1"
+                  max="50"
+                />
               </div>
             )}
 
@@ -525,13 +553,14 @@ const PetRaceTab = ({
                 style={{ width: `${raceProgress * 100}%` }}
               ></div>
             </div>
+            <p className="text-sm mt-2 opacity-75">Race Progress: {Math.round(raceProgress * 100)}%</p>
           </div>
 
           {/* Race Track */}
           <div 
             ref={trackRef}
             className="relative bg-gradient-to-r from-green-200 via-green-100 to-green-200 border-4 border-gray-400 rounded-xl overflow-hidden shadow-inner"
-            style={{ height: `${selectedPets.length * 90 + 40}px`, minHeight: '250px' }}
+            style={{ height: `${selectedPets.length * 100 + 40}px`, minHeight: '300px' }}
           >
             {/* Track Lanes */}
             {selectedPets.map((_, index) => (
@@ -541,14 +570,14 @@ const PetRaceTab = ({
                   index % 2 === 0 ? 'bg-white bg-opacity-20' : 'bg-green-50 bg-opacity-40'
                 }`}
                 style={{
-                  top: `${index * 90 + 20}px`,
-                  height: '90px'
+                  top: `${index * 100 + 20}px`,
+                  height: '100px'
                 }}
               />
             ))}
 
             {/* Start Line */}
-            <div className="absolute top-0 bottom-0 left-8 w-4 bg-green-600 rounded shadow-lg">
+            <div className="absolute top-0 bottom-0 left-6 w-4 bg-green-600 rounded shadow-lg z-10">
               <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-white px-3 py-1 rounded shadow text-sm font-bold text-green-800">
                 START
               </div>
@@ -559,14 +588,14 @@ const PetRaceTab = ({
               <div
                 key={index}
                 className="absolute top-0 bottom-0 w-1 bg-gray-400 opacity-60"
-                style={{ left: `${8 + (trackWidth * 0.85 * percent) + 32}px` }}
+                style={{ left: `${20 + (trackWidth * 0.92 * percent)}px` }}
               />
             ))}
 
-            {/* Finish Line */}
+            {/* FIXED: Finish Line at the actual end */}
             <div 
               className="absolute top-0 bottom-0 w-4 bg-gradient-to-b from-red-500 via-white to-red-500 rounded shadow-lg z-10"
-              style={{ left: `${trackWidth * 0.85 + 40}px` }}
+              style={{ left: `${trackWidth * 0.92 + 20}px` }}
             >
               <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-white px-3 py-1 rounded shadow text-sm font-bold text-red-800">
                 FINISH
@@ -579,26 +608,26 @@ const PetRaceTab = ({
               if (!student) return null;
               
               const position = racePositions[petId] || 0;
+              const pet = student.ownedPets[0];
               
               return (
                 <div
                   key={petId}
-                  className="absolute flex items-center space-x-3 z-20"
+                  className="absolute flex items-center space-x-3 z-20 transition-all duration-100"
                   style={{
-                    top: `${index * 90 + 50}px`,
-                    left: `${40 + position}px`,
-                    transform: 'translateY(-50%)',
-                    transition: isRacing ? 'none' : 'left 0.3s ease-out'
+                    top: `${index * 100 + 70}px`,
+                    left: `${30 + position}px`,
+                    transform: 'translateY(-50%)'
                   }}
                 >
                   <img 
-                    src={getPetImage(student.pet)}
-                    alt={student.pet.name}
-                    className={`w-14 h-14 rounded-full border-3 border-white shadow-lg object-cover ${
+                    src={getPetImage(student)}
+                    alt={pet.name}
+                    className={`w-16 h-16 rounded-full border-3 border-white shadow-lg object-cover ${
                       isRacing ? 'animate-bounce' : ''
                     }`}
                     style={{
-                      animationDuration: isRacing ? '0.6s' : '0s'
+                      animationDuration: isRacing ? '0.8s' : '0s'
                     }}
                     onError={(e) => {
                       e.target.src = '/Pets/Wizard.png';
@@ -606,7 +635,7 @@ const PetRaceTab = ({
                   />
                   <div className="bg-white px-4 py-2 rounded-lg shadow-lg text-sm font-bold min-w-0">
                     <div className="truncate">{student.firstName}</div>
-                    <div className="text-xs text-gray-500 truncate">{student.pet.name}</div>
+                    <div className="text-xs text-gray-500 truncate">{pet.name}</div>
                   </div>
                 </div>
               );
@@ -623,7 +652,7 @@ const PetRaceTab = ({
             <div className="text-8xl mb-4 animate-bounce">🏆</div>
             <h3 className="text-4xl font-bold mb-4">🎉 RACE COMPLETE! 🎉</h3>
             <div className="text-2xl mb-4">
-              <strong>{raceWinner.firstName}</strong> wins with <strong>{raceWinner.pet.name}!</strong>
+              <strong>{raceWinner.firstName}</strong> wins with <strong>{raceWinner.ownedPets[0]?.name || 'their pet'}!</strong>
             </div>
             <div className="bg-white bg-opacity-20 rounded-xl p-4 text-xl font-semibold">
               Prize Awarded: {getPrizeDescription()}
@@ -653,34 +682,37 @@ const PetRaceTab = ({
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {studentsWithPets
-              .filter(student => student.pet.wins > 0)
-              .sort((a, b) => (b.pet.wins || 0) - (a.pet.wins || 0))
+              .filter(student => (student.ownedPets[0]?.wins || 0) > 0)
+              .sort((a, b) => (b.ownedPets[0]?.wins || 0) - (a.ownedPets[0]?.wins || 0))
               .slice(0, 6)
-              .map((student, index) => (
-                <div key={student.id} className="bg-white rounded-xl p-6 shadow-lg border-2 border-purple-200 transform hover:scale-105 transition-all">
-                  <div className="flex items-center space-x-4">
-                    <div className="text-3xl">
-                      {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🏆'}
-                    </div>
-                    <img 
-                      src={getPetImage(student.pet)} 
-                      alt={student.pet.name}
-                      className="w-14 h-14 rounded-full border-3 border-purple-300 shadow-lg object-cover"
-                      onError={(e) => {
-                        e.target.src = '/Pets/Wizard.png';
-                      }}
-                    />
-                    <div>
-                      <h4 className="font-bold text-gray-800 text-lg">{student.firstName}</h4>
-                      <p className="text-gray-600">{student.pet.name}</p>
-                      <p className="text-purple-600 font-semibold">{student.pet.wins} wins</p>
+              .map((student, index) => {
+                const pet = student.ownedPets[0];
+                return (
+                  <div key={student.id} className="bg-white rounded-xl p-6 shadow-lg border-2 border-purple-200 transform hover:scale-105 transition-all">
+                    <div className="flex items-center space-x-4">
+                      <div className="text-3xl">
+                        {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🏆'}
+                      </div>
+                      <img 
+                        src={getPetImage(student)} 
+                        alt={pet.name}
+                        className="w-14 h-14 rounded-full border-3 border-purple-300 shadow-lg object-cover"
+                        onError={(e) => {
+                          e.target.src = '/Pets/Wizard.png';
+                        }}
+                      />
+                      <div>
+                        <h4 className="font-bold text-gray-800 text-lg">{student.firstName}</h4>
+                        <p className="text-gray-600">{pet.name}</p>
+                        <p className="text-purple-600 font-semibold">{pet.wins || 0} wins</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
           </div>
           
-          {studentsWithPets.filter(s => s.pet.wins > 0).length === 0 && (
+          {studentsWithPets.filter(s => (s.ownedPets[0]?.wins || 0) > 0).length === 0 && (
             <div className="text-center py-8">
               <div className="text-6xl mb-4">🏁</div>
               <p className="text-gray-500 text-xl italic">No champions yet! Start racing to see winners here.</p>
