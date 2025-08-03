@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 
 // Import activity components (you'll create these files)
 import LiteracyWarmup from '../curriculum/literacy/LiteracyWarmup';
+import ReadingComprehension from '../curriculum/literacy/ReadingComprehension';
 import AreaPerimeterTool from '../curriculum/mathematics/AreaPerimeterTool';
 // import SpellingBee from '../curriculum/literacy/SpellingBee';
 // import NumbersBoard from '../curriculum/mathematics/NumbersBoard';
@@ -54,7 +55,7 @@ const subjects = [
         name: 'Reading Comprehension',
         icon: '🧠',
         description: 'Text analysis and understanding activities',
-        component: ComingSoon
+        component: ReadingComprehension
       },
       {
         id: 'phonics-games',
