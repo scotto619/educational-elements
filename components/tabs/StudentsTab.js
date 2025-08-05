@@ -38,14 +38,35 @@ const AwardNotification = ({ notification, onClose }) => {
 
     useEffect(() => {
         // Auto-close after 4 seconds
-        const timer = setTimeout(onClose, 4000);
+        const timer = setTimeout(() => {
+            onClose();
+        }, 4000);
         return () => clearTimeout(timer);
-    }, [onClose]);
+    }, []); // Remove onClose from dependencies to prevent re-running
+
+    // Handle click outside to close
+    const handleBackdropClick = (e) => {
+        if (e.target === e.currentTarget) {
+            onClose();
+        }
+    };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
+        <div 
+            className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4"
+            onClick={handleBackdropClick}
+        >
             <div className={`bg-gradient-to-br ${color} text-white rounded-2xl shadow-2xl p-8 max-w-md w-full transform animate-bounce`}>
                 <div className="text-center">
+                    {/* Close X button in top right */}
+                    <button
+                        onClick={onClose}
+                        className="absolute top-4 right-4 text-white hover:text-gray-200 text-2xl font-bold w-8 h-8 flex items-center justify-center"
+                        style={{ position: 'absolute', top: '1rem', right: '1rem' }}
+                    >
+                        ×
+                    </button>
+
                     {/* Celebration Header */}
                     <div className="text-6xl mb-4 animate-pulse">{icon}</div>
                     <h2 className="text-3xl font-bold mb-4">
@@ -79,7 +100,7 @@ const AwardNotification = ({ notification, onClose }) => {
                     {/* Close Button */}
                     <button
                         onClick={onClose}
-                        className="mt-4 bg-white bg-opacity-20 hover:bg-opacity-30 px-6 py-2 rounded-xl transition-all duration-300 font-semibold"
+                        className="mt-4 bg-white bg-opacity-20 hover:bg-opacity-30 px-6 py-2 rounded-xl transition-all duration-300 font-semibold hover:scale-105 transform"
                     >
                         Awesome! ✨
                     </button>
@@ -169,7 +190,6 @@ const StudentsTab = ({
     const [selectedStudents, setSelectedStudents] = useState([]);
     const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0, student: null });
     const [draggedStudentId, setDraggedStudentId] = useState(null);
-    const [showCategoriesModal, setShowCategoriesModal] = useState(false);
     const [awardModal, setAwardModal] = useState({ visible: false, isBulk: false, type: 'xp', studentId: null, student: null });
     const [hoverPreview, setHoverPreview] = useState(null);
     const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -234,6 +254,36 @@ const StudentsTab = ({
     const closeAwardNotification = () => {
         setAwardNotification(null);
     };
+
+    // NEW: Quick award function for star/coin clicks
+    const handleQuickAward = (student, type) => {
+        const amount = 1; // Always award 1 for quick awards
+        const awardedStudents = [student];
+        
+        // Call the original award function
+        onBulkAward([student.id], amount, type);
+        
+        // Play sound effect
+        playAwardSound(type);
+        
+        // Show notification popup
+        setAwardNotification({
+            students: awardedStudents,
+            amount: amount,
+            type: type,
+            isBulk: false,
+            reason: 'Quick Award'
+        });
+    };
+
+    // NEW: Toggle individual student selection
+    const toggleStudentSelection = (studentId) => {
+        setSelectedStudents(prev => 
+            prev.includes(studentId) 
+                ? prev.filter(id => id !== studentId)
+                : [...prev, studentId]
+        );
+    };
     
     return (
         <div className="space-y-6" onMouseMove={handleMouseMove}>
@@ -242,10 +292,9 @@ const StudentsTab = ({
                     <input type="text" placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full md:w-auto pl-4 pr-4 py-2 border rounded-lg" />
                     <button onClick={handleSelectAll} className="bg-blue-500 text-white px-4 py-2 rounded-lg whitespace-nowrap">{selectedStudents.length === filteredStudents.length ? 'Deselect All' : 'Select All'}</button>
                 </div>
-                <div className="text-gray-600 font-semibold">{selectedStudents.length > 0 ? `${selectedStudents.length} student(s) selected` : 'Click an avatar for options or drag to reorder'}</div>
+                <div className="text-gray-600 font-semibold">{selectedStudents.length > 0 ? `${selectedStudents.length} student(s) selected` : 'Click an avatar for options, star/coin to quick award, or drag to reorder'}</div>
                 <div className="flex items-center gap-2">
                     {selectedStudents.length > 0 && (<button onClick={() => setAwardModal({ visible: true, isBulk: true, type: 'xp', studentId: null, student: null })} className="bg-purple-600 text-white font-bold px-4 py-2 rounded-lg hover:bg-purple-700 transition-all transform hover:scale-105">🏆 Award Bulk</button>)}
-                    <button onClick={() => setShowCategoriesModal(true)} className="bg-indigo-500 text-white px-4 py-2 rounded-lg hover:bg-indigo-600 transition-all">⚙️ Categories</button>
                     <button onClick={onAddStudent} className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-all">+ Add Student</button>
                 </div>
             </div>
@@ -275,6 +324,8 @@ const StudentsTab = ({
                                     : [...prev, studentId]
                             );
                         }}
+                        onQuickAward={handleQuickAward}
+                        onToggleSelection={toggleStudentSelection}
                     />
                 ))}
             </div>
@@ -288,7 +339,6 @@ const StudentsTab = ({
             <HoverPreview preview={hoverPreview} position={mousePosition} />
             {contextMenu.visible && <ContextMenu student={contextMenu.student} position={{ x: contextMenu.x, y: contextMenu.y }} onAward={() => { setAwardModal({ visible: true, isBulk: false, type: 'xp', studentId: contextMenu.student.id, student: contextMenu.student }); closeContextMenu(); }} onView={() => { onViewDetails(contextMenu.student); closeContextMenu(); }} onAvatar={() => { /* Avatar modal logic */ closeContextMenu(); }} onClose={closeContextMenu} getAvatarImage={getAvatarImageFunc} calculateAvatarLevel={calculateAvatarLevelFunc} />}
             {awardModal.visible && <AwardModal isBulk={awardModal.isBulk} awardType={awardModal.type} onTypeChange={(newType) => setAwardModal(prev => ({ ...prev, type: newType }))} studentCount={selectedStudents.length} student={awardModal.student} onSubmit={handleAwardSubmit} onClose={() => setAwardModal({ visible: false, isBulk: false, type: 'xp', studentId: null, student: null })} />}
-            {showCategoriesModal && <CategoriesModal categories={xpCategories} onSave={onUpdateCategories} onClose={() => setShowCategoriesModal(false)} />}
         </div>
     );
 };
@@ -296,7 +346,7 @@ const StudentsTab = ({
 // ===============================================
 // STUDENT CARD COMPONENT
 // ===============================================
-const StudentCard = ({ student, isSelected, isDragged, onClick, onDragStart, onDragOver, onDrop, onAvatarHover, onPetHover, onHoverEnd, getAvatarImage, getPetImage, calculateCoins, calculateAvatarLevel, onSelect }) => {
+const StudentCard = ({ student, isSelected, isDragged, onClick, onDragStart, onDragOver, onDrop, onAvatarHover, onPetHover, onHoverEnd, getAvatarImage, getPetImage, calculateCoins, calculateAvatarLevel, onSelect, onQuickAward, onToggleSelection }) => {
     const level = calculateAvatarLevel(student.totalPoints);
     const coins = calculateCoins(student);
     const xpForNextLevel = (student.totalPoints || 0) % 100;
@@ -306,14 +356,35 @@ const StudentCard = ({ student, isSelected, isDragged, onClick, onDragStart, onD
     // FIXED: Pass the entire pet object to getPetImage, not separate parameters
     const petImg = pet ? getPetImage(pet) : null;
 
+    // Handle quick award clicks (prevent bubbling to parent)
+    const handleStarClick = (e) => {
+        e.stopPropagation();
+        onQuickAward(student, 'xp');
+    };
+
+    const handleCoinClick = (e) => {
+        e.stopPropagation();
+        onQuickAward(student, 'coins');
+    };
+
+    // Handle card selection (shift+click to select individual students)
+    const handleCardClick = (e) => {
+        if (e.shiftKey) {
+            e.preventDefault();
+            onToggleSelection(student.id);
+        } else {
+            onClick(e);
+        }
+    };
+
     return (
         <div 
             draggable="true" 
             onDragStart={onDragStart} 
             onDragOver={onDragOver} 
             onDrop={onDrop} 
-            onClick={onClick} 
-            className={`p-3 rounded-2xl shadow-lg border-2 transition-all duration-300 cursor-pointer hover:shadow-xl ${
+            onClick={handleCardClick} 
+            className={`relative p-3 rounded-2xl shadow-lg border-2 transition-all duration-300 cursor-pointer hover:shadow-xl ${
                 isSelected 
                     ? 'border-purple-500 bg-purple-100 scale-105 shadow-purple-200' 
                     : 'border-transparent bg-white hover:border-blue-400 hover:bg-blue-50'
@@ -342,8 +413,20 @@ const StudentCard = ({ student, isSelected, isDragged, onClick, onDragStart, onD
                 </div>
                 <h3 className="text-md font-bold text-gray-800 mt-2 truncate w-full">{student.firstName}</h3>
                 <div className="flex items-center justify-around w-full mt-2 text-xs">
-                    <span className="font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded-full">⭐ {student.totalPoints || 0}</span>
-                    <span className="font-semibold text-yellow-600 bg-yellow-50 px-2 py-1 rounded-full">💰 {coins}</span>
+                    <span 
+                        onClick={handleStarClick}
+                        className="font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded-full cursor-pointer hover:bg-blue-100 hover:scale-110 transition-all duration-200 select-none"
+                        title="Click to award 1 XP"
+                    >
+                        ⭐ {student.totalPoints || 0}
+                    </span>
+                    <span 
+                        onClick={handleCoinClick}
+                        className="font-semibold text-yellow-600 bg-yellow-50 px-2 py-1 rounded-full cursor-pointer hover:bg-yellow-100 hover:scale-110 transition-all duration-200 select-none"
+                        title="Click to award 1 coin"
+                    >
+                        💰 {coins}
+                    </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1.5">
                     <div 
@@ -351,6 +434,20 @@ const StudentCard = ({ student, isSelected, isDragged, onClick, onDragStart, onD
                         style={{ width: `${xpForNextLevel}%` }}
                     ></div>
                 </div>
+                
+                {/* Selection indicator */}
+                {isSelected && (
+                    <div className="absolute top-1 right-1 bg-purple-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">
+                        ✓
+                    </div>
+                )}
+                
+                {/* Selection helper text - only show when not selected */}
+                {!isSelected && (
+                    <div className="text-xs text-gray-400 mt-1 opacity-75">
+                        Shift+click to select
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -425,71 +522,6 @@ const AwardModal = ({ isBulk, awardType, onTypeChange, studentCount, student, on
                         className="flex-1 px-4 py-3 rounded-lg bg-green-500 hover:bg-green-600 font-semibold text-white transition-all duration-200 transform hover:scale-105 shadow-lg"
                     >
                         🎁 Confirm Award
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-const CategoriesModal = ({ categories, onSave, onClose }) => {
-    const [localCategories, setLocalCategories] = useState(JSON.parse(JSON.stringify(categories)));
-    const handleUpdate = (id, field, value) => setLocalCategories(localCategories.map(cat => cat.id === id ? { ...cat, [field]: value } : cat));
-    const handleAdd = () => setLocalCategories([...localCategories, { id: Date.now(), label: 'New Category', amount: 1, icon: '🌟', color: 'bg-gray-500' }]);
-    const handleDelete = (id) => setLocalCategories(localCategories.filter(cat => cat.id !== id));
-    
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
-                <div className="p-6 border-b bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-t-2xl">
-                    <h2 className="text-2xl font-bold">Manage XP Categories</h2>
-                </div>
-                <div className="p-6 space-y-3 overflow-y-auto flex-grow">
-                    {localCategories.map(cat => (
-                        <div key={cat.id} className="grid grid-cols-12 gap-2 items-center bg-gray-50 p-3 rounded-lg">
-                            <input 
-                                value={cat.icon} 
-                                onChange={e => handleUpdate(cat.id, 'icon', e.target.value)} 
-                                className="col-span-1 p-2 border rounded-lg text-center"
-                            />
-                            <input 
-                                value={cat.label} 
-                                onChange={e => handleUpdate(cat.id, 'label', e.target.value)} 
-                                className="col-span-6 p-2 border rounded-lg"
-                            />
-                            <input 
-                                type="number" 
-                                value={cat.amount} 
-                                onChange={e => handleUpdate(cat.id, 'amount', Number(e.target.value))} 
-                                className="col-span-2 p-2 border rounded-lg"
-                            />
-                            <button 
-                                onClick={() => handleDelete(cat.id)} 
-                                className="col-span-3 bg-red-500 hover:bg-red-600 text-white rounded-lg py-2 text-sm transition-all duration-200"
-                            >
-                                Delete
-                            </button>
-                        </div>
-                    ))}
-                    <button 
-                        onClick={handleAdd} 
-                        className="w-full mt-2 border-2 border-dashed border-gray-300 text-gray-500 rounded-lg py-2 hover:bg-gray-100 transition-all duration-200"
-                    >
-                        + Add Category
-                    </button>
-                </div>
-                <div className="flex space-x-3 p-6 bg-gray-50 rounded-b-2xl">
-                    <button 
-                        onClick={onClose} 
-                        className="flex-1 py-3 border rounded-lg hover:bg-gray-100 transition-all duration-200"
-                    >
-                        Cancel
-                    </button>
-                    <button 
-                        onClick={() => { onSave(localCategories); onClose(); }} 
-                        className="flex-1 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-all duration-200 transform hover:scale-105"
-                    >
-                        Save Changes
                     </button>
                 </div>
             </div>
