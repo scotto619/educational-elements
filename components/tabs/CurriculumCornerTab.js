@@ -1,4 +1,4 @@
-// components/tabs/CurriculumCornerTab.js - MAIN NAVIGATION HUB
+// components/tabs/CurriculumCornerTab.js - UPDATED WITH FIREBASE SAVING SUPPORT
 import React, { useState } from 'react';
 
 // Import activity components (you'll create these files)
@@ -240,9 +240,14 @@ const subjects = [
 ];
 
 // ===============================================
-// MAIN CURRICULUM CORNER COMPONENT
+// MAIN CURRICULUM CORNER COMPONENT - UPDATED WITH FIREBASE SUPPORT
 // ===============================================
-const CurriculumCornerTab = ({ students = [], showToast = () => {} }) => {
+const CurriculumCornerTab = ({ 
+  students = [], 
+  showToast = () => {},
+  saveData = () => {},
+  loadedData = {}
+}) => {
   const [activeSubject, setActiveSubject] = useState(null);
   const [activeActivity, setActiveActivity] = useState(null);
 
@@ -267,6 +272,19 @@ const CurriculumCornerTab = ({ students = [], showToast = () => {} }) => {
   // Render specific activity
   if (activeActivity) {
     const ActivityComponent = activeActivity.component;
+    
+    // Pass additional props to LiteracyWarmup for Firebase saving
+    const activityProps = {
+      showToast,
+      students
+    };
+    
+    // Add Firebase save/load props specifically for LiteracyWarmup
+    if (activeActivity.id === 'literacy-warmup') {
+      activityProps.saveData = saveData;
+      activityProps.loadedData = loadedData;
+    }
+    
     return (
       <div className="space-y-6">
         {/* Breadcrumb Navigation */}
@@ -282,7 +300,7 @@ const CurriculumCornerTab = ({ students = [], showToast = () => {} }) => {
         </div>
 
         {/* Activity Content */}
-        <ActivityComponent showToast={showToast} students={students} />
+        <ActivityComponent {...activityProps} />
       </div>
     );
   }
@@ -401,6 +419,31 @@ const CurriculumCornerTab = ({ students = [], showToast = () => {} }) => {
               </div>
             );
           })}
+        </div>
+      </div>
+
+      {/* Enhanced Feature Notice for Literacy Updates */}
+      <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-xl p-6">
+        <div className="flex items-start space-x-4">
+          <span className="text-3xl">🔥</span>
+          <div>
+            <h4 className="font-bold text-blue-800 mb-2">✨ New Literacy Warmup Features!</h4>
+            <p className="text-blue-700 mb-4">
+              The Literacy Warmup now includes daily activities with 5 reading passage activities, 4 daily grammar tasks, 
+              daily riddles and fun facts, random graph practice, and Firebase-saved focus words!
+            </p>
+            <div className="bg-blue-100 rounded-lg p-4">
+              <h5 className="font-semibold text-blue-800 mb-2">🎯 What's New:</h5>
+              <ul className="text-sm text-blue-700 space-y-1">
+                <li>• Random 5+5 letter/digraph practice (increases complexity after week 5)</li>
+                <li>• Larger, easier-to-read fonts throughout</li>
+                <li>• 5 daily reading activities per passage</li>
+                <li>• 4 daily grammar/punctuation tasks</li>
+                <li>• 5 riddles and fun facts per week (one per day)</li>
+                <li>• Editable focus words that save to Firebase</li>
+              </ul>
+            </div>
+          </div>
         </div>
       </div>
 

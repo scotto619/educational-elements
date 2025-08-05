@@ -431,6 +431,8 @@ const ClassroomChampions = () => {
         return <CurriculumCornerTab 
                   students={students}
                   showToast={showToast}
+                  saveData={saveClassData}
+                  loadedData={getCurrentClassToolkitData()}
                 />;
       case 'toolkit':
         return <TeachersToolkitTab 
