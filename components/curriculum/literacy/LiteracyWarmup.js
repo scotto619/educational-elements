@@ -770,10 +770,10 @@ const LiteracyWarmup = ({ showToast = () => {}, students = [], saveData = () => 
         </div>
       )}
 
-      {/* Compact Classroom Tools - Always Available */}
-      <div className="bg-white rounded-xl shadow-lg p-6">
-        <h4 className={`font-bold text-gray-800 mb-4 ${isPresentationMode ? 'text-3xl' : 'text-lg'}`}>🛠️ Quick Classroom Tools</h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Compact Classroom Tools - Always Available & Sticky */}
+      <div className={`sticky top-4 z-50 bg-white rounded-xl shadow-xl border-2 border-gray-200 p-4 mb-6 backdrop-blur-sm bg-opacity-95 ${isPresentationMode ? 'p-6 top-6' : ''}`}>
+        <h4 className={`font-bold text-gray-800 mb-3 text-center ${isPresentationMode ? 'text-2xl' : 'text-sm'}`}>🛠️ Quick Tools</h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <CompactNamePicker students={students} isPresentationMode={isPresentationMode} />
           <CompactTimer isPresentationMode={isPresentationMode} />
         </div>
@@ -892,9 +892,9 @@ const LiteracyWarmup = ({ showToast = () => {}, students = [], saveData = () => 
             <div>
               <h4 className="font-bold text-green-800 mb-2">🎯 Teaching Tip</h4>
               <p className="text-green-700">
-                New features: Compact name picker and timer tools available on every lesson, sequential word highlighting, 
-                daily different synonyms/antonyms, 4-copy printing, and complete 10-week curriculum! 
-                Use the day selector to match your weekly schedule.
+                New features: **Sticky** name picker and timer tools (stay visible when scrolling!), ultra-fast student selection, 
+                sequential word highlighting, daily different synonyms/antonyms, 4-copy printing, and complete 10-week curriculum! 
+                The quick tools are always accessible during any lesson step.
               </p>
             </div>
           </div>
