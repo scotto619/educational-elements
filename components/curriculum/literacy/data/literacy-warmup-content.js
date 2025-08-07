@@ -1,5 +1,5 @@
 // components/curriculum/literacy/data/literacy-warmup-content.js
-// IMPROVED LITERACY WARMUP CONTENT DATA WITH DAILY ACTIVITIES
+// COMPLETE LITERACY WARMUP CONTENT WITH DAILY DIFFERENT SYNONYMS/ANTONYMS
 
 export const literacyWarmupContent = {
   "week1": {
@@ -29,10 +29,20 @@ export const literacyWarmupContent = {
       ]
     },
     "language": {
-      "synonyms": [["happy", "joyful"], ["big", "large"]],
-      "antonyms": [["hot", "cold"], ["fast", "slow"]],
-      "incompleteSynonyms": ["small", "glad"],
-      "incompleteAntonyms": ["up", "wet"],
+      "dailySynonyms": [
+        { complete: [["happy", "joyful"], ["big", "large"]], incomplete: ["small", "glad"] }, // Monday
+        { complete: [["little", "tiny"], ["shine", "glow"]], incomplete: ["wash", "near"] }, // Tuesday
+        { complete: [["fresh", "clean"], ["bright", "shiny"]], incomplete: ["live", "used"] }, // Wednesday
+        { complete: [["splash", "spray"], ["crew", "team"]], incomplete: ["deck", "away"] }, // Thursday
+        { complete: [["flash", "sparkle"], ["dash", "rush"]], incomplete: ["ship", "cloth"] } // Friday
+      ],
+      "dailyAntonyms": [
+        { complete: [["hot", "cold"], ["fast", "slow"]], incomplete: ["up", "wet"] }, // Monday
+        { complete: [["big", "small"], ["day", "night"]], incomplete: ["fresh", "dirty"] }, // Tuesday
+        { complete: [["near", "far"], ["bright", "dark"]], incomplete: ["wash", "soil"] }, // Wednesday
+        { complete: [["little", "huge"], ["around", "away"]], incomplete: ["shine", "dull"] }, // Thursday
+        { complete: [["flash", "fade"], ["splash", "drip"]], incomplete: ["clean", "messy"] } // Friday
+      ],
       "dailyTasks": [
         "Day 1: Underline the verbs in the passage",
         "Day 2: Fix the punctuation: 'can we go now she asked'",
@@ -40,7 +50,6 @@ export const literacyWarmupContent = {
         "Day 4: Add capital letters: 'the fish lived near a big ship'"
       ]
     },
-    "writingPrompt": "Write a story using at least three words that include the sound 'sh'.",
     "riddleOfTheDay": [
       {
         "day": "Monday",
@@ -79,8 +88,7 @@ export const literacyWarmupContent = {
       "Wednesday: Cool fact: Ships have been around for over 10,000 years! The oldest boat ever found is from the Netherlands.",
       "Thursday: Incredible fact: Your tongue is the strongest muscle in your body for its size!",
       "Friday: Mind-blowing fact: There are more possible games of chess than there are atoms in the observable universe!"
-    ],
-    "focusWords": ["the", "and", "to", "a", "in"] // Teacher editable
+    ]
   },
   "week2": {
     "focusSound": "ch",
@@ -109,10 +117,20 @@ export const literacyWarmupContent = {
       ]
     },
     "language": {
-      "synonyms": [["choose", "pick"], ["cheerful", "happy"]],
-      "antonyms": [["big", "small"], ["favorite", "least liked"]],
-      "incompleteSynonyms": ["think", "smile"],
-      "incompleteAntonyms": ["first", "careful"],
+      "dailySynonyms": [
+        { complete: [["choose", "pick"], ["cheerful", "happy"]], incomplete: ["think", "smile"] }, // Monday
+        { complete: [["big", "large"], ["favorite", "best"]], incomplete: ["choose", "sat"] }, // Tuesday
+        { complete: [["carefully", "slowly"], ["finally", "lastly"]], incomplete: ["thought", "took"] }, // Wednesday
+        { complete: [["chocolate", "cocoa"], ["chunk", "piece"]], incomplete: ["chair", "cake"] }, // Thursday
+        { complete: [["cheerful", "joyful"], ["ate", "consumed"]], incomplete: ["lunch", "pie"] } // Friday
+      ],
+      "dailyAntonyms": [
+        { complete: [["big", "small"], ["favorite", "least liked"]], incomplete: ["first", "careful"] }, // Monday
+        { complete: [["happy", "sad"], ["choose", "reject"]], incomplete: ["big", "little"] }, // Tuesday
+        { complete: [["carefully", "carelessly"], ["sat", "stood"]], incomplete: ["thought", "forgot"] }, // Wednesday
+        { complete: [["finally", "initially"], ["chocolate", "vanilla"]], incomplete: ["took", "gave"] }, // Thursday
+        { complete: [["cheerful", "gloomy"], ["lunch", "dinner"]], incomplete: ["smile", "frown"] } // Friday
+      ],
       "dailyTasks": [
         "Day 1: Circle all the nouns in the passage",
         "Day 2: Add commas where needed: 'Charlie ate cake pie and cookies'",
@@ -120,7 +138,6 @@ export const literacyWarmupContent = {
         "Day 4: Rewrite this sentence with better punctuation: 'charlie thought carefully then he chose'"
       ]
     },
-    "writingPrompt": "Write about a time you had to make a difficult choice using words with 'ch'.",
     "riddleOfTheDay": [
       {
         "day": "Monday",
@@ -159,8 +176,7 @@ export const literacyWarmupContent = {
       "Wednesday: Incredible fact: A group of flamingos is called a 'flamboyance'! How perfect is that?",
       "Thursday: Mind-blowing fact: Honey never spoils! Archaeologists have found 3000-year-old honey that's still perfectly edible.",
       "Friday: Amazing fact: Your heart beats about 100,000 times per day! That's like a full-time job just for your heart."
-    ],
-    "focusWords": ["is", "it", "you", "that", "he"] // Teacher editable
+    ]
   },
   "week3": {
     "focusSound": "th",
@@ -189,10 +205,20 @@ export const literacyWarmupContent = {
       ]
     },
     "language": {
-      "synonyms": [["think", "ponder"], ["important", "vital"]],
-      "antonyms": [["first", "last"], ["kind", "mean"]],
-      "incompleteSynonyms": ["brush", "thank"],
-      "incompleteAntonyms": ["everything", "after"],
+      "dailySynonyms": [
+        { complete: [["think", "ponder"], ["important", "vital"]], incomplete: ["brush", "thank"] }, // Monday
+        { complete: [["three", "trio"], ["first", "initial"]], incomplete: ["thought", "breakfast"] }, // Tuesday
+        { complete: [["second", "next"], ["kind", "nice"]], incomplete: ["teeth", "after"] }, // Wednesday
+        { complete: [["third", "final"], ["parents", "family"]], incomplete: ["everything", "do"] }, // Thursday
+        { complete: [["every", "each"], ["day", "daily"]], incomplete: ["things", "about"] } // Friday
+      ],
+      "dailyAntonyms": [
+        { complete: [["first", "last"], ["kind", "mean"]], incomplete: ["everything", "after"] }, // Monday
+        { complete: [["important", "trivial"], ["think", "ignore"]], incomplete: ["three", "one"] }, // Tuesday
+        { complete: [["second", "first"], ["brush", "dirty"]], incomplete: ["teeth", "gums"] }, // Wednesday
+        { complete: [["third", "first"], ["thank", "blame"]], incomplete: ["parents", "children"] }, // Thursday
+        { complete: [["every", "no"], ["day", "never"]], incomplete: ["everything", "nothing"] } // Friday
+      ],
       "dailyTasks": [
         "Day 1: Find all the words with 'th' in the passage",
         "Day 2: Add capital letters: 'thomas thought about three things'",
@@ -200,7 +226,6 @@ export const literacyWarmupContent = {
         "Day 4: Rewrite using different words: 'Thomas thought about three important things'"
       ]
     },
-    "writingPrompt": "Write about three things that are important to you using 'th' words.",
     "riddleOfTheDay": [
       {
         "day": "Monday",
@@ -239,8 +264,7 @@ export const literacyWarmupContent = {
       "Wednesday: Incredible fact: Your brain uses 20% of your body's total energy, even though it's only 2% of your body weight!",
       "Thursday: Mind-blowing fact: A group of pandas is called an 'embarrassment'! Scientists aren't sure why.",
       "Friday: Fun fact: The longest word in English has 189,819 letters! It's the chemical name for a protein called titin."
-    ],
-    "focusWords": ["was", "for", "are", "as", "with"] // Teacher editable
+    ]
   },
   "week4": {
     "focusSound": "wh",
@@ -269,10 +293,20 @@ export const literacyWarmupContent = {
       ]
     },
     "language": {
-      "synonyms": [["wondered", "thought"], ["magnificent", "amazing"]],
-      "antonyms": [["white", "black"], ["sets", "rises"]],
-      "incompleteSynonyms": ["find", "watch"],
-      "incompleteAntonyms": ["asked", "waited"],
+      "dailySynonyms": [
+        { complete: [["wondered", "thought"], ["magnificent", "amazing"]], incomplete: ["find", "watch"] }, // Monday
+        { complete: [["white", "pale"], ["whispered", "murmured"]], incomplete: ["asked", "waited"] }, // Tuesday
+        { complete: [["sailors", "crew"], ["captain", "leader"]], incomplete: ["sets", "falls"] }, // Wednesday
+        { complete: [["watched", "observed"], ["hoping", "wishing"]], incomplete: ["catch", "grab"] }, // Thursday
+        { complete: [["glimpse", "peek"], ["waves", "swells"]], incomplete: ["whale", "fish"] } // Friday
+      ],
+      "dailyAntonyms": [
+        { complete: [["white", "black"], ["sets", "rises"]], incomplete: ["asked", "waited"] }, // Monday
+        { complete: [["find", "lose"], ["whispered", "shouted"]], incomplete: ["wondered", "knew"] }, // Tuesday
+        { complete: [["magnificent", "ordinary"], ["watched", "ignored"]], incomplete: ["white", "dark"] }, // Wednesday
+        { complete: [["hoping", "despairing"], ["catch", "release"]], incomplete: ["sets", "rises"] }, // Thursday
+        { complete: [["waves", "calm"], ["sailors", "landlubbers"]], incomplete: ["find", "lose"] } // Friday
+      ],
       "dailyTasks": [
         "Day 1: Find all the question words in the passage",
         "Day 2: Add question marks: 'What time will we see it asked one sailor'",
@@ -280,7 +314,6 @@ export const literacyWarmupContent = {
         "Day 4: Rewrite the sailor's question as a statement: 'The sailor wanted to know...'"
       ]
     },
-    "writingPrompt": "Write a story that starts with a question using 'wh' words.",
     "riddleOfTheDay": [
       {
         "day": "Monday",
@@ -319,8 +352,7 @@ export const literacyWarmupContent = {
       "Wednesday: Cool fact: Whales can hold their breath for up to 90 minutes! Some can dive deeper than Mount Everest is tall.",
       "Thursday: Incredible fact: Whales have their own 'languages'! Different whale families have different 'accents'.",
       "Friday: Mind-blowing fact: The sperm whale has the largest brain of any animal on Earth - it weighs 8 kg (17 pounds)!"
-    ],
-    "focusWords": ["his", "they", "be", "at", "one"] // Teacher editable
+    ]
   },
   "week5": {
     "focusSound": "ph",
@@ -349,10 +381,20 @@ export const literacyWarmupContent = {
       ]
     },
     "language": {
-      "synonyms": [["photo", "picture"], ["funny", "amusing"]],
-      "antonyms": [["excitedly", "calmly"], ["laugh", "cry"]],
-      "incompleteSynonyms": ["call", "look"],
-      "incompleteAntonyms": ["began", "friend"],
+      "dailySynonyms": [
+        { complete: [["photo", "picture"], ["funny", "amusing"]], incomplete: ["call", "look"] }, // Monday
+        { complete: [["excitedly", "eagerly"], ["began", "started"]], incomplete: ["took", "used"] }, // Tuesday
+        { complete: [["friend", "buddy"], ["laugh", "giggle"]], incomplete: ["saw", "eating"] }, // Wednesday
+        { complete: [["elephant", "jumbo"], ["picture", "image"]], incomplete: ["phone", "call"] }, // Thursday
+        { complete: [["peanuts", "nuts"], ["zoo", "park"]], incomplete: ["funny", "silly"] } // Friday
+      ],
+      "dailyAntonyms": [
+        { complete: [["excitedly", "calmly"], ["laugh", "cry"]], incomplete: ["began", "friend"] }, // Monday
+        { complete: [["funny", "serious"], ["took", "gave"]], incomplete: ["photo", "real"] }, // Tuesday
+        { complete: [["friend", "enemy"], ["began", "ended"]], incomplete: ["look", "ignore"] }, // Wednesday
+        { complete: [["eating", "starving"], ["big", "tiny"]], incomplete: ["call", "hang up"] }, // Thursday
+        { complete: [["excitedly", "sadly"], ["picture", "reality"]], incomplete: ["saw", "missed"] } // Friday
+      ],
       "dailyTasks": [
         "Day 1: Circle the verbs that show action in the passage",
         "Day 2: Add exclamation marks: 'Look at this photograph he said'",
@@ -360,7 +402,6 @@ export const literacyWarmupContent = {
         "Day 4: Rewrite the sentence with better description: 'Ralph began to laugh'"
       ]
     },
-    "writingPrompt": "Write about a time you took a special photo using 'ph' words.",
     "riddleOfTheDay": [
       {
         "day": "Monday",
@@ -399,8 +440,7 @@ export const literacyWarmupContent = {
       "Wednesday: Incredible fact: The first photograph ever taken needed 8 hours of exposure time! Now photos are instant.",
       "Thursday: Mind-blowing fact: Before phones, people used to send messages with carrier pigeons!",
       "Friday: Fun fact: Dolphins have names! They each have a unique whistle that other dolphins recognize as their 'name'."
-    ],
-    "focusWords": ["have", "from", "or", "had", "by"] // Teacher editable
+    ]
   },
   "week6": {
     "focusSound": "ck",
@@ -429,10 +469,20 @@ export const literacyWarmupContent = {
       ]
     },
     "language": {
-      "synonyms": [["lucky", "fortunate"], ["quick", "fast"]],
-      "antonyms": [["neat", "messy"], ["thick", "thin"]],
-      "incompleteSynonyms": ["pick", "stack"],
-      "incompleteAntonyms": ["morning", "loudly"],
+      "dailySynonyms": [
+        { complete: [["lucky", "fortunate"], ["quick", "fast"]], incomplete: ["pick", "stack"] }, // Monday
+        { complete: [["neat", "tidy"], ["thick", "dense"]], incomplete: ["lived", "morning"] }, // Tuesday
+        { complete: [["struck", "hit"], ["loudly", "noisily"]], incomplete: ["clock", "twelve"] }, // Wednesday
+        { complete: [["character", "personality"], ["movements", "actions"]], incomplete: ["thought", "other"] }, // Thursday
+        { complete: [["flick", "flip"], ["pile", "heap"]], incomplete: ["duck", "tower"] } // Friday
+      ],
+      "dailyAntonyms": [
+        { complete: [["neat", "messy"], ["thick", "thin"]], incomplete: ["morning", "loudly"] }, // Monday
+        { complete: [["lucky", "unlucky"], ["quick", "slow"]], incomplete: ["pick", "drop"] }, // Tuesday
+        { complete: [["up", "down"], ["stack", "scatter"]], incomplete: ["neat", "messy"] }, // Wednesday
+        { complete: [["struck", "missed"], ["loudly", "quietly"]], incomplete: ["thick", "thin"] }, // Thursday
+        { complete: [["other", "same"], ["character", "boring"]], incomplete: ["quick", "slow"] } // Friday
+      ],
       "dailyTasks": [
         "Day 1: Find all the words ending in 'ck' in the passage",
         "Day 2: Add periods where needed: 'The duck was lucky She lived by the clock'",
@@ -440,7 +490,6 @@ export const literacyWarmupContent = {
         "Day 4: Rewrite this sentence more clearly: 'The other ducks thought she was quite a character'"
       ]
     },
-    "writingPrompt": "Write a story about an animal using words that end with 'ck'.",
     "riddleOfTheDay": [
       {
         "day": "Monday",
@@ -479,10 +528,8 @@ export const literacyWarmupContent = {
       "Wednesday: Cool fact: The first mechanical clock was invented over 1000 years ago in China!",
       "Thursday: Incredible fact: Some trees can live for thousands of years! The oldest tree is over 4,800 years old.",
       "Friday: Mind-blowing fact: LEGO blocks are so precisely made that only 18 out of every 1 million fail to meet standards!"
-    ],
-    "focusWords": ["not", "word", "but", "all", "were"] // Teacher editable
+    ]
   },
-  // Continue with weeks 7-10 with similar pattern...
   "week7": {
     "focusSound": "ng",
     "graphReview": {
@@ -510,10 +557,20 @@ export const literacyWarmupContent = {
       ]
     },
     "language": {
-      "synonyms": [["strong", "powerful"], ["long", "lengthy"]],
-      "antonyms": [["young", "old"], ["morning", "evening"]],
-      "incompleteSynonyms": ["sing", "bring"],
-      "incompleteAntonyms": ["loved", "golden"],
+      "dailySynonyms": [
+        { complete: [["strong", "powerful"], ["long", "lengthy"]], incomplete: ["sing", "bring"] }, // Monday
+        { complete: [["loved", "adored"], ["morning", "dawn"]], incomplete: ["ring", "bell"] }, // Tuesday
+        { complete: [["young", "little"], ["listen", "hear"]], incomplete: ["voice", "song"] }, // Wednesday
+        { complete: [["golden", "gold"], ["swing", "sway"]], incomplete: ["wore", "garden"] }, // Thursday
+        { complete: [["humming", "buzzing"], ["rope", "cord"]], incomplete: ["king", "time"] } // Friday
+      ],
+      "dailyAntonyms": [
+        { complete: [["young", "old"], ["morning", "evening"]], incomplete: ["loved", "golden"] }, // Monday
+        { complete: [["strong", "weak"], ["long", "short"]], incomplete: ["sing", "quiet"] }, // Tuesday
+        { complete: [["bring", "take"], ["listen", "ignore"]], incomplete: ["young", "old"] }, // Wednesday
+        { complete: [["golden", "silver"], ["swing", "still"]], incomplete: ["wore", "removed"] }, // Thursday
+        { complete: [["humming", "silent"], ["garden", "indoor"]], incomplete: ["rope", "chain"] } // Friday
+      ],
       "dailyTasks": [
         "Day 1: Circle all the words ending in 'ng' in the passage",
         "Day 2: Fix the sentence: 'the king loved singing he had a strong voice'",
@@ -521,7 +578,6 @@ export const literacyWarmupContent = {
         "Day 4: Add describing words: 'The king sang a __ song with his __ voice'"
       ]
     },
-    "writingPrompt": "Write about something you love doing using words ending in 'ng'.",
     "riddleOfTheDay": [
       {
         "day": "Monday",
@@ -560,10 +616,624 @@ export const literacyWarmupContent = {
       "Wednesday: Cool fact: The highest swing ever built was 100 feet high! It was in Russia and could swing people at 60 mph.",
       "Thursday: Incredible fact: Spring is the only season that's also a verb! You can 'spring' into action.",
       "Friday: Mind-blowing fact: The longest reigning monarch in history ruled for 82 years! That's longer than most people live."
+    ]
+  },
+  "week8": {
+    "focusSound": "tch",
+    "graphReview": {
+      "graphs": ["a", "e", "i", "o", "u", "b", "c", "d", "f", "g", "h", "j", "k", "l", "m", "n", "p", "q", "r", "s", "t", "v", "w", "x", "y", "z"],
+      "digraphs": ["sh", "ch", "th", "wh", "ph", "ck", "ng"],
+      "trigraphs": ["tch", "dge", "igh"], // Add igh
+      "quadgraphs": []
+    },
+    "soundWords": ["catch", "match", "watch", "patch", "hatch", "latch", "batch", "scratch", "kitchen", "pitcher"],
+    "boggleLetters": ["t", "c", "h", "a", "i", "o", "m"],
+    "extraActivities": [
+      "Write 3 more words with 'tch'",
+      "Practice the 'tch' sound clearly",
+      "Find things you can catch or watch"
     ],
-    "focusWords": ["we", "when", "your", "can", "said"] // Teacher editable
+    "readingPassage": {
+      "title": "The Witch's Kitchen",
+      "text": "In the witch's kitchen, there was a special batch of cookies in the oven. She would watch them carefully and scratch her head when trying to match the perfect recipe. When ready, she would catch them with her special mitts and patch up any cracks with magical frosting.",
+      "dailyActivities": [
+        "Day 1: Highlight all the 'tch' words in the passage",
+        "Day 2: Draw the witch's magical kitchen",
+        "Day 3: Read with a spooky witch voice",
+        "Day 4: Answer: What was in the oven? What did the witch do when the cookies were ready?",
+        "Day 5: Write your own magical kitchen story using 'tch' words"
+      ]
+    },
+    "language": {
+      "dailySynonyms": [
+        { complete: [["special", "unique"], ["carefully", "cautiously"]], incomplete: ["watch", "catch"] }, // Monday
+        { complete: [["perfect", "ideal"], ["recipe", "formula"]], incomplete: ["match", "batch"] }, // Tuesday
+        { complete: [["ready", "prepared"], ["magical", "enchanted"]], incomplete: ["scratch", "head"] }, // Wednesday
+        { complete: [["kitchen", "cooking area"], ["mitts", "gloves"]], incomplete: ["patch", "cracks"] }, // Thursday
+        { complete: [["frosting", "icing"], ["cookies", "biscuits"]], incomplete: ["witch", "oven"] } // Friday
+      ],
+      "dailyAntonyms": [
+        { complete: [["special", "ordinary"], ["carefully", "carelessly"]], incomplete: ["watch", "ignore"] }, // Monday
+        { complete: [["perfect", "flawed"], ["ready", "unprepared"]], incomplete: ["match", "mismatch"] }, // Tuesday
+        { complete: [["magical", "normal"], ["catch", "drop"]], incomplete: ["scratch", "smooth"] }, // Wednesday
+        { complete: [["kitchen", "bedroom"], ["cracks", "whole"]], incomplete: ["patch", "break"] }, // Thursday
+        { complete: [["cookies", "vegetables"], ["frosting", "plain"]], incomplete: ["witch", "angel"] } // Friday
+      ],
+      "dailyTasks": [
+        "Day 1: Find all the words ending in 'tch' in the passage",
+        "Day 2: Add periods where needed: 'The witch watched carefully She made cookies'",
+        "Day 3: Circle all the action words (verbs) in the passage",
+        "Day 4: Replace 'said' with better words: 'Look at this!' the witch said excitedly"
+      ]
+    },
+    "riddleOfTheDay": [
+      {
+        "day": "Monday",
+        "riddle": "I help you catch and hold things tight. In baseball games, I'm quite a sight. What am I?",
+        "answer": "A catcher's mitt!",
+        "hint": "Baseball players wear me"
+      },
+      {
+        "day": "Tuesday",
+        "riddle": "I keep time all day and night. My hands move round, but I don't take flight. What am I?",
+        "answer": "A watch or clock!",
+        "hint": "I help you know what time it is"
+      },
+      {
+        "day": "Wednesday",
+        "riddle": "I'm used to fix what's torn or worn. On clothes and quilts, I am born. What am I?",
+        "answer": "A patch!",
+        "hint": "I cover holes in things"
+      },
+      {
+        "day": "Thursday",
+        "riddle": "In the kitchen I can be found, mixing things that are round. Cookies and cakes I help create. What am I?",
+        "answer": "A kitchen mixer (or batch of dough)!",
+        "hint": "I help make yummy treats"
+      },
+      {
+        "day": "Friday",
+        "riddle": "When you're itchy, this you do. On your head or arm so blue. What am I?",
+        "answer": "Scratch!",
+        "hint": "You do this when something itches"
+      }
+    ],
+    "funFactOfTheDay": [
+      "Monday: Fun fact: The 'tch' spelling is used after short vowels, while 'ch' comes after long vowels or consonants!",
+      "Tuesday: Amazing fact: The first wristwatch was made in 1868 for a woman! Before that, people carried pocket watches.",
+      "Wednesday: Cool fact: Kitchen witches were actually considered good luck in medieval times! They protected homes.",
+      "Thursday: Incredible fact: The largest batch of cookies ever made weighed over 40,000 pounds!",
+      "Friday: Mind-blowing fact: When you scratch an itch, your brain releases endorphins that make you feel good!"
+    ]
+  },
+  "week9": {
+    "focusSound": "dge",
+    "graphReview": {
+      "graphs": ["a", "e", "i", "o", "u", "b", "c", "d", "f", "g", "h", "j", "k", "l", "m", "n", "p", "q", "r", "s", "t", "v", "w", "x", "y", "z"],
+      "digraphs": ["sh", "ch", "th", "wh", "ph", "ck", "ng"],
+      "trigraphs": ["tch", "dge", "igh", "sch"], // Add sch
+      "quadgraphs": []
+    },
+    "soundWords": ["bridge", "fudge", "hedge", "judge", "badge", "edge", "ledge", "ridge", "dodge", "smudge"],
+    "boggleLetters": ["d", "g", "e", "a", "i", "r", "b"],
+    "extraActivities": [
+      "Write 3 more words with 'dge'",
+      "Listen for the 'j' sound in 'dge' words",
+      "Draw pictures of bridges and hedges"
+    ],
+    "readingPassage": {
+      "title": "The Bridge Judge",
+      "text": "Judge Bradley had to make a pledge to protect the old stone bridge. Every day, he would walk along the hedge and check the bridge's edge for any damage. When he found a smudge or scratch, he would make a note in his special badge-shaped notebook.",
+      "dailyActivities": [
+        "Day 1: Highlight all the 'dge' words in the passage",
+        "Day 2: Draw Judge Bradley walking by the bridge",
+        "Day 3: Read as if you're making an important pledge",
+        "Day 4: Answer: What was Judge Bradley's job? What did he do when he found damage?",
+        "Day 5: Write about someone who has an important job using 'dge' words"
+      ]
+    },
+    "language": {
+      "dailySynonyms": [
+        { complete: [["judge", "referee"], ["pledge", "promise"]], incomplete: ["protect", "check"] }, // Monday
+        { complete: [["damage", "harm"], ["special", "unique"]], incomplete: ["edge", "walk"] }, // Tuesday
+        { complete: [["stone", "rock"], ["notebook", "journal"]], incomplete: ["found", "note"] }, // Wednesday
+        { complete: [["smudge", "stain"], ["scratch", "mark"]], incomplete: ["bridge", "old"] }, // Thursday
+        { complete: [["badge", "pin"], ["shaped", "formed"]], incomplete: ["hedge", "along"] } // Friday
+      ],
+      "dailyAntonyms": [
+        { complete: [["protect", "harm"], ["old", "new"]], incomplete: ["damage", "repair"] }, // Monday
+        { complete: [["edge", "center"], ["along", "across"]], incomplete: ["found", "lost"] }, // Tuesday
+        { complete: [["special", "ordinary"], ["stone", "wood"]], incomplete: ["check", "ignore"] }, // Wednesday
+        { complete: [["smudge", "clean"], ["damage", "fix"]], incomplete: ["scratch", "smooth"] }, // Thursday
+        { complete: [["notebook", "verbal"], ["badge", "plain"]], incomplete: ["walk", "run"] } // Friday
+      ],
+      "dailyTasks": [
+        "Day 1: Find all the words ending in 'dge' in the passage",
+        "Day 2: Add commas in lists: 'He checked the bridge hedge and edge'",
+        "Day 3: Circle all the nouns in the passage",
+        "Day 4: Rewrite with better adjectives: 'Judge Bradley walked along the hedge'"
+      ]
+    },
+    "riddleOfTheDay": [
+      {
+        "day": "Monday",
+        "riddle": "I connect two places, over water I span. Cars and people cross me, built by human hands. What am I?",
+        "answer": "A bridge!",
+        "hint": "I help you cross rivers and valleys"
+      },
+      {
+        "day": "Tuesday",
+        "riddle": "In court I sit up high, deciding wrong from right. With my gavel I bang, ensuring justice is in sight. What am I?",
+        "answer": "A judge!",
+        "hint": "I wear black robes and make legal decisions"
+      },
+      {
+        "day": "Wednesday",
+        "riddle": "I'm green and neat, around gardens I grow. Trim me to keep me looking just so. What am I?",
+        "answer": "A hedge!",
+        "hint": "I'm made of bushes and need cutting"
+      },
+      {
+        "day": "Thursday",
+        "riddle": "I'm worn with pride on uniforms bright. Police and scouts pin me in sight. What am I?",
+        "answer": "A badge!",
+        "hint": "I show rank or achievement"
+      },
+      {
+        "day": "Friday",
+        "riddle": "I'm on the border, not in the middle. I'm sharp and straight, like solving a riddle. What am I?",
+        "answer": "An edge!",
+        "hint": "I'm the border of something"
+      }
+    ],
+    "funFactOfTheDay": [
+      "Monday: Fun fact: The 'dge' spelling makes a 'j' sound and comes after short vowels, just like 'tch' makes a 'ch' sound!",
+      "Tuesday: Amazing fact: The longest bridge in the world is 102 miles long! It's in China and takes 2 hours to cross by car.",
+      "Wednesday: Cool fact: Hedge mazes have been around for over 400 years! The oldest one still exists in England.",
+      "Thursday: Incredible fact: Police badges were first used in London in 1829! Before that, officers wore armbands.",
+      "Friday: Mind-blowing fact: A judge's gavel is called a 'gavel' because it comes from the word 'gable' meaning a small hammer!"
+    ]
+  },
+  "week8": {
+    "focusSound": "tch",
+    "graphReview": {
+      "graphs": ["a", "e", "i", "o", "u", "b", "c", "d", "f", "g", "h", "j", "k", "l", "m", "n", "p", "q", "r", "s", "t", "v", "w", "x", "y", "z"],
+      "digraphs": ["sh", "ch", "th", "wh", "ph", "ck", "ng"],
+      "trigraphs": ["tch", "dge", "igh"], // Add igh
+      "quadgraphs": []
+    },
+    "soundWords": ["catch", "match", "watch", "patch", "hatch", "latch", "batch", "scratch", "kitchen", "pitcher"],
+    "boggleLetters": ["t", "c", "h", "a", "i", "o", "m"],
+    "extraActivities": [
+      "Write 3 more words with 'tch'",
+      "Practice the 'tch' sound clearly",
+      "Find things you can catch or watch"
+    ],
+    "readingPassage": {
+      "title": "The Witch's Kitchen",
+      "text": "In the witch's kitchen, there was a special batch of cookies in the oven. She would watch them carefully and scratch her head when trying to match the perfect recipe. When ready, she would catch them with her special mitts and patch up any cracks with magical frosting.",
+      "dailyActivities": [
+        "Day 1: Highlight all the 'tch' words in the passage",
+        "Day 2: Draw the witch's magical kitchen",
+        "Day 3: Read with a spooky witch voice",
+        "Day 4: Answer: What was in the oven? What did the witch do when the cookies were ready?",
+        "Day 5: Write your own magical kitchen story using 'tch' words"
+      ]
+    },
+    "language": {
+      "dailySynonyms": [
+        { complete: [["special", "unique"], ["carefully", "cautiously"]], incomplete: ["watch", "catch"] }, // Monday
+        { complete: [["perfect", "ideal"], ["recipe", "formula"]], incomplete: ["match", "batch"] }, // Tuesday
+        { complete: [["ready", "prepared"], ["magical", "enchanted"]], incomplete: ["scratch", "head"] }, // Wednesday
+        { complete: [["kitchen", "cooking area"], ["mitts", "gloves"]], incomplete: ["patch", "cracks"] }, // Thursday
+        { complete: [["frosting", "icing"], ["cookies", "biscuits"]], incomplete: ["witch", "oven"] } // Friday
+      ],
+      "dailyAntonyms": [
+        { complete: [["special", "ordinary"], ["carefully", "carelessly"]], incomplete: ["watch", "ignore"] }, // Monday
+        { complete: [["perfect", "flawed"], ["ready", "unprepared"]], incomplete: ["match", "mismatch"] }, // Tuesday
+        { complete: [["magical", "normal"], ["catch", "drop"]], incomplete: ["scratch", "smooth"] }, // Wednesday
+        { complete: [["kitchen", "bedroom"], ["cracks", "whole"]], incomplete: ["patch", "break"] }, // Thursday
+        { complete: [["cookies", "vegetables"], ["frosting", "plain"]], incomplete: ["witch", "angel"] } // Friday
+      ],
+      "dailyTasks": [
+        "Day 1: Find all the words ending in 'tch' in the passage",
+        "Day 2: Add periods where needed: 'The witch watched carefully She made cookies'",
+        "Day 3: Circle all the action words (verbs) in the passage",
+        "Day 4: Replace 'said' with better words: 'Look at this!' the witch said excitedly"
+      ]
+    },
+    "riddleOfTheDay": [
+      {
+        "day": "Monday",
+        "riddle": "I help you catch and hold things tight. In baseball games, I'm quite a sight. What am I?",
+        "answer": "A catcher's mitt!",
+        "hint": "Baseball players wear me"
+      },
+      {
+        "day": "Tuesday",
+        "riddle": "I keep time all day and night. My hands move round, but I don't take flight. What am I?",
+        "answer": "A watch or clock!",
+        "hint": "I help you know what time it is"
+      },
+      {
+        "day": "Wednesday",
+        "riddle": "I'm used to fix what's torn or worn. On clothes and quilts, I am born. What am I?",
+        "answer": "A patch!",
+        "hint": "I cover holes in things"
+      },
+      {
+        "day": "Thursday",
+        "riddle": "In the kitchen I can be found, mixing things that are round. Cookies and cakes I help create. What am I?",
+        "answer": "A kitchen mixer (or batch of dough)!",
+        "hint": "I help make yummy treats"
+      },
+      {
+        "day": "Friday",
+        "riddle": "When you're itchy, this you do. On your head or arm so blue. What am I?",
+        "answer": "Scratch!",
+        "hint": "You do this when something itches"
+      }
+    ],
+    "funFactOfTheDay": [
+      "Monday: Fun fact: The 'tch' spelling is used after short vowels, while 'ch' comes after long vowels or consonants!",
+      "Tuesday: Amazing fact: The first wristwatch was made in 1868 for a woman! Before that, people carried pocket watches.",
+      "Wednesday: Cool fact: Kitchen witches were actually considered good luck in medieval times! They protected homes.",
+      "Thursday: Incredible fact: The largest batch of cookies ever made weighed over 40,000 pounds!",
+      "Friday: Mind-blowing fact: When you scratch an itch, your brain releases endorphins that make you feel good!"
+    ]
+  },
+  "week9": {
+    "focusSound": "dge",
+    "graphReview": {
+      "graphs": ["a", "e", "i", "o", "u", "b", "c", "d", "f", "g", "h", "j", "k", "l", "m", "n", "p", "q", "r", "s", "t", "v", "w", "x", "y", "z"],
+      "digraphs": ["sh", "ch", "th", "wh", "ph", "ck", "ng"],
+      "trigraphs": ["tch", "dge", "igh", "sch"], // Add sch
+      "quadgraphs": []
+    },
+    "soundWords": ["bridge", "fudge", "hedge", "judge", "badge", "edge", "ledge", "ridge", "dodge", "smudge"],
+    "boggleLetters": ["d", "g", "e", "a", "i", "r", "b"],
+    "extraActivities": [
+      "Write 3 more words with 'dge'",
+      "Listen for the 'j' sound in 'dge' words",
+      "Draw pictures of bridges and hedges"
+    ],
+    "readingPassage": {
+      "title": "The Bridge Judge",
+      "text": "Judge Bradley had to make a pledge to protect the old stone bridge. Every day, he would walk along the hedge and check the bridge's edge for any damage. When he found a smudge or scratch, he would make a note in his special badge-shaped notebook.",
+      "dailyActivities": [
+        "Day 1: Highlight all the 'dge' words in the passage",
+        "Day 2: Draw Judge Bradley walking by the bridge",
+        "Day 3: Read as if you're making an important pledge",
+        "Day 4: Answer: What was Judge Bradley's job? What did he do when he found damage?",
+        "Day 5: Write about someone who has an important job using 'dge' words"
+      ]
+    },
+    "language": {
+      "dailySynonyms": [
+        { complete: [["judge", "referee"], ["pledge", "promise"]], incomplete: ["protect", "check"] }, // Monday
+        { complete: [["damage", "harm"], ["special", "unique"]], incomplete: ["edge", "walk"] }, // Tuesday
+        { complete: [["stone", "rock"], ["notebook", "journal"]], incomplete: ["found", "note"] }, // Wednesday
+        { complete: [["smudge", "stain"], ["scratch", "mark"]], incomplete: ["bridge", "old"] }, // Thursday
+        { complete: [["badge", "pin"], ["shaped", "formed"]], incomplete: ["hedge", "along"] } // Friday
+      ],
+      "dailyAntonyms": [
+        { complete: [["protect", "harm"], ["old", "new"]], incomplete: ["damage", "repair"] }, // Monday
+        { complete: [["edge", "center"], ["along", "across"]], incomplete: ["found", "lost"] }, // Tuesday
+        { complete: [["special", "ordinary"], ["stone", "wood"]], incomplete: ["check", "ignore"] }, // Wednesday
+        { complete: [["smudge", "clean"], ["damage", "fix"]], incomplete: ["scratch", "smooth"] }, // Thursday
+        { complete: [["notebook", "verbal"], ["badge", "plain"]], incomplete: ["walk", "run"] } // Friday
+      ],
+      "dailyTasks": [
+        "Day 1: Find all the words ending in 'dge' in the passage",
+        "Day 2: Add commas in lists: 'He checked the bridge hedge and edge'",
+        "Day 3: Circle all the nouns in the passage",
+        "Day 4: Rewrite with better adjectives: 'Judge Bradley walked along the hedge'"
+      ]
+    },
+    "riddleOfTheDay": [
+      {
+        "day": "Monday",
+        "riddle": "I connect two places, over water I span. Cars and people cross me, built by human hands. What am I?",
+        "answer": "A bridge!",
+        "hint": "I help you cross rivers and valleys"
+      },
+      {
+        "day": "Tuesday",
+        "riddle": "In court I sit up high, deciding wrong from right. With my gavel I bang, ensuring justice is in sight. What am I?",
+        "answer": "A judge!",
+        "hint": "I wear black robes and make legal decisions"
+      },
+      {
+        "day": "Wednesday",
+        "riddle": "I'm green and neat, around gardens I grow. Trim me to keep me looking just so. What am I?",
+        "answer": "A hedge!",
+        "hint": "I'm made of bushes and need cutting"
+      },
+      {
+        "day": "Thursday",
+        "riddle": "I'm worn with pride on uniforms bright. Police and scouts pin me in sight. What am I?",
+        "answer": "A badge!",
+        "hint": "I show rank or achievement"
+      },
+      {
+        "day": "Friday",
+        "riddle": "I'm on the border, not in the middle. I'm sharp and straight, like solving a riddle. What am I?",
+        "answer": "An edge!",
+        "hint": "I'm the border of something"
+      }
+    ],
+    "funFactOfTheDay": [
+      "Monday: Fun fact: The 'dge' spelling makes a 'j' sound and comes after short vowels, just like 'tch' makes a 'ch' sound!",
+      "Tuesday: Amazing fact: The longest bridge in the world is 102 miles long! It's in China and takes 2 hours to cross by car.",
+      "Wednesday: Cool fact: Hedge mazes have been around for over 400 years! The oldest one still exists in England.",
+      "Thursday: Incredible fact: Police badges were first used in London in 1829! Before that, officers wore armbands.",
+      "Friday: Mind-blowing fact: A judge's gavel is called a 'gavel' because it comes from the word 'gable' meaning a small hammer!"
+    ]
+  },
+  "week10": {
+    "focusSound": "igh",
+    "graphReview": {
+      "graphs": ["a", "e", "i", "o", "u", "b", "c", "d", "f", "g", "h", "j", "k", "l", "m", "n", "p", "q", "r", "s", "t", "v", "w", "x", "y", "z"],
+      "digraphs": ["sh", "ch", "th", "wh", "ph", "ck", "ng"],
+      "trigraphs": ["tch", "dge", "igh", "sch"],
+      "quadgraphs": ["ough"] // Start introducing quadgraphs
+    },
+    "soundWords": ["light", "night", "bright", "right", "fight", "sight", "might", "flight", "fright", "knight"],
+    "boggleLetters": ["i", "g", "h", "t", "l", "r", "n"],
+    "extraActivities": [
+      "Write 3 more words with 'igh'",
+      "Notice how 'igh' sounds like 'i'",
+      "Find things that are bright or give light"
+    ],
+    "readingPassage": {
+      "title": "The Knight's Night Flight",
+      "text": "One bright night, a brave knight took flight on his magnificent horse. The moonlight was so bright that he could see far into the distance. He had no fright because his sword gleamed in the light. The sight of shooting stars filled him with delight as he flew through the starry night.",
+      "dailyActivities": [
+        "Day 1: Highlight all the 'igh' words in the passage",
+        "Day 2: Draw the knight flying through the starry night",
+        "Day 3: Read with excitement and wonder",
+        "Day 4: Answer: What helped the knight see in the dark? What filled him with delight?",
+        "Day 5: Write your own magical night adventure using 'igh' words"
+      ]
+    },
+    "language": {
+      "dailySynonyms": [
+        { complete: [["bright", "brilliant"], ["brave", "courageous"]], incomplete: ["flight", "night"] }, // Monday
+        { complete: [["magnificent", "splendid"], ["gleamed", "shone"]], incomplete: ["sword", "light"] }, // Tuesday
+        { complete: [["fright", "fear"], ["distance", "faraway"]], incomplete: ["sight", "see"] }, // Wednesday
+        { complete: [["delight", "joy"], ["shooting", "falling"]], incomplete: ["stars", "filled"] }, // Thursday
+        { complete: [["starry", "stellar"], ["flew", "soared"]], incomplete: ["knight", "horse"] } // Friday
+      ],
+      "dailyAntonyms": [
+        { complete: [["bright", "dark"], ["night", "day"]], incomplete: ["brave", "scared"] }, // Monday
+        { complete: [["magnificent", "ordinary"], ["far", "near"]], incomplete: ["flight", "landing"] }, // Tuesday
+        { complete: [["fright", "courage"], ["gleamed", "dulled"]], incomplete: ["sword", "shield"] }, // Wednesday
+        { complete: [["delight", "disgust"], ["shooting", "stationary"]], incomplete: ["sight", "blindness"] }, // Thursday
+        { complete: [["starry", "cloudy"], ["through", "around"]], incomplete: ["flew", "walked"] } // Friday
+      ],
+      "dailyTasks": [
+        "Day 1: Find all the words with 'igh' making the long 'i' sound",
+        "Day 2: Add describing words: 'The __ knight rode his __ horse'",
+        "Day 3: Circle all the words that describe light or brightness",
+        "Day 4: Rewrite with better action words: 'The knight went through the night'"
+      ]
+    },
+    "riddleOfTheDay": [
+      {
+        "day": "Monday",
+        "riddle": "I help you catch and hold things tight. In baseball games, I'm quite a sight. What am I?",
+        "answer": "A catcher's mitt!",
+        "hint": "Baseball players wear me"
+      },
+      {
+        "day": "Tuesday",
+        "riddle": "I keep time all day and night. My hands move round, but I don't take flight. What am I?",
+        "answer": "A watch or clock!",
+        "hint": "I help you know what time it is"
+      },
+      {
+        "day": "Wednesday",
+        "riddle": "I'm used to fix what's torn or worn. On clothes and quilts, I am born. What am I?",
+        "answer": "A patch!",
+        "hint": "I cover holes in things"
+      },
+      {
+        "day": "Thursday",
+        "riddle": "In the kitchen I can be found, mixing things that are round. Cookies and cakes I help create. What am I?",
+        "answer": "A kitchen mixer (or batch of dough)!",
+        "hint": "I help make yummy treats"
+      },
+      {
+        "day": "Friday",
+        "riddle": "When you're itchy, this you do. On your head or arm so blue. What am I?",
+        "answer": "Scratch!",
+        "hint": "You do this when something itches"
+      }
+    ],
+    "funFactOfTheDay": [
+      "Monday: Fun fact: The 'tch' spelling is used after short vowels, while 'ch' comes after long vowels or consonants!",
+      "Tuesday: Amazing fact: The first wristwatch was made in 1868 for a woman! Before that, people carried pocket watches.",
+      "Wednesday: Cool fact: Kitchen witches were actually considered good luck in medieval times! They protected homes.",
+      "Thursday: Incredible fact: The largest batch of cookies ever made weighed over 40,000 pounds!",
+      "Friday: Mind-blowing fact: When you scratch an itch, your brain releases endorphins that make you feel good!"
+    ]
+  },
+  "week9": {
+    "focusSound": "dge",
+    "graphReview": {
+      "graphs": ["a", "e", "i", "o", "u", "b", "c", "d", "f", "g", "h", "j", "k", "l", "m", "n", "p", "q", "r", "s", "t", "v", "w", "x", "y", "z"],
+      "digraphs": ["sh", "ch", "th", "wh", "ph", "ck", "ng"],
+      "trigraphs": ["tch", "dge", "igh", "sch"], // Add sch
+      "quadgraphs": []
+    },
+    "soundWords": ["bridge", "fudge", "hedge", "judge", "badge", "edge", "ledge", "ridge", "dodge", "smudge"],
+    "boggleLetters": ["d", "g", "e", "a", "i", "r", "b"],
+    "extraActivities": [
+      "Write 3 more words with 'dge'",
+      "Listen for the 'j' sound in 'dge' words",
+      "Draw pictures of bridges and hedges"
+    ],
+    "readingPassage": {
+      "title": "The Bridge Judge",
+      "text": "Judge Bradley had to make a pledge to protect the old stone bridge. Every day, he would walk along the hedge and check the bridge's edge for any damage. When he found a smudge or scratch, he would make a note in his special badge-shaped notebook.",
+      "dailyActivities": [
+        "Day 1: Highlight all the 'dge' words in the passage",
+        "Day 2: Draw Judge Bradley walking by the bridge",
+        "Day 3: Read as if you're making an important pledge",
+        "Day 4: Answer: What was Judge Bradley's job? What did he do when he found damage?",
+        "Day 5: Write about someone who has an important job using 'dge' words"
+      ]
+    },
+    "language": {
+      "dailySynonyms": [
+        { complete: [["judge", "referee"], ["pledge", "promise"]], incomplete: ["protect", "check"] }, // Monday
+        { complete: [["damage", "harm"], ["special", "unique"]], incomplete: ["edge", "walk"] }, // Tuesday
+        { complete: [["stone", "rock"], ["notebook", "journal"]], incomplete: ["found", "note"] }, // Wednesday
+        { complete: [["smudge", "stain"], ["scratch", "mark"]], incomplete: ["bridge", "old"] }, // Thursday
+        { complete: [["badge", "pin"], ["shaped", "formed"]], incomplete: ["hedge", "along"] } // Friday
+      ],
+      "dailyAntonyms": [
+        { complete: [["protect", "harm"], ["old", "new"]], incomplete: ["damage", "repair"] }, // Monday
+        { complete: [["edge", "center"], ["along", "across"]], incomplete: ["found", "lost"] }, // Tuesday
+        { complete: [["special", "ordinary"], ["stone", "wood"]], incomplete: ["check", "ignore"] }, // Wednesday
+        { complete: [["smudge", "clean"], ["damage", "fix"]], incomplete: ["scratch", "smooth"] }, // Thursday
+        { complete: [["notebook", "verbal"], ["badge", "plain"]], incomplete: ["walk", "run"] } // Friday
+      ],
+      "dailyTasks": [
+        "Day 1: Find all the words ending in 'dge' in the passage",
+        "Day 2: Add commas in lists: 'He checked the bridge hedge and edge'",
+        "Day 3: Circle all the nouns in the passage",
+        "Day 4: Rewrite with better adjectives: 'Judge Bradley walked along the hedge'"
+      ]
+    },
+    "riddleOfTheDay": [
+      {
+        "day": "Monday",
+        "riddle": "I connect two places, over water I span. Cars and people cross me, built by human hands. What am I?",
+        "answer": "A bridge!",
+        "hint": "I help you cross rivers and valleys"
+      },
+      {
+        "day": "Tuesday",
+        "riddle": "In court I sit up high, deciding wrong from right. With my gavel I bang, ensuring justice is in sight. What am I?",
+        "answer": "A judge!",
+        "hint": "I wear black robes and make legal decisions"
+      },
+      {
+        "day": "Wednesday",
+        "riddle": "I'm green and neat, around gardens I grow. Trim me to keep me looking just so. What am I?",
+        "answer": "A hedge!",
+        "hint": "I'm made of bushes and need cutting"
+      },
+      {
+        "day": "Thursday",
+        "riddle": "I'm worn with pride on uniforms bright. Police and scouts pin me in sight. What am I?",
+        "answer": "A badge!",
+        "hint": "I show rank or achievement"
+      },
+      {
+        "day": "Friday",
+        "riddle": "I'm on the border, not in the middle. I'm sharp and straight, like solving a riddle. What am I?",
+        "answer": "An edge!",
+        "hint": "I'm the border of something"
+      }
+    ],
+    "funFactOfTheDay": [
+      "Monday: Fun fact: The 'dge' spelling makes a 'j' sound and comes after short vowels, just like 'tch' makes a 'ch' sound!",
+      "Tuesday: Amazing fact: The longest bridge in the world is 102 miles long! It's in China and takes 2 hours to cross by car.",
+      "Wednesday: Cool fact: Hedge mazes have been around for over 400 years! The oldest one still exists in England.",
+      "Thursday: Incredible fact: Police badges were first used in London in 1829! Before that, officers wore armbands.",
+      "Friday: Mind-blowing fact: A judge's gavel is called a 'gavel' because it comes from the word 'gable' meaning a small hammer!"
+    ]
+  },
+  "week10": {
+    "focusSound": "igh",
+    "graphReview": {
+      "graphs": ["a", "e", "i", "o", "u", "b", "c", "d", "f", "g", "h", "j", "k", "l", "m", "n", "p", "q", "r", "s", "t", "v", "w", "x", "y", "z"],
+      "digraphs": ["sh", "ch", "th", "wh", "ph", "ck", "ng"],
+      "trigraphs": ["tch", "dge", "igh", "sch"],
+      "quadgraphs": ["ough", "eigh"] // Introduce quadgraphs
+    },
+    "soundWords": ["light", "night", "bright", "right", "fight", "sight", "might", "flight", "fright", "knight"],
+    "boggleLetters": ["i", "g", "h", "t", "l", "r", "n"],
+    "extraActivities": [
+      "Write 3 more words with 'igh'",
+      "Notice how 'igh' sounds like 'i'",
+      "Find things that are bright or give light"
+    ],
+    "readingPassage": {
+      "title": "The Knight's Night Flight",
+      "text": "One bright night, a brave knight took flight on his magnificent horse. The moonlight was so bright that he could see far into the distance. He had no fright because his sword gleamed in the light. The sight of shooting stars filled him with delight as he flew through the starry night.",
+      "dailyActivities": [
+        "Day 1: Highlight all the 'igh' words in the passage",
+        "Day 2: Draw the knight flying through the starry night",
+        "Day 3: Read with excitement and wonder",
+        "Day 4: Answer: What helped the knight see in the dark? What filled him with delight?",
+        "Day 5: Write your own magical night adventure using 'igh' words"
+      ]
+    },
+    "language": {
+      "dailySynonyms": [
+        { complete: [["bright", "brilliant"], ["brave", "courageous"]], incomplete: ["flight", "night"] }, // Monday
+        { complete: [["magnificent", "splendid"], ["gleamed", "shone"]], incomplete: ["sword", "light"] }, // Tuesday
+        { complete: [["fright", "fear"], ["distance", "faraway"]], incomplete: ["sight", "see"] }, // Wednesday
+        { complete: [["delight", "joy"], ["shooting", "falling"]], incomplete: ["stars", "filled"] }, // Thursday
+        { complete: [["starry", "stellar"], ["flew", "soared"]], incomplete: ["knight", "horse"] } // Friday
+      ],
+      "dailyAntonyms": [
+        { complete: [["bright", "dark"], ["night", "day"]], incomplete: ["brave", "scared"] }, // Monday
+        { complete: [["magnificent", "ordinary"], ["far", "near"]], incomplete: ["flight", "landing"] }, // Tuesday
+        { complete: [["fright", "courage"], ["gleamed", "dulled"]], incomplete: ["sword", "shield"] }, // Wednesday
+        { complete: [["delight", "disgust"], ["shooting", "stationary"]], incomplete: ["sight", "blindness"] }, // Thursday
+        { complete: [["starry", "cloudy"], ["through", "around"]], incomplete: ["flew", "walked"] } // Friday
+      ],
+      "dailyTasks": [
+        "Day 1: Find all the words with 'igh' making the long 'i' sound",
+        "Day 2: Add describing words: 'The __ knight rode his __ horse'",
+        "Day 3: Circle all the words that describe light or brightness",
+        "Day 4: Rewrite with better action words: 'The knight went through the night'"
+      ]
+    },
+    "riddleOfTheDay": [
+      {
+        "day": "Monday",
+        "riddle": "I chase away the dark of night, without me you'd have no sight. What am I?",
+        "answer": "Light!",
+        "hint": "Flip a switch to find me"
+      },
+      {
+        "day": "Tuesday",
+        "riddle": "I'm brave and bold with armor bright, I ride a horse and fight for right. What am I?",
+        "answer": "A knight!",
+        "hint": "I live in castles and rescue people"
+      },
+      {
+        "day": "Wednesday",
+        "riddle": "When the sun goes down I appear, filled with stars both far and near. What am I?",
+        "answer": "Night!",
+        "hint": "I'm the opposite of day"
+      },
+      {
+        "day": "Thursday",
+        "riddle": "Up in the sky I soar so high, with wings spread wide I touch the sky. What am I?",
+        "answer": "Flight (or something flying)!",
+        "hint": "Birds and planes do this"
+      },
+      {
+        "day": "Friday",
+        "riddle": "I'm what you feel when things go wrong, a scary feeling, dark and strong. What am I?",
+        "answer": "Fright!",
+        "hint": "I make you want to hide"
+      }
+    ],
+    "funFactOfTheDay": [
+      "Monday: Fascinating fact: The 'igh' spelling for the long 'i' sound comes from Old English! It used to be pronounced differently.",
+      "Tuesday: Amazing fact: Knights wore armor that weighed 50-60 pounds! That's like carrying a big dog around all day.",
+      "Wednesday: Cool fact: During a full moon, the night can be 10 times brighter than a normal night!",
+      "Thursday: Incredible fact: The first powered flight by the Wright brothers lasted only 12 seconds!",
+      "Friday: Mind-blowing fact: Light travels so fast it could circle the Earth 7.5 times in just one second!"
+    ]
   }
-  // Add weeks 8-10 following the same pattern...
 };
 
 // Helper function to get random graphs for practice
@@ -577,6 +1247,7 @@ export const getRandomGraphsForPractice = (weekNumber) => {
   const letters = content.graphReview.graphs;
   const digraphs = content.graphReview.digraphs;
   const trigraphs = content.graphReview.trigraphs || [];
+  const quadgraphs = content.graphReview.quadgraphs || [];
   
   // Always include the focus sound
   let selectedGraphs = [content.focusSound];
@@ -587,14 +1258,22 @@ export const getRandomGraphsForPractice = (weekNumber) => {
     const randomDigraphs = digraphs.filter(d => d !== content.focusSound).sort(() => 0.5 - Math.random()).slice(0, 4);
     selectedGraphs = [...selectedGraphs, ...randomLetters, ...randomDigraphs];
   } else {
-    // Week 6+: 5 random digraphs + 4 random trigraphs + focus sound  
-    const randomDigraphs = digraphs.filter(d => d !== content.focusSound).sort(() => 0.5 - Math.random()).slice(0, 5);
-    const randomTrigraphs = trigraphs.filter(t => t !== content.focusSound).sort(() => 0.5 - Math.random()).slice(0, 4);
-    selectedGraphs = [...selectedGraphs, ...randomDigraphs, ...randomTrigraphs];
+    // Week 6+: 3 random digraphs + 3 random trigraphs + 3 random letters + focus sound  
+    const randomDigraphs = digraphs.filter(d => d !== content.focusSound).sort(() => 0.5 - Math.random()).slice(0, 3);
+    const randomTrigraphs = trigraphs.filter(t => t !== content.focusSound).sort(() => 0.5 - Math.random()).slice(0, 3);
+    const randomLetters = letters.sort(() => 0.5 - Math.random()).slice(0, 3);
+    
+    selectedGraphs = [...selectedGraphs, ...randomDigraphs, ...randomTrigraphs, ...randomLetters];
+    
+    // Add quadgraphs from week 10 onwards
+    if (weekNum >= 10 && quadgraphs.length > 0) {
+      const randomQuadgraphs = quadgraphs.filter(q => q !== content.focusSound).sort(() => 0.5 - Math.random()).slice(0, 1);
+      selectedGraphs = [...selectedGraphs, ...randomQuadgraphs];
+    }
   }
   
-  // Shuffle the final array
-  return selectedGraphs.sort(() => 0.5 - Math.random());
+  // Shuffle the final array but keep it to 10 items
+  return selectedGraphs.sort(() => 0.5 - Math.random()).slice(0, 10);
 };
 
 // Helper function to get progressive graph content based on week
