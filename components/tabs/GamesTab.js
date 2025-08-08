@@ -7,11 +7,23 @@ import MathRaceGame from '../games/MathRaceGame';
 import MemoryMatchGame from '../games/MemoryMatchGame';
 import NoggleGame from '../games/NoggleGame';
 import WordSearchGame from '../games/WordSearchGame';
+import CrosswordGame from '../games/CrosswordGame';
 
 // ===============================================
 // GAME DEFINITIONS
 // ===============================================
 const AVAILABLE_GAMES = [
+  {
+    id: 'crossword',
+    name: 'Crossword Puzzle',
+    icon: '🧩',
+    description: 'Create custom crossword puzzles with your own clues and print them for class use',
+    component: CrosswordGame,
+    color: 'from-indigo-500 to-purple-600',
+    difficulty: 'Easy - Hard',
+    players: '1-30 students',
+    time: '10-30 minutes'
+  },
   {
     id: 'word-search',
     name: 'Word Search',
