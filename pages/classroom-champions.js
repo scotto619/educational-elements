@@ -1,4 +1,4 @@
-// pages/classroom-champions.js - MANUAL SAVE VERSION (No Auto-Save)
+// pages/classroom-champions.js - MANUAL SAVE VERSION (No Auto-Save) - WITH GAMES TAB INTEGRATED
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
@@ -425,6 +425,11 @@ const ClassroomChampions = () => {
         return <PetRaceTab
                   students={students}
                   updateStudent={handleUpdateStudent}
+                  showToast={showToast}
+                />;
+      case 'games':
+        return <GamesTab
+                  students={students}
                   showToast={showToast}
                 />;
       case 'curriculum':

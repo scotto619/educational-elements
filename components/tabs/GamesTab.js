@@ -1,356 +1,301 @@
-// components/tabs/GamesTab.js - Educational Games Collection
-import React, { useState, useEffect } from 'react';
+// components/tabs/GamesTab.js - Main Games Hub with Multiple Game Options
+import React, { useState } from 'react';
+
+// Import all individual game components
+import BoggleGame from '../games/BoggleGame';
+import MathRaceGame from '../games/MathRaceGame';
+import MemoryMatchGame from '../games/MemoryMatchGame';
+import NoggleGame from '../games/NoggleGame';
+import WordSearchGame from '../games/WordSearchGame';
 
 // ===============================================
-// GAMES TAB COMPONENT
+// GAME DEFINITIONS
 // ===============================================
+const AVAILABLE_GAMES = [
+  {
+    id: 'word-search',
+    name: 'Word Search',
+    icon: '🔍',
+    description: 'Find hidden words in the grid with custom word lists and printing options',
+    component: WordSearchGame,
+    color: 'from-blue-500 to-blue-600',
+    difficulty: 'Easy - Medium',
+    players: '1-30 students',
+    time: '5-15 minutes'
+  },
+  {
+    id: 'math-race',
+    name: 'Math Race',
+    icon: '🧮',
+    description: 'Fast-paced math problem solving with different difficulty levels',
+    component: MathRaceGame,
+    color: 'from-green-500 to-green-600',
+    difficulty: 'Easy - Hard',
+    players: '1-30 students',
+    time: '2-5 minutes'
+  },
+  {
+    id: 'memory-match',
+    name: 'Memory Match',
+    icon: '🧠',
+    description: 'Classic memory card matching game with multiple themes',
+    component: MemoryMatchGame,
+    color: 'from-purple-500 to-purple-600',
+    difficulty: 'Easy - Expert',
+    players: '1-10 students',
+    time: '3-8 minutes'
+  },
+  {
+    id: 'boggle',
+    name: 'Word Boggle',
+    icon: '🔤',
+    description: 'Form words by connecting adjacent letters in the grid',
+    component: BoggleGame,
+    color: 'from-yellow-500 to-orange-500',
+    difficulty: 'Medium - Hard',
+    players: '1-30 students',
+    time: '3-5 minutes'
+  },
+  {
+    id: 'noggle',
+    name: 'Number Noggle',
+    icon: '🔢',
+    description: 'Create sums by connecting adjacent numbers to hit target values',
+    component: NoggleGame,
+    color: 'from-red-500 to-pink-500',
+    difficulty: 'Medium - Hard',
+    players: '1-30 students',
+    time: '3-5 minutes'
+  }
+];
 
-const GamesTab = ({ showToast = () => {} }) => {
-  const [activeGame, setActiveGame] = useState(null);
-  const [gameTimer, setGameTimer] = useState(0);
-  const [isTimerRunning, setIsTimerRunning] = useState(false);
+// ===============================================
+// MAIN GAMES TAB COMPONENT
+// ===============================================
+const GamesTab = ({ students = [], showToast = () => {} }) => {
+  const [selectedGame, setSelectedGame] = useState(null);
+  const [gameMode, setGameMode] = useState('digital'); // 'digital' or 'projector'
 
-  // Timer effect
-  useEffect(() => {
-    let interval = null;
-    if (isTimerRunning) {
-      interval = setInterval(() => {
-        setGameTimer(timer => timer + 1);
-      }, 1000);
-    } else if (!isTimerRunning && gameTimer !== 0) {
-      clearInterval(interval);
-    }
-    return () => clearInterval(interval);
-  }, [isTimerRunning, gameTimer]);
-
-  // Format time display
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  const handleGameSelect = (game) => {
+    setSelectedGame(game);
   };
 
-  // Start game
-  const startGame = (gameId) => {
-    setActiveGame(gameId);
-    setGameTimer(0);
-    setIsTimerRunning(true);
-    showToast(`Started ${games.find(g => g.id === gameId)?.name}!`, 'success');
+  const handleBackToMenu = () => {
+    setSelectedGame(null);
   };
 
-  // Stop game
-  const stopGame = () => {
-    setIsTimerRunning(false);
-    showToast(`Game stopped! Time: ${formatTime(gameTimer)}`, 'info');
-    setActiveGame(null);
-    setGameTimer(0);
-  };
-
-  // Pause/Resume game
-  const toggleTimer = () => {
-    setIsTimerRunning(!isTimerRunning);
-  };
-
-  // Available games
-  const games = [
-    {
-      id: 'word-search',
-      name: 'Word Search',
-      icon: '🔍',
-      description: 'Find hidden words in the grid',
-      category: 'Language Arts',
-      difficulty: 'Easy',
-      timeLimit: 300, // 5 minutes
-      color: 'from-blue-500 to-blue-600'
-    },
-    {
-      id: 'math-race',
-      name: 'Math Race',
-      icon: '🏁',
-      description: 'Solve math problems as quickly as possible',
-      category: 'Mathematics',
-      difficulty: 'Medium',
-      timeLimit: 180, // 3 minutes
-      color: 'from-green-500 to-green-600'
-    },
-    {
-      id: 'memory-match',
-      name: 'Memory Match',
-      icon: '🧠',
-      description: 'Match pairs of cards to test your memory',
-      category: 'Logic',
-      difficulty: 'Easy',
-      timeLimit: 240, // 4 minutes
-      color: 'from-purple-500 to-purple-600'
-    },
-    {
-      id: 'spelling-bee',
-      name: 'Spelling Challenge',
-      icon: '🐝',
-      description: 'Spell words correctly to advance',
-      category: 'Language Arts',
-      difficulty: 'Medium',
-      timeLimit: 600, // 10 minutes
-      color: 'from-yellow-500 to-yellow-600'
-    },
-    {
-      id: 'geography-quiz',
-      name: 'Geography Quest',
-      icon: '🌍',
-      description: 'Test your knowledge of world geography',
-      category: 'Social Studies',
-      difficulty: 'Hard',
-      timeLimit: 480, // 8 minutes
-      color: 'from-teal-500 to-teal-600'
-    },
-    {
-      id: 'science-lab',
-      name: 'Virtual Science Lab',
-      icon: '🔬',
-      description: 'Conduct virtual experiments safely',
-      category: 'Science',
-      difficulty: 'Hard',
-      timeLimit: 900, // 15 minutes
-      color: 'from-red-500 to-red-600'
-    }
-  ];
-
-  // Get difficulty color
-  const getDifficultyColor = (difficulty) => {
-    switch (difficulty) {
-      case 'Easy': return 'bg-green-100 text-green-800';
-      case 'Medium': return 'bg-yellow-100 text-yellow-800';
-      case 'Hard': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  // Get category color
-  const getCategoryColor = (category) => {
-    switch (category) {
-      case 'Language Arts': return 'bg-blue-100 text-blue-800';
-      case 'Mathematics': return 'bg-green-100 text-green-800';
-      case 'Science': return 'bg-red-100 text-red-800';
-      case 'Social Studies': return 'bg-purple-100 text-purple-800';
-      case 'Logic': return 'bg-indigo-100 text-indigo-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  return (
-    <div className="space-y-6">
-      {/* Game Timer (when active) */}
-      {activeGame && (
-        <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl p-6 shadow-lg">
+  // Render individual game
+  if (selectedGame) {
+    const GameComponent = selectedGame.component;
+    return (
+      <div className="space-y-6">
+        {/* Game Header */}
+        <div className="bg-white rounded-xl shadow-lg p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="text-4xl">
-                {games.find(g => g.id === activeGame)?.icon}
-              </div>
-              <div>
-                <h3 className="text-2xl font-bold">
-                  {games.find(g => g.id === activeGame)?.name}
-                </h3>
-                <p className="text-orange-100">Game in Progress</p>
+              <button
+                onClick={handleBackToMenu}
+                className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
+              >
+                ← Back to Games
+              </button>
+              <div className="flex items-center space-x-3">
+                <div className={`w-12 h-12 rounded-full bg-gradient-to-r ${selectedGame.color} flex items-center justify-center text-2xl`}>
+                  {selectedGame.icon}
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-800">{selectedGame.name}</h2>
+                  <p className="text-gray-600">{selectedGame.description}</p>
+                </div>
               </div>
             </div>
-            
-            <div className="text-right">
-              <div className="text-3xl font-mono font-bold mb-2">
-                {formatTime(gameTimer)}
+
+            {/* Game Mode Toggle */}
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <span className="text-sm font-medium text-gray-700">Mode:</span>
+                <select
+                  value={gameMode}
+                  onChange={(e) => setGameMode(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg bg-white"
+                >
+                  <option value="digital">🖥️ Digital (Interactive)</option>
+                  <option value="projector">📽️ Projector (Display Only)</option>
+                </select>
               </div>
-              <div className="flex space-x-2">
-                <button
-                  onClick={toggleTimer}
-                  className="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg transition-all"
-                >
-                  {isTimerRunning ? '⏸️ Pause' : '▶️ Resume'}
-                </button>
-                <button
-                  onClick={stopGame}
-                  className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg transition-all"
-                >
-                  🛑 Stop
-                </button>
+
+              <div className="text-sm text-gray-500">
+                👥 {students.length} students connected
               </div>
             </div>
           </div>
-          
-          {/* Progress bar for time limit */}
-          {games.find(g => g.id === activeGame)?.timeLimit && (
-            <div className="mt-4">
-              <div className="w-full bg-white bg-opacity-20 rounded-full h-2">
-                <div 
-                  className="bg-white h-2 rounded-full transition-all duration-1000"
-                  style={{ 
-                    width: `${Math.min((gameTimer / games.find(g => g.id === activeGame).timeLimit) * 100, 100)}%` 
-                  }}
-                ></div>
-              </div>
-              <p className="text-sm text-orange-100 mt-1">
-                {games.find(g => g.id === activeGame).timeLimit - gameTimer > 0 
-                  ? `${games.find(g => g.id === activeGame).timeLimit - gameTimer} seconds remaining`
-                  : 'Time\'s up!'
-                }
-              </p>
-            </div>
-          )}
-        </div>
-      )}
 
-      {/* Games Grid */}
-      <div className="bg-white rounded-xl p-6 shadow-lg">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-2xl font-bold text-gray-800">🎮 Educational Games</h3>
-          <div className="text-sm text-gray-600">
-            {games.length} games available
+          {/* Game Info Bar */}
+          <div className="mt-4 flex items-center space-x-6 text-sm">
+            <div className="flex items-center space-x-1">
+              <span className="font-medium">⚡ Difficulty:</span>
+              <span className="text-gray-600">{selectedGame.difficulty}</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <span className="font-medium">👥 Players:</span>
+              <span className="text-gray-600">{selectedGame.players}</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <span className="font-medium">⏱️ Duration:</span>
+              <span className="text-gray-600">{selectedGame.time}</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <span className="font-medium">📱 Mode:</span>
+              <span className="text-gray-600">{gameMode === 'digital' ? 'Interactive' : 'Display Only'}</span>
+            </div>
           </div>
         </div>
 
+        {/* Game Component */}
+        <div className="bg-white rounded-xl shadow-lg p-6">
+          <GameComponent 
+            gameMode={gameMode}
+            showToast={showToast}
+            students={students}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Game Selection Menu
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="text-center">
+          <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+            🎮 Classroom Games
+          </h2>
+          <p className="text-gray-600 max-w-2xl mx-auto">
+            Engage your students with fun, educational games. Perfect for brain breaks, reward time, or interactive learning sessions.
+          </p>
+          <div className="mt-4 flex items-center justify-center space-x-6 text-sm text-gray-500">
+            <div className="flex items-center space-x-1">
+              <span>👥</span>
+              <span>{students.length} students ready</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <span>🎯</span>
+              <span>{AVAILABLE_GAMES.length} games available</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <span>⚡</span>
+              <span>Quick setup</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Game Mode Selection */}
+      <div className="bg-white rounded-xl shadow-lg p-6">
+        <h3 className="text-xl font-bold text-gray-800 mb-4">🖥️ Choose Game Mode</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div 
+            onClick={() => setGameMode('digital')}
+            className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+              gameMode === 'digital' 
+                ? 'border-blue-500 bg-blue-50' 
+                : 'border-gray-200 hover:border-gray-300'
+            }`}
+          >
+            <div className="text-2xl mb-2">🖥️</div>
+            <h4 className="font-bold text-gray-800">Digital Mode</h4>
+            <p className="text-sm text-gray-600">Students interact directly with the game. Perfect for individual or small group play.</p>
+          </div>
+          <div 
+            onClick={() => setGameMode('projector')}
+            className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+              gameMode === 'projector' 
+                ? 'border-blue-500 bg-blue-50' 
+                : 'border-gray-200 hover:border-gray-300'
+            }`}
+          >
+            <div className="text-2xl mb-2">📽️</div>
+            <h4 className="font-bold text-gray-800">Projector Mode</h4>
+            <p className="text-sm text-gray-600">Display on projector for whole class participation. Teacher controls the game.</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Available Games */}
+      <div className="bg-white rounded-xl shadow-lg p-6">
+        <h3 className="text-xl font-bold text-gray-800 mb-6">🎯 Select a Game</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {games.map(game => (
+          {AVAILABLE_GAMES.map((game) => (
             <div
               key={game.id}
-              className={`border-2 rounded-xl p-6 transition-all duration-300 ${
-                activeGame === game.id
-                  ? 'border-orange-500 bg-orange-50 shadow-lg'
-                  : 'border-gray-200 hover:border-gray-300 hover:shadow-lg'
-              }`}
+              onClick={() => handleGameSelect(game)}
+              className="group cursor-pointer bg-gray-50 rounded-xl p-6 border-2 border-transparent hover:border-gray-300 hover:shadow-lg transition-all duration-200"
             >
-              <div className="text-center mb-4">
-                <div className="text-5xl mb-3">{game.icon}</div>
-                <h4 className="text-xl font-bold text-gray-800 mb-2">{game.name}</h4>
-                <p className="text-gray-600 text-sm">{game.description}</p>
-              </div>
-
-              <div className="space-y-3 mb-4">
-                <div className="flex items-center justify-between">
-                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getCategoryColor(game.category)}`}>
-                    {game.category}
-                  </span>
-                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getDifficultyColor(game.difficulty)}`}>
-                    {game.difficulty}
-                  </span>
+              {/* Game Icon & Header */}
+              <div className="flex items-center space-x-3 mb-4">
+                <div className={`w-12 h-12 rounded-full bg-gradient-to-r ${game.color} flex items-center justify-center text-2xl group-hover:scale-110 transition-transform`}>
+                  {game.icon}
                 </div>
-                
-                <div className="text-sm text-gray-600 text-center">
-                  ⏱️ {Math.floor(game.timeLimit / 60)} minutes
+                <div>
+                  <h4 className="text-lg font-bold text-gray-800 group-hover:text-blue-600 transition-colors">
+                    {game.name}
+                  </h4>
                 </div>
               </div>
 
-              <button
-                onClick={() => startGame(game.id)}
-                disabled={activeGame === game.id}
-                className={`w-full py-3 rounded-lg font-semibold transition-all ${
-                  activeGame === game.id
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : `bg-gradient-to-r ${game.color} text-white hover:shadow-lg`
-                }`}
-              >
-                {activeGame === game.id ? '🎮 Playing' : '🚀 Start Game'}
-              </button>
+              {/* Game Description */}
+              <p className="text-gray-600 text-sm mb-4 leading-relaxed">
+                {game.description}
+              </p>
+
+              {/* Game Details */}
+              <div className="space-y-2 text-xs text-gray-500">
+                <div className="flex justify-between">
+                  <span>⚡ Difficulty:</span>
+                  <span className="font-medium">{game.difficulty}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>👥 Players:</span>
+                  <span className="font-medium">{game.players}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>⏱️ Duration:</span>
+                  <span className="font-medium">{game.time}</span>
+                </div>
+              </div>
+
+              {/* Play Button */}
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className={`w-full py-2 px-4 rounded-lg bg-gradient-to-r ${game.color} text-white text-center font-semibold group-hover:shadow-md transition-all`}>
+                  🎮 Play Game
+                </div>
+              </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Game Instructions */}
-      <div className="bg-white rounded-xl p-6 shadow-lg">
-        <h3 className="text-xl font-bold text-gray-800 mb-4">🎯 How to Play</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-4">
-            <div className="flex items-start space-x-3">
-              <div className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">1</div>
-              <div>
-                <h4 className="font-semibold text-gray-800">Choose a Game</h4>
-                <p className="text-sm text-gray-600">Select any game from the collection above</p>
-              </div>
-            </div>
-            
-            <div className="flex items-start space-x-3">
-              <div className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">2</div>
-              <div>
-                <h4 className="font-semibold text-gray-800">Start the Timer</h4>
-                <p className="text-sm text-gray-600">Click "Start Game" to begin the timer and activity</p>
-              </div>
-            </div>
+      {/* Quick Tips */}
+      <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-200">
+        <h3 className="text-lg font-bold text-blue-800 mb-3">💡 Game Tips</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+          <div className="bg-white rounded-lg p-3">
+            <div className="font-semibold text-blue-700 mb-1">🖥️ Digital Mode</div>
+            <div className="text-gray-600">Best for individual practice and small groups</div>
           </div>
-          
-          <div className="space-y-4">
-            <div className="flex items-start space-x-3">
-              <div className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">3</div>
-              <div>
-                <h4 className="font-semibold text-gray-800">Play & Learn</h4>
-                <p className="text-sm text-gray-600">Engage students with the educational content</p>
-              </div>
-            </div>
-            
-            <div className="flex items-start space-x-3">
-              <div className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">4</div>
-              <div>
-                <h4 className="font-semibold text-gray-800">Track Progress</h4>
-                <p className="text-sm text-gray-600">Use the timer to manage game sessions</p>
-              </div>
-            </div>
+          <div className="bg-white rounded-lg p-3">
+            <div className="font-semibold text-purple-700 mb-1">📽️ Projector Mode</div>
+            <div className="text-gray-600">Perfect for whole class activities and competitions</div>
           </div>
-        </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="bg-white rounded-xl p-6 shadow-lg">
-        <h3 className="text-xl font-bold text-gray-800 mb-4">⚡ Quick Actions</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <button
-            onClick={() => showToast('Random team generator coming soon!', 'info')}
-            className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all"
-          >
-            <div className="text-2xl mb-2">🎲</div>
-            <p className="font-semibold text-sm">Random Teams</p>
-          </button>
-          
-          <button
-            onClick={() => showToast('Name picker coming soon!', 'info')}
-            className="p-4 border-2 border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50 transition-all"
-          >
-            <div className="text-2xl mb-2">🎯</div>
-            <p className="font-semibold text-sm">Pick a Name</p>
-          </button>
-          
-          <button
-            onClick={() => showToast('Class timer coming soon!', 'info')}
-            className="p-4 border-2 border-gray-200 rounded-lg hover:border-purple-300 hover:bg-purple-50 transition-all"
-          >
-            <div className="text-2xl mb-2">⏰</div>
-            <p className="font-semibold text-sm">Class Timer</p>
-          </button>
-          
-          <button
-            onClick={() => showToast('Noise meter coming soon!', 'info')}
-            className="p-4 border-2 border-gray-200 rounded-lg hover:border-red-300 hover:bg-red-50 transition-all"
-          >
-            <div className="text-2xl mb-2">🔊</div>
-            <p className="font-semibold text-sm">Noise Meter</p>
-          </button>
-        </div>
-      </div>
-
-      {/* Game Statistics */}
-      <div className="bg-white rounded-xl p-6 shadow-lg">
-        <h3 className="text-xl font-bold text-gray-800 mb-4">📊 Session Statistics</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="text-center p-4 bg-blue-50 rounded-lg">
-            <div className="text-2xl font-bold text-blue-600">0</div>
-            <p className="text-sm text-gray-600">Games Played Today</p>
+          <div className="bg-white rounded-lg p-3">
+            <div className="font-semibold text-green-700 mb-1">⏱️ Quick Games</div>
+            <div className="text-gray-600">Great for brain breaks and transitions</div>
           </div>
-          
-          <div className="text-center p-4 bg-green-50 rounded-lg">
-            <div className="text-2xl font-bold text-green-600">00:00</div>
-            <p className="text-sm text-gray-600">Total Play Time</p>
-          </div>
-          
-          <div className="text-center p-4 bg-purple-50 rounded-lg">
-            <div className="text-2xl font-bold text-purple-600">N/A</div>
-            <p className="text-sm text-gray-600">Favorite Game</p>
+          <div className="bg-white rounded-lg p-3">
+            <div className="font-semibold text-orange-700 mb-1">🏆 Rewards</div>
+            <div className="text-gray-600">Use as classroom rewards or celebration activities</div>
           </div>
         </div>
       </div>
