@@ -321,6 +321,9 @@ const SoundOfTheWeekTool = ({ content, isPresentationMode }) => {
     };
 
     const [boggleBoard] = useState(generateBoggleBoard());
+    
+    // Flatten daily sound words to show all the week's words
+    const allSoundWords = content.dailySoundWords ? content.dailySoundWords.flat() : [];
 
     return (
         <div className={`grid gap-6 ${isPresentationMode ? 'grid-cols-1 lg:grid-cols-2 p-8' : 'grid-cols-1 lg:grid-cols-2'}`}>
@@ -333,7 +336,7 @@ const SoundOfTheWeekTool = ({ content, isPresentationMode }) => {
                 </h3>
                 <h4 className={`font-bold text-purple-700 mb-4 ${isPresentationMode ? 'text-3xl' : 'text-2xl'}`}>📚 Sound Words:</h4>
                 <div className={`flex flex-wrap gap-4 mb-6 ${isPresentationMode ? 'text-3xl gap-4' : 'text-xl'}`}>
-                    {content.soundWords.map((word, i) => (
+                    {allSoundWords.slice(0, 10).map((word, i) => (
                         <span key={i} className="bg-white px-4 py-3 rounded-lg shadow-md font-semibold border-2 border-purple-200">{word}</span>
                     ))}
                 </div>
@@ -663,13 +666,14 @@ const LiteracyWarmup = ({ showToast = () => {}, students = [], saveData = () => 
 
   const renderCurrentStep = () => {
     const randomGraphs = getRandomGraphsForPractice(selectedWeek);
+    const todaysSoundWords = weeklyContent.dailySoundWords[currentDay] || weeklyContent.dailySoundWords[0];
     
     switch(currentStep.id) {
         case 'graph_review':
             return <GraphReviewTool 
                      title="📚 Review Letters, Digraphs & More" 
                      items={randomGraphs} 
-                     words={weeklyContent.soundWords} 
+                     words={todaysSoundWords} 
                      isPresentationMode={isPresentationMode} 
                    />;
         case 'sound_of_week':

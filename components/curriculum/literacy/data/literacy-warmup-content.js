@@ -10,7 +10,13 @@ export const literacyWarmupContent = {
       "trigraphs": [], // None yet
       "quadgraphs": [] // None yet
     },
-    "soundWords": ["fish", "ship", "brush", "crash", "fresh", "dish", "push", "wash", "flash", "rush"],
+    "dailySoundWords": [
+      ["fish", "ship", "brush", "crash", "fresh"], // Monday
+      ["dish", "push", "wash", "flash", "rush"], // Tuesday  
+      ["shop", "shell", "shark", "shape", "shake"], // Wednesday
+      ["shed", "shirt", "short", "sharp", "shift"], // Thursday
+      ["shoe", "show", "shine", "shame", "shout"] // Friday
+    ],
     "boggleLetters": ["h", "i", "a", "u", "s", "l", "n"],
     "extraActivities": [
       "Write 3 more words with 'sh'",
@@ -47,7 +53,8 @@ export const literacyWarmupContent = {
         "Day 1: Underline the verbs in the passage",
         "Day 2: Fix the punctuation: 'can we go now she asked'",
         "Day 3: Circle all the nouns in the passage",
-        "Day 4: Add capital letters: 'the fish lived near a big ship'"
+        "Day 4: Add capital letters: 'the fish lived near a big ship'",
+        "Day 5: Count how many sentences are in the passage"
       ]
     },
     "riddleOfTheDay": [
@@ -98,7 +105,13 @@ export const literacyWarmupContent = {
       "trigraphs": [], 
       "quadgraphs": []
     },
-    "soundWords": ["chair", "cheese", "church", "beach", "lunch", "march", "reach", "teach", "peach", "rich"],
+    "dailySoundWords": [
+      ["chair", "cheese", "church", "beach", "lunch"], // Monday
+      ["march", "reach", "teach", "peach", "rich"], // Tuesday
+      ["chip", "chin", "chill", "chief", "child"], // Wednesday
+      ["chat", "chop", "chew", "cheer", "cheap"], // Thursday
+      ["chest", "chess", "check", "charm", "chart"] // Friday
+    ],
     "boggleLetters": ["h", "i", "a", "u", "s", "l", "c"],
     "extraActivities": [
       "Write 3 more words with 'ch'",
@@ -135,7 +148,8 @@ export const literacyWarmupContent = {
         "Day 1: Circle all the nouns in the passage",
         "Day 2: Add commas where needed: 'Charlie ate cake pie and cookies'",
         "Day 3: Find all the adjectives (describing words) in the passage",
-        "Day 4: Rewrite this sentence with better punctuation: 'charlie thought carefully then he chose'"
+        "Day 4: Rewrite this sentence with better punctuation: 'charlie thought carefully then he chose'",
+        "Day 5: How many questions can you make about this passage?"
       ]
     },
     "riddleOfTheDay": [
@@ -186,7 +200,13 @@ export const literacyWarmupContent = {
       "trigraphs": [],
       "quadgraphs": []
     },
-    "soundWords": ["think", "three", "throw", "bath", "teeth", "both", "path", "with", "earth", "mouth"],
+    "dailySoundWords": [
+      ["think", "three", "throw", "bath", "teeth"], // Monday
+      ["both", "path", "with", "earth", "mouth"], // Tuesday
+      ["thick", "thin", "thing", "thumb", "thud"], // Wednesday
+      ["that", "this", "them", "they", "then"], // Thursday
+      ["thank", "thaw", "theme", "theft", "thrill"] // Friday
+    ],
     "boggleLetters": ["h", "i", "a", "u", "t", "l", "n"],
     "extraActivities": [
       "Write 3 more words with 'th'",
@@ -223,7 +243,8 @@ export const literacyWarmupContent = {
         "Day 1: Find all the words with 'th' in the passage",
         "Day 2: Add capital letters: 'thomas thought about three things'",
         "Day 3: Circle the ordinal numbers (first, second, third) in the passage",
-        "Day 4: Rewrite using different words: 'Thomas thought about three important things'"
+        "Day 4: Rewrite using different words: 'Thomas thought about three important things'",
+        "Day 5: Write the passage as a list with bullet points"
       ]
     },
     "riddleOfTheDay": [
@@ -274,7 +295,13 @@ export const literacyWarmupContent = {
       "trigraphs": [],
       "quadgraphs": []
     },
-    "soundWords": ["what", "where", "when", "white", "whale", "wheel", "whisper", "whip", "wheat", "whine"],
+    "dailySoundWords": [
+      ["what", "where", "when", "white", "whale"], // Monday
+      ["wheel", "whisper", "whip", "wheat", "whine"], // Tuesday
+      ["which", "while", "whisk", "whirl", "whim"], // Wednesday
+      ["why", "who", "whose", "whole", "whoop"], // Thursday
+      ["whack", "wharf", "whiz", "whoosh", "whomp"] // Friday
+    ],
     "boggleLetters": ["h", "i", "a", "u", "w", "l", "n"],
     "extraActivities": [
       "Write 3 more words with 'wh'",
@@ -311,7 +338,8 @@ export const literacyWarmupContent = {
         "Day 1: Find all the question words in the passage",
         "Day 2: Add question marks: 'What time will we see it asked one sailor'",
         "Day 3: Circle all the 'wh' words and identify if they're questions or not",
-        "Day 4: Rewrite the sailor's question as a statement: 'The sailor wanted to know...'"
+        "Day 4: Rewrite the sailor's question as a statement: 'The sailor wanted to know...'",
+        "Day 5: Count how many different 'wh' words are in the passage"
       ]
     },
     "riddleOfTheDay": [
@@ -362,7 +390,13 @@ export const literacyWarmupContent = {
       "trigraphs": [],
       "quadgraphs": []
     },
-    "soundWords": ["phone", "photo", "graph", "laugh", "elephant", "alphabet", "dolphin", "trophy", "nephew", "phantom"],
+    "dailySoundWords": [
+      ["phone", "photo", "graph", "laugh", "elephant"], // Monday
+      ["alphabet", "dolphin", "trophy", "nephew", "phantom"], // Tuesday
+      ["phrase", "physics", "phobia", "sphere", "sphinx"], // Wednesday
+      ["paragraph", "pharmacy", "philosophy", "photograph", "microphone"], // Thursday
+      ["telephone", "telegraph", "phonics", "triumph", "morphine"] // Friday
+    ],
     "boggleLetters": ["h", "p", "i", "a", "u", "s", "l"],
     "extraActivities": [
       "Write 3 more words with 'ph'",
@@ -399,7 +433,8 @@ export const literacyWarmupContent = {
         "Day 1: Circle the verbs that show action in the passage",
         "Day 2: Add exclamation marks: 'Look at this photograph he said'",
         "Day 3: Find all the 'ph' words and practice their 'f' sound",
-        "Day 4: Rewrite the sentence with better description: 'Ralph began to laugh'"
+        "Day 4: Rewrite the sentence with better description: 'Ralph began to laugh'",
+        "Day 5: Change the passage from past tense to present tense"
       ]
     },
     "riddleOfTheDay": [
@@ -450,7 +485,13 @@ export const literacyWarmupContent = {
       "trigraphs": ["tch"], // Start introducing trigraphs
       "quadgraphs": []
     },
-    "soundWords": ["back", "clock", "duck", "truck", "stick", "block", "crack", "track", "quick", "thick"],
+    "dailySoundWords": [
+      ["back", "clock", "duck", "truck", "stick"], // Monday
+      ["block", "crack", "track", "quick", "thick"], // Tuesday
+      ["pack", "rock", "sock", "luck", "pick"], // Wednesday
+      ["black", "slack", "smack", "snack", "stack"], // Thursday
+      ["check", "neck", "deck", "peck", "wreck"] // Friday
+    ],
     "boggleLetters": ["c", "k", "a", "u", "i", "t", "r"],
     "extraActivities": [
       "Write 3 more words with 'ck'",
@@ -487,7 +528,8 @@ export const literacyWarmupContent = {
         "Day 1: Find all the words ending in 'ck' in the passage",
         "Day 2: Add periods where needed: 'The duck was lucky She lived by the clock'",
         "Day 3: Circle all the action words (verbs) in the passage",
-        "Day 4: Rewrite this sentence more clearly: 'The other ducks thought she was quite a character'"
+        "Day 4: Rewrite this sentence more clearly: 'The other ducks thought she was quite a character'",
+        "Day 5: Find and list all the describing words (adjectives) in the passage"
       ]
     },
     "riddleOfTheDay": [
@@ -538,7 +580,13 @@ export const literacyWarmupContent = {
       "trigraphs": ["tch", "dge"], // Add more trigraphs
       "quadgraphs": []
     },
-    "soundWords": ["ring", "sing", "long", "strong", "bring", "thing", "swing", "spring", "young", "among"],
+    "dailySoundWords": [
+      ["ring", "sing", "long", "strong", "bring"], // Monday
+      ["thing", "swing", "spring", "young", "among"], // Tuesday
+      ["hang", "bang", "sang", "gang", "fang"], // Wednesday
+      ["king", "wing", "sting", "string", "cling"], // Thursday
+      ["lung", "hung", "rung", "sung", "swung"] // Friday
+    ],
     "boggleLetters": ["n", "g", "i", "o", "r", "s", "a"],
     "extraActivities": [
       "Write 3 more words with 'ng'",
@@ -575,7 +623,8 @@ export const literacyWarmupContent = {
         "Day 1: Circle all the words ending in 'ng' in the passage",
         "Day 2: Fix the sentence: 'the king loved singing he had a strong voice'",
         "Day 3: Find all the rhyming words in the passage (ring, sing, bring, etc.)",
-        "Day 4: Add describing words: 'The king sang a __ song with his __ voice'"
+        "Day 4: Add describing words: 'The king sang a __ song with his __ voice'",
+        "Day 5: Write the story in present tense instead of past tense"
       ]
     },
     "riddleOfTheDay": [
