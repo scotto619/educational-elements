@@ -1,10 +1,11 @@
-// components/tabs/CurriculumCornerTab.js - UPDATED WITH FIREBASE SAVING SUPPORT
+// components/tabs/CurriculumCornerTab.js - UPDATED WITH MATH WARMUP SUPPORT
 import React, { useState } from 'react';
 
-// Import activity components (you'll create these files)
+// Import activity components
 import LiteracyWarmup from '../curriculum/literacy/LiteracyWarmup';
 import ReadingComprehension from '../curriculum/literacy/ReadingComprehension';
 import AreaPerimeterTool from '../curriculum/mathematics/AreaPerimeterTool';
+import MathWarmup from '../curriculum/mathematics/MathWarmup';
 // import SpellingBee from '../curriculum/literacy/SpellingBee';
 // import NumbersBoard from '../curriculum/mathematics/NumbersBoard';
 // import VirtualExperiments from '../curriculum/science/VirtualExperiments';
@@ -26,7 +27,7 @@ const ComingSoon = ({ toolName, description }) => (
 );
 
 // ===============================================
-// SUBJECT CONFIGURATION
+// SUBJECT CONFIGURATION - UPDATED WITH MATH WARMUP
 // ===============================================
 const subjects = [
   {
@@ -73,6 +74,13 @@ const subjects = [
     color: 'from-green-500 to-green-600',
     description: 'Math tools and number activities',
     activities: [
+      {
+        id: 'math-warmup',
+        name: 'Math Warmup',
+        icon: '🔥',
+        description: 'Daily number activities and mathematical thinking',
+        component: MathWarmup
+      },
       {
         id: 'area-perimeter',
         name: 'Area & Perimeter',
@@ -273,14 +281,14 @@ const CurriculumCornerTab = ({
   if (activeActivity) {
     const ActivityComponent = activeActivity.component;
     
-    // Pass additional props to LiteracyWarmup for Firebase saving
+    // Pass additional props to activities for Firebase saving
     const activityProps = {
       showToast,
       students
     };
     
-    // Add Firebase save/load props specifically for LiteracyWarmup
-    if (activeActivity.id === 'literacy-warmup') {
+    // Add Firebase save/load props for specific activities that need them
+    if (activeActivity.id === 'literacy-warmup' || activeActivity.id === 'math-warmup') {
       activityProps.saveData = saveData;
       activityProps.loadedData = loadedData;
     }
@@ -422,18 +430,43 @@ const CurriculumCornerTab = ({
         </div>
       </div>
 
+      {/* Enhanced Feature Notice for New Math Warmup */}
+      <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-xl p-6">
+        <div className="flex items-start space-x-4">
+          <span className="text-3xl">🔥</span>
+          <div>
+            <h4 className="font-bold text-green-800 mb-2">✨ New Math Warmup Added!</h4>
+            <p className="text-green-700 mb-4">
+              The Math Warmup includes progressive Number of the Day activities, mental math strategies that build over 10 weeks, 
+              daily problem solving with hints, and interactive number practice tools!
+            </p>
+            <div className="bg-green-100 rounded-lg p-4">
+              <h5 className="font-semibold text-green-800 mb-2">🎯 What's Included:</h5>
+              <ul className="text-sm text-green-700 space-y-1">
+                <li>• Number of the Day activities with progressive difficulty (5→1000)</li>
+                <li>• Mental math strategies that build across weeks</li>
+                <li>• Daily math problems with hints and explanations</li>
+                <li>• Interactive number practice with random highlighting</li>
+                <li>• Math facts of the day for engagement</li>
+                <li>• Presentation mode for classroom display</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Enhanced Feature Notice for Literacy Updates */}
       <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-xl p-6">
         <div className="flex items-start space-x-4">
           <span className="text-3xl">🔥</span>
           <div>
-            <h4 className="font-bold text-blue-800 mb-2">✨ New Literacy Warmup Features!</h4>
+            <h4 className="font-bold text-blue-800 mb-2">✨ Literacy Warmup Features!</h4>
             <p className="text-blue-700 mb-4">
-              The Literacy Warmup now includes daily activities with 5 reading passage activities, 4 daily grammar tasks, 
+              The Literacy Warmup includes daily activities with 5 reading passage activities, 4 daily grammar tasks, 
               daily riddles and fun facts, random graph practice, and Firebase-saved focus words!
             </p>
             <div className="bg-blue-100 rounded-lg p-4">
-              <h5 className="font-semibold text-blue-800 mb-2">🎯 What's New:</h5>
+              <h5 className="font-semibold text-blue-800 mb-2">🎯 What's Available:</h5>
               <ul className="text-sm text-blue-700 space-y-1">
                 <li>• Random 5+5 letter/digraph practice (increases complexity after week 5)</li>
                 <li>• Larger, easier-to-read fonts throughout</li>
