@@ -40,7 +40,7 @@ const CrosswordGame = ({ gameMode, showToast, students }) => {
     }
   }, []);
 
-  // Crossword Generation Algorithm
+  // Crossword Generation Algorithm - COMPLETELY REWRITTEN
   const generateCrossword = useCallback(() => {
     if (editingClues.length < 3) {
       showToast('Need at least 3 clues to generate a crossword!', 'error');
@@ -55,15 +55,17 @@ const CrosswordGame = ({ gameMode, showToast, students }) => {
         answer: clue.answer.toUpperCase().replace(/[^A-Z]/g, ''),
         length: clue.answer.toUpperCase().replace(/[^A-Z]/g, '').length
       }))
-      .filter(word => word.length >= 2 && word.length <= gridSize)
-      .sort((a, b) => b.length - a.length); // Start with longest words
+      .filter(word => word.length >= 3 && word.length <= gridSize - 2)
+      .sort((a, b) => b.length - a.length);
 
     if (words.length < 3) {
-      showToast('Need at least 3 valid answers to generate crossword!', 'error');
+      showToast('Need at least 3 valid answers (3+ letters each)!', 'error');
       return;
     }
 
-    // Initialize grid
+    console.log('Starting crossword generation with', words.length, 'words:', words.map(w => w.answer));
+
+    // Initialize empty grid
     const newGrid = Array(gridSize).fill().map(() => Array(gridSize).fill(null));
     const placed = [];
     const centerRow = Math.floor(gridSize / 2);
@@ -71,58 +73,80 @@ const CrosswordGame = ({ gameMode, showToast, students }) => {
 
     // Place first word horizontally in center
     const firstWord = words[0];
-    const startCol = Math.max(0, centerCol - Math.floor(firstWord.length / 2));
+    const startCol = Math.max(1, centerCol - Math.floor(firstWord.length / 2));
     
-    if (startCol + firstWord.length <= gridSize) {
-      for (let i = 0; i < firstWord.length; i++) {
-        newGrid[centerRow][startCol + i] = {
-          letter: firstWord.answer[i],
-          wordIds: [`word_0`],
-          isStart: i === 0,
-          directions: ['across']
-        };
-      }
-
-      placed.push({
-        id: `word_0`,
-        word: firstWord.answer,
-        clue: firstWord.question,
-        category: firstWord.category,
-        row: centerRow,
-        col: startCol,
-        direction: 'across',
-        length: firstWord.length,
-        number: 1
-      });
+    console.log('Placing first word:', firstWord.answer, 'at row', centerRow, 'col', startCol);
+    
+    // Place first word
+    for (let i = 0; i < firstWord.length; i++) {
+      newGrid[centerRow][startCol + i] = firstWord.answer[i];
     }
 
+    placed.push({
+      id: `word_0`,
+      word: firstWord.answer,
+      clue: firstWord.question,
+      category: firstWord.category,
+      row: centerRow,
+      col: startCol,
+      direction: 'across',
+      length: firstWord.length,
+      number: 1
+    });
+
+    console.log('First word placed successfully');
+
     // Try to place remaining words
-    for (let wordIndex = 1; wordIndex < words.length && placed.length < 12; wordIndex++) {
+    for (let wordIndex = 1; wordIndex < Math.min(words.length, 10); wordIndex++) {
       const currentWord = words[wordIndex];
+      console.log(`\nTrying to place word ${wordIndex}:`, currentWord.answer);
+      
       let bestPlacement = null;
       let bestScore = -1;
 
       // Try to intersect with each placed word
       for (const placedWord of placed) {
-        // Try both directions (but prefer perpendicular)
-        const directions = placedWord.direction === 'across' ? ['down', 'across'] : ['across', 'down'];
+        console.log(`  Checking intersections with placed word:`, placedWord.word);
         
-        for (const direction of directions) {
-          const intersections = findIntersections(currentWord.answer, placedWord.word);
-          
-          for (const intersection of intersections) {
-            const placement = calculatePlacement(
-              currentWord,
-              placedWord,
-              intersection,
-              direction
-            );
-
-            if (placement && isValidPlacement(newGrid, placement, currentWord, direction)) {
-              const score = calculatePlacementScore(placement, placed, newGrid, direction, currentWord);
-              if (score > bestScore) {
-                bestScore = score;
-                bestPlacement = { ...placement, direction, wordIndex };
+        // Find letter intersections
+        for (let currentIndex = 0; currentIndex < currentWord.answer.length; currentIndex++) {
+          for (let placedIndex = 0; placedIndex < placedWord.word.length; placedIndex++) {
+            
+            if (currentWord.answer[currentIndex] === placedWord.word[placedIndex]) {
+              console.log(`    Found intersection: ${currentWord.answer[currentIndex]} at current[${currentIndex}] placed[${placedIndex}]`);
+              
+              // Try both directions
+              const directions = placedWord.direction === 'across' ? ['down'] : ['across'];
+              
+              for (const direction of directions) {
+                let newRow, newCol;
+                
+                if (direction === 'across') {
+                  // Place current word horizontally, intersecting with vertical placed word
+                  newRow = placedWord.row + placedIndex;
+                  newCol = placedWord.col - currentIndex;
+                } else {
+                  // Place current word vertically, intersecting with horizontal placed word
+                  newRow = placedWord.row - currentIndex;
+                  newCol = placedWord.col + placedIndex;
+                }
+                
+                console.log(`      Trying ${direction} placement at row ${newRow}, col ${newCol}`);
+                
+                // Check if placement is valid
+                if (canPlaceWordAt(newGrid, currentWord.answer, newRow, newCol, direction)) {
+                  const score = 100 + Math.random() * 10; // Simple scoring for now
+                  console.log(`      Valid placement found with score ${score}`);
+                  
+                  if (score > bestScore) {
+                    bestScore = score;
+                    bestPlacement = {
+                      row: newRow,
+                      col: newCol,
+                      direction: direction
+                    };
+                  }
+                }
               }
             }
           }
@@ -131,7 +155,15 @@ const CrosswordGame = ({ gameMode, showToast, students }) => {
 
       // Place the word if we found a valid placement
       if (bestPlacement) {
-        placeWordOnGrid(newGrid, bestPlacement, currentWord, wordIndex);
+        console.log(`  Placing word at:`, bestPlacement);
+        
+        // Place word in grid
+        for (let i = 0; i < currentWord.answer.length; i++) {
+          const row = bestPlacement.direction === 'across' ? bestPlacement.row : bestPlacement.row + i;
+          const col = bestPlacement.direction === 'across' ? bestPlacement.col + i : bestPlacement.col;
+          newGrid[row][col] = currentWord.answer[i];
+        }
+
         placed.push({
           id: `word_${wordIndex}`,
           word: currentWord.answer,
@@ -141,13 +173,20 @@ const CrosswordGame = ({ gameMode, showToast, students }) => {
           col: bestPlacement.col,
           direction: bestPlacement.direction,
           length: currentWord.length,
-          number: wordIndex + 1
+          number: placed.length + 1
         });
+        
+        console.log(`  Word placed successfully! Total placed: ${placed.length}`);
+      } else {
+        console.log(`  Could not place word: ${currentWord.answer}`);
       }
     }
 
     // Assign proper numbering
     assignNumbers(placed);
+
+    console.log('Final placed words:', placed.length);
+    console.log('Placed words:', placed.map(p => `${p.word} (${p.direction})`));
 
     setGrid(newGrid);
     setPlacedWords(placed);
@@ -162,152 +201,95 @@ const CrosswordGame = ({ gameMode, showToast, students }) => {
     showToast(`Generated crossword with ${placed.length} words!`, 'success');
   }, [editingClues, gridSize, showToast]);
 
-  // Helper functions for crossword generation
-  const findIntersections = (word1, word2) => {
-    const intersections = [];
-    for (let i = 0; i < word1.length; i++) {
-      for (let j = 0; j < word2.length; j++) {
-        if (word1[i] === word2[j]) {
-          intersections.push({ word1Index: i, word2Index: j });
-        }
-      }
-    }
-    return intersections;
-  };
-
-  const calculatePlacement = (currentWord, placedWord, intersection, direction) => {
+  // Simple helper function to check if word can be placed
+  const canPlaceWordAt = (grid, word, row, col, direction) => {
+    // Check bounds
     if (direction === 'across') {
-      const row = placedWord.row + intersection.word2Index;
-      const col = placedWord.col - intersection.word1Index;
-      
-      if (row >= 0 && row < gridSize && 
-          col >= 0 && col + currentWord.length <= gridSize) {
-        return { row, col };
+      if (col < 0 || col + word.length > gridSize || row < 0 || row >= gridSize) {
+        return false;
       }
-    } else { // down
-      const row = placedWord.row - intersection.word1Index;
-      const col = placedWord.col + intersection.word2Index;
-      
-      if (col >= 0 && col < gridSize && 
-          row >= 0 && row + currentWord.length <= gridSize) {
-        return { row, col };
+    } else {
+      if (row < 0 || row + word.length > gridSize || col < 0 || col >= gridSize) {
+        return false;
       }
     }
-    return null;
-  };
 
-  const isValidPlacement = (grid, placement, word, direction) => {
-    const { row, col } = placement;
-    
-    // Check each cell of the word
+    // Check each cell
     for (let i = 0; i < word.length; i++) {
       const r = direction === 'across' ? row : row + i;
       const c = direction === 'across' ? col + i : col;
       
-      if (r < 0 || r >= gridSize || c < 0 || c >= gridSize) return false;
+      const existingLetter = grid[r][c];
       
-      const cell = grid[r][c];
-      
-      // If cell is occupied, it must match the letter we want to place
-      if (cell && cell.letter !== word.answer[i]) {
+      // If cell is occupied, it must match our letter
+      if (existingLetter && existingLetter !== word[i]) {
         return false;
       }
       
-      // Check adjacent cells to avoid touching words inappropriately
-      if (!cell) {
-        // Check all 4 directions for adjacent letters
-        const adjacentPositions = [
-          [r-1, c], [r+1, c], [r, c-1], [r, c+1]
-        ];
-        
-        for (const [ar, ac] of adjacentPositions) {
-          if (ar >= 0 && ar < gridSize && ac >= 0 && ac < gridSize) {
-            const adjacentCell = grid[ar][ac];
-            if (adjacentCell && adjacentCell.letter) {
-              // Only allow adjacent if it's part of an intersecting word at this exact position
-              const isIntersection = (direction === 'across' && ac === c) || 
-                                   (direction === 'down' && ar === r);
-              if (!isIntersection) {
-                return false;
-              }
-            }
-          }
+      // Check for adjacent letters (only if this is an empty cell)
+      if (!existingLetter) {
+        // Check cells above and below (for across words) or left and right (for down words)
+        if (direction === 'across') {
+          // Check above
+          if (r > 0 && grid[r - 1][c]) return false;
+          // Check below
+          if (r < gridSize - 1 && grid[r + 1][c]) return false;
+        } else {
+          // Check left
+          if (c > 0 && grid[r][c - 1]) return false;
+          // Check right
+          if (c < gridSize - 1 && grid[r][c + 1]) return false;
         }
       }
+    }
+    
+    // Check that the word doesn't extend into existing letters
+    if (direction === 'across') {
+      // Check letter before start
+      if (col > 0 && grid[row][col - 1]) return false;
+      // Check letter after end
+      if (col + word.length < gridSize && grid[row][col + word.length]) return false;
+    } else {
+      // Check letter before start
+      if (row > 0 && grid[row - 1][col]) return false;
+      // Check letter after end
+      if (row + word.length < gridSize && grid[row + word.length][col]) return false;
     }
     
     return true;
   };
 
-  const calculatePlacementScore = (placement, placed, grid, direction, word) => {
-    let score = 0;
-    const { row, col } = placement;
-    
-    // Count intersections (higher is better)
-    for (let i = 0; i < word.length; i++) {
-      const r = direction === 'across' ? row : row + i;
-      const c = direction === 'across' ? col + i : col;
-      
-      if (grid[r] && grid[r][c] && grid[r][c].letter) {
-        score += 100; // High bonus for intersections
-      }
-    }
-    
-    // Prefer more central placements
-    const centerDistance = Math.abs(row - Math.floor(gridSize / 2)) + 
-                          Math.abs(col - Math.floor(gridSize / 2));
-    score -= centerDistance * 2;
-    
-    // Prefer placing perpendicular to existing words
-    const existingDirections = placed.map(p => p.direction);
-    if (direction === 'down' && existingDirections.includes('across')) score += 50;
-    if (direction === 'across' && existingDirections.includes('down')) score += 50;
-    
-    return score;
-  };
-
-  const placeWordOnGrid = (grid, placement, word, wordIndex) => {
-    for (let i = 0; i < word.length; i++) {
-      const row = placement.direction === 'across' ? placement.row : placement.row + i;
-      const col = placement.direction === 'across' ? placement.col + i : placement.col;
-      
-      if (!grid[row][col]) {
-        grid[row][col] = {
-          letter: word.answer[i],
-          wordIds: [`word_${wordIndex}`],
-          isStart: i === 0,
-          directions: [placement.direction]
-        };
-      } else {
-        // Update existing cell for intersection
-        grid[row][col] = {
-          ...grid[row][col],
-          wordIds: [...(grid[row][col].wordIds || []), `word_${wordIndex}`],
-          directions: [...(grid[row][col].directions || []), placement.direction]
-        };
-      }
-    }
-  };
-
   const assignNumbers = (placed) => {
-    // Sort by position for proper numbering
-    placed.sort((a, b) => {
+    // Sort by position (top to bottom, left to right) for proper numbering
+    const positions = new Map();
+    let number = 1;
+
+    // First, find all starting positions
+    placed.forEach(word => {
+      const key = `${word.row}-${word.col}`;
+      if (!positions.has(key)) {
+        positions.set(key, { row: word.row, col: word.col, number });
+        number++;
+      }
+    });
+
+    // Sort positions by row, then by column
+    const sortedPositions = Array.from(positions.values()).sort((a, b) => {
       if (a.row !== b.row) return a.row - b.row;
       return a.col - b.col;
     });
 
-    let number = 1;
-    const positions = new Set();
+    // Reassign numbers based on sorted order
+    sortedPositions.forEach((pos, index) => {
+      pos.number = index + 1;
+    });
 
+    // Update word numbers
     placed.forEach(word => {
       const key = `${word.row}-${word.col}`;
-      if (!positions.has(key)) {
-        word.number = number++;
-        positions.add(key);
-      } else {
-        // Find existing number for this position
-        const existing = placed.find(w => w.row === word.row && w.col === word.col && w.number);
-        word.number = existing ? existing.number : number++;
+      const position = positions.get(key);
+      if (position) {
+        word.number = position.number;
       }
     });
   };
@@ -316,8 +298,8 @@ const CrosswordGame = ({ gameMode, showToast, students }) => {
   const handleCellClick = (row, col) => {
     if (gameMode !== 'digital' || !isActive) return;
 
-    const cell = grid[row][col];
-    if (!cell) return;
+    // Only allow clicking on cells that are part of words
+    if (!isCellPartOfWord(row, col)) return;
 
     setSelectedCell({ row, col });
     
@@ -507,22 +489,15 @@ const CrosswordGame = ({ gameMode, showToast, students }) => {
     let gridHTML = '';
     for (let row = 0; row < gridSize; row++) {
       for (let col = 0; col < gridSize; col++) {
-        const cell = grid[row][col];
-        const hasWord = placedWords.some(word => {
-          if (word.direction === 'across') {
-            return word.row === row && col >= word.col && col < word.col + word.length;
-          } else {
-            return word.col === col && row >= word.row && row < word.row + word.length;
-          }
-        });
+        const isPartOfWord = isCellPartOfWord(row, col);
 
-        if (!hasWord) {
+        if (!isPartOfWord) {
           // This is a blocked cell - should be black
           gridHTML += `<div class="cell blocked"></div>`;
         } else {
           // This is an answer cell - should be white
           const startWord = placedWords.find(word => word.row === row && word.col === col);
-          const cellContent = printWithAnswers && cell ? cell.letter : '';
+          const cellContent = printWithAnswers ? (grid[row][col] || '') : '';
           const numberContent = startWord ? startWord.number : '';
           
           gridHTML += `
@@ -560,11 +535,11 @@ const CrosswordGame = ({ gameMode, showToast, students }) => {
       <div class="clues">
         <div class="clue-section">
           <h3>Across</h3>
-          ${acrossClues}
+          ${acrossClues || '<div class="clue-item">No across clues</div>'}
         </div>
         <div class="clue-section">
           <h3>Down</h3>
-          ${downClues}
+          ${downClues || '<div class="clue-item">No down clues</div>'}
         </div>
       </div>
       
@@ -576,8 +551,8 @@ const CrosswordGame = ({ gameMode, showToast, students }) => {
 
   // Get cell style
   const getCellStyle = (row, col) => {
-    const cell = grid[row][col];
     const isSelected = selectedCell?.row === row && selectedCell?.col === col;
+    const isPartOfWord = isCellPartOfWord(row, col);
     const isInSelectedWord = selectedClue && placedWords.some(word => {
       if (word.id === selectedClue.id) {
         if (word.direction === 'across') {
@@ -591,7 +566,7 @@ const CrosswordGame = ({ gameMode, showToast, students }) => {
 
     let className = "w-8 h-8 border border-gray-400 flex items-center justify-center text-sm font-bold relative transition-all ";
 
-    if (!cell) {
+    if (!isPartOfWord) {
       className += "bg-gray-800"; // Blocked cell
     } else if (isSelected) {
       className += "bg-blue-200 border-blue-500 cursor-pointer";
@@ -627,6 +602,17 @@ const CrosswordGame = ({ gameMode, showToast, students }) => {
   const getCellNumber = (row, col) => {
     const startWord = placedWords.find(word => word.row === row && word.col === col);
     return startWord?.number || '';
+  };
+
+  // Check if cell is part of any word
+  const isCellPartOfWord = (row, col) => {
+    return placedWords.some(word => {
+      if (word.direction === 'across') {
+        return word.row === row && col >= word.col && col < word.col + word.length;
+      } else {
+        return word.col === col && row >= word.row && row < word.row + word.length;
+      }
+    });
   };
 
   // Event listener for keyboard input
@@ -746,9 +732,9 @@ const CrosswordGame = ({ gameMode, showToast, students }) => {
                 >
                   {Array.from({ length: gridSize }, (_, row) =>
                     Array.from({ length: gridSize }, (_, col) => {
-                      const cell = grid[row][col];
                       const cellNumber = getCellNumber(row, col);
                       const userLetter = getUserLetter(row, col);
+                      const isPartOfWord = isCellPartOfWord(row, col);
                       
                       return (
                         <div
@@ -761,7 +747,7 @@ const CrosswordGame = ({ gameMode, showToast, students }) => {
                               {cellNumber}
                             </div>
                           )}
-                          {gameMode === 'digital' && isActive ? userLetter : ''}
+                          {isPartOfWord && gameMode === 'digital' && isActive ? userLetter : ''}
                         </div>
                       );
                     })
