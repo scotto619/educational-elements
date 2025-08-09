@@ -1,11 +1,11 @@
-// components/tabs/CurriculumCornerTab.js - UPDATED WITH MATH WARMUP SUPPORT
+// components/tabs/CurriculumCornerTab.js - UPDATED WITH NEW DAILY 10 MATH WARMUP
 import React, { useState } from 'react';
 
 // Import activity components
 import LiteracyWarmup from '../curriculum/literacy/LiteracyWarmup';
 import ReadingComprehension from '../curriculum/literacy/ReadingComprehension';
 import AreaPerimeterTool from '../curriculum/mathematics/AreaPerimeterTool';
-import MathWarmup from '../curriculum/mathematics/MathWarmup';
+import MathWarmup from '../curriculum/mathematics/MathWarmup'; // NEW DAILY 10 STYLE COMPONENT
 // import SpellingBee from '../curriculum/literacy/SpellingBee';
 // import NumbersBoard from '../curriculum/mathematics/NumbersBoard';
 // import VirtualExperiments from '../curriculum/science/VirtualExperiments';
@@ -27,7 +27,7 @@ const ComingSoon = ({ toolName, description }) => (
 );
 
 // ===============================================
-// SUBJECT CONFIGURATION - UPDATED WITH MATH WARMUP
+// SUBJECT CONFIGURATION - UPDATED WITH NEW DAILY 10 MATH
 // ===============================================
 const subjects = [
   {
@@ -75,10 +75,10 @@ const subjects = [
     description: 'Math tools and number activities',
     activities: [
       {
-        id: 'math-warmup',
-        name: 'Math Warmup',
-        icon: '🔥',
-        description: 'Daily number activities and mathematical thinking',
+        id: 'daily-10-math',
+        name: 'Daily 10 Math Challenge',
+        icon: '🎯',
+        description: 'Grade-leveled math questions with 10 challenges per session - like Topmarks Daily 10',
         component: MathWarmup
       },
       {
@@ -288,7 +288,7 @@ const CurriculumCornerTab = ({
     };
     
     // Add Firebase save/load props for specific activities that need them
-    if (activeActivity.id === 'literacy-warmup' || activeActivity.id === 'math-warmup') {
+    if (activeActivity.id === 'literacy-warmup' || activeActivity.id === 'daily-10-math') {
       activityProps.saveData = saveData;
       activityProps.loadedData = loadedData;
     }
@@ -430,25 +430,26 @@ const CurriculumCornerTab = ({
         </div>
       </div>
 
-      {/* Enhanced Feature Notice for New Math Warmup */}
+      {/* Enhanced Feature Notice for NEW Daily 10 Math */}
       <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-xl p-6">
         <div className="flex items-start space-x-4">
-          <span className="text-3xl">🔥</span>
+          <span className="text-4xl">🎯</span>
           <div>
-            <h4 className="font-bold text-green-800 mb-2">✨ New Math Warmup Added!</h4>
+            <h4 className="font-bold text-green-800 mb-2">🆕 NEW: Daily 10 Math Challenge!</h4>
             <p className="text-green-700 mb-4">
-              The Math Warmup includes progressive Number of the Day activities, mental math strategies that build over 10 weeks, 
-              daily problem solving with hints, and interactive number practice tools!
+              Experience the popular Topmarks Daily 10 format! Choose your grade level (Prep to Grade 6), 
+              select math categories, pick specific topics, and tackle 10 large-display questions perfect for classroom use.
             </p>
             <div className="bg-green-100 rounded-lg p-4">
               <h5 className="font-semibold text-green-800 mb-2">🎯 What's Included:</h5>
               <ul className="text-sm text-green-700 space-y-1">
-                <li>• Number of the Day activities with progressive difficulty (5→1000)</li>
-                <li>• Mental math strategies that build across weeks</li>
-                <li>• Daily math problems with hints and explanations</li>
-                <li>• Interactive number practice with random highlighting</li>
-                <li>• Math facts of the day for engagement</li>
-                <li>• Presentation mode for classroom display</li>
+                <li>• Grade-leveled content from Prep to Grade 6</li>
+                <li>• Categories: Addition, Subtraction, Multiplication, Division, Fractions, etc.</li>
+                <li>• Multiple subcategories per grade level (e.g., "Add to 20", "Times Tables")</li>
+                <li>• 10 questions per session with large, classroom-friendly display</li>
+                <li>• Timer mode or manual progression</li>
+                <li>• Presentation mode for full-screen classroom display</li>
+                <li>• Perfect for mental math warm-ups and quick assessments!</li>
               </ul>
             </div>
           </div>
