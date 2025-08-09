@@ -248,7 +248,7 @@ const ClassroomJobs = ({
   };
 
   // ===============================================
-  // PAYMENT FUNCTIONS - FIXED
+  // PAYMENT FUNCTIONS - FINAL FIXED
   // ===============================================
 
   const payJob = (job) => {
@@ -262,7 +262,7 @@ const ClassroomJobs = ({
       if (job.payType === 'xp') {
         onAwardXP(student.id, job.payAmount, `Job: ${job.title}`);
       } else {
-        // FIXED: Use proper coin awarding function instead of XP conversion
+        // FINAL FIXED: Use proper coin awarding function
         onAwardCoins(student.id, job.payAmount, `Job: ${job.title}`);
       }
       paymentCount++;
@@ -281,7 +281,7 @@ const ClassroomJobs = ({
           if (job.payType === 'xp') {
             onAwardXP(student.id, job.payAmount, `Job: ${job.title}`);
           } else {
-            // FIXED: Use proper coin awarding function
+            // FINAL FIXED: Use proper coin awarding function
             onAwardCoins(student.id, job.payAmount, `Job: ${job.title}`);
           }
           totalStudents++;

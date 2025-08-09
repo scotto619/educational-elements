@@ -1,4 +1,4 @@
-// pages/classroom-champions.js - FIXED Version with Proper Coin Awards
+// pages/classroom-champions.js - FINAL FIXED VERSION
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
@@ -301,6 +301,7 @@ const ClassroomChampions = () => {
     updateAndSaveClass(students, newCategories);
   };
     
+  // FIXED: This is the main bulk award function that handles both XP and coins properly
   const handleBulkAward = (studentIds, amount, type) => {
       const newStudents = students.map(student => {
           if (studentIds.includes(student.id)) {
@@ -351,62 +352,6 @@ const ClassroomChampions = () => {
     // Save to Firebase
     saveClassData({ attendanceData: updatedAttendance });
     showToast('Attendance updated!', 'success');
-  };
-
-  // Award XP function for toolkit components (especially classroom jobs)
-  const handleAwardXPFromToolkit = (studentId, amount, reason = '') => {
-    const student = students.find(s => s.id === studentId);
-    if (!student) return;
-
-    const oldLevel = calculateAvatarLevel(student.totalPoints || 0);
-    const newTotalPoints = (student.totalPoints || 0) + amount;
-    const newLevel = calculateAvatarLevel(newTotalPoints);
-    
-    const updatedStudent = {
-      ...student,
-      totalPoints: newTotalPoints,
-      lastUpdated: new Date().toISOString()
-    };
-
-    // Check for level up
-    if (newLevel > oldLevel) {
-      setLevelUpData({ student: updatedStudent, oldLevel, newLevel });
-    }
-
-    // Check for pet unlock
-    if (shouldReceivePet(updatedStudent)) {
-      const newPet = getRandomPet();
-      updatedStudent.ownedPets = [...(updatedStudent.ownedPets || []), newPet];
-      setPetUnlockData({ student: updatedStudent, pet: newPet });
-    }
-
-    // Update students array
-    const newStudents = students.map(s => s.id === studentId ? updatedStudent : s);
-    setStudents(newStudents);
-    updateAndSaveClass(newStudents, xpCategories);
-    
-    playSound('ding');
-    showToast(`${student.firstName} earned ${amount} XP${reason ? ` for ${reason}` : ''}!`, 'success');
-  };
-
-  // FIXED: Award Coins function for toolkit components (especially classroom jobs)
-  const handleAwardCoinsFromToolkit = (studentId, amount, reason = '') => {
-    const student = students.find(s => s.id === studentId);
-    if (!student) return;
-
-    const updatedStudent = {
-      ...student,
-      currency: (student.currency || 0) + amount,
-      lastUpdated: new Date().toISOString()
-    };
-
-    // Update students array
-    const newStudents = students.map(s => s.id === studentId ? updatedStudent : s);
-    setStudents(newStudents);
-    updateAndSaveClass(newStudents, xpCategories);
-    
-    playSound('coins');
-    showToast(`${student.firstName} earned ${amount} coins${reason ? ` for ${reason}` : ''}!`, 'success');
   };
 
   // RENDER LOGIC
@@ -468,8 +413,8 @@ const ClassroomChampions = () => {
                   saveGroupDataToFirebase={saveGroupDataToFirebase}
                   saveClassroomDataToFirebase={saveClassroomDataToFirebase}
                   currentClassId={currentClassId}
-                  onAwardXP={handleAwardXPFromToolkit}
-                  onAwardCoins={handleAwardCoinsFromToolkit} // FIXED: Now passing proper coin function
+                  // FIXED: Pass the main handleBulkAward function instead of separate XP/coin functions
+                  onBulkAward={handleBulkAward}
                   activeQuests={activeQuests}
                   attendanceData={attendanceData}
                   markAttendance={markAttendance}
