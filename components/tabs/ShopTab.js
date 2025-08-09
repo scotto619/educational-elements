@@ -1,5 +1,5 @@
-// components/tabs/ShopTab.js - REIMPLEMENTED AND FULLY FUNCTIONAL (COMPLETE FILE)
-import React, { useState } from 'react';
+// components/tabs/ShopTab.js - UPDATED WITH FEATURED ITEMS AND COMPLETE PET COLLECTION
+import React, { useState, useEffect } from 'react';
 
 // ===============================================
 // SHOP DATA (Classroom Rewards - can be customized here)
@@ -9,6 +9,10 @@ const TEACHER_REWARDS = [
   { id: 'reward_2', name: 'Class Game Session', price: 30, category: 'fun', icon: '🎮' },
   { id: 'reward_3', name: 'No Homework Pass', price: 25, category: 'privileges', icon: '📝' },
   { id: 'reward_4', name: 'Choose Class Music', price: 15, category: 'privileges', icon: '🎵' },
+  { id: 'reward_5', name: 'Line Leader for a Week', price: 10, category: 'privileges', icon: '👑' },
+  { id: 'reward_6', name: 'Sit Anywhere Day', price: 12, category: 'privileges', icon: '💺' },
+  { id: 'reward_7', name: 'Extra Recess Time', price: 18, category: 'fun', icon: '⏰' },
+  { id: 'reward_8', name: 'Teach the Class', price: 35, category: 'special', icon: '🎓' },
 ];
 
 // ===============================================
@@ -17,10 +21,10 @@ const TEACHER_REWARDS = [
 const ShopTab = ({ 
     students = [], 
     onUpdateStudent, 
-    SHOP_BASIC_AVATARS,
-    SHOP_PREMIUM_AVATARS,
-    SHOP_BASIC_PETS,
-    SHOP_PREMIUM_PETS,
+    SHOP_BASIC_AVATARS = [],
+    SHOP_PREMIUM_AVATARS = [],
+    SHOP_BASIC_PETS = [],
+    SHOP_PREMIUM_PETS = [],
     showToast = () => {},
     getAvatarImage,
     getPetImage,
@@ -28,11 +32,36 @@ const ShopTab = ({
     calculateAvatarLevel
 }) => {
   const [selectedStudentId, setSelectedStudentId] = useState(null);
-  const [activeCategory, setActiveCategory] = useState('basic_avatars');
+  const [activeCategory, setActiveCategory] = useState('featured');
   const [purchaseModal, setPurchaseModal] = useState({ visible: false, item: null, type: null });
   const [inventoryModal, setInventoryModal] = useState({ visible: false });
+  const [featuredItems, setFeaturedItems] = useState([]);
 
   const selectedStudent = students.find(s => s.id === selectedStudentId);
+
+  // Generate featured items (3 random items on sale)
+  useEffect(() => {
+    const allShopItems = [
+      ...SHOP_BASIC_AVATARS.map(item => ({ ...item, category: 'basic_avatars', type: 'avatar' })),
+      ...SHOP_PREMIUM_AVATARS.map(item => ({ ...item, category: 'premium_avatars', type: 'avatar' })),
+      ...SHOP_BASIC_PETS.map(item => ({ ...item, category: 'basic_pets', type: 'pet' })),
+      ...SHOP_PREMIUM_PETS.map(item => ({ ...item, category: 'premium_pets', type: 'pet' })),
+      ...TEACHER_REWARDS.map(item => ({ ...item, category: 'rewards', type: 'reward' }))
+    ];
+
+    if (allShopItems.length > 0) {
+      // Use date as seed for consistent daily featured items
+      const today = new Date().getDate() + new Date().getMonth() * 31;
+      const shuffled = allShopItems.sort(() => 0.5 - Math.sin(today * 1000));
+      const featured = shuffled.slice(0, 3).map(item => ({
+        ...item,
+        originalPrice: item.price,
+        price: Math.max(1, Math.floor(item.price * 0.7)), // 30% discount
+        salePercentage: 30
+      }));
+      setFeaturedItems(featured);
+    }
+  }, [SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, SHOP_BASIC_PETS, SHOP_PREMIUM_PETS]);
 
   const handlePurchase = () => {
     if (!selectedStudent || !purchaseModal.item) return;
@@ -84,6 +113,7 @@ const ShopTab = ({
   };
 
   const SHOP_CATEGORIES = [
+      { id: 'featured', name: '⭐ Featured Items' },
       { id: 'basic_avatars', name: 'Basic Avatars' },
       { id: 'premium_avatars', name: 'Premium Avatars' },
       { id: 'basic_pets', name: 'Basic Pets' },
@@ -91,7 +121,59 @@ const ShopTab = ({
       { id: 'rewards', name: 'Class Rewards' }
   ];
 
+  const renderFeaturedItems = () => {
+    return featuredItems.map(item => {
+      const isAvatar = item.type === 'avatar';
+      const isPet = item.type === 'pet';
+      const isReward = item.type === 'reward';
+      const owned = isAvatar ? selectedStudent?.ownedAvatars?.includes(item.name) : 
+                    isPet ? selectedStudent?.ownedPets?.some(p => p.name === item.name) : false;
+      
+      return (
+        <div key={item.name || item.id} className={`border-2 rounded-lg p-4 text-center flex flex-col justify-between relative ${owned ? 'border-green-400 bg-green-50' : 'border-red-300 bg-gradient-to-br from-red-50 to-pink-50'}`}>
+          {/* Sale Badge */}
+          <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg">
+            -{item.salePercentage}%
+          </div>
+          
+          {isReward ? (
+              <>
+                  <div className="text-4xl">{item.icon}</div>
+                  <p className="font-semibold mt-2">{item.name}</p>
+              </>
+          ) : (
+              <img src={item.path} className="w-24 h-24 object-contain rounded-full mx-auto mb-2"/>
+          )}
+
+          {!isReward && <p className="font-semibold">{item.name}</p>}
+          
+          {/* Price Display */}
+          <div className="mt-2">
+            <div className="text-sm text-gray-500 line-through">💰 {item.originalPrice}</div>
+            <div className="text-lg font-bold text-red-600">💰 {item.price}</div>
+          </div>
+
+          {owned ? (
+              <p className="font-bold text-green-600 mt-2">Owned</p>
+          ) : (
+              <button 
+                onClick={() => setPurchaseModal({ visible: true, item: item, type: item.type })} 
+                disabled={calculateCoins(selectedStudent) < item.price} 
+                className="mt-2 w-full bg-red-500 text-white text-sm py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-red-600 font-semibold"
+              >
+                🔥 Buy Now!
+              </button>
+          )}
+        </div>
+      );
+    });
+  };
+
   const renderShopItems = () => {
+      if (activeCategory === 'featured') {
+        return renderFeaturedItems();
+      }
+      
       let items;
       let type;
       switch(activeCategory) {
@@ -107,7 +189,8 @@ const ShopTab = ({
           const isAvatar = type === 'avatar';
           const isPet = type === 'pet';
           const isReward = type === 'reward';
-          const owned = isAvatar ? selectedStudent.ownedAvatars?.includes(item.name) : isPet ? selectedStudent.ownedPets?.some(p => p.name === item.name) : false;
+          const owned = isAvatar ? selectedStudent?.ownedAvatars?.includes(item.name) : 
+                        isPet ? selectedStudent?.ownedPets?.some(p => p.name === item.name) : false;
           
           return (
             <div key={item.name || item.id} className={`border-2 rounded-lg p-4 text-center flex flex-col justify-between ${owned ? 'border-green-400 bg-green-50' : 'border-gray-200'}`}>
@@ -165,10 +248,44 @@ const ShopTab = ({
         <div className="bg-white rounded-xl p-6 shadow-lg">
             <div className="flex space-x-2 border-b pb-4 mb-4 overflow-x-auto">
                 {SHOP_CATEGORIES.map(cat => (
-                    <button key={cat.id} onClick={() => setActiveCategory(cat.id)} className={`px-4 py-2 rounded-lg font-semibold whitespace-nowrap ${activeCategory === cat.id ? 'bg-blue-500 text-white' : 'bg-gray-100'}`}>{cat.name}</button>
+                    <button 
+                      key={cat.id} 
+                      onClick={() => setActiveCategory(cat.id)} 
+                      className={`px-4 py-2 rounded-lg font-semibold whitespace-nowrap ${
+                        activeCategory === cat.id 
+                          ? cat.id === 'featured' 
+                            ? 'bg-red-500 text-white' 
+                            : 'bg-blue-500 text-white'
+                          : 'bg-gray-100'
+                      }`}
+                    >
+                      {cat.name}
+                    </button>
                 ))}
             </div>
-            <div className={`grid gap-4 ${activeCategory === 'rewards' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-5'}`}>{renderShopItems()}</div>
+            
+            {/* Special Header for Featured Section */}
+            {activeCategory === 'featured' && (
+              <div className="mb-6 p-4 bg-gradient-to-r from-red-100 to-pink-100 rounded-lg border-2 border-red-200">
+                <div className="flex items-center gap-3">
+                  <div className="text-3xl">🔥</div>
+                  <div>
+                    <h3 className="text-xl font-bold text-red-800">Daily Special Offers!</h3>
+                    <p className="text-red-600">Limited time discounts - Save up to 30%!</p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <div className={`grid gap-4 ${
+              activeCategory === 'rewards' 
+                ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' 
+                : activeCategory === 'featured'
+                  ? 'grid-cols-1 md:grid-cols-3'
+                  : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-5'
+            }`}>
+              {renderShopItems()}
+            </div>
         </div>
       )}
 
@@ -177,6 +294,14 @@ const ShopTab = ({
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md text-center p-6">
                 <h2 className="text-2xl font-bold mb-4">Confirm Purchase</h2>
+                {purchaseModal.item.originalPrice && (
+                  <div className="mb-2">
+                    <span className="text-lg text-gray-500 line-through">💰{purchaseModal.item.originalPrice}</span>
+                    <span className="ml-2 bg-red-500 text-white px-2 py-1 rounded-full text-sm font-bold">
+                      SALE!
+                    </span>
+                  </div>
+                )}
                 <p className="mb-4">Buy {purchaseModal.item.name} for 💰{purchaseModal.item.price} coins?</p>
                 <div className="flex gap-4">
                     <button onClick={() => setPurchaseModal({ visible: false, item: null, type: null })} className="flex-1 py-3 border rounded-lg">Cancel</button>
@@ -225,6 +350,24 @@ const ShopTab = ({
                             </div>
                         ) : (<p className="text-gray-500">No pets yet!</p>)}
                     </div>
+                    
+                    {/* Purchased Rewards */}
+                    {selectedStudent.rewardsPurchased?.length > 0 && (
+                      <div>
+                        <h3 className="font-bold text-lg mb-2">Earned Rewards</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {selectedStudent.rewardsPurchased.map((reward, index) => (
+                            <div key={index} className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-3 flex items-center gap-3">
+                              <div className="text-2xl">{TEACHER_REWARDS.find(r => r.id === reward.id)?.icon || '🎁'}</div>
+                              <div>
+                                <p className="font-semibold">{reward.name}</p>
+                                <p className="text-xs text-gray-600">Earned: {new Date(reward.purchasedAt).toLocaleDateString()}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                 </div>
             </div>
         </div>
