@@ -75,10 +75,10 @@ const subjects = [
     description: 'Math tools and number activities',
     activities: [
       {
-        id: 'daily-10-math',
-        name: 'Daily 10 Math Challenge',
+        id: 'math-warmup',
+        name: 'Math Warmup',
         icon: '🎯',
-        description: 'Grade-leveled math questions with 10 challenges per session - like Topmarks Daily 10',
+        description: 'Grade-leveled math questions with 10 challenges per session',
         component: MathWarmup
       },
       {
@@ -288,7 +288,7 @@ const CurriculumCornerTab = ({
     };
     
     // Add Firebase save/load props for specific activities that need them
-    if (activeActivity.id === 'literacy-warmup' || activeActivity.id === 'daily-10-math') {
+    if (activeActivity.id === 'literacy-warmup' || activeActivity.id === 'math-warmup') {
       activityProps.saveData = saveData;
       activityProps.loadedData = loadedData;
     }
@@ -430,14 +430,14 @@ const CurriculumCornerTab = ({
         </div>
       </div>
 
-      {/* Enhanced Feature Notice for NEW Daily 10 Math */}
+      {/* Enhanced Feature Notice for NEW Math Warmup */}
       <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-xl p-6">
         <div className="flex items-start space-x-4">
           <span className="text-4xl">🎯</span>
           <div>
-            <h4 className="font-bold text-green-800 mb-2">🆕 NEW: Daily 10 Math Challenge!</h4>
+            <h4 className="font-bold text-green-800 mb-2">🆕 NEW: Math Warmup Challenge!</h4>
             <p className="text-green-700 mb-4">
-              Experience the popular Topmarks Daily 10 format! Choose your grade level (Prep to Grade 6), 
+              Experience a comprehensive math warmup format! Choose your grade level (Prep to Grade 6), 
               select math categories, pick specific topics, and tackle 10 large-display questions perfect for classroom use.
             </p>
             <div className="bg-green-100 rounded-lg p-4">
