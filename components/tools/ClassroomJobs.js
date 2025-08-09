@@ -1,8 +1,8 @@
-// components/tools/ClassroomJobs.js - Manual Save Version (No Auto-Save)
+// components/tools/ClassroomJobs.js - FIXED Version with Compact Layout + Proper Payment
 import React, { useState, useEffect } from 'react';
 
 // ===============================================
-// CLASSROOM JOBS COMPONENT - MANUAL SAVE VERSION
+// CLASSROOM JOBS COMPONENT - FIXED VERSION
 // ===============================================
 
 const ClassroomJobs = ({ 
@@ -248,7 +248,7 @@ const ClassroomJobs = ({
   };
 
   // ===============================================
-  // PAYMENT FUNCTIONS
+  // PAYMENT FUNCTIONS - FIXED
   // ===============================================
 
   const payJob = (job) => {
@@ -262,10 +262,8 @@ const ClassroomJobs = ({
       if (job.payType === 'xp') {
         onAwardXP(student.id, job.payAmount, `Job: ${job.title}`);
       } else {
-        // For coins, we'll award XP equivalent and let the coin calculation happen automatically
-        // Since coins = totalXP / 5, awarding 5 XP = 1 coin
-        const xpEquivalent = job.payAmount * 5; // Convert coins to XP
-        onAwardXP(student.id, xpEquivalent, `Job Payment: ${job.title}`);
+        // FIXED: Use proper coin awarding function instead of XP conversion
+        onAwardCoins(student.id, job.payAmount, `Job: ${job.title}`);
       }
       paymentCount++;
     });
@@ -283,8 +281,8 @@ const ClassroomJobs = ({
           if (job.payType === 'xp') {
             onAwardXP(student.id, job.payAmount, `Job: ${job.title}`);
           } else {
-            const xpEquivalent = job.payAmount * 5;
-            onAwardXP(student.id, xpEquivalent, `Job Payment: ${job.title}`);
+            // FIXED: Use proper coin awarding function
+            onAwardCoins(student.id, job.payAmount, `Job: ${job.title}`);
           }
           totalStudents++;
         });
@@ -297,7 +295,7 @@ const ClassroomJobs = ({
   };
 
   // ===============================================
-  // RENDER FUNCTIONS
+  // RENDER FUNCTIONS - COMPACT LAYOUT
   // ===============================================
 
   return (
@@ -318,19 +316,19 @@ const ClassroomJobs = ({
       </div>
 
       {/* Control Panel */}
-      <div className="bg-white rounded-xl p-6 shadow-lg">
-        <div className="flex flex-wrap gap-4 items-center justify-between">
+      <div className="bg-white rounded-xl p-4 shadow-lg">
+        <div className="flex flex-wrap gap-3 items-center justify-between">
           <div className="flex gap-3">
             <button
               onClick={() => setShowCreateJobModal(true)}
-              className="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all font-semibold"
+              className="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all font-semibold text-sm"
             >
               ➕ Create New Job
             </button>
             
             <button
               onClick={() => setShowPayAllModal(true)}
-              className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all font-semibold"
+              className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all font-semibold text-sm"
             >
               💰 Pay All Jobs
             </button>
@@ -338,7 +336,7 @@ const ClassroomJobs = ({
             <button
               onClick={handleManualSave}
               disabled={isSaving || !hasUnsavedChanges}
-              className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+              className={`px-4 py-2 rounded-lg font-semibold transition-all text-sm ${
                 hasUnsavedChanges 
                   ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:shadow-lg'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
@@ -346,7 +344,7 @@ const ClassroomJobs = ({
             >
               {isSaving ? (
                 <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   <span>Saving...</span>
                 </div>
               ) : (
@@ -355,24 +353,24 @@ const ClassroomJobs = ({
             </button>
           </div>
 
-          <div className="text-sm text-gray-600">
+          <div className="text-xs text-gray-600">
             <span className="font-semibold">💡 Tip:</span> Drag students between jobs to reassign them
             {hasUnsavedChanges && <span className="ml-2 text-orange-600 font-semibold">• Click "Save Changes" to save your work</span>}
           </div>
         </div>
       </div>
 
-      {/* Job Management Area */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      {/* Job Management Area - COMPACT LAYOUT */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         
-        {/* Unassigned Students */}
+        {/* Unassigned Students - More Compact */}
         <div 
-          className="bg-white rounded-xl p-4 shadow-lg border-2 border-dashed border-gray-300 min-h-[400px]"
+          className="bg-white rounded-xl p-3 shadow-lg border-2 border-dashed border-gray-300 h-fit max-h-96 overflow-y-auto"
           onDragOver={handleDragOver}
           onDrop={handleDropOnUnassigned}
         >
-          <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
-            <span className="text-2xl mr-2">👥</span>
+          <h3 className="text-md font-bold text-gray-800 mb-3 flex items-center">
+            <span className="text-lg mr-2">👥</span>
             Available Students ({unassignedStudents.length})
           </h3>
           
@@ -382,55 +380,55 @@ const ClassroomJobs = ({
                 key={student.id}
                 draggable
                 onDragStart={(e) => handleDragStart(e, student, 'unassigned')}
-                className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg cursor-move hover:bg-gray-100 transition-colors border border-gray-200"
+                className="flex items-center space-x-2 p-2 bg-gray-50 rounded-lg cursor-move hover:bg-gray-100 transition-colors border border-gray-200"
               >
                 <img 
                   src={`/avatars/${student.avatarBase || 'Wizard F'}/Level ${Math.min(Math.max(Math.floor((student.totalPoints || 0) / 100) + 1, 1), 4)}.png`}
                   alt={`${student.firstName}'s Avatar`}
-                  className="w-8 h-8 rounded-full border-2 border-gray-300"
+                  className="w-6 h-6 rounded-full border border-gray-300"
                   onError={(e) => {
                     e.target.src = '/avatars/Wizard F/Level 1.png';
                   }}
                 />
                 <div>
-                  <div className="font-semibold text-sm text-gray-800">{student.firstName}</div>
+                  <div className="font-semibold text-xs text-gray-800">{student.firstName}</div>
                   <div className="text-xs text-gray-500">{student.totalPoints || 0} XP</div>
                 </div>
               </div>
             ))}
             
             {unassignedStudents.length === 0 && (
-              <div className="text-center py-8">
-                <div className="text-4xl mb-2">✨</div>
-                <p className="text-gray-500 text-sm">All students have jobs!</p>
+              <div className="text-center py-4">
+                <div className="text-2xl mb-1">✨</div>
+                <p className="text-gray-500 text-xs">All students have jobs!</p>
               </div>
             )}
           </div>
         </div>
 
-        {/* Jobs Grid */}
-        <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        {/* Jobs Grid - MUCH MORE COMPACT */}
+        <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
           {jobs.map(job => (
             <div
               key={job.id}
-              className={`${job.color} rounded-xl p-4 text-white shadow-lg min-h-[300px] relative`}
+              className={`${job.color} rounded-xl p-3 text-white shadow-lg h-fit`}
               onDragOver={handleDragOver}
               onDrop={(e) => handleDropOnJob(e, job.id)}
             >
-              {/* Job Header */}
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <div className="flex items-center space-x-2 mb-2">
-                    <span className="text-2xl">{job.icon}</span>
-                    <h3 className="text-lg font-bold">{job.title}</h3>
+              {/* Job Header - Compact */}
+              <div className="flex items-start justify-between mb-2">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center space-x-1 mb-1">
+                    <span className="text-lg">{job.icon}</span>
+                    <h3 className="text-sm font-bold truncate">{job.title}</h3>
                   </div>
-                  <p className="text-sm opacity-90 mb-2">{job.description}</p>
+                  <p className="text-xs opacity-90 mb-1 line-clamp-1">{job.description}</p>
                   <div className="text-xs opacity-75">
                     Max: {job.maxStudents} • Pay: {job.payAmount} {job.payType === 'xp' ? 'XP' : 'coins'}
                   </div>
                 </div>
                 
-                <div className="flex space-x-1">
+                <div className="flex space-x-1 ml-2">
                   <button
                     onClick={() => {
                       setEditingJob(job);
@@ -451,46 +449,46 @@ const ClassroomJobs = ({
                 </div>
               </div>
 
-              {/* Assigned Students */}
-              <div className="space-y-2 mb-4">
+              {/* Assigned Students - Compact */}
+              <div className="space-y-1 mb-2">
                 {job.assignedStudents.map(student => (
                   <div
                     key={student.id}
                     draggable
                     onDragStart={(e) => handleDragStart(e, student, `job-${job.id}`)}
-                    className="flex items-center space-x-3 p-2 bg-white bg-opacity-20 rounded-lg cursor-move hover:bg-opacity-30 transition-all"
+                    className="flex items-center space-x-2 p-1.5 bg-white bg-opacity-20 rounded-lg cursor-move hover:bg-opacity-30 transition-all"
                   >
                     <img 
                       src={`/avatars/${student.avatarBase || 'Wizard F'}/Level ${Math.min(Math.max(Math.floor((student.totalPoints || 0) / 100) + 1, 1), 4)}.png`}
                       alt={`${student.firstName}'s Avatar`}
-                      className="w-8 h-8 rounded-full border-2 border-white border-opacity-50"
+                      className="w-6 h-6 rounded-full border border-white border-opacity-50"
                       onError={(e) => {
                         e.target.src = '/avatars/Wizard F/Level 1.png';
                       }}
                     />
                     <div>
-                      <div className="font-semibold text-sm">{student.firstName}</div>
+                      <div className="font-semibold text-xs">{student.firstName}</div>
                       <div className="text-xs opacity-75">{student.totalPoints || 0} XP</div>
                     </div>
                   </div>
                 ))}
                 
-                {/* Empty slots */}
+                {/* Empty slots - Compact */}
                 {Array.from({ length: job.maxStudents - job.assignedStudents.length }).map((_, index) => (
                   <div
                     key={`empty-${index}`}
-                    className="p-3 border-2 border-dashed border-white border-opacity-50 rounded-lg text-center text-sm opacity-75"
+                    className="p-2 border border-dashed border-white border-opacity-50 rounded-lg text-center text-xs opacity-75"
                   >
                     Drop student here
                   </div>
                 ))}
               </div>
 
-              {/* Pay Button */}
+              {/* Pay Button - Compact */}
               <button
                 onClick={() => payJob(job)}
                 disabled={job.assignedStudents.length === 0}
-                className={`w-full py-2 px-4 rounded-lg font-semibold text-sm transition-all ${
+                className={`w-full py-1.5 px-2 rounded-lg font-semibold text-xs transition-all ${
                   job.assignedStudents.length === 0
                     ? 'bg-white bg-opacity-20 text-white opacity-50 cursor-not-allowed'
                     : 'bg-white bg-opacity-30 hover:bg-opacity-40 text-white'

@@ -1,4 +1,4 @@
-// pages/classroom-champions.js - MANUAL SAVE VERSION (No Auto-Save) - WITH GAMES TAB INTEGRATED
+// pages/classroom-champions.js - FIXED Version with Proper Coin Awards
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
@@ -389,6 +389,26 @@ const ClassroomChampions = () => {
     showToast(`${student.firstName} earned ${amount} XP${reason ? ` for ${reason}` : ''}!`, 'success');
   };
 
+  // FIXED: Award Coins function for toolkit components (especially classroom jobs)
+  const handleAwardCoinsFromToolkit = (studentId, amount, reason = '') => {
+    const student = students.find(s => s.id === studentId);
+    if (!student) return;
+
+    const updatedStudent = {
+      ...student,
+      currency: (student.currency || 0) + amount,
+      lastUpdated: new Date().toISOString()
+    };
+
+    // Update students array
+    const newStudents = students.map(s => s.id === studentId ? updatedStudent : s);
+    setStudents(newStudents);
+    updateAndSaveClass(newStudents, xpCategories);
+    
+    playSound('coins');
+    showToast(`${student.firstName} earned ${amount} coins${reason ? ` for ${reason}` : ''}!`, 'success');
+  };
+
   // RENDER LOGIC
   const renderTabContent = () => {
     switch (activeTab) {
@@ -449,6 +469,7 @@ const ClassroomChampions = () => {
                   saveClassroomDataToFirebase={saveClassroomDataToFirebase}
                   currentClassId={currentClassId}
                   onAwardXP={handleAwardXPFromToolkit}
+                  onAwardCoins={handleAwardCoinsFromToolkit} // FIXED: Now passing proper coin function
                   activeQuests={activeQuests}
                   attendanceData={attendanceData}
                   markAttendance={markAttendance}
