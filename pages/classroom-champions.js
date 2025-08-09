@@ -31,9 +31,46 @@ const PET_SPECIES = [ { name: 'Alchemist', type: 'alchemist', rarity: 'common' }
 // ===============================================
 // CENTRALIZED SHOP ITEM DEFINITIONS (UPDATED WITH ALL PETS)
 // ===============================================
-const SHOP_BASIC_AVATARS = [ { name: 'Banana', price: 10, path: '/shop/Basic/Banana.png' }, { name: 'Goblin1', price: 15, path: '/shop/Basic/Goblin1.png' }, { name: 'GoblinGirl1', price: 15, path: '/shop/Basic/GoblinGirl1.png' }, { name: 'Guard1', price: 20, path: '/shop/Basic/Guard1.png' }, { name: 'GuardGirl1', price: 20, path: '/shop/Basic/GuardGirl1.png' }, { name: 'SoccerBoy', price: 10, path: '/shop/Basic/SoccerBoy.png' }, { name: 'SoccerBoy2', price: 10, path: '/shop/Basic/SoccerBoy2.png' }, { name: 'SoccerGirl', price: 10, path: '/shop/Basic/SoccerGirl.png' }, { name: 'StreetBoy1', price: 15, path: '/shop/Basic/Streetboy1.png' }, { name: 'StreetGirl1', price: 15, path: '/shop/Basic/Streetgirl1.png' }, { name: 'Vampire1', price: 20, path: '/shop/Basic/Vampire1.png' } ];
+const SHOP_BASIC_AVATARS = [ 
+  { name: 'Banana', price: 10, path: '/shop/Basic/Banana.png' }, 
+  { name: 'Basketball', price: 12, path: '/shop/Basic/Basketball.png' }, 
+  { name: 'BasketballGirl', price: 12, path: '/shop/Basic/BasketballGirl.png' }, 
+  { name: 'FarmerBoy', price: 15, path: '/shop/Basic/FarmerBoy.png' }, 
+  { name: 'FarmerGirl', price: 15, path: '/shop/Basic/FarmerGirl.png' }, 
+  { name: 'Goblin1', price: 15, path: '/shop/Basic/Goblin1.png' }, 
+  { name: 'GoblinGirl1', price: 15, path: '/shop/Basic/GoblinGirl1.png' }, 
+  { name: 'Guard1', price: 20, path: '/shop/Basic/Guard1.png' }, 
+  { name: 'GuardGirl1', price: 20, path: '/shop/Basic/GuardGirl1.png' }, 
+  { name: 'PirateBoy', price: 18, path: '/shop/Basic/PirateBoy.png' }, 
+  { name: 'PirateGirl', price: 18, path: '/shop/Basic/PirateGirl.png' }, 
+  { name: 'RoboKnight', price: 25, path: '/shop/Basic/RoboKnight.png' }, 
+  { name: 'RobotBoy', price: 22, path: '/shop/Basic/RobotBoy.png' }, 
+  { name: 'RobotGirl', price: 22, path: '/shop/Basic/RobotGirl.png' }, 
+  { name: 'SoccerBoy', price: 10, path: '/shop/Basic/SoccerBoy.png' }, 
+  { name: 'SoccerBoy2', price: 10, path: '/shop/Basic/SoccerBoy2.png' }, 
+  { name: 'SoccerGirl', price: 10, path: '/shop/Basic/SoccerGirl.png' }, 
+  { name: 'StreetBoy1', price: 15, path: '/shop/Basic/Streetboy1.png' }, 
+  { name: 'StreetGirl1', price: 15, path: '/shop/Basic/Streetgirl1.png' }, 
+  { name: 'Vampire1', price: 20, path: '/shop/Basic/Vampire1.png' } 
+];
 
-const SHOP_PREMIUM_AVATARS = [ { name: 'Goblin2', price: 30, path: '/shop/Premium/Goblin2.png' }, { name: 'GoblinGirl2', price: 30, path: '/shop/Premium/GoblinGirl2.png' }, { name: 'Vampire2', price: 40, path: '/shop/Premium/Vampire2.png' }, { name: 'VampireGirl2', price: 40, path: '/shop/Premium/VampireGirl2.png' } ];
+const SHOP_PREMIUM_AVATARS = [ 
+  { name: 'Dwarf', price: 45, path: '/shop/Premium/Dwarf.png' }, 
+  { name: 'Dwarf2', price: 45, path: '/shop/Premium/Dwarf2.png' }, 
+  { name: 'FarmerBoy Premium', price: 35, path: '/shop/Premium/FarmerBoy.png' }, 
+  { name: 'FarmerGirl Premium', price: 35, path: '/shop/Premium/FarmerGirl.png' }, 
+  { name: 'Goblin2', price: 30, path: '/shop/Premium/Goblin2.png' }, 
+  { name: 'GoblinGirl2', price: 30, path: '/shop/Premium/GoblinGirl2.png' }, 
+  { name: 'King', price: 60, path: '/shop/Premium/King.png' }, 
+  { name: 'MechanicGirl', price: 40, path: '/shop/Premium/MechanicGirl.png' }, 
+  { name: 'PirateBoy Premium', price: 42, path: '/shop/Premium/PirateBoy.png' }, 
+  { name: 'PirateGirl Premium', price: 42, path: '/shop/Premium/PirateGirl.png' }, 
+  { name: 'Queen', price: 60, path: '/shop/Premium/Queen.png' }, 
+  { name: 'RobotBoy Premium', price: 38, path: '/shop/Premium/RobotBoy.png' }, 
+  { name: 'RobotGirl Premium', price: 38, path: '/shop/Premium/RobotGirl.png' }, 
+  { name: 'Vampire2', price: 40, path: '/shop/Premium/Vampire2.png' }, 
+  { name: 'VampireGirl2', price: 40, path: '/shop/Premium/VampireGirl2.png' } 
+];
 
 // UPDATED: Complete list of Basic Pets from Image 4
 const SHOP_BASIC_PETS = [
