@@ -413,7 +413,9 @@ const ClassroomChampions = () => {
                   saveGroupDataToFirebase={saveGroupDataToFirebase}
                   saveClassroomDataToFirebase={saveClassroomDataToFirebase}
                   currentClassId={currentClassId}
-                  // FIXED: Pass the main handleBulkAward function instead of separate XP/coin functions
+                  // FIXED: Pass both individual functions AND bulk award
+                  onAwardXP={handleAwardXPFromToolkit}
+                  onAwardCoins={handleAwardCoinsFromToolkit}
                   onBulkAward={handleBulkAward}
                   activeQuests={activeQuests}
                   attendanceData={attendanceData}

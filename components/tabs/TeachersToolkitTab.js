@@ -214,7 +214,9 @@ const TeachersToolkitTab = ({
   saveGroupDataToFirebase,
   saveClassroomDataToFirebase,
   currentClassId,
-  // FIXED: Receive the main bulk award function instead of separate functions
+  // FIXED: Receive individual award functions from parent
+  onAwardXP = () => {},
+  onAwardCoins = () => {},
   onBulkAward = () => {},
   activeQuests = [],
   attendanceData = {},
@@ -241,27 +243,6 @@ const TeachersToolkitTab = ({
   });
 
   const isPro = userData?.subscription === 'pro' || true;
-
-  // FIXED: Create proper wrapper functions for XP and coin awards
-  const handleAwardXPFromToolkit = (studentId, amount, reason = '') => {
-    const student = students.find(s => s.id === studentId);
-    if (!student) return;
-
-    // Use the main bulk award function with 'xp' type
-    onBulkAward([studentId], amount, 'xp');
-    
-    showToast(`${student.firstName} earned ${amount} XP${reason ? ` for ${reason}` : ''}!`, 'success');
-  };
-
-  const handleAwardCoinsFromToolkit = (studentId, amount, reason = '') => {
-    const student = students.find(s => s.id === studentId);
-    if (!student) return;
-
-    // Use the main bulk award function with 'coins' type
-    onBulkAward([studentId], amount, 'coins');
-    
-    showToast(`${student.firstName} earned ${amount} coins${reason ? ` for ${reason}` : ''}!`, 'success');
-  };
 
   const calculateBasicAnalytics = () => {
     return {
@@ -447,8 +428,8 @@ const TeachersToolkitTab = ({
             <ClassroomJobs 
               students={students} 
               showToast={showToast} 
-              onAwardXP={handleAwardXPFromToolkit}
-              onAwardCoins={handleAwardCoinsFromToolkit}
+              onAwardXP={onAwardXP}
+              onAwardCoins={onAwardCoins}
               // Pass the correct save function and loaded data
               saveData={saveToolkitData}
               loadedData={loadedData}
