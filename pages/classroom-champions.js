@@ -1,4 +1,4 @@
-// pages/classroom-champions.js - FINAL FIXED VERSION
+// pages/classroom-champions.js - CLEAN FIXED VERSION
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
@@ -148,10 +148,10 @@ const ClassroomChampions = () => {
   };
 
   // ===============================================
-  // SIMPLIFIED FIREBASE SAVING FUNCTIONS (For Student Management Only)
+  // FIREBASE SAVING FUNCTIONS
   // ===============================================
 
-  // Main function to update and save class data (for student management)
+  // Main function to update and save class data
   const updateAndSaveClass = async (updatedStudents, updatedCategories, additionalUpdates = {}) => {
     if (!user || !currentClassId) return;
     const docRef = doc(firestore, 'users', user.uid);
@@ -274,7 +274,7 @@ const ClassroomChampions = () => {
   };
 
   // ===============================================
-  // STATE HANDLERS
+  // STUDENT UPDATE HANDLERS
   // ===============================================
   const handleReorderStudents = (reorderedStudents) => {
     setStudents(reorderedStudents);
@@ -301,7 +301,7 @@ const ClassroomChampions = () => {
     updateAndSaveClass(students, newCategories);
   };
     
-  // FIXED: This is the main bulk award function that handles both XP and coins properly
+  // Main bulk award function that handles both XP and coins properly
   const handleBulkAward = (studentIds, amount, type) => {
       const newStudents = students.map(student => {
           if (studentIds.includes(student.id)) {
@@ -327,6 +327,61 @@ const ClassroomChampions = () => {
       });
       setStudents(newStudents);
       updateAndSaveClass(newStudents, xpCategories);
+  };
+
+  // Individual award functions for toolkit
+  const handleAwardXPFromToolkit = (studentId, amount, reason = '') => {
+    const student = students.find(s => s.id === studentId);
+    if (!student) return;
+
+    const oldLevel = calculateAvatarLevel(student.totalPoints || 0);
+    const newTotalPoints = (student.totalPoints || 0) + amount;
+    const newLevel = calculateAvatarLevel(newTotalPoints);
+    
+    const updatedStudent = {
+      ...student,
+      totalPoints: newTotalPoints,
+      lastUpdated: new Date().toISOString()
+    };
+
+    // Check for level up
+    if (newLevel > oldLevel) {
+      setLevelUpData({ student: updatedStudent, oldLevel, newLevel });
+    }
+
+    // Check for pet unlock
+    if (shouldReceivePet(updatedStudent)) {
+      const newPet = getRandomPet();
+      updatedStudent.ownedPets = [...(updatedStudent.ownedPets || []), newPet];
+      setPetUnlockData({ student: updatedStudent, pet: newPet });
+    }
+
+    // Update students array
+    const newStudents = students.map(s => s.id === studentId ? updatedStudent : s);
+    setStudents(newStudents);
+    updateAndSaveClass(newStudents, xpCategories);
+    
+    playSound('ding');
+    showToast(`${student.firstName} earned ${amount} XP${reason ? ` for ${reason}` : ''}!`, 'success');
+  };
+
+  const handleAwardCoinsFromToolkit = (studentId, amount, reason = '') => {
+    const student = students.find(s => s.id === studentId);
+    if (!student) return;
+
+    const updatedStudent = {
+      ...student,
+      currency: (student.currency || 0) + amount,
+      lastUpdated: new Date().toISOString()
+    };
+
+    // Update students array
+    const newStudents = students.map(s => s.id === studentId ? updatedStudent : s);
+    setStudents(newStudents);
+    updateAndSaveClass(newStudents, xpCategories);
+    
+    playSound('coins');
+    showToast(`${student.firstName} earned ${amount} coins${reason ? ` for ${reason}` : ''}!`, 'success');
   };
   
   const addStudent = () => {
@@ -413,18 +468,16 @@ const ClassroomChampions = () => {
                   saveGroupDataToFirebase={saveGroupDataToFirebase}
                   saveClassroomDataToFirebase={saveClassroomDataToFirebase}
                   currentClassId={currentClassId}
-                  // FIXED: Pass both individual functions AND bulk award
                   onAwardXP={handleAwardXPFromToolkit}
                   onAwardCoins={handleAwardCoinsFromToolkit}
                   onBulkAward={handleBulkAward}
                   activeQuests={activeQuests}
                   attendanceData={attendanceData}
                   markAttendance={markAttendance}
-                  completeQuest={() => showToast('Quest completed!', 'success')} // Fallback if no quests
-                  setShowQuestManagement={() => showToast('Quest management opened!', 'info')} // Fallback
+                  completeQuest={() => showToast('Quest completed!', 'success')}
+                  setShowQuestManagement={() => showToast('Quest management opened!', 'info')}
                   getAvatarImage={getAvatarImage}
                   calculateAvatarLevel={calculateAvatarLevel}
-                  // Toolkit save function and loaded data
                   saveToolkitData={saveToolkitDataToFirebase}
                   loadedData={getCurrentClassToolkitData()}
                 />;
