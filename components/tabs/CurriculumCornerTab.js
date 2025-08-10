@@ -1,11 +1,12 @@
-// components/tabs/CurriculumCornerTab.js - UPDATED WITH NEW DAILY 10 MATH WARMUP
+// components/tabs/CurriculumCornerTab.js - UPDATED WITH MATH WARMUP SUPPORT
 import React, { useState } from 'react';
 
 // Import activity components
 import LiteracyWarmup from '../curriculum/literacy/LiteracyWarmup';
 import ReadingComprehension from '../curriculum/literacy/ReadingComprehension';
+import VisualWritingPrompts from '../curriculum/literacy/VisualWritingPrompts';
 import AreaPerimeterTool from '../curriculum/mathematics/AreaPerimeterTool';
-import MathWarmup from '../curriculum/mathematics/MathWarmup'; // NEW DAILY 10 STYLE COMPONENT
+import MathWarmup from '../curriculum/mathematics/MathWarmup';
 // import SpellingBee from '../curriculum/literacy/SpellingBee';
 // import NumbersBoard from '../curriculum/mathematics/NumbersBoard';
 // import VirtualExperiments from '../curriculum/science/VirtualExperiments';
@@ -27,7 +28,7 @@ const ComingSoon = ({ toolName, description }) => (
 );
 
 // ===============================================
-// SUBJECT CONFIGURATION - UPDATED WITH NEW DAILY 10 MATH
+// SUBJECT CONFIGURATION - UPDATED WITH MATH WARMUP
 // ===============================================
 const subjects = [
   {
@@ -68,6 +69,43 @@ const subjects = [
     ]
   },
   {
+    id: 'writing',
+    name: 'Writing',
+    icon: '✍️',
+    color: 'from-purple-500 to-pink-600',
+    description: 'Creative writing tools and inspiration',
+    activities: [
+      {
+        id: 'visual-writing-prompts',
+        name: 'Visual Writing Prompts',
+        icon: '🖼️',
+        description: 'Inspire creativity through visual storytelling prompts',
+        component: VisualWritingPrompts
+      },
+      {
+        id: 'story-starters',
+        name: 'Story Starters',
+        icon: '📖',
+        description: 'Creative opening lines to spark imagination',
+        component: ComingSoon
+      },
+      {
+        id: 'character-creator',
+        name: 'Character Creator',
+        icon: '🎭',
+        description: 'Build compelling characters for stories',
+        component: ComingSoon
+      },
+      {
+        id: 'poetry-workshop',
+        name: 'Poetry Workshop',
+        icon: '🎵',
+        description: 'Explore different forms of poetry writing',
+        component: ComingSoon
+      }
+    ]
+  },
+  {
     id: 'mathematics',
     name: 'Mathematics',
     icon: '🔢',
@@ -77,8 +115,8 @@ const subjects = [
       {
         id: 'math-warmup',
         name: 'Math Warmup',
-        icon: '🎯',
-        description: 'Grade-leveled math questions with 10 challenges per session',
+        icon: '🔥',
+        description: 'Daily number activities and mathematical thinking',
         component: MathWarmup
       },
       {
@@ -430,26 +468,51 @@ const CurriculumCornerTab = ({
         </div>
       </div>
 
-      {/* Enhanced Feature Notice for NEW Math Warmup */}
+      {/* Enhanced Feature Notice for New Visual Writing Prompts */}
+      <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-xl p-6">
+        <div className="flex items-start space-x-4">
+          <span className="text-3xl">🖼️</span>
+          <div>
+            <h4 className="font-bold text-purple-800 mb-2">✨ New Visual Writing Prompts Added!</h4>
+            <p className="text-purple-700 mb-4">
+              Inspire creativity with 20 stunning visual prompts! Each image comes with themed word banks to help students 
+              get started. Perfect for creative writing sessions, story starters, and imagination building!
+            </p>
+            <div className="bg-purple-100 rounded-lg p-4">
+              <h5 className="font-semibold text-purple-800 mb-2">🎯 What's Included:</h5>
+              <ul className="text-sm text-purple-700 space-y-1">
+                <li>• 20 high-quality visual writing prompts with fantasy/adventure themes</li>
+                <li>• Accompanying word banks organized by nouns, verbs, and adjectives</li>
+                <li>• Built-in writing timer (5, 10, 15, 20 minutes) with progress tracking</li>
+                <li>• Writing techniques helper with tips and strategies</li>
+                <li>• Gallery view for easy prompt selection</li>
+                <li>• Presentation mode for classroom display</li>
+                <li>• Printable worksheets with prompts and word banks</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Enhanced Feature Notice for New Math Warmup */}
       <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-xl p-6">
         <div className="flex items-start space-x-4">
-          <span className="text-4xl">🎯</span>
+          <span className="text-3xl">🔥</span>
           <div>
-            <h4 className="font-bold text-green-800 mb-2">🆕 NEW: Math Warmup Challenge!</h4>
+            <h4 className="font-bold text-green-800 mb-2">✨ New Math Warmup Added!</h4>
             <p className="text-green-700 mb-4">
-              Experience a comprehensive math warmup format! Choose your grade level (Prep to Grade 6), 
-              select math categories, pick specific topics, and tackle 10 large-display questions perfect for classroom use.
+              The Math Warmup includes progressive Number of the Day activities, mental math strategies that build over 10 weeks, 
+              daily problem solving with hints, and interactive number practice tools!
             </p>
             <div className="bg-green-100 rounded-lg p-4">
               <h5 className="font-semibold text-green-800 mb-2">🎯 What's Included:</h5>
               <ul className="text-sm text-green-700 space-y-1">
-                <li>• Grade-leveled content from Prep to Grade 6</li>
-                <li>• Categories: Addition, Subtraction, Multiplication, Division, Fractions, etc.</li>
-                <li>• Multiple subcategories per grade level (e.g., "Add to 20", "Times Tables")</li>
-                <li>• 10 questions per session with large, classroom-friendly display</li>
-                <li>• Timer mode or manual progression</li>
-                <li>• Presentation mode for full-screen classroom display</li>
-                <li>• Perfect for mental math warm-ups and quick assessments!</li>
+                <li>• Number of the Day activities with progressive difficulty (5→1000)</li>
+                <li>• Mental math strategies that build across weeks</li>
+                <li>• Daily math problems with hints and explanations</li>
+                <li>• Interactive number practice with random highlighting</li>
+                <li>• Math facts of the day for engagement</li>
+                <li>• Presentation mode for classroom display</li>
               </ul>
             </div>
           </div>
