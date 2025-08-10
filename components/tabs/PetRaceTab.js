@@ -1,4 +1,5 @@
-// components/tabs/PetRaceTab.js - REBUILT PET RACE SYSTEM WITH CLIENT-SIDE CSS
+// components/tabs/PetRaceTab.js - FIXED: pets now move (raceDataRef + animation loop)
+// REBUILT PET RACE SYSTEM WITH CLIENT-SIDE CSS
 'use client'; // Mark as client-side component
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -26,6 +27,9 @@ const PetRaceTab = ({
   const animationRef = useRef(null);
   const [trackWidth, setTrackWidth] = useState(800);
 
+  // IMPORTANT: persistent race data ref (speeds, etc.)
+  const raceDataRef = useRef({});
+
   // Filter students with valid pets
   const studentsWithPets = students.filter(student => {
     const firstPet = student.ownedPets?.[0];
@@ -37,12 +41,22 @@ const PetRaceTab = ({
     const updateTrackWidth = () => {
       if (trackRef.current) {
         const rect = trackRef.current.getBoundingClientRect();
-        setTrackWidth(rect.width - 100); // Account for padding and finish line
+        setTrackWidth(Math.max(300, rect.width - 100)); // Account for padding and finish line
       }
     };
     updateTrackWidth();
     window.addEventListener('resize', updateTrackWidth);
     return () => window.removeEventListener('resize', updateTrackWidth);
+  }, []);
+
+  // Cleanup any running animation if the component unmounts
+  useEffect(() => {
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
+      }
+    };
   }, []);
 
   // Pet Selection Handler
@@ -122,74 +136,77 @@ const PetRaceTab = ({
       return;
     }
 
+    // Initialize race data speeds and reset positions
+    raceDataRef.current = {};
+    validSelectedPets.forEach(petId => {
+      raceDataRef.current[petId] = {
+        speed: 0.75 + Math.random() * 0.5, // tuned so 15–20s race finishes nicely
+      };
+    });
+
+    const initialPositions = {};
+    validSelectedPets.forEach(petId => { initialPositions[petId] = 0; });
+
     setRacePhase('racing');
     setIsRacing(true);
     setRaceProgress(0);
     setRaceWinner(null);
-
-    const raceData = {};
-    const initialPositions = {};
-    validSelectedPets.forEach(petId => {
-      initialPositions[petId] = 0;
-      raceData[petId] = {
-        speed: 0.2 + Math.random() * 0.3, // Slower base speed with variance
-        position: 0,
-        finished: false,
-      };
-    });
-
     setRacePositions(initialPositions);
-    animationRef.current = requestAnimationFrame(() => runSmoothRace(validSelectedPets));
+
+    // Kick off the animation loop
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+    }
+    animationRef.current = requestAnimationFrame((t) => runSmoothRace(validSelectedPets, t));
     showToast('🏁 Race Started! Go pets go!', 'success');
   };
 
-  // Smooth Race Animation with Easing
-  const runSmoothRace = (racingPets) => {
-    const startTime = performance.now();
-    const raceDuration = 15000 + Math.random() * 5000; // 15-20 seconds for excitement
+  // Smooth Race Animation with Easing (fixed to use raceDataRef)
+  const runSmoothRace = (racingPets, startTime) => {
+    const totalDuration = 15000 + Math.random() * 5000; // 15-20 seconds
     const finishLine = trackWidth * 0.95; // 95% of track width
-    let winner = null;
+    let localWinner = null;
 
-    const animate = (currentTime) => {
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / raceDuration, 1);
-      const easedProgress = progress < 1 ? progress * progress : 1; // Quadratic ease-out
+    const animate = (now) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / totalDuration, 1);
+      const easedProgress = progress < 1 ? (1 - Math.pow(1 - progress, 2)) : 1; // ease-out
 
       setRaceProgress(easedProgress);
 
+      // Calculate new positions
       const newPositions = {};
-      let maxPosition = 0;
-      let leadingPetId = null;
+      let leadingId = null;
+      let leadingPos = 0;
 
-      racingPets.forEach(petId => {
+      for (const petId of racingPets) {
         const student = studentsWithPets.find(s => s.id === petId);
-        if (!student || !student.ownedPets?.[0]) return;
+        if (!student) continue;
 
-        const raceData = raceDataRef.current[petId] || { speed: 0.2 + Math.random() * 0.3, position: 0, finished: false };
-        const position = easedProgress * raceData.speed * finishLine;
+        const data = raceDataRef.current[petId] || { speed: 1 };
+        // A little wobble to keep things interesting
+        const wobble = Math.sin((elapsed / 250) + parseInt(petId, 36)) * 6; // +/- 6px
+        const position = Math.min(easedProgress * data.speed * finishLine + wobble, finishLine);
 
-        if (!raceDataRef.current[petId]) raceDataRef.current[petId] = raceData;
+        newPositions[petId] = position;
 
-        if (position >= finishLine && !winner) {
-          winner = student;
-          raceData.finished = true;
+        if (position > leadingPos) {
+          leadingPos = position;
+          leadingId = petId;
         }
-
-        newPositions[petId] = Math.min(position, finishLine); // Cap at finish line
-        if (position > maxPosition && !winner) {
-          maxPosition = position;
-          leadingPetId = petId;
-        }
-      });
+      }
 
       setRacePositions(newPositions);
 
-      if (progress < 1 && !winner) {
+      // Continue or finish
+      if (progress < 1) {
         animationRef.current = requestAnimationFrame(animate);
       } else {
-        if (!winner && leadingPetId) winner = studentsWithPets.find(s => s.id === leadingPetId);
-        if (winner) setTimeout(() => finishRace(winner), 1000); // 1-second delay for drama
-        else setTimeout(() => finishRace(studentsWithPets[Math.floor(Math.random() * studentsWithPets.length)]), 1000);
+        // Winner is the leader at the end
+        if (!localWinner && leadingId) {
+          localWinner = studentsWithPets.find(s => s.id === leadingId) || null;
+        }
+        setTimeout(() => finishRace(localWinner || studentsWithPets[Math.floor(Math.random() * studentsWithPets.length)]), 800);
       }
     };
 
@@ -207,8 +224,9 @@ const PetRaceTab = ({
       animationRef.current = null;
     }
 
-    const winnerPet = winner.ownedPets?.[0];
-    if (winnerPet) {
+    // Award winner
+    const winnerPet = winner?.ownedPets?.[0];
+    if (winner && winnerPet) {
       const updatedOwnedPets = [...(winner.ownedPets || [])];
       updatedOwnedPets[0] = {
         ...winnerPet,
@@ -220,12 +238,15 @@ const PetRaceTab = ({
         updatedWinnerData.totalPoints = (winner.totalPoints || 0) + prizeAmount;
       } else if (prizeType === 'coins') {
         updatedWinnerData.currency = (winner.currency || 0) + prizeAmount;
+      } else {
+        // custom prize: record it for history if you want in future
       }
 
+      // IMPORTANT: Parent expects (studentId, updatedFields)
       updateStudent(winner.id, updatedWinnerData);
     }
 
-    showToast(`🎉 ${winner.firstName} wins with ${winnerPet?.name || 'their pet'}! Prize awarded!`, 'success');
+    showToast(`🎉 ${winner?.firstName || 'Winner'} wins with ${winnerPet?.name || 'their pet'}! Prize awarded!`, 'success');
   };
 
   // Reset Race
@@ -293,7 +314,7 @@ const PetRaceTab = ({
                   <button
                     key={student.id}
                     onClick={() => togglePetSelection(student.id)}
-                    className={`p-6 rounded-xl border-3 transition-all duration-300 transform hover:scale-105 ${
+                    className={`p-6 rounded-xl border-2 transition-all duration-300 transform hover:scale-105 ${
                       selectedPets.includes(student.id)
                         ? 'border-green-500 bg-green-50 shadow-lg'
                         : 'border-gray-300 bg-white hover:border-blue-400'
@@ -303,10 +324,10 @@ const PetRaceTab = ({
                       <img 
                         src={getPetImage(student)} 
                         alt={pet.name}
-                        className={`w-16 h-16 rounded-full border-3 object-cover ${
+                        className={`w-16 h-16 rounded-full border-2 object-cover ${
                           selectedPets.includes(student.id) ? 'border-green-400' : 'border-gray-300'
                         } animate-pulse`}
-                        onError={(e) => { e.target.src = '/Pets/Wizard.png'; }}
+                        onError={(e) => { e.currentTarget.src = '/Pets/Wizard.png'; }}
                       />
                       <div className="text-left">
                         <h4 className="font-bold text-lg text-gray-800">{student.firstName}</h4>
@@ -518,7 +539,7 @@ const PetRaceTab = ({
               return (
                 <div
                   key={petId}
-                  className="absolute flex items-center space-x-4 z-20 transition-all duration-200 ease-out"
+                  className="absolute flex items-center space-x-4 z-20 transition-transform duration-150 ease-out"
                   style={{
                     top: `${index * 120 + 90}px`,
                     left: `${30 + position}px`,
@@ -528,11 +549,8 @@ const PetRaceTab = ({
                   <img 
                     src={getPetImage(student)}
                     alt={pet.name}
-                    className={`w-20 h-20 rounded-full border-4 border-white shadow-lg object-cover animate-run ${
-                      raceWinner && raceWinner.id === petId ? 'border-yellow-400 animate-winner' : ''
-                    }`}
-                    style={{ animationDuration: '0.6s' }}
-                    onError={(e) => { e.target.src = '/Pets/Wizard.png'; }}
+                    className={`w-20 h-20 rounded-full border-4 border-white shadow-lg object-cover`}
+                    onError={(e) => { e.currentTarget.src = '/Pets/Wizard.png'; }}
                   />
                   <div className="bg-white px-4 py-2 rounded-lg shadow-lg text-sm font-bold min-w-0 flex items-center">
                     <span className="truncate mr-2">{student.firstName}</span>
@@ -557,103 +575,29 @@ const PetRaceTab = ({
               <div className="text-2xl mb-4">
                 <strong>{raceWinner.firstName}</strong> wins with <strong>{raceWinner.ownedPets[0]?.name || 'their pet'}!</strong>
               </div>
-              <div className="bg-white bg-opacity-20 rounded-xl p-4 text-xl font-semibold">
-                Prize Awarded: {getPrizeDescription()}
+              <div className="bg-white bg-opacity-20 rounded-xl p-4">
+                <p className="text-xl">Prize: {getPrizeDescription()}</p>
               </div>
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex justify-center space-x-4">
+          {/* Actions */}
+          <div className="flex items-center justify-center gap-4">
             <button
               onClick={resetRace}
-              className="px-8 py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all font-bold text-xl transform hover:scale-105"
+              className="px-6 py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-all"
             >
-              🔄 New Race
+              Set Up Another Race
+            </button>
+            <button
+              onClick={() => setRacePhase('setup')}
+              className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all"
+            >
+              New Selection
             </button>
           </div>
         </div>
       )}
-
-      {/* Pet Champions Leaderboard */}
-      {studentsWithPets.length > 0 && (
-        <div className="bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 rounded-xl p-8">
-          <h3 className="text-3xl font-bold text-center text-purple-800 mb-6 flex items-center justify-center">
-            <span className="mr-3">🏅</span>
-            Pet Champions Hall of Fame
-            <span className="ml-3">🏅</span>
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {studentsWithPets
-              .filter(student => (student.ownedPets[0]?.wins || 0) > 0)
-              .sort((a, b) => (b.ownedPets[0]?.wins || 0) - (a.ownedPets[0]?.wins || 0))
-              .slice(0, 6)
-              .map((student, index) => {
-                const pet = student.ownedPets[0];
-                return (
-                  <div key={student.id} className="bg-white rounded-xl p-6 shadow-lg border-2 border-purple-200 transform hover:scale-105 transition-all">
-                    <div className="flex items-center space-x-4">
-                      <div className="text-3xl">
-                        {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🏆'}
-                      </div>
-                      <img 
-                        src={getPetImage(student)} 
-                        alt={pet.name}
-                        className="w-14 h-14 rounded-full border-3 border-purple-300 shadow-lg object-cover animate-pulse"
-                        onError={(e) => { e.target.src = '/Pets/Wizard.png'; }}
-                      />
-                      <div>
-                        <h4 className="font-bold text-gray-800 text-lg">{student.firstName}</h4>
-                        <p className="text-gray-600">{pet.name}</p>
-                        <p className="text-purple-600 font-semibold">{pet.wins || 0} wins</p>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-          </div>
-          {studentsWithPets.filter(s => (s.ownedPets[0]?.wins || 0) > 0).length === 0 && (
-            <div className="text-center py-8">
-              <div className="text-6xl mb-4">🏁</div>
-              <p className="text-gray-500 text-xl italic">No champions yet! Start racing to see winners here.</p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Inline CSS for Animations */}
-      <style jsx>{`
-        @keyframes run {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-5px); }
-        }
-        @keyframes winner {
-          0%, 100% { transform: scale(1) rotate(0deg); }
-          50% { transform: scale(1.2) rotate(10deg); }
-        }
-        @keyframes pan-left {
-          from { background-position: 0 0; }
-          to { background-position: -200px 0; }
-        }
-        @keyframes spin-slow {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.6; }
-        }
-        @keyframes bounce {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-10px); }
-        }
-        .animate-run { animation: run 0.6s infinite; }
-        .animate-winner { animation: winner 1s infinite; }
-        .animate-pan-left { animation: pan-left 10s infinite linear; }
-        .animate-pulse { animation: pulse 2s infinite; }
-        .animate-bounce { animation: bounce 1s infinite; }
-        .animate-spin-slow { animation: spin-slow 10s linear infinite; }
-      `}</style>
     </div>
   );
 };
