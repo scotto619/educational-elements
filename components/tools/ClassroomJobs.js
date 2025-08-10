@@ -99,6 +99,24 @@ const ClassroomJobs = ({
   }, [students, jobs]);
 
   // ===============================================
+  // SYNC STUDENT DATA IN JOBS WHEN STUDENTS PROP UPDATES
+  // ===============================================
+  useEffect(() => {
+    // Update student data in job assignments when students prop changes
+    // This ensures that when XP is updated in the main component, the job assignments reflect the latest student data
+    setJobs(prevJobs => 
+      prevJobs.map(job => ({
+        ...job,
+        assignedStudents: job.assignedStudents.map(assignedStudent => {
+          // Find the latest student data from the students prop
+          const updatedStudent = students.find(s => s.id === assignedStudent.id);
+          return updatedStudent || assignedStudent; // Use updated data if found, otherwise keep existing
+        })
+      }))
+    );
+  }, [students]);
+
+  // ===============================================
   // JOB MANAGEMENT FUNCTIONS
   // ===============================================
 
@@ -415,7 +433,7 @@ const ClassroomJobs = ({
                 />
                 <div>
                   <div className="font-semibold text-xs text-gray-800">{student.firstName}</div>
-                  <div className="text-xs text-gray-500">{student.totalPoints || 0} XP</div>
+                  <div className="text-xs text-gray-500">Available</div>
                 </div>
               </div>
             ))}
@@ -491,7 +509,7 @@ const ClassroomJobs = ({
                     />
                     <div>
                       <div className="font-semibold text-xs">{student.firstName}</div>
-                      <div className="text-xs opacity-75">{student.totalPoints || 0} XP</div>
+                      <div className="text-xs opacity-75">Working</div>
                     </div>
                   </div>
                 ))}
