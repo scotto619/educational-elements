@@ -1,4 +1,4 @@
-// pages/classroom-champions.js - UPDATED WITH DASHBOARD AND COMPLETE SHOP
+// pages/classroom-champions.js - UPDATED WITH CLEAR XP AWARD PATHWAY
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
@@ -415,15 +415,29 @@ const ClassroomChampions = () => {
       updateAndSaveClass(newStudents, xpCategories);
   };
 
-  // Individual award functions for toolkit
-  const handleAwardXPFromToolkit = (studentId, amount, reason = '') => {
+  // ===============================================
+  // CLEAR XP AWARD PATHWAY FOR CLASSROOM JOBS
+  // ===============================================
+  
+  /**
+   * awardXPToStudent - Called from ClassroomJobs → onAwardXP pathway
+   * This function immutably updates the student, handles pet unlocks/level-ups,
+   * and calls updateAndSaveClass which writes to current class and persists to Firestore
+   */
+  const awardXPToStudent = (studentId, amount, reason = '') => {
+    console.log(`🎯 awardXPToStudent called: studentId=${studentId}, amount=${amount}, reason=${reason}`);
+    
     const student = students.find(s => s.id === studentId);
-    if (!student) return;
+    if (!student) {
+      console.error(`❌ Student not found: ${studentId}`);
+      return;
+    }
 
     const oldLevel = calculateAvatarLevel(student.totalPoints || 0);
     const newTotalPoints = (student.totalPoints || 0) + amount;
     const newLevel = calculateAvatarLevel(newTotalPoints);
     
+    // IMMUTABLY update the student
     const updatedStudent = {
       ...student,
       totalPoints: newTotalPoints,
@@ -433,6 +447,7 @@ const ClassroomChampions = () => {
     // Check for level up
     if (newLevel > oldLevel) {
       setLevelUpData({ student: updatedStudent, oldLevel, newLevel });
+      console.log(`🆙 Level up! ${student.firstName}: ${oldLevel} → ${newLevel}`);
     }
 
     // Check for pet unlock
@@ -440,34 +455,55 @@ const ClassroomChampions = () => {
       const newPet = getRandomPet();
       updatedStudent.ownedPets = [...(updatedStudent.ownedPets || []), newPet];
       setPetUnlockData({ student: updatedStudent, pet: newPet });
+      console.log(`🐾 Pet unlocked! ${student.firstName} got ${newPet.name}`);
     }
 
-    // Update students array
+    // Update students array (immutably)
     const newStudents = students.map(s => s.id === studentId ? updatedStudent : s);
     setStudents(newStudents);
+    
+    // Persist to Firestore via updateAndSaveClass
     updateAndSaveClass(newStudents, xpCategories);
     
+    // Feedback
     playSound('ding');
     showToast(`${student.firstName} earned ${amount} XP${reason ? ` for ${reason}` : ''}!`, 'success');
+    
+    console.log(`✅ XP awarded successfully: ${student.firstName} now has ${newTotalPoints} XP`);
   };
 
-  const handleAwardCoinsFromToolkit = (studentId, amount, reason = '') => {
+  /**
+   * awardCoinsToStudent - Called from ClassroomJobs → onAwardCoins pathway
+   * Similar to awardXPToStudent but for coins
+   */
+  const awardCoinsToStudent = (studentId, amount, reason = '') => {
+    console.log(`🪙 awardCoinsToStudent called: studentId=${studentId}, amount=${amount}, reason=${reason}`);
+    
     const student = students.find(s => s.id === studentId);
-    if (!student) return;
+    if (!student) {
+      console.error(`❌ Student not found: ${studentId}`);
+      return;
+    }
 
+    // IMMUTABLY update the student
     const updatedStudent = {
       ...student,
       currency: (student.currency || 0) + amount,
       lastUpdated: new Date().toISOString()
     };
 
-    // Update students array
+    // Update students array (immutably)
     const newStudents = students.map(s => s.id === studentId ? updatedStudent : s);
     setStudents(newStudents);
+    
+    // Persist to Firestore via updateAndSaveClass
     updateAndSaveClass(newStudents, xpCategories);
     
+    // Feedback
     playSound('coins');
     showToast(`${student.firstName} earned ${amount} coins${reason ? ` for ${reason}` : ''}!`, 'success');
+    
+    console.log(`✅ Coins awarded successfully: ${student.firstName} now has ${updatedStudent.currency} coins`);
   };
   
   const addStudent = () => {
@@ -567,8 +603,9 @@ const ClassroomChampions = () => {
                   saveGroupDataToFirebase={saveGroupDataToFirebase}
                   saveClassroomDataToFirebase={saveClassroomDataToFirebase}
                   currentClassId={currentClassId}
-                  onAwardXP={handleAwardXPFromToolkit}
-                  onAwardCoins={handleAwardCoinsFromToolkit}
+                  // ⭐ CLEAR PATHWAY: Pass the renamed functions to make the flow obvious
+                  onAwardXP={awardXPToStudent}
+                  onAwardCoins={awardCoinsToStudent}
                   onBulkAward={handleBulkAward}
                   activeQuests={activeQuests}
                   attendanceData={attendanceData}

@@ -1,4 +1,4 @@
-// components/tabs/TeachersToolkitTab.js - FINAL FIXED with proper award functions
+// components/tabs/TeachersToolkitTab.js - UPDATED WITH COMPLETE AWARD FUNCTIONS
 import React, { useState } from 'react';
 
 // Import tool components from the tools folder
@@ -204,7 +204,7 @@ const BirthdayWall = ({ students, showToast, saveClassroomDataToFirebase, curren
 };
 
 // ===============================================
-// TEACHERS TOOLKIT TAB COMPONENT - FINAL FIXED
+// TEACHERS TOOLKIT TAB COMPONENT - UPDATED
 // ===============================================
 const TeachersToolkitTab = ({
   students = [],
@@ -214,9 +214,9 @@ const TeachersToolkitTab = ({
   saveGroupDataToFirebase,
   saveClassroomDataToFirebase,
   currentClassId,
-  // FIXED: Receive individual award functions from parent
-  onAwardXP = () => {},
-  onAwardCoins = () => {},
+  // ⭐ CLEAR PATHWAY: Receive the renamed award functions
+  onAwardXP = () => {},  // This will be awardXPToStudent
+  onAwardCoins = () => {}, // This will be awardCoinsToStudent
   onBulkAward = () => {},
   activeQuests = [],
   attendanceData = {},
@@ -428,8 +428,9 @@ const TeachersToolkitTab = ({
             <ClassroomJobs 
               students={students} 
               showToast={showToast} 
-              onAwardXP={onAwardXP}
-              onAwardCoins={onAwardCoins}
+              // ⭐ CLEAR PATHWAY: Pass both award functions to ClassroomJobs
+              onAwardXP={onAwardXP}        // This is awardXPToStudent from main component
+              onAwardCoins={onAwardCoins}  // This is awardCoinsToStudent from main component
               // Pass the correct save function and loaded data
               saveData={saveToolkitData}
               loadedData={loadedData}

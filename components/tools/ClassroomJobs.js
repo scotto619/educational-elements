@@ -1,15 +1,15 @@
-// components/tools/ClassroomJobs.js - FIXED Version with Compact Layout + Proper Payment
+// components/tools/ClassroomJobs.js - UPDATED WITH CLEAR AWARD PATHWAY
 import React, { useState, useEffect } from 'react';
 
 // ===============================================
-// CLASSROOM JOBS COMPONENT - FIXED VERSION
+// CLASSROOM JOBS COMPONENT - CLEAR AWARD PATHWAY
 // ===============================================
 
 const ClassroomJobs = ({ 
   students = [], 
   showToast = () => {},
-  onAwardXP = () => {}, // Function to award XP to students
-  onAwardCoins = () => {}, // Function to award coins to students
+  onAwardXP = () => {}, // Function to award XP to students - THIS CALLS awardXPToStudent
+  onAwardCoins = () => {}, // Function to award coins to students - THIS CALLS awardCoinsToStudent
   saveData = () => {}, // Function to save data to Firebase
   loadedData = {} // Pre-loaded data from Firebase
 }) => {
@@ -248,10 +248,17 @@ const ClassroomJobs = ({
   };
 
   // ===============================================
-  // PAYMENT FUNCTIONS - FINAL FIXED
+  // PAYMENT FUNCTIONS - CLEAR PATHWAY TO AWARD FUNCTIONS
   // ===============================================
 
+  /**
+   * payJob - Pay all students assigned to a specific job
+   * This function calls either onAwardXP or onAwardCoins based on job payment type
+   * These functions ultimately lead to awardXPToStudent/awardCoinsToStudent in main component
+   */
   const payJob = (job) => {
+    console.log(`💼 Paying job: ${job.title} (${job.payType}) to ${job.assignedStudents.length} students`);
+    
     if (job.assignedStudents.length === 0) {
       showToast('No students assigned to this job!', 'error');
       return;
@@ -259,10 +266,13 @@ const ClassroomJobs = ({
 
     let paymentCount = 0;
     job.assignedStudents.forEach(student => {
+      console.log(`💰 Awarding ${job.payAmount} ${job.payType} to ${student.firstName} (ID: ${student.id})`);
+      
       if (job.payType === 'xp') {
+        // ⭐ CLEAR PATHWAY: Call onAwardXP → awardXPToStudent → updateAndSaveClass → Firestore
         onAwardXP(student.id, job.payAmount, `Job: ${job.title}`);
-      } else {
-        // FINAL FIXED: Use proper coin awarding function
+      } else if (job.payType === 'coins') {
+        // 🪙 CLEAR PATHWAY: Call onAwardCoins → awardCoinsToStudent → updateAndSaveClass → Firestore  
         onAwardCoins(student.id, job.payAmount, `Job: ${job.title}`);
       }
       paymentCount++;
@@ -271,17 +281,28 @@ const ClassroomJobs = ({
     showToast(`Paid ${paymentCount} student(s) for ${job.title}!`, 'success');
   };
 
+  /**
+   * payAllJobs - Pay all students for all jobs they're assigned to
+   * Loops through all jobs and calls the appropriate award functions
+   */
   const payAllJobs = () => {
+    console.log(`💼 Paying all jobs...`);
+    
     let totalPayments = 0;
     let totalStudents = 0;
     
     jobs.forEach(job => {
       if (job.assignedStudents.length > 0) {
+        console.log(`💼 Processing job: ${job.title} (${job.assignedStudents.length} students)`);
+        
         job.assignedStudents.forEach(student => {
+          console.log(`💰 Awarding ${job.payAmount} ${job.payType} to ${student.firstName} for ${job.title}`);
+          
           if (job.payType === 'xp') {
+            // ⭐ CLEAR PATHWAY: Call onAwardXP → awardXPToStudent → updateAndSaveClass → Firestore
             onAwardXP(student.id, job.payAmount, `Job: ${job.title}`);
-          } else {
-            // FINAL FIXED: Use proper coin awarding function
+          } else if (job.payType === 'coins') {
+            // 🪙 CLEAR PATHWAY: Call onAwardCoins → awardCoinsToStudent → updateAndSaveClass → Firestore
             onAwardCoins(student.id, job.payAmount, `Job: ${job.title}`);
           }
           totalStudents++;
@@ -292,6 +313,8 @@ const ClassroomJobs = ({
 
     showToast(`Paid all jobs! ${totalStudents} students received payments for ${totalPayments} different jobs.`, 'success');
     setShowPayAllModal(false);
+    
+    console.log(`✅ All jobs paid: ${totalStudents} students across ${totalPayments} jobs`);
   };
 
   // ===============================================
