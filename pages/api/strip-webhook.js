@@ -1,4 +1,4 @@
-// pages/api/stripe-webhook.js - Updated for Educational Elements
+// pages/api/strip-webhook.js - FIXED version
 import { buffer } from 'micro';
 import Stripe from 'stripe';
 import { adminAuth, adminFirestore } from '../../utils/firebase-admin';
@@ -146,7 +146,7 @@ async function handleSubscriptionCreated(subscription) {
 }
 
 async function handleSubscriptionUpdated(subscription) {
-  const firebaseUserId = subscription.metadata?.firebaseUserId;
+  let firebaseUserId = subscription.metadata?.firebaseUserId; // FIXED: Changed from const to let
 
   if (!firebaseUserId) {
     // Try to find user by customer ID
@@ -162,7 +162,7 @@ async function handleSubscriptionUpdated(subscription) {
       }
 
       const userDoc = usersSnapshot.docs[0];
-      firebaseUserId = userDoc.id;
+      firebaseUserId = userDoc.id; // Now this works because firebaseUserId is let, not const
     } catch (error) {
       console.error('Error finding user by customer ID:', error);
       return;
@@ -196,7 +196,7 @@ async function handleSubscriptionUpdated(subscription) {
 }
 
 async function handleSubscriptionDeleted(subscription) {
-  const firebaseUserId = subscription.metadata?.firebaseUserId;
+  let firebaseUserId = subscription.metadata?.firebaseUserId; // FIXED: Changed from const to let
 
   if (!firebaseUserId) {
     // Try to find user by customer ID
@@ -212,7 +212,7 @@ async function handleSubscriptionDeleted(subscription) {
       }
 
       const userDoc = usersSnapshot.docs[0];
-      firebaseUserId = userDoc.id;
+      firebaseUserId = userDoc.id; // Now this works because firebaseUserId is let, not const
     } catch (error) {
       console.error('Error finding user by customer ID:', error);
       return;
