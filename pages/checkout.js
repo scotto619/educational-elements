@@ -1,4 +1,4 @@
-// pages/checkout.js - SIMPLIFIED VERSION
+// pages/checkout.js - CLEAN TRIAL VERSION (No LAUNCH2025)
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { auth } from '../utils/firebase';
@@ -9,8 +9,23 @@ export default function Checkout() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [daysUntilJan1, setDaysUntilJan1] = useState(0);
 
   useEffect(() => {
+    // Calculate days until January 1, 2026
+    const calculateDaysUntilJan1 = () => {
+      const now = new Date();
+      const targetDate = new Date('2026-01-01T00:00:00.000Z');
+      const timeDifference = targetDate.getTime() - now.getTime();
+      const days = Math.max(1, Math.ceil(timeDifference / (1000 * 60 * 60 * 24)));
+      setDaysUntilJan1(days);
+    };
+
+    calculateDaysUntilJan1();
+    
+    // Update the countdown every hour
+    const interval = setInterval(calculateDaysUntilJan1, 1000 * 60 * 60);
+    
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setUser(user);
@@ -20,7 +35,10 @@ export default function Checkout() {
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      clearInterval(interval);
+      unsubscribe();
+    };
   }, [router]);
 
   const handleStartTrial = async () => {
@@ -34,8 +52,7 @@ export default function Checkout() {
         },
         body: JSON.stringify({
           userEmail: user.email,
-          userId: user.uid,
-          trialSubscription: true
+          userId: user.uid
         }),
       });
 
@@ -83,30 +100,30 @@ export default function Checkout() {
             </div>
           </div>
           <h1 className="text-3xl font-bold text-gray-800 mb-2">Start Your Free Trial</h1>
-          <p className="text-gray-600">Complete access until January 2026</p>
+          <p className="text-gray-600">Complete access until January 1st, 2026</p>
         </div>
 
-        {/* Main Offer */}
+        {/* Countdown Banner */}
         <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-2xl shadow-2xl p-8 mb-8 text-white relative overflow-hidden">
           <div className="absolute top-0 right-0 bg-yellow-400 text-green-800 px-4 py-2 rounded-bl-lg font-bold">
-            🔥 LIMITED TIME
+            🔥 FREE TRIAL
           </div>
           
           <div className="text-center mb-6">
-            <div className="text-4xl mb-4">🎉</div>
-            <h2 className="text-3xl font-bold mb-2">FREE Until January 2026!</h2>
-            <p className="text-green-100 text-lg">Get complete access to Educational Elements at no cost</p>
+            <div className="text-6xl mb-4">⏰</div>
+            <h2 className="text-4xl font-bold mb-2">{daysUntilJan1} Days Free!</h2>
+            <p className="text-green-100 text-lg">Then $5.99/month • Cancel anytime before trial ends</p>
           </div>
 
           <div className="bg-white bg-opacity-10 rounded-xl p-6 mb-6">
-            <h3 className="font-bold text-xl mb-4">What's Included:</h3>
+            <h3 className="font-bold text-xl mb-4">Complete Platform Access:</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-              <div className="flex items-center"><span className="text-yellow-300 mr-2">✓</span>Classroom Champions Gamification</div>
-              <div className="flex items-center"><span className="text-yellow-300 mr-2">✓</span>Professional Teaching Tools</div>
-              <div className="flex items-center"><span className="text-yellow-300 mr-2">✓</span>Curriculum Resources</div>
-              <div className="flex items-center"><span className="text-yellow-300 mr-2">✓</span>Interactive Learning Games</div>
-              <div className="flex items-center"><span className="text-yellow-300 mr-2">✓</span>Up to 2 Classrooms</div>
-              <div className="flex items-center"><span className="text-yellow-300 mr-2">✓</span>Unlimited Students</div>
+              <div className="flex items-center"><span className="text-yellow-300 mr-2">🏆</span>Classroom Champions Gamification</div>
+              <div className="flex items-center"><span className="text-yellow-300 mr-2">🛠️</span>Professional Teaching Tools</div>
+              <div className="flex items-center"><span className="text-yellow-300 mr-2">📚</span>Curriculum Resources</div>
+              <div className="flex items-center"><span className="text-yellow-300 mr-2">🎮</span>Interactive Learning Games</div>
+              <div className="flex items-center"><span className="text-yellow-300 mr-2">🏫</span>Up to 2 Classrooms</div>
+              <div className="flex items-center"><span className="text-yellow-300 mr-2">👥</span>Unlimited Students</div>
             </div>
           </div>
 
@@ -121,50 +138,66 @@ export default function Checkout() {
                 <span>Setting up trial...</span>
               </div>
             ) : (
-              '🎁 Start FREE Trial'
+              `🚀 Start ${daysUntilJan1}-Day Free Trial`
             )}
           </button>
 
           <div className="text-center mt-4 text-green-100 text-sm">
-            <p>✨ Use code <strong>LAUNCH2025</strong> at checkout for extended trial</p>
-            <p>💳 Payment details required but not charged until January 2026</p>
+            <p>💳 Payment details required but not charged until January 1st, 2026</p>
+            <p>✨ Full access starts immediately • Cancel anytime</p>
           </div>
         </div>
 
         {/* How it Works */}
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-200">
-          <h3 className="text-2xl font-bold text-center text-gray-800 mb-6">How It Works</h3>
+          <h3 className="text-2xl font-bold text-center text-gray-800 mb-6">How Your Free Trial Works</h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="text-center">
               <div className="bg-blue-100 text-blue-600 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 text-xl font-bold">1</div>
               <h4 className="font-bold text-gray-700 mb-2">Enter Payment Details</h4>
-              <p className="text-gray-600 text-sm">Secure checkout powered by Stripe</p>
+              <p className="text-gray-600 text-sm">Secure checkout powered by Stripe (required for trial)</p>
             </div>
             
             <div className="text-center">
               <div className="bg-green-100 text-green-600 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 text-xl font-bold">2</div>
-              <h4 className="font-bold text-gray-700 mb-2">Use LAUNCH2025</h4>
-              <p className="text-gray-600 text-sm">Enter promo code for extended trial</p>
+              <h4 className="font-bold text-gray-700 mb-2">Start Using Immediately</h4>
+              <p className="text-gray-600 text-sm">Full access to all features right away</p>
             </div>
             
             <div className="text-center">
               <div className="bg-purple-100 text-purple-600 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 text-xl font-bold">3</div>
-              <h4 className="font-bold text-gray-700 mb-2">Start Teaching</h4>
-              <p className="text-gray-600 text-sm">Immediate access to all features</p>
+              <h4 className="font-bold text-gray-700 mb-2">Free Until Jan 1st</h4>
+              <p className="text-gray-600 text-sm">No charges for {daysUntilJan1} days</p>
             </div>
             
             <div className="text-center">
               <div className="bg-orange-100 text-orange-600 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 text-xl font-bold">4</div>
-              <h4 className="font-bold text-gray-700 mb-2">No Charges</h4>
-              <p className="text-gray-600 text-sm">Free until January 31, 2026</p>
+              <h4 className="font-bold text-gray-700 mb-2">Cancel Anytime</h4>
+              <p className="text-gray-600 text-sm">No charges if you cancel before trial ends</p>
+            </div>
+          </div>
+
+          <div className="mt-8 bg-blue-50 border border-blue-200 rounded-xl p-6">
+            <div className="flex items-start space-x-3">
+              <div className="text-2xl">ℹ️</div>
+              <div>
+                <h4 className="font-bold text-blue-800 mb-2">Trial Details</h4>
+                <ul className="text-blue-700 text-sm space-y-1">
+                  <li>• Payment method required to prevent abuse</li>
+                  <li>• Trial automatically ends January 1st, 2026</li>
+                  <li>• $5.99/month billing starts after trial (if not cancelled)</li>
+                  <li>• Cancel anytime in your account settings</li>
+                  <li>• No charges until trial period ends</li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Security & Support */}
         <div className="text-center mt-8 text-gray-500 text-sm">
-          <p>🔒 Secure payment processing • ✉️ Email support • 📱 Works on all devices</p>
+          <p>🔒 Secure payment processing by Stripe • ✉️ Email support • 📱 Works on all devices</p>
           <p className="mt-2">
             Questions? <a href="mailto:support@educationalelements.com" className="text-blue-600 hover:underline">Contact Support</a>
           </p>

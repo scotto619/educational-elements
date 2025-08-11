@@ -1,3 +1,4 @@
+// pages/index.js - Updated with dynamic trial countdown
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
@@ -5,6 +6,25 @@ import Head from 'next/head';
 export default function Home() {
   const router = useRouter();
   const [hoveredImage, setHoveredImage] = useState(null);
+  const [daysUntilJan1, setDaysUntilJan1] = useState(0);
+
+  useEffect(() => {
+    // Calculate days until January 1, 2026
+    const calculateDaysUntilJan1 = () => {
+      const now = new Date();
+      const targetDate = new Date('2026-01-01T00:00:00.000Z');
+      const timeDifference = targetDate.getTime() - now.getTime();
+      const days = Math.max(1, Math.ceil(timeDifference / (1000 * 60 * 60 * 24)));
+      setDaysUntilJan1(days);
+    };
+
+    calculateDaysUntilJan1();
+    
+    // Update the countdown every hour
+    const interval = setInterval(calculateDaysUntilJan1, 1000 * 60 * 60);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   const scrollToSection = (sectionId) => {
     document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
@@ -70,7 +90,7 @@ export default function Home() {
                     onClick={() => router.push('/signup')} 
                     className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 rounded-xl text-lg font-bold transition-all transform hover:scale-105 shadow-xl hover:shadow-2xl"
                   >
-                    🚀 Start FREE Until 2026
+                    🚀 Start {daysUntilJan1}-Day FREE Trial
                   </button>
                   <button 
                     onClick={() => scrollToSection('features')} 
@@ -81,7 +101,7 @@ export default function Home() {
                 </div>
 
                 <p className="text-gray-500 mt-4 text-sm">
-                  ✨ FREE access until January 2026 • Setup in minutes • No contracts
+                  ✨ FREE until January 1st, 2026 • Setup in minutes • No charges during trial
                 </p>
               </div>
               
@@ -387,15 +407,15 @@ export default function Home() {
               <p className="text-xl text-gray-600">Everything you need in one comprehensive platform.</p>
             </div>
             
-            {/* Special Offer Banner */}
+            {/* Trial Offer Banner */}
             <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-8 py-6 rounded-2xl mb-12 shadow-2xl text-center max-w-4xl mx-auto">
               <div className="flex items-center justify-center space-x-4">
-                <span className="text-4xl">🎉</span>
+                <span className="text-4xl">⏰</span>
                 <div>
-                  <p className="font-bold text-2xl mb-2">Limited Time: FREE Until January 2026!</p>
-                  <p className="text-lg opacity-90">Get complete access to Educational Elements at no cost. Use code <span className="bg-white text-green-600 px-3 py-1 rounded font-mono font-bold">LAUNCH2025</span></p>
+                  <p className="font-bold text-2xl mb-2">{daysUntilJan1} Days FREE Trial!</p>
+                  <p className="text-lg opacity-90">Get complete access to Educational Elements at no cost until January 1st, 2026</p>
                 </div>
-                <span className="text-4xl">🎉</span>
+                <span className="text-4xl">⏰</span>
               </div>
             </div>
             
@@ -413,7 +433,7 @@ export default function Home() {
                   <div className="mb-4">
                     <div className="text-5xl font-bold text-white mb-2">$5.99</div>
                     <div className="text-purple-200 text-lg">per month</div>
-                    <div className="text-green-300 font-bold text-lg mt-2">Currently FREE until Jan 2026!</div>
+                    <div className="text-green-300 font-bold text-lg mt-2">Currently FREE for {daysUntilJan1} days!</div>
                   </div>
                 </div>
                 
@@ -432,9 +452,9 @@ export default function Home() {
                   onClick={() => router.push('/signup')} 
                   className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 text-black px-6 py-4 rounded-xl hover:from-yellow-500 hover:to-orange-600 transition-all font-bold text-lg shadow-xl transform hover:scale-105"
                 >
-                  Start FREE Trial
+                  Start {daysUntilJan1}-Day FREE Trial
                 </button>
-                <p className="text-center text-purple-200 text-sm mt-3">FREE until January 2026 • No contracts • Cancel anytime</p>
+                <p className="text-center text-purple-200 text-sm mt-3">FREE for {daysUntilJan1} days • Payment details required • Cancel anytime</p>
               </div>
             </div>
           </div>
@@ -453,14 +473,14 @@ export default function Home() {
                 onClick={() => router.push('/signup')} 
                 className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black px-10 py-5 rounded-2xl text-xl font-bold transition-all transform hover:scale-105 shadow-2xl"
               >
-                🚀 Start FREE Until 2026
+                🚀 Start {daysUntilJan1}-Day FREE Trial
               </button>
             </div>
             
             <div className="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-8 text-white/80 mt-8">
-              <div className="flex items-center"><span className="text-green-400 mr-2">✓</span><span>FREE until January 2026</span></div>
+              <div className="flex items-center"><span className="text-green-400 mr-2">✓</span><span>FREE for {daysUntilJan1} days</span></div>
               <div className="flex items-center"><span className="text-green-400 mr-2">✓</span><span>Setup in 5 minutes</span></div>
-              <div className="flex items-center"><span className="text-green-400 mr-2">✓</span><span>No contracts</span></div>
+              <div className="flex items-center"><span className="text-green-400 mr-2">✓</span><span>Cancel anytime</span></div>
             </div>
           </div>
         </section>

@@ -1,4 +1,4 @@
-// pages/api/create-checkout-session.js - FIXED VERSION
+// pages/api/create-checkout-session.js - DYNAMIC TRIAL VERSION
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 export default async function handler(req, res) {
@@ -7,7 +7,6 @@ export default async function handler(req, res) {
       const { 
         userEmail, 
         userId, 
-        trialSubscription = false,
         successUrl = `${req.headers.origin}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
         cancelUrl = `${req.headers.origin}/signup`
       } = req.body;
@@ -17,7 +16,14 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Missing required fields: userEmail and userId' });
       }
 
-      // Use the same price ID for both trial and regular subscriptions
+      // Calculate days until January 1, 2026
+      const now = new Date();
+      const targetDate = new Date('2026-01-01T00:00:00.000Z');
+      const timeDifference = targetDate.getTime() - now.getTime();
+      const daysUntilJan1 = Math.max(1, Math.ceil(timeDifference / (1000 * 60 * 60 * 24)));
+
+      console.log(`Calculated trial days: ${daysUntilJan1} days until January 1, 2026`);
+
       const priceId = process.env.STRIPE_PRICE_ID_EDUCATIONAL_ELEMENTS;
 
       if (!priceId) {
@@ -48,7 +54,7 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'Failed to create customer' });
       }
 
-      // Create checkout session
+      // Create checkout session with dynamic trial period
       const sessionConfig = {
         customer: customer.id,
         payment_method_types: ['card'],
@@ -64,13 +70,14 @@ export default async function handler(req, res) {
         metadata: {
           firebaseUserId: userId,
           planType: 'educational-elements',
-          trialSubscription: trialSubscription.toString()
+          trialDays: daysUntilJan1.toString()
         },
         subscription_data: {
+          trial_period_days: daysUntilJan1,
           metadata: {
             firebaseUserId: userId,
             planType: 'educational-elements',
-            trialSubscription: trialSubscription.toString()
+            trialEndDate: targetDate.toISOString()
           }
         },
         billing_address_collection: 'required',
@@ -80,28 +87,20 @@ export default async function handler(req, res) {
         }
       };
 
-      // Handle trial subscriptions with 100% discount until Jan 2026
-      if (trialSubscription) {
-        sessionConfig.subscription_data.trial_period_days = 365; // ~1 year trial
-        sessionConfig.subscription_data.description = 'Educational Elements - Free until January 31, 2026';
-        
-        // Allow promotion codes (this enables LAUNCH2025 if configured as promotion code)
-        sessionConfig.allow_promotion_codes = true;
-        
-        // Custom text to explain the trial
-        sessionConfig.custom_text = {
-          submit: {
-            message: 'You will get free access until January 31, 2026. Enter LAUNCH2025 for extended trial.'
-          }
-        };
-      } else {
-        // For regular subscriptions, still allow promotion codes
-        sessionConfig.allow_promotion_codes = true;
-      }
+      // Custom text explaining the trial
+      sessionConfig.custom_text = {
+        submit: {
+          message: `You'll get free access until January 1, 2026. Billing starts automatically after your trial ends (${daysUntilJan1} days from now).`
+        }
+      };
 
       const session = await stripe.checkout.sessions.create(sessionConfig);
 
-      res.status(200).json({ url: session.url, sessionId: session.id });
+      res.status(200).json({ 
+        url: session.url, 
+        sessionId: session.id,
+        trialDays: daysUntilJan1
+      });
 
     } catch (error) {
       console.error('Stripe checkout error:', error);
