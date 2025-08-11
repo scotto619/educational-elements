@@ -1,4 +1,4 @@
-// pages/api/create-checkout-session.js - Updated for trial subscriptions
+// pages/api/create-checkout-session.js - FIXED VERSION
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 export default async function handler(req, res) {
@@ -17,10 +17,8 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Missing required fields: userEmail and userId' });
       }
 
-      // Use trial price ID if available, otherwise fall back to regular price
-      const priceId = trialSubscription 
-        ? (process.env.STRIPE_PRICE_ID_EDUCATIONAL_ELEMENTS_TRIAL || process.env.STRIPE_PRICE_ID_EDUCATIONAL_ELEMENTS)
-        : process.env.STRIPE_PRICE_ID_EDUCATIONAL_ELEMENTS;
+      // Use the same price ID for both trial and regular subscriptions
+      const priceId = process.env.STRIPE_PRICE_ID_EDUCATIONAL_ELEMENTS;
 
       if (!priceId) {
         console.error('Missing Stripe Price ID for Educational Elements');
@@ -49,10 +47,6 @@ export default async function handler(req, res) {
         console.error('Error handling customer:', error);
         return res.status(500).json({ error: 'Failed to create customer' });
       }
-
-      // Calculate trial end date (January 31, 2026)
-      const trialEndDate = new Date('2026-01-31T23:59:59.999Z');
-      const trialEndTimestamp = Math.floor(trialEndDate.getTime() / 1000);
 
       // Create checkout session
       const sessionConfig = {
@@ -86,20 +80,23 @@ export default async function handler(req, res) {
         }
       };
 
-      // Add coupon for trial subscriptions
+      // Handle trial subscriptions with 100% discount until Jan 2026
       if (trialSubscription) {
-        sessionConfig.discounts = [{
-          coupon: 'TRIAL2026' // Your coupon ID from Stripe
-        }];
-        
+        sessionConfig.subscription_data.trial_period_days = 365; // ~1 year trial
         sessionConfig.subscription_data.description = 'Educational Elements - Free until January 31, 2026';
+        
+        // Allow promotion codes (this enables LAUNCH2025 if configured as promotion code)
+        sessionConfig.allow_promotion_codes = true;
         
         // Custom text to explain the trial
         sessionConfig.custom_text = {
           submit: {
-            message: 'Your subscription includes 100% discount until January 31, 2026. Full billing starts after discount expires.'
+            message: 'You will get free access until January 31, 2026. Enter LAUNCH2025 for extended trial.'
           }
         };
+      } else {
+        // For regular subscriptions, still allow promotion codes
+        sessionConfig.allow_promotion_codes = true;
       }
 
       const session = await stripe.checkout.sessions.create(sessionConfig);
@@ -110,7 +107,7 @@ export default async function handler(req, res) {
       console.error('Stripe checkout error:', error);
       res.status(500).json({ 
         error: 'Failed to create checkout session',
-        details: error.message 
+        details: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
       });
     }
   } else {
