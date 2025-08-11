@@ -79,7 +79,6 @@ export default async function handler(req, res) {
             trialSubscription: trialSubscription.toString()
           }
         },
-        allow_promotion_codes: false, // Disable promotion codes since we're using trials
         billing_address_collection: 'required',
         customer_update: {
           address: 'auto',
@@ -87,17 +86,18 @@ export default async function handler(req, res) {
         }
       };
 
-      // Add trial period for trial subscriptions
+      // Add coupon for trial subscriptions
       if (trialSubscription) {
-        sessionConfig.subscription_data.trial_end = trialEndTimestamp;
+        sessionConfig.discounts = [{
+          coupon: 'TRIAL2026' // Your coupon ID from Stripe
+        }];
         
-        // Add trial information to the checkout
         sessionConfig.subscription_data.description = 'Educational Elements - Free until January 31, 2026';
         
-        // Ensure customer sees trial information
+        // Custom text to explain the trial
         sessionConfig.custom_text = {
           submit: {
-            message: 'Your free trial runs until January 31, 2026. No charges until then!'
+            message: 'Your subscription includes 100% discount until January 31, 2026. Full billing starts after discount expires.'
           }
         };
       }

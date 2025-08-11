@@ -1,4 +1,4 @@
-// pages/api/stripe-webhook.js - FIXED version
+// pages/api/strip-webhook.js - FIXED version
 import { buffer } from 'micro';
 import Stripe from 'stripe';
 import { adminAuth, adminFirestore } from '../../utils/firebase-admin';
@@ -71,6 +71,7 @@ export default async function handler(req, res) {
 async function handleCheckoutCompleted(session) {
   const firebaseUserId = session.metadata?.firebaseUserId;
   const customerId = session.customer;
+  const isTrialSubscription = session.metadata?.trialSubscription === 'true';
 
   if (!firebaseUserId) {
     console.error('No Firebase user ID in checkout session metadata');
@@ -86,26 +87,40 @@ async function handleCheckoutCompleted(session) {
       limit: 1
     });
 
-    if (subscriptions.data.length === 0) {
-      console.error('No active subscription found for customer');
+    const subscription = subscriptions.data[0];
+    if (!subscription) {
+      console.error('No subscription found for customer');
       return;
     }
 
-    const subscription = subscriptions.data[0];
-    
+    // Check if subscription has the trial coupon applied
+    const hasTrialCoupon = subscription.discount && subscription.discount.coupon.id === 'TRIAL2026';
+
     // Update user document in Firestore
     const userRef = adminFirestore.collection('users').doc(firebaseUserId);
     
-    await userRef.update({
+    const updateData = {
       stripeCustomerId: customerId,
       subscription: 'educational-elements',
       subscriptionId: subscription.id,
       subscriptionStatus: subscription.status,
       planType: 'educational-elements',
       currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-      updatedAt: new Date().toISOString(),
-      freeAccessUntil: null // Clear any free access since they now have a paid subscription
-    });
+      updatedAt: new Date().toISOString()
+    };
+
+    // Handle trial subscriptions with coupon
+    if (isTrialSubscription && hasTrialCoupon) {
+      updateData.trialUntil = '2026-01-31T23:59:59.999Z'; // When coupon expires
+      updateData.isTrialUser = true;
+      updateData.discountApplied = 'TRIAL2026';
+      console.log(`✅ Trial subscription with coupon created for user ${firebaseUserId}`);
+    } else {
+      // Regular subscription or trial ended
+      updateData.isTrialUser = false;
+    }
+
+    await userRef.update(updateData);
 
     console.log(`✅ Updated user ${firebaseUserId} with Educational Elements subscription`);
 
@@ -181,8 +196,22 @@ async function handleSubscriptionUpdated(subscription) {
     // Handle subscription status changes
     if (subscription.status === 'active') {
       updateData.subscription = 'educational-elements';
+      
+      // If transitioning from trial to active, clear trial data
+      if (subscription.trial_end && new Date() > new Date(subscription.trial_end * 1000)) {
+        updateData.isTrialUser = false;
+        updateData.trialUntil = null;
+        console.log(`🔄 User ${firebaseUserId} trial ended, now active subscriber`);
+      }
+    } else if (subscription.status === 'trialing') {
+      updateData.subscription = 'educational-elements';
+      updateData.isTrialUser = true;
+      updateData.trialUntil = new Date(subscription.trial_end * 1000).toISOString();
+      console.log(`🆓 User ${firebaseUserId} in trial until ${updateData.trialUntil}`);
     } else if (['canceled', 'unpaid', 'past_due'].includes(subscription.status)) {
       updateData.subscription = 'cancelled';
+      updateData.isTrialUser = false;
+      updateData.trialUntil = null;
     }
 
     await userRef.update(updateData);
