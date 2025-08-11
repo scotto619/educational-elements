@@ -89,7 +89,7 @@ export default function Home() {
                 <div className="bg-white rounded-2xl shadow-2xl p-4 border border-gray-200">
                   <div className="aspect-w-16 aspect-h-9 bg-gray-100 rounded-lg flex items-center justify-center">
                     <img 
-                      src="/Screenshots/dashboard.png" 
+                      src="/Screenshots/dashboard" 
                       alt="Educational Elements Dashboard" 
                       className="rounded-lg object-cover w-full h-full"
                       onError={(e) => {
@@ -121,12 +121,12 @@ export default function Home() {
             {/* Screenshots Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
               {[
-                { src: '/Screenshots/students.png', title: 'Classroom Champions Gamification', desc: 'RPG-style student management with avatars, XP, and leveling' },
-                { src: '/Screenshots/teachertools.png', title: 'Professional Teaching Tools', desc: 'Comprehensive toolkit for classroom management' },
-                { src: '/Screenshots/shop.png', title: 'Reward System & Shop', desc: 'Motivate students with unlockable rewards and achievements' },
-                { src: '/Screenshots/games.png', title: 'Interactive Learning Games', desc: 'Engaging educational games and activities' },
-                { src: '/Screenshots/writingprompts.png', title: 'Curriculum Resources', desc: 'Rich content library for all subjects' },
-                { src: '/Screenshots/petrace.png', title: 'Engagement Activities', desc: 'Fun classroom activities like pet racing and competitions' }
+                { src: '/Screenshots/students', title: 'Classroom Champions Gamification', desc: 'RPG-style student management with avatars, XP, and leveling' },
+                { src: '/Screenshots/teachertools', title: 'Professional Teaching Tools', desc: 'Comprehensive toolkit for classroom management' },
+                { src: '/Screenshots/shop', title: 'Reward System & Shop', desc: 'Motivate students with unlockable rewards and achievements' },
+                { src: '/Screenshots/games', title: 'Interactive Learning Games', desc: 'Engaging educational games and activities' },
+                { src: '/Screenshots/writingprompts', title: 'Curriculum Resources', desc: 'Rich content library for all subjects' },
+                { src: '/Screenshots/petrace', title: 'Engagement Activities', desc: 'Fun classroom activities like pet racing and competitions' }
               ].map((item, index) => (
                 <div key={index} className="bg-white rounded-2xl shadow-xl p-4 border border-gray-100 group hover:shadow-2xl transition-all duration-300">
                   <div className="aspect-w-16 aspect-h-10 mb-4">
