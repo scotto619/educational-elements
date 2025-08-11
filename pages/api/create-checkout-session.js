@@ -1,4 +1,4 @@
-// pages/api/create-checkout-session.js - Updated for Educational Elements single plan
+// pages/api/create-checkout-session.js - Updated for trial subscriptions
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 export default async function handler(req, res) {
@@ -7,9 +7,9 @@ export default async function handler(req, res) {
       const { 
         userEmail, 
         userId, 
-        discountCode, 
+        trialSubscription = false,
         successUrl = `${req.headers.origin}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
-        cancelUrl = `${req.headers.origin}/pricing`
+        cancelUrl = `${req.headers.origin}/signup`
       } = req.body;
 
       // Validate required fields
@@ -17,21 +17,13 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Missing required fields: userEmail and userId' });
       }
 
-      // Check for valid discount code - LAUNCH2025 gives free access until Jan 2026
-      if (discountCode && discountCode.toUpperCase() === 'LAUNCH2025') {
-        // For the free promotion, redirect directly to dashboard with free access
-        return res.status(200).json({ 
-          url: `${req.headers.origin}/dashboard?free_access=true`,
-          freeAccess: true,
-          message: 'Free access granted until January 2026!'
-        });
-      }
-
-      // Educational Elements - Single Plan: $5.99/month
-      const priceId = process.env.STRIPE_PRICE_ID_EDUCATIONAL_ELEMENTS; // Set this in your environment
+      // Use trial price ID if this is a trial subscription, otherwise use regular price
+      const priceId = trialSubscription 
+        ? process.env.STRIPE_PRICE_ID_EDUCATIONAL_ELEMENTS_TRIAL 
+        : process.env.STRIPE_PRICE_ID_EDUCATIONAL_ELEMENTS;
 
       if (!priceId) {
-        console.error('Missing Stripe Price ID');
+        console.error('Missing Stripe Price ID for Educational Elements');
         return res.status(500).json({ error: 'Pricing configuration error' });
       }
 
@@ -58,8 +50,12 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'Failed to create customer' });
       }
 
+      // Calculate trial end date (January 31, 2026)
+      const trialEndDate = new Date('2026-01-31T23:59:59.999Z');
+      const trialEndTimestamp = Math.floor(trialEndDate.getTime() / 1000);
+
       // Create checkout session
-      const session = await stripe.checkout.sessions.create({
+      const sessionConfig = {
         customer: customer.id,
         payment_method_types: ['card'],
         line_items: [
@@ -73,21 +69,40 @@ export default async function handler(req, res) {
         cancel_url: cancelUrl,
         metadata: {
           firebaseUserId: userId,
-          planType: 'educational-elements'
+          planType: 'educational-elements',
+          trialSubscription: trialSubscription.toString()
         },
         subscription_data: {
           metadata: {
             firebaseUserId: userId,
-            planType: 'educational-elements'
+            planType: 'educational-elements',
+            trialSubscription: trialSubscription.toString()
           }
         },
-        allow_promotion_codes: true, // Allow Stripe promotion codes
+        allow_promotion_codes: false, // Disable promotion codes since we're using trials
         billing_address_collection: 'required',
         customer_update: {
           address: 'auto',
           name: 'auto'
         }
-      });
+      };
+
+      // Add trial period for trial subscriptions
+      if (trialSubscription) {
+        sessionConfig.subscription_data.trial_end = trialEndTimestamp;
+        
+        // Add trial information to the checkout
+        sessionConfig.subscription_data.description = 'Educational Elements - Free until January 31, 2026';
+        
+        // Ensure customer sees trial information
+        sessionConfig.custom_text = {
+          submit: {
+            message: 'Your free trial runs until January 31, 2026. No charges until then!'
+          }
+        };
+      }
+
+      const session = await stripe.checkout.sessions.create(sessionConfig);
 
       res.status(200).json({ url: session.url, sessionId: session.id });
 

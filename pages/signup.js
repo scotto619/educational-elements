@@ -13,10 +13,8 @@ export default function Signup() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [discountCode, setDiscountCode] = useState('LAUNCH2025'); // Pre-fill with the discount code
   const [isLoading, setIsLoading] = useState(false);
   const [firebaseLoaded, setFirebaseLoaded] = useState(false);
-  const [showDiscountSuccess, setShowDiscountSuccess] = useState(false);
   const router = useRouter();
 
   // Load Firebase only on client side
@@ -35,11 +33,6 @@ export default function Signup() {
           setDoc = firestoreModule.setDoc;
           
           setFirebaseLoaded(true);
-          
-          // Check discount code after Firebase loads
-          if (discountCode.toUpperCase() === 'LAUNCH2025') {
-            setShowDiscountSuccess(true);
-          }
         } catch (error) {
           console.error('Error loading Firebase:', error);
         }
@@ -82,28 +75,19 @@ export default function Signup() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Check discount code and set up user document
-      const isValidDiscountCode = discountCode.toUpperCase() === 'LAUNCH2025';
-      const freeAccessUntil = isValidDiscountCode ? '2026-01-31T23:59:59.999Z' : null;
-
       // Create user document in Firestore
       await setDoc(doc(firestore, 'users', user.uid), {
         email: user.email,
         createdAt: new Date().toISOString(),
         classes: [],
         subscription: null,
-        discountCodeUsed: isValidDiscountCode ? discountCode.toUpperCase() : null,
-        freeAccessUntil: freeAccessUntil,
-        stripeCustomerId: null
+        stripeCustomerId: null,
+        trialUntil: '2026-01-31T23:59:59.999Z', // Track trial end date
+        planType: 'educational-elements'
       });
 
-      if (isValidDiscountCode) {
-        // Redirect to dashboard with free access confirmation
-        router.push('/dashboard?free_access=true');
-      } else {
-        // Redirect to pricing for subscription
-        router.push('/pricing');
-      }
+      // Redirect to Stripe checkout with trial
+      await redirectToStripeCheckout(user);
 
     } catch (error) {
       console.error('Signup error:', error);
@@ -120,15 +104,35 @@ export default function Signup() {
     }
   };
 
-  const handleDiscountCodeChange = (e) => {
-    const code = e.target.value;
-    setDiscountCode(code);
-    
-    // Show success message if valid code is entered
-    if (code.toUpperCase() === 'LAUNCH2025') {
-      setShowDiscountSuccess(true);
-    } else {
-      setShowDiscountSuccess(false);
+  const redirectToStripeCheckout = async (user) => {
+    try {
+      const response = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userEmail: user.email,
+          userId: user.uid,
+          trialSubscription: true // Flag for trial subscription
+        }),
+      });
+
+      const { url, error } = await response.json();
+
+      if (error) {
+        alert(error);
+        setIsLoading(false);
+        return;
+      }
+
+      // Redirect to Stripe Checkout
+      window.location.href = url;
+
+    } catch (error) {
+      console.error('Error creating checkout session:', error);
+      alert('Error setting up payment. Please try again.');
+      setIsLoading(false);
     }
   };
 
@@ -145,17 +149,17 @@ export default function Signup() {
             />
             <div className="text-2xl font-bold">Educational Elements</div>
           </div>
-          <h1 className="text-2xl font-bold mb-2">Create Your Account</h1>
-          <p className="text-purple-100">Join thousands of educators worldwide</p>
+          <h1 className="text-2xl font-bold mb-2">Start Your Free Trial</h1>
+          <p className="text-purple-100">Free until January 2026, then $5.99/month</p>
         </div>
 
-        {/* Discount Code Highlight */}
+        {/* Trial Info Banner */}
         <div className="bg-gradient-to-r from-green-400 to-green-500 text-white p-4 text-center">
           <div className="flex items-center justify-center space-x-2">
             <span className="text-2xl">🎉</span>
             <div>
-              <p className="font-bold">FREE Until January 2026!</p>
-              <p className="text-sm opacity-90">Use code LAUNCH2025</p>
+              <p className="font-bold">FREE Trial Until January 2026!</p>
+              <p className="text-sm opacity-90">No charges until trial ends</p>
             </div>
             <span className="text-2xl">🎉</span>
           </div>
@@ -214,38 +218,15 @@ export default function Signup() {
             />
           </div>
 
-          {/* Discount Code Field */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Discount Code (Optional)
-            </label>
-            <input
-              type="text"
-              placeholder="Enter discount code"
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent transition-all ${
-                showDiscountSuccess 
-                  ? 'border-green-400 focus:ring-green-500 bg-green-50' 
-                  : 'border-gray-300 focus:ring-purple-500'
-              }`}
-              value={discountCode}
-              onChange={handleDiscountCodeChange}
-            />
-            {showDiscountSuccess && (
-              <div className="mt-2 p-3 bg-green-100 border border-green-300 rounded-lg">
-                <div className="flex items-center space-x-2">
-                  <span className="text-green-600 text-lg">✅</span>
-                  <div>
-                    <p className="text-green-800 font-medium">Valid Code!</p>
-                    <p className="text-green-700 text-sm">You'll get FREE access until January 31, 2026</p>
-                  </div>
-                </div>
-              </div>
-            )}
-            {discountCode && discountCode.toUpperCase() !== 'LAUNCH2025' && discountCode.length > 0 && (
-              <p className="mt-2 text-sm text-yellow-600">
-                ⚠️ Invalid discount code. Use LAUNCH2025 for free access.
-              </p>
-            )}
+          {/* Trial Information */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h3 className="font-bold text-blue-800 mb-3">🎯 What happens next:</h3>
+            <ul className="text-sm text-blue-700 space-y-2">
+              <li className="flex items-start"><span className="text-blue-500 mr-2 mt-0.5">1.</span>Enter your payment details (secure)</li>
+              <li className="flex items-start"><span className="text-blue-500 mr-2 mt-0.5">2.</span>Start using Educational Elements immediately</li>
+              <li className="flex items-start"><span className="text-blue-500 mr-2 mt-0.5">3.</span>No charges until January 31, 2026</li>
+              <li className="flex items-start"><span className="text-blue-500 mr-2 mt-0.5">4.</span>Cancel anytime before trial ends</li>
+            </ul>
           </div>
 
           {/* Submit Button */}
@@ -262,19 +243,17 @@ export default function Signup() {
             ) : isLoading ? (
               <div className="flex items-center justify-center space-x-2">
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>Creating Account...</span>
+                <span>Setting up trial...</span>
               </div>
             ) : (
-              <>
-                {showDiscountSuccess ? '🎉 Create FREE Account' : '🚀 Create Account'}
-              </>
+              '🚀 Start FREE Trial'
             )}
           </button>
 
           {/* Value Proposition */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h3 className="font-bold text-blue-800 mb-2">What you'll get:</h3>
-            <ul className="text-sm text-blue-700 space-y-1">
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <h3 className="font-bold text-gray-800 mb-2">✨ Complete Platform Includes:</h3>
+            <ul className="text-sm text-gray-700 space-y-1">
               <li className="flex items-center"><span className="text-green-500 mr-2">✓</span>Classroom Champions Gamification</li>
               <li className="flex items-center"><span className="text-green-500 mr-2">✓</span>Professional Teaching Tools</li>
               <li className="flex items-center"><span className="text-green-500 mr-2">✓</span>Curriculum Resources & Games</li>
@@ -299,36 +278,35 @@ export default function Signup() {
         {/* Security Notice */}
         <div className="bg-gray-50 px-8 py-4 text-center">
           <p className="text-xs text-gray-500">
-            By creating an account, you agree to our Terms of Service and Privacy Policy.
-            Your data is encrypted and secure.
+            Secure payment processing by Stripe. Cancel anytime before January 31, 2026.
           </p>
         </div>
       </div>
 
-      {/* Additional CTA */}
+      {/* Additional Info */}
       <div className="hidden lg:block ml-12 max-w-md">
         <div className="bg-white rounded-2xl shadow-xl p-8">
-          <h3 className="text-2xl font-bold text-gray-800 mb-4">Why Educational Elements?</h3>
+          <h3 className="text-2xl font-bold text-gray-800 mb-4">Why Start Your Trial Today?</h3>
           <div className="space-y-4">
             <div className="flex items-start space-x-3">
-              <div className="text-2xl">🏆</div>
+              <div className="text-2xl">🆓</div>
               <div>
-                <h4 className="font-bold text-gray-700">Proven Results</h4>
-                <p className="text-gray-600 text-sm">Dramatically increase student engagement with RPG-style learning</p>
+                <h4 className="font-bold text-gray-700">Risk-Free Trial</h4>
+                <p className="text-gray-600 text-sm">Full access until January 2026 - cancel anytime with no charges</p>
               </div>
             </div>
             <div className="flex items-start space-x-3">
-              <div className="text-2xl">🛠️</div>
+              <div className="text-2xl">⚡</div>
               <div>
-                <h4 className="font-bold text-gray-700">Complete Toolkit</h4>
-                <p className="text-gray-600 text-sm">Everything you need for modern classroom management</p>
+                <h4 className="font-bold text-gray-700">Instant Access</h4>
+                <p className="text-gray-600 text-sm">Start transforming your classroom immediately after setup</p>
               </div>
             </div>
             <div className="flex items-start space-x-3">
-              <div className="text-2xl">👨‍🏫</div>
+              <div className="text-2xl">🔒</div>
               <div>
-                <h4 className="font-bold text-gray-700">Built by Teachers</h4>
-                <p className="text-gray-600 text-sm">Created by educators who understand your daily challenges</p>
+                <h4 className="font-bold text-gray-700">Secure & Simple</h4>
+                <p className="text-gray-600 text-sm">Payment details stored securely by Stripe - never charged until trial ends</p>
               </div>
             </div>
           </div>
