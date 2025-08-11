@@ -1,9 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import { auth, firestore } from '../utils/firebase';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+
+// Dynamic import for Firebase to prevent SSR issues
+let auth = null;
+let createUserWithEmailAndPassword = null;
+let firestore = null;
+let doc = null;
+let setDoc = null;
 
 export default function Signup() {
   const [email, setEmail] = useState('');
@@ -11,11 +15,48 @@ export default function Signup() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [discountCode, setDiscountCode] = useState('LAUNCH2025'); // Pre-fill with the discount code
   const [isLoading, setIsLoading] = useState(false);
+  const [firebaseLoaded, setFirebaseLoaded] = useState(false);
   const [showDiscountSuccess, setShowDiscountSuccess] = useState(false);
   const router = useRouter();
 
+  // Load Firebase only on client side
+  useEffect(() => {
+    const loadFirebase = async () => {
+      if (typeof window !== 'undefined') {
+        try {
+          const firebaseModule = await import('../utils/firebase');
+          const firebaseAuthModule = await import('firebase/auth');
+          const firestoreModule = await import('firebase/firestore');
+          
+          auth = firebaseModule.auth;
+          firestore = firebaseModule.firestore;
+          createUserWithEmailAndPassword = firebaseAuthModule.createUserWithEmailAndPassword;
+          doc = firestoreModule.doc;
+          setDoc = firestoreModule.setDoc;
+          
+          setFirebaseLoaded(true);
+          
+          // Check discount code after Firebase loads
+          if (discountCode.toUpperCase() === 'LAUNCH2025') {
+            setShowDiscountSuccess(true);
+          }
+        } catch (error) {
+          console.error('Error loading Firebase:', error);
+        }
+      }
+    };
+
+    loadFirebase();
+  }, []);
+
   const handleSignup = async (e) => {
     e.preventDefault();
+    
+    if (!firebaseLoaded || !auth || !createUserWithEmailAndPassword) {
+      alert('Firebase is still loading. Please try again in a moment.');
+      return;
+    }
+
     setIsLoading(true);
 
     if (!email || !password || !confirmPassword) {
@@ -122,6 +163,16 @@ export default function Signup() {
 
         {/* Form */}
         <form onSubmit={handleSignup} className="p-8 space-y-6">
+          {/* Firebase Loading Message */}
+          {!firebaseLoaded && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+              <div className="flex items-center justify-center space-x-2">
+                <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-blue-700">Loading Educational Elements...</span>
+              </div>
+            </div>
+          )}
+
           {/* Email Field */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
@@ -200,10 +251,15 @@ export default function Signup() {
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || !firebaseLoaded}
             className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-4 rounded-lg font-bold text-lg hover:from-purple-700 hover:to-indigo-700 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
           >
-            {isLoading ? (
+            {!firebaseLoaded ? (
+              <div className="flex items-center justify-center space-x-2">
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>Loading...</span>
+              </div>
+            ) : isLoading ? (
               <div className="flex items-center justify-center space-x-2">
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                 <span>Creating Account...</span>
