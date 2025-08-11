@@ -10,13 +10,13 @@ export default function Dashboard() {
   const [user, setUser] = useState(null);
   const [userData, setUserData] = useState(null);
   const [savedClasses, setSavedClasses] = useState([]);
-  const [showSubscriptionBanner, setShowSubscriptionBanner] = useState(false);
+  const [trialDaysLeft, setTrialDaysLeft] = useState(0);
   
   // Class creation states
   const [showCreateClassModal, setShowCreateClassModal] = useState(false);
   const [className, setClassName] = useState('');
   const [studentNames, setStudentNames] = useState('');
-  const [currentStep, setCurrentStep] = useState(1); // 1: Class Info, 2: Avatar Selection
+  const [currentStep, setCurrentStep] = useState(1);
   const [studentList, setStudentList] = useState([]);
   const [selectedAvatars, setSelectedAvatars] = useState({});
   const [isCreatingClass, setIsCreatingClass] = useState(false);
@@ -32,26 +32,34 @@ export default function Dashboard() {
     'Time Mage F', 'Time Mage M', 'Wizard F', 'Wizard M'
   ];
 
-  // Check for successful checkout and discount code
+  // Calculate days until January 1, 2026
+  useEffect(() => {
+    const calculateTrialDays = () => {
+      const now = new Date();
+      const targetDate = new Date('2026-01-01T00:00:00.000Z');
+      const timeDifference = targetDate.getTime() - now.getTime();
+      const days = Math.max(0, Math.ceil(timeDifference / (1000 * 60 * 60 * 24)));
+      setTrialDaysLeft(days);
+    };
+
+    calculateTrialDays();
+    const interval = setInterval(calculateTrialDays, 1000 * 60 * 60); // Update every hour
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  // Check for successful checkout
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const sessionId = urlParams.get('session_id');
-    const freeAccess = urlParams.get('free_access');
     
     if (sessionId) {
       window.history.replaceState({}, document.title, '/dashboard');
       setTimeout(() => {
-        alert('🎉 Welcome to Educational Elements! Your subscription is now active.');
+        alert(`🎉 Welcome to Educational Elements! Your ${trialDaysLeft}-day free trial is now active.`);
       }, 1000);
     }
-    
-    if (freeAccess === 'true') {
-      window.history.replaceState({}, document.title, '/dashboard');
-      setTimeout(() => {
-        alert('🎉 Welcome to Educational Elements! You have free access until January 2026!');
-      }, 1000);
-    }
-  }, []);
+  }, [trialDaysLeft]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -60,7 +68,7 @@ export default function Dashboard() {
       } else {
         setUser(user);
         
-        // Load user data including subscription info
+        // Load user data
         const docRef = doc(firestore, 'users', user.uid);
         const snap = await getDoc(docRef);
         
@@ -68,24 +76,20 @@ export default function Dashboard() {
           const data = snap.data();
           setUserData(data);
           setSavedClasses(data.classes || []);
-          
-          // Check if user needs to subscribe (no free access or active subscription)
-          const hasFreeAccess = data.freeAccessUntil && new Date(data.freeAccessUntil) > new Date();
-          const hasActiveSubscription = data.subscription && data.subscription !== 'cancelled';
-          
-          if (!hasFreeAccess && !hasActiveSubscription) {
-            setShowSubscriptionBanner(true);
-          }
         } else {
-          // New user - create initial document and redirect to pricing
-          await setDoc(docRef, {
+          // New user - create initial document
+          const newUserData = {
             email: user.email,
             createdAt: new Date().toISOString(),
             classes: [],
-            subscription: null
-          });
-          router.push('/pricing');
-          return;
+            subscription: null,
+            subscriptionStatus: 'trialing', // Assume they completed signup with trial
+            trialUntil: '2026-01-01T00:00:00.000Z'
+          };
+          
+          await setDoc(docRef, newUserData);
+          setUserData(newUserData);
+          setSavedClasses([]);
         }
         
         setLoading(false);
@@ -102,8 +106,7 @@ export default function Dashboard() {
 
   const handleManageSubscription = async () => {
     if (!userData?.stripeCustomerId) {
-      alert('No subscription found. Please subscribe first.');
-      router.push('/pricing');
+      alert('No subscription found. Please contact support.');
       return;
     }
 
@@ -255,7 +258,6 @@ export default function Dashboard() {
       
       await updateDoc(docRef, { 
         classes: updated,
-        // If deleting the active class, set a new active class or null
         activeClassId: updated.length > 0 ? updated[0].id : null
       });
       
@@ -273,7 +275,6 @@ export default function Dashboard() {
       const docRef = doc(firestore, 'users', user.uid);
       await updateDoc(docRef, { activeClassId: classId });
       
-      // Update local userData
       setUserData(prev => ({ ...prev, activeClassId: classId }));
       
     } catch (error) {
@@ -293,27 +294,28 @@ export default function Dashboard() {
     );
   }
 
-  const hasFreeAccess = userData?.freeAccessUntil && new Date(userData.freeAccessUntil) > new Date();
-  const hasActiveSubscription = userData?.subscription && userData.subscription !== 'cancelled';
-  const canCreateClasses = hasFreeAccess || hasActiveSubscription;
+  // Check access status
+  const hasTrialAccess = userData?.subscriptionStatus === 'trialing' || 
+                        (userData?.trialUntil && new Date(userData.trialUntil) > new Date());
+  const hasActiveSubscription = userData?.subscriptionStatus === 'active';
+  const canAccess = hasTrialAccess || hasActiveSubscription;
 
   return (
     <div className="p-6 max-w-6xl mx-auto bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
       <div className="bg-white rounded-lg shadow-lg p-8">
-        {/* Subscription Banner */}
-        {showSubscriptionBanner && (
+        
+        {/* Trial Status Banner */}
+        {hasTrialAccess && trialDaysLeft > 0 && (
           <div className="bg-gradient-to-r from-green-400 to-green-500 border border-green-300 rounded-lg p-6 mb-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-xl font-bold text-white mb-2">🎉 Get FREE Access Until January 2026!</h3>
-                <p className="text-green-100">Use code LAUNCH2025 to unlock Educational Elements completely free until January 31, 2026.</p>
+                <h3 className="text-xl font-bold text-white mb-2">🎉 Free Trial Active!</h3>
+                <p className="text-green-100">You have {trialDaysLeft} days of free access remaining until January 1st, 2026.</p>
               </div>
-              <button
-                onClick={() => router.push('/pricing')}
-                className="bg-white text-green-600 px-6 py-3 rounded-lg hover:bg-green-50 font-bold shadow-lg"
-              >
-                Claim FREE Access
-              </button>
+              <div className="text-white text-center">
+                <div className="text-3xl font-bold">{trialDaysLeft}</div>
+                <div className="text-sm">Days Left</div>
+              </div>
             </div>
           </div>
         )}
@@ -333,9 +335,9 @@ export default function Dashboard() {
               <p className="text-gray-600 text-lg">Teacher Dashboard</p>
               {userData && (
                 <div className="flex items-center mt-2 space-x-4">
-                  {hasFreeAccess ? (
+                  {hasTrialAccess ? (
                     <span className="px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-800">
-                      FREE Access Until Jan 2026
+                      Free Trial ({trialDaysLeft} days left)
                     </span>
                   ) : hasActiveSubscription ? (
                     <span className="px-3 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-800">
@@ -343,7 +345,7 @@ export default function Dashboard() {
                     </span>
                   ) : (
                     <span className="px-3 py-1 rounded-full text-sm font-semibold bg-yellow-100 text-yellow-800">
-                      No Active Subscription
+                      Trial Expired
                     </span>
                   )}
                   <span className="text-sm text-gray-600">
@@ -364,7 +366,7 @@ export default function Dashboard() {
             )}
             <button
               onClick={() => router.push('/classroom-champions')}
-              disabled={!canCreateClasses || savedClasses.length === 0}
+              disabled={!canAccess || savedClasses.length === 0}
               className="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-4 rounded-lg font-semibold hover:from-green-600 hover:to-green-700 text-lg shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
             >
               🚀 Launch Platform
@@ -409,16 +411,16 @@ export default function Dashboard() {
             </div>
             <button
               onClick={startCreateClass}
-              disabled={!canCreateClasses || savedClasses.length >= 2}
+              disabled={!canAccess || savedClasses.length >= 2}
               className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-purple-600 hover:to-purple-700 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {savedClasses.length >= 2 ? 'Class Limit Reached' : '➕ Create Class'}
             </button>
           </div>
-          {!canCreateClasses && (
-            <div className="mt-4 p-4 bg-yellow-100 border border-yellow-300 rounded-lg">
-              <p className="text-yellow-800 font-medium">
-                Subscribe or use code LAUNCH2025 for free access to create classes.
+          {!canAccess && (
+            <div className="mt-4 p-4 bg-red-100 border border-red-300 rounded-lg">
+              <p className="text-red-800 font-medium">
+                Your trial has expired. Please subscribe to continue using Educational Elements.
               </p>
             </div>
           )}
@@ -494,7 +496,8 @@ export default function Dashboard() {
                       </button>
                       <button
                         onClick={() => router.push('/classroom-champions')}
-                        className="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors font-medium"
+                        disabled={!canAccess}
+                        className="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Open Class
                       </button>
@@ -506,7 +509,7 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Usage Limits */}
+        {/* Plan Status */}
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
           <h3 className="font-bold text-blue-800 mb-2">Your Plan</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
@@ -519,17 +522,24 @@ export default function Dashboard() {
               <span className="ml-2 text-blue-800">Unlimited per class</span>
             </div>
           </div>
-          {hasFreeAccess && (
+          {hasTrialAccess && trialDaysLeft > 0 && (
             <div className="mt-3 p-3 bg-green-100 border border-green-300 rounded-lg">
               <p className="text-green-800 font-medium">
-                🎉 You have FREE access until January 31, 2026!
+                🎉 Free trial active! {trialDaysLeft} days remaining until January 1st, 2026.
+              </p>
+            </div>
+          )}
+          {trialDaysLeft === 0 && !hasActiveSubscription && (
+            <div className="mt-3 p-3 bg-yellow-100 border border-yellow-300 rounded-lg">
+              <p className="text-yellow-800 font-medium">
+                ⚠️ Your trial has expired. Billing will begin at $5.99/month.
               </p>
             </div>
           )}
         </div>
       </div>
 
-      {/* Create Class Modal */}
+      {/* Create Class Modal - Same as before */}
       {showCreateClassModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">

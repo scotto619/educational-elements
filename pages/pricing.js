@@ -1,8 +1,24 @@
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function Pricing() {
-  const [showDiscount, setShowDiscount] = useState(true);
+  const [daysUntilJan1, setDaysUntilJan1] = useState(0);
+
+  useEffect(() => {
+    // Calculate days until January 1, 2026
+    const calculateDaysUntilJan1 = () => {
+      const now = new Date();
+      const targetDate = new Date('2026-01-01T00:00:00.000Z');
+      const timeDifference = targetDate.getTime() - now.getTime();
+      const days = Math.max(1, Math.ceil(timeDifference / (1000 * 60 * 60 * 24)));
+      setDaysUntilJan1(days);
+    };
+
+    calculateDaysUntilJan1();
+    const interval = setInterval(calculateDaysUntilJan1, 1000 * 60 * 60);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
@@ -18,31 +34,23 @@ export default function Pricing() {
         </div>
       </div>
 
-      {/* Promotional Banner */}
-      {showDiscount && (
-        <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-8 py-6 rounded-2xl mb-12 shadow-2xl relative max-w-5xl text-center">
-          <button 
-            onClick={() => setShowDiscount(false)}
-            className="absolute top-3 right-5 text-white hover:text-gray-200 text-2xl font-bold"
-          >
-            ×
-          </button>
-          <div className="flex items-center justify-center space-x-4">
-            <span className="text-4xl">🎉</span>
-            <div>
-              <p className="font-bold text-2xl mb-2">🔥 LAUNCH SPECIAL: FREE Until January 2026! 🔥</p>
-              <p className="text-lg opacity-90">Get complete access to Educational Elements at no cost. Use code <span className="bg-white text-green-600 px-3 py-1 rounded font-mono font-bold mx-2">LAUNCH2025</span> at signup</p>
-              <p className="text-sm opacity-75 mt-2">No credit card required • Full platform access • No contracts</p>
-            </div>
-            <span className="text-4xl">🎉</span>
-          </div>
-        </div>
-      )}
-
-      <h1 className="text-5xl font-bold mb-4 text-gray-800">Simple, Comprehensive Pricing</h1>
+      <h1 className="text-5xl font-bold mb-4 text-gray-800">Simple, Transparent Pricing</h1>
       <p className="text-xl text-gray-600 mb-12 text-center max-w-3xl">
-        Everything you need to transform your classroom in one complete platform. No complicated tiers, no hidden fees.
+        Start your free trial today. No hidden fees, no complicated tiers.
       </p>
+
+      {/* Trial Banner */}
+      <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-8 py-6 rounded-2xl mb-12 shadow-2xl max-w-4xl text-center">
+        <div className="flex items-center justify-center space-x-4">
+          <span className="text-4xl">⏰</span>
+          <div>
+            <p className="font-bold text-2xl mb-2">{daysUntilJan1} Days FREE Trial!</p>
+            <p className="text-lg opacity-90">Get complete access until January 1st, 2026</p>
+            <p className="text-sm opacity-75 mt-2">Payment details required • No charges during trial • Cancel anytime</p>
+          </div>
+          <span className="text-4xl">⏰</span>
+        </div>
+      </div>
 
       <div className="max-w-lg mx-auto">
         {/* Single Plan */}
@@ -59,7 +67,7 @@ export default function Pricing() {
               <div className="text-6xl font-bold text-white mb-3">$5.99</div>
               <div className="text-purple-200 text-xl mb-3">per month</div>
               <div className="bg-green-400 text-green-900 px-6 py-3 rounded-xl text-lg font-bold">
-                🎁 Currently FREE until January 2026!
+                🎁 FREE for {daysUntilJan1} days!
               </div>
             </div>
           </div>
@@ -119,33 +127,38 @@ export default function Pricing() {
           
           <Link href="/signup">
             <button className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 text-black px-8 py-5 rounded-xl hover:from-yellow-500 hover:to-orange-600 font-bold text-xl transition-all shadow-xl transform hover:scale-105">
-              🚀 Start FREE Until 2026
+              🚀 Start {daysUntilJan1}-Day FREE Trial
             </button>
           </Link>
           <p className="text-center text-purple-200 text-sm mt-4">
-            Use code <span className="font-mono font-bold">LAUNCH2025</span> • No credit card required • Cancel anytime
+            FREE for {daysUntilJan1} days • Payment details required • Cancel anytime
           </p>
         </div>
       </div>
 
-      {/* Value Proposition */}
+      {/* How It Works */}
       <div className="mt-16 max-w-4xl">
-        <h3 className="text-3xl font-bold text-center text-gray-800 mb-8">Why Choose Educational Elements?</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <h3 className="text-3xl font-bold text-center text-gray-800 mb-8">How Your Free Trial Works</h3>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="bg-white p-6 rounded-xl shadow-lg text-center">
-            <div className="text-4xl mb-4">🎯</div>
-            <h4 className="font-bold text-gray-800 mb-2">Complete Solution</h4>
-            <p className="text-gray-600">Everything you need in one platform - from gamification to professional tools and curriculum resources.</p>
+            <div className="bg-blue-100 text-blue-600 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">1</div>
+            <h4 className="font-bold text-gray-800 mb-2">Sign Up</h4>
+            <p className="text-gray-600 text-sm">Create account and enter payment details (required for trial verification)</p>
           </div>
           <div className="bg-white p-6 rounded-xl shadow-lg text-center">
-            <div className="text-4xl mb-4">👨‍🏫</div>
-            <h4 className="font-bold text-gray-800 mb-2">Built by Teachers</h4>
-            <p className="text-gray-600">Created by practicing educators who understand real classroom needs and challenges.</p>
+            <div className="bg-green-100 text-green-600 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">2</div>
+            <h4 className="font-bold text-gray-800 mb-2">Start Using</h4>
+            <p className="text-gray-600 text-sm">Immediate access to all features and tools</p>
+          </div>
+          <div className="bg-purple-100 p-6 rounded-xl shadow-lg text-center">
+            <div className="bg-purple-100 text-purple-600 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">3</div>
+            <h4 className="font-bold text-gray-800 mb-2">Free Until Jan 1st</h4>
+            <p className="text-gray-600 text-sm">No charges for {daysUntilJan1} days</p>
           </div>
           <div className="bg-white p-6 rounded-xl shadow-lg text-center">
-            <div className="text-4xl mb-4">📈</div>
-            <h4 className="font-bold text-gray-800 mb-2">Proven Results</h4>
-            <p className="text-gray-600">Tested in real classrooms with measurable improvements in student engagement and learning outcomes.</p>
+            <div className="bg-orange-100 text-orange-600 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">4</div>
+            <h4 className="font-bold text-gray-800 mb-2">Continue or Cancel</h4>
+            <p className="text-gray-600 text-sm">$5.99/month after trial or cancel anytime before</p>
           </div>
         </div>
       </div>
@@ -155,24 +168,20 @@ export default function Pricing() {
         <h3 className="text-3xl font-bold text-center text-gray-800 mb-8">Frequently Asked Questions</h3>
         <div className="space-y-6">
           <div className="bg-white p-6 rounded-lg shadow-md">
-            <h4 className="font-bold text-gray-800 mb-2">Is it really free until January 2026?</h4>
-            <p className="text-gray-600">Yes! Use code LAUNCH2025 at signup for complete free access until January 31, 2026. No credit card required, and you can cancel anytime.</p>
+            <h4 className="font-bold text-gray-800 mb-2">Why do you need payment details for a free trial?</h4>
+            <p className="text-gray-600">Payment details prevent trial abuse and ensure a smooth transition after your trial ends. You won't be charged until January 1st, 2026.</p>
           </div>
           <div className="bg-white p-6 rounded-lg shadow-md">
             <h4 className="font-bold text-gray-800 mb-2">How many students can I have?</h4>
             <p className="text-gray-600">Unlimited students across up to 2 classrooms. Perfect for teachers who have multiple classes or want to separate subjects.</p>
           </div>
           <div className="bg-white p-6 rounded-lg shadow-md">
+            <h4 className="font-bold text-gray-800 mb-2">Can I cancel anytime?</h4>
+            <p className="text-gray-600">Yes! Cancel anytime before January 1st, 2026 with no charges. After your trial, you can cancel anytime and your subscription ends at the current billing period.</p>
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow-md">
             <h4 className="font-bold text-gray-800 mb-2">What happens to my data if I cancel?</h4>
             <p className="text-gray-600">Your classroom data is safely stored and you can reactivate anytime. We believe in data portability and will never hold your information hostage.</p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h4 className="font-bold text-gray-800 mb-2">Do I get updates and new features?</h4>
-            <p className="text-gray-600">Absolutely! All updates and new features are included in your subscription. We're constantly improving based on teacher feedback.</p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h4 className="font-bold text-gray-800 mb-2">What support do I get?</h4>
-            <p className="text-gray-600">All users get priority email support, video tutorials, and access to our teacher community. We're here to help you succeed!</p>
           </div>
         </div>
       </div>
@@ -180,10 +189,10 @@ export default function Pricing() {
       {/* Final CTA */}
       <div className="mt-16 text-center bg-gradient-to-r from-blue-600 to-purple-600 text-white p-8 rounded-2xl max-w-4xl">
         <h3 className="text-3xl font-bold mb-4">Ready to Transform Your Classroom?</h3>
-        <p className="text-xl mb-6">Join thousands of educators already using Educational Elements</p>
+        <p className="text-xl mb-6">Join educators already using Educational Elements</p>
         <Link href="/signup">
           <button className="bg-gradient-to-r from-yellow-400 to-orange-500 text-black px-8 py-4 rounded-xl font-bold text-lg hover:from-yellow-500 hover:to-orange-600 transition-all transform hover:scale-105 shadow-xl">
-            Start Your FREE Trial Now
+            Start Your {daysUntilJan1}-Day FREE Trial
           </button>
         </Link>
       </div>
