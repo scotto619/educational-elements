@@ -1,4 +1,4 @@
-// pages/classroom-champions.js - UPDATED WITH CLEAR XP AWARD PATHWAY
+// pages/classroom-champions.js - UPDATED WITH EDUCATIONAL ELEMENTS BRANDING
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
@@ -163,12 +163,18 @@ const showToast = (message, type = 'info') => {
   alert(`${type.toUpperCase()}: ${message}`);
 };
 
-const NAVIGATION_TABS = [ 
+// ===============================================
+// GROUPED NAVIGATION TABS
+// ===============================================
+const CLASSROOM_CHAMPIONS_TABS = [ 
   { id: 'dashboard', name: 'Dashboard', icon: '🏠'}, 
   { id: 'students', name: 'Students', icon: '👥'}, 
   { id: 'quests', name: 'Quests', icon: '📜'}, 
   { id: 'shop', name: 'Shop', icon: '🏪'}, 
-  { id: 'petrace', name: 'Pet Race', icon: '🏁'}, 
+  { id: 'petrace', name: 'Pet Race', icon: '🏁'}
+];
+
+const EDUCATIONAL_ELEMENTS_TABS = [
   { id: 'games', name: 'Games', icon: '🎮'}, 
   { id: 'curriculum', name: 'Curriculum Corner', icon: '📖'}, 
   { id: 'toolkit', name: 'Teachers Toolkit', icon: '🛠️'}, 
@@ -627,7 +633,7 @@ const ClassroomChampions = () => {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading Classroom Champions...</p>
+          <p className="text-gray-600">Loading Educational Elements...</p>
         </div>
       </div>
     ); 
@@ -635,11 +641,19 @@ const ClassroomChampions = () => {
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+        {/* Header */}
         <div className="bg-white shadow-lg border-b-4 border-blue-500">
             <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  Classroom Champions
-                </h1>
+                <div className="flex items-center">
+                  <img 
+                    src="/Logo/LOGO_NoBG.png" 
+                    alt="Educational Elements Logo" 
+                    className="h-12 w-12 mr-4"
+                  />
+                  <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                    Educational Elements
+                  </h1>
+                </div>
                 <button 
                     onClick={() => auth.signOut()} 
                     className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
@@ -648,22 +662,65 @@ const ClassroomChampions = () => {
                   </button>
             </div>
         </div>
+        
+        {/* Navigation Tabs */}
         <div className="bg-white shadow-sm border-b">
-            <div className="max-w-7xl mx-auto flex overflow-x-auto">
-                {NAVIGATION_TABS.map(tab => (
-                    <button 
-                      key={tab.id} 
-                      onClick={() => setActiveTab(tab.id)} 
-                      className={`flex items-center space-x-2 px-6 py-4 whitespace-nowrap transition-all duration-200 ${activeTab === tab.id ? 'text-blue-600 border-b-2 font-semibold border-blue-600 bg-blue-50' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'}`}
-                    >
-                        <span className="text-lg">{tab.icon}</span>
-                        <span>{tab.name}</span>
-                    </button>
-                ))}
+            <div className="max-w-7xl mx-auto">
+                {/* Classroom Champions Section */}
+                <div className="border-b border-gray-100">
+                  <div className="px-4 py-2">
+                    <h3 className="text-sm font-semibold text-purple-600 uppercase tracking-wider">
+                      🏆 Classroom Champions
+                    </h3>
+                  </div>
+                  <div className="flex flex-wrap">
+                    {CLASSROOM_CHAMPIONS_TABS.map(tab => (
+                        <button 
+                          key={tab.id} 
+                          onClick={() => setActiveTab(tab.id)} 
+                          className={`flex items-center space-x-2 px-4 py-3 whitespace-nowrap transition-all duration-200 ${
+                            activeTab === tab.id 
+                              ? 'text-purple-600 border-b-2 font-semibold border-purple-600 bg-purple-50' 
+                              : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                          }`}
+                        >
+                            <span className="text-lg">{tab.icon}</span>
+                            <span className="text-sm">{tab.name}</span>
+                        </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Educational Elements Section */}
+                <div>
+                  <div className="px-4 py-2">
+                    <h3 className="text-sm font-semibold text-blue-600 uppercase tracking-wider">
+                      📚 Educational Tools
+                    </h3>
+                  </div>
+                  <div className="flex flex-wrap">
+                    {EDUCATIONAL_ELEMENTS_TABS.map(tab => (
+                        <button 
+                          key={tab.id} 
+                          onClick={() => setActiveTab(tab.id)} 
+                          className={`flex items-center space-x-2 px-4 py-3 whitespace-nowrap transition-all duration-200 ${
+                            activeTab === tab.id 
+                              ? 'text-blue-600 border-b-2 font-semibold border-blue-600 bg-blue-50' 
+                              : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                          }`}
+                        >
+                            <span className="text-lg">{tab.icon}</span>
+                            <span className="text-sm">{tab.name}</span>
+                        </button>
+                    ))}
+                  </div>
+                </div>
             </div>
         </div>
+        
         <main className="max-w-screen-2xl mx-auto px-4 py-6">{renderTabContent()}</main>
         
+        {/* Modals - keeping all existing modal code unchanged */}
         {showAddStudentModal && <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"><div className="bg-white rounded-2xl shadow-2xl w-full max-w-md"><div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-t-2xl"><h2 className="text-2xl font-bold">Add New Champion</h2></div><div className="p-6 space-y-4"><input type="text" value={newStudentFirstName} onChange={(e) => setNewStudentFirstName(e.target.value)} placeholder="First Name" className="w-full px-3 py-2 border border-gray-300 rounded-lg"/><input type="text" value={newStudentLastName} onChange={(e) => setNewStudentLastName(e.target.value)} placeholder="Last Name (Optional)" className="w-full px-3 py-2 border border-gray-300 rounded-lg"/></div><div className="flex space-x-3 p-6 pt-0"><button onClick={() => setShowAddStudentModal(false)} className="flex-1 px-4 py-2 border rounded-lg">Cancel</button><button onClick={addStudent} className="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg">Add Champion</button></div></div></div>}
         {levelUpData && <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"><div className="bg-white rounded-2xl shadow-2xl w-full max-w-md text-center p-6"><div className="text-6xl mb-2">🎉</div><h2 className="text-2xl font-bold">LEVEL UP!</h2><h3 className="text-xl font-bold text-gray-800 my-2">{levelUpData.student.firstName} reached Level {levelUpData.newLevel}!</h3><img src={getAvatarImage(levelUpData.student.avatarBase, levelUpData.newLevel)} alt="New Avatar" className="w-32 h-32 mx-auto rounded-full border-4 border-yellow-400"/><button onClick={() => setLevelUpData(null)} className="mt-4 w-full bg-yellow-500 text-white py-2 rounded">Awesome!</button></div></div>}
         {petUnlockData && <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"><div className="bg-white rounded-2xl shadow-2xl w-full max-w-md text-center p-6"><div className="text-6xl mb-2">🐾</div><h2 className="text-2xl font-bold">PET UNLOCKED!</h2><h3 className="text-xl font-bold text-gray-800 my-2">{petUnlockData.student.firstName} found a companion!</h3><img src={getPetImage(petUnlockData.pet)} alt={petUnlockData.pet.name} className="w-24 h-24 mx-auto rounded-full border-4 border-purple-400"/><h4 className="text-lg font-semibold text-purple-600 mt-2">{petUnlockData.pet.name}</h4><button onClick={() => setPetUnlockData(null)} className="mt-4 w-full bg-purple-500 text-white py-2 rounded">Meet My Pet!</button></div></div>}
