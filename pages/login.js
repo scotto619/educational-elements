@@ -1,57 +1,105 @@
-import { useState } from 'react';
-import { useRouter } from 'next/router';
-import Link from 'next/link';
-import { auth } from '../utils/firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+// pages/api/create-checkout-session.js - Updated for Educational Elements single plan
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
-export default function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const router = useRouter();
-
-  const handleLogin = async (e) => {
-    e.preventDefault();
+export default async function handler(req, res) {
+  if (req.method === 'POST') {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      router.push('/dashboard'); // redirect after login
+      const { 
+        userEmail, 
+        userId, 
+        discountCode, 
+        successUrl = `${req.headers.origin}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
+        cancelUrl = `${req.headers.origin}/pricing`
+      } = req.body;
+
+      // Validate required fields
+      if (!userEmail || !userId) {
+        return res.status(400).json({ error: 'Missing required fields: userEmail and userId' });
+      }
+
+      // Check for valid discount code - LAUNCH2025 gives free access until Jan 2026
+      if (discountCode && discountCode.toUpperCase() === 'LAUNCH2025') {
+        // For the free promotion, redirect directly to dashboard with free access
+        return res.status(200).json({ 
+          url: `${req.headers.origin}/dashboard?free_access=true`,
+          freeAccess: true,
+          message: 'Free access granted until January 2026!'
+        });
+      }
+
+      // Educational Elements - Single Plan: $5.99/month
+      const priceId = process.env.STRIPE_PRICE_ID_EDUCATIONAL_ELEMENTS; // Set this in your environment
+
+      if (!priceId) {
+        console.error('Missing Stripe Price ID');
+        return res.status(500).json({ error: 'Pricing configuration error' });
+      }
+
+      // Create or retrieve customer
+      let customer;
+      try {
+        const customers = await stripe.customers.list({
+          email: userEmail,
+          limit: 1
+        });
+
+        if (customers.data.length > 0) {
+          customer = customers.data[0];
+        } else {
+          customer = await stripe.customers.create({
+            email: userEmail,
+            metadata: {
+              firebaseUserId: userId
+            }
+          });
+        }
+      } catch (error) {
+        console.error('Error handling customer:', error);
+        return res.status(500).json({ error: 'Failed to create customer' });
+      }
+
+      // Create checkout session
+      const session = await stripe.checkout.sessions.create({
+        customer: customer.id,
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price: priceId,
+            quantity: 1,
+          },
+        ],
+        mode: 'subscription',
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+        metadata: {
+          firebaseUserId: userId,
+          planType: 'educational-elements'
+        },
+        subscription_data: {
+          metadata: {
+            firebaseUserId: userId,
+            planType: 'educational-elements'
+          }
+        },
+        allow_promotion_codes: true, // Allow Stripe promotion codes
+        billing_address_collection: 'required',
+        customer_update: {
+          address: 'auto',
+          name: 'auto'
+        }
+      });
+
+      res.status(200).json({ url: session.url, sessionId: session.id });
+
     } catch (error) {
-      alert(error.message);
+      console.error('Stripe checkout error:', error);
+      res.status(500).json({ 
+        error: 'Failed to create checkout session',
+        details: error.message 
+      });
     }
-  };
-
-  return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-green-200 to-blue-300 p-6">
-      <h1 className="text-4xl font-bold mb-4 text-gray-800">Login</h1>
-
-      <form onSubmit={handleLogin} className="flex flex-col w-full max-w-sm space-y-4">
-        <input
-          type="email"
-          placeholder="Email"
-          className="px-4 py-2 rounded border border-gray-400 bg-white text-black"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          className="px-4 py-2 rounded border border-gray-400 bg-white text-black"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        <button
-          type="submit"
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
-          Login
-        </button>
-      </form>
-
-      <p className="mt-4 text-gray-700">
-        Don’t have an account?{' '}
-        <Link href="/signup">
-          <span className="text-blue-600 hover:underline">Sign up</span>
-        </Link>
-      </p>
-    </div>
-  );
+  } else {
+    res.setHeader('Allow', 'POST');
+    res.status(405).end('Method Not Allowed');
+  }
 }

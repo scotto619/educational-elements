@@ -187,7 +187,7 @@ export default function Home() {
                       src="/Screenshots/xpaward.PNG" 
                       alt="XP Award System" 
                       className="rounded-xl w-full h-48 object-cover cursor-pointer transition-transform duration-300 hover:scale-105"
-                      onMouseEnter={() => setHoveredImage('/Screenshots/xpaward.png')}
+                      onMouseEnter={() => setHoveredImage('/Screenshots/xpaward.PNG')}
                       onMouseLeave={() => setHoveredImage(null)}
                     />
                   </div>
@@ -207,7 +207,7 @@ export default function Home() {
                       src="/Screenshots/levelup.PNG" 
                       alt="Level Up System" 
                       className="rounded-xl w-full h-48 object-cover cursor-pointer transition-transform duration-300 hover:scale-105"
-                      onMouseEnter={() => setHoveredImage('/Screenshots/levelup.png')}
+                      onMouseEnter={() => setHoveredImage('/Screenshots/levelup.PNG')}
                       onMouseLeave={() => setHoveredImage(null)}
                     />
                   </div>
@@ -227,7 +227,7 @@ export default function Home() {
                       src="/Screenshots/petunlock.PNG" 
                       alt="Pet Unlock System" 
                       className="rounded-xl w-full h-48 object-cover cursor-pointer transition-transform duration-300 hover:scale-105"
-                      onMouseEnter={() => setHoveredImage('/Screenshots/petunlock.png')}
+                      onMouseEnter={() => setHoveredImage('/Screenshots/petunlock.PNG')}
                       onMouseLeave={() => setHoveredImage(null)}
                     />
                   </div>
