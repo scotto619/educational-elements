@@ -1,9 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 
 export default function Home() {
   const router = useRouter();
+  const [hoveredImage, setHoveredImage] = useState(null);
 
   const scrollToSection = (sectionId) => {
     document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
@@ -91,7 +92,9 @@ export default function Home() {
                     <img 
                       src="/Screenshots/dashboard.png" 
                       alt="Educational Elements Dashboard" 
-                      className="rounded-lg object-cover w-full h-full"
+                      className="rounded-lg object-cover w-full h-full cursor-pointer transition-transform duration-300 hover:scale-105"
+                      onMouseEnter={() => setHoveredImage('/Screenshots/dashboard.png')}
+                      onMouseLeave={() => setHoveredImage(null)}
                       onError={(e) => {
                         e.target.style.display = 'none';
                         e.target.nextSibling.style.display = 'flex';
@@ -110,51 +113,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Platform Features Showcase */}
-        <section id="screenshots" className="py-20 bg-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl font-bold text-gray-900 mb-4">One Platform, Endless Possibilities</h2>
-              <p className="text-xl text-gray-600">From gamification to professional tools - everything your classroom needs.</p>
-            </div>
-            
-            {/* Screenshots Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-              {[
-                { src: '/Screenshots/students.png', title: 'Classroom Champions Gamification', desc: 'RPG-style student management with avatars, XP, and leveling' },
-                { src: '/Screenshots/teachertools.png', title: 'Professional Teaching Tools', desc: 'Comprehensive toolkit for classroom management' },
-                { src: '/Screenshots/shop.png', title: 'Reward System & Shop', desc: 'Motivate students with unlockable rewards and achievements' },
-                { src: '/Screenshots/games.png', title: 'Interactive Learning Games', desc: 'Engaging educational games and activities' },
-                { src: '/Screenshots/writingprompts.png', title: 'Curriculum Resources', desc: 'Rich content library for all subjects' },
-                { src: '/Screenshots/petrace.png', title: 'Engagement Activities', desc: 'Fun classroom activities like pet racing and competitions' }
-              ].map((item, index) => (
-                <div key={index} className="bg-white rounded-2xl shadow-xl p-4 border border-gray-100 group hover:shadow-2xl transition-all duration-300">
-                  <div className="aspect-w-16 aspect-h-10 mb-4">
-                    <img 
-                      src={item.src} 
-                      alt={item.title}
-                      className="rounded-lg w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.nextSibling.style.display = 'flex';
-                      }}
-                    />
-                    <div className="hidden rounded-lg bg-gradient-to-br from-blue-100 to-purple-100 w-full h-48 items-center justify-center">
-                      <div className="text-center">
-                        <div className="text-3xl mb-2">📱</div>
-                        <p className="text-gray-600 font-semibold">{item.title}</p>
-                      </div>
-                    </div>
-                  </div>
-                  <h3 className="font-bold text-lg text-gray-900 mb-2">{item.title}</h3>
-                  <p className="text-gray-600 text-sm">{item.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Platform Features */}
+        {/* Platform Features - MOVED UP */}
         <section id="features" className="py-20 bg-gray-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
@@ -199,6 +158,52 @@ export default function Home() {
                   <div className="text-5xl mb-4">{feature.icon}</div>
                   <h3 className="text-xl font-bold text-gray-900 mb-3">{feature.title}</h3>
                   <p className="text-gray-600">{feature.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Platform Features Showcase - MOVED DOWN */}
+        <section id="screenshots" className="py-20 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-16">
+              <h2 className="text-4xl font-bold text-gray-900 mb-4">One Platform, Endless Possibilities</h2>
+              <p className="text-xl text-gray-600">From gamification to professional tools - everything your classroom needs.</p>
+            </div>
+            
+            {/* Screenshots Grid with Hover Effect */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+              {[
+                { src: '/Screenshots/students.png', title: 'Classroom Champions Gamification', desc: 'RPG-style student management with avatars, XP, and leveling' },
+                { src: '/Screenshots/teachertools.png', title: 'Professional Teaching Tools', desc: 'Comprehensive toolkit for classroom management' },
+                { src: '/Screenshots/shop.png', title: 'Reward System & Shop', desc: 'Motivate students with unlockable rewards and achievements' },
+                { src: '/Screenshots/games.png', title: 'Interactive Learning Games', desc: 'Engaging educational games and activities' },
+                { src: '/Screenshots/writingprompts.png', title: 'Curriculum Resources', desc: 'Rich content library for all subjects' },
+                { src: '/Screenshots/petrace.png', title: 'Engagement Activities', desc: 'Fun classroom activities like pet racing and competitions' }
+              ].map((item, index) => (
+                <div key={index} className="bg-white rounded-2xl shadow-xl p-4 border border-gray-100 group hover:shadow-2xl transition-all duration-300">
+                  <div className="aspect-w-16 aspect-h-10 mb-4">
+                    <img 
+                      src={item.src} 
+                      alt={item.title}
+                      className="rounded-lg w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300 cursor-pointer"
+                      onMouseEnter={() => setHoveredImage(item.src)}
+                      onMouseLeave={() => setHoveredImage(null)}
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                    <div className="hidden rounded-lg bg-gradient-to-br from-blue-100 to-purple-100 w-full h-48 items-center justify-center">
+                      <div className="text-center">
+                        <div className="text-3xl mb-2">📱</div>
+                        <p className="text-gray-600 font-semibold">{item.title}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <h3 className="font-bold text-lg text-gray-900 mb-2">{item.title}</h3>
+                  <p className="text-gray-600 text-sm">{item.desc}</p>
                 </div>
               ))}
             </div>
@@ -387,6 +392,22 @@ export default function Home() {
             </div>
           </div>
         </footer>
+
+        {/* Enlarged Image Preview Overlay */}
+        {hoveredImage && (
+          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[60] pointer-events-none">
+            <div className="relative max-w-6xl max-h-[90vh] mx-4">
+              <img 
+                src={hoveredImage} 
+                alt="Enlarged Preview" 
+                className="rounded-2xl shadow-2xl max-w-full max-h-full object-contain"
+              />
+              <div className="absolute top-4 right-4 bg-white text-gray-700 px-3 py-1 rounded-full text-sm font-medium shadow-lg">
+                Hover to preview
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
