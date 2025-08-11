@@ -1,13 +1,8 @@
-// utils/firebase-admin.js - Firebase Admin SDK configuration for Educational Elements
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
-import { getFirestore } from 'firebase-admin/firestore';
+// utils/firebase-admin.js - FIXED Firebase Admin SDK configuration
+import admin from 'firebase-admin';
 
 // Initialize Firebase Admin SDK
-const apps = getApps();
-let adminApp;
-
-if (apps.length === 0) {
+if (!admin.apps.length) {
   try {
     // Parse the private key (handle newlines properly)
     const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY
@@ -18,8 +13,8 @@ if (apps.length === 0) {
       throw new Error('Missing Firebase Admin SDK environment variables');
     }
 
-    adminApp = initializeApp({
-      credential: cert({
+    admin.initializeApp({
+      credential: admin.credential.cert({
         projectId: process.env.FIREBASE_ADMIN_PROJECT_ID,
         clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
         privateKey: privateKey,
@@ -32,13 +27,11 @@ if (apps.length === 0) {
     console.error('❌ Failed to initialize Firebase Admin SDK:', error);
     throw error;
   }
-} else {
-  adminApp = apps[0];
 }
 
 // Export Firebase Admin services
-export const adminAuth = getAuth(adminApp);
-export const adminFirestore = getFirestore(adminApp);
+export const adminAuth = admin.auth();
+export const adminFirestore = admin.firestore();
 
 // Helper functions for Educational Elements
 
@@ -190,57 +183,5 @@ export async function updateUserSubscription(userId, subscriptionData) {
   return updateData;
 }
 
-/**
- * Get user's active class
- */
-export async function getUserActiveClass(userId) {
-  const userData = await getUserWithAccessStatus(userId);
-  
-  if (!userData || !userData.hasAccess) {
-    return null;
-  }
-
-  const activeClassId = userData.activeClassId;
-  if (!activeClassId || !userData.classes) {
-    return null;
-  }
-
-  const activeClass = userData.classes.find(cls => cls.id === activeClassId);
-  return activeClass || null;
-}
-
-/**
- * Cleanup expired free access accounts (run this periodically)
- */
-export async function cleanupExpiredAccess() {
-  const now = new Date().toISOString();
-  
-  const expiredUsersQuery = adminFirestore.collection('users')
-    .where('freeAccessUntil', '<', now)
-    .where('subscription', '==', null);
-
-  const expiredUsers = await expiredUsersQuery.get();
-  
-  const batch = adminFirestore.batch();
-  let count = 0;
-
-  expiredUsers.forEach(doc => {
-    const userRef = doc.ref;
-    batch.update(userRef, {
-      freeAccessUntil: null,
-      accessExpiredAt: now,
-      updatedAt: now
-    });
-    count++;
-  });
-
-  if (count > 0) {
-    await batch.commit();
-    console.log(`✅ Cleaned up ${count} expired free access accounts`);
-  }
-
-  return count;
-}
-
-// Export the app for other uses
-export default adminApp;
+// Export the admin app
+export default admin;
