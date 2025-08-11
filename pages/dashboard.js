@@ -294,11 +294,25 @@ export default function Dashboard() {
     );
   }
 
-  // Check access status
+  // ✅ UPDATED ACCESS LOGIC WITH LEGACY SUPPORT
   const hasTrialAccess = userData?.subscriptionStatus === 'trialing' || 
                         (userData?.trialUntil && new Date(userData.trialUntil) > new Date());
   const hasActiveSubscription = userData?.subscriptionStatus === 'active';
-  const canAccess = hasTrialAccess || hasActiveSubscription;
+
+  // Legacy user support - users who subscribed before the new system
+  const hasLegacySubscription = (
+    // Has old subscription field and it's not cancelled
+    (userData?.subscription && 
+     userData?.subscription !== 'cancelled' && 
+     userData?.subscription !== null) ||
+    // Has Stripe customer ID but no subscription status (old system)
+    (userData?.stripeCustomerId && 
+     !userData?.subscriptionStatus && 
+     (!userData?.subscription || userData?.subscription !== 'cancelled'))
+  );
+
+  // Combined access check
+  const canAccess = hasTrialAccess || hasActiveSubscription || hasLegacySubscription;
 
   return (
     <div className="p-6 max-w-6xl mx-auto bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
@@ -316,6 +330,19 @@ export default function Dashboard() {
                 <div className="text-3xl font-bold">{trialDaysLeft}</div>
                 <div className="text-sm">Days Left</div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Legacy User Welcome Banner */}
+        {hasLegacySubscription && !hasActiveSubscription && !hasTrialAccess && (
+          <div className="bg-gradient-to-r from-purple-400 to-purple-500 border border-purple-300 rounded-lg p-6 mb-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-bold text-white mb-2">👑 Welcome Back, Legacy Subscriber!</h3>
+                <p className="text-purple-100">Your subscription is active and working perfectly. Thanks for being an early supporter!</p>
+              </div>
+              <div className="text-white text-4xl">✨</div>
             </div>
           </div>
         )}
@@ -342,6 +369,10 @@ export default function Dashboard() {
                   ) : hasActiveSubscription ? (
                     <span className="px-3 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-800">
                       Active Subscription
+                    </span>
+                  ) : hasLegacySubscription ? (
+                    <span className="px-3 py-1 rounded-full text-sm font-semibold bg-purple-100 text-purple-800">
+                      Legacy Subscription ✨
                     </span>
                   ) : (
                     <span className="px-3 py-1 rounded-full text-sm font-semibold bg-yellow-100 text-yellow-800">
@@ -529,7 +560,14 @@ export default function Dashboard() {
               </p>
             </div>
           )}
-          {trialDaysLeft === 0 && !hasActiveSubscription && (
+          {hasLegacySubscription && !hasActiveSubscription && !hasTrialAccess && (
+            <div className="mt-3 p-3 bg-purple-100 border border-purple-300 rounded-lg">
+              <p className="text-purple-800 font-medium">
+                ✨ Legacy subscription active! You have full access to all features.
+              </p>
+            </div>
+          )}
+          {trialDaysLeft === 0 && !hasActiveSubscription && !hasLegacySubscription && (
             <div className="mt-3 p-3 bg-yellow-100 border border-yellow-300 rounded-lg">
               <p className="text-yellow-800 font-medium">
                 ⚠️ Your trial has expired. Billing will begin at $5.99/month.
