@@ -164,6 +164,126 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Classroom Champions Deep Dive Section */}
+        <section className="py-20 bg-gradient-to-br from-purple-50 to-indigo-100">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-16">
+              <h2 className="text-4xl font-bold text-gray-900 mb-4">
+                🏆 <span className="bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">Classroom Champions</span> - Where Learning Becomes an Adventure
+              </h2>
+              <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+                Transform your classroom into an epic RPG where students earn XP, unlock avatars, and gain companions through positive behavior and academic achievement.
+              </p>
+            </div>
+
+            {/* Three Feature Showcase */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 mb-16">
+              
+              {/* XP Awards */}
+              <div className="text-center group">
+                <div className="bg-white rounded-2xl shadow-xl p-6 border border-purple-100 group-hover:shadow-2xl transition-all duration-300">
+                  <div className="mb-6">
+                    <img 
+                      src="/Screenshots/xpaward.png" 
+                      alt="XP Award System" 
+                      className="rounded-xl w-full h-48 object-cover cursor-pointer transition-transform duration-300 hover:scale-105"
+                      onMouseEnter={() => setHoveredImage('/Screenshots/xpaward.png')}
+                      onMouseLeave={() => setHoveredImage(null)}
+                    />
+                  </div>
+                  <div className="text-5xl mb-4">⭐</div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3">Earn XP & Coins</h3>
+                  <p className="text-gray-600 leading-relaxed">
+                    Students gain experience points and coins for positive behavior, participation, completing assignments, and classroom contributions. Watch engagement soar as learning becomes rewarding!
+                  </p>
+                </div>
+              </div>
+
+              {/* Level Up */}
+              <div className="text-center group">
+                <div className="bg-white rounded-2xl shadow-xl p-6 border border-purple-100 group-hover:shadow-2xl transition-all duration-300">
+                  <div className="mb-6">
+                    <img 
+                      src="/Screenshots/levelup.png" 
+                      alt="Level Up System" 
+                      className="rounded-xl w-full h-48 object-cover cursor-pointer transition-transform duration-300 hover:scale-105"
+                      onMouseEnter={() => setHoveredImage('/Screenshots/levelup.png')}
+                      onMouseLeave={() => setHoveredImage(null)}
+                    />
+                  </div>
+                  <div className="text-5xl mb-4">🆙</div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3">Level Up & Evolve</h3>
+                  <p className="text-gray-600 leading-relaxed">
+                    Every 100 XP, students level up and their avatar evolves! From Level 1 to Level 4, each transformation brings excitement and celebrates their growth and achievements.
+                  </p>
+                </div>
+              </div>
+
+              {/* Pet Unlock */}
+              <div className="text-center group">
+                <div className="bg-white rounded-2xl shadow-xl p-6 border border-purple-100 group-hover:shadow-2xl transition-all duration-300">
+                  <div className="mb-6">
+                    <img 
+                      src="/Screenshots/petunlock.png" 
+                      alt="Pet Unlock System" 
+                      className="rounded-xl w-full h-48 object-cover cursor-pointer transition-transform duration-300 hover:scale-105"
+                      onMouseEnter={() => setHoveredImage('/Screenshots/petunlock.png')}
+                      onMouseLeave={() => setHoveredImage(null)}
+                    />
+                  </div>
+                  <div className="text-5xl mb-4">🐾</div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3">Unlock Companions</h3>
+                  <p className="text-gray-600 leading-relaxed">
+                    At 50 XP, students unlock their first magical pet companion! From dragons to unicorns, these companions accompany students on their learning journey.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* How It Works */}
+            <div className="bg-white rounded-2xl shadow-xl p-8 md:p-12 border border-purple-200">
+              <h3 className="text-3xl font-bold text-center text-gray-900 mb-8">How Classroom Champions Works</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div className="text-center">
+                  <div className="bg-gradient-to-br from-blue-400 to-blue-600 text-white w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">1</div>
+                  <h4 className="font-bold text-lg mb-2">Positive Actions</h4>
+                  <p className="text-gray-600 text-sm">Students demonstrate good behavior, participate in class, complete tasks, and help others.</p>
+                </div>
+                
+                <div className="text-center">
+                  <div className="bg-gradient-to-br from-green-400 to-green-600 text-white w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">2</div>
+                  <h4 className="font-bold text-lg mb-2">Instant Rewards</h4>
+                  <p className="text-gray-600 text-sm">Teachers award XP and coins instantly with satisfying sound effects and visual celebrations.</p>
+                </div>
+                
+                <div className="text-center">
+                  <div className="bg-gradient-to-br from-purple-400 to-purple-600 text-white w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">3</div>
+                  <h4 className="font-bold text-lg mb-2">Epic Progression</h4>
+                  <p className="text-gray-600 text-sm">Avatars evolve at each level, pets unlock at milestones, creating anticipation and excitement.</p>
+                </div>
+                
+                <div className="text-center">
+                  <div className="bg-gradient-to-br from-orange-400 to-orange-600 text-white w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">4</div>
+                  <h4 className="font-bold text-lg mb-2">Continued Engagement</h4>
+                  <p className="text-gray-600 text-sm">Students stay motivated, classroom culture improves, and learning becomes an adventure they want to continue.</p>
+                </div>
+              </div>
+
+              <div className="mt-12 text-center">
+                <div className="bg-gradient-to-r from-purple-100 to-indigo-100 p-6 rounded-xl border border-purple-200">
+                  <p className="text-lg text-gray-700 mb-4">
+                    <strong>Over 40 unique avatars</strong> to unlock, <strong>dozens of magical pets</strong> to discover, and <strong>endless possibilities</strong> for classroom engagement.
+                  </p>
+                  <p className="text-purple-600 font-semibold">
+                    Turn your classroom into the most exciting place your students want to be! 🚀
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Platform Features Showcase - MOVED DOWN */}
         <section id="screenshots" className="py-20 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
