@@ -17,9 +17,9 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Missing required fields: userEmail and userId' });
       }
 
-      // Use trial price ID if this is a trial subscription, otherwise use regular price
+      // Use trial price ID if available, otherwise fall back to regular price
       const priceId = trialSubscription 
-        ? process.env.STRIPE_PRICE_ID_EDUCATIONAL_ELEMENTS_TRIAL 
+        ? (process.env.STRIPE_PRICE_ID_EDUCATIONAL_ELEMENTS_TRIAL || process.env.STRIPE_PRICE_ID_EDUCATIONAL_ELEMENTS)
         : process.env.STRIPE_PRICE_ID_EDUCATIONAL_ELEMENTS;
 
       if (!priceId) {
