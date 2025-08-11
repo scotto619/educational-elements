@@ -1,4 +1,4 @@
-// pages/api/strip-webhook.js - FIXED version
+// pages/api/stripe-webhook.js - FIXED version
 import { buffer } from 'micro';
 import Stripe from 'stripe';
 import { adminAuth, adminFirestore } from '../../utils/firebase-admin';
