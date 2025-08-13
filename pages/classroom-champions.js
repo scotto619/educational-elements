@@ -1,4 +1,4 @@
-// pages/classroom-champions.js - UPDATED WITH EDUCATIONAL ELEMENTS BRANDING
+// pages/classroom-champions.js - UPDATED WITH REWARD MANAGEMENT SUPPORT
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
@@ -203,6 +203,9 @@ const ClassroomChampions = () => {
   const [newStudentLastName, setNewStudentLastName] = useState('');
   const [attendanceData, setAttendanceData] = useState({});
   const [activeQuests, setActiveQuests] = useState([]);
+  
+  // New state for reward management
+  const [classRewards, setClassRewards] = useState([]);
 
   // AUTH & DATA LOADING
   useEffect(() => {
@@ -230,6 +233,8 @@ const ClassroomChampions = () => {
           // Load additional data if available
           setAttendanceData(activeClass.attendanceData || {});
           setActiveQuests(activeClass.activeQuests || []);
+          // Load class rewards
+          setClassRewards(activeClass.classRewards || []);
         }
       }
     } catch (error) {
@@ -298,6 +303,29 @@ const ClassroomChampions = () => {
       console.error("Error saving tool data:", error);
       showToast('Error saving data', 'error');
     }
+  };
+
+  // ===============================================
+  // REWARD MANAGEMENT FUNCTIONS
+  // ===============================================
+  
+  // Save rewards to Firebase and update local state
+  const saveRewards = async (updatedRewards) => {
+    if (!user || !currentClassId) return;
+    
+    try {
+      await saveClassData({ classRewards: updatedRewards });
+      console.log('✅ Rewards saved successfully');
+    } catch (error) {
+      console.error('❌ Error saving rewards:', error);
+      showToast('Error saving rewards', 'error');
+      throw error;
+    }
+  };
+
+  // Update local rewards state
+  const updateRewards = (updatedRewards) => {
+    setClassRewards(updatedRewards);
   };
 
   // Tool-specific save functions
@@ -581,6 +609,10 @@ const ClassroomChampions = () => {
                   getPetImage={getPetImage}
                   calculateCoins={calculateCoins}
                   calculateAvatarLevel={calculateAvatarLevel}
+                  // New reward management props
+                  classRewards={classRewards}
+                  onUpdateRewards={updateRewards}
+                  saveRewards={saveRewards}
                 />;
       case 'petrace':
         return <PetRaceTab

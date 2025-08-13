@@ -1,10 +1,10 @@
-// components/tabs/ShopTab.js - UPDATED WITH FEATURED ITEMS AND COMPLETE PET COLLECTION
+// components/tabs/ShopTab.js - UPDATED WITH REWARD MANAGEMENT
 import React, { useState, useEffect } from 'react';
 
 // ===============================================
-// SHOP DATA (Classroom Rewards - can be customized here)
+// DEFAULT TEACHER REWARDS (Starting Template)
 // ===============================================
-const TEACHER_REWARDS = [
+const DEFAULT_TEACHER_REWARDS = [
   { id: 'reward_1', name: 'Extra Computer Time', price: 20, category: 'technology', icon: '💻' },
   { id: 'reward_2', name: 'Class Game Session', price: 30, category: 'fun', icon: '🎮' },
   { id: 'reward_3', name: 'No Homework Pass', price: 25, category: 'privileges', icon: '📝' },
@@ -14,6 +14,9 @@ const TEACHER_REWARDS = [
   { id: 'reward_7', name: 'Extra Recess Time', price: 18, category: 'fun', icon: '⏰' },
   { id: 'reward_8', name: 'Teach the Class', price: 35, category: 'special', icon: '🎓' },
 ];
+
+// Available icons for new rewards
+const REWARD_ICONS = ['💻', '🎮', '📝', '🎵', '👑', '💺', '⏰', '🎓', '🏆', '⭐', '🎨', '📚', '🏃‍♂️', '🍎', '🎭', '🎪', '🎯', '🎲', '🎊', '🎉', '💝', '🏅', '🥇', '🎀', '🌟', '✨', '🔮', '🎈', '🎁', '🍕', '🍪', '🧸', '🚀', '🌈', '⚡', '🔥', '💎', '🍭'];
 
 // ===============================================
 // SHOP TAB COMPONENT
@@ -29,13 +32,30 @@ const ShopTab = ({
     getAvatarImage,
     getPetImage,
     calculateCoins,
-    calculateAvatarLevel
+    calculateAvatarLevel,
+    // New props for reward management
+    classRewards = [],
+    onUpdateRewards = () => {},
+    saveRewards = () => {}
 }) => {
   const [selectedStudentId, setSelectedStudentId] = useState(null);
   const [activeCategory, setActiveCategory] = useState('featured');
   const [purchaseModal, setPurchaseModal] = useState({ visible: false, item: null, type: null });
   const [inventoryModal, setInventoryModal] = useState({ visible: false });
   const [featuredItems, setFeaturedItems] = useState([]);
+  
+  // Reward Management States
+  const [showRewardManager, setShowRewardManager] = useState(false);
+  const [editingReward, setEditingReward] = useState(null);
+  const [newReward, setNewReward] = useState({
+    name: '',
+    price: 10,
+    category: 'privileges',
+    icon: '🏆'
+  });
+
+  // Initialize rewards if none exist
+  const currentRewards = classRewards.length > 0 ? classRewards : DEFAULT_TEACHER_REWARDS;
 
   const selectedStudent = students.find(s => s.id === selectedStudentId);
 
@@ -46,7 +66,7 @@ const ShopTab = ({
       ...SHOP_PREMIUM_AVATARS.map(item => ({ ...item, category: 'premium_avatars', type: 'avatar' })),
       ...SHOP_BASIC_PETS.map(item => ({ ...item, category: 'basic_pets', type: 'pet' })),
       ...SHOP_PREMIUM_PETS.map(item => ({ ...item, category: 'premium_pets', type: 'pet' })),
-      ...TEACHER_REWARDS.map(item => ({ ...item, category: 'rewards', type: 'reward' }))
+      ...currentRewards.map(item => ({ ...item, category: 'rewards', type: 'reward' }))
     ];
 
     if (allShopItems.length > 0) {
@@ -61,7 +81,79 @@ const ShopTab = ({
       }));
       setFeaturedItems(featured);
     }
-  }, [SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, SHOP_BASIC_PETS, SHOP_PREMIUM_PETS]);
+  }, [SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, SHOP_BASIC_PETS, SHOP_PREMIUM_PETS, currentRewards]);
+
+  // ===============================================
+  // REWARD MANAGEMENT FUNCTIONS
+  // ===============================================
+  
+  const handleAddReward = () => {
+    if (!newReward.name.trim()) {
+      showToast('Please enter a reward name', 'error');
+      return;
+    }
+
+    const reward = {
+      id: `reward_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      name: newReward.name.trim(),
+      price: Math.max(1, newReward.price),
+      category: newReward.category,
+      icon: newReward.icon
+    };
+
+    const updatedRewards = [...currentRewards, reward];
+    onUpdateRewards(updatedRewards);
+    saveRewards(updatedRewards);
+
+    setNewReward({ name: '', price: 10, category: 'privileges', icon: '🏆' });
+    showToast('Reward added successfully!', 'success');
+  };
+
+  const handleEditReward = (reward) => {
+    setEditingReward(reward);
+    setNewReward({ ...reward });
+  };
+
+  const handleUpdateReward = () => {
+    if (!newReward.name.trim()) {
+      showToast('Please enter a reward name', 'error');
+      return;
+    }
+
+    const updatedRewards = currentRewards.map(reward =>
+      reward.id === editingReward.id
+        ? { ...reward, name: newReward.name.trim(), price: Math.max(1, newReward.price), category: newReward.category, icon: newReward.icon }
+        : reward
+    );
+
+    onUpdateRewards(updatedRewards);
+    saveRewards(updatedRewards);
+
+    setEditingReward(null);
+    setNewReward({ name: '', price: 10, category: 'privileges', icon: '🏆' });
+    showToast('Reward updated successfully!', 'success');
+  };
+
+  const handleDeleteReward = (rewardId) => {
+    if (confirm('Are you sure you want to delete this reward?')) {
+      const updatedRewards = currentRewards.filter(reward => reward.id !== rewardId);
+      onUpdateRewards(updatedRewards);
+      saveRewards(updatedRewards);
+      showToast('Reward deleted successfully!', 'success');
+    }
+  };
+
+  const resetToDefaults = () => {
+    if (confirm('Are you sure you want to reset to default rewards? This will replace all custom rewards.')) {
+      onUpdateRewards(DEFAULT_TEACHER_REWARDS);
+      saveRewards(DEFAULT_TEACHER_REWARDS);
+      showToast('Rewards reset to defaults!', 'success');
+    }
+  };
+
+  // ===============================================
+  // PURCHASE LOGIC
+  // ===============================================
 
   const handlePurchase = () => {
     if (!selectedStudent || !purchaseModal.item) return;
@@ -181,7 +273,7 @@ const ShopTab = ({
           case 'premium_avatars': items = SHOP_PREMIUM_AVATARS; type = 'avatar'; break;
           case 'basic_pets': items = SHOP_BASIC_PETS; type = 'pet'; break;
           case 'premium_pets': items = SHOP_PREMIUM_PETS; type = 'pet'; break;
-          case 'rewards': items = TEACHER_REWARDS; type = 'reward'; break;
+          case 'rewards': items = currentRewards; type = 'reward'; break;
           default: items = [];
       }
       
@@ -214,6 +306,133 @@ const ShopTab = ({
           );
       });
   };
+
+  // ===============================================
+  // REWARD MANAGER MODAL
+  // ===============================================
+  const renderRewardManager = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+        <div className="p-6 border-b flex justify-between items-center">
+          <h2 className="text-2xl font-bold">🏆 Manage Class Rewards</h2>
+          <button onClick={() => setShowRewardManager(false)} className="text-2xl font-bold hover:text-red-600">×</button>
+        </div>
+        
+        <div className="p-6 space-y-6 overflow-y-auto">
+          {/* Add/Edit Reward Form */}
+          <div className="bg-blue-50 rounded-lg p-4">
+            <h3 className="text-lg font-bold mb-4">{editingReward ? 'Edit Reward' : 'Add New Reward'}</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-sm font-semibold mb-1">Reward Name</label>
+                <input
+                  type="text"
+                  value={newReward.name}
+                  onChange={(e) => setNewReward({ ...newReward, name: e.target.value })}
+                  placeholder="e.g., Extra Computer Time"
+                  className="w-full px-3 py-2 border rounded-lg"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-1">Price (Coins)</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={newReward.price}
+                  onChange={(e) => setNewReward({ ...newReward, price: parseInt(e.target.value) || 1 })}
+                  className="w-full px-3 py-2 border rounded-lg"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-1">Category</label>
+                <select
+                  value={newReward.category}
+                  onChange={(e) => setNewReward({ ...newReward, category: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg"
+                >
+                  <option value="privileges">Privileges</option>
+                  <option value="technology">Technology</option>
+                  <option value="fun">Fun</option>
+                  <option value="special">Special</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-1">Icon</label>
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">{newReward.icon}</span>
+                  <select
+                    value={newReward.icon}
+                    onChange={(e) => setNewReward({ ...newReward, icon: e.target.value })}
+                    className="flex-1 px-3 py-2 border rounded-lg"
+                  >
+                    {REWARD_ICONS.map(icon => (
+                      <option key={icon} value={icon}>{icon}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div className="mt-4 flex gap-3">
+              {editingReward ? (
+                <>
+                  <button onClick={handleUpdateReward} className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">
+                    Update Reward
+                  </button>
+                  <button onClick={() => { setEditingReward(null); setNewReward({ name: '', price: 10, category: 'privileges', icon: '🏆' }); }} className="bg-gray-500 text-white px-4 py-2 rounded-lg">
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <button onClick={handleAddReward} className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+                  Add Reward
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Current Rewards List */}
+          <div>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold">Current Rewards ({currentRewards.length})</h3>
+              <button onClick={resetToDefaults} className="bg-orange-500 text-white px-3 py-1 rounded text-sm hover:bg-orange-600">
+                Reset to Defaults
+              </button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {currentRewards.map(reward => (
+                <div key={reward.id} className="border-2 border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-all">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3 flex-1">
+                      <span className="text-3xl">{reward.icon}</span>
+                      <div>
+                        <h4 className="font-semibold">{reward.name}</h4>
+                        <p className="text-sm text-gray-600">💰 {reward.price} coins</p>
+                        <p className="text-xs text-gray-500 capitalize">{reward.category}</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-1">
+                      <button 
+                        onClick={() => handleEditReward(reward)}
+                        className="bg-yellow-500 text-white px-2 py-1 rounded text-xs hover:bg-yellow-600"
+                      >
+                        Edit
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteReward(reward.id)}
+                        className="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -262,6 +481,16 @@ const ShopTab = ({
                       {cat.name}
                     </button>
                 ))}
+                
+                {/* Manage Rewards Button - Only show when in rewards category */}
+                {activeCategory === 'rewards' && (
+                  <button 
+                    onClick={() => setShowRewardManager(true)}
+                    className="px-4 py-2 rounded-lg font-semibold bg-green-500 text-white hover:bg-green-600 ml-4"
+                  >
+                    🛠️ Manage Rewards
+                  </button>
+                )}
             </div>
             
             {/* Special Header for Featured Section */}
@@ -356,15 +585,19 @@ const ShopTab = ({
                       <div>
                         <h3 className="font-bold text-lg mb-2">Earned Rewards</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {selectedStudent.rewardsPurchased.map((reward, index) => (
-                            <div key={index} className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-3 flex items-center gap-3">
-                              <div className="text-2xl">{TEACHER_REWARDS.find(r => r.id === reward.id)?.icon || '🎁'}</div>
-                              <div>
-                                <p className="font-semibold">{reward.name}</p>
-                                <p className="text-xs text-gray-600">Earned: {new Date(reward.purchasedAt).toLocaleDateString()}</p>
+                          {selectedStudent.rewardsPurchased.map((reward, index) => {
+                            // Find the reward in current rewards to get the icon
+                            const rewardDetails = currentRewards.find(r => r.id === reward.id) || reward;
+                            return (
+                              <div key={index} className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-3 flex items-center gap-3">
+                                <div className="text-2xl">{rewardDetails.icon || '🎁'}</div>
+                                <div>
+                                  <p className="font-semibold">{reward.name}</p>
+                                  <p className="text-xs text-gray-600">Earned: {new Date(reward.purchasedAt).toLocaleDateString()}</p>
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
                     )}
@@ -372,6 +605,9 @@ const ShopTab = ({
             </div>
         </div>
       )}
+
+      {/* Reward Manager Modal */}
+      {showRewardManager && renderRewardManager()}
     </div>
   );
 };
