@@ -1,4 +1,4 @@
-// components/tabs/CurriculumCornerTab.js - UPDATED WITH MATH WARMUP SUPPORT
+// components/tabs/CurriculumCornerTab.js - UPDATED WITH WORKSHEET GENERATOR
 import React, { useState } from 'react';
 
 // Import activity components
@@ -7,6 +7,7 @@ import ReadingComprehension from '../curriculum/literacy/ReadingComprehension';
 import VisualWritingPrompts from '../curriculum/literacy/VisualWritingPrompts';
 import AreaPerimeterTool from '../curriculum/mathematics/AreaPerimeterTool';
 import MathWarmup from '../curriculum/mathematics/MathWarmup';
+import WorksheetGenerator from '../curriculum/mathematics/WorksheetGenerator';
 // import SpellingBee from '../curriculum/literacy/SpellingBee';
 // import NumbersBoard from '../curriculum/mathematics/NumbersBoard';
 // import VirtualExperiments from '../curriculum/science/VirtualExperiments';
@@ -28,7 +29,7 @@ const ComingSoon = ({ toolName, description }) => (
 );
 
 // ===============================================
-// SUBJECT CONFIGURATION - UPDATED WITH MATH WARMUP
+// SUBJECT CONFIGURATION - UPDATED WITH WORKSHEET GENERATOR
 // ===============================================
 const subjects = [
   {
@@ -71,7 +72,7 @@ const subjects = [
   {
     id: 'writing',
     name: 'Writing',
-    icon: '✍️',
+    icon: '✏️',
     color: 'from-purple-500 to-pink-600',
     description: 'Creative writing tools and inspiration',
     activities: [
@@ -112,6 +113,14 @@ const subjects = [
     color: 'from-green-500 to-green-600',
     description: 'Math tools and number activities',
     activities: [
+      {
+        id: 'worksheet-generator',
+        name: 'Worksheet Generator',
+        icon: '📄',
+        description: 'Create professional printable math worksheets for any topic',
+        component: WorksheetGenerator,
+        featured: true
+      },
       {
         id: 'math-warmup',
         name: 'Math Warmup',
@@ -277,7 +286,7 @@ const subjects = [
       {
         id: 'creative-writing',
         name: 'Creative Writing',
-        icon: '✍️',
+        icon: '✏️',
         description: 'Story writing prompts and tools',
         component: ComingSoon
       }
@@ -374,8 +383,17 @@ const CurriculumCornerTab = ({
             <button
               key={activity.id}
               onClick={() => handleActivitySelect(activity)}
-              className="bg-white rounded-xl shadow-lg p-6 text-left hover:shadow-xl transition-all duration-300 hover:scale-105 border-2 border-transparent hover:border-blue-300"
+              className={`bg-white rounded-xl shadow-lg p-6 text-left hover:shadow-xl transition-all duration-300 hover:scale-105 border-2 ${
+                activity.featured 
+                  ? 'border-yellow-400 bg-gradient-to-br from-yellow-50 to-orange-50' 
+                  : 'border-transparent hover:border-blue-300'
+              }`}
             >
+              {activity.featured && (
+                <div className="absolute -top-2 -right-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full font-bold">
+                  NEW!
+                </div>
+              )}
               <div className="flex items-center gap-4 mb-4">
                 <div className="text-4xl">{activity.icon}</div>
                 <div>
@@ -384,8 +402,14 @@ const CurriculumCornerTab = ({
                 </div>
               </div>
               <div className="flex justify-between items-center">
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${activity.component === ComingSoon ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}`}>
-                  {activity.component === ComingSoon ? 'Coming Soon' : 'Available'}
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                  activity.component === ComingSoon 
+                    ? 'bg-yellow-100 text-yellow-700' 
+                    : activity.featured 
+                      ? 'bg-yellow-200 text-yellow-800'
+                      : 'bg-green-100 text-green-700'
+                }`}>
+                  {activity.component === ComingSoon ? 'Coming Soon' : activity.featured ? 'Featured!' : 'Available'}
                 </span>
                 <span className="text-blue-500 font-semibold">Open →</span>
               </div>
@@ -468,12 +492,57 @@ const CurriculumCornerTab = ({
         </div>
       </div>
 
+      {/* Enhanced Feature Notice for NEW Math Worksheet Generator */}
+      <div className="bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-300 rounded-xl p-6 relative overflow-hidden">
+        <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full font-bold animate-pulse">
+          NEW!
+        </div>
+        <div className="flex items-start space-x-4">
+          <span className="text-4xl">📄</span>
+          <div>
+            <h4 className="font-bold text-green-800 mb-2 text-xl">🌟 Math Worksheet Generator - Just Added!</h4>
+            <p className="text-green-700 mb-4 text-lg">
+              Create professional, printable math worksheets instantly! Perfect for homework, practice, assessments, 
+              and differentiated learning. All worksheets include your Educational Elements branding!
+            </p>
+            <div className="bg-green-100 rounded-lg p-4">
+              <h5 className="font-semibold text-green-800 mb-3">🎯 What You Can Generate:</h5>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <ul className="text-sm text-green-700 space-y-1">
+                  <li>• ➕ Addition (1-20, 1-100, 1-1000)</li>
+                  <li>• ➖ Subtraction (with positive results)</li>
+                  <li>• ✖️ Multiplication (times tables to complex)</li>
+                  <li>• ➗ Division (with whole number answers)</li>
+                </ul>
+                <ul className="text-sm text-green-700 space-y-1">
+                  <li>• ½ Fractions (addition & subtraction)</li>
+                  <li>• 🔢 Decimals (1-3 decimal places)</li>
+                  <li>• 📝 Word Problems (age-appropriate)</li>
+                  <li>• 📋 Automatic answer keys included</li>
+                </ul>
+              </div>
+            </div>
+            <div className="mt-4 p-3 bg-yellow-100 rounded-lg">
+              <h5 className="font-semibold text-yellow-800 mb-2">✨ Professional Features:</h5>
+              <p className="text-sm text-yellow-700">
+                • Print-optimized layout for standard 8.5" x 11" paper<br/>
+                • Student name, date, and score fields<br/>
+                • Educational Elements logo branding<br/>
+                • Multiple difficulty levels per topic<br/>
+                • Customizable problem count (10-30 problems)<br/>
+                • Clear instructions and professional formatting
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Enhanced Feature Notice for New Visual Writing Prompts */}
       <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-xl p-6">
         <div className="flex items-start space-x-4">
           <span className="text-3xl">🖼️</span>
           <div>
-            <h4 className="font-bold text-purple-800 mb-2">✨ New Visual Writing Prompts Added!</h4>
+            <h4 className="font-bold text-purple-800 mb-2">✨ Visual Writing Prompts Added!</h4>
             <p className="text-purple-700 mb-4">
               Inspire creativity with 20 stunning visual prompts! Each image comes with themed word banks to help students 
               get started. Perfect for creative writing sessions, story starters, and imagination building!
@@ -499,7 +568,7 @@ const CurriculumCornerTab = ({
         <div className="flex items-start space-x-4">
           <span className="text-3xl">🔥</span>
           <div>
-            <h4 className="font-bold text-green-800 mb-2">✨ New Math Warmup Added!</h4>
+            <h4 className="font-bold text-green-800 mb-2">✨ Math Warmup Added!</h4>
             <p className="text-green-700 mb-4">
               The Math Warmup includes progressive Number of the Day activities, mental math strategies that build over 10 weeks, 
               daily problem solving with hints, and interactive number practice tools!
