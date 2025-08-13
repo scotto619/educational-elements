@@ -1,20 +1,28 @@
 // components/curriculum/mathematics/MathWarmup.js
-// SIMPLIFIED MATH WARMUP - 20 QUESTIONS PER GRADE
+// COMPREHENSIVE MATH WARMUP - 50 DAILY SETS (10 WEEKS × 5 DAYS)
 import React, { useState, useEffect, useRef } from 'react';
-import { grade5MathQuestions } from './data/grade5-math-data';
+import { generateDailyQuestions, grade5Config } from './data/grade5-comprehensive-data';
 
 // Available grades (will expand as we add more)
 const AVAILABLE_GRADES = {
-  grade5: {
-    name: "Grade 5",
-    description: "Year 5 mathematics",
-    questions: grade5MathQuestions
-  }
+  grade5: grade5Config
   // Add more grades here as we create them
+};
+
+// Days of the week
+const DAYS_OF_WEEK = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+const DAY_NAMES = {
+  monday: 'Monday',
+  tuesday: 'Tuesday', 
+  wednesday: 'Wednesday',
+  thursday: 'Thursday',
+  friday: 'Friday'
 };
 
 const MathWarmup = ({ showToast = () => {}, students = [] }) => {
   const [selectedGrade, setSelectedGrade] = useState(null);
+  const [selectedWeek, setSelectedWeek] = useState(null);
+  const [selectedDay, setSelectedDay] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
@@ -44,12 +52,17 @@ const MathWarmup = ({ showToast = () => {}, students = [] }) => {
     return () => clearInterval(timerRef.current);
   }, [isTimerMode, timeLeft, isQuizActive]);
 
-  const startQuiz = (gradeKey) => {
+  const startQuiz = (gradeKey, week, day) => {
     const grade = AVAILABLE_GRADES[gradeKey];
     if (!grade) return;
     
+    // Generate questions for the selected week and day
+    const dailyQuestions = generateDailyQuestions(week, day);
+    
     setSelectedGrade(gradeKey);
-    setQuestions(grade.questions);
+    setSelectedWeek(week);
+    setSelectedDay(day);
+    setQuestions(dailyQuestions);
     setCurrentQuestionIndex(0);
     setShowAnswer(false);
     setIsQuizActive(true);
@@ -58,7 +71,7 @@ const MathWarmup = ({ showToast = () => {}, students = [] }) => {
       setTimeLeft(15); // 15 seconds per question for mental math
     }
     
-    showToast(`Starting ${grade.name} Math Warmup!`, 'success');
+    showToast(`Starting ${grade.name} - Week ${week.replace('week', '')} ${DAY_NAMES[day]}!`, 'success');
   };
 
   const nextQuestion = () => {
@@ -92,9 +105,24 @@ const MathWarmup = ({ showToast = () => {}, students = [] }) => {
   const resetQuiz = () => {
     setIsQuizActive(false);
     setSelectedGrade(null);
+    setSelectedWeek(null);
+    setSelectedDay(null);
     setCurrentQuestionIndex(0);
     setShowAnswer(false);
     setTimeLeft(0);
+  };
+
+  const backToWeekSelection = () => {
+    setSelectedWeek(null);
+    setSelectedDay(null);
+    setIsQuizActive(false);
+  };
+
+  const backToGradeSelection = () => {
+    setSelectedGrade(null);
+    setSelectedWeek(null);
+    setSelectedDay(null);
+    setIsQuizActive(false);
   };
 
   const goToQuestion = (index) => {
@@ -106,7 +134,7 @@ const MathWarmup = ({ showToast = () => {}, students = [] }) => {
   };
 
   // Render grade selection
-  if (!selectedGrade || !isQuizActive) {
+  if (!selectedGrade) {
     return (
       <div className={`space-y-6 ${isPresentationMode ? 'min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-8' : ''}`}>
         {/* Header */}
@@ -116,7 +144,7 @@ const MathWarmup = ({ showToast = () => {}, students = [] }) => {
               🔢 Math Warmup
             </h1>
             <p className={`opacity-90 mb-6 ${isPresentationMode ? 'text-4xl' : 'text-xl'}`}>
-              20 mental math questions to start your day
+              Daily mental math practice • 10 weeks • 50 different sets
             </p>
             
             <div className="flex justify-center gap-4">
@@ -126,7 +154,32 @@ const MathWarmup = ({ showToast = () => {}, students = [] }) => {
               >
                 {isPresentationMode ? '📺 Exit Presentation' : '🎭 Presentation Mode'}
               </button>
+              {/* Enhanced Feature Notice for Comprehensive Math Warmup */}
+        <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-xl p-6">
+          <div className="flex items-start space-x-4">
+            <span className="text-3xl">🔢</span>
+            <div>
+              <h4 className="font-bold text-green-800 mb-2">✨ Comprehensive Math Warmup System!</h4>
+              <p className="text-green-700 mb-4">
+                The Grade 5 Math Warmup now includes 50 different daily sets across 10 weeks! Each day features 10 number fact questions (randomized from large pools) and 10 mixed math questions covering percentages, fractions, decimals, algebra, and more.
+              </p>
+              <div className="bg-green-100 rounded-lg p-4">
+                <h5 className="font-semibold text-green-800 mb-2">🎯 What's Included:</h5>
+                <ul className="text-sm text-green-700 space-y-1">
+                  <li>• 10 weeks × 5 days = 50 different daily warmups</li>
+                  <li>• Number facts: multiplication, division, squares, addition, subtraction, doubling, halving</li>
+                  <li>• Mixed questions: percentages, fractions, decimals, rounding, basic algebra, estimation, word problems</li>
+                  <li>• Questions generated from large pools to ensure variety</li>
+                  <li>• All questions designed for mental math (no written working required)</li>
+                  <li>• Presentation mode for classroom display with large text</li>
+                  <li>• Optional timer mode (15 seconds per question)</li>
+                  <li>• Progress tracking and quick question navigation</li>
+                </ul>
+              </div>
             </div>
+          </div>
+        </div>
+      </div>
           </div>
         </div>
 
@@ -159,7 +212,7 @@ const MathWarmup = ({ showToast = () => {}, students = [] }) => {
           {Object.entries(AVAILABLE_GRADES).map(([gradeKey, grade]) => (
             <button
               key={gradeKey}
-              onClick={() => startQuiz(gradeKey)}
+              onClick={() => setSelectedGrade(gradeKey)}
               className={`bg-white rounded-xl shadow-lg border-2 border-gray-200 hover:border-blue-400 hover:shadow-xl transition-all duration-300 text-left transform hover:scale-105 ${isPresentationMode ? 'p-12' : 'p-8'}`}
             >
               <h3 className={`font-bold text-blue-600 mb-3 ${isPresentationMode ? 'text-6xl' : 'text-3xl'}`}>
@@ -170,14 +223,17 @@ const MathWarmup = ({ showToast = () => {}, students = [] }) => {
               </p>
               <div className={`bg-green-100 rounded-lg p-3 mb-4 ${isPresentationMode ? 'p-6' : ''}`}>
                 <p className={`text-green-800 font-semibold ${isPresentationMode ? 'text-2xl' : 'text-sm'}`}>
-                  ✓ 10 Number Facts Questions
+                  ✓ {grade.totalWeeks} weeks of content
                 </p>
                 <p className={`text-green-800 font-semibold ${isPresentationMode ? 'text-2xl' : 'text-sm'}`}>
-                  ✓ 10 Mixed Math Questions
+                  ✓ {grade.totalWeeks * grade.daysPerWeek} different daily sets
+                </p>
+                <p className={`text-green-800 font-semibold ${isPresentationMode ? 'text-2xl' : 'text-sm'}`}>
+                  ✓ {grade.questionsPerDay} questions per day
                 </p>
               </div>
               <div className={`text-blue-500 font-semibold ${isPresentationMode ? 'text-2xl' : 'text-base'}`}>
-                Start Warmup →
+                Select Grade →
               </div>
             </button>
           ))}
@@ -199,10 +255,125 @@ const MathWarmup = ({ showToast = () => {}, students = [] }) => {
     );
   }
 
+  // Render week selection
+  if (selectedGrade && !selectedWeek) {
+    const grade = AVAILABLE_GRADES[selectedGrade];
+    return (
+      <div className={`space-y-6 ${isPresentationMode ? 'min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-8' : ''}`}>
+        {/* Header */}
+        <div className={`bg-gradient-to-r from-green-500 to-blue-600 text-white rounded-xl shadow-lg ${isPresentationMode ? 'p-16' : 'p-8'}`}>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className={`font-bold mb-2 ${isPresentationMode ? 'text-7xl' : 'text-4xl'}`}>
+                📚 {grade.name}
+              </h1>
+              <p className={`opacity-90 ${isPresentationMode ? 'text-3xl' : 'text-xl'}`}>
+                Choose a week (1-{grade.totalWeeks})
+              </p>
+            </div>
+            <button
+              onClick={backToGradeSelection}
+              className={`bg-white bg-opacity-20 text-white rounded-lg font-semibold hover:bg-opacity-30 transition-all ${isPresentationMode ? 'px-12 py-6 text-3xl' : 'px-6 py-3'}`}
+            >
+              ← Back to Grades
+            </button>
+          </div>
+        </div>
+
+        {/* Week Selection */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
+          {Array.from({ length: grade.totalWeeks }, (_, i) => {
+            const weekNumber = i + 1;
+            const weekKey = `week${weekNumber}`;
+            return (
+              <button
+                key={weekKey}
+                onClick={() => setSelectedWeek(weekKey)}
+                className={`bg-white rounded-xl shadow-lg border-2 border-gray-200 hover:border-green-400 hover:shadow-xl transition-all duration-300 text-center transform hover:scale-105 ${isPresentationMode ? 'p-12' : 'p-8'}`}
+              >
+                <div className={`text-center mb-4 ${isPresentationMode ? 'text-8xl' : 'text-5xl'}`}>
+                  📅
+                </div>
+                <h3 className={`font-bold text-green-600 mb-3 text-center ${isPresentationMode ? 'text-5xl' : 'text-2xl'}`}>
+                  Week {weekNumber}
+                </h3>
+                <p className={`text-gray-600 mb-4 ${isPresentationMode ? 'text-2xl' : 'text-sm'}`}>
+                  5 daily warmups
+                </p>
+                <div className={`text-green-500 font-semibold text-center ${isPresentationMode ? 'text-2xl' : 'text-base'}`}>
+                  Select Week →
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  // Render day selection
+  if (selectedGrade && selectedWeek && !isQuizActive) {
+    const grade = AVAILABLE_GRADES[selectedGrade];
+    const weekNumber = selectedWeek.replace('week', '');
+    return (
+      <div className={`space-y-6 ${isPresentationMode ? 'min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-8' : ''}`}>
+        {/* Header */}
+        <div className={`bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-xl shadow-lg ${isPresentationMode ? 'p-16' : 'p-8'}`}>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className={`font-bold mb-2 ${isPresentationMode ? 'text-7xl' : 'text-4xl'}`}>
+                📅 Week {weekNumber}
+              </h1>
+              <p className={`opacity-90 ${isPresentationMode ? 'text-3xl' : 'text-xl'}`}>
+                {grade.name} • Choose a day
+              </p>
+            </div>
+            <button
+              onClick={backToWeekSelection}
+              className={`bg-white bg-opacity-20 text-white rounded-lg font-semibold hover:bg-opacity-30 transition-all ${isPresentationMode ? 'px-12 py-6 text-3xl' : 'px-6 py-3'}`}
+            >
+              ← Back to Weeks
+            </button>
+          </div>
+        </div>
+
+        {/* Day Selection */}
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+          {DAYS_OF_WEEK.map((day, index) => (
+            <button
+              key={day}
+              onClick={() => startQuiz(selectedGrade, selectedWeek, day)}
+              className={`bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-lg border-2 border-gray-200 hover:border-purple-400 hover:shadow-xl transition-all duration-300 text-center transform hover:scale-105 ${isPresentationMode ? 'p-16' : 'p-8'}`}
+            >
+              <div className={`text-center mb-4 ${isPresentationMode ? 'text-8xl' : 'text-5xl'}`}>
+                {['📝', '📚', '🧮', '🎯', '🏆'][index]}
+              </div>
+              <h3 className={`font-bold text-purple-600 mb-4 ${isPresentationMode ? 'text-5xl' : 'text-2xl'}`}>
+                {DAY_NAMES[day]}
+              </h3>
+              <div className={`bg-purple-100 rounded-lg p-3 mb-4 ${isPresentationMode ? 'p-6' : ''}`}>
+                <p className={`text-purple-800 font-semibold ${isPresentationMode ? 'text-2xl' : 'text-sm'}`}>
+                  ✓ 10 Number Facts
+                </p>
+                <p className={`text-purple-800 font-semibold ${isPresentationMode ? 'text-2xl' : 'text-sm'}`}>
+                  ✓ 10 Mixed Questions
+                </p>
+              </div>
+              <div className={`text-purple-500 font-semibold ${isPresentationMode ? 'text-2xl' : 'text-lg'}`}>
+                Start Warmup →
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   // Render quiz
   const currentQuestion = questions[currentQuestionIndex];
   const grade = AVAILABLE_GRADES[selectedGrade];
   const isNumberFact = currentQuestionIndex < 10; // First 10 are number facts
+  const weekNumber = selectedWeek.replace('week', '');
 
   return (
     <div className={`space-y-6 ${isPresentationMode ? 'min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-8' : ''}`}>
@@ -214,7 +385,7 @@ const MathWarmup = ({ showToast = () => {}, students = [] }) => {
               {isNumberFact ? '🔢 Number Facts' : '🎯 Mixed Math'}
             </h1>
             <p className={`opacity-90 ${isPresentationMode ? 'text-3xl' : 'text-lg'}`}>
-              {grade.name} • Question {currentQuestionIndex + 1} of {questions.length}
+              {grade.name} • Week {weekNumber} • {DAY_NAMES[selectedDay]} • Question {currentQuestionIndex + 1} of {questions.length}
             </p>
           </div>
           <div className="text-right">
