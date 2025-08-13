@@ -411,6 +411,138 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* What's New & Updates Section */}
+        <div className="mb-8">
+          <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl p-6 mb-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="text-3xl">🚀</div>
+              <div>
+                <h2 className="text-2xl font-bold">What's New & Always Expanding!</h2>
+                <p className="text-blue-100">Educational Elements and Classroom Champions are constantly growing</p>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Main Message */}
+              <div className="bg-white/10 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <div className="text-2xl">✨</div>
+                  <div>
+                    <h3 className="text-lg font-bold mb-2">Always Updating!</h3>
+                    <p className="text-blue-100 text-sm leading-relaxed">
+                      We're constantly adding new features, tools, and improvements to make your classroom experience even better. 
+                      Keep an eye out for exciting updates!
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Feedback Section */}
+              <div className="bg-white/10 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <div className="text-2xl">💡</div>
+                  <div>
+                    <h3 className="text-lg font-bold mb-2">Share Your Ideas!</h3>
+                    <p className="text-blue-100 text-sm leading-relaxed">
+                      Found a bug? Have a great idea? Visit the <strong>Settings</strong> tab in your classroom 
+                      to report issues or suggest new features. Your feedback shapes our updates!
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* What's New Items */}
+          <div className="bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-200 rounded-xl p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="text-3xl">🎉</div>
+              <h3 className="text-2xl font-bold text-gray-800">Latest Updates</h3>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* New Feature 1 */}
+              <div className="bg-white rounded-lg p-4 border-2 border-green-200 shadow-sm">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <span className="font-bold text-green-700 text-sm">NEW</span>
+                  <span className="text-gray-600 text-sm">Custom Class Rewards</span>
+                </div>
+                <p className="text-sm text-gray-700 leading-relaxed">
+                  Teachers can now create, edit, and manage custom classroom rewards in the Shop! 
+                  Personalize your reward system to fit your classroom perfectly.
+                </p>
+              </div>
+
+              {/* Improved Feature */}
+              <div className="bg-white rounded-lg p-4 border-2 border-blue-200 shadow-sm">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                  <span className="font-bold text-blue-700 text-sm">IMPROVED</span>
+                  <span className="text-gray-600 text-sm">Featured Daily Deals</span>
+                </div>
+                <p className="text-sm text-gray-700 leading-relaxed">
+                  The Shop now features rotating daily special offers with up to 30% discounts on 
+                  avatars, pets, and rewards to keep students engaged!
+                </p>
+              </div>
+
+              {/* Enhanced Feature */}
+              <div className="bg-white rounded-lg p-4 border-2 border-purple-200 shadow-sm">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                  <span className="font-bold text-purple-700 text-sm">ENHANCED</span>
+                  <span className="text-gray-600 text-sm">Teachers Toolkit</span>
+                </div>
+                <p className="text-sm text-gray-700 leading-relaxed">
+                  Expanded classroom management tools including job assignments with XP/coin rewards, 
+                  timetable creation, birthday tracking, and more organizational features.
+                </p>
+              </div>
+
+              {/* Updated Feature */}
+              <div className="bg-white rounded-lg p-4 border-2 border-orange-200 shadow-sm">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                  <span className="font-bold text-orange-700 text-sm">UPDATED</span>
+                  <span className="text-gray-600 text-sm">Pet Collection</span>
+                </div>
+                <p className="text-sm text-gray-700 leading-relaxed">
+                  Expanded pet collection with new species and improved pet management. 
+                  Students can now collect and equip from a wider variety of companions!
+                </p>
+              </div>
+
+              {/* Upcoming Feature */}
+              <div className="bg-white rounded-lg p-4 border-2 border-gray-200 shadow-sm">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-3 h-3 bg-gray-500 rounded-full"></div>
+                  <span className="font-bold text-gray-700 text-sm">COMING SOON</span>
+                  <span className="text-gray-600 text-sm">More Games & Activities</span>
+                </div>
+                <p className="text-sm text-gray-700 leading-relaxed">
+                  We're working on exciting new classroom games and interactive activities 
+                  to make learning even more engaging for your students!
+                </p>
+              </div>
+
+              {/* Call to Action */}
+              <div className="bg-gradient-to-br from-green-400 to-blue-500 text-white rounded-lg p-4 shadow-sm">
+                <div className="text-center">
+                  <div className="text-2xl mb-2">🎯</div>
+                  <h4 className="font-bold mb-1">Have Requests?</h4>
+                  <p className="text-sm text-green-100 mb-2">
+                    Your ideas help us build better tools!
+                  </p>
+                  <p className="text-xs text-green-100">
+                    Find the feedback form in Settings after launching your classroom.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Quick Stats */}
         {savedClasses.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
