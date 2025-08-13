@@ -206,6 +206,9 @@ const ClassroomChampions = () => {
   
   // New state for reward management
   const [classRewards, setClassRewards] = useState([]);
+  
+  // Welcome popup state
+  const [showWelcomePopup, setShowWelcomePopup] = useState(false);
 
   // AUTH & DATA LOADING
   useEffect(() => {
@@ -215,6 +218,20 @@ const ClassroomChampions = () => {
     });
     return () => unsubscribe();
   }, [router]);
+
+  // Show welcome popup after data loads
+  useEffect(() => {
+    if (!loading && user && students.length > 0) {
+      // Show popup once per session
+      const hasShownToday = sessionStorage.getItem('welcomePopupShown');
+      if (!hasShownToday) {
+        setTimeout(() => {
+          setShowWelcomePopup(true);
+          sessionStorage.setItem('welcomePopupShown', 'true');
+        }, 1000); // Small delay for better UX
+      }
+    }
+  }, [loading, user, students]);
 
   const loadUserData = async (user) => {
     setLoading(true);
