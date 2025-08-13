@@ -1,21 +1,26 @@
 // components/curriculum/mathematics/MathWarmup.js
-// MATH WARMUP WITH GRADE LEVELS AND CATEGORIES
+// SIMPLIFIED MATH WARMUP - 20 QUESTIONS PER GRADE
 import React, { useState, useEffect, useRef } from 'react';
-import { GRADE_LEVELS, questionGenerators, getQuestionsForSubcategory } from './data/math-warmup-content';
+import { grade5MathQuestions } from './data/grade5-math-data';
 
-// ===============================================
-// MAIN COMPONENT
-// ===============================================
+// Available grades (will expand as we add more)
+const AVAILABLE_GRADES = {
+  grade5: {
+    name: "Grade 5",
+    description: "Year 5 mathematics",
+    questions: grade5MathQuestions
+  }
+  // Add more grades here as we create them
+};
+
 const MathWarmup = ({ showToast = () => {}, students = [] }) => {
-  const [currentGrade, setCurrentGrade] = useState(null);
-  const [currentCategory, setCurrentCategory] = useState(null);
-  const [currentSubcategory, setCurrentSubcategory] = useState(null);
+  const [selectedGrade, setSelectedGrade] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [showAnswer, setShowAnswer] = useState(false);
+  const [isPresentationMode, setIsPresentationMode] = useState(false);
   const [isTimerMode, setIsTimerMode] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
-  const [isPresentationMode, setIsPresentationMode] = useState(false);
-  const [showAnswer, setShowAnswer] = useState(false);
   const [isQuizActive, setIsQuizActive] = useState(false);
   
   const timerRef = useRef(null);
@@ -39,24 +44,21 @@ const MathWarmup = ({ showToast = () => {}, students = [] }) => {
     return () => clearInterval(timerRef.current);
   }, [isTimerMode, timeLeft, isQuizActive]);
 
-  const startQuiz = (subcategoryKey) => {
-    const questions = getQuestionsForSubcategory(currentGrade, currentCategory, subcategoryKey);
+  const startQuiz = (gradeKey) => {
+    const grade = AVAILABLE_GRADES[gradeKey];
+    if (!grade) return;
     
-    setCurrentSubcategory(subcategoryKey);
-    setQuestions(questions);
+    setSelectedGrade(gradeKey);
+    setQuestions(grade.questions);
     setCurrentQuestionIndex(0);
     setShowAnswer(false);
     setIsQuizActive(true);
     
     if (isTimerMode) {
-      setTimeLeft(10); // 10 seconds per question
+      setTimeLeft(15); // 15 seconds per question for mental math
     }
     
-    const grade = GRADE_LEVELS[currentGrade];
-    const category = grade.categories[currentCategory];
-    const subcategory = category.subcategories[subcategoryKey];
-    
-    showToast(`Starting ${subcategory.name} quiz!`, 'success');
+    showToast(`Starting ${grade.name} Math Warmup!`, 'success');
   };
 
   const nextQuestion = () => {
@@ -64,12 +66,12 @@ const MathWarmup = ({ showToast = () => {}, students = [] }) => {
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
       if (isTimerMode) {
-        setTimeLeft(10);
+        setTimeLeft(15);
       }
     } else {
       // Quiz finished
       setIsQuizActive(false);
-      showToast('Quiz completed! Well done!', 'success');
+      showToast('Math Warmup completed! Well done!', 'success');
     }
   };
 
@@ -78,7 +80,7 @@ const MathWarmup = ({ showToast = () => {}, students = [] }) => {
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(prev => prev - 1);
       if (isTimerMode) {
-        setTimeLeft(10);
+        setTimeLeft(15);
       }
     }
   };
@@ -89,133 +91,42 @@ const MathWarmup = ({ showToast = () => {}, students = [] }) => {
 
   const resetQuiz = () => {
     setIsQuizActive(false);
+    setSelectedGrade(null);
     setCurrentQuestionIndex(0);
     setShowAnswer(false);
     setTimeLeft(0);
   };
 
+  const goToQuestion = (index) => {
+    setCurrentQuestionIndex(index);
+    setShowAnswer(false);
+    if (isTimerMode) {
+      setTimeLeft(15);
+    }
+  };
+
   // Render grade selection
-  if (!currentGrade) {
+  if (!selectedGrade || !isQuizActive) {
     return (
       <div className={`space-y-6 ${isPresentationMode ? 'min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-8' : ''}`}>
         {/* Header */}
         <div className={`bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl shadow-lg ${isPresentationMode ? 'p-16' : 'p-8'}`}>
           <div className="text-center">
             <h1 className={`font-bold mb-4 ${isPresentationMode ? 'text-8xl' : 'text-5xl'}`}>
-              🔢 Math Warmup Challenge
+              🔢 Math Warmup
             </h1>
-            <p className={`opacity-90 ${isPresentationMode ? 'text-4xl' : 'text-xl'}`}>
-              Choose your grade level to begin
+            <p className={`opacity-90 mb-6 ${isPresentationMode ? 'text-4xl' : 'text-xl'}`}>
+              20 mental math questions to start your day
             </p>
-          </div>
-          
-          <div className="flex justify-center mt-6">
-            <button
-              onClick={() => setIsPresentationMode(!isPresentationMode)}
-              className={`bg-white bg-opacity-20 text-white rounded-lg font-semibold hover:bg-opacity-30 transition-all ${isPresentationMode ? 'px-12 py-6 text-3xl' : 'px-6 py-3'}`}
-            >
-              {isPresentationMode ? '📺 Exit Presentation' : '🎭 Presentation Mode'}
-            </button>
-          </div>
-        </div>
-
-        {/* Grade Level Selection */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Object.entries(GRADE_LEVELS).map(([gradeKey, grade]) => (
-            <button
-              key={gradeKey}
-              onClick={() => setCurrentGrade(gradeKey)}
-              className={`bg-white rounded-xl shadow-lg border-2 border-gray-200 hover:border-blue-400 hover:shadow-xl transition-all duration-300 text-left transform hover:scale-105 ${isPresentationMode ? 'p-12' : 'p-8'}`}
-            >
-              <h3 className={`font-bold text-blue-600 mb-3 ${isPresentationMode ? 'text-6xl' : 'text-3xl'}`}>
-                📚 {grade.name}
-              </h3>
-              <p className={`text-gray-600 mb-4 ${isPresentationMode ? 'text-3xl' : 'text-lg'}`}>
-                {grade.description}
-              </p>
-              <div className={`text-blue-500 font-semibold ${isPresentationMode ? 'text-2xl' : 'text-base'}`}>
-                {Object.keys(grade.categories).length} categories available →
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  // Render category selection
-  if (!currentCategory) {
-    const grade = GRADE_LEVELS[currentGrade];
-    return (
-      <div className={`space-y-6 ${isPresentationMode ? 'min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-8' : ''}`}>
-        {/* Header with back button */}
-        <div className={`bg-gradient-to-r from-green-500 to-blue-600 text-white rounded-xl shadow-lg ${isPresentationMode ? 'p-16' : 'p-8'}`}>
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className={`font-bold mb-2 ${isPresentationMode ? 'text-7xl' : 'text-4xl'}`}>
-                📚 {grade.name}
-              </h1>
-              <p className={`opacity-90 ${isPresentationMode ? 'text-3xl' : 'text-xl'}`}>
-                Choose a math category
-              </p>
+            
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={() => setIsPresentationMode(!isPresentationMode)}
+                className={`bg-white bg-opacity-20 text-white rounded-lg font-semibold hover:bg-opacity-30 transition-all ${isPresentationMode ? 'px-12 py-6 text-3xl' : 'px-6 py-3'}`}
+              >
+                {isPresentationMode ? '📺 Exit Presentation' : '🎭 Presentation Mode'}
+              </button>
             </div>
-            <button
-              onClick={() => setCurrentGrade(null)}
-              className={`bg-white bg-opacity-20 text-white rounded-lg font-semibold hover:bg-opacity-30 transition-all ${isPresentationMode ? 'px-12 py-6 text-3xl' : 'px-6 py-3'}`}
-            >
-              ← Back to Grades
-            </button>
-          </div>
-        </div>
-
-        {/* Category Selection */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Object.entries(grade.categories).map(([categoryKey, category]) => (
-            <button
-              key={categoryKey}
-              onClick={() => setCurrentCategory(categoryKey)}
-              className={`bg-white rounded-xl shadow-lg border-2 border-gray-200 hover:border-green-400 hover:shadow-xl transition-all duration-300 text-left transform hover:scale-105 ${isPresentationMode ? 'p-12' : 'p-8'}`}
-            >
-              <div className={`text-center mb-4 ${isPresentationMode ? 'text-8xl' : 'text-5xl'}`}>
-                {category.icon}
-              </div>
-              <h3 className={`font-bold text-green-600 mb-3 text-center ${isPresentationMode ? 'text-5xl' : 'text-2xl'}`}>
-                {category.name}
-              </h3>
-              <div className={`text-green-500 font-semibold text-center ${isPresentationMode ? 'text-2xl' : 'text-base'}`}>
-                {Object.keys(category.subcategories).length} topics →
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  // Render subcategory selection or quiz
-  if (!isQuizActive) {
-    const grade = GRADE_LEVELS[currentGrade];
-    const category = grade.categories[currentCategory];
-    
-    return (
-      <div className={`space-y-6 ${isPresentationMode ? 'min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-8' : ''}`}>
-        {/* Header */}
-        <div className={`bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-xl shadow-lg ${isPresentationMode ? 'p-16' : 'p-8'}`}>
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className={`font-bold mb-2 ${isPresentationMode ? 'text-7xl' : 'text-4xl'}`}>
-                {category.icon} {category.name}
-              </h1>
-              <p className={`opacity-90 ${isPresentationMode ? 'text-3xl' : 'text-xl'}`}>
-                {grade.name} • Choose a topic
-              </p>
-            </div>
-            <button
-              onClick={() => setCurrentCategory(null)}
-              className={`bg-white bg-opacity-20 text-white rounded-lg font-semibold hover:bg-opacity-30 transition-all ${isPresentationMode ? 'px-12 py-6 text-3xl' : 'px-6 py-3'}`}
-            >
-              ← Back to Categories
-            </button>
           </div>
         </div>
 
@@ -238,28 +149,51 @@ const MathWarmup = ({ showToast = () => {}, students = [] }) => {
               />
             </button>
             <span className={`text-gray-600 ${isPresentationMode ? 'text-2xl' : 'text-base'}`}>
-              {isTimerMode ? '⏰ 10 seconds per question' : '⏱️ Manual timing'}
+              {isTimerMode ? '⏰ 15 seconds per question' : '⏱️ Manual timing'}
             </span>
           </div>
         </div>
 
-        {/* Subcategory Selection */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {Object.entries(category.subcategories).map(([subcategoryKey, subcategory]) => (
+        {/* Grade Selection */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Object.entries(AVAILABLE_GRADES).map(([gradeKey, grade]) => (
             <button
-              key={subcategoryKey}
-              onClick={() => startQuiz(subcategoryKey)}
-              className={`bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-lg border-2 border-gray-200 hover:border-purple-400 hover:shadow-xl transition-all duration-300 text-left transform hover:scale-105 ${isPresentationMode ? 'p-16' : 'p-8'}`}
+              key={gradeKey}
+              onClick={() => startQuiz(gradeKey)}
+              className={`bg-white rounded-xl shadow-lg border-2 border-gray-200 hover:border-blue-400 hover:shadow-xl transition-all duration-300 text-left transform hover:scale-105 ${isPresentationMode ? 'p-12' : 'p-8'}`}
             >
-              <h3 className={`font-bold text-purple-600 mb-4 ${isPresentationMode ? 'text-5xl' : 'text-2xl'}`}>
-                {subcategory.name}
+              <h3 className={`font-bold text-blue-600 mb-3 ${isPresentationMode ? 'text-6xl' : 'text-3xl'}`}>
+                📚 {grade.name}
               </h3>
-              <div className={`flex items-center justify-between ${isPresentationMode ? 'text-2xl' : 'text-lg'}`}>
-                <span className="text-gray-600">10 Questions</span>
-                <span className="text-purple-500 font-semibold">Start →</span>
+              <p className={`text-gray-600 mb-4 ${isPresentationMode ? 'text-3xl' : 'text-lg'}`}>
+                {grade.description}
+              </p>
+              <div className={`bg-green-100 rounded-lg p-3 mb-4 ${isPresentationMode ? 'p-6' : ''}`}>
+                <p className={`text-green-800 font-semibold ${isPresentationMode ? 'text-2xl' : 'text-sm'}`}>
+                  ✓ 10 Number Facts Questions
+                </p>
+                <p className={`text-green-800 font-semibold ${isPresentationMode ? 'text-2xl' : 'text-sm'}`}>
+                  ✓ 10 Mixed Math Questions
+                </p>
+              </div>
+              <div className={`text-blue-500 font-semibold ${isPresentationMode ? 'text-2xl' : 'text-base'}`}>
+                Start Warmup →
               </div>
             </button>
           ))}
+        </div>
+
+        {/* Coming Soon Notice */}
+        <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-xl p-6">
+          <div className="flex items-start space-x-4">
+            <span className="text-3xl">🚧</span>
+            <div>
+              <h4 className="font-bold text-yellow-800 mb-2">More Grades Coming Soon!</h4>
+              <p className="text-yellow-700">
+                Additional grade levels (Prep through Grade 6) will be added once Grade 5 is tested and approved.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -267,9 +201,8 @@ const MathWarmup = ({ showToast = () => {}, students = [] }) => {
 
   // Render quiz
   const currentQuestion = questions[currentQuestionIndex];
-  const grade = GRADE_LEVELS[currentGrade];
-  const category = grade.categories[currentCategory];
-  const subcategory = category.subcategories[currentSubcategory];
+  const grade = AVAILABLE_GRADES[selectedGrade];
+  const isNumberFact = currentQuestionIndex < 10; // First 10 are number facts
 
   return (
     <div className={`space-y-6 ${isPresentationMode ? 'min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-8' : ''}`}>
@@ -278,16 +211,16 @@ const MathWarmup = ({ showToast = () => {}, students = [] }) => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className={`font-bold mb-2 ${isPresentationMode ? 'text-6xl' : 'text-3xl'}`}>
-              {category.icon} {subcategory.name}
+              {isNumberFact ? '🔢 Number Facts' : '🎯 Mixed Math'}
             </h1>
             <p className={`opacity-90 ${isPresentationMode ? 'text-3xl' : 'text-lg'}`}>
-              Question {currentQuestionIndex + 1} of {questions.length}
+              {grade.name} • Question {currentQuestionIndex + 1} of {questions.length}
             </p>
           </div>
           <div className="text-right">
             {isTimerMode && (
               <div className={`bg-white bg-opacity-20 rounded-lg px-4 py-2 mb-3 ${isPresentationMode ? 'px-8 py-4' : ''}`}>
-                <div className={`font-bold ${isPresentationMode ? 'text-4xl' : 'text-2xl'} ${timeLeft <= 3 ? 'text-red-300 animate-pulse' : 'text-white'}`}>
+                <div className={`font-bold ${isPresentationMode ? 'text-4xl' : 'text-2xl'} ${timeLeft <= 5 ? 'text-red-300 animate-pulse' : 'text-white'}`}>
                   ⏰ {timeLeft}s
                 </div>
               </div>
@@ -302,32 +235,47 @@ const MathWarmup = ({ showToast = () => {}, students = [] }) => {
         </div>
       </div>
 
-      {/* Progress Bar */}
+      {/* Progress Section */}
       <div className={`bg-white rounded-xl shadow-lg ${isPresentationMode ? 'p-8' : 'p-4'}`}>
-        <div className="flex items-center justify-between mb-2">
+        {/* Progress Bar */}
+        <div className="flex items-center justify-between mb-4">
           <span className={`font-semibold text-gray-700 ${isPresentationMode ? 'text-2xl' : 'text-sm'}`}>Progress</span>
           <span className={`text-gray-600 ${isPresentationMode ? 'text-2xl' : 'text-sm'}`}>
             {Math.round(((currentQuestionIndex + 1) / questions.length) * 100)}%
           </span>
         </div>
-        <div className={`w-full bg-gray-200 rounded-full ${isPresentationMode ? 'h-6' : 'h-3'}`}>
+        <div className={`w-full bg-gray-200 rounded-full ${isPresentationMode ? 'h-6' : 'h-3'} mb-4`}>
           <div 
             className="bg-gradient-to-r from-green-500 to-blue-500 h-full rounded-full transition-all duration-500"
             style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
           ></div>
         </div>
+
+        {/* Section Indicator */}
+        <div className="flex gap-2">
+          <div className={`flex-1 rounded-lg p-2 text-center ${isPresentationMode ? 'p-4' : ''} ${isNumberFact ? 'bg-blue-100 border-2 border-blue-400' : 'bg-gray-100'}`}>
+            <div className={`font-semibold ${isPresentationMode ? 'text-xl' : 'text-sm'} ${isNumberFact ? 'text-blue-600' : 'text-gray-600'}`}>
+              Number Facts (1-10)
+            </div>
+          </div>
+          <div className={`flex-1 rounded-lg p-2 text-center ${isPresentationMode ? 'p-4' : ''} ${!isNumberFact ? 'bg-purple-100 border-2 border-purple-400' : 'bg-gray-100'}`}>
+            <div className={`font-semibold ${isPresentationMode ? 'text-xl' : 'text-sm'} ${!isNumberFact ? 'text-purple-600' : 'text-gray-600'}`}>
+              Mixed Math (11-20)
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Question Display */}
-      <div className={`bg-white rounded-xl shadow-lg text-center ${isPresentationMode ? 'p-24' : 'p-12'}`}>
-        <div className={`font-bold text-gray-800 mb-8 ${isPresentationMode ? 'text-8xl leading-relaxed' : 'text-4xl md:text-6xl'}`}>
+      <div className={`bg-white rounded-xl shadow-lg text-center ${isPresentationMode ? 'p-24 flex-grow flex flex-col justify-center' : 'p-12'}`}>
+        <div className={`font-bold text-gray-800 mb-8 ${isPresentationMode ? 'text-9xl leading-relaxed' : 'text-5xl md:text-7xl'}`}>
           {currentQuestion.question}
         </div>
         
         {showAnswer && (
           <div className={`bg-green-50 border-2 border-green-200 rounded-xl p-8 mb-8 ${isPresentationMode ? 'p-16' : ''}`}>
-            <div className={`text-green-700 font-bold ${isPresentationMode ? 'text-6xl' : 'text-3xl md:text-5xl'}`}>
-              Answer: {currentQuestion.answer}
+            <div className={`text-green-700 font-bold ${isPresentationMode ? 'text-7xl' : 'text-4xl md:text-6xl'}`}>
+              {currentQuestion.answer}
             </div>
           </div>
         )}
@@ -356,6 +304,36 @@ const MathWarmup = ({ showToast = () => {}, students = [] }) => {
           >
             {currentQuestionIndex === questions.length - 1 ? 'Finish' : 'Next →'}
           </button>
+        </div>
+      </div>
+
+      {/* Question Navigator (for easy jumping) */}
+      <div className={`bg-white rounded-xl shadow-lg ${isPresentationMode ? 'p-8' : 'p-6'}`}>
+        <h4 className={`font-bold text-gray-800 mb-4 text-center ${isPresentationMode ? 'text-2xl' : 'text-lg'}`}>
+          Quick Jump to Question
+        </h4>
+        <div className="grid grid-cols-10 gap-2">
+          {questions.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => goToQuestion(index)}
+              className={`rounded-lg font-semibold transition-all ${isPresentationMode ? 'px-4 py-3 text-xl' : 'px-3 py-2 text-sm'} ${
+                currentQuestionIndex === index
+                  ? index < 10 
+                    ? 'bg-blue-500 text-white' 
+                    : 'bg-purple-500 text-white'
+                  : index < 10
+                  ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                  : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+              }`}
+            >
+              {index + 1}
+            </button>
+          ))}
+        </div>
+        <div className={`text-center mt-4 text-gray-600 ${isPresentationMode ? 'text-lg' : 'text-sm'}`}>
+          <span className="inline-block bg-blue-100 text-blue-700 px-2 py-1 rounded mr-2">Blue = Number Facts</span>
+          <span className="inline-block bg-purple-100 text-purple-700 px-2 py-1 rounded">Purple = Mixed Math</span>
         </div>
       </div>
     </div>
