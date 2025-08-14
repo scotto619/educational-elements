@@ -1,4 +1,4 @@
-// components/tabs/QuizShowTab.js - UPDATED TO FIX GAME START ERROR
+// components/tabs/QuizShowTab.js - FINAL VERSION WITH FIXED STUDENT JOIN
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { database } from '../../utils/firebase';
@@ -9,10 +9,6 @@ import { generateRoomCode, calculateQuizScore, playQuizSound } from '../../utils
 import QuizDashboard from '../quizshow/teacher/QuizDashboard';
 import GameLobby from '../quizshow/teacher/GameLobby';
 import GamePresentation from '../quizshow/teacher/GamePresentation';
-
-// Import student components
-import JoinGame from '../quizshow/student/JoinGame';
-import StudentLobby from '../quizshow/student/StudentLobby';
 
 // ===============================================
 // MAIN QUIZ SHOW TAB COMPONENT
@@ -37,10 +33,6 @@ const QuizShowTab = ({
   const [roomCode, setRoomCode] = useState(null);
   const [isHost, setIsHost] = useState(false);
   const [gameRoomData, setGameRoomData] = useState(null);
-  
-  // Student Mode State
-  const [studentMode, setStudentMode] = useState(false);
-  const [joinedAsStudent, setJoinedAsStudent] = useState(null);
 
   // ===============================================
   // FIREBASE REAL-TIME LISTENERS
@@ -58,7 +50,7 @@ const QuizShowTab = ({
           setRoomCode(null);
           setGameRoomData(null);
           setCurrentView('dashboard');
-          showToast('Game ended by host', 'info');
+          showToast('Game ended', 'info');
         }
       });
       
@@ -80,6 +72,7 @@ const QuizShowTab = ({
         status: 'waiting',
         currentQuestion: 0,
         startTime: null,
+        questionPhase: 'showing',
         settings: {
           showLeaderboard: true,
           allowLateJoin: false,
@@ -148,8 +141,6 @@ const QuizShowTab = ({
       setRoomCode(null);
       setGameRoomData(null);
       setCurrentView('dashboard');
-      setStudentMode(false);
-      setJoinedAsStudent(null);
       
       showToast('Game ended successfully!', 'success');
     } catch (error) {
@@ -218,15 +209,28 @@ const QuizShowTab = ({
           onAwardCoins(result.studentId, coinReward, 'Quiz Show performance');
         }
       });
+      
+      showToast('XP and coins awarded to participants!', 'success');
     } catch (error) {
       console.error('Error awarding game rewards:', error);
+    }
+  };
+
+  // Handle student join button
+  const handleStudentJoin = () => {
+    if (roomCode) {
+      // Open join page with room code pre-filled
+      window.open(`/join?code=${roomCode}`, '_blank');
+    } else {
+      // Open join page without room code
+      window.open('/join', '_blank');
     }
   };
 
   // ===============================================
   // RENDER FUNCTIONS
   // ===============================================
-  const renderTeacherView = () => {
+  const renderView = () => {
     switch (currentView) {
       case 'dashboard':
         return (
@@ -265,28 +269,6 @@ const QuizShowTab = ({
     }
   };
 
-  const renderStudentView = () => {
-    switch (currentView) {
-      case 'join':
-        return (
-          <JoinGame
-            students={students}
-            onJoinGame={() => showToast('Student join coming soon!', 'info')}
-            onCancel={() => {
-              setStudentMode(false);
-              setCurrentView('dashboard');
-            }}
-            getAvatarImage={getAvatarImage}
-            calculateAvatarLevel={calculateAvatarLevel}
-            loading={loading}
-          />
-        );
-      
-      default:
-        return renderTeacherView();
-    }
-  };
-
   // ===============================================
   // MAIN RENDER
   // ===============================================
@@ -304,17 +286,13 @@ const QuizShowTab = ({
           </div>
           
           <div className="flex items-center space-x-4">
-            {!studentMode && (
-              <button
-                onClick={() => {
-                  setStudentMode(true);
-                  setCurrentView('join');
-                }}
-                className="bg-white text-purple-600 px-4 py-2 rounded-lg font-semibold hover:bg-purple-50 transition-colors"
-              >
-                Join as Student
-              </button>
-            )}
+            <button
+              onClick={handleStudentJoin}
+              className="bg-white text-purple-600 px-4 py-2 rounded-lg font-semibold hover:bg-purple-50 transition-colors flex items-center space-x-2"
+            >
+              <span>📱</span>
+              <span>Join as Student</span>
+            </button>
             
             {roomCode && (
               <div className="bg-yellow-400 text-purple-900 px-4 py-2 rounded-lg font-bold">
@@ -327,7 +305,7 @@ const QuizShowTab = ({
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto p-6">
-        {studentMode ? renderStudentView() : renderTeacherView()}
+        {renderView()}
       </div>
     </div>
   );

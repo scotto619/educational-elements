@@ -1,10 +1,9 @@
-// components/quizshow/teacher/GameLobby.js - TEACHER GAME WAITING ROOM
+// components/quizshow/teacher/GameLobby.js - FIXED PLAYER DISPLAY
 import React, { useState, useEffect } from 'react';
 import { playQuizSound } from '../../../utils/quizShowHelpers';
 
 const GameLobby = ({ roomCode, gameData, onStartGame, onEndGame, loading }) => {
   const [players, setPlayers] = useState([]);
-  const [showSettings, setShowSettings] = useState(false);
   const [gameSettings, setGameSettings] = useState({
     showLeaderboard: true,
     allowLateJoin: false,
@@ -18,12 +17,13 @@ const GameLobby = ({ roomCode, gameData, onStartGame, onEndGame, loading }) => {
         id,
         ...player
       }));
-      setPlayers(playerList);
       
-      // Play join sound when new player joins
+      // Play sound when new player joins
       if (playerList.length > players.length) {
         playQuizSound('join');
       }
+      
+      setPlayers(playerList);
     }
 
     if (gameData?.settings) {
@@ -34,7 +34,7 @@ const GameLobby = ({ roomCode, gameData, onStartGame, onEndGame, loading }) => {
   const canStartGame = players.length > 0 && gameData?.quiz?.questions?.length > 0;
 
   const PlayerCard = ({ player }) => (
-    <div className="bg-white rounded-xl p-4 shadow-lg border-2 border-purple-200 hover:border-purple-400 transition-all duration-200 transform hover:scale-105">
+    <div className="bg-white rounded-xl p-4 shadow-lg border-2 border-purple-200 hover:border-purple-400 transition-all duration-200">
       <div className="flex items-center space-x-3">
         <div className="relative">
           <img 
@@ -80,7 +80,7 @@ const GameLobby = ({ roomCode, gameData, onStartGame, onEndGame, loading }) => {
                 </div>
                 <div className="flex items-center space-x-2">
                   <span className="text-2xl">🏆</span>
-                  <span>{gameData?.quiz?.category || 'General'}</span>
+                  <span className="capitalize">{gameData?.quiz?.category || 'General'}</span>
                 </div>
               </div>
             </div>
@@ -90,7 +90,7 @@ const GameLobby = ({ roomCode, gameData, onStartGame, onEndGame, loading }) => {
                 <p className="text-4xl font-bold tracking-wider">{roomCode}</p>
               </div>
               <p className="text-purple-100 text-sm mt-2">
-                Students enter this code to join
+                Students go to: <strong>educational-elements.com/join</strong>
               </p>
             </div>
           </div>
@@ -125,11 +125,14 @@ const GameLobby = ({ roomCode, gameData, onStartGame, onEndGame, loading }) => {
                   <p className="text-gray-500 mb-4">
                     Share the room code <strong>{roomCode}</strong> with your students
                   </p>
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md mx-auto">
-                    <p className="text-blue-800 text-sm">
-                      💡 <strong>Tip:</strong> Students can join by clicking "Join as Student" 
-                      button in the Quiz Show tab and entering the room code.
-                    </p>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 max-w-md mx-auto">
+                    <h4 className="font-bold text-blue-800 mb-2">📱 How students join:</h4>
+                    <ol className="text-blue-700 text-sm space-y-1 text-left">
+                      <li>1. Open browser on phone/tablet</li>
+                      <li>2. Go to <strong>educational-elements.com/join</strong></li>
+                      <li>3. Enter room code: <strong>{roomCode}</strong></li>
+                      <li>4. Enter their name and join!</li>
+                    </ol>
                   </div>
                 </div>
               )}
@@ -140,7 +143,7 @@ const GameLobby = ({ roomCode, gameData, onStartGame, onEndGame, loading }) => {
           <div className="space-y-6">
             {/* Game Controls */}
             <div className="bg-white rounded-2xl shadow-xl p-6">
-              <h3 className="text-xl font-bold text-gray-800 mb-4">Game Controls</h3>
+              <h3 className="text-xl font-bold text-gray-800 mb-4">🎮 Game Controls</h3>
               
               <div className="space-y-4">
                 <button
@@ -171,14 +174,6 @@ const GameLobby = ({ roomCode, gameData, onStartGame, onEndGame, loading }) => {
                 )}
 
                 <button
-                  onClick={() => setShowSettings(!showSettings)}
-                  className="w-full bg-blue-500 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-600 transition-colors flex items-center justify-center space-x-2"
-                >
-                  <span>⚙️</span>
-                  <span>Game Settings</span>
-                </button>
-
-                <button
                   onClick={onEndGame}
                   className="w-full bg-red-500 text-white py-3 px-4 rounded-lg font-semibold hover:bg-red-600 transition-colors flex items-center justify-center space-x-2"
                 >
@@ -188,74 +183,9 @@ const GameLobby = ({ roomCode, gameData, onStartGame, onEndGame, loading }) => {
               </div>
             </div>
 
-            {/* Game Settings Panel */}
-            {showSettings && (
-              <div className="bg-white rounded-2xl shadow-xl p-6">
-                <h3 className="text-xl font-bold text-gray-800 mb-4">Settings</h3>
-                
-                <div className="space-y-4">
-                  <label className="flex items-center justify-between">
-                    <span className="text-sm font-semibold text-gray-700">Show Leaderboard</span>
-                    <input
-                      type="checkbox"
-                      checked={gameSettings.showLeaderboard}
-                      onChange={(e) => setGameSettings(prev => ({ 
-                        ...prev, 
-                        showLeaderboard: e.target.checked 
-                      }))}
-                      className="text-purple-600 rounded"
-                    />
-                  </label>
-
-                  <label className="flex items-center justify-between">
-                    <span className="text-sm font-semibold text-gray-700">Allow Late Join</span>
-                    <input
-                      type="checkbox"
-                      checked={gameSettings.allowLateJoin}
-                      onChange={(e) => setGameSettings(prev => ({ 
-                        ...prev, 
-                        allowLateJoin: e.target.checked 
-                      }))}
-                      className="text-purple-600 rounded"
-                    />
-                  </label>
-
-                  <label className="flex items-center justify-between">
-                    <span className="text-sm font-semibold text-gray-700">Show Correct Answers</span>
-                    <input
-                      type="checkbox"
-                      checked={gameSettings.showCorrectAnswers}
-                      onChange={(e) => setGameSettings(prev => ({ 
-                        ...prev, 
-                        showCorrectAnswers: e.target.checked 
-                      }))}
-                      className="text-purple-600 rounded"
-                    />
-                  </label>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Time per Question: {gameSettings.timePerQuestion}s
-                    </label>
-                    <input
-                      type="range"
-                      min="10"
-                      max="60"
-                      value={gameSettings.timePerQuestion}
-                      onChange={(e) => setGameSettings(prev => ({ 
-                        ...prev, 
-                        timePerQuestion: parseInt(e.target.value) 
-                      }))}
-                      className="w-full"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* Quiz Info */}
             <div className="bg-white rounded-2xl shadow-xl p-6">
-              <h3 className="text-xl font-bold text-gray-800 mb-4">Quiz Preview</h3>
+              <h3 className="text-xl font-bold text-gray-800 mb-4">📊 Quiz Preview</h3>
               
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
@@ -287,32 +217,49 @@ const GameLobby = ({ roomCode, gameData, onStartGame, onEndGame, loading }) => {
               )}
             </div>
 
-            {/* Room Info */}
+            {/* Share Info */}
             <div className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-2xl p-6">
-              <h3 className="text-lg font-bold mb-3">🔗 Share Room Code</h3>
-              <div className="bg-white bg-opacity-20 rounded-lg p-4 text-center">
-                <p className="text-sm opacity-90 mb-2">Room Code</p>
-                <p className="text-3xl font-bold tracking-wider">{roomCode}</p>
+              <h3 className="text-lg font-bold mb-3">🔗 Share with Students</h3>
+              <div className="space-y-3">
+                <div className="bg-white bg-opacity-20 rounded-lg p-3">
+                  <p className="text-sm opacity-90 mb-1">Website:</p>
+                  <p className="font-bold">educational-elements.com/join</p>
+                </div>
+                <div className="bg-white bg-opacity-20 rounded-lg p-3">
+                  <p className="text-sm opacity-90 mb-1">Room Code:</p>
+                  <p className="text-2xl font-bold tracking-wider">{roomCode}</p>
+                </div>
               </div>
-              <p className="text-sm opacity-90 mt-3 text-center">
-                Students enter this code to join the game
-              </p>
             </div>
           </div>
         </div>
 
-        {/* Instructions Bar */}
-        <div className="mt-8 bg-blue-50 border border-blue-200 rounded-xl p-6">
-          <div className="flex items-center space-x-4">
+        {/* Instructions */}
+        <div className="mt-8 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
+          <div className="flex items-start space-x-4">
             <div className="text-3xl">ℹ️</div>
             <div>
-              <h3 className="font-bold text-blue-800 mb-1">How to Start</h3>
-              <ol className="text-blue-700 text-sm space-y-1">
-                <li>1. Share room code <strong>{roomCode}</strong> with students</li>
-                <li>2. Wait for students to join using their avatars</li>
-                <li>3. Adjust game settings if needed</li>
-                <li>4. Click "Start Game" when ready!</li>
-              </ol>
+              <h3 className="font-bold text-blue-800 mb-2">Quick Start Guide:</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-blue-700 text-sm">
+                <div>
+                  <h4 className="font-semibold mb-2">For Students:</h4>
+                  <ol className="space-y-1">
+                    <li>1. Open browser on phone/tablet</li>
+                    <li>2. Go to <strong>educational-elements.com/join</strong></li>
+                    <li>3. Enter room code: <strong>{roomCode}</strong></li>
+                    <li>4. Enter name and join the game!</li>
+                  </ol>
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-2">For Teachers:</h4>
+                  <ol className="space-y-1">
+                    <li>1. Share room code with students</li>
+                    <li>2. Wait for students to join</li>
+                    <li>3. Click "Start Game" when ready</li>
+                    <li>4. Control the game from this screen!</li>
+                  </ol>
+                </div>
+              </div>
             </div>
           </div>
         </div>
