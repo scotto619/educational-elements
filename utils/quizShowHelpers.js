@@ -1,471 +1,497 @@
-// components/tabs/QuizShowTab.js - COMPLETE KAHOOT CLONE IMPLEMENTATION
-import React, { useState, useEffect } from 'react';
-import { database } from '../../utils/firebase';
-import { ref, onValue, push, set, remove, off } from 'firebase/database';
-import { generateRoomCode, calculateQuizScore, playQuizSound } from '../../utils/quizShowHelpers';
-
-// Import quiz show components
-import QuizDashboard from '../quizshow/teacher/QuizDashboard';
-import QuizCreator from '../quizshow/teacher/QuizCreator';
-import QuizLibrary from '../quizshow/teacher/QuizLibrary';
-import GameLobby from '../quizshow/teacher/GameLobby';
-import GamePresentation from '../quizshow/teacher/GamePresentation';
-import GameResults from '../quizshow/teacher/GameResults';
-
-// Import student components
-import JoinGame from '../quizshow/student/JoinGame';
-import StudentLobby from '../quizshow/student/StudentLobby';
-import StudentGameView from '../quizshow/student/StudentGameView';
-import StudentResults from '../quizshow/student/StudentResults';
+// utils/quizShowHelpers.js - QUIZ SHOW CORE UTILITIES
+import { database } from './firebase';
+import { ref, get } from 'firebase/database';
 
 // ===============================================
-// MAIN QUIZ SHOW TAB COMPONENT
+// ROOM CODE GENERATION
 // ===============================================
-const QuizShowTab = ({ 
-  students, 
-  user, 
-  showToast, 
-  userData, 
-  currentClassId,
-  getAvatarImage,
-  calculateAvatarLevel,
-  onAwardXP,
-  onAwardCoins 
-}) => {
-  // UI State
-  const [currentView, setCurrentView] = useState('dashboard');
-  const [loading, setLoading] = useState(false);
-  
-  // Game State
-  const [activeGame, setActiveGame] = useState(null);
-  const [roomCode, setRoomCode] = useState(null);
-  const [isHost, setIsHost] = useState(false);
-  const [gameRoomData, setGameRoomData] = useState(null);
-  
-  // Quiz Management
-  const [quizzes, setQuizzes] = useState([]);
-  const [selectedQuiz, setSelectedQuiz] = useState(null);
-  const [editingQuiz, setEditingQuiz] = useState(null);
-  
-  // Student Mode State
-  const [studentMode, setStudentMode] = useState(false);
-  const [joinedAsStudent, setJoinedAsStudent] = useState(null);
-
-  // ===============================================
-  // FIREBASE REAL-TIME LISTENERS
-  // ===============================================
-  useEffect(() => {
-    if (roomCode) {
-      const gameRef = ref(database, `gameRooms/${roomCode}`);
-      const unsubscribe = onValue(gameRef, (snapshot) => {
-        const data = snapshot.val();
-        setGameRoomData(data);
-        
-        if (!data && activeGame) {
-          // Game was ended by host
-          setActiveGame(null);
-          setRoomCode(null);
-          setGameRoomData(null);
-          setCurrentView('dashboard');
-          showToast('Game ended by host', 'info');
-        }
-      });
-      
-      return () => off(gameRef, 'value', unsubscribe);
-    }
-  }, [roomCode, activeGame]);
-
-  // ===============================================
-  // GAME MANAGEMENT FUNCTIONS
-  // ===============================================
-  const createGame = async (quiz) => {
-    setLoading(true);
-    try {
-      const newRoomCode = generateRoomCode();
-      const gameData = {
-        hostId: user.uid,
-        quizId: quiz.id,
-        quiz: quiz,
-        status: 'waiting',
-        currentQuestion: 0,
-        startTime: null,
-        settings: {
-          showLeaderboard: true,
-          allowLateJoin: false,
-          timePerQuestion: quiz.defaultTimeLimit || 20,
-          showCorrectAnswers: true
-        },
-        players: {},
-        responses: {},
-        createdAt: Date.now()
-      };
-      
-      await set(ref(database, `gameRooms/${newRoomCode}`), gameData);
-      
-      setRoomCode(newRoomCode);
-      setActiveGame(gameData);
-      setIsHost(true);
-      setCurrentView('lobby');
-      
-      playQuizSound('gameStart');
-      showToast(`Game created! Room code: ${newRoomCode}`, 'success');
-    } catch (error) {
-      console.error('Error creating game:', error);
-      showToast('Failed to create game', 'error');
-    }
-    setLoading(false);
-  };
-
-  const joinGame = async (code, studentInfo) => {
-    setLoading(true);
-    try {
-      const gameRef = ref(database, `gameRooms/${code}`);
-      const snapshot = await get(gameRef);
-      
-      if (!snapshot.exists()) {
-        throw new Error('Game not found');
-      }
-      
-      const gameData = snapshot.val();
-      if (gameData.status === 'finished') {
-        throw new Error('Game has already finished');
-      }
-      
-      const playerId = `player_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const playerData = {
-        name: studentInfo.name,
-        studentId: studentInfo.studentId,
-        avatar: studentInfo.avatar,
-        score: 0,
-        joinedAt: Date.now(),
-        isReady: false
-      };
-      
-      await set(ref(database, `gameRooms/${code}/players/${playerId}`), playerData);
-      
-      setRoomCode(code);
-      setJoinedAsStudent({ playerId, ...playerData });
-      setStudentMode(true);
-      setCurrentView('studentLobby');
-      
-      playQuizSound('join');
-      showToast('Joined game successfully!', 'success');
-    } catch (error) {
-      console.error('Error joining game:', error);
-      showToast(error.message || 'Failed to join game', 'error');
-    }
-    setLoading(false);
-  };
-
-  const startGame = async () => {
-    if (!roomCode || !activeGame) return;
-    
-    try {
-      const updates = {
-        status: 'playing',
-        startTime: Date.now(),
-        currentQuestion: 0
-      };
-      
-      await update(ref(database, `gameRooms/${roomCode}`), updates);
-      setCurrentView('presentation');
-      playQuizSound('gameStart');
-    } catch (error) {
-      console.error('Error starting game:', error);
-      showToast('Failed to start game', 'error');
-    }
-  };
-
-  const endGame = async () => {
-    if (!roomCode) return;
-    
-    try {
-      // Calculate final results and award XP/coins
-      const finalResults = calculateFinalResults(gameRoomData);
-      await awardGameRewards(finalResults);
-      
-      // Remove game room
-      await remove(ref(database, `gameRooms/${roomCode}`));
-      
-      // Reset state
-      setActiveGame(null);
-      setRoomCode(null);
-      setGameRoomData(null);
-      setCurrentView('dashboard');
-      setStudentMode(false);
-      setJoinedAsStudent(null);
-      
-      showToast('Game ended successfully!', 'success');
-    } catch (error) {
-      console.error('Error ending game:', error);
-      showToast('Error ending game', 'error');
-    }
-  };
-
-  const calculateFinalResults = (gameData) => {
-    if (!gameData?.players || !gameData?.responses) return [];
-    
-    const results = Object.entries(gameData.players).map(([playerId, player]) => {
-      let totalScore = 0;
-      let correctAnswers = 0;
-      
-      Object.entries(gameData.responses).forEach(([questionIndex, responses]) => {
-        const response = responses[playerId];
-        if (response?.isCorrect) {
-          correctAnswers++;
-          totalScore += response.points || 0;
-        }
-      });
-      
-      return {
-        playerId,
-        ...player,
-        totalScore,
-        correctAnswers,
-        totalQuestions: gameData.quiz?.questions?.length || 0
-      };
-    }).sort((a, b) => b.totalScore - a.totalScore);
-    
-    return results;
-  };
-
-  const awardGameRewards = async (results) => {
-    if (!results.length) return;
-    
-    try {
-      results.forEach((result, index) => {
-        const student = students.find(s => s.id === result.studentId);
-        if (!student) return;
-        
-        // Base participation XP
-        let xpReward = 10;
-        
-        // Correct answer bonus
-        xpReward += result.correctAnswers * 5;
-        
-        // Position bonus
-        if (index === 0) xpReward += 25; // 1st place
-        else if (index === 1) xpReward += 15; // 2nd place  
-        else if (index === 2) xpReward += 10; // 3rd place
-        
-        // Perfect score bonus
-        if (result.correctAnswers === result.totalQuestions) {
-          xpReward += 50;
-        }
-        
-        // Award XP
-        onAwardXP(result.studentId, xpReward, 'Quiz Show participation');
-        
-        // Award coins based on score
-        const coinReward = Math.floor(result.totalScore / 100);
-        if (coinReward > 0) {
-          onAwardCoins(result.studentId, coinReward, 'Quiz Show performance');
-        }
-      });
-    } catch (error) {
-      console.error('Error awarding game rewards:', error);
-    }
-  };
-
-  // ===============================================
-  // RENDER FUNCTIONS
-  // ===============================================
-  const renderTeacherView = () => {
-    switch (currentView) {
-      case 'dashboard':
-        return (
-          <QuizDashboard
-            quizzes={quizzes}
-            onCreateQuiz={() => setCurrentView('creator')}
-            onEditQuiz={(quiz) => {
-              setEditingQuiz(quiz);
-              setCurrentView('creator');
-            }}
-            onStartGame={createGame}
-            onViewLibrary={() => setCurrentView('library')}
-            loading={loading}
-          />
-        );
-      
-      case 'creator':
-        return (
-          <QuizCreator
-            quiz={editingQuiz}
-            onSave={(quiz) => {
-              // Save quiz logic here
-              setCurrentView('dashboard');
-              showToast('Quiz saved successfully!', 'success');
-            }}
-            onCancel={() => {
-              setEditingQuiz(null);
-              setCurrentView('dashboard');
-            }}
-          />
-        );
-      
-      case 'library':
-        return (
-          <QuizLibrary
-            quizzes={quizzes}
-            onSelectQuiz={setSelectedQuiz}
-            onStartGame={createGame}
-            onEditQuiz={(quiz) => {
-              setEditingQuiz(quiz);
-              setCurrentView('creator');
-            }}
-            onBack={() => setCurrentView('dashboard')}
-          />
-        );
-      
-      case 'lobby':
-        return (
-          <GameLobby
-            roomCode={roomCode}
-            gameData={gameRoomData}
-            onStartGame={startGame}
-            onEndGame={endGame}
-            loading={loading}
-          />
-        );
-      
-      case 'presentation':
-        return (
-          <GamePresentation
-            roomCode={roomCode}
-            gameData={gameRoomData}
-            onEndGame={endGame}
-            onNextQuestion={() => {/* Next question logic */}}
-          />
-        );
-      
-      case 'results':
-        return (
-          <GameResults
-            results={calculateFinalResults(gameRoomData)}
-            onNewGame={() => setCurrentView('dashboard')}
-            getAvatarImage={getAvatarImage}
-          />
-        );
-      
-      default:
-        return <div>View not found</div>;
-    }
-  };
-
-  const renderStudentView = () => {
-    switch (currentView) {
-      case 'join':
-        return (
-          <JoinGame
-            students={students}
-            onJoinGame={joinGame}
-            onCancel={() => {
-              setStudentMode(false);
-              setCurrentView('dashboard');
-            }}
-            getAvatarImage={getAvatarImage}
-            calculateAvatarLevel={calculateAvatarLevel}
-            loading={loading}
-          />
-        );
-      
-      case 'studentLobby':
-        return (
-          <StudentLobby
-            roomCode={roomCode}
-            gameData={gameRoomData}
-            playerInfo={joinedAsStudent}
-            onLeaveGame={() => {
-              setStudentMode(false);
-              setRoomCode(null);
-              setCurrentView('dashboard');
-            }}
-          />
-        );
-      
-      case 'studentGame':
-        return (
-          <StudentGameView
-            roomCode={roomCode}
-            gameData={gameRoomData}
-            playerInfo={joinedAsStudent}
-          />
-        );
-      
-      case 'studentResults':
-        return (
-          <StudentResults
-            results={calculateFinalResults(gameRoomData)}
-            playerInfo={joinedAsStudent}
-            onPlayAgain={() => setCurrentView('join')}
-            getAvatarImage={getAvatarImage}
-          />
-        );
-      
-      default:
-        return renderTeacherView();
-    }
-  };
-
-  // ===============================================
-  // MAIN RENDER
-  // ===============================================
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
-      {/* Game Show Header */}
-      <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white p-6 shadow-2xl">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="text-4xl">🎪</div>
-            <div>
-              <h1 className="text-3xl font-bold">Quiz Show</h1>
-              <p className="text-purple-100">Educational Elements Game Show</p>
-            </div>
-          </div>
-          
-          <div className="flex items-center space-x-4">
-            {!studentMode && (
-              <button
-                onClick={() => {
-                  setStudentMode(true);
-                  setCurrentView('join');
-                }}
-                className="bg-white text-purple-600 px-4 py-2 rounded-lg font-semibold hover:bg-purple-50 transition-colors"
-              >
-                Join as Student
-              </button>
-            )}
-            
-            {roomCode && (
-              <div className="bg-yellow-400 text-purple-900 px-4 py-2 rounded-lg font-bold">
-                Room: {roomCode}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto p-6">
-        {studentMode ? renderStudentView() : renderTeacherView()}
-      </div>
-
-      {/* Floating Action Buttons */}
-      {!studentMode && currentView === 'dashboard' && (
-        <div className="fixed bottom-8 right-8 space-y-4">
-          <button
-            onClick={() => setCurrentView('creator')}
-            className="bg-gradient-to-r from-green-500 to-emerald-500 text-white p-4 rounded-full shadow-2xl hover:shadow-3xl transform hover:scale-110 transition-all duration-200"
-            title="Create New Quiz"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-          </button>
-        </div>
-      )}
-    </div>
-  );
+export const generateRoomCode = () => {
+  // Generate a 6-digit room code
+  return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-export default QuizShowTab;
+export const validateRoomCode = (code) => {
+  return /^\d{6}$/.test(code);
+};
+
+// ===============================================
+// SCORE CALCULATION SYSTEM
+// ===============================================
+export const calculateQuizScore = (timeSpent, timeLimit, basePoints = 1000, isCorrect = true) => {
+  if (!isCorrect) return 0;
+  
+  // Time bonus: faster answers get more points
+  const timeRatio = Math.max(0, (timeLimit - timeSpent) / timeLimit);
+  const timeBonus = Math.floor(timeRatio * 500); // Up to 500 bonus points
+  
+  return Math.max(100, basePoints + timeBonus); // Minimum 100 points for correct answers
+};
+
+export const calculateStreakBonus = (streak) => {
+  if (streak < 2) return 0;
+  return streak * 50; // 50 points per consecutive correct answer
+};
+
+// ===============================================
+// SOUND SYSTEM
+// ===============================================
+export const playQuizSound = (soundType, volume = 0.5) => {
+  try {
+    const soundMap = {
+      'join': '/sounds/quizshow/chime.mp3',
+      'gameStart': '/sounds/quizshow/fanfare.mp3',
+      'questionReveal': '/sounds/quizshow/swoosh.mp3',
+      'answerSubmit': '/sounds/quizshow/click.mp3',
+      'correct': '/sounds/quizshow/success.mp3',
+      'incorrect': '/sounds/quizshow/buzzer.mp3',
+      'timeWarning': '/sounds/quizshow/tick.mp3',
+      'leaderboard': '/sounds/quizshow/dramatic.mp3',
+      'gameEnd': '/sounds/quizshow/finale.mp3'
+    };
+    
+    const audio = new Audio(soundMap[soundType]);
+    audio.volume = volume;
+    audio.play().catch(e => {
+      console.warn('Could not play sound:', soundType, e);
+    });
+  } catch (error) {
+    console.warn('Sound system error:', error);
+  }
+};
+
+// ===============================================
+// QUESTION VALIDATION
+// ===============================================
+export const validateQuestion = (question) => {
+  const errors = [];
+  
+  if (!question.question?.trim()) {
+    errors.push('Question text is required');
+  }
+  
+  if (question.type === 'multiple_choice') {
+    if (!question.options || question.options.length < 2) {
+      errors.push('At least 2 answer options are required');
+    }
+    
+    if (question.correctAnswer === undefined || question.correctAnswer < 0 || question.correctAnswer >= question.options.length) {
+      errors.push('Valid correct answer must be selected');
+    }
+    
+    // Check for empty options
+    const emptyOptions = question.options.some(option => !option?.trim());
+    if (emptyOptions) {
+      errors.push('All answer options must have text');
+    }
+  }
+  
+  if (!question.timeLimit || question.timeLimit < 5 || question.timeLimit > 120) {
+    errors.push('Time limit must be between 5 and 120 seconds');
+  }
+  
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
+};
+
+export const validateQuiz = (quiz) => {
+  const errors = [];
+  
+  if (!quiz.title?.trim()) {
+    errors.push('Quiz title is required');
+  }
+  
+  if (!quiz.questions || quiz.questions.length === 0) {
+    errors.push('Quiz must have at least one question');
+  }
+  
+  // Validate each question
+  if (quiz.questions) {
+    quiz.questions.forEach((question, index) => {
+      const questionValidation = validateQuestion(question);
+      if (!questionValidation.isValid) {
+        errors.push(`Question ${index + 1}: ${questionValidation.errors.join(', ')}`);
+      }
+    });
+  }
+  
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
+};
+
+// ===============================================
+// PRESET QUESTION CATEGORIES
+// ===============================================
+export const QUESTION_CATEGORIES = {
+  mathematics: {
+    name: 'Mathematics',
+    icon: '🔢',
+    color: '#3B82F6',
+    description: 'Numbers, arithmetic, and math concepts'
+  },
+  science: {
+    name: 'Science',
+    icon: '🧪',
+    color: '#10B981',
+    description: 'Natural sciences and scientific concepts'
+  },
+  geography: {
+    name: 'Geography',
+    icon: '🌍',
+    color: '#F59E0B',
+    description: 'Countries, capitals, and world knowledge'
+  },
+  history: {
+    name: 'History',
+    icon: '🏛️',
+    color: '#8B5CF6',
+    description: 'Historical events and figures'
+  },
+  language: {
+    name: 'Language Arts',
+    icon: '📚',
+    color: '#EF4444',
+    description: 'Grammar, vocabulary, and language skills'
+  },
+  general: {
+    name: 'General Knowledge',
+    icon: '🧠',
+    color: '#6B7280',
+    description: 'Mixed topics and trivia'
+  }
+};
+
+// ===============================================
+// PRESET QUESTIONS DATABASE
+// ===============================================
+export const PRESET_QUESTIONS = {
+  mathematics: [
+    {
+      id: 'math_1',
+      question: 'What is 7 + 8?',
+      type: 'multiple_choice',
+      options: ['14', '15', '16', '17'],
+      correctAnswer: 1,
+      timeLimit: 15,
+      difficulty: 'easy',
+      points: 1000
+    },
+    {
+      id: 'math_2',
+      question: 'Which number comes next: 2, 4, 6, 8, __?',
+      type: 'multiple_choice',
+      options: ['9', '10', '11', '12'],
+      correctAnswer: 1,
+      timeLimit: 20,
+      difficulty: 'easy',
+      points: 1000
+    },
+    {
+      id: 'math_3',
+      question: 'What is 12 × 5?',
+      type: 'multiple_choice',
+      options: ['50', '55', '60', '65'],
+      correctAnswer: 2,
+      timeLimit: 20,
+      difficulty: 'medium',
+      points: 1200
+    },
+    {
+      id: 'math_4',
+      question: 'How many sides does a triangle have?',
+      type: 'multiple_choice',
+      options: ['2', '3', '4', '5'],
+      correctAnswer: 1,
+      timeLimit: 10,
+      difficulty: 'easy',
+      points: 800
+    },
+    {
+      id: 'math_5',
+      question: 'What is 100 ÷ 4?',
+      type: 'multiple_choice',
+      options: ['20', '25', '30', '35'],
+      correctAnswer: 1,
+      timeLimit: 20,
+      difficulty: 'medium',
+      points: 1200
+    }
+  ],
+  
+  science: [
+    {
+      id: 'sci_1',
+      question: 'How many planets are in our solar system?',
+      type: 'multiple_choice',
+      options: ['7', '8', '9', '10'],
+      correctAnswer: 1,
+      timeLimit: 15,
+      difficulty: 'easy',
+      points: 1000
+    },
+    {
+      id: 'sci_2',
+      question: 'What gas do plants take in during photosynthesis?',
+      type: 'multiple_choice',
+      options: ['Oxygen', 'Carbon Dioxide', 'Nitrogen', 'Hydrogen'],
+      correctAnswer: 1,
+      timeLimit: 20,
+      difficulty: 'medium',
+      points: 1200
+    },
+    {
+      id: 'sci_3',
+      question: 'Which animal is known as the "King of the Jungle"?',
+      type: 'multiple_choice',
+      options: ['Tiger', 'Elephant', 'Lion', 'Gorilla'],
+      correctAnswer: 2,
+      timeLimit: 15,
+      difficulty: 'easy',
+      points: 1000
+    },
+    {
+      id: 'sci_4',
+      question: 'What are the three states of matter?',
+      type: 'multiple_choice',
+      options: ['Hot, Cold, Warm', 'Solid, Liquid, Gas', 'Big, Medium, Small', 'Fast, Medium, Slow'],
+      correctAnswer: 1,
+      timeLimit: 20,
+      difficulty: 'medium',
+      points: 1200
+    },
+    {
+      id: 'sci_5',
+      question: 'Which planet is closest to the Sun?',
+      type: 'multiple_choice',
+      options: ['Venus', 'Mercury', 'Earth', 'Mars'],
+      correctAnswer: 1,
+      timeLimit: 20,
+      difficulty: 'medium',
+      points: 1200
+    }
+  ],
+  
+  geography: [
+    {
+      id: 'geo_1',
+      question: 'What is the capital of Australia?',
+      type: 'multiple_choice',
+      options: ['Sydney', 'Melbourne', 'Canberra', 'Perth'],
+      correctAnswer: 2,
+      timeLimit: 20,
+      difficulty: 'medium',
+      points: 1200
+    },
+    {
+      id: 'geo_2',
+      question: 'Which continent is the largest?',
+      type: 'multiple_choice',
+      options: ['Africa', 'Asia', 'North America', 'Europe'],
+      correctAnswer: 1,
+      timeLimit: 15,
+      difficulty: 'easy',
+      points: 1000
+    },
+    {
+      id: 'geo_3',
+      question: 'How many continents are there?',
+      type: 'multiple_choice',
+      options: ['5', '6', '7', '8'],
+      correctAnswer: 2,
+      timeLimit: 15,
+      difficulty: 'easy',
+      points: 1000
+    },
+    {
+      id: 'geo_4',
+      question: 'Which ocean is the largest?',
+      type: 'multiple_choice',
+      options: ['Atlantic', 'Indian', 'Arctic', 'Pacific'],
+      correctAnswer: 3,
+      timeLimit: 20,
+      difficulty: 'medium',
+      points: 1200
+    },
+    {
+      id: 'geo_5',
+      question: 'What is the longest river in the world?',
+      type: 'multiple_choice',
+      options: ['Amazon', 'Nile', 'Mississippi', 'Yangtze'],
+      correctAnswer: 1,
+      timeLimit: 25,
+      difficulty: 'hard',
+      points: 1500
+    }
+  ]
+};
+
+// ===============================================
+// GAME LOGIC HELPERS
+// ===============================================
+export const createQuizFromPreset = (category, questionCount = 10) => {
+  const categoryQuestions = PRESET_QUESTIONS[category] || [];
+  if (categoryQuestions.length === 0) {
+    throw new Error(`No preset questions available for category: ${category}`);
+  }
+  
+  // Shuffle and select questions
+  const shuffled = [...categoryQuestions].sort(() => Math.random() - 0.5);
+  const selectedQuestions = shuffled.slice(0, Math.min(questionCount, shuffled.length));
+  
+  const categoryInfo = QUESTION_CATEGORIES[category];
+  
+  return {
+    id: `preset_${category}_${Date.now()}`,
+    title: `${categoryInfo?.name || 'Quiz'} - ${selectedQuestions.length} Questions`,
+    description: `Auto-generated quiz from ${categoryInfo?.name || 'preset'} questions`,
+    category: category,
+    isPreset: true,
+    questions: selectedQuestions.map((q, index) => ({
+      ...q,
+      id: `${q.id}_${index}`,
+      index: index
+    })),
+    settings: {
+      showCorrectAnswers: true,
+      allowRetakes: true,
+      shuffleQuestions: false,
+      shuffleAnswers: true
+    },
+    createdAt: Date.now(),
+    defaultTimeLimit: 20
+  };
+};
+
+export const shuffleArray = (array) => {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
+
+export const formatTime = (seconds) => {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+};
+
+export const formatScore = (score) => {
+  return score.toLocaleString();
+};
+
+// ===============================================
+// REAL-TIME HELPER FUNCTIONS
+// ===============================================
+export const checkGameRoomExists = async (roomCode) => {
+  try {
+    const gameRef = ref(database, `gameRooms/${roomCode}`);
+    const snapshot = await get(gameRef);
+    return snapshot.exists();
+  } catch (error) {
+    console.error('Error checking game room:', error);
+    return false;
+  }
+};
+
+export const getGameRoomData = async (roomCode) => {
+  try {
+    const gameRef = ref(database, `gameRooms/${roomCode}`);
+    const snapshot = await get(gameRef);
+    return snapshot.exists() ? snapshot.val() : null;
+  } catch (error) {
+    console.error('Error getting game room data:', error);
+    return null;
+  }
+};
+
+// ===============================================
+// ANIMATION & EFFECTS HELPERS
+// ===============================================
+export const triggerConfetti = () => {
+  // Create confetti effect
+  try {
+    const colors = ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7'];
+    
+    for (let i = 0; i < 50; i++) {
+      setTimeout(() => {
+        const confetti = document.createElement('div');
+        confetti.innerHTML = '🎉';
+        confetti.style.position = 'fixed';
+        confetti.style.left = Math.random() * 100 + 'vw';
+        confetti.style.top = '-10px';
+        confetti.style.fontSize = '20px';
+        confetti.style.zIndex = '9999';
+        confetti.style.pointerEvents = 'none';
+        confetti.style.transition = 'all 3s ease-out';
+        
+        document.body.appendChild(confetti);
+        
+        setTimeout(() => {
+          confetti.style.transform = `translateY(${window.innerHeight + 100}px) rotate(${Math.random() * 360}deg)`;
+          confetti.style.opacity = '0';
+        }, 10);
+        
+        setTimeout(() => {
+          document.body.removeChild(confetti);
+        }, 3000);
+      }, i * 50);
+    }
+  } catch (error) {
+    console.warn('Confetti animation error:', error);
+  }
+};
+
+export const animateScoreIncrease = (element, newScore, duration = 1000) => {
+  if (!element) return;
+  
+  const startScore = parseInt(element.textContent) || 0;
+  const scoreDiff = newScore - startScore;
+  const startTime = Date.now();
+  
+  const animate = () => {
+    const elapsed = Date.now() - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    
+    // Ease-out animation
+    const easeOut = 1 - Math.pow(1 - progress, 3);
+    const currentScore = Math.floor(startScore + (scoreDiff * easeOut));
+    
+    element.textContent = formatScore(currentScore);
+    
+    if (progress < 1) {
+      requestAnimationFrame(animate);
+    } else {
+      element.textContent = formatScore(newScore);
+    }
+  };
+  
+  requestAnimationFrame(animate);
+};
+
+// ===============================================
+// EXPORT ALL UTILITIES
+// ===============================================
+export default {
+  generateRoomCode,
+  validateRoomCode,
+  calculateQuizScore,
+  calculateStreakBonus,
+  playQuizSound,
+  validateQuestion,
+  validateQuiz,
+  QUESTION_CATEGORIES,
+  PRESET_QUESTIONS,
+  createQuizFromPreset,
+  shuffleArray,
+  formatTime,
+  formatScore,
+  checkGameRoomExists,
+  getGameRoomData,
+  triggerConfetti,
+  animateScoreIncrease
+};
