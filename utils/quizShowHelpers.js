@@ -1,4 +1,4 @@
-// utils/quizShowHelpers.js - QUIZ SHOW CORE UTILITIES
+// utils/quizShowHelpers.js - UPDATED WITH SIMPLE SCORING SYSTEM
 import { database } from './firebase';
 import { ref, get } from 'firebase/database';
 
@@ -15,21 +15,16 @@ export const validateRoomCode = (code) => {
 };
 
 // ===============================================
-// SCORE CALCULATION SYSTEM
+// SIMPLIFIED SCORE CALCULATION SYSTEM
 // ===============================================
 export const calculateQuizScore = (timeSpent, timeLimit, basePoints = 1000, isCorrect = true) => {
-  if (!isCorrect) return 0;
-  
-  // Time bonus: faster answers get more points
-  const timeRatio = Math.max(0, (timeLimit - timeSpent) / timeLimit);
-  const timeBonus = Math.floor(timeRatio * 500); // Up to 500 bonus points
-  
-  return Math.max(100, basePoints + timeBonus); // Minimum 100 points for correct answers
+  // SIMPLIFIED: +10 for correct, -5 for incorrect
+  return isCorrect ? 10 : -5;
 };
 
 export const calculateStreakBonus = (streak) => {
-  if (streak < 2) return 0;
-  return streak * 50; // 50 points per consecutive correct answer
+  // Simplified - no streak bonus for now
+  return 0;
 };
 
 // ===============================================
@@ -177,7 +172,7 @@ export const PRESET_QUESTIONS = {
       correctAnswer: 1,
       timeLimit: 15,
       difficulty: 'easy',
-      points: 1000
+      points: 10
     },
     {
       id: 'math_2',
@@ -187,7 +182,7 @@ export const PRESET_QUESTIONS = {
       correctAnswer: 1,
       timeLimit: 20,
       difficulty: 'easy',
-      points: 1000
+      points: 10
     },
     {
       id: 'math_3',
@@ -197,7 +192,7 @@ export const PRESET_QUESTIONS = {
       correctAnswer: 2,
       timeLimit: 20,
       difficulty: 'medium',
-      points: 1200
+      points: 10
     },
     {
       id: 'math_4',
@@ -207,7 +202,7 @@ export const PRESET_QUESTIONS = {
       correctAnswer: 1,
       timeLimit: 10,
       difficulty: 'easy',
-      points: 800
+      points: 10
     },
     {
       id: 'math_5',
@@ -217,7 +212,7 @@ export const PRESET_QUESTIONS = {
       correctAnswer: 1,
       timeLimit: 20,
       difficulty: 'medium',
-      points: 1200
+      points: 10
     }
   ],
   
@@ -230,7 +225,7 @@ export const PRESET_QUESTIONS = {
       correctAnswer: 1,
       timeLimit: 15,
       difficulty: 'easy',
-      points: 1000
+      points: 10
     },
     {
       id: 'sci_2',
@@ -240,7 +235,7 @@ export const PRESET_QUESTIONS = {
       correctAnswer: 1,
       timeLimit: 20,
       difficulty: 'medium',
-      points: 1200
+      points: 10
     },
     {
       id: 'sci_3',
@@ -250,7 +245,7 @@ export const PRESET_QUESTIONS = {
       correctAnswer: 2,
       timeLimit: 15,
       difficulty: 'easy',
-      points: 1000
+      points: 10
     },
     {
       id: 'sci_4',
@@ -260,7 +255,7 @@ export const PRESET_QUESTIONS = {
       correctAnswer: 1,
       timeLimit: 20,
       difficulty: 'medium',
-      points: 1200
+      points: 10
     },
     {
       id: 'sci_5',
@@ -270,7 +265,7 @@ export const PRESET_QUESTIONS = {
       correctAnswer: 1,
       timeLimit: 20,
       difficulty: 'medium',
-      points: 1200
+      points: 10
     }
   ],
   
@@ -283,7 +278,7 @@ export const PRESET_QUESTIONS = {
       correctAnswer: 2,
       timeLimit: 20,
       difficulty: 'medium',
-      points: 1200
+      points: 10
     },
     {
       id: 'geo_2',
@@ -293,7 +288,7 @@ export const PRESET_QUESTIONS = {
       correctAnswer: 1,
       timeLimit: 15,
       difficulty: 'easy',
-      points: 1000
+      points: 10
     },
     {
       id: 'geo_3',
@@ -303,7 +298,7 @@ export const PRESET_QUESTIONS = {
       correctAnswer: 2,
       timeLimit: 15,
       difficulty: 'easy',
-      points: 1000
+      points: 10
     },
     {
       id: 'geo_4',
@@ -313,7 +308,7 @@ export const PRESET_QUESTIONS = {
       correctAnswer: 3,
       timeLimit: 20,
       difficulty: 'medium',
-      points: 1200
+      points: 10
     },
     {
       id: 'geo_5',
@@ -323,7 +318,7 @@ export const PRESET_QUESTIONS = {
       correctAnswer: 1,
       timeLimit: 25,
       difficulty: 'hard',
-      points: 1500
+      points: 10
     }
   ]
 };
@@ -381,7 +376,7 @@ export const formatTime = (seconds) => {
 };
 
 export const formatScore = (score) => {
-  return score.toLocaleString();
+  return score.toString();
 };
 
 // ===============================================
@@ -407,6 +402,51 @@ export const getGameRoomData = async (roomCode) => {
     console.error('Error getting game room data:', error);
     return null;
   }
+};
+
+// ===============================================
+// LEADERBOARD CALCULATION
+// ===============================================
+export const calculateFinalLeaderboard = (gameData) => {
+  if (!gameData?.players || !gameData?.responses) return [];
+  
+  const results = Object.entries(gameData.players).map(([playerId, player]) => {
+    let totalScore = 0;
+    let correctAnswers = 0;
+    let incorrectAnswers = 0;
+    
+    Object.entries(gameData.responses).forEach(([questionIndex, responses]) => {
+      const response = responses[playerId];
+      if (response) {
+        if (response.isCorrect) {
+          correctAnswers++;
+          totalScore += 10; // +10 for correct
+        } else {
+          incorrectAnswers++;
+          totalScore -= 5; // -5 for incorrect
+        }
+      }
+    });
+    
+    return {
+      playerId,
+      name: player.name,
+      avatar: player.avatar,
+      studentId: player.studentId,
+      totalScore,
+      correctAnswers,
+      incorrectAnswers,
+      totalQuestions: gameData.quiz?.questions?.length || 0,
+      accuracy: correctAnswers + incorrectAnswers > 0 ? Math.round((correctAnswers / (correctAnswers + incorrectAnswers)) * 100) : 0
+    };
+  }).sort((a, b) => {
+    // Sort by score first, then by accuracy, then by correct answers
+    if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
+    if (b.accuracy !== a.accuracy) return b.accuracy - a.accuracy;
+    return b.correctAnswers - a.correctAnswers;
+  });
+  
+  return results;
 };
 
 // ===============================================
@@ -492,6 +532,7 @@ export default {
   formatScore,
   checkGameRoomExists,
   getGameRoomData,
+  calculateFinalLeaderboard,
   triggerConfetti,
   animateScoreIncrease
 };

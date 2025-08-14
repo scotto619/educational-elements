@@ -1,14 +1,16 @@
-// components/quizshow/teacher/GamePresentation.js - FIXED VERSION WITH FIREBASE SYNC
+// components/quizshow/teacher/GamePresentation.js - FIXED VERSION WITH FIREBASE SYNC + FINAL LEADERBOARD
 import React, { useState, useEffect } from 'react';
 import { ref, update } from 'firebase/database';
 import { database } from '../../../utils/firebase';
 import { playQuizSound } from '../../../utils/quizShowHelpers';
+import FinalLeaderboard from './FinalLeaderboard';
 
 const GamePresentation = ({ roomCode, gameData, onEndGame }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(20);
-  const [questionPhase, setQuestionPhase] = useState('showing'); // 'showing', 'answering', 'results'
+  const [questionPhase, setQuestionPhase] = useState('showing'); // 'showing', 'answering', 'results', 'finished'
   const [isUpdating, setIsUpdating] = useState(false);
+  const [showFinalResults, setShowFinalResults] = useState(false);
 
   const currentQuestion = gameData?.quiz?.questions?.[currentQuestionIndex];
   const totalQuestions = gameData?.quiz?.questions?.length || 0;
@@ -18,6 +20,11 @@ const GamePresentation = ({ roomCode, gameData, onEndGame }) => {
     if (gameData) {
       setCurrentQuestionIndex(gameData.currentQuestion || 0);
       setQuestionPhase(gameData.questionPhase || 'showing');
+      
+      // Check if game is finished
+      if (gameData.status === 'finished' || gameData.questionPhase === 'finished') {
+        setShowFinalResults(true);
+      }
     }
   }, [gameData]);
 
@@ -86,16 +93,36 @@ const GamePresentation = ({ roomCode, gameData, onEndGame }) => {
       
       await updateGameState(updates);
     } else {
-      // Game finished
+      // Game finished - show final leaderboard
       const updates = {
         status: 'finished',
         questionPhase: 'finished'
       };
       
       await updateGameState(updates);
-      onEndGame();
+      setShowFinalResults(true);
+      playQuizSound('gameEnd');
     }
   };
+
+  const handleBackToDashboard = () => {
+    onEndGame();
+  };
+
+  const handleNewGame = () => {
+    onEndGame(); // This will take them back to dashboard to start a new game
+  };
+
+  // Show final leaderboard if game is finished
+  if (showFinalResults) {
+    return (
+      <FinalLeaderboard 
+        gameData={gameData}
+        onNewGame={handleNewGame}
+        onBackToDashboard={handleBackToDashboard}
+      />
+    );
+  }
 
   const getPlayerCount = () => {
     return gameData?.players ? Object.keys(gameData.players).length : 0;
