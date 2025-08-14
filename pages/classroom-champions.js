@@ -15,6 +15,7 @@ import GamesTab from '../components/tabs/GamesTab';
 import SettingsTab from '../components/tabs/SettingsTab';
 import TeachersToolkitTab from '../components/tabs/TeachersToolkitTab';
 import CurriculumCornerTab from '../components/tabs/CurriculumCornerTab';
+import QuizShowTab from '../components/tabs/QuizShowTab';
 
 // ===============================================
 // CORE GAME CONSTANTS & UTILITIES
@@ -168,7 +169,8 @@ const showToast = (message, type = 'info') => {
 // ===============================================
 const CLASSROOM_CHAMPIONS_TABS = [ 
   { id: 'dashboard', name: 'Dashboard', icon: '🏠'}, 
-  { id: 'students', name: 'Students', icon: '👥'}, 
+  { id: 'students', name: 'Students', icon: '👥'},
+  { id: 'quizshow', name: 'Quiz Show', icon: '🎪'}, 
   { id: 'quests', name: 'Quests', icon: '📜'}, 
   { id: 'shop', name: 'Shop', icon: '🏪'}, 
   { id: 'petrace', name: 'Pet Race', icon: '🏁'}
@@ -613,6 +615,18 @@ const ClassroomChampions = () => {
                   calculateCoins={calculateCoins}
                   calculateAvatarLevel={calculateAvatarLevel}
                 />;
+       case 'quizshow':
+  return <QuizShowTab 
+            students={students}
+            user={user}
+            showToast={showToast}
+            userData={userData}
+            currentClassId={currentClassId}
+            getAvatarImage={getAvatarImage}
+            calculateAvatarLevel={calculateAvatarLevel}
+            onAwardXP={awardXPToStudent}
+            onAwardCoins={awardCoinsToStudent}
+          />;         
       case 'shop':
         return <ShopTab
                   students={students}

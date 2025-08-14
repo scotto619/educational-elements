@@ -2,6 +2,7 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import { getDatabase } from 'firebase/database'; // ADD THIS LINE
 
 // Firebase configuration - these should be set in your .env.local file
 const firebaseConfig = {
@@ -22,6 +23,9 @@ export const auth = getAuth(app);
 
 // Initialize Cloud Firestore and get a reference to the service
 export const firestore = getFirestore(app);
+
+// Initialize Realtime Database and get a reference to the service
+export const database = getDatabase(app); // ADD THIS LINE
 
 // Export the app instance for other Firebase services if needed
 export default app;
