@@ -1,13 +1,13 @@
-// pages/join.js - FIXED STUDENT JOIN PAGE WITH REAL GAME INTERFACE
+// pages/join.js - FIXED STUDENT INTERFACE - SHOWS QUESTIONS PROPERLY
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { database } from '../utils/firebase';
-import { ref, onValue, set, update } from 'firebase/database';
+import { ref, onValue, set } from 'firebase/database';
 import { validateRoomCode, calculateQuizScore, playQuizSound } from '../utils/quizShowHelpers';
 
 const StudentJoinPage = () => {
   const router = useRouter();
-  const [step, setStep] = useState(1); // 1: Enter code, 2: Enter name, 3: Lobby, 4: Playing, 5: Results
+  const [step, setStep] = useState(1); // 1: Enter code, 2: Enter name, 3: Lobby, 4: Playing
   const [roomCode, setRoomCode] = useState('');
   const [gameData, setGameData] = useState(null);
   const [playerName, setPlayerName] = useState('');
@@ -19,7 +19,6 @@ const StudentJoinPage = () => {
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [hasAnswered, setHasAnswered] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [answerStartTime, setAnswerStartTime] = useState(null);
 
@@ -36,44 +35,39 @@ const StudentJoinPage = () => {
       const gameRef = ref(database, `gameRooms/${roomCode}`);
       const unsubscribe = onValue(gameRef, (snapshot) => {
         const data = snapshot.val();
+        console.log('Game data update:', data); // Debug log
+        
         if (data) {
           setGameData(data);
           
           // Handle game state changes
           if (data.status === 'playing' && step === 3) {
             setStep(4); // Move to playing
-            setCurrentQuestionIndex(data.currentQuestion || 0);
           }
           
-          // Handle question changes
-          if (data.currentQuestion !== currentQuestionIndex) {
-            setCurrentQuestionIndex(data.currentQuestion || 0);
+          // Reset answer state when question changes
+          if (data.currentQuestion !== undefined) {
+            const currentQ = data.currentQuestion;
             setSelectedAnswer(null);
             setHasAnswered(false);
             setAnswerStartTime(null);
-          }
-          
-          // Handle question phase changes
-          if (data.questionPhase === 'answering' && !answerStartTime) {
-            setAnswerStartTime(Date.now());
-            setTimeLeft(data.quiz?.questions?.[data.currentQuestion]?.timeLimit || 20);
+            
+            // Start timer when question phase is 'answering'
+            if (data.questionPhase === 'answering') {
+              setAnswerStartTime(Date.now());
+              const questionTimeLimit = data.quiz?.questions?.[currentQ]?.timeLimit || 20;
+              setTimeLeft(questionTimeLimit);
+            }
           }
           
           if (data.status === 'finished') {
             setStep(5);
           }
-        } else if (step > 1) {
-          setError('Game has ended');
-          setTimeout(() => {
-            setStep(1);
-            setRoomCode('');
-            setError('');
-          }, 3000);
         }
       });
       return () => unsubscribe();
     }
-  }, [roomCode, step, currentQuestionIndex, answerStartTime]);
+  }, [roomCode, step]);
 
   // Countdown timer
   useEffect(() => {
@@ -154,7 +148,7 @@ const StudentJoinPage = () => {
   const submitAnswer = async (answerIndex) => {
     if (hasAnswered || gameData?.questionPhase !== 'answering') return;
 
-    const currentQuestion = gameData?.quiz?.questions?.[currentQuestionIndex];
+    const currentQuestion = gameData?.quiz?.questions?.[gameData.currentQuestion];
     if (!currentQuestion) return;
 
     const timeSpent = answerStartTime ? (Date.now() - answerStartTime) / 1000 : 0;
@@ -175,7 +169,7 @@ const StudentJoinPage = () => {
 
     // Submit to Firebase
     try {
-      const responsePath = `gameRooms/${roomCode}/responses/${currentQuestionIndex}/${playerId}`;
+      const responsePath = `gameRooms/${roomCode}/responses/${gameData.currentQuestion}/${playerId}`;
       await set(ref(database, responsePath), {
         answer: answerIndex,
         timeSpent: timeSpent,
@@ -193,9 +187,7 @@ const StudentJoinPage = () => {
       'from-red-500 to-red-600',
       'from-blue-500 to-blue-600', 
       'from-green-500 to-green-600',
-      'from-yellow-500 to-yellow-600',
-      'from-purple-500 to-purple-600',
-      'from-pink-500 to-pink-600'
+      'from-yellow-500 to-yellow-600'
     ];
     return colors[index] || colors[0];
   };
@@ -327,36 +319,44 @@ const StudentJoinPage = () => {
     );
   }
 
-  // Step 4: Playing - Answer Questions
+  // Step 4: Playing - Show Questions
   if (step === 4) {
-    const currentQuestion = gameData?.quiz?.questions?.[currentQuestionIndex];
+    const currentQuestion = gameData?.quiz?.questions?.[gameData?.currentQuestion];
     const totalQuestions = gameData?.quiz?.questions?.length || 0;
+    const questionNumber = (gameData?.currentQuestion || 0) + 1;
+
+    // Debug info
+    console.log('Current game phase:', gameData?.questionPhase);
+    console.log('Current question:', currentQuestion);
+    console.log('Question index:', gameData?.currentQuestion);
 
     if (!currentQuestion) {
       return (
         <div className="min-h-screen bg-red-500 text-white flex items-center justify-center">
           <div className="text-center">
-            <h1 className="text-2xl font-bold">No question data</h1>
+            <h1 className="text-2xl font-bold">Loading question...</h1>
+            <p>Game phase: {gameData?.questionPhase}</p>
+            <p>Question index: {gameData?.currentQuestion}</p>
           </div>
         </div>
       );
     }
 
-    // Waiting for question to start
+    // Waiting for teacher to start question (showing phase)
     if (gameData?.questionPhase === 'showing') {
       return (
         <div className="min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 text-white flex items-center justify-center p-4">
           <div className="text-center">
             <div className="text-6xl mb-4">🎯</div>
             <h1 className="text-3xl font-bold mb-4">Get Ready!</h1>
-            <p className="text-xl mb-2">Question {currentQuestionIndex + 1} of {totalQuestions}</p>
+            <p className="text-xl mb-2">Question {questionNumber} of {totalQuestions}</p>
             <p className="text-lg opacity-90">Look at the main screen...</p>
           </div>
         </div>
       );
     }
 
-    // Question results phase
+    // Show results (results phase)
     if (gameData?.questionPhase === 'results') {
       const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
       return (
@@ -386,7 +386,7 @@ const StudentJoinPage = () => {
       );
     }
 
-    // Active question - answering phase
+    // Active answering phase - SHOW THE QUESTION!
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-4">
         <div className="max-w-2xl mx-auto">
@@ -398,11 +398,11 @@ const StudentJoinPage = () => {
             </div>
             <div className="text-center">
               <div className="text-sm text-gray-600">Question</div>
-              <div className="font-bold">{currentQuestionIndex + 1}/{totalQuestions}</div>
+              <div className="font-bold">{questionNumber}/{totalQuestions}</div>
             </div>
             {timeLeft > 0 && !hasAnswered && (
               <div className={`text-2xl font-bold px-3 py-1 rounded ${
-                timeLeft <= 5 ? 'bg-red-500 text-white' : 'bg-green-500 text-white'
+                timeLeft <= 5 ? 'bg-red-500 text-white animate-pulse' : 'bg-green-500 text-white'
               }`}>
                 {timeLeft}s
               </div>
@@ -425,14 +425,9 @@ const StudentJoinPage = () => {
               let buttonClass = `w-full p-4 rounded-xl text-white font-bold text-left transition-all duration-200 transform`;
               
               if (hasAnswered || timeLeft <= 0) {
+                buttonClass += ' opacity-75 cursor-not-allowed';
                 if (index === selectedAnswer) {
-                  buttonClass += index === currentQuestion.correctAnswer 
-                    ? ' bg-green-500 ring-4 ring-green-300' 
-                    : ' bg-red-500 ring-4 ring-red-300';
-                } else if (index === currentQuestion.correctAnswer) {
-                  buttonClass += ' bg-green-500 ring-4 ring-green-300';
-                } else {
-                  buttonClass += ' bg-gray-400';
+                  buttonClass += ' ring-4 ring-white';
                 }
               } else {
                 buttonClass += ` bg-gradient-to-r ${getAnswerButtonColor(index)} hover:scale-105 hover:shadow-lg cursor-pointer`;
@@ -466,7 +461,7 @@ const StudentJoinPage = () => {
     );
   }
 
-  // Step 5: Game finished
+  // Game finished
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center text-white">
       <div className="text-center">
