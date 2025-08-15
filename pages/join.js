@@ -1,5 +1,5 @@
-// pages/join.js - FIXED GAME END STATE & SCORING
-import React, { useState, useEffect } from 'react';
+// pages/join.js - FIXED ALL ISSUES
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { database } from '../utils/firebase';
 import { ref, onValue, set } from 'firebase/database';
@@ -22,6 +22,11 @@ const StudentJoinPage = () => {
   const [score, setScore] = useState(0);
   const [answerStartTime, setAnswerStartTime] = useState(null);
   const [finalResults, setFinalResults] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Use refs for immediate state tracking to prevent multiple clicks
+  const hasAnsweredRef = useRef(false);
+  const isSubmittingRef = useRef(false);
 
   // Pre-fill room code from URL if present
   useEffect(() => {
@@ -55,8 +60,12 @@ const StudentJoinPage = () => {
           // Reset answer state when question changes
           if (data.currentQuestion !== undefined) {
             const currentQ = data.currentQuestion;
+            console.log(`🔄 Question changed to ${currentQ}, resetting answer state`);
             setSelectedAnswer(null);
             setHasAnswered(false);
+            setIsSubmitting(false);
+            hasAnsweredRef.current = false;
+            isSubmittingRef.current = false;
             setAnswerStartTime(null);
             
             // Start timer when question phase is 'answering'
@@ -64,6 +73,7 @@ const StudentJoinPage = () => {
               setAnswerStartTime(Date.now());
               const questionTimeLimit = data.quiz?.questions?.[currentQ]?.timeLimit || 20;
               setTimeLeft(questionTimeLimit);
+              console.log(`⏰ Timer started: ${questionTimeLimit} seconds`);
             }
           }
         }
@@ -101,15 +111,15 @@ const StudentJoinPage = () => {
     });
   };
 
-  // Countdown timer
+  // FIXED: Timer logic - never reset once started, continue counting regardless of answer state
   useEffect(() => {
-    if (step === 4 && timeLeft > 0 && !hasAnswered && gameData?.questionPhase === 'answering') {
+    if (step === 4 && timeLeft > 0 && gameData?.questionPhase === 'answering' && answerStartTime) {
       const timer = setTimeout(() => {
         setTimeLeft(prev => prev - 1);
       }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [timeLeft, step, hasAnswered, gameData?.questionPhase]);
+  }, [timeLeft, step, gameData?.questionPhase, answerStartTime]); // Removed hasAnswered
 
   const handleRoomCodeSubmit = async (e) => {
     e.preventDefault();
@@ -178,20 +188,42 @@ const StudentJoinPage = () => {
   };
 
   const submitAnswer = async (answerIndex) => {
-    if (hasAnswered || gameData?.questionPhase !== 'answering') return;
+    // FIXED: Use refs for immediate blocking to prevent multiple submissions
+    if (hasAnsweredRef.current || isSubmittingRef.current || gameData?.questionPhase !== 'answering') {
+      console.log(`🚫 Answer submission blocked: hasAnswered=${hasAnsweredRef.current}, isSubmitting=${isSubmittingRef.current}, phase=${gameData?.questionPhase}`);
+      return;
+    }
 
     const currentQuestion = gameData?.quiz?.questions?.[gameData.currentQuestion];
-    if (!currentQuestion) return;
+    if (!currentQuestion) {
+      console.error('❌ No current question data');
+      return;
+    }
+
+    console.log(`📝 Submitting answer ${answerIndex} for question ${gameData.currentQuestion}`);
+
+    // IMMEDIATELY block further submissions using refs
+    hasAnsweredRef.current = true;
+    isSubmittingRef.current = true;
+    setHasAnswered(true);
+    setIsSubmitting(true);
+    setSelectedAnswer(answerIndex);
 
     const timeSpent = answerStartTime ? (Date.now() - answerStartTime) / 1000 : 0;
-    const isCorrect = answerIndex === currentQuestion.correctAnswer;
+    
+    // FIXED: Proper answer validation with explicit type checking and debugging
+    const correctAnswerIndex = parseInt(currentQuestion.correctAnswer);
+    const submittedAnswerIndex = parseInt(answerIndex);
+    const isCorrect = submittedAnswerIndex === correctAnswerIndex;
+    
+    console.log(`🔍 Answer validation: submitted=${submittedAnswerIndex}, correct=${correctAnswerIndex}, isCorrect=${isCorrect}`);
+    console.log(`🔍 Question options:`, currentQuestion.options);
+    console.log(`🔍 Selected option: "${currentQuestion.options[submittedAnswerIndex]}"`);
+    console.log(`🔍 Correct option: "${currentQuestion.options[correctAnswerIndex]}"`);
     
     // Simple scoring: +10 for correct, -5 for incorrect
     const points = isCorrect ? 10 : -5;
 
-    setSelectedAnswer(answerIndex);
-    setHasAnswered(true);
-    
     // Update local score immediately
     setScore(prev => prev + points);
 
@@ -202,17 +234,27 @@ const StudentJoinPage = () => {
     try {
       const responsePath = `gameRooms/${roomCode}/responses/${gameData.currentQuestion}/${playerId}`;
       await set(ref(database, responsePath), {
-        answer: answerIndex,
+        answer: submittedAnswerIndex,
         timeSpent: timeSpent,
         isCorrect: isCorrect,
         points: points,
         submittedAt: Date.now()
       });
       
-      console.log(`✅ Answer submitted: ${isCorrect ? 'CORRECT' : 'INCORRECT'} (${points} points)`);
+      console.log(`✅ Answer submitted successfully: ${isCorrect ? 'CORRECT' : 'INCORRECT'} (${points} points)`);
     } catch (error) {
-      console.error('Error submitting answer:', error);
+      console.error('❌ Error submitting answer:', error);
+      // Reset blocking states if submission failed
+      hasAnsweredRef.current = false;
+      isSubmittingRef.current = false;
+      setHasAnswered(false);
+      setIsSubmitting(false);
+      setSelectedAnswer(null);
     }
+    
+    // Allow submission flag to be reset after successful Firebase write
+    isSubmittingRef.current = false;
+    setIsSubmitting(false);
   };
 
   const getAnswerButtonColor = (index) => {
@@ -231,15 +273,15 @@ const StudentJoinPage = () => {
     
     if (gameData?.questionPhase === 'answering') {
       if (hasAnswered) {
-        // Show selected answer but no correct/incorrect feedback yet
+        // FIXED: Much stronger visual indication for selected answer
         if (index === selectedAnswer) {
-          buttonStyle += ` bg-gray-600 ring-4 ring-white transform scale-105`;
+          buttonStyle += ` bg-gray-700 ring-8 ring-yellow-400 transform scale-105 shadow-2xl border-4 border-yellow-300`;
         } else {
           buttonStyle += ' bg-gray-400 opacity-50';
         }
       } else {
         // Active answering phase
-        buttonStyle += ` bg-gradient-to-r ${getAnswerButtonColor(index)} hover:scale-105 cursor-pointer`;
+        buttonStyle += ` bg-gradient-to-r ${getAnswerButtonColor(index)} hover:scale-105 cursor-pointer shadow-lg`;
       }
     } else if (gameData?.questionPhase === 'results') {
       // Show correct/incorrect feedback
@@ -473,7 +515,8 @@ const StudentJoinPage = () => {
               <div className="text-sm text-gray-600">Question</div>
               <div className="font-bold">{questionNumber}/{totalQuestions}</div>
             </div>
-            {timeLeft > 0 && !hasAnswered && (
+            {/* FIXED: Timer shows and doesn't reset after answer submission */}
+            {timeLeft > 0 && answerStartTime && (
               <div className={`text-2xl font-bold px-3 py-1 rounded ${
                 timeLeft <= 5 ? 'bg-red-500 text-white animate-pulse' : 'bg-green-500 text-white'
               }`}>
@@ -498,14 +541,21 @@ const StudentJoinPage = () => {
               <button
                 key={index}
                 onClick={() => submitAnswer(index)}
-                disabled={hasAnswered || timeLeft <= 0}
+                disabled={hasAnswered || isSubmitting || timeLeft <= 0}
                 className={getAnswerButtonStyle(index)}
               >
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-3 relative">
                   <div className="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center font-bold">
                     {String.fromCharCode(65 + index)}
                   </div>
                   <span>{option}</span>
+                  
+                  {/* FIXED: Much stronger visual indicator for selected answer */}
+                  {selectedAnswer === index && hasAnswered && (
+                    <div className="absolute right-2 bg-yellow-400 text-black px-3 py-1 rounded-full text-xs font-bold">
+                      ✓ SELECTED
+                    </div>
+                  )}
                 </div>
               </button>
             ))}
@@ -514,6 +564,9 @@ const StudentJoinPage = () => {
           {hasAnswered && (
             <div className="bg-white rounded-lg p-4 mt-4 text-center">
               <p className="text-gray-600">✅ Answer submitted! Waiting for results...</p>
+              <p className="text-sm text-gray-500 mt-2">
+                Your answer: <strong>{currentQuestion.options[selectedAnswer]}</strong>
+              </p>
             </div>
           )}
         </div>
