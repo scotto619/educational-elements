@@ -1,7 +1,7 @@
-// components/games/TicTacToeGame.js - MULTIPLAYER TIC TAC TOE WITH FIRESTORE
+// components/games/TicTacToeGame.js - MULTIPLAYER TIC TAC TOE WITH REALTIME DATABASE
 import React, { useState, useEffect } from 'react';
-import { firestore } from '../../utils/firebase';
-import { collection, doc, onSnapshot, setDoc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
+import { database } from '../../utils/firebase';
+import { ref, onValue, set, update, remove, off } from 'firebase/database';
 
 const TicTacToeGame = ({ studentData, showToast }) => {
   // Game states
@@ -24,20 +24,21 @@ const TicTacToeGame = ({ studentData, showToast }) => {
   };
 
   // ===============================================
-  // FIRESTORE LISTENERS
+  // FIREBASE REALTIME DATABASE LISTENERS
   // ===============================================
   useEffect(() => {
     if (gameRoom) {
-      const gameRef = doc(firestore, 'ticTacToeGames', gameRoom);
-      const unsubscribe = onSnapshot(gameRef, (snapshot) => {
-        if (!snapshot.exists()) {
+      const gameRef = ref(database, `ticTacToe/${gameRoom}`);
+      const unsubscribe = onValue(gameRef, (snapshot) => {
+        const data = snapshot.val();
+        
+        if (!data) {
           // Game was deleted/ended
           resetGame();
           showToast('Game ended', 'info');
           return;
         }
         
-        const data = snapshot.data();
         setGameData(data);
         
         // Check if both players joined
@@ -65,11 +66,11 @@ const TicTacToeGame = ({ studentData, showToast }) => {
         setIsMyTurn(myTurn);
         
       }, (error) => {
-        console.error('Error listening to game:', error);
-        showToast('Connection error', 'error');
+        console.error('Firebase error:', error);
+        showToast('Connection error: ' + error.message, 'error');
       });
       
-      return unsubscribe;
+      return () => off(gameRef, 'value', unsubscribe);
     }
   }, [gameRoom, playerRole, gameState]);
 
@@ -81,30 +82,35 @@ const TicTacToeGame = ({ studentData, showToast }) => {
   };
 
   const checkWinner = (board) => {
+    if (!board) return { winner: null };
+    
     // Check rows
     for (let i = 0; i < 3; i++) {
-      if (board[i][0] && board[i][0] === board[i][1] && board[i][1] === board[i][2]) {
+      if (board[i] && board[i][0] && board[i][0] === board[i][1] && board[i][1] === board[i][2]) {
         return { winner: board[i][0], line: 'row', index: i };
       }
     }
     
     // Check columns
     for (let i = 0; i < 3; i++) {
-      if (board[0][i] && board[0][i] === board[1][i] && board[1][i] === board[2][i]) {
+      if (board[0] && board[1] && board[2] && 
+          board[0][i] && board[0][i] === board[1][i] && board[1][i] === board[2][i]) {
         return { winner: board[0][i], line: 'col', index: i };
       }
     }
     
     // Check diagonals
-    if (board[0][0] && board[0][0] === board[1][1] && board[1][1] === board[2][2]) {
+    if (board[0] && board[1] && board[2] && 
+        board[0][0] && board[0][0] === board[1][1] && board[1][1] === board[2][2]) {
       return { winner: board[0][0], line: 'diagonal', index: 0 };
     }
-    if (board[0][2] && board[0][2] === board[1][1] && board[1][1] === board[2][0]) {
+    if (board[0] && board[1] && board[2] && 
+        board[0][2] && board[0][2] === board[1][1] && board[1][1] === board[2][0]) {
       return { winner: board[0][2], line: 'diagonal', index: 1 };
     }
     
     // Check for draw
-    const isFull = board.every(row => row.every(cell => cell !== null));
+    const isFull = board.every(row => row && row.every(cell => cell !== null));
     if (isFull) {
       return { winner: 'draw' };
     }
@@ -115,10 +121,10 @@ const TicTacToeGame = ({ studentData, showToast }) => {
   const createGame = async () => {
     setLoading(true);
     const newRoomCode = generateRoomCode();
+    const gameRef = ref(database, `ticTacToe/${newRoomCode}`);
     
     try {
-      const gameRef = doc(firestore, 'ticTacToeGames', newRoomCode);
-      await setDoc(gameRef, {
+      await set(gameRef, {
         roomCode: newRoomCode,
         host: playerInfo.id,
         players: {
@@ -131,8 +137,7 @@ const TicTacToeGame = ({ studentData, showToast }) => {
         ],
         currentPlayer: 'X',
         status: 'waiting',
-        createdAt: Date.now(),
-        lastActivity: Date.now()
+        createdAt: Date.now()
       });
       
       setGameRoom(newRoomCode);
@@ -142,7 +147,7 @@ const TicTacToeGame = ({ studentData, showToast }) => {
       showToast(`Game created! Room code: ${newRoomCode}`, 'success');
     } catch (error) {
       console.error('Error creating game:', error);
-      showToast('Failed to create game. Please try again.', 'error');
+      showToast('Failed to create game: ' + error.message, 'error');
     }
     
     setLoading(false);
@@ -155,30 +160,32 @@ const TicTacToeGame = ({ studentData, showToast }) => {
     }
     
     setLoading(true);
+    const gameRef = ref(database, `ticTacToe/${joinCode.toUpperCase()}`);
     
     try {
-      const gameRef = doc(firestore, 'ticTacToeGames', joinCode.toUpperCase());
-      const gameSnap = await getDoc(gameRef);
+      // Check if game exists first
+      const snapshot = await new Promise((resolve, reject) => {
+        const unsubscribe = onValue(gameRef, resolve, reject, { onlyOnce: true });
+      });
       
-      if (!gameSnap.exists()) {
+      const gameData = snapshot.val();
+      
+      if (!gameData) {
         showToast('Game not found', 'error');
         setLoading(false);
         return;
       }
       
-      const gameData = gameSnap.data();
-      
-      if (Object.keys(gameData.players).length >= 2) {
+      if (Object.keys(gameData.players || {}).length >= 2) {
         showToast('Game is full', 'error');
         setLoading(false);
         return;
       }
       
       // Join the game
-      await updateDoc(gameRef, {
-        [`players.${playerInfo.id}`]: { ...playerInfo, symbol: 'O' },
-        status: 'playing',
-        lastActivity: Date.now()
+      await update(gameRef, {
+        [`players/${playerInfo.id}`]: { ...playerInfo, symbol: 'O' },
+        status: 'playing'
       });
       
       setGameRoom(joinCode.toUpperCase());
@@ -187,7 +194,7 @@ const TicTacToeGame = ({ studentData, showToast }) => {
       showToast('Joined game successfully!', 'success');
     } catch (error) {
       console.error('Error joining game:', error);
-      showToast('Failed to join game. Please check the room code.', 'error');
+      showToast('Failed to join game: ' + error.message, 'error');
     }
     
     setLoading(false);
@@ -204,16 +211,14 @@ const TicTacToeGame = ({ studentData, showToast }) => {
     const nextPlayer = playerRole === 'X' ? 'O' : 'X';
     
     try {
-      const gameRef = doc(firestore, 'ticTacToeGames', gameRoom);
-      await updateDoc(gameRef, {
+      await update(ref(database, `ticTacToe/${gameRoom}`), {
         board: newBoard,
         currentPlayer: nextPlayer,
-        lastMove: { row, col, player: playerRole, timestamp: Date.now() },
-        lastActivity: Date.now()
+        lastMove: { row, col, player: playerRole, timestamp: Date.now() }
       });
     } catch (error) {
       console.error('Error making move:', error);
-      showToast('Failed to make move', 'error');
+      showToast('Failed to make move: ' + error.message, 'error');
     }
   };
 
@@ -231,8 +236,7 @@ const TicTacToeGame = ({ studentData, showToast }) => {
   const endGame = async () => {
     if (gameRoom) {
       try {
-        const gameRef = doc(firestore, 'ticTacToeGames', gameRoom);
-        await deleteDoc(gameRef);
+        await remove(ref(database, `ticTacToe/${gameRoom}`));
       } catch (error) {
         console.error('Error ending game:', error);
       }
@@ -244,7 +248,7 @@ const TicTacToeGame = ({ studentData, showToast }) => {
   // RENDER FUNCTIONS
   // ===============================================
   const renderCell = (row, col) => {
-    const value = gameData?.board[row][col];
+    const value = gameData?.board?.[row]?.[col];
     const isWinningCell = winner && (
       (winner.line === 'row' && winner.index === row) ||
       (winner.line === 'col' && winner.index === col) ||
@@ -291,7 +295,7 @@ const TicTacToeGame = ({ studentData, showToast }) => {
             🎯 Tic Tac Toe
           </h2>
           <p className="text-gray-600 text-sm md:text-base">
-            Challenge a friend to a game!
+            Challenge a friend to a real-time game!
           </p>
         </div>
 
@@ -333,11 +337,11 @@ const TicTacToeGame = ({ studentData, showToast }) => {
         </div>
 
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
-          <div className="text-2xl mb-2">💡</div>
-          <p className="text-blue-800 text-sm font-semibold">How to Play:</p>
+          <div className="text-2xl mb-2">⚡</div>
+          <p className="text-blue-800 text-sm font-semibold">Real-Time Gaming</p>
           <p className="text-blue-700 text-xs mt-1">
-            One player creates a game and shares the room code. 
-            The other player joins using that code. Take turns placing X's and O's!
+            Moves sync instantly between devices! 
+            One player creates a game, the other joins using the room code.
           </p>
         </div>
       </div>
@@ -447,7 +451,7 @@ const TicTacToeGame = ({ studentData, showToast }) => {
         <div className="bg-white rounded-xl p-6 shadow-lg">
           <div className="grid grid-cols-3 gap-2 md:gap-3 max-w-xs mx-auto">
             {gameData?.board?.map((row, rowIndex) =>
-              row.map((_, colIndex) => renderCell(rowIndex, colIndex))
+              row?.map((_, colIndex) => renderCell(rowIndex, colIndex))
             )}
           </div>
         </div>
