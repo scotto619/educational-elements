@@ -22,58 +22,6 @@ export const calculateCoins = (student) => {
 };
 
 // ===============================================
-// AVATAR IMAGE PATHS
-// ===============================================
-export const getAvatarImage = (avatarBase, level = 1) => {
-  if (!avatarBase) return '/shop/Basic/Banana.png'; // Default fallback
-  
-  // List of traditional avatar names that should use the /avatars/ system
-  const TRADITIONAL_AVATARS = [
-    'Alchemist F', 'Alchemist M', 'Archer F', 'Archer M', 'Barbarian F', 'Barbarian M',
-    'Bard F', 'Bard M', 'Beastmaster F', 'Beastmaster M', 'Cleric F', 'Cleric M',
-    'Crystal Sage F', 'Crystal Sage M', 'Druid F', 'Druid M', 'Engineer F', 'Engineer M',
-    'Ice Mage F', 'Ice Mage M', 'Illusionist F', 'Illusionist M', 'Knight F', 'Knight M',
-    'Monk F', 'Monk M', 'Necromancer F', 'Necromancer M', 'Orc F', 'Orc M',
-    'Paladin F', 'Paladin M', 'Rogue F', 'Rogue M', 'Sky Knight F', 'Sky Knight M',
-    'Time Mage F', 'Time Mage M', 'Wizard F', 'Wizard M'
-  ];
-  
-  // Check if it's a traditional avatar first
-  if (TRADITIONAL_AVATARS.includes(avatarBase)) {
-    const basePath = '/avatars';
-    const levelSuffix = level > 1 ? ` L${level}` : '';
-    return `${basePath}/${avatarBase}/${avatarBase}${levelSuffix}.png`;
-  }
-  
-  // Then check if it's a shop avatar
-  const shopItem = [...SHOP_BASIC_AVATARS, ...SHOP_PREMIUM_AVATARS].find(a => 
-    a.name.toLowerCase() === avatarBase?.toLowerCase()
-  );
-  if (shopItem) return shopItem.path;
-  
-  // Final fallback to traditional system
-  const basePath = '/avatars';
-  const levelSuffix = level > 1 ? ` L${level}` : '';
-  return `${basePath}/${avatarBase}/${avatarBase}${levelSuffix}.png`;
-};
-
-// ===============================================
-// PET IMAGE PATHS
-// ===============================================
-export const getPetImage = (pet) => {
-  if (!pet || !pet.name) return '/shop/BasicPets/Wizard.png'; // Default fallback
-  
-  // First check if it's a shop pet
-  const shopItem = [...SHOP_BASIC_PETS, ...SHOP_PREMIUM_PETS].find(p => 
-    p.name.toLowerCase() === pet.name.toLowerCase()
-  );
-  if (shopItem) return shopItem.path;
-  
-  // Fallback to old pet system
-  return `/Pets/${pet.name}.png`;
-};
-
-// ===============================================
 // SHOP DATA (from your classroom-champions.js)
 // ===============================================
 export const SHOP_BASIC_AVATARS = [ 
@@ -163,6 +111,36 @@ export const SHOP_PREMIUM_PETS = [
   { name: 'Snake Pet', price: 50, path: '/shop/PremiumPets/SnakePet.png' },
   { name: 'Vampire Pet', price: 50, path: '/shop/PremiumPets/VampirePet.png' }
 ];
+
+// ===============================================
+// AVATAR IMAGE PATHS - FIXED TO MATCH CLASSROOM-CHAMPIONS.JS
+// ===============================================
+export const getAvatarImage = (avatarBase, level) => {
+  // First check if it's a shop avatar
+  const shopItem = [...SHOP_BASIC_AVATARS, ...SHOP_PREMIUM_AVATARS].find(a => 
+    a.name.toLowerCase() === avatarBase?.toLowerCase()
+  );
+  if (shopItem) return shopItem.path;
+  
+  // Default to traditional avatar system with the SAME path structure as classroom-champions.js
+  return `/avatars/${avatarBase || 'Wizard F'}/Level ${Math.max(1, Math.min(level || 1, 4))}.png`;
+};
+
+// ===============================================
+// PET IMAGE PATHS
+// ===============================================
+export const getPetImage = (pet) => {
+  if (!pet || !pet.name) return '/shop/BasicPets/Wizard.png'; // Default fallback
+  
+  // First check if it's a shop pet
+  const shopItem = [...SHOP_BASIC_PETS, ...SHOP_PREMIUM_PETS].find(p => 
+    p.name.toLowerCase() === pet.name.toLowerCase()
+  );
+  if (shopItem) return shopItem.path;
+  
+  // Fallback to old pet system
+  return `/Pets/${pet.name}.png`;
+};
 
 // ===============================================
 // PET GENERATION SYSTEM
