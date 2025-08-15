@@ -1,27 +1,17 @@
-// components/quizshow/student/StudentGameView.js - FIXED ALL ISSUES
-import React, { useState, useEffect, useRef } from 'react';
+// components/quizshow/student/StudentGameView.js - COMPLETELY FIXED VERSION
+import React, { useState, useEffect } from 'react';
 import { ref, set } from 'firebase/database';
 import { database } from '../../../utils/firebase';
 import { playQuizSound } from '../../../utils/quizShowHelpers';
-
-// SIMPLE SCORING SYSTEM - USED EVERYWHERE
-const calculateSimpleScore = (isCorrect) => {
-  return isCorrect ? 10 : -5; // +10 for correct, -5 for incorrect
-};
 
 const StudentGameView = ({ roomCode, gameData, playerInfo }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [hasAnswered, setHasAnswered] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
-  const [questionPhase, setQuestionPhase] = useState('waiting'); // 'waiting', 'answering', 'results'
+  const [questionPhase, setQuestionPhase] = useState('waiting');
   const [score, setScore] = useState(0);
   const [answerStartTime, setAnswerStartTime] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false); // Prevent double submissions
-  
-  // Use refs for immediate state tracking to prevent multiple clicks
-  const hasAnsweredRef = useRef(false);
-  const isSubmittingRef = useRef(false);
 
   const currentQuestion = gameData?.quiz?.questions?.[currentQuestionIndex];
   const totalQuestions = gameData?.quiz?.questions?.length || 0;
@@ -36,18 +26,14 @@ const StudentGameView = ({ roomCode, gameData, playerInfo }) => {
         setCurrentQuestionIndex(newQuestionIndex);
         setSelectedAnswer(null);
         setHasAnswered(false);
-        setIsSubmitting(false);
-        // Reset refs immediately
-        hasAnsweredRef.current = false;
-        isSubmittingRef.current = false;
-        setAnswerStartTime(null); // Reset timer start time
+        setAnswerStartTime(null);
       }
     }
 
     if (gameData?.questionPhase) {
       setQuestionPhase(gameData.questionPhase);
       
-      // FIXED: Only set timer when entering answering phase for the first time
+      // Start timer when entering answering phase
       if (gameData.questionPhase === 'answering' && !answerStartTime) {
         const timeLimit = currentQuestion?.timeLimit || 20;
         console.log(`⏰ Starting timer for ${timeLimit} seconds`);
@@ -56,22 +42,19 @@ const StudentGameView = ({ roomCode, gameData, playerInfo }) => {
       }
     }
 
-    // Update score from Firebase responses
+    // Update score from Firebase responses only
     updatePlayerScore();
   }, [gameData]);
 
-  // FIXED: Timer logic - never reset timer once started, continue counting regardless of answer state
+  // Timer logic - runs independently
   useEffect(() => {
     if (questionPhase === 'answering' && timeLeft > 0 && answerStartTime) {
       const timer = setTimeout(() => {
-        setTimeLeft(prev => {
-          const newTime = prev - 1;
-          return newTime;
-        });
+        setTimeLeft(prev => prev - 1);
       }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [timeLeft, questionPhase, answerStartTime]); // Only these dependencies, nothing else
+  }, [timeLeft, questionPhase, answerStartTime]);
 
   const updatePlayerScore = () => {
     if (gameData?.responses && playerInfo?.playerId) {
@@ -87,76 +70,78 @@ const StudentGameView = ({ roomCode, gameData, playerInfo }) => {
   };
 
   const submitAnswer = async (answerIndex) => {
-    // FIXED: Use refs for immediate blocking to prevent multiple submissions
-    if (hasAnsweredRef.current || isSubmittingRef.current || questionPhase !== 'answering') {
-      console.log(`🚫 Answer submission blocked: hasAnswered=${hasAnsweredRef.current}, isSubmitting=${isSubmittingRef.current}, phase=${questionPhase}`);
+    // CRITICAL: Complete prevention of multiple submissions
+    if (hasAnswered || questionPhase !== 'answering') {
+      console.log(`🚫 Answer submission blocked: hasAnswered=${hasAnswered}, phase=${questionPhase}`);
       return;
     }
 
     console.log(`📝 Submitting answer ${answerIndex} for question ${currentQuestionIndex}`);
     
-    // IMMEDIATELY block further submissions using refs
-    hasAnsweredRef.current = true;
-    isSubmittingRef.current = true;
-    setIsSubmitting(true);
+    // IMMEDIATELY block any further clicks
     setHasAnswered(true);
     setSelectedAnswer(answerIndex);
 
     const timeSpent = answerStartTime ? (Date.now() - answerStartTime) / 1000 : 0;
     
-    // FIXED: Ensure we have the current question and proper comparison
     if (!currentQuestion || !currentQuestion.options || answerIndex >= currentQuestion.options.length) {
       console.error('❌ Invalid question or answer index');
-      // Reset blocking states on error
-      hasAnsweredRef.current = false;
-      isSubmittingRef.current = false;
-      setIsSubmitting(false);
       setHasAnswered(false);
       setSelectedAnswer(null);
       return;
     }
     
-    // FIXED: Proper answer validation with explicit type checking and debugging
-    const correctAnswerIndex = parseInt(currentQuestion.correctAnswer);
-    const submittedAnswerIndex = parseInt(answerIndex);
+    // EXPLICIT TYPE CONVERSION AND DETAILED LOGGING
+    let correctAnswerIndex = currentQuestion.correctAnswer;
+    let submittedAnswerIndex = answerIndex;
+    
+    // Convert both to numbers explicitly
+    if (typeof correctAnswerIndex === 'string') {
+      correctAnswerIndex = parseInt(correctAnswerIndex, 10);
+    }
+    if (typeof submittedAnswerIndex === 'string') {
+      submittedAnswerIndex = parseInt(submittedAnswerIndex, 10);
+    }
+    
     const isAnswerCorrect = submittedAnswerIndex === correctAnswerIndex;
     
-    console.log(`🔍 Answer validation: submitted=${submittedAnswerIndex}, correct=${correctAnswerIndex}, isCorrect=${isAnswerCorrect}`);
-    console.log(`🔍 Question options:`, currentQuestion.options);
-    console.log(`🔍 Selected option: "${currentQuestion.options[submittedAnswerIndex]}"`);
-    console.log(`🔍 Correct option: "${currentQuestion.options[correctAnswerIndex]}"`);
+    // DETAILED DEBUG LOGGING
+    console.log(`🔍 DETAILED ANSWER VALIDATION:`);
+    console.log(`   Question: "${currentQuestion.question}"`);
+    console.log(`   Options: [${currentQuestion.options.map((opt, i) => `${i}:"${opt}"`).join(', ')}]`);
+    console.log(`   Submitted Index: ${submittedAnswerIndex} (type: ${typeof submittedAnswerIndex})`);
+    console.log(`   Correct Index: ${correctAnswerIndex} (type: ${typeof correctAnswerIndex})`);
+    console.log(`   Submitted Answer: "${currentQuestion.options[submittedAnswerIndex]}"`);
+    console.log(`   Correct Answer: "${currentQuestion.options[correctAnswerIndex]}"`);
+    console.log(`   Is Correct: ${isAnswerCorrect}`);
     
-    // Simple scoring system
-    const points = calculateSimpleScore(isAnswerCorrect);
+    // Simple scoring: +10 for correct, -5 for incorrect
+    const points = isAnswerCorrect ? 10 : -5;
 
-    // Play submission sound (not result sound yet)
+    // Play submission sound
     playQuizSound('answerSubmit');
 
     // Submit to Firebase
     try {
       const responsePath = `gameRooms/${roomCode}/responses/${currentQuestionIndex}/${playerInfo.playerId}`;
-      await set(ref(database, responsePath), {
+      const responseData = {
         answer: submittedAnswerIndex,
         timeSpent: timeSpent,
         isCorrect: isAnswerCorrect,
         points: points,
         submittedAt: Date.now()
-      });
+      };
+      
+      console.log(`📤 Submitting to Firebase:`, responseData);
+      await set(ref(database, responsePath), responseData);
       
       console.log(`✅ Answer submitted successfully: ${isAnswerCorrect ? 'CORRECT' : 'INCORRECT'} (${points} points)`);
     } catch (error) {
       console.error('❌ Error submitting answer:', error);
-      // Reset blocking states if submission failed
-      hasAnsweredRef.current = false;
-      isSubmittingRef.current = false;
-      setIsSubmitting(false);
+      // Reset state if submission failed
       setHasAnswered(false);
       setSelectedAnswer(null);
     }
-    
-    // Allow refs to be reset only after successful Firebase write
-    isSubmittingRef.current = false;
-    setIsSubmitting(false);
   };
 
   const getTimeColor = () => {
@@ -182,8 +167,8 @@ const StudentGameView = ({ roomCode, gameData, playerInfo }) => {
     
     if (questionPhase === 'answering') {
       if (hasAnswered) {
-        // FIXED: Much stronger visual indication of selected answer
         if (index === selectedAnswer) {
+          // EXTREME visual feedback for selected answer
           buttonStyle += ` bg-gray-700 ring-8 ring-yellow-400 ring-opacity-90 transform scale-110 shadow-2xl border-8 border-yellow-300`;
         } else {
           buttonStyle += ' bg-gray-400 opacity-30';
@@ -195,20 +180,15 @@ const StudentGameView = ({ roomCode, gameData, playerInfo }) => {
     } else if (questionPhase === 'results') {
       // Show correct/incorrect feedback
       if (index === selectedAnswer && index === currentQuestion.correctAnswer) {
-        // Selected and correct
         buttonStyle += ' bg-green-500 ring-4 ring-green-300 transform scale-105';
       } else if (index === selectedAnswer && index !== currentQuestion.correctAnswer) {
-        // Selected but wrong
         buttonStyle += ' bg-red-500 ring-4 ring-red-300 transform scale-105';
       } else if (index === currentQuestion.correctAnswer) {
-        // Correct answer (not selected by user)
         buttonStyle += ' bg-green-400 ring-2 ring-green-300';
       } else {
-        // Other options
         buttonStyle += ' bg-gray-400';
       }
     } else {
-      // Disabled state
       buttonStyle += ' bg-gray-400 cursor-not-allowed';
     }
 
@@ -290,7 +270,6 @@ const StudentGameView = ({ roomCode, gameData, playerInfo }) => {
             </div>
           </div>
           
-          {/* FIXED: Timer shows during answering phase and NEVER resets after answer */}
           {questionPhase === 'answering' && answerStartTime && (
             <div className={`text-3xl font-bold px-4 py-2 rounded-lg ${getTimeColor()}`}>
               {timeLeft}s
@@ -352,7 +331,7 @@ const StudentGameView = ({ roomCode, gameData, playerInfo }) => {
               <button
                 key={index}
                 onClick={() => submitAnswer(index)}
-                disabled={hasAnswered || isSubmitting || questionPhase !== 'answering'}
+                disabled={hasAnswered || questionPhase !== 'answering'}
                 className={getAnswerButtonStyle(index)}
               >
                 <div className="flex items-center space-x-4">
@@ -371,15 +350,16 @@ const StudentGameView = ({ roomCode, gameData, playerInfo }) => {
                   </div>
                 )}
                 
-                {/* FIXED: MUCH stronger visual indicator for selected answer */}
+                {/* EXTREME visual indicator for selected answer */}
                 {selectedAnswer === index && questionPhase === 'answering' && (
                   <>
-                    <div className="absolute inset-0 border-8 border-yellow-400 rounded-xl pointer-events-none"></div>
-                    <div className="absolute inset-0 bg-yellow-400 bg-opacity-20 rounded-xl pointer-events-none"></div>
-                    <div className="absolute top-2 right-2 bg-yellow-400 text-black px-3 py-2 rounded-full text-sm font-bold shadow-lg">
+                    <div className="absolute inset-0 border-8 border-yellow-400 rounded-xl pointer-events-none animate-pulse"></div>
+                    <div className="absolute inset-0 bg-yellow-400 bg-opacity-30 rounded-xl pointer-events-none"></div>
+                    <div className="absolute top-2 right-2 bg-yellow-400 text-black px-4 py-2 rounded-full text-lg font-bold shadow-lg border-2 border-black">
                       ✓ SELECTED
                     </div>
-                    <div className="absolute -top-2 -left-2 text-3xl animate-bounce">⭐</div>
+                    <div className="absolute -top-3 -left-3 text-4xl animate-bounce">⭐</div>
+                    <div className="absolute -top-3 -right-3 text-4xl animate-bounce delay-200">✨</div>
                   </>
                 )}
               </button>
@@ -427,26 +407,24 @@ const StudentGameView = ({ roomCode, gameData, playerInfo }) => {
           </p>
         </div>
 
-        {/* Debug Info (only in development) */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="mt-6 bg-gray-800 text-white rounded-xl p-4 text-xs">
-            <h4 className="font-bold mb-2">🔧 Debug Info:</h4>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <p><strong>Question:</strong> {currentQuestionIndex}</p>
-                <p><strong>Phase:</strong> {questionPhase}</p>
-                <p><strong>Has Answered:</strong> {hasAnswered ? 'Yes' : 'No'}</p>
-                <p><strong>Selected:</strong> {selectedAnswer !== null ? selectedAnswer : 'None'}</p>
-              </div>
-              <div>
-                <p><strong>Correct Answer:</strong> {currentQuestion?.correctAnswer}</p>
-                <p><strong>Time Left:</strong> {timeLeft}s</p>
-                <p><strong>Submitting:</strong> {isSubmitting ? 'Yes' : 'No'}</p>
-                <p><strong>Score:</strong> {score}</p>
-              </div>
+        {/* Debug Info */}
+        <div className="mt-6 bg-gray-800 text-white rounded-xl p-4 text-xs">
+          <h4 className="font-bold mb-2">🔧 Debug Info:</h4>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <p><strong>Question:</strong> {currentQuestionIndex}</p>
+              <p><strong>Phase:</strong> {questionPhase}</p>
+              <p><strong>Has Answered:</strong> {hasAnswered ? 'Yes' : 'No'}</p>
+              <p><strong>Selected:</strong> {selectedAnswer !== null ? selectedAnswer : 'None'}</p>
+            </div>
+            <div>
+              <p><strong>Correct Answer:</strong> {currentQuestion?.correctAnswer} (type: {typeof currentQuestion?.correctAnswer})</p>
+              <p><strong>Time Left:</strong> {timeLeft}s</p>
+              <p><strong>Score:</strong> {score}</p>
+              <p><strong>Question Options:</strong> {currentQuestion?.options?.length || 0}</p>
             </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

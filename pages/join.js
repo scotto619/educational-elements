@@ -1,5 +1,5 @@
-// pages/join.js - FIXED ALL ISSUES
-import React, { useState, useEffect, useRef } from 'react';
+// pages/join.js - COMPLETELY FIXED VERSION WITH DEBUG
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { database } from '../utils/firebase';
 import { ref, onValue, set } from 'firebase/database';
@@ -7,7 +7,7 @@ import { validateRoomCode, playQuizSound } from '../utils/quizShowHelpers';
 
 const StudentJoinPage = () => {
   const router = useRouter();
-  const [step, setStep] = useState(1); // 1: Enter code, 2: Enter name, 3: Lobby, 4: Playing, 5: Finished
+  const [step, setStep] = useState(1);
   const [roomCode, setRoomCode] = useState('');
   const [gameData, setGameData] = useState(null);
   const [playerName, setPlayerName] = useState('');
@@ -22,11 +22,6 @@ const StudentJoinPage = () => {
   const [score, setScore] = useState(0);
   const [answerStartTime, setAnswerStartTime] = useState(null);
   const [finalResults, setFinalResults] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // Use refs for immediate state tracking to prevent multiple clicks
-  const hasAnsweredRef = useRef(false);
-  const isSubmittingRef = useRef(false);
 
   // Pre-fill room code from URL if present
   useEffect(() => {
@@ -41,20 +36,18 @@ const StudentJoinPage = () => {
       const gameRef = ref(database, `gameRooms/${roomCode}`);
       const unsubscribe = onValue(gameRef, (snapshot) => {
         const data = snapshot.val();
-        console.log('Game data update:', data); // Debug log
+        console.log('Game data update:', data);
         
         if (data) {
           setGameData(data);
           
-          // Handle game state changes
           if (data.status === 'playing' && step === 3) {
-            setStep(4); // Move to playing
+            setStep(4);
           }
           
-          // Handle game finished
           if (data.status === 'finished' || data.questionPhase === 'finished') {
             calculateFinalScore(data);
-            setStep(5); // Move to finished state
+            setStep(5);
           }
           
           // Reset answer state when question changes
@@ -63,9 +56,6 @@ const StudentJoinPage = () => {
             console.log(`🔄 Question changed to ${currentQ}, resetting answer state`);
             setSelectedAnswer(null);
             setHasAnswered(false);
-            setIsSubmitting(false);
-            hasAnsweredRef.current = false;
-            isSubmittingRef.current = false;
             setAnswerStartTime(null);
             
             // Start timer when question phase is 'answering'
@@ -76,11 +66,28 @@ const StudentJoinPage = () => {
               console.log(`⏰ Timer started: ${questionTimeLimit} seconds`);
             }
           }
+          
+          // Update score from Firebase only
+          if (data.responses && playerId) {
+            updateScoreFromFirebase(data);
+          }
         }
       });
       return () => unsubscribe();
     }
-  }, [roomCode, step]);
+  }, [roomCode, step, playerId]);
+
+  // Update score only from Firebase responses
+  const updateScoreFromFirebase = (data) => {
+    let totalScore = 0;
+    Object.values(data.responses || {}).forEach(questionResponses => {
+      const response = questionResponses[playerId];
+      if (response && response.points !== undefined) {
+        totalScore += response.points;
+      }
+    });
+    setScore(totalScore);
+  };
 
   // Calculate final score from responses
   const calculateFinalScore = (data) => {
@@ -111,7 +118,7 @@ const StudentJoinPage = () => {
     });
   };
 
-  // FIXED: Timer logic - never reset once started, continue counting regardless of answer state
+  // Timer logic - runs independently
   useEffect(() => {
     if (step === 4 && timeLeft > 0 && gameData?.questionPhase === 'answering' && answerStartTime) {
       const timer = setTimeout(() => {
@@ -119,7 +126,7 @@ const StudentJoinPage = () => {
       }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [timeLeft, step, gameData?.questionPhase, answerStartTime]); // Removed hasAnswered
+  }, [timeLeft, step, gameData?.questionPhase, answerStartTime]);
 
   const handleRoomCodeSubmit = async (e) => {
     e.preventDefault();
@@ -188,9 +195,9 @@ const StudentJoinPage = () => {
   };
 
   const submitAnswer = async (answerIndex) => {
-    // FIXED: Use refs for immediate blocking to prevent multiple submissions
-    if (hasAnsweredRef.current || isSubmittingRef.current || gameData?.questionPhase !== 'answering') {
-      console.log(`🚫 Answer submission blocked: hasAnswered=${hasAnsweredRef.current}, isSubmitting=${isSubmittingRef.current}, phase=${gameData?.questionPhase}`);
+    // CRITICAL: Complete prevention of multiple submissions
+    if (hasAnswered || gameData?.questionPhase !== 'answering') {
+      console.log(`🚫 Answer submission blocked: hasAnswered=${hasAnswered}, phase=${gameData?.questionPhase}`);
       return;
     }
 
@@ -202,59 +209,62 @@ const StudentJoinPage = () => {
 
     console.log(`📝 Submitting answer ${answerIndex} for question ${gameData.currentQuestion}`);
 
-    // IMMEDIATELY block further submissions using refs
-    hasAnsweredRef.current = true;
-    isSubmittingRef.current = true;
+    // IMMEDIATELY block any further clicks
     setHasAnswered(true);
-    setIsSubmitting(true);
     setSelectedAnswer(answerIndex);
 
     const timeSpent = answerStartTime ? (Date.now() - answerStartTime) / 1000 : 0;
     
-    // FIXED: Proper answer validation with explicit type checking and debugging
-    const correctAnswerIndex = parseInt(currentQuestion.correctAnswer);
-    const submittedAnswerIndex = parseInt(answerIndex);
+    // EXPLICIT TYPE CONVERSION AND DETAILED LOGGING
+    let correctAnswerIndex = currentQuestion.correctAnswer;
+    let submittedAnswerIndex = answerIndex;
+    
+    // Convert both to numbers explicitly
+    if (typeof correctAnswerIndex === 'string') {
+      correctAnswerIndex = parseInt(correctAnswerIndex, 10);
+    }
+    if (typeof submittedAnswerIndex === 'string') {
+      submittedAnswerIndex = parseInt(submittedAnswerIndex, 10);
+    }
+    
     const isCorrect = submittedAnswerIndex === correctAnswerIndex;
     
-    console.log(`🔍 Answer validation: submitted=${submittedAnswerIndex}, correct=${correctAnswerIndex}, isCorrect=${isCorrect}`);
-    console.log(`🔍 Question options:`, currentQuestion.options);
-    console.log(`🔍 Selected option: "${currentQuestion.options[submittedAnswerIndex]}"`);
-    console.log(`🔍 Correct option: "${currentQuestion.options[correctAnswerIndex]}"`);
+    // DETAILED DEBUG LOGGING
+    console.log(`🔍 DETAILED ANSWER VALIDATION:`);
+    console.log(`   Question: "${currentQuestion.question}"`);
+    console.log(`   Options: [${currentQuestion.options.map((opt, i) => `${i}:"${opt}"`).join(', ')}]`);
+    console.log(`   Submitted Index: ${submittedAnswerIndex} (type: ${typeof submittedAnswerIndex})`);
+    console.log(`   Correct Index: ${correctAnswerIndex} (type: ${typeof correctAnswerIndex})`);
+    console.log(`   Submitted Answer: "${currentQuestion.options[submittedAnswerIndex]}"`);
+    console.log(`   Correct Answer: "${currentQuestion.options[correctAnswerIndex]}"`);
+    console.log(`   Is Correct: ${isCorrect}`);
     
     // Simple scoring: +10 for correct, -5 for incorrect
     const points = isCorrect ? 10 : -5;
 
-    // Update local score immediately
-    setScore(prev => prev + points);
-
-    // Play submission sound (not result sound yet)
+    // DON'T update local score - let Firebase handle it
     playQuizSound('answerSubmit');
 
     // Submit to Firebase
     try {
       const responsePath = `gameRooms/${roomCode}/responses/${gameData.currentQuestion}/${playerId}`;
-      await set(ref(database, responsePath), {
+      const responseData = {
         answer: submittedAnswerIndex,
         timeSpent: timeSpent,
         isCorrect: isCorrect,
         points: points,
         submittedAt: Date.now()
-      });
+      };
+      
+      console.log(`📤 Submitting to Firebase:`, responseData);
+      await set(ref(database, responsePath), responseData);
       
       console.log(`✅ Answer submitted successfully: ${isCorrect ? 'CORRECT' : 'INCORRECT'} (${points} points)`);
     } catch (error) {
       console.error('❌ Error submitting answer:', error);
-      // Reset blocking states if submission failed
-      hasAnsweredRef.current = false;
-      isSubmittingRef.current = false;
       setHasAnswered(false);
-      setIsSubmitting(false);
       setSelectedAnswer(null);
     }
-    
-    // Allow submission flag to be reset after successful Firebase write
-    isSubmittingRef.current = false;
-    setIsSubmitting(false);
   };
 
   const getAnswerButtonColor = (index) => {
@@ -273,9 +283,9 @@ const StudentJoinPage = () => {
     
     if (gameData?.questionPhase === 'answering') {
       if (hasAnswered) {
-        // FIXED: Much stronger visual indication for selected answer
         if (index === selectedAnswer) {
-          buttonStyle += ` bg-gray-700 ring-8 ring-yellow-400 transform scale-105 shadow-2xl border-4 border-yellow-300`;
+          // EXTREME visual feedback for selected answer
+          buttonStyle += ` bg-gray-700 ring-8 ring-yellow-400 transform scale-105 shadow-2xl border-8 border-yellow-300`;
         } else {
           buttonStyle += ' bg-gray-400 opacity-50';
         }
@@ -286,20 +296,15 @@ const StudentJoinPage = () => {
     } else if (gameData?.questionPhase === 'results') {
       // Show correct/incorrect feedback
       if (index === selectedAnswer && index === currentQuestion?.correctAnswer) {
-        // Selected and correct
         buttonStyle += ' bg-green-500 ring-4 ring-green-300';
       } else if (index === selectedAnswer && index !== currentQuestion?.correctAnswer) {
-        // Selected but wrong
         buttonStyle += ' bg-red-500 ring-4 ring-red-300';
       } else if (index === currentQuestion?.correctAnswer) {
-        // Correct answer (not selected by user)
         buttonStyle += ' bg-green-400 ring-2 ring-green-300';
       } else {
-        // Other options
         buttonStyle += ' bg-gray-400';
       }
     } else {
-      // Disabled state
       buttonStyle += ' bg-gray-400 cursor-not-allowed';
     }
 
@@ -409,7 +414,6 @@ const StudentJoinPage = () => {
               <p className="text-blue-600 text-sm">{gameData?.quiz?.questions?.length} questions</p>
             </div>
 
-            {/* Show other players */}
             {gameData?.players && (
               <div className="text-left">
                 <h3 className="font-semibold text-gray-700 mb-3">
@@ -438,11 +442,6 @@ const StudentJoinPage = () => {
     const currentQuestion = gameData?.quiz?.questions?.[gameData?.currentQuestion];
     const totalQuestions = gameData?.quiz?.questions?.length || 0;
     const questionNumber = (gameData?.currentQuestion || 0) + 1;
-
-    // Debug info
-    console.log('Current game phase:', gameData?.questionPhase);
-    console.log('Current question:', currentQuestion);
-    console.log('Question index:', gameData?.currentQuestion);
 
     if (!currentQuestion) {
       return (
@@ -515,7 +514,6 @@ const StudentJoinPage = () => {
               <div className="text-sm text-gray-600">Question</div>
               <div className="font-bold">{questionNumber}/{totalQuestions}</div>
             </div>
-            {/* FIXED: Timer shows and doesn't reset after answer submission */}
             {timeLeft > 0 && answerStartTime && (
               <div className={`text-2xl font-bold px-3 py-1 rounded ${
                 timeLeft <= 5 ? 'bg-red-500 text-white animate-pulse' : 'bg-green-500 text-white'
@@ -541,7 +539,7 @@ const StudentJoinPage = () => {
               <button
                 key={index}
                 onClick={() => submitAnswer(index)}
-                disabled={hasAnswered || isSubmitting || timeLeft <= 0}
+                disabled={hasAnswered || timeLeft <= 0}
                 className={getAnswerButtonStyle(index)}
               >
                 <div className="flex items-center space-x-3 relative">
@@ -550,11 +548,14 @@ const StudentJoinPage = () => {
                   </div>
                   <span>{option}</span>
                   
-                  {/* FIXED: Much stronger visual indicator for selected answer */}
+                  {/* EXTREME visual indicator for selected answer */}
                   {selectedAnswer === index && hasAnswered && (
-                    <div className="absolute right-2 bg-yellow-400 text-black px-3 py-1 rounded-full text-xs font-bold">
-                      ✓ SELECTED
-                    </div>
+                    <>
+                      <div className="absolute right-2 bg-yellow-400 text-black px-4 py-2 rounded-full text-sm font-bold border-2 border-black">
+                        ✓ SELECTED
+                      </div>
+                      <div className="absolute -top-2 -right-2 text-2xl animate-bounce">⭐</div>
+                    </>
                   )}
                 </div>
               </button>
@@ -569,6 +570,25 @@ const StudentJoinPage = () => {
               </p>
             </div>
           )}
+
+          {/* Debug Info */}
+          <div className="mt-6 bg-gray-800 text-white rounded-xl p-4 text-xs">
+            <h4 className="font-bold mb-2">🔧 Debug Info:</h4>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <p><strong>Phase:</strong> {gameData?.questionPhase}</p>
+                <p><strong>Has Answered:</strong> {hasAnswered ? 'Yes' : 'No'}</p>
+                <p><strong>Selected:</strong> {selectedAnswer !== null ? selectedAnswer : 'None'}</p>
+                <p><strong>Score:</strong> {score}</p>
+              </div>
+              <div>
+                <p><strong>Correct Answer:</strong> {currentQuestion?.correctAnswer} (type: {typeof currentQuestion?.correctAnswer})</p>
+                <p><strong>Time Left:</strong> {timeLeft}s</p>
+                <p><strong>Question:</strong> {gameData?.currentQuestion}</p>
+                <p><strong>Options:</strong> {currentQuestion?.options?.length || 0}</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
