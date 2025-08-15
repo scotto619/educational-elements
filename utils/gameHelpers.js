@@ -25,9 +25,16 @@ export const calculateCoins = (student) => {
 // AVATAR IMAGE PATHS
 // ===============================================
 export const getAvatarImage = (avatarBase, level = 1) => {
-  if (!avatarBase) return '/images/avatars/Wizard F/Wizard F.png';
+  if (!avatarBase) return '/shop/Basic/Banana.png'; // Default fallback
   
-  const basePath = '/images/avatars';
+  // First check if it's a shop avatar
+  const shopItem = [...SHOP_BASIC_AVATARS, ...SHOP_PREMIUM_AVATARS].find(a => 
+    a.name.toLowerCase() === avatarBase?.toLowerCase()
+  );
+  if (shopItem) return shopItem.path;
+  
+  // Fallback to old avatar system
+  const basePath = '/avatars';
   const levelSuffix = level > 1 ? ` L${level}` : '';
   return `${basePath}/${avatarBase}/${avatarBase}${levelSuffix}.png`;
 };
@@ -36,81 +43,107 @@ export const getAvatarImage = (avatarBase, level = 1) => {
 // PET IMAGE PATHS
 // ===============================================
 export const getPetImage = (pet) => {
-  if (!pet || !pet.name) return '/images/pets/default.png';
-  return `/images/pets/${pet.name}.png`;
+  if (!pet || !pet.name) return '/shop/BasicPets/Wizard.png'; // Default fallback
+  
+  // First check if it's a shop pet
+  const shopItem = [...SHOP_BASIC_PETS, ...SHOP_PREMIUM_PETS].find(p => 
+    p.name.toLowerCase() === pet.name.toLowerCase()
+  );
+  if (shopItem) return shopItem.path;
+  
+  // Fallback to old pet system
+  return `/Pets/${pet.name}.png`;
 };
 
 // ===============================================
-// SHOP DATA
+// SHOP DATA (from your classroom-champions.js)
 // ===============================================
-export const SHOP_BASIC_AVATARS = [
-  { name: 'Alchemist F', price: 50, path: '/images/avatars/Alchemist F/Alchemist F.png' },
-  { name: 'Alchemist M', price: 50, path: '/images/avatars/Alchemist M/Alchemist M.png' },
-  { name: 'Archer F', price: 45, path: '/images/avatars/Archer F/Archer F.png' },
-  { name: 'Archer M', price: 45, path: '/images/avatars/Archer M/Archer M.png' },
-  { name: 'Barbarian F', price: 55, path: '/images/avatars/Barbarian F/Barbarian F.png' },
-  { name: 'Barbarian M', price: 55, path: '/images/avatars/Barbarian M/Barbarian M.png' },
-  { name: 'Bard F', price: 40, path: '/images/avatars/Bard F/Bard F.png' },
-  { name: 'Bard M', price: 40, path: '/images/avatars/Bard M/Bard M.png' },
-  { name: 'Cleric F', price: 60, path: '/images/avatars/Cleric F/Cleric F.png' },
-  { name: 'Cleric M', price: 60, path: '/images/avatars/Cleric M/Cleric M.png' },
-  { name: 'Druid F', price: 65, path: '/images/avatars/Druid F/Druid F.png' },
-  { name: 'Druid M', price: 65, path: '/images/avatars/Druid M/Druid M.png' },
-  { name: 'Knight F', price: 70, path: '/images/avatars/Knight F/Knight F.png' },
-  { name: 'Knight M', price: 70, path: '/images/avatars/Knight M/Knight M.png' },
-  { name: 'Monk F', price: 50, path: '/images/avatars/Monk F/Monk F.png' },
-  { name: 'Monk M', price: 50, path: '/images/avatars/Monk M/Monk M.png' },
-  { name: 'Rogue F', price: 55, path: '/images/avatars/Rogue F/Rogue F.png' },
-  { name: 'Rogue M', price: 55, path: '/images/avatars/Rogue M/Rogue M.png' },
-  { name: 'Wizard F', price: 75, path: '/images/avatars/Wizard F/Wizard F.png' },
-  { name: 'Wizard M', price: 75, path: '/images/avatars/Wizard M/Wizard M.png' }
+export const SHOP_BASIC_AVATARS = [ 
+  { name: 'Banana', price: 10, path: '/shop/Basic/Banana.png' }, 
+  { name: 'Basketball', price: 12, path: '/shop/Basic/Basketball.png' }, 
+  { name: 'BasketballGirl', price: 12, path: '/shop/Basic/BasketballGirl.png' }, 
+  { name: 'FarmerBoy', price: 15, path: '/shop/Basic/FarmerBoy.png' }, 
+  { name: 'FarmerGirl', price: 15, path: '/shop/Basic/FarmerGirl.png' }, 
+  { name: 'Goblin1', price: 15, path: '/shop/Basic/Goblin1.png' }, 
+  { name: 'GoblinGirl1', price: 15, path: '/shop/Basic/GoblinGirl1.png' }, 
+  { name: 'Guard1', price: 20, path: '/shop/Basic/Guard1.png' }, 
+  { name: 'GuardGirl1', price: 20, path: '/shop/Basic/GuardGirl1.png' }, 
+  { name: 'PirateBoy', price: 18, path: '/shop/Basic/PirateBoy.png' }, 
+  { name: 'PirateGirl', price: 18, path: '/shop/Basic/PirateGirl.png' }, 
+  { name: 'RoboKnight', price: 25, path: '/shop/Basic/RoboKnight.png' }, 
+  { name: 'RobotBoy', price: 22, path: '/shop/Basic/RobotBoy.png' }, 
+  { name: 'RobotGirl', price: 22, path: '/shop/Basic/RobotGirl.png' }, 
+  { name: 'SoccerBoy', price: 10, path: '/shop/Basic/SoccerBoy.png' }, 
+  { name: 'SoccerBoy2', price: 10, path: '/shop/Basic/SoccerBoy2.png' }, 
+  { name: 'SoccerGirl', price: 10, path: '/shop/Basic/SoccerGirl.png' }, 
+  { name: 'StreetBoy1', price: 15, path: '/shop/Basic/Streetboy1.png' }, 
+  { name: 'StreetGirl1', price: 15, path: '/shop/Basic/Streetgirl1.png' }, 
+  { name: 'Vampire1', price: 20, path: '/shop/Basic/Vampire1.png' } 
 ];
 
-export const SHOP_PREMIUM_AVATARS = [
-  { name: 'Beastmaster F', price: 100, path: '/images/avatars/Beastmaster F/Beastmaster F.png' },
-  { name: 'Beastmaster M', price: 100, path: '/images/avatars/Beastmaster M/Beastmaster M.png' },
-  { name: 'Crystal Sage F', price: 150, path: '/images/avatars/Crystal Sage F/Crystal Sage F.png' },
-  { name: 'Crystal Sage M', price: 150, path: '/images/avatars/Crystal Sage M/Crystal Sage M.png' },
-  { name: 'Engineer F', price: 120, path: '/images/avatars/Engineer F/Engineer F.png' },
-  { name: 'Engineer M', price: 120, path: '/images/avatars/Engineer M/Engineer M.png' },
-  { name: 'Ice Mage F', price: 130, path: '/images/avatars/Ice Mage F/Ice Mage F.png' },
-  { name: 'Ice Mage M', price: 130, path: '/images/avatars/Ice Mage M/Ice Mage M.png' },
-  { name: 'Illusionist F', price: 140, path: '/images/avatars/Illusionist F/Illusionist F.png' },
-  { name: 'Illusionist M', price: 140, path: '/images/avatars/Illusionist M/Illusionist M.png' },
-  { name: 'Necromancer F', price: 160, path: '/images/avatars/Necromancer F/Necromancer F.png' },
-  { name: 'Necromancer M', price: 160, path: '/images/avatars/Necromancer M/Necromancer M.png' },
-  { name: 'Orc F', price: 110, path: '/images/avatars/Orc F/Orc F.png' },
-  { name: 'Orc M', price: 110, path: '/images/avatars/Orc M/Orc M.png' },
-  { name: 'Paladin F', price: 180, path: '/images/avatars/Paladin F/Paladin F.png' },
-  { name: 'Paladin M', price: 180, path: '/images/avatars/Paladin M/Paladin M.png' },
-  { name: 'Sky Knight F', price: 200, path: '/images/avatars/Sky Knight F/Sky Knight F.png' },
-  { name: 'Sky Knight M', price: 200, path: '/images/avatars/Sky Knight M/Sky Knight M.png' },
-  { name: 'Time Mage F', price: 250, path: '/images/avatars/Time Mage F/Time Mage F.png' },
-  { name: 'Time Mage M', price: 250, path: '/images/avatars/Time Mage M/Time Mage M.png' }
+export const SHOP_PREMIUM_AVATARS = [ 
+  { name: 'Dwarf', price: 45, path: '/shop/Premium/Dwarf.png' }, 
+  { name: 'Dwarf2', price: 45, path: '/shop/Premium/Dwarf2.png' }, 
+  { name: 'FarmerBoy Premium', price: 35, path: '/shop/Premium/FarmerBoy.png' }, 
+  { name: 'FarmerGirl Premium', price: 35, path: '/shop/Premium/FarmerGirl.png' }, 
+  { name: 'Goblin2', price: 30, path: '/shop/Premium/Goblin2.png' }, 
+  { name: 'GoblinGirl2', price: 30, path: '/shop/Premium/GoblinGirl2.png' }, 
+  { name: 'King', price: 60, path: '/shop/Premium/King.png' }, 
+  { name: 'MechanicGirl', price: 40, path: '/shop/Premium/MechanicGirl.png' }, 
+  { name: 'PirateBoy Premium', price: 42, path: '/shop/Premium/PirateBoy.png' }, 
+  { name: 'PirateGirl Premium', price: 42, path: '/shop/Premium/PirateGirl.png' }, 
+  { name: 'Queen', price: 60, path: '/shop/Premium/Queen.png' }, 
+  { name: 'RobotBoy Premium', price: 38, path: '/shop/Premium/RobotBoy.png' }, 
+  { name: 'RobotGirl Premium', price: 38, path: '/shop/Premium/RobotGirl.png' }, 
+  { name: 'Vampire2', price: 40, path: '/shop/Premium/Vampire2.png' }, 
+  { name: 'VampireGirl2', price: 40, path: '/shop/Premium/VampireGirl2.png' } 
 ];
 
 export const SHOP_BASIC_PETS = [
-  { name: 'Alchemist', price: 30, path: '/images/pets/Alchemist.png', rarity: 'common' },
-  { name: 'Barbarian', price: 35, path: '/images/pets/Barbarian.png', rarity: 'common' },
-  { name: 'Bard', price: 25, path: '/images/pets/Bard.png', rarity: 'common' },
-  { name: 'Cleric', price: 40, path: '/images/pets/Cleric.png', rarity: 'common' },
-  { name: 'Knight', price: 45, path: '/images/pets/Knight.png', rarity: 'common' },
-  { name: 'Monk', price: 30, path: '/images/pets/Monk.png', rarity: 'common' },
-  { name: 'Rogue', price: 35, path: '/images/pets/Rogue.png', rarity: 'common' },
-  { name: 'Warrior', price: 40, path: '/images/pets/Warrior.png', rarity: 'common' },
-  { name: 'Wizard', price: 50, path: '/images/pets/Wizard.png', rarity: 'common' }
+  { name: 'Alchemist Pet', price: 25, path: '/shop/BasicPets/Alchemist.png' },
+  { name: 'Barbarian Pet', price: 30, path: '/shop/BasicPets/Barbarian.png' },
+  { name: 'Bard Pet', price: 25, path: '/shop/BasicPets/Bard.png' },
+  { name: 'Beastmaster Pet', price: 35, path: '/shop/BasicPets/Beastmaster.png' },
+  { name: 'Cleric Pet', price: 25, path: '/shop/BasicPets/Cleric.png' },
+  { name: 'Crystal Knight Pet', price: 45, path: '/shop/BasicPets/Crystal Knight.png' },
+  { name: 'Crystal Sage Pet', price: 45, path: '/shop/BasicPets/Crystal Sage.png' },
+  { name: 'Dragon Pet', price: 50, path: '/shop/BasicPets/DragonPet.png' },
+  { name: 'Dream Pet', price: 40, path: '/shop/BasicPets/Dream.png' },
+  { name: 'Druid Pet', price: 35, path: '/shop/BasicPets/Druid.png' },
+  { name: 'Engineer Pet', price: 30, path: '/shop/BasicPets/Engineer.png' },
+  { name: 'Farm Pet 1', price: 20, path: '/shop/BasicPets/FarmPet1.png' },
+  { name: 'Farm Pet 2', price: 20, path: '/shop/BasicPets/FarmPet2.png' },
+  { name: 'Farm Pet 3', price: 20, path: '/shop/BasicPets/FarmPet3.png' },
+  { name: 'Frost Mage Pet', price: 35, path: '/shop/BasicPets/Frost Mage.png' },
+  { name: 'Goblin Pet', price: 25, path: '/shop/BasicPets/GoblinPet.png' },
+  { name: 'Illusionist Pet', price: 40, path: '/shop/BasicPets/Illusionist.png' },
+  { name: 'Knight Pet', price: 30, path: '/shop/BasicPets/Knight.png' },
+  { name: 'Lightning Pet', price: 50, path: '/shop/BasicPets/Lightning.png' },
+  { name: 'Monk Pet', price: 25, path: '/shop/BasicPets/Monk.png' },
+  { name: 'Necromancer Pet', price: 40, path: '/shop/BasicPets/Necromancer.png' },
+  { name: 'Orc Pet', price: 30, path: '/shop/BasicPets/Orc.png' },
+  { name: 'Paladin Pet', price: 35, path: '/shop/BasicPets/Paladin.png' },
+  { name: 'Pirate Pet 1', price: 25, path: '/shop/BasicPets/PiratePet1.png' },
+  { name: 'Pirate Pet 2', price: 25, path: '/shop/BasicPets/PiratePet2.png' },
+  { name: 'Pirate Pet 3', price: 25, path: '/shop/BasicPets/PiratePet3.png' },
+  { name: 'Rabbit Pet', price: 20, path: '/shop/BasicPets/RabbitPet.png' },
+  { name: 'Robot Boy Pet', price: 30, path: '/shop/BasicPets/RobotBoyPet.png' },
+  { name: 'Robot Girl Pet', price: 30, path: '/shop/BasicPets/RobotGirlPet.png' },
+  { name: 'Robot Pet 1', price: 30, path: '/shop/BasicPets/RobotPet1.png' },
+  { name: 'Robot Pet 2', price: 30, path: '/shop/BasicPets/RobotPet2.png' },
+  { name: 'Rogue Pet', price: 25, path: '/shop/BasicPets/Rogue.png' },
+  { name: 'Soccer Pet', price: 20, path: '/shop/BasicPets/SoccerPet.png' },
+  { name: 'Stealth Pet', price: 35, path: '/shop/BasicPets/Stealth.png' },
+  { name: 'Time Knight Pet', price: 50, path: '/shop/BasicPets/Time Knight.png' },
+  { name: 'Unicorn Pet', price: 35, path: '/shop/BasicPets/UnicornPet.png' },
+  { name: 'Warrior Pet', price: 30, path: '/shop/BasicPets/Warrior.png' },
+  { name: 'Wizard Pet', price: 25, path: '/shop/BasicPets/Wizard.png' }
 ];
 
 export const SHOP_PREMIUM_PETS = [
-  { name: 'Beastmaster', price: 80, path: '/images/pets/Beastmaster.png', rarity: 'rare' },
-  { name: 'Crystal Sage', price: 120, path: '/images/pets/Crystal Sage.png', rarity: 'epic' },
-  { name: 'Engineer', price: 90, path: '/images/pets/Engineer.png', rarity: 'rare' },
-  { name: 'Frost Mage', price: 100, path: '/images/pets/Frost Mage.png', rarity: 'rare' },
-  { name: 'Illusionist', price: 130, path: '/images/pets/Illusionist.png', rarity: 'epic' },
-  { name: 'Lightning', price: 200, path: '/images/pets/Lightning.png', rarity: 'legendary' },
-  { name: 'Necromancer', price: 140, path: '/images/pets/Necromancer.png', rarity: 'epic' },
-  { name: 'Stealth', price: 110, path: '/images/pets/Stealth.png', rarity: 'rare' },
-  { name: 'Time Knight', price: 250, path: '/images/pets/Time Knight.png', rarity: 'legendary' }
+  { name: 'Lion Pet', price: 60, path: '/shop/PremiumPets/LionPet.png' },
+  { name: 'Snake Pet', price: 50, path: '/shop/PremiumPets/SnakePet.png' },
+  { name: 'Vampire Pet', price: 50, path: '/shop/PremiumPets/VampirePet.png' }
 ];
 
 // ===============================================

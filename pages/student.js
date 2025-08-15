@@ -1,4 +1,4 @@
-// pages/student.js - FIXED Student Portal with Better Firebase Approach
+// pages/student.js - FIXED with Correct Imports
 import React, { useState, useEffect } from 'react';
 import { firestore } from '../utils/firebase';
 import { collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
@@ -8,7 +8,7 @@ import StudentShop from '../components/student/StudentShop';
 import StudentGames from '../components/student/StudentGames';
 import StudentDashboard from '../components/student/StudentDashboard';
 
-// Import existing utilities
+// FIXED: Import from the correct gameHelpers file
 import { 
   calculateAvatarLevel, 
   calculateCoins, 
@@ -18,7 +18,7 @@ import {
   SHOP_PREMIUM_AVATARS,
   SHOP_BASIC_PETS,
   SHOP_PREMIUM_PETS
-} from '../pages/classroom-champions';
+} from '../utils/gameHelpers';
 
 const StudentPortal = () => {
   // Authentication states
@@ -372,7 +372,7 @@ const StudentPortal = () => {
                       alt={student.firstName}
                       className="w-12 h-12 rounded-full border-2 border-gray-300"
                       onError={(e) => {
-                        e.target.src = '/images/default-avatar.png'; // Fallback image
+                        e.target.src = '/shop/Basic/Banana.png'; // Fallback image
                       }}
                     />
                     <div className="text-left">
