@@ -277,27 +277,35 @@ const TicTacToeGame = ({ studentData, showToast }) => {
          (winner.index === 1 && row + col === 2)))
     );
 
+    // Debug logging
+    console.log(`Cell [${row}][${col}]:`, value, 'MyTurn:', isMyTurn, 'GameState:', gameState);
+
     return (
       <button
         key={`${row}-${col}`}
-        onClick={() => makeMove(row, col)}
+        onClick={() => {
+          console.log(`Clicked cell [${row}][${col}] - Value: ${value}, MyTurn: ${isMyTurn}`);
+          makeMove(row, col);
+        }}
         disabled={!isMyTurn || value !== null || gameState !== 'playing'}
         className={`
-          aspect-square border-2 border-gray-300 rounded-lg text-3xl md:text-4xl font-bold
-          flex items-center justify-center transition-all duration-200
+          aspect-square border-2 border-gray-300 rounded-lg text-2xl md:text-3xl font-bold
+          flex items-center justify-center transition-all duration-200 min-h-[60px] min-w-[60px]
           ${isMyTurn && !value && gameState === 'playing' 
-            ? 'hover:bg-blue-50 hover:border-blue-400 cursor-pointer active:scale-95' 
-            : 'cursor-not-allowed'
+            ? 'hover:bg-blue-50 hover:border-blue-400 cursor-pointer active:scale-95 bg-gray-50' 
+            : 'cursor-not-allowed bg-gray-100'
           }
-          ${isWinningCell ? 'bg-green-200 border-green-500' : 'bg-white'}
-          ${value === 'X' ? 'text-blue-600' : 'text-red-600'}
+          ${isWinningCell ? 'bg-green-200 border-green-500' : ''}
+          ${value === 'X' ? 'text-blue-600' : value === 'O' ? 'text-red-600' : 'text-gray-400'}
         `}
       >
-        {value && (
+        {value ? (
           <span className="drop-shadow-lg">
             {value === 'X' ? '❌' : '⭕'}
           </span>
-        )}
+        ) : isMyTurn && gameState === 'playing' ? (
+          <span className="opacity-30 text-xs">Click</span>
+        ) : null}
       </button>
     );
   };
@@ -476,8 +484,9 @@ const TicTacToeGame = ({ studentData, showToast }) => {
         {/* Game Board */}
         <div className="bg-white rounded-xl p-6 shadow-lg">
           <div className="grid grid-cols-3 gap-2 md:gap-3 max-w-xs mx-auto">
-            {gameData?.board?.map((row, rowIndex) =>
-              row?.map((_, colIndex) => renderCell(rowIndex, colIndex))
+            {/* Always render 9 cells regardless of gameData structure */}
+            {[0, 1, 2].map(row => 
+              [0, 1, 2].map(col => renderCell(row, col))
             )}
           </div>
         </div>
