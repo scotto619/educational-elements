@@ -5,7 +5,7 @@ import { database } from '../../../utils/firebase';
 import { playQuizSound } from '../../../utils/quizShowHelpers';
 import FinalLeaderboard from './FinalLeaderboard';
 
-const GamePresentation = ({ roomCode, gameData, onEndGame }) => {
+const GamePresentation = ({ roomCode, gameData, onEndGame, onAwardXP, onAwardCoins, showToast }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(20);
   const [questionPhase, setQuestionPhase] = useState('showing'); // 'showing', 'answering', 'results', 'finished'
@@ -120,6 +120,9 @@ const GamePresentation = ({ roomCode, gameData, onEndGame }) => {
         gameData={gameData}
         onNewGame={handleNewGame}
         onBackToDashboard={handleBackToDashboard}
+        onAwardXP={onAwardXP}
+        onAwardCoins={onAwardCoins}
+        showToast={showToast}
       />
     );
   }

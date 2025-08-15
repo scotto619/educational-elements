@@ -1,13 +1,13 @@
-// pages/join.js - FIXED STUDENT INTERFACE - SHOWS QUESTIONS PROPERLY
+// pages/join.js - FIXED GAME END STATE & SCORING
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { database } from '../utils/firebase';
 import { ref, onValue, set } from 'firebase/database';
-import { validateRoomCode, calculateQuizScore, playQuizSound } from '../utils/quizShowHelpers';
+import { validateRoomCode, playQuizSound } from '../utils/quizShowHelpers';
 
 const StudentJoinPage = () => {
   const router = useRouter();
-  const [step, setStep] = useState(1); // 1: Enter code, 2: Enter name, 3: Lobby, 4: Playing
+  const [step, setStep] = useState(1); // 1: Enter code, 2: Enter name, 3: Lobby, 4: Playing, 5: Finished
   const [roomCode, setRoomCode] = useState('');
   const [gameData, setGameData] = useState(null);
   const [playerName, setPlayerName] = useState('');
@@ -21,6 +21,7 @@ const StudentJoinPage = () => {
   const [timeLeft, setTimeLeft] = useState(0);
   const [score, setScore] = useState(0);
   const [answerStartTime, setAnswerStartTime] = useState(null);
+  const [finalResults, setFinalResults] = useState(null);
 
   // Pre-fill room code from URL if present
   useEffect(() => {
@@ -45,6 +46,12 @@ const StudentJoinPage = () => {
             setStep(4); // Move to playing
           }
           
+          // Handle game finished
+          if (data.status === 'finished' || data.questionPhase === 'finished') {
+            calculateFinalScore(data);
+            setStep(5); // Move to finished state
+          }
+          
           // Reset answer state when question changes
           if (data.currentQuestion !== undefined) {
             const currentQ = data.currentQuestion;
@@ -59,15 +66,40 @@ const StudentJoinPage = () => {
               setTimeLeft(questionTimeLimit);
             }
           }
-          
-          if (data.status === 'finished') {
-            setStep(5);
-          }
         }
       });
       return () => unsubscribe();
     }
   }, [roomCode, step]);
+
+  // Calculate final score from responses
+  const calculateFinalScore = (data) => {
+    if (!data?.responses || !playerId) return;
+    
+    let totalScore = 0;
+    let correctAnswers = 0;
+    let totalAnswered = 0;
+    
+    Object.values(data.responses).forEach(questionResponses => {
+      const response = questionResponses[playerId];
+      if (response && response.points !== undefined) {
+        totalScore += response.points;
+        totalAnswered++;
+        if (response.isCorrect) {
+          correctAnswers++;
+        }
+      }
+    });
+    
+    setScore(totalScore);
+    setFinalResults({
+      totalScore,
+      correctAnswers,
+      totalAnswered,
+      totalQuestions: data.quiz?.questions?.length || 0,
+      accuracy: totalAnswered > 0 ? Math.round((correctAnswers / totalAnswered) * 100) : 0
+    });
+  };
 
   // Countdown timer
   useEffect(() => {
@@ -153,19 +185,18 @@ const StudentJoinPage = () => {
 
     const timeSpent = answerStartTime ? (Date.now() - answerStartTime) / 1000 : 0;
     const isCorrect = answerIndex === currentQuestion.correctAnswer;
-    const points = calculateQuizScore(
-      timeSpent, 
-      currentQuestion.timeLimit || 20, 
-      currentQuestion.points || 1000, 
-      isCorrect
-    );
+    
+    // Simple scoring: +10 for correct, -5 for incorrect
+    const points = isCorrect ? 10 : -5;
 
     setSelectedAnswer(answerIndex);
     setHasAnswered(true);
+    
+    // Update local score immediately
     setScore(prev => prev + points);
 
-    // Play sound
-    playQuizSound(isCorrect ? 'correct' : 'incorrect');
+    // Play submission sound (not result sound yet)
+    playQuizSound('answerSubmit');
 
     // Submit to Firebase
     try {
@@ -177,6 +208,8 @@ const StudentJoinPage = () => {
         points: points,
         submittedAt: Date.now()
       });
+      
+      console.log(`✅ Answer submitted: ${isCorrect ? 'CORRECT' : 'INCORRECT'} (${points} points)`);
     } catch (error) {
       console.error('Error submitting answer:', error);
     }
@@ -190,6 +223,45 @@ const StudentJoinPage = () => {
       'from-yellow-500 to-yellow-600'
     ];
     return colors[index] || colors[0];
+  };
+
+  const getAnswerButtonStyle = (index) => {
+    const currentQuestion = gameData?.quiz?.questions?.[gameData?.currentQuestion];
+    let buttonStyle = `w-full p-4 rounded-xl text-white font-bold text-left transition-all duration-200 transform`;
+    
+    if (gameData?.questionPhase === 'answering') {
+      if (hasAnswered) {
+        // Show selected answer but no correct/incorrect feedback yet
+        if (index === selectedAnswer) {
+          buttonStyle += ` bg-gray-600 ring-4 ring-white transform scale-105`;
+        } else {
+          buttonStyle += ' bg-gray-400 opacity-50';
+        }
+      } else {
+        // Active answering phase
+        buttonStyle += ` bg-gradient-to-r ${getAnswerButtonColor(index)} hover:scale-105 cursor-pointer`;
+      }
+    } else if (gameData?.questionPhase === 'results') {
+      // Show correct/incorrect feedback
+      if (index === selectedAnswer && index === currentQuestion?.correctAnswer) {
+        // Selected and correct
+        buttonStyle += ' bg-green-500 ring-4 ring-green-300';
+      } else if (index === selectedAnswer && index !== currentQuestion?.correctAnswer) {
+        // Selected but wrong
+        buttonStyle += ' bg-red-500 ring-4 ring-red-300';
+      } else if (index === currentQuestion?.correctAnswer) {
+        // Correct answer (not selected by user)
+        buttonStyle += ' bg-green-400 ring-2 ring-green-300';
+      } else {
+        // Other options
+        buttonStyle += ' bg-gray-400';
+      }
+    } else {
+      // Disabled state
+      buttonStyle += ' bg-gray-400 cursor-not-allowed';
+    }
+
+    return buttonStyle;
   };
 
   // Step 1: Enter Room Code
@@ -370,15 +442,16 @@ const StudentJoinPage = () => {
             </h1>
             {isCorrect ? (
               <div>
-                <p className="text-xl mb-2">Great job! 🌟</p>
-                <p className="text-lg">Your Score: {score.toLocaleString()}</p>
+                <p className="text-xl mb-2">+10 points! Great job! 🌟</p>
+                <p className="text-lg">Your Score: {score}</p>
               </div>
             ) : (
               <div>
-                <p className="text-xl mb-2">Better luck next time!</p>
+                <p className="text-xl mb-2">-5 points. Better luck next time!</p>
                 <p className="text-lg">
                   Correct: {currentQuestion.options[currentQuestion.correctAnswer]}
                 </p>
+                <p className="text-lg">Your Score: {score}</p>
               </div>
             )}
           </div>
@@ -394,7 +467,7 @@ const StudentJoinPage = () => {
           <div className="bg-white rounded-lg p-4 mb-4 flex items-center justify-between">
             <div>
               <h2 className="font-bold text-gray-800">{playerName}</h2>
-              <p className="text-sm text-gray-600">Score: {score.toLocaleString()}</p>
+              <p className="text-sm text-gray-600">Score: {score}</p>
             </div>
             <div className="text-center">
               <div className="text-sm text-gray-600">Question</div>
@@ -415,40 +488,27 @@ const StudentJoinPage = () => {
               {currentQuestion.question}
             </h1>
             <div className="text-center text-sm text-gray-600">
-              {currentQuestion.points || 1000} Points
+              +10 points for correct • -5 points for incorrect
             </div>
           </div>
 
           {/* Answer Options */}
           <div className="space-y-3">
-            {currentQuestion.options?.map((option, index) => {
-              let buttonClass = `w-full p-4 rounded-xl text-white font-bold text-left transition-all duration-200 transform`;
-              
-              if (hasAnswered || timeLeft <= 0) {
-                buttonClass += ' opacity-75 cursor-not-allowed';
-                if (index === selectedAnswer) {
-                  buttonClass += ' ring-4 ring-white';
-                }
-              } else {
-                buttonClass += ` bg-gradient-to-r ${getAnswerButtonColor(index)} hover:scale-105 hover:shadow-lg cursor-pointer`;
-              }
-
-              return (
-                <button
-                  key={index}
-                  onClick={() => submitAnswer(index)}
-                  disabled={hasAnswered || timeLeft <= 0}
-                  className={buttonClass}
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center font-bold">
-                      {String.fromCharCode(65 + index)}
-                    </div>
-                    <span>{option}</span>
+            {currentQuestion.options?.map((option, index) => (
+              <button
+                key={index}
+                onClick={() => submitAnswer(index)}
+                disabled={hasAnswered || timeLeft <= 0}
+                className={getAnswerButtonStyle(index)}
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center font-bold">
+                    {String.fromCharCode(65 + index)}
                   </div>
-                </button>
-              );
-            })}
+                  <span>{option}</span>
+                </div>
+              </button>
+            ))}
           </div>
 
           {hasAnswered && (
@@ -461,17 +521,47 @@ const StudentJoinPage = () => {
     );
   }
 
-  // Game finished
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center text-white">
-      <div className="text-center">
-        <div className="text-6xl mb-4">🏁</div>
-        <h1 className="text-3xl font-bold mb-4">Game Finished!</h1>
-        <p className="text-xl mb-4">Final Score: {score.toLocaleString()}</p>
-        <p className="text-lg">Thanks for playing!</p>
+  // Step 5: Game finished
+  if (step === 5) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center text-white">
+        <div className="text-center max-w-md mx-auto p-6">
+          <div className="text-6xl mb-4">🏁</div>
+          <h1 className="text-3xl font-bold mb-4">Game Finished!</h1>
+          
+          {finalResults && (
+            <div className="bg-white bg-opacity-20 rounded-xl p-6 mb-6">
+              <h2 className="text-2xl font-bold mb-4">Your Results</h2>
+              <div className="space-y-3">
+                <div>
+                  <div className="text-3xl font-bold text-yellow-300">{finalResults.totalScore}</div>
+                  <div className="text-sm">Final Score</div>
+                </div>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <div className="text-lg font-bold">{finalResults.correctAnswers}</div>
+                    <div>Correct</div>
+                  </div>
+                  <div>
+                    <div className="text-lg font-bold">{finalResults.accuracy}%</div>
+                    <div>Accuracy</div>
+                  </div>
+                </div>
+                <div className="text-xs opacity-75">
+                  {finalResults.correctAnswers} of {finalResults.totalQuestions} questions correct
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <p className="text-xl mb-4">Thanks for playing!</p>
+          <p className="text-lg opacity-75">Ask your teacher about the final leaderboard!</p>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  return null;
 };
 
 export default StudentJoinPage;

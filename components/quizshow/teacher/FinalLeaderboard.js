@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { triggerConfetti, playQuizSound, calculateFinalLeaderboard } from '../../../utils/quizShowHelpers';
 
-const FinalLeaderboard = ({ gameData, onNewGame, onBackToDashboard }) => {
+const FinalLeaderboard = ({ gameData, onNewGame, onBackToDashboard, onAwardXP, onAwardCoins, showToast }) => {
   const [leaderboard, setLeaderboard] = useState([]);
   const [showCelebration, setShowCelebration] = useState(false);
   const [animateScores, setAnimateScores] = useState(false);
@@ -11,6 +11,9 @@ const FinalLeaderboard = ({ gameData, onNewGame, onBackToDashboard }) => {
     if (gameData) {
       const results = calculateFinalLeaderboard(gameData);
       setLeaderboard(results);
+      
+      // Award XP and coins to students ONCE when leaderboard loads
+      awardGameRewards(results);
       
       // Trigger celebration effects
       setTimeout(() => {
@@ -25,6 +28,47 @@ const FinalLeaderboard = ({ gameData, onNewGame, onBackToDashboard }) => {
       }, 1000);
     }
   }, [gameData]);
+
+  const awardGameRewards = (results) => {
+    if (!results.length || !onAwardXP) return;
+    
+    try {
+      results.forEach((result, index) => {
+        if (!result.studentId) return; // Skip non-student players
+        
+        // Base participation XP: 5 XP
+        let xpReward = 5;
+        
+        // Correct answer bonus: 2 XP per correct answer
+        xpReward += result.correctAnswers * 2;
+        
+        // Ranking bonus
+        if (index === 0) xpReward += 10; // 1st place: +10 XP
+        else if (index === 1) xpReward += 5; // 2nd place: +5 XP
+        else if (index === 2) xpReward += 3; // 3rd place: +3 XP
+        
+        // Perfect score bonus: +15 XP
+        if (result.correctAnswers === result.totalQuestions) {
+          xpReward += 15;
+        }
+        
+        // Award XP to student in classroom champions
+        onAwardXP(result.studentId, xpReward, 'Quiz Show participation');
+        
+        // Award coins: 1 coin per 2 points scored (simplified)
+        const coinReward = Math.max(1, Math.floor(Math.abs(result.totalScore) / 2));
+        if (coinReward > 0 && onAwardCoins) {
+          onAwardCoins(result.studentId, coinReward, 'Quiz Show performance');
+        }
+      });
+      
+      if (showToast) {
+        showToast('XP and coins awarded to participants!', 'success');
+      }
+    } catch (error) {
+      console.error('Error awarding game rewards:', error);
+    }
+  };
 
   const getRankBadge = (rank) => {
     if (rank === 1) return { emoji: '🥇', label: 'CHAMPION!', color: 'from-yellow-400 to-orange-500', text: 'text-yellow-900' };

@@ -405,7 +405,7 @@ export const getGameRoomData = async (roomCode) => {
 };
 
 // ===============================================
-// LEADERBOARD CALCULATION
+// LEADERBOARD CALCULATION - USES SIMPLE SCORING
 // ===============================================
 export const calculateFinalLeaderboard = (gameData) => {
   if (!gameData?.players || !gameData?.responses) return [];
@@ -414,19 +414,24 @@ export const calculateFinalLeaderboard = (gameData) => {
     let totalScore = 0;
     let correctAnswers = 0;
     let incorrectAnswers = 0;
+    let totalAnswered = 0;
     
+    // Calculate score from actual Firebase responses
     Object.entries(gameData.responses).forEach(([questionIndex, responses]) => {
       const response = responses[playerId];
-      if (response) {
+      if (response && response.points !== undefined) {
+        totalScore += response.points; // Use the exact points stored in Firebase
+        totalAnswered++;
         if (response.isCorrect) {
           correctAnswers++;
-          totalScore += 10; // +10 for correct
         } else {
           incorrectAnswers++;
-          totalScore -= 5; // -5 for incorrect
         }
       }
     });
+    
+    const totalQuestions = gameData.quiz?.questions?.length || 0;
+    const accuracy = totalAnswered > 0 ? Math.round((correctAnswers / totalAnswered) * 100) : 0;
     
     return {
       playerId,
@@ -436,8 +441,9 @@ export const calculateFinalLeaderboard = (gameData) => {
       totalScore,
       correctAnswers,
       incorrectAnswers,
-      totalQuestions: gameData.quiz?.questions?.length || 0,
-      accuracy: correctAnswers + incorrectAnswers > 0 ? Math.round((correctAnswers / (correctAnswers + incorrectAnswers)) * 100) : 0
+      totalAnswered,
+      totalQuestions,
+      accuracy
     };
   }).sort((a, b) => {
     // Sort by score first, then by accuracy, then by correct answers
