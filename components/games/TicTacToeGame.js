@@ -1,15 +1,36 @@
-// components/games/TicTacToeGame.js - MULTIPLAYER TIC TAC TOE WITH REALTIME DATABASE
+// components/games/TicTacToeGame.js - SIMPLE REALTIME DATABASE VERSION
 import React, { useState, useEffect } from 'react';
-import { database } from '../../utils/firebase';
-import { ref, onValue, set, update, remove, off } from 'firebase/database';
 
 const TicTacToeGame = ({ studentData, showToast }) => {
+  // Import Firebase functions dynamically to avoid conflicts
+  const [firebaseReady, setFirebaseReady] = useState(false);
+  const [firebase, setFirebase] = useState(null);
+
+  // Initialize Firebase
+  useEffect(() => {
+    const initFirebase = async () => {
+      try {
+        const { database } = await import('../../utils/firebase');
+        const { ref, onValue, set, update, remove, off } = await import('firebase/database');
+        
+        setFirebase({ database, ref, onValue, set, update, remove, off });
+        setFirebaseReady(true);
+        console.log('✅ Firebase Realtime Database loaded successfully');
+      } catch (error) {
+        console.error('❌ Failed to load Firebase:', error);
+        showToast('Failed to load game engine', 'error');
+      }
+    };
+    
+    initFirebase();
+  }, []);
+
   // Game states
-  const [gameState, setGameState] = useState('menu'); // 'menu', 'creating', 'joining', 'waiting', 'playing', 'finished'
+  const [gameState, setGameState] = useState('menu');
   const [gameRoom, setGameRoom] = useState(null);
   const [roomCode, setRoomCode] = useState('');
   const [joinCode, setJoinCode] = useState('');
-  const [playerRole, setPlayerRole] = useState(null); // 'X' or 'O'
+  const [playerRole, setPlayerRole] = useState(null);
   const [isMyTurn, setIsMyTurn] = useState(false);
   const [gameData, setGameData] = useState(null);
   const [winner, setWinner] = useState(null);
@@ -23,60 +44,50 @@ const TicTacToeGame = ({ studentData, showToast }) => {
     level: studentData?.totalPoints ? Math.min(4, Math.max(1, Math.floor(studentData.totalPoints / 100) + 1)) : 1
   };
 
-  // ===============================================
-  // FIREBASE REALTIME DATABASE LISTENERS
-  // ===============================================
+  // Firebase listener
   useEffect(() => {
-    if (gameRoom) {
-      const gameRef = ref(database, `ticTacToe/${gameRoom}`);
-      const unsubscribe = onValue(gameRef, (snapshot) => {
-        const data = snapshot.val();
-        
-        if (!data) {
-          // Game was deleted/ended
-          resetGame();
-          showToast('Game ended', 'info');
-          return;
-        }
-        
-        setGameData(data);
-        
-        // Check if both players joined
-        if (data.players && Object.keys(data.players).length === 2 && gameState === 'waiting') {
-          setGameState('playing');
-          showToast('Game started! You are ' + playerRole, 'success');
-        }
-        
-        // Check win condition
-        const winResult = checkWinner(data.board);
-        if (winResult.winner) {
-          setWinner(winResult);
-          setGameState('finished');
-          if (winResult.winner === playerRole) {
-            showToast('🎉 You Won!', 'success');
-          } else if (winResult.winner === 'draw') {
-            showToast('🤝 It\'s a Draw!', 'info');
-          } else {
-            showToast('😔 You Lost!', 'error');
-          }
-        }
-        
-        // Update turn status
-        const myTurn = data.currentPlayer === playerRole;
-        setIsMyTurn(myTurn);
-        
-      }, (error) => {
-        console.error('Firebase error:', error);
-        showToast('Connection error: ' + error.message, 'error');
-      });
-      
-      return () => off(gameRef, 'value', unsubscribe);
-    }
-  }, [gameRoom, playerRole, gameState]);
+    if (!firebaseReady || !firebase || !gameRoom) return;
 
-  // ===============================================
-  // GAME LOGIC FUNCTIONS
-  // ===============================================
+    const gameRef = firebase.ref(firebase.database, `ticTacToe/${gameRoom}`);
+    
+    const unsubscribe = firebase.onValue(gameRef, (snapshot) => {
+      const data = snapshot.val();
+      
+      if (!data) {
+        resetGame();
+        showToast('Game ended', 'info');
+        return;
+      }
+      
+      setGameData(data);
+      
+      // Check if both players joined
+      if (data.players && Object.keys(data.players).length === 2 && gameState === 'waiting') {
+        setGameState('playing');
+        showToast('Game started! You are ' + playerRole, 'success');
+      }
+      
+      // Check win condition
+      const winResult = checkWinner(data.board);
+      if (winResult.winner) {
+        setWinner(winResult);
+        setGameState('finished');
+        if (winResult.winner === playerRole) {
+          showToast('🎉 You Won!', 'success');
+        } else if (winResult.winner === 'draw') {
+          showToast('🤝 It\'s a Draw!', 'info');
+        } else {
+          showToast('😔 You Lost!', 'error');
+        }
+      }
+      
+      // Update turn status
+      setIsMyTurn(data.currentPlayer === playerRole);
+    });
+    
+    return () => firebase.off(gameRef, 'value', unsubscribe);
+  }, [firebaseReady, firebase, gameRoom, playerRole, gameState]);
+
   const generateRoomCode = () => {
     return Math.random().toString(36).substring(2, 8).toUpperCase();
   };
@@ -119,12 +130,17 @@ const TicTacToeGame = ({ studentData, showToast }) => {
   };
 
   const createGame = async () => {
+    if (!firebaseReady || !firebase) {
+      showToast('Game engine not ready', 'error');
+      return;
+    }
+
     setLoading(true);
     const newRoomCode = generateRoomCode();
-    const gameRef = ref(database, `ticTacToe/${newRoomCode}`);
     
     try {
-      await set(gameRef, {
+      const gameRef = firebase.ref(firebase.database, `ticTacToe/${newRoomCode}`);
+      await firebase.set(gameRef, {
         roomCode: newRoomCode,
         host: playerInfo.id,
         players: {
@@ -147,25 +163,31 @@ const TicTacToeGame = ({ studentData, showToast }) => {
       showToast(`Game created! Room code: ${newRoomCode}`, 'success');
     } catch (error) {
       console.error('Error creating game:', error);
-      showToast('Failed to create game: ' + error.message, 'error');
+      showToast('Failed to create game. Please try again.', 'error');
     }
     
     setLoading(false);
   };
 
   const joinGame = async () => {
+    if (!firebaseReady || !firebase) {
+      showToast('Game engine not ready', 'error');
+      return;
+    }
+
     if (!joinCode.trim()) {
       showToast('Please enter a room code', 'error');
       return;
     }
     
     setLoading(true);
-    const gameRef = ref(database, `ticTacToe/${joinCode.toUpperCase()}`);
     
     try {
-      // Check if game exists first
-      const snapshot = await new Promise((resolve, reject) => {
-        const unsubscribe = onValue(gameRef, resolve, reject, { onlyOnce: true });
+      const gameRef = firebase.ref(firebase.database, `ticTacToe/${joinCode.toUpperCase()}`);
+      
+      // Check if game exists
+      const snapshot = await new Promise((resolve) => {
+        firebase.onValue(gameRef, resolve, { onlyOnce: true });
       });
       
       const gameData = snapshot.val();
@@ -183,7 +205,7 @@ const TicTacToeGame = ({ studentData, showToast }) => {
       }
       
       // Join the game
-      await update(gameRef, {
+      await firebase.update(gameRef, {
         [`players/${playerInfo.id}`]: { ...playerInfo, symbol: 'O' },
         status: 'playing'
       });
@@ -194,14 +216,15 @@ const TicTacToeGame = ({ studentData, showToast }) => {
       showToast('Joined game successfully!', 'success');
     } catch (error) {
       console.error('Error joining game:', error);
-      showToast('Failed to join game: ' + error.message, 'error');
+      showToast('Failed to join game', 'error');
     }
     
     setLoading(false);
   };
 
   const makeMove = async (row, col) => {
-    if (!isMyTurn || !gameData || gameData.board[row][col] !== null || gameState !== 'playing') {
+    if (!firebaseReady || !firebase || !isMyTurn || !gameData || 
+        gameData.board[row][col] !== null || gameState !== 'playing') {
       return;
     }
     
@@ -211,14 +234,14 @@ const TicTacToeGame = ({ studentData, showToast }) => {
     const nextPlayer = playerRole === 'X' ? 'O' : 'X';
     
     try {
-      await update(ref(database, `ticTacToe/${gameRoom}`), {
+      await firebase.update(firebase.ref(firebase.database, `ticTacToe/${gameRoom}`), {
         board: newBoard,
         currentPlayer: nextPlayer,
         lastMove: { row, col, player: playerRole, timestamp: Date.now() }
       });
     } catch (error) {
       console.error('Error making move:', error);
-      showToast('Failed to make move: ' + error.message, 'error');
+      showToast('Failed to make move', 'error');
     }
   };
 
@@ -234,9 +257,9 @@ const TicTacToeGame = ({ studentData, showToast }) => {
   };
 
   const endGame = async () => {
-    if (gameRoom) {
+    if (firebaseReady && firebase && gameRoom) {
       try {
-        await remove(ref(database, `ticTacToe/${gameRoom}`));
+        await firebase.remove(firebase.ref(firebase.database, `ticTacToe/${gameRoom}`));
       } catch (error) {
         console.error('Error ending game:', error);
       }
@@ -244,9 +267,6 @@ const TicTacToeGame = ({ studentData, showToast }) => {
     resetGame();
   };
 
-  // ===============================================
-  // RENDER FUNCTIONS
-  // ===============================================
   const renderCell = (row, col) => {
     const value = gameData?.board?.[row]?.[col];
     const isWinningCell = winner && (
@@ -282,10 +302,16 @@ const TicTacToeGame = ({ studentData, showToast }) => {
     );
   };
 
-  // ===============================================
-  // MAIN RENDER
-  // ===============================================
-  
+  // Loading state while Firebase initializes
+  if (!firebaseReady) {
+    return (
+      <div className="max-w-md mx-auto text-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
+        <p className="text-gray-600">Loading game engine...</p>
+      </div>
+    );
+  }
+
   // Menu State
   if (gameState === 'menu') {
     return (
