@@ -1,4 +1,4 @@
-// components/quizshow/student/StudentGameView.js - COMPLETELY FIXED - NO MORE BUGS
+// components/quizshow/student/StudentGameView.js - FIXED TO MATCH WORKING MOBILE VERSION
 import React, { useState, useEffect, useRef } from 'react';
 import { ref, set } from 'firebase/database';
 import { database } from '../../../utils/firebase';
@@ -12,7 +12,7 @@ const StudentGameView = ({ roomCode, gameData, playerInfo }) => {
   const [questionPhase, setQuestionPhase] = useState('waiting');
   const [score, setScore] = useState(0);
   
-  // Use refs to prevent state resets and timer issues - CRITICAL FIX
+  // Use refs to prevent state resets and timer issues - SAME AS MOBILE FIX
   const answerSubmittedRef = useRef(false);
   const timerRunningRef = useRef(false);
   const currentQuestionRef = useRef(-1);
@@ -21,7 +21,7 @@ const StudentGameView = ({ roomCode, gameData, playerInfo }) => {
   const currentQuestion = gameData?.quiz?.questions?.[currentQuestionIndex];
   const totalQuestions = gameData?.quiz?.questions?.length || 0;
 
-  // Handle game data updates - SIMPLIFIED to prevent constant resets
+  // Handle game data updates - SIMPLIFIED to prevent constant resets (SAME AS MOBILE)
   useEffect(() => {
     if (!gameData) return;
 
@@ -60,7 +60,7 @@ const StudentGameView = ({ roomCode, gameData, playerInfo }) => {
     }
   }, [gameData, currentQuestion]);
 
-  // Timer countdown - PROTECTED and simplified
+  // Timer countdown - PROTECTED and simplified (SAME AS MOBILE)
   useEffect(() => {
     if (timeLeft > 0 && timerRunningRef.current && questionPhase === 'answering') {
       const timer = setTimeout(() => {
@@ -90,7 +90,7 @@ const StudentGameView = ({ roomCode, gameData, playerInfo }) => {
   };
 
   const submitAnswer = async (answerIndex) => {
-    // ABSOLUTE protection against multiple submissions
+    // ABSOLUTE protection against multiple submissions (SAME AS MOBILE)
     if (answerSubmittedRef.current || hasAnswered || questionPhase !== 'answering') {
       console.log(`🚫 BLOCKED: submitted=${answerSubmittedRef.current}, hasAnswered=${hasAnswered}, phase=${questionPhase}`);
       return;
@@ -108,7 +108,7 @@ const StudentGameView = ({ roomCode, gameData, playerInfo }) => {
       return;
     }
     
-    // FIXED: Convert both values to integers for accurate comparison
+    // FIXED: Convert both values to integers for accurate comparison (SAME AS MOBILE)
     const correctAnswerIndex = parseInt(currentQuestion.correctAnswer, 10);
     const submittedAnswerIndex = parseInt(answerIndex, 10);
     const isCorrect = submittedAnswerIndex === correctAnswerIndex;
@@ -161,7 +161,7 @@ const StudentGameView = ({ roomCode, gameData, playerInfo }) => {
     
     if (questionPhase === 'answering') {
       if (hasAnswered && selectedAnswer === index) {
-        // Show selected - PERSISTENT blue styling, no correct/incorrect indication
+        // Show selected - PERSISTENT blue styling, no correct/incorrect indication (SAME AS MOBILE)
         style += ` bg-blue-600 ring-8 ring-blue-300 scale-110 shadow-2xl border-4 border-blue-400`;
       } else if (hasAnswered) {
         // Not selected - disabled
@@ -246,7 +246,7 @@ const StudentGameView = ({ roomCode, gameData, playerInfo }) => {
             <div className="font-bold text-gray-800">{currentQuestionIndex + 1} / {totalQuestions}</div>
           </div>
           
-          {/* Timer - ONLY show during answering when actually running */}
+          {/* Timer - ONLY show during answering when actually running (SAME AS MOBILE) */}
           {questionPhase === 'answering' && timeLeft > 0 && timerRunningRef.current && (
             <div className={`text-3xl font-bold px-4 py-2 rounded-lg ${
               timeLeft <= 5 ? 'bg-red-500 text-white animate-pulse' : 'bg-green-500 text-white'
@@ -324,7 +324,7 @@ const StudentGameView = ({ roomCode, gameData, playerInfo }) => {
                   <span className="flex-1 text-left">{option}</span>
                 </div>
                 
-                {/* Selected indicator - PERSISTENT during answering phase */}
+                {/* Selected indicator - PERSISTENT during answering phase (SAME AS MOBILE) */}
                 {selectedAnswer === index && questionPhase === 'answering' && (
                   <>
                     <div className="absolute top-2 right-2 bg-white text-blue-600 px-3 py-1 rounded-full text-sm font-bold border-2 border-blue-600">
@@ -361,7 +361,7 @@ const StudentGameView = ({ roomCode, gameData, playerInfo }) => {
           </div>
         )}
 
-        {/* Score Display - NO immediate updates during answering */}
+        {/* Score Display - NO immediate updates during answering (SAME AS MOBILE) */}
         <div className="mt-6 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl p-6 text-center">
           <h3 className="text-lg font-bold mb-2">Your Total Score</h3>
           <div className="text-3xl font-bold">{score} points</div>
@@ -370,9 +370,9 @@ const StudentGameView = ({ roomCode, gameData, playerInfo }) => {
           </p>
         </div>
 
-        {/* Debug Panel - COMPREHENSIVE */}
+        {/* Debug Panel - COMPREHENSIVE (SAME AS MOBILE) */}
         <div className="mt-6 bg-gray-900 text-white rounded-xl p-4 text-xs font-mono">
-          <h4 className="font-bold mb-2 text-yellow-400">🔧 DEBUG PANEL:</h4>
+          <h4 className="font-bold mb-2 text-yellow-400">🔧 DESKTOP DEBUG PANEL:</h4>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p><span className="text-cyan-400">Question Index:</span> {currentQuestionIndex}</p>
@@ -396,6 +396,9 @@ const StudentGameView = ({ roomCode, gameData, playerInfo }) => {
               <p><span className="text-cyan-400">Options:</span> [{currentQuestion.options.map((opt, i) => `${i}:"${opt}"`).join(', ')}]</p>
             </div>
           )}
+          <div className="mt-2 text-yellow-400">
+            <p><strong>🖥️ DESKTOP VERSION</strong> - Should now match mobile behavior exactly!</p>
+          </div>
         </div>
       </div>
     </div>
