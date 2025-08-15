@@ -43,6 +43,54 @@ const StudentJoinPage = () => {
 
   // Helper functions for avatar and level calculation
   const getAvatarImage = (avatarBase, level) => {
+    // Shop avatar mappings (Basic + Premium)
+    const SHOP_AVATARS = {
+      // Basic Avatars
+      'banana': '/shop/Basic/Banana.png',
+      'basketball': '/shop/Basic/Basketball.png',
+      'basketballgirl': '/shop/Basic/BasketballGirl.png',
+      'farmerboy': '/shop/Basic/FarmerBoy.png',
+      'farmergirl': '/shop/Basic/FarmerGirl.png',
+      'goblin1': '/shop/Basic/Goblin1.png',
+      'goblingirl1': '/shop/Basic/GoblinGirl1.png',
+      'guard1': '/shop/Basic/Guard1.png',
+      'guardgirl1': '/shop/Basic/GuardGirl1.png',
+      'pirateboy': '/shop/Basic/PirateBoy.png',
+      'pirategirl': '/shop/Basic/PirateGirl.png',
+      'roboknight': '/shop/Basic/RoboKnight.png',
+      'robotboy': '/shop/Basic/RobotBoy.png',
+      'robotgirl': '/shop/Basic/RobotGirl.png',
+      'soccerboy': '/shop/Basic/SoccerBoy.png',
+      'soccerboy2': '/shop/Basic/SoccerBoy2.png',
+      'soccergirl': '/shop/Basic/SoccerGirl.png',
+      'streetboy1': '/shop/Basic/Streetboy1.png',
+      'streetgirl1': '/shop/Basic/Streetgirl1.png',
+      'vampire1': '/shop/Basic/Vampire1.png',
+      // Premium Avatars
+      'dwarf': '/shop/Premium/Dwarf.png',
+      'dwarf2': '/shop/Premium/Dwarf2.png',
+      'farmerboy premium': '/shop/Premium/FarmerBoy.png',
+      'farmergirl premium': '/shop/Premium/FarmerGirl.png',
+      'goblin2': '/shop/Premium/Goblin2.png',
+      'goblingirl2': '/shop/Premium/GoblinGirl2.png',
+      'king': '/shop/Premium/King.png',
+      'mechanicgirl': '/shop/Premium/MechanicGirl.png',
+      'pirateboy premium': '/shop/Premium/PirateBoy.png',
+      'pirategirl premium': '/shop/Premium/PirateGirl.png',
+      'queen': '/shop/Premium/Queen.png',
+      'robotboy premium': '/shop/Premium/RobotBoy.png',
+      'robotgirl premium': '/shop/Premium/RobotGirl.png',
+      'vampire2': '/shop/Premium/Vampire2.png',
+      'vampiregirl2': '/shop/Premium/VampireGirl2.png'
+    };
+
+    // Check if it's a shop avatar first
+    const shopPath = SHOP_AVATARS[avatarBase?.toLowerCase()];
+    if (shopPath) {
+      return shopPath;
+    }
+
+    // Fall back to standard level-based avatars
     return `/avatars/${avatarBase || 'Wizard F'}/Level ${Math.max(1, Math.min(level || 1, 4))}.png`;
   };
 

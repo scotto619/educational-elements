@@ -316,14 +316,6 @@ const GamePresentation = ({ roomCode, gameData, onEndGame, onAwardXP, onAwardCoi
           )}
 
           <button
-            onClick={() => setShowPrizeModal(true)}
-            className="bg-yellow-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-yellow-600 transition-colors flex items-center justify-center space-x-2"
-          >
-            <span>🏆</span>
-            <span>Award Prizes</span>
-          </button>
-
-          <button
             onClick={onEndGame}
             className="bg-red-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-600 transition-colors flex items-center justify-center space-x-2"
           >
