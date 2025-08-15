@@ -1,8 +1,9 @@
-// pages/join.js - COMPLETELY FIXED - NO MORE BUGS
+// pages/join.js - WITH STUDENT AVATAR SELECTION
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
-import { database } from '../utils/firebase';
-import { ref, onValue, set } from 'firebase/database';
+import { database, firestore } from '../utils/firebase';
+import { ref, onValue, set, get } from 'firebase/database';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { validateRoomCode, playQuizSound } from '../utils/quizShowHelpers';
 
 const StudentJoinPage = () => {
@@ -14,6 +15,11 @@ const StudentJoinPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [playerId, setPlayerId] = useState(null);
+  
+  // New states for student selection
+  const [availableStudents, setAvailableStudents] = useState([]);
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [loadingStudents, setLoadingStudents] = useState(false);
   
   // Game state - using refs to prevent unwanted resets
   const [selectedAnswer, setSelectedAnswer] = useState(null);
@@ -34,6 +40,44 @@ const StudentJoinPage = () => {
       setRoomCode(router.query.code);
     }
   }, [router.query.code]);
+
+  // Helper functions for avatar and level calculation
+  const getAvatarImage = (avatarBase, level) => {
+    return `/avatars/${avatarBase || 'Wizard F'}/Level ${Math.max(1, Math.min(level || 1, 4))}.png`;
+  };
+
+  const calculateAvatarLevel = (xp) => (xp >= 300 ? 4 : xp >= 200 ? 3 : xp >= 100 ? 2 : 1);
+
+  // Load students from the class when game room is found
+  const loadClassStudents = async (gameRoomData) => {
+    if (!gameRoomData?.hostId) return;
+    
+    setLoadingStudents(true);
+    try {
+      // Find the teacher's document and get their active class students
+      const q = query(collection(firestore, 'users'), where('__name__', '==', gameRoomData.hostId));
+      const querySnapshot = await getDocs(q);
+      
+      if (!querySnapshot.empty) {
+        const teacherDoc = querySnapshot.docs[0];
+        const teacherData = teacherDoc.data();
+        
+        // Get the active class or first class
+        const activeClassId = teacherData.activeClassId || (teacherData.classes && teacherData.classes[0]?.id);
+        if (activeClassId) {
+          const activeClass = teacherData.classes.find(cls => cls.id === activeClassId);
+          if (activeClass && activeClass.students) {
+            setAvailableStudents(activeClass.students);
+            console.log(`✅ Loaded ${activeClass.students.length} students from class`);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error loading class students:', error);
+      // Continue without student data - allow manual name entry
+    }
+    setLoadingStudents(false);
+  };
 
   // Listen for game updates - SIMPLIFIED to prevent constant resets
   useEffect(() => {
@@ -91,7 +135,7 @@ const StudentJoinPage = () => {
       });
       return () => unsubscribe();
     }
-  }, [roomCode, step, playerId]); // Removed problematic dependencies
+  }, [roomCode, step, playerId]);
 
   // Timer countdown - SIMPLIFIED and protected
   useEffect(() => {
@@ -156,9 +200,7 @@ const StudentJoinPage = () => {
 
     try {
       const gameRef = ref(database, `gameRooms/${roomCode}`);
-      const snapshot = await new Promise((resolve) => {
-        onValue(gameRef, resolve, { onlyOnce: true });
-      });
+      const snapshot = await get(gameRef);
 
       if (!snapshot.exists()) {
         throw new Error('Game not found. Check your room code.');
@@ -170,6 +212,10 @@ const StudentJoinPage = () => {
       }
 
       setGameData(data);
+      
+      // Load class students for avatar selection
+      await loadClassStudents(data);
+      
       setStep(2);
       playQuizSound('join');
     } catch (error) {
@@ -179,26 +225,46 @@ const StudentJoinPage = () => {
   };
 
   const handleJoinGame = async () => {
-    if (!playerName.trim()) {
-      setError('Please enter your name');
+    if (!selectedStudent && !playerName.trim()) {
+      setError('Please select a student or enter your name');
       return;
     }
 
     setLoading(true);
     try {
       const newPlayerId = `player_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const playerData = {
-        name: playerName.trim(),
-        studentId: null,
-        avatar: {
-          base: 'Wizard F',
-          level: 1,
-          image: '/avatars/Wizard F/Level 1.png'
-        },
-        score: 0,
-        joinedAt: Date.now(),
-        isReady: true
-      };
+      
+      let playerData;
+      if (selectedStudent) {
+        // Use selected student's data
+        const level = calculateAvatarLevel(selectedStudent.totalPoints || 0);
+        playerData = {
+          name: `${selectedStudent.firstName} ${selectedStudent.lastName || ''}`.trim(),
+          studentId: selectedStudent.id,
+          avatar: {
+            base: selectedStudent.avatarBase || 'Wizard F',
+            level: level,
+            image: getAvatarImage(selectedStudent.avatarBase || 'Wizard F', level)
+          },
+          score: 0,
+          joinedAt: Date.now(),
+          isReady: true
+        };
+      } else {
+        // Use manual name entry with default avatar
+        playerData = {
+          name: playerName.trim(),
+          studentId: null,
+          avatar: {
+            base: 'Wizard F',
+            level: 1,
+            image: getAvatarImage('Wizard F', 1)
+          },
+          score: 0,
+          joinedAt: Date.now(),
+          isReady: true
+        };
+      }
 
       await set(ref(database, `gameRooms/${roomCode}/players/${newPlayerId}`), playerData);
       setPlayerId(newPlayerId);
@@ -363,40 +429,94 @@ const StudentJoinPage = () => {
     );
   }
 
-  // Step 2: Enter Name
+  // Step 2: Select Student or Enter Name
   if (step === 2) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
-        <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md">
+        <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-2xl">
           <div className="text-center mb-8">
             <div className="text-6xl mb-4">👋</div>
-            <h1 className="text-2xl font-bold text-gray-800 mb-2">What's your name?</h1>
+            <h1 className="text-2xl font-bold text-gray-800 mb-2">Who are you?</h1>
             <p className="text-gray-600">Room: <span className="font-bold">{roomCode}</span></p>
           </div>
 
-          <div className="space-y-6">
-            <input
-              type="text"
-              value={playerName}
-              onChange={(e) => setPlayerName(e.target.value)}
-              placeholder="Enter your name..."
-              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none text-lg"
-              maxLength={20}
-              autoFocus
-            />
+          {loadingStudents ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-2 border-purple-500 border-t-transparent mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading class students...</p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {availableStudents.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-700 mb-3">Select your profile:</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-64 overflow-y-auto">
+                    {availableStudents.map((student) => {
+                      const level = calculateAvatarLevel(student.totalPoints || 0);
+                      return (
+                        <button
+                          key={student.id}
+                          onClick={() => setSelectedStudent(student)}
+                          className={`p-3 rounded-lg border-2 transition-all duration-200 ${
+                            selectedStudent?.id === student.id
+                              ? 'border-purple-500 bg-purple-50 shadow-lg scale-105'
+                              : 'border-gray-200 hover:border-purple-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          <img
+                            src={getAvatarImage(student.avatarBase || 'Wizard F', level)}
+                            alt={student.firstName}
+                            className="w-12 h-12 mx-auto rounded-full mb-2 border-2 border-gray-300"
+                          />
+                          <div className="text-sm font-semibold text-gray-800">
+                            {student.firstName}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            Level {level}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  
+                  <div className="text-center my-4">
+                    <span className="text-gray-500 text-sm">or</span>
+                  </div>
+                </div>
+              )}
 
-            {error && (
-              <div className="text-red-600 text-sm">{error}</div>
-            )}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-700 mb-3">
+                  {availableStudents.length > 0 ? 'Enter a different name:' : 'Enter your name:'}
+                </h3>
+                <input
+                  type="text"
+                  value={playerName}
+                  onChange={(e) => {
+                    setPlayerName(e.target.value);
+                    if (e.target.value.trim()) {
+                      setSelectedStudent(null);
+                    }
+                  }}
+                  placeholder="Enter your name..."
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none text-lg"
+                  maxLength={20}
+                />
+              </div>
 
-            <button
-              onClick={handleJoinGame}
-              disabled={!playerName.trim() || loading}
-              className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white py-3 px-4 rounded-lg font-semibold hover:shadow-lg transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-            >
-              {loading ? 'Joining...' : 'Join Game!'}
-            </button>
-          </div>
+              {error && (
+                <div className="text-red-600 text-sm">{error}</div>
+              )}
+
+              <button
+                onClick={handleJoinGame}
+                disabled={(!selectedStudent && !playerName.trim()) || loading}
+                className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white py-3 px-4 rounded-lg font-semibold hover:shadow-lg transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              >
+                {loading ? 'Joining...' : 'Join Game!'}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -428,9 +548,13 @@ const StudentJoinPage = () => {
                 <div className="space-y-2 max-h-32 overflow-y-auto">
                   {Object.values(gameData.players).map((player, index) => (
                     <div key={index} className="flex items-center space-x-2 text-sm">
-                      <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                      <span className={player.name === playerName ? 'font-bold text-purple-600' : ''}>
-                        {player.name} {player.name === playerName ? '(You)' : ''}
+                      <img 
+                        src={player.avatar?.image || '/avatars/Wizard F/Level 1.png'} 
+                        alt={player.name}
+                        className="w-6 h-6 rounded-full border border-gray-300"
+                      />
+                      <span className={player.name === (selectedStudent ? `${selectedStudent.firstName} ${selectedStudent.lastName || ''}`.trim() : playerName) ? 'font-bold text-purple-600' : ''}>
+                        {player.name} {player.name === (selectedStudent ? `${selectedStudent.firstName} ${selectedStudent.lastName || ''}`.trim() : playerName) ? '(You)' : ''}
                       </span>
                     </div>
                   ))}
@@ -443,7 +567,7 @@ const StudentJoinPage = () => {
     );
   }
 
-  // Step 4: Playing - Show Questions
+  // Step 4: Playing - Show Questions (same as before)
   if (step === 4) {
     const currentQuestion = gameData?.quiz?.questions?.[gameData?.currentQuestion];
     const totalQuestions = gameData?.quiz?.questions?.length || 0;
@@ -512,9 +636,18 @@ const StudentJoinPage = () => {
         <div className="max-w-2xl mx-auto">
           {/* Header */}
           <div className="bg-white rounded-lg p-4 mb-4 flex items-center justify-between">
-            <div>
-              <h2 className="font-bold text-gray-800">{playerName}</h2>
-              <p className="text-sm text-gray-600">Score: {score}</p>
+            <div className="flex items-center space-x-3">
+              <img 
+                src={(selectedStudent ? getAvatarImage(selectedStudent.avatarBase || 'Wizard F', calculateAvatarLevel(selectedStudent.totalPoints || 0)) : '/avatars/Wizard F/Level 1.png')}
+                alt="Your avatar"
+                className="w-10 h-10 rounded-full border-2 border-purple-300"
+              />
+              <div>
+                <h2 className="font-bold text-gray-800">
+                  {selectedStudent ? `${selectedStudent.firstName} ${selectedStudent.lastName || ''}`.trim() : playerName}
+                </h2>
+                <p className="text-sm text-gray-600">Score: {score}</p>
+              </div>
             </div>
             <div className="text-center">
               <div className="text-sm text-gray-600">Question</div>
@@ -580,27 +713,6 @@ const StudentJoinPage = () => {
               </p>
             </div>
           )}
-
-          {/* Debug Info - FIXED display */}
-          <div className="mt-6 bg-gray-800 text-white rounded-xl p-4 text-xs">
-            <h4 className="font-bold mb-2">🔧 Debug Info:</h4>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <p><strong>Phase:</strong> {gameData?.questionPhase}</p>
-                <p><strong>Has Answered:</strong> {hasAnswered ? 'Yes' : 'No'}</p>
-                <p><strong>Answer Submitted Ref:</strong> {answerSubmittedRef.current ? 'Yes' : 'No'}</p>
-                <p><strong>Selected:</strong> {selectedAnswer !== null ? selectedAnswer : 'None'}</p>
-                <p><strong>Score:</strong> {score}</p>
-              </div>
-              <div>
-                <p><strong>Correct Answer:</strong> {currentQuestion?.correctAnswer} ({typeof currentQuestion?.correctAnswer})</p>
-                <p><strong>Timer Running:</strong> {timerRunningRef.current ? 'Yes' : 'No'}</p>
-                <p><strong>Time Left:</strong> {timeLeft}s</p>
-                <p><strong>Question #:</strong> {gameData?.currentQuestion}</p>
-                <p><strong>Current Q Ref:</strong> {currentQuestionRef.current}</p>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     );
