@@ -1,5 +1,6 @@
-// components/tabs/DashboardTab.js - Engaging Dashboard Overview
+// components/tabs/DashboardTab.js - Engaging Dashboard Overview with Student Portal Management
 import React, { useState, useEffect } from 'react';
+import ClassCodeManager from '../ClassCodeManager';
 
 const DashboardTab = ({ 
   students = [], 
@@ -11,7 +12,10 @@ const DashboardTab = ({
   SHOP_BASIC_AVATARS,
   SHOP_PREMIUM_AVATARS,
   SHOP_BASIC_PETS,
-  SHOP_PREMIUM_PETS
+  SHOP_PREMIUM_PETS,
+  // NEW: Props for class code management
+  currentClassData = {},
+  updateClassCode = () => {}
 }) => {
   const [featuredStudent, setFeaturedStudent] = useState(null);
   const [featuredShopItem, setFeaturedShopItem] = useState(null);
@@ -78,10 +82,19 @@ const DashboardTab = ({
 
   if (!featuredStudent) {
     return (
-      <div className="p-8 text-center">
-        <div className="text-6xl mb-4">🏫</div>
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">Welcome to Classroom Champions!</h2>
-        <p className="text-gray-600">Add some students to get started with your classroom adventure.</p>
+      <div className="space-y-6">
+        <div className="p-8 text-center">
+          <div className="text-6xl mb-4">🏫</div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Welcome to Classroom Champions!</h2>
+          <p className="text-gray-600">Add some students to get started with your classroom adventure.</p>
+        </div>
+
+        {/* Class Code Management - Show even when no students */}
+        <ClassCodeManager 
+          classData={currentClassData}
+          onUpdateClassCode={updateClassCode}
+          showToast={showToast}
+        />
       </div>
     );
   }
@@ -98,6 +111,13 @@ const DashboardTab = ({
           <div className="text-6xl opacity-20">🎯</div>
         </div>
       </div>
+
+      {/* Class Code Management Section */}
+      <ClassCodeManager 
+        classData={currentClassData}
+        onUpdateClassCode={updateClassCode}
+        showToast={showToast}
+      />
 
       {/* Main Dashboard Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -211,7 +231,7 @@ const DashboardTab = ({
         {featuredShopItem && (
           <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 shadow-lg border-2 border-purple-200">
             <div className="flex items-center gap-3 mb-4">
-              <div className="text-3xl">🏪</div>
+              <div className="text-3xl">🛒</div>
               <h2 className="text-xl font-bold text-gray-800">Featured in Shop</h2>
               <div className="text-xs bg-purple-200 px-2 py-1 rounded-full text-purple-800 font-semibold">
                 Daily Special
@@ -255,7 +275,7 @@ const DashboardTab = ({
               onClick={() => showToast('Navigate to Shop tab to browse items!', 'info')}
               className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-3 rounded-lg text-sm font-semibold hover:shadow-lg transition-all"
             >
-              <div className="text-xl mb-1">🏪</div>
+              <div className="text-xl mb-1">🛒</div>
               Open Shop
             </button>
             
@@ -263,7 +283,7 @@ const DashboardTab = ({
               onClick={() => showToast('Navigate to Pet Race tab for class fun!', 'info')}
               className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-3 rounded-lg text-sm font-semibold hover:shadow-lg transition-all"
             >
-              <div className="text-xl mb-1">🏁</div>
+              <div className="text-xl mb-1">🏇</div>
               Pet Race
             </button>
             

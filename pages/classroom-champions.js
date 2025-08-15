@@ -1,4 +1,4 @@
-// pages/classroom-champions.js - UPDATED WITH REWARD MANAGEMENT SUPPORT
+// pages/classroom-champions.js - UPDATED WITH STUDENT PORTAL SUPPORT
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
@@ -16,6 +16,17 @@ import SettingsTab from '../components/tabs/SettingsTab';
 import TeachersToolkitTab from '../components/tabs/TeachersToolkitTab';
 import CurriculumCornerTab from '../components/tabs/CurriculumCornerTab';
 import QuizShowTab from '../components/tabs/QuizShowTab';
+import ClassCodeManager from '../components/ClassCodeManager';
+import { 
+  calculateAvatarLevel, 
+  calculateCoins, 
+  getAvatarImage, 
+  getPetImage,
+  SHOP_BASIC_AVATARS,
+  SHOP_PREMIUM_AVATARS,
+  SHOP_BASIC_PETS,
+  SHOP_PREMIUM_PETS
+} from '../utils/gameHelpers';
 
 // ===============================================
 // CORE GAME CONSTANTS & UTILITIES
@@ -172,8 +183,8 @@ const CLASSROOM_CHAMPIONS_TABS = [
   { id: 'students', name: 'Students', icon: '👥'},
   { id: 'quizshow', name: 'Quiz Show', icon: '🎪'}, 
   { id: 'quests', name: 'Quests', icon: '📜'}, 
-  { id: 'shop', name: 'Shop', icon: '🏪'}, 
-  { id: 'petrace', name: 'Pet Race', icon: '🏁'}
+  { id: 'shop', name: 'Shop', icon: '🛒'}, 
+  { id: 'petrace', name: 'Pet Race', icon: '🏇'}
 ];
 
 const EDUCATIONAL_ELEMENTS_TABS = [
@@ -325,6 +336,39 @@ const ClassroomChampions = () => {
   };
 
   // ===============================================
+  // CLASS CODE MANAGEMENT FUNCTION
+  // ===============================================
+  
+  const updateClassCode = async (newClassCode) => {
+    if (!user || !currentClassId) return;
+    
+    try {
+      const docRef = doc(firestore, 'users', user.uid);
+      const docSnap = await getDoc(docRef);
+      
+      if (docSnap.exists()) {
+        const loadedUserData = docSnap.data();
+        const updatedClasses = loadedUserData.classes.map(cls =>
+          cls.id === currentClassId 
+            ? { ...cls, classCode: newClassCode }
+            : cls
+        );
+        
+        await updateDoc(docRef, { classes: updatedClasses });
+        
+        // Update local state
+        setUserData({
+          ...loadedUserData,
+          classes: updatedClasses
+        });
+      }
+    } catch (error) {
+      console.error("Error updating class code:", error);
+      throw error;
+    }
+  };
+
+  // ===============================================
   // REWARD MANAGEMENT FUNCTIONS
   // ===============================================
   
@@ -402,6 +446,12 @@ const ClassroomChampions = () => {
       console.error("❌ Error saving toolkit data:", error);
       throw error; // Re-throw to let the component handle it
     }
+  };
+
+  // Get current class data for passing to components
+  const getCurrentClassData = () => {
+    if (!userData.classes || !currentClassId) return {};
+    return userData.classes.find(cls => cls.id === currentClassId) || {};
   };
 
   // Get current class toolkit data for passing to components
@@ -599,6 +649,9 @@ const ClassroomChampions = () => {
                   SHOP_PREMIUM_AVATARS={SHOP_PREMIUM_AVATARS}
                   SHOP_BASIC_PETS={SHOP_BASIC_PETS}
                   SHOP_PREMIUM_PETS={SHOP_PREMIUM_PETS}
+                  // NEW: Pass class data and update function for class code management
+                  currentClassData={getCurrentClassData()}
+                  updateClassCode={updateClassCode}
                 />;
       case 'students':
         return <StudentsTab 
