@@ -92,15 +92,22 @@ const QuizShowTab = ({
       }
 
       const userData = docSnap.data();
+      
+      // Find current class and check if quiz exists
+      const currentClass = userData.classes.find(cls => cls.id === currentClassId);
+      if (!currentClass) {
+        throw new Error('Current class not found');
+      }
+      
+      const existingQuizzes = currentClass.savedQuizzes || [];
+      const existingIndex = existingQuizzes.findIndex(q => q.id === quiz.id);
+      const isUpdating = existingIndex >= 0;
+      
+      // Create updated classes array
       const updatedClasses = userData.classes.map(cls => {
         if (cls.id === currentClassId) {
-          const existingQuizzes = cls.savedQuizzes || [];
-          
-          // Check if updating existing quiz or creating new one
-          const existingIndex = existingQuizzes.findIndex(q => q.id === quiz.id);
-          
           let updatedQuizzes;
-          if (existingIndex >= 0) {
+          if (isUpdating) {
             // Update existing quiz
             updatedQuizzes = [...existingQuizzes];
             updatedQuizzes[existingIndex] = quiz;
@@ -120,10 +127,10 @@ const QuizShowTab = ({
       await updateDoc(docRef, { classes: updatedClasses });
       
       // Update local state
-      const currentClass = updatedClasses.find(cls => cls.id === currentClassId);
-      setSavedQuizzes(currentClass.savedQuizzes || []);
+      const updatedCurrentClass = updatedClasses.find(cls => cls.id === currentClassId);
+      setSavedQuizzes(updatedCurrentClass.savedQuizzes || []);
       
-      showToast(existingIndex >= 0 ? 'Quiz updated successfully!' : 'Quiz saved successfully!', 'success');
+      showToast(isUpdating ? 'Quiz updated successfully!' : 'Quiz saved successfully!', 'success');
       playQuizSound('gameStart');
       
       // Return to dashboard
@@ -448,6 +455,7 @@ const QuizShowTab = ({
             onSave={saveQuizToFirebase}
             onCancel={handleCancelQuizCreation}
             loading={loading}
+            showToast={showToast}
           />
         );
       
