@@ -17,16 +17,7 @@ import TeachersToolkitTab from '../components/tabs/TeachersToolkitTab';
 import CurriculumCornerTab from '../components/tabs/CurriculumCornerTab';
 import QuizShowTab from '../components/tabs/QuizShowTab';
 import ClassCodeManager from '../components/ClassCodeManager';
-import { 
-  calculateAvatarLevel, 
-  calculateCoins, 
-  getAvatarImage, 
-  getPetImage,
-  SHOP_BASIC_AVATARS,
-  SHOP_PREMIUM_AVATARS,
-  SHOP_BASIC_PETS,
-  SHOP_PREMIUM_PETS
-} from '../utils/gameHelpers';
+
 
 // ===============================================
 // CORE GAME CONSTANTS & UTILITIES
