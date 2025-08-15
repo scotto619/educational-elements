@@ -1,4 +1,4 @@
-// pages/join.js - COMPLETELY FIXED VERSION WITH DEBUG
+// pages/join.js - FINAL FIX - NO IMMEDIATE SCORE UPDATES
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { database } from '../utils/firebase';
@@ -22,6 +22,7 @@ const StudentJoinPage = () => {
   const [score, setScore] = useState(0);
   const [answerStartTime, setAnswerStartTime] = useState(null);
   const [finalResults, setFinalResults] = useState(null);
+  const [timerStarted, setTimerStarted] = useState(false); // Track if timer has started
 
   // Pre-fill room code from URL if present
   useEffect(() => {
@@ -57,12 +58,14 @@ const StudentJoinPage = () => {
             setSelectedAnswer(null);
             setHasAnswered(false);
             setAnswerStartTime(null);
+            setTimerStarted(false); // Reset timer flag
             
-            // Start timer when question phase is 'answering'
-            if (data.questionPhase === 'answering') {
+            // Start timer when question phase is 'answering' - but only once per question
+            if (data.questionPhase === 'answering' && !timerStarted) {
               setAnswerStartTime(Date.now());
               const questionTimeLimit = data.quiz?.questions?.[currentQ]?.timeLimit || 20;
               setTimeLeft(questionTimeLimit);
+              setTimerStarted(true);
               console.log(`⏰ Timer started: ${questionTimeLimit} seconds`);
             }
           }
@@ -75,7 +78,7 @@ const StudentJoinPage = () => {
       });
       return () => unsubscribe();
     }
-  }, [roomCode, step, playerId]);
+  }, [roomCode, step, playerId, timerStarted]);
 
   // Update score only from Firebase responses
   const updateScoreFromFirebase = (data) => {
@@ -118,15 +121,15 @@ const StudentJoinPage = () => {
     });
   };
 
-  // Timer logic - runs independently
+  // FIXED: Timer logic - only runs when timer is started and phase is answering
   useEffect(() => {
-    if (step === 4 && timeLeft > 0 && gameData?.questionPhase === 'answering' && answerStartTime) {
+    if (step === 4 && timeLeft > 0 && gameData?.questionPhase === 'answering' && timerStarted && answerStartTime) {
       const timer = setTimeout(() => {
         setTimeLeft(prev => prev - 1);
       }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [timeLeft, step, gameData?.questionPhase, answerStartTime]);
+  }, [timeLeft, step, gameData?.questionPhase, timerStarted, answerStartTime]); // Removed hasAnswered
 
   const handleRoomCodeSubmit = async (e) => {
     e.preventDefault();
@@ -195,7 +198,7 @@ const StudentJoinPage = () => {
   };
 
   const submitAnswer = async (answerIndex) => {
-    // CRITICAL: Complete prevention of multiple submissions
+    // Prevent multiple submissions
     if (hasAnswered || gameData?.questionPhase !== 'answering') {
       console.log(`🚫 Answer submission blocked: hasAnswered=${hasAnswered}, phase=${gameData?.questionPhase}`);
       return;
@@ -215,29 +218,23 @@ const StudentJoinPage = () => {
 
     const timeSpent = answerStartTime ? (Date.now() - answerStartTime) / 1000 : 0;
     
-    // EXPLICIT TYPE CONVERSION AND DETAILED LOGGING
-    let correctAnswerIndex = currentQuestion.correctAnswer;
-    let submittedAnswerIndex = answerIndex;
-    
-    // Convert both to numbers explicitly
-    if (typeof correctAnswerIndex === 'string') {
-      correctAnswerIndex = parseInt(correctAnswerIndex, 10);
-    }
-    if (typeof submittedAnswerIndex === 'string') {
-      submittedAnswerIndex = parseInt(submittedAnswerIndex, 10);
-    }
-    
+    // ENSURE BOTH VALUES ARE NUMBERS FOR COMPARISON
+    const correctAnswerIndex = Number(currentQuestion.correctAnswer);
+    const submittedAnswerIndex = Number(answerIndex);
     const isCorrect = submittedAnswerIndex === correctAnswerIndex;
     
-    // DETAILED DEBUG LOGGING
-    console.log(`🔍 DETAILED ANSWER VALIDATION:`);
-    console.log(`   Question: "${currentQuestion.question}"`);
-    console.log(`   Options: [${currentQuestion.options.map((opt, i) => `${i}:"${opt}"`).join(', ')}]`);
-    console.log(`   Submitted Index: ${submittedAnswerIndex} (type: ${typeof submittedAnswerIndex})`);
-    console.log(`   Correct Index: ${correctAnswerIndex} (type: ${typeof correctAnswerIndex})`);
-    console.log(`   Submitted Answer: "${currentQuestion.options[submittedAnswerIndex]}"`);
-    console.log(`   Correct Answer: "${currentQuestion.options[correctAnswerIndex]}"`);
-    console.log(`   Is Correct: ${isCorrect}`);
+    // ULTRA DETAILED DEBUG LOGGING
+    console.log(`🔍 ULTRA DETAILED ANSWER VALIDATION:`);
+    console.log(`   Question Text: "${currentQuestion.question}"`);
+    console.log(`   All Options: [${currentQuestion.options.map((opt, i) => `${i}:"${opt}"`).join(', ')}]`);
+    console.log(`   Raw Submitted Index: ${answerIndex} (type: ${typeof answerIndex})`);
+    console.log(`   Raw Correct Index: ${currentQuestion.correctAnswer} (type: ${typeof currentQuestion.correctAnswer})`);
+    console.log(`   Converted Submitted: ${submittedAnswerIndex} (type: ${typeof submittedAnswerIndex})`);
+    console.log(`   Converted Correct: ${correctAnswerIndex} (type: ${typeof correctAnswerIndex})`);
+    console.log(`   Submitted Answer Text: "${currentQuestion.options[submittedAnswerIndex]}"`);
+    console.log(`   Correct Answer Text: "${currentQuestion.options[correctAnswerIndex]}"`);
+    console.log(`   Comparison Result: ${submittedAnswerIndex} === ${correctAnswerIndex} = ${isCorrect}`);
+    console.log(`   ✅ FINAL ANSWER: ${isCorrect ? 'CORRECT' : 'INCORRECT'}`);
     
     // Simple scoring: +10 for correct, -5 for incorrect
     const points = isCorrect ? 10 : -5;
@@ -259,7 +256,10 @@ const StudentJoinPage = () => {
       console.log(`📤 Submitting to Firebase:`, responseData);
       await set(ref(database, responsePath), responseData);
       
-      console.log(`✅ Answer submitted successfully: ${isCorrect ? 'CORRECT' : 'INCORRECT'} (${points} points)`);
+      console.log(`✅ Answer submitted successfully to Firebase`);
+      
+      // DO NOT UPDATE LOCAL SCORE - Let Firebase handle everything
+      
     } catch (error) {
       console.error('❌ Error submitting answer:', error);
       setHasAnswered(false);
@@ -284,8 +284,8 @@ const StudentJoinPage = () => {
     if (gameData?.questionPhase === 'answering') {
       if (hasAnswered) {
         if (index === selectedAnswer) {
-          // EXTREME visual feedback for selected answer
-          buttonStyle += ` bg-gray-700 ring-8 ring-yellow-400 transform scale-105 shadow-2xl border-8 border-yellow-300`;
+          // Show selected but no correct/incorrect feedback yet
+          buttonStyle += ` bg-gray-700 ring-8 ring-blue-400 transform scale-105 shadow-2xl border-8 border-blue-300`;
         } else {
           buttonStyle += ' bg-gray-400 opacity-50';
         }
@@ -294,7 +294,7 @@ const StudentJoinPage = () => {
         buttonStyle += ` bg-gradient-to-r ${getAnswerButtonColor(index)} hover:scale-105 cursor-pointer shadow-lg`;
       }
     } else if (gameData?.questionPhase === 'results') {
-      // Show correct/incorrect feedback
+      // Show correct/incorrect feedback ONLY during results phase
       if (index === selectedAnswer && index === currentQuestion?.correctAnswer) {
         buttonStyle += ' bg-green-500 ring-4 ring-green-300';
       } else if (index === selectedAnswer && index !== currentQuestion?.correctAnswer) {
@@ -514,7 +514,8 @@ const StudentJoinPage = () => {
               <div className="text-sm text-gray-600">Question</div>
               <div className="font-bold">{questionNumber}/{totalQuestions}</div>
             </div>
-            {timeLeft > 0 && answerStartTime && (
+            {/* FIXED: Timer shows and doesn't reset after answer submission */}
+            {timeLeft > 0 && timerStarted && (
               <div className={`text-2xl font-bold px-3 py-1 rounded ${
                 timeLeft <= 5 ? 'bg-red-500 text-white animate-pulse' : 'bg-green-500 text-white'
               }`}>
@@ -548,10 +549,10 @@ const StudentJoinPage = () => {
                   </div>
                   <span>{option}</span>
                   
-                  {/* EXTREME visual indicator for selected answer */}
+                  {/* Visual indicator for selected answer - but no correct/incorrect feedback */}
                   {selectedAnswer === index && hasAnswered && (
                     <>
-                      <div className="absolute right-2 bg-yellow-400 text-black px-4 py-2 rounded-full text-sm font-bold border-2 border-black">
+                      <div className="absolute right-2 bg-blue-400 text-white px-4 py-2 rounded-full text-sm font-bold">
                         ✓ SELECTED
                       </div>
                       <div className="absolute -top-2 -right-2 text-2xl animate-bounce">⭐</div>
@@ -568,6 +569,9 @@ const StudentJoinPage = () => {
               <p className="text-sm text-gray-500 mt-2">
                 Your answer: <strong>{currentQuestion.options[selectedAnswer]}</strong>
               </p>
+              <p className="text-xs text-gray-400 mt-1">
+                Results will be revealed when everyone has answered!
+              </p>
             </div>
           )}
 
@@ -580,12 +584,14 @@ const StudentJoinPage = () => {
                 <p><strong>Has Answered:</strong> {hasAnswered ? 'Yes' : 'No'}</p>
                 <p><strong>Selected:</strong> {selectedAnswer !== null ? selectedAnswer : 'None'}</p>
                 <p><strong>Score:</strong> {score}</p>
+                <p><strong>Timer Started:</strong> {timerStarted ? 'Yes' : 'No'}</p>
               </div>
               <div>
                 <p><strong>Correct Answer:</strong> {currentQuestion?.correctAnswer} (type: {typeof currentQuestion?.correctAnswer})</p>
                 <p><strong>Time Left:</strong> {timeLeft}s</p>
                 <p><strong>Question:</strong> {gameData?.currentQuestion}</p>
                 <p><strong>Options:</strong> {currentQuestion?.options?.length || 0}</p>
+                <p><strong>Answer Start:</strong> {answerStartTime ? 'Yes' : 'No'}</p>
               </div>
             </div>
           </div>
