@@ -238,33 +238,54 @@ const TicTacToeGame = ({ studentData, showToast }) => {
   };
 
   const makeMove = async (index) => {
-    if (!firebaseReady || !firebase || !isMyTurn || board[index] !== null || gameState !== 'playing') {
-      console.log('❌ Move blocked:', { 
-        firebaseReady, 
-        isMyTurn, 
-        cellValue: board[index], 
-        gameState 
-      });
+    console.log(`🎯 makeMove called with index: ${index}`);
+    console.log(`Current board state:`, board);
+    console.log(`Cell ${index} current value:`, board[index]);
+    console.log(`Game state: ${gameState}, Is my turn: ${isMyTurn}, Player role: ${playerRole}`);
+    
+    if (!firebaseReady || !firebase) {
+      console.log('❌ Firebase not ready');
       return;
     }
     
-    console.log(`🎯 Making move at index ${index} with ${playerRole}`);
+    if (!isMyTurn) {
+      console.log('❌ Not my turn');
+      return;
+    }
+    
+    if (board[index] !== null) {
+      console.log('❌ Cell already occupied:', board[index]);
+      return;
+    }
+    
+    if (gameState !== 'playing') {
+      console.log('❌ Game not in playing state:', gameState);
+      return;
+    }
+    
+    console.log(`✅ Making move: placing ${playerRole} at index ${index}`);
     
     const newBoard = [...board];
     newBoard[index] = playerRole;
     
+    console.log(`New board will be:`, newBoard);
+    
     const nextPlayer = playerRole === 'X' ? 'O' : 'X';
     
     try {
-      await firebase.update(firebase.ref(firebase.database, `ticTacToe/${gameRoom}`), {
+      const updateData = {
         board: newBoard,
         currentPlayer: nextPlayer,
         lastMove: { index, player: playerRole, timestamp: Date.now() }
-      });
+      };
       
-      console.log('✅ Move sent to Firebase');
+      console.log('📤 Sending to Firebase:', updateData);
+      
+      await firebase.update(firebase.ref(firebase.database, `ticTacToe/${gameRoom}`), updateData);
+      
+      console.log('✅ Move sent to Firebase successfully');
     } catch (error) {
-      console.error('Error making move:', error);
+      console.error('❌ Error making move:', error);
       showToast('Failed to make move: ' + error.message, 'error');
     }
   };
@@ -304,35 +325,50 @@ const TicTacToeGame = ({ studentData, showToast }) => {
          (winner.index === 1 && row + col === 2)))
     );
 
+    const handleCellClick = () => {
+      console.log(`🖱️ Cell clicked - Index: ${index}, Row: ${row}, Col: ${col}, Value: ${value}, MyTurn: ${isMyTurn}, GameState: ${gameState}`);
+      if (isMyTurn && !value && gameState === 'playing') {
+        makeMove(index);
+      } else {
+        console.log('❌ Click blocked:', { isMyTurn, hasValue: !!value, gameState });
+      }
+    };
+
     return (
-      <button
+      <div
         key={index}
-        onClick={() => {
-          console.log(`🖱️ Clicked cell ${index} - Value: ${value}, MyTurn: ${isMyTurn}, GameState: ${gameState}`);
-          makeMove(index);
+        onClick={handleCellClick}
+        onTouchEnd={(e) => {
+          e.preventDefault();
+          handleCellClick();
         }}
-        disabled={!isMyTurn || value !== null || gameState !== 'playing'}
         className={`
-          aspect-square border-2 border-gray-300 rounded-lg text-2xl md:text-3xl font-bold
-          flex items-center justify-center transition-all duration-200 min-h-[80px] min-w-[80px]
+          aspect-square border-2 border-gray-400 rounded-lg text-2xl md:text-3xl font-bold
+          flex items-center justify-center transition-all duration-200 
+          min-h-[70px] min-w-[70px] md:min-h-[90px] md:min-w-[90px]
+          select-none touch-manipulation
           ${isMyTurn && !value && gameState === 'playing' 
-            ? 'hover:bg-blue-50 hover:border-blue-400 cursor-pointer active:scale-95 bg-blue-50' 
-            : 'cursor-not-allowed bg-gray-100'
+            ? 'hover:bg-blue-100 active:bg-blue-200 cursor-pointer bg-blue-50 border-blue-400' 
+            : 'cursor-not-allowed bg-gray-100 border-gray-300'
           }
           ${isWinningCell ? 'bg-green-200 border-green-500' : ''}
           ${value === 'X' ? 'text-blue-600' : value === 'O' ? 'text-red-600' : 'text-gray-400'}
         `}
       >
         {value ? (
-          <span className="drop-shadow-lg">
+          <span className="drop-shadow-lg text-3xl md:text-4xl">
             {value === 'X' ? '❌' : '⭕'}
           </span>
         ) : isMyTurn && gameState === 'playing' ? (
-          <span className="opacity-50 text-sm">
+          <span className="opacity-40 text-lg md:text-xl">
             {playerRole === 'X' ? '❌' : '⭕'}
           </span>
-        ) : null}
-      </button>
+        ) : (
+          <span className="text-xs text-gray-400 font-normal">
+            {index}
+          </span>
+        )}
+      </div>
     );
   };
 
@@ -455,13 +491,19 @@ const TicTacToeGame = ({ studentData, showToast }) => {
 
     return (
       <div className="max-w-lg mx-auto space-y-6">
-        {/* Debug Info */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-2 text-xs">
-            <p>Player: {playerRole} | Turn: {gameData?.currentPlayer} | My Turn: {isMyTurn ? 'Yes' : 'No'}</p>
-            <p>Board: [{board.map(cell => cell || '_').join(', ')}]</p>
+        {/* Debug Info - Always visible for testing */}
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-xs space-y-1">
+          <p><strong>Debug Info:</strong></p>
+          <p>Player: {playerRole} | Current Turn: {gameData?.currentPlayer} | My Turn: {isMyTurn ? 'Yes' : 'No'}</p>
+          <p>Game State: {gameState} | Room: {gameRoom}</p>
+          <div className="grid grid-cols-3 gap-1 mt-2 max-w-[150px]">
+            {[0,1,2,3,4,5,6,7,8].map(i => (
+              <div key={i} className="border text-center p-1 text-xs bg-white">
+                {i}: {board[i] || 'empty'}
+              </div>
+            ))}
           </div>
-        )}
+        </div>
 
         {/* Game Header */}
         <div className="bg-white rounded-xl p-4 shadow-lg">
@@ -516,9 +558,17 @@ const TicTacToeGame = ({ studentData, showToast }) => {
         </div>
 
         {/* Game Board */}
-        <div className="bg-white rounded-xl p-6 shadow-lg">
-          <div className="grid grid-cols-3 gap-3 max-w-xs mx-auto">
-            {[0, 1, 2, 3, 4, 5, 6, 7, 8].map(index => renderCell(index))}
+        <div className="bg-white rounded-xl p-4 md:p-6 shadow-lg">
+          <div className="grid grid-cols-3 gap-2 md:gap-3 max-w-[240px] md:max-w-[300px] mx-auto">
+            {/* Render cells in correct order: 0,1,2 / 3,4,5 / 6,7,8 */}
+            {Array.from({ length: 9 }, (_, index) => renderCell(index))}
+          </div>
+          
+          {/* Mobile-specific instructions */}
+          <div className="mt-4 text-center">
+            <p className="text-xs text-gray-500">
+              {isMyTurn ? 'Tap any empty square to make your move' : 'Wait for your opponent'}
+            </p>
           </div>
         </div>
 
