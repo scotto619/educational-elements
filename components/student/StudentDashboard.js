@@ -1,4 +1,4 @@
-// components/student/StudentDashboard.js
+// components/student/StudentDashboard.js - FIXED EXPORT
 import React from 'react';
 
 const StudentDashboard = ({ 
@@ -11,7 +11,6 @@ const StudentDashboard = ({
 }) => {
   const level = calculateAvatarLevel(studentData?.totalPoints || 0);
   const coins = calculateCoins(studentData);
-  const xpForNextLevel = level < 4 ? (level * 100) - (studentData?.totalPoints || 0) : 0;
 
   return (
     <div className="space-y-6">
@@ -29,6 +28,9 @@ const StudentDashboard = ({
             src={getAvatarImage(studentData?.avatarBase, level)} 
             alt="Your Avatar"
             className="w-20 h-20 rounded-full mx-auto mb-4 border-4 border-purple-300"
+            onError={(e) => {
+              e.target.src = '/shop/Basic/Banana.png'; // Fallback
+            }}
           />
           <h3 className="text-lg font-bold text-gray-800">Level {level}</h3>
           <p className="text-purple-600 font-semibold">Champion</p>
@@ -73,6 +75,9 @@ const StudentDashboard = ({
                 src={getPetImage(studentData.ownedPets[0])} 
                 alt="Your Pet"
                 className="w-16 h-16 rounded-full mx-auto mb-2 border-2 border-green-300"
+                onError={(e) => {
+                  e.target.src = '/shop/BasicPets/Wizard.png'; // Fallback
+                }}
               />
               <h4 className="font-semibold text-gray-800">{studentData.ownedPets[0].name}</h4>
               <p className="text-xs text-green-600">Your Companion</p>
@@ -97,7 +102,7 @@ const StudentDashboard = ({
           </div>
           
           <div className="bg-green-50 rounded-lg p-4 border-2 border-green-200">
-            <div className="text-2xl mb-2">🛒</div>
+            <div className="text-2xl mb-2">🛍️</div>
             <h4 className="font-semibold text-gray-800">Items Owned</h4>
             <p className="text-2xl font-bold text-green-600">
               {(studentData?.ownedAvatars?.length || 0) + (studentData?.ownedPets?.length || 0)}
@@ -119,7 +124,7 @@ const StudentDashboard = ({
         <h3 className="text-xl font-bold text-gray-800 mb-4">🚀 Quick Actions</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <button className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 rounded-lg text-center hover:shadow-lg transition-all">
-            <div className="text-2xl mb-1">🛒</div>
+            <div className="text-2xl mb-1">🛍️</div>
             <div className="text-sm font-semibold">Visit Shop</div>
           </button>
           
@@ -143,4 +148,5 @@ const StudentDashboard = ({
   );
 };
 
-export { StudentDashboard};
+// FIXED: Use default export
+export default StudentDashboard;

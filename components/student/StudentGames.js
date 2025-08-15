@@ -1,4 +1,4 @@
-// components/student/StudentGames.js
+// components/student/StudentGames.js - FIXED EXPORT
 import React, { useState } from 'react';
 
 // Import existing game components (they should work as-is)
@@ -170,4 +170,5 @@ const StudentGames = ({ studentData, showToast }) => {
   );
 };
 
-export { StudentGames };
+// FIXED: Use default export to match other components
+export default StudentGames;

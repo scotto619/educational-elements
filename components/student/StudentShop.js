@@ -1,4 +1,4 @@
-// components/student/StudentShop.js
+// components/student/StudentShop.js - FIXED VERSION
 import React, { useState } from 'react';
 
 const StudentShop = ({ 
@@ -91,8 +91,17 @@ const StudentShop = ({
       case 'premium_avatars': items = SHOP_PREMIUM_AVATARS; type = 'avatar'; break;
       case 'basic_pets': items = SHOP_BASIC_PETS; type = 'pet'; break;
       case 'premium_pets': items = SHOP_PREMIUM_PETS; type = 'pet'; break;
-      case 'rewards': items = classRewards; type = 'reward'; break;
+      case 'rewards': items = classRewards || []; type = 'reward'; break;
       default: items = [];
+    }
+
+    if (!items || items.length === 0) {
+      return (
+        <div className="col-span-full text-center py-8">
+          <div className="text-4xl mb-2">📦</div>
+          <p className="text-gray-500">No items available in this category yet.</p>
+        </div>
+      );
     }
 
     return items.map(item => {
@@ -105,9 +114,15 @@ const StudentShop = ({
       return (
         <div key={item.name || item.id} className={`border-2 rounded-lg p-4 text-center ${owned ? 'border-green-400 bg-green-50' : 'border-gray-200'}`}>
           {isReward ? (
-            <div className="text-4xl">{item.icon}</div>
+            <div className="text-4xl mb-2">{item.icon || '🎁'}</div>
           ) : (
-            <img src={item.path} className="w-24 h-24 object-contain rounded-full mx-auto mb-2"/>
+            <img 
+              src={item.path} 
+              className="w-24 h-24 object-contain rounded-full mx-auto mb-2"
+              onError={(e) => {
+                e.target.src = '/shop/Basic/Banana.png'; // Fallback
+              }}
+            />
           )}
           
           <p className="font-semibold mt-2">{item.name}</p>
@@ -137,6 +152,9 @@ const StudentShop = ({
             <img 
               src={getAvatarImage(studentData.avatarBase, calculateAvatarLevel(studentData.totalPoints))} 
               className="w-16 h-16 rounded-full border-2 border-blue-300 shadow-lg"
+              onError={(e) => {
+                e.target.src = '/shop/Basic/Banana.png'; // Fallback
+              }}
             />
             <div>
               <h2 className="text-2xl font-bold text-gray-800">{studentData.firstName}'s Shop</h2>
@@ -214,27 +232,34 @@ const StudentShop = ({
               {/* Owned Avatars */}
               <div>
                 <h3 className="font-bold text-lg mb-3">My Avatars</h3>
-                <div className="grid grid-cols-4 md:grid-cols-6 gap-4">
-                  {studentData.ownedAvatars?.map(avatarName => (
-                    <div key={avatarName} className={`border-2 rounded-lg p-2 text-center ${studentData.avatarBase === avatarName ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}>
-                      <img 
-                        src={getAvatarImage(avatarName, calculateAvatarLevel(studentData.totalPoints))} 
-                        className="w-16 h-16 rounded-full mx-auto mb-1"
-                      />
-                      <p className="text-xs font-semibold truncate">{avatarName}</p>
-                      {studentData.avatarBase === avatarName ? (
-                        <p className="text-xs text-blue-600 font-bold">Equipped</p>
-                      ) : (
-                        <button 
-                          onClick={() => handleEquip('avatar', avatarName)} 
-                          className="text-xs bg-blue-500 text-white px-2 py-1 rounded mt-1 hover:bg-blue-600"
-                        >
-                          Equip
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                {studentData.ownedAvatars && studentData.ownedAvatars.length > 0 ? (
+                  <div className="grid grid-cols-4 md:grid-cols-6 gap-4">
+                    {studentData.ownedAvatars.map(avatarName => (
+                      <div key={avatarName} className={`border-2 rounded-lg p-2 text-center ${studentData.avatarBase === avatarName ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}>
+                        <img 
+                          src={getAvatarImage(avatarName, calculateAvatarLevel(studentData.totalPoints))} 
+                          className="w-16 h-16 rounded-full mx-auto mb-1"
+                          onError={(e) => {
+                            e.target.src = '/shop/Basic/Banana.png';
+                          }}
+                        />
+                        <p className="text-xs font-semibold truncate">{avatarName}</p>
+                        {studentData.avatarBase === avatarName ? (
+                          <p className="text-xs text-blue-600 font-bold">Equipped</p>
+                        ) : (
+                          <button 
+                            onClick={() => handleEquip('avatar', avatarName)} 
+                            className="text-xs bg-blue-500 text-white px-2 py-1 rounded mt-1 hover:bg-blue-600"
+                          >
+                            Equip
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500">No avatars owned yet. Visit the shop to buy some!</p>
+                )}
               </div>
 
               {/* Owned Pets */}
@@ -247,6 +272,9 @@ const StudentShop = ({
                         <img 
                           src={getPetImage(pet)} 
                           className="w-16 h-16 rounded-full mx-auto mb-1"
+                          onError={(e) => {
+                            e.target.src = '/shop/BasicPets/Wizard.png';
+                          }}
                         />
                         <p className="text-xs font-semibold truncate">{pet.name}</p>
                         {index === 0 ? (
@@ -292,4 +320,5 @@ const StudentShop = ({
   );
 };
 
-export { StudentShop };
+// FIXED: Use default export
+export default StudentShop;

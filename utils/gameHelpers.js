@@ -27,13 +27,31 @@ export const calculateCoins = (student) => {
 export const getAvatarImage = (avatarBase, level = 1) => {
   if (!avatarBase) return '/shop/Basic/Banana.png'; // Default fallback
   
-  // First check if it's a shop avatar
+  // List of traditional avatar names that should use the /avatars/ system
+  const TRADITIONAL_AVATARS = [
+    'Alchemist F', 'Alchemist M', 'Archer F', 'Archer M', 'Barbarian F', 'Barbarian M',
+    'Bard F', 'Bard M', 'Beastmaster F', 'Beastmaster M', 'Cleric F', 'Cleric M',
+    'Crystal Sage F', 'Crystal Sage M', 'Druid F', 'Druid M', 'Engineer F', 'Engineer M',
+    'Ice Mage F', 'Ice Mage M', 'Illusionist F', 'Illusionist M', 'Knight F', 'Knight M',
+    'Monk F', 'Monk M', 'Necromancer F', 'Necromancer M', 'Orc F', 'Orc M',
+    'Paladin F', 'Paladin M', 'Rogue F', 'Rogue M', 'Sky Knight F', 'Sky Knight M',
+    'Time Mage F', 'Time Mage M', 'Wizard F', 'Wizard M'
+  ];
+  
+  // Check if it's a traditional avatar first
+  if (TRADITIONAL_AVATARS.includes(avatarBase)) {
+    const basePath = '/avatars';
+    const levelSuffix = level > 1 ? ` L${level}` : '';
+    return `${basePath}/${avatarBase}/${avatarBase}${levelSuffix}.png`;
+  }
+  
+  // Then check if it's a shop avatar
   const shopItem = [...SHOP_BASIC_AVATARS, ...SHOP_PREMIUM_AVATARS].find(a => 
     a.name.toLowerCase() === avatarBase?.toLowerCase()
   );
   if (shopItem) return shopItem.path;
   
-  // Fallback to old avatar system
+  // Final fallback to traditional system
   const basePath = '/avatars';
   const levelSuffix = level > 1 ? ` L${level}` : '';
   return `${basePath}/${avatarBase}/${avatarBase}${levelSuffix}.png`;
