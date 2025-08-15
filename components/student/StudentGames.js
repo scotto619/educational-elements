@@ -1,4 +1,4 @@
-// components/student/StudentGames.js - FIXED EXPORT
+// components/student/StudentGames.js - MOBILE OPTIMIZED
 import React, { useState } from 'react';
 
 // Import existing game components (they should work as-is)
@@ -78,30 +78,30 @@ const StudentGames = ({ studentData, showToast }) => {
   if (selectedGame) {
     const GameComponent = selectedGame.component;
     return (
-      <div className="space-y-6">
-        <div className="bg-white rounded-xl shadow-lg p-6">
+      <div className="space-y-4 md:space-y-6">
+        <div className="bg-white rounded-xl shadow-lg p-4 md:p-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3 md:space-x-4 min-w-0 flex-1">
               <button
                 onClick={() => setSelectedGame(null)}
-                className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
+                className="bg-gray-500 text-white px-3 md:px-4 py-2 rounded-lg hover:bg-gray-600 text-sm md:text-base flex-shrink-0"
               >
-                ← Back to Games
+                ← Back
               </button>
-              <div className="flex items-center space-x-3">
-                <div className={`w-12 h-12 rounded-full bg-gradient-to-r ${selectedGame.color} flex items-center justify-center text-2xl`}>
+              <div className="flex items-center space-x-2 md:space-x-3 min-w-0">
+                <div className={`w-8 h-8 md:w-12 md:h-12 rounded-full bg-gradient-to-r ${selectedGame.color} flex items-center justify-center text-lg md:text-2xl flex-shrink-0`}>
                   {selectedGame.icon}
                 </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-800">{selectedGame.name}</h2>
-                  <p className="text-gray-600">{selectedGame.description}</p>
+                <div className="min-w-0">
+                  <h2 className="text-lg md:text-2xl font-bold text-gray-800 truncate">{selectedGame.name}</h2>
+                  <p className="text-gray-600 text-sm md:text-base hidden md:block">{selectedGame.description}</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="bg-white rounded-xl shadow-lg p-3 md:p-6">
           <GameComponent 
             gameMode="digital"
             showToast={showToast}
@@ -113,40 +113,40 @@ const StudentGames = ({ studentData, showToast }) => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white rounded-xl shadow-lg p-6">
+    <div className="space-y-4 md:space-y-6">
+      <div className="bg-white rounded-xl shadow-lg p-4 md:p-6">
         <div className="text-center">
-          <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+          <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
             🎮 Play Games
           </h2>
-          <p className="text-gray-600">Choose a game to play and have fun learning!</p>
+          <p className="text-gray-600 text-sm md:text-base">Choose a game to play and have fun learning!</p>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-lg p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="bg-white rounded-xl shadow-lg p-4 md:p-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {availableGames.map((game) => (
             <div
               key={game.id}
               onClick={() => setSelectedGame(game)}
-              className="group cursor-pointer bg-gray-50 rounded-xl p-6 border-2 border-transparent hover:border-gray-300 hover:shadow-lg transition-all duration-200"
+              className="group cursor-pointer bg-gray-50 rounded-xl p-4 md:p-6 border-2 border-transparent hover:border-gray-300 hover:shadow-lg transition-all duration-200 active:scale-95"
             >
-              <div className="flex items-center space-x-3 mb-4">
-                <div className={`w-12 h-12 rounded-full bg-gradient-to-r ${game.color} flex items-center justify-center text-2xl group-hover:scale-110 transition-transform`}>
+              <div className="flex items-center space-x-3 mb-3 md:mb-4">
+                <div className={`w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-r ${game.color} flex items-center justify-center text-xl md:text-2xl group-hover:scale-110 transition-transform flex-shrink-0`}>
                   {game.icon}
                 </div>
-                <div>
-                  <h4 className="text-lg font-bold text-gray-800 group-hover:text-blue-600 transition-colors">
+                <div className="min-w-0">
+                  <h4 className="text-base md:text-lg font-bold text-gray-800 group-hover:text-blue-600 transition-colors truncate">
                     {game.name}
                   </h4>
                 </div>
               </div>
 
-              <p className="text-gray-600 text-sm mb-4 leading-relaxed">
+              <p className="text-gray-600 text-sm leading-relaxed mb-3 md:mb-4">
                 {game.description}
               </p>
 
-              <div className="space-y-2 text-xs text-gray-500">
+              <div className="space-y-1 md:space-y-2 text-xs text-gray-500 mb-3 md:mb-4">
                 <div className="flex justify-between">
                   <span>⚡ Difficulty:</span>
                   <span className="font-medium">{game.difficulty}</span>
@@ -157,8 +157,8 @@ const StudentGames = ({ studentData, showToast }) => {
                 </div>
               </div>
 
-              <div className="mt-4 pt-4 border-t border-gray-200">
-                <div className={`w-full py-2 px-4 rounded-lg bg-gradient-to-r ${game.color} text-white text-center font-semibold group-hover:shadow-md transition-all`}>
+              <div className="pt-3 md:pt-4 border-t border-gray-200">
+                <div className={`w-full py-2 md:py-3 px-4 rounded-lg bg-gradient-to-r ${game.color} text-white text-center font-semibold group-hover:shadow-md transition-all text-sm md:text-base`}>
                   🎮 Play Game
                 </div>
               </div>
@@ -170,5 +170,4 @@ const StudentGames = ({ studentData, showToast }) => {
   );
 };
 
-// FIXED: Use default export to match other components
 export default StudentGames;

@@ -1,4 +1,4 @@
-// pages/student.js - FIXED with Correct Imports
+// pages/student.js - MOBILE OPTIMIZED
 import React, { useState, useEffect } from 'react';
 import { firestore } from '../utils/firebase';
 import { collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
@@ -8,7 +8,7 @@ import StudentShop from '../components/student/StudentShop';
 import StudentGames from '../components/student/StudentGames';
 import StudentDashboard from '../components/student/StudentDashboard';
 
-// FIXED: Import from the correct gameHelpers file
+// Import from the correct gameHelpers file
 import { 
   calculateAvatarLevel, 
   calculateCoins, 
@@ -53,10 +53,6 @@ const StudentPortal = () => {
     }
   }, []);
 
-  // ===============================================
-  // IMPROVED CLASS CODE LOOKUP APPROACH
-  // ===============================================
-  
   const handleClassCodeSubmit = async (e) => {
     e.preventDefault();
     if (!classCode.trim()) {
@@ -70,15 +66,10 @@ const StudentPortal = () => {
     try {
       console.log('🔍 Searching for class code:', classCode.trim());
       
-      // APPROACH 1: Try to find class codes in a dedicated collection (if implemented)
-      // This would be the most efficient approach but requires backend changes
-      
-      // APPROACH 2: Fallback to safer user collection search with better error handling
       const usersRef = collection(firestore, 'users');
       let usersSnapshot;
       
       try {
-        // Try to get users - this will fail if security rules block it
         usersSnapshot = await getDocs(usersRef);
         console.log('✅ Successfully retrieved users collection');
       } catch (firebaseError) {
@@ -91,7 +82,6 @@ const StudentPortal = () => {
       let foundClass = null;
       let foundTeacherUserId = null;
 
-      // Search through all teachers' classes
       for (const userDoc of usersSnapshot.docs) {
         try {
           const userData = userDoc.data();
@@ -111,7 +101,6 @@ const StudentPortal = () => {
           }
         } catch (userError) {
           console.warn('⚠️ Error processing user document:', userDoc.id, userError);
-          // Continue searching other users
         }
       }
 
@@ -124,14 +113,12 @@ const StudentPortal = () => {
 
       console.log('✅ Class found with', foundClass.students?.length || 0, 'students');
 
-      // Validate that the class has students
       if (!foundClass.students || foundClass.students.length === 0) {
         setError('This class has no students yet. Please check with your teacher.');
         setLoading(false);
         return;
       }
 
-      // Set available students for selection
       setAvailableStudents(foundClass.students || []);
       setClassData(foundClass);
       setTeacherUserId(foundTeacherUserId);
@@ -139,7 +126,6 @@ const StudentPortal = () => {
     } catch (error) {
       console.error('💥 Unexpected error finding class:', error);
       
-      // More specific error messages based on error type
       if (error.code === 'permission-denied') {
         setError('Access denied. Please check your internet connection and try again.');
       } else if (error.code === 'unavailable') {
@@ -161,7 +147,6 @@ const StudentPortal = () => {
 
     console.log('👤 Student selected:', student.firstName);
 
-    // Save session
     const session = {
       studentData: student,
       classData: classData,
@@ -173,7 +158,6 @@ const StudentPortal = () => {
       sessionStorage.setItem('studentSession', JSON.stringify(session));
     } catch (sessionError) {
       console.warn('⚠️ Could not save session to sessionStorage:', sessionError);
-      // Continue anyway - the session just won't persist
     }
     
     setStudentData(student);
@@ -197,10 +181,6 @@ const StudentPortal = () => {
     setError('');
   };
 
-  // ===============================================
-  // IMPROVED STUDENT DATA UPDATE FUNCTIONS
-  // ===============================================
-  
   const updateStudentData = async (updatedStudentData) => {
     if (!teacherUserId || !classData || !studentData) {
       console.error('Missing required data for student update');
@@ -210,7 +190,6 @@ const StudentPortal = () => {
     try {
       console.log('💾 Updating student data for:', studentData.firstName);
       
-      // Get current teacher data
       const teacherDocRef = doc(firestore, 'users', teacherUserId);
       const teacherDocSnap = await getDoc(teacherDocRef);
       
@@ -221,7 +200,6 @@ const StudentPortal = () => {
 
       const teacherData = teacherDocSnap.data();
       
-      // Update the specific student in the specific class
       const updatedClasses = teacherData.classes.map(cls => {
         if (cls.id === classData.id) {
           return {
@@ -236,14 +214,11 @@ const StudentPortal = () => {
         return cls;
       });
 
-      // Save to Firebase
       await updateDoc(teacherDocRef, { classes: updatedClasses });
       
-      // Update local state
       const newStudentData = { ...studentData, ...updatedStudentData };
       setStudentData(newStudentData);
       
-      // Update session
       try {
         const session = JSON.parse(sessionStorage.getItem('studentSession') || '{}');
         session.studentData = newStudentData;
@@ -261,9 +236,8 @@ const StudentPortal = () => {
   };
 
   const showToast = (message, type = 'info') => {
-    // Enhanced toast with better styling
     const toastElement = document.createElement('div');
-    toastElement.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg text-white font-semibold ${
+    toastElement.className = `fixed top-4 left-4 right-4 md:top-4 md:right-4 md:left-auto z-50 p-4 rounded-lg shadow-lg text-white font-semibold text-center md:text-left max-w-sm mx-auto md:mx-0 ${
       type === 'success' ? 'bg-green-500' : 
       type === 'error' ? 'bg-red-500' : 
       type === 'warning' ? 'bg-yellow-500' : 
@@ -281,32 +255,32 @@ const StudentPortal = () => {
   };
 
   // ===============================================
-  // RENDER LOGIN SCREEN
+  // RENDER LOGIN SCREEN - MOBILE OPTIMIZED
   // ===============================================
   
   if (!isLoggedIn) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-100 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 md:p-8">
           {/* Header */}
-          <div className="text-center mb-8">
+          <div className="text-center mb-6 md:mb-8">
             <img 
               src="/Logo/LOGO_NoBG.png" 
               alt="Educational Elements Logo" 
-              className="h-16 w-16 mx-auto mb-4"
+              className="h-12 w-12 md:h-16 md:w-16 mx-auto mb-3 md:mb-4"
               onError={(e) => {
                 e.target.style.display = 'none';
               }}
             />
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               Student Portal
             </h1>
-            <p className="text-gray-600 mt-2">Access your classroom adventure!</p>
+            <p className="text-gray-600 mt-2 text-sm md:text-base">Access your classroom adventure!</p>
           </div>
 
           {/* Class Code Entry */}
           {availableStudents.length === 0 && (
-            <form onSubmit={handleClassCodeSubmit} className="space-y-6">
+            <form onSubmit={handleClassCodeSubmit} className="space-y-4 md:space-y-6">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Class Code
@@ -316,7 +290,7 @@ const StudentPortal = () => {
                   value={classCode}
                   onChange={(e) => setClassCode(e.target.value.toUpperCase())}
                   placeholder="Enter your class code"
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none text-center text-lg font-semibold tracking-wider uppercase"
+                  className="w-full px-4 py-3 md:py-4 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none text-center text-lg md:text-xl font-semibold tracking-wider uppercase"
                   maxLength="10"
                   disabled={loading}
                 />
@@ -334,7 +308,7 @@ const StudentPortal = () => {
               <button
                 type="submit"
                 disabled={loading || !classCode.trim()}
-                className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 md:py-4 rounded-lg font-semibold text-base md:text-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <span className="flex items-center justify-center">
@@ -351,35 +325,35 @@ const StudentPortal = () => {
             </form>
           )}
 
-          {/* Student Selection */}
+          {/* Student Selection - Mobile Optimized */}
           {availableStudents.length > 0 && (
-            <div className="space-y-6">
+            <div className="space-y-4 md:space-y-6">
               <div className="text-center">
-                <h2 className="text-xl font-bold text-gray-800 mb-2">Select Your Name</h2>
-                <p className="text-gray-600">Class: {classData?.name || 'Unknown Class'}</p>
-                <p className="text-sm text-gray-500">Found {availableStudents.length} students</p>
+                <h2 className="text-lg md:text-xl font-bold text-gray-800 mb-2">Select Your Name</h2>
+                <p className="text-gray-600 text-sm md:text-base">Class: {classData?.name || 'Unknown Class'}</p>
+                <p className="text-xs md:text-sm text-gray-500">Found {availableStudents.length} students</p>
               </div>
               
-              <div className="grid grid-cols-1 gap-3 max-h-64 overflow-y-auto">
+              <div className="grid grid-cols-1 gap-2 md:gap-3 max-h-64 md:max-h-80 overflow-y-auto">
                 {availableStudents.map(student => (
                   <button
                     key={student.id}
                     onClick={() => handleStudentSelect(student.id)}
-                    className="flex items-center space-x-3 p-3 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all"
+                    className="flex items-center space-x-3 p-3 md:p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all active:scale-95"
                   >
                     <img 
                       src={getAvatarImage(student.avatarBase, calculateAvatarLevel(student.totalPoints))} 
                       alt={student.firstName}
-                      className="w-12 h-12 rounded-full border-2 border-gray-300"
+                      className="w-10 h-10 md:w-12 md:h-12 rounded-full border-2 border-gray-300 flex-shrink-0"
                       onError={(e) => {
-                        e.target.src = '/shop/Basic/Banana.png'; // Fallback image
+                        e.target.src = '/shop/Basic/Banana.png';
                       }}
                     />
-                    <div className="text-left">
-                      <p className="font-semibold text-gray-800">
+                    <div className="text-left flex-1 min-w-0">
+                      <p className="font-semibold text-gray-800 text-sm md:text-base truncate">
                         {student.firstName} {student.lastName}
                       </p>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-xs md:text-sm text-gray-600">
                         Level {calculateAvatarLevel(student.totalPoints)} • {student.totalPoints || 0} XP
                       </p>
                     </div>
@@ -393,7 +367,7 @@ const StudentPortal = () => {
                   setClassCode('');
                   setError('');
                 }}
-                className="w-full py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                className="w-full py-2 md:py-3 text-gray-600 hover:text-gray-800 transition-colors text-sm md:text-base"
               >
                 ← Back to Class Code
               </button>
@@ -405,14 +379,14 @@ const StudentPortal = () => {
   }
 
   // ===============================================
-  // RENDER MAIN PORTAL
+  // RENDER MAIN PORTAL - MOBILE OPTIMIZED
   // ===============================================
   
   const tabs = [
-    { id: 'dashboard', name: 'Dashboard', icon: '🏠' },
-    { id: 'shop', name: 'Shop', icon: '🛍️' },
-    { id: 'games', name: 'Games', icon: '🎮' },
-    { id: 'quizshow', name: 'Quiz Show', icon: '🎪' }
+    { id: 'dashboard', name: 'Home', icon: '🏠', shortName: 'Home' },
+    { id: 'shop', name: 'Shop', icon: '🛍️', shortName: 'Shop' },
+    { id: 'games', name: 'Games', icon: '🎮', shortName: 'Games' },
+    { id: 'quizshow', name: 'Quiz Show', icon: '🎪', shortName: 'Quiz' }
   ];
 
   const renderTabContent = () => {
@@ -454,17 +428,17 @@ const StudentPortal = () => {
         );
       case 'quizshow':
         return (
-          <div className="bg-white rounded-xl p-8 text-center">
-            <div className="text-6xl mb-4">🎪</div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Join the Quiz Show!</h2>
-            <p className="text-gray-600 mb-6">
+          <div className="bg-white rounded-xl p-6 md:p-8 text-center">
+            <div className="text-4xl md:text-6xl mb-4">🎪</div>
+            <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-4">Join the Quiz Show!</h2>
+            <p className="text-gray-600 mb-6 text-sm md:text-base leading-relaxed">
               Click the link below to join the live quiz show with your class.
             </p>
             <a 
               href="https://www.educational-elements.com/join" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="inline-block bg-gradient-to-r from-purple-500 to-pink-600 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:shadow-lg transition-all"
+              className="inline-block bg-gradient-to-r from-purple-500 to-pink-600 text-white px-6 md:px-8 py-3 md:py-4 rounded-lg font-semibold text-base md:text-lg hover:shadow-lg transition-all active:scale-95"
             >
               🚀 Join Quiz Show
             </a>
@@ -477,23 +451,23 @@ const StudentPortal = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-100">
-      {/* Header */}
+      {/* Header - Mobile Optimized */}
       <div className="bg-white shadow-lg border-b-4 border-blue-500">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center">
+        <div className="max-w-6xl mx-auto px-3 md:px-4 py-3 md:py-4 flex items-center justify-between">
+          <div className="flex items-center min-w-0 flex-1">
             <img 
               src="/Logo/LOGO_NoBG.png" 
               alt="Educational Elements Logo" 
-              className="h-10 w-10 mr-3"
+              className="h-8 w-8 md:h-10 md:w-10 mr-2 md:mr-3 flex-shrink-0"
               onError={(e) => {
                 e.target.style.display = 'none';
               }}
             />
-            <div>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            <div className="min-w-0 flex-1">
+              <h1 className="text-base md:text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent truncate">
                 Welcome, {studentData?.firstName}!
               </h1>
-              <p className="text-sm text-gray-600">
+              <p className="text-xs md:text-sm text-gray-600 truncate">
                 Level {calculateAvatarLevel(studentData?.totalPoints)} Champion • {calculateCoins(studentData)} coins
               </p>
             </div>
@@ -501,37 +475,38 @@ const StudentPortal = () => {
           
           <button 
             onClick={handleLogout}
-            className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
+            className="bg-gray-500 text-white px-3 md:px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors text-sm md:text-base flex-shrink-0"
           >
             Logout
           </button>
         </div>
       </div>
 
-      {/* Navigation */}
-      <div className="bg-white shadow-sm border-b">
+      {/* Navigation - Mobile Optimized */}
+      <div className="bg-white shadow-sm border-b sticky top-0 z-10">
         <div className="max-w-6xl mx-auto">
-          <div className="flex space-x-1">
+          <div className="flex">
             {tabs.map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center space-x-2 px-6 py-3 whitespace-nowrap transition-all duration-200 ${
+                className={`flex-1 flex flex-col md:flex-row items-center justify-center space-y-1 md:space-y-0 md:space-x-2 px-2 md:px-6 py-2 md:py-3 transition-all duration-200 ${
                   activeTab === tab.id 
                     ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50 font-semibold' 
                     : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
                 }`}
               >
-                <span className="text-lg">{tab.icon}</span>
-                <span>{tab.name}</span>
+                <span className="text-lg md:text-xl">{tab.icon}</span>
+                <span className="text-xs md:text-base md:hidden">{tab.shortName}</span>
+                <span className="hidden md:inline">{tab.name}</span>
               </button>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <main className="max-w-6xl mx-auto px-4 py-6">
+      {/* Main Content - Mobile Optimized */}
+      <main className="max-w-6xl mx-auto px-3 md:px-4 py-4 md:py-6">
         {renderTabContent()}
       </main>
     </div>
