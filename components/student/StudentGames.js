@@ -8,11 +8,23 @@ import MemoryMatchGame from '../games/MemoryMatchGame';
 import NoggleGame from '../games/NoggleGame';
 import WordSearchGame from '../games/WordSearchGame';
 import CrosswordGame from '../games/CrosswordGame';
+import TicTacToeGame from '../games/TicTacToeGame';
 
 const StudentGames = ({ studentData, showToast }) => {
   const [selectedGame, setSelectedGame] = useState(null);
 
   const availableGames = [
+    {
+      id: 'tic-tac-toe',
+      name: 'Tic Tac Toe',
+      icon: '🎯',
+      description: 'Challenge a friend to a classic strategy game!',
+      component: TicTacToeGame,
+      color: 'from-purple-500 to-pink-600',
+      difficulty: 'Easy',
+      time: '2-5 minutes',
+      multiplayer: true
+    },
     {
       id: 'crossword',
       name: 'Crossword Puzzle',
@@ -106,6 +118,7 @@ const StudentGames = ({ studentData, showToast }) => {
             gameMode="digital"
             showToast={showToast}
             students={[studentData]}
+            studentData={studentData}
           />
         </div>
       </div>
@@ -155,11 +168,17 @@ const StudentGames = ({ studentData, showToast }) => {
                   <span>⏱️ Duration:</span>
                   <span className="font-medium">{game.time}</span>
                 </div>
+                {game.multiplayer && (
+                  <div className="flex justify-between">
+                    <span>👥 Mode:</span>
+                    <span className="font-medium text-purple-600">Multiplayer</span>
+                  </div>
+                )}
               </div>
 
               <div className="pt-3 md:pt-4 border-t border-gray-200">
                 <div className={`w-full py-2 md:py-3 px-4 rounded-lg bg-gradient-to-r ${game.color} text-white text-center font-semibold group-hover:shadow-md transition-all text-sm md:text-base`}>
-                  🎮 Play Game
+                  {game.multiplayer ? '👥 Play vs Friend' : '🎮 Play Game'}
                 </div>
               </div>
             </div>
