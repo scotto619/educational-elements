@@ -1,10 +1,18 @@
-// components/ClassCodeManager.js - Component for teachers to manage class codes
+// ===============================================
+// PART 1: Updated ClassCodeManager.js
+// ===============================================
+
+// components/ClassCodeManager.js - IMPROVED with dedicated collection
 import React, { useState } from 'react';
+import { firestore } from '../utils/firebase';
+import { doc, setDoc, deleteDoc } from 'firebase/firestore';
 
 const ClassCodeManager = ({ 
   classData, 
   onUpdateClassCode, 
-  showToast 
+  showToast,
+  userId, // Add userId prop
+  currentClassId // Add currentClassId prop
 }) => {
   const [showCodeModal, setShowCodeModal] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -24,15 +32,37 @@ const ClassCodeManager = ({
     const newCode = generateClassCode();
     
     try {
+      // Update the class with the new code
       await onUpdateClassCode(newCode);
+      
+      // IMPROVED: Also store in dedicated classCodes collection
+      await setDoc(doc(firestore, 'classCodes', newCode), {
+        teacherId: userId,
+        classId: currentClassId,
+        className: classData?.name || 'Unnamed Class',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+      
+      // Remove old class code from classCodes collection if it exists
+      if (classData?.classCode) {
+        try {
+          await deleteDoc(doc(firestore, 'classCodes', classData.classCode));
+        } catch (error) {
+          console.warn('Could not delete old class code:', error);
+        }
+      }
+      
       showToast(`New class code generated: ${newCode}`, 'success');
     } catch (error) {
+      console.error('Error generating class code:', error);
       showToast('Error generating class code', 'error');
     }
     
     setIsGenerating(false);
   };
 
+  // Rest of the component remains the same...
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text).then(() => {
       showToast('Class code copied to clipboard!', 'success');
@@ -105,7 +135,7 @@ ${classData?.name || 'Your Teacher'}`);
         )}
       </div>
 
-      {/* Class Code Management Modal */}
+      {/* Class Code Management Modal - Same as before but with better error handling */}
       {showCodeModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
@@ -200,51 +230,139 @@ ${classData?.name || 'Your Teacher'}`);
 
 export default ClassCodeManager;
 
-// ADDITIONAL: Update to classroom-champions.js Dashboard Tab
-// Add this component to the DashboardTab to show class code management
+// ===============================================
+// PART 2: Improved Student Portal with classCodes collection lookup
+// ===============================================
 
-/*
-// In DashboardTab.js, add this import and include in the dashboard:
+// Add this to the student portal's handleClassCodeSubmit function:
 
-import ClassCodeManager from './ClassCodeManager';
-
-// Then add this section to the dashboard after the main stats:
-
-{/* Class Code Management Section *\/}
-<ClassCodeManager 
-  classData={currentClassData}
-  onUpdateClassCode={updateClassCode}
-  showToast={showToast}
-/>
-
-// And add this function to classroom-champions.js:
-
-const updateClassCode = async (newClassCode) => {
-  if (!user || !currentClassId) return;
-  
-  try {
-    const docRef = doc(firestore, 'users', user.uid);
-    const docSnap = await getDoc(docRef);
-    
-    if (docSnap.exists()) {
-      const loadedUserData = docSnap.data();
-      const updatedClasses = loadedUserData.classes.map(cls =>
-        cls.id === currentClassId 
-          ? { ...cls, classCode: newClassCode }
-          : cls
-      );
-      
-      await updateDoc(docRef, { classes: updatedClasses });
-      
-      // Update local state
-      setUserData({
-        ...loadedUserData,
-        classes: updatedClasses
-      });
-    }
-  } catch (error) {
-    console.error("Error updating class code:", error);
-    throw error;
+const handleClassCodeSubmitImproved = async (e) => {
+  e.preventDefault();
+  if (!classCode.trim()) {
+    setError('Please enter a class code');
+    return;
   }
+
+  setLoading(true);
+  setError('');
+
+  try {
+    console.log('🔍 Searching for class code:', classCode.trim());
+    
+    // APPROACH 1: Try dedicated classCodes collection first (RECOMMENDED)
+    try {
+      const classCodeRef = doc(firestore, 'classCodes', classCode.trim().toUpperCase());
+      const classCodeSnap = await getDoc(classCodeRef);
+      
+      if (classCodeSnap.exists()) {
+        const classCodeData = classCodeSnap.data();
+        console.log('✅ Found class code in dedicated collection');
+        
+        // Get the teacher's full data
+        const teacherRef = doc(firestore, 'users', classCodeData.teacherId);
+        const teacherSnap = await getDoc(teacherRef);
+        
+        if (teacherSnap.exists()) {
+          const teacherData = teacherSnap.data();
+          const foundClass = teacherData.classes.find(cls => cls.id === classCodeData.classId);
+          
+          if (foundClass && foundClass.students && foundClass.students.length > 0) {
+            console.log('✅ Class found with', foundClass.students.length, 'students');
+            setAvailableStudents(foundClass.students);
+            setClassData(foundClass);
+            setTeacherUserId(classCodeData.teacherId);
+            setLoading(false);
+            return;
+          }
+        }
+      }
+    } catch (classCodeError) {
+      console.warn('⚠️ classCodes collection not available, falling back to user search:', classCodeError);
+    }
+    
+    // APPROACH 2: Fallback to original method if classCodes collection doesn't work
+    console.log('🔄 Falling back to user collection search...');
+    
+    const usersRef = collection(firestore, 'users');
+    const usersSnapshot = await getDocs(usersRef);
+    
+    let foundClass = null;
+    let foundTeacherUserId = null;
+
+    for (const userDoc of usersSnapshot.docs) {
+      try {
+        const userData = userDoc.data();
+        
+        if (userData.classes && Array.isArray(userData.classes)) {
+          const matchingClass = userData.classes.find(cls => 
+            cls.classCode && cls.classCode.trim().toUpperCase() === classCode.trim().toUpperCase()
+          );
+          
+          if (matchingClass) {
+            console.log('🎯 Found matching class!', matchingClass.name);
+            foundClass = matchingClass;
+            foundTeacherUserId = userDoc.id;
+            break;
+          }
+        }
+      } catch (userError) {
+        console.warn('⚠️ Error processing user document:', userDoc.id, userError);
+      }
+    }
+
+    if (!foundClass) {
+      setError('Class code not found. Please check with your teacher and make sure the code is correct.');
+      setLoading(false);
+      return;
+    }
+
+    if (!foundClass.students || foundClass.students.length === 0) {
+      setError('This class has no students yet. Please check with your teacher.');
+      setLoading(false);
+      return;
+    }
+
+    setAvailableStudents(foundClass.students);
+    setClassData(foundClass);
+    setTeacherUserId(foundTeacherUserId);
+    
+  } catch (error) {
+    console.error('💥 Unexpected error finding class:', error);
+    
+    if (error.code === 'permission-denied') {
+      setError('Access denied. Please check your internet connection and try again.');
+    } else if (error.code === 'unavailable') {
+      setError('Service temporarily unavailable. Please try again in a moment.');
+    } else {
+      setError('Unable to connect to class. Please check your internet connection and try again.');
+    }
+  }
+
+  setLoading(false);
 };
+
+// ===============================================
+// PART 3: Update the DashboardTab to pass required props
+// ===============================================
+
+// In classroom-champions.js, update the DashboardTab call:
+/*
+case 'dashboard':
+  return <DashboardTab 
+            students={students}
+            showToast={showToast}
+            getAvatarImage={getAvatarImage}
+            getPetImage={getPetImage}
+            calculateCoins={calculateCoins}
+            calculateAvatarLevel={calculateAvatarLevel}
+            SHOP_BASIC_AVATARS={SHOP_BASIC_AVATARS}
+            SHOP_PREMIUM_AVATARS={SHOP_PREMIUM_AVATARS}
+            SHOP_BASIC_PETS={SHOP_BASIC_PETS}
+            SHOP_PREMIUM_PETS={SHOP_PREMIUM_PETS}
+            currentClassData={getCurrentClassData()}
+            updateClassCode={updateClassCode}
+            // ADD THESE NEW PROPS:
+            userId={user?.uid}
+            currentClassId={currentClassId}
+          />;
 */

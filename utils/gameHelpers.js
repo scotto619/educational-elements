@@ -1,254 +1,196 @@
-// utils/gameHelpers.js - Shared game calculation and avatar functions
+// utils/gameHelpers.js - Game Helper Functions for Educational Elements
 export const GAME_CONFIG = { MAX_LEVEL: 4, COINS_PER_XP: 5, PET_UNLOCK_XP: 50 };
 
-// Standard Level-Up Avatars
-export const AVAILABLE_AVATARS = [ 
-  'Alchemist F', 'Alchemist M', 'Archer F', 'Archer M', 'Barbarian F', 'Barbarian M', 
-  'Bard F', 'Bard M', 'Beastmaster F', 'Beastmaster M', 'Cleric F', 'Cleric M', 
-  'Crystal Sage F', 'Crystal Sage M', 'Druid F', 'Druid M', 'Engineer F', 'Engineer M', 
-  'Ice Mage F', 'Ice Mage M', 'Illusionist F', 'Illusionist M', 'Knight F', 'Knight M', 
-  'Monk F', 'Monk M', 'Necromancer F', 'Necromancer M', 'Orc F', 'Orc M', 
-  'Paladin F', 'Paladin M', 'Rogue F', 'Rogue M', 'Sky Knight F', 'Sky Knight M', 
-  'Time Mage F', 'Time Mage M', 'Wizard F', 'Wizard M' 
-];
-
-// Shop Items - Basic Avatars
-export const SHOP_BASIC_AVATARS = [ 
-  { name: 'Banana', price: 10, path: '/shop/Basic/Banana.png' }, 
-  { name: 'Basketball', price: 12, path: '/shop/Basic/Basketball.png' }, 
-  { name: 'BasketballGirl', price: 12, path: '/shop/Basic/BasketballGirl.png' }, 
-  { name: 'FarmerBoy', price: 15, path: '/shop/Basic/FarmerBoy.png' }, 
-  { name: 'FarmerGirl', price: 15, path: '/shop/Basic/FarmerGirl.png' }, 
-  { name: 'Goblin1', price: 15, path: '/shop/Basic/Goblin1.png' }, 
-  { name: 'GoblinGirl1', price: 15, path: '/shop/Basic/GoblinGirl1.png' }, 
-  { name: 'Guard1', price: 20, path: '/shop/Basic/Guard1.png' }, 
-  { name: 'GuardGirl1', price: 20, path: '/shop/Basic/GuardGirl1.png' }, 
-  { name: 'PirateBoy', price: 18, path: '/shop/Basic/PirateBoy.png' }, 
-  { name: 'PirateGirl', price: 18, path: '/shop/Basic/PirateGirl.png' }, 
-  { name: 'RoboKnight', price: 25, path: '/shop/Basic/RoboKnight.png' }, 
-  { name: 'RobotBoy', price: 22, path: '/shop/Basic/RobotBoy.png' }, 
-  { name: 'RobotGirl', price: 22, path: '/shop/Basic/RobotGirl.png' }, 
-  { name: 'SoccerBoy', price: 10, path: '/shop/Basic/SoccerBoy.png' }, 
-  { name: 'SoccerBoy2', price: 10, path: '/shop/Basic/SoccerBoy2.png' }, 
-  { name: 'SoccerGirl', price: 10, path: '/shop/Basic/SoccerGirl.png' }, 
-  { name: 'StreetBoy1', price: 15, path: '/shop/Basic/Streetboy1.png' }, 
-  { name: 'StreetGirl1', price: 15, path: '/shop/Basic/Streetgirl1.png' }, 
-  { name: 'Vampire1', price: 20, path: '/shop/Basic/Vampire1.png' } 
-];
-
-// Shop Items - Premium Avatars
-export const SHOP_PREMIUM_AVATARS = [ 
-  { name: 'Dwarf', price: 45, path: '/shop/Premium/Dwarf.png' }, 
-  { name: 'Dwarf2', price: 45, path: '/shop/Premium/Dwarf2.png' }, 
-  { name: 'FarmerBoy Premium', price: 35, path: '/shop/Premium/FarmerBoy.png' }, 
-  { name: 'FarmerGirl Premium', price: 35, path: '/shop/Premium/FarmerGirl.png' }, 
-  { name: 'Goblin2', price: 30, path: '/shop/Premium/Goblin2.png' }, 
-  { name: 'GoblinGirl2', price: 30, path: '/shop/Premium/GoblinGirl2.png' }, 
-  { name: 'King', price: 60, path: '/shop/Premium/King.png' }, 
-  { name: 'MechanicGirl', price: 40, path: '/shop/Premium/MechanicGirl.png' }, 
-  { name: 'PirateBoy Premium', price: 42, path: '/shop/Premium/PirateBoy.png' }, 
-  { name: 'PirateGirl Premium', price: 42, path: '/shop/Premium/PirateGirl.png' }, 
-  { name: 'Queen', price: 60, path: '/shop/Premium/Queen.png' }, 
-  { name: 'RobotBoy Premium', price: 38, path: '/shop/Premium/RobotBoy.png' }, 
-  { name: 'RobotGirl Premium', price: 38, path: '/shop/Premium/RobotGirl.png' }, 
-  { name: 'Vampire2', price: 40, path: '/shop/Premium/Vampire2.png' }, 
-  { name: 'VampireGirl2', price: 40, path: '/shop/Premium/VampireGirl2.png' } 
-];
-
-// Shop Items - Basic Pets
-export const SHOP_BASIC_PETS = [
-  { name: 'Alchemist Pet', price: 25, path: '/shop/BasicPets/Alchemist.png' },
-  { name: 'Barbarian Pet', price: 30, path: '/shop/BasicPets/Barbarian.png' },
-  { name: 'Bard Pet', price: 25, path: '/shop/BasicPets/Bard.png' },
-  { name: 'Beastmaster Pet', price: 35, path: '/shop/BasicPets/Beastmaster.png' },
-  { name: 'Cleric Pet', price: 25, path: '/shop/BasicPets/Cleric.png' },
-  { name: 'Crystal Knight Pet', price: 45, path: '/shop/BasicPets/Crystal Knight.png' },
-  { name: 'Crystal Sage Pet', price: 45, path: '/shop/BasicPets/Crystal Sage.png' },
-  { name: 'Dragon Pet', price: 50, path: '/shop/BasicPets/DragonPet.png' },
-  { name: 'Dream Pet', price: 40, path: '/shop/BasicPets/Dream.png' },
-  { name: 'Druid Pet', price: 35, path: '/shop/BasicPets/Druid.png' },
-  { name: 'Engineer Pet', price: 30, path: '/shop/BasicPets/Engineer.png' },
-  { name: 'Farm Pet 1', price: 20, path: '/shop/BasicPets/FarmPet1.png' },
-  { name: 'Farm Pet 2', price: 20, path: '/shop/BasicPets/FarmPet2.png' },
-  { name: 'Farm Pet 3', price: 20, path: '/shop/BasicPets/FarmPet3.png' },
-  { name: 'Frost Mage Pet', price: 35, path: '/shop/BasicPets/Frost Mage.png' },
-  { name: 'Goblin Pet', price: 25, path: '/shop/BasicPets/GoblinPet.png' },
-  { name: 'Illusionist Pet', price: 40, path: '/shop/BasicPets/Illusionist.png' },
-  { name: 'Knight Pet', price: 30, path: '/shop/BasicPets/Knight.png' },
-  { name: 'Lightning Pet', price: 50, path: '/shop/BasicPets/Lightning.png' },
-  { name: 'Monk Pet', price: 25, path: '/shop/BasicPets/Monk.png' },
-  { name: 'Necromancer Pet', price: 40, path: '/shop/BasicPets/Necromancer.png' },
-  { name: 'Orc Pet', price: 30, path: '/shop/BasicPets/Orc.png' },
-  { name: 'Paladin Pet', price: 35, path: '/shop/BasicPets/Paladin.png' },
-  { name: 'Pirate Pet 1', price: 25, path: '/shop/BasicPets/PiratePet1.png' },
-  { name: 'Pirate Pet 2', price: 25, path: '/shop/BasicPets/PiratePet2.png' },
-  { name: 'Pirate Pet 3', price: 25, path: '/shop/BasicPets/PiratePet3.png' },
-  { name: 'Rabbit Pet', price: 20, path: '/shop/BasicPets/RabbitPet.png' },
-  { name: 'Robot Boy Pet', price: 30, path: '/shop/BasicPets/RobotBoyPet.png' },
-  { name: 'Robot Girl Pet', price: 30, path: '/shop/BasicPets/RobotGirlPet.png' },
-  { name: 'Robot Pet 1', price: 30, path: '/shop/BasicPets/RobotPet1.png' },
-  { name: 'Robot Pet 2', price: 30, path: '/shop/BasicPets/RobotPet2.png' },
-  { name: 'Rogue Pet', price: 25, path: '/shop/BasicPets/Rogue.png' },
-  { name: 'Soccer Pet', price: 20, path: '/shop/BasicPets/SoccerPet.png' },
-  { name: 'Stealth Pet', price: 35, path: '/shop/BasicPets/Stealth.png' },
-  { name: 'Time Knight Pet', price: 50, path: '/shop/BasicPets/Time Knight.png' },
-  { name: 'Unicorn Pet', price: 35, path: '/shop/BasicPets/UnicornPet.png' },
-  { name: 'Warrior Pet', price: 30, path: '/shop/BasicPets/Warrior.png' },
-  { name: 'Wizard Pet', price: 25, path: '/shop/BasicPets/Wizard.png' }
-];
-
-// Shop Items - Premium Pets
-export const SHOP_PREMIUM_PETS = [
-  { name: 'Lion Pet', price: 60, path: '/shop/PremiumPets/LionPet.png' },
-  { name: 'Snake Pet', price: 50, path: '/shop/PremiumPets/SnakePet.png' },
-  { name: 'Vampire Pet', price: 50, path: '/shop/PremiumPets/VampirePet.png' }
-];
-
 // ===============================================
-// HELPER FUNCTIONS
+// LEVEL CALCULATION
 // ===============================================
-
-export const getAvatarImage = (avatarBase, level) => {
-  const shopItem = [...SHOP_BASIC_AVATARS, ...SHOP_PREMIUM_AVATARS].find(a => a.name.toLowerCase() === avatarBase?.toLowerCase());
-  if (shopItem) return shopItem.path;
-  return `/avatars/${avatarBase || 'Wizard F'}/Level ${Math.max(1, Math.min(level || 1, 4))}.png`;
+export const calculateAvatarLevel = (totalPoints) => {
+  if (totalPoints >= 300) return 4;
+  if (totalPoints >= 200) return 3;
+  if (totalPoints >= 100) return 2;
+  return 1;
 };
 
+// ===============================================
+// COINS CALCULATION
+// ===============================================
+export const calculateCoins = (student) => {
+  if (!student) return 0;
+  const totalEarned = Math.floor((student.totalPoints || 0) / GAME_CONFIG.COINS_PER_XP) + (student.currency || 0);
+  const totalSpent = student.coinsSpent || 0;
+  return Math.max(0, totalEarned - totalSpent);
+};
+
+// ===============================================
+// AVATAR IMAGE PATHS
+// ===============================================
+export const getAvatarImage = (avatarBase, level = 1) => {
+  if (!avatarBase) return '/images/avatars/Wizard F/Wizard F.png';
+  
+  const basePath = '/images/avatars';
+  const levelSuffix = level > 1 ? ` L${level}` : '';
+  return `${basePath}/${avatarBase}/${avatarBase}${levelSuffix}.png`;
+};
+
+// ===============================================
+// PET IMAGE PATHS
+// ===============================================
 export const getPetImage = (pet) => {
-  if (!pet || !pet.name) return '/Pets/Wizard.png';
-
-  // First, check if pet has a direct path (for shop pets)
-  if (pet.path) return pet.path;
-
-  // Then, check shop items (case insensitive)
-  const shopItem = [...SHOP_BASIC_PETS, ...SHOP_PREMIUM_PETS].find(p => p.name.toLowerCase() === pet.name.toLowerCase());
-  if (shopItem) return shopItem.path;
-
-  // For standard pets
-  const key = (pet.type || pet.name || '').toLowerCase();
-  const map = { 
-    'alchemist': '/Pets/Alchemist.png', 
-    'barbarian': '/Pets/Barbarian.png', 
-    'bard': '/Pets/Bard.png', 
-    'beastmaster': '/Pets/Beastmaster.png', 
-    'cleric': '/Pets/Cleric.png', 
-    'crystal knight': '/Pets/Crystal Knight.png', 
-    'crystal sage': '/Pets/Crystal Sage.png', 
-    'engineer': '/Pets/Engineer.png', 
-    'frost mage': '/Pets/Frost Mage.png', 
-    'illusionist': '/Pets/Illusionist.png', 
-    'knight': '/Pets/Knight.png', 
-    'lightning': '/Pets/Lightning.png', 
-    'monk': '/Pets/Monk.png', 
-    'necromancer': '/Pets/Necromancer.png', 
-    'rogue': '/Pets/Rogue.png', 
-    'stealth': '/Pets/Stealth.png', 
-    'time knight': '/Pets/Time Knight.png', 
-    'warrior': '/Pets/Warrior.png', 
-    'wizard': '/Pets/Wizard.png', 
-    'dragon': '/Pets/Lightning.png', 
-    'phoenix': '/Pets/Crystal Sage.png', 
-    'unicorn': '/Pets/Time Knight.png', 
-    'wolf': '/Pets/Warrior.png', 
-    'owl': '/Pets/Wizard.png', 
-    'cat': '/Pets/Rogue.png', 
-    'tiger': '/Pets/Barbarian.png', 
-    'bear': '/Pets/Beastmaster.png', 
-    'lion': '/Pets/Knight.png', 
-    'eagle': '/Pets/Stealth.png' 
-  };
-  return map[key] || '/Pets/Wizard.png';
+  if (!pet || !pet.name) return '/images/pets/default.png';
+  return `/images/pets/${pet.name}.png`;
 };
 
-export const calculateAvatarLevel = (xp) => (xp >= 300 ? 4 : xp >= 200 ? 3 : xp >= 100 ? 2 : 1);
+// ===============================================
+// SHOP DATA
+// ===============================================
+export const SHOP_BASIC_AVATARS = [
+  { name: 'Alchemist F', price: 50, path: '/images/avatars/Alchemist F/Alchemist F.png' },
+  { name: 'Alchemist M', price: 50, path: '/images/avatars/Alchemist M/Alchemist M.png' },
+  { name: 'Archer F', price: 45, path: '/images/avatars/Archer F/Archer F.png' },
+  { name: 'Archer M', price: 45, path: '/images/avatars/Archer M/Archer M.png' },
+  { name: 'Barbarian F', price: 55, path: '/images/avatars/Barbarian F/Barbarian F.png' },
+  { name: 'Barbarian M', price: 55, path: '/images/avatars/Barbarian M/Barbarian M.png' },
+  { name: 'Bard F', price: 40, path: '/images/avatars/Bard F/Bard F.png' },
+  { name: 'Bard M', price: 40, path: '/images/avatars/Bard M/Bard M.png' },
+  { name: 'Cleric F', price: 60, path: '/images/avatars/Cleric F/Cleric F.png' },
+  { name: 'Cleric M', price: 60, path: '/images/avatars/Cleric M/Cleric M.png' },
+  { name: 'Druid F', price: 65, path: '/images/avatars/Druid F/Druid F.png' },
+  { name: 'Druid M', price: 65, path: '/images/avatars/Druid M/Druid M.png' },
+  { name: 'Knight F', price: 70, path: '/images/avatars/Knight F/Knight F.png' },
+  { name: 'Knight M', price: 70, path: '/images/avatars/Knight M/Knight M.png' },
+  { name: 'Monk F', price: 50, path: '/images/avatars/Monk F/Monk F.png' },
+  { name: 'Monk M', price: 50, path: '/images/avatars/Monk M/Monk M.png' },
+  { name: 'Rogue F', price: 55, path: '/images/avatars/Rogue F/Rogue F.png' },
+  { name: 'Rogue M', price: 55, path: '/images/avatars/Rogue M/Rogue M.png' },
+  { name: 'Wizard F', price: 75, path: '/images/avatars/Wizard F/Wizard F.png' },
+  { name: 'Wizard M', price: 75, path: '/images/avatars/Wizard M/Wizard M.png' }
+];
 
-export const calculateCoins = (student) => Math.max(0, Math.floor((student?.totalPoints || 0) / GAME_CONFIG.COINS_PER_XP) + (student?.currency || 0) - (student?.coinsSpent || 0));
+export const SHOP_PREMIUM_AVATARS = [
+  { name: 'Beastmaster F', price: 100, path: '/images/avatars/Beastmaster F/Beastmaster F.png' },
+  { name: 'Beastmaster M', price: 100, path: '/images/avatars/Beastmaster M/Beastmaster M.png' },
+  { name: 'Crystal Sage F', price: 150, path: '/images/avatars/Crystal Sage F/Crystal Sage F.png' },
+  { name: 'Crystal Sage M', price: 150, path: '/images/avatars/Crystal Sage M/Crystal Sage M.png' },
+  { name: 'Engineer F', price: 120, path: '/images/avatars/Engineer F/Engineer F.png' },
+  { name: 'Engineer M', price: 120, path: '/images/avatars/Engineer M/Engineer M.png' },
+  { name: 'Ice Mage F', price: 130, path: '/images/avatars/Ice Mage F/Ice Mage F.png' },
+  { name: 'Ice Mage M', price: 130, path: '/images/avatars/Ice Mage M/Ice Mage M.png' },
+  { name: 'Illusionist F', price: 140, path: '/images/avatars/Illusionist F/Illusionist F.png' },
+  { name: 'Illusionist M', price: 140, path: '/images/avatars/Illusionist M/Illusionist M.png' },
+  { name: 'Necromancer F', price: 160, path: '/images/avatars/Necromancer F/Necromancer F.png' },
+  { name: 'Necromancer M', price: 160, path: '/images/avatars/Necromancer M/Necromancer M.png' },
+  { name: 'Orc F', price: 110, path: '/images/avatars/Orc F/Orc F.png' },
+  { name: 'Orc M', price: 110, path: '/images/avatars/Orc M/Orc M.png' },
+  { name: 'Paladin F', price: 180, path: '/images/avatars/Paladin F/Paladin F.png' },
+  { name: 'Paladin M', price: 180, path: '/images/avatars/Paladin M/Paladin M.png' },
+  { name: 'Sky Knight F', price: 200, path: '/images/avatars/Sky Knight F/Sky Knight F.png' },
+  { name: 'Sky Knight M', price: 200, path: '/images/avatars/Sky Knight M/Sky Knight M.png' },
+  { name: 'Time Mage F', price: 250, path: '/images/avatars/Time Mage F/Time Mage F.png' },
+  { name: 'Time Mage M', price: 250, path: '/images/avatars/Time Mage M/Time Mage M.png' }
+];
 
-export const playSound = (sound = 'ding') => { 
-  try { 
-    const audio = new Audio(`/sounds/${sound}.mp3`); 
-    audio.volume = 0.3; 
-    audio.play().catch(e => {}); 
-  } catch(e) {} 
-};
+export const SHOP_BASIC_PETS = [
+  { name: 'Alchemist', price: 30, path: '/images/pets/Alchemist.png', rarity: 'common' },
+  { name: 'Barbarian', price: 35, path: '/images/pets/Barbarian.png', rarity: 'common' },
+  { name: 'Bard', price: 25, path: '/images/pets/Bard.png', rarity: 'common' },
+  { name: 'Cleric', price: 40, path: '/images/pets/Cleric.png', rarity: 'common' },
+  { name: 'Knight', price: 45, path: '/images/pets/Knight.png', rarity: 'common' },
+  { name: 'Monk', price: 30, path: '/images/pets/Monk.png', rarity: 'common' },
+  { name: 'Rogue', price: 35, path: '/images/pets/Rogue.png', rarity: 'common' },
+  { name: 'Warrior', price: 40, path: '/images/pets/Warrior.png', rarity: 'common' },
+  { name: 'Wizard', price: 50, path: '/images/pets/Wizard.png', rarity: 'common' }
+];
 
-// Student utility functions
-export const shouldReceivePet = (student) => (student?.totalPoints || 0) >= GAME_CONFIG.PET_UNLOCK_XP && (!student?.ownedPets || student.ownedPets.length === 0);
+export const SHOP_PREMIUM_PETS = [
+  { name: 'Beastmaster', price: 80, path: '/images/pets/Beastmaster.png', rarity: 'rare' },
+  { name: 'Crystal Sage', price: 120, path: '/images/pets/Crystal Sage.png', rarity: 'epic' },
+  { name: 'Engineer', price: 90, path: '/images/pets/Engineer.png', rarity: 'rare' },
+  { name: 'Frost Mage', price: 100, path: '/images/pets/Frost Mage.png', rarity: 'rare' },
+  { name: 'Illusionist', price: 130, path: '/images/pets/Illusionist.png', rarity: 'epic' },
+  { name: 'Lightning', price: 200, path: '/images/pets/Lightning.png', rarity: 'legendary' },
+  { name: 'Necromancer', price: 140, path: '/images/pets/Necromancer.png', rarity: 'epic' },
+  { name: 'Stealth', price: 110, path: '/images/pets/Stealth.png', rarity: 'rare' },
+  { name: 'Time Knight', price: 250, path: '/images/pets/Time Knight.png', rarity: 'legendary' }
+];
+
+// ===============================================
+// PET GENERATION SYSTEM
+// ===============================================
+const PET_SPECIES = [
+  { name: 'Alchemist', type: 'alchemist', rarity: 'common' },
+  { name: 'Barbarian', type: 'barbarian', rarity: 'common' },
+  { name: 'Bard', type: 'bard', rarity: 'common' },
+  { name: 'Beastmaster', type: 'beastmaster', rarity: 'rare' },
+  { name: 'Cleric', type: 'cleric', rarity: 'common' },
+  { name: 'Crystal Knight', type: 'crystal knight', rarity: 'epic' },
+  { name: 'Crystal Sage', type: 'crystal sage', rarity: 'epic' },
+  { name: 'Engineer', type: 'engineer', rarity: 'rare' },
+  { name: 'Frost Mage', type: 'frost mage', rarity: 'rare' },
+  { name: 'Illusionist', type: 'illusionist', rarity: 'epic' },
+  { name: 'Knight', type: 'knight', rarity: 'common' },
+  { name: 'Lightning', type: 'lightning', rarity: 'legendary' },
+  { name: 'Monk', type: 'monk', rarity: 'common' },
+  { name: 'Necromancer', type: 'necromancer', rarity: 'epic' },
+  { name: 'Rogue', type: 'rogue', rarity: 'common' },
+  { name: 'Stealth', type: 'stealth', rarity: 'rare' },
+  { name: 'Time Knight', type: 'time knight', rarity: 'legendary' },
+  { name: 'Warrior', type: 'warrior', rarity: 'common' },
+  { name: 'Wizard', type: 'wizard', rarity: 'common' }
+];
 
 export const getRandomPet = () => {
-  const PET_SPECIES = [ 
-    { name: 'Alchemist', type: 'alchemist', rarity: 'common' }, 
-    { name: 'Barbarian', type: 'barbarian', rarity: 'common' }, 
-    { name: 'Bard', type: 'bard', rarity: 'common' }, 
-    { name: 'Beastmaster', type: 'beastmaster', rarity: 'rare' }, 
-    { name: 'Cleric', type: 'cleric', rarity: 'common' }, 
-    { name: 'Crystal Knight', type: 'crystal knight', rarity: 'epic' }, 
-    { name: 'Crystal Sage', type: 'crystal sage', rarity: 'epic' }, 
-    { name: 'Engineer', type: 'engineer', rarity: 'rare' }, 
-    { name: 'Frost Mage', type: 'frost mage', rarity: 'rare' }, 
-    { name: 'Illusionist', type: 'illusionist', rarity: 'epic' }, 
-    { name: 'Knight', type: 'knight', rarity: 'common' }, 
-    { name: 'Lightning', type: 'lightning', rarity: 'legendary' }, 
-    { name: 'Monk', type: 'monk', rarity: 'common' }, 
-    { name: 'Necromancer', type: 'necromancer', rarity: 'epic' }, 
-    { name: 'Rogue', type: 'rogue', rarity: 'common' }, 
-    { name: 'Stealth', type: 'stealth', rarity: 'rare' }, 
-    { name: 'Time Knight', type: 'time knight', rarity: 'legendary' }, 
-    { name: 'Warrior', type: 'warrior', rarity: 'common' }, 
-    { name: 'Wizard', type: 'wizard', rarity: 'common' } 
-  ];
-
-  try {
-    const pet = PET_SPECIES[Math.floor(Math.random() * PET_SPECIES.length)];
-    return { 
-      id: `pet_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, 
-      name: pet.name, 
-      type: pet.type, 
-      rarity: pet.rarity, 
-      displayName: pet.name, 
-      imageType: pet.type 
-    };
-  } catch (error) {
-    return { 
-      id: `pet_${Date.now()}_failsafe`, 
-      name: 'Wizard', 
-      type: 'wizard', 
-      rarity: 'common', 
-      displayName: 'Wizard', 
-      imageType: 'wizard' 
-    };
-  }
+  const randomSpecies = PET_SPECIES[Math.floor(Math.random() * PET_SPECIES.length)];
+  return {
+    id: `pet_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    name: randomSpecies.name,
+    type: randomSpecies.type,
+    rarity: randomSpecies.rarity,
+    level: 1,
+    experience: 0,
+    unlocked: new Date().toISOString()
+  };
 };
 
-// Student data update helper for Firebase
-export const updateStudentInFirebase = async (firestore, teacherUserId, classId, studentId, updates) => {
-  try {
-    const { doc, getDoc, updateDoc } = await import('firebase/firestore');
-    
-    const teacherDocRef = doc(firestore, 'users', teacherUserId);
-    const teacherDocSnap = await getDoc(teacherDocRef);
-    
-    if (!teacherDocSnap.exists()) {
-      throw new Error('Teacher document not found');
-    }
-    
-    const teacherData = teacherDocSnap.data();
-    const updatedClasses = teacherData.classes.map(cls => {
-      if (cls.id === classId) {
-        return {
-          ...cls,
-          students: cls.students.map(student => 
-            student.id === studentId ? { ...student, ...updates } : student
-          )
-        };
-      }
-      return cls;
-    });
-
-    await updateDoc(teacherDocRef, { classes: updatedClasses });
+export const shouldReceivePet = (student) => {
+  const totalPoints = student.totalPoints || 0;
+  const ownedPets = student.ownedPets || [];
+  
+  // Give first pet at 50 XP
+  if (totalPoints >= GAME_CONFIG.PET_UNLOCK_XP && ownedPets.length === 0) {
     return true;
+  }
+  
+  // Give additional pets every 100 XP after first
+  if (totalPoints >= 50 && (totalPoints - 50) % 100 === 0 && ownedPets.length < Math.floor((totalPoints - 50) / 100) + 1) {
+    return true;
+  }
+  
+  return false;
+};
+
+// ===============================================
+// SOUND SYSTEM
+// ===============================================
+export const playSound = (soundType, volume = 0.5) => {
+  try {
+    const soundMap = {
+      'ding': '/sounds/ding.mp3',
+      'coins': '/sounds/coins.mp3',
+      'levelup': '/sounds/levelup.mp3',
+      'pet': '/sounds/pet.mp3',
+      'purchase': '/sounds/purchase.mp3',
+      'error': '/sounds/error.mp3'
+    };
+    
+    const soundPath = soundMap[soundType];
+    if (soundPath) {
+      const audio = new Audio(soundPath);
+      audio.volume = volume;
+      audio.play().catch(e => {
+        console.warn('Could not play sound:', soundType, e);
+      });
+    }
   } catch (error) {
-    console.error('Error updating student in Firebase:', error);
-    return false;
+    console.warn('Sound system error:', error);
   }
 };

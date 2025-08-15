@@ -573,6 +573,8 @@ const ClassroomChampions = () => {
                   // NEW: Pass class data and update function for class code management
                   currentClassData={getCurrentClassData()}
                   updateClassCode={updateClassCode}
+                  userId={user?.uid}
+                  currentClassId={currentClassId}
                 />;
       case 'students':
         return <StudentsTab 
