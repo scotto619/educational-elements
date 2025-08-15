@@ -1,7 +1,7 @@
-// components/games/TicTacToeGame.js - MULTIPLAYER TIC TAC TOE
+// components/games/TicTacToeGame.js - MULTIPLAYER TIC TAC TOE WITH FIRESTORE
 import React, { useState, useEffect } from 'react';
-import { database } from '../../utils/firebase';
-import { ref, onValue, set, update, remove, push, off } from 'firebase/database';
+import { firestore } from '../../utils/firebase';
+import { collection, doc, onSnapshot, setDoc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
 
 const TicTacToeGame = ({ studentData, showToast }) => {
   // Game states
@@ -24,21 +24,20 @@ const TicTacToeGame = ({ studentData, showToast }) => {
   };
 
   // ===============================================
-  // FIREBASE LISTENERS
+  // FIRESTORE LISTENERS
   // ===============================================
   useEffect(() => {
     if (gameRoom) {
-      const gameRef = ref(database, `ticTacToe/${gameRoom}`);
-      const unsubscribe = onValue(gameRef, (snapshot) => {
-        const data = snapshot.val();
-        
-        if (!data) {
+      const gameRef = doc(firestore, 'ticTacToeGames', gameRoom);
+      const unsubscribe = onSnapshot(gameRef, (snapshot) => {
+        if (!snapshot.exists()) {
           // Game was deleted/ended
           resetGame();
           showToast('Game ended', 'info');
           return;
         }
         
+        const data = snapshot.data();
         setGameData(data);
         
         // Check if both players joined
@@ -65,9 +64,12 @@ const TicTacToeGame = ({ studentData, showToast }) => {
         const myTurn = data.currentPlayer === playerRole;
         setIsMyTurn(myTurn);
         
+      }, (error) => {
+        console.error('Error listening to game:', error);
+        showToast('Connection error', 'error');
       });
       
-      return () => off(gameRef, 'value', unsubscribe);
+      return unsubscribe;
     }
   }, [gameRoom, playerRole, gameState]);
 
@@ -113,10 +115,10 @@ const TicTacToeGame = ({ studentData, showToast }) => {
   const createGame = async () => {
     setLoading(true);
     const newRoomCode = generateRoomCode();
-    const gameRef = ref(database, `ticTacToe/${newRoomCode}`);
     
     try {
-      await set(gameRef, {
+      const gameRef = doc(firestore, 'ticTacToeGames', newRoomCode);
+      await setDoc(gameRef, {
         roomCode: newRoomCode,
         host: playerInfo.id,
         players: {
@@ -129,7 +131,8 @@ const TicTacToeGame = ({ studentData, showToast }) => {
         ],
         currentPlayer: 'X',
         status: 'waiting',
-        createdAt: Date.now()
+        createdAt: Date.now(),
+        lastActivity: Date.now()
       });
       
       setGameRoom(newRoomCode);
@@ -139,7 +142,7 @@ const TicTacToeGame = ({ studentData, showToast }) => {
       showToast(`Game created! Room code: ${newRoomCode}`, 'success');
     } catch (error) {
       console.error('Error creating game:', error);
-      showToast('Failed to create game', 'error');
+      showToast('Failed to create game. Please try again.', 'error');
     }
     
     setLoading(false);
@@ -152,21 +155,18 @@ const TicTacToeGame = ({ studentData, showToast }) => {
     }
     
     setLoading(true);
-    const gameRef = ref(database, `ticTacToe/${joinCode.toUpperCase()}`);
     
     try {
-      // Check if game exists
-      const snapshot = await new Promise((resolve) => {
-        onValue(gameRef, resolve, { onlyOnce: true });
-      });
+      const gameRef = doc(firestore, 'ticTacToeGames', joinCode.toUpperCase());
+      const gameSnap = await getDoc(gameRef);
       
-      const gameData = snapshot.val();
-      
-      if (!gameData) {
+      if (!gameSnap.exists()) {
         showToast('Game not found', 'error');
         setLoading(false);
         return;
       }
+      
+      const gameData = gameSnap.data();
       
       if (Object.keys(gameData.players).length >= 2) {
         showToast('Game is full', 'error');
@@ -175,9 +175,10 @@ const TicTacToeGame = ({ studentData, showToast }) => {
       }
       
       // Join the game
-      await update(gameRef, {
-        [`players/${playerInfo.id}`]: { ...playerInfo, symbol: 'O' },
-        status: 'playing'
+      await updateDoc(gameRef, {
+        [`players.${playerInfo.id}`]: { ...playerInfo, symbol: 'O' },
+        status: 'playing',
+        lastActivity: Date.now()
       });
       
       setGameRoom(joinCode.toUpperCase());
@@ -186,7 +187,7 @@ const TicTacToeGame = ({ studentData, showToast }) => {
       showToast('Joined game successfully!', 'success');
     } catch (error) {
       console.error('Error joining game:', error);
-      showToast('Failed to join game', 'error');
+      showToast('Failed to join game. Please check the room code.', 'error');
     }
     
     setLoading(false);
@@ -203,10 +204,12 @@ const TicTacToeGame = ({ studentData, showToast }) => {
     const nextPlayer = playerRole === 'X' ? 'O' : 'X';
     
     try {
-      await update(ref(database, `ticTacToe/${gameRoom}`), {
+      const gameRef = doc(firestore, 'ticTacToeGames', gameRoom);
+      await updateDoc(gameRef, {
         board: newBoard,
         currentPlayer: nextPlayer,
-        lastMove: { row, col, player: playerRole, timestamp: Date.now() }
+        lastMove: { row, col, player: playerRole, timestamp: Date.now() },
+        lastActivity: Date.now()
       });
     } catch (error) {
       console.error('Error making move:', error);
@@ -228,7 +231,8 @@ const TicTacToeGame = ({ studentData, showToast }) => {
   const endGame = async () => {
     if (gameRoom) {
       try {
-        await remove(ref(database, `ticTacToe/${gameRoom}`));
+        const gameRef = doc(firestore, 'ticTacToeGames', gameRoom);
+        await deleteDoc(gameRef);
       } catch (error) {
         console.error('Error ending game:', error);
       }
@@ -327,6 +331,15 @@ const TicTacToeGame = ({ studentData, showToast }) => {
             </button>
           </div>
         </div>
+
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+          <div className="text-2xl mb-2">💡</div>
+          <p className="text-blue-800 text-sm font-semibold">How to Play:</p>
+          <p className="text-blue-700 text-xs mt-1">
+            One player creates a game and shares the room code. 
+            The other player joins using that code. Take turns placing X's and O's!
+          </p>
+        </div>
       </div>
     );
   }
@@ -350,7 +363,10 @@ const TicTacToeGame = ({ studentData, showToast }) => {
           
           <div className="space-y-3">
             <button
-              onClick={() => navigator.clipboard.writeText(roomCode)}
+              onClick={() => {
+                navigator.clipboard.writeText(roomCode);
+                showToast('Room code copied!', 'success');
+              }}
               className="w-full bg-blue-500 text-white py-3 rounded-lg font-semibold hover:bg-blue-600 transition-colors"
             >
               📋 Copy Room Code
