@@ -1,17 +1,20 @@
-// components/tabs/QuizShowTab.js - FINAL VERSION WITH FIXED STUDENT JOIN
+// components/tabs/QuizShowTab.js - COMPLETE QUIZ CREATOR INTEGRATION
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { database } from '../../utils/firebase';
 import { ref, onValue, push, set, remove, update, off } from 'firebase/database';
-import { generateRoomCode, calculateQuizScore, playQuizSound } from '../../utils/quizShowHelpers';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { firestore } from '../../utils/firebase';
+import { generateRoomCode, calculateQuizScore, playQuizSound, createQuizFromPreset, QUESTION_CATEGORIES } from '../../utils/quizShowHelpers';
 
 // Import components
 import QuizDashboard from '../quizshow/teacher/QuizDashboard';
+import QuizCreator from '../quizshow/teacher/QuizCreator';
 import GameLobby from '../quizshow/teacher/GameLobby';
 import GamePresentation from '../quizshow/teacher/GamePresentation';
 
 // ===============================================
-// MAIN QUIZ SHOW TAB COMPONENT
+// MAIN QUIZ SHOW TAB COMPONENT WITH QUIZ CREATOR
 // ===============================================
 const QuizShowTab = ({ 
   students, 
@@ -33,9 +36,177 @@ const QuizShowTab = ({
   const [roomCode, setRoomCode] = useState(null);
   const [isHost, setIsHost] = useState(false);
   const [gameRoomData, setGameRoomData] = useState(null);
+  
+  // Quiz Management State
+  const [savedQuizzes, setSavedQuizzes] = useState([]);
+  const [editingQuiz, setEditingQuiz] = useState(null);
+  const [quizzesLoading, setQuizzesLoading] = useState(true);
 
   // ===============================================
-  // FIREBASE REAL-TIME LISTENERS
+  // LOAD SAVED QUIZZES FROM FIREBASE
+  // ===============================================
+  useEffect(() => {
+    if (user && currentClassId) {
+      loadSavedQuizzes();
+    }
+  }, [user, currentClassId]);
+
+  const loadSavedQuizzes = async () => {
+    setQuizzesLoading(true);
+    try {
+      const docRef = doc(firestore, 'users', user.uid);
+      const docSnap = await getDoc(docRef);
+      
+      if (docSnap.exists()) {
+        const userData = docSnap.data();
+        const currentClass = userData.classes?.find(cls => cls.id === currentClassId);
+        const quizzes = currentClass?.savedQuizzes || [];
+        setSavedQuizzes(quizzes);
+        console.log(`✅ Loaded ${quizzes.length} saved quizzes`);
+      }
+    } catch (error) {
+      console.error('❌ Error loading quizzes:', error);
+      showToast('Error loading saved quizzes', 'error');
+    }
+    setQuizzesLoading(false);
+  };
+
+  // ===============================================
+  // QUIZ CRUD OPERATIONS
+  // ===============================================
+  const saveQuizToFirebase = async (quiz) => {
+    if (!user || !currentClassId) {
+      showToast('Error: No active class found', 'error');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      // Get current user data
+      const docRef = doc(firestore, 'users', user.uid);
+      const docSnap = await getDoc(docRef);
+      
+      if (!docSnap.exists()) {
+        throw new Error('User document not found');
+      }
+
+      const userData = docSnap.data();
+      const updatedClasses = userData.classes.map(cls => {
+        if (cls.id === currentClassId) {
+          const existingQuizzes = cls.savedQuizzes || [];
+          
+          // Check if updating existing quiz or creating new one
+          const existingIndex = existingQuizzes.findIndex(q => q.id === quiz.id);
+          
+          let updatedQuizzes;
+          if (existingIndex >= 0) {
+            // Update existing quiz
+            updatedQuizzes = [...existingQuizzes];
+            updatedQuizzes[existingIndex] = quiz;
+            console.log(`📝 Updated quiz: ${quiz.title}`);
+          } else {
+            // Add new quiz
+            updatedQuizzes = [...existingQuizzes, quiz];
+            console.log(`➕ Added new quiz: ${quiz.title}`);
+          }
+          
+          return { ...cls, savedQuizzes: updatedQuizzes };
+        }
+        return cls;
+      });
+
+      // Save to Firebase
+      await updateDoc(docRef, { classes: updatedClasses });
+      
+      // Update local state
+      const currentClass = updatedClasses.find(cls => cls.id === currentClassId);
+      setSavedQuizzes(currentClass.savedQuizzes || []);
+      
+      showToast(existingIndex >= 0 ? 'Quiz updated successfully!' : 'Quiz saved successfully!', 'success');
+      playQuizSound('gameStart');
+      
+      // Return to dashboard
+      setCurrentView('dashboard');
+      setEditingQuiz(null);
+      
+    } catch (error) {
+      console.error('❌ Error saving quiz:', error);
+      showToast('Error saving quiz. Please try again.', 'error');
+    }
+    setLoading(false);
+  };
+
+  const deleteQuiz = async (quizId) => {
+    if (!window.confirm('Are you sure you want to delete this quiz? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      const docRef = doc(firestore, 'users', user.uid);
+      const docSnap = await getDoc(docRef);
+      
+      if (docSnap.exists()) {
+        const userData = docSnap.data();
+        const updatedClasses = userData.classes.map(cls => {
+          if (cls.id === currentClassId) {
+            const updatedQuizzes = (cls.savedQuizzes || []).filter(q => q.id !== quizId);
+            return { ...cls, savedQuizzes: updatedQuizzes };
+          }
+          return cls;
+        });
+
+        await updateDoc(docRef, { classes: updatedClasses });
+        
+        // Update local state
+        setSavedQuizzes(prev => prev.filter(q => q.id !== quizId));
+        
+        showToast('Quiz deleted successfully!', 'success');
+        console.log(`🗑️ Deleted quiz: ${quizId}`);
+      }
+    } catch (error) {
+      console.error('❌ Error deleting quiz:', error);
+      showToast('Error deleting quiz', 'error');
+    }
+    setLoading(false);
+  };
+
+  const duplicateQuiz = async (quiz) => {
+    const duplicatedQuiz = {
+      ...quiz,
+      id: `quiz_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      title: `${quiz.title} (Copy)`,
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    };
+    
+    await saveQuizToFirebase(duplicatedQuiz);
+    showToast('Quiz duplicated successfully!', 'success');
+  };
+
+  // ===============================================
+  // PRESET QUIZ CREATION
+  // ===============================================
+  const createPresetQuiz = async (category, questionCount = 5) => {
+    try {
+      setLoading(true);
+      const presetQuiz = createQuizFromPreset(category, questionCount);
+      
+      // Save preset quiz to user's collection
+      await saveQuizToFirebase(presetQuiz);
+      
+      showToast(`Created ${presetQuiz.title} with ${presetQuiz.questions.length} questions!`, 'success');
+    } catch (error) {
+      console.error('❌ Error creating preset quiz:', error);
+      showToast('Error creating preset quiz', 'error');
+    }
+    setLoading(false);
+  };
+
+  // ===============================================
+  // FIREBASE REAL-TIME LISTENERS (GAME)
   // ===============================================
   useEffect(() => {
     if (roomCode) {
@@ -62,6 +233,11 @@ const QuizShowTab = ({
   // GAME MANAGEMENT FUNCTIONS
   // ===============================================
   const createGame = async (quiz) => {
+    if (!quiz || !quiz.questions || quiz.questions.length === 0) {
+      showToast('Cannot start game: Quiz has no questions', 'error');
+      return;
+    }
+
     setLoading(true);
     try {
       const newRoomCode = generateRoomCode();
@@ -77,7 +253,7 @@ const QuizShowTab = ({
           showLeaderboard: true,
           allowLateJoin: false,
           timePerQuestion: quiz.defaultTimeLimit || 20,
-          showCorrectAnswers: true
+          showCorrectAnswers: quiz.settings?.showCorrectAnswers ?? true
         },
         players: {},
         responses: {},
@@ -228,6 +404,24 @@ const QuizShowTab = ({
   };
 
   // ===============================================
+  // VIEW NAVIGATION FUNCTIONS
+  // ===============================================
+  const handleCreateQuiz = () => {
+    setEditingQuiz(null);
+    setCurrentView('creator');
+  };
+
+  const handleEditQuiz = (quiz) => {
+    setEditingQuiz(quiz);
+    setCurrentView('creator');
+  };
+
+  const handleCancelQuizCreation = () => {
+    setEditingQuiz(null);
+    setCurrentView('dashboard');
+  };
+
+  // ===============================================
   // RENDER FUNCTIONS
   // ===============================================
   const renderView = () => {
@@ -235,11 +429,24 @@ const QuizShowTab = ({
       case 'dashboard':
         return (
           <QuizDashboard
-            quizzes={[]}
-            onCreateQuiz={() => showToast('Quiz Creator coming soon!', 'info')}
-            onEditQuiz={() => showToast('Edit Quiz coming soon!', 'info')}
+            quizzes={savedQuizzes}
+            onCreateQuiz={handleCreateQuiz}
+            onEditQuiz={handleEditQuiz}
+            onDeleteQuiz={deleteQuiz}
+            onDuplicateQuiz={duplicateQuiz}
             onStartGame={createGame}
-            onViewLibrary={() => showToast('Quiz Library coming soon!', 'info')}
+            onCreatePreset={createPresetQuiz}
+            loading={quizzesLoading || loading}
+            QUESTION_CATEGORIES={QUESTION_CATEGORIES}
+          />
+        );
+      
+      case 'creator':
+        return (
+          <QuizCreator
+            quiz={editingQuiz}
+            onSave={saveQuizToFirebase}
+            onCancel={handleCancelQuizCreation}
             loading={loading}
           />
         );
@@ -261,11 +468,14 @@ const QuizShowTab = ({
             roomCode={roomCode}
             gameData={gameRoomData}
             onEndGame={endGame}
+            onAwardXP={onAwardXP}
+            onAwardCoins={onAwardCoins}
+            showToast={showToast}
           />
         );
       
       default:
-        return <div>View not found</div>;
+        return <div className="text-center text-white">View not found</div>;
     }
   };
 
@@ -286,6 +496,20 @@ const QuizShowTab = ({
           </div>
           
           <div className="flex items-center space-x-4">
+            {/* Back to Dashboard Button (only show when not on dashboard) */}
+            {currentView !== 'dashboard' && (
+              <button
+                onClick={() => {
+                  setCurrentView('dashboard');
+                  setEditingQuiz(null);
+                }}
+                className="bg-purple-700 text-white px-4 py-2 rounded-lg font-semibold hover:bg-purple-800 transition-colors flex items-center space-x-2"
+              >
+                <span>←</span>
+                <span>Back to Dashboard</span>
+              </button>
+            )}
+            
             <button
               onClick={handleStudentJoin}
               className="bg-white text-purple-600 px-4 py-2 rounded-lg font-semibold hover:bg-purple-50 transition-colors flex items-center space-x-2"

@@ -1,115 +1,189 @@
-// components/quizshow/teacher/QuizDashboard.js - MAIN TEACHER DASHBOARD
-import React, { useState, useEffect } from 'react';
-import { QUESTION_CATEGORIES, createQuizFromPreset, playQuizSound } from '../../../utils/quizShowHelpers';
+// components/quizshow/teacher/QuizDashboard.js - COMPLETE QUIZ MANAGEMENT DASHBOARD
+import React, { useState } from 'react';
+import { playQuizSound } from '../../../utils/quizShowHelpers';
 
 const QuizDashboard = ({ 
-  quizzes, 
+  quizzes = [], 
   onCreateQuiz, 
   onEditQuiz, 
+  onDeleteQuiz,
+  onDuplicateQuiz,
   onStartGame, 
-  onViewLibrary, 
-  loading 
+  onCreatePreset,
+  loading = false,
+  QUESTION_CATEGORIES = {}
 }) => {
-  const [recentGames, setRecentGames] = useState([]);
-  const [stats, setStats] = useState({
-    totalQuizzes: 0,
-    totalGames: 0,
-    totalPlayers: 0,
-    averageScore: 0
-  });
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [showPresetModal, setShowPresetModal] = useState(false);
 
-  useEffect(() => {
-    // Calculate stats from quizzes data
-    setStats({
-      totalQuizzes: quizzes.length,
-      totalGames: recentGames.length,
-      totalPlayers: recentGames.reduce((sum, game) => sum + (game.playerCount || 0), 0),
-      averageScore: recentGames.length > 0 
-        ? recentGames.reduce((sum, game) => sum + (game.averageScore || 0), 0) / recentGames.length 
-        : 0
-    });
-  }, [quizzes, recentGames]);
-
-  const handleQuickStart = (category) => {
-    try {
-      const quiz = createQuizFromPreset(category, 10);
-      playQuizSound('gameStart');
-      onStartGame(quiz);
-    } catch (error) {
-      console.error('Error creating preset quiz:', error);
-      alert('Error creating quiz. Please try again.');
-    }
+  // ===============================================
+  // PRESET QUIZ CREATION
+  // ===============================================
+  const handleCreatePreset = (category, questionCount) => {
+    onCreatePreset(category, questionCount);
+    setShowPresetModal(false);
+    playQuizSound('gameStart');
   };
 
-  const StatCard = ({ title, value, icon, color }) => (
-    <div className={`bg-gradient-to-br ${color} rounded-xl p-6 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105`}>
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm opacity-90">{title}</p>
-          <p className="text-3xl font-bold">{value}</p>
-        </div>
-        <div className="text-4xl opacity-80">{icon}</div>
-      </div>
-    </div>
-  );
+  // ===============================================
+  // QUIZ CARD COMPONENT
+  // ===============================================
+  const QuizCard = ({ quiz }) => {
+    const categoryInfo = QUESTION_CATEGORIES[quiz.category] || QUESTION_CATEGORIES.general;
+    const questionCount = quiz.questions?.length || 0;
+    const estimatedDuration = Math.ceil(questionCount * (quiz.settings?.timePerQuestion || 20) / 60);
 
-  const QuickStartCard = ({ category, categoryData }) => (
+    return (
+      <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200 overflow-hidden group">
+        {/* Card Header */}
+        <div className="p-6 border-b border-gray-100">
+          <div className="flex items-start justify-between mb-3">
+            <div className="flex-1">
+              <h3 className="text-xl font-bold text-gray-800 mb-2 line-clamp-2">
+                {quiz.title}
+              </h3>
+              {quiz.description && (
+                <p className="text-gray-600 text-sm line-clamp-2 mb-3">
+                  {quiz.description}
+                </p>
+              )}
+            </div>
+            {quiz.isPreset && (
+              <span className="bg-blue-100 text-blue-600 text-xs font-semibold px-2 py-1 rounded-full ml-3">
+                PRESET
+              </span>
+            )}
+          </div>
+
+          {/* Category Badge */}
+          <div className="flex items-center space-x-2 mb-4">
+            <span 
+              className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium text-white"
+              style={{ backgroundColor: categoryInfo.color }}
+            >
+              <span className="mr-1">{categoryInfo.icon}</span>
+              {categoryInfo.name}
+            </span>
+          </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-4 text-center">
+            <div>
+              <div className="text-2xl font-bold text-purple-600">{questionCount}</div>
+              <div className="text-xs text-gray-500">Questions</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-blue-600">{estimatedDuration}</div>
+              <div className="text-xs text-gray-500">Minutes</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-green-600">
+                {quiz.settings?.showCorrectAnswers ? '✓' : '✗'}
+              </div>
+              <div className="text-xs text-gray-500">Show Answers</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Card Actions */}
+        <div className="p-4 bg-gray-50 space-y-2">
+          {/* Primary Action - Start Game */}
+          <button
+            onClick={() => onStartGame(quiz)}
+            disabled={questionCount === 0}
+            className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white py-3 px-4 rounded-lg font-semibold hover:from-green-600 hover:to-emerald-600 transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center space-x-2"
+          >
+            <span>🎮</span>
+            <span>Start Game</span>
+          </button>
+
+          {/* Secondary Actions */}
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              onClick={() => onEditQuiz(quiz)}
+              className="bg-blue-500 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors flex items-center justify-center space-x-1"
+              title="Edit Quiz"
+            >
+              <span>✏️</span>
+              <span>Edit</span>
+            </button>
+            
+            <button
+              onClick={() => onDuplicateQuiz(quiz)}
+              className="bg-yellow-500 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-yellow-600 transition-colors flex items-center justify-center space-x-1"
+              title="Duplicate Quiz"
+            >
+              <span>📋</span>
+              <span>Copy</span>
+            </button>
+            
+            <button
+              onClick={() => onDeleteQuiz(quiz.id)}
+              className="bg-red-500 text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-red-600 transition-colors flex items-center justify-center space-x-1"
+              title="Delete Quiz"
+            >
+              <span>🗑️</span>
+              <span>Delete</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Updated/Created Info */}
+        <div className="px-4 pb-3">
+          <div className="text-xs text-gray-400">
+            {quiz.updatedAt ? (
+              <>Updated {new Date(quiz.updatedAt).toLocaleDateString()}</>
+            ) : quiz.createdAt ? (
+              <>Created {new Date(quiz.createdAt).toLocaleDateString()}</>
+            ) : (
+              <>Recently created</>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ===============================================
+  // PRESET CATEGORY CARD
+  // ===============================================
+  const PresetCategoryCard = ({ category, categoryData }) => (
     <div 
-      className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 cursor-pointer border-2 border-transparent hover:border-purple-300"
-      onClick={() => handleQuickStart(category)}
+      className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border-2 border-dashed border-gray-300 hover:border-purple-400 cursor-pointer group p-6"
+      onClick={() => {
+        setSelectedCategory(category);
+        setShowPresetModal(true);
+      }}
     >
-      <div className="flex items-center space-x-4 mb-4">
+      <div className="text-center">
         <div 
-          className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl text-white"
+          className="w-16 h-16 rounded-full flex items-center justify-center text-3xl text-white mx-auto mb-4 group-hover:scale-110 transition-transform"
           style={{ backgroundColor: categoryData.color }}
         >
           {categoryData.icon}
         </div>
-        <div>
-          <h3 className="text-lg font-bold text-gray-800">{categoryData.name}</h3>
-          <p className="text-sm text-gray-600">{categoryData.description}</p>
-        </div>
-      </div>
-      <div className="flex items-center justify-between">
-        <span className="text-sm text-gray-500">Quick Start • 10 Questions</span>
+        <h3 className="text-lg font-bold text-gray-800 mb-2">{categoryData.name}</h3>
+        <p className="text-sm text-gray-600 mb-4">{categoryData.description}</p>
         <div className="bg-purple-100 text-purple-600 px-3 py-1 rounded-full text-sm font-semibold">
-          Start Game
+          Quick Start • 5 Questions
         </div>
       </div>
     </div>
   );
 
-  const RecentQuizCard = ({ quiz }) => (
-    <div className="bg-white rounded-lg p-4 shadow-md hover:shadow-lg transition-all duration-200 border border-gray-100">
-      <div className="flex items-center justify-between mb-3">
-        <h4 className="font-semibold text-gray-800 truncate">{quiz.title}</h4>
-        <div className="flex space-x-2">
-          <button
-            onClick={() => onEditQuiz(quiz)}
-            className="text-blue-600 hover:text-blue-800 p-1"
-            title="Edit Quiz"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
-          </button>
-          <button
-            onClick={() => onStartGame(quiz)}
-            className="text-green-600 hover:text-green-800 p-1"
-            title="Start Game"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M12 5v.01M3 12a9 9 0 1018 0 9 9 0 00-18 0z" />
-            </svg>
-          </button>
+  // ===============================================
+  // MAIN RENDER
+  // ===============================================
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center text-white">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-white border-t-transparent mx-auto mb-4"></div>
+          <p className="text-xl">Loading your quizzes...</p>
         </div>
       </div>
-      <div className="flex items-center justify-between text-sm text-gray-600">
-        <span>{quiz.questions?.length || 0} questions</span>
-        <span className="capitalize">{quiz.category || 'general'}</span>
-      </div>
-    </div>
-  );
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -124,149 +198,164 @@ const QuizDashboard = ({
         </p>
       </div>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard 
-          title="Total Quizzes" 
-          value={stats.totalQuizzes} 
-          icon="📝" 
-          color="from-blue-500 to-blue-600"
-        />
-        <StatCard 
-          title="Games Played" 
-          value={stats.totalGames} 
-          icon="🎮" 
-          color="from-green-500 to-green-600"
-        />
-        <StatCard 
-          title="Total Players" 
-          value={stats.totalPlayers} 
-          icon="👥" 
-          color="from-purple-500 to-purple-600"
-        />
-        <StatCard 
-          title="Avg Score" 
-          value={`${Math.round(stats.averageScore)}%`} 
-          icon="⭐" 
-          color="from-yellow-500 to-orange-500"
-        />
-      </div>
-
       {/* Quick Actions */}
-      <div className="bg-white rounded-2xl p-8 shadow-xl">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">Quick Actions</h2>
-          <div className="flex space-x-4">
-            <button
-              onClick={onCreateQuiz}
-              className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-3 rounded-lg font-semibold hover:shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center space-x-2"
-              disabled={loading}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              <span>Create Custom Quiz</span>
-            </button>
-            <button
-              onClick={onViewLibrary}
-              className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white px-6 py-3 rounded-lg font-semibold hover:shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center space-x-2"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-              </svg>
-              <span>Browse Library</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Quick Start Categories */}
-        <div>
-          <h3 className="text-lg font-semibold text-gray-700 mb-4">🚀 Quick Start Games</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Object.entries(QUESTION_CATEGORIES).map(([category, categoryData]) => (
-              <QuickStartCard 
-                key={category} 
-                category={category} 
-                categoryData={categoryData} 
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Quizzes */}
-      <div className="bg-white rounded-2xl p-8 shadow-xl">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">Your Recent Quizzes</h2>
+      <div className="bg-white rounded-2xl shadow-xl p-8">
+        <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+          <span className="mr-3">⚡</span>
+          Quick Actions
+        </h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Create Custom Quiz */}
           <button
-            onClick={onViewLibrary}
-            className="text-blue-600 hover:text-blue-800 font-semibold"
+            onClick={onCreateQuiz}
+            className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-6 rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all duration-200 transform hover:scale-105 text-left"
           >
-            View All →
+            <div className="flex items-center justify-between mb-4">
+              <div className="text-4xl">✨</div>
+              <div className="bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm font-semibold">
+                CUSTOM
+              </div>
+            </div>
+            <h3 className="text-xl font-bold mb-2">Create Custom Quiz</h3>
+            <p className="text-purple-100">
+              Build your own quiz with custom questions, multiple choice answers, and personalized settings.
+            </p>
+          </button>
+
+          {/* Browse Presets */}
+          <button
+            onClick={() => setShowPresetModal(true)}
+            className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white p-6 rounded-xl hover:from-blue-600 hover:to-cyan-600 transition-all duration-200 transform hover:scale-105 text-left"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="text-4xl">🚀</div>
+              <div className="bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm font-semibold">
+                INSTANT
+              </div>
+            </div>
+            <h3 className="text-xl font-bold mb-2">Quick Start Preset</h3>
+            <p className="text-blue-100">
+              Choose from pre-made quizzes in Math, Science, Geography and more. Ready to play instantly!
+            </p>
           </button>
         </div>
+      </div>
 
+      {/* Saved Quizzes */}
+      <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-gray-800 flex items-center">
+            <span className="mr-3">📚</span>
+            Your Quiz Library ({quizzes.length})
+          </h2>
+          
+          {quizzes.length > 0 && (
+            <button
+              onClick={onCreateQuiz}
+              className="bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 transition-colors flex items-center space-x-2"
+            >
+              <span>➕</span>
+              <span>New Quiz</span>
+            </button>
+          )}
+        </div>
+        
         {quizzes.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {quizzes.slice(0, 6).map((quiz) => (
-              <RecentQuizCard key={quiz.id} quiz={quiz} />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {quizzes.map((quiz) => (
+              <QuizCard key={quiz.id} quiz={quiz} />
             ))}
           </div>
         ) : (
           <div className="text-center py-12">
-            <div className="text-6xl mb-4">📝</div>
-            <h3 className="text-xl font-semibold text-gray-600 mb-2">No Quizzes Yet</h3>
-            <p className="text-gray-500 mb-6">
-              Create your first quiz or try a quick start game to get started!
+            <div className="text-6xl mb-6">🎯</div>
+            <h3 className="text-2xl font-bold text-gray-600 mb-4">No Quizzes Yet</h3>
+            <p className="text-gray-500 mb-8 max-w-md mx-auto">
+              Get started by creating your first custom quiz or choosing from our preset categories.
             </p>
-            <div className="flex justify-center space-x-4">
+            <div className="space-y-4">
               <button
                 onClick={onCreateQuiz}
-                className="bg-blue-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-600 transition-colors"
+                className="bg-purple-500 text-white px-6 py-3 rounded-lg hover:bg-purple-600 transition-colors font-semibold mr-4"
               >
-                Create Your First Quiz
+                ✨ Create Your First Quiz
               </button>
               <button
-                onClick={() => handleQuickStart('mathematics')}
-                className="bg-green-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-600 transition-colors"
+                onClick={() => setShowPresetModal(true)}
+                className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors font-semibold"
               >
-                Try Quick Start
+                🚀 Try a Preset Quiz
               </button>
             </div>
           </div>
         )}
       </div>
 
-      {/* Recent Games History */}
-      {recentGames.length > 0 && (
-        <div className="bg-white rounded-2xl p-8 shadow-xl">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">Recent Game Sessions</h2>
-          <div className="space-y-4">
-            {recentGames.slice(0, 5).map((game, index) => (
-              <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+      {/* Preset Selection Modal */}
+      {showPresetModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white p-6 rounded-t-2xl">
+              <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="font-semibold text-gray-800">{game.quizTitle}</h4>
-                  <p className="text-sm text-gray-600">
-                    {game.playerCount} players • {game.date}
-                  </p>
+                  <h2 className="text-2xl font-bold">Choose a Preset Quiz</h2>
+                  <p className="text-blue-100 mt-1">Select a category to create an instant quiz</p>
                 </div>
-                <div className="text-right">
-                  <p className="font-semibold text-green-600">{game.averageScore}% avg score</p>
-                  <p className="text-sm text-gray-500">{game.duration}</p>
-                </div>
+                <button
+                  onClick={() => setShowPresetModal(false)}
+                  className="text-white hover:text-blue-200 text-2xl font-bold"
+                >
+                  ×
+                </button>
               </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Loading Overlay */}
-      {loading && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-8 text-center shadow-2xl">
-            <div className="animate-spin rounded-full h-16 w-16 border-4 border-purple-600 border-t-transparent mx-auto mb-4"></div>
-            <p className="text-lg font-semibold text-gray-700">Creating Game...</p>
-            <p className="text-sm text-gray-500 mt-2">Setting up your quiz show experience</p>
+            </div>
+            
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {Object.entries(QUESTION_CATEGORIES).map(([category, categoryData]) => (
+                  <PresetCategoryCard 
+                    key={category} 
+                    category={category} 
+                    categoryData={categoryData} 
+                  />
+                ))}
+              </div>
+              
+              {selectedCategory && (
+                <div className="mt-8 bg-gray-50 rounded-xl p-6">
+                  <h3 className="text-lg font-bold text-gray-800 mb-4">
+                    Create {QUESTION_CATEGORIES[selectedCategory]?.name} Quiz
+                  </h3>
+                  <p className="text-gray-600 mb-6">
+                    How many questions would you like in your quiz?
+                  </p>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {[5, 10, 15, 20].map((count) => (
+                      <button
+                        key={count}
+                        onClick={() => handleCreatePreset(selectedCategory, count)}
+                        className="bg-white border-2 border-gray-200 hover:border-blue-400 hover:bg-blue-50 p-4 rounded-lg text-center transition-all duration-200"
+                      >
+                        <div className="text-2xl font-bold text-blue-600">{count}</div>
+                        <div className="text-sm text-gray-600">Questions</div>
+                        <div className="text-xs text-gray-500">~{Math.ceil(count * 20 / 60)} min</div>
+                      </button>
+                    ))}
+                  </div>
+                  
+                  <div className="mt-4 flex justify-end">
+                    <button
+                      onClick={() => setSelectedCategory(null)}
+                      className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
