@@ -71,7 +71,7 @@ const BattleshipsGame = ({ studentData, showToast }) => {
   useEffect(() => {
     if (!firebaseReady || !firebase || !gameRoom) return;
 
-    const gameRef = firebase.ref(firebase.database, `battleships/${gameRoom}`);
+    const gameRef = firebase.ref(firebase.database, `ticTacToe/${gameRoom}`);
     
     const unsubscribe = firebase.onValue(gameRef, (snapshot) => {
       const data = snapshot.val();
@@ -185,7 +185,7 @@ const BattleshipsGame = ({ studentData, showToast }) => {
     setLoading(true);
     
     try {
-      const gameRef = firebase.ref(firebase.database, `battleships/${joinCode.toUpperCase()}`);
+      const gameRef = firebase.ref(firebase.database, `ticTacToe/${joinCode.toUpperCase()}`);
       
       const snapshot = await new Promise((resolve) => {
         firebase.onValue(gameRef, resolve, { onlyOnce: true });
@@ -195,6 +195,13 @@ const BattleshipsGame = ({ studentData, showToast }) => {
       
       if (!gameData) {
         showToast('Game not found', 'error');
+        setLoading(false);
+        return;
+      }
+      
+      // Check if this is actually a battleships game
+      if (gameData.gameType !== 'battleships') {
+        showToast('This is not a Battleships game', 'error');
         setLoading(false);
         return;
       }
@@ -294,12 +301,12 @@ const BattleshipsGame = ({ studentData, showToast }) => {
         sunk: ship.sunk
       }));
       
-      await firebase.update(firebase.ref(firebase.database, `battleships/${gameRoom}`), {
+      await firebase.update(firebase.ref(firebase.database, `ticTacToe/${gameRoom}`), {
         [`ships/${playerRole}`]: shipData
       });
       
       // Check if both players have placed ships
-      const gameRef = firebase.ref(firebase.database, `battleships/${gameRoom}`);
+      const gameRef = firebase.ref(firebase.database, `ticTacToe/${gameRoom}`);
       const snapshot = await new Promise((resolve) => {
         firebase.onValue(gameRef, resolve, { onlyOnce: true });
       });
@@ -327,7 +334,7 @@ const BattleshipsGame = ({ studentData, showToast }) => {
     
     try {
       const attack = { row, col, timestamp: Date.now() };
-      const attackPath = `battleships/${gameRoom}/attacks/${playerRole}`;
+      const attackPath = `ticTacToe/${gameRoom}/attacks/${playerRole}`;
       const currentAttacks = gameData?.attacks?.[playerRole] || [];
       
       await firebase.set(firebase.ref(firebase.database, attackPath), [...currentAttacks, attack]);
@@ -370,7 +377,7 @@ const BattleshipsGame = ({ studentData, showToast }) => {
         gameResetAt: Date.now()
       };
       
-      await firebase.update(firebase.ref(firebase.database, `battleships/${gameRoom}`), resetData);
+      await firebase.update(firebase.ref(firebase.database, `ticTacToe/${gameRoom}`), resetData);
       
       // Reset local state
       setMyGrid(Array(100).fill(null));
