@@ -1,4 +1,4 @@
-// components/student/StudentGames.js - MOBILE OPTIMIZED
+// components/student/StudentGames.js - MOBILE OPTIMIZED WITH BATTLESHIPS
 import React, { useState } from 'react';
 
 // Import existing game components (they should work as-is)
@@ -9,11 +9,23 @@ import NoggleGame from '../games/NoggleGame';
 import WordSearchGame from '../games/WordSearchGame';
 import CrosswordGame from '../games/CrosswordGame';
 import TicTacToeGame from '../games/TicTacToeGame';
+import BattleshipsGame from '../games/BattleshipsGame'; // NEW IMPORT
 
 const StudentGames = ({ studentData, showToast }) => {
   const [selectedGame, setSelectedGame] = useState(null);
 
   const availableGames = [
+    {
+      id: 'battleships',
+      name: 'Battleships',
+      icon: '🚢',
+      description: 'Sink your opponent\'s fleet in this classic naval battle!',
+      component: BattleshipsGame,
+      color: 'from-blue-600 to-cyan-600',
+      difficulty: 'Medium',
+      time: '10-20 minutes',
+      multiplayer: true
+    },
     {
       id: 'tic-tac-toe',
       name: 'Tic Tac Toe',

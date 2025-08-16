@@ -64,7 +64,123 @@ const SPELLING_LISTS = [
   { id: "1.56", name: "Level 1.56", words: ["a", "I", "is", "as", "his", "has", "was", "the"] },
   { id: "1.57", name: "Level 1.57", words: ["of", "for", "me", "be", "he", "we", "she", "are"] },
   { id: "1.58", name: "Level 1.58", words: ["to", "do", "who", "into", "you", "one", "two", "said"] },
-  { id: "1.59", name: "Level 1.59", words: ["they", "more", "what", "have", "put", "pull", "so", "no", "go"] }
+  { id: "1.59", name: "Level 1.59", words: ["they", "more", "what", "have", "put", "pull", "so", "no", "go"] },
+  
+  // LEVEL 2 LISTS
+  { id: "2.1", name: "Level 2.1", words: ["drink", "thank", "shrink", "thick", "shack", "chick", "quack", "quick", "queen", "quilt"] },
+  { id: "2.2", name: "Level 2.2", words: ["away", "stay", "today", "delay", "again", "drain", "waist", "faith", "strain", "paint"] },
+  { id: "2.3", name: "Level 2.3", words: ["point", "spoil", "joint", "moist", "noise", "royal", "loyal", "enjoy", "destroy", "employ"] },
+  { id: "2.4", name: "Level 2.4", words: ["number", "finger", "anger", "clever", "garden", "starch", "farmer", "horse", "forget", "report"] },
+  { id: "2.5", name: "Level 2.5", words: ["finished", "chicken", "o'clock", "Sunday", "holiday", "football", "morning", "dragon", "seven", "second"] },
+  { id: "2.6", name: "Level 2.6", words: ["spell", "hill", "fell", "still", "well", "will", "tell", "doll", "thrill", "smell"] },
+  { id: "2.7", name: "Level 2.7", words: ["dress", "miss", "across", "press", "stress", "bless", "chess", "mess", "loss", "fuss"] },
+  { id: "2.8", name: "Level 2.8", words: ["frizz", "buzz", "fuzzy", "off", "whiff", "cliff", "scruff", "sniff", "add", "egg"] },
+  { id: "2.9", name: "Level 2.9", words: ["boat", "road", "coach", "soap", "float", "throat", "coat", "soak", "coast", "roast"] },
+  { id: "2.10", name: "Level 2.10", words: ["yellow", "below", "own", "grow", "show", "follow", "window", "snow", "rainbow", "throw"] },
+  { id: "2.11", name: "Level 2.11", words: ["sea", "eat", "team", "beach", "read", "real", "tea", "mean", "each", "season"] },
+  { id: "2.12", name: "Level 2.12", words: ["really", "teacher", "reach", "leaf", "dream", "between", "weekend", "asleep", "sweet", "squeeze"] },
+  { id: "2.13", name: "Level 2.13", words: ["wrong", "thrash", "throb", "thrill", "shred", "shrub", "shrug", "squeak", "squish", "squat"] },
+  { id: "2.14", name: "Level 2.14", words: ["scrub", "splinter", "spring", "strong", "splash", "stream", "street", "spray", "strip", "split"] },
+  { id: "2.15", name: "Level 2.15", words: ["shrink", "squint", "branch", "crunch", "squelch", "thrust", "shrimp", "scold", "strict", "sprint"] },
+  { id: "2.16", name: "Level 2.16", words: ["kind", "find", "child", "mild", "wild", "grind", "blind", "behind", "mind", "wind"] },
+  { id: "2.17", name: "Level 2.17", words: ["out", "house", "found", "mouse", "around", "our", "sound", "ground", "round", "about"] },
+  { id: "2.18", name: "Level 2.18", words: ["brown", "now", "flower", "how", "down", "town", "power", "shower", "owl", "clown"] },
+  { id: "2.19", name: "Level 2.19", words: ["without", "playground", "south", "shout", "flour", "tower", "frown", "coward", "powder", "crown"] },
+  { id: "2.20", name: "Level 2.20", words: ["bird", "girl", "first", "birthday", "swirl", "third", "stir", "skirt", "shirt", "dirt"] },
+  { id: "2.21", name: "Level 2.21", words: ["hurt", "turn", "Saturday", "church", "curl", "nurse", "burst", "return", "purse", "sunburn"] },
+  { id: "2.22", name: "Level 2.22", words: ["yesterday", "person", "versus", "perfect", "lurk", "burn", "turnip", "twirl", "birth", "squirt"] },
+  { id: "2.23", name: "Level 2.23", words: ["saw", "draw", "straw", "shawl", "prawn", "hawk", "claw", "raw", "jaw", "dawn"] },
+  { id: "2.24", name: "Level 2.24", words: ["torch", "thorn", "order", "short", "north", "yawn", "crawl", "law", "paw", "fawn"] },
+  { id: "2.25", name: "Level 2.25", words: ["new", "threw", "few", "flew", "stew", "drew", "blue", "true", "due", "glue"] },
+  { id: "2.26", name: "Level 2.26", words: ["cue", "clue", "grew", "chew", "blew", "smooth", "loose", "scoop", "goose", "balloon"] },
+  { id: "2.27", name: "Level 2.27", words: ["plan", "plane", "hid", "hide", "hop", "hope", "cub", "cube", "pet", "Pete"] },
+  { id: "2.28", name: "Level 2.28", words: ["made", "snake", "late", "cake", "take", "game", "same", "came", "gave", "state"] },
+  { id: "2.29", name: "Level 2.29", words: ["these", "theme", "eve", "delete", "extreme", "teeth", "need", "seem", "sheet", "cheek"] },
+  { id: "2.30", name: "Level 2.30", words: ["ride", "slide", "life", "while", "time", "like", "fire", "white", "inside", "five"] },
+  { id: "2.31", name: "Level 2.31", words: ["rode", "broke", "woke", "home", "close", "drove", "those", "rope", "choke", "nose"] },
+  { id: "2.32", name: "Level 2.32", words: ["cute", "use", "tune", "dune", "rude", "flute", "June", "prune", "mute", "tube"] },
+  { id: "2.33", name: "Level 2.33", words: ["make", "ate", "name", "cave", "side", "mile", "bike", "nine", "line", "clothes"] },
+  { id: "2.34", name: "Level 2.34", words: ["better", "dinner", "letter", "monster", "paper", "sleepover", "together", "different", "icecream", "outside"] },
+  { id: "2.35", name: "Level 2.35", words: ["by", "my", "try", "fly", "why", "cry", "dry", "sky", "shy", "sly"] },
+  { id: "2.36", name: "Level 2.36", words: ["live", "have", "leave", "give", "weave", "active", "nerve", "serve", "sleeve", "captive"] },
+  { id: "2.37", name: "Level 2.37", words: ["puppy", "happy", "funny", "study", "yummy", "story", "body", "twenty", "party", "quickly"] },
+  { id: "2.38", name: "Level 2.38", words: ["buddy", "footy", "sunny", "windy", "rocky", "sticky", "sandy", "bumpy", "forty", "messy"] },
+  { id: "2.39", name: "Level 2.39", words: ["know", "knee", "knock", "knew", "knife", "knead", "kneel", "knoll", "knit", "knot"] },
+  { id: "2.40", name: "Level 2.40", words: ["be", "bee", "see", "sea", "been", "bean", "reed", "read", "meet", "meat"] },
+  { id: "2.41", name: "Level 2.41", words: ["plain", "plane", "sale", "sail", "hear", "here", "some", "sum", "one", "won"] },
+  { id: "2.42", name: "Level 2.42", words: ["two", "to", "too", "by", "buy", "bye", "knew", "new", "know", "no"] },
+  { id: "2.43", name: "Level 2.43", words: ["Sunday", "Wednesday", "Friday", "Tuesday", "Saturday", "Thursday", "Monday", "yesterday", "holiday", "weekend"] },
+  { id: "2.44", name: "Level 2.44", words: ["above", "won", "other", "love", "another", "mother", "month", "Mr", "Mrs", "Miss"] },
+  { id: "2.45", name: "Level 2.45", words: ["only", "open", "over", "word", "world", "work", "animal", "buy", "OK", "TV"] },
+  { id: "2.46", name: "Level 2.46", words: ["after", "ask", "father", "last", "want", "watch", "water", "their", "there", "where"] },
+  { id: "2.47", name: "Level 2.47", words: ["even", "people", "does", "gone", "come", "some", "something", "sometimes", "here", "were"] },
+  
+  // LEVEL 3 LISTS
+  { id: "3.1", name: "Level 3.1", words: ["while", "smile", "knife", "plate", "skate", "whale", "lace", "pace", "trace", "mice", "dice", "rice"] },
+  { id: "3.2", name: "Level 3.2", words: ["chase", "blaze", "quake", "brave", "cute", "use", "fuse", "page", "cage", "rage", "stage", "huge"] },
+  { id: "3.3", name: "Level 3.3", words: ["squeal", "dream", "stream", "screen", "sweet", "agree", "please", "tease", "cheese", "sneeze", "squeeze", "freeze"] },
+  { id: "3.4", name: "Level 3.4", words: ["strode", "alone", "clone", "scope", "quote", "froze", "care", "dare", "hare", "share", "rare", "mare"] },
+  { id: "3.5", name: "Level 3.5", words: ["kind", "wild", "find", "blind", "child", "grind", "high", "light", "night", "slight", "tight", "flight"] },
+  { id: "3.6", name: "Level 3.6", words: ["sty", "sly", "spy", "shy", "ply", "pry", "might", "fight", "right", "sight", "thigh", "slight"] },
+  { id: "3.7", name: "Level 3.7", words: ["draw", "crawl", "straw", "dawn", "lawn", "claw", "coarse", "soar", "roar", "boar", "oar", "board"] },
+  { id: "3.8", name: "Level 3.8", words: ["proud", "amount", "shout", "crowd", "tower", "scowl", "fear", "smear", "clear", "spear", "tear", "beard"] },
+  { id: "3.9", name: "Level 3.9", words: ["hue", "clue", "due", "brew", "screw", "crew", "cocoon", "scooter", "cartoon", "stoop", "boost", "proof"] },
+  { id: "3.10", name: "Level 3.10", words: ["captive", "swerve", "forgive", "festive", "weave", "active", "clutch", "batch", "ditch", "patch", "latch", "hutch"] },
+  { id: "3.11", name: "Level 3.11", words: ["throat", "boast", "float", "coast", "groan", "toast", "both", "don't", "most", "host", "post", "gross"] },
+  { id: "3.12", name: "Level 3.12", words: ["know", "knew", "knock", "knead", "knife", "kneel", "comb", "limb", "crumb", "lamb", "thumb", "numb"] },
+  { id: "3.13", name: "Level 3.13", words: ["squirt", "thirsty", "dirty", "thirteen", "burnt", "return", "burden", "burger", "perfect", "transfer", "understand", "western"] },
+  { id: "3.14", name: "Level 3.14", words: ["yellow", "follow", "pillow", "shallow", "arrow", "hollow", "nanny", "funny", "annoy", "mammal", "cotton", "paddock"] },
+  { id: "3.15", name: "Level 3.15", words: ["paper", "teacher", "longer", "winter", "jumper", "temper", "actor", "razor", "mirror", "error", "sailor", "tremor"] },
+  { id: "3.16", name: "Level 3.16", words: ["memory", "empty", "angry", "candy", "plenty", "silly", "honey", "kidney", "abbey", "jockey", "trolley", "barley"] },
+  { id: "3.17", name: "Level 3.17", words: ["face", "place", "race", "space", "trace", "brace", "grace", "nice", "mice", "rice", "slice", "spice"] },
+  { id: "3.18", name: "Level 3.18", words: ["twice", "prince", "dance", "peace", "since", "price", "ice-cream", "disgrace", "replace", "embrace", "necklace", "advice"] },
+  { id: "3.19", name: "Level 3.19", words: ["horse", "house", "mouse", "goose", "loose", "nurse", "rinse", "grease", "curse", "please", "cheese", "praise"] },
+  { id: "3.20", name: "Level 3.20", words: ["sneeze", "squeeze", "freeze", "snooze", "breeze", "noise", "tease", "browse", "raise", "choose", "present", "surprise"] },
+  { id: "3.21", name: "Level 3.21", words: ["large", "change", "page", "orange", "stage", "huge", "hinge", "tinge", "plunge", "cage", "rage", "cringe"] },
+  { id: "3.22", name: "Level 3.22", words: ["bridge", "edge", "pledge", "hedge", "wedge", "judge", "trudge", "dodge", "lodge", "nudge", "ledge", "porridge"] },
+  { id: "3.23", name: "Level 3.23", words: ["fridge", "grudge", "smudge", "fudge", "ridge", "badge", "badger", "budget", "fidget", "gadget", "ledger", "midget"] },
+  { id: "3.24", name: "Level 3.24", words: ["twilight", "highway", "lightning", "frighten", "mighty", "brightest", "tighter", "slightest", "higher", "alright", "delight", "midnight"] },
+  { id: "3.25", name: "Level 3.25", words: ["bear", "wear", "tear", "pear", "hair", "air", "pair", "chair", "square", "spare", "glare", "stare"] },
+  { id: "3.26", name: "Level 3.26", words: ["wearing", "fairy", "airport", "repair", "upstairs", "dairy", "parent", "scared", "scary", "careless", "aware", "compare"] },
+  { id: "3.27", name: "Level 3.27", words: ["more", "sore", "score", "shore", "store", "chore", "before", "forecast", "adore", "explore", "restore", "ignore"] },
+  { id: "3.28", name: "Level 3.28", words: ["soar", "hoarse", "hoard", "coarse", "cupboard", "door", "floor", "poor", "four", "your", "court", "pour"] },
+  { id: "3.29", name: "Level 3.29", words: ["match", "witch", "catch", "snatch", "sketch", "stitch", "scratch", "stretch", "switch", "hitch", "fetch", "hatch"] },
+  { id: "3.30", name: "Level 3.30", words: ["bewitch", "itchy", "sketchpad", "rematch", "patching", "satchel", "catchy", "stitching", "splotchy", "kitchen", "hatchet", "butcher"] },
+  { id: "3.31", name: "Level 3.31", words: ["hear", "year", "near", "dear", "shear", "clear", "jeer", "steer", "peer", "deer", "cheer", "veer"] },
+  { id: "3.32", name: "Level 3.32", words: ["appear", "nearly", "fearful", "endear", "weary", "earwig", "clearly", "peering", "cheery", "career", "pioneer", "engineer"] },
+  { id: "3.33", name: "Level 3.33", words: ["group", "toucan", "soup", "coupon", "wound", "youth", "fruit", "juice", "bruise", "suitcase", "cruise", "recruit"] },
+  { id: "3.34", name: "Level 3.34", words: ["climbed", "thumb", "lamb", "crumb", "limb", "numb", "comb", "dumb", "plumber", "debt", "doubt", "subtle"] },
+  { id: "3.35", name: "Level 3.35", words: ["walk", "talk", "walking", "stalk", "chalk", "balk", "both", "don't", "most", "post", "gross", "host"] },
+  { id: "3.36", name: "Level 3.36", words: ["whole", "who", "whose", "whom", "anyhow", "many", "anything", "anyone", "anywhere", "anytime", "anymore", "anybody"] },
+  { id: "3.37", name: "Level 3.37", words: ["could", "should", "would", "couldn't", "move", "lose", "prove", "reprove", "movement", "disprove", "approve", "remove"] },
+  { id: "3.38", name: "Level 3.38", words: ["head", "dead", "breakfast", "breath", "already", "leather", "healthy", "heavy", "instead", "feather", "weather", "threaten"] },
+  { id: "3.39", name: "Level 3.39", words: ["jungle", "uncle", "grumble", "crumble", "candle", "handle", "eagle", "sparkle", "simple", "beetle", "needle", "twinkle"] },
+  { id: "3.40", name: "Level 3.40", words: ["angle", "tremble", "crumple", "stifle", "chuckle", "bundle", "purple", "edible", "ample", "tumble", "sample", "tickle"] },
+  { id: "3.41", name: "Level 3.41", words: ["apples", "little", "wiggle", "battle", "paddle", "rattle", "gobble", "smuggle", "topple", "fiddle", "drizzle", "ripple"] },
+  { id: "3.42", name: "Level 3.42", words: ["pebble", "cattle", "bubble", "puddle", "sniffle", "scribble", "huddle", "bottle", "settle", "puzzle", "snuggle", "struggle"] },
+  { id: "3.43", name: "Level 3.43", words: ["happened", "lollies", "rabbit", "soccer", "suddenly", "summer", "butterfly", "letter", "better", "different", "paddock", "sluggish"] },
+  { id: "3.44", name: "Level 3.44", words: ["ladder", "cubby", "ribbon", "stagger", "nugget", "tunnel", "sunny", "common", "hammer", "support", "puppet", "occur"] },
+  { id: "3.45", name: "Level 3.45", words: ["function", "lotion", "pollution", "fiction", "action", "devotion", "fraction", "mention", "section", "emotion", "option", "solution"] },
+  { id: "3.46", name: "Level 3.46", words: ["elephant", "alphabet", "photo", "orphan", "nephew", "telephone", "dolphin", "phase", "triumph", "typhoon", "sphere", "emphasis"] },
+  { id: "3.47", name: "Level 3.47", words: ["table", "basic", "label", "paper", "apron", "basin", "major", "vacant", "bacon", "native", "danger", "chamber"] },
+  { id: "3.48", name: "Level 3.48", words: ["begin", "began", "before", "below", "being", "became", "behind", "between", "beside", "beyond", "beware", "belong"] },
+  { id: "3.49", name: "Level 3.49", words: ["money", "monkey", "key", "donkey", "joey", "valley", "hockey", "alley", "turkey", "parsley", "pulley", "chimney"] },
+  { id: "3.50", name: "Level 3.50", words: ["very", "baby", "family", "carry", "every", "everyone", "everything", "lady", "gravy", "duty", "tidy", "tiny"] },
+  { id: "3.51", name: "Level 3.51", words: ["doctor", "motorbike", "equator", "creator", "instructor", "tractor", "editor", "visitor", "spectator", "sponsor", "monitor", "terror"] },
+  { id: "3.52", name: "Level 3.52", words: ["almost", "also", "always", "water", "already", "install", "walnut", "bald", "almighty", "enthral", "appal", "palsy"] },
+  { id: "3.53", name: "Level 3.53", words: ["dwarf", "swarming", "warmest", "warty", "warmup", "warning", "award", "quarter", "reward", "towards", "wardrobe", "warble"] },
+  { id: "3.54", name: "Level 3.54", words: ["Indian", "idea", "children", "quickly", "equal", "require", "request", "liquid", "dessert", "scissors", "dissolve", "possess"] },
+  { id: "3.55", name: "Level 3.55", words: ["grey", "obey", "survey", "prey", "convey", "great", "break", "steak", "greatest", "straight", "eight", "eighty"] },
+  { id: "3.56", name: "Level 3.56", words: ["aunty", "laughed", "city", "excited", "princess", "sentence", "earth", "heard", "learn", "because", "caught", "dinosaur"] },
+  { id: "3.57", name: "Level 3.57", words: ["ghost", "hour", "autumn", "castle", "often", "guys", "answer", "write", "school", "friend", "beautiful", "pizza"] },
+  { id: "3.58", name: "Level 3.58", words: ["through", "enough", "young", "country", "cousin", "bought", "brought", "though", "computer", "decided", "example", "important"] },
+  { id: "3.59", name: "Level 3.59", words: ["giant", "magic", "afternoon", "basketball", "class", "fast", "colour", "favourite", "field", "movie", "brother", "front"] },
+  { id: "3.60", name: "Level 3.60", words: ["mountain", "restaurant", "special", "heart", "police", "lion", "trampoline", "picture", "music", "minute", "once", "eye"] },
+  { id: "3.61", name: "Level 3.61", words: ["for", "four", "fore", "knot", "not", "which", "witch", "weak", "week", "saw", "sore", "soar"] },
+  { id: "3.62", name: "Level 3.62", words: ["so", "sew", "road", "rode", "rowed", "there", "their", "they're", "bear", "bare", "hair", "hare"] },
+  { id: "3.63", name: "Level 3.63", words: ["hour", "our", "flower", "flour", "threw", "through", "blew", "blue", "heard", "herd", "would", "wood"] },
+  { id: "3.64", name: "Level 3.64", words: ["write", "right", "knight", "night", "steak", "stake", "break", "brake", "made", "maid", "read", "red"] },
+  { id: "3.65", name: "Level 3.65", words: ["don't", "didn't", "can't", "wasn't", "couldn't", "I'll", "he's", "I've", "let's", "we're", "it's", "there's"] }
 ];
 
 // ===============================================
@@ -92,6 +208,7 @@ const SpellingProgram = ({
   const [selectedLists, setSelectedLists] = useState([]);
   const [isPresentationMode, setIsPresentationMode] = useState(false);
   const [showListSelector, setShowListSelector] = useState(false);
+  const [viewingList, setViewingList] = useState(null);
 
   // Initialize groups if empty
   useEffect(() => {
@@ -310,12 +427,15 @@ const SpellingProgram = ({
       {/* List Selector Modal */}
       {showListSelector && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-4xl w-full max-h-[80vh] overflow-y-auto">
+          <div className="bg-white rounded-xl max-w-6xl w-full max-h-[80vh] overflow-y-auto">
             <div className="p-6 border-b">
               <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold">Select Spelling Lists</h2>
+                <h2 className="text-2xl font-bold">Browse Spelling Lists</h2>
                 <button
-                  onClick={() => setShowListSelector(false)}
+                  onClick={() => {
+                    setShowListSelector(false);
+                    setViewingList(null);
+                  }}
                   className="text-gray-500 hover:text-gray-700 text-2xl"
                 >
                   ×
@@ -323,33 +443,47 @@ const SpellingProgram = ({
               </div>
             </div>
             <div className="p-6">
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                {SPELLING_LISTS.map(list => (
-                  <button
-                    key={list.id}
-                    onClick={() => {
-                      if (selectedLists.includes(list.id)) {
-                        setSelectedLists(selectedLists.filter(id => id !== list.id));
-                      } else if (selectedLists.length < 5) {
-                        setSelectedLists([...selectedLists, list.id]);
-                      } else {
-                        showToast('Maximum 5 lists can be selected', 'error');
-                      }
-                    }}
-                    className={`p-3 rounded-lg border-2 text-left transition-all ${
-                      selectedLists.includes(list.id)
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <div className="font-bold text-sm">{list.name}</div>
-                    <div className="text-xs text-gray-600">{list.words.length} words</div>
-                    <div className="text-xs mt-1">
-                      {list.words.slice(0, 3).join(', ')}...
+              {viewingList ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-2xl font-bold text-gray-800">{viewingList.name}</h3>
+                      <p className="text-gray-600">{viewingList.words.length} words</p>
                     </div>
-                  </button>
-                ))}
-              </div>
+                    <button
+                      onClick={() => setViewingList(null)}
+                      className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
+                    >
+                      ← Back to Lists
+                    </button>
+                  </div>
+                  <div className="bg-gray-50 rounded-xl p-6">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {viewingList.words.map((word, index) => (
+                        <div key={index} className="bg-white border border-gray-200 rounded-lg p-3 text-center">
+                          <span className="text-lg font-bold text-gray-800">{word}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                  {SPELLING_LISTS.map(list => (
+                    <button
+                      key={list.id}
+                      onClick={() => setViewingList(list)}
+                      className="p-3 rounded-lg border-2 border-gray-200 hover:border-blue-300 hover:bg-blue-50 text-left transition-all"
+                    >
+                      <div className="font-bold text-sm">{list.name}</div>
+                      <div className="text-xs text-gray-600">{list.words.length} words</div>
+                      <div className="text-xs mt-1">
+                        {list.words.slice(0, 3).join(', ')}...
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -380,79 +514,104 @@ const SpellingProgram = ({
       )}
 
       {/* Groups Display */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className={`grid gap-4 ${
+        groups.length === 1 ? 'grid-cols-1' :
+        groups.length === 2 ? 'grid-cols-2' :
+        groups.length === 3 ? 'grid-cols-3' :
+        groups.length === 4 ? 'grid-cols-4' :
+        'grid-cols-5'
+      }`}>
         {groups.map(group => (
           <div key={group.id} className="bg-white rounded-xl shadow-lg border-2 border-gray-200">
             {/* Group Header */}
-            <div className={`${group.color} text-white p-4 rounded-t-xl`}>
+            <div className={`${group.color} text-white p-3 rounded-t-xl`}>
               <div className="flex items-center justify-between">
                 <input
                   type="text"
                   value={group.name}
                   onChange={(e) => updateGroupName(group.id, e.target.value)}
-                  className="bg-transparent text-white font-bold text-lg border-none outline-none"
+                  className={`bg-transparent text-white font-bold border-none outline-none ${
+                    groups.length >= 4 ? 'text-sm' : 'text-lg'
+                  }`}
                 />
                 <button
                   onClick={() => removeGroup(group.id)}
-                  className="text-white hover:text-red-200 text-xl"
+                  className="text-white hover:text-red-200 text-lg"
                 >
                   ×
                 </button>
               </div>
-              <p className="text-sm opacity-90">{group.students.length} students</p>
+              <p className={`opacity-90 ${groups.length >= 4 ? 'text-xs' : 'text-sm'}`}>
+                {group.students.length} students
+              </p>
             </div>
 
-            <div className="p-4">
+            <div className={`${groups.length >= 4 ? 'p-3' : 'p-4'}`}>
               {/* Students */}
-              <div className="mb-4">
-                <h4 className="font-bold text-gray-700 mb-2">Students:</h4>
-                <div className="space-y-1">
+              <div className="mb-3">
+                <h4 className={`font-bold text-gray-700 mb-2 ${groups.length >= 4 ? 'text-sm' : 'text-base'}`}>
+                  Students:
+                </h4>
+                <div className="space-y-1 max-h-24 overflow-y-auto">
                   {group.students.map(student => (
-                    <div key={student.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                      <span className="text-sm">{student.firstName} {student.lastName}</span>
+                    <div key={student.id} className="flex items-center justify-between bg-gray-50 p-1 rounded">
+                      <span className={`${groups.length >= 4 ? 'text-xs' : 'text-sm'}`}>
+                        {student.firstName} {student.lastName}
+                      </span>
                       <button
                         onClick={() => assignStudentToGroup(student.id, null)}
-                        className="text-red-500 hover:text-red-700 text-sm"
+                        className="text-red-500 hover:text-red-700 text-xs"
                       >
-                        Remove
+                        ×
                       </button>
                     </div>
                   ))}
                   {group.students.length === 0 && (
-                    <p className="text-gray-500 text-sm italic">No students assigned</p>
+                    <p className={`text-gray-500 italic ${groups.length >= 4 ? 'text-xs' : 'text-sm'}`}>
+                      No students assigned
+                    </p>
                   )}
                 </div>
               </div>
 
               {/* Assigned Lists */}
-              <div className="mb-4">
+              <div className="mb-3">
                 <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-bold text-gray-700">Spelling Lists:</h4>
+                  <h4 className={`font-bold text-gray-700 ${groups.length >= 4 ? 'text-sm' : 'text-base'}`}>
+                    Lists:
+                  </h4>
                   <button
                     onClick={() => printLists(group.assignedLists)}
                     disabled={group.assignedLists.length === 0}
-                    className="text-xs bg-blue-500 text-white px-2 py-1 rounded disabled:opacity-50"
+                    className={`bg-blue-500 text-white rounded disabled:opacity-50 hover:bg-blue-600 ${
+                      groups.length >= 4 ? 'text-xs px-1 py-1' : 'text-xs px-2 py-1'
+                    }`}
                   >
-                    🖨️ Print
+                    🖨️
                   </button>
                 </div>
                 
-                <div className="space-y-2 mb-3">
+                <div className="space-y-1 mb-2 max-h-32 overflow-y-auto">
                   {group.assignedLists.map(listId => {
                     const list = SPELLING_LISTS.find(l => l.id === listId);
                     return (
                       <div key={listId} className="bg-blue-50 border border-blue-200 rounded p-2">
                         <div className="flex items-center justify-between">
-                          <span className="font-medium text-blue-800">{list.name}</span>
+                          <span className={`font-medium text-blue-800 ${groups.length >= 4 ? 'text-xs' : 'text-sm'}`}>
+                            {list.name}
+                          </span>
                           <button
                             onClick={() => assignListsToGroup(group.id, group.assignedLists.filter(id => id !== listId))}
-                            className="text-red-500 hover:text-red-700 text-sm"
+                            className="text-red-500 hover:text-red-700 text-xs"
                           >
                             ×
                           </button>
                         </div>
-                        <div className="text-xs text-blue-600 mt-1">
-                          {list.words.join(', ')}
+                        <div className={`text-blue-600 mt-1 ${groups.length >= 5 ? 'text-xs' : 'text-xs'}`}>
+                          {groups.length >= 5 ? 
+                            `${list.words.slice(0, 3).join(', ')}...` : 
+                            list.words.join(', ')
+                          }
                         </div>
                       </div>
                     );
@@ -470,10 +629,10 @@ const SpellingProgram = ({
                     }
                     e.target.value = '';
                   }}
-                  className="w-full text-sm border border-gray-300 rounded p-2"
+                  className={`w-full border border-gray-300 rounded p-1 ${groups.length >= 4 ? 'text-xs' : 'text-sm'}`}
                   defaultValue=""
                 >
-                  <option value="">Add spelling list...</option>
+                  <option value="">Add list...</option>
                   {SPELLING_LISTS.filter(list => !group.assignedLists.includes(list.id)).map(list => (
                     <option key={list.id} value={list.id}>{list.name}</option>
                   ))}
@@ -482,20 +641,22 @@ const SpellingProgram = ({
 
               {/* Assigned Activity */}
               <div>
-                <h4 className="font-bold text-gray-700 mb-2">Activity:</h4>
+                <h4 className={`font-bold text-gray-700 mb-2 ${groups.length >= 4 ? 'text-sm' : 'text-base'}`}>
+                  Activity:
+                </h4>
                 {group.assignedActivity ? (
-                  <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded p-3">
+                  <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded p-2">
                     <div className="flex items-center">
-                      <span className="text-2xl mr-3">
+                      <span className={`mr-2 ${groups.length >= 4 ? 'text-lg' : 'text-xl'}`}>
                         {ACTIVITIES.find(a => a.id === group.assignedActivity)?.icon}
                       </span>
-                      <span className="font-medium text-green-800">
+                      <span className={`font-medium text-green-800 ${groups.length >= 4 ? 'text-xs' : 'text-sm'}`}>
                         {ACTIVITIES.find(a => a.id === group.assignedActivity)?.name}
                       </span>
                     </div>
                     <button
                       onClick={() => assignActivityToGroup(group.id, null)}
-                      className="text-red-500 hover:text-red-700"
+                      className="text-red-500 hover:text-red-700 text-sm"
                     >
                       ×
                     </button>
@@ -503,7 +664,7 @@ const SpellingProgram = ({
                 ) : (
                   <select
                     onChange={(e) => e.target.value && assignActivityToGroup(group.id, e.target.value)}
-                    className="w-full text-sm border border-gray-300 rounded p-2"
+                    className={`w-full border border-gray-300 rounded p-1 ${groups.length >= 4 ? 'text-xs' : 'text-sm'}`}
                     defaultValue=""
                   >
                     <option value="">Select activity...</option>
@@ -521,13 +682,13 @@ const SpellingProgram = ({
 
         {/* Add Group Button */}
         {groups.length < 5 && (
-          <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-8 flex items-center justify-center">
+          <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center min-h-[300px]">
             <button
               onClick={addGroup}
               className="text-gray-600 hover:text-gray-800 text-center"
             >
-              <div className="text-4xl mb-2">+</div>
-              <div className="font-bold">Add Group</div>
+              <div className={`mb-2 ${groups.length >= 4 ? 'text-2xl' : 'text-4xl'}`}>+</div>
+              <div className={`font-bold ${groups.length >= 4 ? 'text-sm' : 'text-base'}`}>Add Group</div>
             </button>
           </div>
         )}
