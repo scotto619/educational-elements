@@ -1,5 +1,5 @@
-// components/games/TicTacToeGame.js - FULLY WORKING REALTIME VERSION
-import React, { useState, useEffect } from 'react';
+// components/games/TicTacToeGame.js - FIXED VERSION with improved mobile and PC support
+import React, { useState, useEffect, useCallback } from 'react';
 
 const TicTacToeGame = ({ studentData, showToast }) => {
   // Import Firebase functions dynamically to avoid conflicts
@@ -35,7 +35,7 @@ const TicTacToeGame = ({ studentData, showToast }) => {
   const [gameData, setGameData] = useState(null);
   const [winner, setWinner] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [board, setBoard] = useState(Array(9).fill(null)); // Flattened board for Firebase
+  const [board, setBoard] = useState(Array(9).fill(null));
 
   // Player info
   const playerInfo = {
@@ -63,11 +63,11 @@ const TicTacToeGame = ({ studentData, showToast }) => {
       
       setGameData(data);
       
-      // Update board state
+      // Update board state - ensure it's always an array
       if (data.board) {
         const boardArray = Array.isArray(data.board) ? data.board : Object.values(data.board);
+        console.log('🎯 Board received from Firebase:', boardArray);
         setBoard(boardArray);
-        console.log('🎯 Board updated:', boardArray);
       }
       
       // Check if both players joined
@@ -160,7 +160,7 @@ const TicTacToeGame = ({ studentData, showToast }) => {
         players: {
           [playerInfo.id]: { ...playerInfo, symbol: 'X' }
         },
-        board: Array(9).fill(null), // Flat array for Firebase
+        board: Array(9).fill(null),
         currentPlayer: 'X',
         status: 'waiting',
         createdAt: Date.now()
@@ -237,10 +237,11 @@ const TicTacToeGame = ({ studentData, showToast }) => {
     setLoading(false);
   };
 
-  const makeMove = async (index) => {
-    console.log(`🎯 makeMove called with index: ${index}`);
+  // FIXED: Use useCallback to prevent stale closures and ensure proper index handling
+  const makeMove = useCallback(async (cellIndex) => {
+    console.log(`🎯 makeMove called with cellIndex: ${cellIndex}`);
     console.log(`Current board state:`, board);
-    console.log(`Cell ${index} current value:`, board[index]);
+    console.log(`Cell ${cellIndex} current value:`, board[cellIndex]);
     console.log(`Game state: ${gameState}, Is my turn: ${isMyTurn}, Player role: ${playerRole}`);
     
     if (!firebaseReady || !firebase) {
@@ -250,11 +251,13 @@ const TicTacToeGame = ({ studentData, showToast }) => {
     
     if (!isMyTurn) {
       console.log('❌ Not my turn');
+      showToast('Wait for your turn!', 'warning');
       return;
     }
     
-    if (board[index] !== null) {
-      console.log('❌ Cell already occupied:', board[index]);
+    if (board[cellIndex] !== null) {
+      console.log('❌ Cell already occupied:', board[cellIndex]);
+      showToast('That square is already taken!', 'warning');
       return;
     }
     
@@ -263,10 +266,11 @@ const TicTacToeGame = ({ studentData, showToast }) => {
       return;
     }
     
-    console.log(`✅ Making move: placing ${playerRole} at index ${index}`);
+    console.log(`✅ Making move: placing ${playerRole} at index ${cellIndex}`);
     
+    // Create new board with the move
     const newBoard = [...board];
-    newBoard[index] = playerRole;
+    newBoard[cellIndex] = playerRole;
     
     console.log(`New board will be:`, newBoard);
     
@@ -276,7 +280,11 @@ const TicTacToeGame = ({ studentData, showToast }) => {
       const updateData = {
         board: newBoard,
         currentPlayer: nextPlayer,
-        lastMove: { index, player: playerRole, timestamp: Date.now() }
+        lastMove: { 
+          index: cellIndex, 
+          player: playerRole, 
+          timestamp: Date.now() 
+        }
       };
       
       console.log('📤 Sending to Firebase:', updateData);
@@ -288,7 +296,7 @@ const TicTacToeGame = ({ studentData, showToast }) => {
       console.error('❌ Error making move:', error);
       showToast('Failed to make move: ' + error.message, 'error');
     }
-  };
+  }, [firebaseReady, firebase, gameRoom, gameState, isMyTurn, playerRole, board]);
 
   const resetGame = () => {
     setGameState('menu');
@@ -313,10 +321,11 @@ const TicTacToeGame = ({ studentData, showToast }) => {
     resetGame();
   };
 
-  const renderCell = (index) => {
-    const value = board[index];
-    const row = Math.floor(index / 3);
-    const col = index % 3;
+  // FIXED: Improved cell rendering with better event handling
+  const renderCell = useCallback((cellIndex) => {
+    const value = board[cellIndex];
+    const row = Math.floor(cellIndex / 3);
+    const col = cellIndex % 3;
     const isWinningCell = winner && (
       (winner.line === 'row' && winner.index === row) ||
       (winner.line === 'col' && winner.index === col) ||
@@ -325,52 +334,75 @@ const TicTacToeGame = ({ studentData, showToast }) => {
          (winner.index === 1 && row + col === 2)))
     );
 
-    const handleCellClick = () => {
-      console.log(`🖱️ Cell clicked - Index: ${index}, Row: ${row}, Col: ${col}, Value: ${value}, MyTurn: ${isMyTurn}, GameState: ${gameState}`);
+    // FIXED: Create stable event handlers with proper cellIndex binding
+    const handleClick = useCallback((e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log(`🖱️ Cell clicked - Index: ${cellIndex}, Row: ${row}, Col: ${col}, Value: ${value}`);
+      
       if (isMyTurn && !value && gameState === 'playing') {
-        makeMove(index);
+        makeMove(cellIndex);
       } else {
-        console.log('❌ Click blocked:', { isMyTurn, hasValue: !!value, gameState });
+        console.log('❌ Click blocked:', { 
+          isMyTurn, 
+          hasValue: !!value, 
+          gameState,
+          cellIndex 
+        });
       }
-    };
+    }, [cellIndex, value, isMyTurn, gameState]);
+
+    const handleTouchStart = useCallback((e) => {
+      e.preventDefault();
+      console.log(`👆 Touch start on cell ${cellIndex}`);
+    }, [cellIndex]);
+
+    const handleTouchEnd = useCallback((e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log(`👆 Touch end on cell ${cellIndex}`);
+      
+      if (isMyTurn && !value && gameState === 'playing') {
+        makeMove(cellIndex);
+      }
+    }, [cellIndex, value, isMyTurn, gameState]);
+
+    const canPlay = isMyTurn && !value && gameState === 'playing';
 
     return (
-      <div
-        key={index}
-        onClick={handleCellClick}
-        onTouchEnd={(e) => {
-          e.preventDefault();
-          handleCellClick();
-        }}
+      <button
+        key={`cell-${cellIndex}`}
+        onClick={handleClick}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        disabled={!canPlay}
         className={`
           aspect-square border-2 border-gray-400 rounded-lg text-2xl md:text-3xl font-bold
           flex items-center justify-center transition-all duration-200 
           min-h-[70px] min-w-[70px] md:min-h-[90px] md:min-w-[90px]
-          select-none touch-manipulation
-          ${isMyTurn && !value && gameState === 'playing' 
-            ? 'hover:bg-blue-100 active:bg-blue-200 cursor-pointer bg-blue-50 border-blue-400' 
-            : 'cursor-not-allowed bg-gray-100 border-gray-300'
+          select-none touch-manipulation focus:outline-none
+          ${canPlay
+            ? 'hover:bg-blue-100 active:bg-blue-200 cursor-pointer bg-blue-50 border-blue-400 enabled:hover:scale-105' 
+            : 'cursor-not-allowed bg-gray-100 border-gray-300 disabled:opacity-60'
           }
           ${isWinningCell ? 'bg-green-200 border-green-500' : ''}
           ${value === 'X' ? 'text-blue-600' : value === 'O' ? 'text-red-600' : 'text-gray-400'}
         `}
+        data-cell-index={cellIndex}
+        aria-label={`Cell ${cellIndex + 1} ${value ? `occupied by ${value}` : 'empty'}`}
       >
         {value ? (
           <span className="drop-shadow-lg text-3xl md:text-4xl">
             {value === 'X' ? '❌' : '⭕'}
           </span>
-        ) : isMyTurn && gameState === 'playing' ? (
+        ) : canPlay ? (
           <span className="opacity-40 text-lg md:text-xl">
             {playerRole === 'X' ? '❌' : '⭕'}
           </span>
-        ) : (
-          <span className="text-xs text-gray-400 font-normal">
-            {index}
-          </span>
-        )}
-      </div>
+        ) : null}
+      </button>
     );
-  };
+  }, [board, winner, isMyTurn, gameState, playerRole, makeMove]);
 
   // Loading state while Firebase initializes
   if (!firebaseReady) {
@@ -491,20 +523,6 @@ const TicTacToeGame = ({ studentData, showToast }) => {
 
     return (
       <div className="max-w-lg mx-auto space-y-6">
-        {/* Debug Info - Always visible for testing */}
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-xs space-y-1">
-          <p><strong>Debug Info:</strong></p>
-          <p>Player: {playerRole} | Current Turn: {gameData?.currentPlayer} | My Turn: {isMyTurn ? 'Yes' : 'No'}</p>
-          <p>Game State: {gameState} | Room: {gameRoom}</p>
-          <div className="grid grid-cols-3 gap-1 mt-2 max-w-[150px]">
-            {[0,1,2,3,4,5,6,7,8].map(i => (
-              <div key={i} className="border text-center p-1 text-xs bg-white">
-                {i}: {board[i] || 'empty'}
-              </div>
-            ))}
-          </div>
-        </div>
-
         {/* Game Header */}
         <div className="bg-white rounded-xl p-4 shadow-lg">
           <div className="flex items-center justify-between mb-4">
@@ -557,14 +575,14 @@ const TicTacToeGame = ({ studentData, showToast }) => {
           )}
         </div>
 
-        {/* Game Board */}
+        {/* Game Board - FIXED */}
         <div className="bg-white rounded-xl p-4 md:p-6 shadow-lg">
           <div className="grid grid-cols-3 gap-2 md:gap-3 max-w-[240px] md:max-w-[300px] mx-auto">
-            {/* Render cells in correct order: 0,1,2 / 3,4,5 / 6,7,8 */}
-            {Array.from({ length: 9 }, (_, index) => renderCell(index))}
+            {/* FIXED: Ensure proper index mapping */}
+            {[0, 1, 2, 3, 4, 5, 6, 7, 8].map(index => renderCell(index))}
           </div>
           
-          {/* Mobile-specific instructions */}
+          {/* Instructions */}
           <div className="mt-4 text-center">
             <p className="text-xs text-gray-500">
               {isMyTurn ? 'Tap any empty square to make your move' : 'Wait for your opponent'}
