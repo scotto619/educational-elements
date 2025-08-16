@@ -1,0 +1,37 @@
+.cell {
+  aspect-ratio: 1;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  font-size: 1.5rem;
+  font-weight: bold;
+  transition: all 0.2s;
+  min-height: 70px;
+  min-width: 70px;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.cell:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+}
+
+.cell.empty:enabled {
+  background-color: #f0f9ff;
+  cursor: pointer;
+}
+
+.cell.empty:enabled:hover {
+  background-color: #e0f2fe;
+  transform: scale(1.05);
+}
+
+.cell.occupied {
+  background-color: #f3f4f6;
+  cursor: not-allowed;
+}
+
+.cell.winning {
+  background-color: #d1fae5;
+  border-color: #059669;
+}
