@@ -1,17 +1,14 @@
-// components/tabs/CurriculumCornerTab.js - UPDATED WITH WORKSHEET GENERATOR
+// components/tabs/CurriculumCornerTab.js - REORGANIZED WITH UNIFIED LITERACY SECTION
 import React, { useState } from 'react';
 
 // Import activity components
 import LiteracyWarmup from '../curriculum/literacy/LiteracyWarmup';
 import ReadingComprehension from '../curriculum/literacy/ReadingComprehension';
 import VisualWritingPrompts from '../curriculum/literacy/VisualWritingPrompts';
+import SpellingProgram from '../curriculum/literacy/SpellingProgram'; // NEW COMPONENT
 import AreaPerimeterTool from '../curriculum/mathematics/AreaPerimeterTool';
 import MathWarmup from '../curriculum/mathematics/MathWarmup';
 import WorksheetGenerator from '../curriculum/mathematics/WorksheetGenerator';
-// import SpellingBee from '../curriculum/literacy/SpellingBee';
-// import NumbersBoard from '../curriculum/mathematics/NumbersBoard';
-// import VirtualExperiments from '../curriculum/science/VirtualExperiments';
-// ... import other activities as you create them
 
 // ===============================================
 // COMING SOON COMPONENT
@@ -29,15 +26,15 @@ const ComingSoon = ({ toolName, description }) => (
 );
 
 // ===============================================
-// SUBJECT CONFIGURATION - UPDATED WITH WORKSHEET GENERATOR
+// REORGANIZED SUBJECT CONFIGURATION - UNIFIED LITERACY
 // ===============================================
 const subjects = [
   {
     id: 'literacy',
-    name: 'Literacy',
+    name: 'Literacy & Language Arts',
     icon: '📚',
-    color: 'from-blue-500 to-blue-600',
-    description: 'Reading, writing, and language arts tools',
+    color: 'from-blue-500 to-purple-600',
+    description: 'Complete literacy toolkit: phonics, spelling, reading, writing & vocabulary',
     activities: [
       {
         id: 'literacy-warmup',
@@ -47,11 +44,12 @@ const subjects = [
         component: LiteracyWarmup
       },
       {
-        id: 'spelling-bee',
-        name: 'Spelling Bee',
-        icon: '🐝',
-        description: 'Interactive spelling competitions and practice',
-        component: ComingSoon
+        id: 'spelling-program',
+        name: 'Spelling Program',
+        icon: '🔤',
+        description: 'Structured spelling lists with activities and assessments',
+        component: SpellingProgram,
+        featured: true
       },
       {
         id: 'reading-comprehension',
@@ -61,22 +59,6 @@ const subjects = [
         component: ReadingComprehension
       },
       {
-        id: 'phonics-games',
-        name: 'Phonics Games',
-        icon: '🎮',
-        description: 'Fun phonics games and activities',
-        component: ComingSoon
-      }
-    ]
-  },
-  {
-    id: 'writing',
-    name: 'Writing',
-    icon: '✏️',
-    color: 'from-purple-500 to-pink-600',
-    description: 'Creative writing tools and inspiration',
-    activities: [
-      {
         id: 'visual-writing-prompts',
         name: 'Visual Writing Prompts',
         icon: '🖼️',
@@ -84,24 +66,31 @@ const subjects = [
         component: VisualWritingPrompts
       },
       {
-        id: 'story-starters',
-        name: 'Story Starters',
+        id: 'vocabulary-builder',
+        name: 'Vocabulary Builder',
         icon: '📖',
-        description: 'Creative opening lines to spark imagination',
+        description: 'Word study and vocabulary development',
         component: ComingSoon
       },
       {
-        id: 'character-creator',
-        name: 'Character Creator',
+        id: 'grammar-workshop',
+        name: 'Grammar Workshop',
+        icon: '✏️',
+        description: 'Interactive grammar lessons and practice',
+        component: ComingSoon
+      },
+      {
+        id: 'poetry-corner',
+        name: 'Poetry Corner',
         icon: '🎭',
-        description: 'Build compelling characters for stories',
+        description: 'Explore different forms of poetry writing',
         component: ComingSoon
       },
       {
-        id: 'poetry-workshop',
-        name: 'Poetry Workshop',
-        icon: '🎵',
-        description: 'Explore different forms of poetry writing',
+        id: 'handwriting-practice',
+        name: 'Handwriting Practice',
+        icon: '✍️',
+        description: 'Letter formation and handwriting improvement',
         component: ComingSoon
       }
     ]
@@ -284,10 +273,10 @@ const subjects = [
         component: ComingSoon
       },
       {
-        id: 'creative-writing',
-        name: 'Creative Writing',
-        icon: '✏️',
-        description: 'Story writing prompts and tools',
+        id: 'drama-workshop',
+        name: 'Drama Workshop',
+        icon: '🎭',
+        description: 'Acting and theater activities',
         component: ComingSoon
       }
     ]
@@ -295,7 +284,7 @@ const subjects = [
 ];
 
 // ===============================================
-// MAIN CURRICULUM CORNER COMPONENT - UPDATED WITH FIREBASE SUPPORT
+// MAIN CURRICULUM CORNER COMPONENT - UPDATED
 // ===============================================
 const CurriculumCornerTab = ({ 
   students = [], 
@@ -335,7 +324,9 @@ const CurriculumCornerTab = ({
     };
     
     // Add Firebase save/load props for specific activities that need them
-    if (activeActivity.id === 'literacy-warmup' || activeActivity.id === 'math-warmup') {
+    if (activeActivity.id === 'literacy-warmup' || 
+        activeActivity.id === 'math-warmup' || 
+        activeActivity.id === 'spelling-program') {
       activityProps.saveData = saveData;
       activityProps.loadedData = loadedData;
     }
@@ -383,14 +374,14 @@ const CurriculumCornerTab = ({
             <button
               key={activity.id}
               onClick={() => handleActivitySelect(activity)}
-              className={`bg-white rounded-xl shadow-lg p-6 text-left hover:shadow-xl transition-all duration-300 hover:scale-105 border-2 ${
+              className={`bg-white rounded-xl shadow-lg p-6 text-left hover:shadow-xl transition-all duration-300 hover:scale-105 border-2 relative ${
                 activity.featured 
                   ? 'border-yellow-400 bg-gradient-to-br from-yellow-50 to-orange-50' 
                   : 'border-transparent hover:border-blue-300'
               }`}
             >
               {activity.featured && (
-                <div className="absolute -top-2 -right-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full font-bold">
+                <div className="absolute -top-2 -right-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full font-bold animate-pulse">
                   NEW!
                 </div>
               )}
@@ -441,6 +432,74 @@ const CurriculumCornerTab = ({
         <div className="absolute top-1/2 right-1/4 text-xl animate-bounce" style={{ animationDelay: '1.5s' }}>🌍</div>
       </div>
 
+      {/* NEW Literacy Spotlight */}
+      <div className="bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-blue-300 rounded-xl p-6 relative overflow-hidden">
+        <div className="absolute top-2 right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-bold animate-pulse">
+          REORGANIZED!
+        </div>
+        <div className="flex items-start space-x-4">
+          <span className="text-4xl">📚</span>
+          <div>
+            <h4 className="font-bold text-blue-800 mb-2 text-xl">✨ Complete Literacy & Language Arts Toolkit!</h4>
+            <p className="text-blue-700 mb-4 text-lg">
+              All literacy tools are now unified under one comprehensive section! Find everything you need for 
+              reading, writing, spelling, phonics, vocabulary, and grammar all in one place.
+            </p>
+            <div className="bg-blue-100 rounded-lg p-4">
+              <h5 className="font-semibold text-blue-800 mb-3">🎯 What's Now Available:</h5>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <ul className="text-sm text-blue-700 space-y-1">
+                  <li>• 🔥 Literacy Warmup (phonics & sounds)</li>
+                  <li>• 🔤 NEW! Spelling Program (structured lists)</li>
+                  <li>• 🧠 Reading Comprehension activities</li>
+                  <li>• 🖼️ Visual Writing Prompts</li>
+                </ul>
+                <ul className="text-sm text-blue-700 space-y-1">
+                  <li>• 📖 Vocabulary Builder (coming soon)</li>
+                  <li>• ✏️ Grammar Workshop (coming soon)</li>
+                  <li>• 🎭 Poetry Corner (coming soon)</li>
+                  <li>• ✍️ Handwriting Practice (coming soon)</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* NEW Spelling Program Feature Notice */}
+      <div className="bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-300 rounded-xl p-6 relative overflow-hidden">
+        <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full font-bold animate-pulse">
+          NEW!
+        </div>
+        <div className="flex items-start space-x-4">
+          <span className="text-4xl">🔤</span>
+          <div>
+            <h4 className="font-bold text-green-800 mb-2 text-xl">🌟 Introducing the Spelling Program!</h4>
+            <p className="text-green-700 mb-4 text-lg">
+              A complete spelling curriculum with structured word lists, daily activities, and student tracking.
+              Perfect for differentiated instruction and classroom display!
+            </p>
+            <div className="bg-green-100 rounded-lg p-4">
+              <h5 className="font-semibold text-green-800 mb-3">🎯 Key Features:</h5>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <ul className="text-sm text-green-700 space-y-1">
+                  <li>• 📋 Organized word lists by difficulty level</li>
+                  <li>• 👥 Assign different lists to student groups</li>
+                  <li>• 🖨️ Printable lists with multiple copies</li>
+                  <li>• 📺 Daily activities for classroom display</li>
+                </ul>
+                <ul className="text-sm text-green-700 space-y-1">
+                  <li>• ✅ "Look, Cover, Write, Check" activities</li>
+                  <li>• 🎯 Student progress tracking</li>
+                  <li>• 🎨 Visually engaging presentations</li>
+                  <li>• 📊 Assessment and review tools</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Subject Selection */}
       <div className="bg-white rounded-xl shadow-lg p-6">
         <h3 className="text-2xl font-bold text-gray-800 mb-6 text-center">Choose Your Subject Area</h3>
@@ -489,127 +548,6 @@ const CurriculumCornerTab = ({
               </div>
             );
           })}
-        </div>
-      </div>
-
-      {/* Enhanced Feature Notice for NEW Math Worksheet Generator */}
-      <div className="bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-300 rounded-xl p-6 relative overflow-hidden">
-        <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full font-bold animate-pulse">
-          NEW!
-        </div>
-        <div className="flex items-start space-x-4">
-          <span className="text-4xl">📄</span>
-          <div>
-            <h4 className="font-bold text-green-800 mb-2 text-xl">🌟 Math Worksheet Generator - Just Added!</h4>
-            <p className="text-green-700 mb-4 text-lg">
-              Create professional, printable math worksheets instantly! Perfect for homework, practice, assessments, 
-              and differentiated learning. All worksheets include your Educational Elements branding!
-            </p>
-            <div className="bg-green-100 rounded-lg p-4">
-              <h5 className="font-semibold text-green-800 mb-3">🎯 What You Can Generate:</h5>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <ul className="text-sm text-green-700 space-y-1">
-                  <li>• ➕ Addition (1-20, 1-100, 1-1000)</li>
-                  <li>• ➖ Subtraction (with positive results)</li>
-                  <li>• ✖️ Multiplication (times tables to complex)</li>
-                  <li>• ➗ Division (with whole number answers)</li>
-                </ul>
-                <ul className="text-sm text-green-700 space-y-1">
-                  <li>• ½ Fractions (addition & subtraction)</li>
-                  <li>• 🔢 Decimals (1-3 decimal places)</li>
-                  <li>• 📝 Word Problems (age-appropriate)</li>
-                  <li>• 📋 Automatic answer keys included</li>
-                </ul>
-              </div>
-            </div>
-            <div className="mt-4 p-3 bg-yellow-100 rounded-lg">
-              <h5 className="font-semibold text-yellow-800 mb-2">✨ Professional Features:</h5>
-              <p className="text-sm text-yellow-700">
-                • Print-optimized layout for standard 8.5" x 11" paper<br/>
-                • Student name, date, and score fields<br/>
-                • Educational Elements logo branding<br/>
-                • Multiple difficulty levels per topic<br/>
-                • Customizable problem count (10-30 problems)<br/>
-                • Clear instructions and professional formatting
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Enhanced Feature Notice for New Visual Writing Prompts */}
-      <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-xl p-6">
-        <div className="flex items-start space-x-4">
-          <span className="text-3xl">🖼️</span>
-          <div>
-            <h4 className="font-bold text-purple-800 mb-2">✨ Visual Writing Prompts Added!</h4>
-            <p className="text-purple-700 mb-4">
-              Inspire creativity with 20 stunning visual prompts! Each image comes with themed word banks to help students 
-              get started. Perfect for creative writing sessions, story starters, and imagination building!
-            </p>
-            <div className="bg-purple-100 rounded-lg p-4">
-              <h5 className="font-semibold text-purple-800 mb-2">🎯 What's Included:</h5>
-              <ul className="text-sm text-purple-700 space-y-1">
-                <li>• 20 high-quality visual writing prompts with fantasy/adventure themes</li>
-                <li>• Accompanying word banks organized by nouns, verbs, and adjectives</li>
-                <li>• Built-in writing timer (5, 10, 15, 20 minutes) with progress tracking</li>
-                <li>• Writing techniques helper with tips and strategies</li>
-                <li>• Gallery view for easy prompt selection</li>
-                <li>• Presentation mode for classroom display</li>
-                <li>• Printable worksheets with prompts and word banks</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Enhanced Feature Notice for New Math Warmup */}
-      <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-xl p-6">
-        <div className="flex items-start space-x-4">
-          <span className="text-3xl">🔥</span>
-          <div>
-            <h4 className="font-bold text-green-800 mb-2">✨ Math Warmup Added!</h4>
-            <p className="text-green-700 mb-4">
-              The Math Warmup includes progressive Number of the Day activities, mental math strategies that build over 10 weeks, 
-              daily problem solving with hints, and interactive number practice tools!
-            </p>
-            <div className="bg-green-100 rounded-lg p-4">
-              <h5 className="font-semibold text-green-800 mb-2">🎯 What's Included:</h5>
-              <ul className="text-sm text-green-700 space-y-1">
-                <li>• Number of the Day activities with progressive difficulty (5→1000)</li>
-                <li>• Mental math strategies that build across weeks</li>
-                <li>• Daily math problems with hints and explanations</li>
-                <li>• Interactive number practice with random highlighting</li>
-                <li>• Math facts of the day for engagement</li>
-                <li>• Presentation mode for classroom display</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Enhanced Feature Notice for Literacy Updates */}
-      <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-xl p-6">
-        <div className="flex items-start space-x-4">
-          <span className="text-3xl">🔥</span>
-          <div>
-            <h4 className="font-bold text-blue-800 mb-2">✨ Literacy Warmup Features!</h4>
-            <p className="text-blue-700 mb-4">
-              The Literacy Warmup includes daily activities with 5 reading passage activities, 4 daily grammar tasks, 
-              daily riddles and fun facts, random graph practice, and Firebase-saved focus words!
-            </p>
-            <div className="bg-blue-100 rounded-lg p-4">
-              <h5 className="font-semibold text-blue-800 mb-2">🎯 What's Available:</h5>
-              <ul className="text-sm text-blue-700 space-y-1">
-                <li>• Random 5+5 letter/digraph practice (increases complexity after week 5)</li>
-                <li>• Larger, easier-to-read fonts throughout</li>
-                <li>• 5 daily reading activities per passage</li>
-                <li>• 4 daily grammar/punctuation tasks</li>
-                <li>• 5 riddles and fun facts per week (one per day)</li>
-                <li>• Editable focus words that save to Firebase</li>
-              </ul>
-            </div>
-          </div>
         </div>
       </div>
 
