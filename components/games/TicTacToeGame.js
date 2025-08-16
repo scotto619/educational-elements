@@ -45,7 +45,7 @@ const TicTacToeGame = ({ studentData, showToast }) => {
     level: studentData?.totalPoints ? Math.min(4, Math.max(1, Math.floor(studentData.totalPoints / 100) + 1)) : 1
   };
 
-  // Firebase listener - FIXED to properly handle board state
+  // Firebase listener - FIXED to properly handle board state and game resets
   useEffect(() => {
     if (!firebaseReady || !firebase || !gameRoom) return;
 
@@ -59,6 +59,14 @@ const TicTacToeGame = ({ studentData, showToast }) => {
         resetGame();
         showToast('Game ended', 'info');
         return;
+      }
+      
+      // Handle game reset - if gameResetAt timestamp exists and is recent, reset local state
+      if (data.gameResetAt && data.gameResetAt > (Date.now() - 5000)) { // Reset within last 5 seconds
+        console.log('🔄 Game was reset, clearing local state');
+        setWinner(null);
+        setGameState('playing');
+        setIsMyTurn(data.currentPlayer === playerRole);
       }
       
       // Update game data
@@ -111,9 +119,9 @@ const TicTacToeGame = ({ studentData, showToast }) => {
       }
       
       // Check win condition - FIXED to prevent false draws
-      if (gameState === 'playing') {
+      if (gameState === 'playing' && !winner) {
         const winResult = checkWinner(processedBoard);
-        if (winResult.winner && !winner) {
+        if (winResult.winner) {
           console.log('🏆 Game ending with winner:', winResult.winner);
           setWinner(winResult);
           setGameState('finished');
@@ -404,6 +412,40 @@ const TicTacToeGame = ({ studentData, showToast }) => {
     setBoard(Array(9).fill(null));
   };
 
+  const playAgain = async () => {
+    if (!firebaseReady || !firebase || !gameRoom) {
+      showToast('Cannot restart game', 'error');
+      return;
+    }
+
+    console.log('🔄 Starting new game with same players');
+    
+    try {
+      // Reset game state in Firebase
+      const resetData = {
+        board: Array(9).fill(null),
+        currentPlayer: 'X', // Always start with X
+        status: 'playing',
+        lastMove: null,
+        gameResetAt: Date.now()
+      };
+      
+      await firebase.update(firebase.ref(firebase.database, `ticTacToe/${gameRoom}`), resetData);
+      
+      // Reset local state
+      setBoard(Array(9).fill(null));
+      setWinner(null);
+      setGameState('playing');
+      setIsMyTurn(playerRole === 'X'); // X player goes first
+      
+      showToast('New game started! 🎮', 'success');
+      console.log('✅ New game started successfully');
+    } catch (error) {
+      console.error('❌ Error starting new game:', error);
+      showToast('Failed to start new game: ' + error.message, 'error');
+    }
+  };
+
   const endGame = async () => {
     if (firebaseReady && firebase && gameRoom) {
       try {
@@ -667,10 +709,19 @@ const TicTacToeGame = ({ studentData, showToast }) => {
           
           {gameState === 'finished' && (
             <button
-              onClick={endGame}
+              onClick={playAgain}
               className="flex-1 bg-green-500 text-white py-3 rounded-lg font-semibold hover:bg-green-600 transition-colors"
             >
               🎮 Play Again
+            </button>
+          )}
+          
+          {gameState === 'finished' && (
+            <button
+              onClick={endGame}
+              className="bg-red-500 text-white px-4 py-3 rounded-lg font-semibold hover:bg-red-600 transition-colors text-sm"
+            >
+              🚪 Exit
             </button>
           )}
           
