@@ -104,18 +104,21 @@ const TicTacToeGame = ({ studentData, showToast }) => {
         showToast('Game started! You are ' + playerRole, 'success');
       }
       
-      // Check win condition
-      const currentBoard = data.board || Array(9).fill(null);
-      const winResult = checkWinner(currentBoard);
-      if (winResult.winner && !winner) {
-        setWinner(winResult);
-        setGameState('finished');
-        if (winResult.winner === playerRole) {
-          showToast('🎉 You Won!', 'success');
-        } else if (winResult.winner === 'draw') {
-          showToast('🤝 It\'s a Draw!', 'info');
-        } else {
-          showToast('😔 You Lost!', 'error');
+      // Check win condition - FIXED to prevent false draws
+      if (gameState === 'playing') { // Only check for winner during active gameplay
+        const currentBoard = data.board || Array(9).fill(null);
+        const winResult = checkWinner(currentBoard);
+        if (winResult.winner && !winner) {
+          console.log('🏆 Game ending with winner:', winResult.winner);
+          setWinner(winResult);
+          setGameState('finished');
+          if (winResult.winner === playerRole) {
+            showToast('🎉 You Won!', 'success');
+          } else if (winResult.winner === 'draw') {
+            showToast('🤝 It\'s a Draw!', 'info');
+          } else {
+            showToast('😔 You Lost!', 'error');
+          }
         }
       }
       
@@ -138,7 +141,32 @@ const TicTacToeGame = ({ studentData, showToast }) => {
   };
 
   const checkWinner = (boardData) => {
-    const boardArray = Array.isArray(boardData) ? boardData : Array(9).fill(null);
+    // FIXED: Better board processing and draw detection
+    let boardArray;
+    if (Array.isArray(boardData)) {
+      boardArray = boardData;
+    } else if (boardData && typeof boardData === 'object') {
+      // Convert Firebase object to array
+      boardArray = Array(9).fill(null);
+      Object.keys(boardData).forEach(key => {
+        const index = parseInt(key);
+        if (!isNaN(index) && index >= 0 && index < 9) {
+          boardArray[index] = boardData[key];
+        }
+      });
+    } else {
+      boardArray = Array(9).fill(null);
+    }
+    
+    // Normalize empty cells to null
+    boardArray = boardArray.map(cell => {
+      if (cell === undefined || cell === '' || cell === null) {
+        return null;
+      }
+      return cell;
+    });
+    
+    console.log('🎯 CheckWinner - Board array:', boardArray);
     
     // Convert to 3x3 for checking
     const grid = [
@@ -150,6 +178,7 @@ const TicTacToeGame = ({ studentData, showToast }) => {
     // Check rows
     for (let i = 0; i < 3; i++) {
       if (grid[i][0] && grid[i][0] === grid[i][1] && grid[i][1] === grid[i][2]) {
+        console.log('🏆 Winner found - Row', i, ':', grid[i][0]);
         return { winner: grid[i][0], line: 'row', index: i };
       }
     }
@@ -157,24 +186,34 @@ const TicTacToeGame = ({ studentData, showToast }) => {
     // Check columns
     for (let i = 0; i < 3; i++) {
       if (grid[0][i] && grid[0][i] === grid[1][i] && grid[1][i] === grid[2][i]) {
+        console.log('🏆 Winner found - Column', i, ':', grid[0][i]);
         return { winner: grid[0][i], line: 'col', index: i };
       }
     }
     
     // Check diagonals
     if (grid[0][0] && grid[0][0] === grid[1][1] && grid[1][1] === grid[2][2]) {
+      console.log('🏆 Winner found - Diagonal 1:', grid[0][0]);
       return { winner: grid[0][0], line: 'diagonal', index: 0 };
     }
     if (grid[0][2] && grid[0][2] === grid[1][1] && grid[1][1] === grid[2][0]) {
+      console.log('🏆 Winner found - Diagonal 2:', grid[0][2]);
       return { winner: grid[0][2], line: 'diagonal', index: 1 };
     }
     
-    // Check for draw
-    const isFull = boardArray.every(cell => cell !== null);
-    if (isFull) {
+    // FIXED: Better draw detection - count actual filled cells
+    const filledCells = boardArray.filter(cell => cell === 'X' || cell === 'O').length;
+    const emptyCells = boardArray.filter(cell => cell === null).length;
+    
+    console.log('🎯 CheckWinner - Filled cells:', filledCells, 'Empty cells:', emptyCells);
+    
+    // Only declare draw if all 9 cells are actually filled with X or O
+    if (filledCells === 9 && emptyCells === 0) {
+      console.log('🤝 Draw detected - board is full');
       return { winner: 'draw' };
     }
     
+    console.log('🎮 Game continues - no winner yet');
     return { winner: null };
   };
 
@@ -597,6 +636,7 @@ const TicTacToeGame = ({ studentData, showToast }) => {
           <div className="mb-4 p-2 bg-gray-100 rounded text-xs">
             <p><strong>Debug:</strong> Player: {playerRole} | Turn: {gameData?.currentPlayer} | My Turn: {isMyTurn ? 'Yes' : 'No'}</p>
             <p><strong>Board:</strong> [{board.map((cell, i) => `${i}:${cell || 'null'}`).join(', ')}]</p>
+            <p><strong>Filled:</strong> {board.filter(cell => cell === 'X' || cell === 'O').length}/9 | <strong>Empty:</strong> {board.filter(cell => cell === null).length}/9</p>
           </div>
           
           <div className="grid grid-cols-3 gap-2 md:gap-3 max-w-[240px] md:max-w-[300px] mx-auto">
@@ -626,6 +666,21 @@ const TicTacToeGame = ({ studentData, showToast }) => {
               className="flex-1 bg-green-500 text-white py-3 rounded-lg font-semibold hover:bg-green-600 transition-colors"
             >
               🎮 Play Again
+            </button>
+          )}
+          
+          {/* Emergency reset button for debugging */}
+          {gameState === 'finished' && (
+            <button
+              onClick={() => {
+                console.log('🔄 Manual game reset');
+                setWinner(null);
+                setGameState('playing');
+                showToast('Game state reset - continue playing!', 'info');
+              }}
+              className="bg-orange-500 text-white px-4 py-3 rounded-lg font-semibold hover:bg-orange-600 transition-colors text-sm"
+            >
+              🔄 Reset
             </button>
           )}
         </div>
