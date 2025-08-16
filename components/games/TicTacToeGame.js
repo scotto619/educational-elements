@@ -53,7 +53,7 @@ const TicTacToeGame = ({ studentData, showToast }) => {
     
     const unsubscribe = firebase.onValue(gameRef, (snapshot) => {
       const data = snapshot.val();
-      console.log('📦 Firebase data received:', data);
+      console.log('📦 Raw Firebase data received:', data);
       
       if (!data) {
         resetGame();
@@ -64,39 +64,45 @@ const TicTacToeGame = ({ studentData, showToast }) => {
       // Update game data
       setGameData(data);
       
-      // FIXED: Ensure board is always a proper array with null values
+      // FIXED: Much more robust board processing
+      let processedBoard = Array(9).fill(null);
+      
       if (data.board) {
-        let boardArray;
+        console.log('🔍 Raw board data from Firebase:', data.board);
+        console.log('🔍 Board data type:', typeof data.board);
+        console.log('🔍 Is board array?', Array.isArray(data.board));
+        
         if (Array.isArray(data.board)) {
-          boardArray = data.board;
+          // Handle array format
+          for (let i = 0; i < 9; i++) {
+            const cellValue = data.board[i];
+            if (cellValue === 'X' || cellValue === 'O') {
+              processedBoard[i] = cellValue;
+            } else {
+              processedBoard[i] = null;
+            }
+          }
         } else if (typeof data.board === 'object') {
-          // Convert Firebase object to array, filling missing indices with null
-          boardArray = Array(9).fill(null);
+          // Handle object format from Firebase
           Object.keys(data.board).forEach(key => {
             const index = parseInt(key);
+            const cellValue = data.board[key];
             if (!isNaN(index) && index >= 0 && index < 9) {
-              boardArray[index] = data.board[key];
+              if (cellValue === 'X' || cellValue === 'O') {
+                processedBoard[index] = cellValue;
+              } else {
+                processedBoard[index] = null;
+              }
             }
           });
-        } else {
-          boardArray = Array(9).fill(null);
         }
-        
-        // Ensure all empty cells are explicitly null
-        boardArray = boardArray.map(cell => {
-          if (cell === undefined || cell === '') {
-            return null;
-          }
-          return cell;
-        });
-        
-        console.log('🎯 Board processed from Firebase:', boardArray);
-        setBoard(boardArray);
-      } else {
-        // No board data, initialize empty board
-        console.log('🎯 No board data, initializing empty board');
-        setBoard(Array(9).fill(null));
       }
+      
+      console.log('🎯 Processed board:', processedBoard);
+      console.log('🔢 Filled cells:', processedBoard.filter(cell => cell === 'X' || cell === 'O').length);
+      console.log('🔢 Empty cells:', processedBoard.filter(cell => cell === null).length);
+      
+      setBoard(processedBoard);
       
       // Check if both players joined
       if (data.players && Object.keys(data.players).length === 2 && gameState === 'waiting') {
@@ -105,9 +111,8 @@ const TicTacToeGame = ({ studentData, showToast }) => {
       }
       
       // Check win condition - FIXED to prevent false draws
-      if (gameState === 'playing') { // Only check for winner during active gameplay
-        const currentBoard = data.board || Array(9).fill(null);
-        const winResult = checkWinner(currentBoard);
+      if (gameState === 'playing') {
+        const winResult = checkWinner(processedBoard);
         if (winResult.winner && !winner) {
           console.log('🏆 Game ending with winner:', winResult.winner);
           setWinner(winResult);
