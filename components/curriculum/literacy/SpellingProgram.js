@@ -1,670 +1,83 @@
 // components/curriculum/literacy/SpellingProgram.js
-// COMPREHENSIVE SPELLING PROGRAM WITH WORD LISTS AND ACTIVITIES
-import React, { useState, useRef } from 'react';
+// CLEAN SPELLING PROGRAM WITH 59 LEVEL 1 LISTS
+import React, { useState, useEffect, useRef } from 'react';
 
 // ===============================================
-// LEVEL 1 SPELLING WORD LISTS - FROM DOCUMENT
+// ALL 59 SPELLING LISTS FROM DOCUMENT
 // ===============================================
-const SPELLING_WORD_LISTS = {
-  level1: {
-    name: "Level 1 - Foundation Words",
-    description: "Essential phonetic words and high-frequency words",
-    lists: [
-      {
-        id: "list_1a",
-        name: "List 1A - Basic CVC Words",
-        category: "Short Vowels",
-        words: ["in", "at", "it", "an", "sit", "sat", "set", "men", "met", "pet", "ten", "net", "bad", "bed", "us", "bit", "up", "dog"]
-      },
-      {
-        id: "list_1b", 
-        name: "List 1B - CVC Continuation",
-        category: "Short Vowels",
-        words: ["pat", "tap", "nap", "tin", "pin", "pit", "pen", "hen", "rat", "mat", "pad", "mad", "mum", "on", "top", "if", "pig", "big"]
-      },
-      {
-        id: "list_1c",
-        name: "List 1C - More CVC Words",
-        category: "Short Vowels", 
-        words: ["pan", "nip", "sip", "tan", "tip", "pip", "hip", "cap", "map", "ram", "dip", "hid", "gum", "hug", "bag", "fed", "bus", "gap"]
-      },
-      {
-        id: "list_1d",
-        name: "List 1D - Final CVC Set",
-        category: "Short Vowels",
-        words: ["him", "red", "did", "can", "man", "ran", "leg", "get", "let", "run", "sun", "fun", "cup", "mud", "rod", "fan", "lip", "rub"]
-      },
-      {
-        id: "list_2a",
-        name: "List 2A - Basic Extensions",
-        category: "Consonant Blends",
-        words: ["cat", "am", "hat", "sad", "dad", "had", "but", "hot", "cut", "got", "not", "lot", "yes", "wet", "jet", "yet", "vet", "kid"]
-      },
-      {
-        id: "list_2b",
-        name: "List 2B - Consonant Clusters",
-        category: "Consonant Blends", 
-        words: ["job", "jug", "zip", "van", "win", "web", "but", "sad", "bed", "tub", "dam", "sob", "dip", "nod"]
-      },
-      {
-        id: "list_3a",
-        name: "List 3A - Digraphs SH/CH",
-        category: "Digraphs",
-        words: ["shed", "fish", "ship", "rush", "shop", "dish", "shot", "wish", "chop", "such", "chip", "much", "chin", "rich", "chat", "chest"]
-      },
-      {
-        id: "list_3b",
-        name: "List 3B - More Digraphs",
-        category: "Digraphs",
-        words: ["lash", "shelf", "shut", "mash", "hush", "chap", "chug", "much", "cash", "shin", "shift", "such", "chum", "thin", "then", "thud"]
-      },
-      {
-        id: "list_4a",
-        name: "List 4A - TH/WH Words",
-        category: "Digraphs",
-        words: ["that", "them", "this", "then", "with", "moth", "than", "thick", "when", "whip", "which", "whiz", "whim", "wheel", "whack", "whacked"]
-      },
-      {
-        id: "list_4b",
-        name: "List 4B - CK Endings",
-        category: "Consonant Digraphs",
-        words: ["duck", "sock", "pick", "sick", "thick", "kick", "back", "neck", "desk", "risk", "thank", "milk", "rock", "shack", "chick", "pack"]
-      },
-      {
-        id: "list_5a",
-        name: "List 5A - Long Vowels EE/OO",
-        category: "Long Vowels",
-        words: ["week", "see", "been", "need", "keep", "seem", "feet", "teeth", "meet", "cheek", "feel", "sheet", "wheel", "weed", "seed", "deep"]
-      },
-      {
-        id: "list_5b",
-        name: "List 5B - More Long Vowels",
-        category: "Long Vowels",
-        words: ["food", "soon", "moon", "room", "tooth", "too", "zoo", "noon", "root", "hoop", "roof", "mood", "boot", "booth", "shoot", "loop"]
-      },
-      {
-        id: "list_5c",
-        name: "List 5C - Cool/Book Pattern",
-        category: "Long Vowels",
-        words: ["cool", "book", "look", "took", "pool", "shook", "good", "wood"]
-      },
-      {
-        id: "list_6a",
-        name: "List 6A - Blends & QU",
-        category: "Consonant Blends",
-        words: ["six", "box", "fox", "wax", "tax", "fix", "mix", "fax", "quick", "quiz", "quit", "quits", "quack", "quacks", "quilt", "queen"]
-      },
-      {
-        id: "list_6b", 
-        name: "List 6B - Initial Blends",
-        category: "Consonant Blends",
-        words: ["twin", "plan", "frog", "step", "from", "stop", "swim", "flag", "black", "smash", "three", "sleep", "flash", "green", "tree", "truck"]
-      },
-      {
-        id: "list_6c",
-        name: "List 6C - More Blends",
-        category: "Consonant Blends", 
-        words: ["drum", "block", "flap", "club", "snap", "track", "flip", "flat", "trip", "drag", "plug", "crash", "clip", "drop", "spin", "glad"]
-      },
-      {
-        id: "list_7a",
-        name: "List 7A - Final Blends",
-        category: "Final Consonant Blends",
-        words: ["just", "left", "and", "lunch", "land", "hand", "went", "must", "end", "help", "next", "list", "thank", "think", "pink", "best"]
-      },
-      {
-        id: "list_7b",
-        name: "List 7B - More Final Blends", 
-        category: "Final Consonant Blends",
-        words: ["told", "gold", "old", "cold", "felt", "jump", "hold", "milk", "soft", "lost", "shift", "pond", "wind", "cost", "damp", "bend"]
-      },
-      {
-        id: "list_8a",
-        name: "List 8A - Complex Words",
-        category: "Complex Patterns",
-        words: ["broom", "snack", "west", "thump", "fresh", "hunt", "speed", "chunk", "slept", "stand", "blend", "stamp", "plant", "drink", "upon", "until"]
-      },
-      {
-        id: "list_8b",
-        name: "List 8B - AI/AY Patterns",
-        category: "Vowel Teams",
-        words: ["day", "play", "say", "way", "stay", "may", "today", "away", "paint", "rain", "chain", "train", "paid", "wait", "again", "nail"]
-      },
-      {
-        id: "list_8c",
-        name: "List 8C - More Vowel Teams",
-        category: "Vowel Teams",
-        words: ["tail", "snail", "afraid", "trail", "tray", "delay", "clay", "sway"]
-      },
-      {
-        id: "list_9a",
-        name: "List 9A - ALL Family",
-        category: "Word Families",
-        words: ["call", "fall", "all", "stall", "small", "ball", "wall", "tall"]
-      },
-      {
-        id: "list_9b",
-        name: "List 9B - ING Family", 
-        category: "Word Families",
-        words: ["king", "swing", "bring", "sing", "thing", "long", "song", "along"]
-      },
-      {
-        id: "list_9c",
-        name: "List 9C - OR/AR Sounds",
-        category: "R-Controlled Vowels",
-        words: ["north", "short", "torch", "storm", "sport", "form", "for", "horse", "start", "hard", "car", "far", "garden", "card", "park", "dark"]
-      },
-      {
-        id: "list_9d",
-        name: "List 9D - More R-Controlled",
-        category: "R-Controlled Vowels", 
-        words: ["shark", "star", "chart", "march", "arch", "farm", "smart", "part"]
-      },
-      {
-        id: "list_10a",
-        name: "List 10A - ER Sounds",
-        category: "R-Controlled Vowels",
-        words: ["ever", "under", "never", "number", "her", "river", "sister", "term", "report", "forget", "thorn", "corn", "scarf", "market", "sharp", "alarm"]
-      },
-      {
-        id: "list_10b",
-        name: "List 10B - Complex R-Controlled",
-        category: "R-Controlled Vowels",
-        words: ["carpet", "spark", "charm", "clever", "winter", "jumper", "porch", "pork"]
-      },
-      {
-        id: "list_11a",
-        name: "List 11A - OY/OI Sounds",
-        category: "Diphthongs",
-        words: ["boy", "toy", "enjoy", "royal", "oil", "point", "soil", "joint", "faint", "grain", "claim", "slay", "pray", "joy", "moist", "join"]
-      },
-      {
-        id: "list_12a",
-        name: "List 12A - High Frequency Words Set 1",
-        category: "High Frequency",
-        words: ["a", "I", "is", "as", "his", "has", "was", "the", "of", "for", "me", "be", "he", "we", "she", "are", "to", "do", "who", "into", "you", "one", "two", "said"]
-      },
-      {
-        id: "list_12b",
-        name: "List 12B - High Frequency Words Set 2", 
-        category: "High Frequency",
-        words: ["they", "more", "what", "have", "put", "pull", "so", "no", "go"]
-      }
-    ]
-  }
-};
-
-// ===============================================
-// DAILY SPELLING ACTIVITIES
-// ===============================================
-const DAILY_ACTIVITIES = [
-  {
-    id: "look_say_cover_write_check",
-    name: "Look, Say, Cover, Write, Check",
-    icon: "👀",
-    description: "Classic spelling practice method",
-    instructions: [
-      "1. 👀 LOOK at the word carefully",
-      "2. 🗣️ SAY the word out loud", 
-      "3. 🙈 COVER the word",
-      "4. ✍️ WRITE the word from memory",
-      "5. ✅ CHECK your spelling"
-    ]
-  },
-  {
-    id: "rainbow_words",
-    name: "Rainbow Words",
-    icon: "🌈", 
-    description: "Write words in different colors",
-    instructions: [
-      "1. Write each spelling word",
-      "2. Use a different color for each letter",
-      "3. Make your words look like rainbows!",
-      "4. Say each word as you write it"
-    ]
-  },
-  {
-    id: "silly_sentences",
-    name: "Silly Sentences",
-    icon: "😄",
-    description: "Create funny sentences with spelling words",
-    instructions: [
-      "1. Choose 3-5 spelling words",
-      "2. Create a silly sentence using all words",
-      "3. Make it as funny as possible!",
-      "4. Share your sentence with the class"
-    ]
-  },
-  {
-    id: "word_sorting",
-    name: "Word Sorting",
-    icon: "📊",
-    description: "Sort words by patterns or features",
-    instructions: [
-      "1. Look at your spelling words",
-      "2. Find words that are similar",
-      "3. Sort them into groups",
-      "4. Explain why you grouped them together"
-    ]
-  },
-  {
-    id: "spelling_pyramid",
-    name: "Spelling Pyramid",
-    icon: "🔺",
-    description: "Build words letter by letter",
-    instructions: [
-      "1. Write the first letter of your word",
-      "2. Write the first two letters below it",
-      "3. Keep adding letters to build a pyramid",
-      "4. Example: c → ca → cat"
-    ]
-  },
-  {
-    id: "trace_and_write",
-    name: "Trace and Write",
-    icon: "✏️",
-    description: "Trace words then write independently",
-    instructions: [
-      "1. Trace each spelling word 3 times",
-      "2. Write the word 3 times without tracing",
-      "3. Say each letter as you write it",
-      "4. Check your spelling when finished"
-    ]
-  },
-  {
-    id: "word_search_create",
-    name: "Create Word Search",
-    icon: "🔍",
-    description: "Make a word search with spelling words",
-    instructions: [
-      "1. Draw a grid on paper",
-      "2. Hide your spelling words in the grid",
-      "3. Fill empty spaces with random letters",
-      "4. Give to a friend to solve!"
-    ]
-  }
+const SPELLING_LISTS = [
+  { id: "1.1", name: "Level 1.1", words: ["in", "at", "it", "an", "sit", "sat"] },
+  { id: "1.2", name: "Level 1.2", words: ["pat", "tap", "nap", "tin", "pin", "pit"] },
+  { id: "1.3", name: "Level 1.3", words: ["pan", "nip", "sip", "tan", "tip", "pip"] },
+  { id: "1.4", name: "Level 1.4", words: ["him", "red", "did", "can", "man", "ran"] },
+  { id: "1.5", name: "Level 1.5", words: ["cat", "am", "hat", "sad", "dad", "had"] },
+  { id: "1.6", name: "Level 1.6", words: ["set", "men", "met", "pet", "ten", "net"] },
+  { id: "1.7", name: "Level 1.7", words: ["pen", "hen", "rat", "mat", "pad", "mad"] },
+  { id: "1.8", name: "Level 1.8", words: ["hip", "cap", "map", "ram", "dip", "hid"] },
+  { id: "1.9", name: "Level 1.9", words: ["leg", "get", "let", "run", "sun", "fun"] },
+  { id: "1.10", name: "Level 1.10", words: ["but", "hot", "cut", "got", "not", "lot"] },
+  { id: "1.11", name: "Level 1.11", words: ["bad", "bed", "us", "bit", "up", "dog"] },
+  { id: "1.12", name: "Level 1.12", words: ["mum", "on", "top", "if", "pig", "big"] },
+  { id: "1.13", name: "Level 1.13", words: ["gum", "hug", "bag", "fed", "bus", "gap"] },
+  { id: "1.14", name: "Level 1.14", words: ["cup", "mud", "rod", "fan", "lip", "rub"] },
+  { id: "1.15", name: "Level 1.15", words: ["yes", "wet", "jet", "yet", "vet", "kid"] },
+  { id: "1.16", name: "Level 1.16", words: ["job", "jug", "zip", "van", "win", "web"] },
+  { id: "1.17", name: "Level 1.17", words: ["but", "sad", "bed", "tub", "dam", "sob", "dip", "nod"] },
+  { id: "1.18", name: "Level 1.18", words: ["shed", "fish", "ship", "rush", "shop", "dish", "shot", "wish"] },
+  { id: "1.19", name: "Level 1.19", words: ["chop", "such", "chip", "much", "chin", "rich", "chat", "chest"] },
+  { id: "1.20", name: "Level 1.20", words: ["lash", "shelf", "shut", "mash", "hush", "chap", "chug", "much"] },
+  { id: "1.21", name: "Level 1.21", words: ["that", "them", "this", "then", "with", "moth", "than", "thick"] },
+  { id: "1.22", name: "Level 1.22", words: ["cash", "shin", "shift", "such", "chum", "thin", "then", "thud"] },
+  { id: "1.23", name: "Level 1.23", words: ["when", "whip", "which", "whiz", "whim", "wheel", "whack", "whacked"] },
+  { id: "1.24", name: "Level 1.24", words: ["duck", "sock", "pick", "sick", "thick", "kick", "back", "neck"] },
+  { id: "1.25", name: "Level 1.25", words: ["desk", "risk", "thank", "milk", "rock", "shack", "chick", "pack"] },
+  { id: "1.26", name: "Level 1.26", words: ["week", "see", "been", "need", "keep", "seem", "feet", "teeth"] },
+  { id: "1.27", name: "Level 1.27", words: ["meet", "cheek", "feel", "sheet", "wheel", "weed", "seed", "deep"] },
+  { id: "1.28", name: "Level 1.28", words: ["food", "soon", "moon", "room", "tooth", "too", "zoo", "noon"] },
+  { id: "1.29", name: "Level 1.29", words: ["root", "hoop", "roof", "mood", "boot", "booth", "shoot", "loop"] },
+  { id: "1.30", name: "Level 1.30", words: ["cool", "book", "look", "took", "pool", "shook", "good", "wood"] },
+  { id: "1.31", name: "Level 1.31", words: ["six", "box", "fox", "wax", "tax", "fix", "mix", "fax"] },
+  { id: "1.32", name: "Level 1.32", words: ["quick", "quiz", "quit", "quits", "quack", "quacks", "quilt", "queen"] },
+  { id: "1.33", name: "Level 1.33", words: ["twin", "plan", "frog", "step", "from", "stop", "swim", "flag"] },
+  { id: "1.34", name: "Level 1.34", words: ["black", "smash", "three", "sleep", "flash", "green", "tree", "truck"] },
+  { id: "1.35", name: "Level 1.35", words: ["drum", "block", "flap", "club", "snap", "track", "flip", "flat"] },
+  { id: "1.36", name: "Level 1.36", words: ["trip", "drag", "plug", "crash", "clip", "drop", "spin", "glad"] },
+  { id: "1.37", name: "Level 1.37", words: ["just", "left", "and", "lunch", "land", "hand", "went", "must"] },
+  { id: "1.38", name: "Level 1.38", words: ["end", "help", "next", "list", "thank", "think", "pink", "best"] },
+  { id: "1.39", name: "Level 1.39", words: ["told", "gold", "old", "cold", "felt", "jump", "hold", "milk"] },
+  { id: "1.40", name: "Level 1.40", words: ["soft", "lost", "shift", "pond", "wind", "cost", "damp", "bend"] },
+  { id: "1.41", name: "Level 1.41", words: ["broom", "snack", "west", "thump", "fresh", "hunt", "speed", "chunk"] },
+  { id: "1.42", name: "Level 1.42", words: ["slept", "stand", "blend", "stamp", "plant", "drink", "upon", "until"] },
+  { id: "1.43", name: "Level 1.43", words: ["day", "play", "say", "way", "stay", "may", "today", "away"] },
+  { id: "1.44", name: "Level 1.44", words: ["paint", "rain", "chain", "train", "paid", "wait", "again", "nail"] },
+  { id: "1.45", name: "Level 1.45", words: ["tail", "snail", "afraid", "trail", "tray", "delay", "clay", "sway"] },
+  { id: "1.46", name: "Level 1.46", words: ["call", "fall", "all", "stall", "small", "ball", "wall", "tall"] },
+  { id: "1.47", name: "Level 1.47", words: ["king", "swing", "bring", "sing", "thing", "long", "song", "along"] },
+  { id: "1.48", name: "Level 1.48", words: ["north", "short", "torch", "storm", "sport", "form", "for", "horse"] },
+  { id: "1.49", name: "Level 1.49", words: ["start", "hard", "car", "far", "garden", "card", "park", "dark"] },
+  { id: "1.50", name: "Level 1.50", words: ["shark", "star", "chart", "march", "arch", "farm", "smart", "part"] },
+  { id: "1.51", name: "Level 1.51", words: ["ever", "under", "never", "number", "her", "river", "sister", "term"] },
+  { id: "1.52", name: "Level 1.52", words: ["report", "forget", "thorn", "corn", "scarf", "market", "sharp", "alarm"] },
+  { id: "1.53", name: "Level 1.53", words: ["carpet", "spark", "charm", "clever", "winter", "jumper", "porch", "pork"] },
+  { id: "1.54", name: "Level 1.54", words: ["boy", "toy", "enjoy", "royal", "oil", "point", "soil", "joint"] },
+  { id: "1.55", name: "Level 1.55", words: ["faint", "grain", "claim", "slay", "pray", "joy", "moist", "join"] },
+  { id: "1.56", name: "Level 1.56", words: ["a", "I", "is", "as", "his", "has", "was", "the"] },
+  { id: "1.57", name: "Level 1.57", words: ["of", "for", "me", "be", "he", "we", "she", "are"] },
+  { id: "1.58", name: "Level 1.58", words: ["to", "do", "who", "into", "you", "one", "two", "said"] },
+  { id: "1.59", name: "Level 1.59", words: ["they", "more", "what", "have", "put", "pull", "so", "no", "go"] }
 ];
 
 // ===============================================
-// STUDENT GROUP MANAGEMENT COMPONENT
+// SPELLING ACTIVITIES
 // ===============================================
-const StudentGroupManager = ({ students, onSaveGroups, savedGroups = [], isPresentationMode }) => {
-  const [groups, setGroups] = useState(savedGroups.length > 0 ? savedGroups : [
-    { id: 1, name: "Group 1", students: [], assignedList: null },
-    { id: 2, name: "Group 2", students: [], assignedList: null },
-    { id: 3, name: "Group 3", students: [], assignedList: null }
-  ]);
-  const [draggedStudent, setDraggedStudent] = useState(null);
-
-  const handleDragStart = (e, student) => {
-    setDraggedStudent(student);
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-  };
-
-  const handleDrop = (e, groupId) => {
-    e.preventDefault();
-    if (!draggedStudent) return;
-
-    const newGroups = groups.map(group => {
-      // Remove student from current group
-      const filteredStudents = group.students.filter(s => s.id !== draggedStudent.id);
-      
-      // Add to target group
-      if (group.id === groupId) {
-        return { ...group, students: [...filteredStudents, draggedStudent] };
-      }
-      return { ...group, students: filteredStudents };
-    });
-
-    setGroups(newGroups);
-    setDraggedStudent(null);
-    onSaveGroups(newGroups);
-  };
-
-  const assignListToGroup = (groupId, listId) => {
-    const newGroups = groups.map(group => 
-      group.id === groupId ? { ...group, assignedList: listId } : group
-    );
-    setGroups(newGroups);
-    onSaveGroups(newGroups);
-  };
-
-  if (isPresentationMode) {
-    return (
-      <div className="bg-white rounded-xl shadow-lg p-8">
-        <h3 className="text-4xl font-bold text-center mb-8">📚 Today's Spelling Groups</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {groups.map(group => {
-            const assignedList = SPELLING_WORD_LISTS.level1.lists.find(list => list.id === group.assignedList);
-            return (
-              <div key={group.id} className="bg-gradient-to-br from-blue-50 to-purple-50 border-2 border-blue-200 rounded-xl p-6">
-                <h4 className="text-2xl font-bold text-blue-800 mb-4">{group.name}</h4>
-                {assignedList && (
-                  <div className="bg-blue-100 rounded-lg p-4 mb-4">
-                    <p className="text-blue-800 font-semibold text-xl">{assignedList.name}</p>
-                    <p className="text-blue-600 text-lg">{assignedList.category}</p>
-                  </div>
-                )}
-                <div className="space-y-2">
-                  {group.students.map(student => (
-                    <div key={student.id} className="bg-white p-3 rounded-lg border border-blue-200">
-                      <p className="font-semibold text-lg">{student.firstName} {student.lastName}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      <h3 className="text-2xl font-bold text-gray-800">👥 Student Groups & List Assignment</h3>
-      
-      {/* Unassigned Students */}
-      <div className="bg-gray-50 rounded-xl p-6">
-        <h4 className="text-lg font-bold text-gray-700 mb-4">📋 Unassigned Students</h4>
-        <div className="flex flex-wrap gap-2">
-          {students.filter(student => 
-            !groups.some(group => group.students.some(s => s.id === student.id))
-          ).map(student => (
-            <div
-              key={student.id}
-              draggable
-              onDragStart={(e) => handleDragStart(e, student)}
-              className="bg-white border-2 border-gray-300 rounded-lg p-3 cursor-move hover:shadow-md transition-all"
-            >
-              <p className="font-semibold">{student.firstName} {student.lastName}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Groups */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {groups.map(group => {
-          const assignedList = SPELLING_WORD_LISTS.level1.lists.find(list => list.id === group.assignedList);
-          return (
-            <div
-              key={group.id}
-              className="bg-white rounded-xl border-2 border-blue-200 p-6 min-h-64"
-              onDragOver={handleDragOver}
-              onDrop={(e) => handleDrop(e, group.id)}
-            >
-              <h4 className="text-xl font-bold text-blue-800 mb-4">{group.name}</h4>
-              
-              {/* List Assignment */}
-              <div className="mb-4">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Assigned List:</label>
-                <select
-                  value={group.assignedList || ""}
-                  onChange={(e) => assignListToGroup(group.id, e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded-lg"
-                >
-                  <option value="">No list assigned</option>
-                  {SPELLING_WORD_LISTS.level1.lists.map(list => (
-                    <option key={list.id} value={list.id}>{list.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              {assignedList && (
-                <div className="bg-blue-50 rounded-lg p-3 mb-4">
-                  <p className="text-blue-800 font-semibold">{assignedList.name}</p>
-                  <p className="text-blue-600 text-sm">{assignedList.category}</p>
-                  <p className="text-xs text-blue-500">{assignedList.words.length} words</p>
-                </div>
-              )}
-
-              {/* Students in Group */}
-              <div className="space-y-2">
-                {group.students.map(student => (
-                  <div key={student.id} className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-                    <p className="font-semibold">{student.firstName} {student.lastName}</p>
-                  </div>
-                ))}
-                {group.students.length === 0 && (
-                  <p className="text-gray-500 text-center py-8">Drop students here</p>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
-
-// ===============================================
-// WORD LIST DISPLAY COMPONENT
-// ===============================================
-const WordListDisplay = ({ list, isPresentationMode }) => {
-  const printRef = useRef(null);
-
-  const handlePrint = () => {
-    const printWindow = window.open('', 'Print', 'height=800,width=600');
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>${list.name} - Spelling Words</title>
-          <style>
-            body { 
-              font-family: Arial, sans-serif; 
-              margin: 10px; 
-              line-height: 1.6; 
-            }
-            .header {
-              text-align: center;
-              border-bottom: 2px solid #333;
-              padding-bottom: 10px;
-              margin-bottom: 20px;
-            }
-            .copy {
-              margin-bottom: 30px;
-              padding: 15px;
-              border: 2px solid #333;
-              page-break-inside: avoid;
-            }
-            .copy h3 {
-              margin-top: 0;
-              color: #333;
-            }
-            .word-grid {
-              display: grid;
-              grid-template-columns: repeat(3, 1fr);
-              gap: 10px;
-              margin-bottom: 15px;
-            }
-            .word {
-              padding: 8px;
-              border: 1px solid #ddd;
-              text-align: center;
-              font-size: 16px;
-              font-weight: bold;
-            }
-            .cut-line {
-              border-top: 2px dashed #999;
-              margin: 15px 0;
-              text-align: center;
-              color: #666;
-              font-size: 12px;
-              padding-top: 5px;
-            }
-            @media print {
-              .cut-line { 
-                page-break-after: avoid; 
-              }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1>Educational Elements</h1>
-            <h2>${list.name}</h2>
-            <p>Category: ${list.category} | ${list.words.length} words</p>
-          </div>
-          
-          ${Array.from({ length: 4 }, (_, i) => `
-            <div class="copy">
-              <h3>Copy ${i + 1} - Student Name: _______________</h3>
-              <div class="word-grid">
-                ${list.words.map(word => `<div class="word">${word}</div>`).join('')}
-              </div>
-              <p style="margin-top: 20px;">
-                <strong>Instructions:</strong> Practice these words daily using the "Look, Say, Cover, Write, Check" method.
-              </p>
-            </div>
-            ${i < 3 ? '<div class="cut-line">✂️ Cut along this line ✂️</div>' : ''}
-          `).join('')}
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
-    printWindow.focus();
-    printWindow.print();
-    printWindow.close();
-  };
-
-  if (isPresentationMode) {
-    return (
-      <div className="bg-white rounded-xl shadow-lg p-12 text-center">
-        <h2 className="text-6xl font-bold text-purple-800 mb-8">{list.name}</h2>
-        <p className="text-3xl text-purple-600 mb-8">{list.category}</p>
-        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
-          {list.words.map((word, index) => (
-            <div key={index} className="bg-gradient-to-br from-purple-100 to-blue-100 border-2 border-purple-300 rounded-xl p-6 shadow-lg">
-              <span className="text-4xl font-bold text-purple-800">{word}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-2xl font-bold text-gray-800">{list.name}</h3>
-          <p className="text-gray-600">Category: {list.category} • {list.words.length} words</p>
-        </div>
-        <button
-          onClick={handlePrint}
-          className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-semibold flex items-center gap-2"
-        >
-          🖨️ Print 4 Copies
-        </button>
-      </div>
-
-      <div ref={printRef} className="bg-white rounded-xl border-2 border-gray-200 p-6">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-          {list.words.map((word, index) => (
-            <div key={index} className="bg-purple-50 border border-purple-200 rounded-lg p-4 text-center">
-              <span className="text-lg font-bold text-purple-800">{word}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// ===============================================
-// DAILY ACTIVITY DISPLAY COMPONENT
-// ===============================================
-const DailyActivityDisplay = ({ activity, selectedWords = [], isPresentationMode }) => {
-  const [currentStep, setCurrentStep] = useState(0);
-
-  if (isPresentationMode) {
-    return (
-      <div className="bg-white rounded-xl shadow-lg p-12">
-        <div className="text-center mb-12">
-          <div className="text-8xl mb-6">{activity.icon}</div>
-          <h2 className="text-6xl font-bold text-green-800 mb-4">{activity.name}</h2>
-          <p className="text-3xl text-green-600">{activity.description}</p>
-        </div>
-
-        <div className="bg-green-50 rounded-xl p-8 mb-8">
-          <h3 className="text-4xl font-bold text-green-800 mb-6">📋 Instructions:</h3>
-          <div className="space-y-6">
-            {activity.instructions.map((instruction, index) => (
-              <div 
-                key={index} 
-                className={`text-3xl p-6 rounded-lg border-2 transition-all ${
-                  currentStep === index 
-                    ? 'bg-green-200 border-green-500 font-bold' 
-                    : 'bg-white border-green-200'
-                }`}
-              >
-                {instruction}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex justify-center space-x-8">
-          <button 
-            onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
-            disabled={currentStep === 0}
-            className="bg-gray-500 text-white px-12 py-6 rounded-lg font-bold text-3xl disabled:opacity-50"
-          >
-            ⬅️ Previous
-          </button>
-          <button 
-            onClick={() => setCurrentStep(Math.min(activity.instructions.length - 1, currentStep + 1))}
-            disabled={currentStep === activity.instructions.length - 1}
-            className="bg-green-500 text-white px-12 py-6 rounded-lg font-bold text-3xl disabled:opacity-50"
-          >
-            Next ➡️
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="bg-white rounded-xl shadow-lg p-6">
-      <div className="text-center mb-6">
-        <div className="text-4xl mb-2">{activity.icon}</div>
-        <h3 className="text-2xl font-bold text-green-800">{activity.name}</h3>
-        <p className="text-green-600">{activity.description}</p>
-      </div>
-
-      <div className="bg-green-50 rounded-lg p-6">
-        <h4 className="text-lg font-bold text-green-800 mb-4">📋 Instructions:</h4>
-        <div className="space-y-3">
-          {activity.instructions.map((instruction, index) => (
-            <div key={index} className="flex items-start gap-3">
-              <span className="flex-shrink-0 w-6 h-6 bg-green-200 text-green-800 rounded-full text-sm font-bold flex items-center justify-center">
-                {index + 1}
-              </span>
-              <p className="text-green-700">{instruction}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {selectedWords.length > 0 && (
-        <div className="mt-6 bg-blue-50 rounded-lg p-4">
-          <h4 className="text-lg font-bold text-blue-800 mb-3">📝 Today's Words:</h4>
-          <div className="flex flex-wrap gap-2">
-            {selectedWords.map((word, index) => (
-              <span key={index} className="bg-blue-200 text-blue-800 px-3 py-1 rounded-full font-semibold">
-                {word}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
+const ACTIVITIES = [
+  { id: "look_cover_write", name: "Look, Cover, Write, Check", icon: "👀", color: "bg-blue-500" },
+  { id: "rainbow_words", name: "Rainbow Words", icon: "🌈", color: "bg-purple-500" },
+  { id: "silly_sentences", name: "Silly Sentences", icon: "😄", color: "bg-green-500" },
+  { id: "word_sorting", name: "Word Sorting", icon: "📊", color: "bg-orange-500" },
+  { id: "spelling_pyramid", name: "Spelling Pyramid", icon: "🔺", color: "bg-red-500" },
+  { id: "trace_write", name: "Trace & Write", icon: "✏️", color: "bg-indigo-500" }
+];
 
 // ===============================================
 // MAIN SPELLING PROGRAM COMPONENT
@@ -675,370 +88,452 @@ const SpellingProgram = ({
   saveData = () => {}, 
   loadedData = {} 
 }) => {
-  const [activeView, setActiveView] = useState('overview');
-  const [selectedList, setSelectedList] = useState(null);
-  const [selectedActivity, setSelectedActivity] = useState(DAILY_ACTIVITIES[0]);
+  const [groups, setGroups] = useState(loadedData.spellingGroups || []);
+  const [selectedLists, setSelectedLists] = useState([]);
   const [isPresentationMode, setIsPresentationMode] = useState(false);
-  const [studentGroups, setStudentGroups] = useState(loadedData.spellingGroups || []);
-  const [currentDay, setCurrentDay] = useState(0);
+  const [showListSelector, setShowListSelector] = useState(false);
+
+  // Initialize groups if empty
+  useEffect(() => {
+    if (groups.length === 0) {
+      const defaultGroups = [
+        { id: 1, name: "Group 1", color: "bg-blue-500", students: [], assignedLists: [], assignedActivity: null },
+        { id: 2, name: "Group 2", color: "bg-green-500", students: [], assignedLists: [], assignedActivity: null },
+        { id: 3, name: "Group 3", color: "bg-purple-500", students: [], assignedLists: [], assignedActivity: null }
+      ];
+      setGroups(defaultGroups);
+      saveGroups(defaultGroups);
+    }
+  }, []);
+
+  const saveGroups = (updatedGroups) => {
+    setGroups(updatedGroups);
+    saveData({ spellingGroups: updatedGroups });
+    showToast('Groups saved successfully!', 'success');
+  };
+
+  const addGroup = () => {
+    if (groups.length >= 5) {
+      showToast('Maximum 5 groups allowed', 'error');
+      return;
+    }
+    const colors = ["bg-blue-500", "bg-green-500", "bg-purple-500", "bg-orange-500", "bg-red-500"];
+    const newGroup = {
+      id: Date.now(),
+      name: `Group ${groups.length + 1}`,
+      color: colors[groups.length % colors.length],
+      students: [],
+      assignedLists: [],
+      assignedActivity: null
+    };
+    const updatedGroups = [...groups, newGroup];
+    saveGroups(updatedGroups);
+  };
+
+  const removeGroup = (groupId) => {
+    const updatedGroups = groups.filter(g => g.id !== groupId);
+    saveGroups(updatedGroups);
+  };
+
+  const updateGroupName = (groupId, newName) => {
+    const updatedGroups = groups.map(g => 
+      g.id === groupId ? { ...g, name: newName } : g
+    );
+    saveGroups(updatedGroups);
+  };
+
+  const assignStudentToGroup = (studentId, groupId) => {
+    const updatedGroups = groups.map(group => ({
+      ...group,
+      students: group.id === groupId 
+        ? [...group.students.filter(s => s.id !== studentId), students.find(s => s.id === studentId)]
+        : group.students.filter(s => s.id !== studentId)
+    }));
+    saveGroups(updatedGroups);
+  };
+
+  const assignListsToGroup = (groupId, listIds) => {
+    const updatedGroups = groups.map(g => 
+      g.id === groupId ? { ...g, assignedLists: listIds } : g
+    );
+    saveGroups(updatedGroups);
+  };
+
+  const assignActivityToGroup = (groupId, activityId) => {
+    const updatedGroups = groups.map(g => 
+      g.id === groupId ? { ...g, assignedActivity: activityId } : g
+    );
+    saveGroups(updatedGroups);
+  };
+
+  const printLists = (listIds) => {
+    const lists = SPELLING_LISTS.filter(list => listIds.includes(list.id));
+    const printWindow = window.open('', 'Print', 'height=800,width=600');
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Spelling Lists</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+            .list { margin-bottom: 30px; page-break-inside: avoid; }
+            .words { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 15px 0; }
+            .word { padding: 8px; border: 1px solid #ddd; text-align: center; font-weight: bold; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>Educational Elements - Spelling Lists</h1>
+            <p>Student Name: _______________  Date: _______________</p>
+          </div>
+          ${lists.map(list => `
+            <div class="list">
+              <h2>${list.name}</h2>
+              <div class="words">
+                ${list.words.map(word => `<div class="word">${word}</div>`).join('')}
+              </div>
+            </div>
+          `).join('')}
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
+  };
 
   const togglePresentationMode = () => {
     setIsPresentationMode(!isPresentationMode);
     showToast(
       isPresentationMode 
         ? 'Exited presentation mode' 
-        : 'Entered presentation mode - perfect for classroom display!', 
+        : 'Entered presentation mode!', 
       'success'
     );
   };
 
-  const handleSaveGroups = (groups) => {
-    setStudentGroups(groups);
-    saveData({ spellingGroups: groups });
-    showToast('Student groups saved successfully!', 'success');
+  const getAssignedStudents = (students) => {
+    return groups.reduce((assigned, group) => [...assigned, ...group.students], []);
   };
 
-  const handleSelectList = (list) => {
-    setSelectedList(list);
-    setActiveView('wordlist');
-    showToast(`Selected ${list.name} - ${list.words.length} words`, 'info');
-  };
+  const unassignedStudents = students.filter(student => 
+    !getAssignedStudents(students).some(assigned => assigned?.id === student.id)
+  );
 
-  const handleSelectActivity = (activity) => {
-    setSelectedActivity(activity);
-    setActiveView('activity');
-    showToast(`Selected ${activity.name} activity`, 'success');
-  };
-
-  // Overview screen
-  if (activeView === 'overview') {
+  if (isPresentationMode) {
+    const activeGroups = groups.filter(g => g.assignedLists.length > 0);
+    
     return (
-      <div className={`space-y-6 ${isPresentationMode ? 'bg-gradient-to-br from-purple-50 to-blue-50 min-h-screen' : ''}`}>
-        {/* Header */}
-        <div className={`bg-gradient-to-r from-purple-500 to-blue-600 text-white rounded-xl p-6 shadow-lg ${isPresentationMode ? 'p-12' : ''}`}>
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className={`font-bold mb-2 flex items-center ${isPresentationMode ? 'text-7xl animate-pulse' : 'text-4xl'}`}>
-                <span className="mr-3">🔤</span>
-                Spelling Program
-              </h3>
-              <p className={`opacity-90 ${isPresentationMode ? 'text-3xl' : 'text-xl'}`}>Structured spelling lists with engaging activities</p>
-            </div>
-            <button
-              onClick={togglePresentationMode}
-              className={`bg-white bg-opacity-20 text-white rounded-lg font-semibold hover:bg-opacity-30 transition-all ${isPresentationMode ? 'px-12 py-6 text-3xl transform hover:scale-105' : 'px-6 py-3'}`}
-            >
-              {isPresentationMode ? '📺 Exit Presentation' : '🎭 Presentation Mode'}
-            </button>
-          </div>
-        </div>
-
-        {/* Quick Navigation */}
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <h4 className={`font-bold text-gray-800 mb-4 ${isPresentationMode ? 'text-3xl' : 'text-xl'}`}>🎯 Quick Actions</h4>
-          <div className={`grid gap-4 ${isPresentationMode ? 'grid-cols-1 md:grid-cols-2 p-8' : 'grid-cols-2 md:grid-cols-4'}`}>
-            <button 
-              onClick={() => setActiveView('groups')}
-              className={`bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg p-6 hover:shadow-xl transition-all duration-300 hover:scale-105 ${isPresentationMode ? 'p-10' : ''}`}
-            >
-              <div className={`text-center ${isPresentationMode ? 'text-6xl' : 'text-3xl'}`}>👥</div>
-              <h5 className={`font-bold mt-2 ${isPresentationMode ? 'text-2xl' : 'text-lg'}`}>Manage Groups</h5>
-              <p className={`text-sm opacity-90 ${isPresentationMode ? 'text-xl' : ''}`}>Assign lists to students</p>
-            </button>
-
-            <button 
-              onClick={() => setActiveView('lists')}
-              className={`bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg p-6 hover:shadow-xl transition-all duration-300 hover:scale-105 ${isPresentationMode ? 'p-10' : ''}`}
-            >
-              <div className={`text-center ${isPresentationMode ? 'text-6xl' : 'text-3xl'}`}>📝</div>
-              <h5 className={`font-bold mt-2 ${isPresentationMode ? 'text-2xl' : 'text-lg'}`}>Word Lists</h5>
-              <p className={`text-sm opacity-90 ${isPresentationMode ? 'text-xl' : ''}`}>View & print lists</p>
-            </button>
-
-            <button 
-              onClick={() => setActiveView('activities')}
-              className={`bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-lg p-6 hover:shadow-xl transition-all duration-300 hover:scale-105 ${isPresentationMode ? 'p-10' : ''}`}
-            >
-              <div className={`text-center ${isPresentationMode ? 'text-6xl' : 'text-3xl'}`}>🎯</div>
-              <h5 className={`font-bold mt-2 ${isPresentationMode ? 'text-2xl' : 'text-lg'}`}>Daily Activities</h5>
-              <p className={`text-sm opacity-90 ${isPresentationMode ? 'text-xl' : ''}`}>Interactive practice</p>
-            </button>
-
-            <button 
-              onClick={() => setActiveView('assessment')}
-              className={`bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-lg p-6 hover:shadow-xl transition-all duration-300 hover:scale-105 ${isPresentationMode ? 'p-10' : ''}`}
-            >
-              <div className={`text-center ${isPresentationMode ? 'text-6xl' : 'text-3xl'}`}>📊</div>
-              <h5 className={`font-bold mt-2 ${isPresentationMode ? 'text-2xl' : 'text-lg'}`}>Assessment</h5>
-              <p className={`text-sm opacity-90 ${isPresentationMode ? 'text-xl' : ''}`}>Track progress</p>
-            </button>
-          </div>
-        </div>
-
-        {/* Program Overview */}
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <h4 className={`font-bold text-gray-800 mb-4 ${isPresentationMode ? 'text-3xl' : 'text-xl'}`}>📚 Level 1 Program Overview</h4>
-          <div className={`grid gap-6 ${isPresentationMode ? 'grid-cols-1 md:grid-cols-2 p-8' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}`}>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h5 className={`font-bold text-blue-800 mb-2 ${isPresentationMode ? 'text-2xl' : 'text-lg'}`}>📊 Statistics</h5>
-              <ul className={`text-blue-700 space-y-1 ${isPresentationMode ? 'text-xl' : 'text-sm'}`}>
-                <li>• {SPELLING_WORD_LISTS.level1.lists.length} spelling lists</li>
-                <li>• {SPELLING_WORD_LISTS.level1.lists.reduce((total, list) => total + list.words.length, 0)} total words</li>
-                <li>• {DAILY_ACTIVITIES.length} activity types</li>
-                <li>• Covers all essential phonetic patterns</li>
-              </ul>
-            </div>
-
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <h5 className={`font-bold text-green-800 mb-2 ${isPresentationMode ? 'text-2xl' : 'text-lg'}`}>🎯 Categories Covered</h5>
-              <ul className={`text-green-700 space-y-1 ${isPresentationMode ? 'text-xl' : 'text-sm'}`}>
-                <li>• Short Vowels (CVC words)</li>
-                <li>• Consonant Blends & Digraphs</li>
-                <li>• Long Vowels & Vowel Teams</li>
-                <li>• R-Controlled Vowels</li>
-                <li>• High Frequency Words</li>
-              </ul>
-            </div>
-
-            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-              <h5 className={`font-bold text-purple-800 mb-2 ${isPresentationMode ? 'text-2xl' : 'text-lg'}`}>✨ Features</h5>
-              <ul className={`text-purple-700 space-y-1 ${isPresentationMode ? 'text-xl' : 'text-sm'}`}>
-                <li>• Differentiated groups</li>
-                <li>• Printable word lists</li>
-                <li>• Interactive activities</li>
-                <li>• Progress tracking</li>
-                <li>• Classroom display mode</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-
-        {/* Featured Activity */}
-        <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-xl p-6">
-          <div className="flex items-start space-x-4">
-            <span className={`${isPresentationMode ? 'text-6xl' : 'text-3xl'}`}>⭐</span>
-            <div>
-              <h4 className={`font-bold text-yellow-800 mb-2 ${isPresentationMode ? 'text-3xl' : 'text-xl'}`}>Featured Activity: Look, Say, Cover, Write, Check</h4>
-              <p className={`text-yellow-700 mb-4 ${isPresentationMode ? 'text-2xl' : 'text-lg'}`}>
-                The classic spelling practice method that builds visual memory and reinforces correct spelling patterns.
-                Perfect for daily practice and proven effective for all learning styles!
-              </p>
-              <button
-                onClick={() => handleSelectActivity(DAILY_ACTIVITIES[0])}
-                className={`bg-yellow-600 text-white rounded-lg font-semibold hover:bg-yellow-700 transition-colors ${isPresentationMode ? 'px-12 py-6 text-3xl' : 'px-6 py-3'}`}
-              >
-                Try This Activity
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Student Groups View
-  if (activeView === 'groups') {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h3 className="text-2xl font-bold text-gray-800">👥 Student Groups & List Assignment</h3>
-          <div className="flex gap-3">
-            <button
-              onClick={togglePresentationMode}
-              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
-            >
-              {isPresentationMode ? '📺 Exit Presentation' : '🎭 Presentation Mode'}
-            </button>
-            <button 
-              onClick={() => setActiveView('overview')}
-              className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
-            >
-              ← Back to Overview
-            </button>
-          </div>
-        </div>
-
-        <StudentGroupManager 
-          students={students}
-          onSaveGroups={handleSaveGroups}
-          savedGroups={studentGroups}
-          isPresentationMode={isPresentationMode}
-        />
-      </div>
-    );
-  }
-
-  // Word Lists View
-  if (activeView === 'lists') {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h3 className="text-2xl font-bold text-gray-800">📝 Spelling Word Lists</h3>
-          <button 
-            onClick={() => setActiveView('overview')}
-            className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-8">
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-6xl font-bold text-gray-800">📝 Today's Spelling</h1>
+          <button
+            onClick={togglePresentationMode}
+            className="bg-gray-600 text-white px-8 py-4 rounded-xl text-2xl font-bold hover:bg-gray-700"
           >
-            ← Back to Overview
+            Exit Presentation
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {SPELLING_WORD_LISTS.level1.lists.map(list => (
-            <button
-              key={list.id}
-              onClick={() => handleSelectList(list)}
-              className="bg-white rounded-xl shadow-lg p-6 text-left hover:shadow-xl transition-all duration-300 hover:scale-105 border-2 border-transparent hover:border-purple-300"
-            >
-              <h4 className="text-lg font-bold text-gray-800 mb-2">{list.name}</h4>
-              <p className="text-purple-600 font-semibold mb-2">{list.category}</p>
-              <p className="text-gray-600 text-sm mb-4">{list.words.length} words</p>
-              <div className="flex flex-wrap gap-1 mb-4">
-                {list.words.slice(0, 6).map((word, i) => (
-                  <span key={i} className="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs">
-                    {word}
-                  </span>
-                ))}
-                {list.words.length > 6 && (
-                  <span className="text-gray-500 text-xs">+{list.words.length - 6} more</span>
+        <div className={`grid gap-8 ${activeGroups.length === 1 ? 'grid-cols-1' : activeGroups.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+          {activeGroups.map(group => {
+            const assignedActivity = ACTIVITIES.find(a => a.id === group.assignedActivity);
+            return (
+              <div key={group.id} className="bg-white rounded-2xl shadow-2xl p-8">
+                <div className={`${group.color} text-white text-center py-6 rounded-xl mb-6`}>
+                  <h2 className="text-4xl font-bold">{group.name}</h2>
+                  <p className="text-2xl opacity-90">{group.students.length} students</p>
+                </div>
+
+                {group.assignedLists.map(listId => {
+                  const list = SPELLING_LISTS.find(l => l.id === listId);
+                  return (
+                    <div key={listId} className="mb-6">
+                      <h3 className="text-3xl font-bold text-center mb-4 text-gray-800">{list.name}</h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        {list.words.map((word, index) => (
+                          <div key={index} className="bg-gray-100 border-2 border-gray-300 rounded-lg p-4 text-center">
+                            <span className="text-3xl font-bold text-gray-800">{word}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {assignedActivity && (
+                  <div className={`${assignedActivity.color} text-white p-6 rounded-xl mt-6`}>
+                    <div className="text-center">
+                      <div className="text-6xl mb-4">{assignedActivity.icon}</div>
+                      <h3 className="text-3xl font-bold">{assignedActivity.name}</h3>
+                    </div>
+                  </div>
                 )}
               </div>
-              <span className="text-purple-500 font-semibold">View List →</span>
-            </button>
-          ))}
+            );
+          })}
         </div>
       </div>
     );
   }
 
-  // Individual Word List View
-  if (activeView === 'wordlist' && selectedList) {
-    return (
-      <div className="space-y-6">
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-2xl font-bold text-gray-800">{selectedList.name}</h3>
-            <p className="text-gray-600">{selectedList.category} • {selectedList.words.length} words</p>
+            <h1 className="text-3xl font-bold flex items-center">
+              <span className="mr-3">🔤</span>
+              Spelling Program
+            </h1>
+            <p className="text-lg opacity-90">59 Level 1 spelling lists with group management</p>
           </div>
           <div className="flex gap-3">
             <button
-              onClick={togglePresentationMode}
-              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+              onClick={() => setShowListSelector(!showListSelector)}
+              className="bg-white bg-opacity-20 text-white px-4 py-2 rounded-lg hover:bg-opacity-30"
             >
-              {isPresentationMode ? '📺 Exit Presentation' : '🎭 Presentation Mode'}
+              📋 Browse Lists
             </button>
-            <button 
-              onClick={() => setActiveView('lists')}
-              className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
+            <button
+              onClick={togglePresentationMode}
+              className="bg-white bg-opacity-20 text-white px-4 py-2 rounded-lg hover:bg-opacity-30"
             >
-              ← Back to Lists
+              🎭 Presentation Mode
             </button>
           </div>
         </div>
-
-        <WordListDisplay list={selectedList} isPresentationMode={isPresentationMode} />
       </div>
-    );
-  }
 
-  // Activities View
-  if (activeView === 'activities') {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h3 className="text-2xl font-bold text-gray-800">🎯 Daily Spelling Activities</h3>
-          <button 
-            onClick={() => setActiveView('overview')}
-            className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
-          >
-            ← Back to Overview
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {DAILY_ACTIVITIES.map(activity => (
-            <button
-              key={activity.id}
-              onClick={() => handleSelectActivity(activity)}
-              className="bg-white rounded-xl shadow-lg p-6 text-left hover:shadow-xl transition-all duration-300 hover:scale-105 border-2 border-transparent hover:border-green-300"
-            >
-              <div className="text-4xl mb-4">{activity.icon}</div>
-              <h4 className="text-lg font-bold text-gray-800 mb-2">{activity.name}</h4>
-              <p className="text-gray-600 text-sm mb-4">{activity.description}</p>
-              <div className="text-xs text-gray-500 mb-4">
-                {activity.instructions.length} steps
+      {/* List Selector Modal */}
+      {showListSelector && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-4xl w-full max-h-[80vh] overflow-y-auto">
+            <div className="p-6 border-b">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold">Select Spelling Lists</h2>
+                <button
+                  onClick={() => setShowListSelector(false)}
+                  className="text-gray-500 hover:text-gray-700 text-2xl"
+                >
+                  ×
+                </button>
               </div>
-              <span className="text-green-500 font-semibold">Try Activity →</span>
-            </button>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  // Individual Activity View
-  if (activeView === 'activity' && selectedActivity) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-2xl font-bold text-gray-800">{selectedActivity.name}</h3>
-            <p className="text-gray-600">{selectedActivity.description}</p>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                {SPELLING_LISTS.map(list => (
+                  <button
+                    key={list.id}
+                    onClick={() => {
+                      if (selectedLists.includes(list.id)) {
+                        setSelectedLists(selectedLists.filter(id => id !== list.id));
+                      } else if (selectedLists.length < 5) {
+                        setSelectedLists([...selectedLists, list.id]);
+                      } else {
+                        showToast('Maximum 5 lists can be selected', 'error');
+                      }
+                    }}
+                    className={`p-3 rounded-lg border-2 text-left transition-all ${
+                      selectedLists.includes(list.id)
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="font-bold text-sm">{list.name}</div>
+                    <div className="text-xs text-gray-600">{list.words.length} words</div>
+                    <div className="text-xs mt-1">
+                      {list.words.slice(0, 3).join(', ')}...
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
-          <div className="flex gap-3">
+        </div>
+      )}
+
+      {/* Unassigned Students */}
+      {unassignedStudents.length > 0 && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+          <h3 className="font-bold text-yellow-800 mb-3">👤 Unassigned Students</h3>
+          <div className="flex flex-wrap gap-2">
+            {unassignedStudents.map(student => (
+              <div key={student.id} className="bg-white border border-yellow-300 rounded-lg p-2">
+                <span className="text-sm font-medium">{student.firstName} {student.lastName}</span>
+                <select
+                  onChange={(e) => e.target.value && assignStudentToGroup(student.id, parseInt(e.target.value))}
+                  className="ml-2 text-xs border rounded"
+                  defaultValue=""
+                >
+                  <option value="">Assign to group...</option>
+                  {groups.map(group => (
+                    <option key={group.id} value={group.id}>{group.name}</option>
+                  ))}
+                </select>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Groups Display */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+        {groups.map(group => (
+          <div key={group.id} className="bg-white rounded-xl shadow-lg border-2 border-gray-200">
+            {/* Group Header */}
+            <div className={`${group.color} text-white p-4 rounded-t-xl`}>
+              <div className="flex items-center justify-between">
+                <input
+                  type="text"
+                  value={group.name}
+                  onChange={(e) => updateGroupName(group.id, e.target.value)}
+                  className="bg-transparent text-white font-bold text-lg border-none outline-none"
+                />
+                <button
+                  onClick={() => removeGroup(group.id)}
+                  className="text-white hover:text-red-200 text-xl"
+                >
+                  ×
+                </button>
+              </div>
+              <p className="text-sm opacity-90">{group.students.length} students</p>
+            </div>
+
+            <div className="p-4">
+              {/* Students */}
+              <div className="mb-4">
+                <h4 className="font-bold text-gray-700 mb-2">Students:</h4>
+                <div className="space-y-1">
+                  {group.students.map(student => (
+                    <div key={student.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                      <span className="text-sm">{student.firstName} {student.lastName}</span>
+                      <button
+                        onClick={() => assignStudentToGroup(student.id, null)}
+                        className="text-red-500 hover:text-red-700 text-sm"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                  {group.students.length === 0 && (
+                    <p className="text-gray-500 text-sm italic">No students assigned</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Assigned Lists */}
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-bold text-gray-700">Spelling Lists:</h4>
+                  <button
+                    onClick={() => printLists(group.assignedLists)}
+                    disabled={group.assignedLists.length === 0}
+                    className="text-xs bg-blue-500 text-white px-2 py-1 rounded disabled:opacity-50"
+                  >
+                    🖨️ Print
+                  </button>
+                </div>
+                
+                <div className="space-y-2 mb-3">
+                  {group.assignedLists.map(listId => {
+                    const list = SPELLING_LISTS.find(l => l.id === listId);
+                    return (
+                      <div key={listId} className="bg-blue-50 border border-blue-200 rounded p-2">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-blue-800">{list.name}</span>
+                          <button
+                            onClick={() => assignListsToGroup(group.id, group.assignedLists.filter(id => id !== listId))}
+                            className="text-red-500 hover:text-red-700 text-sm"
+                          >
+                            ×
+                          </button>
+                        </div>
+                        <div className="text-xs text-blue-600 mt-1">
+                          {list.words.join(', ')}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <select
+                  onChange={(e) => {
+                    if (e.target.value && !group.assignedLists.includes(e.target.value)) {
+                      if (group.assignedLists.length < 5) {
+                        assignListsToGroup(group.id, [...group.assignedLists, e.target.value]);
+                      } else {
+                        showToast('Maximum 5 lists per group', 'error');
+                      }
+                    }
+                    e.target.value = '';
+                  }}
+                  className="w-full text-sm border border-gray-300 rounded p-2"
+                  defaultValue=""
+                >
+                  <option value="">Add spelling list...</option>
+                  {SPELLING_LISTS.filter(list => !group.assignedLists.includes(list.id)).map(list => (
+                    <option key={list.id} value={list.id}>{list.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Assigned Activity */}
+              <div>
+                <h4 className="font-bold text-gray-700 mb-2">Activity:</h4>
+                {group.assignedActivity ? (
+                  <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded p-3">
+                    <div className="flex items-center">
+                      <span className="text-2xl mr-3">
+                        {ACTIVITIES.find(a => a.id === group.assignedActivity)?.icon}
+                      </span>
+                      <span className="font-medium text-green-800">
+                        {ACTIVITIES.find(a => a.id === group.assignedActivity)?.name}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => assignActivityToGroup(group.id, null)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ) : (
+                  <select
+                    onChange={(e) => e.target.value && assignActivityToGroup(group.id, e.target.value)}
+                    className="w-full text-sm border border-gray-300 rounded p-2"
+                    defaultValue=""
+                  >
+                    <option value="">Select activity...</option>
+                    {ACTIVITIES.map(activity => (
+                      <option key={activity.id} value={activity.id}>
+                        {activity.icon} {activity.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {/* Add Group Button */}
+        {groups.length < 5 && (
+          <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-8 flex items-center justify-center">
             <button
-              onClick={togglePresentationMode}
-              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+              onClick={addGroup}
+              className="text-gray-600 hover:text-gray-800 text-center"
             >
-              {isPresentationMode ? '📺 Exit Presentation' : '🎭 Presentation Mode'}
-            </button>
-            <button 
-              onClick={() => setActiveView('activities')}
-              className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
-            >
-              ← Back to Activities
+              <div className="text-4xl mb-2">+</div>
+              <div className="font-bold">Add Group</div>
             </button>
           </div>
-        </div>
-
-        <DailyActivityDisplay 
-          activity={selectedActivity} 
-          selectedWords={selectedList ? selectedList.words.slice(0, 5) : []}
-          isPresentationMode={isPresentationMode}
-        />
+        )}
       </div>
-    );
-  }
-
-  // Assessment View (Coming Soon)
-  if (activeView === 'assessment') {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h3 className="text-2xl font-bold text-gray-800">📊 Spelling Assessment</h3>
-          <button 
-            onClick={() => setActiveView('overview')}
-            className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
-          >
-            ← Back to Overview
-          </button>
-        </div>
-
-        <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-12 text-center">
-          <div className="text-6xl mb-4">🚧</div>
-          <h3 className="text-2xl font-bold text-gray-700 mb-2">Assessment Tools</h3>
-          <p className="text-gray-600 mb-6">Student progress tracking and spelling assessments</p>
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 max-w-md mx-auto">
-            <h4 className="font-bold text-blue-800 mb-2">🌟 Coming Soon!</h4>
-            <p className="text-blue-700 text-sm">
-              Spelling tests, progress charts, and individual student tracking will be available in the next update.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return null;
+    </div>
+  );
 };
 
 export default SpellingProgram;
