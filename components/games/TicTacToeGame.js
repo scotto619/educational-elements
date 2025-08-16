@@ -1,5 +1,5 @@
 // components/games/TicTacToeGame.js - FIXED VERSION with improved mobile and PC support
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const TicTacToeGame = ({ studentData, showToast }) => {
   // Import Firebase functions dynamically to avoid conflicts
@@ -45,7 +45,7 @@ const TicTacToeGame = ({ studentData, showToast }) => {
     level: studentData?.totalPoints ? Math.min(4, Math.max(1, Math.floor(studentData.totalPoints / 100) + 1)) : 1
   };
 
-  // Firebase listener
+  // Firebase listener - FIXED to prevent infinite loops
   useEffect(() => {
     if (!firebaseReady || !firebase || !gameRoom) return;
 
@@ -61,13 +61,24 @@ const TicTacToeGame = ({ studentData, showToast }) => {
         return;
       }
       
-      setGameData(data);
+      // Only update state if there are actual changes
+      setGameData(prevData => {
+        if (JSON.stringify(prevData) === JSON.stringify(data)) {
+          return prevData; // No change, prevent unnecessary re-render
+        }
+        return data;
+      });
       
       // Update board state - ensure it's always an array
       if (data.board) {
         const boardArray = Array.isArray(data.board) ? data.board : Object.values(data.board);
         console.log('🎯 Board received from Firebase:', boardArray);
-        setBoard(boardArray);
+        setBoard(prevBoard => {
+          if (JSON.stringify(prevBoard) === JSON.stringify(boardArray)) {
+            return prevBoard; // No change, prevent unnecessary re-render
+          }
+          return boardArray;
+        });
       }
       
       // Check if both players joined
@@ -78,7 +89,7 @@ const TicTacToeGame = ({ studentData, showToast }) => {
       
       // Check win condition
       const winResult = checkWinner(data.board || Array(9).fill(null));
-      if (winResult.winner) {
+      if (winResult.winner && !winner) { // Only set winner if not already set
         setWinner(winResult);
         setGameState('finished');
         if (winResult.winner === playerRole) {
@@ -91,12 +102,20 @@ const TicTacToeGame = ({ studentData, showToast }) => {
       }
       
       // Update turn status
-      setIsMyTurn(data.currentPlayer === playerRole);
-      console.log('🔄 Turn update - Current player:', data.currentPlayer, 'My role:', playerRole, 'My turn:', data.currentPlayer === playerRole);
+      const newIsMyTurn = data.currentPlayer === playerRole;
+      setIsMyTurn(prevIsMyTurn => {
+        if (prevIsMyTurn !== newIsMyTurn) {
+          console.log('🔄 Turn update - Current player:', data.currentPlayer, 'My role:', playerRole, 'My turn:', newIsMyTurn);
+        }
+        return newIsMyTurn;
+      });
     });
     
-    return () => firebase.off(gameRef, 'value', unsubscribe);
-  }, [firebaseReady, firebase, gameRoom, playerRole, gameState]);
+    return () => {
+      console.log('🧹 Cleaning up Firebase listener');
+      firebase.off(gameRef, 'value', unsubscribe);
+    };
+  }, [firebaseReady, firebase, gameRoom, playerRole, gameState, winner]);
 
   const generateRoomCode = () => {
     return Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -237,8 +256,8 @@ const TicTacToeGame = ({ studentData, showToast }) => {
     setLoading(false);
   };
 
-  // FIXED: Use useCallback to prevent stale closures and ensure proper index handling
-  const makeMove = useCallback(async (cellIndex) => {
+  // FIXED: Simplified makeMove without problematic useCallback dependencies
+  const makeMove = async (cellIndex) => {
     console.log(`🎯 makeMove called with cellIndex: ${cellIndex}`);
     console.log(`Current board state:`, board);
     console.log(`Cell ${cellIndex} current value:`, board[cellIndex]);
@@ -296,9 +315,11 @@ const TicTacToeGame = ({ studentData, showToast }) => {
       console.error('❌ Error making move:', error);
       showToast('Failed to make move: ' + error.message, 'error');
     }
-  }, [firebaseReady, firebase, gameRoom, gameState, isMyTurn, playerRole, board]);
+  };
 
+  // FIXED: Prevent potential infinite loops by batching state updates
   const resetGame = () => {
+    console.log('🧹 Resetting game state');
     setGameState('menu');
     setGameRoom(null);
     setRoomCode('');
@@ -321,8 +342,8 @@ const TicTacToeGame = ({ studentData, showToast }) => {
     resetGame();
   };
 
-  // FIXED: Improved cell rendering with better event handling
-  const renderCell = useCallback((cellIndex) => {
+  // FIXED: Simplified cell rendering without problematic useCallback chains
+  const renderCell = (cellIndex) => {
     const value = board[cellIndex];
     const row = Math.floor(cellIndex / 3);
     const col = cellIndex % 3;
@@ -334,8 +355,8 @@ const TicTacToeGame = ({ studentData, showToast }) => {
          (winner.index === 1 && row + col === 2)))
     );
 
-    // FIXED: Create stable event handlers with proper cellIndex binding
-    const handleClick = useCallback((e) => {
+    // FIXED: Simple event handlers without useCallback to prevent circular dependencies
+    const handleClick = (e) => {
       e.preventDefault();
       e.stopPropagation();
       console.log(`🖱️ Cell clicked - Index: ${cellIndex}, Row: ${row}, Col: ${col}, Value: ${value}`);
@@ -350,14 +371,14 @@ const TicTacToeGame = ({ studentData, showToast }) => {
           cellIndex 
         });
       }
-    }, [cellIndex, value, isMyTurn, gameState]);
+    };
 
-    const handleTouchStart = useCallback((e) => {
+    const handleTouchStart = (e) => {
       e.preventDefault();
       console.log(`👆 Touch start on cell ${cellIndex}`);
-    }, [cellIndex]);
+    };
 
-    const handleTouchEnd = useCallback((e) => {
+    const handleTouchEnd = (e) => {
       e.preventDefault();
       e.stopPropagation();
       console.log(`👆 Touch end on cell ${cellIndex}`);
@@ -365,7 +386,7 @@ const TicTacToeGame = ({ studentData, showToast }) => {
       if (isMyTurn && !value && gameState === 'playing') {
         makeMove(cellIndex);
       }
-    }, [cellIndex, value, isMyTurn, gameState]);
+    };
 
     const canPlay = isMyTurn && !value && gameState === 'playing';
 
@@ -402,7 +423,7 @@ const TicTacToeGame = ({ studentData, showToast }) => {
         ) : null}
       </button>
     );
-  }, [board, winner, isMyTurn, gameState, playerRole, makeMove]);
+  };
 
   // Loading state while Firebase initializes
   if (!firebaseReady) {
