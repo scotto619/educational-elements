@@ -6,7 +6,7 @@ const BattleshipsGame = ({ studentData, showToast }) => {
   const [firebaseReady, setFirebaseReady] = useState(false);
   const [firebase, setFirebase] = useState(null);
 
-  // Initialize Firebase
+  // Initialize Firebase - BACK TO REALTIME DATABASE
   useEffect(() => {
     const initFirebase = async () => {
       try {
@@ -305,12 +305,12 @@ const BattleshipsGame = ({ studentData, showToast }) => {
         sunk: ship.sunk
       }));
       
-      await firebase.update(firebase.ref(firebase.database, `ticTacToe/${gameRoom}`), {
+      const gameRef = firebase.ref(firebase.database, `ticTacToe/${gameRoom}`);
+      await firebase.update(gameRef, {
         [`battleshipData/ships/${playerRole}`]: shipData
       });
       
       // Check if both players have placed ships
-      const gameRef = firebase.ref(firebase.database, `ticTacToe/${gameRoom}`);
       const snapshot = await new Promise((resolve) => {
         firebase.onValue(gameRef, resolve, { onlyOnce: true });
       });
@@ -341,10 +341,12 @@ const BattleshipsGame = ({ studentData, showToast }) => {
     
     try {
       const attack = { row, col, timestamp: Date.now() };
-      const attackPath = `ticTacToe/${gameRoom}/battleshipData/attacks/${playerRole}`;
+      const gameRef = firebase.ref(firebase.database, `ticTacToe/${gameRoom}`);
       const currentAttacks = gameData?.battleshipData?.attacks?.[playerRole] || [];
       
-      await firebase.set(firebase.ref(firebase.database, attackPath), [...currentAttacks, attack]);
+      await firebase.update(gameRef, {
+        [`battleshipData/attacks/${playerRole}`]: [...currentAttacks, attack]
+      });
       
       // Server will process the attack and update the result
       showToast(`Attacking ${getGridLabel(row, col)}...`, 'info');
@@ -379,16 +381,15 @@ const BattleshipsGame = ({ studentData, showToast }) => {
         status: 'placing',
         currentPlayer: 'player1',
         board: Array(100).fill(null),
-        battleshipData: {
-          phase: 'placing',
-          ships: {},
-          attacks: { player1: [], player2: [] },
-          winner: null
-        },
+        'battleshipData/phase': 'placing',
+        'battleshipData/ships': {},
+        'battleshipData/attacks': { player1: [], player2: [] },
+        'battleshipData/winner': null,
         gameResetAt: Date.now()
       };
       
-      await firebase.update(firebase.ref(firebase.database, `ticTacToe/${gameRoom}`), resetData);
+      const gameRef = firebase.ref(firebase.database, `ticTacToe/${gameRoom}`);
+      await firebase.update(gameRef, resetData);
       
       // Reset local state
       setMyGrid(Array(100).fill(null));
