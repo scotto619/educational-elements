@@ -86,19 +86,21 @@ const BattleshipsGame = ({ studentData, showToast }) => {
       setGameData(data);
       
       // Handle different game phases
-      if (data.phase === 'waiting' && Object.keys(data.players || {}).length === 2) {
+      const battleshipPhase = data.battleshipData?.phase || data.status;
+      
+      if (battleshipPhase === 'waiting' && Object.keys(data.players || {}).length === 2) {
         setGameState('placing');
         showToast('Both players joined! Place your ships.', 'success');
       }
       
-      if (data.phase === 'battle' && gameState !== 'battle') {
+      if (battleshipPhase === 'battle' && gameState !== 'battle') {
         setGameState('battle');
         showToast('Battle begins! 🚢💥', 'success');
       }
       
       // Update enemy grid based on my attacks
-      if (data.attacks && data.attacks[playerRole]) {
-        const myAttacks = data.attacks[playerRole] || [];
+      if (data.battleshipData?.attacks && data.battleshipData.attacks[playerRole]) {
+        const myAttacks = data.battleshipData.attacks[playerRole] || [];
         const newEnemyGrid = Array(100).fill(null);
         myAttacks.forEach(attack => {
           const index = getGridIndex(attack.row, attack.col);
@@ -108,10 +110,11 @@ const BattleshipsGame = ({ studentData, showToast }) => {
       }
       
       // Check for winner
-      if (data.winner && !winner) {
-        setWinner(data.winner);
+      const winner = data.battleshipData?.winner || data.winner;
+      if (winner && !winner) {
+        setWinner(winner);
         setGameState('finished');
-        if (data.winner === playerRole) {
+        if (winner === playerRole) {
           showToast('🎉 Victory! You sunk all enemy ships!', 'success');
         } else {
           showToast('💀 Defeat! Your fleet was destroyed!', 'error');
@@ -213,8 +216,9 @@ const BattleshipsGame = ({ studentData, showToast }) => {
       }
       
       await firebase.update(gameRef, {
-        [`players/${playerInfo.id}`]: { ...playerInfo, role: 'player2' },
-        phase: 'placing'
+        [`players/${playerInfo.id}`]: { ...playerInfo, symbol: 'player2' },
+        status: 'placing',
+        'battleshipData/phase': 'placing'
       });
       
       setGameRoom(joinCode.toUpperCase());
@@ -302,7 +306,7 @@ const BattleshipsGame = ({ studentData, showToast }) => {
       }));
       
       await firebase.update(firebase.ref(firebase.database, `ticTacToe/${gameRoom}`), {
-        [`ships/${playerRole}`]: shipData
+        [`battleshipData/ships/${playerRole}`]: shipData
       });
       
       // Check if both players have placed ships
@@ -312,8 +316,11 @@ const BattleshipsGame = ({ studentData, showToast }) => {
       });
       
       const data = snapshot.val();
-      if (data.ships && data.ships.player1 && data.ships.player2) {
-        await firebase.update(gameRef, { phase: 'battle' });
+      if (data.battleshipData?.ships?.player1 && data.battleshipData?.ships?.player2) {
+        await firebase.update(gameRef, { 
+          'battleshipData/phase': 'battle',
+          status: 'battle'
+        });
       }
       
       showToast('Ships submitted! 🚢', 'success');
@@ -334,8 +341,8 @@ const BattleshipsGame = ({ studentData, showToast }) => {
     
     try {
       const attack = { row, col, timestamp: Date.now() };
-      const attackPath = `ticTacToe/${gameRoom}/attacks/${playerRole}`;
-      const currentAttacks = gameData?.attacks?.[playerRole] || [];
+      const attackPath = `ticTacToe/${gameRoom}/battleshipData/attacks/${playerRole}`;
+      const currentAttacks = gameData?.battleshipData?.attacks?.[playerRole] || [];
       
       await firebase.set(firebase.ref(firebase.database, attackPath), [...currentAttacks, attack]);
       
@@ -369,11 +376,15 @@ const BattleshipsGame = ({ studentData, showToast }) => {
     
     try {
       const resetData = {
-        phase: 'placing',
+        status: 'placing',
         currentPlayer: 'player1',
-        ships: {},
-        attacks: { player1: [], player2: [] },
-        winner: null,
+        board: Array(100).fill(null),
+        battleshipData: {
+          phase: 'placing',
+          ships: {},
+          attacks: { player1: [], player2: [] },
+          winner: null
+        },
         gameResetAt: Date.now()
       };
       
