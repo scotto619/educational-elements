@@ -39,6 +39,7 @@ const BattleshipsGame = ({ studentData, showToast }) => {
   const [myGrid, setMyGrid] = useState(Array(100).fill(null)); // 10x10 grid
   const [enemyGrid, setEnemyGrid] = useState(Array(100).fill(null)); // What I know about enemy
   const [myShips, setMyShips] = useState([]);
+  const [myHits, setMyHits] = useState(Array(100).fill(false)); // Track hits on my ships
   const [currentShipPlacing, setCurrentShipPlacing] = useState(0);
   const [shipOrientation, setShipOrientation] = useState('horizontal'); // 'horizontal' or 'vertical'
   const [placementComplete, setPlacementComplete] = useState(false);
@@ -133,6 +134,20 @@ const BattleshipsGame = ({ studentData, showToast }) => {
         setEnemyGrid(newEnemyGrid);
       }
 
+      // FIXED: Update my hits based on opponent attacks
+      const opponentRole = playerRole === 'player1' ? 'player2' : 'player1';
+      if (data.attackResults && data.attackResults[opponentRole]) {
+        const opponentAttackResults = data.attackResults[opponentRole] || [];
+        const newMyHits = Array(100).fill(false);
+        opponentAttackResults.forEach(attack => {
+          if (attack.result === 'hit' || attack.result === 'sunk') {
+            const index = getGridIndex(attack.row, attack.col);
+            newMyHits[index] = true;
+          }
+        });
+        setMyHits(newMyHits);
+      }
+
       // Update battle log
       if (data.battleLog) {
         setBattleLog(data.battleLog);
@@ -158,6 +173,11 @@ const BattleshipsGame = ({ studentData, showToast }) => {
         if (gameState === 'waiting' && data.phase === 'placing') {
           console.log('🚨 FORCE SYNC: Transitioning stuck waiting state to placing');
           setGameState('placing');
+        }
+        // FIXED: Force reset hit tracking if in placing phase
+        if (data.phase === 'placing' && myHits.some(hit => hit === true)) {
+          console.log('🔄 FORCE SYNC: Clearing hit tracking for new game');
+          setMyHits(Array(100).fill(false));
         }
       }, 100);
     });
@@ -523,6 +543,7 @@ const BattleshipsGame = ({ studentData, showToast }) => {
   };
 
   const resetGame = () => {
+    console.log('🧹 Complete game reset');
     setGameState('menu');
     setGameRoom(null);
     setRoomCode('');
@@ -533,7 +554,9 @@ const BattleshipsGame = ({ studentData, showToast }) => {
     setMyGrid(Array(100).fill(null));
     setEnemyGrid(Array(100).fill(null));
     setMyShips([]);
+    setMyHits(Array(100).fill(false)); // FIXED: Reset hit tracking
     setCurrentShipPlacing(0);
+    setShipOrientation('horizontal'); // FIXED: Reset orientation
     setPlacementComplete(false);
     setWinner(null);
     setBattleLog([]);
@@ -543,6 +566,8 @@ const BattleshipsGame = ({ studentData, showToast }) => {
     if (!firebaseReady || !firebase || !gameRoom) return;
     
     try {
+      console.log('🔄 Starting rematch - resetting all game state');
+      
       const resetData = {
         phase: 'placing',
         currentPlayer: 'player1',
@@ -556,11 +581,13 @@ const BattleshipsGame = ({ studentData, showToast }) => {
       const gameRef = firebase.ref(firebase.database, `battleships/${gameRoom}`);
       await firebase.update(gameRef, resetData);
       
-      // Reset local state
+      // FIXED: Complete local state reset for rematch
       setMyGrid(Array(100).fill(null));
       setEnemyGrid(Array(100).fill(null));
       setMyShips([]);
+      setMyHits(Array(100).fill(false)); // FIXED: Reset hit tracking
       setCurrentShipPlacing(0);
+      setShipOrientation('horizontal'); // FIXED: Reset orientation
       setPlacementComplete(false);
       setWinner(null);
       setBattleLog([]);
