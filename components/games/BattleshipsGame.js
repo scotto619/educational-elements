@@ -1,4 +1,4 @@
-// components/games/BattleshipsGame.js - Complete 2-Player Battleships Game
+// components/games/BattleshipsGame.js - FIXED VERSION with consistent Firebase paths
 import React, { useState, useEffect } from 'react';
 
 const BattleshipsGame = ({ studentData, showToast }) => {
@@ -67,11 +67,11 @@ const BattleshipsGame = ({ studentData, showToast }) => {
   const getRowCol = (index) => ({ row: Math.floor(index / 10), col: index % 10 });
   const getGridLabel = (row, col) => String.fromCharCode(65 + row) + (col + 1);
 
-  // Firebase listener
+  // Firebase listener - FIXED to use battleships path consistently
   useEffect(() => {
     if (!firebaseReady || !firebase || !gameRoom) return;
 
-    const gameRef = firebase.ref(firebase.database, `ticTacToe/${gameRoom}`);
+    const gameRef = firebase.ref(firebase.database, `battleships/${gameRoom}`);
     
     const unsubscribe = firebase.onValue(gameRef, (snapshot) => {
       const data = snapshot.val();
@@ -86,7 +86,7 @@ const BattleshipsGame = ({ studentData, showToast }) => {
       setGameData(data);
       
       // Handle different game phases
-      const battleshipPhase = data.battleshipData?.phase || data.status;
+      const battleshipPhase = data.phase || data.status;
       
       if (battleshipPhase === 'waiting' && Object.keys(data.players || {}).length === 2) {
         setGameState('placing');
@@ -99,8 +99,8 @@ const BattleshipsGame = ({ studentData, showToast }) => {
       }
       
       // Update enemy grid based on my attacks
-      if (data.battleshipData?.attacks && data.battleshipData.attacks[playerRole]) {
-        const myAttacks = data.battleshipData.attacks[playerRole] || [];
+      if (data.attacks && data.attacks[playerRole]) {
+        const myAttacks = data.attacks[playerRole] || [];
         const newEnemyGrid = Array(100).fill(null);
         myAttacks.forEach(attack => {
           const index = getGridIndex(attack.row, attack.col);
@@ -110,8 +110,8 @@ const BattleshipsGame = ({ studentData, showToast }) => {
       }
       
       // Check for winner
-      const winner = data.battleshipData?.winner || data.winner;
-      if (winner && !winner) {
+      const winner = data.winner;
+      if (winner && !this.winner) {
         setWinner(winner);
         setGameState('finished');
         if (winner === playerRole) {
@@ -148,6 +148,7 @@ const BattleshipsGame = ({ studentData, showToast }) => {
       const gameRef = firebase.ref(firebase.database, `battleships/${newRoomCode}`);
       const initialData = {
         roomCode: newRoomCode,
+        gameType: 'battleships', // Add this to identify game type
         host: playerInfo.id,
         players: {
           [playerInfo.id]: { ...playerInfo, role: 'player1' }
@@ -188,7 +189,8 @@ const BattleshipsGame = ({ studentData, showToast }) => {
     setLoading(true);
     
     try {
-      const gameRef = firebase.ref(firebase.database, `ticTacToe/${joinCode.toUpperCase()}`);
+      // FIXED: Use battleships path consistently
+      const gameRef = firebase.ref(firebase.database, `battleships/${joinCode.toUpperCase()}`);
       
       const snapshot = await new Promise((resolve) => {
         firebase.onValue(gameRef, resolve, { onlyOnce: true });
@@ -216,9 +218,8 @@ const BattleshipsGame = ({ studentData, showToast }) => {
       }
       
       await firebase.update(gameRef, {
-        [`players/${playerInfo.id}`]: { ...playerInfo, symbol: 'player2' },
-        status: 'placing',
-        'battleshipData/phase': 'placing'
+        [`players/${playerInfo.id}`]: { ...playerInfo, role: 'player2' },
+        phase: 'placing'
       });
       
       setGameRoom(joinCode.toUpperCase());
@@ -305,9 +306,10 @@ const BattleshipsGame = ({ studentData, showToast }) => {
         sunk: ship.sunk
       }));
       
-      const gameRef = firebase.ref(firebase.database, `ticTacToe/${gameRoom}`);
+      // FIXED: Use battleships path consistently
+      const gameRef = firebase.ref(firebase.database, `battleships/${gameRoom}`);
       await firebase.update(gameRef, {
-        [`battleshipData/ships/${playerRole}`]: shipData
+        [`ships/${playerRole}`]: shipData
       });
       
       // Check if both players have placed ships
@@ -316,10 +318,9 @@ const BattleshipsGame = ({ studentData, showToast }) => {
       });
       
       const data = snapshot.val();
-      if (data.battleshipData?.ships?.player1 && data.battleshipData?.ships?.player2) {
+      if (data.ships?.player1 && data.ships?.player2) {
         await firebase.update(gameRef, { 
-          'battleshipData/phase': 'battle',
-          status: 'battle'
+          phase: 'battle'
         });
       }
       
@@ -341,11 +342,12 @@ const BattleshipsGame = ({ studentData, showToast }) => {
     
     try {
       const attack = { row, col, timestamp: Date.now() };
-      const gameRef = firebase.ref(firebase.database, `ticTacToe/${gameRoom}`);
-      const currentAttacks = gameData?.battleshipData?.attacks?.[playerRole] || [];
+      // FIXED: Use battleships path consistently
+      const gameRef = firebase.ref(firebase.database, `battleships/${gameRoom}`);
+      const currentAttacks = gameData?.attacks?.[playerRole] || [];
       
       await firebase.update(gameRef, {
-        [`battleshipData/attacks/${playerRole}`]: [...currentAttacks, attack]
+        [`attacks/${playerRole}`]: [...currentAttacks, attack]
       });
       
       // Server will process the attack and update the result
@@ -378,17 +380,16 @@ const BattleshipsGame = ({ studentData, showToast }) => {
     
     try {
       const resetData = {
-        status: 'placing',
+        phase: 'placing',
         currentPlayer: 'player1',
-        board: Array(100).fill(null),
-        'battleshipData/phase': 'placing',
-        'battleshipData/ships': {},
-        'battleshipData/attacks': { player1: [], player2: [] },
-        'battleshipData/winner': null,
+        ships: {},
+        attacks: { player1: [], player2: [] },
+        winner: null,
         gameResetAt: Date.now()
       };
       
-      const gameRef = firebase.ref(firebase.database, `ticTacToe/${gameRoom}`);
+      // FIXED: Use battleships path consistently
+      const gameRef = firebase.ref(firebase.database, `battleships/${gameRoom}`);
       await firebase.update(gameRef, resetData);
       
       // Reset local state
