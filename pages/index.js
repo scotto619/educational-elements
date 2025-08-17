@@ -1,4 +1,4 @@
-// pages/index.js - Updated with dynamic trial countdown
+// pages/index.js - Updated with dynamic trial countdown and Student Portal button
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
@@ -28,6 +28,10 @@ export default function Home() {
 
   const scrollToSection = (sectionId) => {
     document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const goToStudentPortal = () => {
+    window.open('https://educational-elements.com/student', '_blank');
   };
 
   return (
@@ -62,6 +66,12 @@ export default function Home() {
               <div className="flex items-center space-x-4">
                 <button onClick={() => router.push('/login')} className="hidden sm:block bg-gray-100 text-blue-600 px-5 py-2 rounded-lg hover:bg-blue-100 transition-colors font-medium">Login</button>
                 <button onClick={() => router.push('/signup')} className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-5 py-2 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all transform hover:scale-105 font-medium shadow-lg">Start FREE Trial</button>
+                <button 
+                  onClick={goToStudentPortal}
+                  className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-3 py-2 rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all font-medium shadow-md text-sm"
+                >
+                  🎓 Portal
+                </button>
               </div>
             </div>
           </div>

@@ -1,4 +1,4 @@
-// pages/classroom-champions.js - UPDATED WITH STUDENT PORTAL SUPPORT
+// pages/classroom-champions.js - UPDATED WITH COMPACT NAVIGATION AND STUDENT PORTAL
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
@@ -166,23 +166,28 @@ const showToast = (message, type = 'info') => {
   alert(`${type.toUpperCase()}: ${message}`);
 };
 
+// Function to open student portal
+const goToStudentPortal = () => {
+  window.open('https://educational-elements.com/student', '_blank');
+};
+
 // ===============================================
-// GROUPED NAVIGATION TABS
+// GROUPED NAVIGATION TABS (UPDATED FOR COMPACT LAYOUT)
 // ===============================================
 const CLASSROOM_CHAMPIONS_TABS = [ 
-  { id: 'dashboard', name: 'Dashboard', icon: '🏠'}, 
-  { id: 'students', name: 'Students', icon: '👥'},
-  { id: 'quizshow', name: 'Quiz Show', icon: '🎪'}, 
-  { id: 'quests', name: 'Quests', icon: '📜'}, 
-  { id: 'shop', name: 'Shop', icon: '🛒'}, 
-  { id: 'petrace', name: 'Pet Race', icon: '🏇'}
+  { id: 'dashboard', name: 'Dashboard', icon: '🏠', shortName: 'Home' }, 
+  { id: 'students', name: 'Students', icon: '👥', shortName: 'Students' },
+  { id: 'quizshow', name: 'Quiz Show', icon: '🎪', shortName: 'Quiz' }, 
+  { id: 'quests', name: 'Quests', icon: '📜', shortName: 'Quests' }, 
+  { id: 'shop', name: 'Shop', icon: '🛒', shortName: 'Shop' }, 
+  { id: 'petrace', name: 'Pet Race', icon: '🏇', shortName: 'Race' }
 ];
 
 const EDUCATIONAL_ELEMENTS_TABS = [
-  { id: 'games', name: 'Games', icon: '🎮'}, 
-  { id: 'curriculum', name: 'Curriculum Corner', icon: '📖'}, 
-  { id: 'toolkit', name: 'Teachers Toolkit', icon: '🛠️'}, 
-  { id: 'settings', name: 'Settings', icon: '⚙️'} 
+  { id: 'games', name: 'Games', icon: '🎮', shortName: 'Games' }, 
+  { id: 'curriculum', name: 'Curriculum Corner', icon: '📖', shortName: 'Curriculum' }, 
+  { id: 'toolkit', name: 'Teachers Toolkit', icon: '🛠️', shortName: 'Toolkit' }, 
+  { id: 'settings', name: 'Settings', icon: '⚙️', shortName: 'Settings' } 
 ];
 
 // ===============================================
@@ -640,9 +645,8 @@ const ClassroomChampions = () => {
                   SHOP_PREMIUM_AVATARS={SHOP_PREMIUM_AVATARS}
                   SHOP_BASIC_PETS={SHOP_BASIC_PETS}
                   SHOP_PREMIUM_PETS={SHOP_PREMIUM_PETS}
-                  // NEW: Pass class data and update function for class code management
+                  // Class data without class code management (moved to settings)
                   currentClassData={getCurrentClassData()}
-                  updateClassCode={updateClassCode}
                 />;
       case 'students':
         return <StudentsTab 
@@ -730,6 +734,22 @@ const ClassroomChampions = () => {
                   saveToolkitData={saveToolkitDataToFirebase}
                   loadedData={getCurrentClassToolkitData()}
                 />;
+      case 'settings':
+        return <SettingsTab 
+                  user={user}
+                  currentClassId={currentClassId}
+                  students={students}
+                  setStudents={setStudents}
+                  updateAndSaveClass={updateAndSaveClass}
+                  showToast={showToast}
+                  getAvatarImage={getAvatarImage}
+                  calculateCoins={calculateCoins}
+                  calculateAvatarLevel={calculateAvatarLevel}
+                  AVAILABLE_AVATARS={AVAILABLE_AVATARS}
+                  // Class code management moved here
+                  currentClassData={getCurrentClassData()}
+                  updateClassCode={updateClassCode}
+                />;
       default:
         return <div className="p-8 text-center text-gray-500">This tab is under construction.</div>;
     }
@@ -761,38 +781,46 @@ const ClassroomChampions = () => {
                     Educational Elements
                   </h1>
                 </div>
-                <button 
-                    onClick={() => auth.signOut()} 
-                    className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
+                <div className="flex items-center space-x-3">
+                  <button 
+                    onClick={goToStudentPortal}
+                    className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-3 py-2 rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all font-medium shadow-md text-sm"
                   >
-                    Sign Out
+                    🎓 Portal
                   </button>
+                  <button 
+                      onClick={() => auth.signOut()} 
+                      className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
+                    >
+                      Sign Out
+                    </button>
+                </div>
             </div>
         </div>
         
-        {/* Navigation Tabs */}
+        {/* Navigation Tabs - UPDATED FOR COMPACT LAYOUT */}
         <div className="bg-white shadow-sm border-b">
             <div className="max-w-7xl mx-auto">
                 {/* Classroom Champions Section */}
                 <div className="border-b border-gray-100">
-                  <div className="px-4 py-2">
-                    <h3 className="text-sm font-semibold text-purple-600 uppercase tracking-wider">
+                  <div className="px-4 py-1">
+                    <h3 className="text-xs font-semibold text-purple-600 uppercase tracking-wider">
                       🏆 Classroom Champions
                     </h3>
                   </div>
-                  <div className="flex flex-wrap">
+                  <div className="flex">
                     {CLASSROOM_CHAMPIONS_TABS.map(tab => (
                         <button 
                           key={tab.id} 
                           onClick={() => setActiveTab(tab.id)} 
-                          className={`flex items-center space-x-2 px-4 py-3 whitespace-nowrap transition-all duration-200 ${
+                          className={`flex items-center space-x-1 px-3 py-2 whitespace-nowrap transition-all duration-200 text-sm ${
                             activeTab === tab.id 
                               ? 'text-purple-600 border-b-2 font-semibold border-purple-600 bg-purple-50' 
                               : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
                           }`}
                         >
-                            <span className="text-lg">{tab.icon}</span>
-                            <span className="text-sm">{tab.name}</span>
+                            <span className="text-base">{tab.icon}</span>
+                            <span className="hidden md:inline">{tab.shortName}</span>
                         </button>
                     ))}
                   </div>
@@ -800,24 +828,24 @@ const ClassroomChampions = () => {
 
                 {/* Educational Elements Section */}
                 <div>
-                  <div className="px-4 py-2">
-                    <h3 className="text-sm font-semibold text-blue-600 uppercase tracking-wider">
+                  <div className="px-4 py-1">
+                    <h3 className="text-xs font-semibold text-blue-600 uppercase tracking-wider">
                       📚 Educational Tools
                     </h3>
                   </div>
-                  <div className="flex flex-wrap">
+                  <div className="flex">
                     {EDUCATIONAL_ELEMENTS_TABS.map(tab => (
                         <button 
                           key={tab.id} 
                           onClick={() => setActiveTab(tab.id)} 
-                          className={`flex items-center space-x-2 px-4 py-3 whitespace-nowrap transition-all duration-200 ${
+                          className={`flex items-center space-x-1 px-3 py-2 whitespace-nowrap transition-all duration-200 text-sm ${
                             activeTab === tab.id 
                               ? 'text-blue-600 border-b-2 font-semibold border-blue-600 bg-blue-50' 
                               : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
                           }`}
                         >
-                            <span className="text-lg">{tab.icon}</span>
-                            <span className="text-sm">{tab.name}</span>
+                            <span className="text-base">{tab.icon}</span>
+                            <span className="hidden md:inline">{tab.shortName}</span>
                         </button>
                     ))}
                   </div>
