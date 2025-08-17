@@ -1,4 +1,4 @@
-// components/games/BattleshipsGame.js - FIXED VERSION with consistent Firebase paths
+// components/games/BattleshipsGame.js - FULLY FUNCTIONAL MOBILE-OPTIMIZED VERSION
 import React, { useState, useEffect } from 'react';
 
 const BattleshipsGame = ({ studentData, showToast }) => {
@@ -6,7 +6,7 @@ const BattleshipsGame = ({ studentData, showToast }) => {
   const [firebaseReady, setFirebaseReady] = useState(false);
   const [firebase, setFirebase] = useState(null);
 
-  // Initialize Firebase - BACK TO REALTIME DATABASE
+  // Initialize Firebase
   useEffect(() => {
     const initFirebase = async () => {
       try {
@@ -42,8 +42,8 @@ const BattleshipsGame = ({ studentData, showToast }) => {
   const [currentShipPlacing, setCurrentShipPlacing] = useState(0);
   const [shipOrientation, setShipOrientation] = useState('horizontal'); // 'horizontal' or 'vertical'
   const [placementComplete, setPlacementComplete] = useState(false);
-  const [attackHistory, setAttackHistory] = useState([]);
   const [winner, setWinner] = useState(null);
+  const [battleLog, setBattleLog] = useState([]);
 
   // Player info
   const playerInfo = {
@@ -67,7 +67,59 @@ const BattleshipsGame = ({ studentData, showToast }) => {
   const getRowCol = (index) => ({ row: Math.floor(index / 10), col: index % 10 });
   const getGridLabel = (row, col) => String.fromCharCode(65 + row) + (col + 1);
 
-  // Firebase listener - FIXED to use battleships path consistently
+  // FIXED: Process attack results
+  const processAttack = (attackerRole, targetRow, targetCol, opponentShips) => {
+    const targetIndex = getGridIndex(targetRow, targetCol);
+    let result = 'miss';
+    let sunkShip = null;
+
+    // Check if attack hits any ship
+    if (opponentShips) {
+      for (let ship of opponentShips) {
+        const hitIndex = ship.positions.findIndex(pos => 
+          pos.row === targetRow && pos.col === targetCol
+        );
+        
+        if (hitIndex !== -1) {
+          // Hit!
+          result = 'hit';
+          ship.hits[hitIndex] = true;
+          
+          // Check if ship is sunk
+          if (ship.hits.every(hit => hit === true)) {
+            ship.sunk = true;
+            result = 'sunk';
+            sunkShip = ship;
+          }
+          break;
+        }
+      }
+    }
+
+    return { result, sunkShip, updatedShips: opponentShips };
+  };
+
+  // FIXED: Check for game winner
+  const checkGameWinner = (ships) => {
+    if (!ships) return null;
+    
+    const allShipsSunk = Object.values(ships).every(playerShips => 
+      playerShips.every(ship => ship.sunk === true)
+    );
+    
+    if (allShipsSunk) {
+      // Find which player's ships are all sunk
+      for (let [player, playerShips] of Object.entries(ships)) {
+        if (playerShips.every(ship => ship.sunk === true)) {
+          return player === 'player1' ? 'player2' : 'player1'; // Winner is the other player
+        }
+      }
+    }
+    
+    return null;
+  };
+
+  // FIXED: Firebase listener with better game state management
   useEffect(() => {
     if (!firebaseReady || !firebase || !gameRoom) return;
 
@@ -84,37 +136,48 @@ const BattleshipsGame = ({ studentData, showToast }) => {
       }
       
       setGameData(data);
+
+      // FIXED: Better game state transitions
+      const currentPhase = data.phase;
+      const playerCount = Object.keys(data.players || {}).length;
       
-      // Handle different game phases
-      const battleshipPhase = data.phase || data.status;
-      
-      if (battleshipPhase === 'waiting' && Object.keys(data.players || {}).length === 2) {
+      console.log(`🎮 Game phase: ${currentPhase}, Players: ${playerCount}, My state: ${gameState}`);
+
+      // Handle state transitions
+      if (currentPhase === 'waiting' && playerCount === 2 && gameState === 'waiting') {
+        console.log('✅ Both players joined, transitioning to placing');
         setGameState('placing');
         showToast('Both players joined! Place your ships.', 'success');
       }
       
-      if (battleshipPhase === 'battle' && gameState !== 'battle') {
+      if (currentPhase === 'battle' && gameState !== 'battle') {
+        console.log('⚔️ Battle phase started');
         setGameState('battle');
         showToast('Battle begins! 🚢💥', 'success');
       }
-      
+
       // Update enemy grid based on my attacks
-      if (data.attacks && data.attacks[playerRole]) {
-        const myAttacks = data.attacks[playerRole] || [];
+      if (data.attackResults && data.attackResults[playerRole]) {
+        const myAttackResults = data.attackResults[playerRole] || [];
         const newEnemyGrid = Array(100).fill(null);
-        myAttacks.forEach(attack => {
+        myAttackResults.forEach(attack => {
           const index = getGridIndex(attack.row, attack.col);
           newEnemyGrid[index] = attack.result; // 'hit', 'miss', or 'sunk'
         });
         setEnemyGrid(newEnemyGrid);
       }
+
+      // Update battle log
+      if (data.battleLog) {
+        setBattleLog(data.battleLog);
+      }
       
       // Check for winner
-      const winner = data.winner;
-      if (winner && !this.winner) {
-        setWinner(winner);
+      const gameWinner = data.winner;
+      if (gameWinner && gameWinner !== winner) {
+        setWinner(gameWinner);
         setGameState('finished');
-        if (winner === playerRole) {
+        if (gameWinner === playerRole) {
           showToast('🎉 Victory! You sunk all enemy ships!', 'success');
         } else {
           showToast('💀 Defeat! Your fleet was destroyed!', 'error');
@@ -148,7 +211,7 @@ const BattleshipsGame = ({ studentData, showToast }) => {
       const gameRef = firebase.ref(firebase.database, `battleships/${newRoomCode}`);
       const initialData = {
         roomCode: newRoomCode,
-        gameType: 'battleships', // Add this to identify game type
+        gameType: 'battleships',
         host: playerInfo.id,
         players: {
           [playerInfo.id]: { ...playerInfo, role: 'player1' }
@@ -156,7 +219,8 @@ const BattleshipsGame = ({ studentData, showToast }) => {
         phase: 'waiting',
         currentPlayer: 'player1',
         ships: {},
-        attacks: { player1: [], player2: [] },
+        attackResults: { player1: [], player2: [] },
+        battleLog: [],
         createdAt: Date.now()
       };
       
@@ -189,7 +253,6 @@ const BattleshipsGame = ({ studentData, showToast }) => {
     setLoading(true);
     
     try {
-      // FIXED: Use battleships path consistently
       const gameRef = firebase.ref(firebase.database, `battleships/${joinCode.toUpperCase()}`);
       
       const snapshot = await new Promise((resolve) => {
@@ -204,7 +267,6 @@ const BattleshipsGame = ({ studentData, showToast }) => {
         return;
       }
       
-      // Check if this is actually a battleships game
       if (gameData.gameType !== 'battleships') {
         showToast('This is not a Battleships game', 'error');
         setLoading(false);
@@ -217,6 +279,7 @@ const BattleshipsGame = ({ studentData, showToast }) => {
         return;
       }
       
+      // FIXED: Properly transition to placing phase when second player joins
       await firebase.update(gameRef, {
         [`players/${playerInfo.id}`]: { ...playerInfo, role: 'player2' },
         phase: 'placing'
@@ -295,6 +358,7 @@ const BattleshipsGame = ({ studentData, showToast }) => {
     }
   };
 
+  // FIXED: Better ship placement submission
   const submitShipPlacement = async () => {
     if (!placementComplete || !firebaseReady || !firebase) return;
     
@@ -306,8 +370,9 @@ const BattleshipsGame = ({ studentData, showToast }) => {
         sunk: ship.sunk
       }));
       
-      // FIXED: Use battleships path consistently
       const gameRef = firebase.ref(firebase.database, `battleships/${gameRoom}`);
+      
+      // Update ships for this player
       await firebase.update(gameRef, {
         [`ships/${playerRole}`]: shipData
       });
@@ -318,19 +383,24 @@ const BattleshipsGame = ({ studentData, showToast }) => {
       });
       
       const data = snapshot.val();
+      console.log('🚢 Checking if both players placed ships:', data.ships);
+      
       if (data.ships?.player1 && data.ships?.player2) {
+        console.log('⚔️ Both players ready, starting battle!');
         await firebase.update(gameRef, { 
           phase: 'battle'
         });
+        showToast('Battle ready! ⚔️', 'success');
+      } else {
+        showToast('Ships submitted! Waiting for opponent...', 'success');
       }
-      
-      showToast('Ships submitted! 🚢', 'success');
     } catch (error) {
       console.error('Error submitting ships:', error);
       showToast('Failed to submit ships', 'error');
     }
   };
 
+  // FIXED: Complete attack processing
   const makeAttack = async (row, col) => {
     if (!isMyTurn || gameState !== 'battle') return;
     
@@ -341,17 +411,57 @@ const BattleshipsGame = ({ studentData, showToast }) => {
     }
     
     try {
-      const attack = { row, col, timestamp: Date.now() };
-      // FIXED: Use battleships path consistently
       const gameRef = firebase.ref(firebase.database, `battleships/${gameRoom}`);
-      const currentAttacks = gameData?.attacks?.[playerRole] || [];
-      
-      await firebase.update(gameRef, {
-        [`attacks/${playerRole}`]: [...currentAttacks, attack]
+      const gameSnapshot = await new Promise((resolve) => {
+        firebase.onValue(gameRef, resolve, { onlyOnce: true });
       });
       
-      // Server will process the attack and update the result
-      showToast(`Attacking ${getGridLabel(row, col)}...`, 'info');
+      const currentGameData = gameSnapshot.val();
+      const opponentRole = playerRole === 'player1' ? 'player2' : 'player1';
+      const opponentShips = currentGameData.ships[opponentRole];
+      
+      // Process the attack
+      const attackResult = processAttack(playerRole, row, col, opponentShips);
+      
+      // Update attack results
+      const currentAttackResults = currentGameData.attackResults[playerRole] || [];
+      const newAttackResult = {
+        row,
+        col,
+        result: attackResult.result,
+        timestamp: Date.now()
+      };
+      
+      // Update battle log
+      const currentBattleLog = currentGameData.battleLog || [];
+      const logEntry = `${playerInfo.name} attacked ${getGridLabel(row, col)}: ${attackResult.result.toUpperCase()}${attackResult.sunkShip ? ` (${attackResult.sunkShip.name} sunk!)` : ''}`;
+      
+      // Check for winner
+      const gameWinner = checkGameWinner(currentGameData.ships);
+      
+      const updateData = {
+        [`attackResults/${playerRole}`]: [...currentAttackResults, newAttackResult],
+        [`ships/${opponentRole}`]: attackResult.updatedShips,
+        battleLog: [...currentBattleLog, logEntry],
+        currentPlayer: attackResult.result === 'miss' ? opponentRole : playerRole // Continue turn on hit
+      };
+      
+      if (gameWinner) {
+        updateData.winner = gameWinner;
+        updateData.phase = 'finished';
+      }
+      
+      await firebase.update(gameRef, updateData);
+      
+      // Show result
+      if (attackResult.result === 'hit') {
+        showToast(`💥 Hit at ${getGridLabel(row, col)}!`, 'success');
+      } else if (attackResult.result === 'sunk') {
+        showToast(`🔥 ${attackResult.sunkShip.name} sunk at ${getGridLabel(row, col)}!`, 'success');
+      } else {
+        showToast(`💧 Miss at ${getGridLabel(row, col)}`, 'info');
+      }
+      
     } catch (error) {
       console.error('Error making attack:', error);
       showToast('Attack failed!', 'error');
@@ -371,8 +481,8 @@ const BattleshipsGame = ({ studentData, showToast }) => {
     setMyShips([]);
     setCurrentShipPlacing(0);
     setPlacementComplete(false);
-    setAttackHistory([]);
     setWinner(null);
+    setBattleLog([]);
   };
 
   const playAgain = async () => {
@@ -383,12 +493,12 @@ const BattleshipsGame = ({ studentData, showToast }) => {
         phase: 'placing',
         currentPlayer: 'player1',
         ships: {},
-        attacks: { player1: [], player2: [] },
+        attackResults: { player1: [], player2: [] },
+        battleLog: [],
         winner: null,
         gameResetAt: Date.now()
       };
       
-      // FIXED: Use battleships path consistently
       const gameRef = firebase.ref(firebase.database, `battleships/${gameRoom}`);
       await firebase.update(gameRef, resetData);
       
@@ -399,6 +509,7 @@ const BattleshipsGame = ({ studentData, showToast }) => {
       setCurrentShipPlacing(0);
       setPlacementComplete(false);
       setWinner(null);
+      setBattleLog([]);
       setGameState('placing');
       setIsMyTurn(playerRole === 'player1');
       
@@ -409,6 +520,7 @@ const BattleshipsGame = ({ studentData, showToast }) => {
     }
   };
 
+  // MOBILE OPTIMIZED: Grid cell rendering
   const renderGridCell = (index, isMyGrid = true) => {
     const { row, col } = getRowCol(index);
     const cellValue = isMyGrid ? myGrid[index] : enemyGrid[index];
@@ -416,15 +528,16 @@ const BattleshipsGame = ({ studentData, showToast }) => {
     let cellClass = `
       aspect-square border border-gray-400 flex items-center justify-center text-xs font-bold
       cursor-pointer transition-all duration-200 relative
+      touch-manipulation select-none
+      min-h-[28px] min-w-[28px] sm:min-h-[32px] sm:min-w-[32px] md:min-h-[40px] md:min-w-[40px]
     `;
     
     if (isMyGrid) {
       // My grid - show ships during placement/battle
       if (cellValue) {
-        const ship = SHIPS.find(s => s.id === cellValue);
         cellClass += ` bg-blue-200 border-blue-400`;
       } else {
-        cellClass += ` bg-blue-50 hover:bg-blue-100`;
+        cellClass += ` bg-blue-50 hover:bg-blue-100 active:bg-blue-200`;
       }
     } else {
       // Enemy grid - show attack results only
@@ -435,11 +548,11 @@ const BattleshipsGame = ({ studentData, showToast }) => {
       } else if (cellValue === 'sunk') {
         cellClass += ` bg-red-700 text-white`;
       } else {
-        cellClass += ` bg-gray-100 hover:bg-gray-200`;
+        cellClass += ` bg-gray-100 hover:bg-gray-200 active:bg-yellow-100`;
       }
       
       if (gameState === 'battle' && isMyTurn && !cellValue) {
-        cellClass += ` hover:bg-yellow-100 hover:border-yellow-400`;
+        cellClass += ` hover:bg-yellow-100 hover:border-yellow-400 active:bg-yellow-200`;
       }
     }
     
@@ -459,26 +572,27 @@ const BattleshipsGame = ({ studentData, showToast }) => {
         data-position={getGridLabel(row, col)}
       >
         {isMyGrid && cellValue && (
-          <span className="text-lg">
+          <span className="text-xs sm:text-sm md:text-base">
             {SHIPS.find(s => s.id === cellValue)?.emoji}
           </span>
         )}
-        {!isMyGrid && cellValue === 'hit' && '💥'}
-        {!isMyGrid && cellValue === 'miss' && '💧'}
-        {!isMyGrid && cellValue === 'sunk' && '💀'}
+        {!isMyGrid && cellValue === 'hit' && <span className="text-xs sm:text-sm">💥</span>}
+        {!isMyGrid && cellValue === 'miss' && <span className="text-xs sm:text-sm">💧</span>}
+        {!isMyGrid && cellValue === 'sunk' && <span className="text-xs sm:text-sm">💀</span>}
       </div>
     );
   };
 
+  // MOBILE OPTIMIZED: Grid rendering
   const renderGrid = (isMyGrid = true, title) => (
-    <div className="bg-white rounded-xl p-4 shadow-lg">
-      <h3 className="text-lg font-bold text-center mb-4">{title}</h3>
+    <div className="bg-white rounded-xl p-2 sm:p-4 shadow-lg w-full">
+      <h3 className="text-sm sm:text-lg font-bold text-center mb-2 sm:mb-4">{title}</h3>
       
       {/* Column headers */}
-      <div className="grid grid-cols-11 gap-1 mb-1">
+      <div className="grid grid-cols-11 gap-0.5 sm:gap-1 mb-1">
         <div></div>
         {Array.from({ length: 10 }, (_, i) => (
-          <div key={i} className="text-center text-xs font-bold p-1">
+          <div key={i} className="text-center text-xs font-bold p-0.5 sm:p-1">
             {i + 1}
           </div>
         ))}
@@ -486,8 +600,8 @@ const BattleshipsGame = ({ studentData, showToast }) => {
       
       {/* Grid with row headers */}
       {Array.from({ length: 10 }, (_, row) => (
-        <div key={row} className="grid grid-cols-11 gap-1 mb-1">
-          <div className="text-center text-xs font-bold p-1 flex items-center justify-center">
+        <div key={row} className="grid grid-cols-11 gap-0.5 sm:gap-1 mb-0.5 sm:mb-1">
+          <div className="text-center text-xs font-bold p-0.5 sm:p-1 flex items-center justify-center">
             {String.fromCharCode(65 + row)}
           </div>
           {Array.from({ length: 10 }, (_, col) => {
@@ -512,21 +626,21 @@ const BattleshipsGame = ({ studentData, showToast }) => {
   // Menu State
   if (gameState === 'menu') {
     return (
-      <div className="max-w-md mx-auto space-y-6">
+      <div className="max-w-md mx-auto space-y-6 p-4">
         <div className="text-center mb-6">
-          <h2 className="text-3xl font-bold text-gray-800 mb-2">
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
             🚢 Battleships
           </h2>
-          <p className="text-gray-600">
+          <p className="text-gray-600 text-sm sm:text-base">
             Sink your opponent's fleet in this classic naval battle!
           </p>
         </div>
 
-        <div className="bg-white rounded-xl p-6 shadow-lg space-y-4">
+        <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg space-y-4">
           <button
             onClick={createGame}
             disabled={loading}
-            className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-4 rounded-lg font-semibold text-lg hover:shadow-lg transition-all disabled:opacity-50"
+            className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 sm:py-4 rounded-lg font-semibold text-base sm:text-lg hover:shadow-lg transition-all disabled:opacity-50 active:scale-95"
           >
             {loading ? '⚓ Creating...' : '🚢 Create New Battle'}
           </button>
@@ -546,13 +660,13 @@ const BattleshipsGame = ({ studentData, showToast }) => {
               value={joinCode}
               onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
               placeholder="Enter battle code"
-              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none text-center font-mono text-lg tracking-wider"
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none text-center font-mono text-base sm:text-lg tracking-wider"
               maxLength="6"
             />
             <button
               onClick={joinGame}
               disabled={loading || !joinCode.trim()}
-              className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-4 rounded-lg font-semibold text-lg hover:shadow-lg transition-all disabled:opacity-50"
+              className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-3 sm:py-4 rounded-lg font-semibold text-base sm:text-lg hover:shadow-lg transition-all disabled:opacity-50 active:scale-95"
             >
               {loading ? '⚓ Joining...' : '⛵ Join Battle'}
             </button>
@@ -573,16 +687,16 @@ const BattleshipsGame = ({ studentData, showToast }) => {
   // Waiting State
   if (gameState === 'waiting') {
     return (
-      <div className="max-w-md mx-auto text-center">
-        <div className="bg-white rounded-xl p-6 shadow-lg">
+      <div className="max-w-md mx-auto text-center p-4">
+        <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg">
           <div className="animate-pulse text-4xl mb-4">⚓</div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">
             Awaiting Admiral...
           </h2>
-          <p className="text-gray-600 mb-4">Share this battle code with your opponent:</p>
+          <p className="text-gray-600 mb-4 text-sm sm:text-base">Share this battle code with your opponent:</p>
           
           <div className="bg-gray-100 rounded-lg p-4 mb-4">
-            <p className="font-mono text-3xl font-bold tracking-wider text-blue-600">
+            <p className="font-mono text-2xl sm:text-3xl font-bold tracking-wider text-blue-600">
               {roomCode}
             </p>
           </div>
@@ -593,14 +707,14 @@ const BattleshipsGame = ({ studentData, showToast }) => {
                 navigator.clipboard.writeText(roomCode);
                 showToast('Battle code copied!', 'success');
               }}
-              className="w-full bg-blue-500 text-white py-3 rounded-lg font-semibold hover:bg-blue-600"
+              className="w-full bg-blue-500 text-white py-3 rounded-lg font-semibold hover:bg-blue-600 active:scale-95"
             >
               📋 Copy Battle Code
             </button>
             
             <button
               onClick={resetGame}
-              className="w-full bg-gray-500 text-white py-3 rounded-lg font-semibold hover:bg-gray-600"
+              className="w-full bg-gray-500 text-white py-3 rounded-lg font-semibold hover:bg-gray-600 active:scale-95"
             >
               ❌ Cancel Battle
             </button>
@@ -610,24 +724,24 @@ const BattleshipsGame = ({ studentData, showToast }) => {
     );
   }
 
-  // Ship Placement State
+  // Ship Placement State - MOBILE OPTIMIZED
   if (gameState === 'placing') {
     const currentShip = SHIPS[currentShipPlacing];
     
     return (
-      <div className="max-w-4xl mx-auto space-y-6">
-        <div className="bg-white rounded-xl p-6 shadow-lg">
-          <h2 className="text-2xl font-bold text-center text-gray-800 mb-4">
+      <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6 p-2 sm:p-4">
+        <div className="bg-white rounded-xl p-3 sm:p-6 shadow-lg">
+          <h2 className="text-lg sm:text-2xl font-bold text-center text-gray-800 mb-3 sm:mb-4">
             🚢 Deploy Your Fleet
           </h2>
           
           {!placementComplete && currentShip && (
             <div className="text-center mb-4">
-              <p className="text-lg font-semibold text-blue-600">
+              <p className="text-sm sm:text-lg font-semibold text-blue-600 mb-2">
                 Place your {currentShip.name} {currentShip.emoji} (Size: {currentShip.size})
               </p>
-              <div className="flex items-center justify-center gap-4 mt-2">
-                <label className="flex items-center gap-2">
+              <div className="flex items-center justify-center gap-2 sm:gap-4">
+                <label className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
                   <input
                     type="radio"
                     name="orientation"
@@ -637,7 +751,7 @@ const BattleshipsGame = ({ studentData, showToast }) => {
                   />
                   Horizontal ↔️
                 </label>
-                <label className="flex items-center gap-2">
+                <label className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
                   <input
                     type="radio"
                     name="orientation"
@@ -653,25 +767,25 @@ const BattleshipsGame = ({ studentData, showToast }) => {
           
           {placementComplete && (
             <div className="text-center mb-4">
-              <p className="text-lg font-semibold text-green-600">
+              <p className="text-sm sm:text-lg font-semibold text-green-600 mb-2">
                 ✅ Fleet deployed! Ready for battle!
               </p>
               <button
                 onClick={submitShipPlacement}
-                className="mt-2 bg-green-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-600"
+                className="bg-green-500 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold hover:bg-green-600 text-sm sm:text-base active:scale-95"
               >
                 🚢 Confirm Fleet Deployment
               </button>
             </div>
           )}
           
-          {/* Ship placement progress */}
+          {/* Ship placement progress - MOBILE OPTIMIZED */}
           <div className="mb-4">
-            <div className="flex justify-center gap-2">
+            <div className="flex justify-center gap-1 sm:gap-2 flex-wrap">
               {SHIPS.map((ship, index) => (
                 <div
                   key={ship.id}
-                  className={`flex items-center gap-1 px-3 py-1 rounded-lg text-sm ${
+                  className={`flex items-center gap-1 px-2 sm:px-3 py-1 rounded-lg text-xs sm:text-sm ${
                     index < currentShipPlacing
                       ? 'bg-green-100 text-green-800'
                       : index === currentShipPlacing
@@ -680,65 +794,65 @@ const BattleshipsGame = ({ studentData, showToast }) => {
                   }`}
                 >
                   <span>{ship.emoji}</span>
-                  <span>{ship.name}</span>
+                  <span className="hidden sm:inline">{ship.name}</span>
                 </div>
               ))}
             </div>
           </div>
         </div>
         
-        {renderGrid(true, "🏴‍☠️ Your Fleet")}
+        <div className="flex justify-center">
+          {renderGrid(true, "🏴‍☠️ Your Fleet")}
+        </div>
       </div>
     );
   }
 
-  // Battle State
+  // Battle State - MOBILE OPTIMIZED
   if (gameState === 'battle') {
     const players = gameData?.players ? Object.values(gameData.players) : [];
     const opponent = players.find(p => p.id !== playerInfo.id);
     
     return (
-      <div className="max-w-6xl mx-auto space-y-6">
-        <div className="bg-white rounded-xl p-4 shadow-lg">
-          <div className="flex items-center justify-between mb-4">
-            <div className="text-center">
+      <div className="max-w-6xl mx-auto space-y-3 sm:space-y-6 p-2 sm:p-4">
+        <div className="bg-white rounded-xl p-3 sm:p-4 shadow-lg">
+          <div className="flex items-center justify-between mb-3 sm:mb-4 text-xs sm:text-sm">
+            <div className="text-center flex-1">
               <p className="font-semibold">⚓ {playerInfo.name}</p>
-              <p className="text-sm text-gray-600">Your Fleet</p>
+              <p className="text-gray-600">Your Fleet</p>
             </div>
             
-            <div className="text-center">
-              <h2 className="text-xl font-bold text-gray-800">Naval Battle</h2>
-              <p className="text-sm text-gray-600">Room: {gameRoom}</p>
-              <div className={`mt-1 px-3 py-1 rounded-lg text-sm font-semibold ${
+            <div className="text-center flex-1">
+              <h2 className="text-sm sm:text-xl font-bold text-gray-800">Naval Battle</h2>
+              <p className="text-gray-600">Room: {gameRoom}</p>
+              <div className={`mt-1 px-2 sm:px-3 py-1 rounded-lg text-xs sm:text-sm font-semibold ${
                 isMyTurn ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
               }`}>
                 {isMyTurn ? '🎯 Your Turn!' : '⏳ Enemy Turn'}
               </div>
             </div>
             
-            <div className="text-center">
+            <div className="text-center flex-1">
               <p className="font-semibold">🏴‍☠️ {opponent?.name || 'Enemy'}</p>
-              <p className="text-sm text-gray-600">Enemy Fleet</p>
+              <p className="text-gray-600">Enemy Fleet</p>
             </div>
           </div>
         </div>
         
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-6">
           {renderGrid(true, "🏴‍☠️ Your Fleet")}
           {renderGrid(false, "🎯 Target Grid")}
         </div>
         
-        {/* Attack history */}
-        <div className="bg-white rounded-xl p-4 shadow-lg">
-          <h3 className="text-lg font-bold mb-2">📋 Battle Log</h3>
-          <div className="text-sm text-gray-600 max-h-20 overflow-y-auto">
-            {attackHistory.length === 0 ? (
+        {/* Battle log - MOBILE OPTIMIZED */}
+        <div className="bg-white rounded-xl p-3 sm:p-4 shadow-lg">
+          <h3 className="text-sm sm:text-lg font-bold mb-2">📋 Battle Log</h3>
+          <div className="text-xs sm:text-sm text-gray-600 max-h-16 sm:max-h-20 overflow-y-auto">
+            {battleLog.length === 0 ? (
               <p>No attacks yet. The calm before the storm...</p>
             ) : (
-              attackHistory.slice(-5).map((attack, index) => (
-                <p key={index}>
-                  {attack.player} attacked {attack.position}: {attack.result}
-                </p>
+              battleLog.slice(-5).map((entry, index) => (
+                <p key={index} className="mb-1">{entry}</p>
               ))
             )}
           </div>
@@ -750,15 +864,15 @@ const BattleshipsGame = ({ studentData, showToast }) => {
   // Finished State
   if (gameState === 'finished') {
     return (
-      <div className="max-w-md mx-auto text-center">
-        <div className="bg-white rounded-xl p-6 shadow-lg">
-          <div className="text-6xl mb-4">
+      <div className="max-w-md mx-auto text-center p-4">
+        <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg">
+          <div className="text-4xl sm:text-6xl mb-4">
             {winner === playerRole ? '🏆' : '💀'}
           </div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">
             {winner === playerRole ? 'VICTORY!' : 'DEFEATED!'}
           </h2>
-          <p className="text-gray-600 mb-6">
+          <p className="text-gray-600 mb-6 text-sm sm:text-base">
             {winner === playerRole 
               ? 'You have achieved naval supremacy!' 
               : 'Your fleet has been sent to Davy Jones\' locker!'}
@@ -767,13 +881,13 @@ const BattleshipsGame = ({ studentData, showToast }) => {
           <div className="flex space-x-3">
             <button
               onClick={resetGame}
-              className="flex-1 bg-blue-500 text-white py-3 rounded-lg font-semibold hover:bg-blue-600"
+              className="flex-1 bg-blue-500 text-white py-3 rounded-lg font-semibold hover:bg-blue-600 text-sm sm:text-base active:scale-95"
             >
               🏠 New Battle
             </button>
             <button
               onClick={playAgain}
-              className="flex-1 bg-green-500 text-white py-3 rounded-lg font-semibold hover:bg-green-600"
+              className="flex-1 bg-green-500 text-white py-3 rounded-lg font-semibold hover:bg-green-600 text-sm sm:text-base active:scale-95"
             >
               ⚓ Rematch
             </button>
