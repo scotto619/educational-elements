@@ -375,7 +375,7 @@ const BattleshipsGame = ({ studentData, showToast }) => {
     }
   };
 
-  // FIXED: Complete attack processing with proper error handling
+  // FIXED: Complete attack processing with extensive error handling
   const makeAttack = async (row, col) => {
     if (!isMyTurn || gameState !== 'battle') {
       showToast('Not your turn!', 'warning');
@@ -402,13 +402,22 @@ const BattleshipsGame = ({ studentData, showToast }) => {
       
       const opponentRole = playerRole === 'player1' ? 'player2' : 'player1';
       console.log('🎯 Making attack:', { row, col, playerRole, opponentRole });
-      console.log('📊 Current game data:', currentGameData);
+      console.log('📊 Full game data structure:', JSON.stringify(currentGameData, null, 2));
       
-      // FIXED: Check if opponent ships exist
-      if (!currentGameData.ships || !currentGameData.ships[opponentRole]) {
+      // FIXED: More thorough validation
+      if (!currentGameData.ships) {
+        console.error('❌ No ships object in game data');
+        showToast('Game ships data missing!', 'error');
+        return;
+      }
+      
+      if (!currentGameData.ships[opponentRole]) {
+        console.error(`❌ No ships for ${opponentRole}:`, currentGameData.ships);
         showToast('Opponent has not placed ships yet!', 'warning');
         return;
       }
+      
+      console.log(`✅ Found opponent ships for ${opponentRole}:`, currentGameData.ships[opponentRole]);
       
       const opponentShips = [...currentGameData.ships[opponentRole]]; // Create copy to avoid mutation
       
@@ -420,15 +429,20 @@ const BattleshipsGame = ({ studentData, showToast }) => {
       // Check if attack hits any ship
       for (let i = 0; i < opponentShips.length; i++) {
         const ship = opponentShips[i];
+        if (!ship || !ship.positions) {
+          console.warn(`⚠️ Invalid ship at index ${i}:`, ship);
+          continue;
+        }
+        
         const hitIndex = ship.positions.findIndex(pos => 
-          pos.row === row && pos.col === col
+          pos && pos.row === row && pos.col === col
         );
         
         if (hitIndex !== -1) {
           // Hit!
           result = 'hit';
           updatedShips[i] = { ...ship };
-          updatedShips[i].hits = [...ship.hits];
+          updatedShips[i].hits = [...(ship.hits || Array(ship.positions.length).fill(false))];
           updatedShips[i].hits[hitIndex] = true;
           
           // Check if ship is sunk
@@ -443,8 +457,8 @@ const BattleshipsGame = ({ studentData, showToast }) => {
       
       console.log('💥 Attack result:', { result, sunkShip });
       
-      // Update attack results
-      const currentAttackResults = currentGameData.attackResults[playerRole] || [];
+      // Update attack results - FIXED: Ensure arrays exist
+      const currentAttackResults = currentGameData.attackResults?.[playerRole] || [];
       const newAttackResult = {
         row,
         col,
@@ -452,7 +466,7 @@ const BattleshipsGame = ({ studentData, showToast }) => {
         timestamp: Date.now()
       };
       
-      // Update battle log
+      // Update battle log - FIXED: Ensure array exists
       const currentBattleLog = currentGameData.battleLog || [];
       let logEntry = `${playerInfo.name} attacked ${getGridLabel(row, col)}: ${result.toUpperCase()}`;
       if (sunkShip) {
@@ -466,8 +480,12 @@ const BattleshipsGame = ({ studentData, showToast }) => {
         gameWinner = playerRole; // Current player wins
       }
       
+      // FIXED: Ensure attackResults object exists
+      const attackResults = currentGameData.attackResults || { player1: [], player2: [] };
+      attackResults[playerRole] = [...currentAttackResults, newAttackResult];
+      
       const updateData = {
-        [`attackResults/${playerRole}`]: [...currentAttackResults, newAttackResult],
+        attackResults: attackResults,
         [`ships/${opponentRole}`]: updatedShips,
         battleLog: [...currentBattleLog, logEntry],
         currentPlayer: result === 'miss' ? opponentRole : playerRole, // Continue turn on hit
@@ -485,6 +503,7 @@ const BattleshipsGame = ({ studentData, showToast }) => {
         updateData.phase = 'finished';
       }
       
+      console.log('📤 Sending update to Firebase:', updateData);
       await firebase.update(gameRef, updateData);
       
       // Show result
@@ -497,7 +516,8 @@ const BattleshipsGame = ({ studentData, showToast }) => {
       }
       
     } catch (error) {
-      console.error('Error making attack:', error);
+      console.error('❌ Complete attack error:', error);
+      console.error('Error stack:', error.stack);
       showToast('Attack failed: ' + error.message, 'error');
     }
   };
