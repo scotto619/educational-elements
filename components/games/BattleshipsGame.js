@@ -137,23 +137,41 @@ const BattleshipsGame = ({ studentData, showToast }) => {
       
       setGameData(data);
 
-      // FIXED: Better game state transitions
+      // FIXED: Better game state transitions with debugging
       const currentPhase = data.phase;
       const playerCount = Object.keys(data.players || {}).length;
       
-      console.log(`🎮 Game phase: ${currentPhase}, Players: ${playerCount}, My state: ${gameState}`);
+      console.log(`🎮 State Check - Phase: ${currentPhase}, Players: ${playerCount}, Local State: ${gameState}, My Role: ${playerRole}`);
 
-      // Handle state transitions
-      if (currentPhase === 'waiting' && playerCount === 2 && gameState === 'waiting') {
-        console.log('✅ Both players joined, transitioning to placing');
+      // FIXED: Better state transitions - sync local state with Firebase
+      if (currentPhase === 'placing' && gameState !== 'placing') {
+        console.log('✅ Transitioning to ship placement phase');
         setGameState('placing');
         showToast('Both players joined! Place your ships.', 'success');
+        
+        // Check if opponent has already placed ships
+        const opponentRole = playerRole === 'player1' ? 'player2' : 'player1';
+        if (data.ships && data.ships[opponentRole]) {
+          showToast('Opponent has already placed ships! Hurry up!', 'info');
+        }
       }
       
       if (currentPhase === 'battle' && gameState !== 'battle') {
         console.log('⚔️ Battle phase started');
         setGameState('battle');
         showToast('Battle begins! 🚢💥', 'success');
+      }
+      
+      // Handle case where we're waiting but game has already progressed
+      if (gameState === 'waiting' && currentPhase !== 'waiting') {
+        console.log(`🔄 Syncing state: local=${gameState}, remote=${currentPhase}`);
+        if (currentPhase === 'placing') {
+          setGameState('placing');
+          showToast('Joining ship placement!', 'success');
+        } else if (currentPhase === 'battle') {
+          setGameState('battle');
+          showToast('Joining battle!', 'success');
+        }
       }
 
       // Update enemy grid based on my attacks
@@ -186,13 +204,21 @@ const BattleshipsGame = ({ studentData, showToast }) => {
       
       // Update turn
       setIsMyTurn(data.currentPlayer === playerRole);
+      
+      // FINAL SAFETY CHECK: Force state sync if we're out of sync
+      setTimeout(() => {
+        if (gameState === 'waiting' && data.phase === 'placing') {
+          console.log('🚨 FORCE SYNC: Transitioning stuck waiting state to placing');
+          setGameState('placing');
+        }
+      }, 100);
     });
     
     return () => {
       console.log('🧹 Cleaning up Firebase listener');
       firebase.off(gameRef, 'value', unsubscribe);
     };
-  }, [firebaseReady, firebase, gameRoom, playerRole, gameState, winner]);
+  }, [firebaseReady, firebase, gameRoom, playerRole]); // Removed gameState and winner from deps
 
   const generateRoomCode = () => {
     return Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -282,7 +308,8 @@ const BattleshipsGame = ({ studentData, showToast }) => {
       // FIXED: Properly transition to placing phase when second player joins
       await firebase.update(gameRef, {
         [`players/${playerInfo.id}`]: { ...playerInfo, role: 'player2' },
-        phase: 'placing'
+        phase: 'placing',
+        lastUpdate: Date.now() // Force listener refresh
       });
       
       setGameRoom(joinCode.toUpperCase());
