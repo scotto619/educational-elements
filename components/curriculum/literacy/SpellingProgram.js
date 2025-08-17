@@ -272,7 +272,7 @@ const SpellingProgram = ({
   saveData = () => {}, 
   loadedData = {} 
 }) => {
-  const [groups, setGroups] = useState(loadedData.spellingGroups || []);
+  const [groups, setGroups] = useState(loadedData?.spellingGroups || []);
   const [selectedLists, setSelectedLists] = useState([]);
   const [isPresentationMode, setIsPresentationMode] = useState(false);
   const [showListSelector, setShowListSelector] = useState(false);
@@ -280,7 +280,12 @@ const SpellingProgram = ({
 
   // Initialize groups if empty
   useEffect(() => {
-    if (groups.length === 0) {
+    // First try to load from Firebase
+    if (loadedData.spellingGroups && loadedData.spellingGroups.length > 0) {
+      setGroups(loadedData.spellingGroups);
+      console.log('📚 Loaded spelling groups from Firebase:', loadedData.spellingGroups);
+    } else if (groups.length === 0) {
+      // Only create defaults if no groups exist and nothing in Firebase
       const defaultGroups = [
         { id: 1, name: "Group 1", color: "bg-blue-500", students: [], assignedLists: [], assignedActivity: null },
         { id: 2, name: "Group 2", color: "bg-green-500", students: [], assignedLists: [], assignedActivity: null },
@@ -288,13 +293,51 @@ const SpellingProgram = ({
       ];
       setGroups(defaultGroups);
       saveGroups(defaultGroups);
+      console.log('📚 Created default spelling groups');
     }
-  }, []);
+  }, [loadedData]);
+
+  // Update groups when loadedData changes (Firebase data loaded)
+  useEffect(() => {
+    if (loadedData?.spellingGroups && JSON.stringify(loadedData.spellingGroups) !== JSON.stringify(groups)) {
+      setGroups(loadedData.spellingGroups);
+      console.log('🔄 Updated spelling groups from Firebase data change');
+    }
+  }, [loadedData?.spellingGroups]);
+
+  // Clean up groups when students change (remove deleted students from groups)
+  useEffect(() => {
+    if (groups.length > 0 && students.length > 0) {
+      const studentIds = students.map(s => s.id);
+      let hasChanges = false;
+      
+      const cleanedGroups = groups.map(group => {
+        const validStudents = group.students.filter(student => studentIds.includes(student.id));
+        if (validStudents.length !== group.students.length) {
+          hasChanges = true;
+          return { ...group, students: validStudents };
+        }
+        return group;
+      });
+      
+      if (hasChanges) {
+        console.log('🧹 Cleaned up removed students from spelling groups');
+        saveGroups(cleanedGroups);
+      }
+    }
+  }, [students]);
 
   const saveGroups = (updatedGroups) => {
-    setGroups(updatedGroups);
-    saveData({ spellingGroups: updatedGroups });
-    showToast('Groups saved successfully!', 'success');
+    try {
+      setGroups(updatedGroups);
+      // Save to Firebase using the provided saveData function
+      saveData({ spellingGroups: updatedGroups });
+      console.log('📝 Spelling groups saved to Firebase:', updatedGroups);
+      showToast('Groups saved successfully!', 'success');
+    } catch (error) {
+      console.error('❌ Error saving spelling groups:', error);
+      showToast('Error saving groups', 'error');
+    }
   };
 
   const addGroup = () => {
@@ -313,11 +356,14 @@ const SpellingProgram = ({
     };
     const updatedGroups = [...groups, newGroup];
     saveGroups(updatedGroups);
+    showToast(`${newGroup.name} created successfully!`, 'success');
   };
 
   const removeGroup = (groupId) => {
+    const groupToRemove = groups.find(g => g.id === groupId);
     const updatedGroups = groups.filter(g => g.id !== groupId);
     saveGroups(updatedGroups);
+    showToast(`${groupToRemove?.name} removed`, 'info');
   };
 
   const updateGroupName = (groupId, newName) => {
@@ -335,6 +381,15 @@ const SpellingProgram = ({
         : group.students.filter(s => s.id !== studentId)
     }));
     saveGroups(updatedGroups);
+    
+    if (groupId) {
+      const student = students.find(s => s.id === studentId);
+      const group = groups.find(g => g.id === groupId);
+      showToast(`${student?.firstName} assigned to ${group?.name}`, 'success');
+    } else {
+      const student = students.find(s => s.id === studentId);
+      showToast(`${student?.firstName} removed from groups`, 'info');
+    }
   };
 
   const assignListsToGroup = (groupId, listIds) => {
@@ -342,6 +397,11 @@ const SpellingProgram = ({
       g.id === groupId ? { ...g, assignedLists: listIds } : g
     );
     saveGroups(updatedGroups);
+    
+    const group = groups.find(g => g.id === groupId);
+    if (listIds.length > 0) {
+      showToast(`${listIds.length} list${listIds.length > 1 ? 's' : ''} assigned to ${group?.name}`, 'success');
+    }
   };
 
   const assignActivityToGroup = (groupId, activityId) => {
@@ -349,77 +409,133 @@ const SpellingProgram = ({
       g.id === groupId ? { ...g, assignedActivity: activityId } : g
     );
     saveGroups(updatedGroups);
+    
+    const group = groups.find(g => g.id === groupId);
+    if (activityId) {
+      const activity = ACTIVITIES.find(a => a.id === activityId);
+      showToast(`${activity?.name} assigned to ${group?.name}`, 'success');
+    }
   };
 
   const printLists = (listIds) => {
-    const lists = SPELLING_LISTS.filter(list => listIds.includes(list.id)).slice(0, 8);
+    // Get the actual lists to print
+    const lists = SPELLING_LISTS.filter(list => listIds.includes(list.id));
+    
+    if (lists.length === 0) {
+      showToast('No lists to print', 'error');
+      return;
+    }
+    
     const printWindow = window.open('', 'Print', 'height=800,width=600');
+    
+    // Generate HTML for 8 copies of each list (2 rows of 4)
+    const generateListCopies = (list) => {
+      let copiesHtml = '';
+      for (let i = 0; i < 8; i++) {
+        copiesHtml += `
+          <div class="list-copy">
+            <div class="list-title">${list.name}</div>
+            <div class="feature">${list.feature}</div>
+            <div class="words">
+              ${list.words.map(word => `<div class="word">${word}</div>`).join('')}
+            </div>
+          </div>
+        `;
+      }
+      return copiesHtml;
+    };
+    
     printWindow.document.write(`
       <html>
         <head>
-          <title>Spelling Lists</title>
+          <title>Spelling Lists - 8 Copies</title>
           <style>
             body { 
               font-family: Arial, sans-serif; 
-              margin: 0; 
-              padding: 20px;
-              font-size: 14px;
+              margin: 10px; 
+              padding: 0;
+              font-size: 12px;
             }
-            .lists-container { 
+            .list-page {
+              page-break-after: always;
+              margin-bottom: 20px;
+            }
+            .list-page:last-child {
+              page-break-after: auto;
+            }
+            .copies-container { 
               display: grid; 
               grid-template-columns: repeat(4, 1fr); 
-              gap: 15px; 
+              grid-template-rows: repeat(2, 1fr);
+              gap: 10px; 
               width: 100%;
+              height: 90vh;
             }
-            .list { 
-              border: 1px solid #ddd; 
-              padding: 10px;
+            .list-copy { 
+              border: 2px solid #333; 
+              padding: 8px;
               break-inside: avoid;
+              display: flex;
+              flex-direction: column;
             }
             .list-title { 
               font-weight: bold; 
               text-align: center; 
-              margin-bottom: 8px;
-              font-size: 12px;
-              border-bottom: 1px solid #ccc;
-              padding-bottom: 4px;
+              margin-bottom: 4px;
+              font-size: 11px;
+              border-bottom: 1px solid #666;
+              padding-bottom: 2px;
+            }
+            .feature {
+              font-style: italic;
+              text-align: center;
+              font-size: 9px;
+              color: #666;
+              margin-bottom: 6px;
             }
             .words { 
               display: flex;
               flex-direction: column;
-              gap: 3px;
+              gap: 2px;
+              flex-grow: 1;
             }
             .word { 
-              padding: 3px 5px; 
-              border: 1px solid #eee; 
+              padding: 2px 4px; 
+              border: 1px solid #ddd; 
               text-align: center; 
-              font-size: 11px;
+              font-size: 10px;
+              background: #f9f9f9;
             }
             @media print {
               body { margin: 0; }
-              .lists-container { gap: 10px; }
-              .list { padding: 8px; }
+              .copies-container { 
+                gap: 8px; 
+                height: 95vh;
+              }
+              .list-copy { 
+                padding: 6px; 
+              }
             }
           </style>
         </head>
         <body>
-          <div class="lists-container">
-            ${lists.map(list => `
-              <div class="list">
-                <div class="list-title">${list.name}</div>
-                <div class="words">
-                  ${list.words.map(word => `<div class="word">${word}</div>`).join('')}
-                </div>
+          ${lists.map(list => `
+            <div class="list-page">
+              <div class="copies-container">
+                ${generateListCopies(list)}
               </div>
-            `).join('')}
-          </div>
+            </div>
+          `).join('')}
         </body>
       </html>
     `);
+    
     printWindow.document.close();
     printWindow.focus();
     printWindow.print();
     printWindow.close();
+    
+    showToast(`Printed 8 copies of ${lists.length} list${lists.length > 1 ? 's' : ''}`, 'success');
   };
 
   const togglePresentationMode = () => {
@@ -557,7 +673,10 @@ const SpellingProgram = ({
               <span className="mr-3">📤</span>
               Spelling Program
             </h1>
-            <p className="text-lg opacity-90">Complete spelling curriculum with 265+ word lists and features</p>
+            <p className="text-lg opacity-90">Complete spelling curriculum with {SPELLING_LISTS.length} word lists and features</p>
+            {loadedData?.spellingGroups && (
+              <p className="text-sm opacity-75 mt-1">✅ Groups loaded from your saved data</p>
+            )}
           </div>
           <div className="flex gap-3">
             <button
