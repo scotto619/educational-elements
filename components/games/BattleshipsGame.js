@@ -67,58 +67,6 @@ const BattleshipsGame = ({ studentData, showToast }) => {
   const getRowCol = (index) => ({ row: Math.floor(index / 10), col: index % 10 });
   const getGridLabel = (row, col) => String.fromCharCode(65 + row) + (col + 1);
 
-  // FIXED: Process attack results
-  const processAttack = (attackerRole, targetRow, targetCol, opponentShips) => {
-    const targetIndex = getGridIndex(targetRow, targetCol);
-    let result = 'miss';
-    let sunkShip = null;
-
-    // Check if attack hits any ship
-    if (opponentShips) {
-      for (let ship of opponentShips) {
-        const hitIndex = ship.positions.findIndex(pos => 
-          pos.row === targetRow && pos.col === targetCol
-        );
-        
-        if (hitIndex !== -1) {
-          // Hit!
-          result = 'hit';
-          ship.hits[hitIndex] = true;
-          
-          // Check if ship is sunk
-          if (ship.hits.every(hit => hit === true)) {
-            ship.sunk = true;
-            result = 'sunk';
-            sunkShip = ship;
-          }
-          break;
-        }
-      }
-    }
-
-    return { result, sunkShip, updatedShips: opponentShips };
-  };
-
-  // FIXED: Check for game winner
-  const checkGameWinner = (ships) => {
-    if (!ships) return null;
-    
-    const allShipsSunk = Object.values(ships).every(playerShips => 
-      playerShips.every(ship => ship.sunk === true)
-    );
-    
-    if (allShipsSunk) {
-      // Find which player's ships are all sunk
-      for (let [player, playerShips] of Object.entries(ships)) {
-        if (playerShips.every(ship => ship.sunk === true)) {
-          return player === 'player1' ? 'player2' : 'player1'; // Winner is the other player
-        }
-      }
-    }
-    
-    return null;
-  };
-
   // FIXED: Firebase listener with better game state management
   useEffect(() => {
     if (!firebaseReady || !firebase || !gameRoom) return;
@@ -427,9 +375,12 @@ const BattleshipsGame = ({ studentData, showToast }) => {
     }
   };
 
-  // FIXED: Complete attack processing
+  // FIXED: Complete attack processing with proper error handling
   const makeAttack = async (row, col) => {
-    if (!isMyTurn || gameState !== 'battle') return;
+    if (!isMyTurn || gameState !== 'battle') {
+      showToast('Not your turn!', 'warning');
+      return;
+    }
     
     const index = getGridIndex(row, col);
     if (enemyGrid[index] !== null) {
@@ -444,33 +395,89 @@ const BattleshipsGame = ({ studentData, showToast }) => {
       });
       
       const currentGameData = gameSnapshot.val();
+      if (!currentGameData) {
+        showToast('Game data not found!', 'error');
+        return;
+      }
+      
       const opponentRole = playerRole === 'player1' ? 'player2' : 'player1';
-      const opponentShips = currentGameData.ships[opponentRole];
+      console.log('🎯 Making attack:', { row, col, playerRole, opponentRole });
+      console.log('📊 Current game data:', currentGameData);
+      
+      // FIXED: Check if opponent ships exist
+      if (!currentGameData.ships || !currentGameData.ships[opponentRole]) {
+        showToast('Opponent has not placed ships yet!', 'warning');
+        return;
+      }
+      
+      const opponentShips = [...currentGameData.ships[opponentRole]]; // Create copy to avoid mutation
       
       // Process the attack
-      const attackResult = processAttack(playerRole, row, col, opponentShips);
+      let result = 'miss';
+      let sunkShip = null;
+      let updatedShips = opponentShips;
+      
+      // Check if attack hits any ship
+      for (let i = 0; i < opponentShips.length; i++) {
+        const ship = opponentShips[i];
+        const hitIndex = ship.positions.findIndex(pos => 
+          pos.row === row && pos.col === col
+        );
+        
+        if (hitIndex !== -1) {
+          // Hit!
+          result = 'hit';
+          updatedShips[i] = { ...ship };
+          updatedShips[i].hits = [...ship.hits];
+          updatedShips[i].hits[hitIndex] = true;
+          
+          // Check if ship is sunk
+          if (updatedShips[i].hits.every(hit => hit === true)) {
+            updatedShips[i].sunk = true;
+            result = 'sunk';
+            sunkShip = updatedShips[i];
+          }
+          break;
+        }
+      }
+      
+      console.log('💥 Attack result:', { result, sunkShip });
       
       // Update attack results
       const currentAttackResults = currentGameData.attackResults[playerRole] || [];
       const newAttackResult = {
         row,
         col,
-        result: attackResult.result,
+        result: result,
         timestamp: Date.now()
       };
       
       // Update battle log
       const currentBattleLog = currentGameData.battleLog || [];
-      const logEntry = `${playerInfo.name} attacked ${getGridLabel(row, col)}: ${attackResult.result.toUpperCase()}${attackResult.sunkShip ? ` (${attackResult.sunkShip.name} sunk!)` : ''}`;
+      let logEntry = `${playerInfo.name} attacked ${getGridLabel(row, col)}: ${result.toUpperCase()}`;
+      if (sunkShip) {
+        logEntry += ` (${sunkShip.name} sunk!)`;
+      }
       
-      // Check for winner
-      const gameWinner = checkGameWinner(currentGameData.ships);
+      // Check for winner - all ships sunk?
+      const allOpponentShipsSunk = updatedShips.every(ship => ship.sunk === true);
+      let gameWinner = null;
+      if (allOpponentShipsSunk) {
+        gameWinner = playerRole; // Current player wins
+      }
       
       const updateData = {
         [`attackResults/${playerRole}`]: [...currentAttackResults, newAttackResult],
-        [`ships/${opponentRole}`]: attackResult.updatedShips,
+        [`ships/${opponentRole}`]: updatedShips,
         battleLog: [...currentBattleLog, logEntry],
-        currentPlayer: attackResult.result === 'miss' ? opponentRole : playerRole // Continue turn on hit
+        currentPlayer: result === 'miss' ? opponentRole : playerRole, // Continue turn on hit
+        lastAttack: {
+          player: playerRole,
+          row,
+          col,
+          result,
+          timestamp: Date.now()
+        }
       };
       
       if (gameWinner) {
@@ -481,17 +488,17 @@ const BattleshipsGame = ({ studentData, showToast }) => {
       await firebase.update(gameRef, updateData);
       
       // Show result
-      if (attackResult.result === 'hit') {
+      if (result === 'hit') {
         showToast(`💥 Hit at ${getGridLabel(row, col)}!`, 'success');
-      } else if (attackResult.result === 'sunk') {
-        showToast(`🔥 ${attackResult.sunkShip.name} sunk at ${getGridLabel(row, col)}!`, 'success');
+      } else if (result === 'sunk') {
+        showToast(`🔥 ${sunkShip.name} sunk at ${getGridLabel(row, col)}!`, 'success');
       } else {
         showToast(`💧 Miss at ${getGridLabel(row, col)}`, 'info');
       }
       
     } catch (error) {
       console.error('Error making attack:', error);
-      showToast('Attack failed!', 'error');
+      showToast('Attack failed: ' + error.message, 'error');
     }
   };
 

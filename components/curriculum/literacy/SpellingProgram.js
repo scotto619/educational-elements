@@ -252,15 +252,114 @@ const SPELLING_LISTS = [
 ];
 
 // ===============================================
-// SPELLING ACTIVITIES
+// EXPANDED SPELLING ACTIVITIES WITH INSTRUCTIONS
 // ===============================================
 const ACTIVITIES = [
-  { id: "look_cover_write", name: "Look, Cover, Write, Check", icon: "👀", color: "bg-blue-500" },
-  { id: "rainbow_words", name: "Rainbow Words", icon: "🌈", color: "bg-purple-500" },
-  { id: "silly_sentences", name: "Silly Sentences", icon: "😄", color: "bg-green-500" },
-  { id: "word_sorting", name: "Word Sorting", icon: "📊", color: "bg-orange-500" },
-  { id: "spelling_pyramid", name: "Spelling Pyramid", icon: "🔺", color: "bg-red-500" },
-  { id: "trace_write", name: "Trace & Write", icon: "✏️", color: "bg-indigo-500" }
+  { 
+    id: "look_cover_write", 
+    name: "Look, Cover, Write, Check", 
+    icon: "👀", 
+    color: "bg-blue-500",
+    instructions: "1. LOOK at the word carefully\n2. COVER the word with your hand\n3. WRITE the word from memory\n4. CHECK by uncovering and comparing\n5. If wrong, repeat the process\n\nThis classic method helps build visual memory of spelling patterns."
+  },
+  { 
+    id: "rainbow_words", 
+    name: "Rainbow Words", 
+    icon: "🌈", 
+    color: "bg-purple-500",
+    instructions: "1. Write each spelling word in different colors\n2. Use a different color for each letter, or\n3. Use different colors for different letter patterns\n4. Make your words look like rainbows!\n\nThis activity helps students notice letter patterns and makes spelling fun and colorful."
+  },
+  { 
+    id: "silly_sentences", 
+    name: "Silly Sentences", 
+    icon: "😄", 
+    color: "bg-green-500",
+    instructions: "1. Use each spelling word in a funny sentence\n2. Make the sentences as silly as possible\n3. Draw pictures to go with your silly sentences\n4. Share your funniest sentences with the class\n\nExample: 'The purple elephant could spell every word backwards while dancing!'"
+  },
+  { 
+    id: "word_sorting", 
+    name: "Word Sorting", 
+    icon: "📊", 
+    color: "bg-orange-500",
+    instructions: "1. Look at all your spelling words\n2. Sort them into groups by:\n   • Number of letters\n   • Spelling patterns\n   • Word endings\n   • Vowel sounds\n3. Explain why you grouped them together\n4. Try sorting the same words in a different way"
+  },
+  { 
+    id: "spelling_pyramid", 
+    name: "Spelling Pyramid", 
+    icon: "🔺", 
+    color: "bg-red-500",
+    instructions: "Build a pyramid for each word:\n\nFor the word 'SPELL':\nS\nSP\nSPE\nSPEL\nSPELL\n\nWrite each word as a pyramid, adding one letter at a time. This helps students see how words are built letter by letter."
+  },
+  { 
+    id: "trace_write", 
+    name: "Trace & Write", 
+    icon: "✏️", 
+    color: "bg-indigo-500",
+    instructions: "1. Trace over each spelling word 3 times\n2. Write the word 3 times without tracing\n3. Say each letter as you write it\n4. Use your finger to 'write' the word in the air\n\nThis builds muscle memory for correct spelling patterns."
+  },
+  {
+    id: "word_shapes",
+    name: "Word Shapes",
+    icon: "📐",
+    color: "bg-pink-500",
+    instructions: "1. Draw a box around each word\n2. Notice the shape made by tall letters (like b, d, h)\n3. Notice letters that go below the line (like g, j, p)\n4. Draw the 'shape' of each word without the letters\n5. Can you recognize words just by their shapes?"
+  },
+  {
+    id: "backwards_spelling",
+    name: "Backwards Spelling",
+    icon: "🔄",
+    color: "bg-cyan-500",
+    instructions: "1. Say each spelling word backwards\n2. Write each word backwards\n3. Can you read the backwards words?\n4. Practice spelling the words forwards and backwards\n\nExample: 'HOUSE' becomes 'ESUOH'\nThis challenges students to really know their letters!"
+  },
+  {
+    id: "word_hunt",
+    name: "Word Hunt",
+    icon: "🔍",
+    color: "bg-emerald-500",
+    instructions: "1. Find your spelling words hidden around the classroom\n2. Look for them in books, on posters, or labels\n3. When you find a word, write down where you found it\n4. Try to find each word in 3 different places\n5. Which words were easiest/hardest to find?"
+  },
+  {
+    id: "syllable_clap",
+    name: "Syllable Clapping",
+    icon: "👏",
+    color: "bg-amber-500",
+    instructions: "1. Say each spelling word slowly\n2. Clap for each syllable (word part)\n3. Write the word with a dot between syllables\n4. Sort words by number of syllables\n\nExample: 'BUT•TER•FLY' (3 claps)\nHelps students break words into manageable parts."
+  },
+  {
+    id: "rhyme_time",
+    name: "Rhyme Time",
+    icon: "🎵",
+    color: "bg-violet-500",
+    instructions: "1. Find words that rhyme with your spelling words\n2. Make up short poems using your spelling words\n3. Create rap songs or chants with the words\n4. Perform your rhymes for the class\n\nExample: 'The CAT sat on a MAT and wore a HAT!'"
+  },
+  {
+    id: "word_detectives",
+    name: "Word Detectives",
+    icon: "🕵️",
+    color: "bg-slate-500",
+    instructions: "1. Investigate each spelling word like a detective\n2. Find clues about the word:\n   • How many vowels?\n   • Any double letters?\n   • What does it rhyme with?\n   • Where might you see this word?\n3. Make a 'case file' for each word\n4. Present your findings!"
+  },
+  {
+    id: "memory_palace",
+    name: "Memory Palace",
+    icon: "🏰",
+    color: "bg-rose-500",
+    instructions: "1. Choose a familiar place (your bedroom, kitchen)\n2. 'Place' each spelling word in different spots\n3. Create a story connecting the word to that location\n4. Take a mental walk through your space\n5. Can you remember all the words by visiting each spot?\n\nExample: Place 'LAUGH' by your pillow where you have funny dreams!"
+  },
+  {
+    id: "air_writing",
+    name: "Air Writing",
+    icon: "✈️",
+    color: "bg-teal-500",
+    instructions: "1. Use your finger to write spelling words in the air\n2. Make the letters BIG with your whole arm\n3. Have a partner guess which word you're writing\n4. Try writing with your opposite hand\n5. Write words with your foot!\n\nThis helps your body remember how to form letters."
+  },
+  {
+    id: "word_art",
+    name: "Word Art",
+    icon: "🎨",
+    color: "bg-lime-500",
+    instructions: "1. Turn each spelling word into art\n2. Make the letters look like what the word means\n3. Use bubble letters, fancy fonts, or decorations\n4. Add pictures that show the word's meaning\n5. Create a word art gallery!\n\nExample: Make 'FIRE' look like flames, 'ICE' look frozen!"
+  }
 ];
 
 // ===============================================
@@ -277,22 +376,26 @@ const SpellingProgram = ({
   const [isPresentationMode, setIsPresentationMode] = useState(false);
   const [showListSelector, setShowListSelector] = useState(false);
   const [viewingList, setViewingList] = useState(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [showActivityInstructions, setShowActivityInstructions] = useState(null);
+  const [showStudentAssignment, setShowStudentAssignment] = useState(false);
 
   // Initialize groups if empty
   useEffect(() => {
-    // First try to load from Firebase
-    if (loadedData.spellingGroups && loadedData.spellingGroups.length > 0) {
+    // Load from Firebase data only
+    if (loadedData?.spellingGroups && loadedData.spellingGroups.length > 0) {
       setGroups(loadedData.spellingGroups);
+      setHasUnsavedChanges(false);
       console.log('📚 Loaded spelling groups from Firebase:', loadedData.spellingGroups);
-    } else if (groups.length === 0) {
-      // Only create defaults if no groups exist and nothing in Firebase
+    } else if (loadedData !== undefined && (!loadedData?.spellingGroups || loadedData.spellingGroups.length === 0)) {
+      // Only create defaults if no groups exist in Firebase
       const defaultGroups = [
         { id: 1, name: "Group 1", color: "bg-blue-500", students: [], assignedLists: [], assignedActivity: null },
         { id: 2, name: "Group 2", color: "bg-green-500", students: [], assignedLists: [], assignedActivity: null },
         { id: 3, name: "Group 3", color: "bg-purple-500", students: [], assignedLists: [], assignedActivity: null }
       ];
       setGroups(defaultGroups);
-      saveGroups(defaultGroups);
+      setHasUnsavedChanges(true);
       console.log('📚 Created default spelling groups');
     }
   }, [loadedData]);
@@ -301,6 +404,7 @@ const SpellingProgram = ({
   useEffect(() => {
     if (loadedData?.spellingGroups && JSON.stringify(loadedData.spellingGroups) !== JSON.stringify(groups)) {
       setGroups(loadedData.spellingGroups);
+      setHasUnsavedChanges(false);
       console.log('🔄 Updated spelling groups from Firebase data change');
     }
   }, [loadedData?.spellingGroups]);
@@ -322,29 +426,36 @@ const SpellingProgram = ({
       
       if (hasChanges) {
         console.log('🧹 Cleaned up removed students from spelling groups');
-        saveGroups(cleanedGroups);
+        setGroups(cleanedGroups);
+        setHasUnsavedChanges(true);
       }
     }
   }, [students]);
 
-  const saveGroups = (updatedGroups) => {
+  // Manual save function
+  const saveGroups = () => {
     try {
-      setGroups(updatedGroups);
-      // Save to Firebase using the provided saveData function
-      saveData({ spellingGroups: updatedGroups });
-      console.log('📝 Spelling groups saved to Firebase:', updatedGroups);
-      showToast('Groups saved successfully!', 'success');
+      if (saveData && typeof saveData === 'function') {
+        saveData({ spellingGroups: groups });
+        setHasUnsavedChanges(false);
+        console.log('📝 Spelling groups saved to Firebase:', groups);
+      } else {
+        console.error('❌ saveData function not available');
+      }
     } catch (error) {
       console.error('❌ Error saving spelling groups:', error);
-      showToast('Error saving groups', 'error');
     }
   };
 
+  // Update groups locally (without auto-saving)
+  const updateGroups = (updatedGroups) => {
+    setGroups(updatedGroups);
+    setHasUnsavedChanges(true);
+  };
+
   const addGroup = () => {
-    if (groups.length >= 5) {
-      showToast('Maximum 5 groups allowed', 'error');
-      return;
-    }
+    if (groups.length >= 5) return;
+    
     const colors = ["bg-blue-500", "bg-green-500", "bg-purple-500", "bg-orange-500", "bg-red-500"];
     const newGroup = {
       id: Date.now(),
@@ -355,22 +466,19 @@ const SpellingProgram = ({
       assignedActivity: null
     };
     const updatedGroups = [...groups, newGroup];
-    saveGroups(updatedGroups);
-    showToast(`${newGroup.name} created successfully!`, 'success');
+    updateGroups(updatedGroups);
   };
 
   const removeGroup = (groupId) => {
-    const groupToRemove = groups.find(g => g.id === groupId);
     const updatedGroups = groups.filter(g => g.id !== groupId);
-    saveGroups(updatedGroups);
-    showToast(`${groupToRemove?.name} removed`, 'info');
+    updateGroups(updatedGroups);
   };
 
   const updateGroupName = (groupId, newName) => {
     const updatedGroups = groups.map(g => 
       g.id === groupId ? { ...g, name: newName } : g
     );
-    saveGroups(updatedGroups);
+    updateGroups(updatedGroups);
   };
 
   const assignStudentToGroup = (studentId, groupId) => {
@@ -380,51 +488,28 @@ const SpellingProgram = ({
         ? [...group.students.filter(s => s.id !== studentId), students.find(s => s.id === studentId)]
         : group.students.filter(s => s.id !== studentId)
     }));
-    saveGroups(updatedGroups);
-    
-    if (groupId) {
-      const student = students.find(s => s.id === studentId);
-      const group = groups.find(g => g.id === groupId);
-      showToast(`${student?.firstName} assigned to ${group?.name}`, 'success');
-    } else {
-      const student = students.find(s => s.id === studentId);
-      showToast(`${student?.firstName} removed from groups`, 'info');
-    }
+    updateGroups(updatedGroups);
   };
 
   const assignListsToGroup = (groupId, listIds) => {
     const updatedGroups = groups.map(g => 
       g.id === groupId ? { ...g, assignedLists: listIds } : g
     );
-    saveGroups(updatedGroups);
-    
-    const group = groups.find(g => g.id === groupId);
-    if (listIds.length > 0) {
-      showToast(`${listIds.length} list${listIds.length > 1 ? 's' : ''} assigned to ${group?.name}`, 'success');
-    }
+    updateGroups(updatedGroups);
   };
 
   const assignActivityToGroup = (groupId, activityId) => {
     const updatedGroups = groups.map(g => 
       g.id === groupId ? { ...g, assignedActivity: activityId } : g
     );
-    saveGroups(updatedGroups);
-    
-    const group = groups.find(g => g.id === groupId);
-    if (activityId) {
-      const activity = ACTIVITIES.find(a => a.id === activityId);
-      showToast(`${activity?.name} assigned to ${group?.name}`, 'success');
-    }
+    updateGroups(updatedGroups);
   };
 
   const printLists = (listIds) => {
     // Get the actual lists to print
     const lists = SPELLING_LISTS.filter(list => listIds.includes(list.id));
     
-    if (lists.length === 0) {
-      showToast('No lists to print', 'error');
-      return;
-    }
+    if (lists.length === 0) return;
     
     const printWindow = window.open('', 'Print', 'height=800,width=600');
     
@@ -534,18 +619,10 @@ const SpellingProgram = ({
     printWindow.focus();
     printWindow.print();
     printWindow.close();
-    
-    showToast(`Printed 8 copies of ${lists.length} list${lists.length > 1 ? 's' : ''}`, 'success');
   };
 
   const togglePresentationMode = () => {
     setIsPresentationMode(!isPresentationMode);
-    showToast(
-      isPresentationMode 
-        ? 'Exited presentation mode' 
-        : 'Entered presentation mode!', 
-      'success'
-    );
   };
 
   const getAssignedStudents = (students) => {
@@ -607,10 +684,12 @@ const SpellingProgram = ({
                     })}
 
                     {assignedActivity && (
-                      <div className={`${assignedActivity.color} text-white p-3 rounded-lg mt-4`}>
+                      <div className={`${assignedActivity.color} text-white p-3 rounded-lg mt-4 cursor-pointer hover:opacity-90 transition-opacity`}
+                           onClick={() => setShowActivityInstructions(assignedActivity)}>
                         <div className="text-center">
                           <div className="text-2xl mb-2">{assignedActivity.icon}</div>
                           <h3 className="text-sm font-bold">{assignedActivity.name}</h3>
+                          <p className="text-xs opacity-80">Click for instructions</p>
                         </div>
                       </div>
                     )}
@@ -679,6 +758,20 @@ const SpellingProgram = ({
             )}
           </div>
           <div className="flex gap-3">
+            {hasUnsavedChanges && (
+              <button
+                onClick={saveGroups}
+                className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 font-semibold flex items-center gap-2"
+              >
+                💾 Save Changes
+              </button>
+            )}
+            <button
+              onClick={() => setShowStudentAssignment(true)}
+              className="bg-white bg-opacity-20 text-white px-4 py-2 rounded-lg hover:bg-opacity-30"
+            >
+              👥 Assign Students
+            </button>
             <button
               onClick={() => setShowListSelector(!showListSelector)}
               className="bg-white bg-opacity-20 text-white px-4 py-2 rounded-lg hover:bg-opacity-30"
@@ -765,23 +858,19 @@ const SpellingProgram = ({
       {/* Unassigned Students */}
       {unassignedStudents.length > 0 && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-          <h3 className="font-bold text-yellow-800 mb-3">👤 Unassigned Students</h3>
+          <h3 className="font-bold text-yellow-800 mb-3">👤 Unassigned Students ({unassignedStudents.length})</h3>
+          <p className="text-sm text-yellow-700 mb-3">Click "Assign Students" above to quickly assign students to groups</p>
           <div className="flex flex-wrap gap-2">
-            {unassignedStudents.map(student => (
+            {unassignedStudents.slice(0, 5).map(student => (
               <div key={student.id} className="bg-white border border-yellow-300 rounded-lg p-2">
                 <span className="text-sm font-medium">{student.firstName} {student.lastName}</span>
-                <select
-                  onChange={(e) => e.target.value && assignStudentToGroup(student.id, parseInt(e.target.value))}
-                  className="ml-2 text-xs border rounded"
-                  defaultValue=""
-                >
-                  <option value="">Assign to group...</option>
-                  {groups.map(group => (
-                    <option key={group.id} value={group.id}>{group.name}</option>
-                  ))}
-                </select>
               </div>
             ))}
+            {unassignedStudents.length > 5 && (
+              <div className="bg-white border border-yellow-300 rounded-lg p-2">
+                <span className="text-sm text-gray-500">+{unassignedStudents.length - 5} more</span>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -921,7 +1010,10 @@ const SpellingProgram = ({
                   Activity:
                 </h4>
                 {group.assignedActivity ? (
-                  <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded p-2">
+                  <div 
+                    className="flex items-center justify-between bg-green-50 border border-green-200 rounded p-2 cursor-pointer hover:bg-green-100 transition-colors"
+                    onClick={() => setShowActivityInstructions(ACTIVITIES.find(a => a.id === group.assignedActivity))}
+                  >
                     <div className="flex items-center">
                       <span className={`mr-2 ${groups.length >= 4 ? 'text-lg' : 'text-xl'}`}>
                         {ACTIVITIES.find(a => a.id === group.assignedActivity)?.icon}
@@ -931,7 +1023,10 @@ const SpellingProgram = ({
                       </span>
                     </div>
                     <button
-                      onClick={() => assignActivityToGroup(group.id, null)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        assignActivityToGroup(group.id, null);
+                      }}
                       className="text-red-500 hover:text-red-700 text-sm"
                     >
                       ×
@@ -969,6 +1064,119 @@ const SpellingProgram = ({
           </div>
         )}
       </div>
+
+      {/* Student Assignment Modal */}
+      {showStudentAssignment && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-4xl w-full max-h-[80vh] overflow-y-auto">
+            <div className="p-6 border-b">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold">👥 Assign Students to Groups</h2>
+                <button
+                  onClick={() => setShowStudentAssignment(false)}
+                  className="text-gray-500 hover:text-gray-700 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Available Students */}
+                <div>
+                  <h3 className="text-lg font-bold mb-4">Available Students</h3>
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {unassignedStudents.map(student => (
+                      <div key={student.id} className="bg-gray-50 border rounded-lg p-3">
+                        <div className="font-medium">{student.firstName} {student.lastName}</div>
+                        <div className="flex gap-2 mt-2">
+                          {groups.map(group => (
+                            <button
+                              key={group.id}
+                              onClick={() => assignStudentToGroup(student.id, group.id)}
+                              className={`${group.color} text-white text-xs px-3 py-1 rounded hover:opacity-80`}
+                            >
+                              → {group.name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                    {unassignedStudents.length === 0 && (
+                      <p className="text-gray-500 italic">All students are assigned to groups!</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Groups with Students */}
+                <div>
+                  <h3 className="text-lg font-bold mb-4">Groups</h3>
+                  <div className="space-y-4 max-h-64 overflow-y-auto">
+                    {groups.map(group => (
+                      <div key={group.id} className="border rounded-lg">
+                        <div className={`${group.color} text-white p-2 rounded-t-lg`}>
+                          <h4 className="font-bold">{group.name} ({group.students.length})</h4>
+                        </div>
+                        <div className="p-2 space-y-1">
+                          {group.students.map(student => (
+                            <div key={student.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                              <span className="text-sm">{student.firstName} {student.lastName}</span>
+                              <button
+                                onClick={() => assignStudentToGroup(student.id, null)}
+                                className="text-red-500 hover:text-red-700 text-xs"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          ))}
+                          {group.students.length === 0 && (
+                            <p className="text-gray-400 text-sm italic">No students assigned</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Activity Instructions Modal */}
+      {showActivityInstructions && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div className={`${showActivityInstructions.color} text-white p-6 rounded-t-xl`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <span className="text-4xl mr-4">{showActivityInstructions.icon}</span>
+                  <h2 className="text-2xl font-bold">{showActivityInstructions.name}</h2>
+                </div>
+                <button
+                  onClick={() => setShowActivityInstructions(null)}
+                  className="text-white hover:text-gray-200 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+            <div className="p-6">
+              <h3 className="text-lg font-bold mb-4">📋 Instructions for Students:</h3>
+              <div className="bg-gray-50 rounded-lg p-4">
+                <pre className="whitespace-pre-wrap text-gray-800 leading-relaxed font-sans">
+                  {showActivityInstructions.instructions}
+                </pre>
+              </div>
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  💡 <strong>Teacher Tip:</strong> You can display these instructions to the class or print them out for student reference.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
