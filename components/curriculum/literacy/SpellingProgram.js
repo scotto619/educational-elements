@@ -387,8 +387,8 @@ const SpellingProgram = ({
       setGroups(loadedData.spellingGroups);
       setHasUnsavedChanges(false);
       console.log('📚 Loaded spelling groups from Firebase:', loadedData.spellingGroups);
-    } else if (loadedData !== undefined && (!loadedData?.spellingGroups || loadedData.spellingGroups.length === 0)) {
-      // Only create defaults if no groups exist in Firebase
+    } else if (loadedData !== undefined && groups.length === 0) {
+      // Only create defaults if no groups exist in Firebase and local state is empty
       const defaultGroups = [
         { id: 1, name: "Group 1", color: "bg-blue-500", students: [], assignedLists: [], assignedActivity: null },
         { id: 2, name: "Group 2", color: "bg-green-500", students: [], assignedLists: [], assignedActivity: null },
@@ -400,9 +400,12 @@ const SpellingProgram = ({
     }
   }, [loadedData]);
 
-  // Update groups when loadedData changes (Firebase data loaded)
+  // Update groups when loadedData changes (Firebase data loaded) - but avoid infinite loops
   useEffect(() => {
-    if (loadedData?.spellingGroups && JSON.stringify(loadedData.spellingGroups) !== JSON.stringify(groups)) {
+    if (loadedData?.spellingGroups && 
+        Array.isArray(loadedData.spellingGroups) && 
+        loadedData.spellingGroups.length > 0 &&
+        JSON.stringify(loadedData.spellingGroups) !== JSON.stringify(groups)) {
       setGroups(loadedData.spellingGroups);
       setHasUnsavedChanges(false);
       console.log('🔄 Updated spelling groups from Firebase data change');
@@ -435,13 +438,29 @@ const SpellingProgram = ({
   // Manual save function
   const saveGroups = () => {
     try {
-      if (saveData && typeof saveData === 'function') {
-        saveData({ spellingGroups: groups });
-        setHasUnsavedChanges(false);
-        console.log('📝 Spelling groups saved to Firebase:', groups);
-      } else {
+      if (!saveData || typeof saveData !== 'function') {
         console.error('❌ saveData function not available');
+        return;
       }
+
+      if (!groups || groups.length === 0) {
+        console.error('❌ No groups to save');
+        return;
+      }
+      
+      // Get existing toolkit data and merge spelling groups
+      const existingToolkitData = loadedData || {};
+      const updatedToolkitData = {
+        ...existingToolkitData,
+        spellingGroups: groups,
+        lastSaved: new Date().toISOString()
+      };
+      
+      // Save to toolkitData to match loading location
+      saveData({ toolkitData: updatedToolkitData });
+      setHasUnsavedChanges(false);
+      console.log('📝 Spelling groups saved to Firebase successfully:', groups);
+      
     } catch (error) {
       console.error('❌ Error saving spelling groups:', error);
     }
@@ -449,8 +468,13 @@ const SpellingProgram = ({
 
   // Update groups locally (without auto-saving)
   const updateGroups = (updatedGroups) => {
+    if (!Array.isArray(updatedGroups)) {
+      console.error('❌ Invalid groups data - must be array');
+      return;
+    }
     setGroups(updatedGroups);
     setHasUnsavedChanges(true);
+    console.log('📝 Groups updated locally, unsaved changes flagged');
   };
 
   const addGroup = () => {
@@ -753,15 +777,18 @@ const SpellingProgram = ({
               Spelling Program
             </h1>
             <p className="text-lg opacity-90">Complete spelling curriculum with {SPELLING_LISTS.length} word lists and features</p>
-            {loadedData?.spellingGroups && (
+            {loadedData?.spellingGroups && loadedData.spellingGroups.length > 0 && !hasUnsavedChanges && (
               <p className="text-sm opacity-75 mt-1">✅ Groups loaded from your saved data</p>
+            )}
+            {hasUnsavedChanges && (
+              <p className="text-sm opacity-75 mt-1">⚠️ You have unsaved changes</p>
             )}
           </div>
           <div className="flex gap-3">
             {hasUnsavedChanges && (
               <button
                 onClick={saveGroups}
-                className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 font-semibold flex items-center gap-2"
+                className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 font-semibold flex items-center gap-2 animate-pulse"
               >
                 💾 Save Changes
               </button>
