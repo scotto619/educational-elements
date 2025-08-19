@@ -1,11 +1,11 @@
-// components/tabs/CurriculumCornerTab.js - REORGANIZED WITH UNIFIED LITERACY SECTION
+// components/tabs/CurriculumCornerTab.js - CLEAN VERSION
 import React, { useState } from 'react';
 
 // Import activity components
 import LiteracyWarmup from '../curriculum/literacy/LiteracyWarmup';
 import ReadingComprehension from '../curriculum/literacy/ReadingComprehension';
 import VisualWritingPrompts from '../curriculum/literacy/VisualWritingPrompts';
-import SpellingProgram from '../curriculum/literacy/SpellingProgram'; // NEW COMPONENT
+import SpellingProgram from '../curriculum/literacy/SpellingProgram';
 import AreaPerimeterTool from '../curriculum/mathematics/AreaPerimeterTool';
 import MathWarmup from '../curriculum/mathematics/MathWarmup';
 import WorksheetGenerator from '../curriculum/mathematics/WorksheetGenerator';
@@ -26,7 +26,7 @@ const ComingSoon = ({ toolName, description }) => (
 );
 
 // ===============================================
-// REORGANIZED SUBJECT CONFIGURATION - UNIFIED LITERACY
+// SUBJECT CONFIGURATION
 // ===============================================
 const subjects = [
   {
@@ -48,8 +48,7 @@ const subjects = [
         name: 'Spelling Program',
         icon: '🔤',
         description: 'Structured spelling lists with activities and assessments',
-        component: SpellingProgram,
-        featured: true
+        component: SpellingProgram
       },
       {
         id: 'reading-comprehension',
@@ -107,8 +106,7 @@ const subjects = [
         name: 'Worksheet Generator',
         icon: '📄',
         description: 'Create professional printable math worksheets for any topic',
-        component: WorksheetGenerator,
-        featured: true
+        component: WorksheetGenerator
       },
       {
         id: 'math-warmup',
@@ -120,7 +118,7 @@ const subjects = [
       {
         id: 'area-perimeter',
         name: 'Area & Perimeter',
-        icon: '📐',
+        icon: '📏',
         description: 'Interactive tool for exploring area and perimeter concepts',
         component: AreaPerimeterTool
       },
@@ -284,7 +282,7 @@ const subjects = [
 ];
 
 // ===============================================
-// MAIN CURRICULUM CORNER COMPONENT - UPDATED
+// MAIN CURRICULUM CORNER COMPONENT
 // ===============================================
 const CurriculumCornerTab = ({ 
   students = [], 
@@ -334,15 +332,15 @@ const CurriculumCornerTab = ({
     return (
       <div className="space-y-6">
         {/* Breadcrumb Navigation */}
-        <div className="bg-white rounded-xl shadow-lg p-4 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-gray-600">
+        <div className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-slate-600">
             <button onClick={handleBackToSubjects} className="hover:text-blue-600 transition-colors">Curriculum Corner</button>
             <span>→</span>
             <button onClick={handleBackToActivities} className="hover:text-blue-600 transition-colors">{activeSubject.name}</button>
             <span>→</span>
-            <span className="font-semibold text-gray-800">{activeActivity.name}</span>
+            <span className="font-semibold text-slate-800">{activeActivity.name}</span>
           </div>
-          <button onClick={handleBackToActivities} className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600">← Back to {activeSubject.name}</button>
+          <button onClick={handleBackToActivities} className="bg-slate-500 text-white px-4 py-2 rounded-lg hover:bg-slate-600 transition-colors">← Back to {activeSubject.name}</button>
         </div>
 
         {/* Activity Content */}
@@ -356,7 +354,7 @@ const CurriculumCornerTab = ({
     return (
       <div className="space-y-6">
         {/* Subject Header */}
-        <div className={`text-center bg-gradient-to-r ${activeSubject.color} text-white rounded-2xl p-8 shadow-2xl relative overflow-hidden`}>
+        <div className={`text-center bg-gradient-to-r ${activeSubject.color} text-white rounded-2xl p-8 shadow-lg relative overflow-hidden`}>
           <div className="absolute inset-0 bg-black bg-opacity-10"></div>
           <div className="relative z-10">
             <h2 className="text-4xl font-bold mb-4 flex items-center justify-center">
@@ -374,33 +372,22 @@ const CurriculumCornerTab = ({
             <button
               key={activity.id}
               onClick={() => handleActivitySelect(activity)}
-              className={`bg-white rounded-xl shadow-lg p-6 text-left hover:shadow-xl transition-all duration-300 hover:scale-105 border-2 relative ${
-                activity.featured 
-                  ? 'border-yellow-400 bg-gradient-to-br from-yellow-50 to-orange-50' 
-                  : 'border-transparent hover:border-blue-300'
-              }`}
+              className="bg-white rounded-xl shadow-sm p-6 text-left hover:shadow-md transition-all duration-300 hover:scale-105 border border-slate-200 hover:border-blue-300"
             >
-              {activity.featured && (
-                <div className="absolute -top-2 -right-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full font-bold animate-pulse">
-                  NEW!
-                </div>
-              )}
               <div className="flex items-center gap-4 mb-4">
                 <div className="text-4xl">{activity.icon}</div>
                 <div>
-                  <h3 className="text-xl font-bold text-gray-800">{activity.name}</h3>
-                  <p className="text-gray-600 text-sm">{activity.description}</p>
+                  <h3 className="text-xl font-bold text-slate-800">{activity.name}</h3>
+                  <p className="text-slate-600 text-sm">{activity.description}</p>
                 </div>
               </div>
               <div className="flex justify-between items-center">
                 <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                   activity.component === ComingSoon 
-                    ? 'bg-yellow-100 text-yellow-700' 
-                    : activity.featured 
-                      ? 'bg-yellow-200 text-yellow-800'
-                      : 'bg-green-100 text-green-700'
+                    ? 'bg-amber-100 text-amber-700' 
+                    : 'bg-green-100 text-green-700'
                 }`}>
-                  {activity.component === ComingSoon ? 'Coming Soon' : activity.featured ? 'Featured!' : 'Available'}
+                  {activity.component === ComingSoon ? 'Coming Soon' : 'Available'}
                 </span>
                 <span className="text-blue-500 font-semibold">Open →</span>
               </div>
@@ -415,106 +402,33 @@ const CurriculumCornerTab = ({
   return (
     <div className="space-y-6">
       {/* Main Header */}
-      <div className="text-center bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 text-white rounded-2xl p-8 shadow-2xl relative overflow-hidden">
+      <div className="text-center bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 text-white rounded-2xl p-8 shadow-lg relative overflow-hidden">
         <div className="absolute inset-0 bg-black bg-opacity-10"></div>
         <div className="relative z-10">
           <h2 className="text-5xl font-bold mb-4 flex items-center justify-center">
-            <span className="text-4xl mr-4 animate-bounce">📖</span>
+            <span className="text-4xl mr-4">📖</span>
             Curriculum Corner
-            <span className="text-4xl ml-4 animate-bounce">🎓</span>
+            <span className="text-4xl ml-4">🎓</span>
           </h2>
           <p className="text-xl opacity-90">Subject-based teaching tools for every classroom need</p>
-        </div>
-        
-        {/* Floating decorations */}
-        <div className="absolute top-4 right-4 text-2xl animate-bounce" style={{ animationDelay: '0.5s' }}>🔬</div>
-        <div className="absolute bottom-4 left-4 text-2xl animate-bounce" style={{ animationDelay: '1s' }}>🎨</div>
-        <div className="absolute top-1/2 right-1/4 text-xl animate-bounce" style={{ animationDelay: '1.5s' }}>🌍</div>
-      </div>
-
-      {/* NEW Literacy Spotlight */}
-      <div className="bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-blue-300 rounded-xl p-6 relative overflow-hidden">
-        <div className="absolute top-2 right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-bold animate-pulse">
-          REORGANIZED!
-        </div>
-        <div className="flex items-start space-x-4">
-          <span className="text-4xl">📚</span>
-          <div>
-            <h4 className="font-bold text-blue-800 mb-2 text-xl">✨ Complete Literacy & Language Arts Toolkit!</h4>
-            <p className="text-blue-700 mb-4 text-lg">
-              All literacy tools are now unified under one comprehensive section! Find everything you need for 
-              reading, writing, spelling, phonics, vocabulary, and grammar all in one place.
-            </p>
-            <div className="bg-blue-100 rounded-lg p-4">
-              <h5 className="font-semibold text-blue-800 mb-3">🎯 What's Now Available:</h5>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <ul className="text-sm text-blue-700 space-y-1">
-                  <li>• 🔥 Literacy Warmup (phonics & sounds)</li>
-                  <li>• 🔤 NEW! Spelling Program (structured lists)</li>
-                  <li>• 🧠 Reading Comprehension activities</li>
-                  <li>• 🖼️ Visual Writing Prompts</li>
-                </ul>
-                <ul className="text-sm text-blue-700 space-y-1">
-                  <li>• 📖 Vocabulary Builder (coming soon)</li>
-                  <li>• ✏️ Grammar Workshop (coming soon)</li>
-                  <li>• 🎭 Poetry Corner (coming soon)</li>
-                  <li>• ✍️ Handwriting Practice (coming soon)</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* NEW Spelling Program Feature Notice */}
-      <div className="bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-300 rounded-xl p-6 relative overflow-hidden">
-        <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full font-bold animate-pulse">
-          NEW!
-        </div>
-        <div className="flex items-start space-x-4">
-          <span className="text-4xl">🔤</span>
-          <div>
-            <h4 className="font-bold text-green-800 mb-2 text-xl">🌟 Introducing the Spelling Program!</h4>
-            <p className="text-green-700 mb-4 text-lg">
-              A complete spelling curriculum with structured word lists, daily activities, and student tracking.
-              Perfect for differentiated instruction and classroom display!
-            </p>
-            <div className="bg-green-100 rounded-lg p-4">
-              <h5 className="font-semibold text-green-800 mb-3">🎯 Key Features:</h5>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <ul className="text-sm text-green-700 space-y-1">
-                  <li>• 📋 Organized word lists by difficulty level</li>
-                  <li>• 👥 Assign different lists to student groups</li>
-                  <li>• 🖨️ Printable lists with multiple copies</li>
-                  <li>• 📺 Daily activities for classroom display</li>
-                </ul>
-                <ul className="text-sm text-green-700 space-y-1">
-                  <li>• ✅ "Look, Cover, Write, Check" activities</li>
-                  <li>• 🎯 Student progress tracking</li>
-                  <li>• 🎨 Visually engaging presentations</li>
-                  <li>• 📊 Assessment and review tools</li>
-                </ul>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
       {/* Subject Selection */}
-      <div className="bg-white rounded-xl shadow-lg p-6">
-        <h3 className="text-2xl font-bold text-gray-800 mb-6 text-center">Choose Your Subject Area</h3>
+      <div className="bg-white rounded-xl shadow-sm p-6">
+        <h3 className="text-2xl font-bold text-slate-800 mb-6 text-center">Choose Your Subject Area</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {subjects.map(subject => (
             <button
               key={subject.id}
               onClick={() => handleSubjectSelect(subject)}
-              className="p-6 rounded-xl border-2 border-gray-200 hover:border-gray-300 bg-white shadow-md hover:shadow-xl transition-all duration-300 text-center hover:scale-105 group"
+              className="p-6 rounded-xl border border-slate-200 hover:border-slate-300 bg-white shadow-sm hover:shadow-md transition-all duration-300 text-center hover:scale-105 group"
             >
               <div className="text-5xl mb-4 group-hover:scale-110 transition-transform">{subject.icon}</div>
-              <h4 className="font-bold text-gray-800 text-lg mb-2">{subject.name}</h4>
-              <p className="text-sm text-gray-600 leading-tight mb-4">{subject.description}</p>
+              <h4 className="font-bold text-slate-800 text-lg mb-2">{subject.name}</h4>
+              <p className="text-sm text-slate-600 leading-tight mb-4">{subject.description}</p>
               <div className="flex justify-between items-center">
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-slate-500">
                   {subject.activities.length} tool{subject.activities.length !== 1 ? 's' : ''}
                 </span>
                 <span className="text-blue-500 font-semibold text-sm group-hover:text-blue-600">Enter →</span>
@@ -525,21 +439,21 @@ const CurriculumCornerTab = ({
       </div>
 
       {/* Quick Stats */}
-      <div className="bg-white rounded-xl shadow-lg p-6">
-        <h3 className="text-xl font-bold text-gray-800 mb-4">📊 Curriculum Overview</h3>
+      <div className="bg-white rounded-xl shadow-sm p-6">
+        <h3 className="text-xl font-bold text-slate-800 mb-4">📊 Curriculum Overview</h3>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {subjects.map(subject => {
             const availableTools = subject.activities.filter(activity => activity.component !== ComingSoon).length;
             const totalTools = subject.activities.length;
             
             return (
-              <div key={subject.id} className="text-center p-4 bg-gray-50 rounded-lg">
+              <div key={subject.id} className="text-center p-4 bg-slate-50 rounded-lg">
                 <div className="text-2xl mb-2">{subject.icon}</div>
-                <div className="text-sm font-semibold text-gray-800">{subject.name}</div>
-                <div className="text-xs text-gray-600 mt-1">
+                <div className="text-sm font-semibold text-slate-800">{subject.name}</div>
+                <div className="text-xs text-slate-600 mt-1">
                   {availableTools}/{totalTools} tools ready
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                <div className="w-full bg-slate-200 rounded-full h-2 mt-2">
                   <div 
                     className={`h-2 rounded-full bg-gradient-to-r ${subject.color}`}
                     style={{ width: `${(availableTools / totalTools) * 100}%` }}
@@ -548,25 +462,6 @@ const CurriculumCornerTab = ({
               </div>
             );
           })}
-        </div>
-      </div>
-
-      {/* Pro Feature Notice */}
-      <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-xl p-6">
-        <div className="flex items-start space-x-4">
-          <span className="text-3xl">⭐</span>
-          <div>
-            <h4 className="font-bold text-yellow-800 mb-2">Unlock More Curriculum Tools</h4>
-            <p className="text-yellow-700 mb-4">
-              Get access to advanced teaching tools, more subject areas, and interactive activities with Classroom Champions PRO!
-            </p>
-            <button
-              onClick={() => showToast('Upgrade feature coming soon!', 'info')}
-              className="bg-yellow-600 text-white px-6 py-3 rounded-lg hover:bg-yellow-700 transition-colors font-semibold"
-            >
-              Upgrade to PRO
-            </button>
-          </div>
         </div>
       </div>
     </div>
