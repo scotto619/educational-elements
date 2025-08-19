@@ -28,18 +28,27 @@ const MathWarmup = ({ showToast = () => {}, students = [] }) => {
   const [showAnswer, setShowAnswer] = useState(false);
   const [isPresentationMode, setIsPresentationMode] = useState(false);
   const [isTimerMode, setIsTimerMode] = useState(false);
+  const [isAutoRun, setIsAutoRun] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const [isQuizActive, setIsQuizActive] = useState(false);
   
   const timerRef = useRef(null);
 
-  // Timer logic
+  // Enhanced timer logic with auto-run support
   useEffect(() => {
-    if (isTimerMode && timeLeft > 0 && isQuizActive) {
+    if (isQuizActive && timeLeft > 0) {
       timerRef.current = setInterval(() => {
         setTimeLeft(prev => {
           if (prev <= 1) {
-            nextQuestion();
+            if (isAutoRun) {
+              // Auto-advance to next question
+              setTimeout(() => {
+                nextQuestion();
+              }, 100);
+            } else if (isTimerMode) {
+              // Just advance in timer mode
+              nextQuestion();
+            }
             return 0;
           }
           return prev - 1;
@@ -50,7 +59,14 @@ const MathWarmup = ({ showToast = () => {}, students = [] }) => {
     }
 
     return () => clearInterval(timerRef.current);
-  }, [isTimerMode, timeLeft, isQuizActive]);
+  }, [isQuizActive, timeLeft, isAutoRun, isTimerMode]);
+
+  // Auto-show answer in auto-run mode after 15 seconds
+  useEffect(() => {
+    if (isAutoRun && isQuizActive && timeLeft === 15 && !showAnswer) {
+      setShowAnswer(true);
+    }
+  }, [timeLeft, isAutoRun, isQuizActive, showAnswer]);
 
   const startQuiz = (gradeKey, week, day) => {
     const grade = AVAILABLE_GRADES[gradeKey];
@@ -67,8 +83,11 @@ const MathWarmup = ({ showToast = () => {}, students = [] }) => {
     setShowAnswer(false);
     setIsQuizActive(true);
     
-    if (isTimerMode) {
-      setTimeLeft(15); // 15 seconds per question for mental math
+    // Set timer based on mode
+    if (isAutoRun) {
+      setTimeLeft(30); // 30 seconds for auto-run
+    } else if (isTimerMode) {
+      setTimeLeft(15); // 15 seconds for manual timer mode
     }
     
     showToast(`Starting ${grade.name} - Week ${week.replace('week', '')} ${DAY_NAMES[day]}!`, 'success');
@@ -78,12 +97,15 @@ const MathWarmup = ({ showToast = () => {}, students = [] }) => {
     setShowAnswer(false);
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
-      if (isTimerMode) {
+      if (isAutoRun) {
+        setTimeLeft(30);
+      } else if (isTimerMode) {
         setTimeLeft(15);
       }
     } else {
       // Quiz finished
       setIsQuizActive(false);
+      setIsAutoRun(false);
       showToast('Math Warmup completed! Well done!', 'success');
     }
   };
@@ -92,7 +114,9 @@ const MathWarmup = ({ showToast = () => {}, students = [] }) => {
     setShowAnswer(false);
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(prev => prev - 1);
-      if (isTimerMode) {
+      if (isAutoRun) {
+        setTimeLeft(30);
+      } else if (isTimerMode) {
         setTimeLeft(15);
       }
     }
@@ -104,6 +128,7 @@ const MathWarmup = ({ showToast = () => {}, students = [] }) => {
 
   const resetQuiz = () => {
     setIsQuizActive(false);
+    setIsAutoRun(false);
     setSelectedGrade(null);
     setSelectedWeek(null);
     setSelectedDay(null);
@@ -116,6 +141,7 @@ const MathWarmup = ({ showToast = () => {}, students = [] }) => {
     setSelectedWeek(null);
     setSelectedDay(null);
     setIsQuizActive(false);
+    setIsAutoRun(false);
   };
 
   const backToGradeSelection = () => {
@@ -123,13 +149,43 @@ const MathWarmup = ({ showToast = () => {}, students = [] }) => {
     setSelectedWeek(null);
     setSelectedDay(null);
     setIsQuizActive(false);
+    setIsAutoRun(false);
   };
 
   const goToQuestion = (index) => {
     setCurrentQuestionIndex(index);
     setShowAnswer(false);
-    if (isTimerMode) {
+    if (isAutoRun) {
+      setTimeLeft(30);
+    } else if (isTimerMode) {
       setTimeLeft(15);
+    }
+  };
+
+  const toggleAutoRun = () => {
+    const newAutoRun = !isAutoRun;
+    setIsAutoRun(newAutoRun);
+    
+    if (newAutoRun) {
+      setIsTimerMode(true); // Auto-enable timer mode
+      if (isQuizActive) {
+        setTimeLeft(30);
+        setShowAnswer(false);
+      }
+      showToast('Auto-run enabled! Questions will advance automatically every 30 seconds', 'success');
+    } else {
+      if (isQuizActive) {
+        setTimeLeft(isTimerMode ? 15 : 0);
+      }
+      showToast('Auto-run disabled', 'info');
+    }
+  };
+
+  const pauseAutoRun = () => {
+    if (isAutoRun) {
+      setIsAutoRun(false);
+      clearInterval(timerRef.current);
+      showToast('Auto-run paused', 'info');
     }
   };
 
@@ -154,7 +210,11 @@ const MathWarmup = ({ showToast = () => {}, students = [] }) => {
               >
                 {isPresentationMode ? '📺 Exit Presentation' : '🎭 Presentation Mode'}
               </button>
-              {/* Enhanced Feature Notice for Comprehensive Math Warmup */}
+            </div>
+          </div>
+        </div>
+
+        {/* Enhanced Feature Notice */}
         <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-xl p-6">
           <div className="flex items-start space-x-4">
             <span className="text-3xl">🔢</span>
@@ -169,41 +229,78 @@ const MathWarmup = ({ showToast = () => {}, students = [] }) => {
                   <li>• 10 weeks × 5 days = 50 different daily warmups</li>
                   <li>• Number facts: multiplication, division, squares, addition, subtraction, doubling, halving</li>
                   <li>• Mixed questions: percentages, fractions, decimals, rounding, basic algebra, estimation, word problems</li>
-                  <li>• Questions generated from large pools to ensure variety</li>
+                  <li>• Advanced anti-repetition system ensures variety within each session</li>
                   <li>• All questions designed for mental math (no written working required)</li>
                   <li>• Presentation mode for classroom display with large text</li>
-                  <li>• Optional timer mode (15 seconds per question)</li>
+                  <li>• Timer mode (15 seconds per question) + Auto-run mode (30 seconds)</li>
                   <li>• Progress tracking and quick question navigation</li>
                 </ul>
               </div>
             </div>
           </div>
         </div>
-      </div>
-          </div>
-        </div>
 
-        {/* Timer Mode Toggle */}
+        {/* Mode Selection */}
         <div className={`bg-white rounded-xl shadow-lg ${isPresentationMode ? 'p-12' : 'p-6'}`}>
-          <div className="flex items-center justify-center space-x-6">
-            <span className={`font-semibold text-gray-700 ${isPresentationMode ? 'text-3xl' : 'text-lg'}`}>
-              Timer Mode:
-            </span>
-            <button
-              onClick={() => setIsTimerMode(!isTimerMode)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
-                isTimerMode ? 'bg-indigo-600' : 'bg-gray-200'
-              } ${isPresentationMode ? 'transform scale-150' : ''}`}
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  isTimerMode ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
-            </button>
-            <span className={`text-gray-600 ${isPresentationMode ? 'text-2xl' : 'text-base'}`}>
-              {isTimerMode ? '⏰ 15 seconds per question' : '⏱️ Manual timing'}
-            </span>
+          <h3 className={`font-bold text-gray-800 mb-6 text-center ${isPresentationMode ? 'text-3xl' : 'text-xl'}`}>
+            Choose Your Mode
+          </h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Manual Mode */}
+            <div className={`border-2 rounded-xl p-6 text-center transition-all ${!isTimerMode && !isAutoRun ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'} ${isPresentationMode ? 'p-12' : ''}`}>
+              <div className={`${isPresentationMode ? 'text-6xl' : 'text-4xl'} mb-4`}>⚡</div>
+              <h4 className={`font-bold text-gray-800 mb-2 ${isPresentationMode ? 'text-2xl' : 'text-lg'}`}>Manual Mode</h4>
+              <p className={`text-gray-600 mb-4 ${isPresentationMode ? 'text-xl' : 'text-sm'}`}>Control timing manually, perfect for discussion</p>
+              <button
+                onClick={() => {
+                  setIsTimerMode(false);
+                  setIsAutoRun(false);
+                }}
+                className={`rounded-lg font-semibold transition-all ${!isTimerMode && !isAutoRun ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'} ${isPresentationMode ? 'px-8 py-4 text-xl' : 'px-4 py-2'}`}
+              >
+                {!isTimerMode && !isAutoRun ? 'Selected' : 'Select'}
+              </button>
+            </div>
+
+            {/* Timer Mode */}
+            <div className={`border-2 rounded-xl p-6 text-center transition-all ${isTimerMode && !isAutoRun ? 'border-orange-500 bg-orange-50' : 'border-gray-200 hover:border-gray-300'} ${isPresentationMode ? 'p-12' : ''}`}>
+              <div className={`${isPresentationMode ? 'text-6xl' : 'text-4xl'} mb-4`}>⏰</div>
+              <h4 className={`font-bold text-gray-800 mb-2 ${isPresentationMode ? 'text-2xl' : 'text-lg'}`}>Timer Mode</h4>
+              <p className={`text-gray-600 mb-4 ${isPresentationMode ? 'text-xl' : 'text-sm'}`}>15 seconds per question, manual advance</p>
+              <button
+                onClick={() => {
+                  setIsTimerMode(true);
+                  setIsAutoRun(false);
+                }}
+                className={`rounded-lg font-semibold transition-all ${isTimerMode && !isAutoRun ? 'bg-orange-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'} ${isPresentationMode ? 'px-8 py-4 text-xl' : 'px-4 py-2'}`}
+              >
+                {isTimerMode && !isAutoRun ? 'Selected' : 'Select'}
+              </button>
+            </div>
+
+            {/* Auto-Run Mode */}
+            <div className={`border-2 rounded-xl p-6 text-center transition-all ${isAutoRun ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'} ${isPresentationMode ? 'p-12' : ''}`}>
+              <div className={`${isPresentationMode ? 'text-6xl' : 'text-4xl'} mb-4`}>🚀</div>
+              <h4 className={`font-bold text-gray-800 mb-2 ${isPresentationMode ? 'text-2xl' : 'text-lg'}`}>Auto-Run Mode</h4>
+              <p className={`text-gray-600 mb-4 ${isPresentationMode ? 'text-xl' : 'text-sm'}`}>30 seconds per question, auto-advance</p>
+              <button
+                onClick={() => {
+                  setIsTimerMode(true);
+                  setIsAutoRun(true);
+                }}
+                className={`rounded-lg font-semibold transition-all ${isAutoRun ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'} ${isPresentationMode ? 'px-8 py-4 text-xl' : 'px-4 py-2'}`}
+              >
+                {isAutoRun ? 'Selected' : 'Select'}
+              </button>
+            </div>
+          </div>
+
+          <div className={`mt-6 text-center text-gray-600 ${isPresentationMode ? 'text-xl' : 'text-sm'}`}>
+            <p className="font-semibold mb-2">Mode Descriptions:</p>
+            <p><strong>Manual:</strong> You control when to show answers and move to next questions</p>
+            <p><strong>Timer:</strong> 15-second countdown, but you click to advance questions</p>
+            <p><strong>Auto-Run:</strong> 30 seconds per question, shows answer at 15s, auto-advances</p>
           </div>
         </div>
 
@@ -230,6 +327,9 @@ const MathWarmup = ({ showToast = () => {}, students = [] }) => {
                 </p>
                 <p className={`text-green-800 font-semibold ${isPresentationMode ? 'text-2xl' : 'text-sm'}`}>
                   ✓ {grade.questionsPerDay} questions per day
+                </p>
+                <p className={`text-green-800 font-semibold ${isPresentationMode ? 'text-2xl' : 'text-sm'}`}>
+                  ✓ No repeated questions per session
                 </p>
               </div>
               <div className={`text-blue-500 font-semibold ${isPresentationMode ? 'text-2xl' : 'text-base'}`}>
@@ -277,6 +377,21 @@ const MathWarmup = ({ showToast = () => {}, students = [] }) => {
             >
               ← Back to Grades
             </button>
+          </div>
+        </div>
+
+        {/* Current Mode Display */}
+        <div className={`bg-white rounded-xl shadow-lg ${isPresentationMode ? 'p-8' : 'p-4'}`}>
+          <div className="text-center">
+            <p className={`text-gray-600 mb-2 ${isPresentationMode ? 'text-2xl' : 'text-sm'}`}>Current Mode:</p>
+            <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold ${isPresentationMode ? 'px-8 py-4 text-2xl' : ''} ${
+              isAutoRun ? 'bg-green-100 text-green-800' : 
+              isTimerMode ? 'bg-orange-100 text-orange-800' : 
+              'bg-blue-100 text-blue-800'
+            }`}>
+              <span>{isAutoRun ? '🚀' : isTimerMode ? '⏰' : '⚡'}</span>
+              {isAutoRun ? 'Auto-Run Mode (30s)' : isTimerMode ? 'Timer Mode (15s)' : 'Manual Mode'}
+            </div>
           </div>
         </div>
 
@@ -337,6 +452,29 @@ const MathWarmup = ({ showToast = () => {}, students = [] }) => {
           </div>
         </div>
 
+        {/* Current Mode Display */}
+        <div className={`bg-white rounded-xl shadow-lg ${isPresentationMode ? 'p-8' : 'p-4'}`}>
+          <div className="flex items-center justify-between">
+            <div className="text-center flex-1">
+              <p className={`text-gray-600 mb-2 ${isPresentationMode ? 'text-2xl' : 'text-sm'}`}>Current Mode:</p>
+              <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold ${isPresentationMode ? 'px-8 py-4 text-2xl' : ''} ${
+                isAutoRun ? 'bg-green-100 text-green-800' : 
+                isTimerMode ? 'bg-orange-100 text-orange-800' : 
+                'bg-blue-100 text-blue-800'
+              }`}>
+                <span>{isAutoRun ? '🚀' : isTimerMode ? '⏰' : '⚡'}</span>
+                {isAutoRun ? 'Auto-Run Mode (30s)' : isTimerMode ? 'Timer Mode (15s)' : 'Manual Mode'}
+              </div>
+            </div>
+            <button
+              onClick={backToGradeSelection}
+              className={`bg-purple-500 text-white rounded-lg font-semibold hover:bg-purple-600 transition-all ${isPresentationMode ? 'px-8 py-4 text-xl' : 'px-4 py-2'}`}
+            >
+              Change Mode
+            </button>
+          </div>
+        </div>
+
         {/* Day Selection */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
           {DAYS_OF_WEEK.map((day, index) => (
@@ -357,6 +495,9 @@ const MathWarmup = ({ showToast = () => {}, students = [] }) => {
                 </p>
                 <p className={`text-purple-800 font-semibold ${isPresentationMode ? 'text-2xl' : 'text-sm'}`}>
                   ✓ 10 Mixed Questions
+                </p>
+                <p className={`text-purple-800 font-semibold ${isPresentationMode ? 'text-2xl' : 'text-sm'}`}>
+                  ✓ No Repeated Questions
                 </p>
               </div>
               <div className={`text-purple-500 font-semibold ${isPresentationMode ? 'text-2xl' : 'text-lg'}`}>
@@ -389,11 +530,27 @@ const MathWarmup = ({ showToast = () => {}, students = [] }) => {
             </p>
           </div>
           <div className="text-right">
-            {isTimerMode && (
+            {(isTimerMode || isAutoRun) && (
               <div className={`bg-white bg-opacity-20 rounded-lg px-4 py-2 mb-3 ${isPresentationMode ? 'px-8 py-4' : ''}`}>
                 <div className={`font-bold ${isPresentationMode ? 'text-4xl' : 'text-2xl'} ${timeLeft <= 5 ? 'text-red-300 animate-pulse' : 'text-white'}`}>
                   ⏰ {timeLeft}s
                 </div>
+              </div>
+            )}
+            {isAutoRun && (
+              <div className="flex gap-2 mb-3">
+                <button
+                  onClick={pauseAutoRun}
+                  className={`bg-white bg-opacity-20 text-white rounded-lg font-semibold hover:bg-opacity-30 transition-all ${isPresentationMode ? 'px-8 py-3 text-xl' : 'px-4 py-2 text-sm'}`}
+                >
+                  ⏸️ Pause
+                </button>
+                <button
+                  onClick={toggleAutoRun}
+                  className={`bg-white bg-opacity-20 text-white rounded-lg font-semibold hover:bg-opacity-30 transition-all ${isPresentationMode ? 'px-8 py-3 text-xl' : 'px-4 py-2 text-sm'}`}
+                >
+                  🚀 Resume
+                </button>
               </div>
             )}
             <button
@@ -435,6 +592,16 @@ const MathWarmup = ({ showToast = () => {}, students = [] }) => {
             </div>
           </div>
         </div>
+
+        {/* Current Mode and Auto-Run Controls */}
+        {isAutoRun && (
+          <div className={`mt-4 text-center ${isPresentationMode ? 'text-xl' : 'text-sm'}`}>
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 text-green-800 rounded-lg font-semibold">
+              <span>🚀</span>
+              Auto-Run Active - Answer will show at 15s, next question at 0s
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Question Display */}
@@ -451,8 +618,8 @@ const MathWarmup = ({ showToast = () => {}, students = [] }) => {
           </div>
         )}
 
-        {/* Control Buttons */}
-        <div className="flex justify-center space-x-4 mt-8">
+        {/* Control Buttons - Hide in auto-run mode except for manual override */}
+        <div className={`flex justify-center space-x-4 mt-8 ${isAutoRun ? 'opacity-50' : ''}`}>
           <button
             onClick={prevQuestion}
             disabled={currentQuestionIndex === 0}
@@ -476,6 +643,12 @@ const MathWarmup = ({ showToast = () => {}, students = [] }) => {
             {currentQuestionIndex === questions.length - 1 ? 'Finish' : 'Next →'}
           </button>
         </div>
+
+        {isAutoRun && (
+          <p className={`mt-4 text-gray-600 ${isPresentationMode ? 'text-2xl' : 'text-sm'}`}>
+            Auto-Run is active. Use buttons above to override if needed.
+          </p>
+        )}
       </div>
 
       {/* Question Navigator (for easy jumping) */}

@@ -25,7 +25,17 @@ export const numberFactGenerators = {
     { question: "12 × 7", answer: "84" },
     { question: "11 × 8", answer: "88" },
     { question: "12 × 9", answer: "108" },
-    { question: "11 × 7", answer: "77" }
+    { question: "11 × 7", answer: "77" },
+    { question: "12 × 8", answer: "96" },
+    { question: "11 × 9", answer: "99" },
+    { question: "12 × 6", answer: "72" },
+    { question: "11 × 11", answer: "121" },
+    { question: "12 × 12", answer: "144" },
+    { question: "6 × 9", answer: "54" },
+    { question: "7 × 12", answer: "84" },
+    { question: "8 × 11", answer: "88" },
+    { question: "9 × 12", answer: "108" },
+    { question: "6 × 11", answer: "66" }
   ],
   
   division: [
@@ -48,7 +58,17 @@ export const numberFactGenerators = {
     { question: "144 ÷ 12", answer: "12" },
     { question: "99 ÷ 11", answer: "9" },
     { question: "84 ÷ 7", answer: "12" },
-    { question: "66 ÷ 6", answer: "11" }
+    { question: "66 ÷ 6", answer: "11" },
+    { question: "72 ÷ 8", answer: "9" },
+    { question: "96 ÷ 12", answer: "8" },
+    { question: "121 ÷ 11", answer: "11" },
+    { question: "72 ÷ 6", answer: "12" },
+    { question: "63 ÷ 9", answer: "7" },
+    { question: "56 ÷ 7", answer: "8" },
+    { question: "48 ÷ 8", answer: "6" },
+    { question: "54 ÷ 6", answer: "9" },
+    { question: "91 ÷ 7", answer: "13" },
+    { question: "102 ÷ 6", answer: "17" }
   ],
   
   squares: [
@@ -66,7 +86,12 @@ export const numberFactGenerators = {
     { question: "14²", answer: "196" },
     { question: "15²", answer: "225" },
     { question: "2²", answer: "4" },
-    { question: "1²", answer: "1" }
+    { question: "1²", answer: "1" },
+    { question: "16²", answer: "256" },
+    { question: "17²", answer: "289" },
+    { question: "18²", answer: "324" },
+    { question: "19²", answer: "361" },
+    { question: "20²", answer: "400" }
   ],
   
   addition: [
@@ -89,7 +114,17 @@ export const numberFactGenerators = {
     { question: "134 + 58", answer: "192" },
     { question: "147 + 45", answer: "192" },
     { question: "156 + 37", answer: "193" },
-    { question: "168 + 25", answer: "193" }
+    { question: "168 + 25", answer: "193" },
+    { question: "74 + 59", answer: "133" },
+    { question: "85 + 48", answer: "133" },
+    { question: "96 + 37", answer: "133" },
+    { question: "52 + 69", answer: "121" },
+    { question: "63 + 58", answer: "121" },
+    { question: "41 + 72", answer: "113" },
+    { question: "83 + 29", answer: "112" },
+    { question: "94 + 18", answer: "112" },
+    { question: "77 + 46", answer: "123" },
+    { question: "88 + 35", answer: "123" }
   ],
   
   subtraction: [
@@ -112,7 +147,17 @@ export const numberFactGenerators = {
     { question: "163 - 74", answer: "89" },
     { question: "187 - 89", answer: "98" },
     { question: "174 - 85", answer: "89" },
-    { question: "195 - 97", answer: "98" }
+    { question: "195 - 97", answer: "98" },
+    { question: "210 - 76", answer: "134" },
+    { question: "225 - 88", answer: "137" },
+    { question: "167 - 79", answer: "88" },
+    { question: "198 - 89", answer: "109" },
+    { question: "176 - 87", answer: "89" },
+    { question: "154 - 66", answer: "88" },
+    { question: "143 - 55", answer: "88" },
+    { question: "132 - 44", answer: "88" },
+    { question: "186 - 98", answer: "88" },
+    { question: "165 - 77", answer: "88" }
   ],
   
   doubling: [
@@ -135,7 +180,17 @@ export const numberFactGenerators = {
     { question: "Double 134", answer: "268" },
     { question: "Double 147", answer: "294" },
     { question: "Double 156", answer: "312" },
-    { question: "Double 163", answer: "326" }
+    { question: "Double 163", answer: "326" },
+    { question: "Double 28", answer: "56" },
+    { question: "Double 35", answer: "70" },
+    { question: "Double 42", answer: "84" },
+    { question: "Double 51", answer: "102" },
+    { question: "Double 64", answer: "128" },
+    { question: "Double 73", answer: "146" },
+    { question: "Double 85", answer: "170" },
+    { question: "Double 92", answer: "184" },
+    { question: "Double 108", answer: "216" },
+    { question: "Double 117", answer: "234" }
   ],
   
   halving: [
@@ -158,7 +213,17 @@ export const numberFactGenerators = {
     { question: "Half of 162", answer: "81" },
     { question: "Half of 174", answer: "87" },
     { question: "Half of 188", answer: "94" },
-    { question: "Half of 196", answer: "98" }
+    { question: "Half of 196", answer: "98" },
+    { question: "Half of 124", answer: "62" },
+    { question: "Half of 138", answer: "69" },
+    { question: "Half of 152", answer: "76" },
+    { question: "Half of 164", answer: "82" },
+    { question: "Half of 176", answer: "88" },
+    { question: "Half of 198", answer: "99" },
+    { question: "Half of 142", answer: "71" },
+    { question: "Half of 158", answer: "79" },
+    { question: "Half of 172", answer: "86" },
+    { question: "Half of 184", answer: "92" }
   ]
 };
 
@@ -186,7 +251,17 @@ export const mixedQuestionsPool = {
     { question: "What is 40% of 85?", answer: "34" },
     { question: "What is 60% of 75?", answer: "45" },
     { question: "What is 80% of 65?", answer: "52" },
-    { question: "What is 90% of 80?", answer: "72" }
+    { question: "What is 90% of 80?", answer: "72" },
+    { question: "What is 15% of 80?", answer: "12" },
+    { question: "What is 35% of 60?", answer: "21" },
+    { question: "What is 45% of 80?", answer: "36" },
+    { question: "What is 55% of 60?", answer: "33" },
+    { question: "What is 65% of 80?", answer: "52" },
+    { question: "What is 85% of 60?", answer: "51" },
+    { question: "What is 95% of 80?", answer: "76" },
+    { question: "What is 5% of 120?", answer: "6" },
+    { question: "What is 15% of 120?", answer: "18" },
+    { question: "What is 70% of 90?", answer: "63" }
   ],
   
   fractions: [
@@ -209,7 +284,17 @@ export const mixedQuestionsPool = {
     { question: "7/10 of 90", answer: "63" },
     { question: "9/10 of 110", answer: "99" },
     { question: "2/7 of 84", answer: "24" },
-    { question: "4/7 of 91", answer: "52" }
+    { question: "4/7 of 91", answer: "52" },
+    { question: "1/4 of 92", answer: "23" },
+    { question: "1/3 of 84", answer: "28" },
+    { question: "2/3 of 90", answer: "60" },
+    { question: "3/4 of 68", answer: "51" },
+    { question: "1/5 of 95", answer: "19" },
+    { question: "2/5 of 85", answer: "34" },
+    { question: "3/5 of 95", answer: "57" },
+    { question: "4/5 of 75", answer: "60" },
+    { question: "1/6 of 96", answer: "16" },
+    { question: "5/6 of 84", answer: "70" }
   ],
   
   decimals: [
@@ -232,7 +317,17 @@ export const mixedQuestionsPool = {
     { question: "23.6 - 9.8", answer: "13.8" },
     { question: "18.4 - 6.7", answer: "11.7" },
     { question: "26.3 - 8.5", answer: "17.8" },
-    { question: "20.7 - 12.9", answer: "7.8" }
+    { question: "20.7 - 12.9", answer: "7.8" },
+    { question: "3.4 + 2.9", answer: "6.3" },
+    { question: "5.2 + 3.7", answer: "8.9" },
+    { question: "7.1 + 4.6", answer: "11.7" },
+    { question: "8.3 + 5.8", answer: "14.1" },
+    { question: "9.7 + 6.4", answer: "16.1" },
+    { question: "6.5 - 2.8", answer: "3.7" },
+    { question: "8.2 - 3.6", answer: "4.6" },
+    { question: "9.4 - 4.7", answer: "4.7" },
+    { question: "10.6 - 5.9", answer: "4.7" },
+    { question: "11.8 - 6.3", answer: "5.5" }
   ],
   
   rounding: [
@@ -255,7 +350,17 @@ export const mixedQuestionsPool = {
     { question: "Round 2,367 to nearest 10", answer: "2,370" },
     { question: "Round 3,484 to nearest 10", answer: "3,480" },
     { question: "Round 4,596 to nearest 10", answer: "4,600" },
-    { question: "Round 5,733 to nearest 10", answer: "5,730" }
+    { question: "Round 5,733 to nearest 10", answer: "5,730" },
+    { question: "Round 675 to nearest 10", answer: "680" },
+    { question: "Round 823 to nearest 10", answer: "820" },
+    { question: "Round 394 to nearest 100", answer: "400" },
+    { question: "Round 751 to nearest 100", answer: "800" },
+    { question: "Round 289 to nearest 100", answer: "300" },
+    { question: "Round 1,567 to nearest 100", answer: "1,600" },
+    { question: "Round 2,834 to nearest 100", answer: "2,800" },
+    { question: "Round 3,145 to nearest 1000", answer: "3,000" },
+    { question: "Round 4,789 to nearest 1000", answer: "5,000" },
+    { question: "Round 6,234 to nearest 1000", answer: "6,000" }
   ],
   
   algebra: [
@@ -278,7 +383,17 @@ export const mixedQuestionsPool = {
     { question: "If 9d = 81, what is d?", answer: "9" },
     { question: "If 2e = 16, what is e?", answer: "8" },
     { question: "If 12f = 84, what is f?", answer: "7" },
-    { question: "If 11g = 77, what is g?", answer: "7" }
+    { question: "If 11g = 77, what is g?", answer: "7" },
+    { question: "If x + 12 = 45, what is x?", answer: "33" },
+    { question: "If y - 34 = 28, what is y?", answer: "62" },
+    { question: "If z + 26 = 71, what is z?", answer: "45" },
+    { question: "If a - 19 = 53, what is a?", answer: "72" },
+    { question: "If b + 37 = 84, what is b?", answer: "47" },
+    { question: "If 4c = 28, what is c?", answer: "7" },
+    { question: "If 6d = 42, what is d?", answer: "7" },
+    { question: "If 8e = 56, what is e?", answer: "7" },
+    { question: "If 9f = 63, what is f?", answer: "7" },
+    { question: "If 7g = 49, what is g?", answer: "7" }
   ],
   
   estimation: [
@@ -301,7 +416,17 @@ export const mixedQuestionsPool = {
     { question: "Estimate: 2,345 + 6,789", answer: "9,000" },
     { question: "Estimate: 3,456 + 7,890", answer: "11,000" },
     { question: "Estimate: 4,567 + 8,901", answer: "14,000" },
-    { question: "Estimate: 5,678 + 9,012", answer: "15,000" }
+    { question: "Estimate: 5,678 + 9,012", answer: "15,000" },
+    { question: "Estimate: 312 + 278", answer: "600" },
+    { question: "Estimate: 487 + 359", answer: "850" },
+    { question: "Estimate: 623 + 194", answer: "800" },
+    { question: "Estimate: 756 - 289", answer: "470" },
+    { question: "Estimate: 834 - 367", answer: "470" },
+    { question: "Estimate: 29 × 31", answer: "900" },
+    { question: "Estimate: 38 × 42", answer: "1600" },
+    { question: "Estimate: 47 × 23", answer: "1000" },
+    { question: "Estimate: 56 × 18", answer: "1000" },
+    { question: "Estimate: 73 × 26", answer: "1800" }
   ],
   
   wordProblems: [
@@ -324,7 +449,17 @@ export const mixedQuestionsPool = {
     { question: "Library: 480 books, 25% are fiction. How many?", answer: "120" },
     { question: "Store: 144 items, sold 75%. How many sold?", answer: "108" },
     { question: "Park: 200 trees, 35% are oak trees. How many?", answer: "70" },
-    { question: "Concert: 180 tickets, 60% sold. How many sold?", answer: "108" }
+    { question: "Concert: 180 tickets, 60% sold. How many sold?", answer: "108" },
+    { question: "32 students, 1/4 play piano. How many?", answer: "8" },
+    { question: "72 apples in 9 baskets. How many per basket?", answer: "8" },
+    { question: "7 boxes of 14 chocolates. How many total?", answer: "98" },
+    { question: "120 stickers shared by 8 children. Each gets?", answer: "15" },
+    { question: "Movie theater: 12 rows of 18 seats. Total?", answer: "216" },
+    { question: "Tom saves $15 weekly for 8 weeks. Total?", answer: "$120" },
+    { question: "144 crayons in packs of 12. How many packs?", answer: "12" },
+    { question: "Class of 32, 75% like math. How many?", answer: "24" },
+    { question: "Book has 180 pages, read 60%. Pages read?", answer: "108" },
+    { question: "Car travels 80 km/h for 4 hours. Distance?", answer: "320 km" }
   ],
 
   geometry: [
@@ -347,7 +482,17 @@ export const mixedQuestionsPool = {
     { question: "How many right angles in a rectangle?", answer: "4" },
     { question: "Triangle: base 10cm, height 6cm. Area?", answer: "30cm²" },
     { question: "Circle: diameter 14m. Radius?", answer: "7m" },
-    { question: "How many parallel sides in a parallelogram?", answer: "2 pairs" }
+    { question: "How many parallel sides in a parallelogram?", answer: "2 pairs" },
+    { question: "Rectangle: length 14m, width 6m. Perimeter?", answer: "40m" },
+    { question: "Square: each side 7m. Area?", answer: "49m²" },
+    { question: "Rectangle: length 18m, width 5m. Area?", answer: "90m²" },
+    { question: "Square: perimeter 28cm. Each side length?", answer: "7cm" },
+    { question: "How many sides does a triangle have?", answer: "3" },
+    { question: "How many vertices does a pyramid have?", answer: "5" },
+    { question: "Rectangle: area 56m², width 7m. Length?", answer: "8m" },
+    { question: "Circle: radius 6cm. Diameter?", answer: "12cm" },
+    { question: "How many faces does a cube have?", answer: "6" },
+    { question: "How many sides does a quadrilateral have?", answer: "4" }
   ],
 
   measurement: [
@@ -370,7 +515,17 @@ export const mixedQuestionsPool = {
     { question: "Rope: 3.4m long. How many 50cm pieces?", answer: "6 pieces" },
     { question: "Tank: 8L capacity, 3/4 full. How many L?", answer: "6L" },
     { question: "Height: 1.65m. How many centimeters?", answer: "165cm" },
-    { question: "Bag: 2.5kg of apples. How many grams?", answer: "2500g" }
+    { question: "Bag: 2.5kg of apples. How many grams?", answer: "2500g" },
+    { question: "How many cm in 3.2 meters?", answer: "320cm" },
+    { question: "How many grams in 2.8 kilograms?", answer: "2800g" },
+    { question: "How many ml in 4.5 liters?", answer: "4500ml" },
+    { question: "How many meters in 6.7 kilometers?", answer: "6700m" },
+    { question: "How many mm in 12 centimeters?", answer: "120mm" },
+    { question: "1.7 kg = how many grams?", answer: "1700g" },
+    { question: "Room: 6m × 8m. Area in m²?", answer: "48m²" },
+    { question: "How many cm in quarter meter?", answer: "25cm" },
+    { question: "Bag weighs 1200g. How many kg?", answer: "1.2kg" },
+    { question: "Distance: 3.5km. How many meters?", answer: "3500m" }
   ],
 
   time: [
@@ -393,7 +548,17 @@ export const mixedQuestionsPool = {
     { question: "How many weeks in 42 days?", answer: "6 weeks" },
     { question: "Flight: 2h 25min, departs 11:40am. Lands?", answer: "2:05pm" },
     { question: "How many minutes in half an hour?", answer: "30 minutes" },
-    { question: "TV show: 8:30pm to 9:15pm. Duration?", answer: "45 minutes" }
+    { question: "TV show: 8:30pm to 9:15pm. Duration?", answer: "45 minutes" },
+    { question: "Start: 10:30am, End: 1:15pm. Duration?", answer: "2h 45min" },
+    { question: "Concert: 2h 15min, starts 8:45pm. Ends?", answer: "11:00pm" },
+    { question: "How many minutes in 1.75 hours?", answer: "105 minutes" },
+    { question: "Library: 10am to 4:15pm. How many hours?", answer: "6.25 hours" },
+    { question: "Train leaves 9:35am, journey 42min. Arrives?", answer: "10:17am" },
+    { question: "How many seconds in 5 minutes?", answer: "300 seconds" },
+    { question: "Meeting: 3:45pm to 5:20pm. Duration?", answer: "1h 35min" },
+    { question: "Bus: 25min late, due 2:50pm. Arrives?", answer: "3:15pm" },
+    { question: "How many hours in 4 days?", answer: "96 hours" },
+    { question: "Lesson: 40min, starts 9:25am. Ends when?", answer: "10:05am" }
   ],
 
   money: [
@@ -416,7 +581,17 @@ export const mixedQuestionsPool = {
     { question: "Pizza $24, split between 3 people. Each pays?", answer: "$8" },
     { question: "Game costs $34.50, save $4.50 weekly. Weeks?", answer: "7.7 weeks" },
     { question: "Buy items: $7.99, $12.50, $6.25. Total?", answer: "$26.74" },
-    { question: "Allowance $8 weekly for 12 weeks. Total?", answer: "$96" }
+    { question: "Allowance $8 weekly for 12 weeks. Total?", answer: "$96" },
+    { question: "Buy $4.25 item with $10. Change?", answer: "$5.75" },
+    { question: "4 toys at $6.75 each. Total cost?", answer: "$27" },
+    { question: "Burger $15.60, pay with $20. Change?", answer: "$4.40" },
+    { question: "Save $9.50 weekly for 6 weeks. Total?", answer: "$57" },
+    { question: "Game costs $32.95. Round to nearest dollar?", answer: "$33" },
+    { question: "Buy 8 erasers at $0.85 each. Total?", answer: "$6.80" },
+    { question: "Snack $3.50, juice $1.75. Total cost?", answer: "$5.25" },
+    { question: "Concert ticket $45, parking $8. Total?", answer: "$53" },
+    { question: "Jacket $39.99, 25% discount. Final price?", answer: "$29.99" },
+    { question: "Have $75, spend $48.30. Money left?", answer: "$26.70" }
   ],
 
   data: [
@@ -439,7 +614,17 @@ export const mixedQuestionsPool = {
     { question: "Library books: 100, 150, 200, 250. Mean?", answer: "175" },
     { question: "Colors chosen: red, blue, red, green, red. Mode?", answer: "red" },
     { question: "Data: 1, 3, 5, 7, 9, 11. Median?", answer: "6" },
-    { question: "Prices: $10, $15, $20, $25. Range?", answer: "$15" }
+    { question: "Prices: $10, $15, $20, $25. Range?", answer: "$15" },
+    { question: "Data: 4, 6, 4, 8, 4. What is the mode?", answer: "4" },
+    { question: "Data: 10, 14, 16, 20. What is the mean?", answer: "15" },
+    { question: "Data: 7, 9, 12, 15, 17. Median?", answer: "12" },
+    { question: "Data: 5, 10, 15, 20, 25. Range?", answer: "20" },
+    { question: "Scores: 72, 85, 78, 85, 90. Mode?", answer: "85" },
+    { question: "Lengths: 12cm, 15cm, 18cm, 21cm. Mean?", answer: "16.5cm" },
+    { question: "Data: 3, 6, 8, 11, 14. Median?", answer: "8" },
+    { question: "Prices: $5, $8, $12, $15. Mean?", answer: "$10" },
+    { question: "Data: 2, 8, 14, 20, 26. Range?", answer: "24" },
+    { question: "Favorite colors: blue, red, blue, green, blue. Mode?", answer: "blue" }
   ],
 
   patterns: [
@@ -462,7 +647,17 @@ export const mixedQuestionsPool = {
     { question: "Pattern: 15, 25, 35, 45, ?. Next?", answer: "55" },
     { question: "Pattern: 96, 48, 24, 12, ?. Next?", answer: "6" },
     { question: "Pattern: 13, 26, 39, 52, ?. Next?", answer: "65" },
-    { question: "Pattern: 9, 18, 27, 36, ?. Next?", answer: "45" }
+    { question: "Pattern: 9, 18, 27, 36, ?. Next?", answer: "45" },
+    { question: "Pattern: 4, 8, 12, 16, ?. Next?", answer: "20" },
+    { question: "Pattern: 80, 70, 60, 50, ?. Next?", answer: "40" },
+    { question: "Pattern: 1, 2, 4, 8, ?. Next?", answer: "16" },
+    { question: "Pattern: 2, 5, 8, 11, ?. Next?", answer: "14" },
+    { question: "Pattern: 45, 40, 35, 30, ?. Next?", answer: "25" },
+    { question: "Pattern: 5, 10, 20, 40, ?. Next?", answer: "80" },
+    { question: "Pattern: 12, 19, 26, 33, ?. Next?", answer: "40" },
+    { question: "Pattern: 72, 36, 18, 9, ?. Next?", answer: "4.5" },
+    { question: "Pattern: 14, 28, 42, 56, ?. Next?", answer: "70" },
+    { question: "Pattern: 8, 16, 24, 32, ?. Next?", answer: "40" }
   ],
 
   factors: [
@@ -485,7 +680,17 @@ export const mixedQuestionsPool = {
     { question: "Is 29 prime or composite?", answer: "Prime" },
     { question: "How many factors does 49 have?", answer: "3" },
     { question: "List all factors of 15", answer: "1, 3, 5, 15" },
-    { question: "What is the largest prime number under 30?", answer: "29" }
+    { question: "What is the largest prime number under 30?", answer: "29" },
+    { question: "List all factors of 14", answer: "1, 2, 7, 14" },
+    { question: "List all factors of 28", answer: "1, 2, 4, 7, 14, 28" },
+    { question: "Is 19 prime or composite?", answer: "Prime" },
+    { question: "Is 27 prime or composite?", answer: "Composite" },
+    { question: "How many factors does 9 have?", answer: "3" },
+    { question: "List prime numbers between 20 and 30", answer: "23, 29" },
+    { question: "List all factors of 21", answer: "1, 3, 7, 21" },
+    { question: "Is 31 prime or composite?", answer: "Prime" },
+    { question: "How many factors does 36 have?", answer: "9" },
+    { question: "What are the first 3 prime numbers?", answer: "2, 3, 5" }
   ],
 
   probability: [
@@ -508,73 +713,116 @@ export const mixedQuestionsPool = {
     { question: "Die: probability of rolling 1 or 2?", answer: "1/3" },
     { question: "Bag: 8 total, 5 red marbles. P(not red)?", answer: "3/8" },
     { question: "Spinner: 6 sections, all different colors. P(any)?", answer: "1/6" },
-    { question: "Coins: flip 2 coins, P(both heads)?", answer: "1/4" }
+    { question: "Coins: flip 2 coins, P(both heads)?", answer: "1/4" },
+    { question: "Die: probability of odd number?", answer: "1/2" },
+    { question: "Bag: 4 red, 6 blue marbles. P(red)?", answer: "2/5" },
+    { question: "Spinner: 10 sections, 2 yellow. P(yellow)?", answer: "1/5" },
+    { question: "Cards: P(red card) in standard deck?", answer: "1/2" },
+    { question: "Box: 20 balls, 5 white. P(white)?", answer: "1/4" },
+    { question: "Die: probability of number < 4?", answer: "1/2" },
+    { question: "Bag: 7 green, 3 orange marbles. P(orange)?", answer: "3/10" },
+    { question: "Wheel: 6 sections, 1 blue. P(blue)?", answer: "1/6" },
+    { question: "Cards: P(king) in standard deck?", answer: "1/13" },
+    { question: "Die: probability of rolling 3 or 5?", answer: "1/3" }
   ]
 };
 
 // ===============================================
-// WEEKLY STRUCTURE (10 WEEKS × 5 DAYS)
+// WEEKLY STRUCTURE (10 WEEKS × 5 DAYS) - FIXED!
 // ===============================================
+const createDayStructure = () => ({
+  numberFactTypes: ['multiplication', 'division', 'addition', 'subtraction', 'doubling', 'halving', 'squares'],
+  mixedQuestionTypes: ['percentages', 'fractions', 'decimals', 'rounding', 'algebra', 'estimation', 'wordProblems', 'geometry', 'measurement', 'time', 'money', 'data', 'patterns', 'factors', 'probability']
+});
+
+const createWeekStructure = () => ({
+  monday: createDayStructure(),
+  tuesday: createDayStructure(),
+  wednesday: createDayStructure(),
+  thursday: createDayStructure(),
+  friday: createDayStructure()
+});
+
 export const weeklyStructure = {
-  week1: {
-    monday: {
-      numberFactTypes: ['multiplication', 'division', 'addition', 'subtraction', 'doubling', 'halving', 'squares'],
-      mixedQuestionTypes: ['percentages', 'fractions', 'decimals', 'rounding', 'algebra', 'estimation', 'wordProblems', 'geometry', 'measurement', 'time', 'money', 'data', 'patterns', 'factors', 'probability']
-    },
-    tuesday: {
-      numberFactTypes: ['multiplication', 'division', 'addition', 'subtraction', 'doubling', 'halving', 'squares'],
-      mixedQuestionTypes: ['percentages', 'fractions', 'decimals', 'rounding', 'algebra', 'estimation', 'wordProblems', 'geometry', 'measurement', 'time', 'money', 'data', 'patterns', 'factors', 'probability']
-    },
-    wednesday: {
-      numberFactTypes: ['multiplication', 'division', 'addition', 'subtraction', 'doubling', 'halving', 'squares'],
-      mixedQuestionTypes: ['percentages', 'fractions', 'decimals', 'rounding', 'algebra', 'estimation', 'wordProblems', 'geometry', 'measurement', 'time', 'money', 'data', 'patterns', 'factors', 'probability']
-    },
-    thursday: {
-      numberFactTypes: ['multiplication', 'division', 'addition', 'subtraction', 'doubling', 'halving', 'squares'],
-      mixedQuestionTypes: ['percentages', 'fractions', 'decimals', 'rounding', 'algebra', 'estimation', 'wordProblems', 'geometry', 'measurement', 'time', 'money', 'data', 'patterns', 'factors', 'probability']
-    },
-    friday: {
-      numberFactTypes: ['multiplication', 'division', 'addition', 'subtraction', 'doubling', 'halving', 'squares'],
-      mixedQuestionTypes: ['percentages', 'fractions', 'decimals', 'rounding', 'algebra', 'estimation', 'wordProblems', 'geometry', 'measurement', 'time', 'money', 'data', 'patterns', 'factors', 'probability']
-    }
-  }
-  // ... weeks 2-10 would follow the same structure
+  week1: createWeekStructure(),
+  week2: createWeekStructure(),
+  week3: createWeekStructure(),
+  week4: createWeekStructure(),
+  week5: createWeekStructure(),
+  week6: createWeekStructure(),
+  week7: createWeekStructure(),
+  week8: createWeekStructure(),
+  week9: createWeekStructure(),
+  week10: createWeekStructure()
 };
 
 // ===============================================
-// QUESTION GENERATION FUNCTION
+// IMPROVED QUESTION GENERATION FUNCTION
 // ===============================================
 export const generateDailyQuestions = (week, day) => {
   const dayStructure = weeklyStructure[week]?.[day];
   if (!dayStructure) return [];
   
   const questions = [];
+  const usedQuestions = new Set(); // Track used questions to prevent repeats
   
-  // Generate 10 number fact questions
+  // Generate 10 number fact questions with better variety
+  const numberFactTypes = [...dayStructure.numberFactTypes];
+  const typesPerCategory = Math.ceil(10 / numberFactTypes.length);
+  
   for (let i = 0; i < 10; i++) {
-    const randomType = dayStructure.numberFactTypes[Math.floor(Math.random() * dayStructure.numberFactTypes.length)];
-    const typeQuestions = numberFactGenerators[randomType];
-    const randomQuestion = typeQuestions[Math.floor(Math.random() * typeQuestions.length)];
+    const typeIndex = Math.floor(i / typesPerCategory) % numberFactTypes.length;
+    const selectedType = numberFactTypes[typeIndex];
+    const typeQuestions = numberFactGenerators[selectedType];
+    
+    let attempts = 0;
+    let randomQuestion;
+    let questionKey;
+    
+    // Try to find a unique question (max 50 attempts to avoid infinite loop)
+    do {
+      randomQuestion = typeQuestions[Math.floor(Math.random() * typeQuestions.length)];
+      questionKey = `${selectedType}-${randomQuestion.question}`;
+      attempts++;
+    } while (usedQuestions.has(questionKey) && attempts < 50);
+    
+    usedQuestions.add(questionKey);
     
     questions.push({
       id: i + 1,
       question: randomQuestion.question + " = ?",
       answer: randomQuestion.answer,
-      type: randomType
+      type: selectedType
     });
   }
   
-  // Generate 10 mixed questions
+  // Generate 10 mixed questions with better variety
+  const mixedTypes = [...dayStructure.mixedQuestionTypes];
+  const mixedTypesPerCategory = Math.ceil(10 / mixedTypes.length);
+  
   for (let i = 0; i < 10; i++) {
-    const randomType = dayStructure.mixedQuestionTypes[Math.floor(Math.random() * dayStructure.mixedQuestionTypes.length)];
-    const typeQuestions = mixedQuestionsPool[randomType];
-    const randomQuestion = typeQuestions[Math.floor(Math.random() * typeQuestions.length)];
+    const typeIndex = Math.floor(i / mixedTypesPerCategory) % mixedTypes.length;
+    const selectedType = mixedTypes[typeIndex];
+    const typeQuestions = mixedQuestionsPool[selectedType];
+    
+    let attempts = 0;
+    let randomQuestion;
+    let questionKey;
+    
+    // Try to find a unique question (max 50 attempts to avoid infinite loop)
+    do {
+      randomQuestion = typeQuestions[Math.floor(Math.random() * typeQuestions.length)];
+      questionKey = `${selectedType}-${randomQuestion.question}`;
+      attempts++;
+    } while (usedQuestions.has(questionKey) && attempts < 50);
+    
+    usedQuestions.add(questionKey);
     
     questions.push({
       id: i + 11,
       question: randomQuestion.question,
       answer: randomQuestion.answer,
-      type: randomType
+      type: selectedType
     });
   }
   
