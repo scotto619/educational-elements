@@ -20,11 +20,11 @@ const NamePicker = ({ students, showToast }) => {
   }, [students, pickedStudents]);
 
   useEffect(() => {
-    // Initialize display
-    if (availableStudents.length > 0 && !isSpinning) {
+    // Initialize display - only set if no student is currently selected
+    if (!selectedStudent && availableStudents.length > 0 && !isSpinning) {
       setCurrentDisplayName(availableStudents[0].firstName);
     }
-  }, [availableStudents, isSpinning]);
+  }, [availableStudents, isSpinning, selectedStudent]);
 
   useEffect(() => {
     // Create audio context for sound effects
@@ -91,23 +91,16 @@ const NamePicker = ({ students, showToast }) => {
     }
 
     setIsSpinning(false);
-    showToast(`Selected: ${picked.firstName}!`, 'success');
   };
 
   // Pick a random student
   const pickRandomStudent = async () => {
     if (availableStudents.length === 0) {
-      if (pickedStudents.size === 0) {
-        showToast('No students available!', 'error');
-        return;
-      } else {
-        showToast('All students have been picked!', 'warning');
-        return;
-      }
+      return; // Just return without doing anything if no students available
     }
 
     setIsSpinning(true);
-    setSelectedStudent(null);
+    // Don't reset selectedStudent here - let it show until new pick is finalized
     playSound();
     
     // Start the cycling animation
@@ -126,16 +119,15 @@ const NamePicker = ({ students, showToast }) => {
   const resetPicked = () => {
     setPickedStudents(new Set());
     setSelectedStudent(null);
-    if (availableStudents.length === 0 && students.length > 0) {
+    // Set display to first available student after reset
+    if (students.length > 0) {
       setCurrentDisplayName(students[0].firstName);
     }
-    showToast('Reset complete! All students are available again.');
   };
 
   // Clear history
   const clearHistory = () => {
     setPickHistory([]);
-    showToast('History cleared!');
   };
 
   // Remove student from picked list
@@ -145,11 +137,16 @@ const NamePicker = ({ students, showToast }) => {
       newSet.delete(studentId);
       return newSet;
     });
-    showToast('Student returned to available pool!');
   };
 
   // Get avatar for current display name
   const getCurrentDisplayAvatar = () => {
+    // If a student is selected and we're not spinning, show their avatar
+    if (selectedStudent && !isSpinning) {
+      return selectedStudent.avatar || null;
+    }
+    
+    // Otherwise show the avatar for the current display name
     const student = availableStudents.find(s => s.firstName === currentDisplayName);
     return student?.avatar || null;
   };
@@ -264,7 +261,11 @@ const NamePicker = ({ students, showToast }) => {
           <div className="text-center">
             {/* Name Display */}
             <div className="mb-8">
-              <div className="bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl p-8 mb-6 border-4 border-slate-300">
+              <div className={`bg-gradient-to-br rounded-2xl p-8 mb-6 border-4 transition-all duration-300 ${
+                selectedStudent && !isSpinning 
+                  ? 'from-green-100 to-green-200 border-green-400 shadow-lg' 
+                  : 'from-slate-100 to-slate-200 border-slate-300'
+              }`}>
                 {/* Avatar */}
                 <div className="mb-4">
                   {getCurrentDisplayAvatar() ? (
@@ -288,12 +289,12 @@ const NamePicker = ({ students, showToast }) => {
                 <div className={`text-4xl font-bold text-slate-800 transition-all duration-200 ${
                   isSpinning ? 'animate-pulse' : ''
                 }`}>
-                  {currentDisplayName || '?'}
+                  {selectedStudent && !isSpinning ? selectedStudent.firstName : currentDisplayName || '?'}
                 </div>
                 
                 {/* Status */}
                 <div className="text-lg text-slate-600 mt-2">
-                  {isSpinning ? 'Picking...' : 'Ready to pick!'}
+                  {isSpinning ? 'Picking...' : selectedStudent ? 'Selected!' : 'Ready to pick!'}
                 </div>
               </div>
 
@@ -304,26 +305,14 @@ const NamePicker = ({ students, showToast }) => {
                 className={`px-8 py-4 rounded-lg font-bold text-xl transition-all duration-300 ${
                   isSpinning || availableStudents.length === 0
                     ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
-                    : 'bg-green-600 text-white hover:bg-green-700 transform hover:scale-105 shadow-lg'
+                    : selectedStudent 
+                      ? 'bg-blue-600 text-white hover:bg-blue-700 transform hover:scale-105 shadow-lg'
+                      : 'bg-green-600 text-white hover:bg-green-700 transform hover:scale-105 shadow-lg'
                 }`}
               >
-                {isSpinning ? '🎯 Picking...' : '🎯 Pick Student'}
+                {isSpinning ? '🎯 Picking...' : selectedStudent ? '🎯 Pick Again' : '🎯 Pick Student'}
               </button>
             </div>
-
-            {/* Selected Student Display */}
-            {selectedStudent && !isSpinning && (
-              <div className="mt-6 p-6 bg-green-50 border-2 border-green-300 rounded-xl">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-800 mb-2">
-                    🎉 {selectedStudent.firstName} Selected! 🎉
-                  </div>
-                  <div className="text-green-700">
-                    Great choice! Time to participate.
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </div>
 
