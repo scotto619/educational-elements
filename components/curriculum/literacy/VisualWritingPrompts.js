@@ -5,28 +5,119 @@ import React, { useState, useRef } from 'react';
 // ===============================================
 // VISUAL WRITING PROMPTS DATA
 // ===============================================
-const TOTAL_PROMPTS = 20; // 20 image prompts (1, 3, 5, 7... up to 39)
+const TOTAL_PROMPTS = 20; // 20 image prompts for each type
 
 // Generate the list of prompts with their corresponding word lists
-const generatePrompts = () => {
+const generatePrompts = (type) => {
   const prompts = [];
+  const basePath = type === 'narrative' 
+    ? '/Curriculum/Literacy/VisualPrompts/' 
+    : '/Curriculum/Literacy/VisualPrompts/Persuasive/';
+    
   for (let i = 1; i <= TOTAL_PROMPTS; i++) {
     const promptNumber = (i * 2) - 1; // 1, 3, 5, 7, 9, etc.
     const wordsNumber = i * 2; // 2, 4, 6, 8, 10, etc.
     
     prompts.push({
       id: i,
-      title: `Writing Prompt ${i}`,
-      imagePath: `/Curriculum/Literacy/VisualPrompts/${promptNumber}.png`,
-      wordsPath: `/Curriculum/Literacy/VisualPrompts/${wordsNumber}.png`,
+      title: `${type === 'narrative' ? 'Narrative' : 'Persuasive'} Writing Prompt ${i}`,
+      imagePath: `${basePath}${promptNumber}.png`,
+      wordsPath: `${basePath}${wordsNumber}.png`,
       promptNumber,
-      wordsNumber
+      wordsNumber,
+      type
     });
   }
   return prompts;
 };
 
-const WRITING_PROMPTS = generatePrompts();
+// Daily Write structure for both types
+const DAILY_WRITE_STRUCTURE = {
+  narrative: [
+    {
+      day: 1,
+      title: "Introduction",
+      icon: "🚀",
+      description: "Hook your reader and introduce characters and setting",
+      details: "Start with an exciting hook (question, dialogue, action, or description). Introduce your main character and where/when the story takes place.",
+      tips: ["Use a strong opening line", "Paint a picture of the setting", "Make readers care about your character"]
+    },
+    {
+      day: 2,
+      title: "Rising Action",
+      icon: "⬆️",
+      description: "Build the problem or conflict",
+      details: "Develop the main problem or challenge your character faces. Build tension and excitement as the story develops.",
+      tips: ["Show the problem clearly", "Add obstacles and challenges", "Build suspense for the reader"]
+    },
+    {
+      day: 3,
+      title: "Climax",
+      icon: "🎯",
+      description: "The turning point or most exciting part",
+      details: "This is the most important and exciting moment! The character faces their biggest challenge or makes a crucial decision.",
+      tips: ["Make it the most exciting part", "Show emotions clearly", "This is where everything changes"]
+    },
+    {
+      day: 4,
+      title: "Falling Action",
+      icon: "⬇️",
+      description: "Begin to solve the problem",
+      details: "Show how the character starts to resolve the conflict. Things begin to calm down after the exciting climax.",
+      tips: ["Start solving the problem", "Show character growth", "Lead towards the ending"]
+    },
+    {
+      day: 5,
+      title: "Conclusion",
+      icon: "🏁",
+      description: "Wrap up the story and reflect",
+      details: "End the story in a satisfying way. Show how things turned out and what the character learned.",
+      tips: ["Tie up loose ends", "Show what changed", "Leave readers satisfied"]
+    }
+  ],
+  persuasive: [
+    {
+      day: 1,
+      title: "Introduction",
+      icon: "📢",
+      description: "Hook + clear position statement",
+      details: "Start with an attention-grabbing hook, then clearly state your position. Let readers know exactly what you believe.",
+      tips: ["Use a strong hook (question, fact, story)", "State your position clearly", "Preview your main reasons"]
+    },
+    {
+      day: 2,
+      title: "Reason 1 + Evidence",
+      icon: "1️⃣",
+      description: "First strong argument with proof",
+      details: "Present your strongest reason with supporting evidence. Use facts, examples, or expert opinions to prove your point.",
+      tips: ["Start with your strongest reason", "Use facts and evidence", "Explain how evidence supports your reason"]
+    },
+    {
+      day: 3,
+      title: "Reason 2 + Evidence",
+      icon: "2️⃣",
+      description: "Second strong argument with proof",
+      details: "Present your second reason with supporting evidence. Make sure each reason is different and builds your case.",
+      tips: ["Use transition words", "Provide different types of evidence", "Connect back to your position"]
+    },
+    {
+      day: 4,
+      title: "Reason 3 + Evidence",
+      icon: "3️⃣",
+      description: "Third strong argument with proof",
+      details: "Present your final reason with supporting evidence. This completes your argument and prepares for your conclusion.",
+      tips: ["Make it compelling", "Use emotional appeals if appropriate", "Build towards your conclusion"]
+    },
+    {
+      day: 5,
+      title: "Conclusion",
+      icon: "🎯",
+      description: "Restate position + call to action",
+      details: "Restate your position and summarize your main reasons. End with a powerful call to action telling readers what to do.",
+      tips: ["Restate your position", "Summarize key reasons", "Include a strong call to action"]
+    }
+  ]
+};
 
 // ===============================================
 // WRITING TIMER COMPONENT
@@ -171,17 +262,28 @@ const WritingTimer = ({ isPresentationMode }) => {
 // ===============================================
 // WRITING TECHNIQUES HELPER
 // ===============================================
-const WritingTechniques = ({ isPresentationMode }) => {
+const WritingTechniques = ({ isPresentationMode, promptType }) => {
   const [showTechniques, setShowTechniques] = useState(false);
 
-  const techniques = [
+  const narrativeTechniques = [
     { name: "5 W's + H", description: "Who, What, Where, When, Why, How", icon: "❓" },
     { name: "Show Don't Tell", description: "Use actions and senses instead of stating facts", icon: "👁️" },
     { name: "Dialogue", description: "Make characters talk to bring your story to life", icon: "💬" },
     { name: "Sensory Details", description: "What do you see, hear, smell, taste, feel?", icon: "👃" },
-    { name: "Beginning-Middle-End", description: "Structure your story with clear parts", icon: "📖" },
-    { name: "Character Feelings", description: "How do characters feel? Show their emotions", icon: "😊" }
+    { name: "Character Feelings", description: "How do characters feel? Show their emotions", icon: "😊" },
+    { name: "Plot Structure", description: "Beginning, middle, end with clear conflict", icon: "📖" }
   ];
+
+  const persuasiveTechniques = [
+    { name: "Strong Position", description: "State your opinion clearly and confidently", icon: "📢" },
+    { name: "Facts & Statistics", description: "Use numbers and research to prove your point", icon: "📊" },
+    { name: "Expert Opinions", description: "Quote people who know about your topic", icon: "🎓" },
+    { name: "Emotional Appeals", description: "Help readers feel strongly about your topic", icon: "❤️" },
+    { name: "Call to Action", description: "Tell readers exactly what they should do", icon: "🎯" },
+    { name: "Counter Arguments", description: "Address what others might say against you", icon: "⚖️" }
+  ];
+
+  const techniques = promptType === 'narrative' ? narrativeTechniques : persuasiveTechniques;
 
   return (
     <div className={`bg-yellow-50 border border-yellow-300 rounded-lg p-4 ${isPresentationMode ? 'p-8' : ''}`}>
@@ -191,7 +293,7 @@ const WritingTechniques = ({ isPresentationMode }) => {
       >
         <span className="flex items-center gap-2">
           <span className={`${isPresentationMode ? 'text-4xl' : 'text-2xl'}`}>💡</span>
-          Writing Techniques Helper
+          {promptType === 'narrative' ? 'Narrative' : 'Persuasive'} Writing Techniques
         </span>
         <span>{showTechniques ? '▼' : '▶'}</span>
       </button>
@@ -214,15 +316,85 @@ const WritingTechniques = ({ isPresentationMode }) => {
 };
 
 // ===============================================
+// DAILY WRITE COMPONENT
+// ===============================================
+const DailyWrite = ({ isPresentationMode, promptType, selectedDay, setSelectedDay }) => {
+  const dailyStructure = DAILY_WRITE_STRUCTURE[promptType];
+  const currentDay = dailyStructure[selectedDay - 1];
+
+  return (
+    <div className={`bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-purple-200 rounded-xl p-6 ${isPresentationMode ? 'p-12' : ''}`}>
+      <div className="text-center mb-6">
+        <h5 className={`font-bold text-purple-800 mb-4 ${isPresentationMode ? 'text-4xl' : 'text-2xl'}`}>
+          📅 Daily Write - {promptType === 'narrative' ? 'Narrative' : 'Persuasive'} Writing
+        </h5>
+        
+        {/* Day Selector */}
+        <div className="flex justify-center gap-2 mb-6">
+          {dailyStructure.map((day, index) => (
+            <button
+              key={day.day}
+              onClick={() => setSelectedDay(day.day)}
+              className={`${isPresentationMode ? 'px-6 py-4 text-2xl' : 'px-4 py-2 text-lg'} rounded-lg font-bold transition-all ${
+                selectedDay === day.day
+                  ? 'bg-purple-500 text-white shadow-lg'
+                  : 'bg-white text-purple-700 border-2 border-purple-300 hover:bg-purple-100'
+              }`}
+            >
+              Day {day.day}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Current Day Content */}
+      <div className="bg-white rounded-xl p-6 shadow-lg">
+        <div className="text-center mb-6">
+          <div className={`${isPresentationMode ? 'text-6xl' : 'text-4xl'} mb-4`}>{currentDay.icon}</div>
+          <h6 className={`font-bold text-purple-800 ${isPresentationMode ? 'text-3xl' : 'text-xl'} mb-2`}>
+            Day {currentDay.day}: {currentDay.title}
+          </h6>
+          <p className={`text-purple-600 font-semibold ${isPresentationMode ? 'text-2xl' : 'text-lg'} mb-4`}>
+            {currentDay.description}
+          </p>
+          <p className={`text-gray-700 ${isPresentationMode ? 'text-xl' : 'text-base'} mb-6`}>
+            {currentDay.details}
+          </p>
+        </div>
+
+        {/* Writing Tips */}
+        <div className="bg-purple-50 rounded-lg p-4">
+          <h7 className={`font-bold text-purple-800 ${isPresentationMode ? 'text-2xl' : 'text-lg'} mb-3 block`}>
+            💡 Today's Writing Tips:
+          </h7>
+          <ul className="space-y-2">
+            {currentDay.tips.map((tip, index) => (
+              <li key={index} className={`flex items-start gap-2 ${isPresentationMode ? 'text-xl' : 'text-sm'}`}>
+                <span className="text-purple-500 mt-1">•</span>
+                <span className="text-purple-700">{tip}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ===============================================
 // MAIN VISUAL WRITING PROMPTS COMPONENT
 // ===============================================
 const VisualWritingPrompts = ({ showToast = () => {}, students = [] }) => {
+  const [promptType, setPromptType] = useState('narrative'); // 'narrative' or 'persuasive'
   const [currentPromptIndex, setCurrentPromptIndex] = useState(0);
   const [isPresentationMode, setIsPresentationMode] = useState(false);
   const [showWords, setShowWords] = useState(true);
   const [viewMode, setViewMode] = useState('single'); // 'single', 'gallery'
   const [imageError, setImageError] = useState({});
+  const [selectedDay, setSelectedDay] = useState(1); // For Daily Write
 
+  // Generate prompts based on current type
+  const WRITING_PROMPTS = generatePrompts(promptType);
   const currentPrompt = WRITING_PROMPTS[currentPromptIndex];
 
   const togglePresentationMode = () => {
@@ -235,19 +407,26 @@ const VisualWritingPrompts = ({ showToast = () => {}, students = [] }) => {
     );
   };
 
+  const changePromptType = (newType) => {
+    setPromptType(newType);
+    setCurrentPromptIndex(0);
+    setImageError({});
+    showToast(`Switched to ${newType} writing prompts`, 'success');
+  };
+
   const goToNext = () => {
     setCurrentPromptIndex(prev => (prev + 1) % WRITING_PROMPTS.length);
-    setImageError({}); // Reset image errors when changing prompts
+    setImageError({});
   };
 
   const goToPrevious = () => {
     setCurrentPromptIndex(prev => prev === 0 ? WRITING_PROMPTS.length - 1 : prev - 1);
-    setImageError({}); // Reset image errors when changing prompts
+    setImageError({});
   };
 
   const goToPrompt = (index) => {
     setCurrentPromptIndex(index);
-    setImageError({}); // Reset image errors when changing prompts
+    setImageError({});
   };
 
   const handleImageError = (imageType) => {
@@ -259,7 +438,7 @@ const VisualWritingPrompts = ({ showToast = () => {}, students = [] }) => {
     printWindow.document.write(`
       <html>
         <head>
-          <title>Writing Prompt ${currentPrompt.id}</title>
+          <title>${currentPrompt.title}</title>
           <style>
             body { 
               font-family: Arial, sans-serif; 
@@ -298,13 +477,13 @@ const VisualWritingPrompts = ({ showToast = () => {}, students = [] }) => {
         </head>
         <body>
           <div class="prompt-container">
-            <h1>Writing Prompt ${currentPrompt.id}</h1>
+            <h1>${currentPrompt.title}</h1>
             <img src="${currentPrompt.imagePath}" alt="Writing Prompt" class="prompt-image" onerror="this.style.display='none';" />
             <div class="instructions">
               <h3>Writing Instructions:</h3>
               <p>📝 Look at the image and let your imagination run wild!</p>
-              <p>🤔 Think about: Who? What? Where? When? Why? How?</p>
-              <p>✍️ Write a story, description, or poem inspired by this image</p>
+              <p>${promptType === 'narrative' ? '🤔 Think about: Who? What? Where? When? Why? How?' : '📢 Think about: What is your position? What reasons support it?'}</p>
+              <p>✏️ Write a ${promptType} ${promptType === 'narrative' ? 'story' : 'argument'} inspired by this image</p>
               <p>🎯 Use the word bank below to help you get started</p>
             </div>
             ${!imageError.words ? `<img src="${currentPrompt.wordsPath}" alt="Word Bank" class="words-image" onerror="this.style.display='none';" />` : ''}
@@ -328,16 +507,24 @@ const VisualWritingPrompts = ({ showToast = () => {}, students = [] }) => {
             <div>
               <h3 className="text-4xl font-bold mb-2 flex items-center">
                 <span className="mr-3">🖼️</span>
-                Visual Writing Prompts Gallery
+                {promptType === 'narrative' ? 'Narrative' : 'Persuasive'} Writing Prompts Gallery
               </h3>
               <p className="text-xl opacity-90">Choose from {WRITING_PROMPTS.length} inspiring visual prompts</p>
             </div>
-            <button
-              onClick={() => setViewMode('single')}
-              className="bg-white bg-opacity-20 text-white px-6 py-3 rounded-lg font-semibold hover:bg-opacity-30 transition-all"
-            >
-              📝 Single View
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={() => changePromptType(promptType === 'narrative' ? 'persuasive' : 'narrative')}
+                className="bg-white bg-opacity-20 text-white px-6 py-3 rounded-lg font-semibold hover:bg-opacity-30 transition-all"
+              >
+                Switch to {promptType === 'narrative' ? 'Persuasive' : 'Narrative'}
+              </button>
+              <button
+                onClick={() => setViewMode('single')}
+                className="bg-white bg-opacity-20 text-white px-6 py-3 rounded-lg font-semibold hover:bg-opacity-30 transition-all"
+              >
+                📝 Single View
+              </button>
+            </div>
           </div>
         </div>
 
@@ -355,7 +542,7 @@ const VisualWritingPrompts = ({ showToast = () => {}, students = [] }) => {
               <div className="aspect-square relative">
                 <img
                   src={prompt.imagePath}
-                  alt={`Writing Prompt ${prompt.id}`}
+                  alt={prompt.title}
                   className="w-full h-full object-cover"
                   onError={() => handleImageError(`prompt-${prompt.id}`)}
                 />
@@ -369,7 +556,7 @@ const VisualWritingPrompts = ({ showToast = () => {}, students = [] }) => {
                 )}
               </div>
               <div className="p-3">
-                <h4 className="font-bold text-gray-800 text-sm">Prompt {prompt.id}</h4>
+                <h4 className="font-bold text-gray-800 text-sm">{promptType === 'narrative' ? 'Narrative' : 'Persuasive'} {prompt.id}</h4>
                 <p className="text-xs text-gray-600">Click to use</p>
               </div>
             </button>
@@ -387,15 +574,23 @@ const VisualWritingPrompts = ({ showToast = () => {}, students = [] }) => {
         <div className="flex items-center justify-between">
           <div>
             <h3 className={`font-bold mb-2 flex items-center ${isPresentationMode ? 'text-7xl animate-pulse' : 'text-4xl'}`}>
-              <span className="mr-3">📝</span>
-              Visual Writing Prompts
+              <span className="mr-3">{promptType === 'narrative' ? '📚' : '📢'}</span>
+              {promptType === 'narrative' ? 'Narrative' : 'Persuasive'} Writing Prompts
             </h3>
-            <p className={`opacity-90 ${isPresentationMode ? 'text-3xl' : 'text-xl'}`}>Inspire creativity through visual storytelling</p>
+            <p className={`opacity-90 ${isPresentationMode ? 'text-3xl' : 'text-xl'}`}>
+              {promptType === 'narrative' ? 'Inspire creativity through visual storytelling' : 'Build convincing arguments with visual inspiration'}
+            </p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-3 flex-wrap">
+            <button
+              onClick={() => changePromptType(promptType === 'narrative' ? 'persuasive' : 'narrative')}
+              className={`bg-white bg-opacity-20 text-white rounded-lg font-semibold hover:bg-opacity-30 transition-all ${isPresentationMode ? 'px-8 py-4 text-2xl' : 'px-4 py-2'}`}
+            >
+              {promptType === 'narrative' ? '📢 Persuasive' : '📚 Narrative'}
+            </button>
             <button
               onClick={() => setViewMode('gallery')}
-              className={`bg-white bg-opacity-20 text-white rounded-lg font-semibold hover:bg-opacity-30 transition-all ${isPresentationMode ? 'px-12 py-6 text-3xl' : 'px-4 py-2'}`}
+              className={`bg-white bg-opacity-20 text-white rounded-lg font-semibold hover:bg-opacity-30 transition-all ${isPresentationMode ? 'px-8 py-4 text-2xl' : 'px-4 py-2'}`}
             >
               🖼️ Gallery
             </button>
@@ -415,7 +610,7 @@ const VisualWritingPrompts = ({ showToast = () => {}, students = [] }) => {
           <h4 className="font-bold text-gray-800 mb-3 text-center text-sm">🛠️ Writing Tools</h4>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
             <WritingTimer isPresentationMode={isPresentationMode} />
-            <WritingTechniques isPresentationMode={isPresentationMode} />
+            <WritingTechniques isPresentationMode={isPresentationMode} promptType={promptType} />
           </div>
         </div>
       )}
@@ -424,7 +619,7 @@ const VisualWritingPrompts = ({ showToast = () => {}, students = [] }) => {
       {!isPresentationMode && (
         <div className="bg-white rounded-xl shadow-lg p-6">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="text-xl font-bold text-gray-800">Navigate Prompts</h4>
+            <h4 className="text-xl font-bold text-gray-800">Navigate {promptType === 'narrative' ? 'Narrative' : 'Persuasive'} Prompts</h4>
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-600">Prompt {currentPrompt.id} of {WRITING_PROMPTS.length}</span>
             </div>
@@ -474,11 +669,13 @@ const VisualWritingPrompts = ({ showToast = () => {}, students = [] }) => {
           <div className="flex items-center justify-between">
             <div>
               <h4 className={`font-bold text-purple-600 flex items-center gap-2 ${isPresentationMode ? 'text-6xl' : 'text-3xl'}`}>
-                <span>🎨</span>
-                Writing Prompt {currentPrompt.id}
+                <span>{promptType === 'narrative' ? '🎨' : '📢'}</span>
+                {currentPrompt.title}
               </h4>
               <p className={`text-gray-600 ${isPresentationMode ? 'text-3xl' : 'text-lg'}`}>
-                Let your imagination flow and create an amazing story!
+                {promptType === 'narrative' 
+                  ? 'Let your imagination flow and create an amazing story!' 
+                  : 'Build a convincing argument that persuades your audience!'}
               </p>
             </div>
             {!isPresentationMode && (
@@ -504,12 +701,14 @@ const VisualWritingPrompts = ({ showToast = () => {}, students = [] }) => {
           <div className={`grid gap-8 ${isPresentationMode ? 'grid-cols-1' : showWords ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
             {/* Main Prompt Image */}
             <div className="space-y-4">
-              <h5 className={`font-bold text-gray-800 text-center ${isPresentationMode ? 'text-4xl' : 'text-2xl'}`}>✨ Your Writing Inspiration</h5>
+              <h5 className={`font-bold text-gray-800 text-center ${isPresentationMode ? 'text-4xl' : 'text-2xl'}`}>
+                ✨ Your Writing Inspiration
+              </h5>
               <div className="relative">
                 {!imageError.prompt ? (
                   <img
                     src={currentPrompt.imagePath}
-                    alt={`Writing Prompt ${currentPrompt.id}`}
+                    alt={currentPrompt.title}
                     className="w-full rounded-lg shadow-lg border-4 border-purple-200"
                     onError={() => handleImageError('prompt')}
                   />
@@ -517,7 +716,7 @@ const VisualWritingPrompts = ({ showToast = () => {}, students = [] }) => {
                   <div className="w-full aspect-video bg-gray-200 rounded-lg shadow-lg border-4 border-purple-200 flex items-center justify-center">
                     <div className="text-center">
                       <span className="text-6xl">🖼️</span>
-                      <p className="text-xl font-semibold text-gray-600 mt-2">Writing Prompt {currentPrompt.id}</p>
+                      <p className="text-xl font-semibold text-gray-600 mt-2">{currentPrompt.title}</p>
                       <p className="text-sm text-gray-500">Image not found at: {currentPrompt.imagePath}</p>
                     </div>
                   </div>
@@ -533,7 +732,7 @@ const VisualWritingPrompts = ({ showToast = () => {}, students = [] }) => {
                   {!imageError.words ? (
                     <img
                       src={currentPrompt.wordsPath}
-                      alt={`Word Bank for Prompt ${currentPrompt.id}`}
+                      alt={`Word Bank for ${currentPrompt.title}`}
                       className="w-full rounded-lg shadow-lg border-4 border-pink-200"
                       onError={() => handleImageError('words')}
                     />
@@ -551,23 +750,14 @@ const VisualWritingPrompts = ({ showToast = () => {}, students = [] }) => {
             )}
           </div>
 
-          {/* Writing Instructions */}
-          <div className={`mt-8 bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-purple-200 rounded-xl p-6 ${isPresentationMode ? 'p-12' : ''}`}>
-            <h5 className={`font-bold text-purple-800 mb-4 text-center ${isPresentationMode ? 'text-4xl' : 'text-2xl'}`}>📝 Writing Challenge</h5>
-            <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 ${isPresentationMode ? 'text-2xl gap-8' : 'text-lg'}`}>
-              <div className="text-center">
-                <span className={`${isPresentationMode ? 'text-6xl' : 'text-4xl'}`}>🤔</span>
-                <p className="font-semibold text-purple-700">Think about the 5 W's: Who, What, Where, When, Why?</p>
-              </div>
-              <div className="text-center">
-                <span className={`${isPresentationMode ? 'text-6xl' : 'text-4xl'}`}>👁️</span>
-                <p className="font-semibold text-purple-700">Use your senses! What do you see, hear, smell, feel?</p>
-              </div>
-              <div className="text-center">
-                <span className={`${isPresentationMode ? 'text-6xl' : 'text-4xl'}`}>✨</span>
-                <p className="font-semibold text-purple-700">Let your imagination run wild and create something amazing!</p>
-              </div>
-            </div>
+          {/* Daily Write Section */}
+          <div className="mt-8">
+            <DailyWrite 
+              isPresentationMode={isPresentationMode} 
+              promptType={promptType}
+              selectedDay={selectedDay}
+              setSelectedDay={setSelectedDay}
+            />
           </div>
         </div>
       </div>
@@ -617,9 +807,10 @@ const VisualWritingPrompts = ({ showToast = () => {}, students = [] }) => {
             <div>
               <h4 className="font-bold text-purple-800 mb-2">🎯 Teaching Tip</h4>
               <p className="text-purple-700">
-                Visual Writing Prompts spark creativity and help students overcome writer's block! Use the word banks to 
-                scaffold vocabulary, set writing timers to create focused writing sessions, and encourage students to share 
-                their unique interpretations of each image. Remember: there are no wrong answers in creative writing!
+                {promptType === 'narrative' 
+                  ? 'Visual Writing Prompts spark creativity and help students overcome writer\'s block! Use the word banks to scaffold vocabulary, the Daily Write structure to guide story development, and encourage students to share their unique interpretations. Remember: every story is unique!'
+                  : 'Persuasive Visual Prompts help students form strong arguments! Use the Daily Write structure to build convincing arguments step-by-step. Encourage students to find evidence in the image and connect it to real-world issues. Strong opinions need strong evidence!'
+                }
               </p>
             </div>
           </div>
