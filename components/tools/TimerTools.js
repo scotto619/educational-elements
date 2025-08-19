@@ -1,230 +1,86 @@
-// TimerTools.js - Epic Enhanced Classroom Timer with Bouncing Avatars
+// TimerTools.js - Clean, Simple Classroom Timer
 import React, { useState, useEffect, useRef } from 'react';
 
 const TimerTools = ({ showToast, students = [], timerState, setTimerState }) => {
-  const [activeTimer, setActiveTimer] = useState(timerState?.type || 'countdown');
   const [time, setTime] = useState(timerState?.time || 300);
   const [isRunning, setIsRunning] = useState(timerState?.isRunning || false);
   const [isPaused, setIsPaused] = useState(timerState?.isPaused || false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [originalTime, setOriginalTime] = useState(300);
+  const [customTitle, setCustomTitle] = useState('');
   
-  // Interval timer specific
-  const [currentCycle, setCurrentCycle] = useState('work'); // 'work' or 'break'
-  const [workDuration, setWorkDuration] = useState(1500); // 25 minutes
-  const [breakDuration, setBreakDuration] = useState(300); // 5 minutes
-  const [cycleCount, setCycleCount] = useState(0);
-
-  // Stopwatch specific
-  const [stopwatchTime, setStopwatchTime] = useState(0);
-  
-  // Avatar animation states
-  const [bouncingAvatars, setBouncingAvatars] = useState([]);
-  const [showCelebration, setShowCelebration] = useState(false);
-  
-  // Effects and sounds
-  const [showVisualAlert, setShowVisualAlert] = useState(false);
-  const [currentTheme, setCurrentTheme] = useState('default');
   const intervalRef = useRef(null);
-  const animationRef = useRef(null);
-
-  // Timer presets
-  const presets = [
-    { name: '30 sec', seconds: 30 },
-    { name: '1 min', seconds: 60 },
-    { name: '2 min', seconds: 120 },
-    { name: '5 min', seconds: 300 },
-    { name: '10 min', seconds: 600 },
-    { name: '15 min', seconds: 900 },
-    { name: '20 min', seconds: 1200 },
-    { name: '25 min', seconds: 1500 },
-    { name: '30 min', seconds: 1800 }
-  ];
-
-  // Timer themes
-  const themes = [
-    { id: 'default', name: 'Classic', colors: 'from-blue-500 to-blue-600', textColor: 'text-blue-600' },
-    { id: 'focus', name: 'Focus Mode', colors: 'from-purple-500 to-purple-600', textColor: 'text-purple-600' },
-    { id: 'energy', name: 'High Energy', colors: 'from-orange-500 to-red-500', textColor: 'text-orange-600' },
-    { id: 'calm', name: 'Calm & Cool', colors: 'from-green-500 to-blue-500', textColor: 'text-green-600' },
-    { id: 'party', name: 'Party Time', colors: 'from-pink-500 to-yellow-500', textColor: 'text-pink-600' }
-  ];
-
-  // Timer types
-  const timerTypes = [
-    {
-      id: 'countdown',
-      name: 'Countdown Timer',
-      icon: '⏰',
-      description: 'Set a specific time and count down to zero'
-    },
-    {
-      id: 'stopwatch',
-      name: 'Stopwatch',
-      icon: '⏱️',
-      description: 'Count up from zero to track elapsed time'
-    },
-    {
-      id: 'interval',
-      name: 'Interval Timer',
-      icon: '🔄',
-      description: 'Alternate between work and break periods'
-    }
-  ];
 
   // Sync with persistent timer state
   useEffect(() => {
     if (timerState) {
-      setActiveTimer(timerState.type || 'countdown');
       setTime(timerState.time || 300);
       setIsRunning(timerState.isRunning || false);
       setIsPaused(timerState.isPaused || false);
+      setOriginalTime(timerState.originalTime || 300);
     }
   }, [timerState]);
 
-  // Update persistent timer when local state changes
+  // Update persistent timer state
   useEffect(() => {
     if (setTimerState) {
       setTimerState({
         isActive: isRunning || time > 0,
         time,
-        originalTime: activeTimer === 'countdown' ? 300 : 0, // Store original time for progress bar
+        originalTime,
         isRunning,
         isPaused,
-        type: activeTimer
+        type: 'countdown'
       });
     }
-  }, [time, isRunning, isPaused, activeTimer, setTimerState]);
-  useEffect(() => {
-    if (students.length > 0 && isFullscreen && isRunning) {
-      const avatars = students.slice(0, Math.min(12, students.length)).map((student, index) => ({
-        id: student.id,
-        name: student.firstName,
-        avatar: student.avatar,
-        x: Math.random() * (window.innerWidth - 100),
-        y: Math.random() * (window.innerHeight - 200),
-        vx: (Math.random() - 0.5) * 4,
-        vy: (Math.random() - 0.5) * 4,
-        rotation: Math.random() * 360,
-        scale: 0.8 + Math.random() * 0.4,
-        bounce: 0
-      }));
-      setBouncingAvatars(avatars);
-    } else {
-      setBouncingAvatars([]);
-    }
-  }, [students, isFullscreen, isRunning]);
+  }, [time, isRunning, isPaused, originalTime, setTimerState]);
 
-  // Animation loop for bouncing avatars
-  useEffect(() => {
-    if (bouncingAvatars.length > 0 && isRunning && !isPaused) {
-      const animate = () => {
-        setBouncingAvatars(prevAvatars => 
-          prevAvatars.map(avatar => {
-            let newX = avatar.x + avatar.vx;
-            let newY = avatar.y + avatar.vy;
-            let newVx = avatar.vx;
-            let newVy = avatar.vy;
+  // Timer presets
+  const presets = [
+    { name: '30s', seconds: 30 },
+    { name: '1m', seconds: 60 },
+    { name: '2m', seconds: 120 },
+    { name: '5m', seconds: 300 },
+    { name: '10m', seconds: 600 },
+    { name: '15m', seconds: 900 },
+    { name: '20m', seconds: 1200 },
+    { name: '30m', seconds: 1800 }
+  ];
 
-            // Bounce off walls
-            if (newX <= 0 || newX >= window.innerWidth - 80) {
-              newVx = -newVx;
-              newX = Math.max(0, Math.min(window.innerWidth - 80, newX));
-            }
-            if (newY <= 80 || newY >= window.innerHeight - 150) {
-              newVy = -newVy;
-              newY = Math.max(80, Math.min(window.innerHeight - 150, newY));
-            }
-
-            return {
-              ...avatar,
-              x: newX,
-              y: newY,
-              vx: newVx,
-              vy: newVy,
-              rotation: avatar.rotation + 2,
-              bounce: Math.sin(Date.now() * 0.01 + avatar.id) * 10
-            };
-          })
-        );
-        animationRef.current = requestAnimationFrame(animate);
-      };
-
-      animationRef.current = requestAnimationFrame(animate);
-      return () => {
-        if (animationRef.current) {
-          cancelAnimationFrame(animationRef.current);
-        }
-      };
-    }
-  }, [bouncingAvatars, isRunning, isPaused]);
-
-  // Play timer completion sound
-  const playTimerSound = () => {
+  // Play completion sound
+  const playCompletionSound = () => {
     try {
-      const audio = new Audio('/sounds/timer.wav');
+      const audio = new Audio('/sounds/ding.wav');
       audio.volume = 0.7;
-      audio.play().catch(error => {
-        console.log('Could not play timer sound:', error);
-        // Fallback to XP sound
-        const fallbackAudio = new Audio('/sounds/ding.wav');
-        fallbackAudio.volume = 0.7;
-        fallbackAudio.play().catch(err => console.log('Fallback audio failed:', err));
+      audio.play().catch(() => {
+        console.log('Sound not available');
       });
     } catch (error) {
-      console.log('Audio not supported:', error);
+      console.log('Audio not supported');
     }
   };
 
-  // Timer completion effects
+  // Timer completion
   const triggerCompletion = () => {
-    playTimerSound();
-    setShowVisualAlert(true);
-    setShowCelebration(true);
-    
-    // Show celebration effects
-    setTimeout(() => {
-      setShowVisualAlert(false);
-    }, 3000);
-    
-    setTimeout(() => {
-      setShowCelebration(false);
-    }, 5000);
-
+    playCompletionSound();
     if (showToast) {
-      showToast('⏰ Timer Completed! Time\'s up!', 'success');
+      const title = customTitle || 'Timer';
+      showToast(`⏰ ${title} completed! Time's up!`, 'success');
     }
   };
 
   // Main timer logic
   useEffect(() => {
-    if (isRunning && !isPaused) {
+    if (isRunning && !isPaused && time > 0) {
       intervalRef.current = setInterval(() => {
-        if (activeTimer === 'countdown' || activeTimer === 'interval') {
-          setTime(prevTime => {
-            if (prevTime <= 1) {
-              setIsRunning(false);
-              triggerCompletion();
-              
-              // Handle interval cycling
-              if (activeTimer === 'interval') {
-                if (currentCycle === 'work') {
-                  setCurrentCycle('break');
-                  setTime(breakDuration);
-                  setCycleCount(prev => prev + 1);
-                  setTimeout(() => setIsRunning(true), 2000);
-                } else {
-                  setCurrentCycle('work');
-                  setTime(workDuration);
-                  setTimeout(() => setIsRunning(true), 2000);
-                }
-              }
-              return 0;
-            }
-            return prevTime - 1;
-          });
-        } else if (activeTimer === 'stopwatch') {
-          setStopwatchTime(prev => prev + 1);
-        }
+        setTime(prevTime => {
+          if (prevTime <= 1) {
+            setIsRunning(false);
+            triggerCompletion();
+            return 0;
+          }
+          return prevTime - 1;
+        });
       }, 1000);
     } else {
       if (intervalRef.current) {
@@ -237,12 +93,14 @@ const TimerTools = ({ showToast, students = [], timerState, setTimerState }) => 
         clearInterval(intervalRef.current);
       }
     };
-  }, [isRunning, isPaused, activeTimer, currentCycle, workDuration, breakDuration]);
+  }, [isRunning, isPaused, time]);
 
-  // Timer control functions
+  // Timer controls
   const startTimer = () => {
-    setIsRunning(true);
-    setIsPaused(false);
+    if (time > 0) {
+      setIsRunning(true);
+      setIsPaused(false);
+    }
   };
 
   const pauseTimer = () => {
@@ -252,153 +110,126 @@ const TimerTools = ({ showToast, students = [], timerState, setTimerState }) => 
   const stopTimer = () => {
     setIsRunning(false);
     setIsPaused(false);
-    resetTimer();
   };
 
   const resetTimer = () => {
-    if (activeTimer === 'countdown') {
-      setTime(300); // Default 5 minutes
-    } else if (activeTimer === 'stopwatch') {
-      setStopwatchTime(0);
-    } else if (activeTimer === 'interval') {
-      setTime(workDuration);
-      setCurrentCycle('work');
-      setCycleCount(0);
-    }
+    setIsRunning(false);
+    setIsPaused(false);
+    setTime(originalTime);
+  };
+
+  const setCustomTime = (minutes, seconds = 0) => {
+    const totalSeconds = minutes * 60 + seconds;
+    setTime(totalSeconds);
+    setOriginalTime(totalSeconds);
+    setIsRunning(false);
+    setIsPaused(false);
   };
 
   // Format time display
   const formatTime = (seconds) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
+    const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
-    
-    if (hours > 0) {
-      return `${hours}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
-    }
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
-  const getCurrentTime = () => {
-    if (activeTimer === 'stopwatch') return stopwatchTime;
-    return time;
+  // Calculate progress percentage
+  const getProgress = () => {
+    if (originalTime === 0) return 0;
+    return ((originalTime - time) / originalTime) * 100;
   };
 
-  const currentThemeData = themes.find(t => t.id === currentTheme) || themes[0];
+  // Circular Progress Component
+  const CircularProgress = ({ size = 200, strokeWidth = 8 }) => {
+    const radius = (size - strokeWidth) / 2;
+    const circumference = radius * 2 * Math.PI;
+    const progress = getProgress();
+    const strokeDasharray = circumference;
+    const strokeDashoffset = circumference - (progress / 100) * circumference;
 
-  // Timer Display Component
-  const TimerDisplay = ({ isLarge = false }) => {
-    const timeValue = getCurrentTime();
-    const displayTime = formatTime(timeValue);
-    
     return (
-      <div className={`text-center ${isLarge ? 'mb-8' : 'mb-4'}`}>
-        <div className={`${isLarge ? 'text-9xl' : 'text-6xl'} font-bold ${currentThemeData.textColor} mb-4 font-mono tracking-wider drop-shadow-lg`}>
-          {displayTime}
-        </div>
-        
-        {activeTimer === 'interval' && (
-          <div className={`${isLarge ? 'text-4xl' : 'text-2xl'} font-bold mb-2`}>
-            <span className={`px-6 py-2 rounded-full ${
-              currentCycle === 'work' ? 'bg-blue-500 text-white' : 'bg-green-500 text-white'
+      <div className="relative" style={{ width: size, height: size }}>
+        <svg
+          width={size}
+          height={size}
+          className="transform -rotate-90"
+        >
+          {/* Background circle */}
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke="#e5e7eb"
+            strokeWidth={strokeWidth}
+            fill="transparent"
+          />
+          {/* Progress circle */}
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke={time <= 10 ? "#ef4444" : time <= 60 ? "#f59e0b" : "#10b981"}
+            strokeWidth={strokeWidth}
+            fill="transparent"
+            strokeDasharray={strokeDasharray}
+            strokeDashoffset={strokeDashoffset}
+            strokeLinecap="round"
+            className="transition-all duration-1000 ease-in-out"
+          />
+        </svg>
+        {/* Time display in center */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="text-center">
+            <div className={`font-mono font-bold ${
+              size > 300 ? 'text-6xl' : size > 200 ? 'text-4xl' : 'text-2xl'
+            } ${
+              time <= 10 ? 'text-red-600' : time <= 60 ? 'text-amber-600' : 'text-gray-800'
             }`}>
-              {currentCycle === 'work' ? '💼 Work Time' : '☕ Break Time'}
-            </span>
+              {formatTime(time)}
+            </div>
           </div>
-        )}
-        
-        {activeTimer === 'interval' && (
-          <div className={`${isLarge ? 'text-2xl' : 'text-lg'} text-gray-600`}>
-            Cycle {cycleCount + 1}
-          </div>
-        )}
+        </div>
       </div>
     );
   };
 
-  // Celebration effects
-  const CelebrationEffects = () => (
-    <div className="fixed inset-0 pointer-events-none z-40">
-      {/* Confetti */}
-      {[...Array(20)].map((_, i) => (
-        <div
-          key={i}
-          className="absolute animate-bounce"
-          style={{
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-            animationDelay: `${Math.random() * 2}s`,
-            fontSize: '2rem'
-          }}
-        >
-          {['🎉', '🎊', '✨', '🌟', '⭐'][Math.floor(Math.random() * 5)]}
-        </div>
-      ))}
-    </div>
-  );
-
-  // Fullscreen mode
+  // Fullscreen Mode
   if (isFullscreen) {
     return (
-      <div className={`fixed inset-0 bg-gradient-to-br ${currentThemeData.colors} text-white z-50 flex flex-col overflow-hidden`}>
-        {/* Bouncing Avatars */}
-        {bouncingAvatars.map(avatar => (
-          <div
-            key={avatar.id}
-            className="absolute transition-all duration-75 pointer-events-none"
-            style={{
-              left: `${avatar.x}px`,
-              top: `${avatar.y + avatar.bounce}px`,
-              transform: `rotate(${avatar.rotation}deg) scale(${avatar.scale})`,
-              zIndex: 10
-            }}
+      <div className="fixed inset-0 bg-gradient-to-br from-slate-100 to-slate-200 z-50 flex flex-col">
+        {/* Header with title and exit */}
+        <div className="flex justify-between items-center p-8">
+          <div className="flex-1">
+            {customTitle && (
+              <h1 className="text-4xl md:text-6xl font-bold text-slate-800 text-center">
+                {customTitle}
+              </h1>
+            )}
+          </div>
+          <button
+            onClick={() => setIsFullscreen(false)}
+            className="bg-slate-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-slate-700 transition-colors"
           >
-            {avatar.avatar ? (
-              <div className="relative">
-                <img
-                  src={avatar.avatar}
-                  alt={avatar.name}
-                  className="w-16 h-16 rounded-full border-4 border-white shadow-lg"
-                />
-                <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-75 text-white text-xs px-2 py-1 rounded-full">
-                  {avatar.name}
-                </div>
-              </div>
-            ) : (
-              <div className="w-16 h-16 rounded-full border-4 border-white bg-gray-300 flex items-center justify-center shadow-lg">
-                <span className="text-2xl">👤</span>
-              </div>
-            )}
-          </div>
-        ))}
-
-        {/* Timer Display */}
-        <div className="flex-1 flex items-center justify-center relative z-20">
-          <div className="text-center">
-            <TimerDisplay isLarge={true} />
-            
-            {/* Progress Bar */}
-            {activeTimer === 'countdown' && (
-              <div className="w-96 h-4 bg-white bg-opacity-30 rounded-full overflow-hidden mx-auto mb-8">
-                <div
-                  className="h-full bg-white transition-all duration-1000"
-                  style={{ 
-                    width: `${((300 - time) / 300) * 100}%` 
-                  }}
-                ></div>
-              </div>
-            )}
-          </div>
+            Exit Fullscreen
+          </button>
         </div>
 
-        {/* Fullscreen Controls */}
-        <div className="p-8 flex justify-center space-x-6 relative z-20">
+        {/* Main timer display */}
+        <div className="flex-1 flex items-center justify-center">
+          <CircularProgress size={400} strokeWidth={12} />
+        </div>
+
+        {/* Controls */}
+        <div className="p-8 flex justify-center space-x-6">
           <button
             onClick={isRunning ? pauseTimer : startTimer}
-            className={`px-12 py-6 rounded-2xl font-bold text-3xl shadow-2xl transition-all duration-200 transform hover:scale-105 ${
-              isRunning 
-                ? 'bg-yellow-500 hover:bg-yellow-600 text-yellow-900' 
-                : 'bg-green-500 hover:bg-green-600 text-green-900'
+            disabled={time === 0}
+            className={`px-8 py-4 rounded-lg font-bold text-xl transition-all duration-200 ${
+              time === 0 
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : isRunning 
+                  ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-lg' 
+                  : 'bg-green-500 hover:bg-green-600 text-white shadow-lg'
             }`}
           >
             {isRunning ? (isPaused ? '▶️ Resume' : '⏸️ Pause') : '▶️ Start'}
@@ -406,73 +237,54 @@ const TimerTools = ({ showToast, students = [], timerState, setTimerState }) => 
           
           <button
             onClick={stopTimer}
-            className="px-12 py-6 bg-red-500 text-red-900 rounded-2xl font-bold text-3xl hover:bg-red-600 transition-all duration-200 shadow-2xl transform hover:scale-105"
+            className="px-8 py-4 bg-red-500 text-white rounded-lg font-bold text-xl hover:bg-red-600 transition-all duration-200 shadow-lg"
           >
             ⏹️ Stop
           </button>
           
           <button
-            onClick={() => setIsFullscreen(false)}
-            className="px-12 py-6 bg-gray-600 text-gray-100 rounded-2xl font-bold text-3xl hover:bg-gray-700 transition-all duration-200 shadow-2xl transform hover:scale-105"
+            onClick={resetTimer}
+            className="px-8 py-4 bg-slate-500 text-white rounded-lg font-bold text-xl hover:bg-slate-600 transition-all duration-200 shadow-lg"
           >
-            🔙 Exit
+            🔄 Reset
           </button>
         </div>
 
-        {/* Celebration Effects */}
-        {showCelebration && <CelebrationEffects />}
+        {/* Timer completion flash effect */}
+        {time === 0 && !isRunning && (
+          <div className="fixed inset-0 bg-green-500 bg-opacity-20 animate-pulse pointer-events-none"></div>
+        )}
       </div>
     );
   }
 
+  // Regular Mode
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="text-center">
-        <h2 className="text-3xl font-bold text-gray-800 mb-2">⏰ Epic Timer Tools</h2>
-        <p className="text-gray-700">Engaging classroom timing with student avatar animations!</p>
-      </div>
-
-      {/* Timer Type Selection */}
-      <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-        <h3 className="text-lg font-bold text-gray-800 mb-4">Timer Type</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {timerTypes.map(type => (
-            <button
-              key={type.id}
-              onClick={() => {
-                setActiveTimer(type.id);
-                resetTimer();
-              }}
-              className={`p-4 rounded-lg border-2 transition-all duration-200 text-left hover:scale-105 ${
-                activeTimer === type.id
-                  ? 'border-blue-500 bg-blue-50 text-blue-800 shadow-lg'
-                  : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-800'
-              }`}
-            >
-              <div className="flex items-center space-x-3 mb-2">
-                <span className="text-2xl">{type.icon}</span>
-                <span className="font-bold text-lg">{type.name}</span>
-              </div>
-              <p className="text-sm">{type.description}</p>
-            </button>
-          ))}
-        </div>
+      <div className="text-center bg-white rounded-xl shadow-sm p-6">
+        <h2 className="text-3xl font-bold text-slate-800 mb-2">⏰ Classroom Timer</h2>
+        <p className="text-slate-600">Simple, clean timing for classroom activities</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Timer Display */}
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-          <TimerDisplay />
+        <div className="bg-white rounded-xl shadow-sm p-8 text-center">
+          <div className="mb-6">
+            <CircularProgress size={280} strokeWidth={10} />
+          </div>
 
           {/* Controls */}
-          <div className="flex justify-center space-x-3 mb-6">
+          <div className="flex justify-center space-x-3 mb-4">
             <button
               onClick={isRunning ? pauseTimer : startTimer}
-              className={`px-6 py-3 rounded-lg font-bold transition-all duration-200 transform hover:scale-105 ${
-                isRunning 
-                  ? 'bg-yellow-500 hover:bg-yellow-600 text-yellow-900' 
-                  : 'bg-green-500 hover:bg-green-600 text-green-900'
+              disabled={time === 0}
+              className={`px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${
+                time === 0 
+                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  : isRunning 
+                    ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-md' 
+                    : 'bg-green-500 hover:bg-green-600 text-white shadow-md'
               }`}
             >
               {isRunning ? (isPaused ? '▶️ Resume' : '⏸️ Pause') : '▶️ Start'}
@@ -480,144 +292,113 @@ const TimerTools = ({ showToast, students = [], timerState, setTimerState }) => 
             
             <button
               onClick={stopTimer}
-              className="px-6 py-3 bg-red-500 text-red-900 rounded-lg font-bold hover:bg-red-600 transition-all duration-200 transform hover:scale-105"
+              className="px-6 py-3 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 transition-all duration-200 shadow-md"
             >
               ⏹️ Stop
             </button>
             
             <button
               onClick={resetTimer}
-              className="px-6 py-3 bg-gray-500 text-gray-100 rounded-lg font-bold hover:bg-gray-600 transition-all duration-200 transform hover:scale-105"
+              className="px-6 py-3 bg-slate-500 text-white rounded-lg font-semibold hover:bg-slate-600 transition-all duration-200 shadow-md"
             >
               🔄 Reset
             </button>
           </div>
 
-          <div className="flex justify-center space-x-3">
-            <button
-              onClick={() => setIsFullscreen(true)}
-              className="px-6 py-3 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 transition-all duration-200 transform hover:scale-105"
-            >
-              🎮 Epic Fullscreen
-            </button>
-          </div>
+          <button
+            onClick={() => setIsFullscreen(true)}
+            className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-all duration-200 shadow-md"
+          >
+            📺 Fullscreen Presentation
+          </button>
         </div>
 
-        {/* Settings and Presets */}
+        {/* Settings */}
         <div className="space-y-6">
-          {/* Theme Selection */}
-          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">🎨 Timer Theme</h3>
-            <div className="grid grid-cols-2 gap-2">
-              {themes.map(theme => (
+          {/* Custom Title */}
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <h3 className="text-lg font-bold text-slate-800 mb-4">📝 Activity Title</h3>
+            <input
+              type="text"
+              value={customTitle}
+              onChange={(e) => setCustomTitle(e.target.value)}
+              placeholder="e.g. Brain Break, Reading Time, Math Quiz..."
+              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg"
+            />
+            <p className="text-sm text-slate-500 mt-2">
+              This title will appear in fullscreen mode to show students what activity they're doing
+            </p>
+          </div>
+
+          {/* Quick Presets */}
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <h3 className="text-lg font-bold text-slate-800 mb-4">⚡ Quick Times</h3>
+            <div className="grid grid-cols-4 gap-2">
+              {presets.map(preset => (
                 <button
-                  key={theme.id}
-                  onClick={() => setCurrentTheme(theme.id)}
-                  className={`p-3 rounded-lg border-2 transition-all duration-200 ${
-                    currentTheme === theme.id
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:bg-gray-50'
-                  }`}
+                  key={preset.name}
+                  onClick={() => setCustomTime(Math.floor(preset.seconds / 60), preset.seconds % 60)}
+                  className="px-3 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors font-semibold text-sm"
                 >
-                  <div className={`w-full h-8 bg-gradient-to-r ${theme.colors} rounded mb-2`}></div>
-                  <div className="text-xs font-bold text-gray-800">{theme.name}</div>
+                  {preset.name}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Quick Presets */}
-          {(activeTimer === 'countdown' || activeTimer === 'interval') && (
-            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-              <h3 className="text-lg font-bold text-gray-800 mb-4">⚡ Quick Presets</h3>
-              <div className="grid grid-cols-3 gap-2">
-                {presets.map(preset => (
-                  <button
-                    key={preset.name}
-                    onClick={() => setTime(preset.seconds)}
-                    className="px-3 py-2 bg-blue-100 text-blue-800 rounded-lg hover:bg-blue-200 transition-colors font-bold text-sm"
-                  >
-                    {preset.name}
-                  </button>
-                ))}
+          {/* Custom Time */}
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <h3 className="text-lg font-bold text-slate-800 mb-4">⏱️ Custom Time</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Minutes</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="60"
+                  value={Math.floor(originalTime / 60)}
+                  onChange={(e) => setCustomTime(parseInt(e.target.value || 0), originalTime % 60)}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Seconds</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="59"
+                  value={originalTime % 60}
+                  onChange={(e) => setCustomTime(Math.floor(originalTime / 60), parseInt(e.target.value || 0))}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
               </div>
             </div>
-          )}
+          </div>
 
-          {/* Custom Time Input */}
-          {activeTimer === 'countdown' && (
-            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-              <h3 className="text-lg font-bold text-gray-800 mb-4">⏱️ Custom Time</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Minutes</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="60"
-                    value={Math.floor(time / 60)}
-                    onChange={(e) => setTime(parseInt(e.target.value || 0) * 60 + (time % 60))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Seconds</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="59"
-                    value={time % 60}
-                    onChange={(e) => setTime(Math.floor(time / 60) * 60 + parseInt(e.target.value || 0))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
+          {/* Status */}
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <h3 className="text-lg font-bold text-slate-800 mb-4">📊 Status</h3>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-slate-600">Current Time:</span>
+                <span className="font-mono font-bold text-slate-800">{formatTime(time)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-600">Progress:</span>
+                <span className="font-bold text-slate-800">{Math.round(getProgress())}%</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-600">Status:</span>
+                <span className={`font-bold ${
+                  isRunning ? (isPaused ? 'text-amber-600' : 'text-green-600') : 'text-slate-600'
+                }`}>
+                  {isRunning ? (isPaused ? 'Paused' : 'Running') : 'Stopped'}
+                </span>
               </div>
             </div>
-          )}
-
-          {/* Student Avatar Preview */}
-          {students.length > 0 && (
-            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-              <h3 className="text-lg font-bold text-gray-800 mb-4">🎭 Avatar Preview</h3>
-              <p className="text-sm text-gray-600 mb-3">
-                {students.length} student avatars will bounce around in fullscreen mode!
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {students.slice(0, 8).map(student => (
-                  <div key={student.id} className="text-center">
-                    {student.avatar ? (
-                      <img
-                        src={student.avatar}
-                        alt={student.firstName}
-                        className="w-8 h-8 rounded-full border-2 border-gray-300"
-                      />
-                    ) : (
-                      <div className="w-8 h-8 rounded-full border-2 border-gray-300 bg-gray-100 flex items-center justify-center text-xs">
-                        👤
-                      </div>
-                    )}
-                  </div>
-                ))}
-                {students.length > 8 && (
-                  <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600">
-                    +{students.length - 8}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Visual Alert Overlay */}
-      {showVisualAlert && (
-        <div className="fixed inset-0 bg-red-600 bg-opacity-75 flex items-center justify-center z-40 animate-pulse">
-          <div className="text-white text-6xl font-bold text-center">
-            <div className="mb-4">⏰ TIME'S UP! ⏰</div>
-            <div className="text-3xl">🎉 Great job, everyone! 🎉</div>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };
