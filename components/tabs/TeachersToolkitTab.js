@@ -1,4 +1,4 @@
-// components/tabs/TeachersToolkitTab.js - UPDATED WITH COMPLETE AWARD FUNCTIONS
+// components/tabs/TeachersToolkitTab.js - UPDATED WITH BRAIN BREAKS TOOL
 import React, { useState } from 'react';
 
 // Import tool components from the tools folder
@@ -10,9 +10,10 @@ import ClassroomDesigner from '../tools/ClassroomDesigner';
 import DiceRoller from '../tools/DiceRoller';
 import ClassroomJobs from '../tools/ClassroomJobs';
 import TimetableCreator from '../tools/TimetableCreator';
+import BrainBreaks from '../tools/BrainBreaks';
 
 // ===============================================
-// BIRTHDAY WALL COMPONENT (No changes needed here)
+// BIRTHDAY WALL COMPONENT
 // ===============================================
 const BirthdayWall = ({ students, showToast, saveClassroomDataToFirebase, currentClassId, getAvatarImage, calculateAvatarLevel }) => {
   const [editingStudentId, setEditingStudentId] = useState(null);
@@ -59,7 +60,6 @@ const BirthdayWall = ({ students, showToast, saveClassroomDataToFirebase, curren
           }
         : student
     );
-    // Note: Birthday data is part of the main student object, so it uses a different save function. This is correct.
     saveClassroomDataToFirebase(updatedStudents, currentClassId);
     showToast('Birthday updated successfully!', 'success');
     setEditingStudentId(null);
@@ -204,7 +204,7 @@ const BirthdayWall = ({ students, showToast, saveClassroomDataToFirebase, curren
 };
 
 // ===============================================
-// TEACHERS TOOLKIT TAB COMPONENT - UPDATED
+// TEACHERS TOOLKIT TAB COMPONENT - WITH BRAIN BREAKS
 // ===============================================
 const TeachersToolkitTab = ({
   students = [],
@@ -214,9 +214,8 @@ const TeachersToolkitTab = ({
   saveGroupDataToFirebase,
   saveClassroomDataToFirebase,
   currentClassId,
-  // ⭐ CLEAR PATHWAY: Receive the renamed award functions
-  onAwardXP = () => {},  // This will be awardXPToStudent
-  onAwardCoins = () => {}, // This will be awardCoinsToStudent
+  onAwardXP = () => {},
+  onAwardCoins = () => {},
   onBulkAward = () => {},
   activeQuests = [],
   attendanceData = {},
@@ -225,9 +224,8 @@ const TeachersToolkitTab = ({
   setShowQuestManagement,
   getAvatarImage,
   calculateAvatarLevel,
-  // Toolkit save function and loaded data
-  saveToolkitData, // This is the function to save toolkit-specific data
-  loadedData, // This contains the loaded toolkit data
+  saveToolkitData,
+  loadedData,
 }) => {
   const [activeToolkitTab, setActiveToolkitTab] = useState('classroom-jobs');
   const [attendanceState, setAttendanceState] = useState(attendanceData);
@@ -317,6 +315,7 @@ const TeachersToolkitTab = ({
     { id: 'classroom-jobs', label: 'Classroom Jobs', icon: '💼' },
     { id: 'timetable', label: 'Timetable', icon: '📅' },
     { id: 'birthday-wall', label: 'Birthday Wall', icon: '🎂' },
+    { id: 'brain-breaks', label: 'Brain Breaks', icon: '🧠' },
     { id: 'help-queue', label: 'Help Queue', icon: '🎫' },
     { id: 'attendance', label: 'Attendance', icon: '✅' },
     { id: 'analytics', label: 'Analytics', icon: '📊' },
@@ -355,7 +354,7 @@ const TeachersToolkitTab = ({
       </div>
 
       {/* Quick Action Dashboard */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
         <button
           onClick={() => setActiveToolkitTab('classroom-jobs')}
           className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-4 rounded-xl hover:shadow-lg transition-all text-center"
@@ -372,6 +371,15 @@ const TeachersToolkitTab = ({
           <div className="text-3xl mb-2">📅</div>
           <div className="font-semibold">Timetable</div>
           <div className="text-sm opacity-90">Schedule management</div>
+        </button>
+
+        <button
+          onClick={() => setActiveToolkitTab('brain-breaks')}
+          className="bg-gradient-to-r from-pink-500 to-purple-500 text-white p-4 rounded-xl hover:shadow-lg transition-all text-center"
+        >
+          <div className="text-3xl mb-2">🧠</div>
+          <div className="font-semibold">Brain Breaks</div>
+          <div className="text-sm opacity-90">Random activities</div>
         </button>
 
         <button
@@ -428,10 +436,8 @@ const TeachersToolkitTab = ({
             <ClassroomJobs 
               students={students} 
               showToast={showToast} 
-              // ⭐ CLEAR PATHWAY: Pass both award functions to ClassroomJobs
-              onAwardXP={onAwardXP}        // This is awardXPToStudent from main component
-              onAwardCoins={onAwardCoins}  // This is awardCoinsToStudent from main component
-              // Pass the correct save function and loaded data
+              onAwardXP={onAwardXP}
+              onAwardCoins={onAwardCoins}
               saveData={saveToolkitData}
               loadedData={loadedData}
             />
@@ -440,7 +446,6 @@ const TeachersToolkitTab = ({
             <TimetableCreator 
               students={students} 
               showToast={showToast}
-              // Pass the correct save function and loaded data
               saveData={saveToolkitData}
               loadedData={loadedData}
             />
@@ -449,11 +454,16 @@ const TeachersToolkitTab = ({
             <BirthdayWall
               students={students}
               showToast={showToast}
-              // This uses a different save mechanism because it modifies the core student objects, which is correct.
               saveClassroomDataToFirebase={saveClassroomDataToFirebase} 
               currentClassId={currentClassId}
               getAvatarImage={getAvatarImage}
               calculateAvatarLevel={calculateAvatarLevel}
+            />
+          )}
+          {activeToolkitTab === 'brain-breaks' && (
+            <BrainBreaks 
+              students={students} 
+              showToast={showToast} 
             />
           )}
 
