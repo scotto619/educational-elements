@@ -426,7 +426,6 @@ const BrainBreaks = ({ showToast, students = [] }) => {
           // Timer finished
           setIsTimerRunning(false);
           setTimerActive(false);
-          showToast('Brain Break time is up! 🎉', 'success');
           // Play completion sound
           try {
             const audio = new Audio('/sounds/ding.mp3');
@@ -437,7 +436,7 @@ const BrainBreaks = ({ showToast, students = [] }) => {
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [isTimerRunning, timerMinutes, timerSeconds, timerActive, showToast]);
+  }, [isTimerRunning, timerMinutes, timerSeconds, timerActive]);
 
   const selectRandomActivity = () => {
     setIsSpinning(true);
@@ -464,8 +463,6 @@ const BrainBreaks = ({ showToast, students = [] }) => {
         audio.volume = 0.3;
         audio.play().catch(e => {});
       } catch(e) {}
-      
-      showToast(`Brain Break selected: ${randomActivity.name}!`, 'success');
     }, 1500);
   };
 
