@@ -419,13 +419,14 @@ const StudentPortal = () => {
             classRewards={classData?.classRewards || []}
           />
         );
-      case 'games':
-        return (
-          <StudentGames 
-            studentData={studentData}
-            showToast={showToast}
-          />
-        );
+case 'games':
+  return (
+    <StudentGames 
+      studentData={studentData}
+      showToast={showToast}
+      updateStudentData={updateStudentData}  // ADD THIS LINE
+    />
+  );
       case 'quizshow':
         return (
           <div className="bg-white rounded-xl p-6 md:p-8 text-center">

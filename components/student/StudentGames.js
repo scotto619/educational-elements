@@ -1,7 +1,7 @@
-// components/student/StudentGames.js - MOBILE OPTIMIZED WITH BATTLESHIPS
+// components/student/StudentGames.js - MOBILE OPTIMIZED WITH CLICKER GAME
 import React, { useState } from 'react';
 
-// Import existing game components (they should work as-is)
+// Import existing game components
 import BoggleGame from '../games/BoggleGame';
 import MathRaceGame from '../games/MathRaceGame';
 import MemoryMatchGame from '../games/MemoryMatchGame';
@@ -9,12 +9,25 @@ import NoggleGame from '../games/NoggleGame';
 import WordSearchGame from '../games/WordSearchGame';
 import CrosswordGame from '../games/CrosswordGame';
 import TicTacToeGame from '../games/TicTacToeGame';
-import BattleshipsGame from '../games/BattleshipsGame'; // NEW IMPORT
+import BattleshipsGame from '../games/BattleshipsGame';
+import ClickerGame from '../games/ClickerGame'; // NEW IMPORT
 
-const StudentGames = ({ studentData, showToast }) => {
+const StudentGames = ({ studentData, showToast, updateStudentData }) => {
   const [selectedGame, setSelectedGame] = useState(null);
 
   const availableGames = [
+    {
+      id: 'clicker',
+      name: 'Hero Forge',
+      icon: '⚔️',
+      description: 'Build your fantasy empire in this epic incremental adventure!',
+      component: ClickerGame,
+      color: 'from-yellow-500 to-orange-600',
+      difficulty: 'Easy',
+      time: 'Unlimited',
+      multiplayer: false,
+      special: true
+    },
     {
       id: 'battleships',
       name: 'Battleships',
@@ -131,6 +144,7 @@ const StudentGames = ({ studentData, showToast }) => {
             showToast={showToast}
             students={[studentData]}
             studentData={studentData}
+            updateStudentData={updateStudentData}
           />
         </div>
       </div>
@@ -154,15 +168,25 @@ const StudentGames = ({ studentData, showToast }) => {
             <div
               key={game.id}
               onClick={() => setSelectedGame(game)}
-              className="group cursor-pointer bg-gray-50 rounded-xl p-4 md:p-6 border-2 border-transparent hover:border-gray-300 hover:shadow-lg transition-all duration-200 active:scale-95"
+              className={`group cursor-pointer rounded-xl p-4 md:p-6 border-2 border-transparent hover:shadow-lg transition-all duration-200 active:scale-95 relative ${
+                game.special 
+                  ? 'bg-gradient-to-br from-yellow-50 to-orange-50 hover:border-orange-300 ring-2 ring-yellow-400 ring-opacity-50' 
+                  : 'bg-gray-50 hover:border-gray-300'
+              }`}
             >
+              {game.special && (
+                <div className="absolute -top-2 -right-2 bg-yellow-500 text-white text-xs font-bold px-2 py-1 rounded-full z-10">
+                  NEW!
+                </div>
+              )}
               <div className="flex items-center space-x-3 mb-3 md:mb-4">
-                <div className={`w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-r ${game.color} flex items-center justify-center text-xl md:text-2xl group-hover:scale-110 transition-transform flex-shrink-0`}>
+                <div className={`w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-r ${game.color} flex items-center justify-center text-xl md:text-2xl group-hover:scale-110 transition-transform flex-shrink-0 ${game.special ? 'animate-pulse' : ''}`}>
                   {game.icon}
                 </div>
                 <div className="min-w-0">
                   <h4 className="text-base md:text-lg font-bold text-gray-800 group-hover:text-blue-600 transition-colors truncate">
                     {game.name}
+                    {game.special && <span className="ml-2 text-yellow-600">⭐</span>}
                   </h4>
                 </div>
               </div>
@@ -186,11 +210,17 @@ const StudentGames = ({ studentData, showToast }) => {
                     <span className="font-medium text-purple-600">Multiplayer</span>
                   </div>
                 )}
+                {game.special && (
+                  <div className="flex justify-between">
+                    <span>💾 Saves:</span>
+                    <span className="font-medium text-green-600">Progress Saved</span>
+                  </div>
+                )}
               </div>
 
               <div className="pt-3 md:pt-4 border-t border-gray-200">
                 <div className={`w-full py-2 md:py-3 px-4 rounded-lg bg-gradient-to-r ${game.color} text-white text-center font-semibold group-hover:shadow-md transition-all text-sm md:text-base`}>
-                  {game.multiplayer ? '👥 Play vs Friend' : '🎮 Play Game'}
+                  {game.special ? '⚔️ Start Adventure' : game.multiplayer ? '👥 Play vs Friend' : '🎮 Play Game'}
                 </div>
               </div>
             </div>
