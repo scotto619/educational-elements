@@ -60,33 +60,33 @@ export const literacyWarmupContent = {
     "riddleOfTheDay": [
       {
         "day": "Monday",
-        "riddle": "I am something you can catch but never throw. What am I?",
-        "answer": "A cold!",
-        "hint": "It makes you sneeze and cough"
+        "riddle": "I have cities, but no houses. I have mountains, but no trees. I have water, but no fish. What am I?",
+        "answer": "A map!",
+        "hint": "You use me to find your way around the world"
       },
       {
         "day": "Tuesday", 
-        "riddle": "I have keys but no locks. I have space but no room. What am I?",
-        "answer": "A keyboard!",
-        "hint": "You use me to type"
+        "riddle": "The more you take away from me, the bigger I become. What am I?",
+        "answer": "A hole!",
+        "hint": "Think about digging"
       },
       {
         "day": "Wednesday",
-        "riddle": "What gets wetter the more it dries?",
-        "answer": "A towel!",
-        "hint": "You use me after a shower"
+        "riddle": "I'm not alive, but I can grow. I don't have lungs, but I need air. I don't have a mouth, but water kills me. What am I?",
+        "answer": "Fire!",
+        "hint": "I'm hot and bright, and you can make me with matches"
       },
       {
         "day": "Thursday",
-        "riddle": "I'm tall when I'm young and short when I'm old. What am I?",
-        "answer": "A candle!",
-        "hint": "I give light when lit"
+        "riddle": "What belongs to you, but other people use it more than you do?",
+        "answer": "Your name!",
+        "hint": "People say this when they want to get your attention"
       },
       {
         "day": "Friday",
-        "riddle": "What has hands but cannot clap?",
-        "answer": "A clock!",
-        "hint": "I tell time"
+        "riddle": "I have a golden head and a golden tail, but no golden body. What am I?",
+        "answer": "A coin!",
+        "hint": "You can flip me to make decisions"
       }
     ],
     "funFactOfTheDay": [
@@ -155,33 +155,33 @@ export const literacyWarmupContent = {
     "riddleOfTheDay": [
       {
         "day": "Monday",
-        "riddle": "I have a face but no eyes, hands but no fingers. What am I?",
-        "answer": "A clock!",
-        "hint": "I help you tell time"
+        "riddle": "What can travel around the world while staying in a corner?",
+        "answer": "A stamp!",
+        "hint": "You stick me on letters before mailing them"
       },
       {
         "day": "Tuesday",
-        "riddle": "What comes down but never goes up?",
-        "answer": "Rain!",
-        "hint": "It falls from the sky"
+        "riddle": "I'm lighter than air but a hundred people cannot lift me. Careful, I am fragile. What am I?",
+        "answer": "A bubble!",
+        "hint": "Children love to blow me and watch me float"
       },
       {
         "day": "Wednesday", 
-        "riddle": "I'm light as a feather, but even the strongest person can't hold me for long. What am I?",
-        "answer": "Your breath!",
-        "hint": "You do this to stay alive"
+        "riddle": "What has 13 hearts but no other organs?",
+        "answer": "A deck of cards!",
+        "hint": "Think about playing cards and card games"
       },
       {
         "day": "Thursday",
-        "riddle": "What has many teeth but cannot bite?",
-        "answer": "A comb!",
-        "hint": "You use me on your hair"
+        "riddle": "I can be cracked, I can be made, I can be told, I can be played. What am I?",
+        "answer": "A joke!",
+        "hint": "I make people laugh when done well"
       },
       {
         "day": "Friday",
-        "riddle": "I'm full of holes but still hold water. What am I?",
-        "answer": "A sponge!",
-        "hint": "You use me for cleaning"
+        "riddle": "The person who makes it, sells it. The person who buys it, never uses it. The person who uses it, never knows they're using it. What is it?",
+        "answer": "A coffin!",
+        "hint": "This is used in funerals"
       }
     ],
     "funFactOfTheDay": [
@@ -250,33 +250,33 @@ export const literacyWarmupContent = {
     "riddleOfTheDay": [
       {
         "day": "Monday",
-        "riddle": "I have teeth but cannot bite. I help you look neat and bright. What am I?",
-        "answer": "A comb!",
-        "hint": "You use me on your hair"
+        "riddle": "What gets sharper the more you use it?",
+        "answer": "Your brain (or mind)!",
+        "hint": "The more you learn and practice, the better this gets"
       },
       {
         "day": "Tuesday",
-        "riddle": "What goes up but never comes down?",
-        "answer": "Your age!",
-        "hint": "It increases every year"
+        "riddle": "I have no body, but I come alive with wind. What am I?",
+        "answer": "An echo!",
+        "hint": "You hear me in mountains and empty buildings"
       },
       {
         "day": "Wednesday",
-        "riddle": "I'm not alive, but I grow. I don't have lungs, but I need air. What am I?",
-        "answer": "Fire!",
-        "hint": "I'm hot and bright"
+        "riddle": "What can run but never walks, has a mouth but never talks, has a head but never weeps, has a bed but never sleeps?",
+        "answer": "A river!",
+        "hint": "I flow from mountains to the sea"
       },
       {
         "day": "Thursday",
-        "riddle": "What has a neck but no head?",
-        "answer": "A bottle!",
-        "hint": "You drink from me"
+        "riddle": "I'm tall when I'm young, short when I'm old, and every Halloween you can guess what I hold. What am I?",
+        "answer": "A candle!",
+        "hint": "I give light and am used in spooky decorations"
       },
       {
         "day": "Friday",
-        "riddle": "I can be cracked, I can be made, I can be told, I can be played. What am I?",
-        "answer": "A joke!",
-        "hint": "I make people laugh"
+        "riddle": "What has one eye but cannot see?",
+        "answer": "A needle!",
+        "hint": "You thread string through my eye for sewing"
       }
     ],
     "funFactOfTheDay": [
@@ -345,33 +345,33 @@ export const literacyWarmupContent = {
     "riddleOfTheDay": [
       {
         "day": "Monday",
-        "riddle": "I ask questions but never get answers. I start with W and help you learn. What am I?",
-        "answer": "Question words (Who, What, Where, When, Why)!",
-        "hint": "Think about the words that start questions"
+        "riddle": "What invention lets you look right through a wall?",
+        "answer": "A window!",
+        "hint": "You can see outside through me, but I keep the weather out"
       },
       {
         "day": "Tuesday",
-        "riddle": "What has ears but cannot hear?",
-        "answer": "Corn!",
-        "hint": "I'm yellow and grow on farms"
+        "riddle": "I have keys but no locks. I have space but no room. You can enter, but you can't go outside. What am I?",
+        "answer": "A keyboard!",
+        "hint": "You type on me to use computers"
       },
       {
         "day": "Wednesday",
-        "riddle": "I'm white when I'm dirty and black when I'm clean. What am I?",
-        "answer": "A blackboard!",
-        "hint": "Teachers write on me"
+        "riddle": "What begins with T, finishes with T, and has T in it?",
+        "answer": "A teapot!",
+        "hint": "You use me to make hot drinks"
       },
       {
         "day": "Thursday",
-        "riddle": "What travels around the world but stays in one corner?",
-        "answer": "A stamp!",
-        "hint": "You put me on letters"
+        "riddle": "I'm found in socks, scarves, and mittens, and often in the paws of playful kittens. What am I?",
+        "answer": "Yarn (or thread)!",
+        "hint": "I'm used for knitting and cats love to play with me"
       },
       {
         "day": "Friday",
-        "riddle": "I have a head and a tail but no body. What am I?",
-        "answer": "A coin!",
-        "hint": "You can flip me"
+        "riddle": "What has four wheels and flies?",
+        "answer": "A garbage truck!",
+        "hint": "I collect trash and attract flying insects"
       }
     ],
     "funFactOfTheDay": [
@@ -440,33 +440,33 @@ export const literacyWarmupContent = {
     "riddleOfTheDay": [
       {
         "day": "Monday",
-        "riddle": "I can capture a moment but I'm not a cage. I save memories on every page. What am I?",
-        "answer": "A photograph (or camera)!",
-        "hint": "Say cheese!"
+        "riddle": "What word becomes shorter when you add two letters to it?",
+        "answer": "Short (add 'er' to make 'shorter')!",
+        "hint": "Think about the opposite of long"
       },
       {
         "day": "Tuesday",
-        "riddle": "I'm big and gray with a long trunk. I remember everything and never get drunk. What am I?",
-        "answer": "An elephant!",
-        "hint": "I have big ears and love peanuts"
+        "riddle": "I have a face and two hands, but I have no arms or legs. What am I?",
+        "answer": "A clock!",
+        "hint": "I help you know what time it is"
       },
       {
         "day": "Wednesday",
-        "riddle": "I ring and buzz, I text and call. Without me, you can't reach friends at all. What am I?",
-        "answer": "A phone!",
-        "hint": "You put me to your ear to talk"
+        "riddle": "What can you hold in your right hand, but never in your left hand?",
+        "answer": "Your left hand!",
+        "hint": "Think about your own body parts"
       },
       {
         "day": "Thursday",
-        "riddle": "I have 26 friends that help you spell. Line us up and stories we'll tell. What am I?",
-        "answer": "The alphabet!",
-        "hint": "A, B, C... what comes next?"
+        "riddle": "I'm light as a feather, yet the strongest person can't hold me for much more than a minute. What am I?",
+        "answer": "Your breath!",
+        "hint": "Try holding this and see how long you can last"
       },
       {
         "day": "Friday",
-        "riddle": "When you're happy, I bubble up. When you're sad, I might hiccup. What am I?",
-        "answer": "A laugh!",
-        "hint": "Ha ha ha!"
+        "riddle": "What has many needles but doesn't sew?",
+        "answer": "A Christmas tree (or pine tree)!",
+        "hint": "I'm green and pointy all year round"
       }
     ],
     "funFactOfTheDay": [
@@ -535,33 +535,33 @@ export const literacyWarmupContent = {
     "riddleOfTheDay": [
       {
         "day": "Monday",
-        "riddle": "I tick and I tock, I have hands but no fingers, I show you the time with numbers and figures. What am I?",
-        "answer": "A clock!",
-        "hint": "I help you know when it's time for lunch"
+        "riddle": "What goes up and down but doesn't move?",
+        "answer": "Stairs (or temperature)!",
+        "hint": "You climb me to get to different floors"
       },
       {
         "day": "Tuesday",
-        "riddle": "I waddle and quack, I swim in the pond. Of water and bread, I'm very fond. What am I?",
-        "answer": "A duck!",
-        "hint": "I have feathers and webbed feet"
+        "riddle": "I have a thumb and four fingers, but I am not alive. What am I?",
+        "answer": "A glove!",
+        "hint": "You wear me on your hands to keep them warm"
       },
       {
         "day": "Wednesday",
-        "riddle": "I carry heavy loads from here to there. I have big wheels but I don't have hair. What am I?",
-        "answer": "A truck!",
-        "hint": "I drive on roads and have a loud horn"
+        "riddle": "What has a bottom at the top?",
+        "answer": "Your legs!",
+        "hint": "Think about where the bottom of your legs are located"
       },
       {
         "day": "Thursday",
-        "riddle": "I'm thin and brown, I fall from trees. Pick me up if you please! What am I?",
-        "answer": "A stick!",
-        "hint": "Dogs like to fetch me"
+        "riddle": "I can fill a room but take up no space. What am I?",
+        "answer": "Light!",
+        "hint": "Flip a switch and I appear everywhere"
       },
       {
         "day": "Friday",
-        "riddle": "I'm square or round, I help you build. Stack me up, your tower's filled! What am I?",
-        "answer": "A block!",
-        "hint": "Children play with me"
+        "riddle": "What gets wet while drying?",
+        "answer": "A towel!",
+        "hint": "You use me after taking a shower"
       }
     ],
     "funFactOfTheDay": [
@@ -630,33 +630,33 @@ export const literacyWarmupContent = {
     "riddleOfTheDay": [
       {
         "day": "Monday",
-        "riddle": "I'm round and I'm golden, on fingers I stay. I'm given with love on a special day. What am I?",
-        "answer": "A ring!",
-        "hint": "People wear me when they get married"
+        "riddle": "What has hands but cannot feel, and a face but cannot see?",
+        "answer": "A clock!",
+        "hint": "I tell you what time it is all day long"
       },
       {
         "day": "Tuesday",
-        "riddle": "I make music with my voice, I tweet and I chirp. In trees I make my choice, no feet but I don't need to walk or hop. What am I?",
-        "answer": "A bird (that sings)!",
-        "hint": "I have wings and make beautiful sounds"
+        "riddle": "I grow down instead of up. What am I?",
+        "answer": "A root (or icicle)!",
+        "hint": "I'm part of a plant that you usually can't see"
       },
       {
         "day": "Wednesday", 
-        "riddle": "Back and forth I like to go, up high and down low. Children love to ride on me, in parks is where I'll be. What am I?",
-        "answer": "A swing!",
-        "hint": "Push me and I'll move back and forth"
+        "riddle": "What has a heart that doesn't beat?",
+        "answer": "An artichoke (or deck of cards)!",
+        "hint": "I'm a vegetable with layers that you can eat"
       },
       {
         "day": "Thursday",
-        "riddle": "I'm a season fresh and new, flowers bloom and skies are blue. After winter I appear, bringing warmth and sunny cheer. What am I?",
-        "answer": "Spring!",
-        "hint": "I come after winter"
+        "riddle": "I am always hungry and will die if not fed, but whatever I touch will soon turn red. What am I?",
+        "answer": "Fire!",
+        "hint": "I need fuel to keep burning"
       },
       {
         "day": "Friday",
-        "riddle": "I wear a crown upon my head, I rule the land where I am fed. In castles tall I like to dwell, commanding armies very well. What am I?",
-        "answer": "A king!",
-        "hint": "I rule a kingdom"
+        "riddle": "What has cities, but no houses; forests, but no trees; and water, but no fish?",
+        "answer": "A map!",
+        "hint": "You use me to navigate and find places"
       }
     ],
     "funFactOfTheDay": [
@@ -675,7 +675,13 @@ export const literacyWarmupContent = {
       "trigraphs": ["tch", "dge", "igh"], // Add igh
       "quadgraphs": []
     },
-    "soundWords": ["catch", "match", "watch", "patch", "hatch", "latch", "batch", "scratch", "kitchen", "pitcher"],
+    "dailySoundWords": [
+      ["catch", "match", "watch", "patch", "hatch"], // Monday
+      ["latch", "batch", "scratch", "kitchen", "pitcher"], // Tuesday
+      ["witch", "switch", "ditch", "stitch", "twitch"], // Wednesday
+      ["fetch", "stretch", "sketch", "wretch", "ketchup"], // Thursday
+      ["hutch", "clutch", "crutch", "butcher", "atcher"] // Friday
+    ],
     "boggleLetters": ["t", "c", "h", "a", "i", "o", "m"],
     "extraActivities": [
       "Write 3 more words with 'tch'",
@@ -712,39 +718,40 @@ export const literacyWarmupContent = {
         "Day 1: Find all the words ending in 'tch' in the passage",
         "Day 2: Add periods where needed: 'The witch watched carefully She made cookies'",
         "Day 3: Circle all the action words (verbs) in the passage",
-        "Day 4: Replace 'said' with better words: 'Look at this!' the witch said excitedly"
+        "Day 4: Replace 'said' with better words: 'Look at this!' the witch said excitedly",
+        "Day 5: Count how many compound words are in the passage"
       ]
     },
     "riddleOfTheDay": [
       {
         "day": "Monday",
-        "riddle": "I help you catch and hold things tight. In baseball games, I'm quite a sight. What am I?",
-        "answer": "A catcher's mitt!",
-        "hint": "Baseball players wear me"
+        "riddle": "What has a neck but no head, and wears a cap?",
+        "answer": "A bottle!",
+        "hint": "You can drink from me and I have a lid"
       },
       {
         "day": "Tuesday",
-        "riddle": "I keep time all day and night. My hands move round, but I don't take flight. What am I?",
-        "answer": "A watch or clock!",
-        "hint": "I help you know what time it is"
+        "riddle": "I have branches, but no fruit, trunk, or leaves. What am I?",
+        "answer": "A bank!",
+        "hint": "You can visit my branches to save or borrow money"
       },
       {
         "day": "Wednesday",
-        "riddle": "I'm used to fix what's torn or worn. On clothes and quilts, I am born. What am I?",
-        "answer": "A patch!",
-        "hint": "I cover holes in things"
+        "riddle": "What kind of room has no doors or windows?",
+        "answer": "A mushroom!",
+        "hint": "I'm a type of fungus that grows in the forest"
       },
       {
         "day": "Thursday",
-        "riddle": "In the kitchen I can be found, mixing things that are round. Cookies and cakes I help create. What am I?",
-        "answer": "A kitchen mixer (or batch of dough)!",
-        "hint": "I help make yummy treats"
+        "riddle": "I am taken from a mine and shut in a wooden case. I am never released, but used by almost everyone. What am I?",
+        "answer": "Pencil lead (graphite)!",
+        "hint": "You use me to write and draw"
       },
       {
         "day": "Friday",
-        "riddle": "When you're itchy, this you do. On your head or arm so blue. What am I?",
-        "answer": "Scratch!",
-        "hint": "You do this when something itches"
+        "riddle": "What can you catch but not throw?",
+        "answer": "A cold (or your breath)!",
+        "hint": "You might get me when someone sneezes near you"
       }
     ],
     "funFactOfTheDay": [
@@ -763,7 +770,13 @@ export const literacyWarmupContent = {
       "trigraphs": ["tch", "dge", "igh", "sch"], // Add sch
       "quadgraphs": []
     },
-    "soundWords": ["bridge", "fudge", "hedge", "judge", "badge", "edge", "ledge", "ridge", "dodge", "smudge"],
+    "dailySoundWords": [
+      ["bridge", "fudge", "hedge", "judge", "badge"], // Monday
+      ["edge", "ledge", "ridge", "dodge", "smudge"], // Tuesday
+      ["wedge", "pledge", "grudge", "budge", "nudge"], // Wednesday
+      ["lodge", "hodge", "podge", "fridge", "porridge"], // Thursday
+      ["knowledge", "college", "village", "bandage", "language"] // Friday
+    ],
     "boggleLetters": ["d", "g", "e", "a", "i", "r", "b"],
     "extraActivities": [
       "Write 3 more words with 'dge'",
@@ -800,391 +813,40 @@ export const literacyWarmupContent = {
         "Day 1: Find all the words ending in 'dge' in the passage",
         "Day 2: Add commas in lists: 'He checked the bridge hedge and edge'",
         "Day 3: Circle all the nouns in the passage",
-        "Day 4: Rewrite with better adjectives: 'Judge Bradley walked along the hedge'"
+        "Day 4: Rewrite with better adjectives: 'Judge Bradley walked along the hedge'",
+        "Day 5: Write the passage from Judge Bradley's point of view"
       ]
     },
     "riddleOfTheDay": [
       {
         "day": "Monday",
-        "riddle": "I connect two places, over water I span. Cars and people cross me, built by human hands. What am I?",
-        "answer": "A bridge!",
-        "hint": "I help you cross rivers and valleys"
+        "riddle": "What word in the English language does the following: The first two letters signify a male, the first three letters signify a female, the first four letters signify a great, while the entire world signifies a great woman. What is the word?",
+        "answer": "Heroine!",
+        "hint": "Think about: HE, HER, HERO, and the whole word"
       },
       {
         "day": "Tuesday",
-        "riddle": "In court I sit up high, deciding wrong from right. With my gavel I bang, ensuring justice is in sight. What am I?",
-        "answer": "A judge!",
-        "hint": "I wear black robes and make legal decisions"
+        "riddle": "I am not a season, but I can make leaves fall. I am not lightning, but I can make trees fall. What am I?",
+        "answer": "Wind!",
+        "hint": "You can feel me but not see me"
       },
       {
         "day": "Wednesday",
-        "riddle": "I'm green and neat, around gardens I grow. Trim me to keep me looking just so. What am I?",
-        "answer": "A hedge!",
-        "hint": "I'm made of bushes and need cutting"
+        "riddle": "What disappears as soon as you say its name?",
+        "answer": "Silence!",
+        "hint": "When you speak, you break me"
       },
       {
         "day": "Thursday",
-        "riddle": "I'm worn with pride on uniforms bright. Police and scouts pin me in sight. What am I?",
-        "answer": "A badge!",
-        "hint": "I show rank or achievement"
+        "riddle": "I have no beginning, end, or middle. What am I?",
+        "answer": "A circle (or ring)!",
+        "hint": "I'm a shape that goes round and round"
       },
       {
         "day": "Friday",
-        "riddle": "I'm on the border, not in the middle. I'm sharp and straight, like solving a riddle. What am I?",
-        "answer": "An edge!",
-        "hint": "I'm the border of something"
-      }
-    ],
-    "funFactOfTheDay": [
-      "Monday: Fun fact: The 'dge' spelling makes a 'j' sound and comes after short vowels, just like 'tch' makes a 'ch' sound!",
-      "Tuesday: Amazing fact: The longest bridge in the world is 102 miles long! It's in China and takes 2 hours to cross by car.",
-      "Wednesday: Cool fact: Hedge mazes have been around for over 400 years! The oldest one still exists in England.",
-      "Thursday: Incredible fact: Police badges were first used in London in 1829! Before that, officers wore armbands.",
-      "Friday: Mind-blowing fact: A judge's gavel is called a 'gavel' because it comes from the word 'gable' meaning a small hammer!"
-    ]
-  },
-  "week8": {
-    "focusSound": "tch",
-    "graphReview": {
-      "graphs": ["a", "e", "i", "o", "u", "b", "c", "d", "f", "g", "h", "j", "k", "l", "m", "n", "p", "q", "r", "s", "t", "v", "w", "x", "y", "z"],
-      "digraphs": ["sh", "ch", "th", "wh", "ph", "ck", "ng"],
-      "trigraphs": ["tch", "dge", "igh"], // Add igh
-      "quadgraphs": []
-    },
-    "soundWords": ["catch", "match", "watch", "patch", "hatch", "latch", "batch", "scratch", "kitchen", "pitcher"],
-    "boggleLetters": ["t", "c", "h", "a", "i", "o", "m"],
-    "extraActivities": [
-      "Write 3 more words with 'tch'",
-      "Practice the 'tch' sound clearly",
-      "Find things you can catch or watch"
-    ],
-    "readingPassage": {
-      "title": "The Witch's Kitchen",
-      "text": "In the witch's kitchen, there was a special batch of cookies in the oven. She would watch them carefully and scratch her head when trying to match the perfect recipe. When ready, she would catch them with her special mitts and patch up any cracks with magical frosting.",
-      "dailyActivities": [
-        "Day 1: Highlight all the 'tch' words in the passage",
-        "Day 2: Draw the witch's magical kitchen",
-        "Day 3: Read with a spooky witch voice",
-        "Day 4: Answer: What was in the oven? What did the witch do when the cookies were ready?",
-        "Day 5: Write your own magical kitchen story using 'tch' words"
-      ]
-    },
-    "language": {
-      "dailySynonyms": [
-        { complete: [["special", "unique"], ["carefully", "cautiously"]], incomplete: ["watch", "catch"] }, // Monday
-        { complete: [["perfect", "ideal"], ["recipe", "formula"]], incomplete: ["match", "batch"] }, // Tuesday
-        { complete: [["ready", "prepared"], ["magical", "enchanted"]], incomplete: ["scratch", "head"] }, // Wednesday
-        { complete: [["kitchen", "cooking area"], ["mitts", "gloves"]], incomplete: ["patch", "cracks"] }, // Thursday
-        { complete: [["frosting", "icing"], ["cookies", "biscuits"]], incomplete: ["witch", "oven"] } // Friday
-      ],
-      "dailyAntonyms": [
-        { complete: [["special", "ordinary"], ["carefully", "carelessly"]], incomplete: ["watch", "ignore"] }, // Monday
-        { complete: [["perfect", "flawed"], ["ready", "unprepared"]], incomplete: ["match", "mismatch"] }, // Tuesday
-        { complete: [["magical", "normal"], ["catch", "drop"]], incomplete: ["scratch", "smooth"] }, // Wednesday
-        { complete: [["kitchen", "bedroom"], ["cracks", "whole"]], incomplete: ["patch", "break"] }, // Thursday
-        { complete: [["cookies", "vegetables"], ["frosting", "plain"]], incomplete: ["witch", "angel"] } // Friday
-      ],
-      "dailyTasks": [
-        "Day 1: Find all the words ending in 'tch' in the passage",
-        "Day 2: Add periods where needed: 'The witch watched carefully She made cookies'",
-        "Day 3: Circle all the action words (verbs) in the passage",
-        "Day 4: Replace 'said' with better words: 'Look at this!' the witch said excitedly"
-      ]
-    },
-    "riddleOfTheDay": [
-      {
-        "day": "Monday",
-        "riddle": "I help you catch and hold things tight. In baseball games, I'm quite a sight. What am I?",
-        "answer": "A catcher's mitt!",
-        "hint": "Baseball players wear me"
-      },
-      {
-        "day": "Tuesday",
-        "riddle": "I keep time all day and night. My hands move round, but I don't take flight. What am I?",
-        "answer": "A watch or clock!",
-        "hint": "I help you know what time it is"
-      },
-      {
-        "day": "Wednesday",
-        "riddle": "I'm used to fix what's torn or worn. On clothes and quilts, I am born. What am I?",
-        "answer": "A patch!",
-        "hint": "I cover holes in things"
-      },
-      {
-        "day": "Thursday",
-        "riddle": "In the kitchen I can be found, mixing things that are round. Cookies and cakes I help create. What am I?",
-        "answer": "A kitchen mixer (or batch of dough)!",
-        "hint": "I help make yummy treats"
-      },
-      {
-        "day": "Friday",
-        "riddle": "When you're itchy, this you do. On your head or arm so blue. What am I?",
-        "answer": "Scratch!",
-        "hint": "You do this when something itches"
-      }
-    ],
-    "funFactOfTheDay": [
-      "Monday: Fun fact: The 'tch' spelling is used after short vowels, while 'ch' comes after long vowels or consonants!",
-      "Tuesday: Amazing fact: The first wristwatch was made in 1868 for a woman! Before that, people carried pocket watches.",
-      "Wednesday: Cool fact: Kitchen witches were actually considered good luck in medieval times! They protected homes.",
-      "Thursday: Incredible fact: The largest batch of cookies ever made weighed over 40,000 pounds!",
-      "Friday: Mind-blowing fact: When you scratch an itch, your brain releases endorphins that make you feel good!"
-    ]
-  },
-  "week9": {
-    "focusSound": "dge",
-    "graphReview": {
-      "graphs": ["a", "e", "i", "o", "u", "b", "c", "d", "f", "g", "h", "j", "k", "l", "m", "n", "p", "q", "r", "s", "t", "v", "w", "x", "y", "z"],
-      "digraphs": ["sh", "ch", "th", "wh", "ph", "ck", "ng"],
-      "trigraphs": ["tch", "dge", "igh", "sch"], // Add sch
-      "quadgraphs": []
-    },
-    "soundWords": ["bridge", "fudge", "hedge", "judge", "badge", "edge", "ledge", "ridge", "dodge", "smudge"],
-    "boggleLetters": ["d", "g", "e", "a", "i", "r", "b"],
-    "extraActivities": [
-      "Write 3 more words with 'dge'",
-      "Listen for the 'j' sound in 'dge' words",
-      "Draw pictures of bridges and hedges"
-    ],
-    "readingPassage": {
-      "title": "The Bridge Judge",
-      "text": "Judge Bradley had to make a pledge to protect the old stone bridge. Every day, he would walk along the hedge and check the bridge's edge for any damage. When he found a smudge or scratch, he would make a note in his special badge-shaped notebook.",
-      "dailyActivities": [
-        "Day 1: Highlight all the 'dge' words in the passage",
-        "Day 2: Draw Judge Bradley walking by the bridge",
-        "Day 3: Read as if you're making an important pledge",
-        "Day 4: Answer: What was Judge Bradley's job? What did he do when he found damage?",
-        "Day 5: Write about someone who has an important job using 'dge' words"
-      ]
-    },
-    "language": {
-      "dailySynonyms": [
-        { complete: [["judge", "referee"], ["pledge", "promise"]], incomplete: ["protect", "check"] }, // Monday
-        { complete: [["damage", "harm"], ["special", "unique"]], incomplete: ["edge", "walk"] }, // Tuesday
-        { complete: [["stone", "rock"], ["notebook", "journal"]], incomplete: ["found", "note"] }, // Wednesday
-        { complete: [["smudge", "stain"], ["scratch", "mark"]], incomplete: ["bridge", "old"] }, // Thursday
-        { complete: [["badge", "pin"], ["shaped", "formed"]], incomplete: ["hedge", "along"] } // Friday
-      ],
-      "dailyAntonyms": [
-        { complete: [["protect", "harm"], ["old", "new"]], incomplete: ["damage", "repair"] }, // Monday
-        { complete: [["edge", "center"], ["along", "across"]], incomplete: ["found", "lost"] }, // Tuesday
-        { complete: [["special", "ordinary"], ["stone", "wood"]], incomplete: ["check", "ignore"] }, // Wednesday
-        { complete: [["smudge", "clean"], ["damage", "fix"]], incomplete: ["scratch", "smooth"] }, // Thursday
-        { complete: [["notebook", "verbal"], ["badge", "plain"]], incomplete: ["walk", "run"] } // Friday
-      ],
-      "dailyTasks": [
-        "Day 1: Find all the words ending in 'dge' in the passage",
-        "Day 2: Add commas in lists: 'He checked the bridge hedge and edge'",
-        "Day 3: Circle all the nouns in the passage",
-        "Day 4: Rewrite with better adjectives: 'Judge Bradley walked along the hedge'"
-      ]
-    },
-    "riddleOfTheDay": [
-      {
-        "day": "Monday",
-        "riddle": "I connect two places, over water I span. Cars and people cross me, built by human hands. What am I?",
-        "answer": "A bridge!",
-        "hint": "I help you cross rivers and valleys"
-      },
-      {
-        "day": "Tuesday",
-        "riddle": "In court I sit up high, deciding wrong from right. With my gavel I bang, ensuring justice is in sight. What am I?",
-        "answer": "A judge!",
-        "hint": "I wear black robes and make legal decisions"
-      },
-      {
-        "day": "Wednesday",
-        "riddle": "I'm green and neat, around gardens I grow. Trim me to keep me looking just so. What am I?",
-        "answer": "A hedge!",
-        "hint": "I'm made of bushes and need cutting"
-      },
-      {
-        "day": "Thursday",
-        "riddle": "I'm worn with pride on uniforms bright. Police and scouts pin me in sight. What am I?",
-        "answer": "A badge!",
-        "hint": "I show rank or achievement"
-      },
-      {
-        "day": "Friday",
-        "riddle": "I'm on the border, not in the middle. I'm sharp and straight, like solving a riddle. What am I?",
-        "answer": "An edge!",
-        "hint": "I'm the border of something"
-      }
-    ],
-    "funFactOfTheDay": [
-      "Monday: Fun fact: The 'dge' spelling makes a 'j' sound and comes after short vowels, just like 'tch' makes a 'ch' sound!",
-      "Tuesday: Amazing fact: The longest bridge in the world is 102 miles long! It's in China and takes 2 hours to cross by car.",
-      "Wednesday: Cool fact: Hedge mazes have been around for over 400 years! The oldest one still exists in England.",
-      "Thursday: Incredible fact: Police badges were first used in London in 1829! Before that, officers wore armbands.",
-      "Friday: Mind-blowing fact: A judge's gavel is called a 'gavel' because it comes from the word 'gable' meaning a small hammer!"
-    ]
-  },
-  "week10": {
-    "focusSound": "igh",
-    "graphReview": {
-      "graphs": ["a", "e", "i", "o", "u", "b", "c", "d", "f", "g", "h", "j", "k", "l", "m", "n", "p", "q", "r", "s", "t", "v", "w", "x", "y", "z"],
-      "digraphs": ["sh", "ch", "th", "wh", "ph", "ck", "ng"],
-      "trigraphs": ["tch", "dge", "igh", "sch"],
-      "quadgraphs": ["ough"] // Start introducing quadgraphs
-    },
-    "soundWords": ["light", "night", "bright", "right", "fight", "sight", "might", "flight", "fright", "knight"],
-    "boggleLetters": ["i", "g", "h", "t", "l", "r", "n"],
-    "extraActivities": [
-      "Write 3 more words with 'igh'",
-      "Notice how 'igh' sounds like 'i'",
-      "Find things that are bright or give light"
-    ],
-    "readingPassage": {
-      "title": "The Knight's Night Flight",
-      "text": "One bright night, a brave knight took flight on his magnificent horse. The moonlight was so bright that he could see far into the distance. He had no fright because his sword gleamed in the light. The sight of shooting stars filled him with delight as he flew through the starry night.",
-      "dailyActivities": [
-        "Day 1: Highlight all the 'igh' words in the passage",
-        "Day 2: Draw the knight flying through the starry night",
-        "Day 3: Read with excitement and wonder",
-        "Day 4: Answer: What helped the knight see in the dark? What filled him with delight?",
-        "Day 5: Write your own magical night adventure using 'igh' words"
-      ]
-    },
-    "language": {
-      "dailySynonyms": [
-        { complete: [["bright", "brilliant"], ["brave", "courageous"]], incomplete: ["flight", "night"] }, // Monday
-        { complete: [["magnificent", "splendid"], ["gleamed", "shone"]], incomplete: ["sword", "light"] }, // Tuesday
-        { complete: [["fright", "fear"], ["distance", "faraway"]], incomplete: ["sight", "see"] }, // Wednesday
-        { complete: [["delight", "joy"], ["shooting", "falling"]], incomplete: ["stars", "filled"] }, // Thursday
-        { complete: [["starry", "stellar"], ["flew", "soared"]], incomplete: ["knight", "horse"] } // Friday
-      ],
-      "dailyAntonyms": [
-        { complete: [["bright", "dark"], ["night", "day"]], incomplete: ["brave", "scared"] }, // Monday
-        { complete: [["magnificent", "ordinary"], ["far", "near"]], incomplete: ["flight", "landing"] }, // Tuesday
-        { complete: [["fright", "courage"], ["gleamed", "dulled"]], incomplete: ["sword", "shield"] }, // Wednesday
-        { complete: [["delight", "disgust"], ["shooting", "stationary"]], incomplete: ["sight", "blindness"] }, // Thursday
-        { complete: [["starry", "cloudy"], ["through", "around"]], incomplete: ["flew", "walked"] } // Friday
-      ],
-      "dailyTasks": [
-        "Day 1: Find all the words with 'igh' making the long 'i' sound",
-        "Day 2: Add describing words: 'The __ knight rode his __ horse'",
-        "Day 3: Circle all the words that describe light or brightness",
-        "Day 4: Rewrite with better action words: 'The knight went through the night'"
-      ]
-    },
-    "riddleOfTheDay": [
-      {
-        "day": "Monday",
-        "riddle": "I help you catch and hold things tight. In baseball games, I'm quite a sight. What am I?",
-        "answer": "A catcher's mitt!",
-        "hint": "Baseball players wear me"
-      },
-      {
-        "day": "Tuesday",
-        "riddle": "I keep time all day and night. My hands move round, but I don't take flight. What am I?",
-        "answer": "A watch or clock!",
-        "hint": "I help you know what time it is"
-      },
-      {
-        "day": "Wednesday",
-        "riddle": "I'm used to fix what's torn or worn. On clothes and quilts, I am born. What am I?",
-        "answer": "A patch!",
-        "hint": "I cover holes in things"
-      },
-      {
-        "day": "Thursday",
-        "riddle": "In the kitchen I can be found, mixing things that are round. Cookies and cakes I help create. What am I?",
-        "answer": "A kitchen mixer (or batch of dough)!",
-        "hint": "I help make yummy treats"
-      },
-      {
-        "day": "Friday",
-        "riddle": "When you're itchy, this you do. On your head or arm so blue. What am I?",
-        "answer": "Scratch!",
-        "hint": "You do this when something itches"
-      }
-    ],
-    "funFactOfTheDay": [
-      "Monday: Fun fact: The 'tch' spelling is used after short vowels, while 'ch' comes after long vowels or consonants!",
-      "Tuesday: Amazing fact: The first wristwatch was made in 1868 for a woman! Before that, people carried pocket watches.",
-      "Wednesday: Cool fact: Kitchen witches were actually considered good luck in medieval times! They protected homes.",
-      "Thursday: Incredible fact: The largest batch of cookies ever made weighed over 40,000 pounds!",
-      "Friday: Mind-blowing fact: When you scratch an itch, your brain releases endorphins that make you feel good!"
-    ]
-  },
-  "week9": {
-    "focusSound": "dge",
-    "graphReview": {
-      "graphs": ["a", "e", "i", "o", "u", "b", "c", "d", "f", "g", "h", "j", "k", "l", "m", "n", "p", "q", "r", "s", "t", "v", "w", "x", "y", "z"],
-      "digraphs": ["sh", "ch", "th", "wh", "ph", "ck", "ng"],
-      "trigraphs": ["tch", "dge", "igh", "sch"], // Add sch
-      "quadgraphs": []
-    },
-    "soundWords": ["bridge", "fudge", "hedge", "judge", "badge", "edge", "ledge", "ridge", "dodge", "smudge"],
-    "boggleLetters": ["d", "g", "e", "a", "i", "r", "b"],
-    "extraActivities": [
-      "Write 3 more words with 'dge'",
-      "Listen for the 'j' sound in 'dge' words",
-      "Draw pictures of bridges and hedges"
-    ],
-    "readingPassage": {
-      "title": "The Bridge Judge",
-      "text": "Judge Bradley had to make a pledge to protect the old stone bridge. Every day, he would walk along the hedge and check the bridge's edge for any damage. When he found a smudge or scratch, he would make a note in his special badge-shaped notebook.",
-      "dailyActivities": [
-        "Day 1: Highlight all the 'dge' words in the passage",
-        "Day 2: Draw Judge Bradley walking by the bridge",
-        "Day 3: Read as if you're making an important pledge",
-        "Day 4: Answer: What was Judge Bradley's job? What did he do when he found damage?",
-        "Day 5: Write about someone who has an important job using 'dge' words"
-      ]
-    },
-    "language": {
-      "dailySynonyms": [
-        { complete: [["judge", "referee"], ["pledge", "promise"]], incomplete: ["protect", "check"] }, // Monday
-        { complete: [["damage", "harm"], ["special", "unique"]], incomplete: ["edge", "walk"] }, // Tuesday
-        { complete: [["stone", "rock"], ["notebook", "journal"]], incomplete: ["found", "note"] }, // Wednesday
-        { complete: [["smudge", "stain"], ["scratch", "mark"]], incomplete: ["bridge", "old"] }, // Thursday
-        { complete: [["badge", "pin"], ["shaped", "formed"]], incomplete: ["hedge", "along"] } // Friday
-      ],
-      "dailyAntonyms": [
-        { complete: [["protect", "harm"], ["old", "new"]], incomplete: ["damage", "repair"] }, // Monday
-        { complete: [["edge", "center"], ["along", "across"]], incomplete: ["found", "lost"] }, // Tuesday
-        { complete: [["special", "ordinary"], ["stone", "wood"]], incomplete: ["check", "ignore"] }, // Wednesday
-        { complete: [["smudge", "clean"], ["damage", "fix"]], incomplete: ["scratch", "smooth"] }, // Thursday
-        { complete: [["notebook", "verbal"], ["badge", "plain"]], incomplete: ["walk", "run"] } // Friday
-      ],
-      "dailyTasks": [
-        "Day 1: Find all the words ending in 'dge' in the passage",
-        "Day 2: Add commas in lists: 'He checked the bridge hedge and edge'",
-        "Day 3: Circle all the nouns in the passage",
-        "Day 4: Rewrite with better adjectives: 'Judge Bradley walked along the hedge'"
-      ]
-    },
-    "riddleOfTheDay": [
-      {
-        "day": "Monday",
-        "riddle": "I connect two places, over water I span. Cars and people cross me, built by human hands. What am I?",
-        "answer": "A bridge!",
-        "hint": "I help you cross rivers and valleys"
-      },
-      {
-        "day": "Tuesday",
-        "riddle": "In court I sit up high, deciding wrong from right. With my gavel I bang, ensuring justice is in sight. What am I?",
-        "answer": "A judge!",
-        "hint": "I wear black robes and make legal decisions"
-      },
-      {
-        "day": "Wednesday",
-        "riddle": "I'm green and neat, around gardens I grow. Trim me to keep me looking just so. What am I?",
-        "answer": "A hedge!",
-        "hint": "I'm made of bushes and need cutting"
-      },
-      {
-        "day": "Thursday",
-        "riddle": "I'm worn with pride on uniforms bright. Police and scouts pin me in sight. What am I?",
-        "answer": "A badge!",
-        "hint": "I show rank or achievement"
-      },
-      {
-        "day": "Friday",
-        "riddle": "I'm on the border, not in the middle. I'm sharp and straight, like solving a riddle. What am I?",
-        "answer": "An edge!",
-        "hint": "I'm the border of something"
+        "riddle": "What comes once in a minute, twice in a moment, but never in a thousand years?",
+        "answer": "The letter 'M'!",
+        "hint": "Count the letters in each word: minute, moment, thousand years"
       }
     ],
     "funFactOfTheDay": [
@@ -1203,7 +865,13 @@ export const literacyWarmupContent = {
       "trigraphs": ["tch", "dge", "igh", "sch"],
       "quadgraphs": ["ough", "eigh"] // Introduce quadgraphs
     },
-    "soundWords": ["light", "night", "bright", "right", "fight", "sight", "might", "flight", "fright", "knight"],
+    "dailySoundWords": [
+      ["light", "night", "bright", "right", "fight"], // Monday
+      ["sight", "might", "flight", "fright", "knight"], // Tuesday
+      ["tight", "height", "delight", "alight", "blight"], // Wednesday
+      ["plight", "slight", "insight", "outright", "upright"], // Thursday
+      ["twilight", "moonlight", "sunlight", "daylight", "highlight"] // Friday
+    ],
     "boggleLetters": ["i", "g", "h", "t", "l", "r", "n"],
     "extraActivities": [
       "Write 3 more words with 'igh'",
@@ -1240,39 +908,40 @@ export const literacyWarmupContent = {
         "Day 1: Find all the words with 'igh' making the long 'i' sound",
         "Day 2: Add describing words: 'The __ knight rode his __ horse'",
         "Day 3: Circle all the words that describe light or brightness",
-        "Day 4: Rewrite with better action words: 'The knight went through the night'"
+        "Day 4: Rewrite with better action words: 'The knight went through the night'",
+        "Day 5: Write the passage in present tense instead of past tense"
       ]
     },
     "riddleOfTheDay": [
       {
         "day": "Monday",
-        "riddle": "I chase away the dark of night, without me you'd have no sight. What am I?",
-        "answer": "Light!",
-        "hint": "Flip a switch to find me"
+        "riddle": "What is so fragile that saying its name breaks it?",
+        "answer": "Silence!",
+        "hint": "When you speak, you destroy this"
       },
       {
         "day": "Tuesday",
-        "riddle": "I'm brave and bold with armor bright, I ride a horse and fight for right. What am I?",
-        "answer": "A knight!",
-        "hint": "I live in castles and rescue people"
+        "riddle": "I am always coming but never arrive. What am I?",
+        "answer": "Tomorrow!",
+        "hint": "No matter how long you wait, I'm always one day away"
       },
       {
         "day": "Wednesday",
-        "riddle": "When the sun goes down I appear, filled with stars both far and near. What am I?",
-        "answer": "Night!",
-        "hint": "I'm the opposite of day"
+        "riddle": "What can you break, even if you never pick it up or touch it?",
+        "answer": "A promise (or a heart)!",
+        "hint": "You can do this with just words"
       },
       {
         "day": "Thursday",
-        "riddle": "Up in the sky I soar so high, with wings spread wide I touch the sky. What am I?",
-        "answer": "Flight (or something flying)!",
-        "hint": "Birds and planes do this"
+        "riddle": "I have a golden head and golden tail, but no golden body. What am I?",
+        "answer": "A coin!",
+        "hint": "You can flip me heads or tails"
       },
       {
         "day": "Friday",
-        "riddle": "I'm what you feel when things go wrong, a scary feeling, dark and strong. What am I?",
-        "answer": "Fright!",
-        "hint": "I make you want to hide"
+        "riddle": "What runs all around a backyard, yet never moves?",
+        "answer": "A fence!",
+        "hint": "I mark the boundary of your property"
       }
     ],
     "funFactOfTheDay": [
