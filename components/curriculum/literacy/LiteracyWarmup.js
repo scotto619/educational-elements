@@ -1,10 +1,10 @@
 // components/curriculum/literacy/LiteracyWarmup.js
-// UPDATED LITERACY WARMUP COMPONENT WITH RANDOM NAME PICKER AND TIMER
+// UPDATED FOR GRADE 5 WITH COMPLETE 40 WEEKS AND FIXED ERRORS
 import React, { useState, useEffect, useRef } from 'react';
-import { literacyWarmupContent, getRandomGraphsForPractice } from './data/literacy-warmup-content';
+import { grade5LiteracyContent, getDailySounds, getSoundImagePath, getSoundWords, generateRandomDailySounds } from './data/grade5-literacy-content';
 
 // ===============================================
-// COMPACT NAME PICKER WIDGET - FASTER SELECTION
+// IMPROVED NAME PICKER - TRULY RANDOM WITH LARGER FONTS
 // ===============================================
 const CompactNamePicker = ({ students, isPresentationMode }) => {
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -17,17 +17,25 @@ const CompactNamePicker = ({ students, isPresentationMode }) => {
     
     setIsSpinning(true);
     setSelectedStudent(null);
+    
+    // IMPROVED: Truly random starting point
+    let currentIdx = Math.floor(Math.random() * students.length);
+    setCurrentIndex(currentIdx);
+    
     let spins = 0;
-    const maxSpins = Math.floor(Math.random() * 8) + 5; // 5-12 spins (much faster)
+    const maxSpins = Math.floor(Math.random() * 12) + 8; // 8-19 spins for more variety
 
     intervalRef.current = setInterval(() => {
-      setCurrentIndex(prev => (prev + 1) % students.length);
+      // IMPROVED: Random jump instead of sequential
+      const jump = Math.floor(Math.random() * 3) + 1; // Jump 1-3 positions
+      currentIdx = (currentIdx + jump) % students.length;
+      setCurrentIndex(currentIdx);
       spins++;
       
       if (spins >= maxSpins) {
         clearInterval(intervalRef.current);
         setIsSpinning(false);
-        setSelectedStudent(students[currentIndex]);
+        setSelectedStudent(students[currentIdx]);
         // Play celebration sound
         try {
           const audio = new Audio('/sounds/ding.mp3');
@@ -35,7 +43,7 @@ const CompactNamePicker = ({ students, isPresentationMode }) => {
           audio.play().catch(e => {});
         } catch(e) {}
       }
-    }, 80); // Faster interval
+    }, 120); // Slightly slower for better visibility
   };
 
   useEffect(() => {
@@ -47,19 +55,19 @@ const CompactNamePicker = ({ students, isPresentationMode }) => {
   }, []);
 
   return (
-    <div className={`bg-yellow-50 border border-yellow-300 rounded-lg p-3 ${isPresentationMode ? 'p-6' : ''}`}>
+    <div className={`bg-yellow-50 border-2 border-yellow-400 rounded-xl p-4 ${isPresentationMode ? 'p-8' : ''}`}>
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className={`${isPresentationMode ? 'text-3xl' : 'text-xl'}`}>🎯</span>
+        <div className="flex items-center gap-4">
+          <span className={`${isPresentationMode ? 'text-5xl' : 'text-2xl'}`}>🎯</span>
           <div>
-            <h4 className={`font-bold text-yellow-800 ${isPresentationMode ? 'text-2xl' : 'text-sm'}`}>Name Picker</h4>
-            <p className={`text-yellow-600 ${isPresentationMode ? 'text-lg' : 'text-xs'}`}>
+            <h4 className={`font-bold text-yellow-800 ${isPresentationMode ? 'text-3xl' : 'text-lg'}`}>Name Picker</h4>
+            <p className={`text-yellow-700 font-bold ${isPresentationMode ? 'text-4xl' : 'text-2xl'}`}>
               {isSpinning ? (
-                <span className="animate-bounce font-bold">{students[currentIndex]?.firstName}...</span>
+                <span className="animate-bounce text-blue-600">{students[currentIndex]?.firstName}...</span>
               ) : selectedStudent ? (
-                <span className="font-bold text-green-600">✅ {selectedStudent.firstName}</span>
+                <span className="text-green-600">✅ {selectedStudent.firstName}</span>
               ) : (
-                'Select a student'
+                <span className="text-gray-500">Select a student</span>
               )}
             </p>
           </div>
@@ -67,9 +75,9 @@ const CompactNamePicker = ({ students, isPresentationMode }) => {
         <button 
           onClick={startNameSpin}
           disabled={isSpinning || students.length === 0}
-          className={`bg-yellow-500 text-white rounded-lg font-semibold hover:bg-yellow-600 transition-all disabled:opacity-50 ${isPresentationMode ? 'px-6 py-3 text-xl' : 'px-3 py-1 text-sm'}`}
+          className={`bg-yellow-500 text-white rounded-xl font-bold hover:bg-yellow-600 transition-all disabled:opacity-50 shadow-lg ${isPresentationMode ? 'px-8 py-4 text-2xl' : 'px-4 py-2 text-lg'}`}
         >
-          {isSpinning ? '🎲' : '🎯'}
+          {isSpinning ? '🎲' : '🎯 Pick'}
         </button>
       </div>
     </div>
@@ -77,7 +85,7 @@ const CompactNamePicker = ({ students, isPresentationMode }) => {
 };
 
 // ===============================================
-// COMPACT TIMER WIDGET
+// IMPROVED TIMER WITH LARGER FONTS
 // ===============================================
 const CompactTimer = ({ isPresentationMode }) => {
   const [timeLeft, setTimeLeft] = useState(0);
@@ -145,43 +153,43 @@ const CompactTimer = ({ isPresentationMode }) => {
   };
 
   return (
-    <div className={`bg-blue-50 border border-blue-300 rounded-lg p-3 ${isPresentationMode ? 'p-6' : ''}`}>
+    <div className={`bg-blue-50 border-2 border-blue-400 rounded-xl p-4 ${isPresentationMode ? 'p-8' : ''}`}>
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className={`${isPresentationMode ? 'text-3xl' : 'text-xl'}`}>⏰</span>
+        <div className="flex items-center gap-4">
+          <span className={`${isPresentationMode ? 'text-5xl' : 'text-2xl'}`}>⏰</span>
           <div>
-            <h4 className={`font-bold text-blue-800 ${isPresentationMode ? 'text-2xl' : 'text-sm'}`}>Timer</h4>
-            <p className={`font-mono font-bold ${getTimerColor()} ${isPresentationMode ? 'text-2xl' : 'text-lg'}`}>
+            <h4 className={`font-bold text-blue-800 ${isPresentationMode ? 'text-3xl' : 'text-lg'}`}>Timer</h4>
+            <p className={`font-mono font-bold ${getTimerColor()} ${isPresentationMode ? 'text-5xl' : 'text-3xl'}`}>
               {formatTime(timeLeft)}
-              {timeLeft === 0 && !isRunning && timeLeft !== 0 && <span className="text-red-600 ml-2 animate-pulse">⏰</span>}
+              {timeLeft === 0 && !isRunning && <span className="text-red-600 ml-2 animate-pulse">⏰</span>}
             </p>
           </div>
         </div>
-        <div className="flex gap-1">
+        <div className="flex gap-2">
           <button 
             onClick={() => startTimer(30)}
             disabled={isRunning}
-            className={`bg-green-500 text-white rounded font-bold hover:bg-green-600 transition-all disabled:opacity-50 ${isPresentationMode ? 'px-4 py-2 text-lg' : 'px-2 py-1 text-xs'}`}
+            className={`bg-green-500 text-white rounded-lg font-bold hover:bg-green-600 transition-all disabled:opacity-50 ${isPresentationMode ? 'px-6 py-3 text-xl' : 'px-3 py-2 text-sm'}`}
           >
             30s
           </button>
           <button 
             onClick={() => startTimer(60)}
             disabled={isRunning}
-            className={`bg-blue-500 text-white rounded font-bold hover:bg-blue-600 transition-all disabled:opacity-50 ${isPresentationMode ? 'px-4 py-2 text-lg' : 'px-2 py-1 text-xs'}`}
+            className={`bg-blue-500 text-white rounded-lg font-bold hover:bg-blue-600 transition-all disabled:opacity-50 ${isPresentationMode ? 'px-6 py-3 text-xl' : 'px-3 py-2 text-sm'}`}
           >
             1m
           </button>
           <button 
             onClick={() => startTimer(120)}
             disabled={isRunning}
-            className={`bg-purple-500 text-white rounded font-bold hover:bg-purple-600 transition-all disabled:opacity-50 ${isPresentationMode ? 'px-4 py-2 text-lg' : 'px-2 py-1 text-xs'}`}
+            className={`bg-purple-500 text-white rounded-lg font-bold hover:bg-purple-600 transition-all disabled:opacity-50 ${isPresentationMode ? 'px-6 py-3 text-xl' : 'px-3 py-2 text-sm'}`}
           >
             2m
           </button>
           <button 
             onClick={resetTimer}
-            className={`bg-gray-500 text-white rounded font-bold hover:bg-gray-600 transition-all ${isPresentationMode ? 'px-4 py-2 text-lg' : 'px-2 py-1 text-xs'}`}
+            className={`bg-gray-500 text-white rounded-lg font-bold hover:bg-gray-600 transition-all ${isPresentationMode ? 'px-6 py-3 text-xl' : 'px-3 py-2 text-sm'}`}
           >
             🔄
           </button>
@@ -192,109 +200,166 @@ const CompactTimer = ({ isPresentationMode }) => {
 };
 
 // ===============================================
-// GRAPH REVIEW TOOL - WITH SEQUENTIAL WORD HIGHLIGHTING
+// SOUND REVIEW TOOL - SHOWS 1 SOUND + IMAGE + 3 WORDS
 // ===============================================
-const GraphReviewTool = ({ title, items, words, isPresentationMode }) => {
-    const [highlightedIndex, setHighlightedIndex] = useState(-1);
-    const [wordHighlightIndex, setWordHighlightIndex] = useState(-1);
-    const [isWordHighlighting, setIsWordHighlighting] = useState(false);
-    const intervalRef = useRef(null);
-    const wordIntervalRef = useRef(null);
+const SoundReviewTool = ({ term, week, day, isPresentationMode, onShowToast }) => {
+  const [currentSoundIndex, setCurrentSoundIndex] = useState(0);
+  const [dailySounds, setDailySounds] = useState([]);
+  const [autoPlay, setAutoPlay] = useState(false);
+  const intervalRef = useRef(null);
 
-    const startHighlighting = () => {
-        stopHighlighting();
-        intervalRef.current = setInterval(() => {
-            // Truly random index each time
-            const randomIndex = Math.floor(Math.random() * items.length);
-            setHighlightedIndex(randomIndex);
-        }, 1500);
-    };
+  // Generate today's sounds when component mounts or day changes
+  useEffect(() => {
+    const sounds = generateRandomDailySounds(term, week, day);
+    setDailySounds(sounds);
+    setCurrentSoundIndex(0);
+  }, [term, week, day]);
 
-    const stopHighlighting = () => {
+  // Auto-play functionality
+  useEffect(() => {
+    if (autoPlay && dailySounds.length > 0) {
+      intervalRef.current = setInterval(() => {
+        setCurrentSoundIndex(prev => (prev + 1) % dailySounds.length);
+      }, 3000); // 3 seconds per sound
+    } else {
+      if (intervalRef.current) {
         clearInterval(intervalRef.current);
-        intervalRef.current = null;
-        setHighlightedIndex(-1);
+      }
+    }
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
     };
+  }, [autoPlay, dailySounds.length]);
 
-    const startWordHighlighting = () => {
-        stopWordHighlighting();
-        setIsWordHighlighting(true);
-        setWordHighlightIndex(0);
-        
-        let currentWordIndex = 0;
-        wordIntervalRef.current = setInterval(() => {
-            currentWordIndex = (currentWordIndex + 1) % words.length;
-            setWordHighlightIndex(currentWordIndex);
-        }, 1000); // 1 second per word
-    };
+  const currentSound = dailySounds[currentSoundIndex];
+  const soundWords = currentSound ? getSoundWords(currentSound) : [];
+  const imagePath = currentSound ? getSoundImagePath(currentSound) : "";
 
-    const stopWordHighlighting = () => {
-        clearInterval(wordIntervalRef.current);
-        wordIntervalRef.current = null;
-        setIsWordHighlighting(false);
-        setWordHighlightIndex(-1);
-    };
+  const nextSound = () => {
+    setCurrentSoundIndex((prev) => (prev + 1) % dailySounds.length);
+  };
 
-    useEffect(() => () => {
-        stopHighlighting();
-        stopWordHighlighting();
-    }, []);
+  const prevSound = () => {
+    setCurrentSoundIndex((prev) => (prev - 1 + dailySounds.length) % dailySounds.length);
+  };
 
+  const toggleAutoPlay = () => {
+    setAutoPlay(!autoPlay);
+    onShowToast(autoPlay ? 'Auto-play stopped' : 'Auto-play started - sounds will change every 3 seconds', 'info');
+  };
+
+  if (!currentSound) {
     return (
-        <div className="space-y-6">
-            <h3 className={`font-bold text-center text-gray-800 ${isPresentationMode ? 'text-6xl animate-pulse' : 'text-3xl'}`}>{title}</h3>
-            <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
-                <div className={`grid gap-3 mb-4 ${isPresentationMode ? 'grid-cols-5 text-6xl p-8' : 'grid-cols-5 text-4xl p-3'}`}>
-                    {items.map((item, index) => (
-                        <div key={index} className={`flex items-center justify-center font-bold rounded-lg transition-all duration-500 aspect-square ${highlightedIndex === index ? 'bg-yellow-400 text-black scale-110 shadow-lg animate-pulse' : 'bg-white text-gray-800 hover:bg-gray-50'} ${isPresentationMode ? 'min-h-32' : 'min-h-20'}`}>
-                            {item}
-                        </div>
-                    ))}
-                </div>
-                <div className="flex justify-center gap-4">
-                    <button onClick={startHighlighting} className={`text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-600 transition-colors bg-blue-500 ${isPresentationMode ? 'px-12 py-6 text-3xl transform hover:scale-105' : 'text-xl'}`}>🎯 Start Random Highlight</button>
-                    <button onClick={stopHighlighting} className={`text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-600 transition-colors bg-gray-500 ${isPresentationMode ? 'px-12 py-6 text-3xl transform hover:scale-105' : 'text-xl'}`}>⏹️ Stop</button>
-                </div>
-            </div>
-            <div className="bg-green-50 border-2 border-green-200 rounded-xl p-6">
-                <h4 className={`font-bold text-green-800 mb-4 ${isPresentationMode ? 'text-4xl' : 'text-2xl'}`}>📖 Read these words:</h4>
-                <div className={`flex flex-wrap gap-4 justify-center ${isPresentationMode ? 'text-4xl gap-6' : 'text-2xl'}`}>
-                    {words.map((word, i) => (
-                        <span 
-                            key={i} 
-                            className={`px-4 py-3 rounded-lg shadow-md font-semibold border-2 transition-all duration-500 ${
-                                wordHighlightIndex === i && isWordHighlighting
-                                    ? 'bg-yellow-400 text-black border-yellow-600 scale-110 animate-pulse' 
-                                    : 'bg-white text-green-700 border-green-200 hover:shadow-lg'
-                            }`}
-                        >
-                            {word}
-                        </span>
-                    ))}
-                </div>
-                <div className="flex justify-center gap-4 mt-4">
-                    <button 
-                        onClick={startWordHighlighting}
-                        disabled={isWordHighlighting}
-                        className={`bg-green-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-600 transition-all disabled:opacity-50 ${isPresentationMode ? 'px-12 py-6 text-3xl transform hover:scale-105' : 'text-xl'}`}
-                    >
-                        ➡️ Highlight Words in Order
-                    </button>
-                    <button 
-                        onClick={stopWordHighlighting}
-                        disabled={!isWordHighlighting}
-                        className={`bg-gray-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-600 transition-all disabled:opacity-50 ${isPresentationMode ? 'px-12 py-6 text-3xl transform hover:scale-105' : 'text-xl'}`}
-                    >
-                        ⏹️ Stop
-                    </button>
-                </div>
-            </div>
-        </div>
+      <div className="text-center p-8">
+        <h3 className="text-xl font-bold text-red-600">Loading sounds...</h3>
+      </div>
     );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="text-center">
+        <h3 className={`font-bold text-gray-800 mb-6 ${isPresentationMode ? 'text-7xl animate-pulse' : 'text-4xl'}`}>
+          🔊 Sound Review
+        </h3>
+        <p className={`text-gray-600 ${isPresentationMode ? 'text-3xl' : 'text-lg'}`}>
+          Sound {currentSoundIndex + 1} of {dailySounds.length} • Today's Focus Sounds
+        </p>
+      </div>
+
+      {/* Main Sound Display */}
+      <div className="bg-gradient-to-br from-purple-50 to-blue-50 border-3 border-purple-300 rounded-2xl p-8 text-center shadow-lg">
+        {/* Sound Image */}
+        <div className={`mb-6 ${isPresentationMode ? 'mb-12' : ''}`}>
+          <img 
+            src={imagePath} 
+            alt={`${currentSound} sound`}
+            className={`mx-auto rounded-xl border-4 border-purple-400 shadow-lg ${isPresentationMode ? 'w-80 h-80' : 'w-48 h-48'}`}
+            onError={(e) => {
+              e.target.src = "/SoundPictures/default.png";
+            }}
+          />
+        </div>
+
+        {/* Current Sound */}
+        <div className={`mb-8 ${isPresentationMode ? 'mb-16' : ''}`}>
+          <h4 className={`font-bold text-purple-800 mb-4 ${isPresentationMode ? 'text-6xl' : 'text-3xl'}`}>
+            Focus Sound:
+          </h4>
+          <div className={`inline-block bg-white px-8 py-4 rounded-xl border-4 border-purple-500 shadow-lg ${isPresentationMode ? 'px-16 py-8' : ''}`}>
+            <span className={`font-mono font-bold text-purple-700 ${isPresentationMode ? 'text-12xl' : 'text-8xl'}`}>
+              {currentSound.toUpperCase()}
+            </span>
+          </div>
+        </div>
+
+        {/* Sound Words */}
+        <div className={`mb-8 ${isPresentationMode ? 'mb-16' : ''}`}>
+          <h4 className={`font-bold text-purple-800 mb-6 ${isPresentationMode ? 'text-5xl' : 'text-2xl'}`}>
+            📚 Example Words:
+          </h4>
+          <div className={`flex justify-center gap-6 ${isPresentationMode ? 'gap-12' : ''}`}>
+            {soundWords.slice(0, 3).map((word, i) => (
+              <div 
+                key={i} 
+                className={`bg-white px-6 py-4 rounded-xl border-3 border-blue-300 shadow-md hover:shadow-lg transition-all hover:scale-105 ${isPresentationMode ? 'px-12 py-8' : ''}`}
+              >
+                <span className={`font-bold text-blue-700 ${isPresentationMode ? 'text-5xl' : 'text-2xl'}`}>
+                  {word}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Navigation Controls */}
+        <div className="flex justify-center items-center gap-4">
+          <button 
+            onClick={prevSound}
+            className={`bg-purple-500 text-white rounded-xl font-bold hover:bg-purple-600 transition-all shadow-lg ${isPresentationMode ? 'px-12 py-6 text-3xl' : 'px-6 py-3 text-lg'}`}
+          >
+            ⬅️ Previous
+          </button>
+          
+          <div className="flex flex-col items-center gap-2">
+            <div className={`flex gap-1 ${isPresentationMode ? 'gap-2' : ''}`}>
+              {dailySounds.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentSoundIndex(index)}
+                  className={`rounded-full transition-all ${
+                    currentSoundIndex === index 
+                      ? 'bg-purple-500 scale-125' 
+                      : 'bg-gray-300 hover:bg-gray-400'
+                  } ${isPresentationMode ? 'w-6 h-6' : 'w-4 h-4'}`}
+                />
+              ))}
+            </div>
+            <button
+              onClick={toggleAutoPlay}
+              className={`bg-green-500 text-white rounded-lg font-semibold hover:bg-green-600 transition-all ${isPresentationMode ? 'px-8 py-3 text-xl' : 'px-4 py-2 text-sm'}`}
+            >
+              {autoPlay ? '⏸️ Stop Auto' : '▶️ Auto Play'}
+            </button>
+          </div>
+          
+          <button 
+            onClick={nextSound}
+            className={`bg-purple-500 text-white rounded-xl font-bold hover:bg-purple-600 transition-all shadow-lg ${isPresentationMode ? 'px-12 py-6 text-3xl' : 'px-6 py-3 text-lg'}`}
+          >
+            Next ➡️
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 // ===============================================
-// SOUND OF THE WEEK TOOL - WITH LARGER FONTS
+// SOUND OF THE WEEK TOOL - UPDATED FOR GRADE 5
 // ===============================================
 const SoundOfTheWeekTool = ({ content, isPresentationMode }) => {
     // Generate a proper 5x5 Boggle board with strategic sound placement
@@ -322,8 +387,8 @@ const SoundOfTheWeekTool = ({ content, isPresentationMode }) => {
 
     const [boggleBoard] = useState(generateBoggleBoard());
     
-    // Flatten daily sound words to show all the week's words
-    const allSoundWords = content.dailySoundWords ? content.dailySoundWords.flat() : [];
+    // Use the sound words from the content
+    const allSoundWords = content.soundWords || [];
 
     return (
         <div className={`grid gap-6 ${isPresentationMode ? 'grid-cols-1 lg:grid-cols-2 p-8' : 'grid-cols-1 lg:grid-cols-2'}`}>
@@ -331,7 +396,7 @@ const SoundOfTheWeekTool = ({ content, isPresentationMode }) => {
                 <h3 className={`font-bold text-purple-800 mb-4 ${isPresentationMode ? 'text-5xl' : 'text-3xl'}`}>
                     🔊 Focus Sound: 
                     <span className={`font-mono bg-white px-4 py-2 ml-3 rounded-lg border-2 border-purple-300 ${isPresentationMode ? 'text-8xl animate-pulse' : 'text-6xl'}`}>
-                        {content.focusSound}
+                        {content.focusSound.toUpperCase()}
                     </span>
                 </h3>
                 <h4 className={`font-bold text-purple-700 mb-4 ${isPresentationMode ? 'text-3xl' : 'text-2xl'}`}>📚 Sound Words:</h4>
@@ -370,7 +435,7 @@ const SoundOfTheWeekTool = ({ content, isPresentationMode }) => {
 };
 
 // ===============================================
-// READING PASSAGE TOOL - WITH DAILY ACTIVITIES AND 4 COPIES
+// READING PASSAGE TOOL - SAME AS BEFORE
 // ===============================================
 const ReadingPassageTool = ({ passage, isPresentationMode, currentDay = 0 }) => {
     const printableRef = useRef(null);
@@ -471,7 +536,7 @@ const ReadingPassageTool = ({ passage, isPresentationMode, currentDay = 0 }) => 
 };
 
 // ===============================================
-// LANGUAGE TOOL - WITH DAILY DIFFERENT SYNONYMS/ANTONYMS
+// LANGUAGE TOOL - SAME AS BEFORE
 // ===============================================
 const LanguageTool = ({ language, isPresentationMode, currentDay = 0 }) => {
     const todaysSynonyms = language.dailySynonyms[currentDay] || language.dailySynonyms[0];
@@ -540,7 +605,7 @@ const LanguageTool = ({ language, isPresentationMode, currentDay = 0 }) => {
 };
 
 // ===============================================
-// RIDDLE OF THE DAY TOOL
+// RIDDLE OF THE DAY TOOL - SAME AS BEFORE  
 // ===============================================
 const RiddleOfTheDayTool = ({ riddles, isPresentationMode, currentDay = 0 }) => {
     const [showAnswer, setShowAnswer] = useState(false);
@@ -595,7 +660,7 @@ const RiddleOfTheDayTool = ({ riddles, isPresentationMode, currentDay = 0 }) => 
 };
 
 // ===============================================
-// FUN FACT OF THE DAY TOOL
+// FUN FACT OF THE DAY TOOL - SAME AS BEFORE
 // ===============================================
 const FunFactOfTheDayTool = ({ funFacts, isPresentationMode, currentDay = 0 }) => {
     const currentFact = funFacts[currentDay] || funFacts[0];
@@ -621,29 +686,32 @@ const FunFactOfTheDayTool = ({ funFacts, isPresentationMode, currentDay = 0 }) =
 };
 
 // ===============================================
-// MAIN LITERACY WARMUP COMPONENT
+// MAIN GRADE 5 LITERACY WARMUP COMPONENT
 // ===============================================
 const LiteracyWarmup = ({ showToast = () => {}, students = [], saveData = () => {}, loadedData = {} }) => {
+  const [selectedTerm, setSelectedTerm] = useState('term1');
   const [selectedWeek, setSelectedWeek] = useState('week1');
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [isPresentationMode, setIsPresentationMode] = useState(false);
   const [currentDay, setCurrentDay] = useState(0); // 0=Monday, 1=Tuesday, etc.
 
   const WARMUP_STEPS = [
-    { id: 'graph_review', title: 'Graph Review', icon: '🔤' },
-    { id: 'sound_of_week', title: 'Sound of the Week', icon: '🔊' },
+    { id: 'sound_review', title: 'Sound Review', icon: '🔊' },
+    { id: 'sound_of_week', title: 'Sound of the Week', icon: '📚' },
     { id: 'reading', title: 'Reading Passage', icon: '📖' },
     { id: 'language', title: 'Language Activities', icon: '📝' },
     { id: 'riddle', title: 'Riddle of the Day', icon: '🧩' },
     { id: 'fun_fact', title: 'Fun Fact of the Day', icon: '🌟' }
   ];
 
-  const weeklyContent = literacyWarmupContent[selectedWeek];
+  const termData = grade5LiteracyContent[selectedTerm];
+  const weeklyContent = termData?.weeks[selectedWeek];
+  
   if (!weeklyContent) {
     return (
         <div className="text-center p-8">
-            <h3 className="text-xl font-bold text-red-600">Error: Content for {selectedWeek} not found.</h3>
-            <p className="text-gray-600">Please select a different week.</p>
+            <h3 className="text-xl font-bold text-red-600">Error: Content for {selectedTerm} {selectedWeek} not found.</h3>
+            <p className="text-gray-600">Please select a different term and week.</p>
         </div>
     );
   }
@@ -665,16 +733,14 @@ const LiteracyWarmup = ({ showToast = () => {}, students = [], saveData = () => 
   const goToStep = (stepIndex) => setCurrentStepIndex(stepIndex);
 
   const renderCurrentStep = () => {
-    const randomGraphs = getRandomGraphsForPractice(selectedWeek);
-    const todaysSoundWords = weeklyContent.dailySoundWords[currentDay] || weeklyContent.dailySoundWords[0];
-    
     switch(currentStep.id) {
-        case 'graph_review':
-            return <GraphReviewTool 
-                     title="📚 Review Letters, Digraphs & More" 
-                     items={randomGraphs} 
-                     words={todaysSoundWords} 
+        case 'sound_review':
+            return <SoundReviewTool 
+                     term={selectedTerm}
+                     week={selectedWeek}
+                     day={currentDay}
                      isPresentationMode={isPresentationMode} 
+                     onShowToast={showToast}
                    />;
         case 'sound_of_week':
             return <SoundOfTheWeekTool content={weeklyContent} isPresentationMode={isPresentationMode} />;
@@ -715,9 +781,11 @@ const LiteracyWarmup = ({ showToast = () => {}, students = [], saveData = () => 
           <div>
             <h3 className={`font-bold mb-2 flex items-center ${isPresentationMode ? 'text-7xl animate-pulse' : 'text-4xl'}`}>
               <span className="mr-3">🔥</span>
-              Literacy Warmup
+              Grade 5 Literacy Warmup
             </h3>
-            <p className={`opacity-90 ${isPresentationMode ? 'text-3xl' : 'text-xl'}`}>Interactive phonics and literacy lessons</p>
+            <p className={`opacity-90 ${isPresentationMode ? 'text-3xl' : 'text-xl'}`}>
+              {termData.name} • {termData.description}
+            </p>
           </div>
           <button
             onClick={togglePresentationMode}
@@ -728,12 +796,34 @@ const LiteracyWarmup = ({ showToast = () => {}, students = [], saveData = () => 
         </div>
       </div>
 
-      {/* Week and Day Selection */}
+      {/* Term, Week and Day Selection */}
       {!isPresentationMode && (
         <div className="bg-white rounded-xl shadow-lg p-6 space-y-4">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <h4 className="text-xl font-bold text-gray-800">📅 Select Teaching Week & Day</h4>
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-4">
+            <h4 className="text-xl font-bold text-gray-800">📅 Select Term, Week & Day</h4>
+            <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex items-center gap-2">
+                <label htmlFor="term-select" className="font-semibold text-gray-700">Term:</label>
+                <select 
+                  id="term-select" 
+                  value={selectedTerm} 
+                  onChange={e => { 
+                    setSelectedTerm(e.target.value); 
+                    setSelectedWeek('week1'); // Reset to week 1 of new term
+                    setCurrentStepIndex(0); 
+                    const termData = grade5LiteracyContent[e.target.value];
+                    showToast(`Switched to ${termData.name}`, 'info');
+                  }} 
+                  className="p-3 border-2 border-gray-300 rounded-lg font-semibold bg-white shadow-sm"
+                >
+                  {Object.entries(grade5LiteracyContent).map(([termKey, termData]) => (
+                    <option key={termKey} value={termKey}>
+                      {termKey.replace('term', 'Term ')} - {termData.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
               <div className="flex items-center gap-2">
                 <label htmlFor="week-select" className="font-semibold text-gray-700">Week:</label>
                 <select 
@@ -742,15 +832,21 @@ const LiteracyWarmup = ({ showToast = () => {}, students = [], saveData = () => 
                   onChange={e => { 
                     setSelectedWeek(e.target.value); 
                     setCurrentStepIndex(0); 
-                    showToast(`Switched to ${e.target.value.replace('week', 'Week ')} - Focus: ${literacyWarmupContent[e.target.value].focusSound.toUpperCase()}`, 'info');
+                    const weekData = termData?.weeks[e.target.value];
+                    if (weekData) {
+                      showToast(`Switched to ${e.target.value.replace('week', 'Week ')} - Focus: ${weekData.focusSound.toUpperCase()}`, 'info');
+                    }
                   }} 
                   className="p-3 border-2 border-gray-300 rounded-lg font-semibold bg-white shadow-sm"
                 >
-                  {Object.keys(literacyWarmupContent).map(weekKey => (
-                    <option key={weekKey} value={weekKey}>
-                      {weekKey.replace('week', 'Week ')} - Focus: {literacyWarmupContent[weekKey].focusSound.toUpperCase()}
-                    </option>
-                  ))}
+                  {termData && Object.keys(termData.weeks).map(weekKey => {
+                    const weekData = termData.weeks[weekKey];
+                    return (
+                      <option key={weekKey} value={weekKey}>
+                        {weekKey.replace('week', 'Week ')} - Focus: {weekData.focusSound.toUpperCase()}
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
               
@@ -783,11 +879,11 @@ const LiteracyWarmup = ({ showToast = () => {}, students = [], saveData = () => 
         </div>
       </div>
 
-      {/* Presentation Mode Week & Day Display */}
+      {/* Presentation Mode Term, Week & Day Display */}
       {isPresentationMode && (
         <div className="bg-white rounded-xl shadow-lg p-8 text-center">
           <h4 className="text-5xl font-bold text-gray-800 mb-4">
-            📚 Week {selectedWeek.replace('week', '')} - {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'][currentDay]}
+            📚 {selectedTerm.replace('term', 'Term ')} - {selectedWeek.replace('week', 'Week ')} - {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'][currentDay]}
           </h4>
           <div className="text-8xl font-mono bg-purple-100 px-6 py-3 rounded-lg text-purple-700 animate-pulse inline-block">
             Focus Sound: {weeklyContent.focusSound.toUpperCase()}
@@ -832,7 +928,9 @@ const LiteracyWarmup = ({ showToast = () => {}, students = [], saveData = () => 
                     </p>
                 </div>
                 <div className="text-right">
-                    <p className={`text-gray-500 ${isPresentationMode ? 'text-2xl' : 'text-base'}`}>Week {selectedWeek.replace('week', '')}</p>
+                    <p className={`text-gray-500 ${isPresentationMode ? 'text-2xl' : 'text-base'}`}>
+                      {selectedTerm.replace('term', 'Term ')} - {selectedWeek.replace('week', 'Week ')}
+                    </p>
                     <div className={`flex items-center gap-1 mt-1 ${isPresentationMode ? 'gap-3' : ''}`}>
                         {WARMUP_STEPS.map((_, index) => (
                             <div 
@@ -894,11 +992,12 @@ const LiteracyWarmup = ({ showToast = () => {}, students = [], saveData = () => 
           <div className="flex items-start space-x-4">
             <span className="text-3xl">💡</span>
             <div>
-              <h4 className="font-bold text-green-800 mb-2">🎯 Teaching Tip</h4>
+              <h4 className="font-bold text-green-800 mb-2">🎯 Complete Grade 5 System - 40 Weeks!</h4>
               <p className="text-green-700">
-                New features: **Sticky** name picker and timer tools (stay visible when scrolling!), ultra-fast student selection, 
-                sequential word highlighting, daily different synonyms/antonyms, 4-copy printing, and complete 10-week curriculum! 
-                The quick tools are always accessible during any lesson step.
+                **NEW Complete Content**: All 40 weeks across 4 terms! Sound Review with images and example words, 
+                completely randomized name picker with larger fonts, progressive difficulty from blends to morphology, 
+                daily riddles and fun facts, and auto-play functionality for easy classroom use. Perfect for Grade 5 
+                literacy development with hundreds of activities and thousands of words!
               </p>
             </div>
           </div>
