@@ -65,9 +65,67 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
   const eventAccumRef = useRef(0);
   const autosaveAccumRef = useRef(0);
 
-  // Initialize refs
+  // Initialize refs and ensure game state integrity
   useEffect(() => {
     lastUpdateRef.current = Date.now();
+    
+    // ENSURE GAME STATE INTEGRITY - Fix any missing or corrupted arrays
+    setGameState(prev => {
+      let needsUpdate = false;
+      const updates = {};
+      
+      if (!prev.artifacts || !Array.isArray(prev.artifacts)) {
+        needsUpdate = true;
+        updates.artifacts = [
+          { key: 'orb', name: 'Crystal Orb', baseCost: 15, count: 0, baseDps: 0.1, icon: '1', path: '/Loot/Artifacts/1.png' },
+          { key: 'tome', name: 'Ancient Tome', baseCost: 100, count: 0, baseDps: 1, icon: '2', path: '/Loot/Artifacts/2.png' },
+          { key: 'lute', name: 'Mystic Lute', baseCost: 1100, count: 0, baseDps: 8, icon: '3', path: '/Loot/Artifacts/3.png' },
+          { key: 'shield', name: 'Guardian Shield', baseCost: 12000, count: 0, baseDps: 47, icon: '4', path: '/Loot/Artifacts/4.png' },
+          { key: 'chalice', name: 'Divine Chalice', baseCost: 130000, count: 0, baseDps: 260, icon: '5', path: '/Loot/Artifacts/5.png' },
+          { key: 'crown', name: 'Crown of Ages', baseCost: 1400000, count: 0, baseDps: 1400, icon: '6', path: '/Loot/Artifacts/6.png' },
+          { key: 'mask', name: 'Shadow Mask', baseCost: 20000000, count: 0, baseDps: 7800, icon: '7', path: '/Loot/Artifacts/7.png' },
+          { key: 'totem', name: 'Primal Totem', baseCost: 330000000, count: 0, baseDps: 44000, icon: '8', path: '/Loot/Artifacts/8.png' },
+          { key: 'phoenix', name: 'Phoenix Feather', baseCost: 5100000000, count: 0, baseDps: 260000, icon: '9', path: '/Loot/Artifacts/9.png' },
+          { key: 'cauldron', name: 'Void Cauldron', baseCost: 75000000000, count: 0, baseDps: 1600000, icon: '10', path: '/Loot/Artifacts/10.png' }
+        ];
+      }
+      
+      if (!prev.upgrades || !Array.isArray(prev.upgrades)) {
+        needsUpdate = true;
+        updates.upgrades = [
+          { id: 'orb-1', name: 'Enhance Crystal Orb', desc: 'Crystal Orbs are twice as efficient', cost: 100, req: { key: 'orb', count: 10 }, purchased: false },
+          { id: 'tome-1', name: 'Forbidden Knowledge', desc: 'Ancient Tomes are twice as efficient', cost: 1000, req: { key: 'tome', count: 10 }, purchased: false },
+          { id: 'lute-1', name: 'Harmonic Resonance', desc: 'Mystic Lutes are twice as efficient', cost: 11000, req: { key: 'lute', count: 10 }, purchased: false },
+          { id: 'shield-1', name: 'Eternal Protection', desc: 'Guardian Shields are twice as efficient', cost: 120000, req: { key: 'shield', count: 10 }, purchased: false },
+          { id: 'chalice-1', name: 'Divine Blessing', desc: 'Divine Chalices are twice as efficient', cost: 1300000, req: { key: 'chalice', count: 10 }, purchased: false },
+          { id: 'attack-1', name: 'Weapon Mastery', desc: 'Attacks earn twice the gold', cost: 500, req: { key: null, count: 0 }, purchased: false },
+          { id: 'attack-2', name: 'Legendary Technique', desc: 'Attacks earn 5x gold', cost: 50000000, req: { key: null, count: 0 }, purchased: false },
+          { id: 'prestige-1', name: 'Ascended Power', desc: 'All artifacts are 50% more efficient', cost: 1000000000000, req: { key: null, count: 0 }, purchased: false },
+        ];
+      }
+      
+      if (!prev.boons || !Array.isArray(prev.boons)) {
+        needsUpdate = true;
+        updates.boons = [];
+      }
+      
+      if (!prev.unlockedWeapons || !Array.isArray(prev.unlockedWeapons)) {
+        needsUpdate = true;
+        updates.unlockedWeapons = ['1'];
+      }
+      
+      if (!prev.unlockedThemes || !Array.isArray(prev.unlockedThemes)) {
+        needsUpdate = true;
+        updates.unlockedThemes = ['default'];
+      }
+      
+      if (!prev.unlockedTitles || !Array.isArray(prev.unlockedTitles)) {
+        needsUpdate = true;
+        updates.unlockedTitles = ['Novice'];
+      }
+      
+      return needsUpdate ? { ...prev, ...updates } : prev;
+    });
   }, []);
 
   // Weapon definitions with unlock requirements - FIXED PATHS
@@ -230,19 +288,31 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
 
   const dps = useCallback(() => {
     let total = 0;
-    for (const a of gameState.artifacts) {
-      total += a.count * a.baseDps * artifactMult(a.key);
+    // ENSURE artifacts is an array before iterating
+    if (gameState.artifacts && Array.isArray(gameState.artifacts)) {
+      for (const a of gameState.artifacts) {
+        if (a && typeof a === 'object' && typeof a.count === 'number' && typeof a.baseDps === 'number') {
+          total += a.count * a.baseDps * artifactMult(a.key);
+        }
+      }
     }
     total *= gameState.globalDpsMult * activeBoonMult('dps');
     return total;
   }, [gameState.artifacts, gameState.globalDpsMult, artifactMult, activeBoonMult]);
 
   const totalArtifacts = useCallback(() => {
-    return gameState.artifacts.reduce((sum, a) => sum + a.count, 0);
+    if (!gameState.artifacts || !Array.isArray(gameState.artifacts)) return 0;
+    return gameState.artifacts.reduce((sum, a) => {
+      if (a && typeof a.count === 'number') {
+        return sum + a.count;
+      }
+      return sum;
+    }, 0);
   }, [gameState.artifacts]);
 
   const purchasedUpgrades = useCallback(() => {
-    return gameState.upgrades.filter(u => u.purchased).length;
+    if (!gameState.upgrades || !Array.isArray(gameState.upgrades)) return 0;
+    return gameState.upgrades.filter(u => u && u.purchased).length;
   }, [gameState.upgrades]);
 
   // Prestige functions
@@ -400,7 +470,18 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
   // Buy artifact
   const buyArtifact = useCallback((artifactIndex, amount) => {
     setGameState(prev => {
+      // ENSURE artifacts array exists and is valid
+      if (!prev.artifacts || !Array.isArray(prev.artifacts) || artifactIndex < 0 || artifactIndex >= prev.artifacts.length) {
+        console.error('Invalid artifacts array or index');
+        return prev;
+      }
+
       const artifact = prev.artifacts[artifactIndex];
+      if (!artifact || typeof artifact.count !== 'number') {
+        console.error('Invalid artifact at index', artifactIndex);
+        return prev;
+      }
+
       const newArtifacts = [...prev.artifacts];
       let bought = 0;
       let totalCost = 0;
@@ -437,7 +518,18 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
   // Buy upgrade
   const buyUpgrade = useCallback((upgradeIndex) => {
     setGameState(prev => {
+      // ENSURE upgrades array exists and is valid
+      if (!prev.upgrades || !Array.isArray(prev.upgrades) || upgradeIndex < 0 || upgradeIndex >= prev.upgrades.length) {
+        console.error('Invalid upgrades array or index');
+        return prev;
+      }
+
       const upgrade = prev.upgrades[upgradeIndex];
+      if (!upgrade || typeof upgrade.cost !== 'number' || upgrade.purchased) {
+        console.error('Invalid upgrade at index', upgradeIndex);
+        return prev;
+      }
+
       if (prev.gold >= upgrade.cost && !upgrade.purchased) {
         const newUpgrades = [...prev.upgrades];
         newUpgrades[upgradeIndex] = { ...upgrade, purchased: true };
@@ -449,23 +541,32 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
           upgrades: newUpgrades
         };
 
-        // Apply upgrade effects
-        if (upgrade.id === 'orb-1') {
-          newState.multipliers = { ...newState.multipliers, orb: (newState.multipliers.orb || 1) * 2 };
-        } else if (upgrade.id === 'tome-1') {
-          newState.multipliers = { ...newState.multipliers, tome: (newState.multipliers.tome || 1) * 2 };
-        } else if (upgrade.id === 'lute-1') {
-          newState.multipliers = { ...newState.multipliers, lute: (newState.multipliers.lute || 1) * 2 };
-        } else if (upgrade.id === 'shield-1') {
-          newState.multipliers = { ...newState.multipliers, shield: (newState.multipliers.shield || 1) * 2 };
-        } else if (upgrade.id === 'chalice-1') {
-          newState.multipliers = { ...newState.multipliers, chalice: (newState.multipliers.chalice || 1) * 2 };
-        } else if (upgrade.id === 'attack-1') {
-          newState.dpcMult *= 2;
-        } else if (upgrade.id === 'attack-2') {
-          newState.dpcMult *= 5;
-        } else if (upgrade.id === 'prestige-1') {
-          newState.globalDpsMult *= 1.5;
+        // Apply upgrade effects based on ID
+        switch (upgrade.id) {
+          case 'orb-1':
+            newState.multipliers = { ...newState.multipliers, orb: (newState.multipliers.orb || 1) * 2 };
+            break;
+          case 'tome-1':
+            newState.multipliers = { ...newState.multipliers, tome: (newState.multipliers.tome || 1) * 2 };
+            break;
+          case 'lute-1':
+            newState.multipliers = { ...newState.multipliers, lute: (newState.multipliers.lute || 1) * 2 };
+            break;
+          case 'shield-1':
+            newState.multipliers = { ...newState.multipliers, shield: (newState.multipliers.shield || 1) * 2 };
+            break;
+          case 'chalice-1':
+            newState.multipliers = { ...newState.multipliers, chalice: (newState.multipliers.chalice || 1) * 2 };
+            break;
+          case 'attack-1':
+            newState.dpcMult *= 2;
+            break;
+          case 'attack-2':
+            newState.dpcMult *= 5;
+            break;
+          case 'prestige-1':
+            newState.globalDpsMult *= 1.5;
+            break;
         }
 
         addToast(`Purchased: ${upgrade.name}`, 'success');
@@ -490,8 +591,10 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
       dpcMult: 1,
       globalDpsMult: 1,
       multipliers: {},
-      artifacts: prev.artifacts.map(a => ({ ...a, count: 0 })),
-      upgrades: prev.upgrades.map(u => ({ ...u, purchased: false })),
+      // SAFELY reset artifacts array
+      artifacts: Array.isArray(prev.artifacts) ? prev.artifacts.map(a => ({ ...a, count: 0 })) : [],
+      // SAFELY reset upgrades array  
+      upgrades: Array.isArray(prev.upgrades) ? prev.upgrades.map(u => ({ ...u, purchased: false })) : [],
       boons: [],
       prestige: prev.prestige + 1,
       prestigePoints: prev.prestigePoints + prestigeGain,
@@ -654,25 +757,41 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
       const now = Date.now();
       const timeDiff = Math.max(0, (now - (loadedData.lastSave || now)) / 1000);
       
-      // Calculate offline DPS from loaded artifacts data
+      // Calculate offline DPS from loaded artifacts data - ENSURE ARTIFACTS IS AN ARRAY
       let offlineDPS = 0;
-      if (loadedData.artifacts) {
+      if (loadedData.artifacts && Array.isArray(loadedData.artifacts)) {
         for (const a of loadedData.artifacts) {
-          const mult = loadedData.multipliers?.[a.key] || 1;
-          offlineDPS += a.count * a.baseDps * mult;
+          if (a && typeof a === 'object' && typeof a.count === 'number' && typeof a.baseDps === 'number') {
+            const mult = loadedData.multipliers?.[a.key] || 1;
+            offlineDPS += a.count * a.baseDps * mult;
+          }
         }
         offlineDPS *= loadedData.globalDpsMult || 1;
       }
       
       const offlineProduction = offlineDPS * Math.min(timeDiff, 86400); // Max 24 hours offline
 
-      setGameState({
+      // ENSURE ALL REQUIRED PROPERTIES ARE PRESENT AND VALID
+      const safeLoadedData = {
+        // Default values first
+        ...gameState,
+        // Then loaded data
         ...loadedData,
-        gold: loadedData.gold + offlineProduction,
-        totalGold: loadedData.totalGold + offlineProduction,
+        // Ensure critical arrays exist
+        artifacts: Array.isArray(loadedData.artifacts) ? loadedData.artifacts : gameState.artifacts,
+        upgrades: Array.isArray(loadedData.upgrades) ? loadedData.upgrades : gameState.upgrades,
         boons: [], // Clear temporary effects
+        unlockedWeapons: Array.isArray(loadedData.unlockedWeapons) ? loadedData.unlockedWeapons : gameState.unlockedWeapons,
+        unlockedThemes: Array.isArray(loadedData.unlockedThemes) ? loadedData.unlockedThemes : gameState.unlockedThemes,
+        unlockedTitles: Array.isArray(loadedData.unlockedTitles) ? loadedData.unlockedTitles : gameState.unlockedTitles,
+        // Apply offline production
+        gold: (loadedData.gold || 0) + offlineProduction,
+        totalGold: (loadedData.totalGold || 0) + offlineProduction,
+        // Reset event
         event: { nextIn: 60 + Math.random() * 120, shown: false, until: 0, choices: [], eventText: '' }
-      });
+      };
+
+      setGameState(safeLoadedData);
 
       if (offlineProduction > 0) {
         addToast(`Welcome back! +${fmt(offlineProduction)} offline gold`, 'success');
@@ -686,7 +805,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     } catch (error) {
       console.error('❌ Error loading clicker game:', error);
     }
-  }, [studentData, addToast, fmt]);
+  }, [studentData, addToast, fmt, gameState]);
 
   // Auto-save interval
   useEffect(() => {
@@ -1027,13 +1146,15 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
             <div className={`${currentTheme.panel} rounded-xl shadow-lg p-6`}>
               <h2 className="text-xl font-bold mb-4">🔮 Mystic Artifacts</h2>
               <div className="space-y-3 max-h-80 overflow-y-auto">
-                {gameState.artifacts.map((artifact, index) => {
+                {(gameState.artifacts && Array.isArray(gameState.artifacts) ? gameState.artifacts : []).map((artifact, index) => {
+                  if (!artifact || typeof artifact !== 'object') return null;
+                  
                   const cost = costFor(artifact);
                   const canAfford = gameState.gold >= cost;
                   
                   return (
                     <div
-                      key={artifact.key}
+                      key={artifact.key || index}
                       className={`flex items-center space-x-4 p-4 rounded-lg border-2 transition-all ${
                         canAfford 
                           ? 'border-green-300 bg-green-50 hover:bg-green-100' 
@@ -1053,9 +1174,9 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
                         <div className="text-2xl hidden">🔮</div>
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-bold">{artifact.name} <span className="text-sm text-gray-600">x{artifact.count}</span></h3>
+                        <h3 className="font-bold">{artifact.name} <span className="text-sm text-gray-600">x{artifact.count || 0}</span></h3>
                         <p className="text-sm text-gray-600">
-                          Each: {fmt(artifact.baseDps * artifactMult(artifact.key))} DPS • Cost: {fmt(cost)}
+                          Each: {fmt((artifact.baseDps || 0) * artifactMult(artifact.key))} DPS • Cost: {fmt(cost)}
                         </p>
                       </div>
                       <button
@@ -1079,21 +1200,27 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
             <div className={`${currentTheme.panel} rounded-xl shadow-lg p-6`}>
               <h2 className="text-xl font-bold mb-4">⚡ Power Upgrades</h2>
               <div className="space-y-3 max-h-60 overflow-y-auto">
-                {gameState.upgrades.filter(upgrade => {
-                  if (upgrade.purchased) return false;
+                {(gameState.upgrades && Array.isArray(gameState.upgrades) ? gameState.upgrades : []).filter(upgrade => {
+                  if (!upgrade || upgrade.purchased) return false;
                   if (upgrade.req && upgrade.req.key) {
-                    const artifact = gameState.artifacts.find(a => a.key === upgrade.req.key);
-                    return artifact && artifact.count >= upgrade.req.count;
+                    const artifact = (gameState.artifacts && Array.isArray(gameState.artifacts)) 
+                      ? gameState.artifacts.find(a => a && a.key === upgrade.req.key) 
+                      : null;
+                    return artifact && (artifact.count || 0) >= (upgrade.req.count || 0);
                   }
                   return true;
                 }).map((upgrade, index) => {
-                  const canAfford = gameState.gold >= upgrade.cost;
-                  const originalIndex = gameState.upgrades.findIndex(u => u.id === upgrade.id);
-                  const isLegendary = upgrade.cost >= 1000000000;
+                  if (!upgrade) return null;
+                  
+                  const canAfford = gameState.gold >= (upgrade.cost || 0);
+                  const originalIndex = (gameState.upgrades && Array.isArray(gameState.upgrades)) 
+                    ? gameState.upgrades.findIndex(u => u && u.id === upgrade.id) 
+                    : -1;
+                  const isLegendary = (upgrade.cost || 0) >= 1000000000;
                   
                   return (
                     <div
-                      key={upgrade.id}
+                      key={upgrade.id || index}
                       className={`flex items-center space-x-4 p-4 rounded-lg border-2 transition-all ${
                         canAfford 
                           ? isLegendary 
@@ -1104,23 +1231,23 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
                     >
                       <div className="flex-1">
                         <h3 className={`font-bold flex items-center ${isLegendary ? 'text-yellow-700' : ''}`}>
-                          {upgrade.name}
+                          {upgrade.name || 'Unknown Upgrade'}
                           {isLegendary && <span className="ml-2">✨</span>}
                         </h3>
-                        <p className="text-sm text-gray-600">{upgrade.desc}</p>
+                        <p className="text-sm text-gray-600">{upgrade.desc || 'No description'}</p>
                       </div>
                       <button
-                        onClick={() => buyUpgrade(originalIndex)}
-                        disabled={!canAfford}
+                        onClick={() => originalIndex >= 0 && buyUpgrade(originalIndex)}
+                        disabled={!canAfford || originalIndex < 0}
                         className={`px-4 py-2 rounded-lg font-semibold transition-all ${
-                          canAfford
+                          canAfford && originalIndex >= 0
                             ? isLegendary
                               ? 'bg-gradient-to-r from-yellow-500 to-orange-600 text-white hover:shadow-lg prestige-glow'
                               : `bg-gradient-to-r ${currentTheme.accent} text-white hover:shadow-lg`
                             : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                         }`}
                       >
-                        {fmt(upgrade.cost)}
+                        {fmt(upgrade.cost || 0)}
                       </button>
                     </div>
                   );
