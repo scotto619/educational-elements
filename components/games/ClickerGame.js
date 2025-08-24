@@ -59,6 +59,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
   const [floatingNumbers, setFloatingNumbers] = useState([]);
   const [toasts, setToasts] = useState([]);
   const [showChoiceEvent, setShowChoiceEvent] = useState(false);
+  const [hasLoadedFromFirebase, setHasLoadedFromFirebase] = useState(false); // Prevent multiple loads
 
   const gameLoopRef = useRef();
   const lastUpdateRef = useRef();
@@ -746,56 +747,66 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     }
   }, [gameState, studentData, updateStudentData]);
 
-  // Load game from Firebase - FIXED
+  // Load game from Firebase - OFFLINE PROGRESSION REMOVED
   const loadGameFromFirebase = useCallback(() => {
     if (!studentData?.clickerGameData) return;
 
     try {
       const loadedData = studentData.clickerGameData;
       
-      // Handle offline progress - Calculate DPS from loaded data
-      const now = Date.now();
-      const timeDiff = Math.max(0, (now - (loadedData.lastSave || now)) / 1000);
-      
-      // Calculate offline DPS from loaded artifacts data - ENSURE ARTIFACTS IS AN ARRAY
-      let offlineDPS = 0;
-      if (loadedData.artifacts && Array.isArray(loadedData.artifacts)) {
-        for (const a of loadedData.artifacts) {
-          if (a && typeof a === 'object' && typeof a.count === 'number' && typeof a.baseDps === 'number') {
-            const mult = loadedData.multipliers?.[a.key] || 1;
-            offlineDPS += a.count * a.baseDps * mult;
-          }
-        }
-        offlineDPS *= loadedData.globalDpsMult || 1;
-      }
-      
-      const offlineProduction = offlineDPS * Math.min(timeDiff, 86400); // Max 24 hours offline
-
       // ENSURE ALL REQUIRED PROPERTIES ARE PRESENT AND VALID
       const safeLoadedData = {
-        // Default values first
-        ...gameState,
-        // Then loaded data
-        ...loadedData,
+        // Use current default state as base
+        gold: loadedData.gold || 0,
+        totalGold: loadedData.totalGold || 0,
+        handGold: loadedData.handGold || 0,
+        attacks: loadedData.attacks || 0,
+        dpcBase: loadedData.dpcBase || 1,
+        dpcMult: loadedData.dpcMult || 1,
+        globalDpsMult: loadedData.globalDpsMult || 1,
+        buyAmount: loadedData.buyAmount || 1,
+        timePlayed: loadedData.timePlayed || 0,
+        lastSave: loadedData.lastSave || Date.now(),
+        multipliers: loadedData.multipliers || {},
         // Ensure critical arrays exist
-        artifacts: Array.isArray(loadedData.artifacts) ? loadedData.artifacts : gameState.artifacts,
-        upgrades: Array.isArray(loadedData.upgrades) ? loadedData.upgrades : gameState.upgrades,
-        boons: [], // Clear temporary effects
-        unlockedWeapons: Array.isArray(loadedData.unlockedWeapons) ? loadedData.unlockedWeapons : gameState.unlockedWeapons,
-        unlockedThemes: Array.isArray(loadedData.unlockedThemes) ? loadedData.unlockedThemes : gameState.unlockedThemes,
-        unlockedTitles: Array.isArray(loadedData.unlockedTitles) ? loadedData.unlockedTitles : gameState.unlockedTitles,
-        // Apply offline production
-        gold: (loadedData.gold || 0) + offlineProduction,
-        totalGold: (loadedData.totalGold || 0) + offlineProduction,
+        artifacts: Array.isArray(loadedData.artifacts) ? loadedData.artifacts : [
+          { key: 'orb', name: 'Crystal Orb', baseCost: 15, count: 0, baseDps: 0.1, icon: '1', path: '/Loot/Artifacts/1.png' },
+          { key: 'tome', name: 'Ancient Tome', baseCost: 100, count: 0, baseDps: 1, icon: '2', path: '/Loot/Artifacts/2.png' },
+          { key: 'lute', name: 'Mystic Lute', baseCost: 1100, count: 0, baseDps: 8, icon: '3', path: '/Loot/Artifacts/3.png' },
+          { key: 'shield', name: 'Guardian Shield', baseCost: 12000, count: 0, baseDps: 47, icon: '4', path: '/Loot/Artifacts/4.png' },
+          { key: 'chalice', name: 'Divine Chalice', baseCost: 130000, count: 0, baseDps: 260, icon: '5', path: '/Loot/Artifacts/5.png' },
+          { key: 'crown', name: 'Crown of Ages', baseCost: 1400000, count: 0, baseDps: 1400, icon: '6', path: '/Loot/Artifacts/6.png' },
+          { key: 'mask', name: 'Shadow Mask', baseCost: 20000000, count: 0, baseDps: 7800, icon: '7', path: '/Loot/Artifacts/7.png' },
+          { key: 'totem', name: 'Primal Totem', baseCost: 330000000, count: 0, baseDps: 44000, icon: '8', path: '/Loot/Artifacts/8.png' },
+          { key: 'phoenix', name: 'Phoenix Feather', baseCost: 5100000000, count: 0, baseDps: 260000, icon: '9', path: '/Loot/Artifacts/9.png' },
+          { key: 'cauldron', name: 'Void Cauldron', baseCost: 75000000000, count: 0, baseDps: 1600000, icon: '10', path: '/Loot/Artifacts/10.png' }
+        ],
+        upgrades: Array.isArray(loadedData.upgrades) ? loadedData.upgrades : [
+          { id: 'orb-1', name: 'Enhance Crystal Orb', desc: 'Crystal Orbs are twice as efficient', cost: 100, req: { key: 'orb', count: 10 }, purchased: false },
+          { id: 'tome-1', name: 'Forbidden Knowledge', desc: 'Ancient Tomes are twice as efficient', cost: 1000, req: { key: 'tome', count: 10 }, purchased: false },
+          { id: 'lute-1', name: 'Harmonic Resonance', desc: 'Mystic Lutes are twice as efficient', cost: 11000, req: { key: 'lute', count: 10 }, purchased: false },
+          { id: 'shield-1', name: 'Eternal Protection', desc: 'Guardian Shields are twice as efficient', cost: 120000, req: { key: 'shield', count: 10 }, purchased: false },
+          { id: 'chalice-1', name: 'Divine Blessing', desc: 'Divine Chalices are twice as efficient', cost: 1300000, req: { key: 'chalice', count: 10 }, purchased: false },
+          { id: 'attack-1', name: 'Weapon Mastery', desc: 'Attacks earn twice the gold', cost: 500, req: { key: null, count: 0 }, purchased: false },
+          { id: 'attack-2', name: 'Legendary Technique', desc: 'Attacks earn 5x gold', cost: 50000000, req: { key: null, count: 0 }, purchased: false },
+          { id: 'prestige-1', name: 'Ascended Power', desc: 'All artifacts are 50% more efficient', cost: 1000000000000, req: { key: null, count: 0 }, purchased: false },
+        ],
+        boons: [], // Always clear temporary effects on load
+        unlockedWeapons: Array.isArray(loadedData.unlockedWeapons) ? loadedData.unlockedWeapons : ['1'],
+        activeWeapon: loadedData.activeWeapon || '1',
+        unlockedThemes: Array.isArray(loadedData.unlockedThemes) ? loadedData.unlockedThemes : ['default'],
+        activeTheme: loadedData.activeTheme || 'default',
+        unlockedTitles: Array.isArray(loadedData.unlockedTitles) ? loadedData.unlockedTitles : ['Novice'],
+        activeTitle: loadedData.activeTitle || 'Novice',
+        achievements: Array.isArray(loadedData.achievements) ? loadedData.achievements : [],
+        prestige: loadedData.prestige || 0,
+        prestigePoints: loadedData.prestigePoints || 0,
+        lifetimeEarnings: loadedData.lifetimeEarnings || 0,
         // Reset event
         event: { nextIn: 60 + Math.random() * 120, shown: false, until: 0, choices: [], eventText: '' }
       };
 
       setGameState(safeLoadedData);
-
-      if (offlineProduction > 0) {
-        addToast(`Welcome back! +${fmt(offlineProduction)} offline gold`, 'success');
-      }
 
       // Load unlockables
       setSelectedWeapon(loadedData.activeWeapon || '1');
@@ -805,7 +816,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     } catch (error) {
       console.error('❌ Error loading clicker game:', error);
     }
-  }, [studentData, addToast, fmt, gameState]);
+  }, [studentData]); // Only depend on studentData to prevent loops
 
   // Auto-save interval
   useEffect(() => {
@@ -816,10 +827,12 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     return () => clearInterval(interval);
   }, [saveGameToFirebase]);
 
-  // Load on component mount
+  // Load on component mount - ONLY ONCE
   useEffect(() => {
-    loadGameFromFirebase();
-  }, [loadGameFromFirebase]);
+    if (studentData && !hasLoadedFromFirebase) {
+      loadGameFromFirebase();
+    }
+  }, [studentData, loadGameFromFirebase, hasLoadedFromFirebase]);
 
   // Check unlocks when relevant stats change
   useEffect(() => {

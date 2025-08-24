@@ -1,102 +1,58 @@
-// components/tabs/QuestsTab.js - Quest Management System
-import React, { useState } from 'react';
+// components/tabs/QuestsTab.js - Redesigned Quest Management System
+import React, { useState, useEffect } from 'react';
 
 // ===============================================
-// QUEST DATA
+// QUEST CHARACTERS & TYPES
 // ===============================================
 
-const QUEST_TEMPLATES = [
+const QUEST_TYPES = [
   {
-    id: 1,
-    title: 'Complete Math Homework',
-    description: 'Submit all math homework assignments this week',
-    xpReward: 10,
-    coinReward: 5,
-    category: 'Academic',
+    id: 'learning',
+    name: 'Learning Quest',
+    color: 'from-blue-500 to-blue-600',
     icon: '📚',
-    difficulty: 'Easy'
+    description: 'Academic and educational tasks'
   },
   {
-    id: 2,
-    title: 'Help a Classmate',
-    description: 'Assist another student with their learning',
-    xpReward: 8,
-    coinReward: 3,
-    category: 'Social',
+    id: 'behaviour',
+    name: 'Behaviour Quest',
+    color: 'from-green-500 to-green-600',
+    icon: '⭐',
+    description: 'Positive behavior and classroom conduct'
+  },
+  {
+    id: 'community',
+    name: 'Community Quest',
+    color: 'from-purple-500 to-purple-600',
     icon: '🤝',
-    difficulty: 'Easy'
+    description: 'Helping others and teamwork'
   },
   {
-    id: 3,
-    title: 'Read 5 Books',
-    description: 'Read and report on 5 books this month',
-    xpReward: 25,
-    coinReward: 15,
-    category: 'Academic',
-    icon: '📖',
-    difficulty: 'Medium'
-  },
-  {
-    id: 4,
-    title: 'Clean Up Classroom',
-    description: 'Take initiative to tidy up the classroom',
-    xpReward: 5,
-    coinReward: 2,
-    category: 'Responsibility',
-    icon: '🧹',
-    difficulty: 'Easy'
-  },
-  {
-    id: 5,
-    title: 'Perfect Attendance Week',
-    description: 'Attend every class this week',
-    xpReward: 15,
-    coinReward: 8,
-    category: 'Dedication',
-    icon: '📅',
-    difficulty: 'Medium'
-  },
-  {
-    id: 6,
-    title: 'Science Project Excellence',
-    description: 'Create an outstanding science project',
-    xpReward: 30,
-    coinReward: 20,
-    category: 'Academic',
-    icon: '🔬',
-    difficulty: 'Hard'
+    id: 'assessment',
+    name: 'Assessment Quest',
+    color: 'from-red-500 to-red-600',
+    icon: '⚔️',
+    description: 'Tests, projects, and major evaluations'
   }
 ];
 
-const QUEST_GIVERS = [
-  {
-    id: 1,
-    name: 'Professor Owl',
-    emoji: '🦉',
-    specialty: 'Academic quests and knowledge challenges',
-    color: 'from-blue-500 to-blue-600'
-  },
-  {
-    id: 2,
-    name: 'Captain Bear',
-    emoji: '🐻',
-    specialty: 'Teamwork and social challenges',
-    color: 'from-green-500 to-green-600'
-  },
-  {
-    id: 3,
-    name: 'Wizard Fox',
-    emoji: '🦊',
-    specialty: 'Creative and artistic quests',
-    color: 'from-purple-500 to-purple-600'
-  },
-  {
-    id: 4,
-    name: 'Guardian Dragon',
-    emoji: '🐉',
-    specialty: 'Epic challenges and major achievements',
-    color: 'from-red-500 to-red-600'
-  }
+// Guide characters (for Learning, Behaviour, Community)
+const GUIDE_CHARACTERS = [
+  { id: 'guide1', name: 'Wise Owl', path: '/Guides/Guide 1.png' },
+  { id: 'guide2', name: 'Magic Fox', path: '/Guides/Guide 2.png' },
+  { id: 'guide3', name: 'Golden Cat', path: '/Guides/Guide 3.png' },
+  { id: 'guide4', name: 'Shadow Wolf', path: '/Guides/Guide 4.png' },
+  { id: 'guide5', name: 'Elder Sage', path: '/Guides/Guide 5.png' },
+  { id: 'guide6', name: 'Forest Guardian', path: '/Guides/Guide 6.png' },
+  { id: 'guide7', name: 'Scholar Mouse', path: '/Guides/Guide 7.png' }
+];
+
+// Boss characters (for Assessment quests)
+const BOSS_CHARACTERS = [
+  { id: 'boss1', name: 'The Examiner', path: '/Bosses/Boss 1.png' },
+  { id: 'boss2', name: 'Test Master', path: '/Bosses/Boss 2.png' },
+  { id: 'boss3', name: 'Grade Guardian', path: '/Bosses/Boss 3.png' },
+  { id: 'boss4', name: 'Assessment Lord', path: '/Bosses/Boss 4.png' }
 ];
 
 // ===============================================
@@ -105,201 +61,328 @@ const QUEST_GIVERS = [
 
 const QuestsTab = ({ 
   students = [], 
-  updateStudent,
-  showToast = () => {} 
+  user,
+  showToast = () => {},
+  userData = {},
+  currentClassId,
+  onAwardXP,
+  onAwardCoins,
+  saveClassData
 }) => {
   const [activeQuests, setActiveQuests] = useState([]);
-  const [selectedQuestGiver, setSelectedQuestGiver] = useState(QUEST_GIVERS[0]);
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
   const [showCompletionModal, setShowCompletionModal] = useState(null);
-  const [selectedStudents, setSelectedStudents] = useState([]);
+  const [selectedStudents, setSelectedStudents] = useState({});
   
-  // Custom quest form
-  const [customQuest, setCustomQuest] = useState({
+  // Quest form state
+  const [questForm, setQuestForm] = useState({
     title: '',
-    description: '',
-    xpReward: 5,
-    coinReward: 2,
-    category: 'Academic',
-    difficulty: 'Easy'
+    task: '',
+    dueDate: '',
+    questType: 'learning',
+    character: 'guide1',
+    rewardType: 'xp',
+    rewardAmount: 5
   });
 
-  // Create a quest from template
-  const createQuestFromTemplate = (template) => {
-    const newQuest = {
-      ...template,
-      id: `quest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      questGiver: selectedQuestGiver,
-      createdAt: new Date().toISOString(),
-      completedBy: [],
-      isActive: true
-    };
+  // Load quests from current class data
+  useEffect(() => {
+    if (userData.classes && currentClassId) {
+      const currentClass = userData.classes.find(cls => cls.id === currentClassId);
+      if (currentClass && currentClass.quests) {
+        setActiveQuests(currentClass.quests);
+      }
+    }
+  }, [userData, currentClassId]);
 
-    setActiveQuests([...activeQuests, newQuest]);
-    showToast(`Quest "${template.title}" created by ${selectedQuestGiver.name}!`, 'success');
+  // Save quests to Firebase
+  const saveQuests = async (updatedQuests) => {
+    try {
+      if (saveClassData) {
+        await saveClassData({ quests: updatedQuests });
+        setActiveQuests(updatedQuests);
+      }
+    } catch (error) {
+      console.error('Error saving quests:', error);
+      showToast('Error saving quest. Please try again.', 'error');
+    }
   };
 
-  // Create custom quest
-  const createCustomQuest = () => {
-    if (!customQuest.title.trim() || !customQuest.description.trim()) {
-      showToast('Please fill in all quest details!', 'error');
+  // Get available characters based on quest type
+  const getAvailableCharacters = (questType) => {
+    return questType === 'assessment' ? BOSS_CHARACTERS : GUIDE_CHARACTERS;
+  };
+
+  // Get character info by ID
+  const getCharacterById = (characterId) => {
+    const allCharacters = [...GUIDE_CHARACTERS, ...BOSS_CHARACTERS];
+    return allCharacters.find(char => char.id === characterId) || GUIDE_CHARACTERS[0];
+  };
+
+  // Create a new quest
+  const createQuest = async () => {
+    if (!questForm.title.trim() || !questForm.task.trim()) {
+      showToast('Please fill in the quest title and task.', 'error');
       return;
     }
 
     const newQuest = {
-      ...customQuest,
       id: `quest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      questGiver: selectedQuestGiver,
+      ...questForm,
+      character: questForm.questType === 'assessment' && !BOSS_CHARACTERS.find(b => b.id === questForm.character)
+        ? 'boss1' 
+        : questForm.character,
       createdAt: new Date().toISOString(),
-      completedBy: [],
-      isActive: true,
-      icon: '⭐' // Default icon for custom quests
+      completedBy: []
     };
 
-    setActiveQuests([...activeQuests, newQuest]);
-    setShowCreateModal(false);
-    setCustomQuest({
+    const updatedQuests = [...activeQuests, newQuest];
+    await saveQuests(updatedQuests);
+
+    // Reset form
+    setQuestForm({
       title: '',
-      description: '',
-      xpReward: 5,
-      coinReward: 2,
-      category: 'Academic',
-      difficulty: 'Easy'
+      task: '',
+      dueDate: '',
+      questType: 'learning',
+      character: 'guide1',
+      rewardType: 'xp',
+      rewardAmount: 5
     });
-    
-    showToast(`Custom quest "${newQuest.title}" created!`, 'success');
+    setShowCreateForm(false);
   };
 
-  // Mark quest as completed for selected students
-  const completeQuest = (quest) => {
-    if (selectedStudents.length === 0) {
-      showToast('Please select students who completed this quest!', 'error');
+  // Delete a quest
+  const deleteQuest = async (questId) => {
+    const updatedQuests = activeQuests.filter(q => q.id !== questId);
+    await saveQuests(updatedQuests);
+  };
+
+  // Handle quest completion
+  const completeQuestForStudents = async (quest) => {
+    const studentsToReward = Object.keys(selectedStudents).filter(
+      studentId => selectedStudents[studentId] && 
+      !quest.completedBy.some(c => c.studentId === studentId)
+    );
+
+    if (studentsToReward.length === 0) {
+      showToast('Please select students to complete this quest.', 'error');
       return;
     }
 
-    // Update quest completion
+    // Award rewards to students
+    for (const studentId of studentsToReward) {
+      const student = students.find(s => s.id === studentId);
+      if (student) {
+        if (quest.rewardType === 'xp') {
+          onAwardXP(studentId, quest.rewardAmount, quest.title);
+        } else {
+          onAwardCoins(studentId, quest.rewardAmount, quest.title);
+        }
+      }
+    }
+
+    // Update quest completion status
     const updatedQuests = activeQuests.map(q => {
       if (q.id === quest.id) {
-        const newCompletedBy = [...q.completedBy, ...selectedStudents.map(id => ({
-          studentId: id,
-          completedAt: new Date().toISOString()
-        }))];
-        return { ...q, completedBy: newCompletedBy };
+        const newCompletions = studentsToReward.map(studentId => ({
+          studentId,
+          completedAt: new Date().toISOString(),
+          rewardAwarded: quest.rewardAmount
+        }));
+        return { ...q, completedBy: [...q.completedBy, ...newCompletions] };
       }
       return q;
     });
-    setActiveQuests(updatedQuests);
 
-    // Award XP and coins to students
-    selectedStudents.forEach(studentId => {
-      const student = students.find(s => s.id === studentId);
-      if (student) {
-        const updatedStudent = {
-          ...student,
-          totalPoints: (student.totalPoints || 0) + quest.xpReward,
-          currency: (student.currency || 0) + quest.coinReward,
-          questsCompleted: [...(student.questsCompleted || []), {
-            questId: quest.id,
-            questTitle: quest.title,
-            completedAt: new Date().toISOString(),
-            xpEarned: quest.xpReward,
-            coinsEarned: quest.coinReward
-          }]
-        };
-        updateStudent(updatedStudent);
-      }
-    });
-
+    await saveQuests(updatedQuests);
     setShowCompletionModal(null);
-    setSelectedStudents([]);
-    showToast(`Quest completed! ${selectedStudents.length} students earned rewards!`, 'success');
+    setSelectedStudents({});
   };
 
-  // Get difficulty color
-  const getDifficultyColor = (difficulty) => {
-    switch (difficulty) {
-      case 'Easy': return 'text-green-600 bg-green-100';
-      case 'Medium': return 'text-yellow-600 bg-yellow-100';
-      case 'Hard': return 'text-red-600 bg-red-100';
-      default: return 'text-gray-600 bg-gray-100';
-    }
+  // Get quest type info
+  const getQuestTypeInfo = (typeId) => {
+    return QUEST_TYPES.find(t => t.id === typeId) || QUEST_TYPES[0];
+  };
+
+  // Format due date for display
+  const formatDueDate = (dateString) => {
+    if (!dateString) return 'No due date';
+    const date = new Date(dateString);
+    return date.toLocaleDateString();
+  };
+
+  // Check if quest is overdue
+  const isOverdue = (dateString) => {
+    if (!dateString) return false;
+    return new Date(dateString) < new Date();
   };
 
   return (
     <div className="space-y-6">
-      {/* Quest Giver Selector */}
+      {/* Header */}
       <div className="bg-white rounded-xl p-6 shadow-lg">
-        <h3 className="text-xl font-bold text-gray-800 mb-4">🎭 Choose Your Quest Giver</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {QUEST_GIVERS.map(giver => (
-            <button
-              key={giver.id}
-              onClick={() => setSelectedQuestGiver(giver)}
-              className={`p-4 rounded-xl transition-all border-2 ${
-                selectedQuestGiver.id === giver.id
-                  ? `border-transparent bg-gradient-to-r ${giver.color} text-white`
-                  : 'border-gray-200 hover:border-gray-300'
-              }`}
-            >
-              <div className="text-4xl mb-2">{giver.emoji}</div>
-              <h4 className="font-bold text-lg">{giver.name}</h4>
-              <p className={`text-sm ${selectedQuestGiver.id === giver.id ? 'text-white opacity-90' : 'text-gray-600'}`}>
-                {giver.specialty}
-              </p>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Quest Creation */}
-      <div className="bg-white rounded-xl p-6 shadow-lg">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-bold text-gray-800">📜 Create New Quest</h3>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-800">📜 Quest Management</h2>
+            <p className="text-gray-600">Create and manage classroom quests</p>
+          </div>
           <button
-            onClick={() => setShowCreateModal(true)}
-            className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all"
+            onClick={() => setShowCreateForm(true)}
+            className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all font-semibold"
           >
-            Create Custom Quest
+            + Create Quest
           </button>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {QUEST_TEMPLATES.map(quest => (
-            <div key={quest.id} className="border-2 border-gray-200 rounded-xl p-4 hover:border-blue-300 transition-all">
-              <div className="flex items-center justify-between mb-3">
-                <div className="text-3xl">{quest.icon}</div>
-                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getDifficultyColor(quest.difficulty)}`}>
-                  {quest.difficulty}
-                </span>
-              </div>
-              
-              <h4 className="font-bold text-gray-800 mb-2">{quest.title}</h4>
-              <p className="text-sm text-gray-600 mb-3">{quest.description}</p>
-              
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex space-x-3 text-sm">
-                  <span className="text-blue-600">⭐ {quest.xpReward} XP</span>
-                  <span className="text-yellow-600">🪙 {quest.coinReward}</span>
-                </div>
-                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                  {quest.category}
-                </span>
-              </div>
-              
-              <button
-                onClick={() => createQuestFromTemplate(quest)}
-                className={`w-full bg-gradient-to-r ${selectedQuestGiver.color} text-white py-2 rounded-lg hover:shadow-lg transition-all font-semibold`}
-              >
-                Create Quest
-              </button>
-            </div>
-          ))}
-        </div>
       </div>
+
+      {/* Create Quest Form */}
+      {showCreateForm && (
+        <div className="bg-white rounded-xl p-6 shadow-lg border-2 border-blue-200">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-bold text-gray-800">🎯 Create New Quest</h3>
+            <button
+              onClick={() => setShowCreateForm(false)}
+              className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+            >
+              ×
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Left Column */}
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Quest Title *</label>
+                <input
+                  type="text"
+                  value={questForm.title}
+                  onChange={(e) => setQuestForm({...questForm, title: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Enter quest title"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Task Description *</label>
+                <textarea
+                  value={questForm.task}
+                  onChange={(e) => setQuestForm({...questForm, task: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  rows={4}
+                  placeholder="Describe what students need to do"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Due Date</label>
+                <input
+                  type="date"
+                  value={questForm.dueDate}
+                  onChange={(e) => setQuestForm({...questForm, dueDate: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+            </div>
+
+            {/* Right Column */}
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Quest Type</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {QUEST_TYPES.map(type => (
+                    <button
+                      key={type.id}
+                      onClick={() => setQuestForm({
+                        ...questForm, 
+                        questType: type.id,
+                        character: type.id === 'assessment' ? 'boss1' : 'guide1'
+                      })}
+                      className={`p-3 rounded-lg border-2 transition-all text-sm ${
+                        questForm.questType === type.id
+                          ? `bg-gradient-to-r ${type.color} text-white border-transparent`
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="text-lg mb-1">{type.icon}</div>
+                      <div className="font-semibold">{type.name}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Character</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {getAvailableCharacters(questForm.questType).map(character => (
+                    <button
+                      key={character.id}
+                      onClick={() => setQuestForm({...questForm, character: character.id})}
+                      className={`p-2 rounded-lg border-2 transition-all ${
+                        questForm.character === character.id
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <img 
+                        src={character.path} 
+                        alt={character.name}
+                        className="w-12 h-12 mx-auto rounded"
+                      />
+                      <p className="text-xs mt-1 font-medium">{character.name}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Reward Type</label>
+                  <select
+                    value={questForm.rewardType}
+                    onChange={(e) => setQuestForm({...questForm, rewardType: e.target.value})}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="xp">⭐ XP Points</option>
+                    <option value="coins">🪙 Coins</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Reward Amount</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="50"
+                    value={questForm.rewardAmount}
+                    onChange={(e) => setQuestForm({...questForm, rewardAmount: parseInt(e.target.value) || 1})}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end space-x-3 mt-6">
+            <button
+              onClick={() => setShowCreateForm(false)}
+              className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all font-semibold"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={createQuest}
+              className="px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:shadow-lg transition-all font-semibold"
+            >
+              Create Quest
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Active Quests */}
       <div className="bg-white rounded-xl p-6 shadow-lg">
-        <h3 className="text-xl font-bold text-gray-800 mb-4">🚀 Active Quests</h3>
+        <h3 className="text-xl font-bold text-gray-800 mb-4">🚀 Active Quests ({activeQuests.length})</h3>
         
         {activeQuests.length === 0 ? (
           <div className="text-center py-12">
@@ -308,179 +391,126 @@ const QuestsTab = ({
             <p className="text-gray-500">Create your first quest to get started!</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {activeQuests.map(quest => (
-              <div key={quest.id} className="border-2 border-blue-200 rounded-xl p-4 bg-blue-50">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-2">
-                    <div className="text-2xl">{quest.icon}</div>
-                    <div className="text-2xl">{quest.questGiver.emoji}</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {activeQuests.map(quest => {
+              const questType = getQuestTypeInfo(quest.questType);
+              const character = getCharacterById(quest.character);
+              const completedCount = quest.completedBy.length;
+              const overdue = isOverdue(quest.dueDate);
+              
+              return (
+                <div key={quest.id} className="border-2 border-gray-200 rounded-xl p-4 hover:shadow-lg transition-all">
+                  {/* Quest Header */}
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center space-x-2">
+                      <img 
+                        src={character.path} 
+                        alt={character.name}
+                        className="w-10 h-10 rounded-full"
+                      />
+                      <span className="text-2xl">{questType.icon}</span>
+                    </div>
+                    <div className="flex space-x-1">
+                      <span className={`px-2 py-1 rounded-full text-xs font-semibold bg-gradient-to-r ${questType.color} text-white`}>
+                        {questType.name}
+                      </span>
+                      {overdue && (
+                        <span className="px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-600">
+                          Overdue
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getDifficultyColor(quest.difficulty)}`}>
-                    {quest.difficulty}
-                  </span>
-                </div>
-                
-                <h4 className="font-bold text-gray-800 mb-2">{quest.title}</h4>
-                <p className="text-sm text-gray-600 mb-3">{quest.description}</p>
-                <p className="text-xs text-gray-500 mb-3">Created by {quest.questGiver.name}</p>
-                
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex space-x-3 text-sm">
-                    <span className="text-blue-600">⭐ {quest.xpReward} XP</span>
-                    <span className="text-yellow-600">🪙 {quest.coinReward}</span>
+                  
+                  {/* Quest Details */}
+                  <h4 className="font-bold text-gray-800 mb-2">{quest.title}</h4>
+                  <p className="text-sm text-gray-600 mb-3 line-clamp-2">{quest.task}</p>
+                  
+                  {/* Quest Info */}
+                  <div className="space-y-2 mb-4">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Due:</span>
+                      <span className={overdue ? 'text-red-600 font-semibold' : 'text-gray-700'}>
+                        {formatDueDate(quest.dueDate)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Reward:</span>
+                      <span className="font-semibold">
+                        {quest.rewardType === 'xp' ? '⭐' : '🪙'} {quest.rewardAmount}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Completed:</span>
+                      <span className="text-green-600 font-semibold">{completedCount}/{students.length}</span>
+                    </div>
                   </div>
-                  <span className="text-xs text-green-600 font-semibold">
-                    {quest.completedBy.length} completed
-                  </span>
+                  
+                  {/* Action Buttons */}
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => setShowCompletionModal(quest)}
+                      className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white py-2 rounded-lg hover:shadow-lg transition-all font-semibold text-sm"
+                    >
+                      Mark Complete
+                    </button>
+                    <button
+                      onClick={() => deleteQuest(quest.id)}
+                      className="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all"
+                    >
+                      🗑️
+                    </button>
+                  </div>
                 </div>
-                
-                <button
-                  onClick={() => setShowCompletionModal(quest)}
-                  className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-2 rounded-lg hover:shadow-lg transition-all font-semibold"
-                >
-                  Mark as Completed
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
 
-      {/* Custom Quest Creation Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-            <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-6 rounded-t-2xl">
-              <h2 className="text-2xl font-bold">Create Custom Quest</h2>
-              <p className="text-purple-100">By {selectedQuestGiver.name}</p>
-            </div>
-            
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Quest Title</label>
-                <input
-                  type="text"
-                  value={customQuest.title}
-                  onChange={(e) => setCustomQuest({...customQuest, title: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-                  placeholder="Enter quest title"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                <textarea
-                  value={customQuest.description}
-                  onChange={(e) => setCustomQuest({...customQuest, description: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-                  rows={3}
-                  placeholder="Describe what students need to do"
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">XP Reward</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="50"
-                    value={customQuest.xpReward}
-                    onChange={(e) => setCustomQuest({...customQuest, xpReward: parseInt(e.target.value) || 5})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Coin Reward</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="25"
-                    value={customQuest.coinReward}
-                    onChange={(e) => setCustomQuest({...customQuest, coinReward: parseInt(e.target.value) || 2})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-                  />
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                  <select
-                    value={customQuest.category}
-                    onChange={(e) => setCustomQuest({...customQuest, category: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-                  >
-                    <option value="Academic">Academic</option>
-                    <option value="Social">Social</option>
-                    <option value="Creative">Creative</option>
-                    <option value="Responsibility">Responsibility</option>
-                    <option value="Dedication">Dedication</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Difficulty</label>
-                  <select
-                    value={customQuest.difficulty}
-                    onChange={(e) => setCustomQuest({...customQuest, difficulty: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-                  >
-                    <option value="Easy">Easy</option>
-                    <option value="Medium">Medium</option>
-                    <option value="Hard">Hard</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex space-x-3 p-6 pt-0">
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={createCustomQuest}
-                className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all"
-              >
-                Create Quest
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Quest Completion Modal */}
       {showCompletionModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
             <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-t-2xl">
-              <h2 className="text-2xl font-bold">Mark Quest Complete</h2>
+              <h2 className="text-2xl font-bold">Complete Quest</h2>
               <p className="text-green-100">{showCompletionModal.title}</p>
             </div>
             
             <div className="p-6">
+              <div className="mb-4 p-4 bg-blue-50 rounded-lg">
+                <div className="flex items-center space-x-4 mb-2">
+                  <img 
+                    src={getCharacterById(showCompletionModal.character).path}
+                    alt="Character"
+                    className="w-12 h-12 rounded-full"
+                  />
+                  <div>
+                    <h4 className="font-bold text-blue-800">Quest Reward</h4>
+                    <p className="text-blue-600">
+                      {showCompletionModal.rewardType === 'xp' ? '⭐' : '🪙'} {showCompletionModal.rewardAmount} {showCompletionModal.rewardType.toUpperCase()}
+                    </p>
+                  </div>
+                </div>
+                <p className="text-sm text-blue-700">{showCompletionModal.task}</p>
+              </div>
+
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Select students who completed this quest:</h3>
               
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-6 max-h-60 overflow-y-auto">
                 {students.map(student => {
                   const alreadyCompleted = showCompletionModal.completedBy.some(c => c.studentId === student.id);
-                  const isSelected = selectedStudents.includes(student.id);
+                  const isSelected = selectedStudents[student.id];
                   
                   return (
                     <button
                       key={student.id}
                       onClick={() => {
                         if (alreadyCompleted) return;
-                        setSelectedStudents(prev => 
-                          prev.includes(student.id)
-                            ? prev.filter(id => id !== student.id)
-                            : [...prev, student.id]
-                        );
+                        setSelectedStudents(prev => ({
+                          ...prev,
+                          [student.id]: !prev[student.id]
+                        }));
                       }}
                       disabled={alreadyCompleted}
                       className={`p-3 rounded-lg border-2 transition-all ${
@@ -493,8 +523,9 @@ const QuestsTab = ({
                     >
                       <div className="text-center">
                         <p className="font-semibold text-sm">{student.firstName}</p>
+                        <p className="text-xs text-gray-600">{student.lastName}</p>
                         {alreadyCompleted && (
-                          <p className="text-xs text-green-600">✅ Completed</p>
+                          <p className="text-xs text-green-600 mt-1">✅ Completed</p>
                         )}
                       </div>
                     </button>
@@ -502,16 +533,8 @@ const QuestsTab = ({
                 })}
               </div>
               
-              <div className="bg-blue-50 p-4 rounded-lg mb-4">
-                <h4 className="font-semibold text-blue-800 mb-2">Quest Rewards:</h4>
-                <div className="flex space-x-4">
-                  <span className="text-blue-600">⭐ {showCompletionModal.xpReward} XP</span>
-                  <span className="text-yellow-600">🪙 {showCompletionModal.coinReward} coins</span>
-                </div>
-              </div>
-              
               <p className="text-gray-600 text-sm mb-4">
-                {selectedStudents.length} student(s) selected to receive rewards
+                {Object.values(selectedStudents).filter(Boolean).length} student(s) selected
               </p>
             </div>
             
@@ -519,18 +542,17 @@ const QuestsTab = ({
               <button
                 onClick={() => {
                   setShowCompletionModal(null);
-                  setSelectedStudents([]);
+                  setSelectedStudents({});
                 }}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all"
+                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all font-semibold"
               >
                 Cancel
               </button>
               <button
-                onClick={() => completeQuest(showCompletionModal)}
-                disabled={selectedStudents.length === 0}
-                className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={() => completeQuestForStudents(showCompletionModal)}
+                className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-3 rounded-lg hover:shadow-lg transition-all font-semibold"
               >
-                Complete Quest
+                Award Rewards
               </button>
             </div>
           </div>

@@ -663,6 +663,17 @@ const ClassroomChampions = () => {
                   calculateCoins={calculateCoins}
                   calculateAvatarLevel={calculateAvatarLevel}
                 />;
+                      case 'quests':
+        return <QuestsTab
+                  students={students}
+                  user={user}
+                  showToast={showToast}
+                  userData={userData}
+                  currentClassId={currentClassId}
+                  onAwardXP={awardXPToStudent}
+                  onAwardCoins={awardCoinsToStudent}
+                  saveClassData={saveClassData}
+                />;
        case 'quizshow':
   return <QuizShowTab 
             students={students}
