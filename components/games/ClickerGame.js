@@ -1,4 +1,4 @@
-// components/games/ClickerGame.js - Enhanced Hero Forge Fantasy Clicker
+// components/games/ClickerGame.js - Enhanced Hero Forge Fantasy Clicker (FIXED)
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
@@ -16,16 +16,16 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     lastSave: Date.now(),
     multipliers: {},
     artifacts: [
-      { key: 'orb', name: 'Crystal Orb', baseCost: 15, count: 0, baseDps: 0.1, icon: '1', path: '/public/Loot/Artifacts/1.png' },
-      { key: 'tome', name: 'Ancient Tome', baseCost: 100, count: 0, baseDps: 1, icon: '2', path: '/public/Loot/Artifacts/2.png' },
-      { key: 'lute', name: 'Mystic Lute', baseCost: 1100, count: 0, baseDps: 8, icon: '3', path: '/public/Loot/Artifacts/3.png' },
-      { key: 'shield', name: 'Guardian Shield', baseCost: 12000, count: 0, baseDps: 47, icon: '4', path: '/public/Loot/Artifacts/4.png' },
-      { key: 'chalice', name: 'Divine Chalice', baseCost: 130000, count: 0, baseDps: 260, icon: '5', path: '/public/Loot/Artifacts/5.png' },
-      { key: 'crown', name: 'Crown of Ages', baseCost: 1400000, count: 0, baseDps: 1400, icon: '6', path: '/public/Loot/Artifacts/6.png' },
-      { key: 'mask', name: 'Shadow Mask', baseCost: 20000000, count: 0, baseDps: 7800, icon: '7', path: '/public/Loot/Artifacts/7.png' },
-      { key: 'totem', name: 'Primal Totem', baseCost: 330000000, count: 0, baseDps: 44000, icon: '8', path: '/public/Loot/Artifacts/8.png' },
-      { key: 'phoenix', name: 'Phoenix Feather', baseCost: 5100000000, count: 0, baseDps: 260000, icon: '9', path: '/public/Loot/Artifacts/9.png' },
-      { key: 'cauldron', name: 'Void Cauldron', baseCost: 75000000000, count: 0, baseDps: 1600000, icon: '10', path: '/public/Loot/Artifacts/10.png' }
+      { key: 'orb', name: 'Crystal Orb', baseCost: 15, count: 0, baseDps: 0.1, icon: '1', path: '/Loot/Artifacts/1.png' },
+      { key: 'tome', name: 'Ancient Tome', baseCost: 100, count: 0, baseDps: 1, icon: '2', path: '/Loot/Artifacts/2.png' },
+      { key: 'lute', name: 'Mystic Lute', baseCost: 1100, count: 0, baseDps: 8, icon: '3', path: '/Loot/Artifacts/3.png' },
+      { key: 'shield', name: 'Guardian Shield', baseCost: 12000, count: 0, baseDps: 47, icon: '4', path: '/Loot/Artifacts/4.png' },
+      { key: 'chalice', name: 'Divine Chalice', baseCost: 130000, count: 0, baseDps: 260, icon: '5', path: '/Loot/Artifacts/5.png' },
+      { key: 'crown', name: 'Crown of Ages', baseCost: 1400000, count: 0, baseDps: 1400, icon: '6', path: '/Loot/Artifacts/6.png' },
+      { key: 'mask', name: 'Shadow Mask', baseCost: 20000000, count: 0, baseDps: 7800, icon: '7', path: '/Loot/Artifacts/7.png' },
+      { key: 'totem', name: 'Primal Totem', baseCost: 330000000, count: 0, baseDps: 44000, icon: '8', path: '/Loot/Artifacts/8.png' },
+      { key: 'phoenix', name: 'Phoenix Feather', baseCost: 5100000000, count: 0, baseDps: 260000, icon: '9', path: '/Loot/Artifacts/9.png' },
+      { key: 'cauldron', name: 'Void Cauldron', baseCost: 75000000000, count: 0, baseDps: 1600000, icon: '10', path: '/Loot/Artifacts/10.png' }
     ],
     upgrades: [
       { id: 'orb-1', name: 'Enhance Crystal Orb', desc: 'Crystal Orbs are twice as efficient', cost: 100, req: { key: 'orb', count: 10 }, purchased: false },
@@ -61,32 +61,37 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
   const [showChoiceEvent, setShowChoiceEvent] = useState(false);
 
   const gameLoopRef = useRef();
-  const lastUpdateRef = useRef(performance.now());
+  const lastUpdateRef = useRef();
   const eventAccumRef = useRef(0);
   const autosaveAccumRef = useRef(0);
 
-  // Weapon definitions with unlock requirements
+  // Initialize refs
+  useEffect(() => {
+    lastUpdateRef.current = Date.now();
+  }, []);
+
+  // Weapon definitions with unlock requirements - FIXED PATHS
   const WEAPONS = {
-    '1': { name: 'Novice Blade', icon: '⚔️', path: '/public/Loot/Weapons/1.png', requirement: null },
-    '2': { name: 'Mystic Staff', icon: '🔮', path: '/public/Loot/Weapons/2.png', requirement: { type: 'totalGold', value: 1000 } },
-    '3': { name: 'Frost Axe', icon: '🪓', path: '/public/Loot/Weapons/3.png', requirement: { type: 'totalGold', value: 5000 } },
-    '4': { name: 'Shadow Daggers', icon: '🗡️', path: '/public/Loot/Weapons/4.png', requirement: { type: 'totalGold', value: 25000 } },
-    '5': { name: 'Elven Bow', icon: '🏹', path: '/public/Loot/Weapons/5.png', requirement: { type: 'attacks', value: 1000 } },
-    '6': { name: 'Orcish Cleaver', icon: '⚔️', path: '/public/Loot/Weapons/6.png', requirement: { type: 'artifacts', value: 50 } },
-    '7': { name: 'Divine Hammer', icon: '🔨', path: '/public/Loot/Weapons/7.png', requirement: { type: 'totalGold', value: 100000 } },
-    '8': { name: 'Nature\'s Whip', icon: '🌿', path: '/public/Loot/Weapons/8.png', requirement: { type: 'upgrades', value: 3 } },
-    '9': { name: 'Celestial Orb', icon: '✨', path: '/public/Loot/Weapons/9.png', requirement: { type: 'totalGold', value: 1000000 } },
-    '10': { name: 'Frost Axe Prime', icon: '❄️', path: '/public/Loot/Weapons/10.png', requirement: { type: 'dps', value: 100000 } },
-    '11': { name: 'Mechanical Gauntlet', icon: '🤖', path: '/public/Loot/Weapons/11.png', requirement: { type: 'totalGold', value: 10000000 } },
-    '12': { name: 'Rose Blade', icon: '🌹', path: '/public/Loot/Weapons/12.png', requirement: { type: 'prestige', value: 1 } },
-    '13': { name: 'Golden Warhammer', icon: '⚒️', path: '/public/Loot/Weapons/13.png', requirement: { type: 'totalGold', value: 100000000 } },
-    '14': { name: 'Void Staff', icon: '🌌', path: '/public/Loot/Weapons/14.png', requirement: { type: 'prestige', value: 2 } },
-    '15': { name: 'Elemental Trident', icon: '🔱', path: '/public/Loot/Weapons/15.png', requirement: { type: 'totalGold', value: 1000000000 } },
-    '16': { name: 'Soul Reaper', icon: '💀', path: '/public/Loot/Weapons/16.png', requirement: { type: 'prestige', value: 5 } },
-    '17': { name: 'Cosmic Blades', icon: '🌟', path: '/public/Loot/Weapons/17.png', requirement: { type: 'prestige', value: 10 } }
+    '1': { name: 'Novice Blade', icon: '⚔️', path: '/Loot/Weapons/1.png', requirement: null },
+    '2': { name: 'Mystic Staff', icon: '🔮', path: '/Loot/Weapons/2.png', requirement: { type: 'totalGold', value: 1000 } },
+    '3': { name: 'Frost Axe', icon: '🪓', path: '/Loot/Weapons/3.png', requirement: { type: 'totalGold', value: 5000 } },
+    '4': { name: 'Shadow Daggers', icon: '🗡️', path: '/Loot/Weapons/4.png', requirement: { type: 'totalGold', value: 25000 } },
+    '5': { name: 'Elven Bow', icon: '🏹', path: '/Loot/Weapons/5.png', requirement: { type: 'attacks', value: 1000 } },
+    '6': { name: 'Orcish Cleaver', icon: '⚔️', path: '/Loot/Weapons/6.png', requirement: { type: 'artifacts', value: 50 } },
+    '7': { name: 'Divine Hammer', icon: '🔨', path: '/Loot/Weapons/7.png', requirement: { type: 'totalGold', value: 100000 } },
+    '8': { name: 'Nature\'s Whip', icon: '🌿', path: '/Loot/Weapons/8.png', requirement: { type: 'upgrades', value: 3 } },
+    '9': { name: 'Celestial Orb', icon: '✨', path: '/Loot/Weapons/9.png', requirement: { type: 'totalGold', value: 1000000 } },
+    '10': { name: 'Frost Axe Prime', icon: '❄️', path: '/Loot/Weapons/10.png', requirement: { type: 'dps', value: 100000 } },
+    '11': { name: 'Mechanical Gauntlet', icon: '🤖', path: '/Loot/Weapons/11.png', requirement: { type: 'totalGold', value: 10000000 } },
+    '12': { name: 'Rose Blade', icon: '🌹', path: '/Loot/Weapons/12.png', requirement: { type: 'prestige', value: 1 } },
+    '13': { name: 'Golden Warhammer', icon: '⚒️', path: '/Loot/Weapons/13.png', requirement: { type: 'totalGold', value: 100000000 } },
+    '14': { name: 'Void Staff', icon: '🌌', path: '/Loot/Weapons/14.png', requirement: { type: 'prestige', value: 2 } },
+    '15': { name: 'Elemental Trident', icon: '🔱', path: '/Loot/Weapons/15.png', requirement: { type: 'totalGold', value: 1000000000 } },
+    '16': { name: 'Soul Reaper', icon: '💀', path: '/Loot/Weapons/16.png', requirement: { type: 'prestige', value: 5 } },
+    '17': { name: 'Cosmic Blades', icon: '🌟', path: '/Loot/Weapons/17.png', requirement: { type: 'prestige', value: 10 } }
   };
 
-  // Theme definitions (enhanced)
+  // Theme definitions
   const THEMES = {
     default: { 
       name: 'Hero\'s Dawn', 
@@ -185,27 +190,9 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     }
   ];
 
-  // Prestige borders
-  const getPrestigeBorder = (prestigeLevel) => {
-    const borders = [
-      '', // No prestige
-      'ring-4 ring-yellow-400 ring-opacity-60', // Prestige 1
-      'ring-4 ring-orange-400 ring-opacity-60', // Prestige 2
-      'ring-4 ring-red-400 ring-opacity-60', // Prestige 3
-      'ring-4 ring-purple-400 ring-opacity-60', // Prestige 4
-      'ring-4 ring-pink-400 ring-opacity-60', // Prestige 5
-      'ring-8 ring-gradient-to-r ring-cyan-400 ring-opacity-80', // Prestige 6+
-      'ring-8 ring-rainbow ring-opacity-100 animate-pulse', // Prestige 10+
-    ];
-    
-    if (prestigeLevel >= 10) return borders[7];
-    if (prestigeLevel >= 6) return borders[6];
-    return borders[Math.min(prestigeLevel, borders.length - 1)] || '';
-  };
-
   // Helper functions
   const fmt = useCallback((n) => {
-    if (!isFinite(n)) return '0';
+    if (!isFinite(n) || isNaN(n)) return '0';
     const abs = Math.abs(n);
     if (abs < 1000) return Math.round(n).toLocaleString();
     const units = ['k', 'M', 'B', 'T', 'q', 'Q', 's', 'S', 'o', 'n'];
@@ -227,10 +214,19 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     return gameState.multipliers[key] || 1;
   }, [gameState.multipliers]);
 
+  const activeBoonMult = useCallback((type) => {
+    let m = 1;
+    const now = Date.now();
+    for (const boon of gameState.boons) {
+      if (boon.type === type && now < boon.until) m *= boon.mult;
+    }
+    return m;
+  }, [gameState.boons]);
+
   const dpc = useCallback(() => {
     let mult = gameState.dpcMult * activeBoonMult('dpc');
     return Math.max(1, gameState.dpcBase * mult);
-  }, [gameState.dpcBase, gameState.dpcMult]);
+  }, [gameState.dpcBase, gameState.dpcMult, activeBoonMult]);
 
   const dps = useCallback(() => {
     let total = 0;
@@ -239,16 +235,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     }
     total *= gameState.globalDpsMult * activeBoonMult('dps');
     return total;
-  }, [gameState.artifacts, gameState.globalDpsMult, artifactMult]);
-
-  const activeBoonMult = useCallback((type) => {
-    let m = 1;
-    const now = performance.now();
-    for (const boon of gameState.boons) {
-      if (boon.type === type && now < boon.until) m *= boon.mult;
-    }
-    return m;
-  }, [gameState.boons]);
+  }, [gameState.artifacts, gameState.globalDpsMult, artifactMult, activeBoonMult]);
 
   const totalArtifacts = useCallback(() => {
     return gameState.artifacts.reduce((sum, a) => sum + a.count, 0);
@@ -258,7 +245,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     return gameState.upgrades.filter(u => u.purchased).length;
   }, [gameState.upgrades]);
 
-  // Prestige calculation
+  // Prestige functions
   const canPrestige = useCallback(() => {
     return gameState.totalGold >= 1000000000; // 1B gold required
   }, [gameState.totalGold]);
@@ -268,31 +255,26 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     return Math.floor(Math.sqrt(gameState.totalGold / 1000000000));
   }, [gameState.totalGold, canPrestige]);
 
-  const doPrestige = useCallback(() => {
-    if (!canPrestige()) return;
+  const getPrestigeBorder = (prestigeLevel) => {
+    if (prestigeLevel <= 0) return '';
+    if (prestigeLevel >= 10) return 'ring-8 ring-purple-400 ring-opacity-100 animate-pulse';
+    if (prestigeLevel >= 6) return 'ring-8 ring-cyan-400 ring-opacity-80';
+    const borders = ['', 'ring-4 ring-yellow-400 ring-opacity-60', 'ring-4 ring-orange-400 ring-opacity-60', 'ring-4 ring-red-400 ring-opacity-60', 'ring-4 ring-purple-400 ring-opacity-60', 'ring-4 ring-pink-400 ring-opacity-60'];
+    return borders[Math.min(prestigeLevel, borders.length - 1)] || '';
+  };
+
+  // Add toast notification
+  const addToast = useCallback((message, type = 'info') => {
+    const id = Date.now() + Math.random();
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 3000);
     
-    const prestigeGain = calculatePrestigeGain();
-    
-    setGameState(prev => ({
-      ...prev,
-      gold: 0,
-      totalGold: 0,
-      handGold: 0,
-      attacks: 0,
-      dpcBase: 1,
-      dpcMult: 1,
-      globalDpsMult: 1,
-      multipliers: {},
-      artifacts: prev.artifacts.map(a => ({ ...a, count: 0 })),
-      upgrades: prev.upgrades.map(u => ({ ...u, purchased: false })),
-      boons: [],
-      prestige: prev.prestige + 1,
-      prestigePoints: prev.prestigePoints + prestigeGain,
-      lifetimeEarnings: prev.lifetimeEarnings + prev.totalGold
-    }));
-    
-    addToast(`Prestige ${gameState.prestige + 1} achieved! +${prestigeGain} prestige points!`, 'success');
-  }, [canPrestige, calculatePrestigeGain, gameState.prestige, addToast]);
+    if (showToast) {
+      showToast(message, type);
+    }
+  }, [showToast]);
 
   // Check unlock requirements
   const checkUnlockRequirement = useCallback((requirement) => {
@@ -314,7 +296,63 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
       default:
         return false;
     }
-  }, [gameState, totalArtifacts, dps, purchasedUpgrades]);
+  }, [gameState.totalGold, gameState.attacks, gameState.prestige, totalArtifacts, dps, purchasedUpgrades]);
+
+  // Add floating number
+  const addFloatingNumber = useCallback((x, y, text, color = '#ffd700') => {
+    const id = Date.now() + Math.random();
+    setFloatingNumbers(prev => [...prev, { id, x, y, text, color, time: Date.now() }]);
+    setTimeout(() => {
+      setFloatingNumbers(prev => prev.filter(f => f.id !== id));
+    }, 800);
+  }, []);
+
+  // Add gold with effects
+  const addGold = useCallback((amount) => {
+    if (!isFinite(amount) || isNaN(amount)) return;
+    
+    setGameState(prev => {
+      const newGold = Math.max(0, prev.gold + amount);
+      const newTotalGold = amount > 0 ? prev.totalGold + amount : prev.totalGold;
+      return {
+        ...prev,
+        gold: newGold,
+        totalGold: newTotalGold
+      };
+    });
+  }, []);
+
+  // Attack function
+  const attack = useCallback((event) => {
+    const gain = dpc();
+    addGold(gain);
+    
+    setGameState(prev => ({
+      ...prev,
+      handGold: prev.handGold + gain,
+      attacks: prev.attacks + 1
+    }));
+
+    // Add floating number at click position
+    if (event && event.currentTarget) {
+      const rect = event.currentTarget.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      addFloatingNumber(x, y, `+${fmt(gain)}`, '#ffd700');
+    }
+
+    // Play sound effect (if available)
+    try {
+      const audio = new Audio('/sounds/ding.mp3');
+      audio.volume = 0.3;
+      audio.play().catch(() => {});
+    } catch (e) {}
+
+    // Check for achievements
+    if (gameState.attacks === 0) {
+      addToast('Achievement: First Strike!', 'success');
+    }
+  }, [dpc, addGold, addFloatingNumber, fmt, gameState.attacks, addToast]);
 
   // Check for new unlocks
   const checkUnlocks = useCallback(() => {
@@ -357,72 +395,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     newUnlocks.forEach(message => {
       addToast(message, 'success');
     });
-  }, [gameState, checkUnlockRequirement]);
-
-  // Add floating number
-  const addFloatingNumber = useCallback((x, y, text, color = '#ffd700') => {
-    const id = Date.now() + Math.random();
-    setFloatingNumbers(prev => [...prev, { id, x, y, text, color, time: Date.now() }]);
-    setTimeout(() => {
-      setFloatingNumbers(prev => prev.filter(f => f.id !== id));
-    }, 800);
-  }, []);
-
-  // Add toast notification
-  const addToast = useCallback((message, type = 'info') => {
-    const id = Date.now() + Math.random();
-    setToasts(prev => [...prev, { id, message, type }]);
-    setTimeout(() => {
-      setToasts(prev => prev.filter(t => t.id !== id));
-    }, 3000);
-    
-    if (showToast) {
-      showToast(message, type);
-    }
-  }, [showToast]);
-
-  // Add gold with effects
-  const addGold = useCallback((amount) => {
-    setGameState(prev => {
-      const newGold = Math.max(0, prev.gold + amount);
-      const newTotalGold = amount > 0 ? prev.totalGold + amount : prev.totalGold;
-      return {
-        ...prev,
-        gold: newGold,
-        totalGold: newTotalGold
-      };
-    });
-  }, []);
-
-  // Attack function
-  const attack = useCallback((event) => {
-    const gain = dpc();
-    addGold(gain);
-    
-    setGameState(prev => ({
-      ...prev,
-      handGold: prev.handGold + gain,
-      attacks: prev.attacks + 1
-    }));
-
-    // Add floating number at click position
-    const rect = event.currentTarget.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-    addFloatingNumber(x, y, `+${fmt(gain)}`, '#ffd700');
-
-    // Play sound effect (if available)
-    try {
-      const audio = new Audio('/sounds/ding.mp3');
-      audio.volume = 0.3;
-      audio.play().catch(() => {});
-    } catch (e) {}
-
-    // Check for achievements
-    if (gameState.attacks === 0) {
-      addToast('Achievement: First Strike!', 'success');
-    }
-  }, [dpc, addGold, addFloatingNumber, fmt, gameState.attacks, addToast]);
+  }, [gameState.unlockedWeapons, gameState.unlockedThemes, gameState.unlockedTitles, checkUnlockRequirement, addToast]);
 
   // Buy artifact
   const buyArtifact = useCallback((artifactIndex, amount) => {
@@ -502,6 +475,32 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     });
   }, [addToast]);
 
+  const doPrestige = useCallback(() => {
+    if (!canPrestige()) return;
+    
+    const prestigeGain = calculatePrestigeGain();
+    
+    setGameState(prev => ({
+      ...prev,
+      gold: 0,
+      totalGold: 0,
+      handGold: 0,
+      attacks: 0,
+      dpcBase: 1,
+      dpcMult: 1,
+      globalDpsMult: 1,
+      multipliers: {},
+      artifacts: prev.artifacts.map(a => ({ ...a, count: 0 })),
+      upgrades: prev.upgrades.map(u => ({ ...u, purchased: false })),
+      boons: [],
+      prestige: prev.prestige + 1,
+      prestigePoints: prev.prestigePoints + prestigeGain,
+      lifetimeEarnings: prev.lifetimeEarnings + prev.totalGold
+    }));
+    
+    addToast(`Prestige ${gameState.prestige + 1} achieved! +${prestigeGain} prestige points!`, 'success');
+  }, [canPrestige, calculatePrestigeGain, gameState.prestige, addToast]);
+
   // Spawn choice event
   const spawnChoiceEvent = useCallback(() => {
     if (gameState.event.shown) return;
@@ -512,7 +511,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
       event: {
         ...prev.event,
         shown: true,
-        until: performance.now() + 30000,
+        until: Date.now() + 30000,
         eventText: randomEvent.text,
         choices: randomEvent.choices
       }
@@ -560,7 +559,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
             name: `Mystic ${randomType.toUpperCase()} Boost`,
             type: randomType,
             mult: mult,
-            until: performance.now() + effect.duration
+            until: Date.now() + effect.duration
           }];
           addToast(`Gained ${randomType.toUpperCase()} x${mult.toFixed(1)} boost!`, 'success');
           break;
@@ -575,7 +574,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
             name: 'Meditation Boost',
             type: 'dps',
             mult: effect.mult,
-            until: performance.now() + effect.duration
+            until: Date.now() + effect.duration
           }];
           addToast(`Temporary DPS x${effect.mult} boost!`, 'success');
           break;
@@ -586,13 +585,13 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
               name: 'Cursed Strength',
               type: 'dpc',
               mult: effect.dpcMult,
-              until: performance.now() + effect.duration
+              until: Date.now() + effect.duration
             },
             {
               name: 'Artifact Curse',
               type: 'dps',
               mult: effect.dpsPenalty,
-              until: performance.now() + effect.duration
+              until: Date.now() + effect.duration
             }
           ];
           addToast(`Cursed power gained! +DPC but -DPS for 2 minutes!`, 'warning');
@@ -644,25 +643,36 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     }
   }, [gameState, studentData, updateStudentData]);
 
-  // Load game from Firebase
+  // Load game from Firebase - FIXED
   const loadGameFromFirebase = useCallback(() => {
     if (!studentData?.clickerGameData) return;
 
     try {
       const loadedData = studentData.clickerGameData;
       
-      // Handle offline progress
+      // Handle offline progress - Calculate DPS from loaded data
       const now = Date.now();
       const timeDiff = Math.max(0, (now - (loadedData.lastSave || now)) / 1000);
-      const offlineProduction = dps() * timeDiff;
+      
+      // Calculate offline DPS from loaded artifacts data
+      let offlineDPS = 0;
+      if (loadedData.artifacts) {
+        for (const a of loadedData.artifacts) {
+          const mult = loadedData.multipliers?.[a.key] || 1;
+          offlineDPS += a.count * a.baseDps * mult;
+        }
+        offlineDPS *= loadedData.globalDpsMult || 1;
+      }
+      
+      const offlineProduction = offlineDPS * Math.min(timeDiff, 86400); // Max 24 hours offline
 
-      setGameState(prev => ({
+      setGameState({
         ...loadedData,
         gold: loadedData.gold + offlineProduction,
         totalGold: loadedData.totalGold + offlineProduction,
         boons: [], // Clear temporary effects
         event: { nextIn: 60 + Math.random() * 120, shown: false, until: 0, choices: [], eventText: '' }
-      }));
+      });
 
       if (offlineProduction > 0) {
         addToast(`Welcome back! +${fmt(offlineProduction)} offline gold`, 'success');
@@ -676,13 +686,13 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     } catch (error) {
       console.error('❌ Error loading clicker game:', error);
     }
-  }, [studentData, dps, addToast, fmt]);
+  }, [studentData, addToast, fmt]);
 
   // Auto-save interval
   useEffect(() => {
     const interval = setInterval(() => {
       saveGameToFirebase();
-    }, 15000); // Save every 15 seconds
+    }, 15000);
 
     return () => clearInterval(interval);
   }, [saveGameToFirebase]);
@@ -690,22 +700,32 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
   // Load on component mount
   useEffect(() => {
     loadGameFromFirebase();
-  }, []);
+  }, [loadGameFromFirebase]);
 
   // Check unlocks when relevant stats change
   useEffect(() => {
     checkUnlocks();
-  }, [gameState.totalGold, gameState.attacks, totalArtifacts(), dps(), purchasedUpgrades(), gameState.prestige, checkUnlocks]);
+  }, [checkUnlocks]);
+
+  // Apply selected weapon and theme
+  useEffect(() => {
+    setGameState(prev => ({
+      ...prev,
+      activeWeapon: selectedWeapon,
+      activeTheme: selectedTheme
+    }));
+  }, [selectedWeapon, selectedTheme]);
 
   // Game loop
   useEffect(() => {
-    const gameLoop = (timestamp) => {
-      const dt = Math.min(0.25, (timestamp - lastUpdateRef.current) / 1000);
-      lastUpdateRef.current = timestamp;
+    const gameLoop = () => {
+      const now = Date.now();
+      const dt = Math.min(0.25, (now - (lastUpdateRef.current || now)) / 1000);
+      lastUpdateRef.current = now;
 
       // Update DPS production
       const production = dps() * dt;
-      if (production > 0) {
+      if (production > 0 && isFinite(production)) {
         addGold(production);
       }
 
@@ -718,17 +738,17 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
       // Clean up expired boons
       setGameState(prev => ({
         ...prev,
-        boons: prev.boons.filter(boon => timestamp < boon.until)
+        boons: prev.boons.filter(boon => now < boon.until)
       }));
 
-      // Choice event system (slower than old diamond events)
+      // Choice event system
       if (!gameState.event.shown) {
         eventAccumRef.current += dt;
         if (eventAccumRef.current >= gameState.event.nextIn) {
           eventAccumRef.current = 0;
           spawnChoiceEvent();
         }
-      } else if (timestamp >= gameState.event.until) {
+      } else if (now >= gameState.event.until) {
         setGameState(prev => ({
           ...prev,
           event: { ...prev.event, shown: false, nextIn: 60 + Math.random() * 120 }
@@ -754,15 +774,6 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
       }
     };
   }, [dps, addGold, gameState.event, spawnChoiceEvent, saveGameToFirebase]);
-
-  // Apply selected weapon and theme
-  useEffect(() => {
-    setGameState(prev => ({
-      ...prev,
-      activeWeapon: selectedWeapon,
-      activeTheme: selectedTheme
-    }));
-  }, [selectedWeapon, selectedTheme]);
 
   const currentTheme = THEMES[gameState.activeTheme] || THEMES.default;
   const currentWeapon = WEAPONS[gameState.activeWeapon] || WEAPONS['1'];

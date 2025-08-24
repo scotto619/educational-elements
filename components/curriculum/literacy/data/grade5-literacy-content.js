@@ -3710,6 +3710,9 @@ export const getSoundImagePath = (sound) => {
     "dge": "/SoundPictures/DGE_Bridge.png",
     "igh": "/SoundPictures/IGH_Light.png",
     "eigh": "/SoundPictures/EIGH_Eight.png",
+    "ough": "/SoundPictures/OUGH_Though.png",
+    "ought": "/SoundPictures/OUGHT_Thought.png",
+    "aught": "/SoundPictures/AUGHT_Caught.png",
     
     // Term 3 - Vowel patterns
     "ai": "/SoundPictures/AI_Rain.png",
@@ -3731,6 +3734,9 @@ export const getSoundImagePath = (sound) => {
     // Term 4 - Morphological patterns  
     "tion": "/SoundPictures/TION_Action.png",
     "sion": "/SoundPictures/SION_Television.png",
+    "cian": "/SoundPictures/CIAN_Musician.png",
+    "tious": "/SoundPictures/TIOUS_Nutritious.png",
+    "cious": "/SoundPictures/CIOUS_Delicious.png",
     "ture": "/SoundPictures/TURE_Furniture.png",
     "sure": "/SoundPictures/SURE_Treasure.png",
     "ous": "/SoundPictures/OUS_House.png",
@@ -3738,7 +3744,8 @@ export const getSoundImagePath = (sound) => {
     "less": "/SoundPictures/LESS_Helpless.png",
     "ness": "/SoundPictures/NESS_Happiness.png",
     "ment": "/SoundPictures/MENT_Movement.png",
-    "able": "/SoundPictures/ABLE_Table.png"
+    "able": "/SoundPictures/ABLE_Table.png",
+    "ible": "/SoundPictures/IBLE_Visible.png",
   };
   
   return soundImageMap[sound] || "/SoundPictures/default.png";
@@ -3793,6 +3800,9 @@ export const getSoundWords = (sound) => {
     "dge": ["bridge", "fudge", "hedge", "judge", "badge", "edge", "ledge", "ridge", "dodge", "smudge"],
     "igh": ["light", "night", "bright", "right", "fight", "sight", "might", "flight", "fright", "knight"],
     "eigh": ["eight", "weigh", "neighbor", "sleigh", "freight", "weight", "height", "straight", "eighteen", "eighty"],
+    "ough": ["though", "through", "bough", "cough", "rough", "tough", "dough", "plough", "slough", "borough"],
+    "ought": ["thought", "bought", "brought", "fought",],
+    "aught": ["caught", "taught", "fraught", "naught", "draught", "slaughter", "daughter", "laughter", "aughts", "aught"],
     
     // Term 3 - Vowel patterns
     "ai": ["rain", "train", "pain", "main", "brain", "chain", "plain", "stain", "drain", "grain"],
@@ -3814,6 +3824,9 @@ export const getSoundWords = (sound) => {
     // Term 4 - Morphological patterns  
     "tion": ["action", "nation", "station", "creation", "education", "vacation", "celebration", "information", "population", "transportation"],
     "sion": ["television", "decision", "division", "confusion", "explosion", "extension", "dimension", "suspension", "expansion", "comprehension"],
+    "cian": ["musician", "magician", "technician", "physician", "politician", "electrician", "historian", "librarian", "veterinarian", "mathematician"],
+    "tious": ["nutritious", "ambitious", "cautious", "pretentious", "contentious", "facetious", "expeditious", "propitious"],
+    "cious": ["delicious", "precious", "gracious", "spacious", "ferocious", "vicious", "suspicious", "malicious", "capricious", "atrocious"],
     "ture": ["nature", "picture", "future", "culture", "feature", "creature", "furniture", "adventure", "temperature", "literature"],
     "sure": ["treasure", "measure", "pleasure", "pressure", "leisure", "closure", "exposure", "composure", "enclosure", "disclosure"],
     "ous": ["famous", "nervous", "curious", "serious", "dangerous", "generous", "enormous", "marvelous", "poisonous", "mountainous"],
@@ -3821,7 +3834,8 @@ export const getSoundWords = (sound) => {
     "less": ["helpless", "careless", "fearless", "homeless", "useless", "endless", "timeless", "hopeless", "restless", "breathless"],
     "ness": ["happiness", "kindness", "darkness", "weakness", "illness", "fairness", "fitness", "sadness", "madness", "thickness"],
     "ment": ["movement", "moment", "treatment", "agreement", "government", "development", "entertainment", "equipment", "statement", "improvement"],
-    "able": ["table", "able", "capable", "reliable", "comfortable", "reasonable", "agreeable", "remarkable", "incredible", "responsible"]
+    "able": ["table", "able", "capable", "reliable", "comfortable", "reasonable", "agreeable", "remarkable", "incredible", "responsible"],
+    "ible": ["visible", "possible", "edible", "flexible", "sensible", "invisible", "terrible", "horrible", "accessible", "responsible"],
   };
   
   return soundWordsMap[sound] || ["sound", "word", "example"];
