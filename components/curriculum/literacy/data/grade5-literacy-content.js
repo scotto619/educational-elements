@@ -1009,7 +1009,7 @@ export const grade5LiteracyContent = {
           "Practice saying 'str' words clearly and strongly"
         ]
       },
-      "week12": {
+      "week2": {
         "focusSound": "spr",
         "soundImage": "/SoundPictures/SPR_Spring.png",
         "soundWords": ["spring", "spray", "spread"],
@@ -1099,7 +1099,7 @@ export const grade5LiteracyContent = {
           "Make a list of things that happen in spring"
         ]
       },
-      "week13": {
+      "week3": {
         "focusSound": "scr",
         "soundImage": "/SoundPictures/SCR_Screw.png",
         "soundWords": ["screw", "screen", "scratch"],
@@ -1189,7 +1189,7 @@ export const grade5LiteracyContent = {
           "Find things that need scrubbing in the classroom"
         ]
       },
-      "week14": {
+      "week4": {
         "focusSound": "spl",
         "soundImage": "/SoundPictures/SPL_Splash.png",
         "soundWords": ["splash", "split", "splendid"],
@@ -1279,7 +1279,7 @@ export const grade5LiteracyContent = {
           "Split into teams for a different classroom activity"
         ]
       },
-      "week15": {
+      "week5": {
         "focusSound": "thr",
         "soundImage": "/SoundPictures/THR_Three.png",
         "soundWords": ["three", "throw", "through"],
@@ -1369,7 +1369,7 @@ export const grade5LiteracyContent = {
           "Count by threes: 3, 6, 9, 12..."
         ]
       },
-      "week16": {
+      "week6": {
         "focusSound": "shr",
         "soundImage": "/SoundPictures/SHR_Shrimp.png",
         "soundWords": ["shrimp", "shrink", "shrub"],
@@ -1459,7 +1459,7 @@ export const grade5LiteracyContent = {
           "Find small things in the classroom and describe them"
         ]
       },
-      "week17": {
+      "week7": {
         "focusSound": "tch",
         "soundImage": "/SoundPictures/TCH_Watch.png",
         "soundWords": ["watch", "catch", "match"],
@@ -1549,7 +1549,7 @@ export const grade5LiteracyContent = {
           "Match pairs of 'tch' words with similar meanings"
         ]
       },
-      "week18": {
+      "week8": {
         "focusSound": "dge",
         "soundImage": "/SoundPictures/DGE_Bridge.png",
         "soundWords": ["bridge", "judge", "badge"],
@@ -1639,7 +1639,7 @@ export const grade5LiteracyContent = {
           "Design your own special badge for the classroom"
         ]
       },
-      "week19": {
+      "week9": {
         "focusSound": "igh",
         "soundImage": "/SoundPictures/IGH_Light.png",
         "soundWords": ["light", "night", "bright"],
@@ -1729,7 +1729,7 @@ export const grade5LiteracyContent = {
           "Look for sources of light in the classroom"
         ]
       },
-      "week20": {
+      "week10": {
         "focusSound": "eigh",
         "soundImage": "/SoundPictures/EIGH_Eight.png",
         "soundWords": ["eight", "weigh", "neighbor"],
@@ -1829,7 +1829,7 @@ export const grade5LiteracyContent = {
     "name": "Vowel Mastery",
     "description": "Advanced vowel combinations and spelling patterns", 
     "weeks": {
-      "week21": {
+      "week1": {
         "focusSound": "ai",
         "soundImage": "/SoundPictures/AI_Rain.png",
         "soundWords": ["rain", "train", "pain"],
@@ -1919,7 +1919,7 @@ export const grade5LiteracyContent = {
           "Draw pictures of rainy day activities"
         ]
       },
-      "week22": {
+      "week2": {
         "focusSound": "ay",
         "soundImage": "/SoundPictures/AY_Day.png",
         "soundWords": ["day", "play", "way"],
@@ -2009,7 +2009,7 @@ export const grade5LiteracyContent = {
           "Find different ways to spell the long 'a' sound"
         ]
       },
-      "week23": {
+      "week3": {
         "focusSound": "ee",
         "soundImage": "/SoundPictures/EE_Bee.png",
         "soundWords": ["bee", "tree", "see"],
@@ -2099,7 +2099,7 @@ export const grade5LiteracyContent = {
           "Count things in groups of three around the classroom"
         ]
       },
-      "week24": {
+      "week4": {
         "focusSound": "ea",
         "soundImage": "/SoundPictures/EA_Beach.png",
         "soundWords": ["beach", "teach", "read"],
@@ -2189,7 +2189,7 @@ export const grade5LiteracyContent = {
           "Find different 'ea' words that make different sounds"
         ]
       },
-      "week25": {
+      "week5": {
         "focusSound": "ie",
         "soundImage": "/SoundPictures/IE_Pie.png",
         "soundWords": ["pie", "tie", "lie"],
@@ -2279,7 +2279,7 @@ export const grade5LiteracyContent = {
           "Make a list of your favorite pie flavors"
         ]
       },
-      "week26": {
+      "week6": {
         "focusSound": "oa",
         "soundImage": "/SoundPictures/OA_Boat.png",
         "soundWords": ["boat", "coat", "goat"],
@@ -2369,7 +2369,7 @@ export const grade5LiteracyContent = {
           "Draw and label parts of a boat"
         ]
       },
-      "week27": {
+      "week7": {
         "focusSound": "oe",
         "soundImage": "/SoundPictures/OE_Toe.png",
         "soundWords": ["toe", "doe", "hoe"],
@@ -2459,7 +2459,7 @@ export const grade5LiteracyContent = {
           "Count your toes and describe what they help you do"
         ]
       },
-      "week28": {
+      "week8": {
         "focusSound": "ue",
         "soundImage": "/SoundPictures/UE_Blue.png",
         "soundWords": ["blue", "true", "glue"],
@@ -2549,7 +2549,7 @@ export const grade5LiteracyContent = {
           "Practice using glue safely for a craft project"
         ]
       },
-      "week29": {
+      "week9": {
         "focusSound": "ew",
         "soundImage": "/SoundPictures/EW_Crew.png",
         "soundWords": ["crew", "grew", "new"],
@@ -2639,7 +2639,7 @@ export const grade5LiteracyContent = {
           "Plan an imaginary voyage and list what you'd need"
         ]
       },
-      "week30": {
+      "week10": {
         "focusSound": "ou",
         "soundImage": "/SoundPictures/OU_Cloud.png",
         "soundWords": ["cloud", "loud", "proud"],
@@ -2739,7 +2739,7 @@ export const grade5LiteracyContent = {
     "name": "Word Structure & Morphology",
     "description": "Prefixes, suffixes, and advanced spelling patterns",
     "weeks": {
-      "week31": {
+      "week1": {
         "focusSound": "tion",
         "soundImage": "/SoundPictures/TION_Action.png", 
         "soundWords": ["action", "nation", "station"],
@@ -2829,7 +2829,7 @@ export const grade5LiteracyContent = {
           "Create your own action station with different activities"
         ]
       },
-      "week32": {
+      "week2": {
         "focusSound": "sion",
         "soundImage": "/SoundPictures/SION_Television.png",
         "soundWords": ["television", "decision", "division"],
@@ -2919,7 +2919,7 @@ export const grade5LiteracyContent = {
           "Find root words in 'sion' words: decide → decision"
         ]
       },
-      "week33": {
+      "week3": {
         "focusSound": "ture",
         "soundImage": "/SoundPictures/TURE_Furniture.png",
         "soundWords": ["furniture", "nature", "picture"],
@@ -3009,7 +3009,7 @@ export const grade5LiteracyContent = {
           "Draw or describe your favorite piece of furniture"
         ]
       },
-      "week34": {
+      "week4": {
         "focusSound": "sure",
         "soundImage": "/SoundPictures/SURE_Treasure.png",
         "soundWords": ["treasure", "measure", "pleasure"],
@@ -3099,7 +3099,7 @@ export const grade5LiteracyContent = {
           "Create a treasure map for the classroom"
         ]
       },
-      "week35": {
+      "week5": {
         "focusSound": "ous",
         "soundImage": "/SoundPictures/OUS_House.png",
         "soundWords": ["house", "famous", "curious"],
@@ -3189,7 +3189,7 @@ export const grade5LiteracyContent = {
           "Practice being curious by asking good questions"
         ]
       },
-      "week36": {
+      "week6": {
         "focusSound": "ful",
         "soundImage": "/SoundPictures/FUL_Helpful.png",
         "soundWords": ["helpful", "careful", "beautiful"],
@@ -3279,7 +3279,7 @@ export const grade5LiteracyContent = {
           "Draw something beautiful and describe it"
         ]
       },
-      "week37": {
+      "week7": {
         "focusSound": "less",
         "soundImage": "/SoundPictures/LESS_Helpless.png",
         "soundWords": ["helpless", "careless", "endless"],
@@ -3369,7 +3369,7 @@ export const grade5LiteracyContent = {
           "Find examples of things that seem endless but aren't"
         ]
       },
-      "week38": {
+      "week8": {
         "focusSound": "ness",
         "soundImage": "/SoundPictures/NESS_Happiness.png",
         "soundWords": ["happiness", "kindness", "darkness"],
@@ -3459,7 +3459,7 @@ export const grade5LiteracyContent = {
           "Discuss what brings you happiness"
         ]
       },
-      "week39": {
+      "week9": {
         "focusSound": "ment",
         "soundImage": "/SoundPictures/MENT_Movement.png",
         "soundWords": ["movement", "moment", "treatment"],
@@ -3549,7 +3549,7 @@ export const grade5LiteracyContent = {
           "Set goals for improvement in different subjects"
         ]
       },
-      "week40": {
+      "week10": {
         "focusSound": "able",
         "soundImage": "/SoundPictures/ABLE_Table.png",
         "soundWords": ["table", "able", "capable"],
