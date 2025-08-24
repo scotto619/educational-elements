@@ -919,7 +919,7 @@ export const grade5LiteracyContent = {
     "name": "Advanced Sounds & Patterns", 
     "description": "Exploring complex consonant clusters and three-letter combinations",
     "weeks": {
-      "week11": {
+      "week1": {
         "focusSound": "str",
         "soundImage": "/SoundPictures/STR_String.png",
         "soundWords": ["string", "strong", "street"],
