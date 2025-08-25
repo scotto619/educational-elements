@@ -775,7 +775,7 @@ export const getPrepTerm3SoundImagePath = (sound) => {
     "k": "/SoundPictures/K_Kangaroo.png",
     "q": "/SoundPictures/Q_Queen.png",
     "x": "/SoundPictures/X_Exit.png",
-    "y": "/SoundPictures/Y_Puppy.png",
+    "y": "/SoundPictures/Y_Yellow.png",
     "z": "/SoundPictures/Z_Zebra.png",
     "st": "/SoundPictures/ST_Star.png",
     "nd": "/SoundPictures/ND_Hand.png",

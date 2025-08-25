@@ -539,7 +539,7 @@ export const prepTerm4Content = {
     },
     "week8": {
       "focusSound": "ss",
-      "soundImage": "/SoundPictures/LESS_Dress.png",
+      "soundImage": "/SoundPictures/SS_Dress.png",
       "soundWords": ["dress", "grass", "less"],
       "dailySounds": [
         ["ss", "ll", "qu", "ck", "wh", "th", "sh", "ch", "nk", "mp"], // Monday
@@ -615,7 +615,7 @@ export const prepTerm4Content = {
     },
     "week9": {
       "focusSound": "ff",
-      "soundImage": "/SoundPictures/OFF_Cliff.png",
+      "soundImage": "/SoundPictures/FF_Cliff.png",
       "soundWords": ["off", "stuff", "cliff"],
       "dailySounds": [
         ["ff", "ss", "ll", "qu", "ck", "wh", "th", "sh", "ch", "nk"], // Monday
@@ -691,7 +691,7 @@ export const prepTerm4Content = {
     },
     "week10": {
       "focusSound": "zz",
-      "soundImage": "/SoundPictures/IZZY_Buzz.png",
+      "soundImage": "/SoundPictures/ZZ_Buzz.png",
       "soundWords": ["buzz", "fizz", "jazz"],
       "dailySounds": [
         ["zz", "ff", "ss", "ll", "qu", "ck", "wh", "th", "sh", "ch"], // Monday
@@ -785,7 +785,7 @@ export const getPrepTerm4SoundImagePath = (sound) => {
     "k": "/SoundPictures/K_Kangaroo.png",
     "q": "/SoundPictures/Q_Queen.png",
     "x": "/SoundPictures/X_Exit.png",
-    "y": "/SoundPictures/Y_Puppy.png",
+    "y": "/SoundPictures/Y_Yellow.png",
     "z": "/SoundPictures/Z_Zebra.png",
     "st": "/SoundPictures/ST_Star.png",
     "nd": "/SoundPictures/ND_Hand.png",
