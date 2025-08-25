@@ -1,4 +1,4 @@
-// components/tabs/CurriculumCornerTab.js - CLEAN VERSION
+// components/tabs/CurriculumCornerTab.js - UPDATED VERSION WITH NUMBERS BOARD
 import React, { useState } from 'react';
 
 // Import activity components
@@ -9,6 +9,7 @@ import SpellingProgram from '../curriculum/literacy/SpellingProgram';
 import AreaPerimeterTool from '../curriculum/mathematics/AreaPerimeterTool';
 import MathWarmup from '../curriculum/mathematics/MathWarmup';
 import WorksheetGenerator from '../curriculum/mathematics/WorksheetGenerator';
+import NumbersBoard from '../curriculum/mathematics/NumbersBoard';
 
 // ===============================================
 // COMING SOON COMPONENT
@@ -118,7 +119,7 @@ const subjects = [
       {
         id: 'area-perimeter',
         name: 'Area & Perimeter',
-        icon: '📏',
+        icon: '📐',
         description: 'Interactive tool for exploring area and perimeter concepts',
         component: AreaPerimeterTool
       },
@@ -126,8 +127,8 @@ const subjects = [
         id: 'numbers-board',
         name: 'Numbers Board',
         icon: '💯',
-        description: 'Interactive hundreds board for number patterns',
-        component: ComingSoon
+        description: 'Interactive hundreds board for number patterns and exploration',
+        component: NumbersBoard
       },
       {
         id: 'times-tables',
