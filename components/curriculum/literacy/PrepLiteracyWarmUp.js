@@ -1,7 +1,38 @@
-// components/curriculum/literacy/PrepLiteracyWarmup.js
-// PREP LEVEL LITERACY WARMUP COMPONENT
+// components/curriculum/literacy/PrepLiteracyWarmUp.js
+// PREP LEVEL LITERACY WARMUP COMPONENT - UPDATED WITH ALL 4 TERMS
 import React, { useState, useEffect, useRef } from 'react';
-import { prepTerm1Content, getPrepSoundImagePath, getPrepSoundWords } from './data/prep-term1-content';
+
+// Import all term content
+import { prepTerm1Content, getPrepSoundImagePath as getTerm1Image, getPrepSoundWords as getTerm1Words } from './data/prep-term1-content';
+import { prepTerm2Content, getPrepTerm2SoundImagePath as getTerm2Image, getPrepTerm2SoundWords as getTerm2Words } from './data/prep-term2-content';
+import { prepTerm3Content, getPrepTerm3SoundImagePath as getTerm3Image, getPrepTerm3SoundWords as getTerm3Words } from './data/prep-term3-content';
+import { prepTerm4Content, getPrepTerm4SoundImagePath as getTerm4Image, getPrepTerm4SoundWords as getTerm4Words } from './data/prep-term4-content';
+
+// ===============================================
+// TERM CONTENT MAPPING
+// ===============================================
+const TERM_CONTENT = {
+  term1: {
+    content: prepTerm1Content,
+    getImagePath: getTerm1Image,
+    getSoundWords: getTerm1Words
+  },
+  term2: {
+    content: prepTerm2Content,
+    getImagePath: getTerm2Image,
+    getSoundWords: getTerm2Words
+  },
+  term3: {
+    content: prepTerm3Content,
+    getImagePath: getTerm3Image,
+    getSoundWords: getTerm3Words
+  },
+  term4: {
+    content: prepTerm4Content,
+    getImagePath: getTerm4Image,
+    getSoundWords: getTerm4Words
+  }
+};
 
 // ===============================================
 // SIMPLE NAME PICKER FOR PREP LEVEL
@@ -180,22 +211,27 @@ const PrepTimer = ({ isPresentationMode }) => {
 // ===============================================
 // SOUND REVIEW TOOL FOR PREP
 // ===============================================
-const PrepSoundReview = ({ week, day, isPresentationMode, onShowToast }) => {
+const PrepSoundReview = ({ selectedTerm, week, day, isPresentationMode, onShowToast }) => {
   const [currentSoundIndex, setCurrentSoundIndex] = useState(0);
   const [dailySounds, setDailySounds] = useState([]);
 
+  const termData = TERM_CONTENT[selectedTerm];
+  if (!termData) {
+    return <div className="text-center p-8 text-red-600">Term not found!</div>;
+  }
+
   // Get today's sounds
   useEffect(() => {
-    const weekData = prepTerm1Content.weeks[`week${week}`];
+    const weekData = termData.content.weeks[`week${week}`];
     if (weekData && weekData.dailySounds && weekData.dailySounds[day]) {
       setDailySounds(weekData.dailySounds[day]);
       setCurrentSoundIndex(0);
     }
-  }, [week, day]);
+  }, [selectedTerm, week, day, termData]);
 
   const currentSound = dailySounds[currentSoundIndex];
-  const soundWords = currentSound ? getPrepSoundWords(currentSound) : [];
-  const imagePath = currentSound ? getPrepSoundImagePath(currentSound) : "";
+  const soundWords = currentSound ? termData.getSoundWords(currentSound) : [];
+  const imagePath = currentSound ? termData.getImagePath(currentSound) : "";
 
   const nextSound = () => {
     setCurrentSoundIndex((prev) => (prev + 1) % dailySounds.length);
@@ -307,61 +343,162 @@ const PrepSoundReview = ({ week, day, isPresentationMode, onShowToast }) => {
 };
 
 // ===============================================
-// PICTURE WORD MATCHING GAME - FIXED & RANDOMIZED
+// PICTURE WORD MATCHING GAME - UPDATED FOR ALL TERMS
 // ===============================================
-const PictureWordMatching = ({ content, isPresentationMode, currentDay = 0 }) => {
+const PictureWordMatching = ({ selectedTerm, content, isPresentationMode, currentDay = 0 }) => {
   const [selectedPicture, setSelectedPicture] = useState(null);
   const [selectedWord, setSelectedWord] = useState(null);
   const [matches, setMatches] = useState([]);
   const [showCelebration, setShowCelebration] = useState(false);
 
-  // Different sets of picture-word pairs for each day
-  const dailyPairs = [
-    // Monday - Basic animals and objects
-    [
-      { id: 1, word: "cat", image: "/SoundPictures/C_Cat.png" },
-      { id: 2, word: "dog", image: "/SoundPictures/D_Dog.png" },
-      { id: 3, word: "apple", image: "/SoundPictures/A_Apple.png" },
-      { id: 4, word: "ball", image: "/SoundPictures/ALL_Ball.png" }
-    ],
-    // Tuesday - Nature and home
-    [
-      { id: 1, word: "tree", image: "/SoundPictures/TR_Tree.png" },
-      { id: 2, word: "house", image: "/SoundPictures/OUS_House.png" },
-      { id: 3, word: "flower", image: "/SoundPictures/FL_Flower.png" },
-      { id: 4, word: "star", image: "/SoundPictures/ST_Star.png" }
-    ],
-    // Wednesday - Transport and items
-    [
-      { id: 1, word: "boat", image: "/SoundPictures/OA_Boat.png" },
-      { id: 2, word: "watch", image: "/SoundPictures/TCH_Watch.png" },
-      { id: 3, word: "table", image: "/SoundPictures/ABLE_Table.png" },
-      { id: 4, word: "scarf", image: "/SoundPictures/SC_Scarf.png" }
-    ],
-    // Thursday - More animals and objects
-    [
-      { id: 1, word: "frog", image: "/SoundPictures/F_Frog.png" },
-      { id: 2, word: "snake", image: "/SoundPictures/SN_Snake.png" },
-      { id: 3, word: "chair", image: "/SoundPictures/CH_Chair.png" },
-      { id: 4, word: "light", image: "/SoundPictures/IGH_Light.png" }
-    ],
-    // Friday - Fun mixed set
-    [
-      { id: 1, word: "bee", image: "/SoundPictures/EE_Bee.png" },
-      { id: 2, word: "goat", image: "/SoundPictures/G_Goat.png" },
-      { id: 3, word: "brush", image: "/SoundPictures/BR_Brush.png" },
-      { id: 4, word: "crown", image: "/SoundPictures/CR_Crab.png" } // Using crab image as crown placeholder
-    ]
-  ];
+  // Enhanced daily pairs that progress with each term
+  const getTermBasedPairs = (term, day) => {
+    const termPairs = {
+      term1: [
+        // Week 1-10: Basic CVC and simple sounds
+        [
+          { id: 1, word: "cat", image: "/SoundPictures/C_Cat.png" },
+          { id: 2, word: "dog", image: "/SoundPictures/D_Dog.png" },
+          { id: 3, word: "sun", image: "/SoundPictures/S_Snake.png" },
+          { id: 4, word: "apple", image: "/SoundPictures/A_Apple.png" }
+        ],
+        [
+          { id: 1, word: "pig", image: "/SoundPictures/P_Puppy.png" },
+          { id: 2, word: "net", image: "/SoundPictures/N_Ninja.png" },
+          { id: 3, word: "top", image: "/SoundPictures/T_Turtle.png" },
+          { id: 4, word: "map", image: "/SoundPictures/M_Monkey.png" }
+        ],
+        [
+          { id: 1, word: "goat", image: "/SoundPictures/G_Goat.png" },
+          { id: 2, word: "octopus", image: "/SoundPictures/O_Octopus.png" },
+          { id: 3, word: "igloo", image: "/SoundPictures/I_Igloo.png" },
+          { id: 4, word: "hat", image: "/SoundPictures/H_Happy.png" }
+        ],
+        [
+          { id: 1, word: "lion", image: "/SoundPictures/L_Lion.png" },
+          { id: 2, word: "rabbit", image: "/SoundPictures/R_Rabbit.png" },
+          { id: 3, word: "umbrella", image: "/SoundPictures/U_Umbrella.png" },
+          { id: 4, word: "violin", image: "/SoundPictures/V_Violin.png" }
+        ],
+        [
+          { id: 1, word: "whale", image: "/SoundPictures/WH_Whale.png" },
+          { id: 2, word: "elephant", image: "/SoundPictures/E_Elephant.png" },
+          { id: 3, word: "frog", image: "/SoundPictures/F_Frog.png" },
+          { id: 4, word: "ball", image: "/SoundPictures/ALL_Ball.png" }
+        ]
+      ],
+      term2: [
+        // Week 11-20: More letters b, c, e, f, h, l, r, u, v, w
+        [
+          { id: 1, word: "banana", image: "/SoundPictures/B_Banana.png" },
+          { id: 2, word: "chair", image: "/SoundPictures/CH_Chair.png" },
+          { id: 3, word: "egg", image: "/SoundPictures/E_Elephant.png" },
+          { id: 4, word: "fish", image: "/SoundPictures/F_Frog.png" }
+        ],
+        [
+          { id: 1, word: "house", image: "/SoundPictures/OUS_House.png" },
+          { id: 2, word: "light", image: "/SoundPictures/IGH_Light.png" },
+          { id: 3, word: "robot", image: "/SoundPictures/R_Rabbit.png" },
+          { id: 4, word: "unicorn", image: "/SoundPictures/U_Umbrella.png" }
+        ],
+        [
+          { id: 1, word: "vase", image: "/SoundPictures/V_Violin.png" },
+          { id: 2, word: "water", image: "/SoundPictures/WH_Whale.png" },
+          { id: 3, word: "boat", image: "/SoundPictures/OA_Boat.png" },
+          { id: 4, word: "tree", image: "/SoundPictures/TR_Tree.png" }
+        ],
+        [
+          { id: 1, word: "flower", image: "/SoundPictures/FL_Flower.png" },
+          { id: 2, word: "star", image: "/SoundPictures/ST_Star.png" },
+          { id: 3, word: "brush", image: "/SoundPictures/BR_Brush.png" },
+          { id: 4, word: "clock", image: "/SoundPictures/CL_Clock.png" }
+        ],
+        [
+          { id: 1, word: "crown", image: "/SoundPictures/CR_Crab.png" },
+          { id: 2, word: "dragon", image: "/SoundPictures/DR_Dragon.png" },
+          { id: 3, word: "glass", image: "/SoundPictures/GL_Glass.png" },
+          { id: 4, word: "grass", image: "/SoundPictures/GR_Grass.png" }
+        ]
+      ],
+      term3: [
+        // Week 21-30: Final letters and simple blends j, k, q, x, y, z, st, nd, mp, nk
+        [
+          { id: 1, word: "jump", image: "/SoundPictures/J_Jump.png" },
+          { id: 2, word: "kangaroo", image: "/SoundPictures/K_Kangaroo.png" },
+          { id: 3, word: "queen", image: "/SoundPictures/Q_Queen.png" },
+          { id: 4, word: "box", image: "/SoundPictures/X_Exit.png" }
+        ],
+        [
+          { id: 1, word: "yellow", image: "/SoundPictures/Y_Puppy.png" },
+          { id: 2, word: "zebra", image: "/SoundPictures/Z_Zebra.png" },
+          { id: 3, word: "star", image: "/SoundPictures/ST_Star.png" },
+          { id: 4, word: "hand", image: "/SoundPictures/END_Hand.png" }
+        ],
+        [
+          { id: 1, word: "lamp", image: "/SoundPictures/AMP_Lamp.png" },
+          { id: 2, word: "pink", image: "/SoundPictures/INK_Pink.png" },
+          { id: 3, word: "plant", image: "/SoundPictures/PL_Plant.png" },
+          { id: 4, word: "snake", image: "/SoundPictures/SN_Snake.png" }
+        ],
+        [
+          { id: 1, word: "spider", image: "/SoundPictures/SP_Spider.png" },
+          { id: 2, word: "smile", image: "/SoundPictures/SM_Smile.png" },
+          { id: 3, word: "slide", image: "/SoundPictures/SL_Slide.png" },
+          { id: 4, word: "swing", image: "/SoundPictures/SW_Swan.png" }
+        ],
+        [
+          { id: 1, word: "twins", image: "/SoundPictures/TW_Twins.png" },
+          { id: 2, word: "princess", image: "/SoundPictures/PR_Princess.png" },
+          { id: 3, word: "scarf", image: "/SoundPictures/SC_Scarf.png" },
+          { id: 4, word: "skunk", image: "/SoundPictures/SK_Skunk.png" }
+        ]
+      ],
+      term4: [
+        // Week 31-40: Digraphs and complex sounds ch, sh, th, wh, ck, qu, ll, ss, ff, zz
+        [
+          { id: 1, word: "chair", image: "/SoundPictures/CH_Chair.png" },
+          { id: 2, word: "ship", image: "/SoundPictures/SH_Ship.png" },
+          { id: 3, word: "thumb", image: "/SoundPictures/TH_Thumb.png" },
+          { id: 4, word: "whale", image: "/SoundPictures/WH_Whale.png" }
+        ],
+        [
+          { id: 1, word: "duck", image: "/SoundPictures/CK_Duck.png" },
+          { id: 2, word: "queen", image: "/SoundPictures/Q_Queen.png" },
+          { id: 3, word: "ball", image: "/SoundPictures/ALL_Ball.png" },
+          { id: 4, word: "dress", image: "/SoundPictures/LESS_Dress.png" }
+        ],
+        [
+          { id: 1, word: "cliff", image: "/SoundPictures/OFF_Cliff.png" },
+          { id: 2, word: "buzz", image: "/SoundPictures/IZZY_Buzz.png" },
+          { id: 3, word: "watch", image: "/SoundPictures/TCH_Watch.png" },
+          { id: 4, word: "table", image: "/SoundPictures/ABLE_Table.png" }
+        ],
+        [
+          { id: 1, word: "phone", image: "/SoundPictures/PH_Phone.png" },
+          { id: 2, word: "cheese", image: "/SoundPictures/EE_Bee.png" },
+          { id: 3, word: "block", image: "/SoundPictures/BL_Block.png" },
+          { id: 4, word: "crab", image: "/SoundPictures/CR_Crab.png" }
+        ],
+        [
+          { id: 1, word: "three", image: "/SoundPictures/THR_Three.png" },
+          { id: 2, word: "splash", image: "/SoundPictures/SPL_Splash.png" },
+          { id: 3, word: "spring", image: "/SoundPictures/SPR_Spring.png" },
+          { id: 4, word: "string", image: "/SoundPictures/STR_String.png" }
+        ]
+      ]
+    };
 
-  // Get pairs for current day, with randomized positions
+    return termPairs[term]?.[day] || termPairs.term1[0];
+  };
+
+  // Get pairs for current term and day, with randomized positions
   const [gamePairs, setGamePairs] = useState([]);
   const [shuffledPictures, setShuffledPictures] = useState([]);
   const [shuffledWords, setShuffledWords] = useState([]);
 
-  // Initialize game when component mounts or day changes
+  // Initialize game when component mounts or term/day changes
   useEffect(() => {
-    const dayPairs = dailyPairs[currentDay] || dailyPairs[0];
+    const dayPairs = getTermBasedPairs(selectedTerm, currentDay);
     const pairs = dayPairs.map((pair, index) => ({ ...pair, id: index, matched: false }));
     setGamePairs(pairs);
     
@@ -377,7 +514,7 @@ const PictureWordMatching = ({ content, isPresentationMode, currentDay = 0 }) =>
     setSelectedPicture(null);
     setSelectedWord(null);
     setShowCelebration(false);
-  }, [currentDay]);
+  }, [selectedTerm, currentDay]);
 
   const handlePictureClick = (pairId) => {
     if (matches.includes(pairId)) return;
@@ -421,6 +558,12 @@ const PictureWordMatching = ({ content, isPresentationMode, currentDay = 0 }) =>
   };
 
   const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+  const termNames = {
+    term1: 'Single Letter Sounds',
+    term2: 'More Letter Sounds', 
+    term3: 'Final Letters & Blends',
+    term4: 'Digraphs & Complex Sounds'
+  };
 
   return (
     <div className="space-y-6">
@@ -429,7 +572,7 @@ const PictureWordMatching = ({ content, isPresentationMode, currentDay = 0 }) =>
           🎯 Picture Word Matching
         </h3>
         <p className={`text-green-600 ${isPresentationMode ? 'text-3xl' : 'text-xl'}`}>
-          Match each picture with its word! ({dayNames[currentDay]} Set)
+          Match each picture with its word! ({termNames[selectedTerm]} - {dayNames[currentDay]} Set)
         </p>
       </div>
 
@@ -481,7 +624,7 @@ const PictureWordMatching = ({ content, isPresentationMode, currentDay = 0 }) =>
         {/* Words Column - Randomized positions */}
         <div className="bg-pink-50 border-2 border-pink-200 rounded-xl p-6">
           <h4 className={`font-bold text-pink-800 mb-4 text-center ${isPresentationMode ? 'text-4xl' : 'text-2xl'}`}>
-            📝 Words
+            🔤 Words
           </h4>
           <div className="grid grid-cols-2 gap-4">
             {shuffledWords.map((pair, position) => (
@@ -570,6 +713,10 @@ const PrepReadingPassage = ({ passage, isPresentationMode, currentDay = 0 }) => 
 // ===============================================
 const RhymingWordsTool = ({ language, isPresentationMode }) => {
   const [currentRhyme, setCurrentRhyme] = useState(0);
+  
+  if (!language.rhymingWords || language.rhymingWords.length === 0) {
+    return <div className="text-center p-8 text-red-600">No rhyming words available</div>;
+  }
   
   const rhymeData = language.rhymingWords[currentRhyme];
 
@@ -662,6 +809,10 @@ const RhymingWordsTool = ({ language, isPresentationMode }) => {
 const LetterRecognitionTool = ({ language, isPresentationMode }) => {
   const [currentTask, setCurrentTask] = useState(0);
   
+  if (!language.letterRecognition || language.letterRecognition.length === 0) {
+    return <div className="text-center p-8 text-red-600">No letter recognition activities available</div>;
+  }
+  
   const nextTask = () => {
     setCurrentTask((prev) => (prev + 1) % language.letterRecognition.length);
   };
@@ -717,6 +868,10 @@ const LetterRecognitionTool = ({ language, isPresentationMode }) => {
 const PrepRiddleTool = ({ riddles, isPresentationMode, currentDay = 0 }) => {
   const [showAnswer, setShowAnswer] = useState(false);
   const [showHint, setShowHint] = useState(false);
+
+  if (!riddles || riddles.length === 0) {
+    return <div className="text-center p-8 text-red-600">No riddles available</div>;
+  }
 
   const currentRiddle = riddles[currentDay] || riddles[0];
 
@@ -776,6 +931,10 @@ const PrepRiddleTool = ({ riddles, isPresentationMode, currentDay = 0 }) => {
 // SIMPLE FUN FACT TOOL FOR PREP
 // ===============================================
 const PrepFunFactTool = ({ funFacts, isPresentationMode, currentDay = 0 }) => {
+  if (!funFacts || funFacts.length === 0) {
+    return <div className="text-center p-8 text-red-600">No fun facts available</div>;
+  }
+
   const currentFact = funFacts[currentDay] || funFacts[0];
   const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
@@ -798,7 +957,7 @@ const PrepFunFactTool = ({ funFacts, isPresentationMode, currentDay = 0 }) => {
       </div>
 
       <p className={`text-blue-600 mt-4 ${isPresentationMode ? 'text-2xl' : 'text-lg'}`}>
-        🤓 That's so cool!
+        🤔 That's so cool!
       </p>
     </div>
   );
@@ -808,6 +967,7 @@ const PrepFunFactTool = ({ funFacts, isPresentationMode, currentDay = 0 }) => {
 // MAIN PREP LITERACY WARMUP COMPONENT
 // ===============================================
 const PrepLiteracyWarmup = ({ showToast = () => {}, students = [], saveData = () => {}, loadedData = {} }) => {
+  const [selectedTerm, setSelectedTerm] = useState('term1');
   const [selectedWeek, setSelectedWeek] = useState('week1');
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [isPresentationMode, setIsPresentationMode] = useState(false);
@@ -823,13 +983,14 @@ const PrepLiteracyWarmup = ({ showToast = () => {}, students = [], saveData = ()
     { id: 'fun_fact', title: 'Cool Fact', icon: '🌟' }
   ];
 
-  const weeklyContent = prepTerm1Content.weeks[selectedWeek];
+  const termData = TERM_CONTENT[selectedTerm];
+  const weeklyContent = termData?.content.weeks[selectedWeek];
   
-  if (!weeklyContent) {
+  if (!termData || !weeklyContent) {
     return (
         <div className="text-center p-8">
-            <h3 className="text-xl font-bold text-red-600">Error: Week not found.</h3>
-            <p className="text-gray-600">Please select a different week.</p>
+            <h3 className="text-xl font-bold text-red-600">Error: Term or Week not found.</h3>
+            <p className="text-gray-600">Please select a different term or week.</p>
         </div>
     );
   }
@@ -856,6 +1017,7 @@ const PrepLiteracyWarmup = ({ showToast = () => {}, students = [], saveData = ()
     switch(currentStep.id) {
         case 'sound_review':
             return <PrepSoundReview 
+                     selectedTerm={selectedTerm}
                      week={weekNumber}
                      day={currentDay}
                      isPresentationMode={isPresentationMode} 
@@ -863,6 +1025,7 @@ const PrepLiteracyWarmup = ({ showToast = () => {}, students = [], saveData = ()
                    />;
         case 'picture_matching':
             return <PictureWordMatching 
+                     selectedTerm={selectedTerm}
                      content={weeklyContent} 
                      isPresentationMode={isPresentationMode}
                      currentDay={currentDay}
@@ -911,7 +1074,7 @@ const PrepLiteracyWarmup = ({ showToast = () => {}, students = [], saveData = ()
               Prep Literacy Fun
             </h3>
             <p className={`opacity-90 ${isPresentationMode ? 'text-4xl' : 'text-2xl'}`}>
-              {prepTerm1Content.name} • Learning letter sounds!
+              {termData.content.name} • {termData.content.description}
             </p>
           </div>
           <button
@@ -923,12 +1086,36 @@ const PrepLiteracyWarmup = ({ showToast = () => {}, students = [], saveData = ()
         </div>
       </div>
 
-      {/* Week and Day Selection */}
+      {/* Term, Week and Day Selection */}
       {!isPresentationMode && (
         <div className="bg-white rounded-xl shadow-lg p-6 space-y-4">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-4">
-            <h4 className="text-2xl font-bold text-gray-800">📅 Choose Week & Day</h4>
+            <h4 className="text-2xl font-bold text-gray-800">📅 Choose Term, Week & Day</h4>
             <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex items-center gap-2">
+                <label htmlFor="term-select" className="font-semibold text-gray-700 text-lg">Term:</label>
+                <select 
+                  id="term-select" 
+                  value={selectedTerm} 
+                  onChange={e => { 
+                    setSelectedTerm(e.target.value); 
+                    setSelectedWeek('week1'); // Reset to week 1 of new term
+                    setCurrentStepIndex(0); 
+                    const newTermData = TERM_CONTENT[e.target.value];
+                    if (newTermData) {
+                      showToast(`Switched to ${newTermData.content.name}`, 'info');
+                    }
+                  }} 
+                  className="p-3 border-2 border-gray-300 rounded-lg font-semibold bg-white shadow-sm text-lg"
+                >
+                  {Object.entries(TERM_CONTENT).map(([termKey, termInfo]) => (
+                    <option key={termKey} value={termKey}>
+                      {termKey.replace('term', 'Term ')} - {termInfo.content.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
               <div className="flex items-center gap-2">
                 <label htmlFor="week-select" className="font-semibold text-gray-700 text-lg">Week:</label>
                 <select 
@@ -937,15 +1124,15 @@ const PrepLiteracyWarmup = ({ showToast = () => {}, students = [], saveData = ()
                   onChange={e => { 
                     setSelectedWeek(e.target.value); 
                     setCurrentStepIndex(0); 
-                    const weekData = prepTerm1Content.weeks[e.target.value];
+                    const weekData = termData.content.weeks[e.target.value];
                     if (weekData) {
                       showToast(`Switched to ${e.target.value.replace('week', 'Week ')} - Letter: ${weekData.focusSound.toUpperCase()}`, 'info');
                     }
                   }} 
                   className="p-3 border-2 border-gray-300 rounded-lg font-semibold bg-white shadow-sm text-lg"
                 >
-                  {Object.keys(prepTerm1Content.weeks).map(weekKey => {
-                    const weekData = prepTerm1Content.weeks[weekKey];
+                  {Object.keys(termData.content.weeks).map(weekKey => {
+                    const weekData = termData.content.weeks[weekKey];
                     return (
                       <option key={weekKey} value={weekKey}>
                         {weekKey.replace('week', 'Week ')} - Letter: {weekData.focusSound.toUpperCase()}
@@ -988,7 +1175,7 @@ const PrepLiteracyWarmup = ({ showToast = () => {}, students = [], saveData = ()
       {isPresentationMode && (
         <div className="bg-white rounded-xl shadow-lg p-8 text-center">
           <h4 className="text-6xl font-bold text-gray-800 mb-4">
-            🔤 {selectedWeek.replace('week', 'Week ')} - {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'][currentDay]}
+            🔤 {selectedTerm.replace('term', 'Term ')} - {selectedWeek.replace('week', 'Week ')} - {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'][currentDay]}
           </h4>
           <div className="text-12xl font-mono bg-green-100 px-8 py-4 rounded-lg text-green-700 animate-pulse inline-block">
             Letter: {weeklyContent.focusSound.toUpperCase()}
@@ -1034,7 +1221,7 @@ const PrepLiteracyWarmup = ({ showToast = () => {}, students = [], saveData = ()
                 </div>
                 <div className="text-right">
                     <p className={`text-gray-500 ${isPresentationMode ? 'text-3xl' : 'text-lg'}`}>
-                      {selectedWeek.replace('week', 'Week ')}
+                      {selectedTerm.replace('term', 'Term ')} - {selectedWeek.replace('week', 'Week ')}
                     </p>
                     <div className={`flex items-center gap-1 mt-1 ${isPresentationMode ? 'gap-3' : ''}`}>
                         {WARMUP_STEPS.map((_, index) => (
@@ -1067,7 +1254,7 @@ const PrepLiteracyWarmup = ({ showToast = () => {}, students = [], saveData = ()
         </button>
         
         <div className="text-center">
-          <p className={`text-gray-600 mb-2 ${isPresentationMode ? 'text-3xl' : 'text-base'}`}>📍 Progress</p>
+          <p className={`text-gray-600 mb-2 ${isPresentationMode ? 'text-3xl' : 'text-base'}`}>📈 Progress</p>
           <div className={`flex items-center gap-2 ${isPresentationMode ? 'gap-4' : ''}`}>
               {WARMUP_STEPS.map((step, index) => (
                   <div 
@@ -1097,12 +1284,12 @@ const PrepLiteracyWarmup = ({ showToast = () => {}, students = [], saveData = ()
           <div className="flex items-start space-x-4">
             <span className="text-4xl">👩‍🏫</span>
             <div>
-              <h4 className="font-bold text-green-800 mb-2">🌟 Perfect for Prep Level!</h4>
+              <h4 className="font-bold text-green-800 mb-2">🌟 Complete 4-Term Prep System!</h4>
               <p className="text-green-700 text-lg">
-                **SATPIN Progression**: Starting with the most important letter sounds (S-A-T-P-I-N), 
-                then building up with M, D, G, O. Picture matching games, simple rhyming activities, 
-                and age-appropriate riddles make learning fun! Great for 4-6 year olds just starting 
-                their literacy journey.
+                **Full 40-Week Progression**: Term 1 (SATPIN basics), Term 2 (remaining alphabet), 
+                Term 3 (final letters + simple blends), Term 4 (digraphs + complex sounds). Each term builds 
+                perfectly on the last with age-appropriate activities, daily riddles, fun facts, and engaging 
+                picture-matching games. Perfect for 4-6 year olds starting their literacy journey!
               </p>
             </div>
           </div>
