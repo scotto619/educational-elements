@@ -8,11 +8,25 @@ import MemoryMatchGame from '../games/MemoryMatchGame';
 import NoggleGame from '../games/NoggleGame';
 import WordSearchGame from '../games/WordSearchGame';
 import CrosswordGame from '../games/CrosswordGame';
+import Match3BattleGame from '../games/Match3BattleGame'; // NEW EPIC GAME!
 
 // ===============================================
 // GAME DEFINITIONS
 // ===============================================
 const AVAILABLE_GAMES = [
+  {
+    id: 'match3battle',
+    name: 'Match-3 Battle Arena',
+    icon: '⚔️',
+    description: 'Epic fantasy RPG match-3 combat! Battle enemies, collect upgrades, and climb the tower of challenges!',
+    component: Match3BattleGame,
+    color: 'from-red-500 to-purple-600',
+    difficulty: 'Medium - Expert',
+    players: '1 player (Multiplayer coming)',
+    time: '5-30 minutes',
+    special: true,
+    featured: true
+  },
   {
     id: 'crossword',
     name: 'Crossword Puzzle',
@@ -112,11 +126,17 @@ const GamesTab = ({ students = [], showToast = () => {} }) => {
                 ← Back to Games
               </button>
               <div className="flex items-center space-x-3">
-                <div className={`w-12 h-12 rounded-full bg-gradient-to-r ${selectedGame.color} flex items-center justify-center text-2xl`}>
+                <div className={`w-12 h-12 rounded-full bg-gradient-to-r ${selectedGame.color} flex items-center justify-center text-2xl ${
+                  selectedGame.special ? 'ring-4 ring-yellow-400 ring-opacity-60 animate-pulse' : ''
+                }`}>
                   {selectedGame.icon}
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-800">{selectedGame.name}</h2>
+                  <h2 className="text-2xl font-bold text-gray-800 flex items-center">
+                    {selectedGame.name}
+                    {selectedGame.featured && <span className="ml-2 text-yellow-500">⭐</span>}
+                    {selectedGame.special && <span className="ml-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs px-2 py-1 rounded-full font-bold">NEW!</span>}
+                  </h2>
                   <p className="text-gray-600">{selectedGame.description}</p>
                 </div>
               </div>
@@ -130,6 +150,7 @@ const GamesTab = ({ students = [], showToast = () => {} }) => {
                   value={gameMode}
                   onChange={(e) => setGameMode(e.target.value)}
                   className="px-3 py-2 border border-gray-300 rounded-lg bg-white"
+                  disabled={selectedGame.id === 'match3battle'} // Match-3 Battle is always digital mode
                 >
                   <option value="digital">🖥️ Digital (Interactive)</option>
                   <option value="projector">📽️ Projector (Display Only)</option>
@@ -158,7 +179,7 @@ const GamesTab = ({ students = [], showToast = () => {} }) => {
             </div>
             <div className="flex items-center space-x-1">
               <span className="font-medium">📱 Mode:</span>
-              <span className="text-gray-600">{gameMode === 'digital' ? 'Interactive' : 'Display Only'}</span>
+              <span className="text-gray-600">{selectedGame.id === 'match3battle' ? 'Adventure RPG' : gameMode === 'digital' ? 'Interactive' : 'Display Only'}</span>
             </div>
           </div>
         </div>
@@ -166,9 +187,12 @@ const GamesTab = ({ students = [], showToast = () => {} }) => {
         {/* Game Component */}
         <div className="bg-white rounded-xl shadow-lg p-6">
           <GameComponent 
-            gameMode={gameMode}
+            gameMode={selectedGame.id === 'match3battle' ? 'digital' : gameMode}
             showToast={showToast}
             students={students}
+            // Pass student data for games that need save functionality
+            studentData={students.length > 0 ? students[0] : null}
+            updateStudentData={null} // Will be passed from parent if needed
           />
         </div>
       </div>
@@ -178,7 +202,7 @@ const GamesTab = ({ students = [], showToast = () => {} }) => {
   // Game Selection Menu
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Enhanced Header */}
       <div className="bg-white rounded-xl shadow-lg p-6">
         <div className="text-center">
           <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
@@ -203,6 +227,45 @@ const GamesTab = ({ students = [], showToast = () => {} }) => {
           </div>
         </div>
       </div>
+
+      {/* Featured Game Spotlight */}
+      {AVAILABLE_GAMES.find(g => g.featured) && (
+        <div className="bg-gradient-to-r from-purple-900 via-blue-900 to-indigo-900 rounded-xl shadow-lg p-8 text-white">
+          <div className="text-center">
+            <div className="text-6xl mb-4">⚔️</div>
+            <h3 className="text-3xl font-bold mb-2 bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
+              🌟 FEATURED: Match-3 Battle Arena! 🌟
+            </h3>
+            <p className="text-xl mb-4 text-purple-100">
+              Epic fantasy RPG meets strategic match-3 gameplay! Battle fierce enemies, collect powerful upgrades, and climb the tower of challenges!
+            </p>
+            <div className="flex justify-center items-center space-x-8 text-sm mb-6">
+              <div className="flex items-center space-x-2">
+                <span>⚔️</span>
+                <span>Combat System</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span>🎯</span>
+                <span>Strategic Matching</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span>📈</span>
+                <span>Progress Saves</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span>🏆</span>
+                <span>Upgrade System</span>
+              </div>
+            </div>
+            <button
+              onClick={() => handleGameSelect(AVAILABLE_GAMES.find(g => g.featured))}
+              className="bg-gradient-to-r from-yellow-500 to-orange-600 text-white px-8 py-4 rounded-xl font-bold text-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95"
+            >
+              ⚔️ START EPIC ADVENTURE!
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Game Mode Selection */}
       <div className="bg-white rounded-xl shadow-lg p-6">
@@ -243,16 +306,29 @@ const GamesTab = ({ students = [], showToast = () => {} }) => {
             <div
               key={game.id}
               onClick={() => handleGameSelect(game)}
-              className="group cursor-pointer bg-gray-50 rounded-xl p-6 border-2 border-transparent hover:border-gray-300 hover:shadow-lg transition-all duration-200"
+              className={`group cursor-pointer rounded-xl p-6 border-2 border-transparent hover:border-gray-300 hover:shadow-lg transition-all duration-200 relative ${
+                game.special 
+                  ? 'bg-gradient-to-br from-yellow-50 to-orange-50 ring-2 ring-yellow-400 ring-opacity-50' 
+                  : 'bg-gray-50'
+              }`}
             >
+              {game.special && (
+                <div className="absolute -top-2 -right-2 bg-gradient-to-r from-yellow-500 to-orange-600 text-white text-xs font-bold px-3 py-1 rounded-full z-10 animate-bounce">
+                  NEW!
+                </div>
+              )}
+              
               {/* Game Icon & Header */}
               <div className="flex items-center space-x-3 mb-4">
-                <div className={`w-12 h-12 rounded-full bg-gradient-to-r ${game.color} flex items-center justify-center text-2xl group-hover:scale-110 transition-transform`}>
+                <div className={`w-12 h-12 rounded-full bg-gradient-to-r ${game.color} flex items-center justify-center text-2xl group-hover:scale-110 transition-transform ${
+                  game.special ? 'animate-pulse' : ''
+                }`}>
                   {game.icon}
                 </div>
                 <div>
-                  <h4 className="text-lg font-bold text-gray-800 group-hover:text-blue-600 transition-colors">
+                  <h4 className="text-lg font-bold text-gray-800 group-hover:text-blue-600 transition-colors flex items-center">
                     {game.name}
+                    {game.featured && <span className="ml-2 text-yellow-500">⭐</span>}
                   </h4>
                 </div>
               </div>
@@ -280,8 +356,10 @@ const GamesTab = ({ students = [], showToast = () => {} }) => {
 
               {/* Play Button */}
               <div className="mt-4 pt-4 border-t border-gray-200">
-                <div className={`w-full py-2 px-4 rounded-lg bg-gradient-to-r ${game.color} text-white text-center font-semibold group-hover:shadow-md transition-all`}>
-                  🎮 Play Game
+                <div className={`w-full py-2 px-4 rounded-lg bg-gradient-to-r ${game.color} text-white text-center font-semibold group-hover:shadow-md transition-all ${
+                  game.special ? 'animate-pulse' : ''
+                }`}>
+                  {game.special ? '⚔️ PLAY EPIC GAME' : '🎮 Play Game'}
                 </div>
               </div>
             </div>
@@ -289,7 +367,7 @@ const GamesTab = ({ students = [], showToast = () => {} }) => {
         </div>
       </div>
 
-      {/* Quick Tips */}
+      {/* Enhanced Quick Tips */}
       <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-200">
         <h3 className="text-lg font-bold text-blue-800 mb-3">💡 Game Tips</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
@@ -308,6 +386,20 @@ const GamesTab = ({ students = [], showToast = () => {} }) => {
           <div className="bg-white rounded-lg p-3">
             <div className="font-semibold text-orange-700 mb-1">🏆 Rewards</div>
             <div className="text-gray-600">Use as classroom rewards or celebration activities</div>
+          </div>
+        </div>
+        
+        {/* Special tip for Match-3 Battle */}
+        <div className="mt-4 p-4 bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg border border-purple-300">
+          <div className="flex items-start space-x-3">
+            <span className="text-2xl">⚔️</span>
+            <div>
+              <h4 className="font-bold text-purple-800 mb-1">Match-3 Battle Arena Tips</h4>
+              <p className="text-purple-700 text-sm">
+                This RPG adventure saves progress automatically! Students can return anytime to continue their quest. 
+                Perfect for longer engagement sessions or as a reward for completing classwork!
+              </p>
+            </div>
           </div>
         </div>
       </div>
