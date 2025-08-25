@@ -244,7 +244,7 @@ const PrepSoundReview = ({ week, day, isPresentationMode, onShowToast }) => {
             Letter Sound:
           </h4>
           <div className={`inline-block bg-white px-12 py-8 rounded-2xl border-4 border-purple-500 shadow-lg ${isPresentationMode ? 'px-20 py-12' : ''}`}>
-            <span className={`font-mono font-bold text-purple-700 ${isPresentationMode ? 'text-16xl' : 'text-12xl'}`}>
+            <span className={`font-mono font-bold text-purple-700 ${isPresentationMode ? 'text-32xl' : 'text-20xl'}`}>
               {currentSound.toUpperCase()}
             </span>
           </div>
@@ -307,7 +307,7 @@ const PrepSoundReview = ({ week, day, isPresentationMode, onShowToast }) => {
 };
 
 // ===============================================
-// PICTURE WORD MATCHING GAME
+// PICTURE WORD MATCHING GAME - UPDATED
 // ===============================================
 const PictureWordMatching = ({ content, isPresentationMode }) => {
   const [selectedPicture, setSelectedPicture] = useState(null);
@@ -315,14 +315,31 @@ const PictureWordMatching = ({ content, isPresentationMode }) => {
   const [matches, setMatches] = useState([]);
   const [showCelebration, setShowCelebration] = useState(false);
 
-  // Create picture-word pairs for the focus sound
-  const soundWords = getPrepSoundWords(content.focusSound);
-  const gamePairs = soundWords.slice(0, 4).map((word, index) => ({
-    id: index,
-    word: word,
-    image: getPrepSoundImagePath(content.focusSound), // Using same image for simplicity
-    matched: false
-  }));
+  // Create diverse picture-word pairs for prep level
+  const allPairs = [
+    { id: 1, word: "cat", image: "/SoundPictures/C_Cat.png" },
+    { id: 2, word: "dog", image: "/SoundPictures/D_Dog.png" },
+    { id: 3, word: "sun", image: "/SoundPictures/AY_Day.png" }, // Using day image for sun
+    { id: 4, word: "apple", image: "/SoundPictures/A_Apple.png" },
+    { id: 5, word: "ball", image: "/SoundPictures/ALL_Ball.png" },
+    { id: 6, word: "tree", image: "/SoundPictures/TR_Tree.png" },
+    { id: 7, word: "house", image: "/SoundPictures/OUS_House.png" },
+    { id: 8, word: "star", image: "/SoundPictures/ST_Star.png" },
+    { id: 9, word: "boat", image: "/SoundPictures/OA_Boat.png" },
+    { id: 10, word: "fish", image: "/SoundPictures/AUGHT_Caught.png" }, // Using caught image for fish
+    { id: 11, word: "car", image: "/SoundPictures/SC_Scarf.png" }, // Using scarf image as placeholder
+    { id: 12, word: "flower", image: "/SoundPictures/FL_Flower.png" }
+  ];
+
+  // Randomly select 4 pairs for the game
+  const [gamePairs] = useState(() => {
+    const shuffled = [...allPairs].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, 4).map((pair, index) => ({
+      ...pair,
+      id: index, // Reset IDs for the game
+      matched: false
+    }));
+  });
 
   const handlePictureClick = (pairId) => {
     if (matches.includes(pairId)) return;
@@ -366,7 +383,7 @@ const PictureWordMatching = ({ content, isPresentationMode }) => {
           🎯 Picture Word Matching
         </h3>
         <p className={`text-green-600 ${isPresentationMode ? 'text-3xl' : 'text-xl'}`}>
-          Match the pictures with words that start with "{content.focusSound.toUpperCase()}"
+          Match each picture with its word!
         </p>
       </div>
 

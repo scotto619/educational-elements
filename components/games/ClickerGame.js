@@ -60,6 +60,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
   const [toasts, setToasts] = useState([]);
   const [showChoiceEvent, setShowChoiceEvent] = useState(false);
   const [hasLoadedFromFirebase, setHasLoadedFromFirebase] = useState(false); // Prevent multiple loads
+  const [eventTimeLeft, setEventTimeLeft] = useState(0); // Timer for event UI
 
   const gameLoopRef = useRef();
   const lastUpdateRef = useRef();
@@ -210,8 +211,9 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     'Eternal': { requirement: { type: 'prestige', value: 10 }, color: 'text-purple-400', glow: 'shadow-purple-400/50' }
   };
 
-  // Choice events system
+  // Choice events system - UPDATED WITH MORE INTERACTIVE EVENTS
   const CHOICE_EVENTS = [
+    // Original events
     {
       text: "You discover a mysterious merchant offering a deal...",
       choices: [
@@ -222,7 +224,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     {
       text: "A magical fountain appears before you...",
       choices: [
-        { text: "Drink from it", effect: { type: 'randomBoon', duration: 30000 } },
+        { text: "Drink from it", effect: { type: 'randomBoon', duration: 60000 } },
         { text: "Fill your pouch with water", effect: { type: 'goldGain', amount: 0.1 } }
       ]
     },
@@ -230,21 +232,67 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
       text: "You find an ancient training ground...",
       choices: [
         { text: "Train intensively", effect: { type: 'permanentDPCBoost', mult: 1.1 } },
-        { text: "Rest and meditate", effect: { type: 'temporaryDPSBoost', mult: 3, duration: 60000 } }
+        { text: "Rest and meditate", effect: { type: 'temporaryDPSBoost', mult: 3, duration: 120000 } }
+      ]
+    },
+    
+    // NEW INTERACTIVE EVENTS
+    {
+      text: "🎰 You find a magical Lucky Wheel! Spin to win fantastic prizes!",
+      choices: [
+        { text: "🎰 Spin the Wheel!", effect: { type: 'luckyWheel' } },
+        { text: "Walk away safely", effect: { type: 'smallGoldGain', amount: 0.02 } }
       ]
     },
     {
-      text: "A cursed artifact calls to you...",
+      text: "🎲 A pair of enchanted dice appear before you, glowing with magical energy!",
       choices: [
-        { text: "Touch the artifact", effect: { type: 'cursedPower', dpcMult: 2, dpsPenalty: 0.5, duration: 120000 } },
-        { text: "Leave it alone", effect: { type: 'goldGain', amount: 0.05 } }
+        { text: "🎲 Roll the Dice!", effect: { type: 'diceRoll' } },
+        { text: "Leave them alone", effect: { type: 'goldGain', amount: 0.05 } }
       ]
     },
     {
-      text: "You encounter a wise sage offering knowledge...",
+      text: "📦 You stumble upon three mysterious treasure chests. Choose wisely!",
       choices: [
-        { text: "Accept the wisdom", effect: { type: 'upgradeDiscount', discount: 0.3, duration: 300000 } },
-        { text: "Politely decline", effect: { type: 'goldGain', amount: 0.2 } }
+        { text: "📦 Open Chest #1", effect: { type: 'treasureChest', chest: 1 } },
+        { text: "📦 Open Chest #2", effect: { type: 'treasureChest', chest: 2 } },
+        { text: "📦 Open Chest #3", effect: { type: 'treasureChest', chest: 3 } }
+      ]
+    },
+    {
+      text: "🔮 A mystical crystal ball shows you glimpses of possible futures...",
+      choices: [
+        { text: "🔮 Peer into the future", effect: { type: 'crystalBall' } },
+        { text: "Look away", effect: { type: 'goldGain', amount: 0.03 } }
+      ]
+    },
+    {
+      text: "⚔️ You encounter a legendary warrior who challenges you to prove your worth!",
+      choices: [
+        { text: "⚔️ Accept the challenge", effect: { type: 'warriorChallenge' } },
+        { text: "Decline respectfully", effect: { type: 'goldGain', amount: 0.08 } }
+      ]
+    },
+    {
+      text: "🌟 Shooting stars streak across the sky! Make a wish!",
+      choices: [
+        { text: "🌟 Wish for gold", effect: { type: 'shootingStar', wish: 'gold' } },
+        { text: "✨ Wish for power", effect: { type: 'shootingStar', wish: 'power' } },
+        { text: "🎯 Wish for luck", effect: { type: 'shootingStar', wish: 'luck' } }
+      ]
+    },
+    {
+      text: "🃏 A mysterious card dealer appears with a deck of fate cards...",
+      choices: [
+        { text: "🃏 Draw a card", effect: { type: 'cardDraw' } },
+        { text: "Walk past", effect: { type: 'smallGoldGain', amount: 0.03 } }
+      ]
+    },
+    {
+      text: "🕳️ You find a deep mining shaft with glinting treasures below...",
+      choices: [
+        { text: "⛏️ Mine for treasure", effect: { type: 'miningEvent' } },
+        { text: "Stay on safe ground", effect: { type: 'goldGain', amount: 0.04 } }
       ]
     }
   ];
@@ -605,7 +653,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     addToast(`Prestige ${gameState.prestige + 1} achieved! +${prestigeGain} prestige points!`, 'success');
   }, [canPrestige, calculatePrestigeGain, gameState.prestige, addToast]);
 
-  // Spawn choice event
+  // Spawn choice event - INCREASED TIME LIMIT
   const spawnChoiceEvent = useCallback(() => {
     if (gameState.event.shown) return;
     
@@ -615,7 +663,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
       event: {
         ...prev.event,
         shown: true,
-        until: Date.now() + 30000,
+        until: Date.now() + 60000, // Increased to 60 seconds
         eventText: randomEvent.text,
         choices: randomEvent.choices
       }
@@ -623,12 +671,27 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     setShowChoiceEvent(true);
   }, [gameState.event.shown]);
 
-  // Handle choice event
+  // Handle choice event - UPDATED WITH NEW INTERACTIVE EVENTS
   const handleChoiceEvent = useCallback((choiceIndex) => {
     const choice = gameState.event.choices[choiceIndex];
     if (!choice) return;
 
     const effect = choice.effect;
+    
+    // Play appropriate sound for different event types
+    const playEventSound = (eventType) => {
+      try {
+        let soundFile = 'ding.mp3'; // default
+        if (['luckyWheel', 'diceRoll', 'treasureChest'].includes(eventType)) {
+          soundFile = 'coins.mp3';
+        } else if (['crystalBall', 'cardDraw'].includes(eventType)) {
+          soundFile = 'ding.mp3';
+        }
+        const audio = new Audio(`/sounds/${soundFile}`);
+        audio.volume = 0.4;
+        audio.play().catch(() => {});
+      } catch (e) {}
+    };
     
     setGameState(prev => {
       let newState = { ...prev };
@@ -639,20 +702,23 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
           newState.gold = prev.gold - goldCost;
           newState.dpcMult *= effect.dpcMult;
           addToast(`Traded ${fmt(goldCost)} gold for permanent power!`, 'success');
+          playEventSound('tradeGoldForDPC');
           break;
           
         case 'smallGoldGain':
-          const smallGain = prev.totalGold * effect.amount;
+          const smallGain = Math.max(100, prev.totalGold * effect.amount);
           newState.gold += smallGain;
           newState.totalGold += smallGain;
           addToast(`Found ${fmt(smallGain)} gold!`, 'success');
+          playEventSound('smallGoldGain');
           break;
           
         case 'goldGain':
-          const gain = prev.totalGold * effect.amount;
+          const gain = Math.max(500, prev.totalGold * effect.amount);
           newState.gold += gain;
           newState.totalGold += gain;
           addToast(`Earned ${fmt(gain)} gold!`, 'success');
+          playEventSound('goldGain');
           break;
           
         case 'randomBoon':
@@ -665,12 +731,14 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
             mult: mult,
             until: Date.now() + effect.duration
           }];
-          addToast(`Gained ${randomType.toUpperCase()} x${mult.toFixed(1)} boost!`, 'success');
+          addToast(`Gained ${randomType.toUpperCase()} x${mult.toFixed(1)} boost for ${effect.duration/1000}s!`, 'success');
+          playEventSound('randomBoon');
           break;
           
         case 'permanentDPCBoost':
           newState.dpcMult *= effect.mult;
-          addToast(`Permanent attack power increased!`, 'success');
+          addToast(`Permanent attack power increased by ${((effect.mult - 1) * 100).toFixed(0)}%!`, 'success');
+          playEventSound('permanentDPCBoost');
           break;
           
         case 'temporaryDPSBoost':
@@ -680,25 +748,253 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
             mult: effect.mult,
             until: Date.now() + effect.duration
           }];
-          addToast(`Temporary DPS x${effect.mult} boost!`, 'success');
+          addToast(`Temporary DPS x${effect.mult} boost for ${effect.duration/1000}s!`, 'success');
+          playEventSound('temporaryDPSBoost');
           break;
-          
-        case 'cursedPower':
-          newState.boons = [...prev.boons, 
-            {
-              name: 'Cursed Strength',
-              type: 'dpc',
-              mult: effect.dpcMult,
-              until: Date.now() + effect.duration
-            },
-            {
-              name: 'Artifact Curse',
-              type: 'dps',
-              mult: effect.dpsPenalty,
-              until: Date.now() + effect.duration
-            }
+
+        // NEW INTERACTIVE EVENTS
+        case 'luckyWheel':
+          const wheelOutcomes = [
+            { type: 'gold', amount: 0.5, message: '🎰 JACKPOT! Huge gold bonus!' },
+            { type: 'gold', amount: 0.2, message: '🎰 Big win! Gold bonus!' },
+            { type: 'gold', amount: 0.1, message: '🎰 Nice! Small gold bonus!' },
+            { type: 'dpc', mult: 2, message: '🎰 Amazing! Double click power!' },
+            { type: 'boon', mult: 4, duration: 90000, message: '🎰 Incredible! Temporary super boost!' },
+            { type: 'nothing', message: '🎰 Almost! Better luck next time!' }
           ];
-          addToast(`Cursed power gained! +DPC but -DPS for 2 minutes!`, 'warning');
+          const wheelResult = wheelOutcomes[Math.floor(Math.random() * wheelOutcomes.length)];
+          
+          if (wheelResult.type === 'gold') {
+            const wheelGold = Math.max(1000, prev.totalGold * wheelResult.amount);
+            newState.gold += wheelGold;
+            newState.totalGold += wheelGold;
+          } else if (wheelResult.type === 'dpc') {
+            newState.dpcMult *= wheelResult.mult;
+          } else if (wheelResult.type === 'boon') {
+            newState.boons = [...prev.boons, {
+              name: 'Lucky Wheel Boost',
+              type: 'dps',
+              mult: wheelResult.mult,
+              until: Date.now() + wheelResult.duration
+            }];
+          }
+          addToast(wheelResult.message, 'success');
+          playEventSound('luckyWheel');
+          break;
+
+        case 'diceRoll':
+          const diceRoll = Math.floor(Math.random() * 6) + Math.floor(Math.random() * 6) + 2; // 2-12
+          if (diceRoll === 12) {
+            // Snake eyes! (Double 6s)
+            const megaGold = Math.max(5000, prev.totalGold * 0.8);
+            newState.gold += megaGold;
+            newState.totalGold += megaGold;
+            newState.dpcMult *= 1.5;
+            addToast(`🎲 DOUBLE SIXES! Massive reward: ${fmt(megaGold)} gold + permanent power boost!`, 'success');
+          } else if (diceRoll >= 10) {
+            const goodGold = Math.max(2000, prev.totalGold * 0.3);
+            newState.gold += goodGold;
+            newState.totalGold += goodGold;
+            addToast(`🎲 High roll (${diceRoll})! Great reward: ${fmt(goodGold)} gold!`, 'success');
+          } else if (diceRoll >= 7) {
+            const okGold = Math.max(500, prev.totalGold * 0.1);
+            newState.gold += okGold;
+            newState.totalGold += okGold;
+            addToast(`🎲 Decent roll (${diceRoll}). Nice reward: ${fmt(okGold)} gold!`, 'success');
+          } else {
+            const smallGold = Math.max(100, prev.totalGold * 0.05);
+            newState.gold += smallGold;
+            newState.totalGold += smallGold;
+            addToast(`🎲 Low roll (${diceRoll}). Small consolation: ${fmt(smallGold)} gold.`, 'success');
+          }
+          playEventSound('diceRoll');
+          break;
+
+        case 'treasureChest':
+          const chestRewards = [
+            { gold: 0.4, message: '📦 Amazing! This chest was full of gold!' },
+            { boon: { mult: 3, duration: 120000 }, message: '📦 Magical! A power-boosting artifact!' },
+            { dpc: 1.3, message: '📦 Excellent! A weapon enhancement!' },
+            { trap: true, message: '📦 Oops! It was a trap, but you found some gold anyway.' }
+          ];
+          
+          // Each chest has different probabilities
+          let chestReward;
+          if (effect.chest === 1) {
+            chestReward = Math.random() < 0.6 ? chestRewards[0] : chestRewards[3]; // Higher gold chance
+          } else if (effect.chest === 2) {
+            chestReward = chestRewards[Math.floor(Math.random() * chestRewards.length)]; // Random
+          } else {
+            chestReward = Math.random() < 0.4 ? chestRewards[1] : (Math.random() < 0.7 ? chestRewards[2] : chestRewards[3]); // Higher power chance
+          }
+
+          if (chestReward.gold) {
+            const chestGold = Math.max(2000, prev.totalGold * chestReward.gold);
+            newState.gold += chestGold;
+            newState.totalGold += chestGold;
+          } else if (chestReward.boon) {
+            newState.boons = [...prev.boons, {
+              name: 'Treasure Boost',
+              type: 'dps',
+              mult: chestReward.boon.mult,
+              until: Date.now() + chestReward.boon.duration
+            }];
+          } else if (chestReward.dpc) {
+            newState.dpcMult *= chestReward.dpc;
+          } else if (chestReward.trap) {
+            const trapGold = Math.max(200, prev.totalGold * 0.08);
+            newState.gold += trapGold;
+            newState.totalGold += trapGold;
+          }
+          addToast(chestReward.message, chestReward.trap ? 'warning' : 'success');
+          playEventSound('treasureChest');
+          break;
+
+        case 'crystalBall':
+          const visions = [
+            { type: 'future_gold', mult: 0.25, message: '🔮 You see great wealth in your future!' },
+            { type: 'power_vision', mult: 1.2, message: '🔮 You witness yourself becoming stronger!' },
+            { type: 'lucky_vision', boon: { mult: 2.5, duration: 180000 }, message: '🔮 The crystal shows you paths to power!' },
+            { type: 'dark_vision', penalty: 0.9, message: '🔮 A dark vision, but you resist its power!' }
+          ];
+          const vision = visions[Math.floor(Math.random() * visions.length)];
+          
+          if (vision.type === 'future_gold') {
+            const futureGold = Math.max(1500, prev.totalGold * vision.mult);
+            newState.gold += futureGold;
+            newState.totalGold += futureGold;
+          } else if (vision.type === 'power_vision') {
+            newState.dpcMult *= vision.mult;
+          } else if (vision.type === 'lucky_vision') {
+            newState.boons = [...prev.boons, {
+              name: 'Crystal Vision',
+              type: 'dps',
+              mult: vision.boon.mult,
+              until: Date.now() + vision.boon.duration
+            }];
+          } else if (vision.type === 'dark_vision') {
+            // Small temporary penalty, but give gold as compensation
+            newState.boons = [...prev.boons, {
+              name: 'Dark Vision',
+              type: 'dps',
+              mult: vision.penalty,
+              until: Date.now() + 60000
+            }];
+            const compensationGold = Math.max(800, prev.totalGold * 0.15);
+            newState.gold += compensationGold;
+            newState.totalGold += compensationGold;
+          }
+          addToast(vision.message, vision.type === 'dark_vision' ? 'warning' : 'success');
+          playEventSound('crystalBall');
+          break;
+
+        case 'warriorChallenge':
+          const challengeSuccess = Math.random() < 0.7; // 70% success rate
+          if (challengeSuccess) {
+            const victorGold = Math.max(3000, prev.totalGold * 0.35);
+            newState.gold += victorGold;
+            newState.totalGold += victorGold;
+            newState.dpcMult *= 1.25;
+            addToast(`⚔️ Victory! The warrior rewards your skill: ${fmt(victorGold)} gold + permanent power!`, 'success');
+          } else {
+            const consolationGold = Math.max(800, prev.totalGold * 0.12);
+            newState.gold += consolationGold;
+            newState.totalGold += consolationGold;
+            addToast(`⚔️ Defeated, but you fought with honor. Consolation prize: ${fmt(consolationGold)} gold.`, 'warning');
+          }
+          playEventSound('warriorChallenge');
+          break;
+
+        case 'shootingStar':
+          if (effect.wish === 'gold') {
+            const starGold = Math.max(2500, prev.totalGold * 0.4);
+            newState.gold += starGold;
+            newState.totalGold += starGold;
+            addToast(`🌟 Your wish for gold comes true! Gained ${fmt(starGold)} gold!`, 'success');
+          } else if (effect.wish === 'power') {
+            newState.dpcMult *= 1.4;
+            addToast(`✨ Your wish for power is granted! Click damage increased by 40%!`, 'success');
+          } else if (effect.wish === 'luck') {
+            newState.boons = [...prev.boons, {
+              name: 'Shooting Star Luck',
+              type: 'dps',
+              mult: 5,
+              until: Date.now() + 150000
+            }];
+            addToast(`🎯 Your wish for luck shines bright! Massive temporary DPS boost!`, 'success');
+          }
+          playEventSound('shootingStar');
+          break;
+
+        case 'cardDraw':
+          const cards = [
+            { name: 'Ace of Gold', effect: 'mega_gold', mult: 0.6, message: '🃏 Ace of Gold! Massive gold bonus!' },
+            { name: 'King of Power', effect: 'big_power', mult: 1.5, message: '🃏 King of Power! Major strength boost!' },
+            { name: 'Queen of Magic', effect: 'magic_boost', mult: 4, duration: 100000, message: '🃏 Queen of Magic! Enchanting power boost!' },
+            { name: 'Jack of Luck', effect: 'luck_boost', mult: 3, duration: 120000, message: '🃏 Jack of Luck! Fortune favors you!' },
+            { name: 'Joker', effect: 'wild_card', message: '🃏 Joker! Wild magic grants you everything!' }
+          ];
+          const drawnCard = cards[Math.floor(Math.random() * cards.length)];
+          
+          if (drawnCard.effect === 'mega_gold') {
+            const cardGold = Math.max(4000, prev.totalGold * drawnCard.mult);
+            newState.gold += cardGold;
+            newState.totalGold += cardGold;
+          } else if (drawnCard.effect === 'big_power') {
+            newState.dpcMult *= drawnCard.mult;
+          } else if (drawnCard.effect === 'magic_boost' || drawnCard.effect === 'luck_boost') {
+            newState.boons = [...prev.boons, {
+              name: drawnCard.name,
+              type: 'dps',
+              mult: drawnCard.mult,
+              until: Date.now() + drawnCard.duration
+            }];
+          } else if (drawnCard.effect === 'wild_card') {
+            // Joker gives everything!
+            const jokerGold = Math.max(2000, prev.totalGold * 0.3);
+            newState.gold += jokerGold;
+            newState.totalGold += jokerGold;
+            newState.dpcMult *= 1.2;
+            newState.boons = [...prev.boons, {
+              name: 'Joker Magic',
+              type: 'dps',
+              mult: 3,
+              until: Date.now() + 90000
+            }];
+          }
+          addToast(drawnCard.message, 'success');
+          playEventSound('cardDraw');
+          break;
+
+        case 'miningEvent':
+          const miningOutcome = Math.random();
+          if (miningOutcome < 0.15) {
+            // Diamond mine!
+            const diamondGold = Math.max(8000, prev.totalGold * 0.75);
+            newState.gold += diamondGold;
+            newState.totalGold += diamondGold;
+            newState.dpcMult *= 1.3;
+            addToast(`⛏️ DIAMOND STRIKE! Incredible find: ${fmt(diamondGold)} gold + permanent power!`, 'success');
+          } else if (miningOutcome < 0.4) {
+            // Gold vein
+            const goldVein = Math.max(3000, prev.totalGold * 0.4);
+            newState.gold += goldVein;
+            newState.totalGold += goldVein;
+            addToast(`⛏️ Gold vein discovered! Mined ${fmt(goldVein)} gold!`, 'success');
+          } else if (miningOutcome < 0.7) {
+            // Silver ore
+            const silverOre = Math.max(1200, prev.totalGold * 0.2);
+            newState.gold += silverOre;
+            newState.totalGold += silverOre;
+            addToast(`⛏️ Silver ore found! Collected ${fmt(silverOre)} gold worth!`, 'success');
+          } else {
+            // Cave-in, but magical protection saves you
+            const compensationGold = Math.max(600, prev.totalGold * 0.1);
+            newState.gold += compensationGold;
+            newState.totalGold += compensationGold;
+            addToast(`⛏️ Cave-in! Your magical protection saves you and grants ${fmt(compensationGold)} gold.`, 'warning');
+          }
+          playEventSound('miningEvent');
           break;
       }
       
@@ -834,6 +1130,21 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     }
   }, [studentData, loadGameFromFirebase, hasLoadedFromFirebase]);
 
+  // Update event timer for UI
+  useEffect(() => {
+    if (!showChoiceEvent) return;
+    
+    const updateTimer = () => {
+      const timeLeft = Math.max(0, Math.ceil((gameState.event.until - Date.now()) / 1000));
+      setEventTimeLeft(timeLeft);
+    };
+    
+    updateTimer();
+    const timerInterval = setInterval(updateTimer, 1000);
+    
+    return () => clearInterval(timerInterval);
+  }, [showChoiceEvent, gameState.event.until]);
+
   // Check unlocks when relevant stats change
   useEffect(() => {
     checkUnlocks();
@@ -967,13 +1278,47 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
         ))}
       </div>
 
-      {/* Choice Event Modal */}
+      {/* Enhanced Choice Event Modal with Timer */}
       {showChoiceEvent && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className={`${currentTheme.panel} rounded-xl shadow-2xl w-full max-w-md p-6`}>
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+          <div className={`${currentTheme.panel} rounded-xl shadow-2xl w-full max-w-lg p-6 border-4 border-yellow-400 ${
+            eventTimeLeft <= 10 ? 'animate-pulse' : eventTimeLeft <= 30 ? 'animate-bounce' : ''
+          }`}>
             <div className="text-center mb-6">
-              <h2 className="text-xl font-bold mb-4">⚡ Adventure Event</h2>
-              <p className="text-gray-600 leading-relaxed">{gameState.event.eventText}</p>
+              <div className="flex items-center justify-center mb-4">
+                <h2 className="text-xl font-bold text-yellow-600">⚡ Adventure Event ⚡</h2>
+              </div>
+              
+              {/* Timer Display */}
+              <div className={`mb-4 p-2 rounded-lg border-2 ${
+                eventTimeLeft <= 10 
+                  ? 'bg-red-100 border-red-400' 
+                  : eventTimeLeft <= 30 
+                    ? 'bg-orange-100 border-orange-300' 
+                    : 'bg-yellow-100 border-yellow-300'
+              }`}>
+                <div className={`text-sm font-semibold ${
+                  eventTimeLeft <= 10 ? 'text-red-700' : eventTimeLeft <= 30 ? 'text-orange-700' : 'text-yellow-700'
+                }`}>
+                  ⏰ Time remaining: {eventTimeLeft}s {eventTimeLeft <= 10 ? '⚠️' : ''}
+                </div>
+                <div className={`w-full rounded-full h-2 mt-1 ${
+                  eventTimeLeft <= 10 ? 'bg-red-200' : eventTimeLeft <= 30 ? 'bg-orange-200' : 'bg-yellow-200'
+                }`}>
+                  <div 
+                    className={`h-2 rounded-full transition-all duration-1000 ${
+                      eventTimeLeft <= 10 ? 'bg-red-500' : eventTimeLeft <= 30 ? 'bg-orange-500' : 'bg-yellow-500'
+                    }`}
+                    style={{
+                      width: `${Math.max(0, Math.min(100, (eventTimeLeft / 60) * 100))}%`
+                    }}
+                  ></div>
+                </div>
+              </div>
+              
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg border-2 border-blue-200 mb-4">
+                <p className="text-gray-700 leading-relaxed font-medium">{gameState.event.eventText}</p>
+              </div>
             </div>
             
             <div className="space-y-3">
@@ -981,7 +1326,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
                 <button
                   key={index}
                   onClick={() => handleChoiceEvent(index)}
-                  className={`w-full p-3 rounded-lg border-2 border-transparent hover:border-blue-300 bg-gradient-to-r ${currentTheme.accent} text-white font-semibold transition-all hover:shadow-lg`}
+                  className={`w-full p-4 rounded-lg border-2 border-transparent hover:border-yellow-300 bg-gradient-to-r ${currentTheme.accent} text-white font-semibold transition-all hover:shadow-lg hover:scale-105 active:scale-95 text-base`}
                 >
                   {choice.text}
                 </button>
@@ -991,11 +1336,25 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
             <div className="mt-4 text-center">
               <button
                 onClick={closeChoiceEvent}
-                className="text-gray-500 hover:text-gray-700 text-sm"
+                className="text-gray-500 hover:text-gray-700 text-sm underline"
               >
-                Walk away...
+                Walk away and ignore the event...
               </button>
             </div>
+            
+            {/* Enhanced visual effects - More intense when time is low */}
+            <div className={`absolute -top-2 -left-2 w-4 h-4 rounded-full ${
+              eventTimeLeft <= 10 ? 'bg-red-400 animate-ping' : 'bg-yellow-400 animate-ping'
+            }`}></div>
+            <div className={`absolute -top-2 -right-2 w-4 h-4 rounded-full ${
+              eventTimeLeft <= 10 ? 'bg-red-400 animate-ping' : 'bg-yellow-400 animate-ping'
+            }`} style={{animationDelay: '0.5s'}}></div>
+            <div className={`absolute -bottom-2 -left-2 w-4 h-4 rounded-full ${
+              eventTimeLeft <= 10 ? 'bg-red-400 animate-ping' : 'bg-yellow-400 animate-ping'
+            }`} style={{animationDelay: '1s'}}></div>
+            <div className={`absolute -bottom-2 -right-2 w-4 h-4 rounded-full ${
+              eventTimeLeft <= 10 ? 'bg-red-400' : 'bg-yellow-400'
+            }`} style={{animationDelay: '1.5s'}}></div>
           </div>
         </div>
       )}

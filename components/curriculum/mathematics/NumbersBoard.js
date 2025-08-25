@@ -93,22 +93,13 @@ const NumbersBoard = ({ showToast = () => {}, students = [] }) => {
         break;
     }
 
+    // Set the full pattern immediately
     setHighlightPattern(pattern);
     setCurrentPattern(patternName);
     
-    // Animate the highlighting
-    pattern.forEach((num, index) => {
-      setTimeout(() => {
-        setHighlightPattern(prev => [...prev.slice(0, index + 1)]);
-      }, index * 50);
-    });
-
     setTimeout(() => {
       setIsAnimating(false);
-      if (pattern.length > 0) {
-        showToast(`✨ Highlighted ${pattern.length} ${patternName.toLowerCase()}!`, 'success');
-      }
-    }, pattern.length * 50 + 500);
+    }, 500);
   };
 
   // Skip counting exercise
@@ -119,18 +110,12 @@ const NumbersBoard = ({ showToast = () => {}, students = [] }) => {
       sequence.push(i);
     }
     
-    setHighlightPattern([]);
-    sequence.forEach((num, index) => {
-      setTimeout(() => {
-        setHighlightPattern(prev => [...prev, num]);
-        // Play sound effect would go here
-      }, index * 300);
-    });
+    setHighlightPattern(sequence);
+    setCurrentPattern(`Skip counting by ${step}`);
 
     setTimeout(() => {
       setShowingSequence(false);
-      showToast(`🎯 Skip counting by ${step} complete!`, 'success');
-    }, sequence.length * 300 + 1000);
+    }, 1000);
   };
 
   // Game modes
@@ -149,7 +134,7 @@ const NumbersBoard = ({ showToast = () => {}, students = [] }) => {
           target: numbers.filter(n => n % randomMultiple === 0),
           found: []
         });
-        showToast(`🎮 Find all multiples of ${randomMultiple}!`, 'info');
+        setCurrentPattern(`Find all multiples of ${randomMultiple}`);
         break;
       case 'find-primes':
         setChallenge({
@@ -157,7 +142,7 @@ const NumbersBoard = ({ showToast = () => {}, students = [] }) => {
           target: numbers.filter(isPrime),
           found: []
         });
-        showToast('🎮 Find all prime numbers!', 'info');
+        setCurrentPattern('Find all prime numbers');
         break;
       case 'pattern-race':
         const patterns = ['even', 'odd', 'squares'];
@@ -170,7 +155,7 @@ const NumbersBoard = ({ showToast = () => {}, students = [] }) => {
                   numbers.filter(isSquare),
           found: []
         });
-        showToast(`🏁 Quick! Click all ${randomPattern} numbers!`, 'info');
+        setCurrentPattern(`Find all ${randomPattern} numbers`);
         break;
     }
   };
@@ -186,11 +171,10 @@ const NumbersBoard = ({ showToast = () => {}, students = [] }) => {
         
         if (newFound.length === challenge.target.length) {
           setGameMode('');
-          showToast(`🎉 Challenge complete! Score: ${score + 10}`, 'success');
+          setCurrentPattern(`Challenge complete! Final score: ${score + 10}`);
         }
       } else if (!challenge.target.includes(number)) {
         setScore(prev => Math.max(0, prev - 5));
-        showToast('❌ Try again!', 'error');
       }
     } else {
       // Regular selection mode
@@ -209,21 +193,22 @@ const NumbersBoard = ({ showToast = () => {}, students = [] }) => {
     setGameMode('');
     setChallenge(null);
     setScore(0);
+    setShowingSequence(false);
+    setIsAnimating(false);
   };
 
   const getNumberStyle = (number) => {
     const isSelected = selectedNumbers.includes(number);
     const isHighlighted = highlightPattern.includes(number);
-    const isChallengeTarget = challenge?.target.includes(number);
     const isChallengeFound = challenge?.found.includes(number);
 
     if (isChallengeFound) {
-      return 'bg-green-500 text-white shadow-lg scale-110 animate-pulse';
+      return 'bg-green-500 text-white shadow-lg scale-110';
     }
     if (isSelected) {
       return 'bg-blue-600 text-white shadow-lg scale-110';
     }
-    if (isHighlighted) {
+    if (isHighlighted && !gameMode) {
       return currentPattern.includes('Prime') ? 'bg-purple-400 text-white' :
              currentPattern.includes('Even') ? 'bg-blue-400 text-white' :
              currentPattern.includes('Odd') ? 'bg-red-400 text-white' :
@@ -231,9 +216,6 @@ const NumbersBoard = ({ showToast = () => {}, students = [] }) => {
              currentPattern.includes('Cube') ? 'bg-orange-400 text-white' :
              currentPattern.includes('Fibonacci') ? 'bg-green-400 text-white' :
              'bg-indigo-400 text-white';
-    }
-    if (gameMode && isChallengeTarget) {
-      return 'bg-yellow-100 border-2 border-yellow-400 text-black hover:bg-yellow-200';
     }
 
     return 'bg-gray-100 text-gray-800 hover:bg-gray-200 hover:shadow-md';
@@ -345,10 +327,20 @@ const NumbersBoard = ({ showToast = () => {}, students = [] }) => {
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h4 className="font-bold text-blue-800 text-lg">Currently Showing: {currentPattern}</h4>
-              <p className="text-blue-700">Numbers highlighted: {highlightPattern.length}</p>
+              <h4 className="font-bold text-blue-800 text-lg">{currentPattern}</h4>
+              {!gameMode && (
+                <p className="text-blue-700">Numbers highlighted: {highlightPattern.length}</p>
+              )}
+              {gameMode && challenge && (
+                <div className="text-blue-700">
+                  <p>Progress: {challenge.found.length} / {challenge.target.length}</p>
+                  <p>Click the correct numbers to find them all!</p>
+                </div>
+              )}
             </div>
-            <div className="text-4xl animate-bounce">✨</div>
+            <div className="text-4xl animate-bounce">
+              {gameMode ? '🎮' : '✨'}
+            </div>
           </div>
         </div>
       )}
