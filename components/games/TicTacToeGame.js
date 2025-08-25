@@ -1,4 +1,4 @@
-// components/games/TicTacToeGame.js - FIXED VERSION with improved mobile and PC support
+// components/games/TicTacToeGame.js - FIXED VERSION with alternating first player
 import React, { useState, useEffect } from 'react';
 
 const TicTacToeGame = ({ studentData, showToast }) => {
@@ -250,7 +250,9 @@ const TicTacToeGame = ({ studentData, showToast }) => {
         board: Array(9).fill(null),
         currentPlayer: 'X',
         status: 'waiting',
-        createdAt: Date.now()
+        createdAt: Date.now(),
+        // FIXED: Track game count to alternate who starts first
+        gamesPlayed: 0
       };
       
       console.log('🚀 Creating game with data:', initialData);
@@ -412,6 +414,7 @@ const TicTacToeGame = ({ studentData, showToast }) => {
     setBoard(Array(9).fill(null));
   };
 
+  // FIXED: Alternating first player logic
   const playAgain = async () => {
     if (!firebaseReady || !firebase || !gameRoom) {
       showToast('Cannot restart game', 'error');
@@ -421,13 +424,23 @@ const TicTacToeGame = ({ studentData, showToast }) => {
     console.log('🔄 Starting new game with same players');
     
     try {
+      // Get current game count to determine who starts
+      const currentGamesPlayed = gameData?.gamesPlayed || 0;
+      const newGamesPlayed = currentGamesPlayed + 1;
+      
+      // FIXED: Alternate who goes first based on games played
+      const firstPlayer = newGamesPlayed % 2 === 1 ? 'X' : 'O';
+      
+      console.log(`🎮 Game #${newGamesPlayed}: ${firstPlayer} will start first`);
+      
       // Reset game state in Firebase
       const resetData = {
         board: Array(9).fill(null),
-        currentPlayer: 'X', // Always start with X
+        currentPlayer: firstPlayer, // FIXED: Alternating first player
         status: 'playing',
         lastMove: null,
-        gameResetAt: Date.now()
+        gameResetAt: Date.now(),
+        gamesPlayed: newGamesPlayed // FIXED: Track game count
       };
       
       await firebase.update(firebase.ref(firebase.database, `ticTacToe/${gameRoom}`), resetData);
@@ -436,10 +449,11 @@ const TicTacToeGame = ({ studentData, showToast }) => {
       setBoard(Array(9).fill(null));
       setWinner(null);
       setGameState('playing');
-      setIsMyTurn(playerRole === 'X'); // X player goes first
+      setIsMyTurn(playerRole === firstPlayer); // FIXED: Set turn based on alternating logic
       
-      showToast('New game started! 🎮', 'success');
-      console.log('✅ New game started successfully');
+      const nextFirstPlayer = firstPlayer === 'X' ? 'O' : 'X';
+      showToast(`New game started! ${firstPlayer} goes first. Next game: ${nextFirstPlayer} will start! 🎮`, 'success');
+      console.log('✅ New game started successfully with alternating first player');
     } catch (error) {
       console.error('❌ Error starting new game:', error);
       showToast('Failed to start new game: ' + error.message, 'error');
@@ -572,6 +586,8 @@ const TicTacToeGame = ({ studentData, showToast }) => {
           <p className="text-blue-700 text-xs mt-1">
             Moves sync instantly between devices! 
             One player creates a game, the other joins using the room code.
+            <br />
+            <strong>🔄 Players alternate who goes first each game!</strong>
           </p>
         </div>
       </div>
@@ -622,6 +638,8 @@ const TicTacToeGame = ({ studentData, showToast }) => {
   if (gameState === 'playing' || gameState === 'finished') {
     const players = gameData?.players ? Object.values(gameData.players) : [];
     const opponent = players.find(p => p.id !== playerInfo.id);
+    const gamesPlayed = gameData?.gamesPlayed || 0;
+    const nextGameStarter = ((gamesPlayed + 1) % 2 === 1) ? 'X' : 'O';
 
     return (
       <div className="max-w-lg mx-auto space-y-6">
@@ -641,6 +659,9 @@ const TicTacToeGame = ({ studentData, showToast }) => {
             <div className="text-center">
               <p className="text-xs text-gray-500 mb-1">VS</p>
               <p className="text-xs font-semibold">Room: {gameRoom}</p>
+              {gamesPlayed > 0 && (
+                <p className="text-xs text-blue-600">Game #{gamesPlayed}</p>
+              )}
             </div>
             
             <div className="flex items-center space-x-2">
@@ -673,19 +694,16 @@ const TicTacToeGame = ({ studentData, showToast }) => {
               {winner.winner === playerRole ? '🎉 You Won!' :
                winner.winner === 'draw' ? '🤝 Draw!' :
                '😔 You Lost!'}
+              <br />
+              <span className="text-sm font-normal">
+                Next game: {nextGameStarter} starts first!
+              </span>
             </div>
           )}
         </div>
 
-        {/* Game Board - FIXED with debugging */}
+        {/* Game Board */}
         <div className="bg-white rounded-xl p-4 md:p-6 shadow-lg">
-          {/* Debug Info */}
-          <div className="mb-4 p-2 bg-gray-100 rounded text-xs">
-            <p><strong>Debug:</strong> Player: {playerRole} | Turn: {gameData?.currentPlayer} | My Turn: {isMyTurn ? 'Yes' : 'No'}</p>
-            <p><strong>Board:</strong> [{board.map((cell, i) => `${i}:${cell || 'null'}`).join(', ')}]</p>
-            <p><strong>Filled:</strong> {board.filter(cell => cell === 'X' || cell === 'O').length}/9 | <strong>Empty:</strong> {board.filter(cell => cell === null).length}/9</p>
-          </div>
-          
           <div className="grid grid-cols-3 gap-2 md:gap-3 max-w-[240px] md:max-w-[300px] mx-auto">
             {[0, 1, 2, 3, 4, 5, 6, 7, 8].map(index => renderCell(index))}
           </div>
@@ -712,7 +730,7 @@ const TicTacToeGame = ({ studentData, showToast }) => {
               onClick={playAgain}
               className="flex-1 bg-green-500 text-white py-3 rounded-lg font-semibold hover:bg-green-600 transition-colors"
             >
-              🎮 Play Again
+              🔄 Play Again
             </button>
           )}
           
@@ -722,21 +740,6 @@ const TicTacToeGame = ({ studentData, showToast }) => {
               className="bg-red-500 text-white px-4 py-3 rounded-lg font-semibold hover:bg-red-600 transition-colors text-sm"
             >
               🚪 Exit
-            </button>
-          )}
-          
-          {/* Emergency reset button for debugging */}
-          {gameState === 'finished' && (
-            <button
-              onClick={() => {
-                console.log('🔄 Manual game reset');
-                setWinner(null);
-                setGameState('playing');
-                showToast('Game state reset - continue playing!', 'info');
-              }}
-              className="bg-orange-500 text-white px-4 py-3 rounded-lg font-semibold hover:bg-orange-600 transition-colors text-sm"
-            >
-              🔄 Reset
             </button>
           )}
         </div>
