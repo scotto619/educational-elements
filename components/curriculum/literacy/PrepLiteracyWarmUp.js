@@ -244,7 +244,7 @@ const PrepSoundReview = ({ week, day, isPresentationMode, onShowToast }) => {
             Letter Sound:
           </h4>
           <div className={`inline-block bg-white px-12 py-8 rounded-2xl border-4 border-purple-500 shadow-lg ${isPresentationMode ? 'px-20 py-12' : ''}`}>
-            <span className={`font-mono font-bold text-purple-700 ${isPresentationMode ? 'text-32xl' : 'text-20xl'}`}>
+            <span className={`font-mono font-bold text-purple-700 ${isPresentationMode ? 'text-9xl' : 'text-8xl'}`} style={{ fontSize: isPresentationMode ? '12rem' : '8rem', lineHeight: '1' }}>
               {currentSound.toUpperCase()}
             </span>
           </div>
@@ -307,39 +307,77 @@ const PrepSoundReview = ({ week, day, isPresentationMode, onShowToast }) => {
 };
 
 // ===============================================
-// PICTURE WORD MATCHING GAME - UPDATED
+// PICTURE WORD MATCHING GAME - FIXED & RANDOMIZED
 // ===============================================
-const PictureWordMatching = ({ content, isPresentationMode }) => {
+const PictureWordMatching = ({ content, isPresentationMode, currentDay = 0 }) => {
   const [selectedPicture, setSelectedPicture] = useState(null);
   const [selectedWord, setSelectedWord] = useState(null);
   const [matches, setMatches] = useState([]);
   const [showCelebration, setShowCelebration] = useState(false);
 
-  // Create diverse picture-word pairs for prep level
-  const allPairs = [
-    { id: 1, word: "cat", image: "/SoundPictures/C_Cat.png" },
-    { id: 2, word: "dog", image: "/SoundPictures/D_Dog.png" },
-    { id: 3, word: "sun", image: "/SoundPictures/AY_Day.png" }, // Using day image for sun
-    { id: 4, word: "apple", image: "/SoundPictures/A_Apple.png" },
-    { id: 5, word: "ball", image: "/SoundPictures/ALL_Ball.png" },
-    { id: 6, word: "tree", image: "/SoundPictures/TR_Tree.png" },
-    { id: 7, word: "house", image: "/SoundPictures/OUS_House.png" },
-    { id: 8, word: "star", image: "/SoundPictures/ST_Star.png" },
-    { id: 9, word: "boat", image: "/SoundPictures/OA_Boat.png" },
-    { id: 10, word: "fish", image: "/SoundPictures/AUGHT_Caught.png" }, // Using caught image for fish
-    { id: 11, word: "car", image: "/SoundPictures/SC_Scarf.png" }, // Using scarf image as placeholder
-    { id: 12, word: "flower", image: "/SoundPictures/FL_Flower.png" }
+  // Different sets of picture-word pairs for each day
+  const dailyPairs = [
+    // Monday - Basic animals and objects
+    [
+      { id: 1, word: "cat", image: "/SoundPictures/C_Cat.png" },
+      { id: 2, word: "dog", image: "/SoundPictures/D_Dog.png" },
+      { id: 3, word: "apple", image: "/SoundPictures/A_Apple.png" },
+      { id: 4, word: "ball", image: "/SoundPictures/ALL_Ball.png" }
+    ],
+    // Tuesday - Nature and home
+    [
+      { id: 1, word: "tree", image: "/SoundPictures/TR_Tree.png" },
+      { id: 2, word: "house", image: "/SoundPictures/OUS_House.png" },
+      { id: 3, word: "flower", image: "/SoundPictures/FL_Flower.png" },
+      { id: 4, word: "star", image: "/SoundPictures/ST_Star.png" }
+    ],
+    // Wednesday - Transport and items
+    [
+      { id: 1, word: "boat", image: "/SoundPictures/OA_Boat.png" },
+      { id: 2, word: "watch", image: "/SoundPictures/TCH_Watch.png" },
+      { id: 3, word: "table", image: "/SoundPictures/ABLE_Table.png" },
+      { id: 4, word: "scarf", image: "/SoundPictures/SC_Scarf.png" }
+    ],
+    // Thursday - More animals and objects
+    [
+      { id: 1, word: "frog", image: "/SoundPictures/F_Frog.png" },
+      { id: 2, word: "snake", image: "/SoundPictures/SN_Snake.png" },
+      { id: 3, word: "chair", image: "/SoundPictures/CH_Chair.png" },
+      { id: 4, word: "light", image: "/SoundPictures/IGH_Light.png" }
+    ],
+    // Friday - Fun mixed set
+    [
+      { id: 1, word: "bee", image: "/SoundPictures/EE_Bee.png" },
+      { id: 2, word: "goat", image: "/SoundPictures/G_Goat.png" },
+      { id: 3, word: "brush", image: "/SoundPictures/BR_Brush.png" },
+      { id: 4, word: "crown", image: "/SoundPictures/CR_Crab.png" } // Using crab image as crown placeholder
+    ]
   ];
 
-  // Randomly select 4 pairs for the game
-  const [gamePairs] = useState(() => {
-    const shuffled = [...allPairs].sort(() => 0.5 - Math.random());
-    return shuffled.slice(0, 4).map((pair, index) => ({
-      ...pair,
-      id: index, // Reset IDs for the game
-      matched: false
-    }));
-  });
+  // Get pairs for current day, with randomized positions
+  const [gamePairs, setGamePairs] = useState([]);
+  const [shuffledPictures, setShuffledPictures] = useState([]);
+  const [shuffledWords, setShuffledWords] = useState([]);
+
+  // Initialize game when component mounts or day changes
+  useEffect(() => {
+    const dayPairs = dailyPairs[currentDay] || dailyPairs[0];
+    const pairs = dayPairs.map((pair, index) => ({ ...pair, id: index, matched: false }));
+    setGamePairs(pairs);
+    
+    // Create shuffled arrays for pictures and words separately
+    const pictures = [...pairs].sort(() => 0.5 - Math.random());
+    const words = [...pairs].sort(() => 0.5 - Math.random());
+    
+    setShuffledPictures(pictures);
+    setShuffledWords(words);
+    
+    // Reset game state
+    setMatches([]);
+    setSelectedPicture(null);
+    setSelectedWord(null);
+    setShowCelebration(false);
+  }, [currentDay]);
 
   const handlePictureClick = (pairId) => {
     if (matches.includes(pairId)) return;
@@ -370,11 +408,19 @@ const PictureWordMatching = ({ content, isPresentationMode }) => {
   };
 
   const resetGame = () => {
+    // Re-shuffle the positions
+    const pictures = [...gamePairs].sort(() => 0.5 - Math.random());
+    const words = [...gamePairs].sort(() => 0.5 - Math.random());
+    
+    setShuffledPictures(pictures);
+    setShuffledWords(words);
     setMatches([]);
     setSelectedPicture(null);
     setSelectedWord(null);
     setShowCelebration(false);
   };
+
+  const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
   return (
     <div className="space-y-6">
@@ -383,7 +429,7 @@ const PictureWordMatching = ({ content, isPresentationMode }) => {
           🎯 Picture Word Matching
         </h3>
         <p className={`text-green-600 ${isPresentationMode ? 'text-3xl' : 'text-xl'}`}>
-          Match each picture with its word!
+          Match each picture with its word! ({dayNames[currentDay]} Set)
         </p>
       </div>
 
@@ -397,15 +443,15 @@ const PictureWordMatching = ({ content, isPresentationMode }) => {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Pictures Column */}
+        {/* Pictures Column - Randomized positions */}
         <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6">
           <h4 className={`font-bold text-blue-800 mb-4 text-center ${isPresentationMode ? 'text-4xl' : 'text-2xl'}`}>
             📸 Pictures
           </h4>
           <div className="grid grid-cols-2 gap-4">
-            {gamePairs.map(pair => (
+            {shuffledPictures.map((pair, position) => (
               <button
-                key={`pic-${pair.id}`}
+                key={`pic-${pair.id}-${position}`}
                 onClick={() => handlePictureClick(pair.id)}
                 disabled={matches.includes(pair.id)}
                 className={`p-4 rounded-xl border-2 transition-all ${
@@ -432,15 +478,15 @@ const PictureWordMatching = ({ content, isPresentationMode }) => {
           </div>
         </div>
 
-        {/* Words Column */}
+        {/* Words Column - Randomized positions */}
         <div className="bg-pink-50 border-2 border-pink-200 rounded-xl p-6">
           <h4 className={`font-bold text-pink-800 mb-4 text-center ${isPresentationMode ? 'text-4xl' : 'text-2xl'}`}>
             📝 Words
           </h4>
           <div className="grid grid-cols-2 gap-4">
-            {gamePairs.map(pair => (
+            {shuffledWords.map((pair, position) => (
               <button
-                key={`word-${pair.id}`}
+                key={`word-${pair.id}-${position}`}
                 onClick={() => handleWordClick(pair.id)}
                 disabled={matches.includes(pair.id)}
                 className={`p-4 rounded-xl border-2 transition-all ${
@@ -473,6 +519,13 @@ const PictureWordMatching = ({ content, isPresentationMode }) => {
         >
           🔄 Play Again
         </button>
+        {matches.length === gamePairs.length && (
+          <div className="mt-4">
+            <p className={`text-green-600 font-bold ${isPresentationMode ? 'text-3xl' : 'text-xl'}`}>
+              🌟 Amazing work! You matched them all! 🌟
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -811,7 +864,8 @@ const PrepLiteracyWarmup = ({ showToast = () => {}, students = [], saveData = ()
         case 'picture_matching':
             return <PictureWordMatching 
                      content={weeklyContent} 
-                     isPresentationMode={isPresentationMode} 
+                     isPresentationMode={isPresentationMode}
+                     currentDay={currentDay}
                    />;
         case 'reading':
             return <PrepReadingPassage 
