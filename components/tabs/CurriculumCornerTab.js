@@ -1,8 +1,9 @@
-// components/tabs/CurriculumCornerTab.js - UPDATED VERSION WITH NUMBERS BOARD
+// components/tabs/CurriculumCornerTab.js - UPDATED VERSION WITH YEAR LEVEL SELECTION
 import React, { useState } from 'react';
 
 // Import activity components
 import LiteracyWarmup from '../curriculum/literacy/LiteracyWarmup';
+import PrepLiteracyWarmup from '../curriculum/literacy/PrepLiteracyWarmUp';
 import ReadingComprehension from '../curriculum/literacy/ReadingComprehension';
 import VisualWritingPrompts from '../curriculum/literacy/VisualWritingPrompts';
 import SpellingProgram from '../curriculum/literacy/SpellingProgram';
@@ -42,7 +43,22 @@ const subjects = [
         name: 'Literacy Warmup',
         icon: '🔥',
         description: 'Interactive phonics and sound recognition activities',
-        component: LiteracyWarmup
+        component: LiteracyWarmup,
+        hasYearLevels: true,
+        yearLevels: [
+          {
+            id: 'prep',
+            name: 'Prep/Foundation',
+            description: 'SATPIN progression - single letter sounds (4-6 years)',
+            component: PrepLiteracyWarmup
+          },
+          {
+            id: 'grade5',
+            name: 'Grade 5',
+            description: 'Complex blends and morphology (10-11 years)',
+            component: LiteracyWarmup
+          }
+        ]
       },
       {
         id: 'spelling-program',
@@ -293,28 +309,43 @@ const CurriculumCornerTab = ({
 }) => {
   const [activeSubject, setActiveSubject] = useState(null);
   const [activeActivity, setActiveActivity] = useState(null);
+  const [selectedYearLevel, setSelectedYearLevel] = useState(null);
 
   const handleSubjectSelect = (subject) => {
     setActiveSubject(subject);
     setActiveActivity(null);
+    setSelectedYearLevel(null);
   };
 
   const handleActivitySelect = (activity) => {
-    setActiveActivity(activity);
+    if (activity.hasYearLevels) {
+      // Don't set activity yet, show year level selection first
+      setActiveActivity(activity);
+      setSelectedYearLevel(null);
+    } else {
+      setActiveActivity(activity);
+      setSelectedYearLevel(null);
+    }
+  };
+
+  const handleYearLevelSelect = (yearLevel) => {
+    setSelectedYearLevel(yearLevel);
   };
 
   const handleBackToSubjects = () => {
     setActiveSubject(null);
     setActiveActivity(null);
+    setSelectedYearLevel(null);
   };
 
   const handleBackToActivities = () => {
     setActiveActivity(null);
+    setSelectedYearLevel(null);
   };
 
   // Render specific activity
-  if (activeActivity) {
-    const ActivityComponent = activeActivity.component;
+  if (activeActivity && (!activeActivity.hasYearLevels || selectedYearLevel)) {
+    const ActivityComponent = selectedYearLevel ? selectedYearLevel.component : activeActivity.component;
     
     // Pass additional props to activities for Firebase saving
     const activityProps = {
@@ -339,13 +370,71 @@ const CurriculumCornerTab = ({
             <span>→</span>
             <button onClick={handleBackToActivities} className="hover:text-blue-600 transition-colors">{activeSubject.name}</button>
             <span>→</span>
-            <span className="font-semibold text-slate-800">{activeActivity.name}</span>
+            <span className="font-semibold text-slate-800">
+              {activeActivity.name}
+              {selectedYearLevel && <span className="text-blue-600"> ({selectedYearLevel.name})</span>}
+            </span>
           </div>
           <button onClick={handleBackToActivities} className="bg-slate-500 text-white px-4 py-2 rounded-lg hover:bg-slate-600 transition-colors">← Back to {activeSubject.name}</button>
         </div>
 
         {/* Activity Content */}
         <ActivityComponent {...activityProps} />
+      </div>
+    );
+  }
+
+  // Render year level selection for activities that have multiple year levels
+  if (activeActivity && activeActivity.hasYearLevels && !selectedYearLevel) {
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-slate-600">
+            <button onClick={handleBackToSubjects} className="hover:text-blue-600 transition-colors">Curriculum Corner</button>
+            <span>→</span>
+            <button onClick={handleBackToActivities} className="hover:text-blue-600 transition-colors">{activeSubject.name}</button>
+            <span>→</span>
+            <span className="font-semibold text-slate-800">{activeActivity.name}</span>
+          </div>
+          <button onClick={handleBackToActivities} className="bg-slate-500 text-white px-4 py-2 rounded-lg hover:bg-slate-600 transition-colors">← Back to Activities</button>
+        </div>
+
+        {/* Year Level Selection */}
+        <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-2xl p-8 shadow-lg relative overflow-hidden">
+          <div className="absolute inset-0 bg-black bg-opacity-10"></div>
+          <div className="relative z-10 text-center">
+            <h2 className="text-4xl font-bold mb-4 flex items-center justify-center">
+              <span className="text-3xl mr-3">{activeActivity.icon}</span>
+              {activeActivity.name}
+            </h2>
+            <p className="text-xl opacity-90">Choose your year level</p>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <h3 className="text-2xl font-bold text-slate-800 mb-6 text-center">Select Year Level</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            {activeActivity.yearLevels.map(yearLevel => (
+              <button
+                key={yearLevel.id}
+                onClick={() => handleYearLevelSelect(yearLevel)}
+                className="p-6 rounded-xl border-2 border-slate-200 hover:border-blue-300 bg-white shadow-sm hover:shadow-md transition-all duration-300 text-left hover:scale-105 group"
+              >
+                <div className="text-center mb-4">
+                  <div className="text-5xl mb-3 group-hover:scale-110 transition-transform">
+                    {yearLevel.id === 'prep' ? '🌱' : '🚀'}
+                  </div>
+                  <h4 className="font-bold text-slate-800 text-xl mb-2">{yearLevel.name}</h4>
+                  <p className="text-slate-600 text-sm leading-tight">{yearLevel.description}</p>
+                </div>
+                <div className="text-center">
+                  <span className="text-blue-500 font-semibold text-sm group-hover:text-blue-600">Select →</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -380,6 +469,11 @@ const CurriculumCornerTab = ({
                 <div>
                   <h3 className="text-xl font-bold text-slate-800">{activity.name}</h3>
                   <p className="text-slate-600 text-sm">{activity.description}</p>
+                  {activity.hasYearLevels && (
+                    <p className="text-blue-600 text-xs font-semibold mt-1">
+                      📚 Multiple year levels available
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="flex justify-between items-center">
@@ -390,7 +484,14 @@ const CurriculumCornerTab = ({
                 }`}>
                   {activity.component === ComingSoon ? 'Coming Soon' : 'Available'}
                 </span>
-                <span className="text-blue-500 font-semibold">Open →</span>
+                <div className="flex items-center gap-2">
+                  {activity.hasYearLevels && (
+                    <span className="text-blue-500 text-xs">
+                      {activity.yearLevels?.length || 2} levels
+                    </span>
+                  )}
+                  <span className="text-blue-500 font-semibold">Open →</span>
+                </div>
               </div>
             </button>
           ))}
