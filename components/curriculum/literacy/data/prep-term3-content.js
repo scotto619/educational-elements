@@ -778,9 +778,29 @@ export const getPrepTerm3SoundImagePath = (sound) => {
     "y": "/SoundPictures/Y_Puppy.png",
     "z": "/SoundPictures/Z_Zebra.png",
     "st": "/SoundPictures/ST_Star.png",
-    "nd": "/SoundPictures/END_Hand.png",
-    "mp": "/SoundPictures/AMP_Lamp.png",
-    "nk": "/SoundPictures/INK_Pink.png"
+    "nd": "/SoundPictures/ND_Hand.png",
+    "mp": "/SoundPictures/MP_Lamp.png",
+    "nk": "/SoundPictures/NK_Sink.png",
+    "b": "/SoundPictures/B_Banana.png",
+    "c": "/SoundPictures/C_Cat.png",
+    "e": "/SoundPictures/E_Elephant.png",
+    "f": "/SoundPictures/F_Frog.png",
+    "h": "/SoundPictures/H_Happy.png",
+    "l": "/SoundPictures/L_Lion.png",
+    "r": "/SoundPictures/R_Rabbit.png",
+    "u": "/SoundPictures/U_Umbrella.png",
+    "v": "/SoundPictures/V_Violin.png",
+    "w": "/SoundPictures/W_Whale.png",
+    "s": "/SoundPictures/S_Snake.png",
+    "a": "/SoundPictures/A_Apple.png", 
+    "t": "/SoundPictures/T_Turtle.png",
+    "p": "/SoundPictures/P_Pirate.png",
+    "i": "/SoundPictures/I_Igloo.png",
+    "n": "/SoundPictures/N_Ninja.png",
+    "m": "/SoundPictures/M_Monkey.png",
+    "d": "/SoundPictures/D_Dog.png",
+    "g": "/SoundPictures/G_Goat.png",
+    "o": "/SoundPictures/O_Octopus.png"
   };
   
   return soundImageMap[sound] || "/SoundPictures/default.png";
@@ -797,7 +817,27 @@ export const getPrepTerm3SoundWords = (sound) => {
     "st": ["star", "stop", "step", "start", "stay", "store", "story"],
     "nd": ["hand", "sand", "find", "send", "bend", "end", "kind"],
     "mp": ["jump", "camp", "stamp", "lamp", "pump", "dump", "bump"],
-    "nk": ["pink", "think", "bank", "sink", "drink", "thank", "wink"]
+    "nk": ["pink", "think", "bank", "sink", "drink", "thank", "wink"],
+    "b": ["bat", "big", "box", "ball", "bus", "bee", "bed"],
+    "c": ["cat", "cup", "car", "can", "cow", "cut", "cap"],
+    "e": ["egg", "end", "elf", "eat", "ear", "eye", "elk"],
+    "f": ["fish", "fun", "fox", "fan", "far", "fit", "fog"],
+    "h": ["hat", "hop", "hug", "hot", "hit", "hen", "ham"],
+    "l": ["leg", "lap", "love", "log", "lid", "let", "lit"],
+    "r": ["run", "red", "rain", "rat", "rug", "rip", "rod"],
+    "u": ["up", "us", "under", "use", "ugly", "ump", "urn"],
+    "v": ["van", "very", "visit", "vet", "vat", "via", "vim"],
+    "w": ["water", "wind", "walk", "win", "was", "way", "web"],
+    "s": ["sun", "sea", "sit", "sad", "six", "see", "say"],
+    "a": ["ant", "apple", "ask", "and", "at", "am", "as"],
+    "t": ["top", "ten", "toy", "two", "tea", "the", "to"],
+    "p": ["pig", "pan", "pop", "pat", "pet", "put", "pin"],
+    "i": ["in", "is", "it", "if", "ink", "ice", "ill"],
+    "n": ["net", "new", "now", "not", "no", "nut", "nap"],
+    "m": ["mat", "man", "mad", "mom", "mud", "mix", "map"],
+    "d": ["dog", "dad", "did", "day", "dig", "den", "dot"],
+    "g": ["go", "get", "got", "gap", "gas", "gun", "gum"],
+    "o": ["on", "of", "ox", "odd", "off", "old", "our"]
   };
   
   return soundWordsMap[sound] || ["sound", "word", "example"];
