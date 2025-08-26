@@ -63,7 +63,8 @@ export default async function handler(req, res) {
     const allowedFields = [
       'totalPoints', 'currency', 'coinsSpent', 'avatarBase', 
       'ownedAvatars', 'ownedPets', 'rewardsPurchased',
-      'gameProgress', 'achievements', 'lastUpdated'
+      'gameProgress', 'achievements', 'lastUpdated',
+      'clickerGameData'
     ];
 
     const sanitizedUpdateData = {};
