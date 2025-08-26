@@ -1,4 +1,4 @@
-// components/tabs/StudentsTab.js - WITH AWARD NOTIFICATIONS (COMPLETE FILE)
+// components/tabs/StudentsTab.js - WITH CLICKER ACHIEVEMENTS DISPLAY
 import React, { useState, useEffect, useRef } from 'react';
 
 // ===============================================
@@ -22,6 +22,49 @@ const playAwardSound = (type = 'xp') => {
     } catch (e) {
         console.log('Sound error:', e);
     }
+};
+
+// Get theme border styles for student cards
+const getThemeBorder = (themeName) => {
+    const themeMap = {
+        'default': 'border-blue-200',
+        'Shadow Realm': 'border-purple-400',
+        'Elven Grove': 'border-green-400',
+        'Dragon\'s Lair': 'border-red-400',
+        'Frozen Peaks': 'border-cyan-400',
+        'Void Dimension': 'border-purple-600'
+    };
+    return themeMap[themeName] || 'border-blue-200';
+};
+
+// Get theme background styles
+const getThemeBackground = (themeName) => {
+    const themeMap = {
+        'default': 'bg-blue-50',
+        'Shadow Realm': 'bg-purple-100',
+        'Elven Grove': 'bg-green-50',
+        'Dragon\'s Lair': 'bg-red-50',
+        'Frozen Peaks': 'bg-cyan-50',
+        'Void Dimension': 'bg-purple-200'
+    };
+    return themeMap[themeName] || 'bg-blue-50';
+};
+
+// Get title colors
+const getTitleColor = (title) => {
+    const titleColorMap = {
+        'Novice': 'text-gray-600',
+        'Apprentice': 'text-green-600',
+        'Warrior': 'text-blue-600',
+        'Hero': 'text-purple-600',
+        'Champion': 'text-orange-600',
+        'Legend': 'text-yellow-600',
+        'Mythic': 'text-pink-600',
+        'Ascended': 'text-cyan-400',
+        'Divine': 'text-yellow-400',
+        'Eternal': 'text-purple-400'
+    };
+    return titleColorMap[title] || 'text-gray-600';
 };
 
 // ===============================================
@@ -70,7 +113,7 @@ const AwardNotification = ({ notification, onClose }) => {
                     {/* Celebration Header */}
                     <div className="text-6xl mb-4 animate-pulse">{icon}</div>
                     <h2 className="text-3xl font-bold mb-4">
-                        {isBulk ? '🎉 BULK AWARD! 🎉' : '🎉 AWARD GIVEN! 🎉'}
+                        {isBulk ? 'BULK AWARD!' : 'AWARD GIVEN!'}
                     </h2>
                     
                     {/* Award Details */}
@@ -102,7 +145,7 @@ const AwardNotification = ({ notification, onClose }) => {
                         onClick={onClose}
                         className="mt-4 bg-white bg-opacity-20 hover:bg-opacity-30 px-6 py-2 rounded-xl transition-all duration-300 font-semibold hover:scale-105 transform"
                     >
-                        Awesome! ✨
+                        Awesome!
                     </button>
                 </div>
             </div>
@@ -196,6 +239,9 @@ const StudentsTab = ({
     
     // NEW: Award notification state
     const [awardNotification, setAwardNotification] = useState(null);
+    
+    // NEW: Clicker achievements display toggle
+    const [showClickerAchievements, setShowClickerAchievements] = useState(false);
     
     const filteredStudents = students.filter(student =>
         student.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -291,6 +337,17 @@ const StudentsTab = ({
                 <div className="flex items-center gap-4">
                     <input type="text" placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full md:w-auto pl-4 pr-4 py-2 border rounded-lg" />
                     <button onClick={handleSelectAll} className="bg-blue-500 text-white px-4 py-2 rounded-lg whitespace-nowrap">{selectedStudents.length === filteredStudents.length ? 'Deselect All' : 'Select All'}</button>
+                    
+                    {/* NEW: Clicker achievements toggle */}
+                    <label className="flex items-center space-x-2 text-sm font-medium text-gray-700">
+                        <input 
+                            type="checkbox" 
+                            checked={showClickerAchievements}
+                            onChange={(e) => setShowClickerAchievements(e.target.checked)}
+                            className="rounded border-gray-300"
+                        />
+                        <span>Show Hero Achievements</span>
+                    </label>
                 </div>
                 <div className="text-gray-600 font-semibold">{selectedStudents.length > 0 ? `${selectedStudents.length} student(s) selected` : 'Click an avatar for options, star/coin to quick award, or drag to reorder'}</div>
                 <div className="flex items-center gap-2">
@@ -326,6 +383,7 @@ const StudentsTab = ({
                         }}
                         onQuickAward={handleQuickAward}
                         onToggleSelection={toggleStudentSelection}
+                        showClickerAchievements={showClickerAchievements}
                     />
                 ))}
             </div>
@@ -344,9 +402,9 @@ const StudentsTab = ({
 };
 
 // ===============================================
-// STUDENT CARD COMPONENT
+// ENHANCED STUDENT CARD COMPONENT WITH CLICKER ACHIEVEMENTS
 // ===============================================
-const StudentCard = ({ student, isSelected, isDragged, onClick, onDragStart, onDragOver, onDrop, onAvatarHover, onPetHover, onHoverEnd, getAvatarImage, getPetImage, calculateCoins, calculateAvatarLevel, onSelect, onQuickAward, onToggleSelection }) => {
+const StudentCard = ({ student, isSelected, isDragged, onClick, onDragStart, onDragOver, onDrop, onAvatarHover, onPetHover, onHoverEnd, getAvatarImage, getPetImage, calculateCoins, calculateAvatarLevel, onSelect, onQuickAward, onToggleSelection, showClickerAchievements }) => {
     const level = calculateAvatarLevel(student.totalPoints);
     const coins = calculateCoins(student);
     const xpForNextLevel = (student.totalPoints || 0) % 100;
@@ -355,6 +413,10 @@ const StudentCard = ({ student, isSelected, isDragged, onClick, onDragStart, onD
     
     // FIXED: Pass the entire pet object to getPetImage, not separate parameters
     const petImg = pet ? getPetImage(pet) : null;
+
+    // NEW: Get clicker achievements data
+    const clickerAchievements = student.clickerAchievements || null;
+    const hasClickerData = clickerAchievements && clickerAchievements.lastPlayed;
 
     // Handle quick award clicks (prevent bubbling to parent)
     const handleStarClick = (e) => {
@@ -377,6 +439,19 @@ const StudentCard = ({ student, isSelected, isDragged, onClick, onDragStart, onD
         }
     };
 
+    // Get theme styling if clicker achievements are enabled
+    const themeBorder = hasClickerData && showClickerAchievements 
+        ? getThemeBorder(clickerAchievements.themeName) 
+        : 'border-transparent';
+        
+    const themeBackground = hasClickerData && showClickerAchievements 
+        ? getThemeBackground(clickerAchievements.themeName) 
+        : (isSelected ? 'bg-purple-100' : 'bg-white');
+
+    const titleColor = hasClickerData && showClickerAchievements 
+        ? getTitleColor(clickerAchievements.title) 
+        : 'text-gray-600';
+
     return (
         <div 
             draggable="true" 
@@ -386,13 +461,32 @@ const StudentCard = ({ student, isSelected, isDragged, onClick, onDragStart, onD
             onClick={handleCardClick} 
             className={`relative p-3 rounded-2xl shadow-lg border-2 transition-all duration-300 cursor-pointer hover:shadow-xl ${
                 isSelected 
-                    ? 'border-purple-500 bg-purple-100 scale-105 shadow-purple-200' 
-                    : 'border-transparent bg-white hover:border-blue-400 hover:bg-blue-50'
+                    ? `border-purple-500 ${themeBackground} scale-105 shadow-purple-200` 
+                    : `${themeBorder} ${themeBackground} hover:border-blue-400 hover:bg-blue-50`
             } ${
                 isDragged ? 'opacity-30 ring-2 ring-blue-500' : ''
             }`}
         >
             <div className="flex flex-col items-center text-center">
+                {/* NEW: Clicker achievements header */}
+                {showClickerAchievements && hasClickerData && (
+                    <div className="w-full mb-2 px-2 py-1 rounded-lg bg-gradient-to-r from-yellow-100 to-orange-100 border border-yellow-200">
+                        <div className="flex items-center justify-between text-xs">
+                            <span className={`font-bold ${titleColor}`}>
+                                {clickerAchievements.title}
+                            </span>
+                            {clickerAchievements.prestige > 0 && (
+                                <span className="text-yellow-600 font-bold flex items-center">
+                                    ⭐{clickerAchievements.prestige}
+                                </span>
+                            )}
+                        </div>
+                        <div className="text-xs text-gray-600">
+                            Hero Level {clickerAchievements.level || 1}
+                        </div>
+                    </div>
+                )}
+
                 <div className="relative">
                     <img 
                         src={avatarImg} 
@@ -446,6 +540,18 @@ const StudentCard = ({ student, isSelected, isDragged, onClick, onDragStart, onD
                 {!isSelected && (
                     <div className="text-xs text-gray-400 mt-1 opacity-75">
                         Shift+click to select
+                    </div>
+                )}
+
+                {/* NEW: Clicker achievements footer */}
+                {showClickerAchievements && hasClickerData && (
+                    <div className="text-xs text-gray-500 mt-1">
+                        {clickerAchievements.weapon && (
+                            <div className="truncate">{clickerAchievements.weapon}</div>
+                        )}
+                        <div className="text-xs text-green-600">
+                            {clickerAchievements.totalGold ? `${Math.floor(clickerAchievements.totalGold / 1000)}K gold` : 'New Hero'}
+                        </div>
                     </div>
                 )}
             </div>
@@ -521,7 +627,7 @@ const AwardModal = ({ isBulk, awardType, onTypeChange, studentCount, student, on
                         onClick={() => onSubmit(amount, reason, awardType)} 
                         className="flex-1 px-4 py-3 rounded-lg bg-green-500 hover:bg-green-600 font-semibold text-white transition-all duration-200 transform hover:scale-105 shadow-lg"
                     >
-                        🎁 Confirm Award
+                        Confirm Award
                     </button>
                 </div>
             </div>

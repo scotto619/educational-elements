@@ -1,4 +1,4 @@
-// components/games/ClickerGame.js - FIXED FIREBASE INTEGRATION
+// components/games/ClickerGame.js - UPDATED WITH WEAPON DPC BONUSES
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
@@ -70,25 +70,25 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
   const eventAccumRef = useRef(0);
   const lastSaveRef = useRef(0);
 
-  // Weapon definitions with unlock requirements
+  // UPDATED: Weapon definitions with DPC bonuses for progression
   const WEAPONS = {
-    '1': { name: 'Novice Blade', icon: '⚔️', path: '/Loot/Weapons/1.png', requirement: null },
-    '2': { name: 'Mystic Staff', icon: '🔮', path: '/Loot/Weapons/2.png', requirement: { type: 'totalGold', value: 1000 } },
-    '3': { name: 'Frost Axe', icon: '🪓', path: '/Loot/Weapons/3.png', requirement: { type: 'totalGold', value: 5000 } },
-    '4': { name: 'Shadow Daggers', icon: '🗡️', path: '/Loot/Weapons/4.png', requirement: { type: 'totalGold', value: 25000 } },
-    '5': { name: 'Elven Bow', icon: '🏹', path: '/Loot/Weapons/5.png', requirement: { type: 'attacks', value: 1000 } },
-    '6': { name: 'Orcish Cleaver', icon: '⚔️', path: '/Loot/Weapons/6.png', requirement: { type: 'artifacts', value: 50 } },
-    '7': { name: 'Divine Hammer', icon: '🔨', path: '/Loot/Weapons/7.png', requirement: { type: 'totalGold', value: 100000 } },
-    '8': { name: 'Nature\'s Whip', icon: '🌿', path: '/Loot/Weapons/8.png', requirement: { type: 'upgrades', value: 3 } },
-    '9': { name: 'Celestial Orb', icon: '✨', path: '/Loot/Weapons/9.png', requirement: { type: 'totalGold', value: 1000000 } },
-    '10': { name: 'Heart Mace', icon: '❄️', path: '/Loot/Weapons/10.png', requirement: { type: 'dps', value: 100000 } },
-    '11': { name: 'Mechanical Gauntlet', icon: '🤖', path: '/Loot/Weapons/11.png', requirement: { type: 'totalGold', value: 10000000 } },
-    '12': { name: 'Golden Hammer', icon: '🌹', path: '/Loot/Weapons/12.png', requirement: { type: 'prestige', value: 1 } },
-    '13': { name: 'Electro Staff', icon: '⚒️', path: '/Loot/Weapons/13.png', requirement: { type: 'totalGold', value: 100000000 } },
-    '14': { name: 'Void Staff', icon: '🌌', path: '/Loot/Weapons/14.png', requirement: { type: 'prestige', value: 2 } },
-    '15': { name: 'Elemental Trident', icon: '🔱', path: '/Loot/Weapons/15.png', requirement: { type: 'totalGold', value: 1000000000 } },
-    '16': { name: 'Soul Reaper', icon: '💀', path: '/Loot/Weapons/16.png', requirement: { type: 'prestige', value: 5 } },
-    '17': { name: 'Cosmic Blades', icon: '🌟', path: '/Loot/Weapons/17.png', requirement: { type: 'prestige', value: 10 } }
+    '1': { name: 'Novice Blade', icon: '⚔️', path: '/Loot/Weapons/1.png', requirement: null, dpcMultiplier: 1 },
+    '2': { name: 'Mystic Staff', icon: '🔮', path: '/Loot/Weapons/2.png', requirement: { type: 'totalGold', value: 1000 }, dpcMultiplier: 1.5 },
+    '3': { name: 'Frost Axe', icon: '🪓', path: '/Loot/Weapons/3.png', requirement: { type: 'totalGold', value: 5000 }, dpcMultiplier: 2 },
+    '4': { name: 'Shadow Daggers', icon: '🗡️', path: '/Loot/Weapons/4.png', requirement: { type: 'totalGold', value: 25000 }, dpcMultiplier: 3 },
+    '5': { name: 'Elven Bow', icon: '🏹', path: '/Loot/Weapons/5.png', requirement: { type: 'attacks', value: 1000 }, dpcMultiplier: 4 },
+    '6': { name: 'Orcish Cleaver', icon: '⚔️', path: '/Loot/Weapons/6.png', requirement: { type: 'artifacts', value: 50 }, dpcMultiplier: 6 },
+    '7': { name: 'Divine Hammer', icon: '🔨', path: '/Loot/Weapons/7.png', requirement: { type: 'totalGold', value: 100000 }, dpcMultiplier: 8 },
+    '8': { name: 'Nature\'s Whip', icon: '🌿', path: '/Loot/Weapons/8.png', requirement: { type: 'upgrades', value: 3 }, dpcMultiplier: 12 },
+    '9': { name: 'Celestial Orb', icon: '✨', path: '/Loot/Weapons/9.png', requirement: { type: 'totalGold', value: 1000000 }, dpcMultiplier: 20 },
+    '10': { name: 'Heart Mace', icon: '❤️', path: '/Loot/Weapons/10.png', requirement: { type: 'dps', value: 100000 }, dpcMultiplier: 30 },
+    '11': { name: 'Mechanical Gauntlet', icon: '🤖', path: '/Loot/Weapons/11.png', requirement: { type: 'totalGold', value: 10000000 }, dpcMultiplier: 50 },
+    '12': { name: 'Golden Hammer', icon: '🌹', path: '/Loot/Weapons/12.png', requirement: { type: 'prestige', value: 1 }, dpcMultiplier: 100 },
+    '13': { name: 'Electro Staff', icon: '⚡', path: '/Loot/Weapons/13.png', requirement: { type: 'totalGold', value: 100000000 }, dpcMultiplier: 200 },
+    '14': { name: 'Void Staff', icon: '🌌', path: '/Loot/Weapons/14.png', requirement: { type: 'prestige', value: 2 }, dpcMultiplier: 500 },
+    '15': { name: 'Elemental Trident', icon: '🔱', path: '/Loot/Weapons/15.png', requirement: { type: 'totalGold', value: 1000000000 }, dpcMultiplier: 1000 },
+    '16': { name: 'Soul Reaper', icon: '💀', path: '/Loot/Weapons/16.png', requirement: { type: 'prestige', value: 5 }, dpcMultiplier: 2500 },
+    '17': { name: 'Cosmic Blades', icon: '🌟', path: '/Loot/Weapons/17.png', requirement: { type: 'prestige', value: 10 }, dpcMultiplier: 10000 }
   };
 
   // Theme definitions
@@ -267,10 +267,14 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     return m;
   }, [gameState.boons]);
 
+  // UPDATED: DPC calculation now includes weapon multiplier
   const dpc = useCallback(() => {
-    let mult = gameState.dpcMult * activeBoonMult('dpc');
+    const currentWeapon = WEAPONS[gameState.activeWeapon] || WEAPONS['1'];
+    const weaponMultiplier = currentWeapon.dpcMultiplier || 1;
+    
+    let mult = gameState.dpcMult * activeBoonMult('dpc') * weaponMultiplier;
     return Math.max(1, gameState.dpcBase * mult);
-  }, [gameState.dpcBase, gameState.dpcMult, activeBoonMult]);
+  }, [gameState.dpcBase, gameState.dpcMult, gameState.activeWeapon, activeBoonMult]);
 
   const dps = useCallback(() => {
     let total = 0;
@@ -420,7 +424,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
           ...prev,
           unlockedWeapons: [...prev.unlockedWeapons, key]
         }));
-        newUnlocks.push(`New weapon unlocked: ${weapon.name}!`);
+        newUnlocks.push(`New weapon unlocked: ${weapon.name}! (+${weapon.dpcMultiplier}x damage)`);
       }
     });
 
@@ -946,7 +950,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     setShowChoiceEvent(false);
   }, []);
 
-  // FIXED: Firebase Save Function - Simplified and Robust
+  // FIXED: Firebase Save Function - UPDATED to include clicker game achievements for student display
   const saveToFirebase = useCallback(async () => {
     if (!studentData || !updateStudentData || !isLoaded || saveInProgress) {
       return;
@@ -983,15 +987,30 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
         version: '2.1'
       };
 
+      // NEW: Create clicker achievements object for student display
+      const currentWeapon = WEAPONS[gameState.activeWeapon] || WEAPONS['1'];
+      const currentTheme = THEMES[gameState.activeTheme] || THEMES.default;
+      const clickerAchievements = {
+        title: gameState.activeTitle,
+        prestige: gameState.prestige,
+        theme: gameState.activeTheme,
+        themeName: currentTheme.name,
+        weapon: currentWeapon.name,
+        totalGold: gameState.totalGold,
+        level: Math.min(Math.floor(gameState.totalGold / 10000) + 1, 100), // Simple leveling system
+        lastPlayed: Date.now()
+      };
+
       await updateStudentData({ 
-        clickerGameData: cleanGameState 
+        clickerGameData: cleanGameState,
+        clickerAchievements: clickerAchievements
       });
 
       console.log('✅ Clicker game saved successfully to Firebase');
       lastSaveRef.current = Date.now();
 
     } catch (error) {
-      console.error('❌ Error saving clicker game to Firebase:', error);
+      console.error('⚠️ Error saving clicker game to Firebase:', error);
       addToast('Save failed! Please try again.', 'error');
     } finally {
       setSaveInProgress(false);
@@ -1005,7 +1024,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     }
 
     try {
-      console.log('🔄 Loading clicker game from Firebase...');
+      console.log('📄 Loading clicker game from Firebase...');
       const data = studentData.clickerGameData;
 
       // Validate and sanitize the loaded data
@@ -1046,7 +1065,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
       addToast('Game loaded successfully!', 'success');
 
     } catch (error) {
-      console.error('❌ Error loading clicker game from Firebase:', error);
+      console.error('⚠️ Error loading clicker game from Firebase:', error);
       setIsLoaded(true); // Still mark as loaded to prevent infinite retries
       addToast('Load failed, starting new game!', 'warning');
     }
@@ -1408,6 +1427,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
                 </div>
                 <p className="mt-4 text-gray-600 text-sm">Click to attack!</p>
                 <p className="text-sm font-semibold text-purple-600">{currentWeapon.name}</p>
+                <p className="text-xs text-green-600 font-semibold">+{currentWeapon.dpcMultiplier}x Damage</p>
               </div>
             </div>
 
@@ -1643,6 +1663,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
                               <div className="text-2xl hidden">{weapon.icon}</div>
                             </div>
                             <div className="text-xs font-semibold">{weapon.name}</div>
+                            <div className="text-xs text-green-600 font-bold">+{weapon.dpcMultiplier}x</div>
                             {!unlocked && requirement && (
                               <div className="text-xs text-gray-500 mt-1">
                                 {requirement.type === 'totalGold' && `${fmt(requirement.value)} gold`}
