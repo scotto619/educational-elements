@@ -1,4 +1,4 @@
-// components/games/ClickerGame.js - Enhanced Hero Forge Fantasy Clicker (FIXED)
+// components/games/ClickerGame.js - COMPLETELY FIXED VERSION
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
@@ -59,7 +59,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
   const [floatingNumbers, setFloatingNumbers] = useState([]);
   const [toasts, setToasts] = useState([]);
   const [showChoiceEvent, setShowChoiceEvent] = useState(false);
-  const [hasLoadedFromFirebase, setHasLoadedFromFirebase] = useState(false); // Prevent multiple loads
+  const [hasLoadedFromFirebase, setHasLoadedFromFirebase] = useState(false); // FIXED: Prevent multiple loads
   const [eventTimeLeft, setEventTimeLeft] = useState(0); // Timer for event UI
 
   const gameLoopRef = useRef();
@@ -1023,9 +1023,12 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     setShowChoiceEvent(false);
   }, []);
 
-  // Save game to Firebase
+  // FIXED: Save game to Firebase - WITH LOAD PROTECTION
   const saveGameToFirebase = useCallback(async () => {
-    if (!studentData || !updateStudentData) return;
+    if (!studentData || !updateStudentData || !hasLoadedFromFirebase) {
+      console.log('Skipping save - not ready or not loaded yet');
+      return;
+    }
 
     try {
       const saveData = {
@@ -1037,18 +1040,19 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
       };
 
       await updateStudentData(saveData);
-      console.log('✅ Clicker game saved to Firebase');
+      console.log('Clicker game saved to Firebase');
     } catch (error) {
-      console.error('❌ Error saving clicker game:', error);
+      console.error('Error saving clicker game:', error);
     }
-  }, [gameState, studentData, updateStudentData]);
+  }, [gameState, studentData, updateStudentData, hasLoadedFromFirebase]);
 
-  // Load game from Firebase - OFFLINE PROGRESSION REMOVED
+  // FIXED: Load game from Firebase - SETS LOADED FLAG
   const loadGameFromFirebase = useCallback(() => {
-    if (!studentData?.clickerGameData) return;
+    if (!studentData?.clickerGameData || hasLoadedFromFirebase) return;
 
     try {
       const loadedData = studentData.clickerGameData;
+      console.log('Loading clicker game from Firebase...');
       
       // ENSURE ALL REQUIRED PROPERTIES ARE PRESENT AND VALID
       const safeLoadedData = {
@@ -1108,27 +1112,44 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
       setSelectedWeapon(loadedData.activeWeapon || '1');
       setSelectedTheme(loadedData.activeTheme || 'default');
 
-      console.log('✅ Clicker game loaded from Firebase');
-    } catch (error) {
-      console.error('❌ Error loading clicker game:', error);
-    }
-  }, [studentData]); // Only depend on studentData to prevent loops
+      // CRITICAL: Mark as loaded to prevent reloading
+      setHasLoadedFromFirebase(true);
 
-  // Auto-save interval
+      console.log('Clicker game loaded from Firebase successfully');
+    } catch (error) {
+      console.error('Error loading clicker game:', error);
+    }
+  }, [studentData, hasLoadedFromFirebase]); // FIXED: Only depend on what actually matters
+
+  // FIXED: Auto-save interval - WAITS FOR LOADING
   useEffect(() => {
+    // Don't start auto-saving until we've loaded
+    if (!hasLoadedFromFirebase) return;
+    
     const interval = setInterval(() => {
+      console.log('Auto-saving clicker game...');
       saveGameToFirebase();
     }, 15000);
 
     return () => clearInterval(interval);
-  }, [saveGameToFirebase]);
+  }, [saveGameToFirebase, hasLoadedFromFirebase]);
 
-  // Load on component mount - ONLY ONCE
+  // FIXED: Load on component mount - ONLY ONCE
   useEffect(() => {
-    if (studentData && !hasLoadedFromFirebase) {
+    if (studentData?.clickerGameData && !hasLoadedFromFirebase) {
+      console.log('Attempting to load clicker game data...');
       loadGameFromFirebase();
     }
-  }, [studentData, loadGameFromFirebase, hasLoadedFromFirebase]);
+  }, [studentData, hasLoadedFromFirebase]); // REMOVED loadGameFromFirebase from dependencies
+
+  // ADDED: Handle when studentData first becomes available
+  useEffect(() => {
+    // Reset loading flag when studentData changes (new login)
+    if (studentData && hasLoadedFromFirebase) {
+      console.log('Student data changed, resetting load flag');
+      setHasLoadedFromFirebase(false);
+    }
+  }, [studentData?.id]); // Only when student ID changes (new student login)
 
   // Update event timer for UI
   useEffect(() => {
@@ -1199,13 +1220,6 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
         setShowChoiceEvent(false);
       }
 
-      // Auto-save accumulator
-      autosaveAccumRef.current += dt;
-      if (autosaveAccumRef.current >= 15) {
-        autosaveAccumRef.current = 0;
-        saveGameToFirebase();
-      }
-
       gameLoopRef.current = requestAnimationFrame(gameLoop);
     };
 
@@ -1216,7 +1230,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
         cancelAnimationFrame(gameLoopRef.current);
       }
     };
-  }, [dps, addGold, gameState.event, spawnChoiceEvent, saveGameToFirebase]);
+  }, [dps, addGold, gameState.event, spawnChoiceEvent]);
 
   const currentTheme = THEMES[gameState.activeTheme] || THEMES.default;
   const currentWeapon = WEAPONS[gameState.activeWeapon] || WEAPONS['1'];
