@@ -1,7 +1,7 @@
-// components/games/Match3BattleGame.js - Enhanced Epic Fantasy Match-3 Battle Arena
+// Enhanced Match-3 Battle Arena - Complete Fantasy Combat Experience
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
-const Match3BattleGame = ({ studentData, updateStudentData, showToast }) => {
+const Match3BattleGame = ({ studentData, updateStudentData }) => {
   const GRID_SIZE = 8;
   
   const TILE_TYPES = {
@@ -12,198 +12,148 @@ const Match3BattleGame = ({ studentData, updateStudentData, showToast }) => {
     FIRE: { id: 'fire', emoji: '🔥', color: '#ff922b', name: 'Fire Rune', effect: 'burn' },
     ICE: { id: 'ice', emoji: '❄️', color: '#74c0fc', name: 'Ice Shard', effect: 'freeze' },
     LIGHTNING: { id: 'lightning', emoji: '⚡', color: '#ffd43b', name: 'Lightning Bolt', effect: 'shock' },
-    CURSE: { id: 'curse', emoji: '☠️', color: '#9775fa', name: 'Curse', effect: 'curse' }
+    CURSE: { id: 'curse', emoji: '☠️', color: '#9775fa', name: 'Curse', effect: 'curse' },
+    TREASURE: { id: 'treasure', emoji: '💎', color: '#ffd700', name: 'Treasure', effect: 'loot' }
   };
+
+  const WEAPONS = [
+    { id: 'rusty_sword', name: 'Rusty Sword', damage: 0, description: 'A worn blade, but it gets the job done', rarity: 'common' },
+    { id: 'iron_sword', name: 'Iron Sword', damage: 2, description: '+2 base damage per sword match', rarity: 'common' },
+    { id: 'steel_blade', name: 'Steel Blade', damage: 3, description: '+3 base damage, improved durability', rarity: 'uncommon' },
+    { id: 'silver_sword', name: 'Silver Sword', damage: 4, description: '+4 base damage, extra damage vs undead', rarity: 'uncommon' },
+    { id: 'frost_blade', name: 'Frost Blade', damage: 5, description: '+5 base damage, chance to freeze enemies', rarity: 'rare' },
+    { id: 'flame_sword', name: 'Flame Sword', damage: 6, description: '+6 base damage, burn effect on crits', rarity: 'rare' },
+    { id: 'shadow_blade', name: 'Shadow Blade', damage: 7, description: '+7 base damage, ignores 25% enemy defense', rarity: 'epic' },
+    { id: 'storm_sword', name: 'Storm Sword', damage: 8, description: '+8 base damage, lightning chains on combo', rarity: 'epic' },
+    { id: 'dragon_slayer', name: 'Dragon Slayer', damage: 12, description: '+12 base damage, massive crit chance vs dragons', rarity: 'legendary' },
+    { id: 'void_reaper', name: 'Void Reaper', damage: 15, description: '+15 base damage, steals enemy health', rarity: 'legendary' },
+    { id: 'excalibur', name: 'Excalibur', damage: 20, description: '+20 base damage, chosen one\'s blade', rarity: 'mythic' }
+  ];
+
+  const ARMOR = [
+    { id: 'cloth_armor', name: 'Cloth Armor', defense: 0, hp: 0, description: 'Basic protection', rarity: 'common' },
+    { id: 'leather_armor', name: 'Leather Armor', defense: 2, hp: 10, description: '+2 defense, +10 max HP', rarity: 'common' },
+    { id: 'chain_mail', name: 'Chain Mail', defense: 4, hp: 20, description: '+4 defense, +20 max HP', rarity: 'uncommon' },
+    { id: 'plate_armor', name: 'Plate Armor', defense: 6, hp: 30, description: '+6 defense, +30 max HP', rarity: 'rare' },
+    { id: 'dragon_scale', name: 'Dragon Scale Armor', defense: 10, hp: 50, description: '+10 defense, +50 max HP, fire resistance', rarity: 'epic' },
+    { id: 'void_armor', name: 'Void Armor', defense: 15, hp: 75, description: '+15 defense, +75 max HP, magic resistance', rarity: 'legendary' }
+  ];
 
   const ENEMIES = [
     { 
-      id: 1, name: 'Goblin Scout', emoji: '👹', hp: 60, damage: 8, 
+      id: 1, name: 'Goblin Scout', emoji: '👹', hp: 40, damage: 6, defense: 0,
       abilities: ['steal_gold'], 
       description: 'A sneaky goblin that steals gold when it attacks',
-      rewards: { xp: 25, gold: 50 },
-      loot: { weapon: null, chance: 0.1 }
+      rewards: { xp: 15, gold: 30 },
+      loot: [
+        { item: 'iron_sword', chance: 0.15, type: 'weapon' },
+        { item: 'leather_armor', chance: 0.10, type: 'armor' }
+      ]
     },
     { 
-      id: 2, name: 'Orc Warrior', emoji: '🧌', hp: 90, damage: 12, 
+      id: 2, name: 'Orc Warrior', emoji: '🧌', hp: 70, damage: 10, defense: 2,
       abilities: ['rage'], 
       description: 'A fierce orc that gets stronger as it takes damage',
-      rewards: { xp: 40, gold: 80 },
-      loot: { weapon: 'Iron Sword', chance: 0.15 }
+      rewards: { xp: 25, gold: 50 },
+      loot: [
+        { item: 'steel_blade', chance: 0.20, type: 'weapon' },
+        { item: 'chain_mail', chance: 0.15, type: 'armor' }
+      ]
     },
     { 
-      id: 3, name: 'Frost Troll', emoji: '🧊', hp: 120, damage: 15, 
+      id: 3, name: 'Frost Troll', emoji: '🧊', hp: 100, damage: 15, defense: 4,
       abilities: ['freeze_tiles'], 
       description: 'An icy troll that can freeze your tiles',
-      rewards: { xp: 75, gold: 150 },
-      loot: { weapon: 'Frost Blade', chance: 0.2 }
+      rewards: { xp: 40, gold: 80 },
+      loot: [
+        { item: 'frost_blade', chance: 0.25, type: 'weapon' },
+        { item: 'plate_armor', chance: 0.20, type: 'armor' }
+      ]
     },
     { 
-      id: 4, name: 'Fire Drake', emoji: '🐉', hp: 160, damage: 18, 
+      id: 4, name: 'Fire Drake', emoji: '🐉', hp: 140, damage: 20, defense: 6,
       abilities: ['burn_attack'], 
       description: 'A fierce drake that inflicts burning damage',
-      rewards: { xp: 100, gold: 200 },
-      loot: { weapon: 'Flame Sword', chance: 0.25 }
+      rewards: { xp: 60, gold: 120 },
+      loot: [
+        { item: 'flame_sword', chance: 0.30, type: 'weapon' },
+        { item: 'dragon_scale', chance: 0.15, type: 'armor' }
+      ]
     },
     { 
-      id: 5, name: 'Shadow Wraith', emoji: '👻', hp: 100, damage: 20, 
+      id: 5, name: 'Shadow Wraith', emoji: '👻', hp: 90, damage: 25, defense: 0,
       abilities: ['curse_tiles'], 
       description: 'A dark wraith that curses the battlefield',
-      rewards: { xp: 125, gold: 250 },
-      loot: { weapon: 'Shadow Blade', chance: 0.3 }
+      rewards: { xp: 75, gold: 150 },
+      loot: [
+        { item: 'shadow_blade', chance: 0.35, type: 'weapon' },
+        { item: 'void_armor', chance: 0.10, type: 'armor' }
+      ]
     },
     { 
-      id: 6, name: 'Lightning Elemental', emoji: '⚡', hp: 140, damage: 22, 
+      id: 6, name: 'Lightning Elemental', emoji: '⚡', hp: 120, damage: 18, defense: 3,
       abilities: ['chain_lightning'], 
       description: 'An elemental that can chain lightning attacks',
-      rewards: { xp: 150, gold: 300 },
-      loot: { weapon: 'Storm Sword', chance: 0.35 }
+      rewards: { xp: 90, gold: 180 },
+      loot: [
+        { item: 'storm_sword', chance: 0.40, type: 'weapon' }
+      ]
     },
     { 
-      id: 7, name: 'Ancient Dragon', emoji: '🐲', hp: 300, damage: 35, 
+      id: 7, name: 'Ancient Dragon', emoji: '🐲', hp: 250, damage: 35, defense: 10,
       abilities: ['dragon_breath', 'treasure_hoard'], 
       description: 'The ultimate challenge - an ancient dragon with immense power',
-      rewards: { xp: 500, gold: 1000 },
-      loot: { weapon: 'Dragon Slayer', chance: 0.5 }
+      rewards: { xp: 200, gold: 500 },
+      loot: [
+        { item: 'dragon_slayer', chance: 0.50, type: 'weapon' },
+        { item: 'excalibur', chance: 0.05, type: 'weapon' },
+        { item: 'void_reaper', chance: 0.10, type: 'weapon' }
+      ]
     }
   ];
-
-  const UPGRADES = [
-    {
-      id: 'sword_master',
-      name: 'Sword Mastery',
-      description: '+50% sword damage',
-      cost: 100,
-      effect: { type: 'damage_multiplier', value: 1.5 },
-      tier: 1
-    },
-    {
-      id: 'shield_expert',
-      name: 'Shield Expert',
-      description: '+75% shield effectiveness',
-      cost: 150,
-      effect: { type: 'shield_multiplier', value: 1.75 },
-      tier: 1
-    },
-    {
-      id: 'potion_brewer',
-      name: 'Master Alchemist',
-      description: '+60% healing from potions',
-      cost: 120,
-      effect: { type: 'heal_multiplier', value: 1.6 },
-      tier: 1
-    },
-    {
-      id: 'mana_well',
-      name: 'Mana Well',
-      description: '+3 mana per crystal',
-      cost: 200,
-      effect: { type: 'mana_bonus', value: 3 },
-      tier: 1
-    },
-    {
-      id: 'fire_lord',
-      name: 'Fire Lord',
-      description: 'Fire deals +8 burn damage',
-      cost: 250,
-      effect: { type: 'burn_bonus', value: 8 },
-      tier: 2
-    },
-    {
-      id: 'frost_armor',
-      name: 'Frost Armor',
-      description: 'Immunity to freeze + reflect ice damage',
-      cost: 300,
-      effect: { type: 'freeze_immunity', value: true },
-      tier: 2
-    },
-    {
-      id: 'lightning_rod',
-      name: 'Lightning Rod',
-      description: 'Lightning chains to deal 2x damage',
-      cost: 350,
-      effect: { type: 'chain_lightning', value: true },
-      tier: 2
-    },
-    {
-      id: 'curse_ward',
-      name: 'Curse Ward',
-      description: 'Convert curse damage to healing',
-      cost: 400,
-      effect: { type: 'curse_immunity', value: true },
-      tier: 2
-    },
-    {
-      id: 'berserker',
-      name: 'Berserker Rage',
-      description: '+100% damage when below 30% HP',
-      cost: 600,
-      effect: { type: 'berserker', value: 2 },
-      tier: 3
-    },
-    {
-      id: 'phoenix_heart',
-      name: 'Phoenix Heart',
-      description: 'Revive once per battle with 50% HP',
-      cost: 800,
-      effect: { type: 'revive', value: 0.5 },
-      tier: 3
-    }
-  ];
-
-  const WEAPONS = {
-    'basic': { name: 'Rusty Sword', damage: 0, description: 'A worn blade, but it gets the job done' },
-    'Iron Sword': { name: 'Iron Sword', damage: 2, description: '+2 base damage per sword match' },
-    'Frost Blade': { name: 'Frost Blade', damage: 3, description: '+3 base damage, chance to freeze enemies' },
-    'Flame Sword': { name: 'Flame Sword', damage: 4, description: '+4 base damage, burn effect on crits' },
-    'Shadow Blade': { name: 'Shadow Blade', damage: 5, description: '+5 base damage, ignores 25% enemy defense' },
-    'Storm Sword': { name: 'Storm Sword', damage: 6, description: '+6 base damage, lightning chains on combo' },
-    'Dragon Slayer': { name: 'Dragon Slayer', damage: 10, description: '+10 base damage, massive crit chance vs dragons' }
-  };
 
   // Game State
   const [gameState, setGameState] = useState({
-    mode: 'menu', // 'menu', 'singleplayer', 'multiplayer', 'lobby', 'pvp'
+    mode: 'menu', // 'menu', 'singleplayer'
     player: {
       level: 1,
       xp: 0,
       xpToNext: 100,
       hp: 100,
       maxHp: 100,
+      baseMaxHp: 100,
       mana: 0,
       maxMana: 100,
       shield: 0,
       gold: 0,
-      upgrades: [],
-      statusEffects: {},
-      weapon: 'basic',
-      inventory: [],
-      wins: 0,
-      losses: 0
+      statusEffects: { burn: 0, freeze: 0 },
+      weapon: 'rusty_sword',
+      armor: 'cloth_armor',
+      inventory: { weapons: [], armor: [] },
+      runs: 0,
+      totalKills: 0
     },
     enemy: null,
-    opponent: null, // For PVP
-    currentLevel: 1,
+    enemyTurnTimer: 3, // Enemy waits 3 turns before attacking
+    currentFloor: 1,
+    runStartFloor: 1,
     board: [],
     selectedTile: null,
+    draggedTile: null,
     animatingTiles: new Set(),
-    turnPhase: 'player', // 'player', 'resolving', 'enemy', 'waiting'
+    turnPhase: 'player', // 'player', 'resolving', 'enemy'
     combo: 0,
     matchedTiles: new Set(),
     isGameOver: false,
     victory: false,
-    multiplayerData: null,
-    roomCode: '',
-    isHost: false
+    showDeathModal: false
   });
 
   const [floatingTexts, setFloatingTexts] = useState([]);
-  const [showUpgrades, setShowUpgrades] = useState(false);
-  const [showLevelComplete, setShowLevelComplete] = useState(false);
-  const [showInventory, setShowInventory] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const [showInventory, setShowInventory] = useState(false);
 
   const gameLoopRef = useRef();
-  const lastUpdateRef = useRef(Date.now());
   const autosaveIntervalRef = useRef();
 
   // Helper Functions
@@ -229,11 +179,7 @@ const Match3BattleGame = ({ studentData, updateStudentData, showToast }) => {
     setTimeout(() => {
       setNotifications(prev => prev.filter(n => n.id !== id));
     }, duration);
-    
-    if (showToast) {
-      showToast(message, type);
-    }
-  }, [showToast]);
+  }, []);
 
   const formatNumber = useCallback((num) => {
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
@@ -241,11 +187,27 @@ const Match3BattleGame = ({ studentData, updateStudentData, showToast }) => {
     return num.toString();
   }, []);
 
+  const getItemByType = useCallback((id, type) => {
+    return type === 'weapon' ? WEAPONS.find(w => w.id === id) : ARMOR.find(a => a.id === id);
+  }, []);
+
   // Initialize Board
   const createRandomTile = useCallback(() => {
-    const types = Object.values(TILE_TYPES).filter(t => t.id !== 'curse');
-    return types[Math.floor(Math.random() * types.length)];
-  }, []);
+    const rand = Math.random();
+    
+    // 5% chance for treasure tile
+    if (rand < 0.05) return TILE_TYPES.TREASURE;
+    
+    // 3% chance for curse tile (appears more in later floors)
+    if (rand < 0.03 + (gameState.currentFloor * 0.01)) return TILE_TYPES.CURSE;
+    
+    const commonTypes = [
+      TILE_TYPES.SWORD, TILE_TYPES.SHIELD, TILE_TYPES.POTION, 
+      TILE_TYPES.MANA, TILE_TYPES.FIRE, TILE_TYPES.ICE, TILE_TYPES.LIGHTNING
+    ];
+    
+    return commonTypes[Math.floor(Math.random() * commonTypes.length)];
+  }, [gameState.currentFloor]);
 
   const initializeBoard = useCallback(() => {
     const board = Array(GRID_SIZE).fill(null).map(() => 
@@ -332,86 +294,115 @@ const Match3BattleGame = ({ studentData, updateStudentData, showToast }) => {
     let healing = 0;
     let manaGain = 0;
     let shieldGain = 0;
-    let burn = 0;
-    let freeze = 0;
-    let shock = 0;
+    let burnDamage = 0;
+    let freezeTurns = 0;
+    let lightningDamage = 0;
+    let curseDamage = 0;
+    let goldGain = 0;
     
-    const comboMultiplier = 1 + (combo * 0.3);
-    const upgrades = gameState.player.upgrades || [];
-    const hasUpgrade = (id) => upgrades.includes(id);
-    const weapon = WEAPONS[gameState.player.weapon] || WEAPONS['basic'];
-    
-    // Berserker rage check
-    const berserkerBonus = hasUpgrade('berserker') && 
-      (gameState.player.hp / gameState.player.maxHp) < 0.3 ? 2 : 1;
+    const comboMultiplier = 1 + (combo * 0.25);
+    const weapon = getItemByType(gameState.player.weapon, 'weapon');
+    const armor = getItemByType(gameState.player.armor, 'armor');
     
     Object.entries(effects).forEach(([tileType, count]) => {
+      const baseAmount = count * comboMultiplier;
+      
       switch (tileType) {
         case 'sword':
-          const baseDamage = 15 + weapon.damage;
-          damage += count * baseDamage * comboMultiplier * berserkerBonus *
-            (hasUpgrade('sword_master') ? 1.5 : 1);
-          
+          damage += Math.floor((15 + (weapon?.damage || 0)) * baseAmount);
           // Critical hit chance (10% base + 5% per combo)
           if (Math.random() < 0.1 + (combo * 0.05)) {
-            damage *= 2;
+            damage *= 1.5;
             addFloatingText('CRITICAL!', 200, 100, '#ff0000', 'text-2xl');
             playSound('coins');
           }
           break;
           
         case 'shield':
-          shieldGain += count * 12 * comboMultiplier * (hasUpgrade('shield_expert') ? 1.75 : 1);
+          shieldGain += Math.floor(10 * baseAmount);
           break;
           
         case 'potion':
-          healing += count * 15 * comboMultiplier * (hasUpgrade('potion_brewer') ? 1.6 : 1);
+          healing += Math.floor(20 * baseAmount);
           break;
           
         case 'mana':
-          manaGain += count * (10 + (hasUpgrade('mana_well') ? 3 : 0)) * comboMultiplier;
+          manaGain += Math.floor(15 * baseAmount);
           break;
           
         case 'fire':
-          burn += count * (4 + (hasUpgrade('fire_lord') ? 8 : 0)) * comboMultiplier;
-          if (weapon.name === 'Flame Sword' && Math.random() < 0.3) {
-            burn += count * 5; // Bonus burn from weapon
-          }
+          burnDamage += Math.floor(8 * baseAmount); // Burn damage over time
           break;
           
         case 'ice':
-          freeze += count * 3 * comboMultiplier;
-          if (!hasUpgrade('freeze_immunity')) {
-            // Enemy gets frozen
-          }
+          freezeTurns += Math.floor(2 * count); // Freeze enemy turns
           break;
           
         case 'lightning':
-          let lightningDamage = count * 10 * comboMultiplier;
-          if (hasUpgrade('chain_lightning')) {
-            lightningDamage *= 2;
-          }
-          shock += lightningDamage;
+          lightningDamage += Math.floor(12 * baseAmount); // Direct lightning damage
           break;
           
         case 'curse':
-          if (hasUpgrade('curse_ward')) {
-            healing += count * 8; // Convert curse to healing
-            addFloatingText('Curse Warded!', 150, 120, '#51cf66');
-          } else {
-            damage -= count * 10; // Curse reduces our own damage
-            addFloatingText('Cursed!', 150, 120, '#9775fa');
+          curseDamage += Math.floor(15 * baseAmount); // Hurts the player!
+          break;
+          
+        case 'treasure':
+          goldGain += Math.floor((50 + gameState.currentFloor * 10) * baseAmount);
+          // Chance for rare loot
+          if (Math.random() < 0.15 * count) {
+            const lootRoll = Math.random();
+            let lootItem = null;
+            let lootType = null;
+            
+            if (lootRoll < 0.6) { // Weapon
+              const availableWeapons = WEAPONS.filter(w => !gameState.player.inventory.weapons.includes(w.id));
+              if (availableWeapons.length > 0) {
+                lootItem = availableWeapons[Math.floor(Math.random() * availableWeapons.length)];
+                lootType = 'weapon';
+              }
+            } else { // Armor
+              const availableArmor = ARMOR.filter(a => !gameState.player.inventory.armor.includes(a.id));
+              if (availableArmor.length > 0) {
+                lootItem = availableArmor[Math.floor(Math.random() * availableArmor.length)];
+                lootType = 'armor';
+              }
+            }
+            
+            if (lootItem) {
+              setGameState(prev => ({
+                ...prev,
+                player: {
+                  ...prev.player,
+                  inventory: {
+                    ...prev.player.inventory,
+                    [lootType === 'weapon' ? 'weapons' : 'armor']: [
+                      ...prev.player.inventory[lootType === 'weapon' ? 'weapons' : 'armor'],
+                      lootItem.id
+                    ]
+                  }
+                }
+              }));
+              addNotification(`Found ${lootItem.name} in treasure!`, 'success');
+            }
           }
           break;
       }
     });
     
-    return { damage: Math.max(0, damage), healing, manaGain, shieldGain, burn, freeze, shock };
-  }, [gameState.player, addFloatingText, playSound]);
+    return { damage, healing, manaGain, shieldGain, burnDamage, freezeTurns, lightningDamage, curseDamage, goldGain };
+  }, [gameState.player, gameState.currentFloor, getItemByType, addFloatingText, addNotification, playSound]);
 
+  // Process Player Turn
   const processPlayerTurn = useCallback((effects) => {
     setGameState(prev => {
       const newState = { ...prev };
+      
+      // Apply curse damage first (hurts player)
+      if (effects.curseDamage > 0) {
+        newState.player.hp = Math.max(0, prev.player.hp - effects.curseDamage);
+        addFloatingText(`-${effects.curseDamage} Cursed!`, 100, 120, '#9775fa', 'text-xl');
+        playSound('ding');
+      }
       
       // Apply healing
       if (effects.healing > 0) {
@@ -430,45 +421,39 @@ const Match3BattleGame = ({ studentData, updateStudentData, showToast }) => {
       
       // Apply shield
       if (effects.shieldGain > 0) {
-        newState.player.shield += effects.shieldGain;
+        newState.player.shield = Math.min(prev.player.shield + effects.shieldGain, 100); // Shield cap
         addFloatingText(`+${effects.shieldGain} Shield`, 50, 100, '#4dabf7');
         playSound('ding');
       }
       
+      // Apply gold gain
+      if (effects.goldGain > 0) {
+        newState.player.gold += effects.goldGain;
+        addFloatingText(`+${effects.goldGain} Gold`, 200, 120, '#ffd700');
+      }
+      
       // Apply damage to enemy
-      if (effects.damage > 0 && newState.enemy) {
-        let finalDamage = effects.damage;
+      let totalDamage = effects.damage + effects.lightningDamage;
+      
+      if (totalDamage > 0 && newState.enemy) {
+        const enemy = newState.enemy;
+        const finalDamage = Math.max(1, totalDamage - (enemy.defense || 0));
         
-        // Apply weapon special effects
-        const weapon = WEAPONS[newState.player.weapon];
-        if (weapon.name === 'Shadow Blade') {
-          finalDamage *= 1.25; // Ignores some defense
-        }
-        if (weapon.name === 'Dragon Slayer' && newState.enemy.name.includes('Dragon')) {
-          finalDamage *= 2; // Bonus vs dragons
-        }
-        
-        newState.enemy.hp = Math.max(0, newState.enemy.hp - finalDamage);
-        addFloatingText(`-${Math.floor(finalDamage)}`, 400, 200, '#ff6b6b', 'text-2xl');
+        newState.enemy.hp = Math.max(0, enemy.hp - finalDamage);
+        addFloatingText(`-${finalDamage}`, 400, 200, '#ff6b6b', 'text-2xl');
         playSound('coins');
         
-        // Apply status effects
-        if (effects.burn > 0) {
+        // Apply status effects to enemy
+        if (effects.burnDamage > 0) {
           newState.enemy.statusEffects = { 
             ...newState.enemy.statusEffects, 
-            burn: (newState.enemy.statusEffects.burn || 0) + effects.burn 
+            burn: (newState.enemy.statusEffects.burn || 0) + effects.burnDamage 
           };
         }
-        if (effects.freeze > 0) {
+        if (effects.freezeTurns > 0) {
           newState.enemy.statusEffects = { 
             ...newState.enemy.statusEffects, 
-            freeze: (newState.enemy.statusEffects.freeze || 0) + effects.freeze 
-          };
-        }
-        if (effects.shock > 0) {
-          newState.enemy.statusEffects = { 
-            ...newState.enemy.statusEffects, 
-            shock: (newState.enemy.statusEffects.shock || 0) + effects.shock 
+            freeze: (newState.enemy.statusEffects.freeze || 0) + effects.freezeTurns 
           };
         }
       }
@@ -482,21 +467,26 @@ const Match3BattleGame = ({ studentData, updateStudentData, showToast }) => {
         const rewards = newState.enemy.rewards;
         newState.player.xp += rewards.xp;
         newState.player.gold += rewards.gold;
+        newState.player.totalKills++;
         
         // Check for loot drop
-        if (newState.enemy.loot && Math.random() < newState.enemy.loot.chance) {
-          if (newState.enemy.loot.weapon && !newState.player.inventory.includes(newState.enemy.loot.weapon)) {
-            newState.player.inventory.push(newState.enemy.loot.weapon);
-            addNotification(`Found ${newState.enemy.loot.weapon}!`, 'success');
+        newState.enemy.loot?.forEach(loot => {
+          if (Math.random() < loot.chance) {
+            const item = getItemByType(loot.item, loot.type);
+            if (item && !newState.player.inventory[loot.type + 's'].includes(loot.item)) {
+              newState.player.inventory[loot.type + 's'].push(loot.item);
+              addNotification(`Found ${item.name}!`, 'success');
+            }
           }
-        }
+        });
         
         // Level up check
         while (newState.player.xp >= newState.player.xpToNext) {
           newState.player.xp -= newState.player.xpToNext;
           newState.player.level++;
-          newState.player.xpToNext = Math.floor(newState.player.xpToNext * 1.2);
-          newState.player.maxHp += 25;
+          newState.player.xpToNext = Math.floor(newState.player.xpToNext * 1.15);
+          newState.player.baseMaxHp += 20;
+          newState.player.maxHp = newState.player.baseMaxHp + (getItemByType(newState.player.armor, 'armor')?.hp || 0);
           newState.player.hp = newState.player.maxHp; // Full heal on level up
           newState.player.maxMana += 10;
           addFloatingText('LEVEL UP!', 200, 150, '#ffd43b', 'text-3xl');
@@ -504,26 +494,26 @@ const Match3BattleGame = ({ studentData, updateStudentData, showToast }) => {
           playSound('ding');
         }
         
-        setTimeout(() => setShowLevelComplete(true), 1000);
+        setTimeout(() => nextFloor(), 1500);
       }
       
       return newState;
     });
-  }, [addFloatingText, addNotification, playSound]);
+  }, [getItemByType, addFloatingText, addNotification, playSound]);
 
+  // Process Enemy Turn
   const processEnemyTurn = useCallback(() => {
     setGameState(prev => {
       if (!prev.enemy || prev.enemy.hp <= 0) return prev;
       
       const newState = { ...prev };
-      let damage = newState.enemy.damage;
       
-      // Apply status effects to enemy first
+      // Process enemy status effects first
       if (newState.enemy.statusEffects.burn > 0) {
-        const burnDamage = newState.enemy.statusEffects.burn * 3;
+        const burnDamage = Math.floor(newState.enemy.statusEffects.burn * 2);
         newState.enemy.hp = Math.max(0, newState.enemy.hp - burnDamage);
         addFloatingText(`-${burnDamage} Burn`, 400, 180, '#ff922b');
-        newState.enemy.statusEffects.burn = Math.max(0, newState.enemy.statusEffects.burn - 1);
+        newState.enemy.statusEffects.burn = Math.max(0, newState.enemy.statusEffects.burn - 3);
         
         if (newState.enemy.hp <= 0) {
           newState.victory = true;
@@ -532,74 +522,60 @@ const Match3BattleGame = ({ studentData, updateStudentData, showToast }) => {
         }
       }
       
+      // Check if enemy is frozen
       if (newState.enemy.statusEffects.freeze > 0) {
-        damage *= 0.4; // Heavily reduced damage when frozen
-        newState.enemy.statusEffects.freeze = Math.max(0, newState.enemy.statusEffects.freeze - 1);
         addFloatingText('Frozen!', 400, 220, '#74c0fc');
+        newState.enemy.statusEffects.freeze = Math.max(0, newState.enemy.statusEffects.freeze - 1);
+        return newState; // Skip enemy turn
       }
       
-      if (newState.enemy.statusEffects.shock > 0) {
-        damage *= 0.7; // Reduced damage when shocked
-        newState.enemy.statusEffects.shock = Math.max(0, newState.enemy.statusEffects.shock - 1);
-        addFloatingText('Shocked!', 400, 240, '#ffd43b');
+      // Enemy turn timer - wait 3 turns before first attack
+      if (newState.enemyTurnTimer > 0) {
+        newState.enemyTurnTimer--;
+        addFloatingText(`Enemy attacks in ${newState.enemyTurnTimer}`, 400, 160, '#ffaa00');
+        return newState;
       }
       
-      // Enemy attacks (if not dead from burn)
-      if (damage > 0 && newState.enemy.hp > 0) {
-        // Apply damage to shield first
-        if (newState.player.shield > 0) {
-          const shieldDamage = Math.min(newState.player.shield, damage);
-          newState.player.shield -= shieldDamage;
-          damage -= shieldDamage;
-          addFloatingText(`-${shieldDamage} Shield`, 100, 180, '#4dabf7');
-        }
+      // Enemy attacks
+      let damage = newState.enemy.damage;
+      const armor = getItemByType(newState.player.armor, 'armor');
+      const defense = armor?.defense || 0;
+      
+      // Apply damage to shield first
+      if (newState.player.shield > 0) {
+        const shieldBlock = Math.min(newState.player.shield, damage);
+        newState.player.shield -= shieldBlock;
+        damage -= shieldBlock;
+        addFloatingText(`-${shieldBlock} Shield`, 100, 180, '#4dabf7');
         
-        // Apply remaining damage to HP
-        if (damage > 0) {
-          newState.player.hp = Math.max(0, newState.player.hp - damage);
-          addFloatingText(`-${damage} HP`, 100, 150, '#ff6b6b', 'text-xl');
-          playSound('ding');
+        if (damage <= 0) {
+          addFloatingText('Blocked!', 100, 160, '#4dabf7', 'text-xl');
+          return newState;
         }
-        
-        // Enemy special abilities
-        if (newState.enemy.abilities.includes('curse_tiles') && Math.random() < 0.25) {
-          // Add curse tiles to board
-          for (let i = 0; i < 3; i++) {
-            const row = Math.floor(Math.random() * GRID_SIZE);
-            const col = Math.floor(Math.random() * GRID_SIZE);
-            newState.board[row][col] = TILE_TYPES.CURSE;
-          }
-          addFloatingText('Board Cursed!', 300, 200, '#9775fa');
-        }
-        
-        if (newState.enemy.abilities.includes('steal_gold') && Math.random() < 0.3) {
-          const stolenGold = Math.min(newState.player.gold, Math.floor(newState.player.gold * 0.1));
-          newState.player.gold -= stolenGold;
-          addFloatingText(`-${stolenGold} Gold`, 100, 200, '#ffd43b');
-        }
+      }
+      
+      // Apply armor defense
+      damage = Math.max(1, damage - defense);
+      
+      // Apply remaining damage to HP
+      if (damage > 0) {
+        newState.player.hp = Math.max(0, newState.player.hp - damage);
+        addFloatingText(`-${damage} HP`, 100, 150, '#ff6b6b', 'text-xl');
+        playSound('ding');
       }
       
       // Check for defeat
       if (newState.player.hp <= 0) {
-        // Phoenix Heart revival check
-        if (newState.player.upgrades.includes('phoenix_heart') && 
-            !newState.player.statusEffects.phoenixUsed) {
-          newState.player.hp = Math.floor(newState.player.maxHp * 0.5);
-          newState.player.statusEffects.phoenixUsed = true;
-          addFloatingText('PHOENIX REVIVAL!', 150, 100, '#ff6b00', 'text-3xl');
-          addNotification('Phoenix Heart activated! You have been revived!', 'success');
-          playSound('ding');
-        } else {
-          newState.isGameOver = true;
-          newState.victory = false;
-        }
+        newState.isGameOver = true;
+        newState.victory = false;
+        newState.showDeathModal = true;
       }
       
       return newState;
     });
-  }, [addFloatingText, addNotification, playSound]);
+  }, [getItemByType, addFloatingText, playSound]);
 
-  // Tile Swapping
+  // Tile Interaction
   const canSwapTiles = useCallback((pos1, pos2, board) => {
     const [r1, c1] = pos1;
     const [r2, c2] = pos2;
@@ -637,6 +613,7 @@ const Match3BattleGame = ({ studentData, updateStudentData, showToast }) => {
         board: newBoard,
         turnPhase: 'resolving',
         selectedTile: null,
+        draggedTile: null,
         combo: 0
       };
     });
@@ -669,50 +646,85 @@ const Match3BattleGame = ({ studentData, updateStudentData, showToast }) => {
     return newBoard;
   }, [createRandomTile]);
 
-  // Game Initialization
-  const startSinglePlayer = useCallback(() => {
-    const enemyTemplate = ENEMIES[(gameState.currentLevel - 1) % ENEMIES.length];
-    const levelMultiplier = Math.floor((gameState.currentLevel - 1) / ENEMIES.length) + 1;
-    const difficultyScale = Math.pow(1.15, gameState.currentLevel - 1);
+  // Game Flow Functions
+  const startNewRun = useCallback(() => {
+    const weapon = getItemByType(gameState.player.weapon, 'weapon');
+    const armor = getItemByType(gameState.player.armor, 'armor');
     
     setGameState(prev => ({
       ...prev,
       mode: 'singleplayer',
-      enemy: {
-        ...enemyTemplate,
-        hp: Math.floor(enemyTemplate.hp * difficultyScale),
-        maxHp: Math.floor(enemyTemplate.hp * difficultyScale),
-        damage: Math.floor(enemyTemplate.damage * difficultyScale),
-        statusEffects: {},
-        rewards: {
-          xp: Math.floor(enemyTemplate.rewards.xp * levelMultiplier),
-          gold: Math.floor(enemyTemplate.rewards.gold * levelMultiplier)
-        }
+      currentFloor: 1,
+      runStartFloor: 1,
+      player: {
+        ...prev.player,
+        hp: prev.player.baseMaxHp + (armor?.hp || 0),
+        maxHp: prev.player.baseMaxHp + (armor?.hp || 0),
+        shield: 0,
+        statusEffects: { burn: 0, freeze: 0 },
+        runs: prev.player.runs + 1
       },
+      enemy: null,
+      enemyTurnTimer: 3,
       board: initializeBoard(),
       turnPhase: 'player',
       isGameOver: false,
       victory: false,
+      showDeathModal: false,
       combo: 0,
       matchedTiles: new Set(),
-      // Reset phoenix heart usage
-      player: {
-        ...prev.player,
-        statusEffects: {}
-      }
+      selectedTile: null,
+      draggedTile: null
     }));
     
-    addNotification(`Entering battle with ${enemyTemplate.name}!`, 'info');
-  }, [gameState.currentLevel, initializeBoard, addNotification]);
+    // Generate first enemy
+    setTimeout(generateEnemy, 500);
+    addNotification(`Starting Run #${gameState.player.runs + 1}`, 'info');
+  }, [gameState.player, initializeBoard, getItemByType]);
 
-  const nextLevel = useCallback(() => {
+  const generateEnemy = useCallback(() => {
+    const enemyIndex = ((gameState.currentFloor - 1) % ENEMIES.length);
+    const tierMultiplier = Math.floor((gameState.currentFloor - 1) / ENEMIES.length) + 1;
+    const difficultyScale = Math.pow(1.12, gameState.currentFloor - 1);
+    
+    const enemyTemplate = ENEMIES[enemyIndex];
+    const scaledEnemy = {
+      ...enemyTemplate,
+      hp: Math.floor(enemyTemplate.hp * difficultyScale * tierMultiplier),
+      maxHp: Math.floor(enemyTemplate.hp * difficultyScale * tierMultiplier),
+      damage: Math.floor(enemyTemplate.damage * difficultyScale * tierMultiplier),
+      defense: Math.floor((enemyTemplate.defense || 0) * difficultyScale),
+      statusEffects: { burn: 0, freeze: 0 },
+      rewards: {
+        xp: Math.floor(enemyTemplate.rewards.xp * tierMultiplier),
+        gold: Math.floor(enemyTemplate.rewards.gold * tierMultiplier)
+      }
+    };
+    
     setGameState(prev => ({
       ...prev,
-      currentLevel: prev.currentLevel + 1
+      enemy: scaledEnemy,
+      enemyTurnTimer: 3
     }));
-    setShowLevelComplete(false);
-    startSinglePlayer();
-  }, [startSinglePlayer]);
+    
+    addNotification(`Floor ${gameState.currentFloor}: ${enemyTemplate.name} appears!`, 'info');
+  }, [gameState.currentFloor]);
+
+  const nextFloor = useCallback(() => {
+    setGameState(prev => ({
+      ...prev,
+      currentFloor: prev.currentFloor + 1,
+      isGameOver: false,
+      victory: false,
+      board: initializeBoard(),
+      combo: 0,
+      matchedTiles: new Set(),
+      selectedTile: null,
+      draggedTile: null
+    }));
+    
+    setTimeout(generateEnemy, 500);
+  }, [initializeBoard, generateEnemy]);
 
   const returnToMenu = useCallback(() => {
     setGameState(prev => ({
@@ -721,127 +733,87 @@ const Match3BattleGame = ({ studentData, updateStudentData, showToast }) => {
       isGameOver: false,
       victory: false,
       enemy: null,
-      opponent: null
+      showDeathModal: false
     }));
-    setShowLevelComplete(false);
-    setShowUpgrades(false);
     setShowInventory(false);
   }, []);
 
-  // Purchase Upgrade
-  const purchaseUpgrade = useCallback((upgradeId) => {
-    const upgrade = UPGRADES.find(u => u.id === upgradeId);
-    if (!upgrade) return;
-    
+  const equipItem = useCallback((itemId, itemType) => {
     setGameState(prev => {
-      if (prev.player.gold < upgrade.cost || prev.player.upgrades.includes(upgradeId)) {
-        return prev;
+      const newState = { ...prev };
+      
+      if (itemType === 'weapon') {
+        newState.player.weapon = itemId;
+      } else if (itemType === 'armor') {
+        newState.player.armor = itemId;
+        const armor = getItemByType(itemId, 'armor');
+        newState.player.maxHp = prev.player.baseMaxHp + (armor?.hp || 0);
+        newState.player.hp = Math.min(newState.player.hp, newState.player.maxHp);
       }
-      
-      const newState = {
-        ...prev,
-        player: {
-          ...prev.player,
-          gold: prev.player.gold - upgrade.cost,
-          upgrades: [...prev.player.upgrades, upgradeId]
-        }
-      };
-      
-      addNotification(`Purchased ${upgrade.name}!`, 'success');
-      playSound('ding');
       
       return newState;
     });
-  }, [addNotification, playSound]);
+    
+    const item = getItemByType(itemId, itemType);
+    addNotification(`Equipped ${item?.name}!`, 'success');
+  }, [getItemByType, addNotification]);
 
-  // Weapon Management
-  const equipWeapon = useCallback((weaponName) => {
+  // Drag and Drop Handlers
+  const handleDragStart = useCallback((e, row, col) => {
+    if (gameState.turnPhase !== 'player' || gameState.isGameOver) return;
+    
     setGameState(prev => ({
       ...prev,
-      player: {
-        ...prev.player,
-        weapon: weaponName
-      }
+      draggedTile: [row, col],
+      selectedTile: [row, col]
     }));
-    addNotification(`Equipped ${weaponName}!`, 'success');
-  }, [addNotification]);
+  }, [gameState.turnPhase, gameState.isGameOver]);
 
-  // Save/Load Game
-  const saveGameData = useCallback(async () => {
-    if (!studentData || !updateStudentData) return;
+  const handleDragOver = useCallback((e) => {
+    e.preventDefault();
+  }, []);
+
+  const handleDrop = useCallback((e, row, col) => {
+    e.preventDefault();
     
-    try {
-      const saveData = {
-        match3BattleData: {
-          player: gameState.player,
-          currentLevel: gameState.currentLevel,
-          lastSave: Date.now(),
-          version: '2.0'
-        }
-      };
-      
-      await updateStudentData(saveData);
-      console.log('✅ Match-3 Battle game saved');
-    } catch (error) {
-      console.error('❌ Error saving Match-3 Battle game:', error);
+    if (gameState.draggedTile) {
+      const [dragRow, dragCol] = gameState.draggedTile;
+      if (dragRow !== row || dragCol !== col) {
+        swapTiles([dragRow, dragCol], [row, col]);
+      }
     }
-  }, [gameState.player, gameState.currentLevel, studentData, updateStudentData]);
-
-  const loadGameData = useCallback(() => {
-    if (!studentData?.match3BattleData) return;
     
-    try {
-      const saveData = studentData.match3BattleData;
-      
+    setGameState(prev => ({
+      ...prev,
+      draggedTile: null,
+      selectedTile: null
+    }));
+  }, [gameState.draggedTile, swapTiles]);
+
+  const handleTileClick = useCallback((row, col) => {
+    if (gameState.turnPhase !== 'player' || gameState.isGameOver) return;
+    
+    const tilePos = [row, col];
+    
+    if (!gameState.selectedTile) {
       setGameState(prev => ({
         ...prev,
-        player: {
-          level: 1,
-          xp: 0,
-          xpToNext: 100,
-          hp: 100,
-          maxHp: 100,
-          mana: 0,
-          maxMana: 100,
-          shield: 0,
-          gold: 0,
-          upgrades: [],
-          statusEffects: {},
-          weapon: 'basic',
-          inventory: [],
-          wins: 0,
-          losses: 0,
-          ...saveData.player
-        },
-        currentLevel: saveData.currentLevel || 1
+        selectedTile: tilePos
       }));
-      
-      console.log('✅ Match-3 Battle game loaded');
-      addNotification('Game progress loaded!', 'info');
-    } catch (error) {
-      console.error('❌ Error loading Match-3 Battle game:', error);
+    } else {
+      const [selectedRow, selectedCol] = gameState.selectedTile;
+      if (selectedRow === row && selectedCol === col) {
+        // Deselect
+        setGameState(prev => ({
+          ...prev,
+          selectedTile: null
+        }));
+      } else {
+        // Try to swap
+        swapTiles(gameState.selectedTile, tilePos);
+      }
     }
-  }, [studentData, addNotification]);
-
-  // Auto-save every 30 seconds
-  useEffect(() => {
-    autosaveIntervalRef.current = setInterval(() => {
-      if (gameState.mode !== 'menu') {
-        saveGameData();
-      }
-    }, 30000);
-    
-    return () => {
-      if (autosaveIntervalRef.current) {
-        clearInterval(autosaveIntervalRef.current);
-      }
-    };
-  }, [saveGameData, gameState.mode]);
-
-  // Load on mount
-  useEffect(() => {
-    loadGameData();
-  }, [loadGameData]);
+  }, [gameState.turnPhase, gameState.isGameOver, gameState.selectedTile, swapTiles]);
 
   // Game Loop
   useEffect(() => {
@@ -907,50 +879,91 @@ const Match3BattleGame = ({ studentData, updateStudentData, showToast }) => {
     };
   }, [gameState.turnPhase, gameState.board, gameState.isGameOver, findMatches, applyGravity, applyMatchEffects, processPlayerTurn, processEnemyTurn]);
 
-  // Tile click handler
-  const handleTileClick = useCallback((row, col) => {
-    if (gameState.turnPhase !== 'player' || gameState.isGameOver) return;
+  // Auto-save
+  useEffect(() => {
+    const saveData = async () => {
+      if (!studentData || !updateStudentData) return;
+      
+      try {
+        const saveData = {
+          match3BattleData: {
+            player: gameState.player,
+            currentFloor: gameState.currentFloor,
+            lastSave: Date.now()
+          }
+        };
+        
+        await updateStudentData(saveData);
+      } catch (error) {
+        console.error('Error saving game:', error);
+      }
+    };
     
-    const tilePos = [row, col];
-    
-    if (!gameState.selectedTile) {
-      setGameState(prev => ({
-        ...prev,
-        selectedTile: tilePos
-      }));
-    } else {
-      const [selectedRow, selectedCol] = gameState.selectedTile;
-      if (selectedRow === row && selectedCol === col) {
-        // Deselect
+    autosaveIntervalRef.current = setInterval(saveData, 30000);
+    return () => {
+      if (autosaveIntervalRef.current) {
+        clearInterval(autosaveIntervalRef.current);
+      }
+    };
+  }, [gameState.player, gameState.currentFloor, studentData, updateStudentData]);
+
+  // Load on mount
+  useEffect(() => {
+    if (studentData?.match3BattleData) {
+      try {
+        const saveData = studentData.match3BattleData;
         setGameState(prev => ({
           ...prev,
-          selectedTile: null
+          player: {
+            level: 1,
+            xp: 0,
+            xpToNext: 100,
+            hp: 100,
+            maxHp: 100,
+            baseMaxHp: 100,
+            mana: 0,
+            maxMana: 100,
+            shield: 0,
+            gold: 0,
+            statusEffects: { burn: 0, freeze: 0 },
+            weapon: 'rusty_sword',
+            armor: 'cloth_armor',
+            inventory: { weapons: [], armor: [] },
+            runs: 0,
+            totalKills: 0,
+            ...saveData.player
+          },
+          currentFloor: saveData.currentFloor || 1
         }));
-      } else {
-        // Try to swap
-        swapTiles(gameState.selectedTile, tilePos);
+        addNotification('Game progress loaded!', 'info');
+      } catch (error) {
+        console.error('Error loading game:', error);
       }
     }
-  }, [gameState.turnPhase, gameState.isGameOver, gameState.selectedTile, swapTiles]);
+  }, [studentData, addNotification]);
 
   // Render Functions
   const renderBoard = () => (
-    <div className="grid grid-cols-8 gap-1 bg-gray-800 p-2 rounded-xl shadow-inner">
+    <div className="grid grid-cols-8 gap-1 bg-gray-800 p-3 rounded-xl shadow-inner">
       {gameState.board.map((row, rowIndex) =>
         row.map((tile, colIndex) => {
           const isSelected = gameState.selectedTile && 
             gameState.selectedTile[0] === rowIndex && 
             gameState.selectedTile[1] === colIndex;
           const isMatched = gameState.matchedTiles.has(`${rowIndex}-${colIndex}`);
+          const isDragged = gameState.draggedTile &&
+            gameState.draggedTile[0] === rowIndex &&
+            gameState.draggedTile[1] === colIndex;
           
           return (
             <div
               key={`${rowIndex}-${colIndex}`}
               className={`
-                w-8 h-8 md:w-12 md:h-12 rounded-lg flex items-center justify-center text-lg md:text-2xl cursor-pointer
-                transition-all duration-200 shadow-md
+                w-10 h-10 md:w-12 md:h-12 rounded-lg flex items-center justify-center text-xl md:text-2xl cursor-pointer
+                transition-all duration-300 shadow-md select-none
                 ${isSelected ? 'ring-4 ring-yellow-400 ring-opacity-80 scale-110' : ''}
                 ${isMatched ? 'animate-pulse scale-105' : ''}
+                ${isDragged ? 'opacity-50 scale-95' : ''}
                 hover:scale-110 active:scale-95
               `}
               style={{
@@ -961,9 +974,13 @@ const Match3BattleGame = ({ studentData, updateStudentData, showToast }) => {
                     ? '0 0 15px rgba(255, 255, 255, 0.6)'
                     : '0 4px 8px rgba(0,0,0,0.3)'
               }}
+              draggable
+              onDragStart={(e) => handleDragStart(e, rowIndex, colIndex)}
+              onDragOver={handleDragOver}
+              onDrop={(e) => handleDrop(e, rowIndex, colIndex)}
               onClick={() => handleTileClick(rowIndex, colIndex)}
             >
-              <span className="drop-shadow-lg">{tile?.emoji}</span>
+              <span className="drop-shadow-lg filter">{tile?.emoji}</span>
             </div>
           );
         })
@@ -971,100 +988,95 @@ const Match3BattleGame = ({ studentData, updateStudentData, showToast }) => {
     </div>
   );
 
-  const renderPlayerStats = () => (
-    <div className="bg-gradient-to-br from-blue-900 to-purple-900 rounded-xl p-4 text-white shadow-lg">
-      <div className="flex items-center space-x-2 mb-3">
-        <span className="text-2xl">🛡️</span>
-        <div>
-          <h3 className="font-bold text-lg flex items-center">
-            {studentData?.firstName || 'Hero'}
-            <span className="ml-2 text-sm bg-yellow-600 px-2 py-1 rounded-full">
-              Lv.{gameState.player.level}
-            </span>
-          </h3>
-          <p className="text-sm opacity-75">
-            {WEAPONS[gameState.player.weapon]?.name || 'Basic Weapon'}
-          </p>
+  const renderPlayerStats = () => {
+    const weapon = getItemByType(gameState.player.weapon, 'weapon');
+    const armor = getItemByType(gameState.player.armor, 'armor');
+    
+    return (
+      <div className="bg-gradient-to-br from-blue-900 to-purple-900 rounded-xl p-4 text-white shadow-lg">
+        <div className="flex items-center space-x-2 mb-3">
+          <span className="text-2xl">🛡️</span>
+          <div>
+            <h3 className="font-bold text-lg flex items-center">
+              {studentData?.firstName || 'Hero'}
+              <span className="ml-2 text-sm bg-yellow-600 px-2 py-1 rounded-full">
+                Lv.{gameState.player.level}
+              </span>
+            </h3>
+            <div className="text-xs opacity-75">
+              Run #{gameState.player.runs} • Floor {gameState.currentFloor}
+            </div>
+          </div>
         </div>
-      </div>
-      
-      {/* HP Bar */}
-      <div className="mb-2">
-        <div className="flex justify-between text-sm">
-          <span>❤️ HP</span>
-          <span>{gameState.player.hp}/{gameState.player.maxHp}</span>
+        
+        {/* Equipment */}
+        <div className="text-xs mb-3 space-y-1">
+          <div className="flex justify-between">
+            <span>⚔️ {weapon?.name || 'No Weapon'}</span>
+            <span>+{weapon?.damage || 0} DMG</span>
+          </div>
+          <div className="flex justify-between">
+            <span>🛡️ {armor?.name || 'No Armor'}</span>
+            <span>+{armor?.defense || 0} DEF</span>
+          </div>
         </div>
-        <div className="w-full bg-gray-700 rounded-full h-3">
-          <div 
-            className={`h-3 rounded-full transition-all duration-300 ${
-              gameState.player.hp / gameState.player.maxHp > 0.6 
-                ? 'bg-gradient-to-r from-green-500 to-green-600'
-                : gameState.player.hp / gameState.player.maxHp > 0.3
-                  ? 'bg-gradient-to-r from-yellow-500 to-orange-600'
-                  : 'bg-gradient-to-r from-red-500 to-red-600'
-            }`}
-            style={{ width: `${(gameState.player.hp / gameState.player.maxHp) * 100}%` }}
-          ></div>
+        
+        {/* HP Bar */}
+        <div className="mb-2">
+          <div className="flex justify-between text-sm">
+            <span>❤️ HP</span>
+            <span>{gameState.player.hp}/{gameState.player.maxHp}</span>
+          </div>
+          <div className="w-full bg-gray-700 rounded-full h-3">
+            <div 
+              className={`h-3 rounded-full transition-all duration-300 ${
+                gameState.player.hp / gameState.player.maxHp > 0.6 
+                  ? 'bg-gradient-to-r from-green-500 to-green-600'
+                  : gameState.player.hp / gameState.player.maxHp > 0.3
+                    ? 'bg-gradient-to-r from-yellow-500 to-orange-600'
+                    : 'bg-gradient-to-r from-red-500 to-red-600'
+              }`}
+              style={{ width: `${(gameState.player.hp / gameState.player.maxHp) * 100}%` }}
+            ></div>
+          </div>
         </div>
-      </div>
-      
-      {/* Mana Bar */}
-      <div className="mb-2">
-        <div className="flex justify-between text-sm">
-          <span>✨ Mana</span>
-          <span>{gameState.player.mana}/{gameState.player.maxMana}</span>
+        
+        {/* Shield & Gold */}
+        <div className="flex justify-between text-sm mb-2">
+          <div className="flex items-center space-x-1">
+            <span>🛡️</span>
+            <span>{gameState.player.shield}/100</span>
+          </div>
+          <div className="flex items-center space-x-1">
+            <span>💰</span>
+            <span>{formatNumber(gameState.player.gold)}</span>
+          </div>
         </div>
-        <div className="w-full bg-gray-700 rounded-full h-3">
-          <div 
-            className="bg-gradient-to-r from-purple-500 to-purple-600 h-3 rounded-full transition-all duration-300"
-            style={{ width: `${(gameState.player.mana / gameState.player.maxMana) * 100}%` }}
-          ></div>
+        
+        {/* XP Bar */}
+        <div className="mb-3">
+          <div className="flex justify-between text-xs">
+            <span>⭐ XP</span>
+            <span>{gameState.player.xp}/{gameState.player.xpToNext}</span>
+          </div>
+          <div className="w-full bg-gray-700 rounded-full h-2">
+            <div 
+              className="bg-gradient-to-r from-yellow-400 to-yellow-500 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${(gameState.player.xp / gameState.player.xpToNext) * 100}%` }}
+            ></div>
+          </div>
         </div>
-      </div>
-      
-      {/* Shield & Gold */}
-      <div className="flex justify-between text-sm mb-3">
-        <div className="flex items-center space-x-1">
-          <span>🛡️</span>
-          <span>{gameState.player.shield}</span>
-        </div>
-        <div className="flex items-center space-x-1">
-          <span>💰</span>
-          <span>{formatNumber(gameState.player.gold)}</span>
-        </div>
-      </div>
-      
-      {/* XP Bar */}
-      <div className="mb-3">
-        <div className="flex justify-between text-xs">
-          <span>⭐ XP</span>
-          <span>{gameState.player.xp}/{gameState.player.xpToNext}</span>
-        </div>
-        <div className="w-full bg-gray-700 rounded-full h-2">
-          <div 
-            className="bg-gradient-to-r from-yellow-400 to-yellow-500 h-2 rounded-full transition-all duration-300"
-            style={{ width: `${(gameState.player.xp / gameState.player.xpToNext) * 100}%` }}
-          ></div>
-        </div>
-      </div>
-      
-      {/* Quick Actions */}
-      <div className="flex space-x-2">
+        
+        {/* Quick Action */}
         <button
           onClick={() => setShowInventory(true)}
-          className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 text-white py-2 px-3 rounded-lg text-sm font-semibold hover:shadow-lg transition-all"
+          className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-2 px-3 rounded-lg text-sm font-semibold hover:shadow-lg transition-all"
         >
           🎒 Inventory
         </button>
-        <button
-          onClick={() => setShowUpgrades(true)}
-          className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white py-2 px-3 rounded-lg text-sm font-semibold hover:shadow-lg transition-all"
-        >
-          ⭐ Upgrades
-        </button>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderEnemyStats = () => {
     if (!gameState.enemy) return null;
@@ -1075,7 +1087,14 @@ const Match3BattleGame = ({ studentData, updateStudentData, showToast }) => {
           <span className="text-3xl animate-bounce">{gameState.enemy.emoji}</span>
           <div>
             <h3 className="font-bold text-lg">{gameState.enemy.name}</h3>
-            <p className="text-sm opacity-75">Floor {gameState.currentLevel}</p>
+            <div className="text-sm opacity-75">
+              Floor {gameState.currentFloor}
+              {gameState.enemyTurnTimer > 0 && (
+                <span className="ml-2 text-yellow-300">
+                  • Attacks in {gameState.enemyTurnTimer}
+                </span>
+              )}
+            </div>
           </div>
         </div>
         
@@ -1093,8 +1112,20 @@ const Match3BattleGame = ({ studentData, updateStudentData, showToast }) => {
           </div>
         </div>
         
+        {/* Enemy Stats */}
+        <div className="text-sm mb-3 space-y-1">
+          <div className="flex justify-between">
+            <span>⚔️ Damage</span>
+            <span>{gameState.enemy.damage}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>🛡️ Defense</span>
+            <span>{gameState.enemy.defense || 0}</span>
+          </div>
+        </div>
+        
         {/* Status Effects */}
-        {gameState.enemy.statusEffects && Object.keys(gameState.enemy.statusEffects).length > 0 && (
+        {gameState.enemy.statusEffects && (
           <div className="flex flex-wrap gap-1 text-xs mb-3">
             {gameState.enemy.statusEffects.burn > 0 && (
               <div className="bg-orange-600 px-2 py-1 rounded">
@@ -1106,18 +1137,13 @@ const Match3BattleGame = ({ studentData, updateStudentData, showToast }) => {
                 ❄️ {gameState.enemy.statusEffects.freeze}
               </div>
             )}
-            {gameState.enemy.statusEffects.shock > 0 && (
-              <div className="bg-yellow-600 px-2 py-1 rounded">
-                ⚡ {gameState.enemy.statusEffects.shock}
-              </div>
-            )}
           </div>
         )}
         
-        <p className="text-xs opacity-75 leading-relaxed">{gameState.enemy.description}</p>
+        <p className="text-xs opacity-75 leading-relaxed mb-3">{gameState.enemy.description}</p>
         
         {/* Rewards Preview */}
-        <div className="mt-3 pt-3 border-t border-red-700">
+        <div className="pt-3 border-t border-red-700">
           <div className="text-xs opacity-75">Rewards:</div>
           <div className="flex justify-between text-sm">
             <span>⭐ {gameState.enemy.rewards.xp} XP</span>
@@ -1130,7 +1156,6 @@ const Match3BattleGame = ({ studentData, updateStudentData, showToast }) => {
 
   const renderMenu = () => (
     <div className="space-y-6">
-      {/* Title */}
       <div className="text-center">
         <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-red-500 via-purple-500 to-blue-500 bg-clip-text text-transparent mb-4">
           ⚔️ Match-3 Battle Arena
@@ -1150,182 +1175,172 @@ const Match3BattleGame = ({ studentData, updateStudentData, showToast }) => {
             <div className="text-sm text-gray-600">Gold</div>
           </div>
           <div>
-            <div className="text-2xl font-bold text-purple-600">{gameState.currentLevel}</div>
-            <div className="text-sm text-gray-600">Current Floor</div>
+            <div className="text-2xl font-bold text-purple-600">{gameState.player.runs}</div>
+            <div className="text-sm text-gray-600">Runs</div>
           </div>
           <div>
-            <div className="text-2xl font-bold text-orange-600">{gameState.player.upgrades.length}</div>
-            <div className="text-sm text-gray-600">Upgrades</div>
+            <div className="text-2xl font-bold text-orange-600">{gameState.player.totalKills}</div>
+            <div className="text-sm text-gray-600">Enemies Defeated</div>
           </div>
           <div>
-            <div className="text-2xl font-bold text-red-600">{gameState.player.inventory.length}</div>
-            <div className="text-sm text-gray-600">Weapons</div>
+            <div className="text-2xl font-bold text-red-600">{gameState.player.inventory.weapons.length + gameState.player.inventory.armor.length}</div>
+            <div className="text-sm text-gray-600">Items Found</div>
           </div>
         </div>
       </div>
       
-      {/* Game Modes */}
+      {/* Action Buttons */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <button
-          onClick={startSinglePlayer}
+          onClick={startNewRun}
           className="bg-gradient-to-r from-red-500 to-orange-600 text-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95"
         >
           <div className="text-4xl mb-2">⚔️</div>
-          <div className="text-xl font-bold">Tower Challenge</div>
-          <div className="text-sm opacity-90">Climb the tower and face increasingly powerful enemies!</div>
-          <div className="text-xs mt-2 bg-black bg-opacity-20 rounded px-2 py-1">
-            Start at Floor {gameState.currentLevel}
-          </div>
+          <div className="text-xl font-bold">Start New Run</div>
+          <div className="text-sm opacity-90">Begin a fresh dungeon crawl adventure!</div>
         </button>
         
-        <div className="grid grid-cols-1 gap-4">
-          <button
-            onClick={() => setShowUpgrades(true)}
-            className="bg-gradient-to-r from-purple-500 to-pink-600 text-white p-4 rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95"
-          >
-            <div className="text-3xl mb-2">⭐</div>
-            <div className="text-lg font-bold">Upgrades Shop</div>
-            <div className="text-sm opacity-90">Enhance your battle abilities!</div>
-          </button>
-          
-          <button
-            onClick={() => setShowInventory(true)}
-            className="bg-gradient-to-r from-green-500 to-emerald-600 text-white p-4 rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95"
-          >
-            <div className="text-3xl mb-2">🎒</div>
-            <div className="text-lg font-bold">Inventory</div>
-            <div className="text-sm opacity-90">Manage your weapons and equipment!</div>
-          </button>
-        </div>
+        <button
+          onClick={() => setShowInventory(true)}
+          className="bg-gradient-to-r from-purple-500 to-pink-600 text-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95"
+        >
+          <div className="text-4xl mb-2">🎒</div>
+          <div className="text-xl font-bold">Inventory</div>
+          <div className="text-sm opacity-90">Manage your weapons and armor!</div>
+        </button>
       </div>
       
       {/* Enhanced Tutorial */}
       <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-200">
         <h3 className="text-lg font-bold mb-4 text-gray-800">🎯 How to Battle</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
-          <div className="text-center">
-            <div className="text-2xl mb-1">⚔️</div>
-            <div className="font-semibold">Swords</div>
-            <div className="text-gray-600">Deal damage</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl mb-1">🛡️</div>
-            <div className="font-semibold">Shields</div>
-            <div className="text-gray-600">Block damage</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl mb-1">🧪</div>
-            <div className="font-semibold">Potions</div>
-            <div className="text-gray-600">Restore HP</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl mb-1">✨</div>
-            <div className="font-semibold">Mana</div>
-            <div className="text-gray-600">Power spells</div>
-          </div>
+        <div className="grid grid-cols-3 md:grid-cols-9 gap-2 text-sm mb-4">
+          {Object.values(TILE_TYPES).map(tile => (
+            <div key={tile.id} className="text-center p-2 bg-white rounded-lg">
+              <div className="text-xl mb-1">{tile.emoji}</div>
+              <div className="text-xs font-semibold">{tile.name}</div>
+            </div>
+          ))}
         </div>
         
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-          <div className="text-center">
-            <div className="text-2xl mb-1">🔥</div>
-            <div className="font-semibold">Fire</div>
-            <div className="text-gray-600">Burn over time</div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+          <div>
+            <div className="font-semibold text-blue-800 mb-2">💡 Combat Tips:</div>
+            <ul className="text-gray-700 space-y-1">
+              <li>• Enemies wait 3 turns before attacking</li>
+              <li>• Shields block damage before HP</li>
+              <li>• Fire causes burn damage over time</li>
+              <li>• Ice freezes enemies for turns</li>
+            </ul>
           </div>
-          <div className="text-center">
-            <div className="text-2xl mb-1">❄️</div>
-            <div className="font-semibold">Ice</div>
-            <div className="text-gray-600">Freeze enemy</div>
+          <div>
+            <div className="font-semibold text-blue-800 mb-2">⚡ Special Tiles:</div>
+            <ul className="text-gray-700 space-y-1">
+              <li>• Lightning deals instant shock damage</li>
+              <li>• Curse tiles hurt YOU - avoid them!</li>
+              <li>• Treasure gives gold and rare loot</li>
+              <li>• Create combos for damage bonuses</li>
+            </ul>
           </div>
-          <div className="text-center">
-            <div className="text-2xl mb-1">⚡</div>
-            <div className="font-semibold">Lightning</div>
-            <div className="text-gray-600">Shock damage</div>
+          <div>
+            <div className="font-semibold text-blue-800 mb-2">🏃 Progression:</div>
+            <ul className="text-gray-700 space-y-1">
+              <li>• Keep weapons/armor between runs</li>
+              <li>• Floors get progressively harder</li>
+              <li>• Defeat enemies for better loot</li>
+              <li>• Drag tiles or click to match</li>
+            </ul>
           </div>
-          <div className="text-center">
-            <div className="text-2xl mb-1">☠️</div>
-            <div className="font-semibold">Curse</div>
-            <div className="text-gray-600">Dangerous!</div>
-          </div>
-        </div>
-        
-        <div className="mt-4 p-3 bg-white rounded-lg border border-blue-200">
-          <div className="text-sm font-semibold text-blue-800 mb-1">💡 Pro Tips:</div>
-          <ul className="text-sm text-gray-700 space-y-1">
-            <li>• Create combos for massive damage bonuses!</li>
-            <li>• Upgrade your abilities to become stronger</li>
-            <li>• Collect weapons from defeated enemies</li>
-            <li>• Your progress saves automatically</li>
-          </ul>
         </div>
       </div>
     </div>
   );
 
-  const renderUpgrades = () => (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">⭐ Upgrade Forge</h2>
-        <button
-          onClick={() => setShowUpgrades(false)}
-          className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
-        >
-          ← Back
-        </button>
-      </div>
-      
-      <div className="bg-white rounded-xl shadow-lg p-4">
-        <div className="flex items-center justify-center space-x-4 text-lg">
-          <span>💰</span>
-          <span className="font-bold">{formatNumber(gameState.player.gold)} Gold</span>
-          <div className="text-sm text-gray-500">
-            Level {gameState.player.level} • {gameState.player.upgrades.length} Upgrades Owned
+  const renderInventory = () => {
+    const currentWeapon = getItemByType(gameState.player.weapon, 'weapon');
+    const currentArmor = getItemByType(gameState.player.armor, 'armor');
+    
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold">🎒 Equipment Arsenal</h2>
+          <button
+            onClick={() => setShowInventory(false)}
+            className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
+          >
+            ← Back
+          </button>
+        </div>
+        
+        {/* Currently Equipped */}
+        <div className="bg-white rounded-xl shadow-lg p-4">
+          <h3 className="font-bold text-lg mb-3">Currently Equipped</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="border rounded-lg p-3">
+              <div className="font-semibold">⚔️ Weapon: {currentWeapon?.name}</div>
+              <div className="text-sm text-gray-600">+{currentWeapon?.damage || 0} Base Damage</div>
+              <div className="text-xs text-gray-500 mt-1">{currentWeapon?.description}</div>
+            </div>
+            <div className="border rounded-lg p-3">
+              <div className="font-semibold">🛡️ Armor: {currentArmor?.name}</div>
+              <div className="text-sm text-gray-600">+{currentArmor?.defense || 0} Defense, +{currentArmor?.hp || 0} Max HP</div>
+              <div className="text-xs text-gray-500 mt-1">{currentArmor?.description}</div>
+            </div>
           </div>
         </div>
-      </div>
-      
-      {/* Group upgrades by tier */}
-      {[1, 2, 3].map(tier => (
-        <div key={tier} className="space-y-4">
-          <h3 className="text-xl font-bold flex items-center">
-            <span className={`mr-2 ${tier === 1 ? 'text-blue-600' : tier === 2 ? 'text-purple-600' : 'text-yellow-600'}`}>
-              {tier === 1 ? '🥉' : tier === 2 ? '🥈' : '🥇'}
-            </span>
-            Tier {tier} Upgrades
-          </h3>
-          
+        
+        {/* Weapons */}
+        <div>
+          <h3 className="font-bold text-xl mb-3">⚔️ Weapons ({gameState.player.inventory.weapons.length + 1})</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {UPGRADES.filter(u => u.tier === tier).map(upgrade => {
-              const owned = gameState.player.upgrades.includes(upgrade.id);
-              const canAfford = gameState.player.gold >= upgrade.cost;
+            {/* Always show starter weapon */}
+            {WEAPONS.filter(w => w.id === 'rusty_sword' || gameState.player.inventory.weapons.includes(w.id)).map(weapon => {
+              const isEquipped = gameState.player.weapon === weapon.id;
+              const rarityColors = {
+                common: 'border-gray-300',
+                uncommon: 'border-green-400',
+                rare: 'border-blue-400',
+                epic: 'border-purple-400',
+                legendary: 'border-yellow-400',
+                mythic: 'border-pink-400'
+              };
               
               return (
                 <div
-                  key={upgrade.id}
+                  key={weapon.id}
                   className={`p-4 rounded-xl border-2 transition-all ${
-                    owned 
-                      ? 'bg-green-50 border-green-300 opacity-80' 
-                      : canAfford 
-                        ? 'bg-white border-blue-300 hover:shadow-lg cursor-pointer hover:scale-102' 
-                        : 'bg-gray-50 border-gray-300 opacity-60'
+                    isEquipped
+                      ? 'bg-blue-50 border-blue-400 ring-2 ring-blue-300'
+                      : `bg-white ${rarityColors[weapon.rarity]} hover:shadow-lg cursor-pointer hover:scale-102`
                   }`}
-                  onClick={() => !owned && canAfford && purchaseUpgrade(upgrade.id)}
+                  onClick={() => !isEquipped && equipItem(weapon.id, 'weapon')}
                 >
                   <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-bold text-lg">{upgrade.name}</h3>
+                    <h4 className="font-bold text-lg">{weapon.name}</h4>
                     <div className="text-right">
-                      <div className={`font-bold ${owned ? 'text-green-600' : canAfford ? 'text-blue-600' : 'text-gray-400'}`}>
-                        {owned ? '✅ Owned' : `💰 ${formatNumber(upgrade.cost)}`}
+                      <div className={`text-sm font-semibold ${
+                        weapon.rarity === 'mythic' ? 'text-pink-600' :
+                        weapon.rarity === 'legendary' ? 'text-yellow-600' :
+                        weapon.rarity === 'epic' ? 'text-purple-600' :
+                        weapon.rarity === 'rare' ? 'text-blue-600' :
+                        weapon.rarity === 'uncommon' ? 'text-green-600' :
+                        'text-gray-600'
+                      }`}>
+                        {weapon.rarity.charAt(0).toUpperCase() + weapon.rarity.slice(1)}
                       </div>
-                      <div className={`text-xs ${tier === 1 ? 'text-blue-500' : tier === 2 ? 'text-purple-500' : 'text-yellow-500'}`}>
-                        Tier {tier}
-                      </div>
+                      {isEquipped && (
+                        <div className="text-xs text-green-600 font-bold">✅ EQUIPPED</div>
+                      )}
                     </div>
                   </div>
-                  <p className="text-gray-600 text-sm">{upgrade.description}</p>
-                  
-                  {owned && (
-                    <div className="mt-2 text-xs text-green-600 font-semibold">
-                      ✨ Active Effect
+                  <p className="text-gray-600 text-sm mb-2">{weapon.description}</p>
+                  <div className="text-sm font-semibold">
+                    Base Damage: +{weapon.damage}
+                  </div>
+                  {!isEquipped && (
+                    <div className="mt-2">
+                      <button className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm">
+                        ⚔️ Equip Weapon
+                      </button>
                     </div>
                   )}
                 </div>
@@ -1333,107 +1348,67 @@ const Match3BattleGame = ({ studentData, updateStudentData, showToast }) => {
             })}
           </div>
         </div>
-      ))}
-    </div>
-  );
-
-  const renderInventory = () => (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">🎒 Weapon Arsenal</h2>
-        <button
-          onClick={() => setShowInventory(false)}
-          className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
-        >
-          ← Back
-        </button>
-      </div>
-      
-      <div className="bg-white rounded-xl shadow-lg p-4">
-        <div className="text-center">
-          <div className="text-lg font-bold">Currently Equipped:</div>
-          <div className="text-2xl font-bold text-blue-600">
-            {WEAPONS[gameState.player.weapon]?.name || 'Basic Weapon'}
-          </div>
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Always show basic weapon */}
-        <div
-          className={`p-4 rounded-xl border-2 transition-all ${
-            gameState.player.weapon === 'basic'
-              ? 'bg-blue-50 border-blue-300 ring-2 ring-blue-300' 
-              : 'bg-white border-gray-300 hover:shadow-lg cursor-pointer'
-          }`}
-          onClick={() => gameState.player.weapon !== 'basic' && equipWeapon('basic')}
-        >
-          <div className="flex justify-between items-start mb-2">
-            <h3 className="font-bold text-lg">{WEAPONS['basic'].name}</h3>
-            <div className="text-right">
-              <div className="text-sm text-blue-600">Starter Weapon</div>
-              {gameState.player.weapon === 'basic' && (
-                <div className="text-xs text-green-600 font-bold">✅ EQUIPPED</div>
-              )}
-            </div>
-          </div>
-          <p className="text-gray-600 text-sm">{WEAPONS['basic'].description}</p>
-          <div className="mt-2 text-sm font-semibold">
-            Base Damage: +{WEAPONS['basic'].damage}
-          </div>
-        </div>
         
-        {/* Show inventory weapons */}
-        {gameState.player.inventory.map(weaponName => {
-          const weapon = WEAPONS[weaponName];
-          if (!weapon) return null;
-          
-          const isEquipped = gameState.player.weapon === weaponName;
-          
-          return (
-            <div
-              key={weaponName}
-              className={`p-4 rounded-xl border-2 transition-all ${
-                isEquipped
-                  ? 'bg-blue-50 border-blue-300 ring-2 ring-blue-300' 
-                  : 'bg-white border-gray-300 hover:shadow-lg cursor-pointer hover:scale-102'
-              }`}
-              onClick={() => !isEquipped && equipWeapon(weaponName)}
-            >
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="font-bold text-lg">{weapon.name}</h3>
-                <div className="text-right">
-                  <div className="text-sm text-purple-600">Legendary</div>
-                  {isEquipped && (
-                    <div className="text-xs text-green-600 font-bold">✅ EQUIPPED</div>
+        {/* Armor */}
+        <div>
+          <h3 className="font-bold text-xl mb-3">🛡️ Armor ({gameState.player.inventory.armor.length + 1})</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {ARMOR.filter(a => a.id === 'cloth_armor' || gameState.player.inventory.armor.includes(a.id)).map(armor => {
+              const isEquipped = gameState.player.armor === armor.id;
+              const rarityColors = {
+                common: 'border-gray-300',
+                uncommon: 'border-green-400',
+                rare: 'border-blue-400',
+                epic: 'border-purple-400',
+                legendary: 'border-yellow-400'
+              };
+              
+              return (
+                <div
+                  key={armor.id}
+                  className={`p-4 rounded-xl border-2 transition-all ${
+                    isEquipped
+                      ? 'bg-blue-50 border-blue-400 ring-2 ring-blue-300'
+                      : `bg-white ${rarityColors[armor.rarity]} hover:shadow-lg cursor-pointer hover:scale-102`
+                  }`}
+                  onClick={() => !isEquipped && equipItem(armor.id, 'armor')}
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <h4 className="font-bold text-lg">{armor.name}</h4>
+                    <div className="text-right">
+                      <div className={`text-sm font-semibold ${
+                        armor.rarity === 'legendary' ? 'text-yellow-600' :
+                        armor.rarity === 'epic' ? 'text-purple-600' :
+                        armor.rarity === 'rare' ? 'text-blue-600' :
+                        armor.rarity === 'uncommon' ? 'text-green-600' :
+                        'text-gray-600'
+                      }`}>
+                        {armor.rarity.charAt(0).toUpperCase() + armor.rarity.slice(1)}
+                      </div>
+                      {isEquipped && (
+                        <div className="text-xs text-green-600 font-bold">✅ EQUIPPED</div>
+                      )}
+                    </div>
+                  </div>
+                  <p className="text-gray-600 text-sm mb-2">{armor.description}</p>
+                  <div className="text-sm font-semibold">
+                    Defense: +{armor.defense} • Max HP: +{armor.hp}
+                  </div>
+                  {!isEquipped && (
+                    <div className="mt-2">
+                      <button className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition-colors text-sm">
+                        🛡️ Equip Armor
+                      </button>
+                    </div>
                   )}
                 </div>
-              </div>
-              <p className="text-gray-600 text-sm">{weapon.description}</p>
-              <div className="mt-2 text-sm font-semibold">
-                Base Damage: +{weapon.damage}
-              </div>
-              {!isEquipped && (
-                <div className="mt-2">
-                  <button className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                    ⚔️ Equip Weapon
-                  </button>
-                </div>
-              )}
-            </div>
-          );
-        })}
-        
-        {gameState.player.inventory.length === 0 && (
-          <div className="col-span-full text-center py-8 text-gray-500">
-            <div className="text-4xl mb-2">⚔️</div>
-            <div>No legendary weapons found yet!</div>
-            <div className="text-sm mt-2">Defeat enemies to collect powerful weapons</div>
+              );
+            })}
           </div>
-        )}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   // Main render
   return (
@@ -1463,7 +1438,6 @@ const Match3BattleGame = ({ studentData, updateStudentData, showToast }) => {
             className={`p-3 rounded-lg shadow-lg text-white font-semibold max-w-sm transition-all ${
               notification.type === 'success' ? 'bg-green-500' : 
               notification.type === 'error' ? 'bg-red-500' : 
-              notification.type === 'warning' ? 'bg-yellow-500' :
               'bg-blue-500'
             }`}
           >
@@ -1473,34 +1447,27 @@ const Match3BattleGame = ({ studentData, updateStudentData, showToast }) => {
       </div>
 
       {/* Menu */}
-      {gameState.mode === 'menu' && (
-        <div className="max-w-4xl mx-auto">
-          {renderMenu()}
-        </div>
-      )}
-
-      {/* Upgrades */}
-      {showUpgrades && (
+      {gameState.mode === 'menu' && !showInventory && (
         <div className="max-w-6xl mx-auto">
-          {renderUpgrades()}
+          {renderMenu()}
         </div>
       )}
 
       {/* Inventory */}
       {showInventory && (
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           {renderInventory()}
         </div>
       )}
 
       {/* Single Player Game */}
-      {gameState.mode === 'singleplayer' && (
+      {gameState.mode === 'singleplayer' && !showInventory && (
         <div className="max-w-7xl mx-auto space-y-4">
           {/* Header */}
           <div className="flex justify-between items-center">
             <h2 className="text-2xl font-bold text-white flex items-center">
               <span className="mr-2">⚔️</span>
-              Floor {gameState.currentLevel}
+              Floor {gameState.currentFloor}
               {gameState.combo > 0 && (
                 <span className="ml-4 bg-gradient-to-r from-yellow-400 to-orange-500 text-black px-3 py-1 rounded-full text-lg font-bold animate-pulse">
                   🔥 COMBO x{gameState.combo + 1}
@@ -1515,10 +1482,10 @@ const Match3BattleGame = ({ studentData, updateStudentData, showToast }) => {
                 🏠 Menu
               </button>
               <button
-                onClick={saveGameData}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                onClick={() => setShowInventory(true)}
+                className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
               >
-                💾 Save
+                🎒 Equipment
               </button>
             </div>
           </div>
@@ -1543,19 +1510,6 @@ const Match3BattleGame = ({ studentData, updateStudentData, showToast }) => {
                 </div>
                 {renderBoard()}
               </div>
-              
-              {/* Enhanced Legend */}
-              <div className="bg-white rounded-xl p-4">
-                <h4 className="font-bold mb-3 text-center">⚡ Battle Elements</h4>
-                <div className="grid grid-cols-4 md:grid-cols-8 gap-2 text-center text-xs">
-                  {Object.values(TILE_TYPES).map(tile => (
-                    <div key={tile.id} className="flex flex-col items-center p-2 rounded-lg bg-gray-50">
-                      <div className="text-lg mb-1">{tile.emoji}</div>
-                      <div className="font-semibold text-xs">{tile.name}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
             </div>
 
             {/* Enemy Stats */}
@@ -1566,64 +1520,38 @@ const Match3BattleGame = ({ studentData, updateStudentData, showToast }) => {
         </div>
       )}
 
-      {/* Level Complete Modal */}
-      {showLevelComplete && (
-        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 text-center">
-            <div className="text-6xl mb-4">🎉</div>
-            <h2 className="text-2xl font-bold mb-4">Victory!</h2>
-            <p className="text-gray-600 mb-4">
-              You defeated the {gameState.enemy?.name}!
-            </p>
-            <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg p-4 mb-4">
-              <div className="text-sm space-y-2">
-                <div>⭐ XP Gained: +{gameState.enemy?.rewards.xp}</div>
-                <div>💰 Gold Earned: +{gameState.enemy?.rewards.gold}</div>
-                {gameState.player.inventory.length > 0 && (
-                  <div className="text-purple-600 font-semibold">
-                    🗡️ Check your inventory for new weapons!
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="flex space-x-3">
-              <button
-                onClick={returnToMenu}
-                className="flex-1 bg-gray-500 text-white py-2 rounded-lg hover:bg-gray-600"
-              >
-                🏠 Menu
-              </button>
-              <button
-                onClick={nextLevel}
-                className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white py-2 rounded-lg hover:shadow-lg"
-              >
-                ⬆️ Next Floor
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Game Over Modal */}
-      {gameState.isGameOver && !gameState.victory && (
+      {/* Death Modal */}
+      {gameState.showDeathModal && (
         <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 text-center">
             <div className="text-6xl mb-4">💀</div>
             <h2 className="text-2xl font-bold mb-4">Defeated!</h2>
             <p className="text-gray-600 mb-4">
-              The {gameState.enemy?.name} proved too powerful this time.
+              You were defeated on Floor {gameState.currentFloor} by the {gameState.enemy?.name}.
             </p>
-            <div className="bg-gradient-to-r from-red-50 to-orange-50 rounded-lg p-4 mb-4">
-              <div className="text-sm text-gray-600">
-                Don't give up! Use your gold to purchase upgrades and try again with better equipment.
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 mb-4">
+              <div className="text-sm space-y-2">
+                <div>🏃 Run #{gameState.player.runs} Complete</div>
+                <div>📊 Floors Reached: {gameState.currentFloor}</div>
+                <div className="text-green-600 font-semibold">
+                  ⚔️ Your equipment has been preserved!
+                </div>
               </div>
             </div>
-            <button
-              onClick={returnToMenu}
-              className="w-full bg-gradient-to-r from-red-500 to-orange-600 text-white py-3 rounded-lg hover:shadow-lg font-bold"
-            >
-              ⚔️ Return & Upgrade
-            </button>
+            <div className="flex space-x-3">
+              <button
+                onClick={returnToMenu}
+                className="flex-1 bg-gray-500 text-white py-3 rounded-lg hover:bg-gray-600 font-bold"
+              >
+                🏠 Main Menu
+              </button>
+              <button
+                onClick={startNewRun}
+                className="flex-1 bg-gradient-to-r from-red-500 to-orange-600 text-white py-3 rounded-lg hover:shadow-lg font-bold"
+              >
+                🔄 Try Again
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -1639,7 +1567,7 @@ const Match3BattleGame = ({ studentData, updateStudentData, showToast }) => {
             transform: translateY(-80px);
           }
         }
-        .hover\:scale-102:hover {
+        .hover\\:scale-102:hover {
           transform: scale(1.02);
         }
       `}</style>
