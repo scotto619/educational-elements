@@ -1,7 +1,7 @@
-// pages/student.js - MOBILE OPTIMIZED
+// pages/student.js - FIXED VERSION THAT WORKS ON STUDENT DEVICES
 import React, { useState, useEffect } from 'react';
 import { firestore } from '../utils/firebase';
-import { collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 
 // Import reusable components
 import StudentShop from '../components/student/StudentShop';
@@ -181,56 +181,77 @@ const StudentPortal = () => {
     setError('');
   };
 
+  // ===============================================
+  // FIXED UPDATE FUNCTION - USES SERVER API INSTEAD OF DIRECT FIRESTORE
+  // ===============================================
+  
   const updateStudentData = async (updatedStudentData) => {
     if (!teacherUserId || !classData || !studentData) {
       console.error('Missing required data for student update');
+      showToast('Unable to save changes. Please try logging in again.', 'error');
       return false;
     }
 
     try {
-      console.log('💾 Updating student data for:', studentData.firstName);
+      console.log('💾 Updating student data via API for:', studentData.firstName);
       
-      const teacherDocRef = doc(firestore, 'users', teacherUserId);
-      const teacherDocSnap = await getDoc(teacherDocRef);
-      
-      if (!teacherDocSnap.exists()) {
-        console.error('Teacher document not found');
+      // Use the server API instead of direct Firestore writes
+      const response = await fetch('/api/student-update', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          teacherUserId: teacherUserId,
+          classId: classData.id,
+          studentId: studentData.id,
+          updateData: updatedStudentData,
+          classCode: classData.classCode
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        console.error('❌ API Error:', result);
+        
+        if (response.status === 404) {
+          showToast('Class or student not found. Please try logging in again.', 'error');
+        } else if (response.status === 400) {
+          showToast('Invalid update request. Please contact your teacher.', 'error');
+        } else {
+          showToast('Unable to save changes. Please try again.', 'error');
+        }
+        
         return false;
       }
 
-      const teacherData = teacherDocSnap.data();
+      // Update local state with the response data
+      const updatedStudent = result.student;
+      setStudentData(updatedStudent);
       
-      const updatedClasses = teacherData.classes.map(cls => {
-        if (cls.id === classData.id) {
-          return {
-            ...cls,
-            students: cls.students.map(student => 
-              student.id === studentData.id 
-                ? { ...student, ...updatedStudentData, lastUpdated: new Date().toISOString() }
-                : student
-            )
-          };
-        }
-        return cls;
-      });
-
-      await updateDoc(teacherDocRef, { classes: updatedClasses });
-      
-      const newStudentData = { ...studentData, ...updatedStudentData };
-      setStudentData(newStudentData);
-      
+      // Update session storage
       try {
         const session = JSON.parse(sessionStorage.getItem('studentSession') || '{}');
-        session.studentData = newStudentData;
+        session.studentData = updatedStudent;
         sessionStorage.setItem('studentSession', JSON.stringify(session));
       } catch (sessionError) {
         console.warn('Could not update session storage:', sessionError);
       }
       
-      console.log('✅ Student data updated successfully');
+      console.log('✅ Student data updated successfully via API');
       return true;
+      
     } catch (error) {
-      console.error('❌ Error updating student data:', error);
+      console.error('❌ Network error updating student data:', error);
+      
+      // Check if it's a network connectivity issue
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        showToast('Network connection error. Please check your internet and try again.', 'error');
+      } else {
+        showToast('Failed to save changes. Please try again.', 'error');
+      }
+      
       return false;
     }
   };
@@ -251,7 +272,7 @@ const StudentPortal = () => {
       if (toastElement.parentNode) {
         toastElement.parentNode.removeChild(toastElement);
       }
-    }, 3000);
+    }, 4000); // Show longer for error messages
   };
 
   // ===============================================
@@ -419,14 +440,14 @@ const StudentPortal = () => {
             classRewards={classData?.classRewards || []}
           />
         );
-case 'games':
-  return (
-    <StudentGames 
-      studentData={studentData}
-      showToast={showToast}
-      updateStudentData={updateStudentData}  // ADD THIS LINE
-    />
-  );
+      case 'games':
+        return (
+          <StudentGames 
+            studentData={studentData}
+            showToast={showToast}
+            updateStudentData={updateStudentData}
+          />
+        );
       case 'quizshow':
         return (
           <div className="bg-white rounded-xl p-6 md:p-8 text-center">
