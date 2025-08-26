@@ -1,4 +1,4 @@
-// components/games/ClickerGame.js - COMPLETELY FIXED VERSION
+// components/games/ClickerGame.js - FIXED FIREBASE INTEGRATION
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
@@ -59,78 +59,18 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
   const [floatingNumbers, setFloatingNumbers] = useState([]);
   const [toasts, setToasts] = useState([]);
   const [showChoiceEvent, setShowChoiceEvent] = useState(false);
-  const [hasLoadedFromFirebase, setHasLoadedFromFirebase] = useState(false); // FIXED: Prevent multiple loads
-  const [eventTimeLeft, setEventTimeLeft] = useState(0); // Timer for event UI
+  const [eventTimeLeft, setEventTimeLeft] = useState(0);
+
+  // SIMPLIFIED LOADING STATE - No complex dependency issues
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [saveInProgress, setSaveInProgress] = useState(false);
 
   const gameLoopRef = useRef();
   const lastUpdateRef = useRef();
   const eventAccumRef = useRef(0);
-  const autosaveAccumRef = useRef(0);
+  const lastSaveRef = useRef(0);
 
-  // Initialize refs and ensure game state integrity
-  useEffect(() => {
-    lastUpdateRef.current = Date.now();
-    
-    // ENSURE GAME STATE INTEGRITY - Fix any missing or corrupted arrays
-    setGameState(prev => {
-      let needsUpdate = false;
-      const updates = {};
-      
-      if (!prev.artifacts || !Array.isArray(prev.artifacts)) {
-        needsUpdate = true;
-        updates.artifacts = [
-          { key: 'orb', name: 'Crystal Orb', baseCost: 15, count: 0, baseDps: 0.1, icon: '1', path: '/Loot/Artifacts/1.png' },
-          { key: 'tome', name: 'Ancient Tome', baseCost: 100, count: 0, baseDps: 1, icon: '2', path: '/Loot/Artifacts/2.png' },
-          { key: 'lute', name: 'Mystic Lute', baseCost: 1100, count: 0, baseDps: 8, icon: '3', path: '/Loot/Artifacts/3.png' },
-          { key: 'shield', name: 'Guardian Shield', baseCost: 12000, count: 0, baseDps: 47, icon: '4', path: '/Loot/Artifacts/4.png' },
-          { key: 'chalice', name: 'Divine Chalice', baseCost: 130000, count: 0, baseDps: 260, icon: '5', path: '/Loot/Artifacts/5.png' },
-          { key: 'crown', name: 'Crown of Ages', baseCost: 1400000, count: 0, baseDps: 1400, icon: '6', path: '/Loot/Artifacts/6.png' },
-          { key: 'mask', name: 'Shadow Mask', baseCost: 20000000, count: 0, baseDps: 7800, icon: '7', path: '/Loot/Artifacts/7.png' },
-          { key: 'totem', name: 'Primal Totem', baseCost: 330000000, count: 0, baseDps: 44000, icon: '8', path: '/Loot/Artifacts/8.png' },
-          { key: 'phoenix', name: 'Phoenix Feather', baseCost: 5100000000, count: 0, baseDps: 260000, icon: '9', path: '/Loot/Artifacts/9.png' },
-          { key: 'cauldron', name: 'Void Cauldron', baseCost: 75000000000, count: 0, baseDps: 1600000, icon: '10', path: '/Loot/Artifacts/10.png' }
-        ];
-      }
-      
-      if (!prev.upgrades || !Array.isArray(prev.upgrades)) {
-        needsUpdate = true;
-        updates.upgrades = [
-          { id: 'orb-1', name: 'Enhance Crystal Orb', desc: 'Crystal Orbs are twice as efficient', cost: 100, req: { key: 'orb', count: 10 }, purchased: false },
-          { id: 'tome-1', name: 'Forbidden Knowledge', desc: 'Ancient Tomes are twice as efficient', cost: 1000, req: { key: 'tome', count: 10 }, purchased: false },
-          { id: 'lute-1', name: 'Harmonic Resonance', desc: 'Mystic Lutes are twice as efficient', cost: 11000, req: { key: 'lute', count: 10 }, purchased: false },
-          { id: 'shield-1', name: 'Eternal Protection', desc: 'Guardian Shields are twice as efficient', cost: 120000, req: { key: 'shield', count: 10 }, purchased: false },
-          { id: 'chalice-1', name: 'Divine Blessing', desc: 'Divine Chalices are twice as efficient', cost: 1300000, req: { key: 'chalice', count: 10 }, purchased: false },
-          { id: 'attack-1', name: 'Weapon Mastery', desc: 'Attacks earn twice the gold', cost: 500, req: { key: null, count: 0 }, purchased: false },
-          { id: 'attack-2', name: 'Legendary Technique', desc: 'Attacks earn 5x gold', cost: 50000000, req: { key: null, count: 0 }, purchased: false },
-          { id: 'prestige-1', name: 'Ascended Power', desc: 'All artifacts are 50% more efficient', cost: 1000000000000, req: { key: null, count: 0 }, purchased: false },
-        ];
-      }
-      
-      if (!prev.boons || !Array.isArray(prev.boons)) {
-        needsUpdate = true;
-        updates.boons = [];
-      }
-      
-      if (!prev.unlockedWeapons || !Array.isArray(prev.unlockedWeapons)) {
-        needsUpdate = true;
-        updates.unlockedWeapons = ['1'];
-      }
-      
-      if (!prev.unlockedThemes || !Array.isArray(prev.unlockedThemes)) {
-        needsUpdate = true;
-        updates.unlockedThemes = ['default'];
-      }
-      
-      if (!prev.unlockedTitles || !Array.isArray(prev.unlockedTitles)) {
-        needsUpdate = true;
-        updates.unlockedTitles = ['Novice'];
-      }
-      
-      return needsUpdate ? { ...prev, ...updates } : prev;
-    });
-  }, []);
-
-  // Weapon definitions with unlock requirements - FIXED PATHS
+  // Weapon definitions with unlock requirements
   const WEAPONS = {
     '1': { name: 'Novice Blade', icon: '⚔️', path: '/Loot/Weapons/1.png', requirement: null },
     '2': { name: 'Mystic Staff', icon: '🔮', path: '/Loot/Weapons/2.png', requirement: { type: 'totalGold', value: 1000 } },
@@ -211,9 +151,8 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     'Eternal': { requirement: { type: 'prestige', value: 10 }, color: 'text-purple-400', glow: 'shadow-purple-400/50' }
   };
 
-  // Choice events system - UPDATED WITH MORE INTERACTIVE EVENTS
+  // Choice events system
   const CHOICE_EVENTS = [
-    // Original events
     {
       text: "You discover a mysterious merchant offering a deal...",
       choices: [
@@ -235,8 +174,6 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
         { text: "Rest and meditate", effect: { type: 'temporaryDPSBoost', mult: 3, duration: 120000 } }
       ]
     },
-    
-    // NEW INTERACTIVE EVENTS
     {
       text: "🎰 You find a magical Lucky Wheel! Spin to win fantastic prizes!",
       choices: [
@@ -297,7 +234,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     }
   ];
 
-  // Helper functions
+  // FIXED: Helper functions
   const fmt = useCallback((n) => {
     if (!isFinite(n) || isNaN(n)) return '0';
     const abs = Math.abs(n);
@@ -337,7 +274,6 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
 
   const dps = useCallback(() => {
     let total = 0;
-    // ENSURE artifacts is an array before iterating
     if (gameState.artifacts && Array.isArray(gameState.artifacts)) {
       for (const a of gameState.artifacts) {
         if (a && typeof a === 'object' && typeof a.count === 'number' && typeof a.baseDps === 'number') {
@@ -519,7 +455,6 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
   // Buy artifact
   const buyArtifact = useCallback((artifactIndex, amount) => {
     setGameState(prev => {
-      // ENSURE artifacts array exists and is valid
       if (!prev.artifacts || !Array.isArray(prev.artifacts) || artifactIndex < 0 || artifactIndex >= prev.artifacts.length) {
         console.error('Invalid artifacts array or index');
         return prev;
@@ -567,7 +502,6 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
   // Buy upgrade
   const buyUpgrade = useCallback((upgradeIndex) => {
     setGameState(prev => {
-      // ENSURE upgrades array exists and is valid
       if (!prev.upgrades || !Array.isArray(prev.upgrades) || upgradeIndex < 0 || upgradeIndex >= prev.upgrades.length) {
         console.error('Invalid upgrades array or index');
         return prev;
@@ -640,9 +574,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
       dpcMult: 1,
       globalDpsMult: 1,
       multipliers: {},
-      // SAFELY reset artifacts array
       artifacts: Array.isArray(prev.artifacts) ? prev.artifacts.map(a => ({ ...a, count: 0 })) : [],
-      // SAFELY reset upgrades array  
       upgrades: Array.isArray(prev.upgrades) ? prev.upgrades.map(u => ({ ...u, purchased: false })) : [],
       boons: [],
       prestige: prev.prestige + 1,
@@ -653,7 +585,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     addToast(`Prestige ${gameState.prestige + 1} achieved! +${prestigeGain} prestige points!`, 'success');
   }, [canPrestige, calculatePrestigeGain, gameState.prestige, addToast]);
 
-  // Spawn choice event - INCREASED TIME LIMIT
+  // Spawn choice event
   const spawnChoiceEvent = useCallback(() => {
     if (gameState.event.shown) return;
     
@@ -663,7 +595,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
       event: {
         ...prev.event,
         shown: true,
-        until: Date.now() + 60000, // Increased to 60 seconds
+        until: Date.now() + 60000,
         eventText: randomEvent.text,
         choices: randomEvent.choices
       }
@@ -671,7 +603,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     setShowChoiceEvent(true);
   }, [gameState.event.shown]);
 
-  // Handle choice event - UPDATED WITH NEW INTERACTIVE EVENTS
+  // Handle choice event
   const handleChoiceEvent = useCallback((choiceIndex) => {
     const choice = gameState.event.choices[choiceIndex];
     if (!choice) return;
@@ -681,7 +613,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     // Play appropriate sound for different event types
     const playEventSound = (eventType) => {
       try {
-        let soundFile = 'ding.mp3'; // default
+        let soundFile = 'ding.mp3';
         if (['luckyWheel', 'diceRoll', 'treasureChest'].includes(eventType)) {
           soundFile = 'coins.mp3';
         } else if (['crystalBall', 'cardDraw'].includes(eventType)) {
@@ -752,7 +684,6 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
           playEventSound('temporaryDPSBoost');
           break;
 
-        // NEW INTERACTIVE EVENTS
         case 'luckyWheel':
           const wheelOutcomes = [
             { type: 'gold', amount: 0.5, message: '🎰 JACKPOT! Huge gold bonus!' },
@@ -783,9 +714,8 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
           break;
 
         case 'diceRoll':
-          const diceRoll = Math.floor(Math.random() * 6) + Math.floor(Math.random() * 6) + 2; // 2-12
+          const diceRoll = Math.floor(Math.random() * 6) + Math.floor(Math.random() * 6) + 2;
           if (diceRoll === 12) {
-            // Snake eyes! (Double 6s)
             const megaGold = Math.max(5000, prev.totalGold * 0.8);
             newState.gold += megaGold;
             newState.totalGold += megaGold;
@@ -818,14 +748,13 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
             { trap: true, message: '📦 Oops! It was a trap, but you found some gold anyway.' }
           ];
           
-          // Each chest has different probabilities
           let chestReward;
           if (effect.chest === 1) {
-            chestReward = Math.random() < 0.6 ? chestRewards[0] : chestRewards[3]; // Higher gold chance
+            chestReward = Math.random() < 0.6 ? chestRewards[0] : chestRewards[3];
           } else if (effect.chest === 2) {
-            chestReward = chestRewards[Math.floor(Math.random() * chestRewards.length)]; // Random
+            chestReward = chestRewards[Math.floor(Math.random() * chestRewards.length)];
           } else {
-            chestReward = Math.random() < 0.4 ? chestRewards[1] : (Math.random() < 0.7 ? chestRewards[2] : chestRewards[3]); // Higher power chance
+            chestReward = Math.random() < 0.4 ? chestRewards[1] : (Math.random() < 0.7 ? chestRewards[2] : chestRewards[3]);
           }
 
           if (chestReward.gold) {
@@ -873,7 +802,6 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
               until: Date.now() + vision.boon.duration
             }];
           } else if (vision.type === 'dark_vision') {
-            // Small temporary penalty, but give gold as compensation
             newState.boons = [...prev.boons, {
               name: 'Dark Vision',
               type: 'dps',
@@ -889,7 +817,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
           break;
 
         case 'warriorChallenge':
-          const challengeSuccess = Math.random() < 0.7; // 70% success rate
+          const challengeSuccess = Math.random() < 0.7;
           if (challengeSuccess) {
             const victorGold = Math.max(3000, prev.totalGold * 0.35);
             newState.gold += victorGold;
@@ -950,7 +878,6 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
               until: Date.now() + drawnCard.duration
             }];
           } else if (drawnCard.effect === 'wild_card') {
-            // Joker gives everything!
             const jokerGold = Math.max(2000, prev.totalGold * 0.3);
             newState.gold += jokerGold;
             newState.totalGold += jokerGold;
@@ -969,26 +896,22 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
         case 'miningEvent':
           const miningOutcome = Math.random();
           if (miningOutcome < 0.15) {
-            // Diamond mine!
             const diamondGold = Math.max(8000, prev.totalGold * 0.75);
             newState.gold += diamondGold;
             newState.totalGold += diamondGold;
             newState.dpcMult *= 1.3;
             addToast(`⛏️ DIAMOND STRIKE! Incredible find: ${fmt(diamondGold)} gold + permanent power!`, 'success');
           } else if (miningOutcome < 0.4) {
-            // Gold vein
             const goldVein = Math.max(3000, prev.totalGold * 0.4);
             newState.gold += goldVein;
             newState.totalGold += goldVein;
             addToast(`⛏️ Gold vein discovered! Mined ${fmt(goldVein)} gold!`, 'success');
           } else if (miningOutcome < 0.7) {
-            // Silver ore
             const silverOre = Math.max(1200, prev.totalGold * 0.2);
             newState.gold += silverOre;
             newState.totalGold += silverOre;
             addToast(`⛏️ Silver ore found! Collected ${fmt(silverOre)} gold worth!`, 'success');
           } else {
-            // Cave-in, but magical protection saves you
             const compensationGold = Math.max(600, prev.totalGold * 0.1);
             newState.gold += compensationGold;
             newState.totalGold += compensationGold;
@@ -1023,133 +946,139 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     setShowChoiceEvent(false);
   }, []);
 
-  // FIXED: Save game to Firebase - WITH LOAD PROTECTION
-  const saveGameToFirebase = useCallback(async () => {
-    if (!studentData || !updateStudentData || !hasLoadedFromFirebase) {
-      console.log('Skipping save - not ready or not loaded yet');
+  // FIXED: Firebase Save Function - Simplified and Robust
+  const saveToFirebase = useCallback(async () => {
+    if (!studentData || !updateStudentData || !isLoaded || saveInProgress) {
+      return;
+    }
+
+    setSaveInProgress(true);
+    try {
+      // Create a clean, serializable copy of the game state
+      const cleanGameState = {
+        gold: gameState.gold,
+        totalGold: gameState.totalGold,
+        handGold: gameState.handGold,
+        attacks: gameState.attacks,
+        dpcBase: gameState.dpcBase,
+        dpcMult: gameState.dpcMult,
+        globalDpsMult: gameState.globalDpsMult,
+        buyAmount: gameState.buyAmount,
+        timePlayed: gameState.timePlayed,
+        multipliers: gameState.multipliers,
+        artifacts: gameState.artifacts,
+        upgrades: gameState.upgrades,
+        boons: [], // Always clear temporary effects on save
+        unlockedWeapons: gameState.unlockedWeapons,
+        activeWeapon: gameState.activeWeapon,
+        unlockedThemes: gameState.unlockedThemes,
+        activeTheme: gameState.activeTheme,
+        unlockedTitles: gameState.unlockedTitles,
+        activeTitle: gameState.activeTitle,
+        achievements: gameState.achievements,
+        prestige: gameState.prestige,
+        prestigePoints: gameState.prestigePoints,
+        lifetimeEarnings: gameState.lifetimeEarnings,
+        lastSave: Date.now(),
+        version: '2.1'
+      };
+
+      await updateStudentData({ 
+        clickerGameData: cleanGameState 
+      });
+
+      console.log('✅ Clicker game saved successfully to Firebase');
+      lastSaveRef.current = Date.now();
+
+    } catch (error) {
+      console.error('❌ Error saving clicker game to Firebase:', error);
+      addToast('Save failed! Please try again.', 'error');
+    } finally {
+      setSaveInProgress(false);
+    }
+  }, [gameState, studentData, updateStudentData, isLoaded, saveInProgress, addToast]);
+
+  // FIXED: Firebase Load Function - Simplified and Robust
+  const loadFromFirebase = useCallback(() => {
+    if (!studentData?.clickerGameData || isLoaded) {
       return;
     }
 
     try {
-      const saveData = {
-        clickerGameData: {
-          ...gameState,
-          lastSave: Date.now(),
-          version: '2.0'
-        }
-      };
+      console.log('🔄 Loading clicker game from Firebase...');
+      const data = studentData.clickerGameData;
 
-      await updateStudentData(saveData);
-      console.log('Clicker game saved to Firebase');
-    } catch (error) {
-      console.error('Error saving clicker game:', error);
-    }
-  }, [gameState, studentData, updateStudentData, hasLoadedFromFirebase]);
-
-  // FIXED: Load game from Firebase - SETS LOADED FLAG
-  const loadGameFromFirebase = useCallback(() => {
-    if (!studentData?.clickerGameData || hasLoadedFromFirebase) return;
-
-    try {
-      const loadedData = studentData.clickerGameData;
-      console.log('Loading clicker game from Firebase...');
-      
-      // ENSURE ALL REQUIRED PROPERTIES ARE PRESENT AND VALID
-      const safeLoadedData = {
-        // Use current default state as base
-        gold: loadedData.gold || 0,
-        totalGold: loadedData.totalGold || 0,
-        handGold: loadedData.handGold || 0,
-        attacks: loadedData.attacks || 0,
-        dpcBase: loadedData.dpcBase || 1,
-        dpcMult: loadedData.dpcMult || 1,
-        globalDpsMult: loadedData.globalDpsMult || 1,
-        buyAmount: loadedData.buyAmount || 1,
-        timePlayed: loadedData.timePlayed || 0,
-        lastSave: loadedData.lastSave || Date.now(),
-        multipliers: loadedData.multipliers || {},
-        // Ensure critical arrays exist
-        artifacts: Array.isArray(loadedData.artifacts) ? loadedData.artifacts : [
-          { key: 'orb', name: 'Crystal Orb', baseCost: 15, count: 0, baseDps: 0.1, icon: '1', path: '/Loot/Artifacts/1.png' },
-          { key: 'tome', name: 'Ancient Tome', baseCost: 100, count: 0, baseDps: 1, icon: '2', path: '/Loot/Artifacts/2.png' },
-          { key: 'lute', name: 'Mystic Lute', baseCost: 1100, count: 0, baseDps: 8, icon: '3', path: '/Loot/Artifacts/3.png' },
-          { key: 'shield', name: 'Guardian Shield', baseCost: 12000, count: 0, baseDps: 47, icon: '4', path: '/Loot/Artifacts/4.png' },
-          { key: 'chalice', name: 'Divine Chalice', baseCost: 130000, count: 0, baseDps: 260, icon: '5', path: '/Loot/Artifacts/5.png' },
-          { key: 'crown', name: 'Crown of Ages', baseCost: 1400000, count: 0, baseDps: 1400, icon: '6', path: '/Loot/Artifacts/6.png' },
-          { key: 'mask', name: 'Shadow Mask', baseCost: 20000000, count: 0, baseDps: 7800, icon: '7', path: '/Loot/Artifacts/7.png' },
-          { key: 'totem', name: 'Primal Totem', baseCost: 330000000, count: 0, baseDps: 44000, icon: '8', path: '/Loot/Artifacts/8.png' },
-          { key: 'phoenix', name: 'Phoenix Feather', baseCost: 5100000000, count: 0, baseDps: 260000, icon: '9', path: '/Loot/Artifacts/9.png' },
-          { key: 'cauldron', name: 'Void Cauldron', baseCost: 75000000000, count: 0, baseDps: 1600000, icon: '10', path: '/Loot/Artifacts/10.png' }
-        ],
-        upgrades: Array.isArray(loadedData.upgrades) ? loadedData.upgrades : [
-          { id: 'orb-1', name: 'Enhance Crystal Orb', desc: 'Crystal Orbs are twice as efficient', cost: 100, req: { key: 'orb', count: 10 }, purchased: false },
-          { id: 'tome-1', name: 'Forbidden Knowledge', desc: 'Ancient Tomes are twice as efficient', cost: 1000, req: { key: 'tome', count: 10 }, purchased: false },
-          { id: 'lute-1', name: 'Harmonic Resonance', desc: 'Mystic Lutes are twice as efficient', cost: 11000, req: { key: 'lute', count: 10 }, purchased: false },
-          { id: 'shield-1', name: 'Eternal Protection', desc: 'Guardian Shields are twice as efficient', cost: 120000, req: { key: 'shield', count: 10 }, purchased: false },
-          { id: 'chalice-1', name: 'Divine Blessing', desc: 'Divine Chalices are twice as efficient', cost: 1300000, req: { key: 'chalice', count: 10 }, purchased: false },
-          { id: 'attack-1', name: 'Weapon Mastery', desc: 'Attacks earn twice the gold', cost: 500, req: { key: null, count: 0 }, purchased: false },
-          { id: 'attack-2', name: 'Legendary Technique', desc: 'Attacks earn 5x gold', cost: 50000000, req: { key: null, count: 0 }, purchased: false },
-          { id: 'prestige-1', name: 'Ascended Power', desc: 'All artifacts are 50% more efficient', cost: 1000000000000, req: { key: null, count: 0 }, purchased: false },
-        ],
-        boons: [], // Always clear temporary effects on load
-        unlockedWeapons: Array.isArray(loadedData.unlockedWeapons) ? loadedData.unlockedWeapons : ['1'],
-        activeWeapon: loadedData.activeWeapon || '1',
-        unlockedThemes: Array.isArray(loadedData.unlockedThemes) ? loadedData.unlockedThemes : ['default'],
-        activeTheme: loadedData.activeTheme || 'default',
-        unlockedTitles: Array.isArray(loadedData.unlockedTitles) ? loadedData.unlockedTitles : ['Novice'],
-        activeTitle: loadedData.activeTitle || 'Novice',
-        achievements: Array.isArray(loadedData.achievements) ? loadedData.achievements : [],
-        prestige: loadedData.prestige || 0,
-        prestigePoints: loadedData.prestigePoints || 0,
-        lifetimeEarnings: loadedData.lifetimeEarnings || 0,
-        // Reset event
+      // Validate and sanitize the loaded data
+      const loadedState = {
+        gold: typeof data.gold === 'number' ? data.gold : 0,
+        totalGold: typeof data.totalGold === 'number' ? data.totalGold : 0,
+        handGold: typeof data.handGold === 'number' ? data.handGold : 0,
+        attacks: typeof data.attacks === 'number' ? data.attacks : 0,
+        dpcBase: typeof data.dpcBase === 'number' ? data.dpcBase : 1,
+        dpcMult: typeof data.dpcMult === 'number' ? data.dpcMult : 1,
+        globalDpsMult: typeof data.globalDpsMult === 'number' ? data.globalDpsMult : 1,
+        buyAmount: typeof data.buyAmount === 'number' ? data.buyAmount : 1,
+        timePlayed: typeof data.timePlayed === 'number' ? data.timePlayed : 0,
+        lastSave: typeof data.lastSave === 'number' ? data.lastSave : Date.now(),
+        multipliers: data.multipliers && typeof data.multipliers === 'object' ? data.multipliers : {},
+        artifacts: Array.isArray(data.artifacts) ? data.artifacts : gameState.artifacts,
+        upgrades: Array.isArray(data.upgrades) ? data.upgrades : gameState.upgrades,
+        boons: [], // Always start fresh with no temporary effects
+        unlockedWeapons: Array.isArray(data.unlockedWeapons) ? data.unlockedWeapons : ['1'],
+        activeWeapon: typeof data.activeWeapon === 'string' ? data.activeWeapon : '1',
+        unlockedThemes: Array.isArray(data.unlockedThemes) ? data.unlockedThemes : ['default'],
+        activeTheme: typeof data.activeTheme === 'string' ? data.activeTheme : 'default',
+        unlockedTitles: Array.isArray(data.unlockedTitles) ? data.unlockedTitles : ['Novice'],
+        activeTitle: typeof data.activeTitle === 'string' ? data.activeTitle : 'Novice',
+        achievements: Array.isArray(data.achievements) ? data.achievements : [],
+        prestige: typeof data.prestige === 'number' ? data.prestige : 0,
+        prestigePoints: typeof data.prestigePoints === 'number' ? data.prestigePoints : 0,
+        lifetimeEarnings: typeof data.lifetimeEarnings === 'number' ? data.lifetimeEarnings : 0,
         event: { nextIn: 60 + Math.random() * 120, shown: false, until: 0, choices: [], eventText: '' }
       };
 
-      setGameState(safeLoadedData);
+      setGameState(loadedState);
+      setSelectedWeapon(loadedState.activeWeapon);
+      setSelectedTheme(loadedState.activeTheme);
+      setIsLoaded(true);
 
-      // Load unlockables
-      setSelectedWeapon(loadedData.activeWeapon || '1');
-      setSelectedTheme(loadedData.activeTheme || 'default');
+      console.log('✅ Clicker game loaded successfully from Firebase');
+      addToast('Game loaded successfully!', 'success');
 
-      // CRITICAL: Mark as loaded to prevent reloading
-      setHasLoadedFromFirebase(true);
-
-      console.log('Clicker game loaded from Firebase successfully');
     } catch (error) {
-      console.error('Error loading clicker game:', error);
+      console.error('❌ Error loading clicker game from Firebase:', error);
+      setIsLoaded(true); // Still mark as loaded to prevent infinite retries
+      addToast('Load failed, starting new game!', 'warning');
     }
-  }, [studentData, hasLoadedFromFirebase]); // FIXED: Only depend on what actually matters
+  }, [studentData, isLoaded, gameState.artifacts, gameState.upgrades, addToast]);
 
-  // FIXED: Auto-save interval - WAITS FOR LOADING
+  // Manual save function for the button
+  const manualSave = useCallback(() => {
+    saveToFirebase();
+    addToast('Game saved!', 'success');
+  }, [saveToFirebase, addToast]);
+
+  // FIXED: Load on component mount - Only once
   useEffect(() => {
-    // Don't start auto-saving until we've loaded
-    if (!hasLoadedFromFirebase) return;
-    
+    if (studentData && !isLoaded) {
+      loadFromFirebase();
+    }
+  }, [studentData, loadFromFirebase, isLoaded]);
+
+  // FIXED: Auto-save every 30 seconds after loading
+  useEffect(() => {
+    if (!isLoaded) return;
+
     const interval = setInterval(() => {
-      console.log('Auto-saving clicker game...');
-      saveGameToFirebase();
-    }, 15000);
+      const now = Date.now();
+      if (now - lastSaveRef.current > 25000) { // Only save if it's been more than 25s since last save
+        console.log('⏰ Auto-saving clicker game...');
+        saveToFirebase();
+      }
+    }, 30000);
 
     return () => clearInterval(interval);
-  }, [saveGameToFirebase, hasLoadedFromFirebase]);
-
-  // FIXED: Load on component mount - ONLY ONCE
-  useEffect(() => {
-    if (studentData?.clickerGameData && !hasLoadedFromFirebase) {
-      console.log('Attempting to load clicker game data...');
-      loadGameFromFirebase();
-    }
-  }, [studentData, hasLoadedFromFirebase]); // REMOVED loadGameFromFirebase from dependencies
-
-  // ADDED: Handle when studentData first becomes available
-  useEffect(() => {
-    // Reset loading flag when studentData changes (new login)
-    if (studentData && hasLoadedFromFirebase) {
-      console.log('Student data changed, resetting load flag');
-      setHasLoadedFromFirebase(false);
-    }
-  }, [studentData?.id]); // Only when student ID changes (new student login)
+  }, [isLoaded, saveToFirebase]);
 
   // Update event timer for UI
   useEffect(() => {
@@ -1168,8 +1097,10 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
 
   // Check unlocks when relevant stats change
   useEffect(() => {
-    checkUnlocks();
-  }, [checkUnlocks]);
+    if (isLoaded) {
+      checkUnlocks();
+    }
+  }, [checkUnlocks, isLoaded]);
 
   // Apply selected weapon and theme
   useEffect(() => {
@@ -1182,6 +1113,8 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
 
   // Game loop
   useEffect(() => {
+    if (!isLoaded) return;
+
     const gameLoop = () => {
       const now = Date.now();
       const dt = Math.min(0.25, (now - (lastUpdateRef.current || now)) / 1000);
@@ -1230,7 +1163,20 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
         cancelAnimationFrame(gameLoopRef.current);
       }
     };
-  }, [dps, addGold, gameState.event, spawnChoiceEvent]);
+  }, [isLoaded, dps, addGold, gameState.event, spawnChoiceEvent]);
+
+  // Show loading screen if not loaded
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-100 flex items-center justify-center">
+        <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <h2 className="text-xl font-bold text-gray-700">Loading Hero Forge...</h2>
+          <p className="text-gray-500 mt-2">Preparing your adventure!</p>
+        </div>
+      </div>
+    );
+  }
 
   const currentTheme = THEMES[gameState.activeTheme] || THEMES.default;
   const currentWeapon = WEAPONS[gameState.activeWeapon] || WEAPONS['1'];
@@ -1356,7 +1302,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
               </button>
             </div>
             
-            {/* Enhanced visual effects - More intense when time is low */}
+            {/* Enhanced visual effects */}
             <div className={`absolute -top-2 -left-2 w-4 h-4 rounded-full ${
               eventTimeLeft <= 10 ? 'bg-red-400 animate-ping' : 'bg-yellow-400 animate-ping'
             }`}></div>
@@ -1414,10 +1360,15 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
                 🎨 Customize
               </button>
               <button
-                onClick={saveGameToFirebase}
-                className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
+                onClick={manualSave}
+                disabled={saveInProgress}
+                className={`px-4 py-2 rounded-lg transition-colors ${
+                  saveInProgress 
+                    ? 'bg-gray-400 cursor-not-allowed' 
+                    : 'bg-gray-500 hover:bg-gray-600'
+                } text-white`}
               >
-                💾 Save
+                {saveInProgress ? '⏳ Saving...' : '💾 Save'}
               </button>
             </div>
           </div>
