@@ -1,9 +1,5 @@
-// components/tabs/SettingsTab.js - Comprehensive Settings and Configuration
+// components/tabs/SettingsTab.js - Fixed Settings with Working Remove Student Functionality
 import React, { useState } from 'react';
-
-// ===============================================
-// SETTINGS TAB COMPONENT
-// ===============================================
 
 const SettingsTab = ({ 
   user,
@@ -18,12 +14,12 @@ const SettingsTab = ({
   AVAILABLE_AVATARS = [],
   // Class code management props
   currentClassData = {},
-  updateClassCode
+  updateClassCode,
+  xpCategories = []
 }) => {
   const [activeSection, setActiveSection] = useState('students');
   const [showConfirmDialog, setShowConfirmDialog] = useState(null);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
-  const [showAddStudentModal, setShowAddStudentModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [showClassCodeModal, setShowClassCodeModal] = useState(false);
   
@@ -51,7 +47,7 @@ const SettingsTab = ({
   });
 
   // ===============================================
-  // STUDENT MANAGEMENT FUNCTIONS
+  // STUDENT MANAGEMENT FUNCTIONS - FIXED
   // ===============================================
 
   const handleAddStudent = () => {
@@ -77,23 +73,37 @@ const SettingsTab = ({
 
     const newStudents = [...students, newStudent];
     setStudents(newStudents);
-    updateAndSaveClass(newStudents, undefined);
+    updateAndSaveClass(newStudents, xpCategories);
     
     setNewStudentForm({ firstName: '', lastName: '' });
-    setShowAddStudentModal(false);
     showToast(`${newStudent.firstName} added to class!`, 'success');
   };
 
+  // FIXED: Properly handle student removal with correct state updates
   const handleRemoveStudent = (studentId) => {
+    console.log('Removing student:', studentId);
+    
     const student = students.find(s => s.id === studentId);
-    if (!student) return;
+    if (!student) {
+      console.log('Student not found');
+      showToast('Student not found', 'error');
+      return;
+    }
 
     const newStudents = students.filter(s => s.id !== studentId);
-    setStudents(newStudents);
-    updateAndSaveClass(newStudents, undefined);
+    console.log('New students array:', newStudents.length);
     
+    // Update state immediately
+    setStudents(newStudents);
+    
+    // Save to Firebase
+    updateAndSaveClass(newStudents, xpCategories);
+    
+    // Close dialog and show feedback
     setShowConfirmDialog(null);
     showToast(`${student.firstName} removed from class`, 'success');
+    
+    console.log('Student removal completed');
   };
 
   const handleAdjustStudent = () => {
@@ -124,7 +134,7 @@ const SettingsTab = ({
 
     const newStudents = students.map(s => s.id === adjustmentForm.studentId ? updatedStudent : s);
     setStudents(newStudents);
-    updateAndSaveClass(newStudents, undefined);
+    updateAndSaveClass(newStudents, xpCategories);
 
     const action = adjustmentForm.type.includes('remove') ? 'removed' : 'added';
     const currency = adjustmentForm.type.includes('xp') ? 'XP' : 'coins';
@@ -146,7 +156,7 @@ const SettingsTab = ({
 
     const newStudents = students.map(s => s.id === studentId ? updatedStudent : s);
     setStudents(newStudents);
-    updateAndSaveClass(newStudents, undefined);
+    updateAndSaveClass(newStudents, xpCategories);
 
     showToast(`${student.firstName}'s avatar changed to ${newAvatarBase}!`, 'success');
     setSelectedStudent(null);
@@ -190,7 +200,7 @@ const SettingsTab = ({
 
   const resetAllData = async () => {
     setStudents([]);
-    await updateAndSaveClass([], undefined);
+    await updateAndSaveClass([], xpCategories);
     setShowConfirmDialog(null);
     showToast('All data has been reset', 'success');
   };
@@ -213,7 +223,7 @@ const SettingsTab = ({
     }));
     
     setStudents(resetStudents);
-    await updateAndSaveClass(resetStudents, undefined);
+    await updateAndSaveClass(resetStudents, xpCategories);
     setShowConfirmDialog(null);
     showToast('All student progress has been reset', 'success');
   };
@@ -358,7 +368,10 @@ Time: ${new Date().toISOString()}
                           Change Avatar
                         </button>
                         <button 
-                          onClick={() => setShowConfirmDialog(`remove_${student.id}`)}
+                          onClick={() => {
+                            console.log('Setting confirm dialog for student:', student.id);
+                            setShowConfirmDialog(`remove_${student.id}`);
+                          }}
                           className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600"
                         >
                           Remove
@@ -686,7 +699,7 @@ Time: ${new Date().toISOString()}
         </div>
       )}
 
-      {/* Confirmation Dialog */}
+      {/* FIXED: Confirmation Dialog with Better Logic */}
       {showConfirmDialog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
@@ -717,9 +730,17 @@ Time: ${new Date().toISOString()}
               </button>
               <button
                 onClick={() => {
-                  if (showConfirmDialog === 'resetAll') resetAllData();
-                  else if (showConfirmDialog === 'resetProgress') resetStudentProgress();
-                  else if (showConfirmDialog.startsWith('remove_')) handleRemoveStudent(showConfirmDialog.split('_')[1]);
+                  console.log('Confirm dialog action:', showConfirmDialog);
+                  
+                  if (showConfirmDialog === 'resetAll') {
+                    resetAllData();
+                  } else if (showConfirmDialog === 'resetProgress') {
+                    resetStudentProgress();
+                  } else if (showConfirmDialog.startsWith('remove_')) {
+                    const studentId = showConfirmDialog.split('_')[1];
+                    console.log('Removing student with ID:', studentId);
+                    handleRemoveStudent(studentId);
+                  }
                 }}
                 className="flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all"
               >
