@@ -881,59 +881,55 @@ const ClassroomChampions = () => {
             </div>
         </div>
         
-        {/* Navigation Tabs - UPDATED FOR SINGLE-LINE LAYOUT */}
+        {/* Navigation Tabs - UPDATED FOR NO-SCROLL COMPACT LAYOUT */}
         <div className="bg-white shadow-sm border-b">
             <div className="max-w-7xl mx-auto">
-                <div className="flex items-center justify-start overflow-x-auto">
-                  {/* Classroom Champions Section */}
-                  <div className="flex items-center">
-                    <div className="px-4 py-3 border-r border-gray-200">
-                      <h3 className="text-xs font-semibold text-purple-600 uppercase tracking-wider whitespace-nowrap">
-                        🏆 Classroom Champions
-                      </h3>
-                    </div>
-                    <div className="flex">
-                      {CLASSROOM_CHAMPIONS_TABS.map(tab => (
-                          <button 
-                            key={tab.id} 
-                            onClick={() => setActiveTab(tab.id)} 
-                            className={`flex items-center space-x-1 px-3 py-3 whitespace-nowrap transition-all duration-200 text-sm ${
-                              activeTab === tab.id 
-                                ? 'text-purple-600 border-b-2 font-semibold border-purple-600 bg-purple-50' 
-                                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                            }`}
-                          >
-                              <span className="text-base">{tab.icon}</span>
-                              <span className="hidden md:inline">{tab.shortName}</span>
-                          </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Educational Elements Section */}
-                  <div className="flex items-center">
-                    <div className="px-4 py-3 border-r border-gray-200">
-                      <h3 className="text-xs font-semibold text-blue-600 uppercase tracking-wider whitespace-nowrap">
-                        📚 Educational Tools
-                      </h3>
-                    </div>
-                    <div className="flex">
-                      {EDUCATIONAL_ELEMENTS_TABS.map(tab => (
-                          <button 
-                            key={tab.id} 
-                            onClick={() => setActiveTab(tab.id)} 
-                            className={`flex items-center space-x-1 px-3 py-3 whitespace-nowrap transition-all duration-200 text-sm ${
-                              activeTab === tab.id 
-                                ? 'text-blue-600 border-b-2 font-semibold border-blue-600 bg-blue-50' 
-                                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                            }`}
-                          >
-                              <span className="text-base">{tab.icon}</span>
-                              <span className="hidden md:inline">{tab.shortName}</span>
-                          </button>
-                      ))}
-                    </div>
-                  </div>
+                {/* Section Headers - Stacked Above */}
+                <div className="flex items-center justify-center gap-8 px-4 py-2 bg-gray-50 border-b border-gray-200">
+                  <h3 className="text-xs font-semibold text-purple-600 uppercase tracking-wider">
+                    🏆 Classroom Champions
+                  </h3>
+                  <h3 className="text-xs font-semibold text-blue-600 uppercase tracking-wider">
+                    📚 Educational Tools
+                  </h3>
+                </div>
+                
+                {/* All Tabs in Single Compact Row */}
+                <div className="flex justify-center">
+                  {/* Classroom Champions Tabs */}
+                  {CLASSROOM_CHAMPIONS_TABS.map(tab => (
+                      <button 
+                        key={tab.id} 
+                        onClick={() => setActiveTab(tab.id)} 
+                        className={`flex items-center space-x-1 px-2 py-2.5 transition-all duration-200 text-xs ${
+                          activeTab === tab.id 
+                            ? 'text-purple-600 border-b-2 font-semibold border-purple-600 bg-purple-50' 
+                            : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                        }`}
+                      >
+                          <span className="text-sm">{tab.icon}</span>
+                          <span className="hidden sm:inline">{tab.shortName}</span>
+                      </button>
+                  ))}
+                  
+                  {/* Divider */}
+                  <div className="w-px bg-gray-300 mx-2 my-1"></div>
+                  
+                  {/* Educational Tools Tabs */}
+                  {EDUCATIONAL_ELEMENTS_TABS.map(tab => (
+                      <button 
+                        key={tab.id} 
+                        onClick={() => setActiveTab(tab.id)} 
+                        className={`flex items-center space-x-1 px-2 py-2.5 transition-all duration-200 text-xs ${
+                          activeTab === tab.id 
+                            ? 'text-blue-600 border-b-2 font-semibold border-blue-600 bg-blue-50' 
+                            : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                        }`}
+                      >
+                          <span className="text-sm">{tab.icon}</span>
+                          <span className="hidden sm:inline">{tab.shortName}</span>
+                      </button>
+                  ))}
                 </div>
             </div>
         </div>
