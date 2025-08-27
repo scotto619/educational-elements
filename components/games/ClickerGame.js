@@ -1017,14 +1017,23 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     }
   }, [gameState, studentData, updateStudentData, isLoaded, saveInProgress, addToast]);
 
-  // FIXED: Firebase Load Function - Simplified and Robust
+  // FIXED: Firebase Load Function - Handles new students properly
   const loadFromFirebase = useCallback(() => {
-    if (!studentData?.clickerGameData || isLoaded) {
+    if (isLoaded) {
       return;
     }
 
     try {
       console.log('📄 Loading clicker game from Firebase...');
+      
+      // Handle case where student has no existing game data (new student)
+      if (!studentData?.clickerGameData) {
+        console.log('🎮 No existing game data found, starting new game for student');
+        setIsLoaded(true);
+        addToast('New adventure begins! Welcome to Hero Forge!', 'success');
+        return;
+      }
+      
       const data = studentData.clickerGameData;
 
       // Validate and sanitize the loaded data
@@ -1077,10 +1086,13 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     addToast('Game saved!', 'success');
   }, [saveToFirebase, addToast]);
 
-  // FIXED: Load on component mount - Only once
+  // FIXED: Load on component mount - Handles both new and returning students
   useEffect(() => {
     if (studentData && !isLoaded) {
       loadFromFirebase();
+    } else if (!studentData && !isLoaded) {
+      // Handle case where studentData is not available yet
+      console.log('⏳ Waiting for student data...');
     }
   }, [studentData, loadFromFirebase, isLoaded]);
 
