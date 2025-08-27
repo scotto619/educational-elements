@@ -1,4 +1,4 @@
-// pages/classroom-champions.js - UPDATED WITH COMPACT NAVIGATION AND STUDENT PORTAL
+// pages/classroom-champions.js - UPDATED WITH CLASS CODE IN HEADER AND SINGLE-LINE NAVIGATION
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
@@ -16,7 +16,6 @@ import SettingsTab from '../components/tabs/SettingsTab';
 import TeachersToolkitTab from '../components/tabs/TeachersToolkitTab';
 import CurriculumCornerTab from '../components/tabs/CurriculumCornerTab';
 import QuizShowTab from '../components/tabs/QuizShowTab';
-import ClassCodeManager from '../components/ClassCodeManager';
 
 
 // ===============================================
@@ -172,7 +171,7 @@ const goToStudentPortal = () => {
 };
 
 // ===============================================
-// GROUPED NAVIGATION TABS (UPDATED FOR COMPACT LAYOUT)
+// GROUPED NAVIGATION TABS (UPDATED FOR SINGLE-LINE LAYOUT)
 // ===============================================
 const CLASSROOM_CHAMPIONS_TABS = [ 
   { id: 'dashboard', name: 'Dashboard', icon: '🏠', shortName: 'Home' }, 
@@ -361,6 +360,37 @@ const ClassroomChampions = () => {
     } catch (error) {
       console.error("Error updating class code:", error);
       throw error;
+    }
+  };
+
+  // Helper functions for class code management in header
+  const copyClassCode = () => {
+    const currentClass = userData.classes?.find(cls => cls.id === currentClassId);
+    if (currentClass?.classCode) {
+      navigator.clipboard.writeText(currentClass.classCode).then(() => {
+        showToast('Class code copied to clipboard!', 'success');
+      }).catch(() => {
+        showToast('Failed to copy class code', 'error');
+      });
+    }
+  };
+
+  const generateClassCode = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = '';
+    for (let i = 0; i < 6; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  };
+
+  const handleGenerateNewCode = async () => {
+    const newCode = generateClassCode();
+    try {
+      await updateClassCode(newCode);
+      showToast(`New class code generated: ${newCode}`, 'success');
+    } catch (error) {
+      showToast('Error generating class code', 'error');
     }
   };
 
@@ -630,6 +660,9 @@ const ClassroomChampions = () => {
     showToast('Attendance updated!', 'success');
   };
 
+  // Get current class data
+  const currentClassData = getCurrentClassData();
+
   // RENDER LOGIC
   const renderTabContent = () => {
     switch (activeTab) {
@@ -645,8 +678,6 @@ const ClassroomChampions = () => {
                   SHOP_PREMIUM_AVATARS={SHOP_PREMIUM_AVATARS}
                   SHOP_BASIC_PETS={SHOP_BASIC_PETS}
                   SHOP_PREMIUM_PETS={SHOP_PREMIUM_PETS}
-                  // Class data without class code management (moved to settings)
-                  currentClassData={getCurrentClassData()}
                 />;
       case 'students':
         return <StudentsTab 
@@ -792,7 +823,48 @@ const ClassroomChampions = () => {
                     Educational Elements
                   </h1>
                 </div>
-                <div className="flex items-center space-x-3">
+                
+                {/* Class Code and Action Buttons - UPDATED */}
+                <div className="flex items-center space-x-4">
+                  {/* Class Code Display - Always Visible */}
+                  {currentClassData?.classCode && (
+                    <div className="flex items-center space-x-2">
+                      <div className="text-sm text-gray-600 hidden md:block">Class Code:</div>
+                      <div className="bg-green-100 border-2 border-green-300 rounded-lg px-3 py-2">
+                        <span className="text-lg font-bold text-green-700 tracking-wider">
+                          {currentClassData.classCode}
+                        </span>
+                      </div>
+                      <button
+                        onClick={copyClassCode}
+                        className="bg-blue-500 text-white px-2 py-2 rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                        title="Copy class code"
+                      >
+                        📋
+                      </button>
+                      <button
+                        onClick={handleGenerateNewCode}
+                        className="bg-orange-500 text-white px-2 py-2 rounded-lg hover:bg-orange-600 transition-colors text-sm"
+                        title="Generate new code"
+                      >
+                        🔄
+                      </button>
+                    </div>
+                  )}
+                  
+                  {/* No class code set */}
+                  {!currentClassData?.classCode && (
+                    <div className="flex items-center space-x-2">
+                      <div className="text-sm text-orange-600 hidden md:block">No class code</div>
+                      <button
+                        onClick={handleGenerateNewCode}
+                        className="bg-green-500 text-white px-3 py-2 rounded-lg hover:bg-green-600 transition-colors text-sm font-semibold"
+                      >
+                        📱 Generate Code
+                      </button>
+                    </div>
+                  )}
+                  
                   <button 
                     onClick={goToStudentPortal}
                     className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-3 py-2 rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all font-medium shadow-md text-sm"
@@ -809,56 +881,58 @@ const ClassroomChampions = () => {
             </div>
         </div>
         
-        {/* Navigation Tabs - UPDATED FOR COMPACT LAYOUT */}
+        {/* Navigation Tabs - UPDATED FOR SINGLE-LINE LAYOUT */}
         <div className="bg-white shadow-sm border-b">
             <div className="max-w-7xl mx-auto">
-                {/* Classroom Champions Section */}
-                <div className="border-b border-gray-100">
-                  <div className="px-4 py-1">
-                    <h3 className="text-xs font-semibold text-purple-600 uppercase tracking-wider">
-                      🏆 Classroom Champions
-                    </h3>
+                <div className="flex items-center justify-start overflow-x-auto">
+                  {/* Classroom Champions Section */}
+                  <div className="flex items-center">
+                    <div className="px-4 py-3 border-r border-gray-200">
+                      <h3 className="text-xs font-semibold text-purple-600 uppercase tracking-wider whitespace-nowrap">
+                        🏆 Classroom Champions
+                      </h3>
+                    </div>
+                    <div className="flex">
+                      {CLASSROOM_CHAMPIONS_TABS.map(tab => (
+                          <button 
+                            key={tab.id} 
+                            onClick={() => setActiveTab(tab.id)} 
+                            className={`flex items-center space-x-1 px-3 py-3 whitespace-nowrap transition-all duration-200 text-sm ${
+                              activeTab === tab.id 
+                                ? 'text-purple-600 border-b-2 font-semibold border-purple-600 bg-purple-50' 
+                                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                            }`}
+                          >
+                              <span className="text-base">{tab.icon}</span>
+                              <span className="hidden md:inline">{tab.shortName}</span>
+                          </button>
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex">
-                    {CLASSROOM_CHAMPIONS_TABS.map(tab => (
-                        <button 
-                          key={tab.id} 
-                          onClick={() => setActiveTab(tab.id)} 
-                          className={`flex items-center space-x-1 px-3 py-2 whitespace-nowrap transition-all duration-200 text-sm ${
-                            activeTab === tab.id 
-                              ? 'text-purple-600 border-b-2 font-semibold border-purple-600 bg-purple-50' 
-                              : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                          }`}
-                        >
-                            <span className="text-base">{tab.icon}</span>
-                            <span className="hidden md:inline">{tab.shortName}</span>
-                        </button>
-                    ))}
-                  </div>
-                </div>
 
-                {/* Educational Elements Section */}
-                <div>
-                  <div className="px-4 py-1">
-                    <h3 className="text-xs font-semibold text-blue-600 uppercase tracking-wider">
-                      📚 Educational Tools
-                    </h3>
-                  </div>
-                  <div className="flex">
-                    {EDUCATIONAL_ELEMENTS_TABS.map(tab => (
-                        <button 
-                          key={tab.id} 
-                          onClick={() => setActiveTab(tab.id)} 
-                          className={`flex items-center space-x-1 px-3 py-2 whitespace-nowrap transition-all duration-200 text-sm ${
-                            activeTab === tab.id 
-                              ? 'text-blue-600 border-b-2 font-semibold border-blue-600 bg-blue-50' 
-                              : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                          }`}
-                        >
-                            <span className="text-base">{tab.icon}</span>
-                            <span className="hidden md:inline">{tab.shortName}</span>
-                        </button>
-                    ))}
+                  {/* Educational Elements Section */}
+                  <div className="flex items-center">
+                    <div className="px-4 py-3 border-r border-gray-200">
+                      <h3 className="text-xs font-semibold text-blue-600 uppercase tracking-wider whitespace-nowrap">
+                        📚 Educational Tools
+                      </h3>
+                    </div>
+                    <div className="flex">
+                      {EDUCATIONAL_ELEMENTS_TABS.map(tab => (
+                          <button 
+                            key={tab.id} 
+                            onClick={() => setActiveTab(tab.id)} 
+                            className={`flex items-center space-x-1 px-3 py-3 whitespace-nowrap transition-all duration-200 text-sm ${
+                              activeTab === tab.id 
+                                ? 'text-blue-600 border-b-2 font-semibold border-blue-600 bg-blue-50' 
+                                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                            }`}
+                          >
+                              <span className="text-base">{tab.icon}</span>
+                              <span className="hidden md:inline">{tab.shortName}</span>
+                          </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
             </div>

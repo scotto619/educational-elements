@@ -1,6 +1,5 @@
-// components/tabs/DashboardTab.js - Engaging Dashboard Overview with Student Portal Management
+// components/tabs/DashboardTab.js - Updated Dashboard with larger featured champion images and no quick actions
 import React, { useState, useEffect } from 'react';
-import ClassCodeManager from '../ClassCodeManager';
 
 const DashboardTab = ({ 
   students = [], 
@@ -12,10 +11,7 @@ const DashboardTab = ({
   SHOP_BASIC_AVATARS,
   SHOP_PREMIUM_AVATARS,
   SHOP_BASIC_PETS,
-  SHOP_PREMIUM_PETS,
-  // NEW: Props for class code management
-  currentClassData = {},
-  updateClassCode = () => {}
+  SHOP_PREMIUM_PETS
 }) => {
   const [featuredStudent, setFeaturedStudent] = useState(null);
   const [featuredShopItem, setFeaturedShopItem] = useState(null);
@@ -88,13 +84,6 @@ const DashboardTab = ({
           <h2 className="text-2xl font-bold text-gray-800 mb-2">Welcome to Classroom Champions!</h2>
           <p className="text-gray-600">Add some students to get started with your classroom adventure.</p>
         </div>
-
-        {/* Class Code Management - Show even when no students */}
-        <ClassCodeManager 
-          classData={currentClassData}
-          onUpdateClassCode={updateClassCode}
-          showToast={showToast}
-        />
       </div>
     );
   }
@@ -112,19 +101,12 @@ const DashboardTab = ({
         </div>
       </div>
 
-      {/* Class Code Management Section */}
-      <ClassCodeManager 
-        classData={currentClassData}
-        onUpdateClassCode={updateClassCode}
-        showToast={showToast}
-      />
-
       {/* Main Dashboard Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* Featured Student Card */}
+        {/* Featured Student Card - UPDATED WITH MUCH LARGER IMAGES */}
         <div className="lg:col-span-2 bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl p-6 shadow-lg border-2 border-yellow-200">
-          <div className="flex items-center gap-4 mb-4">
+          <div className="flex items-center gap-4 mb-6">
             <div className="text-3xl">⭐</div>
             <h2 className="text-2xl font-bold text-gray-800">Featured Champion</h2>
             <div className="text-sm bg-yellow-200 px-3 py-1 rounded-full text-yellow-800 font-semibold">
@@ -132,45 +114,45 @@ const DashboardTab = ({
             </div>
           </div>
           
-          <div className="flex flex-col md:flex-row items-center gap-6">
-            {/* Student Avatar */}
+          <div className="flex flex-col lg:flex-row items-center gap-8">
+            {/* Student Avatar - MUCH LARGER */}
             <div className="relative">
               <img 
                 src={getAvatarImage(featuredStudent.avatarBase, calculateAvatarLevel(featuredStudent.totalPoints))} 
                 alt={featuredStudent.firstName}
-                className="w-32 h-32 rounded-full border-4 border-yellow-400 shadow-lg"
+                className="w-48 h-48 lg:w-56 lg:h-56 rounded-full border-4 border-yellow-400 shadow-lg"
               />
-              <div className={`absolute -top-2 -right-2 ${getLevelBadgeColor(calculateAvatarLevel(featuredStudent.totalPoints))} text-white text-sm font-bold px-2 py-1 rounded-full shadow-lg`}>
+              <div className={`absolute -top-3 -right-3 ${getLevelBadgeColor(calculateAvatarLevel(featuredStudent.totalPoints))} text-white text-lg font-bold px-4 py-2 rounded-full shadow-lg`}>
                 LVL {calculateAvatarLevel(featuredStudent.totalPoints)}
               </div>
             </div>
 
             {/* Student Info */}
-            <div className="flex-1 text-center md:text-left">
-              <h3 className="text-3xl font-bold text-gray-800 mb-2">{featuredStudent.firstName} {featuredStudent.lastName}</h3>
+            <div className="flex-1 text-center lg:text-left">
+              <h3 className="text-4xl font-bold text-gray-800 mb-4">{featuredStudent.firstName} {featuredStudent.lastName}</h3>
               
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div className="bg-white rounded-lg p-3 shadow-sm">
-                  <div className="text-2xl font-bold text-blue-600">{featuredStudent.totalPoints || 0}</div>
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="bg-white rounded-lg p-4 shadow-sm">
+                  <div className="text-3xl font-bold text-blue-600">{featuredStudent.totalPoints || 0}</div>
                   <div className="text-sm text-gray-600">⚡ Total XP</div>
                 </div>
-                <div className="bg-white rounded-lg p-3 shadow-sm">
-                  <div className="text-2xl font-bold text-yellow-600">{calculateCoins(featuredStudent)}</div>
+                <div className="bg-white rounded-lg p-4 shadow-sm">
+                  <div className="text-3xl font-bold text-yellow-600">{calculateCoins(featuredStudent)}</div>
                   <div className="text-sm text-gray-600">💰 Coins</div>
                 </div>
               </div>
 
-              {/* Featured Student's Pet */}
+              {/* Featured Student's Pet - MUCH LARGER */}
               {featuredStudent.ownedPets && featuredStudent.ownedPets.length > 0 && (
-                <div className="bg-white rounded-lg p-3 shadow-sm">
-                  <div className="flex items-center gap-3">
+                <div className="bg-white rounded-lg p-4 shadow-sm">
+                  <div className="flex flex-col lg:flex-row items-center gap-4">
                     <img 
                       src={getPetImage(featuredStudent.ownedPets[0])} 
                       alt={featuredStudent.ownedPets[0].name}
-                      className="w-12 h-12 rounded-full border-2 border-purple-300"
+                      className="w-24 h-24 lg:w-32 lg:h-32 rounded-full border-3 border-purple-300 shadow-md"
                     />
-                    <div>
-                      <div className="font-semibold text-gray-800">Companion: {featuredStudent.ownedPets[0].name}</div>
+                    <div className="text-center lg:text-left">
+                      <div className="text-xl font-bold text-gray-800">Companion: {featuredStudent.ownedPets[0].name}</div>
                       <div className="text-sm text-gray-600">🐾 Faithful Friend</div>
                     </div>
                   </div>
@@ -224,7 +206,7 @@ const DashboardTab = ({
         </div>
       </div>
 
-      {/* Featured Shop Item and Quick Actions */}
+      {/* Featured Shop Item */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         
         {/* Featured Shop Item */}
@@ -256,44 +238,27 @@ const DashboardTab = ({
           </div>
         )}
 
-        {/* Quick Actions */}
+        {/* Class Achievement Highlights */}
         <div className="bg-white rounded-xl p-6 shadow-lg">
           <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-            ⚡ Quick Actions
+            🌟 Class Highlights
           </h2>
           
-          <div className="grid grid-cols-2 gap-3">
-            <button 
-              onClick={() => showToast('Navigate to Students tab to award XP!', 'info')}
-              className="bg-gradient-to-r from-green-500 to-green-600 text-white p-3 rounded-lg text-sm font-semibold hover:shadow-lg transition-all"
-            >
-              <div className="text-xl mb-1">⚡</div>
-              Award XP
-            </button>
+          <div className="space-y-3">
+            <div className="p-3 bg-blue-50 rounded-lg">
+              <div className="text-sm text-gray-600">Most Active Champion</div>
+              <div className="font-bold text-blue-600">{classStats.topStudent?.firstName || 'None'}</div>
+            </div>
             
-            <button 
-              onClick={() => showToast('Navigate to Shop tab to browse items!', 'info')}
-              className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-3 rounded-lg text-sm font-semibold hover:shadow-lg transition-all"
-            >
-              <div className="text-xl mb-1">🛒</div>
-              Open Shop
-            </button>
+            <div className="p-3 bg-green-50 rounded-lg">
+              <div className="text-sm text-gray-600">Class Total XP</div>
+              <div className="font-bold text-green-600">{classStats.totalXP || 0}</div>
+            </div>
             
-            <button 
-              onClick={() => showToast('Navigate to Pet Race tab for class fun!', 'info')}
-              className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-3 rounded-lg text-sm font-semibold hover:shadow-lg transition-all"
-            >
-              <div className="text-xl mb-1">🏇</div>
-              Pet Race
-            </button>
-            
-            <button 
-              onClick={() => showToast('Navigate to Games tab for activities!', 'info')}
-              className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-3 rounded-lg text-sm font-semibold hover:shadow-lg transition-all"
-            >
-              <div className="text-xl mb-1">🎮</div>
-              Games
-            </button>
+            <div className="p-3 bg-purple-50 rounded-lg">
+              <div className="text-sm text-gray-600">Champions with Pets</div>
+              <div className="font-bold text-purple-600">{classStats.studentsWithPets || 0} / {classStats.totalStudents || 0}</div>
+            </div>
           </div>
         </div>
       </div>
