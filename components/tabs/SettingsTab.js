@@ -1,4 +1,4 @@
-// components/tabs/SettingsTab.js - Fixed Settings with Working Remove Student Functionality
+// components/tabs/SettingsTab.js - FIXED Student Removal Issue
 import React, { useState } from 'react';
 
 const SettingsTab = ({ 
@@ -79,13 +79,13 @@ const SettingsTab = ({
     showToast(`${newStudent.firstName} added to class!`, 'success');
   };
 
-  // FIXED: Properly handle student removal with correct state updates
+  // FIXED: Properly handle student removal with correct ID extraction
   const handleRemoveStudent = (studentId) => {
     console.log('Removing student:', studentId);
     
     const student = students.find(s => s.id === studentId);
     if (!student) {
-      console.log('Student not found');
+      console.log('Student not found. Available student IDs:', students.map(s => s.id));
       showToast('Student not found', 'error');
       return;
     }
@@ -699,7 +699,7 @@ Time: ${new Date().toISOString()}
         </div>
       )}
 
-      {/* FIXED: Confirmation Dialog with Better Logic */}
+      {/* FIXED: Confirmation Dialog with Proper Student ID Extraction */}
       {showConfirmDialog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
@@ -714,7 +714,7 @@ Time: ${new Date().toISOString()}
                   : showConfirmDialog === 'resetProgress'
                   ? 'Are you sure you want to reset all student progress? This will reset XP, coins, quests, purchases, pets, AND avatars back to default (Wizard F). Only student names will be kept.'
                   : showConfirmDialog.startsWith('remove_')
-                  ? `Are you sure you want to remove ${students.find(s => s.id === showConfirmDialog.split('_')[1])?.firstName} from the class? This cannot be undone.`
+                  ? `Are you sure you want to remove ${students.find(s => s.id === showConfirmDialog.slice(7))?.firstName} from the class? This cannot be undone.`
                   : 'Are you sure you want to continue?'
                 }
               </p>
@@ -737,7 +737,8 @@ Time: ${new Date().toISOString()}
                   } else if (showConfirmDialog === 'resetProgress') {
                     resetStudentProgress();
                   } else if (showConfirmDialog.startsWith('remove_')) {
-                    const studentId = showConfirmDialog.split('_')[1];
+                    // FIXED: Use slice(7) to get everything after "remove_"
+                    const studentId = showConfirmDialog.slice(7);
                     console.log('Removing student with ID:', studentId);
                     handleRemoveStudent(studentId);
                   }
@@ -826,7 +827,7 @@ Time: ${new Date().toISOString()}
                 📤 Send Feedback
               </button>
             </div>
-          </div>
+            </div>
         </div>
       )}
     </div>
