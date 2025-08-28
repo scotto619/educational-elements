@@ -352,6 +352,7 @@ const FluencyPractice = ({
   const [selectedTextType, setSelectedTextType] = useState(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showStudentAssignment, setShowStudentAssignment] = useState(false);
+  const [displayingText, setDisplayingText] = useState(null);
 
   // Initialize groups if empty
   useEffect(() => {
@@ -816,12 +817,20 @@ const FluencyPractice = ({
                       <p className="text-blue-600 italic">{viewingText.passage.level} - {viewingText.type}</p>
                       <p className="text-gray-600">{viewingText.wordCount} words | {viewingText.passage.spellingFocus}</p>
                     </div>
-                    <button
-                      onClick={() => setViewingText(null)}
-                      className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
-                    >
-                      ← Back
-                    </button>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => setDisplayingText(`${viewingText.passage.id}-${viewingText.type}`)}
+                        className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 flex items-center gap-2"
+                      >
+                        📺 Display to Class
+                      </button>
+                      <button
+                        onClick={() => setViewingText(null)}
+                        className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
+                      >
+                        ← Back
+                      </button>
+                    </div>
                   </div>
                   <div className="bg-gray-50 rounded-xl p-6">
                     <div className="text-lg leading-relaxed text-gray-800 whitespace-pre-wrap font-serif">
@@ -1009,12 +1018,23 @@ const FluencyPractice = ({
                           <span className={`font-medium text-blue-800 ${groups.length >= 4 ? 'text-xs' : 'text-sm'}`}>
                             {text.title}
                           </span>
-                          <button
-                            onClick={() => assignTextsToGroup(group.id, group.assignedTexts.filter(id => id !== textId))}
-                            className="text-red-500 hover:text-red-700 text-xs"
-                          >
-                            ×
-                          </button>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => setDisplayingText(textId)}
+                              className={`bg-green-500 text-white rounded hover:bg-green-600 ${
+                                groups.length >= 4 ? 'text-xs px-1 py-1' : 'text-xs px-2 py-1'
+                              }`}
+                              title="Display to class"
+                            >
+                              📺
+                            </button>
+                            <button
+                              onClick={() => assignTextsToGroup(group.id, group.assignedTexts.filter(id => id !== textId))}
+                              className="text-red-500 hover:text-red-700 text-xs"
+                            >
+                              ×
+                            </button>
+                          </div>
                         </div>
                         <div className="flex items-center gap-1 mt-1">
                           <span className="text-sm">{typeConfig?.icon}</span>
