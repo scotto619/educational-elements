@@ -316,52 +316,24 @@ const TEXT_TYPES = [
 ];
 
 // ===============================================
-// READING ACTIVITIES & STRATEGIES
+// READING ACTIVITIES & STRATEGIES - REMOVED PER USER REQUEST
 // ===============================================
-const READING_ACTIVITIES = [
-  {
-    id: "partner_reading",
-    name: "Partner Reading",
-    icon: "👫",
-    color: "bg-blue-500",
-    instructions: "1. Students sit side by side with one copy of the text\n2. Decide who reads first (take turns)\n3. Read one sentence each, back and forth\n4. Help your partner with difficult words\n5. Discuss what you read together\n6. Switch roles and read the text again\n\nPartner reading builds confidence and fluency through peer support."
-  },
-  {
-    id: "modelled_reading",
-    name: "Modelled Reading",
-    icon: "🎯",
-    color: "bg-green-500",
-    instructions: "1. Teacher reads the text aloud first\n2. Students follow along silently\n3. Teacher demonstrates expression and pace\n4. Pause to discuss vocabulary or concepts\n5. Read the text again together as a class\n6. Students practice reading independently\n\nModelled reading shows students how fluent reading sounds."
-  },
-  {
-    id: "echo_reading",
-    name: "Echo Reading",
-    icon: "🔄",
-    color: "bg-purple-500",
-    instructions: "1. Teacher reads a sentence with expression\n2. Students immediately repeat (echo) the same sentence\n3. Match the teacher's pace and expression\n4. Continue sentence by sentence through the text\n5. Focus on smooth, fluent reading\n6. Repeat difficult sections as needed\n\nEcho reading helps students learn proper phrasing and expression."
-  },
-  {
-    id: "choral_reading",
-    name: "Choral Reading",
-    icon: "🎵",
-    color: "bg-red-500",
-    instructions: "1. Entire class reads the text together\n2. Teacher leads with clear pace and expression\n3. All voices blend together in unison\n4. Focus on matching pace and rhythm\n5. Practice tricky words before starting\n6. Read the text multiple times for fluency\n\nChoral reading builds confidence in reluctant readers."
-  },
-  {
-    id: "repeated_reading",
-    name: "Repeated Reading",
-    icon: "🔁",
-    color: "bg-indigo-500",
-    instructions: "1. Students read the same text multiple times\n2. First reading: Focus on accuracy\n3. Second reading: Work on pace\n4. Third reading: Add expression and smoothness\n5. Time each reading to track improvement\n6. Set goals for fewer mistakes and better pace\n\nRepeated reading dramatically improves fluency and confidence."
-  },
-  {
-    id: "guided_reading",
-    name: "Guided Reading",
-    icon: "👨‍🏫",
-    color: "bg-cyan-500",
-    instructions: "1. Small group reads with teacher guidance\n2. Preview vocabulary before reading\n3. Set a purpose for reading\n4. Stop to discuss and check understanding\n5. Teacher provides immediate feedback\n6. Focus on both fluency and comprehension\n\nGuided reading provides targeted support for developing readers."
-  }
-];
+// const READING_ACTIVITIES = [
+//   {
+//     id: "partner_reading",
+//     name: "Partner Reading",
+//     icon: "👫",
+//     color: "bg-blue-500",
+//     instructions: "1. Students sit side by side with one copy of the text\n2. Decide who reads first (take turns)\n3. Read one sentence each, back and forth\n4. Help your partner with difficult words\n5. Discuss what you read together\n6. Switch roles and read the text again\n\nPartner reading builds confidence and fluency through peer support."
+//   },
+//   {
+//     id: "modelled_reading",
+//     name: "Modelled Reading", 
+//     icon: "🎯",
+//     color: "bg-green-500",
+//     instructions: "1. Teacher reads the text aloud first\n2. Students follow along silently\n3. Teacher demonstrates expression and pace\n4. Pause to discuss vocabulary or concepts\n5. Read the text again together as a class\n6. Students practice reading independently\n\nModelled reading shows students how fluent reading sounds."
+//   }
+// ];
 
 // ===============================================
 // MAIN FLUENCY PRACTICE COMPONENT
@@ -379,7 +351,6 @@ const FluencyPractice = ({
   const [selectedLevel, setSelectedLevel] = useState(null);
   const [selectedTextType, setSelectedTextType] = useState(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [showActivityInstructions, setShowActivityInstructions] = useState(null);
   const [showStudentAssignment, setShowStudentAssignment] = useState(false);
 
   // Initialize groups if empty
@@ -390,9 +361,9 @@ const FluencyPractice = ({
       console.log('📚 Loaded fluency groups from Firebase:', loadedData.fluencyGroups);
     } else if (loadedData !== undefined && groups.length === 0) {
       const defaultGroups = [
-        { id: 1, name: "Group 1", color: "bg-blue-500", students: [], assignedTexts: [], assignedActivity: null },
-        { id: 2, name: "Group 2", color: "bg-green-500", students: [], assignedTexts: [], assignedActivity: null },
-        { id: 3, name: "Group 3", color: "bg-purple-500", students: [], assignedTexts: [], assignedActivity: null }
+        { id: 1, name: "Group 1", color: "bg-blue-500", students: [], assignedTexts: [] },
+        { id: 2, name: "Group 2", color: "bg-green-500", students: [], assignedTexts: [] },
+        { id: 3, name: "Group 3", color: "bg-purple-500", students: [], assignedTexts: [] }
       ];
       setGroups(defaultGroups);
       setHasUnsavedChanges(true);
@@ -484,8 +455,7 @@ const FluencyPractice = ({
       name: `Group ${groups.length + 1}`,
       color: colors[groups.length % colors.length],
       students: [],
-      assignedTexts: [],
-      assignedActivity: null
+      assignedTexts: []
     };
     updateGroups([...groups, newGroup]);
   };
@@ -513,12 +483,6 @@ const FluencyPractice = ({
   const assignTextsToGroup = (groupId, textIds) => {
     updateGroups(groups.map(g => 
       g.id === groupId ? { ...g, assignedTexts: textIds } : g
-    ));
-  };
-
-  const assignActivityToGroup = (groupId, activityId) => {
-    updateGroups(groups.map(g => 
-      g.id === groupId ? { ...g, assignedActivity: activityId } : g
     ));
   };
 
@@ -710,54 +674,11 @@ const FluencyPractice = ({
         }`}>
           {activeGroups.length > 3 ? (
             <div className="grid grid-cols-4 gap-4">
-              {activeGroups.map(group => {
-                const assignedActivity = READING_ACTIVITIES.find(a => a.id === group.assignedActivity);
-                return (
-                  <div key={group.id} className="bg-white rounded-xl shadow-lg p-4">
-                    <div className={`${group.color} text-white text-center py-3 rounded-lg mb-4`}>
-                      <h2 className="text-xl font-bold">{group.name}</h2>
-                      <p className="text-sm opacity-90">{group.students.length} students</p>
-                    </div>
-
-                    {group.assignedTexts.map(textId => {
-                      const [levelId, textType] = textId.split('-');
-                      const passage = READING_PASSAGES.find(p => p.id === levelId);
-                      const text = passage?.texts.find(t => t.type === textType);
-                      if (!text || !passage) return null;
-
-                      return (
-                        <div key={textId} className="mb-4 text-xs">
-                          <h3 className="font-bold text-center mb-2 text-gray-800">{text.title}</h3>
-                          <p className="text-center mb-2 text-blue-600 italic">{passage.level}</p>
-                          <div className="bg-gray-50 p-2 rounded text-gray-700 max-h-24 overflow-hidden">
-                            {text.content.substring(0, 120)}...
-                          </div>
-                        </div>
-                      );
-                    })}
-
-                    {assignedActivity && (
-                      <div className={`${assignedActivity.color} text-white p-3 rounded-lg mt-4 cursor-pointer hover:opacity-90 transition-opacity`}
-                           onClick={() => setShowActivityInstructions(assignedActivity)}>
-                        <div className="text-center">
-                          <div className="text-2xl mb-2">{assignedActivity.icon}</div>
-                          <h3 className="text-sm font-bold">{assignedActivity.name}</h3>
-                          <p className="text-xs opacity-80">Click for instructions</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            activeGroups.map(group => {
-              const assignedActivity = READING_ACTIVITIES.find(a => a.id === group.assignedActivity);
-              return (
-                <div key={group.id} className="bg-white rounded-2xl shadow-2xl p-8">
-                  <div className={`${group.color} text-white text-center py-6 rounded-xl mb-6`}>
-                    <h2 className="text-4xl font-bold">{group.name}</h2>
-                    <p className="text-2xl opacity-90">{group.students.length} students</p>
+              {activeGroups.map(group => (
+                <div key={group.id} className="bg-white rounded-xl shadow-lg p-4">
+                  <div className={`${group.color} text-white text-center py-3 rounded-lg mb-4`}>
+                    <h2 className="text-xl font-bold">{group.name}</h2>
+                    <p className="text-sm opacity-90">{group.students.length} students</p>
                   </div>
 
                   {group.assignedTexts.map(textId => {
@@ -767,32 +688,49 @@ const FluencyPractice = ({
                     if (!text || !passage) return null;
 
                     return (
-                      <div key={textId} className="mb-6">
-                        <h3 className="text-3xl font-bold text-center mb-2 text-gray-800">{text.title}</h3>
-                        <p className="text-lg text-center mb-4 text-blue-600 italic">{passage.level} - {text.type}</p>
-                        <div className="bg-gray-100 border-2 border-gray-300 rounded-lg p-6">
-                          <div className="text-lg leading-relaxed text-gray-800 whitespace-pre-wrap">
-                            {text.content}
-                          </div>
-                        </div>
-                        <div className="mt-3 text-center text-sm text-gray-600">
-                          <strong>Focus Words:</strong> {passage.targetWords.join(', ')}
+                      <div key={textId} className="mb-4 text-xs">
+                        <h3 className="font-bold text-center mb-2 text-gray-800">{text.title}</h3>
+                        <p className="text-center mb-2 text-blue-600 italic">{passage.level}</p>
+                        <div className="bg-gray-50 p-2 rounded text-gray-700 max-h-24 overflow-hidden">
+                          {text.content.substring(0, 120)}...
                         </div>
                       </div>
                     );
                   })}
+                </div>
+              ))}
+            </div>
+          ) : (
+            activeGroups.map(group => (
+              <div key={group.id} className="bg-white rounded-2xl shadow-2xl p-8">
+                <div className={`${group.color} text-white text-center py-6 rounded-xl mb-6`}>
+                  <h2 className="text-4xl font-bold">{group.name}</h2>
+                  <p className="text-2xl opacity-90">{group.students.length} students</p>
+                </div>
 
-                  {assignedActivity && (
-                    <div className={`${assignedActivity.color} text-white p-6 rounded-xl mt-6`}>
-                      <div className="text-center">
-                        <div className="text-6xl mb-4">{assignedActivity.icon}</div>
-                        <h3 className="text-3xl font-bold">{assignedActivity.name}</h3>
+                {group.assignedTexts.map(textId => {
+                  const [levelId, textType] = textId.split('-');
+                  const passage = READING_PASSAGES.find(p => p.id === levelId);
+                  const text = passage?.texts.find(t => t.type === textType);
+                  if (!text || !passage) return null;
+
+                  return (
+                    <div key={textId} className="mb-6">
+                      <h3 className="text-3xl font-bold text-center mb-2 text-gray-800">{text.title}</h3>
+                      <p className="text-lg text-center mb-4 text-blue-600 italic">{passage.level} - {text.type}</p>
+                      <div className="bg-gray-100 border-2 border-gray-300 rounded-lg p-6">
+                        <div className="text-lg leading-relaxed text-gray-800 whitespace-pre-wrap">
+                          {text.content}
+                        </div>
+                      </div>
+                      <div className="mt-3 text-center text-sm text-gray-600">
+                        <strong>Focus Words:</strong> {passage.targetWords.join(', ')}
                       </div>
                     </div>
-                  )}
-                </div>
-              );
-            })
+                  );
+                })}
+              </div>
+            ))
           )}
         </div>
       </div>
@@ -845,28 +783,6 @@ const FluencyPractice = ({
               🎭 Presentation Mode
             </button>
           </div>
-        </div>
-      </div>
-
-      {/* Available Levels Display */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <h3 className="text-xl font-bold text-slate-800 mb-4">📊 Available Reading Levels</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {READING_PASSAGES.map(passage => (
-            <div key={passage.id} className="text-center p-4 bg-slate-50 rounded-lg border hover:border-blue-300 transition-colors">
-              <div className="text-2xl mb-2">📚</div>
-              <div className="text-sm font-semibold text-slate-800">{passage.level}</div>
-              <div className="text-xs text-slate-600 mt-1">
-                {passage.texts.length} texts available
-              </div>
-              <div className="text-xs text-blue-600 mt-1 italic">
-                {passage.spellingFocus}
-              </div>
-              <div className="w-full bg-slate-200 rounded-full h-2 mt-2">
-                <div className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 w-full"></div>
-              </div>
-            </div>
-          ))}
         </div>
       </div>
 
@@ -1133,50 +1049,6 @@ const FluencyPractice = ({
                   ))}
                 </select>
               </div>
-
-              {/* Assigned Activity */}
-              <div>
-                <h4 className={`font-bold text-gray-700 mb-2 ${groups.length >= 4 ? 'text-sm' : 'text-base'}`}>
-                  Reading Strategy:
-                </h4>
-                {group.assignedActivity ? (
-                  <div 
-                    className="flex items-center justify-between bg-green-50 border border-green-200 rounded p-2 cursor-pointer hover:bg-green-100 transition-colors"
-                    onClick={() => setShowActivityInstructions(READING_ACTIVITIES.find(a => a.id === group.assignedActivity))}
-                  >
-                    <div className="flex items-center">
-                      <span className={`mr-2 ${groups.length >= 4 ? 'text-lg' : 'text-xl'}`}>
-                        {READING_ACTIVITIES.find(a => a.id === group.assignedActivity)?.icon}
-                      </span>
-                      <span className={`font-medium text-green-800 ${groups.length >= 4 ? 'text-xs' : 'text-sm'}`}>
-                        {READING_ACTIVITIES.find(a => a.id === group.assignedActivity)?.name}
-                      </span>
-                    </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        assignActivityToGroup(group.id, null);
-                      }}
-                      className="text-red-500 hover:text-red-700 text-sm"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ) : (
-                  <select
-                    onChange={(e) => e.target.value && assignActivityToGroup(group.id, e.target.value)}
-                    className={`w-full border border-gray-300 rounded p-1 ${groups.length >= 4 ? 'text-xs' : 'text-sm'}`}
-                    defaultValue=""
-                  >
-                    <option value="">Select strategy...</option>
-                    {READING_ACTIVITIES.map(activity => (
-                      <option key={activity.id} value={activity.id}>
-                        {activity.icon} {activity.name}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </div>
             </div>
           </div>
         ))}
@@ -1273,42 +1145,8 @@ const FluencyPractice = ({
         </div>
       )}
 
-      {/* Activity Instructions Modal */}
-      {showActivityInstructions && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-            <div className={`${showActivityInstructions.color} text-white p-6 rounded-t-xl`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <span className="text-4xl mr-4">{showActivityInstructions.icon}</span>
-                  <h2 className="text-2xl font-bold">{showActivityInstructions.name}</h2>
-                </div>
-                <button
-                  onClick={() => setShowActivityInstructions(null)}
-                  className="text-white hover:text-gray-200 text-2xl"
-                >
-                  ×
-                </button>
-              </div>
-            </div>
-            <div className="p-6">
-              <h3 className="text-lg font-bold mb-4">📋 Instructions for Students:</h3>
-              <div className="bg-gray-50 rounded-lg p-4">
-                <pre className="whitespace-pre-wrap text-gray-800 leading-relaxed font-sans">
-                  {showActivityInstructions.instructions}
-                </pre>
-              </div>
-              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                <p className="text-sm text-blue-800">
-                  💡 <strong>Teacher Tip:</strong> You can display these instructions to the class or print them out for reference during reading time.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Instructions for Adding New Texts */}
+      {/* Instructions for Adding New Texts - COMMENTED OUT FOR DEVELOPERS */}
+      {/* 
       <div className="bg-green-50 border border-green-200 rounded-xl p-6">
         <h3 className="text-xl font-bold text-green-800 mb-4">📝 Adding New Reading Passages</h3>
         <div className="text-sm text-green-700 space-y-2">
@@ -1351,6 +1189,7 @@ const FluencyPractice = ({
           <p><strong>Focus:</strong> Include target spelling words naturally throughout each text</p>
         </div>
       </div>
+      */}
     </div>
   );
 };
