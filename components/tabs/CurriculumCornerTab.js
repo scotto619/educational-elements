@@ -1,4 +1,4 @@
-// components/tabs/CurriculumCornerTab.js - UPDATED VERSION WITH YEAR LEVEL SELECTION
+// components/tabs/CurriculumCornerTab.js - UPDATED WITH FLUENCY PRACTICE
 import React, { useState } from 'react';
 
 // Import activity components
@@ -7,6 +7,7 @@ import PrepLiteracyWarmup from '../curriculum/literacy/PrepLiteracyWarmUp';
 import ReadingComprehension from '../curriculum/literacy/ReadingComprehension';
 import VisualWritingPrompts from '../curriculum/literacy/VisualWritingPrompts';
 import SpellingProgram from '../curriculum/literacy/SpellingProgram';
+import FluencyPractice from '../curriculum/literacy/FluencyPractice'; // NEW IMPORT
 import AreaPerimeterTool from '../curriculum/mathematics/AreaPerimeterTool';
 import MathWarmup from '../curriculum/mathematics/MathWarmup';
 import WorksheetGenerator from '../curriculum/mathematics/WorksheetGenerator';
@@ -28,7 +29,7 @@ const ComingSoon = ({ toolName, description }) => (
 );
 
 // ===============================================
-// SUBJECT CONFIGURATION
+// SUBJECT CONFIGURATION - UPDATED WITH FLUENCY PRACTICE
 // ===============================================
 const subjects = [
   {
@@ -66,6 +67,13 @@ const subjects = [
         icon: '🔤',
         description: 'Structured spelling lists with activities and assessments',
         component: SpellingProgram
+      },
+      {
+        id: 'fluency-practice', // NEW ACTIVITY ADDED HERE
+        name: 'Fluency Practice',
+        icon: '📖',
+        description: 'Reading passages for fluency development and practice',
+        component: FluencyPractice
       },
       {
         id: 'reading-comprehension',
@@ -299,7 +307,7 @@ const subjects = [
 ];
 
 // ===============================================
-// MAIN CURRICULUM CORNER COMPONENT
+// MAIN CURRICULUM CORNER COMPONENT - UPDATED TO SUPPORT FLUENCY PRACTICE
 // ===============================================
 const CurriculumCornerTab = ({ 
   students = [], 
@@ -356,7 +364,8 @@ const CurriculumCornerTab = ({
     // Add Firebase save/load props for specific activities that need them
     if (activeActivity.id === 'literacy-warmup' || 
         activeActivity.id === 'math-warmup' || 
-        activeActivity.id === 'spelling-program') {
+        activeActivity.id === 'spelling-program' ||
+        activeActivity.id === 'fluency-practice') { // ADDED FLUENCY PRACTICE HERE
       activityProps.saveData = saveData;
       activityProps.loadedData = loadedData;
     }
