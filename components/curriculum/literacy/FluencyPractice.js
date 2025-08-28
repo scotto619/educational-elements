@@ -244,8 +244,6 @@ const READING_PASSAGES = [
     ]
   },
 
-  // LEVEL 1.2 - CVC Practice (CVC patterns with p, t, n) - Already added above
-
   // LEVEL 4.2 - Silent Letters (Silent letters in doubt, write, thumb)
   {
     id: "4.2",
@@ -314,26 +312,6 @@ const TEXT_TYPES = [
     description: "Poems, rhymes, and verse" 
   }
 ];
-
-// ===============================================
-// READING ACTIVITIES & STRATEGIES - REMOVED PER USER REQUEST
-// ===============================================
-// const READING_ACTIVITIES = [
-//   {
-//     id: "partner_reading",
-//     name: "Partner Reading",
-//     icon: "👫",
-//     color: "bg-blue-500",
-//     instructions: "1. Students sit side by side with one copy of the text\n2. Decide who reads first (take turns)\n3. Read one sentence each, back and forth\n4. Help your partner with difficult words\n5. Discuss what you read together\n6. Switch roles and read the text again\n\nPartner reading builds confidence and fluency through peer support."
-//   },
-//   {
-//     id: "modelled_reading",
-//     name: "Modelled Reading", 
-//     icon: "🎯",
-//     color: "bg-green-500",
-//     instructions: "1. Teacher reads the text aloud first\n2. Students follow along silently\n3. Teacher demonstrates expression and pace\n4. Pause to discuss vocabulary or concepts\n5. Read the text again together as a class\n6. Students practice reading independently\n\nModelled reading shows students how fluent reading sounds."
-//   }
-// ];
 
 // ===============================================
 // MAIN FLUENCY PRACTICE COMPONENT
@@ -653,6 +631,22 @@ const FluencyPractice = ({
     return texts;
   };
 
+  // Get text for display
+  const getDisplayText = () => {
+    if (!displayingText) return null;
+    
+    const [levelId, textType] = displayingText.split('-');
+    const passage = READING_PASSAGES.find(p => p.id === levelId);
+    if (!passage) return null;
+    
+    const text = passage.texts.find(t => t.type === textType);
+    if (!text) return null;
+    
+    return { text, passage };
+  };
+
+  const displayText = getDisplayText();
+
   if (isPresentationMode) {
     const activeGroups = groups.filter(g => g.assignedTexts.length > 0);
     
@@ -786,6 +780,61 @@ const FluencyPractice = ({
           </div>
         </div>
       </div>
+
+      {/* Text Display Modal */}
+      {displayText && (
+        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-6 rounded-t-xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-3xl font-bold">{displayText.text.title}</h2>
+                  <p className="text-xl opacity-90">{displayText.passage.level} - {displayText.text.type.charAt(0).toUpperCase() + displayText.text.type.slice(1)}</p>
+                  <p className="text-lg opacity-80">{displayText.text.wordCount} words | {displayText.passage.spellingFocus}</p>
+                </div>
+                <button
+                  onClick={() => setDisplayingText(null)}
+                  className="text-white hover:text-red-200 text-4xl font-bold"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-8">
+              <div className="bg-gray-50 border-2 border-gray-200 rounded-xl p-8 mb-6">
+                <div className="text-2xl leading-relaxed text-gray-800 whitespace-pre-wrap font-serif text-center">
+                  {displayText.text.content}
+                </div>
+              </div>
+
+              {/* Target Words */}
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
+                <h3 className="text-xl font-bold text-blue-800 mb-3 text-center">Focus Words</h3>
+                <div className="flex flex-wrap justify-center gap-3">
+                  {displayText.passage.targetWords.map(word => (
+                    <span key={word} className="bg-blue-500 text-white px-4 py-2 rounded-lg text-lg font-semibold">
+                      {word}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="bg-gray-50 p-4 rounded-b-xl text-center">
+              <button
+                onClick={() => setDisplayingText(null)}
+                className="bg-gray-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-gray-700"
+              >
+                Close Display
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Text Browser Modal */}
       {showTextBrowser && (
@@ -1164,52 +1213,6 @@ const FluencyPractice = ({
           </div>
         </div>
       )}
-
-      {/* Instructions for Adding New Texts - COMMENTED OUT FOR DEVELOPERS */}
-      {/* 
-      <div className="bg-green-50 border border-green-200 rounded-xl p-6">
-        <h3 className="text-xl font-bold text-green-800 mb-4">📝 Adding New Reading Passages</h3>
-        <div className="text-sm text-green-700 space-y-2">
-          <p><strong>To add new texts:</strong> Copy the structure below and paste it into the READING_PASSAGES array.</p>
-          <div className="bg-white border border-green-300 rounded p-4 text-xs font-mono overflow-x-auto">
-            <pre>{`{
-  id: "X.X", // Match spelling level (e.g., "1.2", "2.5", "3.10", "4.25")
-  level: "Level X.X - [Name]", // Copy from spelling program
-  spellingFocus: "[Description]", // Copy from spelling program
-  targetWords: ["word1", "word2", "word3"], // Copy from spelling program
-  texts: [
-    {
-      type: "narrative",
-      title: "Your Story Title",
-      wordCount: 120, // Count actual words
-      content: \`Your story content here...\`
-    },
-    {
-      type: "informational", 
-      title: "Your Info Text Title",
-      wordCount: 135,
-      content: \`Your informational text here...\`
-    },
-    {
-      type: "persuasive",
-      title: "Your Persuasive Title", 
-      wordCount: 140,
-      content: \`Your persuasive text here...\`
-    },
-    {
-      type: "poetry",
-      title: "Your Poem Title",
-      wordCount: 95,
-      content: \`Your poem here...\\nUse \\\\n for line breaks\`
-    }
-  ]
-},`}</pre>
-          </div>
-          <p><strong>Word Count Guidelines:</strong> Level 1: 50-150 words | Levels 2-4: 100-200 words</p>
-          <p><strong>Focus:</strong> Include target spelling words naturally throughout each text</p>
-        </div>
-      </div>
-      */}
     </div>
   );
 };
