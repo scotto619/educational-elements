@@ -1,4 +1,4 @@
-// components/tabs/SettingsTab.js - FIXED Student Removal Issue
+// components/tabs/SettingsTab.js - UPDATED WITH WIDGET CONTROLS AND UNSUBSCRIBE
 import React, { useState } from 'react';
 
 const SettingsTab = ({ 
@@ -15,13 +15,17 @@ const SettingsTab = ({
   // Class code management props
   currentClassData = {},
   updateClassCode,
-  xpCategories = []
+  xpCategories = [],
+  // NEW: Widget settings props
+  widgetSettings = { showTimer: true, showNamePicker: true },
+  onUpdateWidgetSettings
 }) => {
   const [activeSection, setActiveSection] = useState('students');
   const [showConfirmDialog, setShowConfirmDialog] = useState(null);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [showClassCodeModal, setShowClassCodeModal] = useState(false);
+  const [showUnsubscribeModal, setShowUnsubscribeModal] = useState(false);
   
   // Form states
   const [newStudentForm, setNewStudentForm] = useState({
@@ -45,6 +49,24 @@ const SettingsTab = ({
     message: '',
     email: user?.email || ''
   });
+
+  // ===============================================
+  // WIDGET SETTINGS MANAGEMENT
+  // ===============================================
+
+  const handleWidgetToggle = async (widgetName, enabled) => {
+    const newSettings = {
+      ...widgetSettings,
+      [widgetName]: enabled
+    };
+    
+    try {
+      await onUpdateWidgetSettings(newSettings);
+      showToast(`${widgetName === 'showTimer' ? 'Timer' : 'Name Picker'} widget ${enabled ? 'enabled' : 'disabled'}`, 'success');
+    } catch (error) {
+      showToast('Error updating widget settings', 'error');
+    }
+  };
 
   // ===============================================
   // STUDENT MANAGEMENT FUNCTIONS - FIXED
@@ -229,6 +251,32 @@ const SettingsTab = ({
   };
 
   // ===============================================
+  // UNSUBSCRIBE FUNCTIONALITY
+  // ===============================================
+
+  const handleUnsubscribe = () => {
+    // Open email client with unsubscribe request
+    const emailBody = `
+Please unsubscribe my account from Educational Elements.
+
+Account Details:
+Email: ${user?.email || 'Unknown'}
+User ID: ${user?.uid || 'Unknown'}
+Date: ${new Date().toISOString()}
+
+Reason for unsubscribing (optional): 
+
+Thank you.
+    `.trim();
+
+    const mailtoLink = `mailto:admin@educational-elements.com?subject=Unsubscribe Request&body=${encodeURIComponent(emailBody)}`;
+    window.location.href = mailtoLink;
+    
+    setShowUnsubscribeModal(false);
+    showToast('Email opened to process unsubscribe request', 'info');
+  };
+
+  // ===============================================
   // FEEDBACK SYSTEM
   // ===============================================
 
@@ -270,10 +318,11 @@ Time: ${new Date().toISOString()}
     showToast('Email client opened with your feedback!', 'success');
   };
 
-  // Section navigation
+  // Section navigation - UPDATED with new widgets section
   const sections = [
     { id: 'students', name: 'Student Management', icon: '👥' },
     { id: 'adjustments', name: 'XP & Coin Adjustments', icon: '⚖️' },
+    { id: 'widgets', name: 'Widget Settings', icon: '🎛️' },
     { id: 'class', name: 'Class Settings', icon: '🎓' },
     { id: 'data', name: 'Data Management', icon: '💾' },
     { id: 'support', name: 'Help & Feedback', icon: '💬' }
@@ -454,6 +503,70 @@ Time: ${new Date().toISOString()}
             </div>
           )}
 
+          {/* NEW: Widget Settings Section */}
+          {activeSection === 'widgets' && (
+            <div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-6">🎛️ Widget Settings</h3>
+              
+              <div className="space-y-6">
+                <div className="p-4 bg-purple-50 rounded-lg">
+                  <h4 className="font-semibold text-purple-800 mb-4">🎯 Floating Widgets</h4>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Control which floating widgets appear in the bottom corners of your screen across all tabs.
+                  </p>
+                  
+                  <div className="space-y-4">
+                    {/* Timer Widget Toggle */}
+                    <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                      <div className="flex items-center space-x-3">
+                        <span className="text-2xl">⏰</span>
+                        <div>
+                          <div className="font-semibold text-gray-800">Timer Widget</div>
+                          <div className="text-sm text-gray-600">Persistent timer for activities and transitions</div>
+                        </div>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={widgetSettings.showTimer}
+                          onChange={(e) => handleWidgetToggle('showTimer', e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                      </label>
+                    </div>
+
+                    {/* Name Picker Widget Toggle */}
+                    <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                      <div className="flex items-center space-x-3">
+                        <span className="text-2xl">🎯</span>
+                        <div>
+                          <div className="font-semibold text-gray-800">Name Picker Widget</div>
+                          <div className="text-sm text-gray-600">Random student selection and group creation</div>
+                        </div>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={widgetSettings.showNamePicker}
+                          onChange={(e) => handleWidgetToggle('showNamePicker', e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                    <p className="text-sm text-blue-800">
+                      💡 <strong>Tip:</strong> Widgets appear as small floating buttons in the bottom corners. Click them to expand and use their features. They work across all tabs!
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Class Settings Section */}
           {activeSection === 'class' && (
             <div>
@@ -587,6 +700,7 @@ Time: ${new Date().toISOString()}
                     <p>• Students get their first pet at 50 XP</p>
                     <p>• Use the Shop tab to let students spend coins on avatars and pets</p>
                     <p>• Create quests to give students structured goals</p>
+                    <p>• Use floating widgets (timer and name picker) for quick classroom tools</p>
                     <p>• Use the XP & Coin Adjustments section for manual corrections</p>
                   </div>
                 </div>
@@ -607,13 +721,30 @@ Time: ${new Date().toISOString()}
                 <div className="p-4 bg-gray-50 rounded-lg">
                   <h4 className="font-semibold text-gray-800 mb-4">ℹ️ Version Information</h4>
                   <div className="space-y-2 text-sm">
-                    <p><strong>Version:</strong> 2.1.0</p>
+                    <p><strong>Version:</strong> 2.2.0</p>
                     <p><strong>Last Updated:</strong> {new Date().toLocaleDateString()}</p>
                     <p><strong>Build:</strong> Educational Elements - Teacher Edition</p>
                     <p className="text-gray-500 italic">
                       Built for teachers, by teachers.
                     </p>
                   </div>
+                </div>
+
+                {/* NEW: Unsubscribe Section - Small and understated */}
+                <div className="p-3 bg-gray-100 rounded-lg border-t border-gray-200">
+                  <details className="group">
+                    <summary className="text-xs text-gray-500 cursor-pointer hover:text-gray-700 transition-colors list-none">
+                      <span className="select-none">Account Options ▼</span>
+                    </summary>
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <button
+                        onClick={() => setShowUnsubscribeModal(true)}
+                        className="text-xs text-gray-500 hover:text-red-600 transition-colors underline"
+                      >
+                        Request Account Cancellation
+                      </button>
+                    </div>
+                  </details>
                 </div>
               </div>
             </div>
@@ -693,6 +824,47 @@ Time: ${new Date().toISOString()}
                 className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all"
               >
                 Update Code
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* NEW: Unsubscribe Confirmation Modal */}
+      {showUnsubscribeModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            <div className="bg-gradient-to-r from-gray-500 to-gray-600 text-white p-6 rounded-t-2xl">
+              <h2 className="text-2xl font-bold">📧 Account Cancellation</h2>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <p className="text-gray-800">
+                This will open your email client to send a cancellation request to our support team.
+              </p>
+              <p className="text-sm text-gray-600">
+                We'll process your request and cancel your subscription. You'll keep access until your current billing period ends.
+              </p>
+              
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                <p className="text-xs text-yellow-800">
+                  <strong>Note:</strong> Consider providing feedback about your experience to help us improve!
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex space-x-3 p-6 pt-0">
+              <button
+                onClick={() => setShowUnsubscribeModal(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUnsubscribe}
+                className="flex-1 bg-gradient-to-r from-gray-500 to-gray-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all"
+              >
+                📧 Send Request
               </button>
             </div>
           </div>

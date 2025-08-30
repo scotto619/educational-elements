@@ -1,4 +1,4 @@
-// pages/classroom-champions.js - UPDATED WITH CLASS CODE IN HEADER AND SINGLE-LINE NAVIGATION
+// pages/classroom-champions.js - UPDATED WITH PERSISTENT FLOATING WIDGETS
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
@@ -17,6 +17,9 @@ import TeachersToolkitTab from '../components/tabs/TeachersToolkitTab';
 import CurriculumCornerTab from '../components/tabs/CurriculumCornerTab';
 import QuizShowTab from '../components/tabs/QuizShowTab';
 
+// NEW: Import floating widgets
+import FloatingTimer from '../components/widgets/FloatingTimer';
+import FloatingNamePicker from '../components/widgets/FloatingNamePicker';
 
 // ===============================================
 // CORE GAME CONSTANTS & UTILITIES
@@ -218,6 +221,12 @@ const ClassroomChampions = () => {
   // Welcome popup state
   const [showWelcomePopup, setShowWelcomePopup] = useState(false);
 
+  // NEW: Floating widget states
+  const [widgetSettings, setWidgetSettings] = useState({
+    showTimer: true,
+    showNamePicker: true
+  });
+
   // AUTH & DATA LOADING
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -260,6 +269,8 @@ const ClassroomChampions = () => {
           setActiveQuests(activeClass.activeQuests || []);
           // Load class rewards
           setClassRewards(activeClass.classRewards || []);
+          // NEW: Load widget settings
+          setWidgetSettings(loadedUserData.widgetSettings || { showTimer: true, showNamePicker: true });
         }
       }
     } catch (error) {
@@ -327,6 +338,21 @@ const ClassroomChampions = () => {
     } catch (error) {
       console.error("Error saving tool data:", error);
       showToast('Error saving data', 'error');
+    }
+  };
+
+  // NEW: Save widget settings
+  const saveWidgetSettings = async (newSettings) => {
+    if (!user) return;
+    const docRef = doc(firestore, 'users', user.uid);
+    try {
+      await updateDoc(docRef, { 
+        widgetSettings: newSettings 
+      });
+      setWidgetSettings(newSettings);
+    } catch (error) {
+      console.error("Error saving widget settings:", error);
+      showToast('Error saving widget settings', 'error');
     }
   };
 
@@ -791,6 +817,9 @@ const ClassroomChampions = () => {
                   // Class code management moved here
                   currentClassData={getCurrentClassData()}
                   updateClassCode={updateClassCode}
+                  // NEW: Widget settings
+                  widgetSettings={widgetSettings}
+                  onUpdateWidgetSettings={saveWidgetSettings}
                 />;
       default:
         return <div className="p-8 text-center text-gray-500">This tab is under construction.</div>;
@@ -935,6 +964,24 @@ const ClassroomChampions = () => {
         </div>
         
         <main className="max-w-screen-2xl mx-auto px-4 py-6">{renderTabContent()}</main>
+        
+        {/* NEW: Floating Widgets */}
+        {widgetSettings.showTimer && (
+          <FloatingTimer 
+            showToast={showToast}
+            playSound={playSound}
+          />
+        )}
+        
+        {widgetSettings.showNamePicker && students.length > 0 && (
+          <FloatingNamePicker 
+            students={students}
+            showToast={showToast}
+            playSound={playSound}
+            getAvatarImage={getAvatarImage}
+            calculateAvatarLevel={calculateAvatarLevel}
+          />
+        )}
         
         {/* Modals - keeping all existing modal code unchanged */}
         {showAddStudentModal && <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"><div className="bg-white rounded-2xl shadow-2xl w-full max-w-md"><div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-t-2xl"><h2 className="text-2xl font-bold">Add New Champion</h2></div><div className="p-6 space-y-4"><input type="text" value={newStudentFirstName} onChange={(e) => setNewStudentFirstName(e.target.value)} placeholder="First Name" className="w-full px-3 py-2 border border-gray-300 rounded-lg"/><input type="text" value={newStudentLastName} onChange={(e) => setNewStudentLastName(e.target.value)} placeholder="Last Name (Optional)" className="w-full px-3 py-2 border border-gray-300 rounded-lg"/></div><div className="flex space-x-3 p-6 pt-0"><button onClick={() => setShowAddStudentModal(false)} className="flex-1 px-4 py-2 border rounded-lg">Cancel</button><button onClick={addStudent} className="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg">Add Champion</button></div></div></div>}
