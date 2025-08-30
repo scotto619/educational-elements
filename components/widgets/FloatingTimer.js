@@ -22,7 +22,6 @@ const FloatingTimer = ({ showToast, playSound }) => {
               setIsRunning(false);
               setIsPaused(false);
               playSound('alarm');
-              showToast('⏰ Timer finished!', 'success');
               return 0;
             }
             return prevTime - 1;
@@ -54,7 +53,6 @@ const FloatingTimer = ({ showToast, playSound }) => {
 
   const startTimer = () => {
     if (timerType === 'countdown' && time === 0) {
-      showToast('Please set a time first', 'error');
       return;
     }
     setIsRunning(true);
@@ -114,7 +112,7 @@ const FloatingTimer = ({ showToast, playSound }) => {
     <>
       {/* Floating Button */}
       <div 
-        className={`fixed bottom-4 right-4 z-40 transition-all duration-300 ${
+        className={`fixed bottom-6 right-6 z-40 transition-all duration-300 ${
           isExpanded ? 'opacity-0 pointer-events-none' : 'opacity-100'
         }`}
       >
@@ -142,7 +140,7 @@ const FloatingTimer = ({ showToast, playSound }) => {
 
       {/* Expanded Timer Panel */}
       {isExpanded && (
-        <div className="fixed bottom-4 right-4 z-50 bg-white rounded-2xl shadow-2xl border-2 border-gray-200 w-80 max-h-96 overflow-hidden">
+        <div className="fixed bottom-6 right-6 z-50 bg-white rounded-2xl shadow-2xl border-2 border-gray-200 w-80 max-h-[calc(100vh-3rem)] overflow-hidden">
           {/* Header */}
           <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4 flex justify-between items-center">
             <div className="flex items-center space-x-2">

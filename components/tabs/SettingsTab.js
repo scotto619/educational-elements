@@ -62,9 +62,8 @@ const SettingsTab = ({
     
     try {
       await onUpdateWidgetSettings(newSettings);
-      showToast(`${widgetName === 'showTimer' ? 'Timer' : 'Name Picker'} widget ${enabled ? 'enabled' : 'disabled'}`, 'success');
     } catch (error) {
-      showToast('Error updating widget settings', 'error');
+      console.error('Error updating widget settings:', error);
     }
   };
 
@@ -74,7 +73,6 @@ const SettingsTab = ({
 
   const handleAddStudent = () => {
     if (!newStudentForm.firstName.trim()) {
-      showToast('Please enter a first name', 'error');
       return;
     }
 
@@ -98,7 +96,6 @@ const SettingsTab = ({
     updateAndSaveClass(newStudents, xpCategories);
     
     setNewStudentForm({ firstName: '', lastName: '' });
-    showToast(`${newStudent.firstName} added to class!`, 'success');
   };
 
   // FIXED: Properly handle student removal with correct ID extraction
@@ -108,7 +105,6 @@ const SettingsTab = ({
     const student = students.find(s => s.id === studentId);
     if (!student) {
       console.log('Student not found. Available student IDs:', students.map(s => s.id));
-      showToast('Student not found', 'error');
       return;
     }
 
@@ -123,14 +119,12 @@ const SettingsTab = ({
     
     // Close dialog and show feedback
     setShowConfirmDialog(null);
-    showToast(`${student.firstName} removed from class`, 'success');
     
     console.log('Student removal completed');
   };
 
   const handleAdjustStudent = () => {
     if (!adjustmentForm.studentId || !adjustmentForm.amount) {
-      showToast('Please select a student and enter an amount', 'error');
       return;
     }
 
@@ -157,10 +151,6 @@ const SettingsTab = ({
     const newStudents = students.map(s => s.id === adjustmentForm.studentId ? updatedStudent : s);
     setStudents(newStudents);
     updateAndSaveClass(newStudents, xpCategories);
-
-    const action = adjustmentForm.type.includes('remove') ? 'removed' : 'added';
-    const currency = adjustmentForm.type.includes('xp') ? 'XP' : 'coins';
-    showToast(`${adjustmentForm.amount} ${currency} ${action} ${adjustmentForm.reason ? `for ${adjustmentForm.reason}` : ''}`, 'success');
     
     setAdjustmentForm({ studentId: '', type: 'xp', amount: 0, reason: '' });
   };
@@ -180,7 +170,6 @@ const SettingsTab = ({
     setStudents(newStudents);
     updateAndSaveClass(newStudents, xpCategories);
 
-    showToast(`${student.firstName}'s avatar changed to ${newAvatarBase}!`, 'success');
     setSelectedStudent(null);
   };
 
@@ -190,17 +179,15 @@ const SettingsTab = ({
 
   const handleUpdateClassCode = async () => {
     if (!newClassCode.trim()) {
-      showToast('Please enter a class code', 'error');
       return;
     }
 
     try {
       await updateClassCode(newClassCode.trim());
-      showToast('Class code updated successfully!', 'success');
       setShowClassCodeModal(false);
       setNewClassCode('');
     } catch (error) {
-      showToast('Error updating class code', 'error');
+      console.error('Error updating class code:', error);
     }
   };
 
@@ -217,14 +204,12 @@ const SettingsTab = ({
     link.download = `classroom-champions-data-${new Date().toISOString().split('T')[0]}.json`;
     link.click();
     URL.revokeObjectURL(url);
-    showToast('Student data exported!', 'success');
   };
 
   const resetAllData = async () => {
     setStudents([]);
     await updateAndSaveClass([], xpCategories);
     setShowConfirmDialog(null);
-    showToast('All data has been reset', 'success');
   };
 
   const resetStudentProgress = async () => {
@@ -247,7 +232,6 @@ const SettingsTab = ({
     setStudents(resetStudents);
     await updateAndSaveClass(resetStudents, xpCategories);
     setShowConfirmDialog(null);
-    showToast('All student progress has been reset', 'success');
   };
 
   // ===============================================
@@ -273,7 +257,6 @@ Thank you.
     window.location.href = mailtoLink;
     
     setShowUnsubscribeModal(false);
-    showToast('Email opened to process unsubscribe request', 'info');
   };
 
   // ===============================================
@@ -282,7 +265,6 @@ Thank you.
 
   const submitFeedback = async () => {
     if (!feedbackForm.subject.trim() || !feedbackForm.message.trim()) {
-      showToast('Please fill in subject and message', 'error');
       return;
     }
 
@@ -314,8 +296,6 @@ Time: ${new Date().toISOString()}
       message: '',
       email: user?.email || ''
     });
-    
-    showToast('Email client opened with your feedback!', 'success');
   };
 
   // Section navigation - UPDATED with new widgets section

@@ -21,7 +21,6 @@ const FloatingNamePicker = ({
 
   const pickRandomStudent = () => {
     if (availableStudents.length === 0) {
-      showToast('No available students to pick from!', 'error');
       return;
     }
 
@@ -45,14 +44,12 @@ const FloatingNamePicker = ({
         setSpinText(finalStudent.firstName);
         setIsSpinning(false);
         playSound('select');
-        showToast(`${finalStudent.firstName} was selected!`, 'success');
       }
     }, 100);
   };
 
   const generateRandomGroups = () => {
     if (availableStudents.length < groupSize) {
-      showToast(`Need at least ${groupSize} students to create groups!`, 'error');
       return;
     }
 
@@ -66,7 +63,6 @@ const FloatingNamePicker = ({
     
     setGeneratedGroups(groups);
     playSound('success');
-    showToast(`Generated ${groups.length} groups!`, 'success');
   };
 
   const toggleStudentExclusion = (studentId) => {
@@ -81,7 +77,6 @@ const FloatingNamePicker = ({
 
   const clearExclusions = () => {
     setExcludedStudents(new Set());
-    showToast('All students included!', 'success');
   };
 
   const clearSelection = () => {
@@ -94,7 +89,7 @@ const FloatingNamePicker = ({
     <>
       {/* Floating Button */}
       <div 
-        className={`fixed bottom-4 right-20 z-40 transition-all duration-300 ${
+        className={`fixed bottom-6 right-24 z-40 transition-all duration-300 ${
           isExpanded ? 'opacity-0 pointer-events-none' : 'opacity-100'
         }`}
       >
@@ -112,7 +107,7 @@ const FloatingNamePicker = ({
 
       {/* Expanded Name Picker Panel */}
       {isExpanded && (
-        <div className="fixed bottom-4 right-20 z-50 bg-white rounded-2xl shadow-2xl border-2 border-gray-200 w-80 max-h-96 overflow-hidden">
+        <div className="fixed bottom-6 right-24 z-50 bg-white rounded-2xl shadow-2xl border-2 border-gray-200 w-80 max-h-[calc(100vh-3rem)] overflow-y-auto">
           {/* Header */}
           <div className="bg-gradient-to-r from-purple-500 to-pink-600 text-white p-4 flex justify-between items-center">
             <div className="flex items-center space-x-2">

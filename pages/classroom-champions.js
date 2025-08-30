@@ -165,7 +165,7 @@ const getRandomPet = () => {
 };
 
 const showToast = (message, type = 'info') => {
-  alert(`${type.toUpperCase()}: ${message}`);
+  // Toast notifications disabled
 };
 
 // Function to open student portal
@@ -275,7 +275,6 @@ const ClassroomChampions = () => {
       }
     } catch (error) {
       console.error("Error loading user data:", error);
-      showToast('Error loading class data', 'error');
     }
     setLoading(false);
   };
@@ -394,9 +393,9 @@ const ClassroomChampions = () => {
     const currentClass = userData.classes?.find(cls => cls.id === currentClassId);
     if (currentClass?.classCode) {
       navigator.clipboard.writeText(currentClass.classCode).then(() => {
-        showToast('Class code copied to clipboard!', 'success');
+        // Code copied successfully
       }).catch(() => {
-        showToast('Failed to copy class code', 'error');
+        console.error('Failed to copy class code');
       });
     }
   };
@@ -414,9 +413,8 @@ const ClassroomChampions = () => {
     const newCode = generateClassCode();
     try {
       await updateClassCode(newCode);
-      showToast(`New class code generated: ${newCode}`, 'success');
     } catch (error) {
-      showToast('Error generating class code', 'error');
+      console.error('Error generating class code:', error);
     }
   };
 
