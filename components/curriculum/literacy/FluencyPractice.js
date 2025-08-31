@@ -1,7 +1,17 @@
 // components/curriculum/literacy/FluencyPractice.js
-// FLUENCY PRACTICE - UPDATED TO USE SEPARATE LEVEL FILES
+// FLUENCY PRACTICE - UPDATED TO USE ALL LEVEL 2 PASSAGE FILES
 import React, { useState, useEffect } from 'react';
 import { LEVEL_1_PASSAGES } from './passages/Level1Passages';
+import { LEVEL_2_PASSAGES_1 } from './passages/Level2Passages1';
+import { LEVEL_2_PASSAGES_2 } from './passages/Level2Passages2';
+import { LEVEL_2_PASSAGES_3 } from './passages/Level2Passages3';
+import { LEVEL_2_PASSAGES_4 } from './passages/Level2Passages4';
+import { LEVEL_2_PASSAGES_5 } from './passages/Level2Passages5';
+import { LEVEL_2_PASSAGES_6 } from './passages/Level2Passages6';
+import { LEVEL_2_PASSAGES_7 } from './passages/Level2Passages7';
+import { LEVEL_2_PASSAGES_8 } from './passages/Level2Passages8';
+import { LEVEL_2_PASSAGES_9 } from './passages/Level2Passages9';
+import { LEVEL_2_PASSAGES_10 } from './passages/Level2Passages10';
 
 // ===============================================
 // TEXT TYPE CONFIGURATIONS
@@ -38,11 +48,21 @@ const TEXT_TYPES = [
 ];
 
 // ===============================================
-// READING PASSAGES - CONSOLIDATED FROM LEVEL FILES
+// READING PASSAGES - CONSOLIDATED FROM ALL LEVEL FILES
 // ===============================================
 const READING_PASSAGES = [
   ...LEVEL_1_PASSAGES,
-  // Level 2, 3, 4 passages will be imported here later
+  ...LEVEL_2_PASSAGES_1,
+  ...LEVEL_2_PASSAGES_2,
+  ...LEVEL_2_PASSAGES_3,
+  ...LEVEL_2_PASSAGES_4,
+  ...LEVEL_2_PASSAGES_5,
+  ...LEVEL_2_PASSAGES_6,
+  ...LEVEL_2_PASSAGES_7,
+  ...LEVEL_2_PASSAGES_8,
+  ...LEVEL_2_PASSAGES_9,
+  ...LEVEL_2_PASSAGES_10
+  // Level 3, 4, etc. passages will be imported here when created
 ];
 
 // ===============================================
@@ -685,9 +705,6 @@ const FluencyPractice = ({
           </div>
         </div>
       )}
-
-      {/* Rest of the component remains the same - groups display, student assignment modal, etc. */}
-      {/* ... (keeping the same UI as before for brevity) */}
 
       {/* Unassigned Students */}
       {unassignedStudents.length > 0 && (
