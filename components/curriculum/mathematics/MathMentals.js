@@ -572,6 +572,13 @@ const MathMentals = ({
   saveData = () => {}, 
   loadedData = {} 
 }) => {
+  // Add error boundary and safety checks
+  console.log('🧮 MathMentals component loaded with:', {
+    studentsCount: students?.length || 0,
+    hasShowToast: typeof showToast === 'function',
+    hasSaveData: typeof saveData === 'function',
+    hasLoadedData: !!loadedData
+  });
   const [mathGroups, setMathGroups] = useState([]);
   const [showGroupModal, setShowGroupModal] = useState(false);
   const [groupName, setGroupName] = useState('');
@@ -582,36 +589,48 @@ const MathMentals = ({
   const [currentQuestions, setCurrentQuestions] = useState([]);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  // Load data on component mount
+  // Load data on component mount with error handling
   useEffect(() => {
-    const mathData = loadedData?.mathMentalsData;
-    if (mathData?.groups) {
-      setMathGroups(mathData.groups);
-      console.log('📖 Loaded Math Mentals data:', mathData.groups.length, 'groups');
+    try {
+      const mathData = loadedData?.mathMentalsData;
+      if (mathData?.groups) {
+        setMathGroups(mathData.groups);
+        console.log('📖 Loaded Math Mentals data:', mathData.groups.length, 'groups');
+      } else {
+        console.log('📄 No existing Math Mentals data found');
+      }
+    } catch (error) {
+      console.error('❌ Error loading Math Mentals data:', error);
+      showToast('Error loading Math Mentals data', 'error');
     }
   }, [loadedData]);
 
   // Save data function matching spelling program pattern
   const saveGroups = (groups) => {
-    console.log('💾 Saving Math Mentals groups to Firebase:', groups.length, 'groups');
-    
-    setMathGroups(groups);
-    setHasUnsavedChanges(false);
-    
-    if (saveData) {
-      const saveDataPayload = { 
-        mathMentalsData: { 
-          groups,
-          lastUpdated: new Date().toISOString() 
-        } 
-      };
+    try {
+      console.log('💾 Saving Math Mentals groups to Firebase:', groups.length, 'groups');
       
-      saveData(saveDataPayload);
-      showToast('Math groups saved successfully!', 'success');
-      console.log('✅ Math Mentals data saved:', saveDataPayload);
-    } else {
-      console.error('❌ saveData function not available');
-      showToast('Error: Unable to save data', 'error');
+      setMathGroups(groups);
+      setHasUnsavedChanges(false);
+      
+      if (saveData && typeof saveData === 'function') {
+        const saveDataPayload = { 
+          mathMentalsData: { 
+            groups,
+            lastUpdated: new Date().toISOString() 
+          } 
+        };
+        
+        saveData(saveDataPayload);
+        showToast('Math groups saved successfully!', 'success');
+        console.log('✅ Math Mentals data saved:', saveDataPayload);
+      } else {
+        console.error('❌ saveData function not available or not a function');
+        showToast('Error: Unable to save data - saveData function missing', 'error');
+      }
+    } catch (error) {
+      console.error('❌ Error saving Math Mentals data:', error);
+      showToast('Error saving data: ' + error.message, 'error');
     }
   };
 
@@ -621,52 +640,75 @@ const MathMentals = ({
   };
 
   const createGroup = () => {
-    if (!groupName.trim() || selectedStudents.length === 0) {
-      showToast('Please enter group name and select students', 'error');
-      return;
+    try {
+      if (!groupName.trim()) {
+        showToast('Please enter a group name', 'error');
+        return;
+      }
+      
+      if (!selectedStudents || selectedStudents.length === 0) {
+        showToast('Please select at least one student', 'error');
+        return;
+      }
+
+      // Validate that each selected student has a starting level
+      const studentsWithoutLevels = selectedStudents.filter(studentId => !studentLevels[studentId]);
+      if (studentsWithoutLevels.length > 0) {
+        showToast('Please assign a starting level to all students', 'error');
+        return;
+      }
+
+      // Validate students exist
+      const validStudents = selectedStudents.filter(id => students.find(s => s.id === id));
+      if (validStudents.length !== selectedStudents.length) {
+        showToast('Some selected students are invalid', 'error');
+        return;
+      }
+
+      const colors = [
+        'bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-red-500', 
+        'bg-yellow-500', 'bg-pink-500', 'bg-indigo-500', 'bg-teal-500'
+      ];
+      const color = colors[mathGroups.length % colors.length];
+
+      const newGroup = {
+        id: `mathgroup_${Date.now()}`,
+        name: groupName,
+        color,
+        students: selectedStudents.map(id => {
+          const student = students.find(s => s.id === id);
+          const startingLevel = studentLevels[id];
+          
+          if (!student) {
+            throw new Error(`Student with id ${id} not found`);
+          }
+          
+          return {
+            id: student.id,
+            firstName: student.firstName || 'Unknown',
+            lastName: student.lastName || '',
+            currentLevel: startingLevel,
+            progress: {},
+            streak: 0
+          };
+        }),
+        createdAt: new Date().toISOString()
+      };
+
+      const updatedGroups = [...mathGroups, newGroup];
+      
+      // Don't auto-save, just mark as changed
+      setMathGroups(updatedGroups);
+      markAsChanged();
+      
+      resetModal();
+      showToast(`Math group "${groupName}" created! Click Save to persist changes.`, 'success');
+      
+      console.log('✅ Math group created successfully:', newGroup);
+    } catch (error) {
+      console.error('❌ Error creating math group:', error);
+      showToast(`Error creating group: ${error.message}`, 'error');
     }
-
-    // Validate that each selected student has a starting level
-    const studentsWithoutLevels = selectedStudents.filter(studentId => !studentLevels[studentId]);
-    if (studentsWithoutLevels.length > 0) {
-      showToast('Please assign a starting level to all students', 'error');
-      return;
-    }
-
-    const colors = [
-      'bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-red-500', 
-      'bg-yellow-500', 'bg-pink-500', 'bg-indigo-500', 'bg-teal-500'
-    ];
-    const color = colors[mathGroups.length % colors.length];
-
-    const newGroup = {
-      id: `mathgroup_${Date.now()}`,
-      name: groupName,
-      color,
-      students: selectedStudents.map(id => {
-        const student = students.find(s => s.id === id);
-        const startingLevel = studentLevels[id];
-        
-        return {
-          id: student.id,
-          firstName: student.firstName,
-          lastName: student.lastName,
-          currentLevel: startingLevel,
-          progress: {},
-          streak: 0
-        };
-      }),
-      createdAt: new Date().toISOString()
-    };
-
-    const updatedGroups = [...mathGroups, newGroup];
-    
-    // Don't auto-save, just mark as changed
-    setMathGroups(updatedGroups);
-    markAsChanged();
-    
-    resetModal();
-    showToast(`Math group "${groupName}" created! Click Save to persist changes.`, 'success');
   };
 
   const updateGroup = () => {
@@ -1021,11 +1063,16 @@ const MathMentals = ({
                   Assign Students & Starting Levels
                 </label>
                 <div className="border border-gray-200 rounded-lg p-4 max-h-80 overflow-y-auto">
-                  {students.length === 0 ? (
+                  {!students || students.length === 0 ? (
                     <p className="text-gray-500 text-center py-4">No students available</p>
                   ) : (
                     <div className="space-y-3">
                       {students.map(student => {
+                        if (!student || !student.id) {
+                          console.warn('Invalid student object:', student);
+                          return null;
+                        }
+                        
                         const isSelected = selectedStudents.includes(student.id);
                         const assignedLevel = studentLevels[student.id] || '';
                         
@@ -1039,38 +1086,54 @@ const MathMentals = ({
                                   type="checkbox"
                                   checked={isSelected}
                                   onChange={(e) => {
-                                    if (e.target.checked) {
-                                      setSelectedStudents([...selectedStudents, student.id]);
-                                      // Set default starting level if none assigned
-                                      if (!studentLevels[student.id]) {
-                                        setStudentLevels(prev => ({
-                                          ...prev,
-                                          [student.id]: '1.1'
-                                        }));
+                                    try {
+                                      if (e.target.checked) {
+                                        setSelectedStudents(prev => [...prev, student.id]);
+                                        // Set default starting level if none assigned
+                                        if (!studentLevels[student.id]) {
+                                          setStudentLevels(prev => ({
+                                            ...prev,
+                                            [student.id]: '1.1'
+                                          }));
+                                        }
+                                      } else {
+                                        setSelectedStudents(prev => prev.filter(id => id !== student.id));
+                                        // Remove level assignment when unchecked
+                                        setStudentLevels(prev => {
+                                          const newLevels = { ...prev };
+                                          delete newLevels[student.id];
+                                          return newLevels;
+                                        });
                                       }
-                                    } else {
-                                      setSelectedStudents(selectedStudents.filter(id => id !== student.id));
-                                      // Remove level assignment when unchecked
-                                      const newLevels = { ...studentLevels };
-                                      delete newLevels[student.id];
-                                      setStudentLevels(newLevels);
+                                    } catch (error) {
+                                      console.error('Error updating student selection:', error);
+                                      showToast('Error updating selection', 'error');
                                     }
                                   }}
                                   className="rounded border-gray-300 mr-3"
                                 />
-                                <span className="font-medium">{student.firstName} {student.lastName}</span>
+                                <span className="font-medium">
+                                  {student.firstName || 'Unknown'} {student.lastName || ''}
+                                </span>
                               </label>
                               
                               {isSelected && (
                                 <select
                                   value={assignedLevel}
-                                  onChange={(e) => handleStudentLevelChange(student.id, e.target.value)}
+                                  onChange={(e) => {
+                                    try {
+                                      handleStudentLevelChange(student.id, e.target.value);
+                                    } catch (error) {
+                                      console.error('Error changing student level:', error);
+                                      showToast('Error updating level', 'error');
+                                    }
+                                  }}
                                   className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
                                   <option value="">Select starting level...</option>
                                   {Object.entries(MATH_SUBLEVELS).map(([levelId, config]) => (
                                     <option key={levelId} value={levelId}>
-                                      {levelId}: {config.name}
+                                      {levelId}: {config?.name || 'Unknown Level'}
                                     </option>
                                   ))}
                                 </select>
@@ -1078,7 +1141,7 @@ const MathMentals = ({
                             </div>
                           </div>
                         );
-                      })}
+                      }).filter(Boolean)}
                     </div>
                   )}
                 </div>
