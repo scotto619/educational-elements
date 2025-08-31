@@ -7,25 +7,25 @@ import React, { useState, useEffect } from 'react';
 
 const MATH_LEVELS = {
   1: {
-    name: "Level 1 - Prep/Grade 1",
+    name: "Level 1",
     description: "Basic number facts and counting (Ages 5-7)",
     color: "from-green-400 to-green-600",
     icon: "🌱"
   },
   2: {
-    name: "Level 2 - Grade 1/2", 
+    name: "Level 2", 
     description: "Early addition and subtraction (Ages 6-8)",
     color: "from-blue-400 to-blue-600",
     icon: "📚"
   },
   3: {
-    name: "Level 3 - Grade 2/3",
+    name: "Level 3",
     description: "Multiplication and division basics (Ages 7-9)", 
     color: "from-purple-400 to-purple-600",
     icon: "🚀"
   },
   4: {
-    name: "Level 4 - Grade 3/4",
+    name: "Level 4",
     description: "Advanced number operations (Ages 8-10)",
     color: "from-red-400 to-red-600", 
     icon: "⭐"
@@ -573,39 +573,63 @@ const MathMentals = ({
   loadedData = {} 
 }) => {
   const [mathGroups, setMathGroups] = useState([]);
-  const [selectedLevel, setSelectedLevel] = useState(null);
-  const [selectedSublevels, setSelectedSublevels] = useState([]);
   const [showGroupModal, setShowGroupModal] = useState(false);
   const [groupName, setGroupName] = useState('');
   const [selectedStudents, setSelectedStudents] = useState([]);
+  const [studentLevels, setStudentLevels] = useState({}); // Single level per student
   const [editingGroup, setEditingGroup] = useState(null);
   const [testMode, setTestMode] = useState(false);
   const [currentQuestions, setCurrentQuestions] = useState([]);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // Load data on component mount
   useEffect(() => {
     const mathData = loadedData?.mathMentalsData;
     if (mathData?.groups) {
       setMathGroups(mathData.groups);
+      console.log('📖 Loaded Math Mentals data:', mathData.groups.length, 'groups');
     }
   }, [loadedData]);
 
-  // Save data whenever groups change
+  // Save data function matching spelling program pattern
   const saveGroups = (groups) => {
+    console.log('💾 Saving Math Mentals groups to Firebase:', groups.length, 'groups');
+    
     setMathGroups(groups);
+    setHasUnsavedChanges(false);
+    
     if (saveData) {
-      saveData({ 
+      const saveDataPayload = { 
         mathMentalsData: { 
           groups,
           lastUpdated: new Date().toISOString() 
         } 
-      });
+      };
+      
+      saveData(saveDataPayload);
+      showToast('Math groups saved successfully!', 'success');
+      console.log('✅ Math Mentals data saved:', saveDataPayload);
+    } else {
+      console.error('❌ saveData function not available');
+      showToast('Error: Unable to save data', 'error');
     }
   };
 
+  // Mark as having unsaved changes
+  const markAsChanged = () => {
+    setHasUnsavedChanges(true);
+  };
+
   const createGroup = () => {
-    if (!groupName.trim() || selectedStudents.length === 0 || selectedSublevels.length === 0) {
-      showToast('Please fill in all fields', 'error');
+    if (!groupName.trim() || selectedStudents.length === 0) {
+      showToast('Please enter group name and select students', 'error');
+      return;
+    }
+
+    // Validate that each selected student has a starting level
+    const studentsWithoutLevels = selectedStudents.filter(studentId => !studentLevels[studentId]);
+    if (studentsWithoutLevels.length > 0) {
+      showToast('Please assign a starting level to all students', 'error');
       return;
     }
 
@@ -616,34 +640,45 @@ const MathMentals = ({
     const color = colors[mathGroups.length % colors.length];
 
     const newGroup = {
-      id: `group_${Date.now()}`,
+      id: `mathgroup_${Date.now()}`,
       name: groupName,
       color,
       students: selectedStudents.map(id => {
         const student = students.find(s => s.id === id);
+        const startingLevel = studentLevels[id];
+        
         return {
           id: student.id,
           firstName: student.firstName,
           lastName: student.lastName,
-          currentLevel: selectedSublevels[0], // Start with first assigned level
-          progress: {}, // Will store completion data
-          streak: 0 // Consecutive correct days
+          currentLevel: startingLevel,
+          progress: {},
+          streak: 0
         };
       }),
-      assignedLevels: selectedSublevels,
       createdAt: new Date().toISOString()
     };
 
     const updatedGroups = [...mathGroups, newGroup];
-    saveGroups(updatedGroups);
+    
+    // Don't auto-save, just mark as changed
+    setMathGroups(updatedGroups);
+    markAsChanged();
     
     resetModal();
-    showToast(`Math group "${groupName}" created!`, 'success');
+    showToast(`Math group "${groupName}" created! Click Save to persist changes.`, 'success');
   };
 
   const updateGroup = () => {
-    if (!groupName.trim() || selectedStudents.length === 0 || selectedSublevels.length === 0) {
-      showToast('Please fill in all fields', 'error');
+    if (!groupName.trim() || selectedStudents.length === 0) {
+      showToast('Please enter group name and select students', 'error');
+      return;
+    }
+
+    // Validate that each selected student has a starting level
+    const studentsWithoutLevels = selectedStudents.filter(studentId => !studentLevels[studentId]);
+    if (studentsWithoutLevels.length > 0) {
+      showToast('Please assign a starting level to all students', 'error');
       return;
     }
 
@@ -655,39 +690,50 @@ const MathMentals = ({
           students: selectedStudents.map(id => {
             const student = students.find(s => s.id === id);
             const existingStudent = group.students.find(s => s.id === id);
-            return existingStudent || {
+            const assignedLevel = studentLevels[id];
+            
+            return existingStudent ? {
+              ...existingStudent,
+              firstName: student.firstName, // Update name in case it changed
+              lastName: student.lastName,
+              // Only update level if it's different and student hasn't made progress
+              currentLevel: (!existingStudent.progress || Object.keys(existingStudent.progress).length === 0) 
+                ? assignedLevel 
+                : existingStudent.currentLevel
+            } : {
               id: student.id,
               firstName: student.firstName,
               lastName: student.lastName,
-              currentLevel: selectedSublevels[0],
+              currentLevel: assignedLevel,
               progress: {},
               streak: 0
             };
           }),
-          assignedLevels: selectedSublevels,
           updatedAt: new Date().toISOString()
         };
       }
       return group;
     });
 
-    saveGroups(updatedGroups);
+    setMathGroups(updatedGroups);
+    markAsChanged();
+    
     resetModal();
-    showToast(`Math group "${groupName}" updated!`, 'success');
+    showToast(`Math group "${groupName}" updated! Click Save to persist changes.`, 'success');
   };
 
   const deleteGroup = (groupId) => {
     const updatedGroups = mathGroups.filter(group => group.id !== groupId);
-    saveGroups(updatedGroups);
-    showToast('Math group deleted', 'success');
+    setMathGroups(updatedGroups);
+    markAsChanged();
+    showToast('Math group deleted - Click Save to persist changes', 'success');
   };
 
   const resetModal = () => {
     setShowGroupModal(false);
     setGroupName('');
     setSelectedStudents([]);
-    setSelectedSublevels([]);
-    setSelectedLevel(null);
+    setStudentLevels({});
     setEditingGroup(null);
   };
 
@@ -695,14 +741,32 @@ const MathMentals = ({
     setEditingGroup(group);
     setGroupName(group.name);
     setSelectedStudents(group.students.map(s => s.id));
-    setSelectedSublevels(group.assignedLevels);
     
-    // Determine which level the assigned sublevels belong to
-    const firstSublevel = group.assignedLevels[0];
-    const level = parseInt(firstSublevel.split('.')[0]);
-    setSelectedLevel(level);
+    // Set the current levels for each student
+    const levels = {};
+    group.students.forEach(student => {
+      levels[student.id] = student.currentLevel;
+    });
+    setStudentLevels(levels);
     
     setShowGroupModal(true);
+  };
+
+  // Handle student level assignment (single level per student)
+  const handleStudentLevelChange = (studentId, level) => {
+    setStudentLevels(prev => ({
+      ...prev,
+      [studentId]: level
+    }));
+  };
+
+  // Save all changes to Firebase (like spelling program)
+  const handleSaveAll = () => {
+    if (mathGroups.length === 0) {
+      showToast('No groups to save', 'info');
+      return;
+    }
+    saveGroups(mathGroups);
   };
 
   const generateTestQuestions = (sublevelId) => {
@@ -783,7 +847,7 @@ const MathMentals = ({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header with Save Button */}
       <div className="bg-gradient-to-r from-green-500 to-blue-600 text-white rounded-xl p-6">
         <div className="flex items-center justify-between">
           <div>
@@ -793,13 +857,30 @@ const MathMentals = ({
             </h1>
             <p className="text-green-100">Daily number facts practice for automatic recall</p>
           </div>
-          <button
-            onClick={() => setShowGroupModal(true)}
-            className="bg-white text-green-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
-          >
-            + Create Group
-          </button>
+          <div className="flex space-x-3">
+            <button
+              onClick={handleSaveAll}
+              className={`px-6 py-3 rounded-lg font-semibold transition-colors ${
+                hasUnsavedChanges 
+                  ? 'bg-yellow-500 text-white hover:bg-yellow-600 shadow-lg' 
+                  : 'bg-white text-green-600 hover:bg-gray-100'
+              }`}
+            >
+              {hasUnsavedChanges ? '💾 Save Changes' : '✅ Saved'}
+            </button>
+            <button
+              onClick={() => setShowGroupModal(true)}
+              className="bg-white text-green-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+            >
+              + Create Group
+            </button>
+          </div>
         </div>
+        {hasUnsavedChanges && (
+          <div className="mt-4 bg-yellow-500 bg-opacity-20 border border-yellow-400 rounded-lg p-3">
+            <p className="text-yellow-100 text-sm">⚠️ You have unsaved changes. Click "Save Changes" to persist them to Firebase.</p>
+          </div>
+        )}
       </div>
 
       {/* Existing Groups */}
@@ -858,26 +939,30 @@ const MathMentals = ({
                     </div>
                     
                     <div>
-                      <h4 className="font-semibold text-gray-800 mb-3">Assigned Levels ({group.assignedLevels.length})</h4>
-                      <div className="space-y-2">
-                        {group.assignedLevels.map(levelId => {
-                          const config = MATH_SUBLEVELS[levelId];
-                          return (
-                            <div key={levelId} className="bg-gray-50 rounded-lg p-3">
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <span className="font-medium">{levelId}: {config.name}</span>
-                                </div>
-                                <button
-                                  onClick={() => startTest(levelId)}
-                                  className="bg-purple-100 text-purple-800 px-3 py-1 rounded text-sm hover:bg-purple-200"
-                                >
-                                  🎯 Test
-                                </button>
-                              </div>
+                      <h4 className="font-semibold text-gray-800 mb-3">Progress Overview</h4>
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <div className="grid grid-cols-2 gap-4 text-center">
+                          <div>
+                            <div className="text-2xl font-bold text-blue-600">
+                              {group.students.filter(s => s.progress && Object.keys(s.progress).length > 0).length}
                             </div>
-                          );
-                        })}
+                            <div className="text-xs text-gray-600">Students Active</div>
+                          </div>
+                          <div>
+                            <div className="text-2xl font-bold text-green-600">
+                              {Math.round((group.students.reduce((sum, s) => sum + (s.streak || 0), 0) / group.students.length) * 10) / 10}
+                            </div>
+                            <div className="text-xs text-gray-600">Avg Streak</div>
+                          </div>
+                        </div>
+                        
+                        {/* Quick Test Button */}
+                        <button
+                          onClick={() => startTest(group.students[0]?.currentLevel || '1.1')}
+                          className="w-full mt-3 bg-purple-100 text-purple-800 px-3 py-2 rounded text-sm hover:bg-purple-200 transition-colors"
+                        >
+                          🎯 Preview Questions
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -930,77 +1015,77 @@ const MathMentals = ({
                 />
               </div>
 
-              {/* Student Selection */}
+              {/* Student Selection with Individual Level Assignment */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Select Students ({selectedStudents.length} selected)
+                  Assign Students & Starting Levels
                 </label>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-40 overflow-y-auto border border-gray-200 rounded-lg p-4">
-                  {students.map(student => (
-                    <label key={student.id} className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-2 rounded">
-                      <input
-                        type="checkbox"
-                        checked={selectedStudents.includes(student.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedStudents([...selectedStudents, student.id]);
-                          } else {
-                            setSelectedStudents(selectedStudents.filter(id => id !== student.id));
-                          }
-                        }}
-                        className="rounded border-gray-300"
-                      />
-                      <span className="text-sm">{student.firstName} {student.lastName}</span>
-                    </label>
-                  ))}
+                <div className="border border-gray-200 rounded-lg p-4 max-h-80 overflow-y-auto">
+                  {students.length === 0 ? (
+                    <p className="text-gray-500 text-center py-4">No students available</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {students.map(student => {
+                        const isSelected = selectedStudents.includes(student.id);
+                        const assignedLevel = studentLevels[student.id] || '';
+                        
+                        return (
+                          <div key={student.id} className={`p-3 rounded-lg border-2 transition-colors ${
+                            isSelected ? 'border-blue-300 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+                          }`}>
+                            <div className="flex items-center justify-between">
+                              <label className="flex items-center cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSelectedStudents([...selectedStudents, student.id]);
+                                      // Set default starting level if none assigned
+                                      if (!studentLevels[student.id]) {
+                                        setStudentLevels(prev => ({
+                                          ...prev,
+                                          [student.id]: '1.1'
+                                        }));
+                                      }
+                                    } else {
+                                      setSelectedStudents(selectedStudents.filter(id => id !== student.id));
+                                      // Remove level assignment when unchecked
+                                      const newLevels = { ...studentLevels };
+                                      delete newLevels[student.id];
+                                      setStudentLevels(newLevels);
+                                    }
+                                  }}
+                                  className="rounded border-gray-300 mr-3"
+                                />
+                                <span className="font-medium">{student.firstName} {student.lastName}</span>
+                              </label>
+                              
+                              {isSelected && (
+                                <select
+                                  value={assignedLevel}
+                                  onChange={(e) => handleStudentLevelChange(student.id, e.target.value)}
+                                  className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                                  <option value="">Select starting level...</option>
+                                  {Object.entries(MATH_SUBLEVELS).map(([levelId, config]) => (
+                                    <option key={levelId} value={levelId}>
+                                      {levelId}: {config.name}
+                                    </option>
+                                  ))}
+                                </select>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  Select students and assign their starting level. They will progress through levels automatically after 3 perfect scores.
+                </p>
               </div>
-
-              {/* Level Selection */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Select Main Level</label>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {Object.entries(MATH_LEVELS).map(([level, config]) => (
-                    <button
-                      key={level}
-                      onClick={() => handleLevelSelect(parseInt(level))}
-                      className={`p-4 rounded-lg border-2 transition-colors ${
-                        selectedLevel === parseInt(level)
-                          ? 'border-blue-500 bg-blue-50 text-blue-700'
-                          : 'border-gray-300 hover:border-gray-400'
-                      }`}
-                    >
-                      <div className="text-2xl mb-2">{config.icon}</div>
-                      <div className="font-semibold text-sm">{config.name}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Sublevel Selection */}
-              {selectedLevel && (
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Select Sub-levels ({selectedSublevels.length} selected)
-                  </label>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 max-h-60 overflow-y-auto border border-gray-200 rounded-lg p-4">
-                    {getSublevelsForLevel(selectedLevel).map(sublevel => (
-                      <label key={sublevel.id} className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-2 rounded">
-                        <input
-                          type="checkbox"
-                          checked={selectedSublevels.includes(sublevel.id)}
-                          onChange={() => handleSublevelToggle(sublevel.id)}
-                          className="rounded border-gray-300"
-                        />
-                        <div className="text-xs">
-                          <div className="font-semibold">{sublevel.id}</div>
-                          <div className="text-gray-600">{sublevel.name}</div>
-                        </div>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
 
             <div className="flex space-x-3 p-6 bg-gray-50 rounded-b-2xl">
