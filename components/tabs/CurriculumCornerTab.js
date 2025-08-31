@@ -1,4 +1,4 @@
-// components/tabs/CurriculumCornerTab.js - UPDATED WITH FLUENCY PRACTICE
+// components/tabs/CurriculumCornerTab.js - UPDATED WITH MATH MENTALS
 import React, { useState } from 'react';
 
 // Import activity components
@@ -7,11 +7,12 @@ import PrepLiteracyWarmup from '../curriculum/literacy/PrepLiteracyWarmUp';
 import ReadingComprehension from '../curriculum/literacy/ReadingComprehension';
 import VisualWritingPrompts from '../curriculum/literacy/VisualWritingPrompts';
 import SpellingProgram from '../curriculum/literacy/SpellingProgram';
-import FluencyPractice from '../curriculum/literacy/FluencyPractice'; // NEW IMPORT
+import FluencyPractice from '../curriculum/literacy/FluencyPractice';
 import AreaPerimeterTool from '../curriculum/mathematics/AreaPerimeterTool';
 import MathWarmup from '../curriculum/mathematics/MathWarmup';
 import WorksheetGenerator from '../curriculum/mathematics/WorksheetGenerator';
 import NumbersBoard from '../curriculum/mathematics/NumbersBoard';
+import MathMentals from '../curriculum/mathematics/MathMentals'; // NEW IMPORT
 
 // ===============================================
 // COMING SOON COMPONENT
@@ -29,7 +30,7 @@ const ComingSoon = ({ toolName, description }) => (
 );
 
 // ===============================================
-// SUBJECT CONFIGURATION - UPDATED WITH FLUENCY PRACTICE
+// SUBJECT CONFIGURATION - UPDATED WITH MATH MENTALS
 // ===============================================
 const subjects = [
   {
@@ -69,7 +70,7 @@ const subjects = [
         component: SpellingProgram
       },
       {
-        id: 'fluency-practice', // NEW ACTIVITY ADDED HERE
+        id: 'fluency-practice',
         name: 'Fluency Practice',
         icon: '📖',
         description: 'Reading passages for fluency development and practice',
@@ -127,6 +128,13 @@ const subjects = [
     description: 'Math tools and number activities',
     activities: [
       {
+        id: 'math-mentals', // NEW ACTIVITY ADDED
+        name: 'Math Mentals',
+        icon: '🧮',
+        description: 'Daily number facts practice for automatic recall - like Wordle for math!',
+        component: MathMentals
+      },
+      {
         id: 'worksheet-generator',
         name: 'Worksheet Generator',
         icon: '📄',
@@ -143,7 +151,7 @@ const subjects = [
       {
         id: 'area-perimeter',
         name: 'Area & Perimeter',
-        icon: '📐',
+        icon: '📏',
         description: 'Interactive tool for exploring area and perimeter concepts',
         component: AreaPerimeterTool
       },
@@ -307,7 +315,7 @@ const subjects = [
 ];
 
 // ===============================================
-// MAIN CURRICULUM CORNER COMPONENT - UPDATED TO SUPPORT FLUENCY PRACTICE
+// MAIN CURRICULUM CORNER COMPONENT - UPDATED TO SUPPORT MATH MENTALS
 // ===============================================
 const CurriculumCornerTab = ({ 
   students = [], 
@@ -365,7 +373,8 @@ const CurriculumCornerTab = ({
     if (activeActivity.id === 'literacy-warmup' || 
         activeActivity.id === 'math-warmup' || 
         activeActivity.id === 'spelling-program' ||
-        activeActivity.id === 'fluency-practice') { // ADDED FLUENCY PRACTICE HERE
+        activeActivity.id === 'fluency-practice' ||
+        activeActivity.id === 'math-mentals') { // ADDED MATH MENTALS HERE
       activityProps.saveData = saveData;
       activityProps.loadedData = loadedData;
     }
@@ -549,7 +558,7 @@ const CurriculumCornerTab = ({
         </div>
       </div>
 
-      {/* Quick Stats */}
+      {/* Quick Stats - UPDATED TO HIGHLIGHT MATH MENTALS */}
       <div className="bg-white rounded-xl shadow-sm p-6">
         <h3 className="text-xl font-bold text-slate-800 mb-4">📊 Curriculum Overview</h3>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -570,6 +579,12 @@ const CurriculumCornerTab = ({
                     style={{ width: `${(availableTools / totalTools) * 100}%` }}
                   ></div>
                 </div>
+                {/* Highlight Math Mentals */}
+                {subject.id === 'mathematics' && (
+                  <div className="text-xs text-green-600 font-semibold mt-1">
+                    🧮 New: Math Mentals!
+                  </div>
+                )}
               </div>
             );
           })}

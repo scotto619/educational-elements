@@ -1,4 +1,4 @@
-// pages/api/student-update.js - Server-side API for student data updates
+// pages/api/student-update.js - Server-side API for student data updates - UPDATED WITH MATH MENTALS
 import { adminFirestore } from '../../utils/firebase-admin';
 
 export default async function handler(req, res) {
@@ -23,11 +23,12 @@ export default async function handler(req, res) {
       });
     }
 
-    console.log('📝 Student update request:', {
+    console.log('🔄 Student update request:', {
       teacherUserId,
       classId,
       studentId,
       hasUpdateData: !!updateData,
+      updateType: Object.keys(updateData).join(', '),
       classCode
     });
 
@@ -59,12 +60,15 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: 'Student not found' });
     }
 
-    // Validate update data to prevent malicious updates
+    // Validate update data to prevent malicious updates - EXPANDED FOR MATH MENTALS
     const allowedFields = [
+      // Existing allowed fields
       'totalPoints', 'currency', 'coinsSpent', 'avatarBase', 
       'ownedAvatars', 'ownedPets', 'rewardsPurchased',
       'gameProgress', 'achievements', 'lastUpdated',
-      'clickerGameData'
+      'clickerGameData',
+      // Math Mentals specific fields
+      'mathMentalsProgress'
     ];
 
     const sanitizedUpdateData = {};
@@ -76,6 +80,11 @@ export default async function handler(req, res) {
 
     // Add timestamp
     sanitizedUpdateData.lastUpdated = new Date().toISOString();
+
+    console.log('📝 Sanitized update data:', Object.keys(sanitizedUpdateData));
+
+    // Get current student data
+    const currentStudent = targetClass.students[studentIndex];
 
     // Update the student data
     const updatedClasses = teacherData.classes.map(cls => {
@@ -93,10 +102,58 @@ export default async function handler(req, res) {
       return cls;
     });
 
+    // MATH MENTALS: Update student progress in math groups if applicable
+    if (sanitizedUpdateData.mathMentalsProgress && updatedClasses) {
+      console.log('🧮 Processing Math Mentals progress update...');
+      
+      const classIndex = updatedClasses.findIndex(cls => cls.id === classId);
+      if (classIndex !== -1 && updatedClasses[classIndex].toolkitData?.mathMentalsData?.groups) {
+        const mathGroups = updatedClasses[classIndex].toolkitData.mathMentalsData.groups;
+        
+        // Find and update the student in their math group
+        let groupUpdated = false;
+        mathGroups.forEach(group => {
+          const groupStudentIndex = group.students.findIndex(s => s.id === studentId);
+          if (groupStudentIndex !== -1) {
+            const mathProgress = sanitizedUpdateData.mathMentalsProgress;
+            
+            // Update the student in the math group
+            group.students[groupStudentIndex] = {
+              ...group.students[groupStudentIndex],
+              currentLevel: mathProgress.currentLevel,
+              progress: mathProgress.progress,
+              streak: mathProgress.streak
+            };
+            
+            console.log('📊 Updated student in math group:', {
+              groupName: group.name,
+              studentName: currentStudent.firstName,
+              newLevel: mathProgress.currentLevel,
+              streak: mathProgress.streak
+            });
+            
+            groupUpdated = true;
+          }
+        });
+
+        if (groupUpdated) {
+          // Update the toolkit data with new timestamp
+          updatedClasses[classIndex].toolkitData.mathMentalsData.groups = mathGroups;
+          updatedClasses[classIndex].toolkitData.mathMentalsData.lastUpdated = new Date().toISOString();
+          console.log('✅ Math group data updated successfully');
+        } else {
+          console.log('⚠️ Student not found in any math group');
+        }
+      } else {
+        console.log('ℹ️ No math mentals data structure found in class');
+      }
+    }
+
     // Save back to Firestore
     await teacherDocRef.update({ classes: updatedClasses });
 
     console.log('✅ Student data updated successfully:', {
+      studentName: currentStudent.firstName,
       studentId,
       updatedFields: Object.keys(sanitizedUpdateData)
     });
@@ -114,9 +171,18 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('❌ Error updating student data:', error);
-    res.status(500).json({ 
-      error: 'Internal server error', 
-      details: error.message 
-    });
+    
+    // Return more specific error info in development
+    const errorResponse = {
+      error: 'Internal server error',
+      message: error.message
+    };
+    
+    // Include stack trace in development
+    if (process.env.NODE_ENV === 'development') {
+      errorResponse.stack = error.stack;
+    }
+    
+    res.status(500).json(errorResponse);
   }
 }

@@ -1,4 +1,4 @@
-// pages/student.js - UPDATED WITH SPELLING & READING ASSIGNMENTS
+// pages/student.js - UPDATED WITH MATH MENTALS TAB
 import React, { useState, useEffect } from 'react';
 import { firestore } from '../utils/firebase';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
@@ -7,8 +7,9 @@ import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firesto
 import StudentShop from '../components/student/StudentShop';
 import StudentGames from '../components/student/StudentGames';
 import StudentDashboard from '../components/student/StudentDashboard';
-import StudentSpelling from '../components/student/StudentSpelling'; // NEW
-import StudentReading from '../components/student/StudentReading'; // NEW
+import StudentSpelling from '../components/student/StudentSpelling';
+import StudentReading from '../components/student/StudentReading';
+import StudentMathMentals from '../components/student/StudentMathMentals'; // NEW IMPORT
 
 // Import from the correct gameHelpers file
 import { 
@@ -105,7 +106,7 @@ const StudentPortal = () => {
                 const fullTeacherData = teacherDocSnap.data();
                 const fullClassData = fullTeacherData.classes.find(cls => cls.id === matchingClass.id);
                 
-                // Include toolkit data for spelling/reading assignments
+                // Include toolkit data for spelling/reading/math assignments
                 foundClass = {
                   ...fullClassData,
                   toolkitData: fullTeacherData.classes.find(cls => cls.id === matchingClass.id)?.toolkitData || {}
@@ -421,13 +422,14 @@ const StudentPortal = () => {
   }
 
   // ===============================================
-  // RENDER MAIN PORTAL - UPDATED WITH NEW TABS
+  // RENDER MAIN PORTAL - UPDATED WITH MATH MENTALS TAB
   // ===============================================
   
   const tabs = [
     { id: 'dashboard', name: 'Home', icon: '🏠', shortName: 'Home' },
-    { id: 'spelling', name: 'Spelling', icon: '📝', shortName: 'Spelling' }, // NEW
-    { id: 'reading', name: 'Reading', icon: '📖', shortName: 'Reading' }, // NEW
+    { id: 'mathmentals', name: 'Math Mentals', icon: '🧮', shortName: 'Math' }, // NEW TAB
+    { id: 'spelling', name: 'Spelling', icon: '📝', shortName: 'Spelling' },
+    { id: 'reading', name: 'Reading', icon: '📖', shortName: 'Reading' },
     { id: 'shop', name: 'Shop', icon: '🛏️', shortName: 'Shop' },
     { id: 'games', name: 'Games', icon: '🎮', shortName: 'Games' },
     { id: 'quizshow', name: 'Quiz Show', icon: '🎪', shortName: 'Quiz' }
@@ -446,7 +448,16 @@ const StudentPortal = () => {
             calculateAvatarLevel={calculateAvatarLevel}
           />
         );
-      case 'spelling': // NEW CASE
+      case 'mathmentals': // NEW CASE FOR MATH MENTALS
+        return (
+          <StudentMathMentals 
+            studentData={studentData}
+            classData={classData}
+            showToast={showToast}
+            updateStudentData={updateStudentData}
+          />
+        );
+      case 'spelling':
         return (
           <StudentSpelling 
             studentData={studentData}
@@ -454,7 +465,7 @@ const StudentPortal = () => {
             showToast={showToast}
           />
         );
-      case 'reading': // NEW CASE
+      case 'reading':
         return (
           <StudentReading 
             studentData={studentData}
@@ -543,7 +554,7 @@ const StudentPortal = () => {
         </div>
       </div>
 
-      {/* Navigation - UPDATED TO HANDLE 6 TABS ON MOBILE */}
+      {/* Navigation - UPDATED TO HANDLE 7 TABS ON MOBILE */}
       <div className="bg-white shadow-sm border-b sticky top-0 z-10">
         <div className="max-w-6xl mx-auto">
           <div className="flex overflow-x-auto">
@@ -551,7 +562,7 @@ const StudentPortal = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-shrink-0 flex flex-col md:flex-row items-center justify-center space-y-1 md:space-y-0 md:space-x-2 px-3 md:px-4 py-2 md:py-3 transition-all duration-200 min-w-[80px] md:min-w-0 ${
+                className={`flex-shrink-0 flex flex-col md:flex-row items-center justify-center space-y-1 md:space-y-0 md:space-x-2 px-2 md:px-4 py-2 md:py-3 transition-all duration-200 min-w-[70px] md:min-w-0 ${
                   activeTab === tab.id 
                     ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50 font-semibold' 
                     : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
