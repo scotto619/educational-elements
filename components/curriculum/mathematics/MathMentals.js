@@ -563,6 +563,16 @@ const generateQuestion = (sublevel, config) => {
 };
 
 // ===============================================
+// HELPER FUNCTIONS
+// ===============================================
+
+const getUniqueLevelsFromGroup = (group) => {
+  if (!group || !group.students) return [];
+  const levels = group.students.map(s => s.currentLevel);
+  return [...new Set(levels)];
+};
+
+// ===============================================
 // STUDENT GROUP MANAGEMENT
 // ===============================================
 
@@ -579,11 +589,12 @@ const MathMentals = ({
     hasSaveData: typeof saveData === 'function',
     hasLoadedData: !!loadedData
   });
+  
   const [mathGroups, setMathGroups] = useState([]);
   const [showGroupModal, setShowGroupModal] = useState(false);
   const [groupName, setGroupName] = useState('');
   const [selectedStudents, setSelectedStudents] = useState([]);
-  const [studentLevels, setStudentLevels] = useState({}); // Single level per student
+  const [studentLevels, setStudentLevels] = useState({});
   const [editingGroup, setEditingGroup] = useState(null);
   const [testMode, setTestMode] = useState(false);
   const [currentQuestions, setCurrentQuestions] = useState([]);
@@ -831,25 +842,6 @@ const MathMentals = ({
     setTestMode(true);
   };
 
-  const handleLevelSelect = (level) => {
-    setSelectedLevel(level);
-    setSelectedSublevels([]); // Reset sublevels when changing main level
-  };
-
-  const handleSublevelToggle = (sublevelId) => {
-    setSelectedSublevels(prev => 
-      prev.includes(sublevelId) 
-        ? prev.filter(id => id !== sublevelId)
-        : [...prev, sublevelId]
-    );
-  };
-
-  const getSublevelsForLevel = (level) => {
-    return Object.entries(MATH_SUBLEVELS)
-      .filter(([id]) => id.startsWith(`${level}.`))
-      .map(([id, config]) => ({ id, ...config }));
-  };
-
   if (testMode && currentQuestions.length > 0) {
     return (
       <div className="space-y-6">
@@ -930,87 +922,90 @@ const MathMentals = ({
         <div className="space-y-4">
           <h2 className="text-2xl font-bold text-gray-800">Current Math Groups</h2>
           <div className="grid gap-4">
-            {mathGroups.map(group => (
-              <div key={group.id} className="bg-white rounded-xl shadow-lg border border-gray-200">
-                <div className={`${group.color} text-white p-4 rounded-t-xl`}>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-xl font-bold">{group.name}</h3>
-                      <p className="opacity-90">{group.students.length} students • {group.assignedLevels.length} levels</p>
-                    </div>
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => editGroup(group)}
-                        className="bg-white bg-opacity-20 px-3 py-2 rounded-lg hover:bg-opacity-30"
-                      >
-                        ✏️ Edit
-                      </button>
-                      <button
-                        onClick={() => deleteGroup(group.id)}
-                        className="bg-red-500 bg-opacity-80 px-3 py-2 rounded-lg hover:bg-opacity-100"
-                      >
-                        🗑️ Delete
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="p-6">
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div>
-                      <h4 className="font-semibold text-gray-800 mb-3">Students ({group.students.length})</h4>
-                      <div className="space-y-2">
-                        {group.students.map(student => (
-                          <div key={student.id} className="bg-gray-50 rounded-lg p-3">
-                            <div className="flex items-center justify-between">
-                              <span className="font-medium">{student.firstName} {student.lastName}</span>
-                              <div className="text-sm">
-                                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                                  Level {student.currentLevel}
-                                </span>
-                                {student.streak > 0 && (
-                                  <span className="bg-green-100 text-green-800 px-2 py-1 rounded ml-2">
-                                    {student.streak} day streak
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
+            {mathGroups.map(group => {
+              const uniqueLevels = getUniqueLevelsFromGroup(group);
+              return (
+                <div key={group.id} className="bg-white rounded-xl shadow-lg border border-gray-200">
+                  <div className={`${group.color} text-white p-4 rounded-t-xl`}>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-xl font-bold">{group.name}</h3>
+                        <p className="opacity-90">{group.students.length} students • {uniqueLevels.length} levels</p>
                       </div>
-                    </div>
-                    
-                    <div>
-                      <h4 className="font-semibold text-gray-800 mb-3">Progress Overview</h4>
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <div className="grid grid-cols-2 gap-4 text-center">
-                          <div>
-                            <div className="text-2xl font-bold text-blue-600">
-                              {group.students.filter(s => s.progress && Object.keys(s.progress).length > 0).length}
-                            </div>
-                            <div className="text-xs text-gray-600">Students Active</div>
-                          </div>
-                          <div>
-                            <div className="text-2xl font-bold text-green-600">
-                              {Math.round((group.students.reduce((sum, s) => sum + (s.streak || 0), 0) / group.students.length) * 10) / 10}
-                            </div>
-                            <div className="text-xs text-gray-600">Avg Streak</div>
-                          </div>
-                        </div>
-                        
-                        {/* Quick Test Button */}
+                      <div className="flex space-x-2">
                         <button
-                          onClick={() => startTest(group.students[0]?.currentLevel || '1.1')}
-                          className="w-full mt-3 bg-purple-100 text-purple-800 px-3 py-2 rounded text-sm hover:bg-purple-200 transition-colors"
+                          onClick={() => editGroup(group)}
+                          className="bg-white bg-opacity-20 px-3 py-2 rounded-lg hover:bg-opacity-30"
                         >
-                          🎯 Preview Questions
+                          ✏️ Edit
+                        </button>
+                        <button
+                          onClick={() => deleteGroup(group.id)}
+                          className="bg-red-500 bg-opacity-80 px-3 py-2 rounded-lg hover:bg-opacity-100"
+                        >
+                          🗑️ Delete
                         </button>
                       </div>
                     </div>
                   </div>
+                  
+                  <div className="p-6">
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div>
+                        <h4 className="font-semibold text-gray-800 mb-3">Students ({group.students.length})</h4>
+                        <div className="space-y-2">
+                          {group.students.map(student => (
+                            <div key={student.id} className="bg-gray-50 rounded-lg p-3">
+                              <div className="flex items-center justify-between">
+                                <span className="font-medium">{student.firstName} {student.lastName}</span>
+                                <div className="text-sm">
+                                  <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                    Level {student.currentLevel}
+                                  </span>
+                                  {student.streak > 0 && (
+                                    <span className="bg-green-100 text-green-800 px-2 py-1 rounded ml-2">
+                                      {student.streak} day streak
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <h4 className="font-semibold text-gray-800 mb-3">Progress Overview</h4>
+                        <div className="bg-gray-50 rounded-lg p-4">
+                          <div className="grid grid-cols-2 gap-4 text-center">
+                            <div>
+                              <div className="text-2xl font-bold text-blue-600">
+                                {group.students.filter(s => s.progress && Object.keys(s.progress).length > 0).length}
+                              </div>
+                              <div className="text-xs text-gray-600">Students Active</div>
+                            </div>
+                            <div>
+                              <div className="text-2xl font-bold text-green-600">
+                                {Math.round((group.students.reduce((sum, s) => sum + (s.streak || 0), 0) / group.students.length) * 10) / 10}
+                              </div>
+                              <div className="text-xs text-gray-600">Avg Streak</div>
+                            </div>
+                          </div>
+                          
+                          {/* Quick Test Button */}
+                          <button
+                            onClick={() => startTest(group.students[0]?.currentLevel || '1.1')}
+                            className="w-full mt-3 bg-purple-100 text-purple-800 px-3 py-2 rounded text-sm hover:bg-purple-200 transition-colors"
+                          >
+                            🎯 Preview Questions
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
