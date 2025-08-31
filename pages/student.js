@@ -1,4 +1,4 @@
-// pages/student.js - FIXED VERSION THAT WORKS ON STUDENT DEVICES
+// pages/student.js - UPDATED WITH SPELLING & READING ASSIGNMENTS
 import React, { useState, useEffect } from 'react';
 import { firestore } from '../utils/firebase';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
@@ -7,6 +7,8 @@ import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firesto
 import StudentShop from '../components/student/StudentShop';
 import StudentGames from '../components/student/StudentGames';
 import StudentDashboard from '../components/student/StudentDashboard';
+import StudentSpelling from '../components/student/StudentSpelling'; // NEW
+import StudentReading from '../components/student/StudentReading'; // NEW
 
 // Import from the correct gameHelpers file
 import { 
@@ -94,7 +96,26 @@ const StudentPortal = () => {
             
             if (matchingClass) {
               console.log('🎯 Found matching class!', matchingClass.name);
-              foundClass = matchingClass;
+              
+              // ENHANCEMENT: Get additional teacher data including toolkitData
+              const teacherDocRef = doc(firestore, 'users', userDoc.id);
+              const teacherDocSnap = await getDoc(teacherDocRef);
+              
+              if (teacherDocSnap.exists()) {
+                const fullTeacherData = teacherDocSnap.data();
+                const fullClassData = fullTeacherData.classes.find(cls => cls.id === matchingClass.id);
+                
+                // Include toolkit data for spelling/reading assignments
+                foundClass = {
+                  ...fullClassData,
+                  toolkitData: fullTeacherData.classes.find(cls => cls.id === matchingClass.id)?.toolkitData || {}
+                };
+                
+                console.log('📚 Loaded class with toolkit data:', foundClass.toolkitData ? 'Yes' : 'No');
+              } else {
+                foundClass = matchingClass;
+              }
+              
               foundTeacherUserId = userDoc.id;
               break;
             }
@@ -400,12 +421,14 @@ const StudentPortal = () => {
   }
 
   // ===============================================
-  // RENDER MAIN PORTAL - MOBILE OPTIMIZED
+  // RENDER MAIN PORTAL - UPDATED WITH NEW TABS
   // ===============================================
   
   const tabs = [
     { id: 'dashboard', name: 'Home', icon: '🏠', shortName: 'Home' },
-    { id: 'shop', name: 'Shop', icon: '🛍️', shortName: 'Shop' },
+    { id: 'spelling', name: 'Spelling', icon: '📝', shortName: 'Spelling' }, // NEW
+    { id: 'reading', name: 'Reading', icon: '📖', shortName: 'Reading' }, // NEW
+    { id: 'shop', name: 'Shop', icon: '🛏️', shortName: 'Shop' },
     { id: 'games', name: 'Games', icon: '🎮', shortName: 'Games' },
     { id: 'quizshow', name: 'Quiz Show', icon: '🎪', shortName: 'Quiz' }
   ];
@@ -421,6 +444,22 @@ const StudentPortal = () => {
             getPetImage={getPetImage}
             calculateCoins={calculateCoins}
             calculateAvatarLevel={calculateAvatarLevel}
+          />
+        );
+      case 'spelling': // NEW CASE
+        return (
+          <StudentSpelling 
+            studentData={studentData}
+            classData={classData}
+            showToast={showToast}
+          />
+        );
+      case 'reading': // NEW CASE
+        return (
+          <StudentReading 
+            studentData={studentData}
+            classData={classData}
+            showToast={showToast}
           />
         );
       case 'shop':
@@ -504,15 +543,15 @@ const StudentPortal = () => {
         </div>
       </div>
 
-      {/* Navigation - Mobile Optimized */}
+      {/* Navigation - UPDATED TO HANDLE 6 TABS ON MOBILE */}
       <div className="bg-white shadow-sm border-b sticky top-0 z-10">
         <div className="max-w-6xl mx-auto">
-          <div className="flex">
+          <div className="flex overflow-x-auto">
             {tabs.map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 flex flex-col md:flex-row items-center justify-center space-y-1 md:space-y-0 md:space-x-2 px-2 md:px-6 py-2 md:py-3 transition-all duration-200 ${
+                className={`flex-shrink-0 flex flex-col md:flex-row items-center justify-center space-y-1 md:space-y-0 md:space-x-2 px-3 md:px-4 py-2 md:py-3 transition-all duration-200 min-w-[80px] md:min-w-0 ${
                   activeTab === tab.id 
                     ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50 font-semibold' 
                     : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
@@ -520,7 +559,7 @@ const StudentPortal = () => {
               >
                 <span className="text-lg md:text-xl">{tab.icon}</span>
                 <span className="text-xs md:text-base md:hidden">{tab.shortName}</span>
-                <span className="hidden md:inline">{tab.name}</span>
+                <span className="hidden md:inline text-sm lg:text-base">{tab.name}</span>
               </button>
             ))}
           </div>
