@@ -364,12 +364,32 @@ const StudentMathMentals = ({
     const levelConfig = MATH_SUBLEVELS[studentAssignment.currentLevel];
     if (!levelConfig) return;
 
-    // Generate 10 questions
+    // FIXED: Generate 10 unique questions (no duplicates)
     const newQuestions = [];
-    for (let i = 0; i < 10; i++) {
+    const usedQuestions = new Set();
+    let attempts = 0;
+    const maxAttempts = 100; // Prevent infinite loop
+    
+    while (newQuestions.length < 10 && attempts < maxAttempts) {
+      const question = generateQuestion(studentAssignment.currentLevel, levelConfig);
+      const questionKey = `${question.question}-${question.answer}`;
+      
+      // Only add if we haven't seen this exact question before
+      if (!usedQuestions.has(questionKey)) {
+        usedQuestions.add(questionKey);
+        newQuestions.push({
+          ...question,
+          id: newQuestions.length + 1
+        });
+      }
+      attempts++;
+    }
+    
+    // If we couldn't generate 10 unique questions, fill remaining slots
+    while (newQuestions.length < 10) {
       newQuestions.push({
         ...generateQuestion(studentAssignment.currentLevel, levelConfig),
-        id: i + 1
+        id: newQuestions.length + 1
       });
     }
 
@@ -452,6 +472,17 @@ const StudentMathMentals = ({
       newStreak = 0; // Reset streak on imperfect score
     }
 
+    // FIXED: Immediately update local state before API call
+    const newAssignment = {
+      ...studentAssignment,
+      currentLevel: newCurrentLevel,
+      progress: updatedProgress,
+      streak: newStreak
+    };
+    
+    setStudentAssignment(newAssignment);
+    setHasAttemptedToday(true); // Immediately prevent retaking
+
     // Update student data via API
     try {
       const success = await updateStudentData({
@@ -463,17 +494,7 @@ const StudentMathMentals = ({
         }
       });
 
-      if (success) {
-        setHasAttemptedToday(true);
-        
-        // Update local state
-        setStudentAssignment(prev => ({
-          ...prev,
-          currentLevel: newCurrentLevel,
-          progress: updatedProgress,
-          streak: newStreak
-        }));
-
+      if (success) {        
         // Show appropriate message
         if (shouldAdvance) {
           showToast(`Amazing! You've advanced to ${newCurrentLevel}! 🎉`, 'success');
@@ -482,8 +503,16 @@ const StudentMathMentals = ({
         } else {
           showToast(`You scored ${score}/10. Keep practicing!`, 'info');
         }
+      } else {
+        // If API call failed, revert local state
+        setStudentAssignment(studentAssignment);
+        setHasAttemptedToday(false);
+        showToast('Error saving results. Please try again.', 'error');
       }
     } catch (error) {
+      // If API call failed, revert local state
+      setStudentAssignment(studentAssignment);
+      setHasAttemptedToday(false);
       showToast('Error saving results. Please try again.', 'error');
     }
   };
