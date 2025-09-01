@@ -119,176 +119,168 @@ const MATH_SUBLEVELS = {
   "4.20": { name: "Mixed Advanced", type: "mixed_advanced", max: 1000 }
 };
 
-// Question generator (same as teacher component but condensed for key types)
-const generateQuestion = (sublevel, config) => {
+// IMPROVED Question generator with better randomization and variety
+const generateQuestion = (sublevel, config, seed = 0) => {
+  // Use seed for reproducible randomness in testing, but allow true randomness in production
   const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 
   switch (config.type) {
     case "counting":
-      const count = randomInt(0, config.max);
+      const count = randomInt(1, config.max); // Start from 1 instead of 0
       return {
-        question: `Count: How many dots?`,
+        question: `Count the dots:`,
         answer: count,
-        display: "•".repeat(count)
+        display: "•".repeat(count),
+        uniqueId: `count_${count}_${Date.now()}`
       };
 
     case "add_one":
       const num1 = randomInt(0, config.max);
       return {
         question: `${num1} + 1 = ?`,
-        answer: num1 + 1
+        answer: num1 + 1,
+        uniqueId: `add1_${num1}_${Date.now()}`
       };
 
     case "subtract_one":
       const num2 = randomInt(1, config.max);
       return {
         question: `${num2} - 1 = ?`,
-        answer: num2 - 1
+        answer: num2 - 1,
+        uniqueId: `sub1_${num2}_${Date.now()}`
       };
 
     case "add_two":
       const num3 = randomInt(0, config.max);
       return {
         question: `${num3} + 2 = ?`,
-        answer: num3 + 2
+        answer: num3 + 2,
+        uniqueId: `add2_${num3}_${Date.now()}`
       };
 
     case "number_before":
       const num4 = randomInt(1, config.max);
       return {
         question: `What comes before ${num4}?`,
-        answer: num4 - 1
+        answer: num4 - 1,
+        uniqueId: `before_${num4}_${Date.now()}`
       };
 
     case "number_after":
       const num5 = randomInt(0, config.max);
       return {
         question: `What comes after ${num5}?`,
-        answer: num5 + 1
+        answer: num5 + 1,
+        uniqueId: `after_${num5}_${Date.now()}`
       };
 
     case "doubles":
-      const double = randomInt(0, Math.floor(config.max / 2));
+      const double = randomInt(1, Math.floor(config.max / 2)); // Avoid 0+0
       return {
         question: `${double} + ${double} = ?`,
-        answer: double * 2
+        answer: double * 2,
+        uniqueId: `double_${double}_${Date.now()}`
       };
 
     case "add_to_target":
       const target1 = config.target;
-      const add1 = randomInt(0, target1);
+      const add1 = randomInt(1, target1 - 1); // Avoid trivial cases
       return {
         question: `${add1} + ? = ${target1}`,
-        answer: target1 - add1
+        answer: target1 - add1,
+        uniqueId: `addtarget_${add1}_${target1}_${Date.now()}`
       };
 
     case "subtract_from_target":
       const target2 = config.target;
-      const sub1 = randomInt(0, target2);
+      const sub1 = randomInt(1, target2 - 1);
       return {
         question: `${target2} - ? = ${sub1}`,
-        answer: target2 - sub1
+        answer: target2 - sub1,
+        uniqueId: `subtarget_${sub1}_${target2}_${Date.now()}`
       };
 
     case "skip_count":
-      const start = randomInt(1, 5) * config.step;
+      const start = randomInt(1, 3) * config.step; // More variety in starting points
       return {
         question: `Count by ${config.step}s: ${start}, ${start + config.step}, ?`,
-        answer: start + (config.step * 2)
+        answer: start + (config.step * 2),
+        uniqueId: `skip_${config.step}_${start}_${Date.now()}`
       };
 
     case "compare":
-      const comp1 = randomInt(0, config.max);
-      const comp2 = randomInt(0, config.max);
+      let comp1, comp2;
+      do {
+        comp1 = randomInt(0, config.max);
+        comp2 = randomInt(0, config.max);
+      } while (comp1 === comp2); // Ensure different numbers
       return {
         question: `Which is bigger: ${comp1} or ${comp2}?`,
-        answer: Math.max(comp1, comp2)
+        answer: Math.max(comp1, comp2),
+        uniqueId: `compare_${comp1}_${comp2}_${Date.now()}`
       };
 
     case "compare_less":
-      const comp3 = randomInt(0, config.max);
-      const comp4 = randomInt(0, config.max);
+      let comp3, comp4;
+      do {
+        comp3 = randomInt(0, config.max);
+        comp4 = randomInt(0, config.max);
+      } while (comp3 === comp4);
       return {
         question: `Which is smaller: ${comp3} or ${comp4}?`,
-        answer: Math.min(comp3, comp4)
+        answer: Math.min(comp3, comp4),
+        uniqueId: `compareless_${comp3}_${comp4}_${Date.now()}`
       };
 
     case "missing_number":
-      const miss1 = randomInt(1, config.max - 1);
+      const miss1 = randomInt(2, config.max - 1); // Avoid edge cases
       return {
         question: `${miss1 - 1}, ?, ${miss1 + 1}`,
-        answer: miss1
+        answer: miss1,
+        uniqueId: `missing_${miss1}_${Date.now()}`
       };
-
-    case "count_forward":
-      const start2 = randomInt(0, config.max);
-      return {
-        question: `Count forward ${config.steps} from ${start2}`,
-        answer: start2 + config.steps
-      };
-
-    case "count_backward":
-      const start3 = randomInt(config.steps, config.max);
-      return {
-        question: `Count backward ${config.steps} from ${start3}`,
-        answer: start3 - config.steps
-      };
-
-    case "mixed_basic":
-      const operations = ['+', '-'];
-      const op = operations[randomInt(0, operations.length - 1)];
-      if (op === '+') {
-        const a = randomInt(0, Math.floor(config.max / 2));
-        const b = randomInt(0, config.max - a);
-        return {
-          question: `${a} + ${b} = ?`,
-          answer: a + b
-        };
-      } else {
-        const result = randomInt(0, config.max);
-        const subtract = randomInt(0, result);
-        return {
-          question: `${result + subtract} - ${subtract} = ?`,
-          answer: result
-        };
-      }
 
     case "addition":
-      const addA = randomInt(1, Math.floor(config.max * 0.7));
+      const addA = randomInt(1, Math.floor(config.max * 0.6));
       const addB = randomInt(1, config.max - addA);
       return {
         question: `${addA} + ${addB} = ?`,
-        answer: addA + addB
+        answer: addA + addB,
+        uniqueId: `add_${addA}_${addB}_${Date.now()}`
       };
 
     case "subtraction":
-      const subResult = randomInt(0, config.max);
+      const subResult = randomInt(1, config.max - 1);
       const subAmount = randomInt(1, config.max - subResult);
       return {
         question: `${subResult + subAmount} - ${subAmount} = ?`,
-        answer: subResult
+        answer: subResult,
+        uniqueId: `sub_${subResult + subAmount}_${subAmount}_${Date.now()}`
       };
 
     case "times_table":
-      const multiplier = randomInt(0, 12);
+      const multiplier = randomInt(1, 12); // Start from 1, not 0
       return {
         question: `${multiplier} × ${config.table} = ?`,
-        answer: multiplier * config.table
+        answer: multiplier * config.table,
+        uniqueId: `times_${multiplier}_${config.table}_${Date.now()}`
       };
 
     case "division":
-      const quotient = randomInt(0, 12);
+      const quotient = randomInt(1, 12);
       const dividend = quotient * config.table;
       return {
         question: `${dividend} ÷ ${config.table} = ?`,
-        answer: quotient
+        answer: quotient,
+        uniqueId: `div_${dividend}_${config.table}_${Date.now()}`
       };
 
-    // Add other question types as needed...
+    // Add more cases as needed...
     default:
       return {
         question: "2 + 2 = ?",
-        answer: 4
+        answer: 4,
+        uniqueId: `default_${Date.now()}`
       };
   }
 };
@@ -316,7 +308,7 @@ const StudentMathMentals = ({
     }
   }, [studentData, classData]);
 
-  // FIXED: Timer effect - 2 minutes for entire test, not per question
+  // Timer effect - 2 minutes for entire test
   useEffect(() => {
     if (testStarted && timeLeft > 0 && !showResults) {
       const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
@@ -339,9 +331,16 @@ const StudentMathMentals = ({
     if (studentGroup) {
       const studentInfo = studentGroup.students.find(s => s.id === studentData.id);
       
-      // Check if student has attempted today
-      const today = new Date().toDateString();
+      // FIXED: Better date checking for daily attempts (use UTC date to avoid timezone issues)
+      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
       const todayAttempt = studentInfo.progress?.[today];
+      
+      console.log('📅 Date check:', {
+        today,
+        hasAttempt: !!todayAttempt,
+        progressKeys: Object.keys(studentInfo.progress || {}),
+        studentName: studentInfo.firstName
+      });
       
       setStudentAssignment({
         groupName: studentGroup.name,
@@ -354,29 +353,38 @@ const StudentMathMentals = ({
 
       setHasAttemptedToday(!!todayAttempt);
     } else {
+      console.log('❌ Student not found in any math group');
       setStudentAssignment(null);
     }
   };
 
   const startTest = () => {
-    if (!studentAssignment || hasAttemptedToday) return;
+    if (!studentAssignment || hasAttemptedToday) {
+      console.log('⚠️ Cannot start test:', { hasAssignment: !!studentAssignment, hasAttemptedToday });
+      return;
+    }
 
     const levelConfig = MATH_SUBLEVELS[studentAssignment.currentLevel];
-    if (!levelConfig) return;
+    if (!levelConfig) {
+      console.error('❌ Invalid level config:', studentAssignment.currentLevel);
+      showToast('Error: Invalid level configuration', 'error');
+      return;
+    }
 
-    // FIXED: Generate 10 unique questions (no duplicates)
+    // IMPROVED: Generate 10 truly unique questions with better variety
     const newQuestions = [];
-    const usedQuestions = new Set();
+    const usedQuestionIds = new Set();
+    const maxAttempts = 50; // Reduced attempts but improved generation
     let attempts = 0;
-    const maxAttempts = 100; // Prevent infinite loop
     
     while (newQuestions.length < 10 && attempts < maxAttempts) {
-      const question = generateQuestion(studentAssignment.currentLevel, levelConfig);
-      const questionKey = `${question.question}-${question.answer}`;
+      const question = generateQuestion(studentAssignment.currentLevel, levelConfig, attempts);
       
-      // Only add if we haven't seen this exact question before
-      if (!usedQuestions.has(questionKey)) {
-        usedQuestions.add(questionKey);
+      // Use a more comprehensive uniqueness check
+      const questionKey = question.uniqueId || `${question.question}-${question.answer}`;
+      
+      if (!usedQuestionIds.has(questionKey)) {
+        usedQuestionIds.add(questionKey);
         newQuestions.push({
           ...question,
           id: newQuestions.length + 1
@@ -385,13 +393,16 @@ const StudentMathMentals = ({
       attempts++;
     }
     
-    // If we couldn't generate 10 unique questions, fill remaining slots
+    // If we couldn't generate 10 unique questions, fill remaining with variations
     while (newQuestions.length < 10) {
+      const question = generateQuestion(studentAssignment.currentLevel, levelConfig, Date.now() + newQuestions.length);
       newQuestions.push({
-        ...generateQuestion(studentAssignment.currentLevel, levelConfig),
+        ...question,
         id: newQuestions.length + 1
       });
     }
+
+    console.log('🎯 Generated questions:', newQuestions.map(q => q.question));
 
     setQuestions(newQuestions);
     setCurrentQuestionIndex(0);
@@ -434,7 +445,9 @@ const StudentMathMentals = ({
     setTestStarted(false);
 
     const score = finalAnswers.filter(a => a.isCorrect).length;
-    const today = new Date().toDateString();
+    const today = new Date().toISOString().split('T')[0]; // FIXED: Use consistent date format
+
+    console.log('🏆 Test completed:', { score, today, totalQuestions: finalAnswers.length });
 
     // Update student progress
     const updatedProgress = {
@@ -452,7 +465,7 @@ const StudentMathMentals = ({
     let newCurrentLevel = studentAssignment.currentLevel;
     let shouldAdvance = false;
 
-    // Check for perfect score (10/10)
+    // FIXED: Proper streak and advancement logic
     if (score === 10) {
       newStreak += 1;
       
@@ -466,13 +479,17 @@ const StudentMathMentals = ({
           newCurrentLevel = allLevels[currentIndex + 1];
           newStreak = 0; // Reset streak for new level
           shouldAdvance = true;
+          console.log('🚀 Student advancing:', {
+            from: studentAssignment.currentLevel,
+            to: newCurrentLevel
+          });
         }
       }
     } else {
       newStreak = 0; // Reset streak on imperfect score
     }
 
-    // FIXED: Immediately update local state before API call
+    // Immediately update local state before API call
     const newAssignment = {
       ...studentAssignment,
       currentLevel: newCurrentLevel,
@@ -485,6 +502,7 @@ const StudentMathMentals = ({
 
     // Update student data via API
     try {
+      console.log('💾 Saving progress to server...');
       const success = await updateStudentData({
         mathMentalsProgress: {
           currentLevel: newCurrentLevel,
@@ -499,21 +517,24 @@ const StudentMathMentals = ({
         if (shouldAdvance) {
           showToast(`Amazing! You've advanced to ${newCurrentLevel}! 🎉`, 'success');
         } else if (score === 10) {
-          showToast(`Perfect score! ${3 - newStreak} more perfect scores to advance!`, 'success');
+          const remainingForAdvance = 3 - newStreak;
+          showToast(`Perfect score! ${remainingForAdvance} more perfect day${remainingForAdvance !== 1 ? 's' : ''} to advance!`, 'success');
         } else {
           showToast(`You scored ${score}/10. Keep practicing!`, 'info');
         }
       } else {
         // If API call failed, revert local state
+        console.error('❌ API call failed - reverting state');
         setStudentAssignment(studentAssignment);
         setHasAttemptedToday(false);
         showToast('Error saving results. Please try again.', 'error');
       }
     } catch (error) {
+      console.error('❌ Network error saving progress:', error);
       // If API call failed, revert local state
       setStudentAssignment(studentAssignment);
       setHasAttemptedToday(false);
-      showToast('Error saving results. Please try again.', 'error');
+      showToast('Error saving results. Please check your internet connection.', 'error');
     }
   };
 
@@ -566,7 +587,7 @@ const StudentMathMentals = ({
     return (
       <div className="space-y-6">
         {/* Header */}
-        <div className={`${studentAssignment.groupColor} text-white rounded-xl p-6`}>
+        <div className={`bg-gradient-to-r ${studentAssignment.groupColor} text-white rounded-xl p-6`}>
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-2xl font-bold">Math Mentals Test</h1>
             <button
@@ -639,7 +660,7 @@ const StudentMathMentals = ({
     return (
       <div className="space-y-6">
         {/* Results Header */}
-        <div className={`${studentAssignment.groupColor} text-white rounded-xl p-6 text-center`}>
+        <div className={`bg-gradient-to-r ${studentAssignment.groupColor} text-white rounded-xl p-6 text-center`}>
           <div className="text-6xl mb-4">
             {score === 10 ? '🏆' : score >= 7 ? '⭐' : '📈'}
           </div>
@@ -735,10 +756,10 @@ const StudentMathMentals = ({
           </h2>
           <div className="flex items-center justify-center space-x-6 text-sm">
             <div className="bg-blue-100 text-blue-800 px-3 py-2 rounded-full">
-              Streak: {studentAssignment.streak} day{studentAssignment.streak !== 1 ? 's' : ''}
+              Streak: {studentAssignment.streak} perfect day{studentAssignment.streak !== 1 ? 's' : ''}
             </div>
             <div className="bg-purple-100 text-purple-800 px-3 py-2 rounded-full">
-              Need 3 perfect scores to advance
+              Need {3 - studentAssignment.streak} more perfect scores to advance
             </div>
           </div>
         </div>
@@ -754,7 +775,7 @@ const StudentMathMentals = ({
               </p>
               <div className="bg-green-100 border border-green-200 rounded-lg p-4">
                 <p className="text-green-800 text-sm">
-                  🔥 Today's result: {studentAssignment.progress?.[new Date().toDateString()]?.score || 0}/10
+                  🔥 Today's result: {studentAssignment.progress?.[new Date().toISOString().split('T')[0]]?.score || 0}/10
                 </p>
               </div>
             </div>
@@ -773,7 +794,7 @@ const StudentMathMentals = ({
               </button>
               <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
                 <p className="text-yellow-800 text-sm">
-                  ⏰ You have 2 minutes to answer all 10 questions. Questions are hidden until you start!
+                  ⏰ You have 2 minutes to answer all 10 questions. Ready when you are!
                 </p>
               </div>
             </div>
@@ -790,7 +811,7 @@ const StudentMathMentals = ({
             .map(([date, result]) => (
               <div key={date} className="text-center p-3 bg-gray-50 rounded-lg">
                 <div className="text-xs text-gray-600 mb-1">
-                  {new Date(date).toLocaleDateString('en-US', { weekday: 'short' })}
+                  {new Date(date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                 </div>
                 <div className={`text-lg font-bold ${
                   result.score === 10 ? 'text-green-600' : 

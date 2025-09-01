@@ -1,4 +1,4 @@
-// pages/api/student-update.js - Server-side API for student data updates - UPDATED WITH MATH MENTALS
+// pages/api/student-update.js - FIXED API for Math Mentals progress saving
 import { adminFirestore } from '../../utils/firebase-admin';
 
 export default async function handler(req, res) {
@@ -60,15 +60,13 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: 'Student not found' });
     }
 
-    // Validate update data to prevent malicious updates - EXPANDED FOR MATH MENTALS
+    // Validate update data to prevent malicious updates
     const allowedFields = [
-      // Existing allowed fields
       'totalPoints', 'currency', 'coinsSpent', 'avatarBase', 
       'ownedAvatars', 'ownedPets', 'rewardsPurchased',
       'gameProgress', 'achievements', 'lastUpdated',
       'clickerGameData',
-      // Math Mentals specific fields
-      'mathMentalsProgress'
+      'mathMentalsProgress' // Math Mentals specific field
     ];
 
     const sanitizedUpdateData = {};
@@ -81,12 +79,12 @@ export default async function handler(req, res) {
     // Add timestamp
     sanitizedUpdateData.lastUpdated = new Date().toISOString();
 
-    console.log('📝 Sanitized update data:', Object.keys(sanitizedUpdateData));
+    console.log('🔍 Sanitized update data:', Object.keys(sanitizedUpdateData));
 
     // Get current student data
     const currentStudent = targetClass.students[studentIndex];
 
-    // Update the student data
+    // Update the student data in the main students array
     const updatedClasses = teacherData.classes.map(cls => {
       if (cls.id === classId) {
         const updatedStudents = [...cls.students];
@@ -102,50 +100,60 @@ export default async function handler(req, res) {
       return cls;
     });
 
-    // MATH MENTALS: Update student progress in math groups if applicable
+    // CRITICAL FIX: Update student progress in math groups using correct data structure
     if (sanitizedUpdateData.mathMentalsProgress && updatedClasses) {
       console.log('🧮 Processing Math Mentals progress update...');
       
       const classIndex = updatedClasses.findIndex(cls => cls.id === classId);
-      if (classIndex !== -1 && updatedClasses[classIndex].toolkitData?.mathMentalsData?.groups) {
-        const mathGroups = updatedClasses[classIndex].toolkitData.mathMentalsData.groups;
+      if (classIndex !== -1) {
+        // FIXED: Look for mathMentalsGroups instead of mathMentalsData.groups
+        const mathGroups = updatedClasses[classIndex].toolkitData?.mathMentalsGroups;
         
-        // Find and update the student in their math group
-        let groupUpdated = false;
-        mathGroups.forEach(group => {
-          const groupStudentIndex = group.students.findIndex(s => s.id === studentId);
-          if (groupStudentIndex !== -1) {
-            const mathProgress = sanitizedUpdateData.mathMentalsProgress;
-            
-            // Update the student in the math group
-            group.students[groupStudentIndex] = {
-              ...group.students[groupStudentIndex],
-              currentLevel: mathProgress.currentLevel,
-              progress: mathProgress.progress,
-              streak: mathProgress.streak
-            };
-            
-            console.log('📊 Updated student in math group:', {
-              groupName: group.name,
-              studentName: currentStudent.firstName,
-              newLevel: mathProgress.currentLevel,
-              streak: mathProgress.streak
-            });
-            
-            groupUpdated = true;
-          }
-        });
+        if (mathGroups && Array.isArray(mathGroups)) {
+          console.log('📊 Found math groups:', mathGroups.length);
+          
+          // Find and update the student in their math group
+          let groupUpdated = false;
+          mathGroups.forEach((group, groupIndex) => {
+            const groupStudentIndex = group.students.findIndex(s => s.id === studentId);
+            if (groupStudentIndex !== -1) {
+              const mathProgress = sanitizedUpdateData.mathMentalsProgress;
+              
+              // Update the student in the math group
+              mathGroups[groupIndex].students[groupStudentIndex] = {
+                ...mathGroups[groupIndex].students[groupStudentIndex],
+                currentLevel: mathProgress.currentLevel,
+                progress: mathProgress.progress,
+                streak: mathProgress.streak,
+                lastUpdated: new Date().toISOString()
+              };
+              
+              console.log('📈 Updated student in math group:', {
+                groupName: group.name,
+                studentName: currentStudent.firstName,
+                newLevel: mathProgress.currentLevel,
+                streak: mathProgress.streak,
+                progressEntries: Object.keys(mathProgress.progress).length
+              });
+              
+              groupUpdated = true;
+            }
+          });
 
-        if (groupUpdated) {
-          // Update the toolkit data with new timestamp
-          updatedClasses[classIndex].toolkitData.mathMentalsData.groups = mathGroups;
-          updatedClasses[classIndex].toolkitData.mathMentalsData.lastUpdated = new Date().toISOString();
-          console.log('✅ Math group data updated successfully');
+          if (groupUpdated) {
+            // Update the toolkit data with the modified groups
+            updatedClasses[classIndex].toolkitData = {
+              ...updatedClasses[classIndex].toolkitData,
+              mathMentalsGroups: mathGroups,
+              lastUpdated: new Date().toISOString()
+            };
+            console.log('✅ Math group data updated successfully');
+          } else {
+            console.log('⚠️ Student not found in any math group');
+          }
         } else {
-          console.log('⚠️ Student not found in any math group');
+          console.log('ℹ️ No mathMentalsGroups found in toolkitData');
         }
-      } else {
-        console.log('ℹ️ No math mentals data structure found in class');
       }
     }
 
