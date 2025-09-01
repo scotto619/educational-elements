@@ -1,4 +1,4 @@
-// components/curriculum/mathematics/MathMentals.js - COMPREHENSIVE MATH MENTALS PROGRAM
+// components/curriculum/mathematics/MathMentals.js - FIXED SAVING STRUCTURE
 import React, { useState, useEffect } from 'react';
 
 // ===============================================
@@ -600,15 +600,17 @@ const MathMentals = ({
   const [currentQuestions, setCurrentQuestions] = useState([]);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  // Load data on component mount with error handling
+  // Load data on component mount with error handling - FIXED TO MATCH SPELLING PATTERN
   useEffect(() => {
     try {
-      const mathData = loadedData?.mathMentalsData;
-      if (mathData?.groups) {
-        setMathGroups(mathData.groups);
-        console.log('📖 Loaded Math Mentals data:', mathData.groups.length, 'groups');
+      // Match the spelling program pattern - load from toolkitData.mathMentalsGroups
+      const mathData = loadedData?.mathMentalsGroups;
+      if (mathData && Array.isArray(mathData)) {
+        setMathGroups(mathData);
+        console.log('📖 Loaded Math Mentals data:', mathData.length, 'groups');
       } else {
         console.log('📄 No existing Math Mentals data found');
+        setMathGroups([]);
       }
     } catch (error) {
       console.error('❌ Error loading Math Mentals data:', error);
@@ -616,7 +618,7 @@ const MathMentals = ({
     }
   }, [loadedData]);
 
-  // Save data function matching spelling program pattern
+  // FIXED: Save data function matching spelling program pattern exactly
   const saveGroups = (groups) => {
     try {
       console.log('💾 Saving Math Mentals groups to Firebase:', groups.length, 'groups');
@@ -625,16 +627,18 @@ const MathMentals = ({
       setHasUnsavedChanges(false);
       
       if (saveData && typeof saveData === 'function') {
-        const saveDataPayload = { 
-          mathMentalsData: { 
-            groups,
-            lastUpdated: new Date().toISOString() 
-          } 
+        // CRITICAL FIX: Save to toolkitData structure like spelling program
+        const existingToolkitData = loadedData || {};
+        const updatedToolkitData = {
+          ...existingToolkitData,
+          mathMentalsGroups: groups,
+          lastSaved: new Date().toISOString()
         };
         
-        saveData(saveDataPayload);
+        // Save to toolkitData to match loading location
+        saveData({ toolkitData: updatedToolkitData });
         showToast('Math groups saved successfully!', 'success');
-        console.log('✅ Math Mentals data saved:', saveDataPayload);
+        console.log('✅ Math Mentals data saved:', updatedToolkitData);
       } else {
         console.error('❌ saveData function not available or not a function');
         showToast('Error: Unable to save data - saveData function missing', 'error');
