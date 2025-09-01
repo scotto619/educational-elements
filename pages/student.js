@@ -1,4 +1,4 @@
-// pages/student.js - UPDATED WITH MATH MENTALS TAB
+// pages/student.js - FIXED WITH MATH MENTALS PROGRESS PERSISTENCE
 import React, { useState, useEffect } from 'react';
 import { firestore } from '../utils/firebase';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
@@ -204,7 +204,7 @@ const StudentPortal = () => {
   };
 
   // ===============================================
-  // FIXED UPDATE FUNCTION - USES SERVER API INSTEAD OF DIRECT FIRESTORE
+  // FIXED UPDATE FUNCTION - ENHANCED FOR MATH MENTALS PROGRESS PERSISTENCE
   // ===============================================
   
   const updateStudentData = async (updatedStudentData) => {
@@ -248,17 +248,56 @@ const StudentPortal = () => {
         return false;
       }
 
-      // Update local state with the response data
+      // CRITICAL FIX: Update local state with the response data
       const updatedStudent = result.student;
       setStudentData(updatedStudent);
       
-      // Update session storage
-      try {
-        const session = JSON.parse(sessionStorage.getItem('studentSession') || '{}');
-        session.studentData = updatedStudent;
-        sessionStorage.setItem('studentSession', JSON.stringify(session));
-      } catch (sessionError) {
-        console.warn('Could not update session storage:', sessionError);
+      // CRITICAL FIX: For Math Mentals updates, also update classData to keep everything in sync
+      if (updatedStudentData.mathMentalsProgress) {
+        console.log('🧮 Math Mentals update detected - syncing local class data...');
+        
+        // Update the math groups in classData to reflect the new progress
+        const updatedClassData = { ...classData };
+        if (updatedClassData.toolkitData?.mathMentalsGroups) {
+          updatedClassData.toolkitData.mathMentalsGroups = updatedClassData.toolkitData.mathMentalsGroups.map(group => ({
+            ...group,
+            students: group.students.map(student => {
+              if (student.id === studentData.id) {
+                return {
+                  ...student,
+                  progress: updatedStudentData.mathMentalsProgress.progress,
+                  streak: updatedStudentData.mathMentalsProgress.streak,
+                  currentLevel: updatedStudentData.mathMentalsProgress.currentLevel,
+                  lastUpdated: new Date().toISOString()
+                };
+              }
+              return student;
+            })
+          }));
+          
+          console.log('✅ Local math group data synchronized');
+        }
+        setClassData(updatedClassData);
+        
+        // Update session storage with both updated student and class data
+        try {
+          const session = JSON.parse(sessionStorage.getItem('studentSession') || '{}');
+          session.studentData = updatedStudent;
+          session.classData = updatedClassData; // Include updated class data
+          sessionStorage.setItem('studentSession', JSON.stringify(session));
+          console.log('✅ Session storage updated with synced data');
+        } catch (sessionError) {
+          console.warn('Could not update session storage:', sessionError);
+        }
+      } else {
+        // For non-Math Mentals updates, just update session storage normally
+        try {
+          const session = JSON.parse(sessionStorage.getItem('studentSession') || '{}');
+          session.studentData = updatedStudent;
+          sessionStorage.setItem('studentSession', JSON.stringify(session));
+        } catch (sessionError) {
+          console.warn('Could not update session storage:', sessionError);
+        }
       }
       
       console.log('✅ Student data updated successfully via API');
@@ -430,7 +469,7 @@ const StudentPortal = () => {
     { id: 'mathmentals', name: 'Math Mentals', icon: '🧮', shortName: 'Math' }, // NEW TAB
     { id: 'spelling', name: 'Spelling', icon: '📝', shortName: 'Spelling' },
     { id: 'reading', name: 'Reading', icon: '📖', shortName: 'Reading' },
-    { id: 'shop', name: 'Shop', icon: '🛏️', shortName: 'Shop' },
+    { id: 'shop', name: 'Shop', icon: '🛍️', shortName: 'Shop' },
     { id: 'games', name: 'Games', icon: '🎮', shortName: 'Games' },
     { id: 'quizshow', name: 'Quiz Show', icon: '🎪', shortName: 'Quiz' }
   ];

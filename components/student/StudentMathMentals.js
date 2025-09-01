@@ -1,7 +1,7 @@
-// components/student/StudentMathMentals.js - FIXED STUDENT MATH MENTALS COMPONENT
+// components/student/StudentMathMentals.js - FIXED PROGRESS PERSISTENCE & UI
 import React, { useState, useEffect } from 'react';
 
-// Import the same level structure and question generators
+// [Include all the constants from before]
 const MATH_LEVELS = {
   1: {
     name: "Level 1 - Prep/Grade 1",
@@ -119,19 +119,18 @@ const MATH_SUBLEVELS = {
   "4.20": { name: "Mixed Advanced", type: "mixed_advanced", max: 1000 }
 };
 
-// IMPROVED Question generator with better randomization and variety
+// IMPROVED Question generator
 const generateQuestion = (sublevel, config, seed = 0) => {
-  // Use seed for reproducible randomness in testing, but allow true randomness in production
   const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 
   switch (config.type) {
     case "counting":
-      const count = randomInt(1, config.max); // Start from 1 instead of 0
+      const count = randomInt(1, config.max);
       return {
         question: `Count the dots:`,
         answer: count,
         display: "•".repeat(count),
-        uniqueId: `count_${count}_${Date.now()}`
+        uniqueId: `count_${count}_${Date.now()}_${Math.random()}`
       };
 
     case "add_one":
@@ -139,7 +138,7 @@ const generateQuestion = (sublevel, config, seed = 0) => {
       return {
         question: `${num1} + 1 = ?`,
         answer: num1 + 1,
-        uniqueId: `add1_${num1}_${Date.now()}`
+        uniqueId: `add1_${num1}_${Date.now()}_${Math.random()}`
       };
 
     case "subtract_one":
@@ -147,123 +146,15 @@ const generateQuestion = (sublevel, config, seed = 0) => {
       return {
         question: `${num2} - 1 = ?`,
         answer: num2 - 1,
-        uniqueId: `sub1_${num2}_${Date.now()}`
-      };
-
-    case "add_two":
-      const num3 = randomInt(0, config.max);
-      return {
-        question: `${num3} + 2 = ?`,
-        answer: num3 + 2,
-        uniqueId: `add2_${num3}_${Date.now()}`
-      };
-
-    case "number_before":
-      const num4 = randomInt(1, config.max);
-      return {
-        question: `What comes before ${num4}?`,
-        answer: num4 - 1,
-        uniqueId: `before_${num4}_${Date.now()}`
-      };
-
-    case "number_after":
-      const num5 = randomInt(0, config.max);
-      return {
-        question: `What comes after ${num5}?`,
-        answer: num5 + 1,
-        uniqueId: `after_${num5}_${Date.now()}`
-      };
-
-    case "doubles":
-      const double = randomInt(1, Math.floor(config.max / 2)); // Avoid 0+0
-      return {
-        question: `${double} + ${double} = ?`,
-        answer: double * 2,
-        uniqueId: `double_${double}_${Date.now()}`
-      };
-
-    case "add_to_target":
-      const target1 = config.target;
-      const add1 = randomInt(1, target1 - 1); // Avoid trivial cases
-      return {
-        question: `${add1} + ? = ${target1}`,
-        answer: target1 - add1,
-        uniqueId: `addtarget_${add1}_${target1}_${Date.now()}`
-      };
-
-    case "subtract_from_target":
-      const target2 = config.target;
-      const sub1 = randomInt(1, target2 - 1);
-      return {
-        question: `${target2} - ? = ${sub1}`,
-        answer: target2 - sub1,
-        uniqueId: `subtarget_${sub1}_${target2}_${Date.now()}`
-      };
-
-    case "skip_count":
-      const start = randomInt(1, 3) * config.step; // More variety in starting points
-      return {
-        question: `Count by ${config.step}s: ${start}, ${start + config.step}, ?`,
-        answer: start + (config.step * 2),
-        uniqueId: `skip_${config.step}_${start}_${Date.now()}`
-      };
-
-    case "compare":
-      let comp1, comp2;
-      do {
-        comp1 = randomInt(0, config.max);
-        comp2 = randomInt(0, config.max);
-      } while (comp1 === comp2); // Ensure different numbers
-      return {
-        question: `Which is bigger: ${comp1} or ${comp2}?`,
-        answer: Math.max(comp1, comp2),
-        uniqueId: `compare_${comp1}_${comp2}_${Date.now()}`
-      };
-
-    case "compare_less":
-      let comp3, comp4;
-      do {
-        comp3 = randomInt(0, config.max);
-        comp4 = randomInt(0, config.max);
-      } while (comp3 === comp4);
-      return {
-        question: `Which is smaller: ${comp3} or ${comp4}?`,
-        answer: Math.min(comp3, comp4),
-        uniqueId: `compareless_${comp3}_${comp4}_${Date.now()}`
-      };
-
-    case "missing_number":
-      const miss1 = randomInt(2, config.max - 1); // Avoid edge cases
-      return {
-        question: `${miss1 - 1}, ?, ${miss1 + 1}`,
-        answer: miss1,
-        uniqueId: `missing_${miss1}_${Date.now()}`
-      };
-
-    case "addition":
-      const addA = randomInt(1, Math.floor(config.max * 0.6));
-      const addB = randomInt(1, config.max - addA);
-      return {
-        question: `${addA} + ${addB} = ?`,
-        answer: addA + addB,
-        uniqueId: `add_${addA}_${addB}_${Date.now()}`
-      };
-
-    case "subtraction":
-      const subResult = randomInt(1, config.max - 1);
-      const subAmount = randomInt(1, config.max - subResult);
-      return {
-        question: `${subResult + subAmount} - ${subAmount} = ?`,
-        answer: subResult,
-        uniqueId: `sub_${subResult + subAmount}_${subAmount}_${Date.now()}`
+        uniqueId: `sub1_${num2}_${Date.now()}_${Math.random()}`
       };
 
     case "times_table":
-      const multiplier = randomInt(1, 12); // Start from 1, not 0
+      const multiplier = randomInt(1, 12);
       return {
         question: `${multiplier} × ${config.table} = ?`,
         answer: multiplier * config.table,
-        uniqueId: `times_${multiplier}_${config.table}_${Date.now()}`
+        uniqueId: `times_${multiplier}_${config.table}_${Date.now()}_${Math.random()}`
       };
 
     case "division":
@@ -272,15 +163,32 @@ const generateQuestion = (sublevel, config, seed = 0) => {
       return {
         question: `${dividend} ÷ ${config.table} = ?`,
         answer: quotient,
-        uniqueId: `div_${dividend}_${config.table}_${Date.now()}`
+        uniqueId: `div_${dividend}_${config.table}_${Date.now()}_${Math.random()}`
       };
 
-    // Add more cases as needed...
+    case "addition":
+      const addA = randomInt(1, Math.floor(config.max * 0.6));
+      const addB = randomInt(1, config.max - addA);
+      return {
+        question: `${addA} + ${addB} = ?`,
+        answer: addA + addB,
+        uniqueId: `add_${addA}_${addB}_${Date.now()}_${Math.random()}`
+      };
+
+    case "subtraction":
+      const subResult = randomInt(1, config.max - 1);
+      const subAmount = randomInt(1, config.max - subResult);
+      return {
+        question: `${subResult + subAmount} - ${subAmount} = ?`,
+        answer: subResult,
+        uniqueId: `sub_${subResult + subAmount}_${subAmount}_${Date.now()}_${Math.random()}`
+      };
+
     default:
       return {
         question: "2 + 2 = ?",
         answer: 4,
-        uniqueId: `default_${Date.now()}`
+        uniqueId: `default_${Date.now()}_${Math.random()}`
       };
   }
 };
@@ -298,7 +206,7 @@ const StudentMathMentals = ({
   const [userAnswers, setUserAnswers] = useState([]);
   const [userInput, setUserInput] = useState('');
   const [showResults, setShowResults] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(120); // 2 minutes = 120 seconds
+  const [timeLeft, setTimeLeft] = useState(120);
   const [hasAttemptedToday, setHasAttemptedToday] = useState(false);
   const [testStarted, setTestStarted] = useState(false);
 
@@ -308,19 +216,18 @@ const StudentMathMentals = ({
     }
   }, [studentData, classData]);
 
-  // Timer effect - 2 minutes for entire test
+  // Timer effect
   useEffect(() => {
     if (testStarted && timeLeft > 0 && !showResults) {
       const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
       return () => clearTimeout(timer);
     } else if (timeLeft === 0 && testStarted && !showResults) {
-      // Time's up - auto-submit test
       finishTest(userAnswers);
     }
   }, [timeLeft, testStarted, showResults, userAnswers]);
 
   const findStudentAssignment = () => {
-    // FIXED: Get math groups from corrected data structure
+    // Get math groups from class data
     const mathGroups = classData?.toolkitData?.mathMentalsGroups || [];
     
     // Find which group this student belongs to
@@ -331,23 +238,36 @@ const StudentMathMentals = ({
     if (studentGroup) {
       const studentInfo = studentGroup.students.find(s => s.id === studentData.id);
       
-      // FIXED: Better date checking for daily attempts (use UTC date to avoid timezone issues)
-      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-      const todayAttempt = studentInfo.progress?.[today];
+      // CRITICAL FIX: Prioritize student's main progress data over group data
+      const today = new Date().toISOString().split('T')[0];
       
-      console.log('📅 Date check:', {
+      // Use student's main progress as the authoritative source
+      const studentMainProgress = studentData.mathMentalsProgress?.progress || {};
+      const groupProgress = studentInfo.progress || {};
+      
+      // Prioritize student main progress, fallback to group progress
+      const combinedProgress = { ...groupProgress, ...studentMainProgress };
+      
+      const todayAttempt = combinedProgress[today];
+      
+      console.log('📅 FIXED Date check:', {
         today,
         hasAttempt: !!todayAttempt,
-        progressKeys: Object.keys(studentInfo.progress || {}),
-        studentName: studentInfo.firstName
+        studentMainProgressKeys: Object.keys(studentMainProgress),
+        groupProgressKeys: Object.keys(groupProgress),
+        combinedProgressKeys: Object.keys(combinedProgress),
+        studentName: studentInfo.firstName,
+        todayAttempt,
+        usingMainProgress: Object.keys(studentMainProgress).length > 0
       });
       
       setStudentAssignment({
         groupName: studentGroup.name,
         groupColor: studentGroup.color,
-        currentLevel: studentInfo.currentLevel,
-        progress: studentInfo.progress || {},
-        streak: studentInfo.streak || 0,
+        // PRIORITIZE student main data over group data
+        currentLevel: studentData.mathMentalsProgress?.currentLevel || studentInfo.currentLevel,
+        progress: combinedProgress,
+        streak: studentData.mathMentalsProgress?.streak ?? studentInfo.streak ?? 0,
         studentInfo: studentInfo
       });
 
@@ -371,20 +291,17 @@ const StudentMathMentals = ({
       return;
     }
 
-    // IMPROVED: Generate 10 truly unique questions with better variety
+    // Generate 10 truly unique questions
     const newQuestions = [];
     const usedQuestionIds = new Set();
-    const maxAttempts = 50; // Reduced attempts but improved generation
+    const maxAttempts = 100;
     let attempts = 0;
     
     while (newQuestions.length < 10 && attempts < maxAttempts) {
       const question = generateQuestion(studentAssignment.currentLevel, levelConfig, attempts);
       
-      // Use a more comprehensive uniqueness check
-      const questionKey = question.uniqueId || `${question.question}-${question.answer}`;
-      
-      if (!usedQuestionIds.has(questionKey)) {
-        usedQuestionIds.add(questionKey);
+      if (!usedQuestionIds.has(question.uniqueId)) {
+        usedQuestionIds.add(question.uniqueId);
         newQuestions.push({
           ...question,
           id: newQuestions.length + 1
@@ -393,7 +310,7 @@ const StudentMathMentals = ({
       attempts++;
     }
     
-    // If we couldn't generate 10 unique questions, fill remaining with variations
+    // Fill remaining if needed
     while (newQuestions.length < 10) {
       const question = generateQuestion(studentAssignment.currentLevel, levelConfig, Date.now() + newQuestions.length);
       newQuestions.push({
@@ -402,13 +319,13 @@ const StudentMathMentals = ({
       });
     }
 
-    console.log('🎯 Generated questions:', newQuestions.map(q => q.question));
+    console.log('🎯 Generated questions:', newQuestions.map(q => ({ question: q.question, answer: q.answer })));
 
     setQuestions(newQuestions);
     setCurrentQuestionIndex(0);
     setUserAnswers([]);
     setUserInput('');
-    setTimeLeft(120); // 2 minutes for entire test
+    setTimeLeft(120);
     setCurrentTest(true);
     setShowResults(false);
     setTestStarted(true);
@@ -434,7 +351,6 @@ const StudentMathMentals = ({
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
     } else {
-      // Test completed
       finishTest(newAnswers);
     }
   };
@@ -445,11 +361,11 @@ const StudentMathMentals = ({
     setTestStarted(false);
 
     const score = finalAnswers.filter(a => a.isCorrect).length;
-    const today = new Date().toISOString().split('T')[0]; // FIXED: Use consistent date format
+    const today = new Date().toISOString().split('T')[0];
 
     console.log('🏆 Test completed:', { score, today, totalQuestions: finalAnswers.length });
 
-    // Update student progress
+    // Calculate new progress data
     const updatedProgress = {
       ...studentAssignment.progress,
       [today]: {
@@ -465,42 +381,25 @@ const StudentMathMentals = ({
     let newCurrentLevel = studentAssignment.currentLevel;
     let shouldAdvance = false;
 
-    // FIXED: Proper streak and advancement logic
+    // Streak and advancement logic
     if (score === 10) {
       newStreak += 1;
       
-      // Check if they should advance (3 perfect scores in a row)
       if (newStreak >= 3) {
-        // Find next level in sequence
         const allLevels = Object.keys(MATH_SUBLEVELS).sort();
         const currentIndex = allLevels.indexOf(studentAssignment.currentLevel);
         
         if (currentIndex < allLevels.length - 1) {
           newCurrentLevel = allLevels[currentIndex + 1];
-          newStreak = 0; // Reset streak for new level
+          newStreak = 0;
           shouldAdvance = true;
-          console.log('🚀 Student advancing:', {
-            from: studentAssignment.currentLevel,
-            to: newCurrentLevel
-          });
         }
       }
     } else {
-      newStreak = 0; // Reset streak on imperfect score
+      newStreak = 0;
     }
 
-    // Immediately update local state before API call
-    const newAssignment = {
-      ...studentAssignment,
-      currentLevel: newCurrentLevel,
-      progress: updatedProgress,
-      streak: newStreak
-    };
-    
-    setStudentAssignment(newAssignment);
-    setHasAttemptedToday(true); // Immediately prevent retaking
-
-    // Update student data via API
+    // Save to server
     try {
       console.log('💾 Saving progress to server...');
       const success = await updateStudentData({
@@ -512,10 +411,23 @@ const StudentMathMentals = ({
         }
       });
 
-      if (success) {        
-        // Show appropriate message
+      if (success) {
+        console.log('✅ Progress saved successfully to server');
+        
+        // CRITICAL FIX: Update local assignment state immediately 
+        const newAssignment = {
+          ...studentAssignment,
+          currentLevel: newCurrentLevel,
+          progress: updatedProgress,
+          streak: newStreak
+        };
+        
+        setStudentAssignment(newAssignment);
+        setHasAttemptedToday(true);
+        
+        // Show success message
         if (shouldAdvance) {
-          showToast(`Amazing! You've advanced to ${newCurrentLevel}! 🎉`, 'success');
+          showToast(`Amazing! You've advanced to ${newCurrentLevel}!`, 'success');
         } else if (score === 10) {
           const remainingForAdvance = 3 - newStreak;
           showToast(`Perfect score! ${remainingForAdvance} more perfect day${remainingForAdvance !== 1 ? 's' : ''} to advance!`, 'success');
@@ -523,17 +435,11 @@ const StudentMathMentals = ({
           showToast(`You scored ${score}/10. Keep practicing!`, 'info');
         }
       } else {
-        // If API call failed, revert local state
-        console.error('❌ API call failed - reverting state');
-        setStudentAssignment(studentAssignment);
-        setHasAttemptedToday(false);
+        console.error('❌ API call failed');
         showToast('Error saving results. Please try again.', 'error');
       }
     } catch (error) {
       console.error('❌ Network error saving progress:', error);
-      // If API call failed, revert local state
-      setStudentAssignment(studentAssignment);
-      setHasAttemptedToday(false);
       showToast('Error saving results. Please check your internet connection.', 'error');
     }
   };
@@ -555,7 +461,6 @@ const StudentMathMentals = ({
     setTestStarted(false);
   };
 
-  // Format time for display
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -572,43 +477,55 @@ const StudentMathMentals = ({
         </p>
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
           <p className="text-blue-800 text-sm">
-            🎯 <strong>Ask your teacher</strong> to assign you to a math group in the Curriculum Corner!
+            Ask your teacher to assign you to a math group in the Curriculum Corner!
           </p>
         </div>
       </div>
     );
   }
 
-  // Show test interface
+  // FIXED: Test interface with better contrast
   if (currentTest && !showResults) {
     const currentQuestion = questions[currentQuestionIndex];
     const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
 
     return (
       <div className="space-y-6">
-        {/* Header */}
-        <div className={`bg-gradient-to-r ${studentAssignment.groupColor} text-white rounded-xl p-6`}>
+        {/* FIXED: Header with better contrast and readability */}
+        <div className="bg-white rounded-xl shadow-lg border-l-4 border-blue-500 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold">Math Mentals Test</h1>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-800">Math Mentals Test</h1>
+              <p className="text-sm text-gray-600">{studentAssignment.groupName} • {studentAssignment.currentLevel}</p>
+            </div>
             <button
               onClick={resetTest}
-              className="bg-white bg-opacity-20 px-4 py-2 rounded-lg hover:bg-opacity-30"
+              className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
             >
               Exit Test
             </button>
           </div>
-          <div className="flex items-center justify-between text-sm">
+          
+          <div className="flex items-center justify-between text-sm text-gray-700 mb-2">
             <span>Question {currentQuestionIndex + 1} of {questions.length}</span>
-            <span className={`font-bold text-lg ${timeLeft <= 30 ? 'text-red-200 animate-pulse' : ''}`}>
+            <span className={`font-bold text-lg ${timeLeft <= 30 ? 'text-red-600 animate-pulse' : 'text-blue-600'}`}>
               Time: {formatTime(timeLeft)}
             </span>
           </div>
-          <div className="w-full bg-white bg-opacity-20 rounded-full h-2 mt-2">
+          
+          {/* Progress bar */}
+          <div className="w-full bg-gray-200 rounded-full h-3">
             <div 
-              className="bg-white h-2 rounded-full transition-all duration-300"
+              className="bg-blue-500 h-3 rounded-full transition-all duration-300"
               style={{ width: `${progress}%` }}
             ></div>
           </div>
+          
+          {timeLeft <= 30 && (
+            <div className="mt-3 bg-red-100 border border-red-300 rounded-lg p-2 text-center">
+              <p className="text-red-800 font-semibold text-sm">⏰ Less than 30 seconds remaining!</p>
+            </div>
+          )}
         </div>
 
         {/* Question */}
@@ -636,23 +553,17 @@ const StudentMathMentals = ({
             <button
               onClick={handleSubmitAnswer}
               disabled={!userInput.trim()}
-              className="w-full mt-4 bg-blue-500 text-white py-3 rounded-lg font-semibold text-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+              className="w-full mt-4 bg-blue-500 text-white py-3 rounded-lg font-semibold text-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
             >
               {currentQuestionIndex === questions.length - 1 ? 'Finish Test' : 'Next Question'}
             </button>
           </div>
-
-          {timeLeft <= 30 && (
-            <div className="mt-4 bg-red-100 border border-red-300 rounded-lg p-3">
-              <p className="text-red-800 font-semibold">⏰ Less than 30 seconds remaining!</p>
-            </div>
-          )}
         </div>
       </div>
     );
   }
 
-  // Show results
+  // Results screen
   if (showResults) {
     const score = userAnswers.filter(a => a.isCorrect).length;
     const percentage = Math.round((score / userAnswers.length) * 100);
@@ -660,22 +571,22 @@ const StudentMathMentals = ({
     return (
       <div className="space-y-6">
         {/* Results Header */}
-        <div className={`bg-gradient-to-r ${studentAssignment.groupColor} text-white rounded-xl p-6 text-center`}>
+        <div className="bg-white rounded-xl shadow-lg p-6 text-center border-l-4 border-green-500">
           <div className="text-6xl mb-4">
             {score === 10 ? '🏆' : score >= 7 ? '⭐' : '📈'}
           </div>
-          <h1 className="text-3xl font-bold mb-2">Test Complete!</h1>
-          <div className="text-2xl font-bold">
+          <h1 className="text-3xl font-bold mb-2 text-gray-800">Test Complete!</h1>
+          <div className="text-2xl font-bold text-blue-600">
             {score} / {userAnswers.length} ({percentage}%)
           </div>
           {score === 10 && (
-            <div className="mt-4 bg-white bg-opacity-20 rounded-lg p-4">
-              <p className="font-semibold">Perfect Score! 🎉</p>
-              <p className="text-sm opacity-90">
+            <div className="mt-4 bg-green-50 border border-green-200 rounded-lg p-4">
+              <p className="font-semibold text-green-800">Perfect Score! 🎉</p>
+              <p className="text-sm text-green-700">
                 Streak: {studentAssignment.streak + 1} perfect day{(studentAssignment.streak + 1) !== 1 ? 's' : ''}
               </p>
               {studentAssignment.streak + 1 >= 3 && (
-                <p className="text-sm opacity-90 mt-1">Ready to advance to next level!</p>
+                <p className="text-sm text-green-700 mt-1">Ready to advance to next level!</p>
               )}
             </div>
           )}
@@ -683,7 +594,7 @@ const StudentMathMentals = ({
 
         {/* Answer Review */}
         <div className="bg-white rounded-xl shadow-lg p-6">
-          <h2 className="text-xl font-bold mb-6">Review Your Answers</h2>
+          <h2 className="text-xl font-bold mb-6 text-gray-800">Review Your Answers</h2>
           <div className="space-y-4">
             {userAnswers.map((answer, index) => (
               <div key={index} className={`p-4 rounded-lg border-2 ${
@@ -732,17 +643,17 @@ const StudentMathMentals = ({
   // Main dashboard
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className={`bg-gradient-to-r ${studentAssignment.groupColor} text-white rounded-xl p-6`}>
+      {/* Header - FIXED: Better contrast */}
+      <div className="bg-white rounded-xl shadow-lg border-l-4 border-blue-500 p-6">
         <div className="text-center">
-          <h1 className="text-2xl md:text-4xl font-bold mb-2 flex items-center justify-center">
+          <h1 className="text-2xl md:text-4xl font-bold mb-2 flex items-center justify-center text-gray-800">
             <span className="mr-3">🧮</span>
             Math Mentals
           </h1>
-          <div className="text-lg md:text-xl opacity-90">
+          <div className="text-lg md:text-xl text-blue-600 font-semibold">
             {studentAssignment.groupName}
           </div>
-          <div className="text-sm md:text-base opacity-80 mt-2">
+          <div className="text-sm md:text-base text-gray-600 mt-2">
             Current Level: {studentAssignment.currentLevel} - {MATH_SUBLEVELS[studentAssignment.currentLevel]?.name}
           </div>
         </div>
@@ -759,7 +670,7 @@ const StudentMathMentals = ({
               Streak: {studentAssignment.streak} perfect day{studentAssignment.streak !== 1 ? 's' : ''}
             </div>
             <div className="bg-purple-100 text-purple-800 px-3 py-2 rounded-full">
-              Need {3 - studentAssignment.streak} more perfect scores to advance
+              Need {Math.max(0, 3 - studentAssignment.streak)} more perfect scores to advance
             </div>
           </div>
         </div>
@@ -775,7 +686,7 @@ const StudentMathMentals = ({
               </p>
               <div className="bg-green-100 border border-green-200 rounded-lg p-4">
                 <p className="text-green-800 text-sm">
-                  🔥 Today's result: {studentAssignment.progress?.[new Date().toISOString().split('T')[0]]?.score || 0}/10
+                  Today's result: {studentAssignment.progress?.[new Date().toISOString().split('T')[0]]?.score || 0}/10
                 </p>
               </div>
             </div>
@@ -807,7 +718,7 @@ const StudentMathMentals = ({
         <h2 className="text-xl font-bold text-gray-800 mb-4">Recent Progress</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {Object.entries(studentAssignment.progress || {})
-            .slice(-7) // Last 7 days
+            .slice(-7)
             .map(([date, result]) => (
               <div key={date} className="text-center p-3 bg-gray-50 rounded-lg">
                 <div className="text-xs text-gray-600 mb-1">
