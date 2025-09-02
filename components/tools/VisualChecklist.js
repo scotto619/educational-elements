@@ -169,13 +169,13 @@ const VisualChecklist = ({ students, showToast, saveData, loadedData }) => {
   // Get active checklist
   const activeChecklist = checklists.find(c => c.id === activeChecklistId);
 
-  // DISPLAY MODE - Full screen checklist for classroom display
+  // DISPLAY MODE - Full screen checklist for classroom display (with space for floating widgets)
   if (displayMode && activeChecklist) {
     const maxItemsPerRow = Math.min(activeChecklist.items.length, 5);
     const itemsPerRow = activeChecklist.items.length <= 4 ? activeChecklist.items.length : maxItemsPerRow;
     
     return (
-      <div className="fixed inset-0 bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 z-50">
+      <div className="fixed inset-0 bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 z-40">
         {/* Header */}
         <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-6 shadow-xl">
           <div className="flex items-center justify-between max-w-7xl mx-auto">
@@ -191,8 +191,8 @@ const VisualChecklist = ({ students, showToast, saveData, loadedData }) => {
           </div>
         </div>
 
-        {/* Checklist Items Grid */}
-        <div className="p-8 h-full overflow-hidden">
+        {/* Checklist Items Grid - with bottom padding for floating widgets */}
+        <div className="p-8 h-full overflow-hidden pb-32">
           <div 
             className="grid gap-6 h-full max-w-7xl mx-auto"
             style={{ 

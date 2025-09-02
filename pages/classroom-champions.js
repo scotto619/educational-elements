@@ -1,4 +1,4 @@
-// pages/classroom-champions.js - UPDATED WITH PERSISTENT FLOATING WIDGETS
+// pages/classroom-champions.js - UPDATED WITH PERSISTENT FLOATING WIDGETS AND VISUAL CHECKLIST SUPPORT
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
@@ -430,7 +430,7 @@ const ClassroomChampions = () => {
       await saveClassData({ classRewards: updatedRewards });
       console.log('✅ Rewards saved successfully');
     } catch (error) {
-      console.error('❌ Error saving rewards:', error);
+      console.error('⚠ Error saving rewards:', error);
       showToast('Error saving rewards', 'error');
       throw error;
     }
@@ -493,7 +493,7 @@ const ClassroomChampions = () => {
         console.log('✅ Toolkit data saved successfully');
       }
     } catch (error) {
-      console.error("❌ Error saving toolkit data:", error);
+      console.error("⚠ Error saving toolkit data:", error);
       throw error; // Re-throw to let the component handle it
     }
   };
@@ -582,7 +582,7 @@ const ClassroomChampions = () => {
     
     const student = students.find(s => s.id === studentId);
     if (!student) {
-      console.error(`❌ Student not found: ${studentId}`);
+      console.error(`⚠ Student not found: ${studentId}`);
       return;
     }
 
@@ -634,7 +634,7 @@ const ClassroomChampions = () => {
     
     const student = students.find(s => s.id === studentId);
     if (!student) {
-      console.error(`❌ Student not found: ${studentId}`);
+      console.error(`⚠ Student not found: ${studentId}`);
       return;
     }
 
@@ -963,23 +963,29 @@ const ClassroomChampions = () => {
         
         <main className="max-w-screen-2xl mx-auto px-4 py-6">{renderTabContent()}</main>
         
-        {/* NEW: Floating Widgets */}
-        {widgetSettings.showTimer && (
-          <FloatingTimer 
-            showToast={showToast}
-            playSound={playSound}
-          />
-        )}
-        
-        {widgetSettings.showNamePicker && students.length > 0 && (
-          <FloatingNamePicker 
-            students={students}
-            showToast={showToast}
-            playSound={playSound}
-            getAvatarImage={getAvatarImage}
-            calculateAvatarLevel={calculateAvatarLevel}
-          />
-        )}
+        {/* UPDATED: Floating Widgets with Higher Z-Index for Visual Checklist Compatibility */}
+        <div className="fixed inset-0 pointer-events-none z-50">
+          {widgetSettings.showTimer && (
+            <div className="pointer-events-auto">
+              <FloatingTimer 
+                showToast={showToast}
+                playSound={playSound}
+              />
+            </div>
+          )}
+          
+          {widgetSettings.showNamePicker && students.length > 0 && (
+            <div className="pointer-events-auto">
+              <FloatingNamePicker 
+                students={students}
+                showToast={showToast}
+                playSound={playSound}
+                getAvatarImage={getAvatarImage}
+                calculateAvatarLevel={calculateAvatarLevel}
+              />
+            </div>
+          )}
+        </div>
         
         {/* Modals - keeping all existing modal code unchanged */}
         {showAddStudentModal && <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"><div className="bg-white rounded-2xl shadow-2xl w-full max-w-md"><div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-t-2xl"><h2 className="text-2xl font-bold">Add New Champion</h2></div><div className="p-6 space-y-4"><input type="text" value={newStudentFirstName} onChange={(e) => setNewStudentFirstName(e.target.value)} placeholder="First Name" className="w-full px-3 py-2 border border-gray-300 rounded-lg"/><input type="text" value={newStudentLastName} onChange={(e) => setNewStudentLastName(e.target.value)} placeholder="Last Name (Optional)" className="w-full px-3 py-2 border border-gray-300 rounded-lg"/></div><div className="flex space-x-3 p-6 pt-0"><button onClick={() => setShowAddStudentModal(false)} className="flex-1 px-4 py-2 border rounded-lg">Cancel</button><button onClick={addStudent} className="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg">Add Champion</button></div></div></div>}
