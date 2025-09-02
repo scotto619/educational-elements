@@ -1,4 +1,4 @@
-// components/tabs/TeachersToolkitTab.js - UPDATED WITH UNIFIED BUTTON INTERFACE AND MINIMAL NOTIFICATIONS
+// components/tabs/TeachersToolkitTab.js - UPDATED WITH VISUAL CHECKLIST AND UNIFIED BUTTON INTERFACE
 import React, { useState, useEffect } from 'react';
 
 // Import tool components from the tools folder
@@ -11,6 +11,7 @@ import DiceRoller from '../tools/DiceRoller';
 import ClassroomJobs from '../tools/ClassroomJobs';
 import TimetableCreator from '../tools/TimetableCreator';
 import BrainBreaks from '../tools/BrainBreaks';
+import VisualChecklist from '../tools/VisualChecklist'; // NEW IMPORT
 
 // ===============================================
 // AUTO-DISMISSING NOTIFICATION COMPONENT
@@ -400,6 +401,14 @@ const TeachersToolkitTab = ({
               calculateAvatarLevel={calculateAvatarLevel}
             />
           )}
+          {activeToolkitTab === 'visual-checklist' && (
+            <VisualChecklist
+              students={students}
+              showToast={showNotification}
+              saveData={saveToolkitData}
+              loadedData={loadedData}
+            />
+          )}
           {activeToolkitTab === 'brain-breaks' && (
             <BrainBreaks 
               students={students} 
@@ -632,6 +641,16 @@ const TeachersToolkitTab = ({
           <div className="text-4xl mb-3">🎂</div>
           <div className="text-lg font-bold mb-1">Birthday Wall</div>
           <div className="text-sm opacity-90">Track student birthdays</div>
+        </button>
+
+        {/* NEW: Visual Checklist Button */}
+        <button
+          onClick={() => setActiveToolkitTab('visual-checklist')}
+          className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white p-6 rounded-xl hover:shadow-lg transition-all text-center"
+        >
+          <div className="text-4xl mb-3">📋</div>
+          <div className="text-lg font-bold mb-1">Visual Checklist</div>
+          <div className="text-sm opacity-90">Interactive routine displays</div>
         </button>
 
         <button
