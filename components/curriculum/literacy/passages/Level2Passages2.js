@@ -1,5 +1,5 @@
 // components/curriculum/literacy/passages/Level2Passages2.js
-// LEVEL 2 FLUENCY PRACTICE PASSAGES - LEVELS 2.6 to 2.10
+// LEVEL 2 FLUENCY PRACTICE PASSAGES - LEVELS 2.6 to 2.10 (Simplified for Ages 6-7)
 import React from 'react';
 
 export const LEVEL_2_PASSAGES_2 = [
@@ -12,50 +12,35 @@ export const LEVEL_2_PASSAGES_2 = [
     texts: [
       {
         type: "narrative",
-        title: "The Magic Spell",
-        wordCount: 149,
-        content: `Sarah discovered an old doll in her grandmother's attic that seemed to have a mysterious spell cast upon it. As she climbed the steep hill behind her house, she could still smell the sweet fragrance of wildflowers that grew along the well-worn path. The doll had fallen from a high shelf when Sarah accidentally bumped into it, but it didn't break when it fell to the dusty floor. She felt a thrill of excitement as she examined the beautiful antique toy, wondering what stories it could tell about the children who had played with it long ago. "I will take very good care of you," Sarah whispered to the doll as they walked down the hill together. The sweet smell of her grandmother's apple pie drifted from the kitchen window, and Sarah knew she would tell her grandmother about her wonderful discovery. That evening, as the sun set behind the hill and the house grew still, Sarah placed the doll carefully on her bedside table, knowing that some magic is too precious to spell out in mere words.`
+        title: "My Special Doll",
+        wordCount: 64,
+        content: `Lucy found an old doll on the hill behind her house. The doll fell from a tree, but it didn't break. Lucy could smell flowers growing by the old well. "I will take care of you," she said to the doll. She tried to spell the doll's name with blocks. The doll sat very still while Lucy played. Lucy felt a thrill of happiness. She would tell everyone about her special doll friend.`
       },
       {
         type: "informational",
-        title: "The Science of Smell",
-        wordCount: 146,
-        content: `The human sense of smell is still one of the most fascinating and complex systems that scientists continue to study and spell out in detailed research reports. When you walk up a hill on a spring morning, you can tell immediately if flowers are blooming nearby because scent molecules travel well through the air. Each person will experience smells differently, which explains why some people get a thrill from the smell of coffee while others prefer the scent of fresh bread. Scientists have learned that smell receptors in our nose can still detect thousands of different odors, even when concentrations are extremely low. A baby playing with a favorite doll will often recognize their mother by smell alone, demonstrating how well this sense develops from birth. The ability to smell smoke can tell us when danger is near, which is why this sense has helped humans survive for thousands of years. Understanding how smell works requires scientists to spell out complex chemical processes that happen in milliseconds when odor molecules reach specialized cells in our nasal passages.`
+        title: "Our Five Senses",
+        wordCount: 58,
+        content: `We have five senses that tell us about the world. We can smell cookies baking in the kitchen. We can tell if something fell down by the sound it makes. When we are very still and quiet, we can hear better. A doll has no senses - it can't smell or tell us anything. What a thrill it is to climb a hill and smell fresh air! Our senses will help us learn about everything around us.`
       },
       {
         type: "persuasive",
-        title: "Protect Your Sense of Smell",
-        wordCount: 144,
-        content: `You should protect your precious sense of smell because it will bring you countless moments of joy and help keep you safe throughout your entire life. Don't take for granted the thrill you feel when you smell your favorite foods cooking or the way flowers smell when you walk up a hill in springtime. Many people who have lost their sense of smell will tell you that food tastes bland and they can't fully enjoy experiences that others take for granted. Simple activities like playing with a childhood doll can still trigger powerful memories through familiar scents that transport us back to earlier times. If you smoke or expose yourself to harsh chemicals, you may permanently damage your ability to spell out different odors and distinguish between various smells. Take care of your nose by avoiding polluted air when possible and seeking medical attention if you notice changes in your ability to smell. The investment you make in protecting this sense will pay dividends for years to come, ensuring that you can always enjoy the simple pleasures that surround us every day.`
+        title: "Take Care of Your Toys",
+        wordCount: 55,
+        content: `You should take good care of all your toys! If your doll fell down, pick it up right away. Keep toys still in a safe place so they won't break. Can you spell your favorite toy's name? I will tell you why this matters - toys that smell good and look nice will last longer. Taking care of toys gives you a thrill of pride. You will be happy you kept them safe!`
       },
       {
         type: "poetry",
-        title: "Scents and Memories",
-        wordCount: 141,
-        content: `I climbed the hill where flowers fell,
-Their sweet perfume I still can smell.
-The magic spell of memory,
-Will tell the tales of you and me.
+        title: "Up the Hill",
+        wordCount: 48,
+        content: `Up the hill I like to go,
+With my doll, we walk so slow.
+Still the air and sweet the smell,
+Flowers growing by the well.
 
-My childhood doll beside the well,
-Her story I will always tell.
-The thrill of scents that fill the air,
-Still bring me joy beyond compare.
-
-I fell asleep beside the hill,
-Where morning dew was fresh and still.
-The smell of earth after the rain,
-Will always ease away my pain.
-
-Spell out the words of long ago,
-When flowers still had room to grow.
-I'll tell you of the sweet perfume,
-That filled my little childhood room.
-
-Fell the shadows, smell the light,
-Still the doll sits through the night.
-Will you remember, will you tell,
-The stories that still cast their spell?`
+Fell a leaf from up so high,
+Will it spell a word? Let's try!
+Tell me what you like to do,
+Thrill of fun for me and you!`
       }
     ]
   },
@@ -69,50 +54,35 @@ The stories that still cast their spell?`
     texts: [
       {
         type: "narrative",
-        title: "The Chess Tournament",
-        wordCount: 148,
-        content: `Emma was determined not to miss the most important chess tournament of her young career, so she laid out her best dress the night before to avoid any unnecessary fuss in the morning. As she walked across the large gymnasium where the tournament was being held, she felt the familiar stress that always came before a big competition. The organizers had to press dozens of chess sets into service to accommodate all the participants who had traveled from across the state. Emma's mother had taught her to never fuss about her appearance during games, but to bless each opponent with respect and good sportsmanship. When she sat down at her assigned table, Emma noticed that someone had made a mess with pencil erasers, but she didn't let it distract her from the challenge ahead. Her first opponent was a boy from across town who was known for creating stress in other players through his aggressive playing style. Emma took a deep breath, smoothed her dress one final time, and prepared to demonstrate that she wouldn't let the pressure of competition cause her to miss any important moves.`
+        title: "The Chess Game",
+        wordCount: 66,
+        content: `Anna wore her favorite blue dress to play chess with her grandpa. She didn't want to miss any of his moves. "Don't stress about it," said Grandpa. "Just have fun!" Anna moved her piece across the board. She tried not to make a mess with the pieces. When she made a mistake, Grandpa didn't fuss about it. "Bless your heart, you're learning well," he said. Anna was happy she didn't miss this special time with Grandpa.`
       },
       {
         type: "informational",
-        title: "Managing Stress in Competition",
-        wordCount: 145,
-        content: `Athletes and competitors often experience significant stress when they don't want to miss important opportunities to demonstrate their skills across various competitive environments. Research shows that those who learn to bless their opponents and maintain good sportsmanship actually perform better than those who create unnecessary fuss during competitions. Whether you're wearing a formal dress to a debate tournament or casual clothes to a chess match, your attire should never become a source of additional stress. Competitors who press themselves too hard often make a mess of their performance because they cannot think clearly under extreme pressure. The fear of loss can cause some people to miss obvious opportunities and make simple mistakes that they would never make during practice sessions. Learning to manage competitive stress requires practice and patience, just like mastering the specific skills needed for success. Those who bless their competition experience with a positive attitude often discover that the fear of loss transforms into excitement about the opportunity to grow and learn from challenging situations across many different contexts.`
+        title: "Playing Games",
+        wordCount: 61,
+        content: `Games like chess are fun to play! Don't stress if you don't win right away. You might miss some moves at first, but that's okay. Keep your game pieces neat so you don't make a mess. Move pieces across the board carefully. Don't fuss if you lose - losing is not a big loss when you're learning. Games bless us with fun times. Even if you're in a fancy dress, you can still enjoy playing games!`
       },
       {
         type: "persuasive",
-        title: "Embrace Healthy Competition",
-        wordCount: 142,
-        content: `You should embrace healthy competition because it will teach you valuable life lessons about handling stress and recovering from occasional loss without making a big fuss about temporary setbacks. Don't miss the opportunity to participate in competitive activities just because you're afraid of not wearing the perfect dress or making a mess of your first attempt. Across all areas of life, from chess tournaments to spelling bees, competition helps you discover strengths you never knew you possessed. Learn to bless each experience, whether it results in victory or loss, because both outcomes provide valuable learning opportunities. The stress you feel before competition is normal and can actually help you perform better if you channel it properly. Don't let fear of making mistakes press you into avoiding challenges that could help you grow as a person. Whether you win or lose, never miss the chance to congratulate your opponents and learn from their strategies. Healthy competition will bless you with confidence, resilience, and friendships that can last across many years of shared experiences.`
+        title: "Learn to Play Chess",
+        wordCount: 57,
+        content: `You should learn to play chess! Don't miss this chance to learn something new. Chess pieces move across the board in special ways. You don't need a fancy dress to play - just come as you are! Don't stress about making mistakes or creating a mess with the pieces. Don't fuss about winning or losing. Chess will bless your mind with new skills. Learning chess is never a loss!`
       },
       {
         type: "poetry",
-        title: "Across the Board",
-        wordCount: 139,
-        content: `Across the board, the pieces stand,
-Chess warriors in a planned command.
-Dress for success, but don't you stress,
-Bless every move, both more and less.
+        title: "Chess Fun",
+        wordCount: 44,
+        content: `In my pretty dress so blue,
+Chess is fun for me and you.
+Don't miss a move across the board,
+Bless this game, it's our reward.
 
-Miss not the chance to learn and grow,
-Press forward when the stakes are low.
-Fuss not about the games you've lost,
-Mess happens at too great a cost.
-
-Stress melts away like morning dew,
-Bless every opponent, tried and true.
-Across the years, through win and loss,
-Press on, no need to count the cost.
-
-Dress proudly in your finest gear,
-Miss nothing of what brings you cheer.
-Chess teaches patience, chess teaches might,
-Bless competition, day and night.
-
-Fuss not about the games behind,
-Mess cleared away from heart and mind.
-Across time's board, we'll always press,
-Stress conquered through our game of chess.`
+Don't stress or make a fuss,
+Chess is meant for all of us.
+No mess, no loss, just fun to play,
+Chess makes a perfect day!`
       }
     ]
   },
@@ -126,50 +96,35 @@ Stress conquered through our game of chess.`
     texts: [
       {
         type: "narrative",
-        title: "The Fuzzy Puppy's Adventure",
-        wordCount: 147,
-        content: `Max was a fuzzy little puppy whose fur would frizz up whenever he got excited about exploring the world around him. One morning, he heard the familiar buzz of bees near the garden and decided to sniff around the flower beds to investigate the interesting sounds. As he wandered further from home, Max caught a whiff of something delicious coming from the kitchen window, but he was determined to add some adventure to his day first. The curious puppy scrambled up a small rocky area that seemed almost like a cliff to his tiny legs, his scruff thick with morning dew. When he reached the top, Max discovered a bird's nest with a single blue egg hidden carefully among the twigs and leaves. The buzz of insects continued around him, and his fuzzy tail wagged with excitement as he realized he had found something truly special. Carefully, so as not to disturb the precious egg, Max backed away from the nest and trotted home, proud that he had turned off his urge to investigate further and chosen to respect the wildlife he had discovered.`
+        title: "The Fuzzy Puppy",
+        wordCount: 67,
+        content: `Max was a fuzzy little puppy with fur that would frizz when he got excited. One day, he heard the buzz of bees near the flowers. He tried to sniff the sweet smell in the air. Max got a whiff of something cooking inside the house. His fur on his scruff stood up with excitement! He found a bird's egg on the ground, but he didn't touch it. Max turned off his curiosity and ran home. You could add Max to any family - he was the best fuzzy friend ever!`
       },
       {
         type: "informational",
-        title: "Animal Hair and Fur Types",
-        wordCount: 144,
-        content: `Many animals have specialized hair or fur that serves different purposes, from the fuzzy coat of a sheep to the sleek fur that helps marine mammals turn off heat loss in cold water. Some animals, like certain dog breeds, have fur that will naturally frizz when exposed to humidity, while others maintain smooth coats regardless of weather conditions. The buzz of insects attracts many animals who use their keen ability to sniff out food sources from great distances. Birds often add soft materials like fuzzy plant fibers to their nests to keep eggs warm and protected from harsh weather. Animals living near cliff edges often develop thick scruff around their necks to protect them from rocky surfaces and harsh winds. A rabbit can catch the slightest whiff of danger and immediately turn off its relaxed behavior to become alert and ready to flee. Understanding how different animals have adapted their fur and hair helps scientists add valuable information to their knowledge of evolution and survival strategies in various environments.`
+        title: "Animal Hair and Fur",
+        wordCount: 62,
+        content: `Animals have different kinds of fur and hair. Some animals are fuzzy and soft. When animals get scared, their fur might frizz up. Dogs like to sniff everything to learn about it. They use their scruff to carry babies. Birds make nests to keep their eggs safe. The buzz of insects helps flowers grow. When you see wild animals, turn off loud noises. You can add kindness by being quiet around animals!`
       },
       {
         type: "persuasive",
-        title: "Protect Wild Animal Habitats",
-        wordCount: 143,
-        content: `You should actively work to protect wild animal habitats because every creature, from the fuzzy caterpillar to the majestic eagle, deserves a safe place to live and raise their young. Don't turn off your concern for wildlife just because you don't see the immediate effects of habitat destruction. The constant buzz of chainsaws and construction equipment can sniff out the peace that animals need to successfully reproduce and care for their offspring. When developers add more buildings to areas near cliff faces and natural nesting sites, they often destroy the scruff vegetation that provides essential cover for small animals. Every egg laid by a wild bird represents hope for the future, and we must not let our actions frizz away their chances for survival. Take a moment to sniff the fresh air that healthy ecosystems provide, and you'll understand why it's important to turn off destructive practices. Add your voice to conservation efforts and help create a fuzzy line of protection around the natural spaces that wild animals desperately need to survive and thrive.`
+        title: "Be Kind to Animals",
+        wordCount: 58,
+        content: `You should be kind to all animals! Pet fuzzy animals gently on their scruff. Don't buzz around or make loud noises that scare them. Let animals sniff your hand first before you pet them. If you find an egg, don't touch it - just walk away. Turn off music or TV if animals seem scared. Add gentleness to every day. Give animals a whiff of kindness, and they will love you back!`
       },
       {
         type: "poetry",
-        title: "Nature's Textures",
-        wordCount: 140,
-        content: `The fuzzy caterpillar crawls along,
-His frizz like notes in nature's song.
-Buzz, buzz, the busy bees all say,
-As they work throughout the day.
+        title: "Fuzzy Friends",
+        wordCount: 48,
+        content: `Fuzzy puppy, soft and sweet,
+Sniff my hand, then we will meet.
+Buzz of bees and whiff of flowers,
+We could play for fuzzy hours.
 
-Off in the distance, cliff so tall,
-Where fuzzy moss grows on the wall.
-Sniff the air so clean and sweet,
-Add your footsteps, light and fleet.
-
-Whiff of flowers on the breeze,
-Fuzzy blossoms on the trees.
-Scruff of bark on ancient oak,
-Buzz of life in every stroke.
-
-Egg so smooth in fuzzy nest,
-Off to find what serves them best.
-Frizz of fur on woodland creatures,
-Add beauty to their fuzzy features.
-
-Buzz of wings and whiff of pine,
-Scruff and fuzz in nature's design.
-Off we go to explore and see,
-Fuzzy wonders, wild and free.`
+Scruff so soft, don't frizz with fear,
+Add some love, keep animals near.
+Egg in nest, off we go,
+Fuzzy friends help hearts to grow!`
       }
     ]
   },
@@ -183,50 +138,35 @@ Fuzzy wonders, wild and free.`
     texts: [
       {
         type: "narrative",
-        title: "The Coastal Road Trip",
-        wordCount: 148,
-        content: `Coach Martinez loaded the team's equipment into his old blue boat and prepared for their annual coast road trip that would take them to the regional championship tournament. The morning fog made it difficult to see the road ahead, so he drove slowly while sipping hot tea that warmed his throat and kept him alert. Each player had packed a warm coat for the chilly coastal weather, knowing they would need to soak up every moment of this special journey together. As they traveled along the winding coast road, the team could see fishing boats that seemed to float effortlessly on the calm morning water. When they stopped for lunch at a roadside café, Coach Martinez ordered roast beef sandwiches for everyone and made sure each player had soap and clean towels for washing up after their meal. The salty air made their throats feel dry, but the excitement of competing at the coast filled them with energy and determination. This road trip would become a cherished memory that would float in their minds long after the tournament was over.`
+        title: "The Boat Trip",
+        wordCount: 65,
+        content: `Coach Sam took the kids to the coast in a big yellow bus. They drove down a long road to see the ocean. "Put on your coat!" said Coach Sam. "The coast is cold today!" The kids watched paper boats float on the water. After lunch, they ate roast beef sandwiches. One boy got wet and had to soak his clothes. They used soap to wash their hands. By the end of the day, everyone had a sore throat from laughing so much!`
       },
       {
         type: "informational",
-        title: "Coastal Ecosystems",
-        wordCount: 145,
-        content: `Coastal ecosystems provide essential habitats where countless species of marine life can float, swim, and reproduce in the shallow waters near the shore. The road to understanding these complex environments requires scientists to carefully study how saltwater can soak into soil and affect plant growth along the coast. Many coastal plants have developed special adaptations to cope with salt spray that can coat their leaves and potentially damage their cellular structure. Fish and marine animals that live near the coast must be able to process salt water through specialized organs, unlike freshwater fish whose throat and gill structures work differently. Coastal erosion is a natural process that helps shape the road that connects inland areas to ocean environments, but human activity can accelerate this process. Scientists who coach conservation efforts often recommend using natural soap products instead of harsh chemicals that can float into coastal waters and harm marine life. The roast fish that many coastal communities depend on for food requires healthy ocean ecosystems that are free from pollution and environmental damage.`
+        title: "Water Safety",
+        wordCount: 60,
+        content: `When you go near water, always wear a coat to stay warm. Watch how things float on top of the water. Never go in a boat without a grown-up! If you soak your clothes, change into dry ones right away. Always use soap to wash your hands after playing near water. A coach or teacher should always be there to help. The road to the coast can be long, so bring snacks for your throat!`
       },
       {
         type: "persuasive",
-        title: "Visit Coastal National Parks",
-        wordCount: 142,
-        content: `You should visit coastal national parks because they offer incredible opportunities to see marine life float freely in their natural habitats while you walk along scenic roads that wind through spectacular landscapes. Don't let fear of getting your coat wet prevent you from exploring tide pools where you can soak up knowledge about fascinating sea creatures. Pack biodegradable soap for washing up after your coastal adventures, and remember to bring warm clothing because ocean breezes can make your throat feel dry and cold. A good coach or park ranger can help you find the safest road to tide pools and beaches where you can observe wildlife without disturbing their natural behaviors. Many coastal parks offer educational programs where you can learn to roast marshmallows while listening to stories about ocean conservation. The salty air that will coat your skin and hair is worth experiencing because it connects you to the powerful natural forces that have shaped our coast for millions of years. These memories will float in your mind forever and inspire you to protect our precious coastal environments.`
+        title: "Explore the Coast",
+        wordCount: 56,
+        content: `You should visit the coast with your family! Watch how toy boats float on the water. Take the road that leads to the beach. Don't forget to bring a warm coat and soap for washing up. You might roast marshmallows by a fire. Let your feet soak in the sand. Ask a coach or grown-up to teach you about ocean safety. The coast is a wonderful place to explore and learn!`
       },
       {
         type: "poetry",
-        title: "Sailing Dreams",
-        wordCount: 139,
-        content: `Upon the road that leads to sea,
-Where coat and boat and dreams float free,
-The coach calls out across the bay,
-"Come soak up sun this perfect day!"
+        title: "Coast Adventure",
+        wordCount: 48,
+        content: `Down the road to the blue coast,
+Bring a coat and maybe toast.
+Watch the boats that float so high,
+Underneath the big blue sky.
 
-The throat of ocean sings its song,
-Coast to coast, both deep and strong.
-Soap bubbles dance on morning tide,
-Where boat and sailor, side by side.
-
-Roast the fish upon the shore,
-Coat the memories, add some more.
-Float along the coastal road,
-Where ocean secrets are bestowed.
-
-Soak the sunset, gold and red,
-Coach the dreams inside your head.
-Throat of sea calls out your name,
-Coast and boat, forever same.
-
-Road to dreams upon the water,
-Soap and sail, like they taught her.
-Float away on ocean's coat,
-Every dream becomes a boat.`
+Coach will teach us how to play,
+Soak up sun this perfect day.
+Soap and water, clean and neat,
+Coast adventures can't be beat!`
       }
     ]
   },
@@ -240,50 +180,35 @@ Every dream becomes a boat.`
     texts: [
       {
         type: "narrative",
-        title: "The Rainbow After the Snow",
-        wordCount: 146,
-        content: `Annie pressed her face against the cold window and watched the yellow school bus disappear below the hill as fresh snow continued to fall on her family's farm. She had never seen her own backyard look so magical, with snowflakes dancing in the air like tiny white butterflies that seemed to follow invisible paths through the sky. Her grandmother came to stand beside her at the window and began to show Annie how to identify different types of snowflakes as they landed on the glass. "Each one is unique," Grandmother explained, "just like the flowers that will grow here when spring returns to our farm." As the storm began to clear, Annie could see a beautiful rainbow arcing below the dark clouds, its colors more vivid than the yellow paint in her art box. Without warning, her little brother decided to throw a snowball at the window from outside, making both Annie and Grandmother laugh at his playful antics. The rainbow seemed to follow the curve of the hills, promising warmer days when flowers would grow and show their colors once again.`
+        title: "The Rainbow in the Snow",
+        wordCount: 68,
+        content: `Mia looked out her bedroom window and saw white snow falling. Below in the yard, her own yellow ball was covered with snow. "Look at that!" she called to her mom. A beautiful rainbow appeared in the sky! The colors seemed to grow brighter and brighter. Mia wanted to show her friends, so she asked them to follow her outside. They decided to throw snowballs at the fence. When the sun came out, they watched the snow below them start to melt. What a magical day!`
       },
       {
         type: "informational",
         title: "How Rainbows Form",
-        wordCount: 144,
-        content: `Rainbows appear when sunlight passes through water droplets in the air, creating a spectacular show of colors that can be seen from below the clouds after a storm. The yellow light that we see in a rainbow is just one part of the white light spectrum that becomes visible when conditions are perfect. You can often see rainbows through your own window if you know exactly where to look and when atmospheric conditions will allow the colors to show clearly. Scientists have learned that rainbows always follow the same pattern of colors, with red appearing above yellow, and blue appearing below green in the visible spectrum. Children often throw water from garden hoses into the air to create their own miniature rainbows on sunny days. The snow that falls in winter contains the same water that will help create rainbows during spring and summer storms. Understanding how rainbows form requires knowledge of physics concepts that grow more complex as students advance in their scientific education and learn to follow detailed explanations of light refraction and reflection.`
+        wordCount: 63,
+        content: `Rainbows show up when the sun shines through water in the air. You might see one through your window after it rains. Rainbows have many colors, like red, yellow, and blue. They seem to grow across the sky. You can follow a rainbow with your eyes, but you can't catch it! Sometimes you can see a rainbow below clouds or above snow. Each person sees their own rainbow because of where they stand. Rainbows show us how beautiful nature can be!`
       },
       {
         type: "persuasive",
-        title: "Appreciate Nature's Beauty",
-        wordCount: 143,
-        content: `You should take time to appreciate the natural beauty that surrounds you, from the yellow autumn leaves that grow on trees outside your window to the pristine snow that transforms ordinary landscapes into winter wonderlands. Don't let the busy pace of modern life prevent you from stopping to watch a rainbow arch below storm clouds or to show gratitude for the simple miracles that happen in your own backyard every day. Follow the example of children who throw themselves into outdoor activities regardless of weather conditions, finding joy in both sunshine and snow. The yellow flowers that grow in spring gardens are no less remarkable than expensive art that people travel great distances to see in museums. Look below the surface of everyday experiences and you'll discover that even common sights like snow falling outside your window can fill you with wonder and peace. Make it your own personal mission to show others how to find beauty in ordinary moments, whether it's watching yellow leaves fall or celebrating the first rainbow after a storm.`
+        title: "Enjoy Nature's Beauty",
+        wordCount: 59,
+        content: `You should take time to look out your window every day! Watch how flowers grow in spring and how snow falls in winter. Follow the path of a rainbow across the sky. Don't throw away chances to see beautiful things below the clouds. Make it your own special time to show appreciation for nature. Yellow flowers, white snow, and colorful rainbows are gifts for everyone to enjoy. Nature will grow your happiness!`
       },
       {
         type: "poetry",
-        title: "Through My Window",
-        wordCount: 140,
-        content: `Through my window, yellow light
-Shines below the snow so white.
-Own the moment, grow in wonder,
-Show the world what's right there under.
+        title: "Out My Window",
+        wordCount: 48,
+        content: `Out my window, what do I see?
+Yellow sun shining down on me.
+Snow below and rainbow high,
+Colors grow across the sky.
 
-Follow rainbows through the sky,
-Window frames where dreams can fly.
-Snow will fall and snow will go,
-Rainbow colors help us grow.
-
-Throw your worries to the wind,
-Yellow sunshine, snow rescinded.
-Below the clouds, above the ground,
-Own the magic that you've found.
-
-Grow in wisdom, show your heart,
-Follow nature, living art.
-Window opens, breezes blow,
-Rainbow bridges help us grow.
-
-Yellow, blue, and green so bright,
-Below the storm, beyond the night.
-Own your dreams and let them show,
-Follow where the rainbows go.`
+Follow me, let's go and show,
+How the pretty flowers grow.
+Throw your hands up to the sky,
+Own this moment, you and I!`
       }
     ]
   }

@@ -1,5 +1,5 @@
 // components/curriculum/literacy/passages/Level2Passages1.js
-// LEVEL 2 FLUENCY PRACTICE PASSAGES - LEVELS 2.1 to 2.5
+// LEVEL 2 FLUENCY PRACTICE PASSAGES - LEVELS 2.1 to 2.5 (Simplified for Ages 6-7)
 import React from 'react';
 
 export const LEVEL_2_PASSAGES_1 = [
@@ -12,50 +12,40 @@ export const LEVEL_2_PASSAGES_1 = [
     texts: [
       {
         type: "narrative",
-        title: "The Queen's Magical Quilt",
-        wordCount: 142,
-        content: `The queen lived in a magnificent castle with thick stone walls that seemed to shrink the outside world away from her peaceful home. Every morning, she would drink her favorite herbal tea while working on her special quilt in the royal sewing room. One day, a tiny yellow chick wandered into her chamber from the nearby shack where the royal chickens lived. The chick began to quack softly, as if asking for permission to stay and watch the queen work. "You may stay, little one," said the queen with a kind smile. She worked with quick, precise stitches, creating beautiful patterns on her quilt. "Thank you for keeping me company while I sew," she told the chick. The thick winter months passed quickly as the queen and her feathered friend spent cozy afternoons together, creating the most beautiful quilt the kingdom had ever seen.`
+        title: "The Queen's Pet Chick",
+        wordCount: 65,
+        content: `The queen had a little yellow chick that lived in a shack behind her castle. The chick would quack loudly every morning when the queen came to drink her tea. "Thank you for being my friend," said the queen to her quick little pet. She made a soft quilt for the chick to sleep on. The thick walls of the shack kept the chick warm. When it rained, the queen would shrink down and sit in the little shack with her chick friend.`
       },
       {
         type: "informational",
-        title: "Making Traditional Quilts",
-        wordCount: 138,
-        content: `Quilting is an ancient art form that requires patience, skill, and creativity from those who practice it. Traditional quilters would often drink tea or coffee while working on their projects during the long winter months when thick snow covered the ground outside. In the past, quilting was done in small shacks or cabins where families would gather around a wooden frame to work together. Today, quick modern techniques help quilters finish their projects faster than ever before. Many quilters like to thank their grandmothers and great-grandmothers who taught them this valuable skill. The materials used in quilts can shrink if not washed properly, so quilters must be careful when selecting fabrics. Even a small chick wandering around the workspace could disturb the delicate process. Whether creating quilts for a queen or a common family, quilters take great pride in their detailed handwork that will be treasured for generations to come.`
+        title: "All About Chickens",
+        wordCount: 58,
+        content: `Chickens say "quack" - no wait, ducks say quack! Chickens say "cluck cluck." A baby chicken is called a chick. Chickens are very quick when they run. They like to drink water and eat corn. Some chickens have thick, fluffy feathers. Long ago, even the queen had chickens! A mother hen will make a warm nest, just like a soft quilt for her babies. Thank you, chickens, for giving us eggs!`
       },
       {
         type: "persuasive",
-        title: "Learn the Art of Quilting",
-        wordCount: 135,
-        content: `You should learn the traditional art of quilting because it connects you to generations of skilled craftspeople who created beautiful, functional artwork. Unlike quick mass-produced blankets, a handmade quilt tells a story through its careful stitching and thoughtful design. Don't let this valuable skill shrink away from our modern world - take time to learn from experienced quilters while you still can. Thank the quilters in your family or community by asking them to teach you their techniques. Even if you start with something as simple as a thick pot holder, you'll be building important skills. You don't need a fancy studio - many quilters started in a simple shack or spare room. Set up a comfortable space where you can drink tea and work peacefully. Whether you dream of making quilts fit for a queen or practical blankets for your family, quilting offers creative satisfaction that lasts a lifetime.`
+        title: "Be Kind to Animals",
+        wordCount: 52,
+        content: `You should be kind to all animals, even a little chick! Animals need fresh water to drink every day. They need a warm place to sleep, like a thick blanket or quilt. Say "thank you" to animals for being our friends. Be quick to help if you see an animal that needs help. Even a queen knows that all animals are special and deserve love!`
       },
       {
         type: "poetry",
-        title: "The Quilter's Song",
-        wordCount: 128,
-        content: `In a shack beside the meadow,
-Where the morning shadows shrink,
-Sits a quilter by the window,
-With her tea so warm to drink.
+        title: "Little Chick Song",
+        wordCount: 48,
+        content: `Little chick, little chick,
+Yellow and quick.
+Drink some water,
+Thank you, little chick.
 
-Quick her fingers dance and flutter,
-Through the thick and colored thread,
-While a chick peeps from the gutter,
-And the queen dreams in her bed.
+Queen made a quilt,
+Soft and thick.
+In the wooden shack,
+Sleep well, little chick.
 
-Quack, quack, calls the garden duck,
-As the quilter works with care,
-Thank you, grandmother, for your luck,
-And the wisdom that you share.
-
-Quilt of memories, quilt of love,
-Stitched with patience, stitched with time,
-Blessed by angels high above,
-Every pattern tells a rhyme.
-
-Thick the winter, quick the spring,
-Shrink away the world outside,
-Queen and peasant, quilts we bring,
-Warmth and beauty, side by side.`
+Don't shrink away,
+Stay and play.
+Quack, quack, quack,
+What a fun day!`
       }
     ]
   },
@@ -69,50 +59,35 @@ Warmth and beauty, side by side.`
     texts: [
       {
         type: "narrative",
-        title: "The Artist Who Wouldn't Give Up",
-        wordCount: 147,
-        content: `Maria had faith that today would be the day she would finally finish her masterpiece painting. She had been working on this special project for months, and she didn't want to delay completing it any longer. Again and again, she had tried to paint the perfect sunset, but something always seemed to strain her concentration. "I must stay focused and not let anything take me away from my work," she said to herself as she mixed the bright orange paint on her palette. She tied her apron carefully around her waist to protect her clothes from paint splatters. The old kitchen drain was making strange noises, but Maria refused to let it distract her from her artistic vision. With steady hands and unwavering faith in her abilities, she painted stroke after stroke until the canvas came alive with color. Again, she had proven that persistence and faith could overcome any obstacle that tried to drain her creative energy.`
+        title: "Painting Today",
+        wordCount: 62,
+        content: `Today, Emma wanted to paint a picture of her dog. "Please stay here with me," she said to her dog, Max. But Max ran away to play outside. "Come back! Don't delay!" called Emma. Again and again, Max ran around the yard. Emma had paint on her hands and a little on her waist too. She had faith that Max would come back soon. Finally, Max came back and sat still so Emma could paint his picture.`
       },
       {
         type: "informational",
-        title: "Understanding Weather Patterns",
-        wordCount: 144,
-        content: `Weather systems can stay in one area for days or move away quickly, depending on various atmospheric conditions that scientists study carefully. Today's weather forecasters use advanced technology to track storms and predict when rain might drain into rivers and cause flooding in low-lying areas. Again and again, meteorologists have observed that high-pressure systems tend to bring clear skies and stable conditions. Faith in weather prediction has grown stronger as computer models become more accurate at forecasting temperature changes and precipitation patterns. When storm systems strain against mountain ranges, they often create dramatic weather changes on both sides of the peaks. Scientists paint detailed weather maps to show how air masses move across continents and oceans. Without delay, weather warnings are issued when dangerous conditions threaten to move away from their predicted paths. The study of weather patterns requires both scientific knowledge and faith in the complex systems that control our planet's atmospheric behavior.`
+        title: "How to Paint",
+        wordCount: 55,
+        content: `Painting is fun! Today you can learn how to paint. First, get your paint ready. Don't delay - start right away! Put on old clothes so you don't get paint on your good shirt or waist. Stay in one place while you paint. If you make a mess, clean the paint drain in the sink. Again and again, practice makes you better at painting. Have faith that you can make beautiful art!`
       },
       {
         type: "persuasive",
-        title: "Don't Delay Your Dreams",
-        wordCount: 141,
-        content: `You should never delay pursuing your dreams, no matter how challenging they might seem today. Don't let fear drain your confidence or strain your determination to succeed in life. Again and again, successful people have shown that faith in yourself is the most important ingredient for achieving your goals. Stay committed to your vision, even when obstacles try to pull you away from your chosen path. Don't let negative thoughts paint a discouraging picture in your mind - instead, focus on the positive outcomes that await you. Keep your faith strong around your waist like a protective belt that supports you through difficult times. When setbacks threaten to drain your motivation, remember that every successful person has faced challenges. Today is the perfect time to take action toward your dreams, so don't delay any longer. Have faith that your hard work will pay off, and never let anyone convince you to stay small when you were meant to shine bright.`
+        title: "Try Art Today",
+        wordCount: 51,
+        content: `You should try making art today! Don't delay or go away from this fun activity. Stay busy with crayons, paint, or markers. Again and again, making art makes you happy. Have faith in yourself - you can make something beautiful! Put on an apron around your waist so your clothes stay clean. Art is the best way to spend time today!`
       },
       {
         type: "poetry",
-        title: "Faith Will Light the Way",
-        wordCount: 135,
-        content: `Today the sun shines bright and clear,
-Away from clouds that brought us fear.
-Stay strong, my heart, and do not strain,
-For after sunshine follows rain.
+        title: "Paint Away",
+        wordCount: 44,
+        content: `Paint today, don't delay,
+Stay and play, don't go away.
+Again we'll paint with colors bright,
+Faith will make it turn out right.
 
-Again the morning brings us hope,
-Faith helps us climb each grassy slope.
-Drain away the doubts that bind,
-Paint new pictures in your mind.
-
-Waist deep in troubles, we may stand,
-But faith will always lend a hand.
-Delay no more, the time is now,
-To keep our sacred, solemn vow.
-
-Away with worry, away with fear,
-Stay close to those we hold most dear.
-Again we'll rise when troubles strain,
-Faith guides us through both sun and rain.
-
-Today, tomorrow, every day,
-Paint hope in all we do and say.
-Drain sorrow from the heart's deep well,
-Faith's story we will always tell.`
+Red and blue around my waist,
+Paint won't go to waste.
+Stay with me, let's paint all day,
+Art will never go away!`
       }
     ]
   },
@@ -126,50 +101,35 @@ Faith's story we will always tell.`
     texts: [
       {
         type: "narrative",
-        title: "The Loyal Royal Guard",
-        wordCount: 149,
-        content: `Sir William was a loyal guard who worked tirelessly to protect the royal family from any threat that might destroy their peaceful kingdom. Every morning, he would employ careful strategies to inspect each joint of the castle's massive wooden gates, making sure they remained strong and secure. The moist morning air often carried strange sounds across the courtyard, and Sir William had learned to distinguish between normal noise and potential danger. At the first point of sunrise, he would begin his rounds, knowing that the royal family could enjoy their breakfast because of his vigilant protection. He took great pride in being employed by the kingdom and would never allow anything to spoil the safety of those under his care. One particularly humid day, when the moist air made every joint in his armor creak, Sir William heard an unusual noise coming from the forest. Without hesitation, he moved to the highest point of the castle tower to investigate, demonstrating once again why the royal family trusted him completely with their lives and security.`
+        title: "The Loyal Dog",
+        wordCount: 67,
+        content: `Prince had a loyal dog named Royal. The dog would point to things with his nose when he wanted to play. One day, they heard a loud noise outside. "What's that noise?" asked Prince. Royal went to the door and made more noise - he was barking! The ground was moist from rain, but that didn't spoil their fun. Prince's mom would employ Royal to help find lost toys. Royal loved to enjoy playing games, and he never tried to destroy anything. He was the best joint friend Prince ever had.`
       },
       {
         type: "informational",
-        title: "How Plants Use Moisture",
-        wordCount: 142,
-        content: `Plants employ several fascinating methods to absorb and use moisture from their environment, which is a crucial point for gardeners to understand. The soil must remain moist but not so wet that it will spoil the delicate root system that plants depend on for survival. Each joint where a leaf connects to the stem serves as an important point for water transport throughout the plant. Garden experts enjoy studying how different plants have evolved to employ various strategies for dealing with both drought and excess moisture. Too much noise from construction or traffic can actually destroy a plant's ability to absorb moisture efficiently through their sensitive root systems. Loyal gardeners know that they must employ consistent watering schedules to keep soil moist without creating conditions that might spoil their plants' health. At the point where roots meet soil, plants begin their remarkable process of extracting moisture and nutrients. Understanding these natural processes helps gardeners enjoy greater success and avoid mistakes that could destroy their carefully tended plants.`
+        title: "Soil and Plants",
+        wordCount: 59,
+        content: `Plants need good soil to grow well. Soil should be moist but not too wet, or it will spoil the roots. When you point to healthy soil, it feels soft in your hands. Too much noise can bother plants, but a little wind won't destroy them. Farmers employ special tools to make soil ready for planting. We should enjoy taking care of plants and soil. Good soil is like a royal gift from nature!`
       },
       {
         type: "persuasive",
-        title: "Protect Our Environment",
-        wordCount: 146,
-        content: `We must all employ immediate action to protect our environment before pollution and climate change destroy the natural world that we enjoy every day. From this point forward, each of us needs to be loyal to environmental causes and stop making choices that spoil our planet's delicate ecosystems. The moist rainforests that provide oxygen for our entire planet are disappearing because we have failed to employ sustainable practices in our daily lives. Every joint effort between communities, governments, and individuals can make a significant difference in preserving the natural resources that we all enjoy. Don't let the noise of modern life distract you from the important point that our planet needs immediate help. We can no longer afford to employ wasteful habits that destroy the moist environments where countless species make their homes. Be loyal to future generations by making choices that protect rather than spoil our shared environment. At this critical point in history, we must all enjoy the responsibility of being environmental stewards who employ wisdom rather than greed in our decision-making processes.`
+        title: "Take Care of Toys",
+        wordCount: 54,
+        content: `You should take good care of your toys! Don't destroy them or let them spoil. Point out broken toys to grown-ups so they can help fix them. Enjoy playing, but be loyal to your toys by treating them well. Keep them in a place where noise won't bother others. When you employ gentle hands, your toys will last longer. Take royal care of everything you own!`
       },
       {
         type: "poetry",
-        title: "Nature's Royal Song",
-        wordCount: 138,
-        content: `In gardens where the morning's moist,
-The loyal flowers raise their voice.
-Each point of light, each drop of dew,
-Employs its magic, fresh and new.
+        title: "Royal Fun",
+        wordCount: 48,
+        content: `Point to the sky so blue,
+Royal colors, me and you.
+Enjoy the sun, enjoy the day,
+Loyal friends who love to play.
 
-Enjoy the noise of singing birds,
-Their royal songs beyond all words.
-No sound can spoil this perfect day,
-Where nature's joint in every way.
-
-The moist earth breathes, the flowers dance,
-Each point of beauty, given chance.
-Destroy we must all selfish thought,
-Employ the wisdom nature taught.
-
-Loyal to the earth we'll be,
-Enjoy its royal majesty.
-At every point where life takes root,
-Noise fades before nature's royal flute.
-
-Moist with tears of joy we stand,
-Joint keepers of this loyal land.
-Spoil not what nature's hands employ,
-But point toward lasting, royal joy.`
+Moist grass beneath our feet,
+Noise of birds sounds so sweet.
+Don't destroy, don't spoil the fun,
+Employ kindness, everyone!`
       }
     ]
   },
@@ -183,50 +143,38 @@ But point toward lasting, royal joy.`
     texts: [
       {
         type: "narrative",
-        title: "The Clever Farmer's Report",
-        wordCount: 148,
-        content: `Old Farmer Johnson was a clever man who kept detailed records of every number related to his successful farming operation. He would never forget to report the exact amount of starch his potatoes produced each season, carefully recording the data with his weathered finger in his thick notebook. Despite his advancing age, he refused to let anger cloud his judgment when neighboring farmers questioned his unconventional methods. His prize-winning horse, Thunder, had helped him plow the garden for over fifteen years, and together they had created the most productive farm in the entire county. Every morning, Johnson would run his finger along the rows of crops, checking each plant for signs of disease or pest damage. The number of vegetables he harvested each year continued to increase, thanks to his clever rotation system that kept the soil rich in natural starch and nutrients. Whenever the county agricultural inspector came to write his annual report, he never failed to praise Johnson's innovative techniques and his deep understanding of sustainable farming practices.`
+        title: "The Clever Farmer",
+        wordCount: 69,
+        content: `Farmer Joe was very clever. He had a brown horse and a big garden. Every day, he would count the number of carrots in his garden using his finger. His horse was gentle and never showed anger, even when children came to visit. "Don't forget to water the plants," Farmer Joe would say. He grew corn full of starch to feed his animals. At school, kids had to write a report about his farm. Everyone loved visiting the clever farmer and his friendly horse.`
       },
       {
         type: "informational",
-        title: "Understanding Plant Starch",
-        wordCount: 145,
-        content: `Starch is a complex carbohydrate that plants produce and store in large numbers throughout their leaves, stems, and roots for future energy needs. A clever scientist can determine the exact number of starch granules in a plant sample by using specialized laboratory equipment and careful finger-tip measurements. Farmers who grow crops high in starch, such as potatoes and corn, must never forget to report their harvest yields to agricultural authorities for statistical purposes. The amount of starch in different plants varies significantly, and even the anger or stress that a plant experiences can affect its starch production levels. In a typical garden, plants employ starch as their primary energy storage system, much like how a farmer stores grain in silos for winter use. Even a horse grazing in a pasture consumes plants containing starch to fuel its daily activities and maintain its strength. Understanding starch production helps clever researchers develop better farming techniques and create detailed reports about crop productivity and nutritional value for both humans and animals.`
+        title: "Gardens and Farms",
+        wordCount: 61,
+        content: `A garden is a place where plants grow. Farmers are clever people who take care of many plants and animals. They grow food like corn, which has starch that gives us energy. A farmer might have a horse to help with work. Count the number of vegetables in a garden - you might need more than one finger! Don't forget that gardens need water and sun. Farmers work hard, and we should write a good report about them!`
       },
       {
         type: "persuasive",
-        title: "Support Local Farmers",
-        wordCount: 143,
-        content: `You should support local farmers because they are clever, hardworking people who deserve our respect and financial support for the countless hours they spend in the garden and fields. Don't let anger toward big agricultural corporations prevent you from appreciating the significant number of small farmers who still use traditional methods passed down through generations. When you point your finger at food prices, remember that farmers often forget to charge enough for their labor and expertise. Every farmer who writes an annual report about their crop yields should be proud of their contribution to feeding our communities. The starch in the vegetables and grains they produce requires months of careful attention and significant financial investment. Supporting local farmers is as natural as a horse returning to its barn after a long day of work. These clever individuals never forget the importance of sustainable farming practices that protect our environment for future generations. Make a conscious choice to purchase locally grown food and help ensure that the number of independent farmers in our area continues to grow rather than shrink.`
+        title: "Help in the Garden",
+        wordCount: 56,
+        content: `You should help in the garden! Be clever and learn about plants. Use your finger to make holes for seeds. Don't let anger stop you if something doesn't grow right away. A garden needs a number of things: water, sun, and care. Don't forget to be gentle, just like a farmer with his horse. Help grow food with starch like corn and potatoes. Make a report about what you learned!`
       },
       {
         type: "poetry",
-        title: "Farmer's Wisdom",
-        wordCount: 140,
-        content: `The clever farmer tends his garden,
-With weathered finger, heart to harden.
-No number counts the hours he spends,
-On soil where starch and sunlight blends.
+        title: "Farm Friends",
+        wordCount: 52,
+        content: `Clever farmer, clever horse,
+Working in the garden, of course.
+Number one, number two,
+Finger pointing, "This will do!"
 
-His faithful horse beside him stands,
-Through seasons' work and nature's demands.
-Forget the anger, forget the pain,
-Each farmer's loss becomes our gain.
+Never anger, always kind,
+Farmer has a gentle mind.
+Don't forget to water well,
+Starch in corn, can you tell?
 
-The morning report tells nature's tale,
-Of how the wise will never fail.
-With finger pointing toward the sky,
-The farmer knows the reason why.
-
-Through garden rows and fields of gold,
-The clever farmer, brave and bold,
-Shall never let us hunger long,
-His starch-rich harvest makes us strong.
-
-Forget not those who till the land,
-Each farmer works with heart and hand.
-The number of their gifts unknown,
-Our gratitude to them we've shown.`
+Report about the farm today,
+Horse and farmer, work and play!`
       }
     ]
   },
@@ -240,53 +188,35 @@ Our gratitude to them we've shown.`
     texts: [
       {
         type: "narrative",
-        title: "Sunday Morning Football",
-        wordCount: 147,
-        content: `Every Sunday morning at exactly seven o'clock, the Thompson family finished their breakfast and prepared for their favorite holiday tradition. Dad would grab the football from the garage while Mom packed a picnic lunch with fried chicken and homemade cookies. Their youngest son, Tommy, always wore his lucky dragon t-shirt because he believed it brought good fortune to their team. For seven years, they had never missed a single Sunday game, not even during their summer holiday vacation. This particular Sunday morning was special because it marked exactly one second after seven o'clock when they finished loading the car and started their journey to the stadium. As they drove through the quiet neighborhood, Tommy counted the houses they passed, stopping at number seven where his best friend lived. The tradition of Sunday morning football had become more than just a game for their family - it was a time when they finished all their weekly worries and simply enjoyed being together as the morning sun painted the sky in brilliant colors.`
+        title: "Sunday Football",
+        wordCount: 68,
+        content: `Every Sunday morning at seven o'clock, Tom and his dad played football in the yard. Tom wore his favorite dragon shirt for luck. They finished eating chicken for lunch, then played for a second time. "This is better than any holiday!" said Tom. On this Sunday morning, Tom's mom came to watch them play. She counted to seven before Tom caught the football. When they finished playing, it was already three o'clock. Sunday football was their favorite family time.`
       },
       {
         type: "informational",
-        title: "The History of Football",
-        wordCount: 144,
-        content: `Football has evolved significantly since the sport was first finished developing in the late 1800s, when players wore minimal protective equipment. The modern game is typically played on Sunday afternoons, with each game lasting approximately three hours from start to finish. Professional football players must be as quick as a dragon and as coordinated as a chicken running across a farmyard. Games begin promptly at various times throughout the day, with the most popular starting time being one o'clock in the afternoon. During holiday weekends, special games are scheduled to accommodate families who want to enjoy football together. The morning hours before game time are crucial for player preparation, including warm-up exercises and team meetings. Each play can be finished in a matter of seconds, but the strategy behind each move takes years to perfect. Seven players on defense must work together to stop the opposing team from advancing down the field. Understanding football requires knowledge of complex rules that have been refined over more than seven decades of professional play.`
+        title: "Days of the Week",
+        wordCount: 63,
+        content: `There are seven days in a week. Sunday is the first day for many people. We wake up in the morning every day. Some people eat chicken on Sunday. At twelve o'clock, it's lunch time! A holiday is a special day when we don't go to school or work. When you have finished your work, you can play football or other games. Every day has a morning, and every second counts when you're having fun!`
       },
       {
         type: "persuasive",
-        title: "Join a Sports Team",
-        wordCount: 142,
-        content: `You should join a sports team this year because physical activity will help you develop the strength and agility of a dragon while building friendships that can last for seven years or longer. Don't wait until the holiday season when teams have already finished selecting their players - sign up today! Whether you choose football, basketball, or any other sport, you'll learn valuable lessons about teamwork and perseverance. Set your alarm for six o'clock every morning to practice your skills before school begins. Like a chicken that never stops moving, athletes must stay active and committed to improving their performance. Every second of practice brings you closer to reaching your athletic goals and developing discipline that will serve you well beyond sports. Teams become like family members who support each other through victories and defeats. Sunday afternoon games provide excitement and entertainment for entire communities. When you've finished your first season, you'll understand why millions of people choose to participate in organized sports throughout their lives.`
+        title: "Family Time is Important",
+        wordCount: 57,
+        content: `You should spend time with your family! Every morning is a chance to be together. Maybe eat chicken for dinner or play football in the yard. Sunday can be like a holiday when families have fun. At seven o'clock, read books together. When you have finished your homework, play games. Every second with family is special. Don't wait - start making happy memories today!`
       },
       {
         type: "poetry",
-        title: "Holiday Morning",
-        wordCount: 139,
+        title: "Sunday Fun",
+        wordCount: 48,
         content: `Sunday morning, seven o'clock,
-The holiday bells begin to rock.
-Finished sleeping, time to play,
-Football waits this special day.
+Football and a dragon smock.
+Finished breakfast, chicken too,
+Holiday fun for me and you.
 
-Morning chicken, golden brown,
-Dragon banners all around.
-Seven players, second chance,
-Holiday football, time to dance.
-
-O'clock strikes the morning hour,
-Finished dreams, awake with power.
-Chicken sandwich, dragon's might,
-Sunday morning, pure delight.
-
-Seven blessings from above,
-Second helpings, food and love.
-Holiday morning, football field,
-Morning sunshine, never yield.
-
-Finished worries, finished care,
-Chicken dinner, time to share.
-Dragon courage, seven fold,
-Sunday stories to be told.
-
-O'clock memories, sweet and long,
-Morning sunshine, holiday song.`
+Second time around the yard,
+Playing football isn't hard.
+Morning sunshine, bright and free,
+Sunday's best for family!`
       }
     ]
   }
