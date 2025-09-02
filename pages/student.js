@@ -535,6 +535,7 @@ const StudentPortal = () => {
             studentData={studentData}
             showToast={showToast}
             updateStudentData={updateStudentData}
+            classData={classData}
           />
         );
       case 'quizshow':
