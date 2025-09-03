@@ -191,8 +191,8 @@ const VisualChecklist = ({ students, showToast, saveData, loadedData }) => {
           </div>
         </div>
 
-        {/* Checklist Items Grid - with bottom padding for floating widgets */}
-        <div className="p-8 h-full overflow-hidden pb-32">
+        {/* Checklist Items Grid - with bottom padding for floating widgets and progress bar */}
+        <div className="p-8 h-full overflow-hidden pb-48">
           <div 
             className="grid gap-6 h-full max-w-7xl mx-auto"
             style={{ 
