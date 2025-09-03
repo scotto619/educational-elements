@@ -1,5 +1,5 @@
 // components/curriculum/literacy/passages/Level2Passages5.js
-// LEVEL 2 FLUENCY PRACTICE PASSAGES - LEVELS 2.21 to 2.25
+// LEVEL 2 FLUENCY PRACTICE PASSAGES - LEVELS 2.21 to 2.25 (Simplified for Ages 6-7)
 import React from 'react';
 
 export const LEVEL_2_PASSAGES_5 = [
@@ -12,50 +12,40 @@ export const LEVEL_2_PASSAGES_5 = [
     texts: [
       {
         type: "narrative",
-        title: "The Perfect Garden Discovery",
-        wordCount: 148,
-        content: `Yesterday, Maria discovered that she was not the kind of person who could grow a perfect garden without lots of practice and patience. The ongoing battle seemed to be her versus the stubborn weeds that continued to lurk between the rows of vegetables she had planted so carefully. She had been trying to grow turnips, carrots, and other root vegetables, but somehow they never seemed to develop into the perfect specimens she had imagined. When she tried to water the plants, the hose would often squirt in unexpected directions, soaking her clothes and making the whole gardening experience feel more like work than pleasure. Yesterday's rainfall had helped some of her plants, but it had also caused others to burn in the intense sunlight that followed the storm. Maria decided to twirl her hair into a messy bun and continue working, knowing that every expert gardener had experienced moments of frustration since the birth of their gardening passion. The perfect garden would take time to develop.`
+        title: "My Garden Adventure",
+        wordCount: 68,
+        content: `Yesterday, Maria learned she wasn't the kind of person who could grow a perfect garden right away. It seemed like her versus the weeds that would lurk between her vegetables! She was trying to grow turnips and carrots, but they didn't look perfect like the pictures. When she tried to water them, the hose would squirt water everywhere! Yesterday's rain helped some plants, but the hot sun made others burn. Maria decided to twirl her hair and keep trying. Every person needs practice to grow the perfect garden!`
       },
       {
         type: "informational",
-        title: "Soil Science and Plant Growth",
-        wordCount: 146,
-        content: `Understanding soil science requires recognizing that no person can create perfect growing conditions without first learning about the complex chemical and biological processes that occur from the birth of a seed to the harvest of mature vegetables. The battle is often gardener versus nature, with many variables lurking beneath the surface of even the most carefully prepared garden plots. Yesterday's weather conditions continue to influence today's plant growth, as root vegetables like turnips require consistent moisture that doesn't burn away during periods of intense heat. When water systems squirt irregularly or fail to distribute moisture evenly, plants cannot develop the perfect root systems they need for proper nutrition absorption. Soil temperature affects how nutrients twirl through the complex network of roots that anchor plants and provide stability. A wise person learns that the perfect garden is actually an ecosystem where beneficial bacteria, earthworms, and other organisms work together to create the ideal growing environment that supports healthy plant development.`
+        title: "How Gardens Grow",
+        wordCount: 64,
+        content: `Growing a garden means no person can make perfect plants without lots of practice! From the birth of a tiny seed to harvest time, many problems can lurk in gardens. Yesterday's weather affects how plants grow today. Vegetables like turnips need water that won't burn them in hot sun. When water systems squirt too much or too little, plants can't grow right. Every person learns that the perfect garden takes time, patience, and practice. Don't give up if your first garden isn't perfect!`
       },
       {
         type: "persuasive",
-        title: "Learn from Gardening Mistakes",
-        wordCount: 144,
-        content: `You should learn from your gardening mistakes because no person ever created a perfect garden without experiencing failures that taught valuable lessons about plant care and soil management. Don't let yesterday's disappointments prevent you from continuing to experiment with different varieties of vegetables, including challenging crops like turnips that require specific growing conditions. The battle is never really gardener versus nature, but rather learning to work with natural systems that have been developing since the birth of agriculture thousands of years ago. When problems lurk in your garden, such as pest damage or irregular watering that might burn plant roots, treat these challenges as learning opportunities. Even experienced gardeners must constantly twirl their approach to accommodate changing weather patterns, soil conditions, and plant needs throughout the growing season. Don't expect perfect results immediately - instead, squirt some humor into the situation and remember that every expert was once a beginner who made countless mistakes before achieving consistent success with their garden.`
+        title: "Don't Give Up on Gardening",
+        wordCount: 62,
+        content: `You should learn from gardening mistakes because no person makes a perfect garden the first time! Don't let yesterday's problems stop you from trying again. Even if weeds lurk in your garden and your hose squirts water everywhere, keep practicing! From the birth of your interest in gardening, you'll get better with each try. Every person makes mistakes when learning something new. Don't let garden problems burn away your excitement about growing plants. Keep trying to be a great gardener!`
       },
       {
         type: "poetry",
         title: "Garden Lessons",
-        wordCount: 142,
-        content: `Yesterday the garden taught
+        wordCount: 56,
+        content: `Yesterday my garden taught,
 Every person lessons brought.
-Versus weeds, the battle's won,
-Perfect growth has just begun.
+Versus weeds, we'll find a way,
+Perfect growth starts today.
 
-Lurk the secrets in the soil,
-Burn away from summer's toil.
-Turnip, carrot, beet so sweet,
-Twirl through seasons, growth complete.
+Lurk the secrets in the ground,
+Burn away each worried frown.
+Turnip, carrot, growing free,
+Twirl with garden victory.
 
-Birth of seedling, small and green,
-Squirt of water, growth unseen.
-Yesterday's mistakes now past,
-Person learns what seeds hold fast.
-
-Versus drought and versus rain,
-Perfect garden, joy and pain.
-Lurk the lessons in each row,
-Burn with passion, watch things grow.
-
-Turnip wisdom, roots run deep,
-Twirl through seasons that we keep.
-Birth of knowledge, season's turn,
-Squirt of joy in all we learn.`
+Birth of seedling, small and bright,
+Squirt of water, pure delight.
+Person learning, day by day,
+Perfect gardens come this way!`
       }
     ]
   },
@@ -70,49 +60,37 @@ Squirt of joy in all we learn.`
       {
         type: "narrative",
         title: "The Hawk at Dawn",
-        wordCount: 147,
-        content: `At the first light of dawn, Emily saw a magnificent hawk perched on the old wooden fence post behind her family's farmhouse. She wanted to draw a picture of the beautiful bird, so she carefully reached for her sketchbook and colored pencils. The hawk's sharp claw gripped the weathered fence post tightly as it scanned the meadow for breakfast. Emily's grandmother had taught her to wear a warm wool shawl during early morning walks, especially when the raw spring air still carried the chill of winter. As she began to sketch the hawk's powerful jaw and piercing eyes, Emily noticed that the bird seemed completely unafraid of her presence. The hawk remained perfectly still, almost as if it understood that it was posing for an important portrait. When her grandmother called from the kitchen, Emily realized that she had been sitting quietly in the dewy straw grass for almost an hour, completely absorbed in capturing the beauty of the magnificent bird that had graced them with its presence at dawn.`
+        wordCount: 67,
+        content: `At dawn, Emma saw a beautiful hawk sitting on the old fence post. She wanted to draw a picture of the bird with her colored pencils. The hawk's sharp claw held tight to the post as it looked for breakfast. Emma's grandma had taught her to wear a warm wool shawl during early morning walks when the raw spring air was still cold. As Emma began to draw the hawk's strong jaw and bright eyes, the bird sat very still. It was like the hawk knew Emma wanted to draw its picture in the golden light of dawn.`
       },
       {
         type: "informational",
-        title: "Birds of Prey and Their Hunting",
-        wordCount: 145,
-        content: `Birds of prey like the hawk use their sharp claw and powerful jaw muscles to capture and consume a variety of small animals during their daily hunting activities. Most hawks prefer to hunt during dawn and early morning hours when small mammals are most active and visible in open grassland areas. The raw power demonstrated by these magnificent birds allows them to saw through tough skin and muscle tissue when processing their prey for consumption. A hawk's claw is specifically designed to penetrate and hold struggling prey animals, while their curved beak functions like a sharp saw for tearing food into manageable pieces. During cold weather, birds of prey may appear to draw their feathers closer to their bodies, creating a natural shawl effect that helps them conserve body heat. Many hawk species build their nests using natural materials including straw, twigs, and other organic matter found in their hunting territories. Understanding how these predators interact with their environment helps wildlife biologists draw conclusions about ecosystem health and balance.`
+        title: "Birds That Hunt",
+        wordCount: 63,
+        content: `Birds like hawks use their sharp claw and strong jaw to catch small animals for food. Most hawks like to hunt at dawn and early morning when mice and other small animals are moving around. The raw power of these birds helps them saw through tough skin when they eat. A hawk's claw is made to grab and hold prey animals, while their curved beak works like a saw for tearing food. During cold weather, hawks draw their feathers close to stay warm, like wearing a warm shawl.`
       },
       {
         type: "persuasive",
-        title: "Appreciate Birds of Prey",
-        wordCount: 143,
-        content: `You should learn to appreciate birds of prey because they play essential roles in maintaining healthy ecosystems that benefit both wildlife and human communities. Don't let fear prevent you from observing these magnificent hunters as they demonstrate the raw power and precision that evolution has refined over millions of years. When you see a hawk at dawn or dusk, take time to draw connections between their hunting behavior and the important pest control services they provide for farmers and gardeners. The sharp claw and powerful jaw of these birds allow them to control rodent populations that would otherwise damage crops and spread disease. Like an old-fashioned shawl that provides warmth and protection, birds of prey offer natural protection for agricultural areas and suburban neighborhoods. Even though their hunting methods might seem harsh compared to the gentle way we saw small songbirds eating seeds, predators serve essential functions in nature's complex web. Learning to appreciate rather than fear these powerful hunters helps us draw better conclusions about wildlife conservation and ecosystem management.`
+        title: "Appreciate Hawks and Birds",
+        wordCount: 61,
+        content: `You should learn to appreciate hawks and other hunting birds because they help keep nature in balance! Don't let fear stop you from watching these amazing hunters show their raw power and skill. When you saw a hawk at dawn or evening, take time to draw connections between their hunting and the help they give farmers. The sharp claw and strong jaw of these birds help control mice that would eat crops. Learn to appreciate rather than fear these powerful birds that saw nature needs!`
       },
       {
         type: "poetry",
         title: "Dawn Hunter",
-        wordCount: 140,
+        wordCount: 52,
         content: `At dawn I saw the hawk take flight,
 Draw circles in the morning light.
 Straw whispers in the meadow wide,
 Shawl of mist on countryside.
 
-Prawn and fish in distant streams,
-Hawk soars high through morning dreams.
+Prawn and fish swim far away,
+Hawk soars high to start the day.
 Claw extended, sharp and true,
-Raw power in the sky so blue.
+Raw beauty in the sky so blue.
 
 Jaw designed for nature's way,
-Dawn hunter starts another day.
-Saw the beauty, saw the grace,
-Draw the wonder in this place.
-
-Straw beneath my morning feet,
-Shawl of dawn, so cool and sweet.
-Prawn may hide in waters deep,
-Hawk above will vigil keep.
-
-Claw and talon, beak and wing,
-Raw beauty that the mornings bring.
-Jaw of hunter, heart of gold,
-Dawn's story never gets old.`
+Dawn hunter greets another day!`
       }
     ]
   },
@@ -126,50 +104,38 @@ Dawn's story never gets old.`
     texts: [
       {
         type: "narrative",
-        title: "The Fawn's Adventure North",
-        wordCount: 149,
-        content: `Officer Martinez received an order to investigate reports of a young fawn that had been separated from its mother somewhere north of the state park boundary. Armed with a powerful torch and wearing his short-sleeved uniform, he began the search just as the sun was beginning to set. The law required him to approach wild animals carefully, so he moved slowly through the thorny undergrowth, being extra cautious to avoid getting scratched by every sharp thorn that blocked his path. After about an hour of searching, Officer Martinez began to yawn from exhaustion, but he was determined to find the lost fawn before darkness made the search impossible. Finally, he heard a soft sound and saw the young deer attempting to crawl under a fallen log near a small creek. The fawn's tiny paw appeared to be caught under the heavy branch, and Officer Martinez knew he would need to work quickly but gently to free the frightened animal. Using his torch to provide light, he carefully lifted the log and watched the grateful fawn scamper north toward the deeper forest.`
+        title: "Finding the Lost Fawn",
+        wordCount: 68,
+        content: `Officer Martinez got an order to look for a young fawn that was lost north of the park. With his bright torch and wearing his short-sleeved shirt, he started looking just as the sun was setting. The law said he had to be very careful around wild animals. He moved slowly through the thorny bushes, being careful not to get scratched by each sharp thorn. After an hour, Officer Martinez began to yawn from being tired. Finally, he found the fawn trying to crawl under a log with its tiny paw stuck underneath. Using his torch for light, he freed the happy fawn!`
       },
       {
         type: "informational",
-        title: "Wildlife Rescue and Care",
-        wordCount: 147,
-        content: `Wildlife rescue operations require trained professionals who understand both the law regarding wild animal protection and the proper techniques for safely handling injured or distressed animals. When rescuing a young fawn, workers must be prepared to crawl through dense vegetation and navigate around every sharp thorn that might impede their progress toward the animal. A rescue torch provides essential illumination during evening operations, while short-handled tools allow rescuers to work effectively in confined spaces. The order of operations during wildlife rescue follows strict protocols designed to minimize stress on animals while ensuring human safety. Rescuers working north of populated areas often encounter challenging terrain and must be prepared to yawn through long hours of patient observation before attempting to approach frightened wildlife. Even a gentle touch from a human hand or paw print left in soft soil can cause wild animals significant stress. Understanding wildlife behavior helps rescuers determine when to intervene and when observation from a short distance serves the animal's best interests.`
+        title: "Helping Wild Animals",
+        wordCount: 64,
+        content: `People who help wild animals must understand the law about protecting them and know safe ways to help hurt animals. When helping a young fawn, workers might need to crawl through bushes and avoid every sharp thorn. A rescue torch gives light during evening work, while short tools help in tight spaces. The order of steps during animal rescue follows rules to keep both animals and people safe. People working north of towns often find rough ground and must be ready to yawn through long hours of patient watching.`
       },
       {
         type: "persuasive",
-        title: "Support Wildlife Protection",
-        wordCount: 145,
-        content: `You should actively support wildlife protection laws because every fawn, adult deer, and other wild animal deserves our respect and protection from unnecessary human interference. Don't let ignorance of the law prevent you from understanding your responsibilities when encountering wildlife in natural areas north of urban developments. Even a short encounter with wild animals requires knowledge of proper behavior that won't cause them to yawn with stress or flee in panic. When hiking through areas where sharp thorns and dense vegetation might slow your progress, carry a reliable torch and make noise to avoid surprising wildlife that might be resting nearby. The law exists to protect both humans and animals, but it can only work effectively when people understand that even touching an animal's paw or leaving food scraps can disrupt natural behavior patterns. Support organizations that train wildlife rescue professionals who know how to crawl through difficult terrain and work during challenging conditions to help injured animals. Every community north of major wildlife habitats benefits from having trained rescuers available.`
+        title: "Protect Wild Animals",
+        wordCount: 62,
+        content: `You should help protect wild animals because every fawn and other wild creature deserves our care and protection! Don't let not knowing the law stop you from learning how to behave around wildlife north of cities. Even a short time with wild animals needs you to know proper behavior. When hiking where sharp thorns grow, carry a torch and make noise so you don't surprise animals. The law protects both people and animals, but it only works when people understand and follow the rules.`
       },
       {
         type: "poetry",
-        title: "Forest Law",
-        wordCount: 143,
-        content: `Torch in hand, we venture forth,
-Thorn and bramble, heading north.
+        title: "Forest Friends",
+        wordCount: 56,
+        content: `Torch in hand, we walk up north,
+Thorn and bramble, going forth.
 Order of the forest deep,
 Short the time that we can keep.
 
-North wind blows through ancient trees,
-Yawn of owl in evening breeze.
-Crawl through undergrowth so thick,
-Law of nature, strong and quick.
+North wind blows through trees so tall,
+Yawn of owl, hear nature's call.
+Crawl through bushes, thick and green,
+Law of wild, in all we've seen.
 
 Paw prints mark the forest floor,
-Fawn and doe need nothing more.
-Torch light flickers, shadows dance,
-Thorn and thistle, nature's stance.
-
-Order comes from balance true,
-Short our time in forest hue.
-North star guides the creatures home,
-Yawn of bear in forest loam.
-
-Crawl we must through nature's door,
-Law of wild forevermore.
-Paw and hoof and claw and wing,
-Fawn and forest, hear them sing.`
+Fawn and deer need nothing more!`
       }
     ]
   },
@@ -183,50 +149,38 @@ Fawn and forest, hear them sing.`
     texts: [
       {
         type: "narrative",
-        title: "The True Blue Art Project",
-        wordCount: 148,
-        content: `Sarah knew that her new art project was due on Friday, so she threw herself into the work with determination and creative energy. She had drawn a few preliminary sketches, but now she needed to decide whether to use watercolors or the thick blue tempera paint that her teacher had recommended. As she worked, the rich aroma of her grandmother's homemade beef stew drifted up from the kitchen below, making it difficult to concentrate on her artwork. Sarah drew inspiration from the beautiful blue jay that flew past her bedroom window, landing gracefully on the old oak tree outside. It was true that she had only a few days left to complete the project, but she felt confident about her artistic vision. She carefully applied small drops of glue to attach fabric pieces to her canvas, creating a mixed-media masterpiece that captured the essence of the blue jay's natural beauty. When she threw back her head to stretch her tired neck muscles, Sarah realized that her new artistic technique was producing exactly the results she had hoped to achieve.`
+        title: "My Blue Art Project",
+        wordCount: 66,
+        content: `Sarah knew her new art project was due on Friday, so she threw herself into the work with lots of energy. She drew a few sketches first, but now she needed to choose between watercolors and thick blue paint. As she worked, she could smell her grandma's yummy beef stew cooking downstairs. Sarah drew pictures of the beautiful blue jay that flew past her window. It was true that she only had a few days left, but she felt good about her art. She used small drops of glue to stick fabric pieces to her canvas.`
       },
       {
         type: "informational",
-        title: "The Science of Color Mixing",
-        wordCount: 146,
-        content: `Understanding color mixing requires learning a few basic principles about how different pigments interact when artists combine them to create new shades and hues. The color blue serves as one of the three primary colors from which all other colors can theoretically be mixed, making it true that blue is essential for comprehensive color work. When an artist threw red paint into a mixture with blue pigment, the resulting purple shade flew in a completely different direction from the original blue tone. Many art teachers drew connections between cooking and painting, explaining that mixing colors is similar to preparing stew where individual ingredients combine to create something entirely new. It is true that some color combinations are more successful than others, and artists often need glue or other binding agents to help pigments adhere properly to canvas surfaces. Understanding why certain colors flew together harmoniously while others clashed required students to study color theory principles that were due to be mastered through practice and experimentation.`
+        title: "Mixing Colors",
+        wordCount: 62,
+        content: `Learning about colors means understanding a few basic rules about how different paints mix together to make new colors. The color blue is one of the three main colors that all other colors come from, making it true that blue is very important for art. When an artist threw red paint together with blue paint, they made purple! It's true that some color combinations work better than others. Artists often need glue to help paints stick to paper or canvas the right way.`
       },
       {
         type: "persuasive",
-        title: "Explore Your Creativity",
-        wordCount: 144,
-        content: `You should explore your creativity because artistic expression offers benefits that are true and lasting, unlike the few temporary distractions that compete for your attention every day. Don't let fear prevent you from trying new techniques, even if your first attempts seem as mixed up as ingredients thrown together randomly in a pot of stew. The beautiful blue sky that flew overhead this morning should inspire you to drew connections between natural beauty and artistic expression. It is true that developing artistic skills requires practice and patience, but the personal satisfaction you'll gain is worth every moment of effort you invest. When creative inspiration flew into your mind, don't let it escape because you think your ideas aren't good enough. Take out some paper, grab whatever art supplies you can find - even simple glue and colored pencils - and begin creating something that reflects your unique perspective. The few moments you spend exploring your creativity today could lead to a new passion that enriches your entire life.`
+        title: "Try Making Art",
+        wordCount: 59,
+        content: `You should try making art because being creative gives you benefits that are true and long-lasting! Don't let fear stop you from trying new art techniques, even if your first tries seem as mixed up as stew ingredients threw together. The beautiful blue sky that flew overhead should inspire you to drew connections between nature and art. It's true that making art takes practice, but the fun you'll have is worth every moment you spend creating something special!`
       },
       {
         type: "poetry",
-        title: "Creative Flight",
-        wordCount: 142,
+        title: "Creative Fun",
+        wordCount: 52,
         content: `New ideas like birds take flight,
 Threw my worries out of sight.
 Few the moments, pure and true,
 Flew my dreams through skies of blue.
 
 Stew of colors on my brush,
-Drew the morning's gentle hush.
+Drew the morning, quiet hush.
 Blue jay singing in the tree,
 True inspiration flows through me.
 
-Due the deadline, due the work,
-Glue and paint help colors lurk.
-New adventures wait in art,
-Threw my fears, they flew apart.
-
-Few regret the time they spent,
-Flew through art with pure intent.
-Stew of passion, bowl of dreams,
-Drew from life's creative streams.
-
-Blue horizons, true and bright,
-Due rewards for those who write.
-Glue together heart and hand,
-New creations, beauty planned.`
+Due the work, but fun comes first,
+Glue together dreams that burst!`
       }
     ]
   },
@@ -240,50 +194,40 @@ New creations, beauty planned.`
     texts: [
       {
         type: "narrative",
-        title: "The Clue of the Lost Balloon",
-        wordCount: 149,
-        content: `Detective Williams was looking for any clue that might help him solve the mystery of the missing red balloon that had blown away from the county fair yesterday afternoon. The smooth investigation had grown more complex when witnesses gave conflicting stories about what they had seen. One child said she saw a goose chase the balloon across the parking lot, while another claimed the wind had simply grown too strong and blew the balloon toward the nearby lake. Detective Williams grew increasingly puzzled as he tried to chew through the various pieces of evidence that didn't seem to fit together logically. He used a small scoop to collect soil samples from the area where the balloon was last seen, hoping to find some microscopic clue that previous investigators had missed. When he received a cue from his partner about a similar case involving loose balloons at other local events, Detective Williams realized that this might not be an isolated incident. The smooth surface of the lake reflected the afternoon sunlight as he continued his methodical search for evidence.`
+        title: "The Mystery of the Red Balloon",
+        wordCount: 69,
+        content: `Detective Sam was looking for any clue to help solve the mystery of the missing red balloon that blew away from the school fair yesterday. The smooth investigation grew harder when kids gave different stories about what they saw. One child said she saw a goose chase the balloon across the playground, while another said the wind just grew too strong and blew the balloon toward the pond. Detective Sam grew more puzzled as he tried to chew through the clues that didn't fit together. When he got a cue from his partner, Sam realized this might not be the only missing balloon case!`
       },
       {
         type: "informational",
-        title: "Helium Balloons and Environmental Impact",
-        wordCount: 147,
-        content: `Released helium balloons pose significant environmental threats when they grew beyond human control and blew into natural habitats where wildlife might mistake them for food sources. The smooth latex surface of deflated balloons can choke birds like geese when they attempt to chew the unfamiliar material thinking it might be edible. Environmental scientists use every available clue to track balloon debris and scoop up litter before it causes harm to marine and terrestrial ecosystems. When balloons blew loose from outdoor events, they often travel great distances before landing in areas where cleanup becomes difficult or impossible. The cue for responsible balloon use should come from understanding that what goes up must come down, and the smooth flight of a balloon eventually ends with environmental consequences. Wildlife rehabilitation centers report that animals often try to chew balloon fragments, which can cause internal injuries or death. Communities that grew more environmentally conscious have begun using biodegradable alternatives to traditional balloons for celebrations and events.`
+        title: "Balloons and the Environment",
+        wordCount: 65,
+        content: `Released balloons can hurt the environment when they grew out of control and blew into natural places where animals might think they're food. The smooth surface of old balloons can choke birds like geese when they try to chew the material thinking it's something to eat. Scientists use every clue they can find to track balloon trash and scoop up litter before it hurts sea and land animals. When balloons blew loose from parties, they often travel far before landing where cleanup is hard or impossible.`
       },
       {
         type: "persuasive",
-        title: "Choose Eco-Friendly Celebrations",
-        wordCount: 145,
-        content: `You should choose eco-friendly celebration alternatives because the temporary joy of watching a balloon float away pales in comparison to the long-term environmental damage that grew from our careless choices. Don't let tradition be your only cue for celebration planning when so many smooth alternatives exist that won't harm wildlife or pollute natural spaces. When celebration debris blew into waterways and natural habitats, countless animals suffer because they cannot distinguish between food and the loose fragments of our festivities. Take this as your cue to scoop up better ideas for celebrations that don't require releasing objects into the environment. Children can chew sugar-free gum instead of watching balloons disappear into the sky, and communities can organize events that grew from environmental awareness rather than environmental carelessness. The smooth transition to sustainable celebration practices requires each person to loose their attachment to potentially harmful traditions. Every goose, fish, and land animal deserves protection from the consequences of our celebration choices.`
+        title: "Choose Earth-Friendly Parties",
+        wordCount: 63,
+        content: `You should choose earth-friendly party ideas because the short fun of watching a balloon float away doesn't compare to the long harm it causes when it grew into litter. Don't let tradition be your only cue for party planning when so many smooth alternatives exist that won't hurt wildlife. Take this as your cue to scoop up better ideas for parties that don't hurt the environment. Kids can chew sugar-free gum instead of watching balloons disappear. Every goose and fish deserves protection from our party trash!`
       },
       {
         type: "poetry",
-        title: "Floating Dreams",
-        wordCount: 143,
+        title: "Better Choices",
+        wordCount: 56,
         content: `Take the cue from morning dew,
 Clue to dreams that grew and grew.
 Grew beyond what we could see,
 Chew on possibilities.
 
-Blew the wishes on the wind,
-Smooth the path where dreams begin.
-Loose the fears that hold us back,
-Scoop up courage that we lack.
+Blew away the harmful ways,
+Smooth the path for better days.
+Loose the habits that cause harm,
+Scoop up kindness, nature's charm.
 
 Goose flies high above the lake,
-Balloon dreams for heaven's sake.
-Cue the music, start the dance,
-Clue to life's sweet circumstance.
-
-Grew in wisdom, grew in grace,
-Chew on time, but don't make haste.
-Blew away the doubts and fears,
-Smooth sailing through the years.
-
-Loose the bonds of yesterday,
-Scoop tomorrow from today.
-Goose and balloon, sky so blue,
-Dreams that grew from me and you.`
+Balloon choices, earth's sake.
+Clue to living, green and true,
+Grew from caring, me and you!`
       }
     ]
   }
