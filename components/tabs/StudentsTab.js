@@ -375,17 +375,15 @@ const StudentCard = ({ student, isSelected, isDragged, onClick, onDragStart, onD
     const pet = student.ownedPets?.[0];
     const petImg = pet ? getPetImage(pet) : null;
 
-    // SIMPLIFIED: Get clicker achievements data with debug logging
+    // SIMPLIFIED: Get clicker achievements data with targeted debug logging
     const clickerAchievements = student.clickerAchievements || null;
     const hasClickerData = clickerAchievements && clickerAchievements.lastPlayed;
     
-    // DEBUG: Log clicker data for first student to see what's actually there
-    if (student.firstName && student.firstName.length > 0) {
-        console.log(`DEBUG - Student ${student.firstName}:`, {
-            hasClickerAchievements: !!student.clickerAchievements,
-            clickerData: student.clickerAchievements,
-            hasLastPlayed: !!(clickerAchievements && clickerAchievements.lastPlayed)
-        });
+    // DEBUG: Log the entire student object structure for one student to see what's actually there
+    if (student.firstName === 'Leo') { // Only log for one specific student to reduce spam
+        console.log(`🔍 DEBUG - Full student object for ${student.firstName}:`, student);
+        console.log(`🎮 Looking for clickerAchievements:`, student.clickerAchievements);
+        console.log(`🎮 Student object keys:`, Object.keys(student));
     }
 
     const handleStarClick = (e) => {
