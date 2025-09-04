@@ -13,52 +13,37 @@ export const LEVEL_2_PASSAGES_8 = [
       {
         type: "narrative",
         title: "The Sleepover Letter",
-        wordCount: 148,
-        content: `Emma was writing a letter to her grandmother on special paper when her mother called her for dinner. "I have something better to tell you after we eat," her mother said with a mysterious smile. During dinner, Emma learned that she would be allowed to have a sleepover party for her birthday, which was completely different from anything she had ever experienced before. "We can make homemade icecream together and play games outside in the backyard," her mother explained excitedly. Emma felt like a friendly monster was doing backflips in her stomach because she was so excited about the upcoming celebration. After dinner, she returned to her letter and wrote about all the wonderful plans they would make together for the sleepover party. "This will be so much better than just a regular birthday," she wrote in her best handwriting on the pretty floral paper. Emma realized that sometimes the most exciting surprises come from spending time together with the people who love us most, whether it's sharing a special dinner or planning different activities outside under the stars.`
+        wordCount: 76,
+        content: `I am writing a letter on pretty paper. The letter is about my sleepover party! We will have dinner together and eat icecream. My friends and I will play different games outside. It will be better than my last party. I drew a funny monster on the paper too. Together we will have so much fun. This sleepover will be different from other parties.`
       },
       {
         type: "informational",
-        title: "Planning Multi-Day Events",
-        wordCount: 146,
-        content: `Planning multi-day events like sleepovers requires better organization than single-day activities because participants need different types of entertainment and meals together. Event planners must consider factors such as dinner menus, breakfast options, and special treats like homemade icecream that will make the experience memorable. Writing everything down on paper helps organizers remember important details and create a timeline that flows smoothly from one activity to another. Children attending sleepovers often bring letters from their parents with emergency contact information and any special instructions about medication or dietary restrictions. Outdoor activities during multi-day events require different planning considerations than indoor entertainment, including backup plans for various weather conditions. The key to successful event planning is understanding that different age groups prefer different types of activities, and organizers should never assume that what worked for one group will be better for another. Successful planners always have backup activities ready in case original plans need to be modified or replaced entirely.`
+        title: "Planning Fun Events",
+        wordCount: 74,
+        content: `Planning a sleepover party can be better with good ideas. Write plans on paper so you do not forget. Think of different games to play together. You can have dinner and icecream for treats. Playing outside games makes parties more fun. A sleepover is different from a regular party. Together with friends, you can make it the better party ever.`
       },
       {
         type: "persuasive",
-        title: "Embrace Family Traditions",
-        wordCount: 144,
-        content: `You should embrace family traditions because these special times together create better memories than any expensive entertainment or electronic device could provide. Don't let busy schedules prevent you from organizing events like family sleepovers, special dinner celebrations, or different outdoor activities that bring everyone together. Writing thank-you letters to family members who plan special events shows appreciation and encourages them to continue creating these meaningful experiences. The time you spend together making homemade icecream or playing outside games will become precious memories that last much longer than any store-bought entertainment. Family traditions don't have to cost lots of money - sometimes the most meaningful celebrations happen when people simply gather together around the dinner table to share stories and laughter. Children especially benefit from different types of family activities that help them feel connected to their relatives and understand their family's unique culture. Make an effort to participate in family traditions, whether they involve reading letters from distant relatives or creating new different traditions that reflect your family's interests and values.`
+        title: "Spend Time with Friends",
+        wordCount: 72,
+        content: `You should spend time together with your friends. A sleepover party is better than just watching TV alone. Write a letter to invite friends over for dinner. You can eat icecream and play different games outside. Friends make everything better and more fun. Different activities together help you make good memories. Time with friends is always better.`
       },
       {
         type: "poetry",
-        title: "Together Time",
-        wordCount: 142,
+        title: "Together Fun",
+        wordCount: 70,
         content: `Better times when we're together,
 Different joys in any weather.
-Monster hugs and laughter loud,
-Paper memories make us proud.
+Letter written, friends so dear,
+Monster laughs we love to hear.
 
-Sleepover fun from night till dawn,
-Together stories, games drawn on
-Different paper, colored bright,
-Outside under starry light.
+Paper games and dinner too,
+Sleepover fun for me and you.
+Together playing outside games,
+Different but love stays the same.
 
-Icecream made with love and care,
-Outside games we love to share.
-Better than the finest things,
-Different happiness it brings.
-
-Letter written, thoughts so dear,
-Dinner shared year after year.
-Monster smiles and giggles sweet,
-Together making life complete.
-
-Paper holds our special day,
-Sleepover memories here to stay.
-Outside adventures, inside too,
-Different but our love stays true.
-
-Better days are yet to come,
-Together we are more than one.`
+Icecream cold on summer night,
+Outside stars shine big and bright.`
       }
     ]
   },
@@ -73,52 +58,34 @@ Together we are more than one.`
       {
         type: "narrative",
         title: "Why I Try to Fly",
-        wordCount: 147,
-        content: `My dream is to fly high in the bright blue sky, but I am often too shy to tell people about my unusual ambition. Every day I try to understand why birds can fly so effortlessly while humans must rely on machines to soar through the dry mountain air. By studying the way eagles move their wings, I hope to discover the secret that will help me achieve my goal. Sometimes I cry when I realize how difficult it will be to make my dream come true, but I refuse to give up trying. My grandmother always tells me to look up at the sky and remember that even the most sly and cunning birds had to learn to fly through practice and determination. On dry, windy days, I climb to the top of the hill by our house and spread my arms wide, imagining what it would feel like to soar above the trees. Why should I abandon my dreams just because other people think they're impossible? I will continue to try until I find a way to fly.`
+        wordCount: 75,
+        content: `I want to fly high up in the blue sky. My dream is to fly by the clouds. Sometimes I try to jump and fly but I cannot. Why can birds fly but I cannot? I do not cry about it. On dry days, I run by the trees and try to fly. My cat is sly and knows I cannot fly. I am shy but I keep trying.`
       },
       {
         type: "informational",
         title: "How Birds Fly",
-        wordCount: 145,
-        content: `Birds can fly because their bodies are specially designed with hollow bones, powerful flight muscles, and feathers that help them navigate through the sky. By studying bird anatomy, scientists have learned why some birds are shy and prefer to stay close to the ground, while others are more sly and bold in their flying patterns. The dry air at high altitudes provides different flying conditions than the humid air by the ocean, which explains why different bird species have adapted to fly in various environments. When young birds first try to fly, they sometimes cry out with distress calls that alert their parents to come and help. My research shows that birds don't actually cry tears like humans do, but they do make vocal sounds when they are frightened or trying to communicate. Understanding why birds can fly while humans cannot requires knowledge of physics, biology, and aerodynamics that scientists continue to study. The sky provides an enormous three-dimensional space where birds can fly freely, hunt for food, and escape from predators that cannot follow them into the air.`
+        wordCount: 73,
+        content: `Birds can fly high in the sky because they have special wings. My book says birds have light bones that help them fly. You might cry when you see how high they can fly. Why do we want to fly like birds? On a dry day, watch birds fly by your window. Even shy birds can fly better than any sly cat can.`
       },
       {
         type: "persuasive",
-        title: "Never Give Up on Your Dreams",
-        wordCount: 143,
-        content: `You should never give up on your dreams, no matter how impossible they might seem to other people who don't understand why you want to try something different. Don't be shy about sharing your goals with supportive friends and family members who will encourage you to fly toward your ambitions. By working hard and staying focused, you can achieve things that will make other people cry with joy when they see your success. My advice is to try new approaches when the first method doesn't work, just like pilots who must adjust their techniques when flying through dry weather conditions or challenging sky environments. Why should you let fear prevent you from pursuing what makes you happy? Even if you fail the first time you try, don't cry about temporary setbacks - instead, use them as learning opportunities. The sky is vast and full of possibilities for those who are brave enough to spread their wings and try to soar. By believing in yourself and continuing to try, you can achieve dreams that once seemed as impossible as human flight.`
+        title: "Keep Trying Your Dreams",
+        wordCount: 71,
+        content: `You should try to reach your dreams even when they seem hard. Do not cry if you cannot do something right away. My advice is to keep trying like birds that learn to fly. Why give up when you can try again? By working hard, you can reach goals as high as the sky. Do not be shy about big dreams.`
       },
       {
         type: "poetry",
-        title: "Dreams Take Flight",
-        wordCount: 141,
-        content: `By the light of morning sky,
-My dreams learn how to fly.
+        title: "Dreams of Flying",
+        wordCount: 68,
+        content: `By the window, I watch the sky,
+My heart dreams to fly so high.
 Try and try with all my might,
-Fly toward the growing light.
+Fly toward the morning light.
 
-Why do eagles soar so high?
-Cry no more, just watch and try.
-Dry your tears and look above,
-Sky embraces with its love.
-
-Shy at first, but growing bold,
-Sly like foxes, brave and old.
-By determination's call,
-My dreams will conquer all.
-
-Try again when hopes seem lost,
-Fly despite what dreams may cost.
-Why surrender to despair?
-Cry no more - the sky is there.
-
-Dry the doubt that holds you down,
-Sky awaits without a frown.
-Shy no longer, proud and free,
-Sly wisdom sets my spirit free.
-
-By my side, dreams take their flight,
-My heart soars in endless light.`
+Why do birds soar way up high?
+Cry no tears, just watch them fly.
+Dry your eyes and look above,
+Sky embraces with its love.`
       }
     ]
   },
@@ -132,53 +99,35 @@ My heart soars in endless light.`
     texts: [
       {
         type: "narrative",
-        title: "The Active Weaver's Gift",
-        wordCount: 149,
-        content: `Mrs. Chen was an active woman who would live each day to its fullest, never wanting to leave any opportunity unexplored. She had decided to give her granddaughter a special birthday present that she would weave herself using colorful threads and incredible patience. "I have enough nerve to try something completely new," she told her husband as she rolled up the sleeve of her work shirt and prepared to begin the intricate project. Mrs. Chen had learned to weave beautiful fabrics when she was a captive audience during long winter evenings in her childhood home. Now she wanted to give this traditional skill to her granddaughter, who would soon leave for college and start her independent adult life. "I will serve my family by passing on this knowledge," Mrs. Chen said as she carefully selected the finest threads for her project. The active motions of weaving reminded her of all the generations of women who had used their hands to give beautiful, practical gifts to the people they loved most.`
+        title: "The Gift I Give",
+        wordCount: 74,
+        content: `I live in a house with my family. I have an idea to give Grandma a gift. I will not leave her on her birthday. I want to weave a small mat for her. I have to be active and work hard. I will serve her tea on the mat. My sleeve got dirty while I worked. I have the nerve to make something special.`
       },
       {
         type: "informational",
-        title: "Traditional Textile Arts",
-        wordCount: 147,
-        content: `Traditional textile arts like weaving have been used throughout history to give communities the practical items they needed to live comfortably. Active participation in these crafts helped people serve their families while creating beautiful objects that could leave lasting impressions on future generations. Weavers who have developed the nerve to attempt complex patterns often spend years perfecting their techniques before they can consistently weave intricate designs. The sleeve of a traditional garment might contain dozens of different weaving patterns that demonstrate the skill level of the person who created it. Many cultures would give young people opportunities to learn weaving as a way to serve their communities and preserve important traditions. Modern people who live busy lifestyles often don't have time to learn these active traditional skills that require patience and dedication. Understanding how to weave fabric connects us to generations of craftspeople who were never held captive by the assumption that all valuable items must be purchased rather than made by hand.`
+        title: "Making Things by Hand",
+        wordCount: 72,
+        content: `People who live long ago would weave cloth by hand. They would have to be active to make things they needed. Some people serve others by making gifts to give away. You can learn to weave if you have the nerve to try. Do not leave a project half done. Roll up your sleeve and work hard. You have the skill to make special things.`
       },
       {
         type: "persuasive",
-        title: "Learn Traditional Crafts",
-        wordCount: 145,
-        content: `You should learn traditional crafts because they give you practical skills and connect you to the generations of people who had to weave, sew, and create everything they needed to live comfortably. Don't leave these valuable abilities to disappear just because modern society makes it easier to buy ready-made items. Have the nerve to try something that requires active participation and patience, rather than remaining captive to passive entertainment that doesn't develop your creative abilities. Learning to weave fabric or serve your family by creating useful items will give you confidence and practical skills that you can use throughout your life. When you live in a world where everything is mass-produced, the ability to create something unique with your own hands becomes even more valuable. Give yourself the gift of learning traditional crafts that help you serve others while developing patience and creativity. These active skills will leave you feeling more connected to your cultural heritage and more confident in your ability to create beauty and function with your own hands.`
+        title: "Make Gifts by Hand",
+        wordCount: 70,
+        content: `You should make gifts by hand to give to people you love. Do not leave all gift buying to stores. Live each day looking for ways to serve others. You have the nerve to try new things like learning to weave. Be active in making something special. Roll up your sleeve and give someone a gift made with love.`
       },
       {
         type: "poetry",
-        title: "Hands That Create",
-        wordCount: 143,
+        title: "Hands That Give",
+        wordCount: 68,
         content: `Live each day with hands that give,
-Have the courage to believe.
+Have the faith to help things live.
 Leave behind all doubt and fear,
-Give your heart to what you weave.
+Give your love to those most dear.
 
-Weave the threads of love so tight,
-Active hands work day and night.
-Nerve to try what seems too hard,
-Serve with love in your backyard.
-
-Sleeve rolled up, the work begins,
-Captive to the thread that spins.
-Live the moment, feel the flow,
-Have the faith to help things grow.
-
-Leave perfection for another day,
-Give your best in every way.
 Weave together heart and hand,
 Active love throughout the land.
-
-Nerve and patience, steady, true,
-Serve the ones who count on you.
-Sleeve by sleeve and stitch by stitch,
-Captive to love's perfect pitch.
-
-Live to give and give to serve,
-Have the joy that you deserve.`
+Nerve to try and serve with care,
+Sleeve rolled up, love everywhere.`
       }
     ]
   },
@@ -192,28 +141,28 @@ Have the joy that you deserve.`
     texts: [
       {
         type: "narrative",
-        title: "The Happy Puppy's Party",
-        wordCount: 147,
-        content: `Lucy's puppy was so happy when she announced that they would have a special birthday party to celebrate his first year of bringing joy to their family. "This will be a funny celebration," Lucy told her parents as she began to study different ways to make the party memorable. She wanted to prepare yummy treats that would be safe for her puppy to eat, so she spent twenty minutes researching healthy recipes online. The story of how the puppy had come to join their family was Lucy's favorite tale to tell, especially the funny parts about how quickly he had learned to sit, stay, and roll over. During the party planning, Lucy realized that she needed to exercise her own body more often so she could keep up with her energetic puppy during their outdoor adventures. Twenty of her friends were invited to the party, and Lucy promised to tell them the complete story of her puppy's adoption. She hoped that everyone would think the celebration was funny and enjoyable, and that they would all want to study ways to help animals in their community.`
+        title: "My Happy Puppy's Party",
+        wordCount: 76,
+        content: `My puppy is very happy and funny. Today we will have a party for him! I made yummy treats that are safe for his little body. Twenty friends are coming to the party. I will tell them the story of how we got our puppy. He learns tricks so quickly. I study how to train puppies every day. This funny puppy makes me so happy.`
       },
       {
         type: "informational",
-        title: "Child Development and Pets",
-        wordCount: 145,
-        content: `Research shows that children who have a puppy or other pet tend to be happier and more responsible than children who don't have animal companions. The funny interactions between kids and pets often help children study social skills and develop empathy for other living creatures. Pet ownership teaches children that their body language and voice tone affect how animals respond to them, which quickly translates into better communication skills with humans. Many families find that planning a birthday party for their pet creates yummy opportunities for children to practice event planning and consideration for others. The story of how a pet joins a family often becomes a treasured memory that children love to retell for twenty years or longer. Children who study animal behavior through daily interaction with pets often develop stronger observation skills and scientific thinking. Understanding how to care for a puppy's body through proper nutrition, exercise, and veterinary care teaches children valuable lessons about health and responsibility that they can quickly apply to caring for themselves and other family members.`
+        title: "Taking Care of Puppies",
+        wordCount: 74,
+        content: `A puppy needs a happy home and yummy food to grow. You should study how to care for a puppy's body. Puppies learn quickly when you teach them. Give your puppy twenty minutes of play time each day. A funny puppy can make you laugh. The story of getting a puppy should be a happy one. A party for your puppy is fun too.`
       },
       {
         type: "persuasive",
-        title: "Consider Pet Ownership",
-        wordCount: 144,
-        content: `You should consider pet ownership because caring for a puppy or other animal will make you a happier, more responsible person who understands the importance of daily commitment. Don't let fear of responsibility prevent you from experiencing the funny, joyful moments that come from building a relationship with an animal companion. Pet ownership requires you to study animal needs and behavior, which quickly develops your observation skills and scientific thinking abilities. The story of your pet's life will become a treasured part of your family history, filled with yummy memories of special celebrations and quiet moments together. Taking care of an animal's body through proper feeding, exercise, and medical care teaches important lessons about health and wellness that apply to humans too. Twenty minutes of daily pet care might seem like a lot of time, but these moments will quickly become the highlight of your day. A birthday party for your pet might sound funny to some people, but celebrations help families bond and create traditions that strengthen relationships between all family members.`
+        title: "Get a Pet",
+        wordCount: 72,
+        content: `You should ask for a puppy if you are ready to care for one. A puppy will make you happy every day with funny tricks. You must study how to feed yummy food that keeps the puppy's body healthy. A puppy learns quickly and will be your best friend. Every story with a puppy is a happy story.`
       },
       {
         type: "poetry",
-        title: "Puppy Joy",
-        wordCount: 141,
-        content: `Happy puppy, tail a-waggin',
-Funny stories, never laggin'.
+        title: "Puppy Love",
+        wordCount: 70,
+        content: `Happy puppy, tail so bright,
+Funny games from day to night.
 Study all his playful ways,
 Yummy treats for special days.
 
@@ -222,23 +171,8 @@ Body warm and full of cheer.
 Twenty kisses, maybe more,
 Party games across the floor.
 
-Quickly running through the yard,
-Puppy, happy, playing hard.
-Funny faces that he makes,
-Study all the joy he takes.
-
-Yummy dinner, tail so high,
-Story told beneath the sky.
-Body tired from play so sweet,
-Twenty naps, then repeat.
-
-Party hats and balloons bright,
-Quickly fading into night.
-Happy puppy, happy me,
-Funny friendship, wild and free.
-
-Study love in puppy's eyes,
-Yummy bond that never dies.`
+Quickly wagging, happy and free,
+Puppy love for you and me.`
       }
     ]
   },
@@ -252,53 +186,38 @@ Yummy bond that never dies.`
     texts: [
       {
         type: "narrative",
-        title: "The Messy Buddy Adventure",
-        wordCount: 148,
-        content: `Jake and his buddy Tom decided to play footy on the sunny Saturday afternoon, even though the field was muddy from yesterday's rain. The windy weather made it difficult to kick the ball accurately, and the rocky path to the field was bumpy and challenging to navigate. Within forty minutes of playing, both boys had become completely messy, covered in mud from head to toe. Their clothes were sticky with dirt and grass stains, and their shoes were caked with sandy soil from the makeshift playing field. "My mom will not be happy about how messy we look," Jake told his buddy as they walked home through the windy afternoon air. The sunny day had been perfect for outdoor sports, but the rocky ground had made their footy game more challenging than usual. Despite being messy and tired, both boys agreed that their buddy time had been worth every bumpy step and sticky mud patch they had encountered. Tom's mother laughed when she saw how messy they were, saying that forty years from now, they would remember this sunny day as one of their best buddy adventures ever.`
+        title: "My Buddy and the Messy Game",
+        wordCount: 78,
+        content: `My buddy Tom and I played footy on a sunny day. The field was windy and the path was rocky. We got very messy from playing in the sandy dirt. Our clothes were sticky with mud. The bumpy field made it hard to run. After forty minutes, we were so messy! My buddy and I laughed about our sticky, sandy clothes. Even messy, it was a sunny day of fun.`
       },
       {
         type: "informational",
-        title: "Outdoor Sports and Weather",
-        wordCount: 146,
-        content: `Outdoor sports like footy require players to adapt to various weather conditions, from sunny days to windy afternoons that can make games more challenging. A rocky or bumpy playing surface changes how players must move and position their bodies to maintain balance and avoid injury. When fields become messy from rain, players and their buddy teammates must adjust their strategies to accommodate the sticky, sandy conditions underfoot. Professional athletes train for forty weeks or more each year to develop the skills needed to play effectively in all types of weather. Sunny conditions provide ideal visibility for sports, but windy weather can dramatically affect how balls travel through the air. Players who spend time on messy, rocky fields often develop better balance and coordination than those who only play on perfect surfaces. Understanding how weather affects outdoor sports helps coaches prepare their teams for the bumpy challenges they might encounter during important games. Smart athletes always check weather forecasts before planning training sessions or buddy practice time.`
+        title: "Playing Outside Sports",
+        wordCount: 76,
+        content: `Playing footy with your buddy outside is fun exercise. A sunny day is perfect for sports, but a windy day works too. Be careful on rocky or bumpy ground. You might get messy playing on sandy fields. Your clothes may get sticky with dirt and grass. After forty minutes of play, you might be very messy. Playing outside with a buddy is always worth getting a little messy.`
       },
       {
         type: "persuasive",
-        title: "Embrace Outdoor Activities",
-        wordCount: 144,
-        content: `You should embrace outdoor activities with your buddy and friends because fresh air and physical exercise will make you healthier and happier than staying indoors all day. Don't let concerns about getting messy prevent you from enjoying footy, hiking, or other outdoor sports on sunny days. Even when the weather is windy or the ground is rocky and bumpy, outdoor activities provide benefits that forty hours of indoor entertainment cannot match. Your body needs regular exercise to stay strong and healthy, and outdoor activities provide natural opportunities to build fitness while having fun. Playing sports with a buddy creates stronger friendships than spending time together in front of screens or in environments where you can't move freely. Messy clothes can be washed, but the memories you create during outdoor adventures will last forever. Even when conditions are less than perfect - whether it's sandy beaches, sticky mud, or bumpy trails - outdoor activities teach resilience and adaptability that will serve you well throughout your life.`
+        title: "Play Outside More",
+        wordCount: 74,
+        content: `You should play outside with your buddy more often. A sunny, windy day is perfect for footy or other games. Do not worry about getting messy on rocky or sandy ground. Your clothes might get sticky, but that is OK. Even on a bumpy field, you can have fun. Spend forty minutes outside each day with a buddy. Getting messy means you had fun!`
       },
       {
         type: "poetry",
-        title: "Outdoor Buddy Fun",
-        wordCount: 142,
+        title: "Outdoor Fun",
+        wordCount: 72,
         content: `Buddy time on sunny days,
 Footy games in muddy ways.
-Sunny skies and windy weather,
-Rocky paths we'll face together.
+Windy weather, rocky ground,
+Sticky fun where joy is found.
 
-Sticky mud and sandy ground,
-Bumpy roads where fun is found.
-Forty laughs and forty more,
-Messy clothes but spirits soar.
+Sandy fields and bumpy trails,
+Forty laughs and happy tales.
+Messy clothes but spirits bright,
+Buddy friendship feels so right.
 
-Buddy friendship, tried and true,
-Footy kicks in skies of blue.
-Sunny moments, memories made,
-Windy adventures, never fade.
-
-Rocky trails and bumpy rides,
-Sticky friendship never hides.
-Sandy beaches, forty waves,
-Messy hair that no one saves.
-
-Buddy, buddy, come and play,
-Footy fun throughout the day.
 Sunny, windy, come what may,
-Rocky friendship's here to stay.
-
-Sticky hands and sandy feet,
-Bumpy roads make life complete.`
+Rocky friendship's here to stay.`
       }
     ]
   }
