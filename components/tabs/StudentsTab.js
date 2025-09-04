@@ -375,15 +375,40 @@ const StudentCard = ({ student, isSelected, isDragged, onClick, onDragStart, onD
     const pet = student.ownedPets?.[0];
     const petImg = pet ? getPetImage(pet) : null;
 
-    // SIMPLIFIED: Get clicker achievements data with targeted debug logging
-    const clickerAchievements = student.clickerAchievements || null;
-    const hasClickerData = clickerAchievements && clickerAchievements.lastPlayed;
+    // FIXED: Get clicker data from clickerGameData (the actual saved data)
+    const clickerGameData = student.clickerGameData || null;
+    const hasClickerData = clickerGameData && clickerGameData.activeTheme;
     
-    // DEBUG: Log the entire student object structure for one student to see what's actually there
-    if (student.firstName === 'Leo') { // Only log for one specific student to reduce spam
-        console.log(`🔍 DEBUG - Full student object for ${student.firstName}:`, student);
-        console.log(`🎮 Looking for clickerAchievements:`, student.clickerAchievements);
-        console.log(`🎮 Student object keys:`, Object.keys(student));
+    // Extract the theme and title info from the game data
+    let clickerAchievements = null;
+    if (hasClickerData) {
+        // Map theme keys to theme names
+        const themeNameMap = {
+            'default': 'Hero\'s Dawn',
+            'dark': 'Shadow Realm',
+            'forest': 'Elven Grove',
+            'fire': 'Dragon\'s Lair',
+            'ice': 'Frozen Peaks',
+            'cosmic': 'Void Dimension'
+        };
+        
+        clickerAchievements = {
+            title: clickerGameData.activeTitle || 'Novice',
+            themeName: themeNameMap[clickerGameData.activeTheme] || 'Hero\'s Dawn',
+            theme: clickerGameData.activeTheme || 'default',
+            totalGold: clickerGameData.totalGold || 0,
+            prestige: clickerGameData.prestige || 0,
+            lastPlayed: clickerGameData.lastSave || Date.now()
+        };
+    }
+    
+    // DEBUG: Log for Leo to confirm it's working
+    if (student.firstName === 'Leo' && hasClickerData) {
+        console.log(`✅ FIXED - ${student.firstName} clicker data:`, {
+            title: clickerAchievements.title,
+            theme: clickerAchievements.themeName,
+            hasData: true
+        });
     }
 
     const handleStarClick = (e) => {
