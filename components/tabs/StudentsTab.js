@@ -1,4 +1,4 @@
-// components/tabs/StudentsTab.js - WITH CLICKER ACHIEVEMENTS DISPLAY
+// components/tabs/StudentsTab.js - WITH PERSISTENT CLICKER ACHIEVEMENTS DISPLAY
 import React, { useState, useEffect, useRef } from 'react';
 
 // ===============================================
@@ -24,28 +24,30 @@ const playAwardSound = (type = 'xp') => {
     }
 };
 
-// Get theme border styles for student cards
+// Get theme border styles for student cards - UPDATED with subtle but visible styling
 const getThemeBorder = (themeName) => {
     const themeMap = {
-        'default': 'border-blue-200',
+        'default': 'border-blue-300',
+        'Hero\'s Dawn': 'border-blue-300',
         'Shadow Realm': 'border-purple-400',
         'Elven Grove': 'border-green-400',
         'Dragon\'s Lair': 'border-red-400',
         'Frozen Peaks': 'border-cyan-400',
-        'Void Dimension': 'border-purple-600'
+        'Void Dimension': 'border-indigo-500'
     };
-    return themeMap[themeName] || 'border-blue-200';
+    return themeMap[themeName] || 'border-blue-300';
 };
 
-// Get theme background styles
+// Get theme background styles - UPDATED with subtle but visible styling
 const getThemeBackground = (themeName) => {
     const themeMap = {
         'default': 'bg-blue-50',
-        'Shadow Realm': 'bg-purple-100',
+        'Hero\'s Dawn': 'bg-blue-50',
+        'Shadow Realm': 'bg-purple-50',
         'Elven Grove': 'bg-green-50',
         'Dragon\'s Lair': 'bg-red-50',
         'Frozen Peaks': 'bg-cyan-50',
-        'Void Dimension': 'bg-purple-200'
+        'Void Dimension': 'bg-indigo-50'
     };
     return themeMap[themeName] || 'bg-blue-50';
 };
@@ -60,9 +62,9 @@ const getTitleColor = (title) => {
         'Champion': 'text-orange-600',
         'Legend': 'text-yellow-600',
         'Mythic': 'text-pink-600',
-        'Ascended': 'text-cyan-400',
-        'Divine': 'text-yellow-400',
-        'Eternal': 'text-purple-400'
+        'Ascended': 'text-cyan-600',
+        'Divine': 'text-yellow-600',
+        'Eternal': 'text-purple-600'
     };
     return titleColorMap[title] || 'text-gray-600';
 };
@@ -240,8 +242,8 @@ const StudentsTab = ({
     // NEW: Award notification state
     const [awardNotification, setAwardNotification] = useState(null);
     
-    // NEW: Clicker achievements display toggle
-    const [showClickerAchievements, setShowClickerAchievements] = useState(false);
+    // UPDATED: Keep the toggle for detailed achievements display
+    const [showDetailedAchievements, setShowDetailedAchievements] = useState(false);
     
     const filteredStudents = students.filter(student =>
         student.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -338,31 +340,39 @@ const StudentsTab = ({
                     <input type="text" placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full md:w-auto pl-4 pr-4 py-2 border rounded-lg" />
                     <button onClick={handleSelectAll} className="bg-blue-500 text-white px-4 py-2 rounded-lg whitespace-nowrap">{selectedStudents.length === filteredStudents.length ? 'Deselect All' : 'Select All'}</button>
                     
-                    {/* NEW: Enhanced clicker achievements toggle with better styling */}
+                    {/* UPDATED: Toggle for detailed achievements display */}
                     <div className="flex items-center space-x-2">
                         <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 cursor-pointer">
                             <input 
                                 type="checkbox" 
-                                checked={showClickerAchievements}
+                                checked={showDetailedAchievements}
                                 onChange={(e) => {
-                                    console.log('🎮 Toggling clicker achievements display:', e.target.checked);
-                                    setShowClickerAchievements(e.target.checked);
+                                    console.log('🎮 Toggling detailed achievements display:', e.target.checked);
+                                    setShowDetailedAchievements(e.target.checked);
                                 }}
                                 className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
                             />
-                            <span className={`transition-colors duration-200 ${showClickerAchievements ? 'text-purple-600 font-semibold' : 'text-gray-600'}`}>
-                                🎮 Show Hero Achievements
+                            <span className={`transition-colors duration-200 ${showDetailedAchievements ? 'text-purple-600 font-semibold' : 'text-gray-600'}`}>
+                                🎮 Show Detailed Achievements
                             </span>
                         </label>
                         {/* Visual indicator when toggle is active */}
-                        {showClickerAchievements && (
+                        {showDetailedAchievements && (
                             <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-medium">
                                 Active
                             </span>
                         )}
                     </div>
                 </div>
-                <div className="text-gray-600 font-semibold">{selectedStudents.length > 0 ? `${selectedStudents.length} student(s) selected` : 'Click an avatar for options, star/coin to quick award, or drag to reorder'}</div>
+                
+                {/* UPDATED: Move general instruction here */}
+                <div className="text-gray-600 font-semibold">
+                    {selectedStudents.length > 0 
+                        ? `${selectedStudents.length} student(s) selected` 
+                        : 'Click an avatar for options • Star/coin to quick award • Shift+click to select • Drag to reorder'
+                    }
+                </div>
+                
                 <div className="flex items-center gap-2">
                     {selectedStudents.length > 0 && (<button onClick={() => setAwardModal({ visible: true, isBulk: true, type: 'xp', studentId: null, student: null })} className="bg-purple-600 text-white font-bold px-4 py-2 rounded-lg hover:bg-purple-700 transition-all transform hover:scale-105">🏆 Award Bulk</button>)}
                     <button onClick={onAddStudent} className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-all">+ Add Student</button>
@@ -396,7 +406,7 @@ const StudentsTab = ({
                         }}
                         onQuickAward={handleQuickAward}
                         onToggleSelection={toggleStudentSelection}
-                        showClickerAchievements={showClickerAchievements}
+                        showDetailedAchievements={showDetailedAchievements}
                     />
                 ))}
             </div>
@@ -415,9 +425,9 @@ const StudentsTab = ({
 };
 
 // ===============================================
-// ENHANCED STUDENT CARD COMPONENT WITH CLICKER ACHIEVEMENTS
+// ENHANCED STUDENT CARD COMPONENT WITH PERSISTENT CLICKER ACHIEVEMENTS
 // ===============================================
-const StudentCard = ({ student, isSelected, isDragged, onClick, onDragStart, onDragOver, onDrop, onAvatarHover, onPetHover, onHoverEnd, getAvatarImage, getPetImage, calculateCoins, calculateAvatarLevel, onSelect, onQuickAward, onToggleSelection, showClickerAchievements }) => {
+const StudentCard = ({ student, isSelected, isDragged, onClick, onDragStart, onDragOver, onDrop, onAvatarHover, onPetHover, onHoverEnd, getAvatarImage, getPetImage, calculateCoins, calculateAvatarLevel, onSelect, onQuickAward, onToggleSelection, showDetailedAchievements }) => {
     const level = calculateAvatarLevel(student.totalPoints);
     const coins = calculateCoins(student);
     const xpForNextLevel = (student.totalPoints || 0) % 100;
@@ -452,21 +462,21 @@ const StudentCard = ({ student, isSelected, isDragged, onClick, onDragStart, onD
         }
     };
 
-    // Get theme styling if clicker achievements are enabled
-    const themeBorder = hasClickerData && showClickerAchievements 
+    // UPDATED: Always apply theme styling when clicker data exists (persistent)
+    const themeBorder = hasClickerData 
         ? getThemeBorder(clickerAchievements.themeName) 
-        : 'border-transparent';
+        : 'border-gray-200';
         
-    const themeBackground = hasClickerData && showClickerAchievements 
+    const themeBackground = hasClickerData 
         ? getThemeBackground(clickerAchievements.themeName) 
         : (isSelected ? 'bg-purple-100' : 'bg-white');
 
-    const titleColor = hasClickerData && showClickerAchievements 
+    const titleColor = hasClickerData 
         ? getTitleColor(clickerAchievements.title) 
         : 'text-gray-600';
 
-    // Enhanced border styling for clicker achievements
-    const achievementBorderClass = hasClickerData && showClickerAchievements
+    // UPDATED: Always show enhanced border when clicker data exists
+    const achievementBorderClass = hasClickerData
         ? `border-4 ${themeBorder} shadow-lg`
         : 'border-2';
 
@@ -479,15 +489,15 @@ const StudentCard = ({ student, isSelected, isDragged, onClick, onDragStart, onD
             onClick={handleCardClick} 
             className={`relative p-3 rounded-2xl shadow-lg transition-all duration-300 cursor-pointer hover:shadow-xl ${achievementBorderClass} ${
                 isSelected 
-                    ? `border-purple-500 ${themeBackground} scale-105 shadow-purple-200` 
-                    : `${hasClickerData && showClickerAchievements ? themeBorder : 'border-transparent'} ${themeBackground} hover:border-blue-400 hover:bg-blue-50`
+                    ? `border-purple-500 bg-purple-100 scale-105 shadow-purple-200` 
+                    : `${themeBorder} ${themeBackground} hover:border-blue-400 hover:shadow-xl`
             } ${
                 isDragged ? 'opacity-30 ring-2 ring-blue-500' : ''
             }`}
         >
             <div className="flex flex-col items-center text-center">
-                {/* NEW: Enhanced clicker achievements header with better visibility */}
-                {showClickerAchievements && hasClickerData && (
+                {/* UPDATED: Show detailed achievements only when toggle is on */}
+                {showDetailedAchievements && hasClickerData && (
                     <div className="w-full mb-2 px-2 py-1 rounded-lg bg-gradient-to-r from-yellow-200 to-orange-200 border-2 border-yellow-300 shadow-sm">
                         <div className="flex items-center justify-between text-xs">
                             <span className={`font-bold ${titleColor} drop-shadow-sm`}>
@@ -505,8 +515,8 @@ const StudentCard = ({ student, isSelected, isDragged, onClick, onDragStart, onD
                     </div>
                 )}
 
-                {/* Show placeholder when achievements are enabled but no data */}
-                {showClickerAchievements && !hasClickerData && (
+                {/* Show placeholder when detailed achievements are enabled but no data */}
+                {showDetailedAchievements && !hasClickerData && (
                     <div className="w-full mb-2 px-2 py-1 rounded-lg bg-gradient-to-r from-gray-100 to-gray-200 border border-gray-300">
                         <div className="text-xs text-gray-500 font-medium">
                             🎮 No Hero Forge progress yet
@@ -563,15 +573,21 @@ const StudentCard = ({ student, isSelected, isDragged, onClick, onDragStart, onD
                     </div>
                 )}
                 
-                {/* Selection helper text - only show when not selected */}
-                {!isSelected && (
-                    <div className="text-xs text-gray-400 mt-1 opacity-75">
-                        Shift+click to select
-                    </div>
-                )}
+                {/* UPDATED: Replace "Shift+click to select" with hero title when clicker data exists */}
+                <div className="text-xs mt-1">
+                    {hasClickerData ? (
+                        <div className={`${titleColor} font-bold`}>
+                            {clickerAchievements.title}
+                        </div>
+                    ) : (
+                        <div className="text-gray-400 opacity-75">
+                            No hero title yet
+                        </div>
+                    )}
+                </div>
 
-                {/* NEW: Enhanced clicker achievements footer */}
-                {showClickerAchievements && hasClickerData && (
+                {/* UPDATED: Show detailed achievements footer only when toggle is on */}
+                {showDetailedAchievements && hasClickerData && (
                     <div className="w-full text-xs text-center mt-2 p-2 bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg border border-blue-200">
                         {clickerAchievements.weapon && (
                             <div className="font-semibold text-gray-700 truncate">⚔️ {clickerAchievements.weapon}</div>
@@ -580,15 +596,8 @@ const StudentCard = ({ student, isSelected, isDragged, onClick, onDragStart, onD
                             💰 {clickerAchievements.totalGold ? `${Math.floor(clickerAchievements.totalGold / 1000)}K gold` : 'New Hero'}
                         </div>
                         {clickerAchievements.themeName && clickerAchievements.themeName !== 'Hero\'s Dawn' && (
-                            <div className="text-xs text-purple-600 mt-1">🌍 {clickerAchievements.themeName}</div>
+                            <div className="text-xs text-purple-600 mt-1">🌎 {clickerAchievements.themeName}</div>
                         )}
-                    </div>
-                )}
-
-                {/* Show message when toggle is on but student has no clicker data */}
-                {showClickerAchievements && !hasClickerData && (
-                    <div className="w-full text-xs text-center mt-2 p-2 bg-gray-100 rounded-lg border border-gray-200">
-                        <div className="text-gray-500">🎮 Play Hero Forge to earn achievements</div>
                     </div>
                 )}
             </div>
