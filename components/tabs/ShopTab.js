@@ -1,4 +1,4 @@
-// components/tabs/ShopTab.js - UPDATED WITH REWARD MANAGEMENT
+// components/tabs/ShopTab.js - UPDATED WITH MYSTERY BOX FEATURE
 import React, { useState, useEffect } from 'react';
 
 // ===============================================
@@ -9,14 +9,163 @@ const DEFAULT_TEACHER_REWARDS = [
   { id: 'reward_2', name: 'Class Game Session', price: 30, category: 'fun', icon: '🎮' },
   { id: 'reward_3', name: 'No Homework Pass', price: 25, category: 'privileges', icon: '📝' },
   { id: 'reward_4', name: 'Choose Class Music', price: 15, category: 'privileges', icon: '🎵' },
-  { id: 'reward_5', name: 'Line Leader for a Week', price: 10, category: 'privileges', icon: '👑' },
+  { id: 'reward_5', name: 'Line Leader for a Week', price: 10, category: 'privileges', icon: '🎯' },
   { id: 'reward_6', name: 'Sit Anywhere Day', price: 12, category: 'privileges', icon: '💺' },
   { id: 'reward_7', name: 'Extra Recess Time', price: 18, category: 'fun', icon: '⏰' },
   { id: 'reward_8', name: 'Teach the Class', price: 35, category: 'special', icon: '🎓' },
 ];
 
 // Available icons for new rewards
-const REWARD_ICONS = ['💻', '🎮', '📝', '🎵', '👑', '💺', '⏰', '🎓', '🏆', '⭐', '🎨', '📚', '🏃‍♂️', '🍎', '🎭', '🎪', '🎯', '🎲', '🎊', '🎉', '💝', '🏅', '🥇', '🎀', '🌟', '✨', '🔮', '🎈', '🎁', '🍕', '🍪', '🧸', '🚀', '🌈', '⚡', '🔥', '💎', '🍭'];
+const REWARD_ICONS = ['💻', '🎮', '📝', '🎵', '🎯', '💺', '⏰', '🎓', '🏆', '⭐', '🎨', '📚', '🏃‍♂️', '🎁', '🎭', '🎪', '🎯', '🎲', '🎊', '🎉', '👑', '🏅', '🥇', '🎀', '🌟', '✨', '🔮', '🎈', '🎂', '🍕', '🍪', '🧸', '🚀', '🌈', '⚡', '🔥', '💎', '🍭'];
+
+// ===============================================
+// MYSTERY BOX SYSTEM
+// ===============================================
+
+const MYSTERY_BOX_PRICE = 10;
+
+// Define rarity weights (higher = more common)
+const RARITY_WEIGHTS = {
+  common: 50,     // 50% base chance
+  uncommon: 30,   // 30% base chance  
+  rare: 15,       // 15% base chance
+  epic: 4,        // 4% base chance
+  legendary: 1    // 1% base chance
+};
+
+// Define XP and Coin rewards by rarity
+const MYSTERY_REWARDS = {
+  xp: {
+    common: [3, 5, 8],
+    uncommon: [10, 12, 15],
+    rare: [18, 20, 25],
+    epic: [30, 35, 40],
+    legendary: [50, 75, 100]
+  },
+  coins: {
+    common: [2, 3, 5],
+    uncommon: [8, 10, 12],
+    rare: [15, 18, 20],
+    epic: [25, 30, 35],
+    legendary: [40, 50, 60]
+  }
+};
+
+// Function to determine item rarity based on price
+const getItemRarity = (price) => {
+  if (price <= 12) return 'common';
+  if (price <= 20) return 'uncommon';
+  if (price <= 30) return 'rare';
+  if (price <= 45) return 'epic';
+  return 'legendary';
+};
+
+// Function to get all possible mystery box prizes
+const getMysteryBoxPrizes = (SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, SHOP_BASIC_PETS, SHOP_PREMIUM_PETS, currentRewards) => {
+  const prizes = [];
+  
+  // Add shop avatars
+  [...SHOP_BASIC_AVATARS, ...SHOP_PREMIUM_AVATARS].forEach(avatar => {
+    prizes.push({
+      type: 'avatar',
+      item: avatar,
+      rarity: getItemRarity(avatar.price),
+      name: avatar.name,
+      displayName: avatar.name
+    });
+  });
+  
+  // Add shop pets
+  [...SHOP_BASIC_PETS, ...SHOP_PREMIUM_PETS].forEach(pet => {
+    prizes.push({
+      type: 'pet',
+      item: pet,
+      rarity: getItemRarity(pet.price),
+      name: pet.name,
+      displayName: pet.name
+    });
+  });
+  
+  // Add class rewards
+  currentRewards.forEach(reward => {
+    prizes.push({
+      type: 'reward',
+      item: reward,
+      rarity: getItemRarity(reward.price),
+      name: reward.name,
+      displayName: reward.name
+    });
+  });
+  
+  // Add XP rewards
+  Object.entries(MYSTERY_REWARDS.xp).forEach(([rarity, amounts]) => {
+    amounts.forEach(amount => {
+      prizes.push({
+        type: 'xp',
+        amount: amount,
+        rarity: rarity,
+        name: `${amount} XP`,
+        displayName: `${amount} XP Boost`,
+        icon: '⭐'
+      });
+    });
+  });
+  
+  // Add coin rewards
+  Object.entries(MYSTERY_REWARDS.coins).forEach(([rarity, amounts]) => {
+    amounts.forEach(amount => {
+      prizes.push({
+        type: 'coins',
+        amount: amount,
+        rarity: rarity,
+        name: `${amount} Coins`,
+        displayName: `${amount} Bonus Coins`,
+        icon: '💰'
+      });
+    });
+  });
+  
+  return prizes;
+};
+
+// Weighted random selection function
+const selectRandomPrize = (prizes) => {
+  // Create weighted array
+  const weightedPrizes = [];
+  prizes.forEach(prize => {
+    const weight = RARITY_WEIGHTS[prize.rarity] || 1;
+    for (let i = 0; i < weight; i++) {
+      weightedPrizes.push(prize);
+    }
+  });
+  
+  // Select random prize
+  const randomIndex = Math.floor(Math.random() * weightedPrizes.length);
+  return weightedPrizes[randomIndex];
+};
+
+// Get rarity color
+const getRarityColor = (rarity) => {
+  switch (rarity) {
+    case 'common': return 'text-gray-600 border-gray-300';
+    case 'uncommon': return 'text-green-600 border-green-300';
+    case 'rare': return 'text-blue-600 border-blue-300';
+    case 'epic': return 'text-purple-600 border-purple-300';
+    case 'legendary': return 'text-yellow-600 border-yellow-300';
+    default: return 'text-gray-600 border-gray-300';
+  }
+};
+
+const getRarityBg = (rarity) => {
+  switch (rarity) {
+    case 'common': return 'bg-gray-100';
+    case 'uncommon': return 'bg-green-100';
+    case 'rare': return 'bg-blue-100';
+    case 'epic': return 'bg-purple-100';
+    case 'legendary': return 'bg-yellow-100';
+    default: return 'bg-gray-100';
+  }
+};
 
 // ===============================================
 // SHOP TAB COMPONENT
@@ -43,6 +192,11 @@ const ShopTab = ({
   const [purchaseModal, setPurchaseModal] = useState({ visible: false, item: null, type: null });
   const [inventoryModal, setInventoryModal] = useState({ visible: false });
   const [featuredItems, setFeaturedItems] = useState([]);
+  
+  // Mystery Box states
+  const [mysteryBoxModal, setMysteryBoxModal] = useState({ visible: false, stage: 'confirm' }); // confirm, opening, reveal
+  const [mysteryBoxPrize, setMysteryBoxPrize] = useState(null);
+  const [isSpinning, setIsSpinning] = useState(false);
   
   // Reward Management States
   const [showRewardManager, setShowRewardManager] = useState(false);
@@ -82,6 +236,110 @@ const ShopTab = ({
       setFeaturedItems(featured);
     }
   }, [SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, SHOP_BASIC_PETS, SHOP_PREMIUM_PETS, currentRewards]);
+
+  // ===============================================
+  // MYSTERY BOX FUNCTIONS
+  // ===============================================
+  
+  const handleMysteryBoxPurchase = () => {
+    if (!selectedStudent) return;
+    
+    const studentCoins = calculateCoins(selectedStudent);
+    if (studentCoins < MYSTERY_BOX_PRICE) {
+      showToast(`${selectedStudent.firstName} needs ${MYSTERY_BOX_PRICE - studentCoins} more coins for a Mystery Box!`, 'error');
+      return;
+    }
+    
+    setMysteryBoxModal({ visible: true, stage: 'confirm' });
+  };
+  
+  const confirmMysteryBoxPurchase = async () => {
+    if (!selectedStudent) return;
+    
+    // Deduct coins first
+    const updatedStudent = { 
+      ...selectedStudent, 
+      coinsSpent: (selectedStudent.coinsSpent || 0) + MYSTERY_BOX_PRICE 
+    };
+    onUpdateStudent(updatedStudent);
+    
+    // Start the opening sequence
+    setMysteryBoxModal({ visible: true, stage: 'opening' });
+    setIsSpinning(true);
+    
+    // Get all possible prizes
+    const allPrizes = getMysteryBoxPrizes(
+      SHOP_BASIC_AVATARS, 
+      SHOP_PREMIUM_AVATARS, 
+      SHOP_BASIC_PETS, 
+      SHOP_PREMIUM_PETS, 
+      currentRewards
+    );
+    
+    // Select random prize
+    const selectedPrize = selectRandomPrize(allPrizes);
+    setMysteryBoxPrize(selectedPrize);
+    
+    // Spinning animation (3 seconds)
+    setTimeout(() => {
+      setIsSpinning(false);
+      setMysteryBoxModal({ visible: true, stage: 'reveal' });
+      
+      // Award the prize
+      awardMysteryBoxPrize(selectedPrize, updatedStudent);
+    }, 3000);
+  };
+  
+  const awardMysteryBoxPrize = (prize, student) => {
+    let finalUpdatedStudent = { ...student };
+    let message = '';
+    
+    switch (prize.type) {
+      case 'avatar':
+        if (!student.ownedAvatars?.includes(prize.item.name)) {
+          finalUpdatedStudent.ownedAvatars = [...new Set([...(student.ownedAvatars || []), prize.item.name])];
+          message = `${student.firstName} won the ${prize.item.name} avatar!`;
+        } else {
+          // Already owned, give coins instead
+          finalUpdatedStudent.currency = (student.currency || 0) + 5;
+          message = `${student.firstName} already had the ${prize.item.name} avatar, so got 5 bonus coins instead!`;
+        }
+        break;
+        
+      case 'pet':
+        const newPet = { ...prize.item, id: `pet_${Date.now()}` };
+        finalUpdatedStudent.ownedPets = [...(student.ownedPets || []), newPet];
+        message = `${student.firstName} won a ${prize.item.name}!`;
+        break;
+        
+      case 'reward':
+        finalUpdatedStudent.rewardsPurchased = [...(student.rewardsPurchased || []), { 
+          ...prize.item, 
+          purchasedAt: new Date().toISOString() 
+        }];
+        message = `${student.firstName} won ${prize.item.name}!`;
+        break;
+        
+      case 'xp':
+        finalUpdatedStudent.totalPoints = (student.totalPoints || 0) + prize.amount;
+        message = `${student.firstName} won ${prize.amount} bonus XP!`;
+        break;
+        
+      case 'coins':
+        finalUpdatedStudent.currency = (student.currency || 0) + prize.amount;
+        message = `${student.firstName} won ${prize.amount} bonus coins!`;
+        break;
+    }
+    
+    onUpdateStudent(finalUpdatedStudent);
+    showToast(message, 'success');
+  };
+  
+  const closeMysteryBoxModal = () => {
+    setMysteryBoxModal({ visible: false, stage: 'confirm' });
+    setMysteryBoxPrize(null);
+    setIsSpinning(false);
+  };
 
   // ===============================================
   // REWARD MANAGEMENT FUNCTIONS
@@ -206,6 +464,7 @@ const ShopTab = ({
 
   const SHOP_CATEGORIES = [
       { id: 'featured', name: '⭐ Featured Items' },
+      { id: 'mysterybox', name: '🎁 Mystery Box' },
       { id: 'basic_avatars', name: 'Basic Avatars' },
       { id: 'premium_avatars', name: 'Premium Avatars' },
       { id: 'basic_pets', name: 'Basic Pets' },
@@ -261,9 +520,63 @@ const ShopTab = ({
     });
   };
 
+  const renderMysteryBox = () => {
+    return (
+      <div className="text-center max-w-md mx-auto">
+        <div className="border-4 border-gradient-to-br from-purple-400 to-pink-400 rounded-xl p-8 bg-gradient-to-br from-purple-100 to-pink-100 shadow-lg">
+          <div className="text-8xl mb-4 animate-pulse">🎁</div>
+          <h3 className="text-2xl font-bold text-purple-800 mb-2">Mystery Box</h3>
+          <p className="text-purple-600 mb-4">
+            A magical box containing random prizes! You might get avatars, pets, rewards, XP, or coins!
+          </p>
+          
+          <div className="bg-white rounded-lg p-4 mb-4 shadow-inner">
+            <h4 className="font-bold text-gray-800 mb-2">Possible Rarities:</h4>
+            <div className="space-y-1 text-sm">
+              <div className="flex items-center justify-center space-x-2">
+                <span className="w-3 h-3 bg-gray-400 rounded-full"></span>
+                <span>Common (50%)</span>
+              </div>
+              <div className="flex items-center justify-center space-x-2">
+                <span className="w-3 h-3 bg-green-400 rounded-full"></span>
+                <span>Uncommon (30%)</span>
+              </div>
+              <div className="flex items-center justify-center space-x-2">
+                <span className="w-3 h-3 bg-blue-400 rounded-full"></span>
+                <span>Rare (15%)</span>
+              </div>
+              <div className="flex items-center justify-center space-x-2">
+                <span className="w-3 h-3 bg-purple-400 rounded-full"></span>
+                <span>Epic (4%)</span>
+              </div>
+              <div className="flex items-center justify-center space-x-2">
+                <span className="w-3 h-3 bg-yellow-400 rounded-full"></span>
+                <span>Legendary (1%)</span>
+              </div>
+            </div>
+          </div>
+          
+          <div className="text-2xl font-bold text-purple-800 mb-4">💰 {MYSTERY_BOX_PRICE} Coins</div>
+          
+          <button
+            onClick={handleMysteryBoxPurchase}
+            disabled={!selectedStudent || calculateCoins(selectedStudent) < MYSTERY_BOX_PRICE}
+            className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 px-6 rounded-lg font-bold text-lg hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg transform hover:scale-105 transition-all"
+          >
+            🎲 Open Mystery Box!
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   const renderShopItems = () => {
       if (activeCategory === 'featured') {
         return renderFeaturedItems();
+      }
+      
+      if (activeCategory === 'mysterybox') {
+        return renderMysteryBox();
       }
       
       let items;
@@ -306,6 +619,87 @@ const ShopTab = ({
           );
       });
   };
+
+  // ===============================================
+  // MYSTERY BOX MODAL
+  // ===============================================
+  const renderMysteryBoxModal = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md text-center relative overflow-hidden">
+        {mysteryBoxModal.stage === 'confirm' && (
+          <div className="p-6">
+            <div className="text-6xl mb-4 animate-bounce">🎁</div>
+            <h2 className="text-2xl font-bold mb-4">Open Mystery Box?</h2>
+            <p className="text-gray-600 mb-6">
+              Cost: 💰 {MYSTERY_BOX_PRICE} coins<br/>
+              You'll get a random surprise!
+            </p>
+            <div className="flex gap-4">
+              <button 
+                onClick={() => setMysteryBoxModal({ visible: false, stage: 'confirm' })}
+                className="flex-1 py-3 border rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmMysteryBoxPurchase}
+                className="flex-1 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 font-bold"
+              >
+                Open Box! 🎲
+              </button>
+            </div>
+          </div>
+        )}
+        
+        {mysteryBoxModal.stage === 'opening' && (
+          <div className="p-8 bg-gradient-to-br from-purple-400 to-pink-400 text-white">
+            <div className={`text-8xl mb-4 ${isSpinning ? 'animate-spin' : ''}`}>🎁</div>
+            <h2 className="text-2xl font-bold mb-2">Opening Mystery Box...</h2>
+            <div className="text-lg">
+              {isSpinning ? 'Finding your prize...' : 'Almost ready...'}
+            </div>
+            <div className="mt-4 flex justify-center">
+              <div className="animate-pulse flex space-x-1">
+                <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{animationDelay: '0ms'}}></div>
+                <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{animationDelay: '150ms'}}></div>
+                <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{animationDelay: '300ms'}}></div>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {mysteryBoxModal.stage === 'reveal' && mysteryBoxPrize && (
+          <div className={`p-8 ${getRarityBg(mysteryBoxPrize.rarity)}`}>
+            <div className="text-6xl mb-4">🎉</div>
+            <h2 className="text-2xl font-bold mb-2">Congratulations!</h2>
+            <div className={`inline-block px-3 py-1 rounded-full text-sm font-bold mb-4 border-2 ${getRarityColor(mysteryBoxPrize.rarity)}`}>
+              {mysteryBoxPrize.rarity.toUpperCase()}
+            </div>
+            
+            {mysteryBoxPrize.type === 'avatar' || mysteryBoxPrize.type === 'pet' ? (
+              <img 
+                src={mysteryBoxPrize.item.path} 
+                className="w-24 h-24 object-contain rounded-full mx-auto mb-4 border-4 border-white shadow-lg" 
+              />
+            ) : (
+              <div className="text-6xl mb-4">{mysteryBoxPrize.icon}</div>
+            )}
+            
+            <h3 className="text-xl font-bold text-gray-800 mb-4">
+              {mysteryBoxPrize.displayName}
+            </h3>
+            
+            <button 
+              onClick={closeMysteryBoxModal}
+              className="w-full bg-green-500 text-white py-3 rounded-lg font-bold hover:bg-green-600"
+            >
+              Awesome! 🎊
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 
   // ===============================================
   // REWARD MANAGER MODAL
@@ -474,6 +868,8 @@ const ShopTab = ({
                         activeCategory === cat.id 
                           ? cat.id === 'featured' 
                             ? 'bg-red-500 text-white' 
+                            : cat.id === 'mysterybox'
+                            ? 'bg-purple-500 text-white'
                             : 'bg-blue-500 text-white'
                           : 'bg-gray-100'
                       }`}
@@ -505,13 +901,28 @@ const ShopTab = ({
                 </div>
               </div>
             )}
+
+            {/* Special Header for Mystery Box Section */}
+            {activeCategory === 'mysterybox' && (
+              <div className="mb-6 p-4 bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg border-2 border-purple-200">
+                <div className="flex items-center gap-3">
+                  <div className="text-3xl">🎁</div>
+                  <div>
+                    <h3 className="text-xl font-bold text-purple-800">Mystery Box Adventure!</h3>
+                    <p className="text-purple-600">Take a chance and discover amazing surprises!</p>
+                  </div>
+                </div>
+              </div>
+            )}
             
             <div className={`grid gap-4 ${
               activeCategory === 'rewards' 
                 ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' 
                 : activeCategory === 'featured'
                   ? 'grid-cols-1 md:grid-cols-3'
-                  : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-5'
+                  : activeCategory === 'mysterybox'
+                    ? 'grid-cols-1'
+                    : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-5'
             }`}>
               {renderShopItems()}
             </div>
@@ -539,6 +950,9 @@ const ShopTab = ({
             </div>
         </div>
       )}
+
+      {/* Mystery Box Modal */}
+      {mysteryBoxModal.visible && renderMysteryBoxModal()}
 
       {/* Inventory Modal */}
       {inventoryModal.visible && selectedStudent && (
