@@ -1,5 +1,5 @@
 // components/curriculum/literacy/FluencyPractice.js
-// FLUENCY PRACTICE - UPDATED TO USE ALL LEVEL 2 PASSAGE FILES
+// FLUENCY PRACTICE - UPDATED TO USE ALL LEVEL 2 AND LEVEL 3 PASSAGE FILES
 import React, { useState, useEffect } from 'react';
 import { LEVEL_1_PASSAGES } from './passages/Level1Passages';
 import { LEVEL_2_PASSAGES_1 } from './passages/Level2Passages1';
@@ -12,6 +12,12 @@ import { LEVEL_2_PASSAGES_7 } from './passages/Level2Passages7';
 import { LEVEL_2_PASSAGES_8 } from './passages/Level2Passages8';
 import { LEVEL_2_PASSAGES_9 } from './passages/Level2Passages9';
 import { LEVEL_2_PASSAGES_10 } from './passages/Level2Passages10';
+import { LEVEL_3_PASSAGES_1 } from './passages/Level3Passages1';
+import { LEVEL_3_PASSAGES_2 } from './passages/Level3Passages2';
+import { LEVEL_3_PASSAGES_3 } from './passages/Level3Passages3';
+import { LEVEL_3_PASSAGES_4 } from './passages/Level3Passages4';
+import { LEVEL_3_PASSAGES_5 } from './passages/Level3Passages5';
+import { LEVEL_3_PASSAGES_6 } from './passages/Level3Passages6';
 
 // ===============================================
 // TEXT TYPE CONFIGURATIONS
@@ -61,8 +67,14 @@ const READING_PASSAGES = [
   ...LEVEL_2_PASSAGES_7,
   ...LEVEL_2_PASSAGES_8,
   ...LEVEL_2_PASSAGES_9,
-  ...LEVEL_2_PASSAGES_10
-  // Level 3, 4, etc. passages will be imported here when created
+  ...LEVEL_2_PASSAGES_10,
+  ...LEVEL_3_PASSAGES_1,
+  ...LEVEL_3_PASSAGES_2,
+  ...LEVEL_3_PASSAGES_3,
+  ...LEVEL_3_PASSAGES_4,
+  ...LEVEL_3_PASSAGES_5,
+  ...LEVEL_3_PASSAGES_6
+  // Level 4, etc. passages will be imported here when created
 ];
 
 // ===============================================
