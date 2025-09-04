@@ -1,4 +1,4 @@
-// components/games/ClickerGame.js - UPDATED WITH WEAPON DPC BONUSES
+// components/games/ClickerGame.js - UPDATED WITH ENHANCED GOLD DISPLAY AND MORE THEMES
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
@@ -70,7 +70,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
   const eventAccumRef = useRef(0);
   const lastSaveRef = useRef(0);
 
-  // UPDATED: Weapon definitions with DPC bonuses for progression
+  // UPDATED: Weapon definitions with ENHANCED Void Staff damage
   const WEAPONS = {
     '1': { name: 'Novice Blade', icon: '⚔️', path: '/Loot/Weapons/1.png', requirement: null, dpcMultiplier: 1 },
     '2': { name: 'Mystic Staff', icon: '🔮', path: '/Loot/Weapons/2.png', requirement: { type: 'totalGold', value: 1000 }, dpcMultiplier: 1.5 },
@@ -85,18 +85,18 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     '11': { name: 'Mechanical Gauntlet', icon: '🤖', path: '/Loot/Weapons/11.png', requirement: { type: 'totalGold', value: 10000000 }, dpcMultiplier: 50 },
     '12': { name: 'Golden Hammer', icon: '🌹', path: '/Loot/Weapons/12.png', requirement: { type: 'prestige', value: 1 }, dpcMultiplier: 100 },
     '13': { name: 'Electro Staff', icon: '⚡', path: '/Loot/Weapons/13.png', requirement: { type: 'totalGold', value: 100000000 }, dpcMultiplier: 200 },
-    '14': { name: 'Void Staff', icon: '🌌', path: '/Loot/Weapons/14.png', requirement: { type: 'prestige', value: 2 }, dpcMultiplier: 500 },
+    '14': { name: 'Void Staff', icon: '🌌', path: '/Loot/Weapons/14.png', requirement: { type: 'prestige', value: 2 }, dpcMultiplier: 1500 }, // ENHANCED!
     '15': { name: 'Elemental Trident', icon: '🔱', path: '/Loot/Weapons/15.png', requirement: { type: 'totalGold', value: 1000000000 }, dpcMultiplier: 1000 },
     '16': { name: 'Soul Reaper', icon: '💀', path: '/Loot/Weapons/16.png', requirement: { type: 'prestige', value: 5 }, dpcMultiplier: 2500 },
     '17': { name: 'Cosmic Blades', icon: '🌟', path: '/Loot/Weapons/17.png', requirement: { type: 'prestige', value: 10 }, dpcMultiplier: 10000 }
   };
 
-  // Theme definitions
+  // EXPANDED Theme definitions with better contrast
   const THEMES = {
     default: { 
       name: 'Hero\'s Dawn', 
       bg: 'from-blue-50 to-purple-100',
-      panel: 'bg-white',
+      panel: 'bg-white text-gray-800',
       accent: 'from-blue-500 to-purple-600',
       requirement: null 
     },
@@ -110,21 +110,21 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     forest: { 
       name: 'Elven Grove', 
       bg: 'from-green-100 to-emerald-200',
-      panel: 'bg-green-50',
+      panel: 'bg-green-50 text-gray-800',
       accent: 'from-green-500 to-emerald-600',
       requirement: { type: 'attacks', value: 500 } 
     },
     fire: { 
       name: 'Dragon\'s Lair', 
       bg: 'from-red-100 to-orange-200',
-      panel: 'bg-red-50',
+      panel: 'bg-red-50 text-gray-800',
       accent: 'from-red-500 to-orange-600',
       requirement: { type: 'artifacts', value: 25 } 
     },
     ice: { 
       name: 'Frozen Peaks', 
       bg: 'from-cyan-100 to-blue-200',
-      panel: 'bg-cyan-50',
+      panel: 'bg-cyan-50 text-gray-800',
       accent: 'from-cyan-500 to-blue-600',
       requirement: { type: 'dps', value: 50 } 
     },
@@ -134,6 +134,41 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
       panel: 'bg-purple-800 text-white',
       accent: 'from-pink-500 to-purple-600',
       requirement: { type: 'prestige', value: 1 }
+    },
+    desert: {
+      name: 'Desert Oasis',
+      bg: 'from-yellow-100 to-orange-200',
+      panel: 'bg-yellow-50 text-gray-800',
+      accent: 'from-yellow-500 to-orange-600',
+      requirement: { type: 'totalGold', value: 50000 }
+    },
+    ocean: {
+      name: 'Ocean Depths',
+      bg: 'from-blue-200 to-teal-300',
+      panel: 'bg-blue-50 text-gray-800',
+      accent: 'from-blue-600 to-teal-600',
+      requirement: { type: 'attacks', value: 2000 }
+    },
+    mystic: {
+      name: 'Mystic Grove',
+      bg: 'from-purple-200 to-pink-200',
+      panel: 'bg-purple-50 text-gray-800',
+      accent: 'from-purple-600 to-pink-600',
+      requirement: { type: 'artifacts', value: 75 }
+    },
+    celestial: {
+      name: 'Celestial Realm',
+      bg: 'from-indigo-200 to-purple-300',
+      panel: 'bg-indigo-50 text-gray-800',
+      accent: 'from-indigo-600 to-purple-600',
+      requirement: { type: 'totalGold', value: 500000 }
+    },
+    volcanic: {
+      name: 'Volcanic Forge',
+      bg: 'from-red-200 to-gray-400',
+      panel: 'bg-red-100 text-gray-800',
+      accent: 'from-red-600 to-gray-700',
+      requirement: { type: 'prestige', value: 3 }
     }
   };
 
@@ -1024,7 +1059,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     }
 
     try {
-      console.log('📄 Loading clicker game from Firebase...');
+      console.log('🔄 Loading clicker game from Firebase...');
       
       // Handle case where student has no existing game data (new student)
       if (!studentData?.clickerGameData) {
@@ -1448,10 +1483,6 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
               <h2 className="text-xl font-bold mb-4">⚡ Combat Stats</h2>
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span>Gold:</span>
-                  <span className="font-bold text-yellow-600">{fmt(Math.floor(gameState.gold))}</span>
-                </div>
-                <div className="flex justify-between">
                   <span>Damage per Click:</span>
                   <span className="font-bold">{fmt(dpc())}</span>
                 </div>
@@ -1489,8 +1520,21 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
             </div>
           </div>
 
-          {/* Right Columns - Artifacts & Upgrades */}
+          {/* Right Columns - Gold Display, Artifacts & Upgrades */}
           <div className="lg:col-span-2 space-y-6">
+            {/* PROMINENT GOLD DISPLAY */}
+            <div className={`${currentTheme.panel} rounded-xl shadow-lg p-8 border-4 border-yellow-400`}>
+              <div className="text-center">
+                <div className="text-6xl mb-4">💰</div>
+                <div className="text-5xl font-bold text-yellow-600 mb-2">
+                  {fmt(Math.floor(gameState.gold))}
+                </div>
+                <div className="text-xl font-semibold text-yellow-700 bg-yellow-100 px-4 py-2 rounded-full inline-block">
+                  GOLD
+                </div>
+              </div>
+            </div>
+
             {/* Buy Amount Controls */}
             <div className={`${currentTheme.panel} rounded-xl shadow-lg p-6`}>
               <h2 className="text-xl font-bold mb-4">🛒 Buy Amount</h2>
@@ -1543,7 +1587,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
                         <div className="text-2xl hidden">🔮</div>
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-bold">{artifact.name} <span className="text-sm text-gray-600">x{artifact.count || 0}</span></h3>
+                        <h3 className="font-bold text-gray-800">{artifact.name} <span className="text-sm text-gray-600">x{artifact.count || 0}</span></h3>
                         <p className="text-sm text-gray-600">
                           Each: {fmt((artifact.baseDps || 0) * artifactMult(artifact.key))} DPS • Cost: {fmt(cost)}
                         </p>
@@ -1599,7 +1643,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
                       }`}
                     >
                       <div className="flex-1">
-                        <h3 className={`font-bold flex items-center ${isLegendary ? 'text-yellow-700' : ''}`}>
+                        <h3 className={`font-bold flex items-center text-gray-800 ${isLegendary ? 'text-yellow-700' : ''}`}>
                           {upgrade.name || 'Unknown Upgrade'}
                           {isLegendary && <span className="ml-2">✨</span>}
                         </h3>

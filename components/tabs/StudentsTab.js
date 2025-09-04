@@ -1,4 +1,4 @@
-// components/tabs/StudentsTab.js - SIMPLIFIED WITH PERSISTENT CLICKER THEME INTEGRATION
+// components/tabs/StudentsTab.js - UPDATED WITH NEW THEMES AND FIXED TEXT CONTRAST
 import React, { useState, useEffect, useRef } from 'react';
 
 // ===============================================
@@ -24,7 +24,7 @@ const playAwardSound = (type = 'xp') => {
     }
 };
 
-// Get theme border styles for student cards
+// UPDATED: Get theme border styles for student cards with all new themes
 const getThemeBorder = (themeName) => {
     const themeMap = {
         'default': 'border-blue-300',
@@ -33,12 +33,17 @@ const getThemeBorder = (themeName) => {
         'Elven Grove': 'border-green-400',
         'Dragon\'s Lair': 'border-red-400',
         'Frozen Peaks': 'border-cyan-400',
-        'Void Dimension': 'border-indigo-500'
+        'Void Dimension': 'border-indigo-500',
+        'Desert Oasis': 'border-yellow-400',
+        'Ocean Depths': 'border-blue-500',
+        'Mystic Grove': 'border-purple-300',
+        'Celestial Realm': 'border-indigo-400',
+        'Volcanic Forge': 'border-red-500'
     };
     return themeMap[themeName] || 'border-blue-300';
 };
 
-// Get theme background styles
+// UPDATED: Get theme background styles with all new themes  
 const getThemeBackground = (themeName) => {
     const themeMap = {
         'default': 'bg-blue-50',
@@ -47,7 +52,12 @@ const getThemeBackground = (themeName) => {
         'Elven Grove': 'bg-green-50',
         'Dragon\'s Lair': 'bg-red-50',
         'Frozen Peaks': 'bg-cyan-50',
-        'Void Dimension': 'bg-indigo-50'
+        'Void Dimension': 'bg-indigo-50',
+        'Desert Oasis': 'bg-yellow-50',
+        'Ocean Depths': 'bg-blue-100',
+        'Mystic Grove': 'bg-purple-100',
+        'Celestial Realm': 'bg-indigo-100',
+        'Volcanic Forge': 'bg-red-100'
     };
     return themeMap[themeName] || 'bg-blue-50';
 };
@@ -365,7 +375,7 @@ const StudentsTab = ({
 };
 
 // ===============================================
-// STUDENT CARD COMPONENT WITH DEBUG AND SIMPLIFIED CLICKER INTEGRATION
+// STUDENT CARD COMPONENT WITH THEME INTEGRATION (NO DEBUGGING)
 // ===============================================
 const StudentCard = ({ student, isSelected, isDragged, onClick, onDragStart, onDragOver, onDrop, onAvatarHover, onPetHover, onHoverEnd, getAvatarImage, getPetImage, calculateCoins, calculateAvatarLevel, onQuickAward, onToggleSelection }) => {
     const level = calculateAvatarLevel(student.totalPoints);
@@ -375,21 +385,26 @@ const StudentCard = ({ student, isSelected, isDragged, onClick, onDragStart, onD
     const pet = student.ownedPets?.[0];
     const petImg = pet ? getPetImage(pet) : null;
 
-    // FIXED: Get clicker data from clickerGameData (the actual saved data)
+    // Get clicker data from clickerGameData (the actual saved data)
     const clickerGameData = student.clickerGameData || null;
     const hasClickerData = clickerGameData && clickerGameData.activeTheme;
     
     // Extract the theme and title info from the game data
     let clickerAchievements = null;
     if (hasClickerData) {
-        // Map theme keys to theme names
+        // UPDATED: Map theme keys to theme names with all new themes
         const themeNameMap = {
             'default': 'Hero\'s Dawn',
             'dark': 'Shadow Realm',
             'forest': 'Elven Grove',
             'fire': 'Dragon\'s Lair',
             'ice': 'Frozen Peaks',
-            'cosmic': 'Void Dimension'
+            'cosmic': 'Void Dimension',
+            'desert': 'Desert Oasis',
+            'ocean': 'Ocean Depths',
+            'mystic': 'Mystic Grove',
+            'celestial': 'Celestial Realm',
+            'volcanic': 'Volcanic Forge'
         };
         
         clickerAchievements = {
@@ -400,15 +415,6 @@ const StudentCard = ({ student, isSelected, isDragged, onClick, onDragStart, onD
             prestige: clickerGameData.prestige || 0,
             lastPlayed: clickerGameData.lastSave || Date.now()
         };
-    }
-    
-    // DEBUG: Log for Leo to confirm it's working
-    if (student.firstName === 'Leo' && hasClickerData) {
-        console.log(`✅ FIXED - ${student.firstName} clicker data:`, {
-            title: clickerAchievements.title,
-            theme: clickerAchievements.themeName,
-            hasData: true
-        });
     }
 
     const handleStarClick = (e) => {
@@ -430,7 +436,7 @@ const StudentCard = ({ student, isSelected, isDragged, onClick, onDragStart, onD
         }
     };
 
-    // SIMPLIFIED: Apply theme styling when clicker data exists
+    // Apply theme styling when clicker data exists
     const themeBorder = hasClickerData 
         ? getThemeBorder(clickerAchievements.themeName) 
         : 'border-gray-200';
@@ -511,7 +517,7 @@ const StudentCard = ({ student, isSelected, isDragged, onClick, onDragStart, onD
                     </div>
                 )}
                 
-                {/* SIMPLIFIED: Show hero title or "Common Hero" */}
+                {/* Show hero title or "Common Hero" */}
                 <div className="text-xs mt-1">
                     {hasClickerData ? (
                         <div className={`${titleColor} font-bold`}>
