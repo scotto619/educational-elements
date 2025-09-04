@@ -18,6 +18,13 @@ import { LEVEL_3_PASSAGES_3 } from './passages/Level3Passages3';
 import { LEVEL_3_PASSAGES_4 } from './passages/Level3Passages4';
 import { LEVEL_3_PASSAGES_5 } from './passages/Level3Passages5';
 import { LEVEL_3_PASSAGES_6 } from './passages/Level3Passages6';
+import { LEVEL_3_PASSAGES_7 } from './passages/Level3Passages7';
+import { LEVEL_3_PASSAGES_8 } from './passages/Level3Passages8';
+import { LEVEL_3_PASSAGES_9 } from './passages/Level3Passages9';
+import { LEVEL_3_PASSAGES_10 } from './passages/Level3Passages10';
+import { LEVEL_3_PASSAGES_11 } from './passages/Level3Passages11';
+import { LEVEL_3_PASSAGES_12 } from './passages/Level3Passages12';
+import { LEVEL_3_PASSAGES_13 } from './passages/Level3Passages13';
 
 // ===============================================
 // TEXT TYPE CONFIGURATIONS
@@ -73,7 +80,14 @@ const READING_PASSAGES = [
   ...LEVEL_3_PASSAGES_3,
   ...LEVEL_3_PASSAGES_4,
   ...LEVEL_3_PASSAGES_5,
-  ...LEVEL_3_PASSAGES_6
+  ...LEVEL_3_PASSAGES_6,
+  ...LEVEL_3_PASSAGES_7,
+  ...LEVEL_3_PASSAGES_8,
+  ...LEVEL_3_PASSAGES_9,
+  ...LEVEL_3_PASSAGES_10,
+  ...LEVEL_3_PASSAGES_11,
+  ...LEVEL_3_PASSAGES_12,
+  ...LEVEL_3_PASSAGES_13
   // Level 4, etc. passages will be imported here when created
 ];
 
