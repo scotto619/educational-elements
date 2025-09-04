@@ -7,7 +7,7 @@ import {
   getRarityColor,
   getRarityBg,
   MYSTERY_BOX_PRICE 
-} from '../../utils/mysteryBox';
+} from '../utils/mysteryBox';
 
 const MysteryBoxModal = ({
   isVisible,

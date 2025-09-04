@@ -1,11 +1,11 @@
 // pages/api/mystery-box.js - API ENDPOINT FOR MYSTERY BOX OPERATIONS
-import { adminFirestore } from '../../utils/firebase-admin';
+import { adminFirestore } from '../utils/firebase-admin';
 import { 
   getMysteryBoxPrizes, 
   selectRandomPrize, 
   getItemRarity,
   MYSTERY_BOX_PRICE 
-} from '../../utils/mysteryBox';
+} from '../utils/mysteryBox';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
