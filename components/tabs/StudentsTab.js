@@ -1,4 +1,4 @@
-// components/tabs/StudentsTab.js - WITH PERSISTENT CLICKER ACHIEVEMENTS DISPLAY
+// components/tabs/StudentsTab.js - SIMPLIFIED WITH PERSISTENT CLICKER THEME INTEGRATION
 import React, { useState, useEffect, useRef } from 'react';
 
 // ===============================================
@@ -24,7 +24,7 @@ const playAwardSound = (type = 'xp') => {
     }
 };
 
-// Get theme border styles for student cards - UPDATED with subtle but visible styling
+// Get theme border styles for student cards
 const getThemeBorder = (themeName) => {
     const themeMap = {
         'default': 'border-blue-300',
@@ -38,7 +38,7 @@ const getThemeBorder = (themeName) => {
     return themeMap[themeName] || 'border-blue-300';
 };
 
-// Get theme background styles - UPDATED with subtle but visible styling
+// Get theme background styles
 const getThemeBackground = (themeName) => {
     const themeMap = {
         'default': 'bg-blue-50',
@@ -82,14 +82,12 @@ const AwardNotification = ({ notification, onClose }) => {
     const typeText = isCoins ? 'Coins' : 'XP';
 
     useEffect(() => {
-        // Auto-close after 4 seconds
         const timer = setTimeout(() => {
             onClose();
         }, 4000);
         return () => clearTimeout(timer);
-    }, []); // Remove onClose from dependencies to prevent re-running
+    }, []);
 
-    // Handle click outside to close
     const handleBackdropClick = (e) => {
         if (e.target === e.currentTarget) {
             onClose();
@@ -103,7 +101,6 @@ const AwardNotification = ({ notification, onClose }) => {
         >
             <div className={`bg-gradient-to-br ${color} text-white rounded-2xl shadow-2xl p-8 max-w-md w-full transform animate-bounce`}>
                 <div className="text-center">
-                    {/* Close X button in top right */}
                     <button
                         onClick={onClose}
                         className="absolute top-4 right-4 text-white hover:text-gray-200 text-2xl font-bold w-8 h-8 flex items-center justify-center"
@@ -112,13 +109,11 @@ const AwardNotification = ({ notification, onClose }) => {
                         ×
                     </button>
 
-                    {/* Celebration Header */}
                     <div className="text-6xl mb-4 animate-pulse">{icon}</div>
                     <h2 className="text-3xl font-bold mb-4">
                         {isBulk ? 'BULK AWARD!' : 'AWARD GIVEN!'}
                     </h2>
                     
-                    {/* Award Details */}
                     <div className="bg-white bg-opacity-20 rounded-xl p-4 mb-4">
                         <div className="text-2xl font-bold mb-2">
                             +{amount} {typeText}
@@ -134,7 +129,6 @@ const AwardNotification = ({ notification, onClose }) => {
                         )}
                     </div>
 
-                    {/* Student Names (for bulk awards, show first few) */}
                     {isBulk && students.length > 1 && (
                         <div className="text-sm opacity-90">
                             {students.slice(0, 3).map(s => s.firstName).join(', ')}
@@ -142,7 +136,6 @@ const AwardNotification = ({ notification, onClose }) => {
                         </div>
                     )}
 
-                    {/* Close Button */}
                     <button
                         onClick={onClose}
                         className="mt-4 bg-white bg-opacity-20 hover:bg-opacity-30 px-6 py-2 rounded-xl transition-all duration-300 font-semibold hover:scale-105 transform"
@@ -219,7 +212,6 @@ const StudentsTab = ({
     // Use passed functions or fallback to local ones
     const getAvatarImageFunc = propGetAvatarImage || ((avatarBase, level) => `/avatars/${avatarBase || 'Wizard F'}/Level ${Math.max(1, Math.min(level || 1, 4))}.png`);
     
-    // FIXED: Use the proper function signature for getPetImage - expecting a pet object, not separate parameters
     const getPetImageFunc = propGetPetImage || ((pet) => {
         if (!pet) return '/Pets/Wizard.png';
         const key = (pet.type || pet.name || '').toLowerCase();
@@ -238,12 +230,7 @@ const StudentsTab = ({
     const [awardModal, setAwardModal] = useState({ visible: false, isBulk: false, type: 'xp', studentId: null, student: null });
     const [hoverPreview, setHoverPreview] = useState(null);
     const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-    
-    // NEW: Award notification state
     const [awardNotification, setAwardNotification] = useState(null);
-    
-    // UPDATED: Keep the toggle for detailed achievements display
-    const [showDetailedAchievements, setShowDetailedAchievements] = useState(false);
     
     const filteredStudents = students.filter(student =>
         student.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -270,19 +257,14 @@ const StudentsTab = ({
         setDraggedStudentId(null);
     };
 
-    // UPDATED: Enhanced award submit with notification
     const handleAwardSubmit = (amount, reason, type) => {
         try {
             const targetIds = awardModal.isBulk ? selectedStudents : [awardModal.studentId];
             const awardedStudents = students.filter(student => targetIds.includes(student.id));
             
-            // Call the original award function
             onBulkAward(targetIds, amount, type);
-            
-            // Play sound effect
             playAwardSound(type);
             
-            // Show notification popup
             setAwardNotification({
                 students: awardedStudents,
                 amount: amount,
@@ -292,29 +274,22 @@ const StudentsTab = ({
             });
             
         } finally {
-            // Close award modal
             setAwardModal({ visible: false, isBulk: false, type: 'xp', studentId: null, student: null });
             if (awardModal.isBulk) setSelectedStudents([]);
         }
     };
 
-    // Close award notification
     const closeAwardNotification = () => {
         setAwardNotification(null);
     };
 
-    // NEW: Quick award function for star/coin clicks
     const handleQuickAward = (student, type) => {
-        const amount = 1; // Always award 1 for quick awards
+        const amount = 1;
         const awardedStudents = [student];
         
-        // Call the original award function
         onBulkAward([student.id], amount, type);
-        
-        // Play sound effect
         playAwardSound(type);
         
-        // Show notification popup
         setAwardNotification({
             students: awardedStudents,
             amount: amount,
@@ -324,7 +299,6 @@ const StudentsTab = ({
         });
     };
 
-    // NEW: Toggle individual student selection
     const toggleStudentSelection = (studentId) => {
         setSelectedStudents(prev => 
             prev.includes(studentId) 
@@ -339,33 +313,8 @@ const StudentsTab = ({
                 <div className="flex items-center gap-4">
                     <input type="text" placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full md:w-auto pl-4 pr-4 py-2 border rounded-lg" />
                     <button onClick={handleSelectAll} className="bg-blue-500 text-white px-4 py-2 rounded-lg whitespace-nowrap">{selectedStudents.length === filteredStudents.length ? 'Deselect All' : 'Select All'}</button>
-                    
-                    {/* UPDATED: Toggle for detailed achievements display */}
-                    <div className="flex items-center space-x-2">
-                        <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 cursor-pointer">
-                            <input 
-                                type="checkbox" 
-                                checked={showDetailedAchievements}
-                                onChange={(e) => {
-                                    console.log('🎮 Toggling detailed achievements display:', e.target.checked);
-                                    setShowDetailedAchievements(e.target.checked);
-                                }}
-                                className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                            />
-                            <span className={`transition-colors duration-200 ${showDetailedAchievements ? 'text-purple-600 font-semibold' : 'text-gray-600'}`}>
-                                🎮 Show Detailed Achievements
-                            </span>
-                        </label>
-                        {/* Visual indicator when toggle is active */}
-                        {showDetailedAchievements && (
-                            <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-medium">
-                                Active
-                            </span>
-                        )}
-                    </div>
                 </div>
                 
-                {/* UPDATED: Move general instruction here */}
                 <div className="text-gray-600 font-semibold">
                     {selectedStudents.length > 0 
                         ? `${selectedStudents.length} student(s) selected` 
@@ -397,51 +346,48 @@ const StudentsTab = ({
                         getPetImage={getPetImageFunc}
                         calculateCoins={calculateCoinsFunc}
                         calculateAvatarLevel={calculateAvatarLevelFunc}
-                        onSelect={(studentId) => {
-                            setSelectedStudents(prev => 
-                                prev.includes(studentId) 
-                                    ? prev.filter(id => id !== studentId)
-                                    : [...prev, studentId]
-                            );
-                        }}
                         onQuickAward={handleQuickAward}
                         onToggleSelection={toggleStudentSelection}
-                        showDetailedAchievements={showDetailedAchievements}
                     />
                 ))}
             </div>
 
-            {/* Award Notification Popup */}
             <AwardNotification 
                 notification={awardNotification} 
                 onClose={closeAwardNotification} 
             />
 
             <HoverPreview preview={hoverPreview} position={mousePosition} />
-            {contextMenu.visible && <ContextMenu student={contextMenu.student} position={{ x: contextMenu.x, y: contextMenu.y }} onAward={() => { setAwardModal({ visible: true, isBulk: false, type: 'xp', studentId: contextMenu.student.id, student: contextMenu.student }); closeContextMenu(); }} onView={() => { onViewDetails(contextMenu.student); closeContextMenu(); }} onAvatar={() => { /* Avatar modal logic */ closeContextMenu(); }} onClose={closeContextMenu} getAvatarImage={getAvatarImageFunc} calculateAvatarLevel={calculateAvatarLevelFunc} />}
+            {contextMenu.visible && <ContextMenu student={contextMenu.student} position={{ x: contextMenu.x, y: contextMenu.y }} onAward={() => { setAwardModal({ visible: true, isBulk: false, type: 'xp', studentId: contextMenu.student.id, student: contextMenu.student }); closeContextMenu(); }} onView={() => { onViewDetails(contextMenu.student); closeContextMenu(); }} onAvatar={() => { closeContextMenu(); }} onClose={closeContextMenu} getAvatarImage={getAvatarImageFunc} calculateAvatarLevel={calculateAvatarLevelFunc} />}
             {awardModal.visible && <AwardModal isBulk={awardModal.isBulk} awardType={awardModal.type} onTypeChange={(newType) => setAwardModal(prev => ({ ...prev, type: newType }))} studentCount={selectedStudents.length} student={awardModal.student} onSubmit={handleAwardSubmit} onClose={() => setAwardModal({ visible: false, isBulk: false, type: 'xp', studentId: null, student: null })} />}
         </div>
     );
 };
 
 // ===============================================
-// ENHANCED STUDENT CARD COMPONENT WITH PERSISTENT CLICKER ACHIEVEMENTS
+// STUDENT CARD COMPONENT WITH DEBUG AND SIMPLIFIED CLICKER INTEGRATION
 // ===============================================
-const StudentCard = ({ student, isSelected, isDragged, onClick, onDragStart, onDragOver, onDrop, onAvatarHover, onPetHover, onHoverEnd, getAvatarImage, getPetImage, calculateCoins, calculateAvatarLevel, onSelect, onQuickAward, onToggleSelection, showDetailedAchievements }) => {
+const StudentCard = ({ student, isSelected, isDragged, onClick, onDragStart, onDragOver, onDrop, onAvatarHover, onPetHover, onHoverEnd, getAvatarImage, getPetImage, calculateCoins, calculateAvatarLevel, onQuickAward, onToggleSelection }) => {
     const level = calculateAvatarLevel(student.totalPoints);
     const coins = calculateCoins(student);
     const xpForNextLevel = (student.totalPoints || 0) % 100;
     const avatarImg = getAvatarImage(student.avatarBase, level);
     const pet = student.ownedPets?.[0];
-    
-    // FIXED: Pass the entire pet object to getPetImage, not separate parameters
     const petImg = pet ? getPetImage(pet) : null;
 
-    // NEW: Get clicker achievements data
+    // SIMPLIFIED: Get clicker achievements data with debug logging
     const clickerAchievements = student.clickerAchievements || null;
     const hasClickerData = clickerAchievements && clickerAchievements.lastPlayed;
+    
+    // DEBUG: Log clicker data for first student to see what's actually there
+    if (student.firstName && student.firstName.length > 0) {
+        console.log(`DEBUG - Student ${student.firstName}:`, {
+            hasClickerAchievements: !!student.clickerAchievements,
+            clickerData: student.clickerAchievements,
+            hasLastPlayed: !!(clickerAchievements && clickerAchievements.lastPlayed)
+        });
+    }
 
-    // Handle quick award clicks (prevent bubbling to parent)
     const handleStarClick = (e) => {
         e.stopPropagation();
         onQuickAward(student, 'xp');
@@ -452,7 +398,6 @@ const StudentCard = ({ student, isSelected, isDragged, onClick, onDragStart, onD
         onQuickAward(student, 'coins');
     };
 
-    // Handle card selection (shift+click to select individual students)
     const handleCardClick = (e) => {
         if (e.shiftKey) {
             e.preventDefault();
@@ -462,7 +407,7 @@ const StudentCard = ({ student, isSelected, isDragged, onClick, onDragStart, onD
         }
     };
 
-    // UPDATED: Always apply theme styling when clicker data exists (persistent)
+    // SIMPLIFIED: Apply theme styling when clicker data exists
     const themeBorder = hasClickerData 
         ? getThemeBorder(clickerAchievements.themeName) 
         : 'border-gray-200';
@@ -475,10 +420,9 @@ const StudentCard = ({ student, isSelected, isDragged, onClick, onDragStart, onD
         ? getTitleColor(clickerAchievements.title) 
         : 'text-gray-600';
 
-    // UPDATED: Always show enhanced border when clicker data exists
     const achievementBorderClass = hasClickerData
         ? `border-4 ${themeBorder} shadow-lg`
-        : 'border-2';
+        : 'border-2 border-gray-200';
 
     return (
         <div 
@@ -490,40 +434,12 @@ const StudentCard = ({ student, isSelected, isDragged, onClick, onDragStart, onD
             className={`relative p-3 rounded-2xl shadow-lg transition-all duration-300 cursor-pointer hover:shadow-xl ${achievementBorderClass} ${
                 isSelected 
                     ? `border-purple-500 bg-purple-100 scale-105 shadow-purple-200` 
-                    : `${themeBorder} ${themeBackground} hover:border-blue-400 hover:shadow-xl`
+                    : `${themeBackground} hover:border-blue-400 hover:shadow-xl`
             } ${
                 isDragged ? 'opacity-30 ring-2 ring-blue-500' : ''
             }`}
         >
             <div className="flex flex-col items-center text-center">
-                {/* UPDATED: Show detailed achievements only when toggle is on */}
-                {showDetailedAchievements && hasClickerData && (
-                    <div className="w-full mb-2 px-2 py-1 rounded-lg bg-gradient-to-r from-yellow-200 to-orange-200 border-2 border-yellow-300 shadow-sm">
-                        <div className="flex items-center justify-between text-xs">
-                            <span className={`font-bold ${titleColor} drop-shadow-sm`}>
-                                {clickerAchievements.title}
-                            </span>
-                            {clickerAchievements.prestige > 0 && (
-                                <span className="text-yellow-700 font-bold flex items-center bg-yellow-100 px-1 rounded">
-                                    ⭐{clickerAchievements.prestige}
-                                </span>
-                            )}
-                        </div>
-                        <div className="text-xs text-gray-700 font-medium">
-                            🏆 Hero Level {clickerAchievements.level || 1}
-                        </div>
-                    </div>
-                )}
-
-                {/* Show placeholder when detailed achievements are enabled but no data */}
-                {showDetailedAchievements && !hasClickerData && (
-                    <div className="w-full mb-2 px-2 py-1 rounded-lg bg-gradient-to-r from-gray-100 to-gray-200 border border-gray-300">
-                        <div className="text-xs text-gray-500 font-medium">
-                            🎮 No Hero Forge progress yet
-                        </div>
-                    </div>
-                )}
-
                 <div className="relative">
                     <img 
                         src={avatarImg} 
@@ -566,47 +482,31 @@ const StudentCard = ({ student, isSelected, isDragged, onClick, onDragStart, onD
                     ></div>
                 </div>
                 
-                {/* Selection indicator */}
                 {isSelected && (
                     <div className="absolute top-1 right-1 bg-purple-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">
                         ✓
                     </div>
                 )}
                 
-                {/* UPDATED: Replace "Shift+click to select" with hero title when clicker data exists */}
+                {/* SIMPLIFIED: Show hero title or "Common Hero" */}
                 <div className="text-xs mt-1">
                     {hasClickerData ? (
                         <div className={`${titleColor} font-bold`}>
                             {clickerAchievements.title}
                         </div>
                     ) : (
-                        <div className="text-gray-400 opacity-75">
-                            No hero title yet
+                        <div className="text-gray-500 font-medium">
+                            Common Hero
                         </div>
                     )}
                 </div>
-
-                {/* UPDATED: Show detailed achievements footer only when toggle is on */}
-                {showDetailedAchievements && hasClickerData && (
-                    <div className="w-full text-xs text-center mt-2 p-2 bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg border border-blue-200">
-                        {clickerAchievements.weapon && (
-                            <div className="font-semibold text-gray-700 truncate">⚔️ {clickerAchievements.weapon}</div>
-                        )}
-                        <div className="text-xs text-green-600 font-bold mt-1">
-                            💰 {clickerAchievements.totalGold ? `${Math.floor(clickerAchievements.totalGold / 1000)}K gold` : 'New Hero'}
-                        </div>
-                        {clickerAchievements.themeName && clickerAchievements.themeName !== 'Hero\'s Dawn' && (
-                            <div className="text-xs text-purple-600 mt-1">🌎 {clickerAchievements.themeName}</div>
-                        )}
-                    </div>
-                )}
             </div>
         </div>
     );
 };
 
 // ===============================================
-// MODAL COMPONENTS
+// AWARD MODAL COMPONENT
 // ===============================================
 const AwardModal = ({ isBulk, awardType, onTypeChange, studentCount, student, onSubmit, onClose }) => {
     const [amount, setAmount] = useState(10);
