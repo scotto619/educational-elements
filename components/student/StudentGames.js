@@ -1,4 +1,4 @@
-// components/student/StudentGames.js - UPDATED WITH MULTIPLAYER AGAR GAME
+// components/student/StudentGames.js - UPDATED WITH MATH SPACE INVADERS
 import React, { useState } from 'react';
 
 // Import existing game components
@@ -12,13 +12,30 @@ import TicTacToeGame from '../games/TicTacToeGame';
 import BattleshipsGame from '../games/BattleshipsGame';
 import ClickerGame from '../games/ClickerGame';
 import Match3BattleGame from '../games/Match3BattleGame';
-// NEW: Import multiplayer Agar game
 import MultiplayerAgarGame from '../games/MultiplayerAgarGame';
+// NEW: Import Math Space Invaders game
+import MathSpaceInvadersGame from '../games/MathSpaceInvadersGame';
 
 const StudentGames = ({ studentData, showToast, updateStudentData, classData }) => {
   const [selectedGame, setSelectedGame] = useState(null);
 
   const availableGames = [
+    {
+      id: 'math-space-invaders',
+      name: 'Math Space Invaders',
+      icon: '🚀',
+      description: 'Fly through space solving math problems! Unlock ships as you level up!',
+      component: MathSpaceInvadersGame,
+      color: 'from-cyan-500 to-purple-600',
+      difficulty: 'Easy - Expert',
+      time: '5-30 minutes',
+      multiplayer: false,
+      special: true,
+      featured: true,
+      category: 'arcade',
+      collectibles: true,
+      progressSaves: true
+    },
     {
       id: 'multiplayer-agar',
       name: 'Cell Battle Arena',
@@ -51,7 +68,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
     {
       id: 'clicker',
       name: 'Hero Forge',
-      icon: '⚒️',
+      icon: '⚡',
       description: 'Build your fantasy empire in this epic incremental adventure!',
       component: ClickerGame,
       color: 'from-yellow-500 to-orange-600',
@@ -155,6 +172,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
 
   // Group games by category for better organization
   const gamesByCategory = {
+    arcade: availableGames.filter(g => g.category === 'arcade'),
     multiplayer: availableGames.filter(g => g.category === 'multiplayer'),
     rpg: availableGames.filter(g => g.category === 'rpg'),
     idle: availableGames.filter(g => g.category === 'idle'),
@@ -165,11 +183,12 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
   };
 
   const categoryInfo = {
+    arcade: { name: 'Arcade Adventures', icon: '🚀', description: 'Action-packed educational games' },
     multiplayer: { name: 'Multiplayer Arena', icon: '👥', description: 'Battle your classmates in real-time' },
     rpg: { name: 'RPG Adventures', icon: '⚔️', description: 'Epic fantasy role-playing games' },
-    idle: { name: 'Idle Games', icon: '🗝️', description: 'Build and grow your empire' },
+    idle: { name: 'Idle Games', icon: '🏗️', description: 'Build and grow your empire' },
     strategy: { name: 'Strategy Games', icon: '🎯', description: 'Test your tactical skills' },
-    word: { name: 'Word Games', icon: '🔍', description: 'Expand your vocabulary' },
+    word: { name: 'Word Games', icon: '📝', description: 'Expand your vocabulary' },
     math: { name: 'Math Games', icon: '🔢', description: 'Sharpen your number skills' },
     memory: { name: 'Memory Games', icon: '🧠', description: 'Train your brain power' }
   };
@@ -234,6 +253,46 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
               🌟 Multiplayer games available with class code: {classData.classCode}
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Featured New Game - Math Space Invaders */}
+      <div className="bg-gradient-to-r from-cyan-900 via-blue-900 to-purple-900 rounded-xl shadow-lg p-6 md:p-8 text-white">
+        <div className="text-center">
+          <div className="text-4xl md:text-6xl mb-4 relative">
+            🚀
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-cyan-500 rounded-full animate-ping"></div>
+          </div>
+          <h3 className="text-xl md:text-3xl font-bold mb-2 bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+            🌟 NEW: Math Space Invaders! 🌟
+          </h3>
+          <p className="text-sm md:text-xl mb-4 text-blue-100">
+            Fly through space solving math problems! Unlock new ships as you progress through levels!
+          </p>
+          <div className="grid grid-cols-2 md:flex md:justify-center md:items-center md:space-x-8 gap-2 text-xs md:text-sm mb-6">
+            <div className="flex items-center justify-center space-x-1 md:space-x-2">
+              <span>🚀</span>
+              <span>Space Adventure</span>
+            </div>
+            <div className="flex items-center justify-center space-x-1 md:space-x-2">
+              <span>🧮</span>
+              <span>Math Practice</span>
+            </div>
+            <div className="flex items-center justify-center space-x-1 md:space-x-2">
+              <span>🎮</span>
+              <span>Arcade Action</span>
+            </div>
+            <div className="flex items-center justify-center space-x-1 md:space-x-2">
+              <span>🏆</span>
+              <span>Ship Collection</span>
+            </div>
+          </div>
+          <button
+            onClick={() => setSelectedGame(availableGames.find(g => g.id === 'math-space-invaders'))}
+            className="bg-gradient-to-r from-cyan-500 to-purple-600 text-white px-6 md:px-8 py-3 md:py-4 rounded-xl font-bold text-sm md:text-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95"
+          >
+            🚀 LAUNCH INTO SPACE!
+          </button>
         </div>
       </div>
 
@@ -315,6 +374,13 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
                     </span>
                   </div>
                 )}
+                {categoryKey === 'arcade' && (
+                  <div className="ml-auto">
+                    <span className="bg-cyan-100 text-cyan-800 text-xs font-semibold px-2 py-1 rounded-full">
+                      🚀 NEW
+                    </span>
+                  </div>
+                )}
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
@@ -382,6 +448,12 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
                           <span className="font-medium text-green-600">Progress Saved</span>
                         </div>
                       )}
+                      {game.collectibles && (
+                        <div className="flex justify-between">
+                          <span>🚀 Ships:</span>
+                          <span className="font-medium text-cyan-600">Collectible</span>
+                        </div>
+                      )}
                       {game.realtime && (
                         <div className="flex justify-between">
                           <span>🔴 Status:</span>
@@ -393,8 +465,9 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
                     <div className="pt-3 md:pt-4 border-t border-gray-200">
                       <div className={`w-full py-2 md:py-3 px-4 rounded-lg bg-gradient-to-r ${game.color} text-white text-center font-semibold group-hover:shadow-md transition-all text-sm md:text-base`}>
                         {game.realtime ? '🔴 Join Live Game' :
+                         game.id === 'math-space-invaders' ? '🚀 Launch Game' :
                          game.special && game.category === 'rpg' ? '⚔️ Start Quest' : 
-                         game.special && game.category === 'idle' ? '🗝️ Build Empire' : 
+                         game.special && game.category === 'idle' ? '🏗️ Build Empire' : 
                          game.multiplayer ? '👥 Play vs Friend' : '🎮 Play Game'}
                       </div>
                     </div>
@@ -411,6 +484,10 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
         <h3 className="text-lg font-bold text-blue-800 mb-3">🎮 Gaming Tips</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div className="bg-white rounded-lg p-3">
+            <div className="font-semibold text-cyan-700 mb-1">🚀 Math Space Invaders</div>
+            <div className="text-gray-600">Use arrow keys or WASD to move. Fly into correct answers to progress. Unlock new ships by reaching higher levels!</div>
+          </div>
+          <div className="bg-white rounded-lg p-3">
             <div className="font-semibold text-red-700 mb-1">🔴 Multiplayer Games</div>
             <div className="text-gray-600">Battle your classmates in real-time! Your class code connects you to the same game room.</div>
           </div>
@@ -422,25 +499,21 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
             <div className="font-semibold text-blue-700 mb-1">🎯 Strategy Games</div>
             <div className="text-gray-600">Think ahead and plan your moves carefully for the best results.</div>
           </div>
-          <div className="bg-white rounded-lg p-3">
-            <div className="font-semibold text-green-700 mb-1">🧠 Brain Games</div>
-            <div className="text-gray-600">Perfect for improving memory, vocabulary, and problem-solving skills.</div>
-          </div>
         </div>
         
-        {/* Special Cell Battle Arena tip */}
-        <div className="mt-4 p-4 bg-gradient-to-r from-red-100 to-pink-100 rounded-lg border border-red-300">
+        {/* Special Math Space Invaders tip */}
+        <div className="mt-4 p-4 bg-gradient-to-r from-cyan-100 to-purple-100 rounded-lg border border-cyan-300">
           <div className="flex items-start space-x-3">
-            <span className="text-2xl">🔴</span>
+            <span className="text-2xl">🚀</span>
             <div>
-              <h4 className="font-bold text-red-800 mb-1">Cell Battle Arena Pro Tips</h4>
-              <ul className="text-red-700 text-sm space-y-1">
-                <li>• Move your mouse to control your cell's direction</li>
-                <li>• Eat colorful food particles to grow slowly and safely</li>
-                <li>• Hunt smaller players for big point bonuses</li>
-                <li>• Avoid larger players - they can eat you!</li>
-                <li>• Bigger cells move slower but can eat more</li>
-                <li>• Watch the live leaderboard to see your ranking</li>
+              <h4 className="font-bold text-cyan-800 mb-1">Math Space Invaders Pro Tips</h4>
+              <ul className="text-cyan-700 text-sm space-y-1">
+                <li>• Use arrow keys or WASD to control your spaceship</li>
+                <li>• Fly into the correct answer to earn points and XP</li>
+                <li>• Avoid enemy ships and wrong answers to keep your lives</li>
+                <li>• Answer 5 questions correctly to advance to the next level</li>
+                <li>• Unlock new ships by reaching higher levels (up to level 20!)</li>
+                <li>• Your progress and ship collection are automatically saved</li>
               </ul>
             </div>
           </div>
