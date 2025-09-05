@@ -547,17 +547,6 @@ const MathSpaceInvadersGame = ({ studentData, updateStudentData, showToast }) =>
       
       createExplosion(player.x, player.y, '#00ff88');
       
-      // Award XP to student
-      if (updateStudentData) {
-        try {
-          await updateStudentData({
-            totalPoints: (studentData.totalPoints || 0) + points
-          });
-        } catch (error) {
-          console.error('Failed to award XP:', error);
-        }
-      }
-      
       // Check if level complete
       if (gameState.questionsAnswered + 1 >= gameState.questionsPerLevel) {
         if (gameState.level >= 20) {
@@ -726,13 +715,16 @@ const MathSpaceInvadersGame = ({ studentData, updateStudentData, showToast }) =>
       }
     });
     
-    // Check enemy collisions
+    // Check enemy collisions with dynamic sizes
     enemies.forEach((enemy, index) => {
       let dx = player.x - enemy.x;
       let dy = player.y - enemy.y;
       let distance = Math.sqrt(dx * dx + dy * dy);
       
-      if (distance < 35) {
+      // Collision radius based on enemy size
+      let collisionRadius = enemy.type.size * 0.6;
+      
+      if (distance < collisionRadius) {
         setEnemies(prev => prev.filter((_, i) => i !== index));
         
         setGameState(prev => ({
@@ -740,7 +732,7 @@ const MathSpaceInvadersGame = ({ studentData, updateStudentData, showToast }) =>
           lives: prev.lives - 1
         }));
         
-        createExplosion(enemy.x, enemy.y, '#ff4757');
+        createExplosion(enemy.x, enemy.y, enemy.type.color);
         
         if (gameState.lives <= 1) {
           setGameState(prev => ({
