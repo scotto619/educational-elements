@@ -25,6 +25,19 @@ import { LEVEL_3_PASSAGES_10 } from './passages/Level3Passages10';
 import { LEVEL_3_PASSAGES_11 } from './passages/Level3Passages11';
 import { LEVEL_3_PASSAGES_12 } from './passages/Level3Passages12';
 import { LEVEL_3_PASSAGES_13 } from './passages/Level3Passages13';
+import { LEVEL_4_PASSAGES_1 } from './passages/Level4Passages1';
+import { LEVEL_4_PASSAGES_2 } from './passages/Level4Passages2';
+import { LEVEL_4_PASSAGES_3 } from './passages/Level4Passages3';
+import { LEVEL_4_PASSAGES_4 } from './passages/Level4Passages4';
+import { LEVEL_4_PASSAGES_5 } from './passages/Level4Passages5';
+import { LEVEL_4_PASSAGES_6 } from './passages/Level4Passages6';
+import { LEVEL_4_PASSAGES_7 } from './passages/Level4Passages7';
+import { LEVEL_4_PASSAGES_8 } from './passages/Level4Passages8';
+import { LEVEL_4_PASSAGES_9 } from './passages/Level4Passages9';
+import { LEVEL_4_PASSAGES_10 } from './passages/Level4Passages10';
+import { LEVEL_4_PASSAGES_11 } from './passages/Level4Passages11';
+import { LEVEL_4_PASSAGES_12 } from './passages/Level4Passages12';
+import { LEVEL_4_PASSAGES_13 } from './passages/Level4Passages13';
 
 // ===============================================
 // TEXT TYPE CONFIGURATIONS
@@ -87,7 +100,20 @@ const READING_PASSAGES = [
   ...LEVEL_3_PASSAGES_10,
   ...LEVEL_3_PASSAGES_11,
   ...LEVEL_3_PASSAGES_12,
-  ...LEVEL_3_PASSAGES_13
+  ...LEVEL_3_PASSAGES_13,
+  ...LEVEL_4_PASSAGES_1,
+  ...LEVEL_4_PASSAGES_2,
+  ...LEVEL_4_PASSAGES_3,
+  ...LEVEL_4_PASSAGES_4,
+  ...LEVEL_4_PASSAGES_5,
+  ...LEVEL_4_PASSAGES_6,
+  ...LEVEL_4_PASSAGES_7,
+  ...LEVEL_4_PASSAGES_8,
+  ...LEVEL_4_PASSAGES_9,
+  ...LEVEL_4_PASSAGES_10,
+  ...LEVEL_4_PASSAGES_11,
+  ...LEVEL_4_PASSAGES_12,
+  ...LEVEL_4_PASSAGES_13
   // Level 4, etc. passages will be imported here when created
 ];
 
