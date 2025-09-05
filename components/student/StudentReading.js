@@ -13,6 +13,32 @@ import { LEVEL_2_PASSAGES_7 } from '../curriculum/literacy/passages/Level2Passag
 import { LEVEL_2_PASSAGES_8 } from '../curriculum/literacy/passages/Level2Passages8';
 import { LEVEL_2_PASSAGES_9 } from '../curriculum/literacy/passages/Level2Passages9';
 import { LEVEL_2_PASSAGES_10 } from '../curriculum/literacy/passages/Level2Passages10';
+import { LEVEL_3_PASSAGES_1 } from '../curriculum/literacy/passages/Level3Passages1';
+import { LEVEL_3_PASSAGES_2 } from '../curriculum/literacy/passages/Level3Passages2';
+import { LEVEL_3_PASSAGES_3 } from '../curriculum/literacy/passages/Level3Passages3';
+import { LEVEL_3_PASSAGES_4 } from '../curriculum/literacy/passages/Level3Passages4';
+import { LEVEL_3_PASSAGES_5 } from '../curriculum/literacy/passages/Level3Passages5';
+import { LEVEL_3_PASSAGES_6 } from '../curriculum/literacy/passages/Level3Passages6';
+import { LEVEL_3_PASSAGES_7 } from '../curriculum/literacy/passages/Level3Passages7';
+import { LEVEL_3_PASSAGES_8 } from '../curriculum/literacy/passages/Level3Passages8';
+import { LEVEL_3_PASSAGES_9 } from '../curriculum/literacy/passages/Level3Passages9';
+import { LEVEL_3_PASSAGES_10 } from '../curriculum/literacy/passages/Level3Passages10';
+import { LEVEL_3_PASSAGES_11 } from '../curriculum/literacy/passages/Level3Passages11';
+import { LEVEL_3_PASSAGES_12 } from '../curriculum/literacy/passages/Level3Passages12';
+import { LEVEL_3_PASSAGES_13 } from '../curriculum/literacy/passages/Level3Passages13';
+import { LEVEL_4_PASSAGES_1 } from '../curriculum/literacy/passages/Level4Passages1';
+import { LEVEL_4_PASSAGES_2 } from '../curriculum/literacy/passages/Level4Passages2';
+import { LEVEL_4_PASSAGES_3 } from '../curriculum/literacy/passages/Level4Passages3';
+import { LEVEL_4_PASSAGES_4 } from '../curriculum/literacy/passages/Level4Passages4';
+import { LEVEL_4_PASSAGES_5 } from '../curriculum/literacy/passages/Level4Passages5';
+import { LEVEL_4_PASSAGES_6 } from '../curriculum/literacy/passages/Level4Passages6';
+import { LEVEL_4_PASSAGES_7 } from '../curriculum/literacy/passages/Level4Passages7';
+import { LEVEL_4_PASSAGES_8 } from '../curriculum/literacy/passages/Level4Passages8';
+import { LEVEL_4_PASSAGES_9 } from '../curriculum/literacy/passages/Level4Passages9';
+import { LEVEL_4_PASSAGES_10 } from '../curriculum/literacy/passages/Level4Passages10';
+import { LEVEL_4_PASSAGES_11 } from '../curriculum/literacy/passages/Level4Passages11';
+import { LEVEL_4_PASSAGES_12 } from '../curriculum/literacy/passages/Level4Passages12';
+import { LEVEL_4_PASSAGES_13 } from '../curriculum/literacy/passages/Level4Passages13';
 
 // Consolidated reading passages from all levels
 const READING_PASSAGES = [
@@ -26,8 +52,33 @@ const READING_PASSAGES = [
   ...LEVEL_2_PASSAGES_7,
   ...LEVEL_2_PASSAGES_8,
   ...LEVEL_2_PASSAGES_9,
-  ...LEVEL_2_PASSAGES_10
-  // Level 3, 4, etc. passages will be imported here when created
+  ...LEVEL_2_PASSAGES_10,
+  ...LEVEL_3_PASSAGES_1,
+  ...LEVEL_3_PASSAGES_2,
+  ...LEVEL_3_PASSAGES_3,
+  ...LEVEL_3_PASSAGES_4,
+  ...LEVEL_3_PASSAGES_5,
+  ...LEVEL_3_PASSAGES_6,
+  ...LEVEL_3_PASSAGES_7,
+  ...LEVEL_3_PASSAGES_8,
+  ...LEVEL_3_PASSAGES_9,
+  ...LEVEL_3_PASSAGES_10,
+  ...LEVEL_3_PASSAGES_11,
+  ...LEVEL_3_PASSAGES_12,
+  ...LEVEL_3_PASSAGES_13,
+  ...LEVEL_4_PASSAGES_1,
+  ...LEVEL_4_PASSAGES_2,
+  ...LEVEL_4_PASSAGES_3,
+  ...LEVEL_4_PASSAGES_4,
+  ...LEVEL_4_PASSAGES_5,
+  ...LEVEL_4_PASSAGES_6,
+  ...LEVEL_4_PASSAGES_7,
+  ...LEVEL_4_PASSAGES_8,
+  ...LEVEL_4_PASSAGES_9,
+  ...LEVEL_4_PASSAGES_10,
+  ...LEVEL_4_PASSAGES_11,
+  ...LEVEL_4_PASSAGES_12,
+  ...LEVEL_4_PASSAGES_13
 ];
 
 const TEXT_TYPES = [
@@ -216,6 +267,63 @@ const StudentReading = ({
             </div>
           </div>
         </div>
+
+{/* Daily Activities */}
+<div className="bg-white rounded-xl shadow-lg p-6">
+  <h3 className="text-lg font-bold text-gray-800 mb-4 text-center">📅 5-Day Reading Activities</h3>
+  <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+    <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4">
+      <div className="text-center">
+        <div className="text-2xl mb-2">👥</div>
+        <h4 className="font-bold text-red-800 mb-2">Day 1</h4>
+        <p className="text-sm text-red-700 font-semibold mb-2">Read to a Partner</p>
+        <p className="text-xs text-red-600">Take turns reading the passage to each other in a clear voice. The partner not reading should follow along pointing at the words being read.</p>
+      </div>
+    </div>
+    
+    <div className="bg-orange-50 border-2 border-orange-200 rounded-lg p-4">
+      <div className="text-center">
+        <div className="text-2xl mb-2">🔍</div>
+        <h4 className="font-bold text-orange-800 mb-2">Day 2</h4>
+        <p className="text-sm text-orange-700 font-semibold mb-2">Find Focus Words</p>
+        <p className="text-xs text-orange-600">After reading to a partner, find each of the focus words in the text. Are there any other words that have a similar pattern?</p>
+      </div>
+    </div>
+    
+    <div className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-4">
+      <div className="text-center">
+        <div className="text-2xl mb-2">❓</div>
+        <h4 className="font-bold text-yellow-800 mb-2">Day 3</h4>
+        <p className="text-sm text-yellow-700 font-semibold mb-2">Answer Questions</p>
+        <p className="text-xs text-yellow-600">After reading to a partner, complete the comprehension questions.</p>
+        <p className="text-xs text-yellow-500 italic mt-1">(Coming soon)</p>
+      </div>
+    </div>
+    
+    <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4">
+      <div className="text-center">
+        <div className="text-2xl mb-2">📝</div>
+        <h4 className="font-bold text-green-800 mb-2">Day 4</h4>
+        <p className="text-sm text-green-700 font-semibold mb-2">Summarize</p>
+        <p className="text-xs text-green-600">After reading to a partner, summarize the text in your own words. What were the main ideas?</p>
+      </div>
+    </div>
+    
+    <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
+      <div className="text-center">
+        <div className="text-2xl mb-2">🎨</div>
+        <h4 className="font-bold text-blue-800 mb-2">Day 5</h4>
+        <p className="text-sm text-blue-700 font-semibold mb-2">Draw a Picture</p>
+        <p className="text-xs text-blue-600">After reading to a partner, draw a picture that relates to the passage. Show the main idea or your favorite part.</p>
+      </div>
+    </div>
+  </div>
+  <div className="mt-4 bg-purple-50 border border-purple-200 rounded-lg p-3 text-center">
+    <p className="text-sm text-purple-700">
+      💡 <strong>Remember:</strong> Every day starts with reading to a partner first!
+    </p>
+  </div>
+</div>
 
         {/* Reading Tips */}
         <div className="bg-white rounded-xl shadow-lg p-6">
