@@ -1,203 +1,7 @@
 // components/curriculum/literacy/LiteracyWarmup.js
-// UPDATED FOR GRADE 5 WITH COMPLETE 40 WEEKS AND FIXED ERRORS
+// UPDATED FOR GRADE 5 WITH COMPLETE 40 WEEKS AND REMOVED TIMER/NAME PICKER
 import React, { useState, useEffect, useRef } from 'react';
 import { grade5LiteracyContent, getDailySounds, getSoundImagePath, getSoundWords, generateRandomDailySounds } from './data/grade5-literacy-content';
-
-// ===============================================
-// IMPROVED NAME PICKER - TRULY RANDOM WITH LARGER FONTS
-// ===============================================
-const CompactNamePicker = ({ students, isPresentationMode }) => {
-  const [selectedStudent, setSelectedStudent] = useState(null);
-  const [isSpinning, setIsSpinning] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const intervalRef = useRef(null);
-
-  const startNameSpin = () => {
-    if (students.length === 0) return;
-    
-    setIsSpinning(true);
-    setSelectedStudent(null);
-    
-    // IMPROVED: Truly random starting point
-    let currentIdx = Math.floor(Math.random() * students.length);
-    setCurrentIndex(currentIdx);
-    
-    let spins = 0;
-    const maxSpins = Math.floor(Math.random() * 12) + 8; // 8-19 spins for more variety
-
-    intervalRef.current = setInterval(() => {
-      // IMPROVED: Random jump instead of sequential
-      const jump = Math.floor(Math.random() * 3) + 1; // Jump 1-3 positions
-      currentIdx = (currentIdx + jump) % students.length;
-      setCurrentIndex(currentIdx);
-      spins++;
-      
-      if (spins >= maxSpins) {
-        clearInterval(intervalRef.current);
-        setIsSpinning(false);
-        setSelectedStudent(students[currentIdx]);
-        // Play celebration sound
-        try {
-          const audio = new Audio('/sounds/ding.mp3');
-          audio.volume = 0.3;
-          audio.play().catch(e => {});
-        } catch(e) {}
-      }
-    }, 120); // Slightly slower for better visibility
-  };
-
-  useEffect(() => {
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, []);
-
-  return (
-    <div className={`bg-yellow-50 border-2 border-yellow-400 rounded-xl p-4 ${isPresentationMode ? 'p-8' : ''}`}>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <span className={`${isPresentationMode ? 'text-5xl' : 'text-2xl'}`}>🎯</span>
-          <div>
-            <h4 className={`font-bold text-yellow-800 ${isPresentationMode ? 'text-3xl' : 'text-lg'}`}>Name Picker</h4>
-            <p className={`text-yellow-700 font-bold ${isPresentationMode ? 'text-4xl' : 'text-2xl'}`}>
-              {isSpinning ? (
-                <span className="animate-bounce text-blue-600">{students[currentIndex]?.firstName}...</span>
-              ) : selectedStudent ? (
-                <span className="text-green-600">✅ {selectedStudent.firstName}</span>
-              ) : (
-                <span className="text-gray-500">Select a student</span>
-              )}
-            </p>
-          </div>
-        </div>
-        <button 
-          onClick={startNameSpin}
-          disabled={isSpinning || students.length === 0}
-          className={`bg-yellow-500 text-white rounded-xl font-bold hover:bg-yellow-600 transition-all disabled:opacity-50 shadow-lg ${isPresentationMode ? 'px-8 py-4 text-2xl' : 'px-4 py-2 text-lg'}`}
-        >
-          {isSpinning ? '🎲' : '🎯 Pick'}
-        </button>
-      </div>
-    </div>
-  );
-};
-
-// ===============================================
-// IMPROVED TIMER WITH LARGER FONTS
-// ===============================================
-const CompactTimer = ({ isPresentationMode }) => {
-  const [timeLeft, setTimeLeft] = useState(0);
-  const [isRunning, setIsRunning] = useState(false);
-  const intervalRef = useRef(null);
-
-  const startTimer = (duration) => {
-    setTimeLeft(duration);
-    setIsRunning(true);
-  };
-
-  const stopTimer = () => {
-    setIsRunning(false);
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-    }
-  };
-
-  const resetTimer = () => {
-    stopTimer();
-    setTimeLeft(0);
-  };
-
-  useEffect(() => {
-    if (isRunning && timeLeft > 0) {
-      intervalRef.current = setInterval(() => {
-        setTimeLeft(prev => {
-          if (prev <= 1) {
-            setIsRunning(false);
-            // Play alarm sound
-            try {
-              const audio = new Audio('/sounds/ding.mp3');
-              audio.volume = 0.5;
-              audio.play().catch(e => {});
-            } catch(e) {}
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } else {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    }
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, [isRunning, timeLeft]);
-
-  const formatTime = (seconds) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-  };
-
-  const getTimerColor = () => {
-    if (timeLeft === 0 && !isRunning) return 'text-red-600';
-    if (timeLeft <= 10) return 'text-red-500';
-    if (timeLeft <= 30) return 'text-yellow-500';
-    return 'text-green-600';
-  };
-
-  return (
-    <div className={`bg-blue-50 border-2 border-blue-400 rounded-xl p-4 ${isPresentationMode ? 'p-8' : ''}`}>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <span className={`${isPresentationMode ? 'text-5xl' : 'text-2xl'}`}>⏰</span>
-          <div>
-            <h4 className={`font-bold text-blue-800 ${isPresentationMode ? 'text-3xl' : 'text-lg'}`}>Timer</h4>
-            <p className={`font-mono font-bold ${getTimerColor()} ${isPresentationMode ? 'text-5xl' : 'text-3xl'}`}>
-              {formatTime(timeLeft)}
-              {timeLeft === 0 && !isRunning && <span className="text-red-600 ml-2 animate-pulse">⏰</span>}
-            </p>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <button 
-            onClick={() => startTimer(30)}
-            disabled={isRunning}
-            className={`bg-green-500 text-white rounded-lg font-bold hover:bg-green-600 transition-all disabled:opacity-50 ${isPresentationMode ? 'px-6 py-3 text-xl' : 'px-3 py-2 text-sm'}`}
-          >
-            30s
-          </button>
-          <button 
-            onClick={() => startTimer(60)}
-            disabled={isRunning}
-            className={`bg-blue-500 text-white rounded-lg font-bold hover:bg-blue-600 transition-all disabled:opacity-50 ${isPresentationMode ? 'px-6 py-3 text-xl' : 'px-3 py-2 text-sm'}`}
-          >
-            1m
-          </button>
-          <button 
-            onClick={() => startTimer(120)}
-            disabled={isRunning}
-            className={`bg-purple-500 text-white rounded-lg font-bold hover:bg-purple-600 transition-all disabled:opacity-50 ${isPresentationMode ? 'px-6 py-3 text-xl' : 'px-3 py-2 text-sm'}`}
-          >
-            2m
-          </button>
-          <button 
-            onClick={resetTimer}
-            className={`bg-gray-500 text-white rounded-lg font-bold hover:bg-gray-600 transition-all ${isPresentationMode ? 'px-6 py-3 text-xl' : 'px-3 py-2 text-sm'}`}
-          >
-            🔄
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 // ===============================================
 // SOUND REVIEW TOOL - SHOWS 1 SOUND + IMAGE + 3 WORDS
@@ -595,7 +399,7 @@ const LanguageTool = ({ language, isPresentationMode, currentDay = 0 }) => {
             
             {/* Daily Grammar & Punctuation Task */}
             <div className="bg-green-50 border-2 border-green-200 rounded-xl p-6">
-                <h3 className={`font-bold text-green-800 mb-4 ${isPresentationMode ? 'text-4xl' : 'text-2xl'}`}>📝 Today's Grammar & Punctuation Task</h3>
+                <h3 className={`font-bold text-green-800 mb-4 ${isPresentationMode ? 'text-4xl' : 'text-2xl'}`}>✏️ Today's Grammar & Punctuation Task</h3>
                 <div className={`p-4 rounded-lg bg-green-100 border-2 border-green-400 font-bold ${isPresentationMode ? 'text-2xl p-6' : 'text-lg'}`}>
                     <p className="text-green-700">{todaysTask}</p>
                 </div>
@@ -699,7 +503,7 @@ const LiteracyWarmup = ({ showToast = () => {}, students = [], saveData = () => 
     { id: 'sound_review', title: 'Sound Review', icon: '🔊' },
     { id: 'sound_of_week', title: 'Sound of the Week', icon: '📚' },
     { id: 'reading', title: 'Reading Passage', icon: '📖' },
-    { id: 'language', title: 'Language Activities', icon: '📝' },
+    { id: 'language', title: 'Language Activities', icon: '✏️' },
     { id: 'riddle', title: 'Riddle of the Day', icon: '🧩' },
     { id: 'fun_fact', title: 'Fun Fact of the Day', icon: '🌟' }
   ];
@@ -869,15 +673,6 @@ const LiteracyWarmup = ({ showToast = () => {}, students = [], saveData = () => 
           </div>
         </div>
       )}
-
-      {/* Compact Classroom Tools - Always Available & Sticky */}
-      <div className={`sticky top-4 z-50 bg-white rounded-xl shadow-xl border-2 border-gray-200 p-4 mb-6 backdrop-blur-sm bg-opacity-95 ${isPresentationMode ? 'p-6 top-6' : ''}`}>
-        <h4 className={`font-bold text-gray-800 mb-3 text-center ${isPresentationMode ? 'text-2xl' : 'text-sm'}`}>🛠️ Quick Tools</h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <CompactNamePicker students={students} isPresentationMode={isPresentationMode} />
-          <CompactTimer isPresentationMode={isPresentationMode} />
-        </div>
-      </div>
 
       {/* Presentation Mode Term, Week & Day Display */}
       {isPresentationMode && (
