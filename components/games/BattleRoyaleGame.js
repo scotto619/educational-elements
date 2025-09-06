@@ -1,4 +1,4 @@
-// components/games/BattleRoyaleGame.js - COMPLETELY REWRITTEN - SIMPLIFIED BATTLE ROYALE
+// components/games/BattleRoyaleGame.js - FIXED - NO INFINITE LOOPS
 import React, { useState, useEffect, useRef } from 'react';
 import { database } from '../../utils/firebase';
 import { ref, push, set, onValue, update, remove, off } from 'firebase/database';
@@ -13,11 +13,13 @@ const BattleRoyaleGame = ({ gameMode, showToast, students = [] }) => {
   const [difficulty, setDifficulty] = useState('easy');
   const [questionCount, setQuestionCount] = useState(0);
   const [winner, setWinner] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false); // CRITICAL: Prevent multiple processing
 
   // Refs for cleanup
   const gameRef = useRef(null);
   const playersRef = useRef(null);
   const responsesRef = useRef(null);
+  const processingTimeoutRef = useRef(null);
 
   // Game categories and difficulties
   const categories = {
@@ -122,7 +124,6 @@ const BattleRoyaleGame = ({ gameMode, showToast, students = [] }) => {
     try {
       gameRef.current = ref(database, `battleRoyale/${code}`);
       playersRef.current = ref(database, `battleRoyale/${code}/players`);
-      responsesRef.current = ref(database, `battleRoyale/${code}/responses`);
 
       const initialGameData = {
         gameCode: code,
@@ -168,8 +169,9 @@ const BattleRoyaleGame = ({ gameMode, showToast, students = [] }) => {
 
       setGameState('playing');
       setQuestionCount(0);
+      setIsProcessing(false); // Reset processing flag
       
-      // Start first question immediately
+      // Start first question after a delay
       setTimeout(() => {
         nextQuestion();
       }, 1000);
@@ -181,8 +183,15 @@ const BattleRoyaleGame = ({ gameMode, showToast, students = [] }) => {
     }
   };
 
-  // Generate and send next question
+  // FIXED: Generate and send next question with safeguards
   const nextQuestion = async () => {
+    // CRITICAL: Prevent multiple simultaneous question generation
+    if (isProcessing) {
+      console.log('Already processing, skipping question generation');
+      return;
+    }
+
+    setIsProcessing(true);
     console.log('Generating next question...');
     
     const question = generateQuestion();
@@ -190,6 +199,11 @@ const BattleRoyaleGame = ({ gameMode, showToast, students = [] }) => {
     setQuestionCount(prev => prev + 1);
 
     try {
+      // Clean up previous response listener
+      if (responsesRef.current) {
+        off(responsesRef.current);
+      }
+
       // Clear previous responses and set new question
       await update(gameRef.current, {
         currentQuestion: question,
@@ -200,32 +214,47 @@ const BattleRoyaleGame = ({ gameMode, showToast, students = [] }) => {
 
       console.log('Question sent:', question.question, '=', question.correctAnswer);
 
-      // Set up real-time response listener
-      if (responsesRef.current) {
-        off(responsesRef.current);
-      }
+      // Set up NEW response listener for this question
       responsesRef.current = ref(database, `battleRoyale/${gameCode}/responses`);
       
-      onValue(responsesRef.current, (snapshot) => {
+      const unsubscribe = onValue(responsesRef.current, (snapshot) => {
         const responsesData = snapshot.val() || {};
         console.log('Responses received:', Object.keys(responsesData).length);
         
-        // Process any responses immediately
-        processResponses(responsesData);
+        // Only process if we have responses and aren't already processing
+        if (Object.keys(responsesData).length > 0 && !isProcessing) {
+          // CRITICAL: Clean up this listener immediately to prevent re-triggering
+          unsubscribe();
+          off(responsesRef.current);
+          
+          // Process responses after a small delay to ensure all responses are collected
+          if (processingTimeoutRef.current) {
+            clearTimeout(processingTimeoutRef.current);
+          }
+          
+          processingTimeoutRef.current = setTimeout(() => {
+            processResponses(responsesData, question);
+          }, 1000); // 1 second delay to collect responses
+        }
       });
 
     } catch (error) {
       console.error('Error sending question:', error);
+      setIsProcessing(false);
     }
   };
 
-  // Process responses immediately - SIMPLIFIED LOGIC
-  const processResponses = async (responses = {}) => {
-    if (!currentQuestion) return;
-
-    const correctAnswer = currentQuestion.correctAnswer;
-    console.log('Processing responses. Correct answer:', correctAnswer);
+  // FIXED: Process responses with proper cleanup and win condition checking
+  const processResponses = async (responses = {}, questionData) => {
+    console.log('Processing responses for question:', questionData.question);
     
+    if (!questionData) {
+      console.log('No question data, stopping processing');
+      setIsProcessing(false);
+      return;
+    }
+
+    const correctAnswer = questionData.correctAnswer;
     let hasCorrectAnswer = false;
     let correctPlayerId = null;
     const playerUpdates = {};
@@ -267,34 +296,41 @@ const BattleRoyaleGame = ({ gameMode, showToast, students = [] }) => {
       }
     }
 
-    // Update Firebase with new player states
-    await update(ref(database, `battleRoyale/${gameCode}/players`), playerUpdates);
-    setPlayers(playerUpdates);
+    try {
+      // Update Firebase with new player states
+      await update(ref(database, `battleRoyale/${gameCode}/players`), playerUpdates);
+      setPlayers(playerUpdates);
 
-    // Check for winner
-    const alivePlayers = Object.values(playerUpdates).filter(p => p.lives > 0);
-    console.log('Players alive:', alivePlayers.length);
-    
-    if (alivePlayers.length <= 1) {
-      // Game over!
-      const gameWinner = alivePlayers[0] || null;
-      console.log('Winner:', gameWinner?.name || 'No one');
+      // Check for winner
+      const alivePlayers = Object.values(playerUpdates).filter(p => p.lives > 0);
+      console.log('Players alive:', alivePlayers.length);
       
-      setWinner(gameWinner);
-      setGameState('finished');
-      
-      await update(gameRef.current, {
-        state: 'finished',
-        winner: gameWinner,
-        endTime: Date.now()
-      });
-      
-      showToast(`${gameWinner?.name || 'Someone'} wins the Battle Royale!`, 'success');
-    } else if (hasCorrectAnswer || Object.keys(responses).length > 0) {
-      // Continue to next question after a short delay
-      setTimeout(() => {
-        nextQuestion();
-      }, 2000);
+      if (alivePlayers.length <= 1) {
+        // Game over!
+        const gameWinner = alivePlayers[0] || null;
+        console.log('Winner:', gameWinner?.name || 'No one');
+        
+        setWinner(gameWinner);
+        setGameState('finished');
+        setIsProcessing(false);
+        
+        await update(gameRef.current, {
+          state: 'finished',
+          winner: gameWinner,
+          endTime: Date.now()
+        });
+        
+        showToast(`${gameWinner?.name || 'Someone'} wins the Battle Royale!`, 'success');
+      } else {
+        // Continue to next question
+        setIsProcessing(false); // Reset flag before next question
+        setTimeout(() => {
+          nextQuestion();
+        }, 2000);
+      }
+    } catch (error) {
+      console.error('Error updating players:', error);
+      setIsProcessing(false);
     }
   };
 
@@ -312,8 +348,14 @@ const BattleRoyaleGame = ({ gameMode, showToast, students = [] }) => {
     }
   };
 
-  // Cleanup
+  // FIXED: Proper cleanup
   const cleanup = () => {
+    setIsProcessing(false);
+    
+    if (processingTimeoutRef.current) {
+      clearTimeout(processingTimeoutRef.current);
+    }
+    
     if (playersRef.current) {
       off(playersRef.current);
     }
@@ -335,7 +377,7 @@ const BattleRoyaleGame = ({ gameMode, showToast, students = [] }) => {
       <div className="space-y-6">
         <div className="text-center">
           <h2 className="text-3xl font-bold bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent mb-4">
-            ⚔️ Battle Royale Learning
+            Battle Royale Learning
           </h2>
           <p className="text-gray-600 mb-6">Create a multiplayer learning battle where students compete to be the last survivor!</p>
         </div>
@@ -372,12 +414,11 @@ const BattleRoyaleGame = ({ gameMode, showToast, students = [] }) => {
           </div>
 
           <div className="mt-6 p-4 bg-red-50 rounded-lg border border-red-200">
-            <h4 className="font-bold text-red-800 mb-2">⚡ Battle Rules</h4>
+            <h4 className="font-bold text-red-800 mb-2">Battle Rules</h4>
             <ul className="text-sm text-red-700 space-y-1">
               <li>• Students start with 10 lives</li>
               <li>• <strong>Correct answer = safe + random opponent loses 1 life</strong></li>
               <li>• Wrong answer = lose 1 life</li>
-              <li>• No timers - instant responses!</li>
               <li>• Last survivor wins!</li>
             </ul>
           </div>
@@ -386,7 +427,7 @@ const BattleRoyaleGame = ({ gameMode, showToast, students = [] }) => {
             onClick={startGame}
             className="w-full mt-6 bg-gradient-to-r from-red-600 to-orange-600 text-white py-3 rounded-lg font-bold text-lg hover:shadow-lg transition-all"
           >
-            ⚔️ Create Battle Arena
+            Create Battle Arena
           </button>
         </div>
       </div>
@@ -398,7 +439,7 @@ const BattleRoyaleGame = ({ gameMode, showToast, students = [] }) => {
     return (
       <div className="space-y-6">
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-red-600 mb-2">⚔️ Battle Arena Created!</h2>
+          <h2 className="text-3xl font-bold text-red-600 mb-2">Battle Arena Created!</h2>
           <div className="bg-red-100 border-2 border-red-300 rounded-xl p-4 inline-block">
             <div className="text-sm text-red-700 mb-2">Game Code</div>
             <div className="text-4xl font-bold text-red-800 tracking-wider">{gameCode}</div>
@@ -430,7 +471,7 @@ const BattleRoyaleGame = ({ gameMode, showToast, students = [] }) => {
               disabled={Object.keys(players).length < 2}
               className="flex-1 bg-gradient-to-r from-red-600 to-orange-600 text-white py-3 rounded-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              ⚡ START BATTLE ({Object.keys(players).length}/30)
+              START BATTLE ({Object.keys(players).length}/30)
             </button>
             <button
               onClick={endGame}
@@ -452,12 +493,9 @@ const BattleRoyaleGame = ({ gameMode, showToast, students = [] }) => {
         <div className="bg-gradient-to-r from-red-600 to-orange-600 text-white rounded-xl p-6">
           <div className="flex justify-between items-center">
             <div>
-              <h2 className="text-2xl font-bold">⚡ Battle Royale</h2>
+              <h2 className="text-2xl font-bold">Battle Royale</h2>
               <div className="text-red-200">Question #{questionCount} • {Object.values(players).filter(p => p.lives > 0).length} survivors</div>
-            </div>
-            <div className="text-right">
-              <div className="text-red-200">Instant responses!</div>
-              <div className="text-red-200">No timers!</div>
+              {isProcessing && <div className="text-yellow-200">Processing responses...</div>}
             </div>
           </div>
         </div>
@@ -469,14 +507,14 @@ const BattleRoyaleGame = ({ gameMode, showToast, students = [] }) => {
               {currentQuestion.question}
             </div>
             <div className="text-lg text-gray-600">
-              Students answer on their devices • First correct answer wins!
+              Students answer on their devices
             </div>
           </div>
         )}
 
         {/* Player Status Grid */}
         <div className="bg-white rounded-xl p-6 shadow-lg">
-          <h3 className="text-xl font-bold mb-4">🏆 Battle Status</h3>
+          <h3 className="text-xl font-bold mb-4">Battle Status</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {Object.values(players)
               .sort((a, b) => b.lives - a.lives || (b.correctAnswers || 0) - (a.correctAnswers || 0))
@@ -497,10 +535,7 @@ const BattleRoyaleGame = ({ gameMode, showToast, students = [] }) => {
                 <div className="space-y-1 text-sm">
                   <div className="flex justify-between">
                     <span>Lives:</span>
-                    <span className="font-bold">
-                      {'❤️'.repeat(Math.max(0, player.lives))}
-                      {'🖤'.repeat(Math.max(0, 10 - player.lives))}
-                    </span>
+                    <span className="font-bold">❤️ {player.lives}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Correct:</span>
