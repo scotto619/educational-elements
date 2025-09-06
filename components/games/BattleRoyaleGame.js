@@ -1,28 +1,23 @@
-// components/games/BattleRoyaleGame.js - FAST-PACED Battle Royale with Immediate Processing
+// components/games/BattleRoyaleGame.js - COMPLETELY REWRITTEN - SIMPLIFIED BATTLE ROYALE
 import React, { useState, useEffect, useRef } from 'react';
 import { database } from '../../utils/firebase';
 import { ref, push, set, onValue, update, remove, off } from 'firebase/database';
 
 const BattleRoyaleGame = ({ gameMode, showToast, students = [] }) => {
   // Game state
-  const [gameState, setGameState] = useState('setup'); // 'setup', 'waiting', 'playing', 'question', 'finished'
+  const [gameState, setGameState] = useState('setup'); // 'setup', 'waiting', 'playing', 'finished'
   const [gameCode, setGameCode] = useState('');
   const [players, setPlayers] = useState({});
   const [currentQuestion, setCurrentQuestion] = useState(null);
-  const [questionTimer, setQuestionTimer] = useState(0);
-  const [winner, setWinner] = useState(null);
   const [category, setCategory] = useState('times-tables');
   const [difficulty, setDifficulty] = useState('easy');
   const [questionCount, setQuestionCount] = useState(0);
-  const [gameStartTime, setGameStartTime] = useState(null);
-  const [responsesReceived, setResponsesReceived] = useState({});
-  const [questionProcessed, setQuestionProcessed] = useState(false); // Prevent double processing
+  const [winner, setWinner] = useState(null);
 
   // Refs for cleanup
   const gameRef = useRef(null);
   const playersRef = useRef(null);
   const responsesRef = useRef(null);
-  const questionTimerRef = useRef(null);
 
   // Game categories and difficulties
   const categories = {
@@ -81,7 +76,7 @@ const BattleRoyaleGame = ({ gameMode, showToast, students = [] }) => {
         break;
       case 'subtraction':
         num1 = Math.floor(Math.random() * (diff.range[1] - diff.range[0] + 1)) + diff.range[0];
-        num2 = Math.floor(Math.random() * num1) + 1; // Ensure positive result
+        num2 = Math.floor(Math.random() * num1) + 1;
         question = `${num1} - ${num2}`;
         correctAnswer = num1 - num2;
         break;
@@ -94,7 +89,7 @@ const BattleRoyaleGame = ({ gameMode, showToast, students = [] }) => {
 
     // Generate wrong answers
     const wrongAnswers = [];
-    while (wrongAnswers.length < 11) { // 11 wrong + 1 correct = 12 total
+    while (wrongAnswers.length < 11) {
       let wrong;
       if (category === 'times-tables') {
         wrong = Math.floor(Math.random() * (correctAnswer * 2)) + 1;
@@ -137,9 +132,7 @@ const BattleRoyaleGame = ({ gameMode, showToast, students = [] }) => {
         difficulty,
         createdAt: Date.now(),
         settings: {
-          maxLives: 10,
-          questionTimeLimit: 15000, // 15 seconds
-          streakBonusThreshold: 3
+          maxLives: 10
         }
       };
 
@@ -148,7 +141,7 @@ const BattleRoyaleGame = ({ gameMode, showToast, students = [] }) => {
       // Listen for players joining
       onValue(playersRef.current, (snapshot) => {
         const playersData = snapshot.val() || {};
-        console.log('👥 Players updated:', Object.keys(playersData).length);
+        console.log('Players updated:', Object.keys(playersData).length);
         setPlayers(playersData);
       });
 
@@ -174,13 +167,12 @@ const BattleRoyaleGame = ({ gameMode, showToast, students = [] }) => {
       });
 
       setGameState('playing');
-      setGameStartTime(Date.now());
       setQuestionCount(0);
       
-      // Start first question after 3 seconds
+      // Start first question immediately
       setTimeout(() => {
         nextQuestion();
-      }, 3000);
+      }, 1000);
 
       showToast('Battle Royale Started!', 'success');
     } catch (error) {
@@ -189,242 +181,120 @@ const BattleRoyaleGame = ({ gameMode, showToast, students = [] }) => {
     }
   };
 
-  // CRITICAL: Real-time response processing
-  const processResponsesRealTime = async (responses) => {
-    if (!currentQuestion || questionProcessed) return;
-
-    const correctAnswer = currentQuestion.correctAnswer;
-    console.log('🔍 Processing responses:', Object.keys(responses).length, 'correct answer:', correctAnswer);
-
-    // Find first correct response
-    let firstCorrectPlayer = null;
-    let firstCorrectTime = Infinity;
-
-    for (const [playerId, response] of Object.entries(responses)) {
-      if (response.answer === correctAnswer && response.timestamp < firstCorrectTime) {
-        firstCorrectPlayer = playerId;
-        firstCorrectTime = response.timestamp;
-      }
-    }
-
-    // If we have a correct answer, process immediately!
-    if (firstCorrectPlayer) {
-      console.log('⚡ FIRST CORRECT ANSWER! Processing immediately...');
-      setQuestionProcessed(true); // Prevent double processing
-      
-      // Clear timer immediately
-      if (questionTimerRef.current) {
-        clearInterval(questionTimerRef.current);
-      }
-
-      await processQuestionResults(responses, firstCorrectPlayer);
-    }
-  };
-
   // Generate and send next question
   const nextQuestion = async () => {
-    console.log('🎯 Generating next question...');
+    console.log('Generating next question...');
     
     const question = generateQuestion();
     setCurrentQuestion(question);
-    setQuestionTimer(15); // 15 seconds maximum per question
     setQuestionCount(prev => prev + 1);
-    setResponsesReceived({});
-    setQuestionProcessed(false); // Reset processing flag
 
     try {
       // Clear previous responses and set new question
       await update(gameRef.current, {
         currentQuestion: question,
-        state: 'question',
+        state: 'playing',
         responses: null, // Clear previous responses
         questionStartTime: Date.now()
       });
 
-      setGameState('question');
-      console.log('📢 Question sent:', question.question, '=', question.correctAnswer);
+      console.log('Question sent:', question.question, '=', question.correctAnswer);
 
       // Set up real-time response listener
       if (responsesRef.current) {
-        off(responsesRef.current); // Clean up previous listener
+        off(responsesRef.current);
       }
       responsesRef.current = ref(database, `battleRoyale/${gameCode}/responses`);
       
       onValue(responsesRef.current, (snapshot) => {
         const responsesData = snapshot.val() || {};
-        console.log('📝 Responses update:', Object.keys(responsesData).length);
-        setResponsesReceived(responsesData);
+        console.log('Responses received:', Object.keys(responsesData).length);
         
-        // CRITICAL: Process responses immediately when they come in
-        processResponsesRealTime(responsesData);
+        // Process any responses immediately
+        processResponses(responsesData);
       });
-
-      // Fallback timer (only if no correct answer is given)
-      questionTimerRef.current = setInterval(() => {
-        setQuestionTimer(prev => {
-          if (prev <= 1) {
-            console.log('⏰ Timer expired, processing fallback...');
-            clearInterval(questionTimerRef.current);
-            if (!questionProcessed) {
-              setQuestionProcessed(true);
-              processQuestionResults(responsesReceived, null);
-            }
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
 
     } catch (error) {
       console.error('Error sending question:', error);
     }
   };
 
-  // ENHANCED: Process question results and damage
-  const processQuestionResults = async (responses = {}, firstCorrectPlayerId = null) => {
-    console.log('🔄 Processing question results...', {
-      responsesCount: Object.keys(responses).length,
-      firstCorrectPlayer: firstCorrectPlayerId,
-      correctAnswer: currentQuestion?.correctAnswer
-    });
+  // Process responses immediately - SIMPLIFIED LOGIC
+  const processResponses = async (responses = {}) => {
+    if (!currentQuestion) return;
+
+    const correctAnswer = currentQuestion.correctAnswer;
+    console.log('Processing responses. Correct answer:', correctAnswer);
     
-    if (questionTimerRef.current) {
-      clearInterval(questionTimerRef.current);
+    let hasCorrectAnswer = false;
+    let correctPlayerId = null;
+    const playerUpdates = {};
+
+    // Initialize all player updates
+    Object.keys(players).forEach(playerId => {
+      playerUpdates[playerId] = { ...players[playerId] };
+    });
+
+    // Check each response
+    for (const [playerId, response] of Object.entries(responses)) {
+      if (!players[playerId] || players[playerId].lives <= 0) continue;
+      
+      if (response.answer === correctAnswer && !hasCorrectAnswer) {
+        // First correct answer - this player is safe
+        hasCorrectAnswer = true;
+        correctPlayerId = playerId;
+        playerUpdates[playerId].correctAnswers = (playerUpdates[playerId].correctAnswers || 0) + 1;
+        console.log(`Correct answer from ${players[playerId].name}`);
+      } else if (response.answer !== correctAnswer) {
+        // Wrong answer - lose a life
+        playerUpdates[playerId].lives = Math.max(0, playerUpdates[playerId].lives - 1);
+        playerUpdates[playerId].wrongAnswers = (playerUpdates[playerId].wrongAnswers || 0) + 1;
+        console.log(`Wrong answer from ${players[playerId].name}, lives: ${playerUpdates[playerId].lives}`);
+      }
     }
 
-    try {
-      const correctAnswer = currentQuestion.correctAnswer;
+    // If someone got it right, one random other player loses a life
+    if (hasCorrectAnswer && correctPlayerId) {
+      const otherAlivePlayers = Object.keys(playerUpdates).filter(id => 
+        id !== correctPlayerId && playerUpdates[id].lives > 0
+      );
       
-      // Process all responses
-      const correctPlayers = [];
-      const incorrectPlayers = [];
-      const noResponsePlayers = [];
-
-      // Sort by response time for accurate ordering
-      const sortedResponses = Object.entries(responses)
-        .filter(([playerId]) => players[playerId]?.lives > 0) // Only alive players
-        .sort(([,a], [,b]) => a.timestamp - b.timestamp);
-
-      for (const [playerId, response] of sortedResponses) {
-        if (response.answer === correctAnswer) {
-          correctPlayers.push(playerId);
-        } else {
-          incorrectPlayers.push(playerId);
-        }
+      if (otherAlivePlayers.length > 0) {
+        const randomTarget = otherAlivePlayers[Math.floor(Math.random() * otherAlivePlayers.length)];
+        playerUpdates[randomTarget].lives = Math.max(0, playerUpdates[randomTarget].lives - 1);
+        console.log(`${players[correctPlayerId].name} attacks ${players[randomTarget].name}!`);
+        showToast(`${players[correctPlayerId].name} attacks ${players[randomTarget].name}!`, 'success');
       }
+    }
 
-      // Find players who didn't respond
-      Object.keys(players).forEach(playerId => {
-        if (!responses[playerId] && players[playerId].lives > 0) {
-          noResponsePlayers.push(playerId);
-        }
-      });
+    // Update Firebase with new player states
+    await update(ref(database, `battleRoyale/${gameCode}/players`), playerUpdates);
+    setPlayers(playerUpdates);
 
-      console.log('📊 Results:', {
-        correct: correctPlayers.length,
-        incorrect: incorrectPlayers.length,
-        noResponse: noResponsePlayers.length,
-        firstCorrect: firstCorrectPlayerId
-      });
-
-      // Apply damage and updates
-      const playerUpdates = {};
-
-      // Initialize all player updates
-      Object.keys(players).forEach(playerId => {
-        playerUpdates[playerId] = { ...players[playerId] };
-      });
-
-      // Update streaks and lives for all players
-      Object.keys(players).forEach(playerId => {
-        const player = players[playerId];
-        if (player.lives <= 0) return; // Skip dead players
-
-        if (correctPlayers.includes(playerId)) {
-          // Correct answer - increase streak, stay protected
-          playerUpdates[playerId].streak = (player.streak || 0) + 1;
-          playerUpdates[playerId].correctAnswers = (player.correctAnswers || 0) + 1;
-          console.log(`✅ ${player.name}: Correct! Streak: ${playerUpdates[playerId].streak}`);
-        } else {
-          // Wrong answer or no response - lose life and reset streak
-          const livesLost = 1;
-          playerUpdates[playerId].lives = Math.max(0, player.lives - livesLost);
-          playerUpdates[playerId].streak = 0;
-          
-          if (incorrectPlayers.includes(playerId)) {
-            playerUpdates[playerId].wrongAnswers = (player.wrongAnswers || 0) + 1;
-            console.log(`❌ ${player.name}: Wrong! Lives: ${player.lives} → ${playerUpdates[playerId].lives}`);
-          } else if (noResponsePlayers.includes(playerId)) {
-            playerUpdates[playerId].timeouts = (player.timeouts || 0) + 1;
-            console.log(`⏰ ${player.name}: No response! Lives: ${player.lives} → ${playerUpdates[playerId].lives}`);
-          }
-        }
-      });
-
-      // CRITICAL: First correct player deals damage immediately
-      if (firstCorrectPlayerId && playerUpdates[firstCorrectPlayerId].lives > 0) {
-        const attacker = playerUpdates[firstCorrectPlayerId];
-        const baseDamage = 1;
-        const damage = attacker.streak >= 3 ? 2 : baseDamage; // Double damage for 3+ streak
-        
-        // Find random target who is still alive (excluding the attacker)
-        const potentialTargets = Object.keys(playerUpdates).filter(id => 
-          id !== firstCorrectPlayerId && 
-          playerUpdates[id].lives > 0
-        );
-        
-        if (potentialTargets.length > 0) {
-          const targetId = potentialTargets[Math.floor(Math.random() * potentialTargets.length)];
-          const oldLives = playerUpdates[targetId].lives;
-          playerUpdates[targetId].lives = Math.max(0, oldLives - damage);
-          
-          // Track damage stats
-          playerUpdates[firstCorrectPlayerId].damageDealt = (playerUpdates[firstCorrectPlayerId].damageDealt || 0) + damage;
-          playerUpdates[targetId].damageTaken = (playerUpdates[targetId].damageTaken || 0) + damage;
-          
-          console.log(`⚔️ ${players[firstCorrectPlayerId].name} attacks ${players[targetId].name} for ${damage} damage!`);
-          console.log(`💔 ${players[targetId].name}: ${oldLives} → ${playerUpdates[targetId].lives} lives`);
-          
-          showToast(`${players[firstCorrectPlayerId].name} attacks ${players[targetId].name}! ${damage} damage dealt!`, 'success');
-        }
-      }
-
-      // Update Firebase with new player states
-      await update(ref(database, `battleRoyale/${gameCode}/players`), playerUpdates);
-
-      // Update local state
-      setPlayers(playerUpdates);
-
-      // Check for winner
-      const alivePlayers = Object.values(playerUpdates).filter(p => p.lives > 0);
-      console.log('👥 Players alive:', alivePlayers.length);
+    // Check for winner
+    const alivePlayers = Object.values(playerUpdates).filter(p => p.lives > 0);
+    console.log('Players alive:', alivePlayers.length);
+    
+    if (alivePlayers.length <= 1) {
+      // Game over!
+      const gameWinner = alivePlayers[0] || null;
+      console.log('Winner:', gameWinner?.name || 'No one');
       
-      if (alivePlayers.length <= 1) {
-        // Game over!
-        const winner = alivePlayers[0];
-        console.log('🏆 Winner:', winner?.name || 'No one');
-        
-        setWinner(winner);
-        setGameState('finished');
-        
-        await update(gameRef.current, {
-          state: 'finished',
-          winner: winner,
-          endTime: Date.now()
-        });
-        
-        showToast(`${winner?.name || 'Someone'} wins the Battle Royale!`, 'success');
-      } else {
-        // Continue to next question immediately! (No delay for fast-paced gameplay)
-        console.log('🔄 Moving to next question immediately...');
-        setTimeout(() => {
-          nextQuestion();
-        }, 1500); // Very short 1.5 second delay
-      }
-
-    } catch (error) {
-      console.error('Error processing results:', error);
-      showToast('Error processing results', 'error');
+      setWinner(gameWinner);
+      setGameState('finished');
+      
+      await update(gameRef.current, {
+        state: 'finished',
+        winner: gameWinner,
+        endTime: Date.now()
+      });
+      
+      showToast(`${gameWinner?.name || 'Someone'} wins the Battle Royale!`, 'success');
+    } else if (hasCorrectAnswer || Object.keys(responses).length > 0) {
+      // Continue to next question after a short delay
+      setTimeout(() => {
+        nextQuestion();
+      }, 2000);
     }
   };
 
@@ -444,9 +314,6 @@ const BattleRoyaleGame = ({ gameMode, showToast, students = [] }) => {
 
   // Cleanup
   const cleanup = () => {
-    if (questionTimerRef.current) {
-      clearInterval(questionTimerRef.current);
-    }
     if (playersRef.current) {
       off(playersRef.current);
     }
@@ -470,7 +337,7 @@ const BattleRoyaleGame = ({ gameMode, showToast, students = [] }) => {
           <h2 className="text-3xl font-bold bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent mb-4">
             ⚔️ Battle Royale Learning
           </h2>
-          <p className="text-gray-600 mb-6">Create an epic fast-paced learning battle where students compete to be the last survivor!</p>
+          <p className="text-gray-600 mb-6">Create a multiplayer learning battle where students compete to be the last survivor!</p>
         </div>
 
         <div className="bg-white rounded-xl p-6 shadow-lg">
@@ -505,13 +372,12 @@ const BattleRoyaleGame = ({ gameMode, showToast, students = [] }) => {
           </div>
 
           <div className="mt-6 p-4 bg-red-50 rounded-lg border border-red-200">
-            <h4 className="font-bold text-red-800 mb-2">⚡ Fast-Paced Battle Rules</h4>
+            <h4 className="font-bold text-red-800 mb-2">⚡ Battle Rules</h4>
             <ul className="text-sm text-red-700 space-y-1">
               <li>• Students start with 10 lives</li>
-              <li>• <strong>First correct answer immediately attacks another player!</strong></li>
-              <li>• Wrong answers or timeouts cost 1 life</li>
-              <li>• 3 correct answers in a row = double damage (2 lives)</li>
-              <li>• Questions change immediately when answered correctly!</li>
+              <li>• <strong>Correct answer = safe + random opponent loses 1 life</strong></li>
+              <li>• Wrong answer = lose 1 life</li>
+              <li>• No timers - instant responses!</li>
               <li>• Last survivor wins!</li>
             </ul>
           </div>
@@ -520,7 +386,7 @@ const BattleRoyaleGame = ({ gameMode, showToast, students = [] }) => {
             onClick={startGame}
             className="w-full mt-6 bg-gradient-to-r from-red-600 to-orange-600 text-white py-3 rounded-lg font-bold text-lg hover:shadow-lg transition-all"
           >
-            ⚔️ Create Fast Battle Arena
+            ⚔️ Create Battle Arena
           </button>
         </div>
       </div>
@@ -564,7 +430,7 @@ const BattleRoyaleGame = ({ gameMode, showToast, students = [] }) => {
               disabled={Object.keys(players).length < 2}
               className="flex-1 bg-gradient-to-r from-red-600 to-orange-600 text-white py-3 rounded-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              ⚡ START FAST BATTLE ({Object.keys(players).length}/30)
+              ⚡ START BATTLE ({Object.keys(players).length}/30)
             </button>
             <button
               onClick={endGame}
@@ -578,120 +444,142 @@ const BattleRoyaleGame = ({ gameMode, showToast, students = [] }) => {
     );
   }
 
-  // Game playing states
-  return (
-    <div className="space-y-6">
-      {/* Game Header */}
-      <div className="bg-gradient-to-r from-red-600 to-orange-600 text-white rounded-xl p-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h2 className="text-2xl font-bold">⚡ Fast Battle Royale</h2>
-            <div className="text-red-200">Question #{questionCount} • {Object.values(players).filter(p => p.lives > 0).length} survivors</div>
-            <div className="text-red-200 text-sm">First correct answer wins the round!</div>
-          </div>
-          <div className="text-right">
-            <div className="text-3xl font-bold">{questionTimer}</div>
-            <div className="text-red-200">seconds max</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Current Question Display */}
-      {gameState === 'question' && currentQuestion && (
-        <div className="bg-white rounded-xl p-8 shadow-lg text-center">
-          <div className="text-6xl font-bold text-gray-800 mb-4">
-            {currentQuestion.question}
-          </div>
-          <div className="text-lg text-gray-600">
-            Answered: {Object.keys(responsesReceived).length}/{Object.values(players).filter(p => p.lives > 0).length} • 
-            <span className="text-red-600 font-bold ml-2">First correct answer wins!</span>
-          </div>
-          
-          {/* Timer bar */}
-          <div className="mt-6 w-full bg-gray-200 rounded-full h-4">
-            <div 
-              className="bg-gradient-to-r from-red-500 to-orange-500 h-4 rounded-full transition-all duration-1000"
-              style={{ width: `${(questionTimer / 15) * 100}%` }}
-            ></div>
-          </div>
-        </div>
-      )}
-
-      {/* Player Status Grid */}
-      <div className="bg-white rounded-xl p-6 shadow-lg">
-        <h3 className="text-xl font-bold mb-4">🏆 Battle Status</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {Object.values(players)
-            .sort((a, b) => b.lives - a.lives || (b.correctAnswers || 0) - (a.correctAnswers || 0))
-            .map(player => (
-            <div 
-              key={player.id} 
-              className={`border-2 rounded-lg p-4 ${
-                player.lives > 0 
-                  ? player.streak >= 3 
-                    ? 'border-yellow-400 bg-yellow-50' 
-                    : 'border-green-400 bg-green-50'
-                  : 'border-gray-400 bg-gray-100'
-              }`}
-            >
-              <div className="flex justify-between items-start mb-2">
-                <div className="font-bold text-gray-800 truncate">{player.name}</div>
-                {player.lives <= 0 && <div className="text-red-500 text-xl">💀</div>}
-                {player.streak >= 3 && player.lives > 0 && <div className="text-yellow-500 text-xl">🔥</div>}
-                {responsesReceived[player.id] && <div className="text-green-500 text-xl">✅</div>}
-              </div>
-              
-              <div className="space-y-1 text-sm">
-                <div className="flex justify-between">
-                  <span>Lives:</span>
-                  <span className="font-bold">
-                    {'❤️'.repeat(Math.max(0, player.lives))}
-                    {'🖤'.repeat(Math.max(0, 10 - player.lives))}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Streak:</span>
-                  <span className={`font-bold ${player.streak >= 3 ? 'text-yellow-600' : ''}`}>
-                    {player.streak || 0} {player.streak >= 3 ? '🔥' : ''}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Correct:</span>
-                  <span className="text-green-600 font-bold">{player.correctAnswers || 0}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Damage:</span>
-                  <span className="text-red-600 font-bold">{player.damageDealt || 0}</span>
-                </div>
-              </div>
+  // Game playing
+  if (gameState === 'playing') {
+    return (
+      <div className="space-y-6">
+        {/* Game Header */}
+        <div className="bg-gradient-to-r from-red-600 to-orange-600 text-white rounded-xl p-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="text-2xl font-bold">⚡ Battle Royale</h2>
+              <div className="text-red-200">Question #{questionCount} • {Object.values(players).filter(p => p.lives > 0).length} survivors</div>
             </div>
-          ))}
+            <div className="text-right">
+              <div className="text-red-200">Instant responses!</div>
+              <div className="text-red-200">No timers!</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Current Question Display */}
+        {currentQuestion && (
+          <div className="bg-white rounded-xl p-8 shadow-lg text-center">
+            <div className="text-6xl font-bold text-gray-800 mb-4">
+              {currentQuestion.question}
+            </div>
+            <div className="text-lg text-gray-600">
+              Students answer on their devices • First correct answer wins!
+            </div>
+          </div>
+        )}
+
+        {/* Player Status Grid */}
+        <div className="bg-white rounded-xl p-6 shadow-lg">
+          <h3 className="text-xl font-bold mb-4">🏆 Battle Status</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {Object.values(players)
+              .sort((a, b) => b.lives - a.lives || (b.correctAnswers || 0) - (a.correctAnswers || 0))
+              .map(player => (
+              <div 
+                key={player.id} 
+                className={`border-2 rounded-lg p-4 ${
+                  player.lives > 0 
+                    ? 'border-green-400 bg-green-50'
+                    : 'border-gray-400 bg-gray-100'
+                }`}
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <div className="font-bold text-gray-800 truncate">{player.name}</div>
+                  {player.lives <= 0 && <div className="text-red-500 text-xl">💀</div>}
+                </div>
+                
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span>Lives:</span>
+                    <span className="font-bold">
+                      {'❤️'.repeat(Math.max(0, player.lives))}
+                      {'🖤'.repeat(Math.max(0, 10 - player.lives))}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Correct:</span>
+                    <span className="text-green-600 font-bold">{player.correctAnswers || 0}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Wrong:</span>
+                    <span className="text-red-600 font-bold">{player.wrongAnswers || 0}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Game Controls */}
+        <div className="flex space-x-4">
+          <button
+            onClick={endGame}
+            className="px-6 bg-gray-500 text-white py-3 rounded-lg font-bold hover:bg-gray-600"
+          >
+            End Game
+          </button>
         </div>
       </div>
+    );
+  }
 
-      {/* Winner Display */}
-      {gameState === 'finished' && winner && (
+  // Winner Display
+  if (gameState === 'finished') {
+    return (
+      <div className="space-y-6">
         <div className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-xl p-8 text-center">
           <div className="text-6xl mb-4">🏆</div>
           <h2 className="text-4xl font-bold mb-2">CHAMPION!</h2>
-          <div className="text-2xl font-bold">{winner.name}</div>
+          <div className="text-2xl font-bold">{winner?.name || 'No survivors'}</div>
           <div className="mt-4 text-yellow-200">
-            Survived {questionCount} questions with {winner.lives} lives remaining!
+            Survived {questionCount} questions with {winner?.lives || 0} lives remaining!
           </div>
         </div>
-      )}
 
-      {/* Game Controls */}
-      <div className="flex space-x-4">
+        <div className="bg-white rounded-xl p-6 shadow-lg">
+          <h3 className="text-xl font-bold mb-4">Final Standings</h3>
+          <div className="space-y-3">
+            {Object.values(players)
+              .sort((a, b) => b.lives - a.lives || (b.correctAnswers || 0) - (a.correctAnswers || 0))
+              .map((player, index) => (
+              <div key={player.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="text-lg font-bold">#{index + 1}</div>
+                  <div>
+                    <div className="font-semibold">{player.name}</div>
+                    <div className="text-sm text-gray-600">
+                      {player.correctAnswers || 0} correct • {player.wrongAnswers || 0} wrong
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="font-bold">❤️ {player.lives}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <button
-          onClick={endGame}
-          className="px-6 bg-gray-500 text-white py-3 rounded-lg font-bold hover:bg-gray-600"
+          onClick={() => {
+            cleanup();
+            setGameState('setup');
+          }}
+          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg font-bold text-lg"
         >
-          End Game
+          Create New Game
         </button>
       </div>
-    </div>
-  );
+    );
+  }
+
+  return null;
 };
 
 export default BattleRoyaleGame;
