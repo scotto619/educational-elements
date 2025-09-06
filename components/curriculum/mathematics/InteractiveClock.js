@@ -391,24 +391,132 @@ const InteractiveClock = ({ showToast = () => {}, saveData = () => {}, loadedDat
 
           {/* Daily Scenarios */}
           <div className="bg-white rounded-xl shadow-lg p-6">
-            <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-              📅 Daily Times
-            </h3>
-            <div className="space-y-2">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                📅 Daily Times
+              </h3>
+              <button
+                onClick={handleAddScenario}
+                className="bg-green-500 text-white px-3 py-1 rounded-lg hover:bg-green-600 transition-colors text-sm font-semibold"
+              >
+                + Add
+              </button>
+            </div>
+            
+            <div className="space-y-2 max-h-64 overflow-y-auto">
               {timeScenarios.map((scenario, index) => (
-                <button
-                  key={index}
-                  onClick={() => setScenarioTime(scenario)}
-                  className="w-full text-left p-3 bg-yellow-50 hover:bg-yellow-100 rounded-lg transition-colors border border-yellow-200"
-                >
-                  <div className="font-semibold text-yellow-800">{scenario.name}</div>
-                  <div className="text-sm text-yellow-600">
-                    {scenario.hour}:{scenario.minute.toString().padStart(2, '0')} - {scenario.description}
+                <div key={scenario.id} className="relative group">
+                  <button
+                    onClick={() => setScenarioTime(scenario)}
+                    className="w-full text-left p-3 bg-yellow-50 hover:bg-yellow-100 rounded-lg transition-colors border border-yellow-200"
+                  >
+                    <div className="font-semibold text-yellow-800">{scenario.name}</div>
+                    <div className="text-sm text-yellow-600">
+                      {scenario.hour.toString().padStart(2, '0')}:{scenario.minute.toString().padStart(2, '0')} - {scenario.description}
+                    </div>
+                  </button>
+                  
+                  {/* Edit/Delete buttons */}
+                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditScenario(scenario);
+                      }}
+                      className="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600"
+                    >
+                      ✏️
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteScenario(scenario.id);
+                      }}
+                      className="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600"
+                    >
+                      🗑️
+                    </button>
                   </div>
-                </button>
+                </div>
               ))}
             </div>
           </div>
+
+          {/* Scenario Edit Modal */}
+          {editingScenario && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+                <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4 rounded-t-xl">
+                  <h3 className="text-xl font-bold">Edit Time Scenario</h3>
+                </div>
+                
+                <div className="p-6 space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Name</label>
+                    <input
+                      type="text"
+                      value={editingScenario.name}
+                      onChange={(e) => setEditingScenario({...editingScenario, name: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="e.g., Breakfast Time"
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Hour (0-23)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="23"
+                        value={editingScenario.hour}
+                        onChange={(e) => setEditingScenario({...editingScenario, hour: Math.max(0, Math.min(23, parseInt(e.target.value) || 0))})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Minute (0-59)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="59"
+                        value={editingScenario.minute}
+                        onChange={(e) => setEditingScenario({...editingScenario, minute: Math.max(0, Math.min(59, parseInt(e.target.value) || 0))})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+                    <input
+                      type="text"
+                      value={editingScenario.description}
+                      onChange={(e) => setEditingScenario({...editingScenario, description: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="e.g., Time to eat breakfast!"
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex space-x-3 p-6 pt-0">
+                  <button 
+                    onClick={() => setEditingScenario(null)}
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={handleSaveScenario}
+                    className="flex-1 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+                  >
+                    Save
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Teaching Tips */}
           <div className="bg-gradient-to-r from-green-100 to-blue-100 rounded-xl p-6">
