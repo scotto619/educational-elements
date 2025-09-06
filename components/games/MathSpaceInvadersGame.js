@@ -1,4 +1,4 @@
-// components/games/MathSpaceInvadersGame.js - COMPLETE Math Space Invaders Game
+// components/games/MathSpaceInvadersGame.js - COMPLETE Math Space Invaders Game with Fixed Enemy System
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 const MathSpaceInvadersGame = ({ studentData, updateStudentData, showToast }) => {
@@ -18,6 +18,82 @@ const MathSpaceInvadersGame = ({ studentData, updateStudentData, showToast }) =>
     { name: 'Crystal Guardian', primary: '#00f5ff', secondary: '#e0e0e0', accent: '#ff69b4', unlock: 15, description: 'Pure light energy' },
     { name: 'Flame Phoenix', primary: '#ff4500', secondary: '#ffd700', accent: '#ff0080', unlock: 18, description: 'Reborn from fire' },
     { name: 'Void Destroyer', primary: '#4b0082', secondary: '#00ffff', accent: '#ffff00', unlock: 20, description: 'Ultimate power' }
+  ];
+
+  // Enemy types with different behaviors and appearances
+  const enemyTypes = [
+    {
+      name: 'Scout Drone',
+      color: '#ff4757',
+      secondaryColor: '#ffffff',
+      size: 25,
+      speed: 1.0,
+      health: 1,
+      damage: 1,
+      rarity: 0.7, // Common
+      minLevel: 1,
+      behavior: 'chase'
+    },
+    {
+      name: 'Hunter Swarm',
+      color: '#ff6348',
+      secondaryColor: '#ffa502',
+      size: 20,
+      speed: 1.5,
+      health: 1,
+      damage: 1,
+      rarity: 0.25, // Less common
+      minLevel: 2,
+      behavior: 'swarm'
+    },
+    {
+      name: 'Heavy Cruiser',
+      color: '#8e44ad',
+      secondaryColor: '#e74c3c',
+      size: 40,
+      speed: 0.6,
+      health: 2,
+      damage: 2,
+      rarity: 0.15, // Uncommon
+      minLevel: 3,
+      behavior: 'tank'
+    },
+    {
+      name: 'Stealth Fighter',
+      color: '#2c3e50',
+      secondaryColor: '#34495e',
+      size: 30,
+      speed: 1.3,
+      health: 1,
+      damage: 1,
+      rarity: 0.1, // Rare
+      minLevel: 5,
+      behavior: 'stealth'
+    },
+    {
+      name: 'Plasma Bomber',
+      color: '#e67e22',
+      secondaryColor: '#f39c12',
+      size: 35,
+      speed: 0.8,
+      health: 2,
+      damage: 2,
+      rarity: 0.08, // Very rare
+      minLevel: 7,
+      behavior: 'bomber'
+    },
+    {
+      name: 'Void Stalker',
+      color: '#9b59b6',
+      secondaryColor: '#8e44ad',
+      size: 45,
+      speed: 0.5,
+      health: 3,
+      damage: 3,
+      rarity: 0.05, // Ultra rare
+      minLevel: 10,
+      behavior: 'boss'
+    }
   ];
 
   // Game state
@@ -330,6 +406,159 @@ const MathSpaceInvadersGame = ({ studentData, updateStudentData, showToast }) =>
     ctx.restore();
   };
 
+  // Draw enemy based on type
+  const drawEnemy = (ctx, enemy) => {
+    ctx.save();
+    ctx.translate(enemy.x, enemy.y);
+    ctx.rotate(enemy.angle);
+    
+    const scale = enemy.size / 35; // Base size is 35
+    ctx.scale(scale, scale);
+    
+    // Different designs based on enemy type
+    switch (enemy.type.name) {
+      case 'Scout Drone':
+        // Small, basic triangle
+        ctx.fillStyle = enemy.type.color;
+        ctx.beginPath();
+        ctx.moveTo(0, -15);
+        ctx.lineTo(-12, 10);
+        ctx.lineTo(0, 5);
+        ctx.lineTo(12, 10);
+        ctx.closePath();
+        ctx.fill();
+        
+        ctx.fillStyle = enemy.type.secondaryColor;
+        ctx.beginPath();
+        ctx.arc(-6, -3, 2, 0, Math.PI * 2);
+        ctx.arc(6, -3, 2, 0, Math.PI * 2);
+        ctx.fill();
+        break;
+        
+      case 'Hunter Swarm':
+        // Smaller, aggressive looking
+        ctx.fillStyle = enemy.type.color;
+        ctx.beginPath();
+        ctx.moveTo(0, -15);
+        ctx.lineTo(-15, 5);
+        ctx.lineTo(-8, 10);
+        ctx.lineTo(0, 8);
+        ctx.lineTo(8, 10);
+        ctx.lineTo(15, 5);
+        ctx.closePath();
+        ctx.fill();
+        
+        ctx.fillStyle = enemy.type.secondaryColor;
+        ctx.beginPath();
+        ctx.moveTo(0, -15);
+        ctx.lineTo(-8, -5);
+        ctx.lineTo(0, -8);
+        ctx.lineTo(8, -5);
+        ctx.closePath();
+        ctx.fill();
+        break;
+        
+      case 'Heavy Cruiser':
+        // Large, blocky design
+        ctx.fillStyle = enemy.type.color;
+        ctx.fillRect(-20, -15, 40, 30);
+        
+        ctx.fillStyle = enemy.type.secondaryColor;
+        ctx.fillRect(-15, -10, 30, 20);
+        
+        // Engines
+        ctx.fillStyle = '#ff6b6b';
+        ctx.beginPath();
+        ctx.arc(-12, 18, 4, 0, Math.PI * 2);
+        ctx.arc(12, 18, 4, 0, Math.PI * 2);
+        ctx.fill();
+        break;
+        
+      case 'Stealth Fighter':
+        // Sleek, angular design
+        ctx.fillStyle = enemy.type.color;
+        ctx.beginPath();
+        ctx.moveTo(0, -18);
+        ctx.lineTo(-20, -5);
+        ctx.lineTo(-15, 15);
+        ctx.lineTo(0, 8);
+        ctx.lineTo(15, 15);
+        ctx.lineTo(20, -5);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Add stealth effect (transparency pulse)
+        ctx.globalAlpha = 0.3 + Math.sin(enemy.stealthPhase || 0) * 0.3;
+        ctx.fillStyle = enemy.type.secondaryColor;
+        ctx.fillRect(-10, -10, 20, 15);
+        ctx.globalAlpha = 1;
+        break;
+        
+      case 'Plasma Bomber':
+        // Rounded, bomber-like
+        ctx.fillStyle = enemy.type.color;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 20, 15, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.fillStyle = enemy.type.secondaryColor;
+        ctx.beginPath();
+        ctx.ellipse(0, -5, 15, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Weapon pods
+        ctx.fillStyle = '#e74c3c';
+        ctx.fillRect(-25, -5, 8, 10);
+        ctx.fillRect(17, -5, 8, 10);
+        break;
+        
+      case 'Void Stalker':
+        // Large, intimidating boss design
+        ctx.fillStyle = enemy.type.color;
+        ctx.beginPath();
+        ctx.moveTo(0, -25);
+        ctx.lineTo(-25, -10);
+        ctx.lineTo(-30, 15);
+        ctx.lineTo(-15, 20);
+        ctx.lineTo(0, 15);
+        ctx.lineTo(15, 20);
+        ctx.lineTo(30, 15);
+        ctx.lineTo(25, -10);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Core
+        ctx.fillStyle = enemy.type.secondaryColor;
+        ctx.beginPath();
+        ctx.arc(0, 0, 12, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Pulsing energy
+        ctx.globalAlpha = 0.5 + Math.sin((enemy.energyPhase || 0)) * 0.3;
+        ctx.fillStyle = '#e74c3c';
+        ctx.beginPath();
+        ctx.arc(0, 0, 8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        break;
+        
+      default:
+        // Fallback design
+        ctx.fillStyle = enemy.type.color;
+        ctx.beginPath();
+        ctx.moveTo(0, -15);
+        ctx.lineTo(-20, 10);
+        ctx.lineTo(-10, 15);
+        ctx.lineTo(0, 5);
+        ctx.lineTo(10, 15);
+        ctx.lineTo(20, 10);
+        ctx.closePath();
+        ctx.fill();
+    }
+    
+    ctx.restore();
+  };
+
   // Draw particle
   const drawParticle = (ctx, particle) => {
     ctx.save();
@@ -391,10 +620,30 @@ const MathSpaceInvadersGame = ({ studentData, updateStudentData, showToast }) =>
     return newNumbers;
   }, [player.x, player.y]);
 
-  // Spawn enemies
+  // Get enemy type for level
+  const getEnemyType = (level) => {
+    const availableTypes = enemyTypes.filter(type => level >= type.minLevel);
+    
+    // Weighted selection based on rarity
+    const rand = Math.random();
+    let cumulativeRarity = 0;
+    
+    for (let type of availableTypes.reverse()) { // Start with rarest
+      cumulativeRarity += type.rarity;
+      if (rand <= cumulativeRarity) {
+        return type;
+      }
+    }
+    
+    // Fallback to most common type
+    return availableTypes[availableTypes.length - 1];
+  };
+
+  // Spawn enemies with improved spacing and types
   const spawnEnemies = useCallback((level) => {
     const newEnemies = [];
     let enemyCount = Math.min(level + 1, 8);
+    const positions = []; // Track all positions to prevent overlap
     
     for (let i = 0; i < enemyCount; i++) {
       let validPosition = false;
@@ -402,34 +651,58 @@ const MathSpaceInvadersGame = ({ studentData, updateStudentData, showToast }) =>
       let x, y;
       
       while (!validPosition && attempts < 100) {
-        x = Math.random() * (800 - 40);
+        x = Math.random() * (800 - 80) + 40; // Account for enemy size
         y = Math.random() * (600 - 400) + 50;
         
+        // Check distance from player
         let distanceFromPlayer = Math.sqrt((x - player.x) ** 2 + (y - player.y) ** 2);
         validPosition = distanceFromPlayer > 150;
+        
+        // Check distance from other enemies
+        if (validPosition) {
+          for (let pos of positions) {
+            let dx = x - pos.x;
+            let dy = y - pos.y;
+            let minDistance = (pos.size + 40) / 2 + 50; // Minimum spacing based on sizes
+            if (Math.sqrt(dx * dx + dy * dy) < minDistance) {
+              validPosition = false;
+              break;
+            }
+          }
+        }
         
         attempts++;
       }
       
+      // Fallback grid positioning if no valid random position found
       if (!validPosition) {
-        x = (i % 4) * (800 / 4) + 50;
-        y = Math.floor(i / 4) * 80 + 50;
+        x = (i % 4) * (800 / 4) + 100;
+        y = Math.floor(i / 4) * 120 + 80;
       }
       
-      newEnemies.push({
+      const enemyType = getEnemyType(level);
+      const enemy = {
         x: x,
         y: y,
-        width: 35,
-        height: 35,
-        speed: 0.8 + level * 0.2,
+        size: enemyType.size,
+        speed: enemyType.speed + level * 0.1, // Scale speed with level
+        health: enemyType.health,
+        maxHealth: enemyType.health,
+        damage: enemyType.damage,
+        type: enemyType,
         vx: 0,
         vy: 0,
         angle: 0,
         lastPlayerX: player.x,
         lastPlayerY: player.y,
         updateTimer: Math.random() * 60,
-        health: 1
-      });
+        behaviorTimer: 0,
+        stealthPhase: Math.random() * Math.PI * 2, // For stealth fighters
+        energyPhase: Math.random() * Math.PI * 2   // For void stalkers
+      };
+      
+      positions.push({ x, y, size: enemyType.size });
+      newEnemies.push(enemy);
     }
     
     return newEnemies;
@@ -464,7 +737,9 @@ const MathSpaceInvadersGame = ({ studentData, updateStudentData, showToast }) =>
       });
       
       setTimeout(() => {
-        showToast(`New ship${newUnlocks.length > 1 ? 's' : ''} unlocked: ${newUnlocks.map(u => u.name).join(', ')}!`, 'success');
+        if (showToast) {
+          showToast(`New ship${newUnlocks.length > 1 ? 's' : ''} unlocked: ${newUnlocks.map(u => u.name).join(', ')}!`, 'success');
+        }
       }, 1000);
     }
     
@@ -547,7 +822,6 @@ const MathSpaceInvadersGame = ({ studentData, updateStudentData, showToast }) =>
       
       createExplosion(player.x, player.y, '#00ff88');
       
-      
       // Check if level complete
       if (gameState.questionsAnswered + 1 >= gameState.questionsPerLevel) {
         if (gameState.level >= 20) {
@@ -577,7 +851,7 @@ const MathSpaceInvadersGame = ({ studentData, updateStudentData, showToast }) =>
         }));
       }
     }
-  }, [gameState, player, generateQuestion, spawnNumbers, updateStudentData, studentData]);
+  }, [gameState, player, generateQuestion, spawnNumbers]);
 
   // Main game loop
   useEffect(() => {
@@ -644,14 +918,73 @@ const MathSpaceInvadersGame = ({ studentData, updateStudentData, showToast }) =>
         };
       });
 
-      // Update enemies
+      // Update enemies with improved AI
       setEnemies(prev => prev.map(enemy => {
         enemy.updateTimer++;
+        enemy.behaviorTimer++;
         
+        // Update special phases for visual effects
+        if (enemy.type.name === 'Stealth Fighter') {
+          enemy.stealthPhase += 0.1;
+        }
+        if (enemy.type.name === 'Void Stalker') {
+          enemy.energyPhase += 0.15;
+        }
+        
+        // Different AI behaviors
         if (enemy.updateTimer > 30 + Math.random() * 60) {
           enemy.updateTimer = 0;
-          enemy.lastPlayerX = player.x + (Math.random() - 0.5) * 100;
-          enemy.lastPlayerY = player.y + (Math.random() - 0.5) * 100;
+          
+          switch (enemy.type.behavior) {
+            case 'chase':
+              enemy.lastPlayerX = player.x;
+              enemy.lastPlayerY = player.y;
+              break;
+              
+            case 'swarm':
+              // Swarm behavior - predict player movement
+              enemy.lastPlayerX = player.x + player.vx * 20;
+              enemy.lastPlayerY = player.y + player.vy * 20;
+              break;
+              
+            case 'tank':
+              // Slow, direct approach
+              enemy.lastPlayerX = player.x + (Math.random() - 0.5) * 50;
+              enemy.lastPlayerY = player.y + (Math.random() - 0.5) * 50;
+              break;
+              
+            case 'stealth':
+              // Unpredictable movement
+              enemy.lastPlayerX = player.x + (Math.random() - 0.5) * 200;
+              enemy.lastPlayerY = player.y + (Math.random() - 0.5) * 200;
+              break;
+              
+            case 'bomber':
+              // Wide arcing approach
+              let angle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
+              angle += Math.sin(enemy.behaviorTimer * 0.02) * 0.5; // Sine wave movement
+              enemy.lastPlayerX = enemy.x + Math.cos(angle) * 100;
+              enemy.lastPlayerY = enemy.y + Math.sin(angle) * 100;
+              break;
+              
+            case 'boss':
+              // Complex boss pattern
+              if (enemy.behaviorTimer % 180 < 60) {
+                // Direct attack phase
+                enemy.lastPlayerX = player.x;
+                enemy.lastPlayerY = player.y;
+              } else {
+                // Circle around player phase
+                let circleAngle = enemy.behaviorTimer * 0.05;
+                enemy.lastPlayerX = player.x + Math.cos(circleAngle) * 150;
+                enemy.lastPlayerY = player.y + Math.sin(circleAngle) * 150;
+              }
+              break;
+              
+            default:
+              enemy.lastPlayerX = player.x + (Math.random() - 0.5) * 100;
+              enemy.lastPlayerY = player.y + (Math.random() - 0.5) * 100;
+          }
         }
         
         let dx = enemy.lastPlayerX - enemy.x;
@@ -668,6 +1001,10 @@ const MathSpaceInvadersGame = ({ studentData, updateStudentData, showToast }) =>
           
           enemy.x += moveX;
           enemy.y += moveY;
+          
+          // Keep enemies on screen
+          enemy.x = Math.max(enemy.size/2, Math.min(800 - enemy.size/2, enemy.x));
+          enemy.y = Math.max(enemy.size/2, Math.min(600 - enemy.size/2, enemy.y));
         }
         
         return enemy;
@@ -698,7 +1035,7 @@ const MathSpaceInvadersGame = ({ studentData, updateStudentData, showToast }) =>
     };
   }, [gameState, keys, player]);
 
-  // Collision detection
+  // Fixed collision detection
   useEffect(() => {
     if (!gameState.gameStarted || gameState.paused) return;
     
@@ -716,26 +1053,30 @@ const MathSpaceInvadersGame = ({ studentData, updateStudentData, showToast }) =>
       }
     });
     
-    // Check enemy collisions with dynamic sizes
+    // Fixed enemy collision detection
     enemies.forEach((enemy, index) => {
       let dx = player.x - enemy.x;
       let dy = player.y - enemy.y;
       let distance = Math.sqrt(dx * dx + dy * dy);
       
-      // Collision radius based on enemy size
-      let collisionRadius = enemy.size * 0.6;
+      // Use proper collision radius based on enemy size
+      let collisionRadius = (enemy.size + 40) / 2; // Enemy radius + player radius
       
       if (distance < collisionRadius) {
+        // Remove the enemy that hit the player
         setEnemies(prev => prev.filter((_, i) => i !== index));
         
+        // Deal damage to player
         setGameState(prev => ({
           ...prev,
-          lives: prev.lives - 1
+          lives: prev.lives - enemy.damage // Use enemy's damage value
         }));
         
+        // Create explosion at enemy position
         createExplosion(enemy.x, enemy.y, enemy.type.color);
         
-        if (gameState.lives <= 1) {
+        // Check for game over
+        if (gameState.lives - enemy.damage <= 0) {
           setGameState(prev => ({
             ...prev,
             gameOver: true,
@@ -804,35 +1145,9 @@ const MathSpaceInvadersGame = ({ studentData, updateStudentData, showToast }) =>
         ctx.restore();
       });
       
-      // Draw enemies
+      // Draw enemies using new drawing function
       enemies.forEach(enemy => {
-        ctx.save();
-        ctx.translate(enemy.x, enemy.y);
-        ctx.rotate(enemy.angle);
-        
-        ctx.fillStyle = '#ff4757';
-        ctx.beginPath();
-        ctx.moveTo(0, -15);
-        ctx.lineTo(-20, 10);
-        ctx.lineTo(-10, 15);
-        ctx.lineTo(0, 5);
-        ctx.lineTo(10, 15);
-        ctx.lineTo(20, 10);
-        ctx.closePath();
-        ctx.fill();
-        
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        ctx.arc(-8, -5, 3, 0, Math.PI * 2);
-        ctx.arc(8, -5, 3, 0, Math.PI * 2);
-        ctx.fill();
-        
-        ctx.fillStyle = '#ff6b6b';
-        ctx.beginPath();
-        ctx.arc(0, 18, 4, 0, Math.PI * 2);
-        ctx.fill();
-        
-        ctx.restore();
+        drawEnemy(ctx, enemy);
       });
       
       // Draw particles
@@ -1039,6 +1354,28 @@ const MathSpaceInvadersGame = ({ studentData, updateStudentData, showToast }) =>
         )}
       </div>
 
+      {/* Enemy Types Info */}
+      <div className="bg-black/40 backdrop-blur border border-red-400 rounded-lg p-4 max-w-4xl">
+        <h3 className="text-lg font-semibold mb-3 text-center">Enemy Types</h3>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 text-xs">
+          {enemyTypes.map((enemy, index) => (
+            <div
+              key={index}
+              className="p-2 rounded border border-red-600 bg-red-900/20 text-center"
+            >
+              <div className="font-semibold text-red-300 mb-1">{enemy.name}</div>
+              <div className="text-gray-300 space-y-1">
+                <div>Size: {enemy.size}</div>
+                <div>Speed: {enemy.speed.toFixed(1)}</div>
+                <div>HP: {enemy.health}</div>
+                <div>Dmg: {enemy.damage}</div>
+                <div>Min Level: {enemy.minLevel}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Ship Collection */}
       <div className="bg-black/40 backdrop-blur border border-cyan-400 rounded-lg p-4 max-w-2xl">
         <h3 className="text-lg font-semibold mb-3 text-center">Ship Collection</h3>
@@ -1070,6 +1407,7 @@ const MathSpaceInvadersGame = ({ studentData, updateStudentData, showToast }) =>
       <div className="bg-black/40 backdrop-blur border border-blue-400 rounded-lg p-4 text-center text-sm max-w-2xl">
         <p className="mb-2"><strong>Controls:</strong> Use ARROW KEYS or WASD to move</p>
         <p>Fly into the correct answer • Avoid enemy ships and wrong answers!</p>
+        <p className="mt-2 text-yellow-300"><strong>New:</strong> Different enemy types with unique behaviors and damage!</p>
       </div>
 
       {/* Game Controls */}
