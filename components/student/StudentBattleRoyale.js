@@ -1,4 +1,4 @@
-// components/student/StudentBattleRoyale.js - Student Battle Royale Participation
+// components/student/StudentBattleRoyale.js - FIXED Student Battle Royale Participation
 import React, { useState, useEffect, useRef } from 'react';
 import { database } from '../../utils/firebase';
 import { ref, onValue, update, push, set, off } from 'firebase/database';
@@ -29,6 +29,8 @@ const StudentBattleRoyale = ({ studentData, classData, showToast }) => {
     const code = gameCode.trim().toUpperCase();
     
     try {
+      console.log('🔍 Trying to join game:', code);
+      
       // Check if game exists
       const gameRefPath = ref(database, `battleRoyale/${code}`);
       const gameSnapshot = await new Promise((resolve, reject) => {
@@ -41,13 +43,14 @@ const StudentBattleRoyale = ({ studentData, classData, showToast }) => {
       }
 
       const gameData = gameSnapshot.val();
+      console.log('🎮 Game found:', gameData.state);
       
       if (gameData.state === 'finished') {
         showToast('This game has already finished!', 'error');
         return;
       }
 
-      if (gameData.state === 'playing') {
+      if (gameData.state === 'playing' || gameData.state === 'question') {
         showToast('This game has already started!', 'error');
         return;
       }
@@ -70,19 +73,23 @@ const StudentBattleRoyale = ({ studentData, classData, showToast }) => {
       };
 
       await update(ref(database, `battleRoyale/${code}/players/${playerId}`), playerInfo);
+      console.log('✅ Successfully joined game as:', playerInfo.name);
 
       setPlayerData(playerInfo);
       setGameInfo(gameData);
       gameRef.current = gameRefPath;
 
-      // Listen for game updates
+      // ENHANCED: Listen for all game updates
       onValue(gameRef.current, (snapshot) => {
         const data = snapshot.val();
         if (data) {
+          console.log('🔄 Game update received:', data.state);
           setGameInfo(data);
           setGameState(data.state);
           
-          if (data.currentQuestion) {
+          // FIXED: Handle new questions properly
+          if (data.currentQuestion && data.currentQuestion.id !== currentQuestion?.id) {
+            console.log('❓ New question received:', data.currentQuestion.question);
             setCurrentQuestion(data.currentQuestion);
             setHasAnswered(false);
             setSelectedAnswer(null);
@@ -93,15 +100,17 @@ const StudentBattleRoyale = ({ studentData, classData, showToast }) => {
             setWinner(data.winner);
           }
 
-          // Update other players
+          // Update player data
           if (data.players) {
             const others = { ...data.players };
             delete others[playerId];
             setOtherPlayers(others);
             
-            // Update own player data
+            // CRITICAL: Update own player data to see health changes
             if (data.players[playerId]) {
-              setPlayerData(data.players[playerId]);
+              const updatedPlayerData = data.players[playerId];
+              console.log(`💓 Health update: ${playerData?.lives || 0} → ${updatedPlayerData.lives}`);
+              setPlayerData(updatedPlayerData);
             }
           }
         }
@@ -116,7 +125,7 @@ const StudentBattleRoyale = ({ studentData, classData, showToast }) => {
     }
   };
 
-  // Start question timer
+  // FIXED: Start question timer
   const startQuestionTimer = () => {
     if (questionTimerRef.current) {
       clearInterval(questionTimerRef.current);
@@ -127,6 +136,10 @@ const StudentBattleRoyale = ({ studentData, classData, showToast }) => {
       setQuestionTimer(prev => {
         if (prev <= 1) {
           clearInterval(questionTimerRef.current);
+          if (!hasAnswered) {
+            console.log('⏰ Time up! No answer submitted');
+            showToast('Time up! ❤️ Lost a life!', 'error');
+          }
           return 0;
         }
         return prev - 1;
@@ -134,15 +147,18 @@ const StudentBattleRoyale = ({ studentData, classData, showToast }) => {
     }, 1000);
   };
 
-  // Submit answer
+  // FIXED: Submit answer with better error handling
   const submitAnswer = async (answer) => {
-    if (hasAnswered || !currentQuestion || !gameRef.current) return;
+    if (hasAnswered || !currentQuestion || !gameRef.current || !playerData) {
+      console.log('⚠️ Cannot submit answer:', { hasAnswered, hasQuestion: !!currentQuestion, hasGameRef: !!gameRef.current, hasPlayerData: !!playerData });
+      return;
+    }
 
     setSelectedAnswer(answer);
     setHasAnswered(true);
 
     try {
-      console.log('Submitting answer:', answer, 'for question:', currentQuestion.question);
+      console.log('📝 Submitting answer:', answer, 'for question:', currentQuestion.question, 'correct:', currentQuestion.correctAnswer);
       
       const responseData = {
         answer: answer,
@@ -153,20 +169,22 @@ const StudentBattleRoyale = ({ studentData, classData, showToast }) => {
       };
       
       await update(ref(database, `battleRoyale/${gameCode}/responses/${playerData.id}`), responseData);
-      
-      console.log('Answer submitted successfully:', responseData);
+      console.log('✅ Answer submitted successfully');
 
-      // Visual feedback
+      // Immediate visual feedback
       if (answer === currentQuestion.correctAnswer) {
-        showToast('Correct! 🛡️ Protected!', 'success');
+        showToast('Correct! 🛡️ Protected from damage!', 'success');
+        console.log('✅ Correct answer submitted');
       } else {
-        showToast('Wrong answer! 💔 Lost a life!', 'error');
+        showToast('Wrong answer! 💔 You may lose a life!', 'error');
+        console.log('❌ Wrong answer submitted');
       }
 
     } catch (error) {
-      console.error('Error submitting answer:', error);
-      showToast('Failed to submit answer!', 'error');
+      console.error('❌ Error submitting answer:', error);
+      showToast('Failed to submit answer! Try again!', 'error');
       setHasAnswered(false); // Allow retry
+      setSelectedAnswer(null);
     }
   };
 
@@ -269,7 +287,7 @@ const StudentBattleRoyale = ({ studentData, classData, showToast }) => {
           <h3 className="text-lg font-bold mb-4">Your Warrior Status</h3>
           <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
             <div className="font-bold text-green-800">{playerData?.name}</div>
-            <div className="text-green-600">💚 {playerData?.lives} lives</div>
+            <div className="text-green-600">❤️ {playerData?.lives} lives</div>
             <div className="text-sm text-gray-600">Ready for battle!</div>
           </div>
 
@@ -290,7 +308,7 @@ const StudentBattleRoyale = ({ studentData, classData, showToast }) => {
           </div>
 
           <div className="text-center text-lg font-bold text-orange-600 mb-4">
-            🕐 Waiting for teacher to start the battle...
+            ⏳ Waiting for teacher to start the battle...
           </div>
 
           <button
@@ -319,7 +337,7 @@ const StudentBattleRoyale = ({ studentData, classData, showToast }) => {
             <div className="text-2xl font-bold text-gray-800 mb-2">Your Status</div>
             <div className="bg-green-100 rounded-lg p-4 inline-block">
               <div className="font-bold text-green-800">{playerData?.name}</div>
-              <div className="text-green-600">💚 {playerData?.lives} lives</div>
+              <div className="text-green-600">❤️ {playerData?.lives} lives</div>
               <div className="text-green-600">🎯 {playerData?.streak || 0} streak</div>
             </div>
           </div>
@@ -338,7 +356,7 @@ const StudentBattleRoyale = ({ studentData, classData, showToast }) => {
             <div>
               <div className="font-bold">{playerData?.name}</div>
               <div className="text-red-200">
-                💚 {playerData?.lives} • 🔥 {playerData?.streak || 0} streak
+                ❤️ {playerData?.lives} • 🔥 {playerData?.streak || 0} streak
               </div>
             </div>
             <div className="text-center">
@@ -363,8 +381,13 @@ const StudentBattleRoyale = ({ studentData, classData, showToast }) => {
           </div>
 
           {hasAnswered && (
-            <div className="text-lg font-bold text-green-600 mb-4">
-              ✅ Answer submitted! {selectedAnswer === currentQuestion.correctAnswer ? '🛡️ Correct!' : '💔 Wrong!'}
+            <div className="text-lg font-bold mb-4">
+              {selectedAnswer === currentQuestion.correctAnswer ? (
+                <div className="text-green-600">✅ Correct! 🛡️ Protected!</div>
+              ) : (
+                <div className="text-red-600">❌ Wrong! 💔 May lose a life!</div>
+              )}
+              <div className="text-sm text-gray-600 mt-2">Waiting for other players...</div>
             </div>
           )}
         </div>
@@ -383,7 +406,7 @@ const StudentBattleRoyale = ({ studentData, classData, showToast }) => {
                     ? selectedAnswer === currentQuestion.correctAnswer
                       ? 'bg-green-500 text-white border-4 border-green-600'
                       : 'bg-red-500 text-white border-4 border-red-600'
-                    : answer === currentQuestion.correctAnswer
+                    : answer === currentQuestion.correctAnswer && selectedAnswer !== currentQuestion.correctAnswer
                       ? 'bg-green-200 text-green-800 border-2 border-green-400'
                       : 'bg-gray-200 text-gray-600 border-2 border-gray-300'
                   : 'bg-blue-500 text-white border-2 border-blue-600 hover:bg-blue-600 hover:scale-105 shadow-lg'
