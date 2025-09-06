@@ -1,4 +1,4 @@
-// components/student/StudentBattleRoyale.js - FIXED Student Battle Royale Participation
+// components/student/StudentBattleRoyale.js - FAST-PACED Student Battle Royale
 import React, { useState, useEffect, useRef } from 'react';
 import { database } from '../../utils/firebase';
 import { ref, onValue, update, push, set, off } from 'firebase/database';
@@ -14,6 +14,7 @@ const StudentBattleRoyale = ({ studentData, classData, showToast }) => {
   const [gameInfo, setGameInfo] = useState(null);
   const [otherPlayers, setOtherPlayers] = useState({});
   const [winner, setWinner] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Refs for cleanup
   const gameRef = useRef(null);
@@ -79,7 +80,7 @@ const StudentBattleRoyale = ({ studentData, classData, showToast }) => {
       setGameInfo(gameData);
       gameRef.current = gameRefPath;
 
-      // ENHANCED: Listen for all game updates
+      // Listen for all game updates
       onValue(gameRef.current, (snapshot) => {
         const data = snapshot.val();
         if (data) {
@@ -87,12 +88,13 @@ const StudentBattleRoyale = ({ studentData, classData, showToast }) => {
           setGameInfo(data);
           setGameState(data.state);
           
-          // FIXED: Handle new questions properly
+          // Handle new questions
           if (data.currentQuestion && data.currentQuestion.id !== currentQuestion?.id) {
             console.log('❓ New question received:', data.currentQuestion.question);
             setCurrentQuestion(data.currentQuestion);
             setHasAnswered(false);
             setSelectedAnswer(null);
+            setIsProcessing(false);
             startQuestionTimer();
           }
 
@@ -106,7 +108,7 @@ const StudentBattleRoyale = ({ studentData, classData, showToast }) => {
             delete others[playerId];
             setOtherPlayers(others);
             
-            // CRITICAL: Update own player data to see health changes
+            // Update own player data to see health changes
             if (data.players[playerId]) {
               const updatedPlayerData = data.players[playerId];
               console.log(`💓 Health update: ${playerData?.lives || 0} → ${updatedPlayerData.lives}`);
@@ -125,7 +127,7 @@ const StudentBattleRoyale = ({ studentData, classData, showToast }) => {
     }
   };
 
-  // FIXED: Start question timer
+  // Start question timer
   const startQuestionTimer = () => {
     if (questionTimerRef.current) {
       clearInterval(questionTimerRef.current);
@@ -147,15 +149,22 @@ const StudentBattleRoyale = ({ studentData, classData, showToast }) => {
     }, 1000);
   };
 
-  // FIXED: Submit answer with better error handling
+  // ENHANCED: Submit answer immediately
   const submitAnswer = async (answer) => {
-    if (hasAnswered || !currentQuestion || !gameRef.current || !playerData) {
-      console.log('⚠️ Cannot submit answer:', { hasAnswered, hasQuestion: !!currentQuestion, hasGameRef: !!gameRef.current, hasPlayerData: !!playerData });
+    if (hasAnswered || !currentQuestion || !gameRef.current || !playerData || isProcessing) {
+      console.log('⚠️ Cannot submit answer:', { 
+        hasAnswered, 
+        hasQuestion: !!currentQuestion, 
+        hasGameRef: !!gameRef.current, 
+        hasPlayerData: !!playerData,
+        isProcessing
+      });
       return;
     }
 
     setSelectedAnswer(answer);
     setHasAnswered(true);
+    setIsProcessing(true);
 
     try {
       console.log('📝 Submitting answer:', answer, 'for question:', currentQuestion.question, 'correct:', currentQuestion.correctAnswer);
@@ -173,18 +182,19 @@ const StudentBattleRoyale = ({ studentData, classData, showToast }) => {
 
       // Immediate visual feedback
       if (answer === currentQuestion.correctAnswer) {
-        showToast('Correct! 🛡️ Protected from damage!', 'success');
-        console.log('✅ Correct answer submitted');
+        showToast('⚡ CORRECT! Attacking others...', 'success');
+        console.log('⚡ Correct answer - should trigger immediate processing');
       } else {
-        showToast('Wrong answer! 💔 You may lose a life!', 'error');
+        showToast('❌ Wrong answer! May lose a life...', 'error');
         console.log('❌ Wrong answer submitted');
       }
 
     } catch (error) {
       console.error('❌ Error submitting answer:', error);
       showToast('Failed to submit answer! Try again!', 'error');
-      setHasAnswered(false); // Allow retry
+      setHasAnswered(false);
       setSelectedAnswer(null);
+      setIsProcessing(false);
     }
   };
 
@@ -226,9 +236,9 @@ const StudentBattleRoyale = ({ studentData, classData, showToast }) => {
       <div className="space-y-6">
         <div className="text-center">
           <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent mb-4">
-            ⚔️ Battle Royale
+            ⚡ Fast Battle Royale
           </h2>
-          <p className="text-gray-600 mb-6">Enter the game code to join the epic learning battle!</p>
+          <p className="text-gray-600 mb-6">Enter the game code to join the lightning-fast learning battle!</p>
         </div>
 
         <div className="bg-white rounded-xl p-6 shadow-lg">
@@ -252,15 +262,16 @@ const StudentBattleRoyale = ({ studentData, classData, showToast }) => {
               disabled={!gameCode.trim()}
               className="w-full bg-gradient-to-r from-red-600 to-orange-600 text-white py-3 rounded-lg font-bold text-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              ⚔️ Join Battle
+              ⚡ Join Fast Battle
             </button>
           </div>
 
           <div className="mt-6 p-4 bg-red-50 rounded-lg border border-red-200">
-            <h4 className="font-bold text-red-800 mb-2">⚔️ Battle Rules</h4>
+            <h4 className="font-bold text-red-800 mb-2">⚡ Fast Battle Rules</h4>
             <ul className="text-sm text-red-700 space-y-1">
               <li>• You start with 10 lives ❤️</li>
-              <li>• First correct answer protects you and attacks another player</li>
+              <li>• <strong>First correct answer wins the round!</strong></li>
+              <li>• Questions change immediately when answered correctly</li>
               <li>• Wrong answers cost you 1 life</li>
               <li>• Get 3 correct in a row for double damage 🔥</li>
               <li>• Be the last survivor to win! 🏆</li>
@@ -276,7 +287,7 @@ const StudentBattleRoyale = ({ studentData, classData, showToast }) => {
     return (
       <div className="space-y-6">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-red-600 mb-2">⚔️ Joined Battle Arena!</h2>
+          <h2 className="text-2xl font-bold text-red-600 mb-2">⚡ Joined Fast Battle!</h2>
           <div className="bg-red-100 border-2 border-red-300 rounded-xl p-4 inline-block">
             <div className="text-sm text-red-700 mb-1">Game Code</div>
             <div className="text-2xl font-bold text-red-800 tracking-wider">{gameCode}</div>
@@ -288,7 +299,7 @@ const StudentBattleRoyale = ({ studentData, classData, showToast }) => {
           <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
             <div className="font-bold text-green-800">{playerData?.name}</div>
             <div className="text-green-600">❤️ {playerData?.lives} lives</div>
-            <div className="text-sm text-gray-600">Ready for battle!</div>
+            <div className="text-sm text-gray-600">Ready for fast battle!</div>
           </div>
 
           <div className="mb-4">
@@ -308,7 +319,7 @@ const StudentBattleRoyale = ({ studentData, classData, showToast }) => {
           </div>
 
           <div className="text-center text-lg font-bold text-orange-600 mb-4">
-            ⏳ Waiting for teacher to start the battle...
+            ⏳ Waiting for teacher to start the fast battle...
           </div>
 
           <button
@@ -327,9 +338,10 @@ const StudentBattleRoyale = ({ studentData, classData, showToast }) => {
     return (
       <div className="space-y-6">
         <div className="bg-gradient-to-r from-red-600 to-orange-600 text-white rounded-xl p-8 text-center">
-          <div className="text-6xl mb-4">⚔️</div>
-          <h2 className="text-3xl font-bold mb-2">BATTLE STARTING!</h2>
-          <div className="text-xl">Get ready to fight for survival...</div>
+          <div className="text-6xl mb-4">⚡</div>
+          <h2 className="text-3xl font-bold mb-2">FAST BATTLE STARTING!</h2>
+          <div className="text-xl">Get ready for lightning-fast survival...</div>
+          <div className="text-lg text-red-200 mt-2">First correct answer wins each round!</div>
         </div>
 
         <div className="bg-white rounded-xl p-6 shadow-lg">
@@ -361,7 +373,7 @@ const StudentBattleRoyale = ({ studentData, classData, showToast }) => {
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold">{questionTimer}</div>
-              <div className="text-red-200 text-sm">seconds</div>
+              <div className="text-red-200 text-sm">seconds max</div>
             </div>
           </div>
         </div>
@@ -370,6 +382,10 @@ const StudentBattleRoyale = ({ studentData, classData, showToast }) => {
         <div className="bg-white rounded-xl p-6 shadow-lg text-center">
           <div className="text-4xl md:text-6xl font-bold text-gray-800 mb-4">
             {currentQuestion.question}
+          </div>
+          
+          <div className="text-lg font-bold text-red-600 mb-4">
+            ⚡ FIRST CORRECT ANSWER WINS!
           </div>
           
           {/* Timer bar */}
@@ -383,11 +399,13 @@ const StudentBattleRoyale = ({ studentData, classData, showToast }) => {
           {hasAnswered && (
             <div className="text-lg font-bold mb-4">
               {selectedAnswer === currentQuestion.correctAnswer ? (
-                <div className="text-green-600">✅ Correct! 🛡️ Protected!</div>
+                <div className="text-green-600">⚡ CORRECT! Attacking others...</div>
               ) : (
-                <div className="text-red-600">❌ Wrong! 💔 May lose a life!</div>
+                <div className="text-red-600">❌ Wrong! May lose a life...</div>
               )}
-              <div className="text-sm text-gray-600 mt-2">Waiting for other players...</div>
+              <div className="text-sm text-gray-600 mt-2">
+                {isProcessing ? 'Processing...' : 'Waiting for round to end...'}
+              </div>
             </div>
           )}
         </div>
@@ -398,7 +416,7 @@ const StudentBattleRoyale = ({ studentData, classData, showToast }) => {
             <button
               key={index}
               onClick={() => submitAnswer(answer)}
-              disabled={hasAnswered || questionTimer <= 0}
+              disabled={hasAnswered || questionTimer <= 0 || isProcessing}
               className={`
                 p-4 rounded-xl text-lg font-bold transition-all transform active:scale-95
                 ${hasAnswered 
@@ -406,12 +424,10 @@ const StudentBattleRoyale = ({ studentData, classData, showToast }) => {
                     ? selectedAnswer === currentQuestion.correctAnswer
                       ? 'bg-green-500 text-white border-4 border-green-600'
                       : 'bg-red-500 text-white border-4 border-red-600'
-                    : answer === currentQuestion.correctAnswer && selectedAnswer !== currentQuestion.correctAnswer
-                      ? 'bg-green-200 text-green-800 border-2 border-green-400'
-                      : 'bg-gray-200 text-gray-600 border-2 border-gray-300'
+                    : 'bg-gray-200 text-gray-600 border-2 border-gray-300'
                   : 'bg-blue-500 text-white border-2 border-blue-600 hover:bg-blue-600 hover:scale-105 shadow-lg'
                 }
-                ${questionTimer <= 0 ? 'opacity-50 cursor-not-allowed' : ''}
+                ${questionTimer <= 0 || isProcessing ? 'opacity-50 cursor-not-allowed' : ''}
               `}
             >
               {answer}
@@ -453,7 +469,7 @@ const StudentBattleRoyale = ({ studentData, classData, showToast }) => {
           </h2>
           <div className="text-xl">
             {isWinner 
-              ? 'You are the last survivor!' 
+              ? 'You survived the fast battle!' 
               : winner 
                 ? `${winner.name} is the champion!`
                 : 'Battle completed!'
@@ -491,7 +507,7 @@ const StudentBattleRoyale = ({ studentData, classData, showToast }) => {
           }}
           className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg font-bold text-lg"
         >
-          🎮 Play Again
+          ⚡ Play Again
         </button>
       </div>
     );
@@ -500,8 +516,8 @@ const StudentBattleRoyale = ({ studentData, classData, showToast }) => {
   // Default state
   return (
     <div className="text-center p-8">
-      <div className="text-4xl mb-4">⚔️</div>
-      <div className="text-lg text-gray-600">Loading battle arena...</div>
+      <div className="text-4xl mb-4">⚡</div>
+      <div className="text-lg text-gray-600">Loading fast battle arena...</div>
     </div>
   );
 };
