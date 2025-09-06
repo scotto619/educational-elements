@@ -142,12 +142,19 @@ const StudentBattleRoyale = ({ studentData, classData, showToast }) => {
     setHasAnswered(true);
 
     try {
-      await update(ref(database, `battleRoyale/${gameCode}/responses/${playerData.id}`), {
+      console.log('Submitting answer:', answer, 'for question:', currentQuestion.question);
+      
+      const responseData = {
         answer: answer,
         timestamp: Date.now(),
         playerId: playerData.id,
-        playerName: playerData.name
-      });
+        playerName: playerData.name,
+        questionId: currentQuestion.id
+      };
+      
+      await update(ref(database, `battleRoyale/${gameCode}/responses/${playerData.id}`), responseData);
+      
+      console.log('Answer submitted successfully:', responseData);
 
       // Visual feedback
       if (answer === currentQuestion.correctAnswer) {
@@ -159,6 +166,7 @@ const StudentBattleRoyale = ({ studentData, classData, showToast }) => {
     } catch (error) {
       console.error('Error submitting answer:', error);
       showToast('Failed to submit answer!', 'error');
+      setHasAnswered(false); // Allow retry
     }
   };
 
