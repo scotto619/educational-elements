@@ -1,4 +1,4 @@
-// components/tabs/CurriculumCornerTab.js - UPDATED WITH MATH MENTALS
+// components/tabs/CurriculumCornerTab.js - UPDATED WITH INTERACTIVE CLOCK
 import React, { useState } from 'react';
 
 // Import activity components
@@ -12,7 +12,8 @@ import AreaPerimeterTool from '../curriculum/mathematics/AreaPerimeterTool';
 import MathWarmup from '../curriculum/mathematics/MathWarmup';
 import WorksheetGenerator from '../curriculum/mathematics/WorksheetGenerator';
 import NumbersBoard from '../curriculum/mathematics/NumbersBoard';
-import MathMentals from '../curriculum/mathematics/MathMentals'; // NEW IMPORT
+import MathMentals from '../curriculum/mathematics/MathMentals';
+import InteractiveClock from '../curriculum/mathematics/InteractiveClock'; // NEW IMPORT
 
 // ===============================================
 // COMING SOON COMPONENT
@@ -30,7 +31,7 @@ const ComingSoon = ({ toolName, description }) => (
 );
 
 // ===============================================
-// SUBJECT CONFIGURATION - UPDATED WITH MATH MENTALS
+// SUBJECT CONFIGURATION - UPDATED WITH INTERACTIVE CLOCK
 // ===============================================
 const subjects = [
   {
@@ -128,7 +129,14 @@ const subjects = [
     description: 'Math tools and number activities',
     activities: [
       {
-        id: 'math-mentals', // NEW ACTIVITY ADDED
+        id: 'interactive-clock', // NEW ACTIVITY ADDED
+        name: 'Interactive Clock',
+        icon: '🕐',
+        description: 'Learn to tell time with draggable hands and digital display',
+        component: InteractiveClock
+      },
+      {
+        id: 'math-mentals',
         name: 'Math Mentals',
         icon: '🧮',
         description: 'Daily number facts practice for automatic recall - like Wordle for math!',
@@ -315,7 +323,7 @@ const subjects = [
 ];
 
 // ===============================================
-// MAIN CURRICULUM CORNER COMPONENT - UPDATED TO SUPPORT MATH MENTALS
+// MAIN CURRICULUM CORNER COMPONENT - UPDATED TO SUPPORT INTERACTIVE CLOCK
 // ===============================================
 const CurriculumCornerTab = ({ 
   students = [], 
@@ -374,7 +382,8 @@ const CurriculumCornerTab = ({
         activeActivity.id === 'math-warmup' || 
         activeActivity.id === 'spelling-program' ||
         activeActivity.id === 'fluency-practice' ||
-        activeActivity.id === 'math-mentals') { // ADDED MATH MENTALS HERE
+        activeActivity.id === 'math-mentals' ||
+        activeActivity.id === 'interactive-clock') { // ADDED INTERACTIVE CLOCK HERE
       activityProps.saveData = saveData;
       activityProps.loadedData = loadedData;
     }
@@ -558,7 +567,7 @@ const CurriculumCornerTab = ({
         </div>
       </div>
 
-      {/* Quick Stats - UPDATED TO HIGHLIGHT MATH MENTALS */}
+      {/* Quick Stats - UPDATED TO HIGHLIGHT INTERACTIVE CLOCK */}
       <div className="bg-white rounded-xl shadow-sm p-6">
         <h3 className="text-xl font-bold text-slate-800 mb-4">📊 Curriculum Overview</h3>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -579,10 +588,10 @@ const CurriculumCornerTab = ({
                     style={{ width: `${(availableTools / totalTools) * 100}%` }}
                   ></div>
                 </div>
-                {/* Highlight Math Mentals */}
+                {/* Highlight Interactive Clock */}
                 {subject.id === 'mathematics' && (
                   <div className="text-xs text-green-600 font-semibold mt-1">
-                    🧮 New: Math Mentals!
+                    🕐 New: Interactive Clock!
                   </div>
                 )}
               </div>
