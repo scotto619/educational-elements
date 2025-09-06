@@ -1,5 +1,6 @@
 // components/curriculum/mathematics/InteractiveClock.js
 import React, { useState, useEffect, useRef } from 'react';
+import PropTypes from 'prop-types';
 
 const InteractiveClock = ({ showToast = () => {}, saveData = () => {}, loadedData = {} }) => {
   // Clock state
@@ -9,20 +10,19 @@ const InteractiveClock = ({ showToast = () => {}, saveData = () => {}, loadedDat
   const [show24Hour, setShow24Hour] = useState(false);
   const [isRealTime, setIsRealTime] = useState(false);
   const [isDragging, setIsDragging] = useState(null);
-  
+  const [editingScenario, setEditingScenario] = useState(null);
+  const [timeScenarios, setTimeScenarios] = useState([
+    { id: 1, name: "Breakfast Time", hour: 7, minute: 30, description: "Time to eat breakfast!" },
+    { id: 2, name: "School Starts", hour: 9, minute: 0, description: "School begins!" },
+    { id: 3, name: "Lunch Time", hour: 12, minute: 15, description: "Time for lunch!" },
+    { id: 4, name: "Home Time", hour: 3, minute: 30, description: "School ends!" },
+    { id: 5, name: "Dinner Time", hour: 6, minute: 0, description: "Family dinner!" },
+    { id: 6, name: "Bedtime", hour: 8, minute: 30, description: "Time for bed!" }
+  ]);
+
   // Refs for drag functionality
   const clockRef = useRef(null);
   
-  // Time scenarios for teaching
-  const timeScenarios = [
-    { name: "Breakfast Time", hour: 7, minute: 30, description: "Time to eat breakfast!" },
-    { name: "School Starts", hour: 9, minute: 0, description: "School begins!" },
-    { name: "Lunch Time", hour: 12, minute: 15, description: "Time for lunch!" },
-    { name: "Home Time", hour: 3, minute: 30, description: "School ends!" },
-    { name: "Dinner Time", hour: 6, minute: 0, description: "Family dinner!" },
-    { name: "Bedtime", hour: 8, minute: 30, description: "Time for bed!" }
-  ];
-
   // Load saved data
   useEffect(() => {
     if (loadedData?.interactiveClock) {
@@ -134,6 +134,41 @@ const InteractiveClock = ({ showToast = () => {}, saveData = () => {}, loadedDat
     { label: "7:45", hour: 7, minute: 45 },
     { label: "10:30", hour: 10, minute: 30 }
   ];
+
+  // Add these functions before the return statement
+  const handleAddScenario = () => {
+    setEditingScenario({
+      id: Date.now(),
+      name: '',
+      hour: 12,
+      minute: 0,
+      description: ''
+    });
+  };
+
+  const handleEditScenario = (scenario) => {
+    setEditingScenario({ ...scenario });
+  };
+
+  const handleDeleteScenario = (id) => {
+    const newScenarios = timeScenarios.filter(s => s.id !== id);
+    setTimeScenarios(newScenarios);
+  };
+
+  const handleSaveScenario = () => {
+    if (!editingScenario.name || !editingScenario.description) {
+      showToast('Please fill in all fields', 'error');
+      return;
+    }
+
+    const newScenarios = editingScenario.id 
+      ? timeScenarios.map(s => s.id === editingScenario.id ? editingScenario : s)
+      : [...timeScenarios, editingScenario];
+    
+    setTimeScenarios(newScenarios);
+    setEditingScenario(null);
+    showToast('Scenario saved successfully!', 'success');
+  };
 
   return (
     <div className="space-y-6">
@@ -535,6 +570,12 @@ const InteractiveClock = ({ showToast = () => {}, saveData = () => {}, loadedDat
       </div>
     </div>
   );
+};
+
+InteractiveClock.propTypes = {
+  showToast: PropTypes.func,
+  saveData: PropTypes.func,
+  loadedData: PropTypes.object
 };
 
 export default InteractiveClock;
