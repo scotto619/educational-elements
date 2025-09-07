@@ -82,7 +82,7 @@ export default function Signup() {
         classes: [],
         subscription: null,
         stripeCustomerId: null,
-        trialUntil: '2026-01-31T23:59:59.999Z', // Track trial end date
+        trialUntil: '2026-01-01T23:59:59.999Z', // Track trial end date
         planType: 'educational-elements'
       });
 

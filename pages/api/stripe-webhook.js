@@ -111,7 +111,7 @@ async function handleCheckoutCompleted(session) {
 
     // Handle trial subscriptions with coupon
     if (isTrialSubscription && hasTrialCoupon) {
-      updateData.trialUntil = '2026-01-31T23:59:59.999Z'; // When coupon expires
+      updateData.trialUntil = '2026-01-01T23:59:59.999Z'; // When coupon expires
       updateData.isTrialUser = true;
       updateData.discountApplied = 'TRIAL2026';
       console.log(`✅ Trial subscription with coupon created for user ${firebaseUserId}`);
