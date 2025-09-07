@@ -106,7 +106,8 @@ export default function Dashboard() {
 
   const handleManageSubscription = async () => {
     if (!userData?.stripeCustomerId) {
-      alert('No subscription found. Please contact support.');
+      // If no Stripe customer ID, redirect to signup/checkout
+      router.push('/signup');
       return;
     }
 
@@ -313,6 +314,129 @@ export default function Dashboard() {
 
   // Combined access check
   const canAccess = hasTrialAccess || hasActiveSubscription || hasLegacySubscription;
+
+  // 🔒 SUBSCRIPTION REQUIRED SCREEN
+  if (!canAccess) {
+    return (
+      <div className="p-6 max-w-4xl mx-auto bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+        <div className="bg-white rounded-lg shadow-lg p-8">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center">
+              <img 
+                src="/Logo/LOGO_NoBG.png" 
+                alt="Educational Elements Logo" 
+                className="h-16 w-16 mr-4"
+              />
+              <div>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                  Educational Elements
+                </h1>
+                <p className="text-gray-600">Teacher Dashboard</p>
+              </div>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 font-semibold"
+            >
+              Sign Out
+            </button>
+          </div>
+
+          {/* Subscription Required Content */}
+          <div className="text-center max-w-2xl mx-auto">
+            <div className="text-6xl mb-6">🔒</div>
+            <h2 className="text-4xl font-bold text-gray-800 mb-4">Subscription Required</h2>
+            <p className="text-xl text-gray-600 mb-8">
+              Your trial has expired. Subscribe now to continue accessing your classroom data and all Educational Elements features.
+            </p>
+            
+            {/* Data Safety Assurance */}
+            <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 mb-8">
+              <div className="flex items-center justify-center mb-3">
+                <div className="text-3xl mr-3">✨</div>
+                <h3 className="text-xl font-bold text-blue-800">Your Data is Safe!</h3>
+              </div>
+              <p className="text-blue-700 text-lg">
+                All your classes, students, and progress are preserved and secure. 
+                Subscribe to instantly regain full access to everything you've created.
+              </p>
+            </div>
+
+            {/* Class Summary */}
+            {savedClasses.length > 0 && (
+              <div className="bg-purple-50 border-2 border-purple-200 rounded-xl p-6 mb-8">
+                <h3 className="text-xl font-bold text-purple-800 mb-4">What You'll Get Back</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                  <div className="bg-white rounded-lg p-4 shadow-sm">
+                    <div className="text-2xl font-bold text-purple-600">{savedClasses.length}</div>
+                    <div className="text-purple-700">Classes</div>
+                  </div>
+                  <div className="bg-white rounded-lg p-4 shadow-sm">
+                    <div className="text-2xl font-bold text-purple-600">
+                      {savedClasses.reduce((total, cls) => total + (cls.students?.length || 0), 0)}
+                    </div>
+                    <div className="text-purple-700">Students</div>
+                  </div>
+                  <div className="bg-white rounded-lg p-4 shadow-sm">
+                    <div className="text-2xl font-bold text-purple-600">
+                      {savedClasses.reduce((total, cls) => total + (cls.students?.reduce((sum, student) => sum + (student.totalPoints || 0), 0) || 0), 0)}
+                    </div>
+                    <div className="text-purple-700">Total XP</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Subscribe Button */}
+            <button
+              onClick={handleManageSubscription}
+              className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-8 py-4 rounded-xl font-bold text-xl hover:from-purple-600 hover:to-purple-700 transition-all transform hover:scale-105 shadow-xl mb-6"
+            >
+              Subscribe Now - $5.99/month
+            </button>
+            
+            <div className="space-y-2 text-gray-600">
+              <p className="text-lg">✅ Instant access to all features</p>
+              <p className="text-lg">✅ Cancel anytime</p>
+              <p className="text-lg">✅ All your data restored immediately</p>
+            </div>
+
+            {/* Additional Info */}
+            <div className="mt-12 bg-gray-50 rounded-xl p-6">
+              <h4 className="font-bold text-gray-800 mb-2">Why Subscribe to Educational Elements?</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left text-gray-700">
+                <div className="flex items-start space-x-2">
+                  <span className="text-green-500 font-bold">•</span>
+                  <span>Gamified classroom management with RPG elements</span>
+                </div>
+                <div className="flex items-start space-x-2">
+                  <span className="text-green-500 font-bold">•</span>
+                  <span>Over 40 character avatars and pets for students</span>
+                </div>
+                <div className="flex items-start space-x-2">
+                  <span className="text-green-500 font-bold">•</span>
+                  <span>Interactive games and activities</span>
+                </div>
+                <div className="flex items-start space-x-2">
+                  <span className="text-green-500 font-bold">•</span>
+                  <span>Professional teaching tools and resources</span>
+                </div>
+                <div className="flex items-start space-x-2">
+                  <span className="text-green-500 font-bold">•</span>
+                  <span>Up to 2 classrooms with unlimited students</span>
+                </div>
+                <div className="flex items-start space-x-2">
+                  <span className="text-green-500 font-bold">•</span>
+                  <span>Regular updates and new features</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 max-w-6xl mx-auto bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
