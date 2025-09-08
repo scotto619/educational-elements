@@ -1,4 +1,4 @@
-// components/games/MathSpaceInvadersGame.js - COMPLETE Math Space Invaders Game with Fixed Enemy System
+// components/games/MathSpaceInvadersGame.js - FIXED with Arrow Key Prevention & Mobile Controls
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 const MathSpaceInvadersGame = ({ studentData, updateStudentData, showToast }) => {
@@ -130,8 +130,29 @@ const MathSpaceInvadersGame = ({ studentData, updateStudentData, showToast }) =>
   const [particles, setParticles] = useState([]);
   const [currentQuestion, setCurrentQuestion] = useState({ question: '', answer: 0, options: [] });
   
-  // Input state
+  // Input state - ENHANCED FOR MOBILE
   const [keys, setKeys] = useState({});
+  const [touchControls, setTouchControls] = useState({
+    up: false,
+    down: false,
+    left: false,
+    right: false
+  });
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile device
+  useEffect(() => {
+    const checkMobile = () => {
+      const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+      const mobileCheck = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+      const touchCheck = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      setIsMobile(mobileCheck || touchCheck);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Load saved progress
   useEffect(() => {
@@ -875,23 +896,24 @@ const MathSpaceInvadersGame = ({ studentData, updateStudentData, showToast }) =>
       // Clear canvas
       ctx.clearRect(0, 0, 800, 600);
 
-      // Update player movement
+      // Update player movement - COMBINED KEYBOARD AND TOUCH CONTROLS
       setPlayer(prev => {
         let newVx = prev.vx;
         let newVy = prev.vy;
         let newAngle = prev.angle;
         
-        if (keys['ArrowLeft'] || keys['a'] || keys['A']) newVx -= acceleration;
-        if (keys['ArrowRight'] || keys['d'] || keys['D']) newVx += acceleration;
-        if (keys['ArrowUp'] || keys['w'] || keys['W']) newVy -= acceleration;
-        if (keys['ArrowDown'] || keys['s'] || keys['S']) newVy += acceleration;
+        // Keyboard controls
+        if (keys['ArrowLeft'] || keys['a'] || keys['A'] || touchControls.left) newVx -= acceleration;
+        if (keys['ArrowRight'] || keys['d'] || keys['D'] || touchControls.right) newVx += acceleration;
+        if (keys['ArrowUp'] || keys['w'] || keys['W'] || touchControls.up) newVy -= acceleration;
+        if (keys['ArrowDown'] || keys['s'] || keys['S'] || touchControls.down) newVy += acceleration;
         
-        if (!(keys['ArrowLeft'] || keys['a'] || keys['A']) && 
-            !(keys['ArrowRight'] || keys['d'] || keys['D'])) {
+        if (!(keys['ArrowLeft'] || keys['a'] || keys['A'] || touchControls.left) && 
+            !(keys['ArrowRight'] || keys['d'] || keys['D'] || touchControls.right)) {
           newVx *= friction;
         }
-        if (!(keys['ArrowUp'] || keys['w'] || keys['W']) && 
-            !(keys['ArrowDown'] || keys['s'] || keys['S'])) {
+        if (!(keys['ArrowUp'] || keys['w'] || keys['W'] || touchControls.up) && 
+            !(keys['ArrowDown'] || keys['s'] || keys['S'] || touchControls.down)) {
           newVy *= friction;
         }
         
@@ -1033,7 +1055,7 @@ const MathSpaceInvadersGame = ({ studentData, updateStudentData, showToast }) =>
         gameLoopRef.current = null;
       }
     };
-  }, [gameState, keys, player]);
+  }, [gameState, keys, touchControls, player]);
 
   // Fixed collision detection
   useEffect(() => {
@@ -1165,9 +1187,14 @@ const MathSpaceInvadersGame = ({ studentData, updateStudentData, showToast }) =>
     };
   }, [gameState, player, numbers, enemies, particles]);
 
-  // Keyboard event handlers
+  // FIXED KEYBOARD EVENT HANDLERS - PREVENT ARROW KEY SCROLLING
   useEffect(() => {
     const handleKeyDown = (e) => {
+      // CRITICAL FIX: Prevent default behavior for arrow keys and WASD
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'W', 'a', 'A', 's', 'S', 'd', 'D'].includes(e.key)) {
+        e.preventDefault();
+      }
+      
       setKeys(prev => ({ ...prev, [e.key]: true }));
       
       if (e.key === ' ') {
@@ -1181,6 +1208,11 @@ const MathSpaceInvadersGame = ({ studentData, updateStudentData, showToast }) =>
     };
     
     const handleKeyUp = (e) => {
+      // CRITICAL FIX: Prevent default behavior for arrow keys and WASD
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'W', 'a', 'A', 's', 'S', 'd', 'D'].includes(e.key)) {
+        e.preventDefault();
+      }
+      
       setKeys(prev => ({ ...prev, [e.key]: false }));
     };
     
@@ -1192,6 +1224,15 @@ const MathSpaceInvadersGame = ({ studentData, updateStudentData, showToast }) =>
       window.removeEventListener('keyup', handleKeyUp);
     };
   }, [gameState]);
+
+  // NEW: MOBILE TOUCH CONTROLS
+  const handleTouchStart = (direction) => {
+    setTouchControls(prev => ({ ...prev, [direction]: true }));
+  };
+
+  const handleTouchEnd = (direction) => {
+    setTouchControls(prev => ({ ...prev, [direction]: false }));
+  };
 
   // Ship selection
   const selectShip = async (shipIndex) => {
@@ -1213,6 +1254,11 @@ const MathSpaceInvadersGame = ({ studentData, updateStudentData, showToast }) =>
           Math Space Invaders
         </h2>
         <p className="text-gray-300">Solve math problems while flying through space!</p>
+        {isMobile && (
+          <p className="text-sm text-yellow-300 mt-1">
+            Touch-enabled - Use the controls below to move!
+          </p>
+        )}
       </div>
 
       {/* Game Stats */}
@@ -1292,7 +1338,7 @@ const MathSpaceInvadersGame = ({ studentData, updateStudentData, showToast }) =>
                 </div>
               </div>
               
-              <p className="text-sm mb-4"><strong>Controls:</strong> Arrow Keys or WASD to move</p>
+              <p className="text-sm mb-4"><strong>Controls:</strong> {isMobile ? 'Touch buttons below' : 'Arrow Keys or WASD to move'}</p>
               <button
                 onClick={startGame}
                 className="bg-gradient-to-r from-green-500 to-blue-600 text-white px-6 py-3 rounded-lg font-bold text-lg hover:shadow-lg transition-all"
@@ -1354,6 +1400,71 @@ const MathSpaceInvadersGame = ({ studentData, updateStudentData, showToast }) =>
         )}
       </div>
 
+      {/* NEW: MOBILE TOUCH CONTROLS */}
+      {isMobile && gameState.gameStarted && (
+        <div className="flex flex-col items-center space-y-4 w-full max-w-xs">
+          {/* UP Button */}
+          <button
+            onTouchStart={() => handleTouchStart('up')}
+            onTouchEnd={() => handleTouchEnd('up')}
+            onMouseDown={() => handleTouchStart('up')}
+            onMouseUp={() => handleTouchEnd('up')}
+            onMouseLeave={() => handleTouchEnd('up')}
+            className={`w-16 h-16 rounded-full border-4 border-cyan-400 flex items-center justify-center text-2xl font-bold transition-all ${
+              touchControls.up ? 'bg-cyan-400 text-black scale-110' : 'bg-cyan-400/20 text-cyan-400'
+            }`}
+          >
+            ↑
+          </button>
+          
+          {/* LEFT, DOWN, RIGHT Buttons */}
+          <div className="flex items-center space-x-4">
+            <button
+              onTouchStart={() => handleTouchStart('left')}
+              onTouchEnd={() => handleTouchEnd('left')}
+              onMouseDown={() => handleTouchStart('left')}
+              onMouseUp={() => handleTouchEnd('left')}
+              onMouseLeave={() => handleTouchEnd('left')}
+              className={`w-16 h-16 rounded-full border-4 border-cyan-400 flex items-center justify-center text-2xl font-bold transition-all ${
+                touchControls.left ? 'bg-cyan-400 text-black scale-110' : 'bg-cyan-400/20 text-cyan-400'
+              }`}
+            >
+              ←
+            </button>
+            
+            <button
+              onTouchStart={() => handleTouchStart('down')}
+              onTouchEnd={() => handleTouchEnd('down')}
+              onMouseDown={() => handleTouchStart('down')}
+              onMouseUp={() => handleTouchEnd('down')}
+              onMouseLeave={() => handleTouchEnd('down')}
+              className={`w-16 h-16 rounded-full border-4 border-cyan-400 flex items-center justify-center text-2xl font-bold transition-all ${
+                touchControls.down ? 'bg-cyan-400 text-black scale-110' : 'bg-cyan-400/20 text-cyan-400'
+              }`}
+            >
+              ↓
+            </button>
+            
+            <button
+              onTouchStart={() => handleTouchStart('right')}
+              onTouchEnd={() => handleTouchEnd('right')}
+              onMouseDown={() => handleTouchStart('right')}
+              onMouseUp={() => handleTouchEnd('right')}
+              onMouseLeave={() => handleTouchEnd('right')}
+              className={`w-16 h-16 rounded-full border-4 border-cyan-400 flex items-center justify-center text-2xl font-bold transition-all ${
+                touchControls.right ? 'bg-cyan-400 text-black scale-110' : 'bg-cyan-400/20 text-cyan-400'
+              }`}
+            >
+              →
+            </button>
+          </div>
+          
+          <p className="text-center text-sm text-gray-300">
+            Touch and hold to move your ship
+          </p>
+        </div>
+      )}
+
       {/* Enemy Types Info */}
       <div className="bg-black/40 backdrop-blur border border-red-400 rounded-lg p-4 max-w-4xl">
         <h3 className="text-lg font-semibold mb-3 text-center">Enemy Types</h3>
@@ -1405,9 +1516,12 @@ const MathSpaceInvadersGame = ({ studentData, updateStudentData, showToast }) =>
 
       {/* Controls */}
       <div className="bg-black/40 backdrop-blur border border-blue-400 rounded-lg p-4 text-center text-sm max-w-2xl">
-        <p className="mb-2"><strong>Controls:</strong> Use ARROW KEYS or WASD to move</p>
+        <p className="mb-2"><strong>Controls:</strong> {isMobile ? 'Use touch buttons above to move' : 'Use ARROW KEYS or WASD to move'}</p>
         <p>Fly into the correct answer • Avoid enemy ships and wrong answers!</p>
-        <p className="mt-2 text-yellow-300"><strong>New:</strong> Different enemy types with unique behaviors and damage!</p>
+        <p className="mt-2 text-yellow-300"><strong>Fixed:</strong> Arrow keys no longer scroll the page!</p>
+        {isMobile && (
+          <p className="mt-2 text-green-300"><strong>New:</strong> Mobile touch controls for phone/tablet play!</p>
+        )}
       </div>
 
       {/* Game Controls */}
