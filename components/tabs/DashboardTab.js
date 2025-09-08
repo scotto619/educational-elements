@@ -1,4 +1,4 @@
-// components/tabs/DashboardTab.js - Updated Dashboard with larger featured champion images and no quick actions
+// components/tabs/DashboardTab.js - MOBILE-OPTIMIZED DASHBOARD
 import React, { useState, useEffect } from 'react';
 
 const DashboardTab = ({ 
@@ -78,82 +78,90 @@ const DashboardTab = ({
 
   if (!featuredStudent) {
     return (
-      <div className="space-y-6">
-        <div className="p-8 text-center">
-          <div className="text-6xl mb-4">🏫</div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Welcome to Classroom Champions!</h2>
-          <p className="text-gray-600">Add some students to get started with your classroom adventure.</p>
+      <div className="space-y-4 sm:space-y-6">
+        <div className="p-6 sm:p-8 text-center">
+          <div className="text-4xl sm:text-6xl mb-3 sm:mb-4">🏫</div>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">Welcome to Classroom Champions!</h2>
+          <p className="text-sm sm:text-base text-gray-600">Add some students to get started with your classroom adventure.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Welcome Header */}
-      <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl p-6 shadow-lg">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">🏆 Classroom Champions Dashboard</h1>
-            <p className="text-blue-100">Track your class progress and celebrate achievements!</p>
+    <div className="space-y-4 sm:space-y-6">
+      {/* MOBILE-OPTIMIZED Welcome Header */}
+      <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl p-4 sm:p-6 shadow-lg">
+        <div className="flex flex-col sm:flex-row items-center justify-between">
+          <div className="text-center sm:text-left">
+            <h1 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">🏆 Classroom Champions Dashboard</h1>
+            <p className="text-xs sm:text-base text-blue-100">Track your class progress and celebrate achievements!</p>
           </div>
-          <div className="text-6xl opacity-20">🎯</div>
+          <div className="text-4xl sm:text-6xl opacity-20 mt-2 sm:mt-0">🎯</div>
         </div>
       </div>
 
-      {/* Main Dashboard Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* MOBILE-OPTIMIZED Main Dashboard Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         
-        {/* Featured Student Card - UPDATED WITH MUCH LARGER IMAGES */}
-        <div className="lg:col-span-2 bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl p-6 shadow-lg border-2 border-yellow-200">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="text-3xl">⭐</div>
-            <h2 className="text-2xl font-bold text-gray-800">Featured Champion</h2>
-            <div className="text-sm bg-yellow-200 px-3 py-1 rounded-full text-yellow-800 font-semibold">
+        {/* MOBILE-OPTIMIZED Featured Student Card */}
+        <div className="lg:col-span-2 bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl p-4 sm:p-6 shadow-lg border-2 border-yellow-200">
+          <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+            <div className="text-2xl sm:text-3xl">⭐</div>
+            <h2 className="text-lg sm:text-2xl font-bold text-gray-800 text-center sm:text-left">Featured Champion</h2>
+            <div className="text-xs sm:text-sm bg-yellow-200 px-2 sm:px-3 py-1 rounded-full text-yellow-800 font-semibold">
               Today's Star
             </div>
           </div>
           
-          <div className="flex flex-col lg:flex-row items-center gap-8">
-            {/* Student Avatar - MUCH LARGER */}
-            <div className="relative">
+          <div className="flex flex-col items-center gap-4 sm:gap-6 lg:flex-row lg:gap-8">
+            {/* Student Avatar - MOBILE RESPONSIVE SIZING */}
+            <div className="relative flex-shrink-0">
               <img 
                 src={getAvatarImage(featuredStudent.avatarBase, calculateAvatarLevel(featuredStudent.totalPoints))} 
                 alt={featuredStudent.firstName}
-                className="w-48 h-48 lg:w-56 lg:h-56 rounded-full border-4 border-yellow-400 shadow-lg"
+                className="w-32 h-32 sm:w-40 sm:h-40 lg:w-48 lg:h-48 xl:w-56 xl:h-56 rounded-full border-3 sm:border-4 border-yellow-400 shadow-lg"
               />
-              <div className={`absolute -top-3 -right-3 ${getLevelBadgeColor(calculateAvatarLevel(featuredStudent.totalPoints))} text-white text-lg font-bold px-4 py-2 rounded-full shadow-lg`}>
+              <div className={`absolute -top-2 -right-2 sm:-top-3 sm:-right-3 ${getLevelBadgeColor(calculateAvatarLevel(featuredStudent.totalPoints))} text-white text-sm sm:text-lg font-bold px-2 sm:px-4 py-1 sm:py-2 rounded-full shadow-lg`}>
                 LVL {calculateAvatarLevel(featuredStudent.totalPoints)}
               </div>
             </div>
 
-            {/* Student Info */}
-            <div className="flex-1 text-center lg:text-left">
-              <h3 className="text-4xl font-bold text-gray-800 mb-4">{featuredStudent.firstName} {featuredStudent.lastName}</h3>
+            {/* Student Info - MOBILE OPTIMIZED */}
+            <div className="flex-1 text-center lg:text-left w-full">
+              <h3 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800 mb-3 sm:mb-4">
+                {featuredStudent.firstName} {featuredStudent.lastName}
+              </h3>
               
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="bg-white rounded-lg p-4 shadow-sm">
-                  <div className="text-3xl font-bold text-blue-600">{featuredStudent.totalPoints || 0}</div>
-                  <div className="text-sm text-gray-600">⚡ Total XP</div>
+              <div className="grid grid-cols-2 gap-2 sm:gap-4 mb-4 sm:mb-6">
+                <div className="bg-white rounded-lg p-3 sm:p-4 shadow-sm">
+                  <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-blue-600">
+                    {featuredStudent.totalPoints || 0}
+                  </div>
+                  <div className="text-xs sm:text-sm text-gray-600">⚡ Total XP</div>
                 </div>
-                <div className="bg-white rounded-lg p-4 shadow-sm">
-                  <div className="text-3xl font-bold text-yellow-600">{calculateCoins(featuredStudent)}</div>
-                  <div className="text-sm text-gray-600">💰 Coins</div>
+                <div className="bg-white rounded-lg p-3 sm:p-4 shadow-sm">
+                  <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-yellow-600">
+                    {calculateCoins(featuredStudent)}
+                  </div>
+                  <div className="text-xs sm:text-sm text-gray-600">💰 Coins</div>
                 </div>
               </div>
 
-              {/* Featured Student's Pet - MUCH LARGER */}
+              {/* Featured Student's Pet - MOBILE RESPONSIVE */}
               {featuredStudent.ownedPets && featuredStudent.ownedPets.length > 0 && (
-                <div className="bg-white rounded-lg p-4 shadow-sm">
-                  <div className="flex flex-col lg:flex-row items-center gap-4">
+                <div className="bg-white rounded-lg p-3 sm:p-4 shadow-sm">
+                  <div className="flex flex-col sm:flex-row lg:flex-row items-center gap-3 sm:gap-4">
                     <img 
                       src={getPetImage(featuredStudent.ownedPets[0])} 
                       alt={featuredStudent.ownedPets[0].name}
-                      className="w-24 h-24 lg:w-32 lg:h-32 rounded-full border-3 border-purple-300 shadow-md"
+                      className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 xl:w-32 xl:h-32 rounded-full border-2 sm:border-3 border-purple-300 shadow-md"
                     />
-                    <div className="text-center lg:text-left">
-                      <div className="text-xl font-bold text-gray-800">Companion: {featuredStudent.ownedPets[0].name}</div>
-                      <div className="text-sm text-gray-600">🐾 Faithful Friend</div>
+                    <div className="text-center sm:text-left lg:text-left">
+                      <div className="text-base sm:text-lg lg:text-xl font-bold text-gray-800">
+                        Companion: {featuredStudent.ownedPets[0].name}
+                      </div>
+                      <div className="text-xs sm:text-sm text-gray-600">🐾 Faithful Friend</div>
                     </div>
                   </div>
                 </div>
@@ -162,43 +170,45 @@ const DashboardTab = ({
           </div>
         </div>
 
-        {/* Class Stats Card */}
-        <div className="bg-white rounded-xl p-6 shadow-lg">
-          <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+        {/* MOBILE-OPTIMIZED Class Stats Card */}
+        <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4 flex items-center gap-2">
             📊 Class Statistics
           </h2>
           
-          <div className="space-y-4">
-            <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
-              <span className="text-gray-700">👥 Total Champions</span>
-              <span className="font-bold text-blue-600 text-xl">{classStats.totalStudents}</span>
+          <div className="space-y-3 sm:space-y-4">
+            <div className="flex justify-between items-center p-2 sm:p-3 bg-blue-50 rounded-lg">
+              <span className="text-sm sm:text-base text-gray-700">👥 Total Champions</span>
+              <span className="font-bold text-blue-600 text-lg sm:text-xl">{classStats.totalStudents}</span>
             </div>
             
-            <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-              <span className="text-gray-700">⚡ Average XP</span>
-              <span className="font-bold text-green-600 text-xl">{classStats.averageXP}</span>
+            <div className="flex justify-between items-center p-2 sm:p-3 bg-green-50 rounded-lg">
+              <span className="text-sm sm:text-base text-gray-700">⚡ Average XP</span>
+              <span className="font-bold text-green-600 text-lg sm:text-xl">{classStats.averageXP}</span>
             </div>
             
-            <div className="flex justify-between items-center p-3 bg-yellow-50 rounded-lg">
-              <span className="text-gray-700">💰 Total Coins</span>
-              <span className="font-bold text-yellow-600 text-xl">{classStats.totalCoins}</span>
+            <div className="flex justify-between items-center p-2 sm:p-3 bg-yellow-50 rounded-lg">
+              <span className="text-sm sm:text-base text-gray-700">💰 Total Coins</span>
+              <span className="font-bold text-yellow-600 text-lg sm:text-xl">{classStats.totalCoins}</span>
             </div>
             
-            <div className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
-              <span className="text-gray-700">🐾 With Pets</span>
-              <span className="font-bold text-purple-600 text-xl">{classStats.studentsWithPets}</span>
+            <div className="flex justify-between items-center p-2 sm:p-3 bg-purple-50 rounded-lg">
+              <span className="text-sm sm:text-base text-gray-700">🐾 With Pets</span>
+              <span className="font-bold text-purple-600 text-lg sm:text-xl">{classStats.studentsWithPets}</span>
             </div>
           </div>
 
-          {/* Level Distribution */}
-          <div className="mt-6">
-            <h3 className="font-semibold text-gray-800 mb-3">Level Distribution</h3>
-            <div className="space-y-2">
+          {/* Level Distribution - MOBILE RESPONSIVE */}
+          <div className="mt-4 sm:mt-6">
+            <h3 className="font-semibold text-gray-800 mb-2 sm:mb-3 text-sm sm:text-base">Level Distribution</h3>
+            <div className="space-y-1 sm:space-y-2">
               {[4, 3, 2, 1].map(level => (
                 <div key={level} className="flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded-full ${getLevelBadgeColor(level)}`}></div>
-                  <span className="text-sm text-gray-600 flex-1">Level {level}</span>
-                  <span className="font-semibold text-gray-800">{classStats.levelDistribution?.[level] || 0}</span>
+                  <div className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full ${getLevelBadgeColor(level)}`}></div>
+                  <span className="text-xs sm:text-sm text-gray-600 flex-1">Level {level}</span>
+                  <span className="font-semibold text-gray-800 text-sm sm:text-base">
+                    {classStats.levelDistribution?.[level] || 0}
+                  </span>
                 </div>
               ))}
             </div>
@@ -206,87 +216,91 @@ const DashboardTab = ({
         </div>
       </div>
 
-      {/* Featured Shop Item */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* MOBILE-OPTIMIZED Featured Shop & Class Highlights */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         
-        {/* Featured Shop Item */}
+        {/* Featured Shop Item - MOBILE RESPONSIVE */}
         {featuredShopItem && (
-          <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 shadow-lg border-2 border-purple-200">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="text-3xl">🛒</div>
-              <h2 className="text-xl font-bold text-gray-800">Featured in Shop</h2>
+          <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-4 sm:p-6 shadow-lg border-2 border-purple-200">
+            <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+              <div className="text-2xl sm:text-3xl">🛒</div>
+              <h2 className="text-lg sm:text-xl font-bold text-gray-800 text-center sm:text-left">Featured in Shop</h2>
               <div className="text-xs bg-purple-200 px-2 py-1 rounded-full text-purple-800 font-semibold">
                 Daily Special
               </div>
             </div>
             
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
               <img 
                 src={featuredShopItem.path} 
                 alt={featuredShopItem.name}
-                className="w-20 h-20 rounded-lg border-2 border-purple-300 shadow-sm object-contain"
+                className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg border-2 border-purple-300 shadow-sm object-contain"
               />
-              <div className="flex-1">
-                <h3 className="text-lg font-bold text-gray-800">{featuredShopItem.name}</h3>
-                <p className="text-sm text-purple-600 font-semibold">{featuredShopItem.type}</p>
-                <div className="mt-2 flex items-center gap-2">
-                  <span className="text-2xl font-bold text-yellow-600">💰 {featuredShopItem.price}</span>
-                  <span className="text-sm text-gray-600">coins</span>
+              <div className="flex-1 text-center sm:text-left">
+                <h3 className="text-base sm:text-lg font-bold text-gray-800">{featuredShopItem.name}</h3>
+                <p className="text-xs sm:text-sm text-purple-600 font-semibold">{featuredShopItem.type}</p>
+                <div className="mt-1 sm:mt-2 flex items-center justify-center sm:justify-start gap-2">
+                  <span className="text-lg sm:text-2xl font-bold text-yellow-600">💰 {featuredShopItem.price}</span>
+                  <span className="text-xs sm:text-sm text-gray-600">coins</span>
                 </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* Class Achievement Highlights */}
-        <div className="bg-white rounded-xl p-6 shadow-lg">
-          <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+        {/* Class Achievement Highlights - MOBILE RESPONSIVE */}
+        <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4 flex items-center gap-2">
             🌟 Class Highlights
           </h2>
           
-          <div className="space-y-3">
-            <div className="p-3 bg-blue-50 rounded-lg">
-              <div className="text-sm text-gray-600">Most Active Champion</div>
-              <div className="font-bold text-blue-600">{classStats.topStudent?.firstName || 'None'}</div>
+          <div className="space-y-2 sm:space-y-3">
+            <div className="p-2 sm:p-3 bg-blue-50 rounded-lg">
+              <div className="text-xs sm:text-sm text-gray-600">Most Active Champion</div>
+              <div className="font-bold text-blue-600 text-sm sm:text-base">
+                {classStats.topStudent?.firstName || 'None'}
+              </div>
             </div>
             
-            <div className="p-3 bg-green-50 rounded-lg">
-              <div className="text-sm text-gray-600">Class Total XP</div>
-              <div className="font-bold text-green-600">{classStats.totalXP || 0}</div>
+            <div className="p-2 sm:p-3 bg-green-50 rounded-lg">
+              <div className="text-xs sm:text-sm text-gray-600">Class Total XP</div>
+              <div className="font-bold text-green-600 text-sm sm:text-base">{classStats.totalXP || 0}</div>
             </div>
             
-            <div className="p-3 bg-purple-50 rounded-lg">
-              <div className="text-sm text-gray-600">Champions with Pets</div>
-              <div className="font-bold text-purple-600">{classStats.studentsWithPets || 0} / {classStats.totalStudents || 0}</div>
+            <div className="p-2 sm:p-3 bg-purple-50 rounded-lg">
+              <div className="text-xs sm:text-sm text-gray-600">Champions with Pets</div>
+              <div className="font-bold text-purple-600 text-sm sm:text-base">
+                {classStats.studentsWithPets || 0} / {classStats.totalStudents || 0}
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Top Performers */}
-      <div className="bg-white rounded-xl p-6 shadow-lg">
-        <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+      {/* MOBILE-OPTIMIZED Top Performers */}
+      <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg">
+        <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4 flex items-center gap-2">
           🏆 Top Performers
         </h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {students
             .sort((a, b) => (b.totalPoints || 0) - (a.totalPoints || 0))
             .slice(0, 3)
             .map((student, index) => (
-              <div key={student.id} className={`p-4 rounded-lg border-2 ${
+              <div key={student.id} className={`p-3 sm:p-4 rounded-lg border-2 ${
                 index === 0 ? 'border-yellow-400 bg-yellow-50' : 
                 index === 1 ? 'border-gray-400 bg-gray-50' : 
                 'border-orange-400 bg-orange-50'
               }`}>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3">
                   <div className="relative">
                     <img 
                       src={getAvatarImage(student.avatarBase, calculateAvatarLevel(student.totalPoints))} 
                       alt={student.firstName}
-                      className="w-12 h-12 rounded-full border-2 border-white shadow-sm"
+                      className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-white shadow-sm"
                     />
-                    <div className={`absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white ${
+                    <div className={`absolute -top-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-xs font-bold text-white ${
                       index === 0 ? 'bg-yellow-500' : 
                       index === 1 ? 'bg-gray-500' : 
                       'bg-orange-500'
@@ -294,11 +308,13 @@ const DashboardTab = ({
                       {index + 1}
                     </div>
                   </div>
-                  <div className="flex-1">
-                    <div className="font-semibold text-gray-800">{student.firstName}</div>
-                    <div className="text-sm text-gray-600">{student.totalPoints || 0} XP</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-gray-800 text-sm sm:text-base truncate">
+                      {student.firstName}
+                    </div>
+                    <div className="text-xs sm:text-sm text-gray-600">{student.totalPoints || 0} XP</div>
                   </div>
-                  <div className="text-2xl">
+                  <div className="text-xl sm:text-2xl">
                     {index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}
                   </div>
                 </div>
@@ -306,6 +322,14 @@ const DashboardTab = ({
             ))
           }
         </div>
+
+        {/* Show message if no students */}
+        {students.length === 0 && (
+          <div className="text-center text-gray-500 py-4 sm:py-8">
+            <div className="text-3xl sm:text-4xl mb-2">👥</div>
+            <p className="text-sm sm:text-base">No students added yet. Add some champions to see the leaderboard!</p>
+          </div>
+        )}
       </div>
     </div>
   );
