@@ -1,4 +1,4 @@
-// pages/classroom-champions.js - UPDATED WITH PERSISTENT FLOATING WIDGETS AND VISUAL CHECKLIST SUPPORT
+// pages/classroom-champions.js - UPDATED WITH MOBILE-FRIENDLY RESPONSIVE DESIGN
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
@@ -174,22 +174,22 @@ const goToStudentPortal = () => {
 };
 
 // ===============================================
-// GROUPED NAVIGATION TABS (UPDATED FOR SINGLE-LINE LAYOUT)
+// GROUPED NAVIGATION TABS (UPDATED FOR MOBILE LAYOUT)
 // ===============================================
 const CLASSROOM_CHAMPIONS_TABS = [ 
-  { id: 'dashboard', name: 'Dashboard', icon: '🏠', shortName: 'Home' }, 
-  { id: 'students', name: 'Students', icon: '👥', shortName: 'Students' },
-  { id: 'quizshow', name: 'Quiz Show', icon: '🎪', shortName: 'Quiz' }, 
-  { id: 'quests', name: 'Quests', icon: '📜', shortName: 'Quests' }, 
-  { id: 'shop', name: 'Shop', icon: '🛒', shortName: 'Shop' }, 
-  { id: 'petrace', name: 'Pet Race', icon: '🏇', shortName: 'Race' }
+  { id: 'dashboard', name: 'Dashboard', icon: '🏠', shortName: 'Home', mobileIcon: '🏠' }, 
+  { id: 'students', name: 'Students', icon: '👥', shortName: 'Students', mobileIcon: '👥' },
+  { id: 'quizshow', name: 'Quiz Show', icon: '🎪', shortName: 'Quiz', mobileIcon: '🎪' }, 
+  { id: 'quests', name: 'Quests', icon: '📜', shortName: 'Quests', mobileIcon: '📜' }, 
+  { id: 'shop', name: 'Shop', icon: '🛒', shortName: 'Shop', mobileIcon: '🛒' }, 
+  { id: 'petrace', name: 'Pet Race', icon: '🏇', shortName: 'Race', mobileIcon: '🏇' }
 ];
 
 const EDUCATIONAL_ELEMENTS_TABS = [
-  { id: 'games', name: 'Games', icon: '🎮', shortName: 'Games' }, 
-  { id: 'curriculum', name: 'Curriculum Corner', icon: '📖', shortName: 'Curriculum' }, 
-  { id: 'toolkit', name: 'Teachers Toolkit', icon: '🛠️', shortName: 'Toolkit' }, 
-  { id: 'settings', name: 'Settings', icon: '⚙️', shortName: 'Settings' } 
+  { id: 'games', name: 'Games', icon: '🎮', shortName: 'Games', mobileIcon: '🎮' }, 
+  { id: 'curriculum', name: 'Curriculum Corner', icon: '📖', shortName: 'Curriculum', mobileIcon: '📖' }, 
+  { id: 'toolkit', name: 'Teachers Toolkit', icon: '🛠️', shortName: 'Toolkit', mobileIcon: '🛠️' }, 
+  { id: 'settings', name: 'Settings', icon: '⚙️', shortName: 'Settings', mobileIcon: '⚙️' } 
 ];
 
 // ===============================================
@@ -220,6 +220,9 @@ const ClassroomChampions = () => {
   
   // Welcome popup state
   const [showWelcomePopup, setShowWelcomePopup] = useState(false);
+
+  // NEW: Mobile-specific states
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   // NEW: Floating widget states
   const [widgetSettings, setWidgetSettings] = useState({
@@ -826,7 +829,7 @@ const ClassroomChampions = () => {
   
   if (loading) { 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
           <p className="text-gray-600">Loading Educational Elements...</p>
@@ -837,82 +840,170 @@ const ClassroomChampions = () => {
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-        {/* Header */}
+        {/* UPDATED: Mobile-Friendly Header */}
         <div className="bg-white shadow-lg border-b-4 border-blue-500">
-            <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-                <div className="flex items-center">
-                  <img 
-                    src="/Logo/LOGO_NoBG.png" 
-                    alt="Educational Elements Logo" 
-                    className="h-12 w-12 mr-4"
-                  />
-                  <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                    Educational Elements
-                  </h1>
-                </div>
+            <div className="max-w-7xl mx-auto px-2 sm:px-4 py-3 sm:py-4">
                 
-                {/* Class Code and Action Buttons - UPDATED */}
-                <div className="flex items-center space-x-4">
-                  {/* Class Code Display - Always Visible */}
-                  {currentClassData?.classCode && (
-                    <div className="flex items-center space-x-2">
-                      <div className="text-sm text-gray-600 hidden md:block">Class Code:</div>
-                      <div className="bg-green-100 border-2 border-green-300 rounded-lg px-3 py-2">
-                        <span className="text-lg font-bold text-green-700 tracking-wider">
-                          {currentClassData.classCode}
-                        </span>
-                      </div>
-                      <button
-                        onClick={copyClassCode}
-                        className="bg-blue-500 text-white px-2 py-2 rounded-lg hover:bg-blue-600 transition-colors text-sm"
-                        title="Copy class code"
-                      >
-                        📋
-                      </button>
-                      <button
-                        onClick={handleGenerateNewCode}
-                        className="bg-orange-500 text-white px-2 py-2 rounded-lg hover:bg-orange-600 transition-colors text-sm"
-                        title="Generate new code"
-                      >
-                        🔄
-                      </button>
+                {/* Mobile Header Layout */}
+                <div className="flex items-center justify-between lg:hidden">
+                    {/* Mobile Logo & Title */}
+                    <div className="flex items-center min-w-0 flex-1">
+                        <img 
+                            src="/Logo/LOGO_NoBG.png" 
+                            alt="Educational Elements Logo" 
+                            className="h-8 w-8 sm:h-10 sm:w-10 mr-2 flex-shrink-0"
+                        />
+                        <div className="min-w-0">
+                            <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent truncate">
+                                Educational Elements
+                            </h1>
+                        </div>
                     </div>
-                  )}
-                  
-                  {/* No class code set */}
-                  {!currentClassData?.classCode && (
-                    <div className="flex items-center space-x-2">
-                      <div className="text-sm text-orange-600 hidden md:block">No class code</div>
-                      <button
-                        onClick={handleGenerateNewCode}
-                        className="bg-green-500 text-white px-3 py-2 rounded-lg hover:bg-green-600 transition-colors text-sm font-semibold"
-                      >
-                        📱 Generate Code
-                      </button>
-                    </div>
-                  )}
-                  
-                  <button 
-                    onClick={goToStudentPortal}
-                    className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-3 py-2 rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all font-medium shadow-md text-sm"
-                  >
-                    🎓 Portal
-                  </button>
-                  <button 
-                      onClick={() => auth.signOut()} 
-                      className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
+                    
+                    {/* Mobile Menu Button */}
+                    <button
+                        onClick={() => setShowMobileMenu(!showMobileMenu)}
+                        className="bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-600 transition-colors"
                     >
-                      Sign Out
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
                     </button>
                 </div>
+
+                {/* Desktop Header Layout */}
+                <div className="hidden lg:flex items-center justify-between">
+                    <div className="flex items-center">
+                        <img 
+                            src="/Logo/LOGO_NoBG.png" 
+                            alt="Educational Elements Logo" 
+                            className="h-12 w-12 mr-4"
+                        />
+                        <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                            Educational Elements
+                        </h1>
+                    </div>
+                    
+                    {/* Desktop Class Code and Action Buttons */}
+                    <div className="flex items-center space-x-4">
+                        {/* Class Code Display */}
+                        {currentClassData?.classCode && (
+                            <div className="flex items-center space-x-2">
+                                <div className="text-sm text-gray-600 hidden md:block">Class Code:</div>
+                                <div className="bg-green-100 border-2 border-green-300 rounded-lg px-3 py-2">
+                                    <span className="text-lg font-bold text-green-700 tracking-wider">
+                                        {currentClassData.classCode}
+                                    </span>
+                                </div>
+                                <button
+                                    onClick={copyClassCode}
+                                    className="bg-blue-500 text-white px-2 py-2 rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                                    title="Copy class code"
+                                >
+                                    📋
+                                </button>
+                                <button
+                                    onClick={handleGenerateNewCode}
+                                    className="bg-orange-500 text-white px-2 py-2 rounded-lg hover:bg-orange-600 transition-colors text-sm"
+                                    title="Generate new code"
+                                >
+                                    🔄
+                                </button>
+                            </div>
+                        )}
+                        
+                        {/* No class code set */}
+                        {!currentClassData?.classCode && (
+                            <div className="flex items-center space-x-2">
+                                <div className="text-sm text-orange-600 hidden md:block">No class code</div>
+                                <button
+                                    onClick={handleGenerateNewCode}
+                                    className="bg-green-500 text-white px-3 py-2 rounded-lg hover:bg-green-600 transition-colors text-sm font-semibold"
+                                >
+                                    📱 Generate Code
+                                </button>
+                            </div>
+                        )}
+                        
+                        <button 
+                            onClick={goToStudentPortal}
+                            className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-3 py-2 rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all font-medium shadow-md text-sm"
+                        >
+                            🎓 Portal
+                        </button>
+                        <button 
+                            onClick={() => auth.signOut()} 
+                            className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
+                        >
+                            Sign Out
+                        </button>
+                    </div>
+                </div>
+
+                {/* Mobile Dropdown Menu */}
+                {showMobileMenu && (
+                    <div className="lg:hidden mt-3 bg-gray-50 rounded-lg p-3 border">
+                        {/* Class Code Section for Mobile */}
+                        {currentClassData?.classCode ? (
+                            <div className="mb-4 p-3 bg-white rounded-lg">
+                                <div className="text-sm text-gray-600 mb-2">Class Code:</div>
+                                <div className="flex items-center space-x-2">
+                                    <div className="bg-green-100 border-2 border-green-300 rounded-lg px-3 py-2 flex-1">
+                                        <span className="text-lg font-bold text-green-700 tracking-wider">
+                                            {currentClassData.classCode}
+                                        </span>
+                                    </div>
+                                    <button
+                                        onClick={copyClassCode}
+                                        className="bg-blue-500 text-white px-3 py-2 rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                                    >
+                                        📋
+                                    </button>
+                                </div>
+                                <button
+                                    onClick={handleGenerateNewCode}
+                                    className="w-full mt-2 bg-orange-500 text-white px-3 py-2 rounded-lg hover:bg-orange-600 transition-colors text-sm"
+                                >
+                                    🔄 Generate New Code
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="mb-4 p-3 bg-white rounded-lg">
+                                <div className="text-sm text-orange-600 mb-2">No class code set</div>
+                                <button
+                                    onClick={handleGenerateNewCode}
+                                    className="w-full bg-green-500 text-white px-3 py-2 rounded-lg hover:bg-green-600 transition-colors text-sm font-semibold"
+                                >
+                                    📱 Generate Class Code
+                                </button>
+                            </div>
+                        )}
+                        
+                        {/* Mobile Action Buttons */}
+                        <div className="space-y-2">
+                            <button 
+                                onClick={goToStudentPortal}
+                                className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white px-3 py-2 rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all font-medium text-sm"
+                            >
+                                🎓 Student Portal
+                            </button>
+                            <button 
+                                onClick={() => auth.signOut()} 
+                                className="w-full bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 text-sm"
+                            >
+                                Sign Out
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
         
-        {/* Navigation Tabs - UPDATED FOR NO-SCROLL COMPACT LAYOUT */}
+        {/* UPDATED: Mobile-Friendly Navigation Tabs */}
         <div className="bg-white shadow-sm border-b">
             <div className="max-w-7xl mx-auto">
-                {/* Section Headers - Stacked Above */}
-                <div className="flex items-center justify-center gap-8 px-4 py-2 bg-gray-50 border-b border-gray-200">
+                {/* Section Headers - Mobile Responsive */}
+                <div className="hidden sm:flex items-center justify-center gap-8 px-4 py-2 bg-gray-50 border-b border-gray-200">
                   <h3 className="text-xs font-semibold text-purple-600 uppercase tracking-wider">
                     🏆 Classroom Champions
                   </h3>
@@ -921,49 +1012,60 @@ const ClassroomChampions = () => {
                   </h3>
                 </div>
                 
-                {/* All Tabs in Single Compact Row */}
-                <div className="flex justify-center">
-                  {/* Classroom Champions Tabs */}
-                  {CLASSROOM_CHAMPIONS_TABS.map(tab => (
-                      <button 
-                        key={tab.id} 
-                        onClick={() => setActiveTab(tab.id)} 
-                        className={`flex items-center space-x-1 px-2 py-2.5 transition-all duration-200 text-xs ${
-                          activeTab === tab.id 
-                            ? 'text-purple-600 border-b-2 font-semibold border-purple-600 bg-purple-50' 
-                            : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                        }`}
-                      >
-                          <span className="text-sm">{tab.icon}</span>
-                          <span className="hidden sm:inline">{tab.shortName}</span>
-                      </button>
-                  ))}
-                  
-                  {/* Divider */}
-                  <div className="w-px bg-gray-300 mx-2 my-1"></div>
-                  
-                  {/* Educational Tools Tabs */}
-                  {EDUCATIONAL_ELEMENTS_TABS.map(tab => (
-                      <button 
-                        key={tab.id} 
-                        onClick={() => setActiveTab(tab.id)} 
-                        className={`flex items-center space-x-1 px-2 py-2.5 transition-all duration-200 text-xs ${
-                          activeTab === tab.id 
-                            ? 'text-blue-600 border-b-2 font-semibold border-blue-600 bg-blue-50' 
-                            : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                        }`}
-                      >
-                          <span className="text-sm">{tab.icon}</span>
-                          <span className="hidden sm:inline">{tab.shortName}</span>
-                      </button>
-                  ))}
+                {/* All Tabs - Mobile Responsive Layout */}
+                <div className="overflow-x-auto">
+                    <div className="flex min-w-full">
+                        {/* Classroom Champions Tabs */}
+                        {CLASSROOM_CHAMPIONS_TABS.map(tab => (
+                            <button 
+                                key={tab.id} 
+                                onClick={() => {
+                                    setActiveTab(tab.id);
+                                    setShowMobileMenu(false);
+                                }} 
+                                className={`flex flex-col sm:flex-row items-center justify-center space-y-1 sm:space-y-0 sm:space-x-1 px-2 sm:px-3 py-2 sm:py-2.5 transition-all duration-200 text-xs whitespace-nowrap min-w-[60px] sm:min-w-[80px] ${
+                                    activeTab === tab.id 
+                                        ? 'text-purple-600 border-b-2 font-semibold border-purple-600 bg-purple-50' 
+                                        : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                                }`}
+                            >
+                                <span className="text-sm sm:text-base">{tab.mobileIcon}</span>
+                                <span className="hidden sm:inline text-xs">{tab.shortName}</span>
+                                <span className="sm:hidden text-[10px] leading-tight text-center">{tab.shortName}</span>
+                            </button>
+                        ))}
+                        
+                        {/* Divider */}
+                        <div className="w-px bg-gray-300 mx-1 my-1"></div>
+                        
+                        {/* Educational Tools Tabs */}
+                        {EDUCATIONAL_ELEMENTS_TABS.map(tab => (
+                            <button 
+                                key={tab.id} 
+                                onClick={() => {
+                                    setActiveTab(tab.id);
+                                    setShowMobileMenu(false);
+                                }} 
+                                className={`flex flex-col sm:flex-row items-center justify-center space-y-1 sm:space-y-0 sm:space-x-1 px-2 sm:px-3 py-2 sm:py-2.5 transition-all duration-200 text-xs whitespace-nowrap min-w-[60px] sm:min-w-[80px] ${
+                                    activeTab === tab.id 
+                                        ? 'text-blue-600 border-b-2 font-semibold border-blue-600 bg-blue-50' 
+                                        : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                                }`}
+                            >
+                                <span className="text-sm sm:text-base">{tab.mobileIcon}</span>
+                                <span className="hidden sm:inline text-xs">{tab.shortName}</span>
+                                <span className="sm:hidden text-[10px] leading-tight text-center">{tab.shortName}</span>
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </div>
         </div>
         
-        <main className="max-w-screen-2xl mx-auto px-4 py-6">{renderTabContent()}</main>
+        {/* UPDATED: Mobile-Responsive Main Content */}
+        <main className="max-w-screen-2xl mx-auto px-2 sm:px-4 py-3 sm:py-6">{renderTabContent()}</main>
         
-        {/* UPDATED: Floating Widgets with Higher Z-Index for Visual Checklist Compatibility */}
+        {/* UPDATED: Mobile-Optimized Floating Widgets */}
         <div className="fixed inset-0 pointer-events-none z-50">
           {widgetSettings.showTimer && (
             <div className="pointer-events-auto">
@@ -987,11 +1089,144 @@ const ClassroomChampions = () => {
           )}
         </div>
         
-        {/* Modals - keeping all existing modal code unchanged */}
-        {showAddStudentModal && <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"><div className="bg-white rounded-2xl shadow-2xl w-full max-w-md"><div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-t-2xl"><h2 className="text-2xl font-bold">Add New Champion</h2></div><div className="p-6 space-y-4"><input type="text" value={newStudentFirstName} onChange={(e) => setNewStudentFirstName(e.target.value)} placeholder="First Name" className="w-full px-3 py-2 border border-gray-300 rounded-lg"/><input type="text" value={newStudentLastName} onChange={(e) => setNewStudentLastName(e.target.value)} placeholder="Last Name (Optional)" className="w-full px-3 py-2 border border-gray-300 rounded-lg"/></div><div className="flex space-x-3 p-6 pt-0"><button onClick={() => setShowAddStudentModal(false)} className="flex-1 px-4 py-2 border rounded-lg">Cancel</button><button onClick={addStudent} className="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg">Add Champion</button></div></div></div>}
-        {levelUpData && <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"><div className="bg-white rounded-2xl shadow-2xl w-full max-w-md text-center p-6"><div className="text-6xl mb-2">🎉</div><h2 className="text-2xl font-bold">LEVEL UP!</h2><h3 className="text-xl font-bold text-gray-800 my-2">{levelUpData.student.firstName} reached Level {levelUpData.newLevel}!</h3><img src={getAvatarImage(levelUpData.student.avatarBase, levelUpData.newLevel)} alt="New Avatar" className="w-32 h-32 mx-auto rounded-full border-4 border-yellow-400"/><button onClick={() => setLevelUpData(null)} className="mt-4 w-full bg-yellow-500 text-white py-2 rounded">Awesome!</button></div></div>}
-        {petUnlockData && <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"><div className="bg-white rounded-2xl shadow-2xl w-full max-w-md text-center p-6"><div className="text-6xl mb-2">🐾</div><h2 className="text-2xl font-bold">PET UNLOCKED!</h2><h3 className="text-xl font-bold text-gray-800 my-2">{petUnlockData.student.firstName} found a companion!</h3><img src={getPetImage(petUnlockData.pet)} alt={petUnlockData.pet.name} className="w-24 h-24 mx-auto rounded-full border-4 border-purple-400"/><h4 className="text-lg font-semibold text-purple-600 mt-2">{petUnlockData.pet.name}</h4><button onClick={() => setPetUnlockData(null)} className="mt-4 w-full bg-purple-500 text-white py-2 rounded">Meet My Pet!</button></div></div>}
-        {selectedStudent && <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"><div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"><div className="p-6"><button onClick={() => setSelectedStudent(null)} className="float-right text-2xl font-bold">×</button><h2 className="text-2xl font-bold">{selectedStudent.firstName} {selectedStudent.lastName}</h2><p>Level {calculateAvatarLevel(selectedStudent.totalPoints || 0)} Champion</p><div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6"><div><img src={getAvatarImage(selectedStudent.avatarBase, calculateAvatarLevel(selectedStudent.totalPoints))} className="w-32 h-32 rounded-full border-4 border-blue-400" /></div><div className="space-y-4"><p><strong>XP:</strong> {selectedStudent.totalPoints || 0}</p><p><strong>Coins:</strong> {calculateCoins(selectedStudent)}</p>{selectedStudent.ownedPets?.[0] && (<div><p><strong>Companion:</strong> {selectedStudent.ownedPets[0].name}</p><img src={getPetImage(selectedStudent.ownedPets[0])} className="w-16 h-16 rounded-full border-2 border-purple-300"/></div>)}</div></div></div></div></div>}
+        {/* UPDATED: Mobile-Responsive Modals */}
+        {showAddStudentModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+                    <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 sm:p-6 rounded-t-2xl">
+                        <h2 className="text-xl sm:text-2xl font-bold">Add New Champion</h2>
+                    </div>
+                    <div className="p-4 sm:p-6 space-y-4">
+                        <input 
+                            type="text" 
+                            value={newStudentFirstName} 
+                            onChange={(e) => setNewStudentFirstName(e.target.value)} 
+                            placeholder="First Name" 
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm sm:text-base"
+                        />
+                        <input 
+                            type="text" 
+                            value={newStudentLastName} 
+                            onChange={(e) => setNewStudentLastName(e.target.value)} 
+                            placeholder="Last Name (Optional)" 
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm sm:text-base"
+                        />
+                    </div>
+                    <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 p-4 sm:p-6 pt-0">
+                        <button 
+                            onClick={() => setShowAddStudentModal(false)} 
+                            className="w-full sm:flex-1 px-4 py-2 border rounded-lg text-sm sm:text-base"
+                        >
+                            Cancel
+                        </button>
+                        <button 
+                            onClick={addStudent} 
+                            className="w-full sm:flex-1 bg-green-500 text-white px-4 py-2 rounded-lg text-sm sm:text-base"
+                        >
+                            Add Champion
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+        
+        {/* Level Up Modal - Mobile Responsive */}
+        {levelUpData && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md text-center p-4 sm:p-6">
+                    <div className="text-4xl sm:text-6xl mb-2">🎉</div>
+                    <h2 className="text-xl sm:text-2xl font-bold">LEVEL UP!</h2>
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-800 my-2">
+                        {levelUpData.student.firstName} reached Level {levelUpData.newLevel}!
+                    </h3>
+                    <img 
+                        src={getAvatarImage(levelUpData.student.avatarBase, levelUpData.newLevel)} 
+                        alt="New Avatar" 
+                        className="w-24 h-24 sm:w-32 sm:h-32 mx-auto rounded-full border-4 border-yellow-400"
+                    />
+                    <button 
+                        onClick={() => setLevelUpData(null)} 
+                        className="mt-4 w-full bg-yellow-500 text-white py-2 rounded text-sm sm:text-base"
+                    >
+                        Awesome!
+                    </button>
+                </div>
+            </div>
+        )}
+        
+        {/* Pet Unlock Modal - Mobile Responsive */}
+        {petUnlockData && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md text-center p-4 sm:p-6">
+                    <div className="text-4xl sm:text-6xl mb-2">🐾</div>
+                    <h2 className="text-xl sm:text-2xl font-bold">PET UNLOCKED!</h2>
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-800 my-2">
+                        {petUnlockData.student.firstName} found a companion!
+                    </h3>
+                    <img 
+                        src={getPetImage(petUnlockData.pet)} 
+                        alt={petUnlockData.pet.name} 
+                        className="w-20 h-20 sm:w-24 sm:h-24 mx-auto rounded-full border-4 border-purple-400"
+                    />
+                    <h4 className="text-base sm:text-lg font-semibold text-purple-600 mt-2">
+                        {petUnlockData.pet.name}
+                    </h4>
+                    <button 
+                        onClick={() => setPetUnlockData(null)} 
+                        className="mt-4 w-full bg-purple-500 text-white py-2 rounded text-sm sm:text-base"
+                    >
+                        Meet My Pet!
+                    </button>
+                </div>
+            </div>
+        )}
+        
+        {/* Student Details Modal - Mobile Responsive */}
+        {selectedStudent && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <div className="p-4 sm:p-6">
+                        <button 
+                            onClick={() => setSelectedStudent(null)} 
+                            className="float-right text-2xl font-bold"
+                        >
+                            ×
+                        </button>
+                        <h2 className="text-xl sm:text-2xl font-bold">
+                            {selectedStudent.firstName} {selectedStudent.lastName}
+                        </h2>
+                        <p className="text-sm sm:text-base">Level {calculateAvatarLevel(selectedStudent.totalPoints || 0)} Champion</p>
+                        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                            <div>
+                                <img 
+                                    src={getAvatarImage(selectedStudent.avatarBase, calculateAvatarLevel(selectedStudent.totalPoints))} 
+                                    className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-blue-400" 
+                                />
+                            </div>
+                            <div className="space-y-2 sm:space-y-4">
+                                <p className="text-sm sm:text-base">
+                                    <strong>XP:</strong> {selectedStudent.totalPoints || 0}
+                                </p>
+                                <p className="text-sm sm:text-base">
+                                    <strong>Coins:</strong> {calculateCoins(selectedStudent)}
+                                </p>
+                                {selectedStudent.ownedPets?.[0] && (
+                                    <div>
+                                        <p className="text-sm sm:text-base">
+                                            <strong>Companion:</strong> {selectedStudent.ownedPets[0].name}
+                                        </p>
+                                        <img 
+                                            src={getPetImage(selectedStudent.ownedPets[0])} 
+                                            className="w-12 h-12 sm:w-16 sm:h-16 rounded-full border-2 border-purple-300"
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )}
     </div>
   );
 };
