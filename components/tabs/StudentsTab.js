@@ -1,16 +1,18 @@
-// components/tabs/StudentsTab.js - UPDATED WITH NEW THEMES AND FIXED TEXT CONTRAST
+// components/tabs/StudentsTab.js - UPDATED WITH MOBILE-FRIENDLY RESPONSIVE DESIGN
 import React, { useState, useEffect, useRef } from 'react';
 
 // ===============================================
 // HELPER FUNCTIONS (LOCAL FALLBACKS)
 // ===============================================
 const getGridClasses = (studentCount) => {
-    if (studentCount <= 6) return 'grid-cols-2 md:grid-cols-3 lg:grid-cols-6';
-    if (studentCount <= 12) return 'grid-cols-3 md:grid-cols-4 lg:grid-cols-6';
-    if (studentCount <= 18) return 'grid-cols-3 md:grid-cols-5 lg:grid-cols-9';
-    if (studentCount <= 24) return 'grid-cols-4 md:grid-cols-6 lg:grid-cols-12';
-    if (studentCount <= 32) return 'grid-cols-4 md:grid-cols-7 lg:grid-cols-12';
-    return 'grid-cols-5 md:grid-cols-8 lg:grid-cols-12';
+    // Mobile-first responsive grid system
+    if (studentCount <= 4) return 'grid-cols-2 sm:grid-cols-2 md:grid-cols-4';
+    if (studentCount <= 8) return 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4';
+    if (studentCount <= 12) return 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6';
+    if (studentCount <= 18) return 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-9';
+    if (studentCount <= 24) return 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8';
+    if (studentCount <= 32) return 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8';
+    return 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-10';
 };
 
 // Play award sound
@@ -80,7 +82,7 @@ const getTitleColor = (title) => {
 };
 
 // ===============================================
-// AWARD NOTIFICATION POPUP COMPONENT
+// MOBILE-OPTIMIZED AWARD NOTIFICATION POPUP
 // ===============================================
 const AwardNotification = ({ notification, onClose }) => {
     if (!notification) return null;
@@ -109,38 +111,38 @@ const AwardNotification = ({ notification, onClose }) => {
             className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4"
             onClick={handleBackdropClick}
         >
-            <div className={`bg-gradient-to-br ${color} text-white rounded-2xl shadow-2xl p-8 max-w-md w-full transform animate-bounce`}>
+            <div className={`bg-gradient-to-br ${color} text-white rounded-2xl shadow-2xl p-4 sm:p-8 max-w-sm sm:max-w-md w-full transform animate-bounce`}>
                 <div className="text-center">
                     <button
                         onClick={onClose}
-                        className="absolute top-4 right-4 text-white hover:text-gray-200 text-2xl font-bold w-8 h-8 flex items-center justify-center"
-                        style={{ position: 'absolute', top: '1rem', right: '1rem' }}
+                        className="absolute top-2 right-2 sm:top-4 sm:right-4 text-white hover:text-gray-200 text-xl sm:text-2xl font-bold w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center"
+                        style={{ position: 'absolute' }}
                     >
                         ×
                     </button>
 
-                    <div className="text-6xl mb-4 animate-pulse">{icon}</div>
-                    <h2 className="text-3xl font-bold mb-4">
+                    <div className="text-4xl sm:text-6xl mb-3 sm:mb-4 animate-pulse">{icon}</div>
+                    <h2 className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4">
                         {isBulk ? 'BULK AWARD!' : 'AWARD GIVEN!'}
                     </h2>
                     
-                    <div className="bg-white bg-opacity-20 rounded-xl p-4 mb-4">
-                        <div className="text-2xl font-bold mb-2">
+                    <div className="bg-white bg-opacity-20 rounded-xl p-3 sm:p-4 mb-3 sm:mb-4">
+                        <div className="text-xl sm:text-2xl font-bold mb-2">
                             +{amount} {typeText}
                         </div>
                         {isBulk ? (
-                            <div className="text-lg">
+                            <div className="text-base sm:text-lg">
                                 Awarded to {students.length} students!
                             </div>
                         ) : (
-                            <div className="text-lg">
+                            <div className="text-base sm:text-lg">
                                 Awarded to <strong>{students[0]?.firstName}</strong>!
                             </div>
                         )}
                     </div>
 
                     {isBulk && students.length > 1 && (
-                        <div className="text-sm opacity-90">
+                        <div className="text-xs sm:text-sm opacity-90">
                             {students.slice(0, 3).map(s => s.firstName).join(', ')}
                             {students.length > 3 && ` +${students.length - 3} more`}
                         </div>
@@ -148,7 +150,7 @@ const AwardNotification = ({ notification, onClose }) => {
 
                     <button
                         onClick={onClose}
-                        className="mt-4 bg-white bg-opacity-20 hover:bg-opacity-30 px-6 py-2 rounded-xl transition-all duration-300 font-semibold hover:scale-105 transform"
+                        className="mt-3 sm:mt-4 bg-white bg-opacity-20 hover:bg-opacity-30 px-4 sm:px-6 py-2 rounded-xl transition-all duration-300 font-semibold hover:scale-105 transform text-sm sm:text-base"
                     >
                         Awesome!
                     </button>
@@ -159,10 +161,11 @@ const AwardNotification = ({ notification, onClose }) => {
 };
 
 // ===============================================
-// CONTEXT MENU COMPONENT
+// MOBILE-OPTIMIZED CONTEXT MENU COMPONENT
 // ===============================================
 const ContextMenu = ({ student, position, onAward, onView, onAvatar, onClose, getAvatarImage, calculateAvatarLevel }) => {
     const menuRef = useRef(null);
+    
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (menuRef.current && !menuRef.current.contains(event.target)) onClose();
@@ -171,39 +174,65 @@ const ContextMenu = ({ student, position, onAward, onView, onAvatar, onClose, ge
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [onClose]);
 
+    // Mobile-responsive positioning
+    const isMobile = window.innerWidth < 640;
+    const menuStyle = isMobile ? {
+        position: 'fixed',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        zIndex: 60
+    } : {
+        position: 'fixed',
+        top: position.y,
+        left: position.x,
+        zIndex: 50
+    };
+
     return (
-        <div ref={menuRef} className="fixed z-50 bg-white w-56 rounded-xl shadow-2xl border border-gray-200 p-2 animate-fade-in-fast" style={{ top: position.y, left: position.x }}>
-            <div className="flex items-center p-2 border-b mb-2">
-                <img src={getAvatarImage(student.avatarBase, calculateAvatarLevel(student.totalPoints))} className="w-10 h-10 rounded-full mr-3" />
-                <span className="font-bold text-gray-800">{student.firstName}</span>
+        <div ref={menuRef} className="bg-white w-56 sm:w-64 rounded-xl shadow-2xl border border-gray-200 p-2 sm:p-3 animate-fade-in-fast" style={menuStyle}>
+            <div className="flex items-center p-2 sm:p-3 border-b mb-2">
+                <img src={getAvatarImage(student.avatarBase, calculateAvatarLevel(student.totalPoints))} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full mr-3" />
+                <span className="font-bold text-gray-800 text-sm sm:text-base">{student.firstName}</span>
             </div>
             <ul className="text-gray-700">
-                <li onClick={onAward} className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-blue-500 hover:text-white cursor-pointer"><span className="mr-3">🏆</span> Award XP / Coins</li>
-                <li onClick={onView} className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-purple-500 hover:text-white cursor-pointer"><span className="mr-3">📜</span> View Character Sheet</li>
-                <li onClick={onAvatar} className="flex items-center px-3 py-2 text-sm rounded-md hover:bg-green-500 hover:text-white cursor-pointer"><span className="mr-3">🎭</span> Change Avatar</li>
+                <li onClick={onAward} className="flex items-center px-3 py-2 sm:py-3 text-sm sm:text-base rounded-md hover:bg-blue-500 hover:text-white cursor-pointer transition-colors">
+                    <span className="mr-3 text-lg">🏆</span> Award XP / Coins
+                </li>
+                <li onClick={onView} className="flex items-center px-3 py-2 sm:py-3 text-sm sm:text-base rounded-md hover:bg-purple-500 hover:text-white cursor-pointer transition-colors">
+                    <span className="mr-3 text-lg">📜</span> View Character Sheet
+                </li>
+                <li onClick={onAvatar} className="flex items-center px-3 py-2 sm:py-3 text-sm sm:text-base rounded-md hover:bg-green-500 hover:text-white cursor-pointer transition-colors">
+                    <span className="mr-3 text-lg">🎭</span> Change Avatar
+                </li>
             </ul>
         </div>
     );
 };
 
 // ===============================================
-// HOVER PREVIEW COMPONENT
+// MOBILE-OPTIMIZED HOVER PREVIEW COMPONENT
 // ===============================================
 const HoverPreview = ({ preview, position }) => {
     if (!preview) return null;
+    
+    // Don't show hover previews on mobile (touch devices)
+    const isMobile = window.innerWidth < 640;
+    if (isMobile) return null;
+    
     return (
         <div
             className="fixed pointer-events-none z-[100] bg-white rounded-lg shadow-2xl p-3 border-2 border-blue-300 transition-transform duration-200 ease-out"
             style={{ left: position.x + 20, top: position.y - 100, transform: 'scale(1)' }}
         >
-            <img src={preview.image} alt="Preview" className="w-48 h-48 rounded-lg" />
-            <p className="text-center font-bold mt-2 text-gray-800">{preview.text}</p>
+            <img src={preview.image} alt="Preview" className="w-32 sm:w-48 h-32 sm:h-48 rounded-lg" />
+            <p className="text-center font-bold mt-2 text-gray-800 text-sm sm:text-base">{preview.text}</p>
         </div>
     );
 };
 
 // ===============================================
-// MAIN STUDENTS TAB COMPONENT
+// MAIN STUDENTS TAB COMPONENT - MOBILE OPTIMIZED
 // ===============================================
 const StudentsTab = ({ 
     students = [], 
@@ -318,27 +347,99 @@ const StudentsTab = ({
     };
     
     return (
-        <div className="space-y-6" onMouseMove={handleMouseMove}>
-            <div className="bg-white rounded-xl p-4 shadow-md border border-gray-200 flex flex-wrap items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                    <input type="text" placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full md:w-auto pl-4 pr-4 py-2 border rounded-lg" />
-                    <button onClick={handleSelectAll} className="bg-blue-500 text-white px-4 py-2 rounded-lg whitespace-nowrap">{selectedStudents.length === filteredStudents.length ? 'Deselect All' : 'Select All'}</button>
+        <div className="space-y-4 sm:space-y-6" onMouseMove={handleMouseMove}>
+            {/* MOBILE-OPTIMIZED HEADER */}
+            <div className="bg-white rounded-xl p-3 sm:p-4 shadow-md border border-gray-200">
+                {/* Mobile Layout - Stacked */}
+                <div className="flex flex-col space-y-3 sm:hidden">
+                    {/* Search */}
+                    <input 
+                        type="text" 
+                        placeholder="Search students..." 
+                        value={searchTerm} 
+                        onChange={(e) => setSearchTerm(e.target.value)} 
+                        className="w-full px-3 py-2 border rounded-lg text-sm"
+                    />
+                    
+                    {/* Mobile Status */}
+                    <div className="text-center text-sm text-gray-600 font-medium">
+                        {selectedStudents.length > 0 
+                            ? `${selectedStudents.length} student(s) selected` 
+                            : 'Tap avatar for options • Star/coin to award'
+                        }
+                    </div>
+                    
+                    {/* Mobile Action Buttons */}
+                    <div className="flex space-x-2">
+                        <button 
+                            onClick={handleSelectAll} 
+                            className="flex-1 bg-blue-500 text-white px-3 py-2 rounded-lg text-sm font-medium"
+                        >
+                            {selectedStudents.length === filteredStudents.length ? 'Deselect All' : 'Select All'}
+                        </button>
+                        {selectedStudents.length > 0 && (
+                            <button 
+                                onClick={() => setAwardModal({ visible: true, isBulk: true, type: 'xp', studentId: null, student: null })} 
+                                className="flex-1 bg-purple-600 text-white font-bold px-3 py-2 rounded-lg text-sm"
+                            >
+                                Award Bulk
+                            </button>
+                        )}
+                        <button 
+                            onClick={onAddStudent} 
+                            className="bg-green-500 text-white px-3 py-2 rounded-lg text-sm font-medium"
+                        >
+                            + Add
+                        </button>
+                    </div>
                 </div>
-                
-                <div className="text-gray-600 font-semibold">
-                    {selectedStudents.length > 0 
-                        ? `${selectedStudents.length} student(s) selected` 
-                        : 'Click an avatar for options • Star/coin to quick award • Shift+click to select • Drag to reorder'
-                    }
-                </div>
-                
-                <div className="flex items-center gap-2">
-                    {selectedStudents.length > 0 && (<button onClick={() => setAwardModal({ visible: true, isBulk: true, type: 'xp', studentId: null, student: null })} className="bg-purple-600 text-white font-bold px-4 py-2 rounded-lg hover:bg-purple-700 transition-all transform hover:scale-105">🏆 Award Bulk</button>)}
-                    <button onClick={onAddStudent} className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-all">+ Add Student</button>
+
+                {/* Desktop Layout - Single Row */}
+                <div className="hidden sm:flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                        <input 
+                            type="text" 
+                            placeholder="Search..." 
+                            value={searchTerm} 
+                            onChange={(e) => setSearchTerm(e.target.value)} 
+                            className="w-full md:w-auto pl-4 pr-4 py-2 border rounded-lg" 
+                        />
+                        <button 
+                            onClick={handleSelectAll} 
+                            className="bg-blue-500 text-white px-4 py-2 rounded-lg whitespace-nowrap"
+                        >
+                            {selectedStudents.length === filteredStudents.length ? 'Deselect All' : 'Select All'}
+                        </button>
+                    </div>
+                    
+                    <div className="text-gray-600 font-semibold text-sm lg:text-base">
+                        {selectedStudents.length > 0 
+                            ? `${selectedStudents.length} student(s) selected` 
+                            : 'Click avatar for options • Star/coin to quick award • Shift+click to select • Drag to reorder'
+                        }
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                        {selectedStudents.length > 0 && (
+                            <button 
+                                onClick={() => setAwardModal({ visible: true, isBulk: true, type: 'xp', studentId: null, student: null })} 
+                                className="bg-purple-600 text-white font-bold px-4 py-2 rounded-lg hover:bg-purple-700 transition-all transform hover:scale-105 text-sm lg:text-base"
+                            >
+                                🏆 Award Bulk
+                            </button>
+                        )}
+                        <button 
+                            onClick={onAddStudent} 
+                            className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-all"
+                        >
+                            + Add Student
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <div className={`grid ${getGridClasses(filteredStudents.length)} gap-4`}>
+            {/* MOBILE-OPTIMIZED STUDENT GRID */}
+            <div className={`grid ${getGridClasses(filteredStudents.length)} gap-2 sm:gap-3 md:gap-4`}>
                 {filteredStudents.map((student) => (
                     <StudentCard
                         key={student.id}
@@ -368,16 +469,64 @@ const StudentsTab = ({
             />
 
             <HoverPreview preview={hoverPreview} position={mousePosition} />
-            {contextMenu.visible && <ContextMenu student={contextMenu.student} position={{ x: contextMenu.x, y: contextMenu.y }} onAward={() => { setAwardModal({ visible: true, isBulk: false, type: 'xp', studentId: contextMenu.student.id, student: contextMenu.student }); closeContextMenu(); }} onView={() => { onViewDetails(contextMenu.student); closeContextMenu(); }} onAvatar={() => { closeContextMenu(); }} onClose={closeContextMenu} getAvatarImage={getAvatarImageFunc} calculateAvatarLevel={calculateAvatarLevelFunc} />}
-            {awardModal.visible && <AwardModal isBulk={awardModal.isBulk} awardType={awardModal.type} onTypeChange={(newType) => setAwardModal(prev => ({ ...prev, type: newType }))} studentCount={selectedStudents.length} student={awardModal.student} onSubmit={handleAwardSubmit} onClose={() => setAwardModal({ visible: false, isBulk: false, type: 'xp', studentId: null, student: null })} />}
+            
+            {contextMenu.visible && (
+                <ContextMenu 
+                    student={contextMenu.student} 
+                    position={{ x: contextMenu.x, y: contextMenu.y }} 
+                    onAward={() => { 
+                        setAwardModal({ visible: true, isBulk: false, type: 'xp', studentId: contextMenu.student.id, student: contextMenu.student }); 
+                        closeContextMenu(); 
+                    }} 
+                    onView={() => { 
+                        onViewDetails(contextMenu.student); 
+                        closeContextMenu(); 
+                    }} 
+                    onAvatar={() => { 
+                        closeContextMenu(); 
+                    }} 
+                    onClose={closeContextMenu} 
+                    getAvatarImage={getAvatarImageFunc} 
+                    calculateAvatarLevel={calculateAvatarLevelFunc} 
+                />
+            )}
+            
+            {awardModal.visible && (
+                <AwardModal 
+                    isBulk={awardModal.isBulk} 
+                    awardType={awardModal.type} 
+                    onTypeChange={(newType) => setAwardModal(prev => ({ ...prev, type: newType }))} 
+                    studentCount={selectedStudents.length} 
+                    student={awardModal.student} 
+                    onSubmit={handleAwardSubmit} 
+                    onClose={() => setAwardModal({ visible: false, isBulk: false, type: 'xp', studentId: null, student: null })} 
+                />
+            )}
         </div>
     );
 };
 
 // ===============================================
-// STUDENT CARD COMPONENT WITH THEME INTEGRATION (NO DEBUGGING)
+// MOBILE-OPTIMIZED STUDENT CARD COMPONENT
 // ===============================================
-const StudentCard = ({ student, isSelected, isDragged, onClick, onDragStart, onDragOver, onDrop, onAvatarHover, onPetHover, onHoverEnd, getAvatarImage, getPetImage, calculateCoins, calculateAvatarLevel, onQuickAward, onToggleSelection }) => {
+const StudentCard = ({ 
+    student, 
+    isSelected, 
+    isDragged, 
+    onClick, 
+    onDragStart, 
+    onDragOver, 
+    onDrop, 
+    onAvatarHover, 
+    onPetHover, 
+    onHoverEnd, 
+    getAvatarImage, 
+    getPetImage, 
+    calculateCoins, 
+    calculateAvatarLevel, 
+    onQuickAward, 
+    onToggleSelection 
+}) => {
     const level = calculateAvatarLevel(student.totalPoints);
     const coins = calculateCoins(student);
     const xpForNextLevel = (student.totalPoints || 0) % 100;
@@ -385,14 +534,12 @@ const StudentCard = ({ student, isSelected, isDragged, onClick, onDragStart, onD
     const pet = student.ownedPets?.[0];
     const petImg = pet ? getPetImage(pet) : null;
 
-    // Get clicker data from clickerGameData (the actual saved data)
+    // Get clicker data from clickerGameData
     const clickerGameData = student.clickerGameData || null;
     const hasClickerData = clickerGameData && clickerGameData.activeTheme;
     
-    // Extract the theme and title info from the game data
     let clickerAchievements = null;
     if (hasClickerData) {
-        // UPDATED: Map theme keys to theme names with all new themes
         const themeNameMap = {
             'default': 'Hero\'s Dawn',
             'dark': 'Shadow Realm',
@@ -460,7 +607,7 @@ const StudentCard = ({ student, isSelected, isDragged, onClick, onDragStart, onD
             onDragOver={onDragOver} 
             onDrop={onDrop} 
             onClick={handleCardClick} 
-            className={`relative p-3 rounded-2xl shadow-lg transition-all duration-300 cursor-pointer hover:shadow-xl ${achievementBorderClass} ${
+            className={`relative p-2 sm:p-3 rounded-xl sm:rounded-2xl shadow-lg transition-all duration-300 cursor-pointer hover:shadow-xl ${achievementBorderClass} ${
                 isSelected 
                     ? `border-purple-500 bg-purple-100 scale-105 shadow-purple-200` 
                     : `${themeBackground} hover:border-blue-400 hover:shadow-xl`
@@ -473,58 +620,65 @@ const StudentCard = ({ student, isSelected, isDragged, onClick, onDragStart, onD
                     <img 
                         src={avatarImg} 
                         alt={student.firstName} 
-                        className="w-20 h-20 rounded-full border-4 border-white shadow-md transition-transform duration-200 hover:scale-105" 
-                        onMouseEnter={() => onAvatarHover(avatarImg, `${student.firstName}'s Avatar`)} 
+                        className="w-12 h-12 sm:w-16 md:w-20 lg:w-20 sm:h-16 md:h-20 lg:h-20 rounded-full border-2 sm:border-4 border-white shadow-md transition-transform duration-200 hover:scale-105" 
+                        onMouseEnter={() => onAvatarHover && onAvatarHover(avatarImg, `${student.firstName}'s Avatar`)} 
                         onMouseLeave={onHoverEnd} 
                     />
-                    <div className="absolute -bottom-1 -right-1 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full font-bold shadow-sm">L{level}</div>
+                    <div className="absolute -bottom-1 -right-1 bg-blue-600 text-white text-[10px] sm:text-xs px-1 sm:px-2 py-0.5 rounded-full font-bold shadow-sm">
+                        L{level}
+                    </div>
                     {pet && (
                         <img 
                             src={petImg} 
-                            className="w-8 h-8 rounded-full absolute -bottom-1 -left-1 border-2 border-white shadow-sm transition-transform duration-200 hover:scale-125" 
-                            onMouseEnter={() => onPetHover(petImg, pet.name)} 
+                            className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 rounded-full absolute -bottom-1 -left-1 border-1 sm:border-2 border-white shadow-sm transition-transform duration-200 hover:scale-125" 
+                            onMouseEnter={() => onPetHover && onPetHover(petImg, pet.name)} 
                             onMouseLeave={onHoverEnd}
                         />
                     )}
                 </div>
-                <h3 className="text-md font-bold text-gray-800 mt-2 truncate w-full">{student.firstName}</h3>
-                <div className="flex items-center justify-around w-full mt-2 text-xs">
+                
+                <h3 className="text-xs sm:text-sm md:text-md font-bold text-gray-800 mt-1 sm:mt-2 truncate w-full leading-tight">
+                    {student.firstName}
+                </h3>
+                
+                <div className="flex items-center justify-around w-full mt-1 sm:mt-2 text-[10px] sm:text-xs">
                     <span 
                         onClick={handleStarClick}
-                        className="font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded-full cursor-pointer hover:bg-blue-100 hover:scale-110 transition-all duration-200 select-none"
+                        className="font-semibold text-blue-600 bg-blue-50 px-1 sm:px-2 py-0.5 sm:py-1 rounded-full cursor-pointer hover:bg-blue-100 hover:scale-110 transition-all duration-200 select-none"
                         title="Click to award 1 XP"
                     >
                         ⭐ {student.totalPoints || 0}
                     </span>
                     <span 
                         onClick={handleCoinClick}
-                        className="font-semibold text-yellow-600 bg-yellow-50 px-2 py-1 rounded-full cursor-pointer hover:bg-yellow-100 hover:scale-110 transition-all duration-200 select-none"
+                        className="font-semibold text-yellow-600 bg-yellow-50 px-1 sm:px-2 py-0.5 sm:py-1 rounded-full cursor-pointer hover:bg-yellow-100 hover:scale-110 transition-all duration-200 select-none"
                         title="Click to award 1 coin"
                     >
                         💰 {coins}
                     </span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1.5">
+                
+                <div className="w-full bg-gray-200 rounded-full h-1 sm:h-1.5 mt-1 sm:mt-1.5">
                     <div 
-                        className="bg-gradient-to-r from-blue-400 to-purple-500 h-1.5 rounded-full transition-all duration-500" 
+                        className="bg-gradient-to-r from-blue-400 to-purple-500 h-1 sm:h-1.5 rounded-full transition-all duration-500" 
                         style={{ width: `${xpForNextLevel}%` }}
                     ></div>
                 </div>
                 
                 {isSelected && (
-                    <div className="absolute top-1 right-1 bg-purple-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">
+                    <div className="absolute top-1 right-1 bg-purple-500 text-white rounded-full w-4 h-4 sm:w-6 sm:h-6 flex items-center justify-center text-xs sm:text-sm font-bold">
                         ✓
                     </div>
                 )}
                 
                 {/* Show hero title or "Common Hero" */}
-                <div className="text-xs mt-1">
+                <div className="text-[10px] sm:text-xs mt-0.5 sm:mt-1">
                     {hasClickerData ? (
-                        <div className={`${titleColor} font-bold`}>
+                        <div className={`${titleColor} font-bold leading-tight`}>
                             {clickerAchievements.title}
                         </div>
                     ) : (
-                        <div className="text-gray-500 font-medium">
+                        <div className="text-gray-500 font-medium leading-tight">
                             Common Hero
                         </div>
                     )}
@@ -535,7 +689,7 @@ const StudentCard = ({ student, isSelected, isDragged, onClick, onDragStart, onD
 };
 
 // ===============================================
-// AWARD MODAL COMPONENT
+// MOBILE-OPTIMIZED AWARD MODAL COMPONENT
 // ===============================================
 const AwardModal = ({ isBulk, awardType, onTypeChange, studentCount, student, onSubmit, onClose }) => {
     const [amount, setAmount] = useState(10);
@@ -545,14 +699,14 @@ const AwardModal = ({ isBulk, awardType, onTypeChange, studentCount, student, on
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md transform animate-scale-in">
-                <div className="p-6 border-b bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-t-2xl">
-                    <h2 className="text-2xl font-bold">{title}</h2>
+                <div className="p-4 sm:p-6 border-b bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-t-2xl">
+                    <h2 className="text-lg sm:text-2xl font-bold">{title}</h2>
                 </div>
-                <div className="p-6 space-y-6">
+                <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
                     <div className="grid grid-cols-2 gap-2 p-1 bg-gray-200 rounded-lg">
                         <button 
                             onClick={() => onTypeChange('xp')} 
-                            className={`px-4 py-2 rounded-md font-semibold transition-all duration-200 ${
+                            className={`px-3 sm:px-4 py-2 rounded-md font-semibold transition-all duration-200 text-sm sm:text-base ${
                                 awardType === 'xp' 
                                     ? 'bg-blue-500 text-white shadow-lg transform scale-105' 
                                     : 'text-gray-600 hover:bg-gray-100'
@@ -562,7 +716,7 @@ const AwardModal = ({ isBulk, awardType, onTypeChange, studentCount, student, on
                         </button>
                         <button 
                             onClick={() => onTypeChange('coins')} 
-                            className={`px-4 py-2 rounded-md font-semibold transition-all duration-200 ${
+                            className={`px-3 sm:px-4 py-2 rounded-md font-semibold transition-all duration-200 text-sm sm:text-base ${
                                 awardType === 'coins' 
                                     ? 'bg-yellow-500 text-white shadow-lg transform scale-105' 
                                     : 'text-gray-600 hover:bg-gray-100'
@@ -578,7 +732,7 @@ const AwardModal = ({ isBulk, awardType, onTypeChange, studentCount, student, on
                             min="1" 
                             value={amount} 
                             onChange={(e) => setAmount(Number(e.target.value))} 
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm sm:text-base"
                         />
                     </div>
                     <div>
@@ -587,20 +741,20 @@ const AwardModal = ({ isBulk, awardType, onTypeChange, studentCount, student, on
                             type="text" 
                             value={reason} 
                             onChange={(e) => setReason(e.target.value)} 
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm sm:text-base"
                         />
                     </div>
                 </div>
-                <div className="flex space-x-3 p-6 bg-gray-50 rounded-b-2xl">
+                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 p-4 sm:p-6 bg-gray-50 rounded-b-2xl">
                     <button 
                         onClick={onClose} 
-                        className="flex-1 px-4 py-3 border rounded-lg bg-white hover:bg-gray-100 font-semibold transition-all duration-200"
+                        className="w-full sm:flex-1 px-4 py-3 border rounded-lg bg-white hover:bg-gray-100 font-semibold transition-all duration-200 text-sm sm:text-base"
                     >
                         Cancel
                     </button>
                     <button 
                         onClick={() => onSubmit(amount, reason, awardType)} 
-                        className="flex-1 px-4 py-3 rounded-lg bg-green-500 hover:bg-green-600 font-semibold text-white transition-all duration-200 transform hover:scale-105 shadow-lg"
+                        className="w-full sm:flex-1 px-4 py-3 rounded-lg bg-green-500 hover:bg-green-600 font-semibold text-white transition-all duration-200 transform hover:scale-105 shadow-lg text-sm sm:text-base"
                     >
                         Confirm Award
                     </button>
