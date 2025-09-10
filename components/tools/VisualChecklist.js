@@ -22,7 +22,7 @@ const VisualChecklist = ({ students, showToast, saveData, loadedData }) => {
 
   // Preset icons for checklist items
   const ICONS = [
-    '📚', '✏️', '🎒', '🧹', '🪑', '💻', '📋', '🔔', '🌟', '⭐', '✅', '👥', 
+    '📚', '✏️', '🎒', '🧹', '🪑', '💻', '📋', '📝', '🌟', '⭐', '✅', '👥', 
     '🎵', '🎨', '📖', '🏃', '🧠', '💡', '🎯', '🏆', '🎪', '🎭', '🎨', '🚀'
   ];
 
@@ -169,80 +169,106 @@ const VisualChecklist = ({ students, showToast, saveData, loadedData }) => {
   // Get active checklist
   const activeChecklist = checklists.find(c => c.id === activeChecklistId);
 
-  // DISPLAY MODE - Full screen checklist for classroom display (with space for floating widgets)
+  // DISPLAY MODE - Full screen checklist for classroom display
   if (displayMode && activeChecklist) {
-    const maxItemsPerRow = Math.min(activeChecklist.items.length, 5);
-    const itemsPerRow = activeChecklist.items.length <= 4 ? activeChecklist.items.length : maxItemsPerRow;
+    const itemCount = activeChecklist.items.length;
     
+    // Calculate optimal grid layout based on item count
+    let columns = 2;
+    let rows = 2;
+    
+    if (itemCount <= 4) {
+      columns = Math.min(itemCount, 2);
+      rows = Math.ceil(itemCount / columns);
+    } else if (itemCount <= 6) {
+      columns = 3;
+      rows = 2;
+    } else if (itemCount <= 9) {
+      columns = 3;
+      rows = 3;
+    } else if (itemCount <= 12) {
+      columns = 4;
+      rows = 3;
+    } else {
+      columns = 4;
+      rows = Math.ceil(itemCount / 4);
+    }
+
     return (
-      <div className="fixed inset-0 bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 z-40">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-6 shadow-xl">
+      <div className="fixed inset-0 bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 z-40 flex flex-col">
+        {/* Header - Fixed height */}
+        <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-4 md:p-6 shadow-xl flex-shrink-0">
           <div className="flex items-center justify-between max-w-7xl mx-auto">
-            <h1 className="text-4xl md:text-6xl font-bold text-center flex-1">
+            <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold text-center flex-1">
               {activeChecklist.name}
             </h1>
             <button
               onClick={() => setDisplayMode(false)}
-              className="bg-white text-purple-600 px-6 py-3 rounded-xl font-bold hover:bg-gray-100 transition-all text-xl"
+              className="bg-white text-purple-600 px-4 py-2 md:px-6 md:py-3 rounded-xl font-bold hover:bg-gray-100 transition-all text-lg md:text-xl"
             >
               Exit Display
             </button>
           </div>
         </div>
 
-        {/* Checklist Items Grid - with bottom padding for floating widgets and progress bar */}
-        <div className="p-8 h-full overflow-hidden pb-48">
-          <div 
-            className="grid gap-6 h-full max-w-7xl mx-auto"
-            style={{ 
-              gridTemplateColumns: `repeat(${Math.min(itemsPerRow, 3)}, 1fr)`,
-              gridTemplateRows: `repeat(${Math.ceil(activeChecklist.items.length / Math.min(itemsPerRow, 3))}, 1fr)`
-            }}
-          >
-            {activeChecklist.items.map((item) => (
-              <div
-                key={item.id}
-                onClick={() => toggleItem(activeChecklistId, item.id)}
-                className={`
-                  ${item.colorScheme.bg} ${item.colorScheme.hover} ${item.colorScheme.text}
-                  rounded-3xl shadow-2xl cursor-pointer transform transition-all duration-300 
-                  hover:scale-105 active:scale-95 p-8 flex flex-col items-center justify-center
-                  text-center relative overflow-hidden border-4 ${item.colorScheme.border}
-                  ${item.completed ? 'opacity-75 saturate-50' : ''}
-                `}
+        {/* Main Content Area - Flexible height */}
+        <div className="flex-1 flex flex-col p-4 md:p-6 lg:p-8 min-h-0">
+          {/* Checklist Items - Take up available space */}
+          <div className="flex-1 flex items-center justify-center">
+            <div className="w-full max-w-7xl">
+              <div 
+                className="grid gap-3 md:gap-4 lg:gap-6 h-full"
+                style={{ 
+                  gridTemplateColumns: `repeat(${columns}, 1fr)`,
+                  gridTemplateRows: `repeat(${rows}, 1fr)`,
+                  height: 'calc(100vh - 200px)' // Account for header and footer
+                }}
               >
-                {/* Completion checkmark */}
-                {item.completed && (
-                  <div className="absolute top-4 right-4 bg-green-500 text-white rounded-full w-16 h-16 flex items-center justify-center text-3xl animate-pulse">
-                    ✅
+                {activeChecklist.items.map((item) => (
+                  <div
+                    key={item.id}
+                    onClick={() => toggleItem(activeChecklistId, item.id)}
+                    className={`
+                      ${item.colorScheme.bg} ${item.colorScheme.hover} ${item.colorScheme.text}
+                      rounded-2xl md:rounded-3xl shadow-2xl cursor-pointer transform transition-all duration-300 
+                      hover:scale-105 active:scale-95 p-3 md:p-6 lg:p-8 flex flex-col items-center justify-center
+                      text-center relative overflow-hidden border-2 md:border-4 ${item.colorScheme.border}
+                      ${item.completed ? 'opacity-75 saturate-50' : ''} min-h-0
+                    `}
+                  >
+                    {/* Completion checkmark */}
+                    {item.completed && (
+                      <div className="absolute top-2 right-2 md:top-4 md:right-4 bg-green-500 text-white rounded-full w-8 h-8 md:w-12 md:h-12 lg:w-16 lg:h-16 flex items-center justify-center text-lg md:text-2xl lg:text-3xl animate-pulse">
+                        ✅
+                      </div>
+                    )}
+                    
+                    {/* Item icon - Responsive sizing */}
+                    <div className="text-3xl md:text-5xl lg:text-7xl xl:text-8xl mb-2 md:mb-4 transform hover:rotate-12 transition-transform flex-shrink-0">
+                      {item.icon}
+                    </div>
+                    
+                    {/* Item text - Responsive sizing with proper overflow handling */}
+                    <h3 className="text-sm md:text-xl lg:text-3xl xl:text-4xl font-bold leading-tight break-words hyphens-auto">
+                      {item.text}
+                    </h3>
+                    
+                    {/* Decorative elements */}
+                    <div className="absolute -bottom-1 -right-1 md:-bottom-2 md:-right-2 opacity-20">
+                      <div className="text-4xl md:text-6xl lg:text-8xl">{item.icon}</div>
+                    </div>
                   </div>
-                )}
-                
-                {/* Item icon */}
-                <div className="text-6xl md:text-8xl lg:text-9xl mb-4 transform hover:rotate-12 transition-transform">
-                  {item.icon}
-                </div>
-                
-                {/* Item text */}
-                <h3 className="text-2xl md:text-4xl lg:text-5xl font-bold leading-tight">
-                  {item.text}
-                </h3>
-                
-                {/* Decorative elements */}
-                <div className="absolute -bottom-2 -right-2 opacity-20">
-                  <div className="text-8xl">{item.icon}</div>
-                </div>
+                ))}
               </div>
-            ))}
+            </div>
           </div>
         </div>
 
-        {/* Footer with progress */}
-        <div className="absolute bottom-0 left-0 right-0 bg-white bg-opacity-95 backdrop-blur p-4 shadow-2xl">
+        {/* Footer - Fixed height */}
+        <div className="bg-white bg-opacity-95 backdrop-blur p-3 md:p-4 shadow-2xl flex-shrink-0">
           <div className="max-w-7xl mx-auto flex items-center justify-center">
-            <div className="bg-gradient-to-r from-green-400 to-blue-500 text-white px-8 py-4 rounded-full shadow-lg">
-              <span className="text-2xl font-bold">
+            <div className="bg-gradient-to-r from-green-400 to-blue-500 text-white px-4 py-2 md:px-8 md:py-4 rounded-full shadow-lg">
+              <span className="text-lg md:text-2xl font-bold">
                 Progress: {activeChecklist.items.filter(item => item.completed).length} / {activeChecklist.items.length} Complete
                 {activeChecklist.items.filter(item => item.completed).length === activeChecklist.items.length && " 🎉"}
               </span>
@@ -580,7 +606,7 @@ const VisualChecklist = ({ students, showToast, saveData, loadedData }) => {
                 Save Changes
               </button>
             </div>
-          </div>
+            </div>
         </div>
       </div>
     );
