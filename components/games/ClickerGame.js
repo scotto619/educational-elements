@@ -1,4 +1,4 @@
-// components/games/ClickerGame.js - UPDATED WITH ENHANCED GOLD DISPLAY AND MORE THEMES
+// components/games/ClickerGame.js - ENHANCED WITH MUSIC, NEW EVENTS & HIGH-LEVEL REWARDS
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
@@ -50,7 +50,15 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     achievements: [],
     prestige: 0,
     prestigePoints: 0,
-    lifetimeEarnings: 0
+    lifetimeEarnings: 0,
+    
+    // NEW: Music and high-level features
+    musicEnabled: false,
+    masterLevel: 0,
+    challengesCompleted: [],
+    bossesDefeated: [],
+    skillPoints: 0,
+    masteries: {}
   });
 
   const [selectedWeapon, setSelectedWeapon] = useState('1');
@@ -60,8 +68,15 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
   const [toasts, setToasts] = useState([]);
   const [showChoiceEvent, setShowChoiceEvent] = useState(false);
   const [eventTimeLeft, setEventTimeLeft] = useState(0);
+  
+  // NEW: Challenge and boss states
+  const [activeBoss, setActiveBoss] = useState(null);
+  const [bossHealth, setBossHealth] = useState(0);
+  const [maxBossHealth, setMaxBossHealth] = useState(0);
+  const [showSkillChallenge, setShowSkillChallenge] = useState(false);
+  const [challengeData, setChallengeData] = useState(null);
 
-  // SIMPLIFIED LOADING STATE - No complex dependency issues
+  // LOADING STATE
   const [isLoaded, setIsLoaded] = useState(false);
   const [saveInProgress, setSaveInProgress] = useState(false);
 
@@ -69,8 +84,9 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
   const lastUpdateRef = useRef();
   const eventAccumRef = useRef(0);
   const lastSaveRef = useRef(0);
+  const musicRef = useRef(null); // Background music reference
 
-  // UPDATED: Weapon definitions with ENHANCED Void Staff damage
+  // EXPANDED: Weapon definitions with ULTRA-RARE weapons for high levels
   const WEAPONS = {
     '1': { name: 'Novice Blade', icon: '⚔️', path: '/Loot/Weapons/1.png', requirement: null, dpcMultiplier: 1 },
     '2': { name: 'Mystic Staff', icon: '🔮', path: '/Loot/Weapons/2.png', requirement: { type: 'totalGold', value: 1000 }, dpcMultiplier: 1.5 },
@@ -85,13 +101,19 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     '11': { name: 'Mechanical Gauntlet', icon: '🤖', path: '/Loot/Weapons/11.png', requirement: { type: 'totalGold', value: 10000000 }, dpcMultiplier: 50 },
     '12': { name: 'Golden Hammer', icon: '🌹', path: '/Loot/Weapons/12.png', requirement: { type: 'prestige', value: 1 }, dpcMultiplier: 100 },
     '13': { name: 'Electro Staff', icon: '⚡', path: '/Loot/Weapons/13.png', requirement: { type: 'totalGold', value: 100000000 }, dpcMultiplier: 200 },
-    '14': { name: 'Void Staff', icon: '🌌', path: '/Loot/Weapons/14.png', requirement: { type: 'prestige', value: 2 }, dpcMultiplier: 1500 }, // ENHANCED!
+    '14': { name: 'Void Staff', icon: '🌌', path: '/Loot/Weapons/14.png', requirement: { type: 'prestige', value: 2 }, dpcMultiplier: 1500 },
     '15': { name: 'Elemental Trident', icon: '🔱', path: '/Loot/Weapons/15.png', requirement: { type: 'totalGold', value: 1000000000 }, dpcMultiplier: 1000 },
     '16': { name: 'Soul Reaper', icon: '💀', path: '/Loot/Weapons/16.png', requirement: { type: 'prestige', value: 5 }, dpcMultiplier: 2500 },
-    '17': { name: 'Cosmic Blades', icon: '🌟', path: '/Loot/Weapons/17.png', requirement: { type: 'prestige', value: 10 }, dpcMultiplier: 10000 }
+    '17': { name: 'Cosmic Blades', icon: '🌟', path: '/Loot/Weapons/17.png', requirement: { type: 'prestige', value: 10 }, dpcMultiplier: 10000 },
+    
+    // NEW: Ultra-rare weapons for extreme high levels
+    '18': { name: 'Genesis Sword', icon: '💫', path: '/Loot/Weapons/18.png', requirement: { type: 'prestige', value: 15 }, dpcMultiplier: 25000 },
+    '19': { name: 'Reality Breaker', icon: '⚫', path: '/Loot/Weapons/19.png', requirement: { type: 'prestige', value: 20 }, dpcMultiplier: 50000 },
+    '20': { name: 'Infinity Edge', icon: '♾️', path: '/Loot/Weapons/20.png', requirement: { type: 'prestige', value: 25 }, dpcMultiplier: 100000 },
+    '21': { name: 'Omnislayer', icon: '🌠', path: '/Loot/Weapons/21.png', requirement: { type: 'masterLevel', value: 10 }, dpcMultiplier: 500000 }
   };
 
-  // EXPANDED Theme definitions with better contrast
+  // EXPANDED Theme definitions with PRESTIGE themes
   const THEMES = {
     default: { 
       name: 'Hero\'s Dawn', 
@@ -169,10 +191,33 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
       panel: 'bg-red-100 text-gray-800',
       accent: 'from-red-600 to-gray-700',
       requirement: { type: 'prestige', value: 3 }
+    },
+    
+    // NEW: Ultra-exclusive prestige themes
+    transcendent: {
+      name: 'Transcendent Plane',
+      bg: 'from-yellow-200 via-pink-300 to-purple-400',
+      panel: 'bg-gradient-to-br from-white to-yellow-50 text-gray-800',
+      accent: 'from-yellow-600 to-pink-600',
+      requirement: { type: 'prestige', value: 10 }
+    },
+    omnipotent: {
+      name: 'Omnipotent Realm',
+      bg: 'from-black via-purple-900 to-pink-900',
+      panel: 'bg-black text-white border-2 border-purple-500',
+      accent: 'from-purple-500 to-pink-500',
+      requirement: { type: 'prestige', value: 20 }
+    },
+    infinite: {
+      name: 'Infinite Cosmos',
+      bg: 'from-indigo-900 via-purple-900 to-pink-900',
+      panel: 'bg-gray-900 text-white border-2 border-yellow-400',
+      accent: 'from-yellow-400 to-orange-500',
+      requirement: { type: 'masterLevel', value: 5 }
     }
   };
 
-  // Enhanced title definitions
+  // EXPANDED title definitions with MASTER tiers
   const TITLES = {
     'Novice': { requirement: null, color: 'text-gray-600', glow: '' },
     'Apprentice': { requirement: { type: 'totalGold', value: 500 }, color: 'text-green-600', glow: 'shadow-green-500/50' },
@@ -183,32 +228,93 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     'Mythic': { requirement: { type: 'prestige', value: 1 }, color: 'text-pink-600', glow: 'shadow-pink-500/50' },
     'Ascended': { requirement: { type: 'prestige', value: 3 }, color: 'text-cyan-400', glow: 'shadow-cyan-400/50' },
     'Divine': { requirement: { type: 'prestige', value: 5 }, color: 'text-yellow-400', glow: 'shadow-yellow-400/50' },
-    'Eternal': { requirement: { type: 'prestige', value: 10 }, color: 'text-purple-400', glow: 'shadow-purple-400/50' }
+    'Eternal': { requirement: { type: 'prestige', value: 10 }, color: 'text-purple-400', glow: 'shadow-purple-400/50' },
+    
+    // NEW: Master tier titles
+    'Transcendent': { requirement: { type: 'prestige', value: 15 }, color: 'text-gradient-to-r from-yellow-400 to-pink-400', glow: 'shadow-yellow-400/70' },
+    'Omnipotent': { requirement: { type: 'prestige', value: 20 }, color: 'text-gradient-to-r from-purple-400 to-pink-400', glow: 'shadow-purple-400/90' },
+    'Cosmic Master': { requirement: { type: 'prestige', value: 25 }, color: 'text-gradient-to-r from-blue-300 to-purple-300', glow: 'shadow-blue-400/90' },
+    'Reality Shaper': { requirement: { type: 'masterLevel', value: 1 }, color: 'text-gradient-to-r from-red-300 to-yellow-300', glow: 'shadow-red-400/90' },
+    'Infinity Lord': { requirement: { type: 'masterLevel', value: 10 }, color: 'text-white', glow: 'shadow-white/100 animate-pulse' }
   };
 
-  // Choice events system
+  // NEW: Boss definitions for epic encounters
+  const BOSS_ENCOUNTERS = [
+    {
+      id: 'shadow_king',
+      name: 'Shadow King',
+      health: 50000,
+      goldReward: 25000,
+      specialReward: { type: 'dpcMult', value: 1.5 },
+      requirement: { type: 'totalGold', value: 100000 },
+      phases: [
+        { healthPercent: 100, message: 'The Shadow King emerges from the darkness!' },
+        { healthPercent: 50, message: 'The Shadow King calls forth minions!' },
+        { healthPercent: 10, message: 'The Shadow King enters a rage!' }
+      ]
+    },
+    {
+      id: 'crystal_dragon',
+      name: 'Crystal Dragon',
+      health: 500000,
+      goldReward: 250000,
+      specialReward: { type: 'globalDpsMult', value: 2.0 },
+      requirement: { type: 'prestige', value: 2 },
+      phases: [
+        { healthPercent: 100, message: 'A massive Crystal Dragon blocks your path!' },
+        { healthPercent: 30, message: 'The Crystal Dragon breathes devastating fire!' },
+        { healthPercent: 5, message: 'The Crystal Dragon makes one final desperate attack!' }
+      ]
+    },
+    {
+      id: 'void_emperor',
+      name: 'Void Emperor',
+      health: 10000000,
+      goldReward: 2000000,
+      specialReward: { type: 'masterLevel', value: 1 },
+      requirement: { type: 'prestige', value: 10 },
+      phases: [
+        { healthPercent: 100, message: 'The Void Emperor materializes from nothingness!' },
+        { healthPercent: 66, message: 'Reality bends around the Void Emperor!' },
+        { healthPercent: 33, message: 'The Void Emperor summons cosmic storms!' },
+        { healthPercent: 10, message: 'The Void Emperor prepares for annihilation!' }
+      ]
+    }
+  ];
+
+  // NEW: Interactive skill challenges
+  const SKILL_CHALLENGES = [
+    {
+      id: 'timing_challenge',
+      name: 'Perfect Timing',
+      description: 'Click when the indicator hits the green zone!',
+      type: 'timing',
+      difficulty: 'medium',
+      goldReward: 5000,
+      duration: 10000
+    },
+    {
+      id: 'sequence_challenge',
+      name: 'Memory Sequence',
+      description: 'Repeat the sequence of clicks!',
+      type: 'sequence',
+      difficulty: 'hard',
+      goldReward: 15000,
+      duration: 30000
+    },
+    {
+      id: 'rapid_fire',
+      name: 'Rapid Fire',
+      description: 'Click as fast as you can!',
+      type: 'speed',
+      difficulty: 'easy',
+      goldReward: 3000,
+      duration: 5000
+    }
+  ];
+
+  // NEW: Enhanced choice events with multi-stage and interactive elements
   const CHOICE_EVENTS = [
-    {
-      text: "You discover a mysterious merchant offering a deal...",
-      choices: [
-        { text: "Trade gold for power", effect: { type: 'tradeGoldForDPC', goldCost: 0.1, dpcMult: 1.5 } },
-        { text: "Ignore the merchant", effect: { type: 'smallGoldGain', amount: 0.05 } }
-      ]
-    },
-    {
-      text: "A magical fountain appears before you...",
-      choices: [
-        { text: "Drink from it", effect: { type: 'randomBoon', duration: 60000 } },
-        { text: "Fill your pouch with water", effect: { type: 'goldGain', amount: 0.1 } }
-      ]
-    },
-    {
-      text: "You find an ancient training ground...",
-      choices: [
-        { text: "Train intensively", effect: { type: 'permanentDPCBoost', mult: 1.1 } },
-        { text: "Rest and meditate", effect: { type: 'temporaryDPSBoost', mult: 3, duration: 120000 } }
-      ]
-    },
     {
       text: "🎰 You find a magical Lucky Wheel! Spin to win fantastic prizes!",
       choices: [
@@ -217,59 +323,58 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
       ]
     },
     {
-      text: "🎲 A pair of enchanted dice appear before you, glowing with magical energy!",
+      text: "⚔️ A legendary warrior challenges you! Do you accept their trial?",
       choices: [
-        { text: "🎲 Roll the Dice!", effect: { type: 'diceRoll' } },
-        { text: "Leave them alone", effect: { type: 'goldGain', amount: 0.05 } }
+        { text: "🗡️ Accept the duel!", effect: { type: 'skillChallenge', challengeType: 'timing_challenge' } },
+        { text: "🏃 Decline respectfully", effect: { type: 'goldGain', amount: 0.05 } }
       ]
     },
     {
-      text: "📦 You stumble upon three mysterious treasure chests. Choose wisely!",
+      text: "🐉 A mighty boss appears on the horizon! Will you face this legendary foe?",
       choices: [
-        { text: "📦 Open Chest #1", effect: { type: 'treasureChest', chest: 1 } },
-        { text: "📦 Open Chest #2", effect: { type: 'treasureChest', chest: 2 } },
-        { text: "📦 Open Chest #3", effect: { type: 'treasureChest', chest: 3 } }
+        { text: "⚔️ Engage in epic battle!", effect: { type: 'bossEncounter' } },
+        { text: "🏃 Retreat for now", effect: { type: 'goldGain', amount: 0.1 } }
       ]
     },
     {
-      text: "🔮 A mystical crystal ball shows you glimpses of possible futures...",
+      text: "🧙‍♂️ An ancient wizard offers to test your magical abilities...",
       choices: [
-        { text: "🔮 Peer into the future", effect: { type: 'crystalBall' } },
-        { text: "Look away", effect: { type: 'goldGain', amount: 0.03 } }
+        { text: "✨ Accept the magical test", effect: { type: 'skillChallenge', challengeType: 'sequence_challenge' } },
+        { text: "🚶 Politely decline", effect: { type: 'smallGoldGain', amount: 0.03 } }
       ]
     },
     {
-      text: "⚔️ You encounter a legendary warrior who challenges you to prove your worth!",
+      text: "🏃‍♂️ A speed demon challenges you to a contest of reflexes!",
       choices: [
-        { text: "⚔️ Accept the challenge", effect: { type: 'warriorChallenge' } },
-        { text: "Decline respectfully", effect: { type: 'goldGain', amount: 0.08 } }
+        { text: "⚡ Show your lightning reflexes!", effect: { type: 'skillChallenge', challengeType: 'rapid_fire' } },
+        { text: "🚶 Walk away calmly", effect: { type: 'goldGain', amount: 0.04 } }
       ]
     },
     {
-      text: "🌟 Shooting stars streak across the sky! Make a wish!",
+      text: "🌟 A cosmic rift opens, revealing treasures beyond imagination!",
       choices: [
-        { text: "🌟 Wish for gold", effect: { type: 'shootingStar', wish: 'gold' } },
-        { text: "✨ Wish for power", effect: { type: 'shootingStar', wish: 'power' } },
-        { text: "🎯 Wish for luck", effect: { type: 'shootingStar', wish: 'luck' } }
+        { text: "🌀 Enter the rift", effect: { type: 'cosmicRift' } },
+        { text: "🛡️ Stay in this reality", effect: { type: 'goldGain', amount: 0.08 } }
       ]
     },
     {
-      text: "🃏 A mysterious card dealer appears with a deck of fate cards...",
+      text: "🎭 A mysterious carnival appears with games of chance and skill...",
       choices: [
-        { text: "🃏 Draw a card", effect: { type: 'cardDraw' } },
-        { text: "Walk past", effect: { type: 'smallGoldGain', amount: 0.03 } }
+        { text: "🎪 Play the carnival games", effect: { type: 'carnival' } },
+        { text: "👀 Just watch from afar", effect: { type: 'smallGoldGain', amount: 0.02 } }
       ]
     },
     {
-      text: "🕳️ You find a deep mining shaft with glinting treasures below...",
+      text: "⚡ A storm of pure energy surrounds you! How do you respond?",
       choices: [
-        { text: "⛏️ Mine for treasure", effect: { type: 'miningEvent' } },
-        { text: "Stay on safe ground", effect: { type: 'goldGain', amount: 0.04 } }
+        { text: "🌩️ Absorb the energy", effect: { type: 'energyStorm' } },
+        { text: "🛡️ Shield yourself", effect: { type: 'goldGain', amount: 0.06 } },
+        { text: "🏃 Run through it", effect: { type: 'randomBoon', duration: 120000 } }
       ]
     }
   ];
 
-  // FIXED: Helper functions
+  // Helper functions
   const fmt = useCallback((n) => {
     if (!isFinite(n) || isNaN(n)) return '0';
     const abs = Math.abs(n);
@@ -302,7 +407,6 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     return m;
   }, [gameState.boons]);
 
-  // UPDATED: DPC calculation now includes weapon multiplier
   const dpc = useCallback(() => {
     const currentWeapon = WEAPONS[gameState.activeWeapon] || WEAPONS['1'];
     const weaponMultiplier = currentWeapon.dpcMultiplier || 1;
@@ -339,9 +443,41 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     return gameState.upgrades.filter(u => u && u.purchased).length;
   }, [gameState.upgrades]);
 
+  // NEW: Background Music Functions
+  const initializeMusic = useCallback(() => {
+    if (!musicRef.current) {
+      musicRef.current = new Audio('/sounds/clickermusic.mp3');
+      musicRef.current.loop = true;
+      musicRef.current.volume = 0.3;
+      
+      // Handle loading errors gracefully
+      musicRef.current.addEventListener('error', () => {
+        console.log('Background music failed to load');
+      });
+    }
+  }, []);
+
+  const toggleMusic = useCallback(() => {
+    initializeMusic();
+    
+    setGameState(prev => {
+      const newMusicEnabled = !prev.musicEnabled;
+      
+      if (newMusicEnabled) {
+        musicRef.current.play().catch(e => {
+          console.log('Music playback failed:', e);
+        });
+      } else {
+        musicRef.current.pause();
+      }
+      
+      return { ...prev, musicEnabled: newMusicEnabled };
+    });
+  }, [initializeMusic]);
+
   // Prestige functions
   const canPrestige = useCallback(() => {
-    return gameState.totalGold >= 1000000000; // 1B gold required
+    return gameState.totalGold >= 1000000000;
   }, [gameState.totalGold]);
 
   const calculatePrestigeGain = useCallback(() => {
@@ -351,8 +487,10 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
 
   const getPrestigeBorder = (prestigeLevel) => {
     if (prestigeLevel <= 0) return '';
-    if (prestigeLevel >= 10) return 'ring-8 ring-purple-400 ring-opacity-100 animate-pulse';
-    if (prestigeLevel >= 6) return 'ring-8 ring-cyan-400 ring-opacity-80';
+    if (prestigeLevel >= 20) return 'ring-8 ring-white ring-opacity-100 animate-pulse shadow-2xl shadow-white/50';
+    if (prestigeLevel >= 15) return 'ring-8 ring-yellow-300 ring-opacity-100 animate-pulse shadow-2xl shadow-yellow-400/50';
+    if (prestigeLevel >= 10) return 'ring-8 ring-purple-400 ring-opacity-100 animate-pulse shadow-2xl shadow-purple-400/50';
+    if (prestigeLevel >= 6) return 'ring-8 ring-cyan-400 ring-opacity-80 shadow-xl shadow-cyan-400/30';
     const borders = ['', 'ring-4 ring-yellow-400 ring-opacity-60', 'ring-4 ring-orange-400 ring-opacity-60', 'ring-4 ring-red-400 ring-opacity-60', 'ring-4 ring-purple-400 ring-opacity-60', 'ring-4 ring-pink-400 ring-opacity-60'];
     return borders[Math.min(prestigeLevel, borders.length - 1)] || '';
   };
@@ -387,10 +525,12 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
         return purchasedUpgrades() >= requirement.value;
       case 'prestige':
         return gameState.prestige >= requirement.value;
+      case 'masterLevel':
+        return gameState.masterLevel >= requirement.value;
       default:
         return false;
     }
-  }, [gameState.totalGold, gameState.attacks, gameState.prestige, totalArtifacts, dps, purchasedUpgrades]);
+  }, [gameState.totalGold, gameState.attacks, gameState.prestige, gameState.masterLevel, totalArtifacts, dps, purchasedUpgrades]);
 
   // Add floating number
   const addFloatingNumber = useCallback((x, y, text, color = '#ffd700') => {
@@ -416,10 +556,105 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     });
   }, []);
 
+  // NEW: Boss encounter functions
+  const startBossEncounter = useCallback((bossId) => {
+    const boss = BOSS_ENCOUNTERS.find(b => b.id === bossId);
+    if (!boss) return;
+
+    setActiveBoss(boss);
+    setBossHealth(boss.health);
+    setMaxBossHealth(boss.health);
+    addToast(`${boss.name} appears! Prepare for battle!`, 'warning');
+  }, [addToast]);
+
+  const attackBoss = useCallback((damage) => {
+    if (!activeBoss || bossHealth <= 0) return;
+
+    const newHealth = Math.max(0, bossHealth - damage);
+    setBossHealth(newHealth);
+
+    // Check for phase transitions
+    const healthPercent = (newHealth / maxBossHealth) * 100;
+    const currentPhase = activeBoss.phases.find(p => 
+      healthPercent <= p.healthPercent && healthPercent > (activeBoss.phases[activeBoss.phases.indexOf(p) + 1]?.healthPercent || 0)
+    );
+
+    if (currentPhase && newHealth !== bossHealth) {
+      addToast(currentPhase.message, 'info');
+    }
+
+    // Boss defeated
+    if (newHealth <= 0) {
+      const reward = activeBoss.goldReward;
+      addGold(reward);
+      
+      // Apply special reward
+      setGameState(prev => {
+        let newState = { ...prev };
+        if (activeBoss.specialReward.type === 'dpcMult') {
+          newState.dpcMult *= activeBoss.specialReward.value;
+        } else if (activeBoss.specialReward.type === 'globalDpsMult') {
+          newState.globalDpsMult *= activeBoss.specialReward.value;
+        } else if (activeBoss.specialReward.type === 'masterLevel') {
+          newState.masterLevel += activeBoss.specialReward.value;
+        }
+        
+        newState.bossesDefeated = [...(prev.bossesDefeated || []), activeBoss.id];
+        return newState;
+      });
+
+      addToast(`${activeBoss.name} defeated! Gained ${fmt(reward)} gold and special power!`, 'success');
+      setActiveBoss(null);
+      setBossHealth(0);
+      setMaxBossHealth(0);
+    }
+  }, [activeBoss, bossHealth, maxBossHealth, addGold, addToast, fmt]);
+
+  // NEW: Skill challenge functions
+  const startSkillChallenge = useCallback((challengeType) => {
+    const challenge = SKILL_CHALLENGES.find(c => c.id === challengeType);
+    if (!challenge) return;
+
+    setChallengeData({
+      ...challenge,
+      startTime: Date.now(),
+      progress: 0,
+      completed: false
+    });
+    setShowSkillChallenge(true);
+  }, []);
+
+  const completeSkillChallenge = useCallback((success) => {
+    if (!challengeData) return;
+
+    if (success) {
+      addGold(challengeData.goldReward);
+      setGameState(prev => ({
+        ...prev,
+        skillPoints: prev.skillPoints + 1,
+        challengesCompleted: [...(prev.challengesCompleted || []), challengeData.id]
+      }));
+      addToast(`Challenge completed! Gained ${fmt(challengeData.goldReward)} gold and 1 skill point!`, 'success');
+    } else {
+      const consolationGold = challengeData.goldReward * 0.1;
+      addGold(consolationGold);
+      addToast(`Challenge failed, but you gained ${fmt(consolationGold)} gold for trying!`, 'warning');
+    }
+
+    setShowSkillChallenge(false);
+    setChallengeData(null);
+  }, [challengeData, addGold, addToast, fmt]);
+
   // Attack function
   const attack = useCallback((event) => {
     const gain = dpc();
-    addGold(gain);
+    
+    // If boss is active, deal damage to boss instead
+    if (activeBoss && bossHealth > 0) {
+      attackBoss(gain);
+    } else {
+      addGold(gain);
+    }
     
     setGameState(prev => ({
       ...prev,
@@ -432,10 +667,11 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
       const rect = event.currentTarget.getBoundingClientRect();
       const x = event.clientX - rect.left;
       const y = event.clientY - rect.top;
-      addFloatingNumber(x, y, `+${fmt(gain)}`, '#ffd700');
+      const color = activeBoss ? '#ff4444' : '#ffd700';
+      addFloatingNumber(x, y, `${activeBoss ? 'DMG: ' : '+'}${fmt(gain)}`, color);
     }
 
-    // Play sound effect (if available)
+    // Play sound effect
     try {
       const audio = new Audio('/sounds/ding.mp3');
       audio.volume = 0.3;
@@ -446,7 +682,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     if (gameState.attacks === 0) {
       addToast('Achievement: First Strike!', 'success');
     }
-  }, [dpc, addGold, addFloatingNumber, fmt, gameState.attacks, addToast]);
+  }, [dpc, addGold, activeBoss, bossHealth, attackBoss, addFloatingNumber, fmt, gameState.attacks, addToast]);
 
   // Check for new unlocks
   const checkUnlocks = useCallback(() => {
@@ -642,85 +878,101 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     setShowChoiceEvent(true);
   }, [gameState.event.shown]);
 
-  // Handle choice event
+  // Enhanced choice event handler with new event types
   const handleChoiceEvent = useCallback((choiceIndex) => {
     const choice = gameState.event.choices[choiceIndex];
     if (!choice) return;
 
     const effect = choice.effect;
     
-    // Play appropriate sound for different event types
-    const playEventSound = (eventType) => {
-      try {
-        let soundFile = 'ding.mp3';
-        if (['luckyWheel', 'diceRoll', 'treasureChest'].includes(eventType)) {
-          soundFile = 'coins.mp3';
-        } else if (['crystalBall', 'cardDraw'].includes(eventType)) {
-          soundFile = 'ding.mp3';
-        }
-        const audio = new Audio(`/sounds/${soundFile}`);
-        audio.volume = 0.4;
-        audio.play().catch(() => {});
-      } catch (e) {}
-    };
-    
     setGameState(prev => {
       let newState = { ...prev };
       
       switch (effect.type) {
-        case 'tradeGoldForDPC':
-          const goldCost = prev.gold * effect.goldCost;
-          newState.gold = prev.gold - goldCost;
-          newState.dpcMult *= effect.dpcMult;
-          addToast(`Traded ${fmt(goldCost)} gold for permanent power!`, 'success');
-          playEventSound('tradeGoldForDPC');
+        case 'skillChallenge':
+          startSkillChallenge(effect.challengeType);
           break;
-          
-        case 'smallGoldGain':
-          const smallGain = Math.max(100, prev.totalGold * effect.amount);
-          newState.gold += smallGain;
-          newState.totalGold += smallGain;
-          addToast(`Found ${fmt(smallGain)} gold!`, 'success');
-          playEventSound('smallGoldGain');
+
+        case 'bossEncounter':
+          // Find an appropriate boss based on player progress
+          const availableBosses = BOSS_ENCOUNTERS.filter(boss => 
+            checkUnlockRequirement(boss.requirement) && 
+            !gameState.bossesDefeated.includes(boss.id)
+          );
+          if (availableBosses.length > 0) {
+            const randomBoss = availableBosses[Math.floor(Math.random() * availableBosses.length)];
+            setTimeout(() => startBossEncounter(randomBoss.id), 500);
+          } else {
+            const fallbackGold = Math.max(10000, prev.totalGold * 0.2);
+            newState.gold += fallbackGold;
+            newState.totalGold += fallbackGold;
+            addToast(`No worthy opponents found! Gained ${fmt(fallbackGold)} gold instead!`, 'info');
+          }
           break;
+
+        case 'cosmicRift':
+          const riftRewards = [
+            { gold: 0.5, message: '🌟 The rift showered you with cosmic gold!' },
+            { dpc: 2.0, message: '⚡ Cosmic energy enhances your power!' },
+            { masterLevel: 1, message: '🌌 You gained cosmic understanding!' }
+          ];
+          const riftReward = riftRewards[Math.floor(Math.random() * riftRewards.length)];
           
-        case 'goldGain':
-          const gain = Math.max(500, prev.totalGold * effect.amount);
-          newState.gold += gain;
-          newState.totalGold += gain;
-          addToast(`Earned ${fmt(gain)} gold!`, 'success');
-          playEventSound('goldGain');
+          if (riftReward.gold) {
+            const cosmicGold = Math.max(20000, prev.totalGold * riftReward.gold);
+            newState.gold += cosmicGold;
+            newState.totalGold += cosmicGold;
+          } else if (riftReward.dpc) {
+            newState.dpcMult *= riftReward.dpc;
+          } else if (riftReward.masterLevel) {
+            newState.masterLevel = (newState.masterLevel || 0) + riftReward.masterLevel;
+          }
+          addToast(riftReward.message, 'success');
           break;
+
+        case 'carnival':
+          const carnivalGames = [
+            { type: 'big_win', gold: 0.3, message: '🎪 JACKPOT! You won big at the carnival!' },
+            { type: 'skill_point', skill: 1, message: '🎯 Your carnival skills earned you a skill point!' },
+            { type: 'small_prize', gold: 0.1, message: '🎈 You won a small carnival prize!' }
+          ];
+          const carnivalResult = carnivalGames[Math.floor(Math.random() * carnivalGames.length)];
           
-        case 'randomBoon':
-          const boonTypes = ['dpc', 'dps'];
-          const randomType = boonTypes[Math.floor(Math.random() * boonTypes.length)];
-          const mult = 2 + Math.random() * 3;
-          newState.boons = [...prev.boons, {
-            name: `Mystic ${randomType.toUpperCase()} Boost`,
-            type: randomType,
-            mult: mult,
-            until: Date.now() + effect.duration
-          }];
-          addToast(`Gained ${randomType.toUpperCase()} x${mult.toFixed(1)} boost for ${effect.duration/1000}s!`, 'success');
-          playEventSound('randomBoon');
+          if (carnivalResult.gold) {
+            const carnivalGold = Math.max(5000, prev.totalGold * carnivalResult.gold);
+            newState.gold += carnivalGold;
+            newState.totalGold += carnivalGold;
+          } else if (carnivalResult.skill) {
+            newState.skillPoints = (newState.skillPoints || 0) + carnivalResult.skill;
+          }
+          addToast(carnivalResult.message, 'success');
           break;
+
+        case 'energyStorm':
+          const stormEffects = [
+            { type: 'power_surge', mult: 3, duration: 180000 },
+            { type: 'gold_rain', gold: 0.4 },
+            { type: 'energy_overload', mult: 1.5, permanent: true }
+          ];
+          const stormEffect = stormEffects[Math.floor(Math.random() * stormEffects.length)];
           
-        case 'permanentDPCBoost':
-          newState.dpcMult *= effect.mult;
-          addToast(`Permanent attack power increased by ${((effect.mult - 1) * 100).toFixed(0)}%!`, 'success');
-          playEventSound('permanentDPCBoost');
-          break;
-          
-        case 'temporaryDPSBoost':
-          newState.boons = [...prev.boons, {
-            name: 'Meditation Boost',
-            type: 'dps',
-            mult: effect.mult,
-            until: Date.now() + effect.duration
-          }];
-          addToast(`Temporary DPS x${effect.mult} boost for ${effect.duration/1000}s!`, 'success');
-          playEventSound('temporaryDPSBoost');
+          if (stormEffect.type === 'power_surge') {
+            newState.boons = [...prev.boons, {
+              name: 'Energy Storm Surge',
+              type: 'dps',
+              mult: stormEffect.mult,
+              until: Date.now() + stormEffect.duration
+            }];
+            addToast(`⚡ Energy storm grants ${stormEffect.mult}x DPS for ${stormEffect.duration/1000}s!`, 'success');
+          } else if (stormEffect.type === 'gold_rain') {
+            const stormGold = Math.max(15000, prev.totalGold * stormEffect.gold);
+            newState.gold += stormGold;
+            newState.totalGold += stormGold;
+            addToast(`💰 Energy storm brings gold rain: ${fmt(stormGold)}!`, 'success');
+          } else if (stormEffect.type === 'energy_overload') {
+            newState.dpcMult *= stormEffect.mult;
+            addToast(`⚡ Permanent energy overload! +50% attack power!`, 'success');
+          }
           break;
 
         case 'luckyWheel':
@@ -749,214 +1001,36 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
             }];
           }
           addToast(wheelResult.message, 'success');
-          playEventSound('luckyWheel');
           break;
 
-        case 'diceRoll':
-          const diceRoll = Math.floor(Math.random() * 6) + Math.floor(Math.random() * 6) + 2;
-          if (diceRoll === 12) {
-            const megaGold = Math.max(5000, prev.totalGold * 0.8);
-            newState.gold += megaGold;
-            newState.totalGold += megaGold;
-            newState.dpcMult *= 1.5;
-            addToast(`🎲 DOUBLE SIXES! Massive reward: ${fmt(megaGold)} gold + permanent power boost!`, 'success');
-          } else if (diceRoll >= 10) {
-            const goodGold = Math.max(2000, prev.totalGold * 0.3);
-            newState.gold += goodGold;
-            newState.totalGold += goodGold;
-            addToast(`🎲 High roll (${diceRoll})! Great reward: ${fmt(goodGold)} gold!`, 'success');
-          } else if (diceRoll >= 7) {
-            const okGold = Math.max(500, prev.totalGold * 0.1);
-            newState.gold += okGold;
-            newState.totalGold += okGold;
-            addToast(`🎲 Decent roll (${diceRoll}). Nice reward: ${fmt(okGold)} gold!`, 'success');
-          } else {
-            const smallGold = Math.max(100, prev.totalGold * 0.05);
-            newState.gold += smallGold;
-            newState.totalGold += smallGold;
-            addToast(`🎲 Low roll (${diceRoll}). Small consolation: ${fmt(smallGold)} gold.`, 'success');
-          }
-          playEventSound('diceRoll');
+        case 'smallGoldGain':
+          const smallGain = Math.max(100, prev.totalGold * effect.amount);
+          newState.gold += smallGain;
+          newState.totalGold += smallGain;
+          addToast(`Found ${fmt(smallGain)} gold!`, 'success');
           break;
 
-        case 'treasureChest':
-          const chestRewards = [
-            { gold: 0.4, message: '📦 Amazing! This chest was full of gold!' },
-            { boon: { mult: 3, duration: 120000 }, message: '📦 Magical! A power-boosting artifact!' },
-            { dpc: 1.3, message: '📦 Excellent! A weapon enhancement!' },
-            { trap: true, message: '📦 Oops! It was a trap, but you found some gold anyway.' }
-          ];
-          
-          let chestReward;
-          if (effect.chest === 1) {
-            chestReward = Math.random() < 0.6 ? chestRewards[0] : chestRewards[3];
-          } else if (effect.chest === 2) {
-            chestReward = chestRewards[Math.floor(Math.random() * chestRewards.length)];
-          } else {
-            chestReward = Math.random() < 0.4 ? chestRewards[1] : (Math.random() < 0.7 ? chestRewards[2] : chestRewards[3]);
-          }
-
-          if (chestReward.gold) {
-            const chestGold = Math.max(2000, prev.totalGold * chestReward.gold);
-            newState.gold += chestGold;
-            newState.totalGold += chestGold;
-          } else if (chestReward.boon) {
-            newState.boons = [...prev.boons, {
-              name: 'Treasure Boost',
-              type: 'dps',
-              mult: chestReward.boon.mult,
-              until: Date.now() + chestReward.boon.duration
-            }];
-          } else if (chestReward.dpc) {
-            newState.dpcMult *= chestReward.dpc;
-          } else if (chestReward.trap) {
-            const trapGold = Math.max(200, prev.totalGold * 0.08);
-            newState.gold += trapGold;
-            newState.totalGold += trapGold;
-          }
-          addToast(chestReward.message, chestReward.trap ? 'warning' : 'success');
-          playEventSound('treasureChest');
+        case 'goldGain':
+          const gain = Math.max(500, prev.totalGold * effect.amount);
+          newState.gold += gain;
+          newState.totalGold += gain;
+          addToast(`Earned ${fmt(gain)} gold!`, 'success');
           break;
 
-        case 'crystalBall':
-          const visions = [
-            { type: 'future_gold', mult: 0.25, message: '🔮 You see great wealth in your future!' },
-            { type: 'power_vision', mult: 1.2, message: '🔮 You witness yourself becoming stronger!' },
-            { type: 'lucky_vision', boon: { mult: 2.5, duration: 180000 }, message: '🔮 The crystal shows you paths to power!' },
-            { type: 'dark_vision', penalty: 0.9, message: '🔮 A dark vision, but you resist its power!' }
-          ];
-          const vision = visions[Math.floor(Math.random() * visions.length)];
-          
-          if (vision.type === 'future_gold') {
-            const futureGold = Math.max(1500, prev.totalGold * vision.mult);
-            newState.gold += futureGold;
-            newState.totalGold += futureGold;
-          } else if (vision.type === 'power_vision') {
-            newState.dpcMult *= vision.mult;
-          } else if (vision.type === 'lucky_vision') {
-            newState.boons = [...prev.boons, {
-              name: 'Crystal Vision',
-              type: 'dps',
-              mult: vision.boon.mult,
-              until: Date.now() + vision.boon.duration
-            }];
-          } else if (vision.type === 'dark_vision') {
-            newState.boons = [...prev.boons, {
-              name: 'Dark Vision',
-              type: 'dps',
-              mult: vision.penalty,
-              until: Date.now() + 60000
-            }];
-            const compensationGold = Math.max(800, prev.totalGold * 0.15);
-            newState.gold += compensationGold;
-            newState.totalGold += compensationGold;
-          }
-          addToast(vision.message, vision.type === 'dark_vision' ? 'warning' : 'success');
-          playEventSound('crystalBall');
+        case 'randomBoon':
+          const boonTypes = ['dpc', 'dps'];
+          const randomType = boonTypes[Math.floor(Math.random() * boonTypes.length)];
+          const mult = 2 + Math.random() * 3;
+          newState.boons = [...prev.boons, {
+            name: `Mystic ${randomType.toUpperCase()} Boost`,
+            type: randomType,
+            mult: mult,
+            until: Date.now() + effect.duration
+          }];
+          addToast(`Gained ${randomType.toUpperCase()} x${mult.toFixed(1)} boost for ${effect.duration/1000}s!`, 'success');
           break;
 
-        case 'warriorChallenge':
-          const challengeSuccess = Math.random() < 0.7;
-          if (challengeSuccess) {
-            const victorGold = Math.max(3000, prev.totalGold * 0.35);
-            newState.gold += victorGold;
-            newState.totalGold += victorGold;
-            newState.dpcMult *= 1.25;
-            addToast(`⚔️ Victory! The warrior rewards your skill: ${fmt(victorGold)} gold + permanent power!`, 'success');
-          } else {
-            const consolationGold = Math.max(800, prev.totalGold * 0.12);
-            newState.gold += consolationGold;
-            newState.totalGold += consolationGold;
-            addToast(`⚔️ Defeated, but you fought with honor. Consolation prize: ${fmt(consolationGold)} gold.`, 'warning');
-          }
-          playEventSound('warriorChallenge');
-          break;
-
-        case 'shootingStar':
-          if (effect.wish === 'gold') {
-            const starGold = Math.max(2500, prev.totalGold * 0.4);
-            newState.gold += starGold;
-            newState.totalGold += starGold;
-            addToast(`🌟 Your wish for gold comes true! Gained ${fmt(starGold)} gold!`, 'success');
-          } else if (effect.wish === 'power') {
-            newState.dpcMult *= 1.4;
-            addToast(`✨ Your wish for power is granted! Click damage increased by 40%!`, 'success');
-          } else if (effect.wish === 'luck') {
-            newState.boons = [...prev.boons, {
-              name: 'Shooting Star Luck',
-              type: 'dps',
-              mult: 5,
-              until: Date.now() + 150000
-            }];
-            addToast(`🎯 Your wish for luck shines bright! Massive temporary DPS boost!`, 'success');
-          }
-          playEventSound('shootingStar');
-          break;
-
-        case 'cardDraw':
-          const cards = [
-            { name: 'Ace of Gold', effect: 'mega_gold', mult: 0.6, message: '🃏 Ace of Gold! Massive gold bonus!' },
-            { name: 'King of Power', effect: 'big_power', mult: 1.5, message: '🃏 King of Power! Major strength boost!' },
-            { name: 'Queen of Magic', effect: 'magic_boost', mult: 4, duration: 100000, message: '🃏 Queen of Magic! Enchanting power boost!' },
-            { name: 'Jack of Luck', effect: 'luck_boost', mult: 3, duration: 120000, message: '🃏 Jack of Luck! Fortune favors you!' },
-            { name: 'Joker', effect: 'wild_card', message: '🃏 Joker! Wild magic grants you everything!' }
-          ];
-          const drawnCard = cards[Math.floor(Math.random() * cards.length)];
-          
-          if (drawnCard.effect === 'mega_gold') {
-            const cardGold = Math.max(4000, prev.totalGold * drawnCard.mult);
-            newState.gold += cardGold;
-            newState.totalGold += cardGold;
-          } else if (drawnCard.effect === 'big_power') {
-            newState.dpcMult *= drawnCard.mult;
-          } else if (drawnCard.effect === 'magic_boost' || drawnCard.effect === 'luck_boost') {
-            newState.boons = [...prev.boons, {
-              name: drawnCard.name,
-              type: 'dps',
-              mult: drawnCard.mult,
-              until: Date.now() + drawnCard.duration
-            }];
-          } else if (drawnCard.effect === 'wild_card') {
-            const jokerGold = Math.max(2000, prev.totalGold * 0.3);
-            newState.gold += jokerGold;
-            newState.totalGold += jokerGold;
-            newState.dpcMult *= 1.2;
-            newState.boons = [...prev.boons, {
-              name: 'Joker Magic',
-              type: 'dps',
-              mult: 3,
-              until: Date.now() + 90000
-            }];
-          }
-          addToast(drawnCard.message, 'success');
-          playEventSound('cardDraw');
-          break;
-
-        case 'miningEvent':
-          const miningOutcome = Math.random();
-          if (miningOutcome < 0.15) {
-            const diamondGold = Math.max(8000, prev.totalGold * 0.75);
-            newState.gold += diamondGold;
-            newState.totalGold += diamondGold;
-            newState.dpcMult *= 1.3;
-            addToast(`⛏️ DIAMOND STRIKE! Incredible find: ${fmt(diamondGold)} gold + permanent power!`, 'success');
-          } else if (miningOutcome < 0.4) {
-            const goldVein = Math.max(3000, prev.totalGold * 0.4);
-            newState.gold += goldVein;
-            newState.totalGold += goldVein;
-            addToast(`⛏️ Gold vein discovered! Mined ${fmt(goldVein)} gold!`, 'success');
-          } else if (miningOutcome < 0.7) {
-            const silverOre = Math.max(1200, prev.totalGold * 0.2);
-            newState.gold += silverOre;
-            newState.totalGold += silverOre;
-            addToast(`⛏️ Silver ore found! Collected ${fmt(silverOre)} gold worth!`, 'success');
-          } else {
-            const compensationGold = Math.max(600, prev.totalGold * 0.1);
-            newState.gold += compensationGold;
-            newState.totalGold += compensationGold;
-            addToast(`⛏️ Cave-in! Your magical protection saves you and grants ${fmt(compensationGold)} gold.`, 'warning');
-          }
-          playEventSound('miningEvent');
+        default:
           break;
       }
       
@@ -970,7 +1044,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     });
     
     setShowChoiceEvent(false);
-  }, [gameState.event.choices, addToast, fmt]);
+  }, [gameState.event.choices, gameState.bossesDefeated, startSkillChallenge, startBossEncounter, checkUnlockRequirement, addToast, fmt]);
 
   // Close choice event without selecting
   const closeChoiceEvent = useCallback(() => {
@@ -985,7 +1059,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     setShowChoiceEvent(false);
   }, []);
 
-  // FIXED: Firebase Save Function - UPDATED to include clicker game achievements for student display
+  // Save to Firebase with enhanced data
   const saveToFirebase = useCallback(async () => {
     if (!studentData || !updateStudentData || !isLoaded || saveInProgress) {
       return;
@@ -993,7 +1067,6 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
 
     setSaveInProgress(true);
     try {
-      // Create a clean, serializable copy of the game state
       const cleanGameState = {
         gold: gameState.gold,
         totalGold: gameState.totalGold,
@@ -1007,7 +1080,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
         multipliers: gameState.multipliers,
         artifacts: gameState.artifacts,
         upgrades: gameState.upgrades,
-        boons: [], // Always clear temporary effects on save
+        boons: [],
         unlockedWeapons: gameState.unlockedWeapons,
         activeWeapon: gameState.activeWeapon,
         unlockedThemes: gameState.unlockedThemes,
@@ -1018,11 +1091,16 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
         prestige: gameState.prestige,
         prestigePoints: gameState.prestigePoints,
         lifetimeEarnings: gameState.lifetimeEarnings,
+        musicEnabled: gameState.musicEnabled,
+        masterLevel: gameState.masterLevel,
+        challengesCompleted: gameState.challengesCompleted,
+        bossesDefeated: gameState.bossesDefeated,
+        skillPoints: gameState.skillPoints,
+        masteries: gameState.masteries,
         lastSave: Date.now(),
-        version: '2.1'
+        version: '3.0'
       };
 
-      // NEW: Create clicker achievements object for student display
       const currentWeapon = WEAPONS[gameState.activeWeapon] || WEAPONS['1'];
       const currentTheme = THEMES[gameState.activeTheme] || THEMES.default;
       const clickerAchievements = {
@@ -1032,7 +1110,8 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
         themeName: currentTheme.name,
         weapon: currentWeapon.name,
         totalGold: gameState.totalGold,
-        level: Math.min(Math.floor(gameState.totalGold / 10000) + 1, 100), // Simple leveling system
+        masterLevel: gameState.masterLevel,
+        level: Math.min(Math.floor(gameState.totalGold / 10000) + 1, 100),
         lastPlayed: Date.now()
       };
 
@@ -1041,7 +1120,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
         clickerAchievements: clickerAchievements
       });
 
-      console.log('✅ Clicker game saved successfully to Firebase');
+      console.log('✅ Enhanced clicker game saved successfully to Firebase');
       lastSaveRef.current = Date.now();
 
     } catch (error) {
@@ -1052,16 +1131,13 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     }
   }, [gameState, studentData, updateStudentData, isLoaded, saveInProgress, addToast]);
 
-  // FIXED: Firebase Load Function - Handles new students properly
+  // Load from Firebase
   const loadFromFirebase = useCallback(() => {
-    if (isLoaded) {
-      return;
-    }
+    if (isLoaded) return;
 
     try {
-      console.log('🔄 Loading clicker game from Firebase...');
+      console.log('📄 Loading clicker game from Firebase...');
       
-      // Handle case where student has no existing game data (new student)
       if (!studentData?.clickerGameData) {
         console.log('🎮 No existing game data found, starting new game for student');
         setIsLoaded(true);
@@ -1071,7 +1147,6 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
       
       const data = studentData.clickerGameData;
 
-      // Validate and sanitize the loaded data
       const loadedState = {
         gold: typeof data.gold === 'number' ? data.gold : 0,
         totalGold: typeof data.totalGold === 'number' ? data.totalGold : 0,
@@ -1086,7 +1161,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
         multipliers: data.multipliers && typeof data.multipliers === 'object' ? data.multipliers : {},
         artifacts: Array.isArray(data.artifacts) ? data.artifacts : gameState.artifacts,
         upgrades: Array.isArray(data.upgrades) ? data.upgrades : gameState.upgrades,
-        boons: [], // Always start fresh with no temporary effects
+        boons: [],
         unlockedWeapons: Array.isArray(data.unlockedWeapons) ? data.unlockedWeapons : ['1'],
         activeWeapon: typeof data.activeWeapon === 'string' ? data.activeWeapon : '1',
         unlockedThemes: Array.isArray(data.unlockedThemes) ? data.unlockedThemes : ['default'],
@@ -1097,48 +1172,64 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
         prestige: typeof data.prestige === 'number' ? data.prestige : 0,
         prestigePoints: typeof data.prestigePoints === 'number' ? data.prestigePoints : 0,
         lifetimeEarnings: typeof data.lifetimeEarnings === 'number' ? data.lifetimeEarnings : 0,
+        musicEnabled: typeof data.musicEnabled === 'boolean' ? data.musicEnabled : false,
+        masterLevel: typeof data.masterLevel === 'number' ? data.masterLevel : 0,
+        challengesCompleted: Array.isArray(data.challengesCompleted) ? data.challengesCompleted : [],
+        bossesDefeated: Array.isArray(data.bossesDefeated) ? data.bossesDefeated : [],
+        skillPoints: typeof data.skillPoints === 'number' ? data.skillPoints : 0,
+        masteries: data.masteries && typeof data.masteries === 'object' ? data.masteries : {},
         event: { nextIn: 60 + Math.random() * 120, shown: false, until: 0, choices: [], eventText: '' }
       };
 
       setGameState(loadedState);
       setSelectedWeapon(loadedState.activeWeapon);
       setSelectedTheme(loadedState.activeTheme);
+      
+      // Initialize music based on saved preference
+      if (loadedState.musicEnabled) {
+        setTimeout(() => {
+          initializeMusic();
+          if (musicRef.current) {
+            musicRef.current.play().catch(e => {
+              console.log('Auto-play music failed:', e);
+            });
+          }
+        }, 1000);
+      }
+      
       setIsLoaded(true);
 
-      console.log('✅ Clicker game loaded successfully from Firebase');
+      console.log('✅ Enhanced clicker game loaded successfully from Firebase');
       addToast('Game loaded successfully!', 'success');
 
     } catch (error) {
       console.error('⚠️ Error loading clicker game from Firebase:', error);
-      setIsLoaded(true); // Still mark as loaded to prevent infinite retries
+      setIsLoaded(true);
       addToast('Load failed, starting new game!', 'warning');
     }
-  }, [studentData, isLoaded, gameState.artifacts, gameState.upgrades, addToast]);
+  }, [studentData, isLoaded, gameState.artifacts, gameState.upgrades, addToast, initializeMusic]);
 
-  // Manual save function for the button
+  // Manual save function
   const manualSave = useCallback(() => {
     saveToFirebase();
     addToast('Game saved!', 'success');
   }, [saveToFirebase, addToast]);
 
-  // FIXED: Load on component mount - Handles both new and returning students
+  // Load on component mount
   useEffect(() => {
     if (studentData && !isLoaded) {
       loadFromFirebase();
-    } else if (!studentData && !isLoaded) {
-      // Handle case where studentData is not available yet
-      console.log('⏳ Waiting for student data...');
     }
   }, [studentData, loadFromFirebase, isLoaded]);
 
-  // FIXED: Auto-save every 30 seconds after loading
+  // Auto-save
   useEffect(() => {
     if (!isLoaded) return;
 
     const interval = setInterval(() => {
       const now = Date.now();
-      if (now - lastSaveRef.current > 25000) { // Only save if it's been more than 25s since last save
-        console.log('⏰ Auto-saving clicker game...');
+      if (now - lastSaveRef.current > 25000) {
+        console.log('⏰ Auto-saving enhanced clicker game...');
         saveToFirebase();
       }
     }, 30000);
@@ -1146,7 +1237,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     return () => clearInterval(interval);
   }, [isLoaded, saveToFirebase]);
 
-  // Update event timer for UI
+  // Update event timer
   useEffect(() => {
     if (!showChoiceEvent) return;
     
@@ -1161,7 +1252,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     return () => clearInterval(timerInterval);
   }, [showChoiceEvent, gameState.event.until]);
 
-  // Check unlocks when relevant stats change
+  // Check unlocks
   useEffect(() => {
     if (isLoaded) {
       checkUnlocks();
@@ -1231,14 +1322,14 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     };
   }, [isLoaded, dps, addGold, gameState.event, spawnChoiceEvent]);
 
-  // Show loading screen if not loaded
+  // Show loading screen
   if (!isLoaded) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-100 flex items-center justify-center">
         <div className="bg-white rounded-xl shadow-lg p-8 text-center">
           <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <h2 className="text-xl font-bold text-gray-700">Loading Hero Forge...</h2>
-          <p className="text-gray-500 mt-2">Preparing your adventure!</p>
+          <p className="text-gray-500 mt-2">Preparing your enhanced adventure!</p>
         </div>
       </div>
     );
@@ -1254,20 +1345,18 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
       {/* Custom styles */}
       <style jsx>{`
         @keyframes float-up {
-          0% {
-            opacity: 1;
-            transform: translateY(0px);
-          }
-          100% {
-            opacity: 0;
-            transform: translateY(-40px);
-          }
+          0% { opacity: 1; transform: translateY(0px); }
+          100% { opacity: 0; transform: translateY(-40px); }
         }
-        .float-number {
-          animation: float-up 0.8s ease-out forwards;
+        .float-number { animation: float-up 0.8s ease-out forwards; }
+        .prestige-glow { box-shadow: 0 0 30px rgba(255, 215, 0, 0.6), inset 0 0 30px rgba(255, 215, 0, 0.2); }
+        .boss-health-bar {
+          background: linear-gradient(90deg, #ff4444 0%, #ff6666 50%, #ff4444 100%);
+          animation: pulse 1s infinite;
         }
-        .prestige-glow {
-          box-shadow: 0 0 30px rgba(255, 215, 0, 0.6), inset 0 0 30px rgba(255, 215, 0, 0.2);
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.8; }
         }
       `}</style>
 
@@ -1304,7 +1393,25 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
         ))}
       </div>
 
-      {/* Enhanced Choice Event Modal with Timer */}
+      {/* Boss Health Bar */}
+      {activeBoss && (
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-40 bg-black bg-opacity-80 rounded-xl p-4 min-w-96">
+          <div className="text-center text-white mb-2">
+            <h3 className="text-xl font-bold text-red-400">{activeBoss.name}</h3>
+          </div>
+          <div className="w-full bg-gray-700 rounded-full h-6 mb-2">
+            <div 
+              className="boss-health-bar h-6 rounded-full transition-all duration-300"
+              style={{ width: `${(bossHealth / maxBossHealth) * 100}%` }}
+            ></div>
+          </div>
+          <div className="text-center text-white text-sm">
+            {fmt(bossHealth)} / {fmt(maxBossHealth)} HP
+          </div>
+        </div>
+      )}
+
+      {/* Enhanced Choice Event Modal */}
       {showChoiceEvent && (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
           <div className={`${currentTheme.panel} rounded-xl shadow-2xl w-full max-w-lg p-6 border-4 border-yellow-400 ${
@@ -1315,7 +1422,6 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
                 <h2 className="text-xl font-bold text-yellow-600">⚡ Adventure Event ⚡</h2>
               </div>
               
-              {/* Timer Display */}
               <div className={`mb-4 p-2 rounded-lg border-2 ${
                 eventTimeLeft <= 10 
                   ? 'bg-red-100 border-red-400' 
@@ -1367,26 +1473,57 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
                 Walk away and ignore the event...
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* NEW: Skill Challenge Modal */}
+      {showSkillChallenge && challengeData && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+          <div className={`${currentTheme.panel} rounded-xl shadow-2xl w-full max-w-md p-6 border-4 border-purple-400`}>
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-purple-600 mb-2">🎯 {challengeData.name}</h2>
+              <p className="text-gray-700 mb-4">{challengeData.description}</p>
+              <div className="text-lg font-semibold text-green-600">
+                Reward: {fmt(challengeData.goldReward)} gold + 1 skill point
+              </div>
+            </div>
             
-            {/* Enhanced visual effects */}
-            <div className={`absolute -top-2 -left-2 w-4 h-4 rounded-full ${
-              eventTimeLeft <= 10 ? 'bg-red-400 animate-ping' : 'bg-yellow-400 animate-ping'
-            }`}></div>
-            <div className={`absolute -top-2 -right-2 w-4 h-4 rounded-full ${
-              eventTimeLeft <= 10 ? 'bg-red-400 animate-ping' : 'bg-yellow-400 animate-ping'
-            }`} style={{animationDelay: '0.5s'}}></div>
-            <div className={`absolute -bottom-2 -left-2 w-4 h-4 rounded-full ${
-              eventTimeLeft <= 10 ? 'bg-red-400 animate-ping' : 'bg-yellow-400 animate-ping'
-            }`} style={{animationDelay: '1s'}}></div>
-            <div className={`absolute -bottom-2 -right-2 w-4 h-4 rounded-full ${
-              eventTimeLeft <= 10 ? 'bg-red-400' : 'bg-yellow-400'
-            }`} style={{animationDelay: '1.5s'}}></div>
+            <div className="mb-6">
+              {challengeData.type === 'timing' && (
+                <TimingChallenge 
+                  onComplete={completeSkillChallenge}
+                  duration={challengeData.duration}
+                />
+              )}
+              {challengeData.type === 'sequence' && (
+                <SequenceChallenge 
+                  onComplete={completeSkillChallenge}
+                  duration={challengeData.duration}
+                />
+              )}
+              {challengeData.type === 'speed' && (
+                <SpeedChallenge 
+                  onComplete={completeSkillChallenge}
+                  duration={challengeData.duration}
+                />
+              )}
+            </div>
+            
+            <div className="text-center">
+              <button
+                onClick={() => completeSkillChallenge(false)}
+                className="text-gray-500 hover:text-gray-700 text-sm underline"
+              >
+                Give up challenge
+              </button>
+            </div>
           </div>
         </div>
       )}
 
       <div className="max-w-7xl mx-auto">
-        {/* Enhanced Header with Title Display */}
+        {/* Enhanced Header with Music Button */}
         <div className={`${currentTheme.panel} rounded-xl shadow-lg p-6 mb-6`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -1395,7 +1532,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
               </div>
               <div>
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">
-                  Hero Forge
+                  Hero Forge Enhanced
                 </h1>
                 <div className="flex items-center space-x-4">
                   <div className={`inline-block px-3 py-1 rounded-full text-sm font-bold ${currentTitle.color} bg-opacity-20 border-2 border-current ${currentTitle.glow} shadow-lg`}>
@@ -1406,11 +1543,29 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
                       Prestige {gameState.prestige} ⭐
                     </div>
                   )}
+                  {gameState.masterLevel > 0 && (
+                    <div className="inline-block px-3 py-1 rounded-full text-sm font-bold text-purple-300 bg-purple-300 bg-opacity-20 border-2 border-purple-300 shadow-purple-300/50 shadow-lg">
+                      Master Level {gameState.masterLevel} 🌌
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
             
             <div className="flex items-center space-x-4">
+              {/* NEW: Music Toggle Button */}
+              <button
+                onClick={toggleMusic}
+                className={`px-4 py-2 rounded-lg transition-all font-semibold ${
+                  gameState.musicEnabled 
+                    ? 'bg-green-500 hover:bg-green-600 text-white' 
+                    : 'bg-gray-500 hover:bg-gray-600 text-white'
+                }`}
+                title={gameState.musicEnabled ? 'Turn off music' : 'Turn on music'}
+              >
+                {gameState.musicEnabled ? '🎵 Music On' : '🔇 Music Off'}
+              </button>
+
               {canPrestige() && (
                 <button
                   onClick={doPrestige}
@@ -1441,7 +1596,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Weapon Emblem & Stats */}
+          {/* Left Column - Enhanced with Master Level display */}
           <div className="lg:col-span-1 space-y-6">
             {/* Weapon Emblem */}
             <div className={`${currentTheme.panel} rounded-xl shadow-lg p-8`}>
@@ -1472,13 +1627,15 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
                   <div className="absolute bottom-16 right-4 w-4 h-4 border-2 border-yellow-400 rounded transform rotate-45 opacity-70 animate-pulse" style={{animationDelay: '2s'}}></div>
                   <div className="absolute bottom-24 right-12 w-4 h-4 border-2 border-yellow-400 rounded transform rotate-45 opacity-70 animate-pulse" style={{animationDelay: '2.5s'}}></div>
                 </div>
-                <p className="mt-4 text-gray-600 text-sm">Click to attack!</p>
+                <p className="mt-4 text-gray-600 text-sm">
+                  {activeBoss ? `Click to attack ${activeBoss.name}!` : 'Click to attack!'}
+                </p>
                 <p className="text-sm font-semibold text-purple-600">{currentWeapon.name}</p>
                 <p className="text-xs text-green-600 font-semibold">+{currentWeapon.dpcMultiplier}x Damage</p>
               </div>
             </div>
 
-            {/* Enhanced Stats */}
+            {/* Enhanced Stats with new metrics */}
             <div className={`${currentTheme.panel} rounded-xl shadow-lg p-6`}>
               <h2 className="text-xl font-bold mb-4">⚡ Combat Stats</h2>
               <div className="space-y-3">
@@ -1498,6 +1655,29 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
                   <span>Attacks:</span>
                   <span className="font-bold">{gameState.attacks.toLocaleString()}</span>
                 </div>
+                
+                {/* NEW: Enhanced progression stats */}
+                {gameState.skillPoints > 0 && (
+                  <div className="flex justify-between">
+                    <span>Skill Points:</span>
+                    <span className="font-bold text-purple-600">{gameState.skillPoints}</span>
+                  </div>
+                )}
+                
+                {gameState.challengesCompleted && gameState.challengesCompleted.length > 0 && (
+                  <div className="flex justify-between">
+                    <span>Challenges Won:</span>
+                    <span className="font-bold text-blue-600">{gameState.challengesCompleted.length}</span>
+                  </div>
+                )}
+                
+                {gameState.bossesDefeated && gameState.bossesDefeated.length > 0 && (
+                  <div className="flex justify-between">
+                    <span>Bosses Defeated:</span>
+                    <span className="font-bold text-red-600">{gameState.bossesDefeated.length}</span>
+                  </div>
+                )}
+                
                 {gameState.prestige > 0 && (
                   <div className="flex justify-between">
                     <span>Lifetime Earnings:</span>
@@ -1520,7 +1700,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
             </div>
           </div>
 
-          {/* Right Columns - Gold Display, Artifacts & Upgrades */}
+          {/* Right Columns - Enhanced content */}
           <div className="lg:col-span-2 space-y-6">
             {/* PROMINENT GOLD DISPLAY */}
             <div className={`${currentTheme.panel} rounded-xl shadow-lg p-8 border-4 border-yellow-400`}>
@@ -1670,7 +1850,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
           </div>
         </div>
 
-        {/* Enhanced Unlockables Panel */}
+        {/* Enhanced Unlockables Panel with new content */}
         {showUnlockables && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className={`${currentTheme.panel} rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-y-auto`}>
@@ -1686,13 +1866,14 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* Weapons */}
+                  {/* Enhanced Weapons with ultra-rare options */}
                   <div>
                     <h3 className="text-lg font-bold mb-4">⚔️ Legendary Weapons</h3>
                     <div className="grid grid-cols-2 gap-3 max-h-96 overflow-y-auto">
                       {Object.entries(WEAPONS).map(([key, weapon]) => {
                         const unlocked = gameState.unlockedWeapons.includes(key);
                         const requirement = weapon.requirement;
+                        const isUltraRare = parseInt(key) >= 18;
                         
                         return (
                           <div
@@ -1701,7 +1882,9 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
                               selectedWeapon === key 
                                 ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-300' 
                                 : unlocked 
-                                  ? 'border-gray-300 hover:border-gray-400 bg-white hover:shadow-md' 
+                                  ? isUltraRare
+                                    ? 'border-yellow-400 bg-gradient-to-br from-yellow-50 to-orange-50 hover:border-yellow-500 hover:shadow-md'
+                                    : 'border-gray-300 hover:border-gray-400 bg-white hover:shadow-md'
                                   : 'border-gray-200 bg-gray-100 opacity-60'
                             }`}
                             onClick={() => unlocked && setSelectedWeapon(key)}
@@ -1718,8 +1901,13 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
                               />
                               <div className="text-2xl hidden">{weapon.icon}</div>
                             </div>
-                            <div className="text-xs font-semibold">{weapon.name}</div>
-                            <div className="text-xs text-green-600 font-bold">+{weapon.dpcMultiplier}x</div>
+                            <div className={`text-xs font-semibold ${isUltraRare ? 'text-yellow-700' : ''}`}>
+                              {weapon.name}
+                              {isUltraRare && <span className="ml-1">✨</span>}
+                            </div>
+                            <div className={`text-xs font-bold ${isUltraRare ? 'text-orange-600' : 'text-green-600'}`}>
+                              +{weapon.dpcMultiplier.toLocaleString()}x
+                            </div>
                             {!unlocked && requirement && (
                               <div className="text-xs text-gray-500 mt-1">
                                 {requirement.type === 'totalGold' && `${fmt(requirement.value)} gold`}
@@ -1728,6 +1916,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
                                 {requirement.type === 'dps' && `${requirement.value} DPS`}
                                 {requirement.type === 'upgrades' && `${requirement.value} upgrades`}
                                 {requirement.type === 'prestige' && `Prestige ${requirement.value}`}
+                                {requirement.type === 'masterLevel' && `Master Level ${requirement.value}`}
                               </div>
                             )}
                             {unlocked && <div className="text-xs text-green-600 mt-1">Unlocked!</div>}
@@ -1737,13 +1926,14 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
                     </div>
                   </div>
 
-                  {/* Themes */}
+                  {/* Enhanced Themes with prestige themes */}
                   <div>
                     <h3 className="text-lg font-bold mb-4">🎨 Realm Themes</h3>
                     <div className="space-y-3 max-h-96 overflow-y-auto">
                       {Object.entries(THEMES).map(([key, theme]) => {
                         const unlocked = gameState.unlockedThemes.includes(key);
                         const requirement = theme.requirement;
+                        const isPrestigeTheme = ['transcendent', 'omnipotent', 'infinite'].includes(key);
                         
                         return (
                           <div
@@ -1752,13 +1942,18 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
                               selectedTheme === key 
                                 ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-300' 
                                 : unlocked 
-                                  ? 'border-gray-300 hover:border-gray-400 bg-white hover:shadow-md' 
+                                  ? isPrestigeTheme
+                                    ? 'border-purple-400 bg-gradient-to-br from-purple-50 to-pink-50 hover:border-purple-500 hover:shadow-md'
+                                    : 'border-gray-300 hover:border-gray-400 bg-white hover:shadow-md'
                                   : 'border-gray-200 bg-gray-100 opacity-60'
                             }`}
                             onClick={() => unlocked && setSelectedTheme(key)}
                           >
-                            <div className={`w-full h-6 rounded bg-gradient-to-r ${theme.bg} mb-2`}></div>
-                            <div className="text-sm font-semibold">{theme.name}</div>
+                            <div className={`w-full h-6 rounded bg-gradient-to-r ${theme.bg} mb-2 ${isPrestigeTheme ? 'shadow-lg' : ''}`}></div>
+                            <div className={`text-sm font-semibold ${isPrestigeTheme ? 'text-purple-700' : ''}`}>
+                              {theme.name}
+                              {isPrestigeTheme && <span className="ml-1">⭐</span>}
+                            </div>
                             {!unlocked && requirement && (
                               <div className="text-xs text-gray-500 mt-1">
                                 {requirement.type === 'totalGold' && `${fmt(requirement.value)} gold`}
@@ -1766,6 +1961,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
                                 {requirement.type === 'artifacts' && `${requirement.value} artifacts`}
                                 {requirement.type === 'dps' && `${requirement.value} DPS`}
                                 {requirement.type === 'prestige' && `Prestige ${requirement.value}`}
+                                {requirement.type === 'masterLevel' && `Master Level ${requirement.value}`}
                               </div>
                             )}
                             {unlocked && <div className="text-xs text-green-600 mt-1">Unlocked!</div>}
@@ -1775,13 +1971,14 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
                     </div>
                   </div>
 
-                  {/* Enhanced Titles */}
+                  {/* Enhanced Titles with master tiers */}
                   <div>
                     <h3 className="text-lg font-bold mb-4">🏆 Hero Titles</h3>
                     <div className="space-y-3 max-h-96 overflow-y-auto">
                       {Object.entries(TITLES).map(([key, title]) => {
                         const unlocked = gameState.unlockedTitles.includes(key);
                         const requirement = title.requirement;
+                        const isMasterTitle = ['Transcendent', 'Omnipotent', 'Cosmic Master', 'Reality Shaper', 'Infinity Lord'].includes(key);
                         
                         return (
                           <div
@@ -1790,19 +1987,25 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
                               gameState.activeTitle === key 
                                 ? `border-blue-500 bg-blue-50 ring-2 ring-blue-300` 
                                 : unlocked 
-                                  ? 'border-gray-300 hover:border-gray-400 bg-white hover:shadow-md' 
+                                  ? isMasterTitle
+                                    ? 'border-gold-400 bg-gradient-to-br from-yellow-50 to-orange-50 hover:border-gold-500 hover:shadow-lg'
+                                    : 'border-gray-300 hover:border-gray-400 bg-white hover:shadow-md'
                                   : 'border-gray-200 bg-gray-100 opacity-60'
                             }`}
                             onClick={() => unlocked && setGameState(prev => ({ ...prev, activeTitle: key }))}
                           >
-                            <div className={`text-sm font-bold ${title.color} mb-1`}>{key}</div>
-                            <div className={`w-full h-2 rounded ${title.color.replace('text-', 'bg-')} opacity-20 mb-2`}></div>
+                            <div className={`text-sm font-bold ${title.color} mb-1`}>
+                              {key}
+                              {isMasterTitle && <span className="ml-1">🌟</span>}
+                            </div>
+                            <div className={`w-full h-2 rounded ${title.color.replace('text-', 'bg-')} opacity-20 mb-2 ${isMasterTitle ? 'shadow-md' : ''}`}></div>
                             {!unlocked && requirement && (
                               <div className="text-xs text-gray-500 mt-1">
                                 {requirement.type === 'totalGold' && `${fmt(requirement.value)} gold`}
                                 {requirement.type === 'attacks' && `${requirement.value} attacks`}
                                 {requirement.type === 'artifacts' && `${requirement.value} artifacts`}
                                 {requirement.type === 'prestige' && `Prestige ${requirement.value}`}
+                                {requirement.type === 'masterLevel' && `Master Level ${requirement.value}`}
                               </div>
                             )}
                             {unlocked && <div className="text-xs text-green-600 mt-1">Unlocked!</div>}
@@ -1825,6 +2028,233 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
             </div>
           </div>
         )}
+      </div>
+    </div>
+  );
+};
+
+// NEW: Skill Challenge Components
+
+// Timing Challenge Component
+const TimingChallenge = ({ onComplete, duration }) => {
+  const [indicator, setIndicator] = useState(0);
+  const [direction, setDirection] = useState(1);
+  const [timeLeft, setTimeLeft] = useState(duration / 1000);
+  const [hasClicked, setHasClicked] = useState(false);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIndicator(prev => {
+        const newVal = prev + direction * 2;
+        if (newVal >= 100) {
+          setDirection(-1);
+          return 100;
+        }
+        if (newVal <= 0) {
+          setDirection(1);
+          return 0;
+        }
+        return newVal;
+      });
+    }, 50);
+
+    const timer = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1 && !hasClicked) {
+          onComplete(false);
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => {
+      clearInterval(interval);
+      clearInterval(timer);
+    };
+  }, [direction, onComplete, hasClicked]);
+
+  const handleClick = () => {
+    if (hasClicked) return;
+    setHasClicked(true);
+    
+    const success = indicator >= 40 && indicator <= 60;
+    onComplete(success);
+  };
+
+  return (
+    <div className="text-center">
+      <div className="mb-4">
+        <div className="text-lg font-bold mb-2">Click when the indicator is in the green zone!</div>
+        <div className="text-sm text-gray-600">Time left: {timeLeft}s</div>
+      </div>
+      
+      <div className="relative w-full h-8 bg-gray-300 rounded-lg mb-4">
+        <div className="absolute left-0 top-0 w-full h-full bg-gradient-to-r from-red-400 via-yellow-400 to-red-400 rounded-lg"></div>
+        <div className="absolute left-[35%] top-0 w-[30%] h-full bg-green-400 rounded-lg"></div>
+        <div 
+          className="absolute top-0 w-2 h-full bg-blue-600 rounded-lg transition-all duration-100"
+          style={{ left: `${indicator}%` }}
+        ></div>
+      </div>
+      
+      <button
+        onClick={handleClick}
+        disabled={hasClicked}
+        className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold text-lg transition-colors"
+      >
+        {hasClicked ? 'Clicked!' : 'Click Now!'}
+      </button>
+    </div>
+  );
+};
+
+// Sequence Challenge Component
+const SequenceChallenge = ({ onComplete, duration }) => {
+  const [sequence, setSequence] = useState([]);
+  const [playerSequence, setPlayerSequence] = useState([]);
+  const [showingSequence, setShowingSequence] = useState(true);
+  const [currentShow, setCurrentShow] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(duration / 1000);
+
+  useEffect(() => {
+    // Generate random sequence
+    const newSequence = [];
+    for (let i = 0; i < 5; i++) {
+      newSequence.push(Math.floor(Math.random() * 4));
+    }
+    setSequence(newSequence);
+
+    // Show sequence
+    let showIndex = 0;
+    const showInterval = setInterval(() => {
+      if (showIndex < newSequence.length) {
+        setCurrentShow(newSequence[showIndex]);
+        showIndex++;
+      } else {
+        setShowingSequence(false);
+        clearInterval(showInterval);
+      }
+    }, 800);
+
+    // Timer
+    const timer = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          onComplete(false);
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => {
+      clearInterval(showInterval);
+      clearInterval(timer);
+    };
+  }, [onComplete]);
+
+  const handleButtonClick = (index) => {
+    if (showingSequence) return;
+
+    const newPlayerSequence = [...playerSequence, index];
+    setPlayerSequence(newPlayerSequence);
+
+    if (newPlayerSequence[newPlayerSequence.length - 1] !== sequence[newPlayerSequence.length - 1]) {
+      onComplete(false);
+    } else if (newPlayerSequence.length === sequence.length) {
+      onComplete(true);
+    }
+  };
+
+  const buttons = [
+    { color: 'bg-red-500', activeColor: 'bg-red-300' },
+    { color: 'bg-blue-500', activeColor: 'bg-blue-300' },
+    { color: 'bg-green-500', activeColor: 'bg-green-300' },
+    { color: 'bg-yellow-500', activeColor: 'bg-yellow-300' }
+  ];
+
+  return (
+    <div className="text-center">
+      <div className="mb-4">
+        <div className="text-lg font-bold mb-2">
+          {showingSequence ? 'Watch the sequence...' : 'Repeat the sequence!'}
+        </div>
+        <div className="text-sm text-gray-600">Time left: {timeLeft}s</div>
+        <div className="text-sm text-gray-600">Progress: {playerSequence.length}/{sequence.length}</div>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-4 mb-4">
+        {buttons.map((button, index) => (
+          <button
+            key={index}
+            onClick={() => handleButtonClick(index)}
+            disabled={showingSequence}
+            className={`w-20 h-20 rounded-lg font-bold text-white transition-all ${
+              showingSequence && currentShow === index 
+                ? button.activeColor 
+                : button.color
+            } ${
+              !showingSequence ? 'hover:opacity-80 active:scale-95' : ''
+            }`}
+          >
+            {index + 1}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// Speed Challenge Component
+const SpeedChallenge = ({ onComplete, duration }) => {
+  const [clicks, setClicks] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(duration / 1000);
+  const [isActive, setIsActive] = useState(true);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          setIsActive(false);
+          const success = clicks >= 25; // Need 25 clicks in 5 seconds
+          onComplete(success);
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [clicks, onComplete]);
+
+  const handleClick = () => {
+    if (isActive) {
+      setClicks(prev => prev + 1);
+    }
+  };
+
+  return (
+    <div className="text-center">
+      <div className="mb-4">
+        <div className="text-lg font-bold mb-2">Click as fast as you can!</div>
+        <div className="text-sm text-gray-600">Time left: {timeLeft}s</div>
+        <div className="text-lg font-semibold text-blue-600">Clicks: {clicks}</div>
+        <div className="text-sm text-gray-600">Target: 25 clicks</div>
+      </div>
+      
+      <button
+        onClick={handleClick}
+        disabled={!isActive}
+        className="w-32 h-32 bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white rounded-full font-bold text-xl transition-all active:scale-95"
+      >
+        {isActive ? 'CLICK!' : 'Done!'}
+      </button>
+      
+      <div className="mt-4">
+        <div className="w-full bg-gray-300 rounded-full h-4">
+          <div 
+            className="bg-blue-500 h-4 rounded-full transition-all duration-300"
+            style={{ width: `${Math.min(100, (clicks / 25) * 100)}%` }}
+          ></div>
+        </div>
       </div>
     </div>
   );
