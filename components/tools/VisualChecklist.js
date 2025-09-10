@@ -169,7 +169,7 @@ const VisualChecklist = ({ students, showToast, saveData, loadedData }) => {
   // Get active checklist
   const activeChecklist = checklists.find(c => c.id === activeChecklistId);
 
-  // DISPLAY MODE - Full screen checklist for classroom display
+  // DISPLAY MODE - Full screen checklist for classroom display - FIXED VERSION
   if (displayMode && activeChecklist) {
     const itemCount = activeChecklist.items.length;
     
@@ -195,9 +195,9 @@ const VisualChecklist = ({ students, showToast, saveData, loadedData }) => {
     }
 
     return (
-      <div className="fixed inset-0 bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 z-40 flex flex-col">
-        {/* Header - Fixed height */}
-        <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-4 md:p-6 shadow-xl flex-shrink-0">
+      <div className="fixed inset-0 bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 z-40">
+        {/* Header - Fixed position */}
+        <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-purple-600 to-blue-600 text-white p-4 md:p-6 shadow-xl">
           <div className="flex items-center justify-between max-w-7xl mx-auto">
             <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold text-center flex-1">
               {activeChecklist.name}
@@ -211,61 +211,63 @@ const VisualChecklist = ({ students, showToast, saveData, loadedData }) => {
           </div>
         </div>
 
-        {/* Main Content Area - Flexible height */}
-        <div className="flex-1 flex flex-col p-4 md:p-6 lg:p-8 min-h-0">
-          {/* Checklist Items - Take up available space */}
-          <div className="flex-1 flex items-center justify-center">
-            <div className="w-full max-w-7xl">
-              <div 
-                className="grid gap-3 md:gap-4 lg:gap-6 h-full"
-                style={{ 
-                  gridTemplateColumns: `repeat(${columns}, 1fr)`,
-                  gridTemplateRows: `repeat(${rows}, 1fr)`,
-                  height: 'calc(100vh - 200px)' // Account for header and footer
-                }}
-              >
-                {activeChecklist.items.map((item) => (
-                  <div
-                    key={item.id}
-                    onClick={() => toggleItem(activeChecklistId, item.id)}
-                    className={`
-                      ${item.colorScheme.bg} ${item.colorScheme.hover} ${item.colorScheme.text}
-                      rounded-2xl md:rounded-3xl shadow-2xl cursor-pointer transform transition-all duration-300 
-                      hover:scale-105 active:scale-95 p-3 md:p-6 lg:p-8 flex flex-col items-center justify-center
-                      text-center relative overflow-hidden border-2 md:border-4 ${item.colorScheme.border}
-                      ${item.completed ? 'opacity-75 saturate-50' : ''} min-h-0
-                    `}
-                  >
-                    {/* Completion checkmark */}
-                    {item.completed && (
-                      <div className="absolute top-2 right-2 md:top-4 md:right-4 bg-green-500 text-white rounded-full w-8 h-8 md:w-12 md:h-12 lg:w-16 lg:h-16 flex items-center justify-center text-lg md:text-2xl lg:text-3xl animate-pulse">
-                        ✅
-                      </div>
-                    )}
-                    
-                    {/* Item icon - Responsive sizing */}
-                    <div className="text-3xl md:text-5xl lg:text-7xl xl:text-8xl mb-2 md:mb-4 transform hover:rotate-12 transition-transform flex-shrink-0">
-                      {item.icon}
+        {/* Main Content - Properly positioned between header and footer */}
+        <div 
+          className="absolute left-0 right-0 p-4 md:p-6 lg:p-8"
+          style={{ 
+            top: '120px', // Space for header
+            bottom: '100px' // Space for footer
+          }}
+        >
+          <div className="w-full h-full max-w-7xl mx-auto">
+            <div 
+              className="grid gap-3 md:gap-4 lg:gap-6 w-full h-full"
+              style={{ 
+                gridTemplateColumns: `repeat(${columns}, 1fr)`,
+                gridTemplateRows: `repeat(${rows}, 1fr)`
+              }}
+            >
+              {activeChecklist.items.map((item) => (
+                <div
+                  key={item.id}
+                  onClick={() => toggleItem(activeChecklistId, item.id)}
+                  className={`
+                    ${item.colorScheme.bg} ${item.colorScheme.hover} ${item.colorScheme.text}
+                    rounded-2xl md:rounded-3xl shadow-2xl cursor-pointer transform transition-all duration-300 
+                    hover:scale-105 active:scale-95 p-2 md:p-4 lg:p-6 flex flex-col items-center justify-center
+                    text-center relative overflow-hidden border-2 md:border-4 ${item.colorScheme.border}
+                    ${item.completed ? 'opacity-75 saturate-50' : ''}
+                  `}
+                >
+                  {/* Completion checkmark */}
+                  {item.completed && (
+                    <div className="absolute top-2 right-2 md:top-4 md:right-4 bg-green-500 text-white rounded-full w-8 h-8 md:w-12 md:h-12 lg:w-16 lg:h-16 flex items-center justify-center text-lg md:text-2xl lg:text-3xl animate-pulse">
+                      ✅
                     </div>
-                    
-                    {/* Item text - Responsive sizing with proper overflow handling */}
-                    <h3 className="text-sm md:text-xl lg:text-3xl xl:text-4xl font-bold leading-tight break-words hyphens-auto">
-                      {item.text}
-                    </h3>
-                    
-                    {/* Decorative elements */}
-                    <div className="absolute -bottom-1 -right-1 md:-bottom-2 md:-right-2 opacity-20">
-                      <div className="text-4xl md:text-6xl lg:text-8xl">{item.icon}</div>
-                    </div>
+                  )}
+                  
+                  {/* Item icon - Responsive sizing */}
+                  <div className="text-3xl md:text-5xl lg:text-7xl xl:text-8xl mb-2 md:mb-4 transform hover:rotate-12 transition-transform flex-shrink-0">
+                    {item.icon}
                   </div>
-                ))}
-              </div>
+                  
+                  {/* Item text - Responsive sizing with proper overflow handling */}
+                  <h3 className="text-sm md:text-xl lg:text-3xl xl:text-4xl font-bold leading-tight break-words hyphens-auto">
+                    {item.text}
+                  </h3>
+                  
+                  {/* Decorative elements */}
+                  <div className="absolute -bottom-1 -right-1 md:-bottom-2 md:-right-2 opacity-20">
+                    <div className="text-4xl md:text-6xl lg:text-8xl">{item.icon}</div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* Footer - Fixed height */}
-        <div className="bg-white bg-opacity-95 backdrop-blur p-3 md:p-4 shadow-2xl flex-shrink-0">
+        {/* Footer - Fixed position */}
+        <div className="absolute bottom-0 left-0 right-0 bg-white bg-opacity-95 backdrop-blur p-3 md:p-4 shadow-2xl">
           <div className="max-w-7xl mx-auto flex items-center justify-center">
             <div className="bg-gradient-to-r from-green-400 to-blue-500 text-white px-4 py-2 md:px-8 md:py-4 rounded-full shadow-lg">
               <span className="text-lg md:text-2xl font-bold">
@@ -606,7 +608,7 @@ const VisualChecklist = ({ students, showToast, saveData, loadedData }) => {
                 Save Changes
               </button>
             </div>
-            </div>
+          </div>
         </div>
       </div>
     );
