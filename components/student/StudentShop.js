@@ -1,4 +1,4 @@
-// components/student/StudentShop.js - UPDATED WITH MYSTERY BOX FEATURE
+// components/student/StudentShop.js - UPDATED WITH MYSTERY BOX AND SELLING FEATURES
 import React, { useState } from 'react';
 
 // ===============================================
@@ -150,6 +150,32 @@ const getRarityBg = (rarity) => {
   }
 };
 
+// ===============================================
+// NEW: SELLING SYSTEM
+// ===============================================
+
+// Calculate sell price (25% of original cost)
+const calculateSellPrice = (originalPrice) => {
+  return Math.max(1, Math.floor(originalPrice * 0.25));
+};
+
+// Find original item price from shop data
+const findOriginalPrice = (itemName, itemType, SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, SHOP_BASIC_PETS, SHOP_PREMIUM_PETS, classRewards) => {
+  if (itemType === 'avatar') {
+    const basicAvatar = SHOP_BASIC_AVATARS.find(a => a.name === itemName);
+    const premiumAvatar = SHOP_PREMIUM_AVATARS.find(a => a.name === itemName);
+    return basicAvatar?.price || premiumAvatar?.price || 10; // Default if not found
+  } else if (itemType === 'pet') {
+    const basicPet = SHOP_BASIC_PETS.find(p => p.name === itemName);
+    const premiumPet = SHOP_PREMIUM_PETS.find(p => p.name === itemName);
+    return basicPet?.price || premiumPet?.price || 15; // Default if not found
+  } else if (itemType === 'reward') {
+    const reward = (classRewards || []).find(r => r.id === itemName || r.name === itemName);
+    return reward?.price || 10; // Default if not found
+  }
+  return 10; // Fallback default
+};
+
 const StudentShop = ({ 
   studentData,
   updateStudentData,
@@ -172,6 +198,10 @@ const StudentShop = ({
   const [mysteryBoxModal, setMysteryBoxModal] = useState({ visible: false, stage: 'confirm' }); // confirm, opening, reveal
   const [mysteryBoxPrize, setMysteryBoxPrize] = useState(null);
   const [isSpinning, setIsSpinning] = useState(false);
+
+  // NEW: Selling states
+  const [sellModal, setSellModal] = useState({ visible: false, item: null, type: null, price: 0 });
+  const [showSellMode, setShowSellMode] = useState(false);
 
   const currentCoins = calculateCoins(studentData);
 
@@ -281,6 +311,95 @@ const StudentShop = ({
     setMysteryBoxPrize(null);
     setIsSpinning(false);
   };
+
+  // ===============================================
+  // NEW: SELLING FUNCTIONS
+  // ===============================================
+  
+  const handleSellItem = (item, type) => {
+    let itemName = '';
+    let canSell = true;
+    let reason = '';
+    
+    if (type === 'avatar') {
+      itemName = item;
+      // Check if this is the currently equipped avatar
+      if (studentData.avatarBase === item) {
+        canSell = false;
+        reason = 'Cannot sell currently equipped avatar';
+      }
+      // Check if this is the only avatar owned
+      if (studentData.ownedAvatars?.length <= 1) {
+        canSell = false;
+        reason = 'Cannot sell your last avatar';
+      }
+    } else if (type === 'pet') {
+      itemName = item.name;
+      // Check if this is the active pet (first in list) - allow but show warning
+    } else if (type === 'reward') {
+      itemName = item.name;
+      // Rewards can always be sold
+    }
+    
+    if (!canSell) {
+      showToast(reason, 'error');
+      return;
+    }
+    
+    const originalPrice = findOriginalPrice(itemName, type, SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, SHOP_BASIC_PETS, SHOP_PREMIUM_PETS, classRewards);
+    const sellPrice = calculateSellPrice(originalPrice);
+    
+    setSellModal({ 
+      visible: true, 
+      item: item, 
+      type: type, 
+      price: sellPrice,
+      originalPrice: originalPrice 
+    });
+  };
+  
+  const confirmSell = async () => {
+    if (!sellModal.item) return;
+    
+    let updates = {
+      currency: (studentData.currency || 0) + sellModal.price
+    };
+    
+    // Remove the item from inventory
+    if (sellModal.type === 'avatar') {
+      updates.ownedAvatars = studentData.ownedAvatars.filter(a => a !== sellModal.item);
+    } else if (sellModal.type === 'pet') {
+      updates.ownedPets = studentData.ownedPets.filter(p => p.id !== sellModal.item.id);
+    } else if (sellModal.type === 'reward') {
+      // For rewards, find by name and remove first match
+      const rewardIndex = studentData.rewardsPurchased?.findIndex(r => 
+        r.name === sellModal.item.name && r.purchasedAt === sellModal.item.purchasedAt
+      );
+      if (rewardIndex >= 0) {
+        updates.rewardsPurchased = [
+          ...studentData.rewardsPurchased.slice(0, rewardIndex),
+          ...studentData.rewardsPurchased.slice(rewardIndex + 1)
+        ];
+      }
+    }
+    
+    const success = await updateStudentData(updates);
+    if (success) {
+      setSellModal({ visible: false, item: null, type: null, price: 0 });
+      
+      const itemDisplayName = sellModal.type === 'pet' ? sellModal.item.name : 
+                             sellModal.type === 'avatar' ? sellModal.item :
+                             sellModal.item.name;
+      
+      showToast(`You sold ${itemDisplayName} for ${sellModal.price} coins!`, 'success');
+    } else {
+      showToast('Failed to sell item. Please try again.', 'error');
+    }
+  };
+
+  // ===============================================
+  // PURCHASE LOGIC
+  // ===============================================
 
   const handlePurchase = async () => {
     if (!purchaseModal.item) return;
@@ -549,6 +668,53 @@ const StudentShop = ({
     </div>
   );
 
+  // ===============================================
+  // NEW: SELL CONFIRMATION MODAL
+  // ===============================================
+  const renderSellModal = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md text-center p-6">
+        <div className="text-5xl mb-4">💰</div>
+        <h2 className="text-2xl font-bold mb-4">Sell Item?</h2>
+        
+        {sellModal.type === 'pet' && studentData?.ownedPets?.[0]?.id === sellModal.item?.id && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+            <p className="text-sm text-yellow-800">⚠️ This is your active companion pet</p>
+          </div>
+        )}
+        
+        <div className="mb-6">
+          <p className="text-base mb-2">
+            Sell {sellModal.type === 'pet' ? sellModal.item?.name : 
+                 sellModal.type === 'avatar' ? sellModal.item :
+                 sellModal.item?.name}
+          </p>
+          <div className="text-sm text-gray-600 mb-1">
+            Original price: 💰{sellModal.originalPrice}
+          </div>
+          <div className="text-xl font-bold text-green-600">
+            Sell for: 💰{sellModal.price} (25% value)
+          </div>
+        </div>
+        
+        <div className="flex gap-4">
+          <button 
+            onClick={() => setSellModal({ visible: false, item: null, type: null, price: 0 })}
+            className="flex-1 py-3 border rounded-lg hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={confirmSell}
+            className="flex-1 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 font-bold"
+          >
+            Sell Item
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="space-y-4 md:space-y-6">
       {/* Student Info Header - Mobile Optimized */}
@@ -567,13 +733,36 @@ const StudentShop = ({
               <p className="text-base md:text-lg font-semibold text-yellow-600">💰 {currentCoins} coins available</p>
             </div>
           </div>
-          <button 
-            onClick={() => setInventoryModal({ visible: true })}
-            className="bg-purple-600 text-white px-3 md:px-4 py-2 rounded-lg hover:bg-purple-700 text-sm md:text-base flex-shrink-0"
-          >
-            Inventory
-          </button>
+          <div className="flex gap-2">
+            <button 
+              onClick={() => setInventoryModal({ visible: true })}
+              className="bg-purple-600 text-white px-3 md:px-4 py-2 rounded-lg hover:bg-purple-700 text-sm md:text-base flex-shrink-0"
+            >
+              Inventory
+            </button>
+            <button 
+              onClick={() => setShowSellMode(!showSellMode)} 
+              className={`font-semibold px-3 md:px-4 py-2 rounded-lg text-sm md:text-base flex-shrink-0 transition-all ${
+                showSellMode ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-green-500 text-white hover:bg-green-600'
+              }`}
+            >
+              {showSellMode ? '❌' : '💸'}
+            </button>
+          </div>
         </div>
+        
+        {/* NEW: Sell Mode Banner */}
+        {showSellMode && (
+          <div className="mt-4 p-3 md:p-4 bg-gradient-to-r from-green-100 to-yellow-100 rounded-lg border-2 border-green-300">
+            <div className="flex items-center gap-3">
+              <div className="text-2xl md:text-3xl">💸</div>
+              <div>
+                <h3 className="text-lg md:text-xl font-bold text-green-800">Sell Mode Active!</h3>
+                <p className="text-sm md:text-base text-green-600">Open your inventory to sell items for 25% of their value</p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Shop Categories - Mobile Optimized */}
@@ -646,18 +835,28 @@ const StudentShop = ({
       {/* Mystery Box Modal */}
       {mysteryBoxModal.visible && renderMysteryBoxModal()}
 
-      {/* Inventory Modal - Mobile Optimized */}
+      {/* NEW: Sell Confirmation Modal */}
+      {sellModal.visible && renderSellModal()}
+
+      {/* Inventory Modal - Mobile Optimized - UPDATED WITH SELLING FEATURE */}
       {inventoryModal.visible && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
             <div className="p-4 md:p-6 border-b flex justify-between items-center">
               <h2 className="text-lg md:text-2xl font-bold">My Inventory</h2>
-              <button 
-                onClick={() => setInventoryModal({ visible: false })} 
-                className="text-2xl font-bold hover:text-red-600"
-              >
-                ×
-              </button>
+              <div className="flex items-center gap-2">
+                {showSellMode && (
+                  <span className="text-xs md:text-sm bg-green-500 text-white px-2 py-1 rounded-full font-semibold">
+                    Sell Mode
+                  </span>
+                )}
+                <button 
+                  onClick={() => setInventoryModal({ visible: false })} 
+                  className="text-2xl font-bold hover:text-red-600"
+                >
+                  ×
+                </button>
+              </div>
             </div>
             <div className="p-4 md:p-6 space-y-4 md:space-y-6 overflow-y-auto">
               {/* Owned Avatars */}
@@ -677,6 +876,13 @@ const StudentShop = ({
                         <p className="text-xs font-semibold truncate">{avatarName}</p>
                         {studentData.avatarBase === avatarName ? (
                           <p className="text-xs text-blue-600 font-bold">Equipped</p>
+                        ) : showSellMode ? (
+                          <button 
+                            onClick={() => handleSellItem(avatarName, 'avatar')} 
+                            className="text-xs bg-red-500 text-white px-2 py-1 rounded mt-1 hover:bg-red-600 active:scale-95"
+                          >
+                            Sell
+                          </button>
                         ) : (
                           <button 
                             onClick={() => handleEquip('avatar', avatarName)} 
@@ -710,6 +916,13 @@ const StudentShop = ({
                         <p className="text-xs font-semibold truncate">{pet.name}</p>
                         {index === 0 ? (
                           <p className="text-xs text-purple-600 font-bold">Active</p>
+                        ) : showSellMode ? (
+                          <button 
+                            onClick={() => handleSellItem(pet, 'pet')} 
+                            className="text-xs bg-red-500 text-white px-2 py-1 rounded mt-1 hover:bg-red-600 active:scale-95"
+                          >
+                            Sell
+                          </button>
                         ) : (
                           <button 
                             onClick={() => handleEquip('pet', pet.id)} 
@@ -732,12 +945,22 @@ const StudentShop = ({
                   <h3 className="font-bold text-base md:text-lg mb-2 md:mb-3">My Rewards</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3">
                     {studentData.rewardsPurchased.map((reward, index) => (
-                      <div key={index} className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-3 flex items-center gap-3">
-                        <div className="text-xl md:text-2xl">{reward.icon || '🎁'}</div>
-                        <div className="min-w-0 flex-1">
-                          <p className="font-semibold text-sm md:text-base">{reward.name}</p>
-                          <p className="text-xs text-gray-600">Earned: {new Date(reward.purchasedAt).toLocaleDateString()}</p>
+                      <div key={index} className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-3 flex items-center justify-between">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div className="text-xl md:text-2xl">{reward.icon || '🎁'}</div>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-semibold text-sm md:text-base">{reward.name}</p>
+                            <p className="text-xs text-gray-600">Earned: {new Date(reward.purchasedAt).toLocaleDateString()}</p>
+                          </div>
                         </div>
+                        {showSellMode && (
+                          <button 
+                            onClick={() => handleSellItem(reward, 'reward')} 
+                            className="text-xs bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 flex-shrink-0 active:scale-95"
+                          >
+                            Sell
+                          </button>
+                        )}
                       </div>
                     ))}
                   </div>
