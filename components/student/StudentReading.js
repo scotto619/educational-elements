@@ -268,18 +268,9 @@ const StudentReading = ({
             <h3 className="text-xl font-bold text-gray-800 mb-4 text-center">📖 Reading Practice</h3>
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-4">
               <h4 className="text-lg font-bold text-blue-800 mb-4 text-center">{selectedSound.sound.simplePassage.title}</h4>
-              <div className="text-lg leading-relaxed text-gray-800 whitespace-pre-wrap font-serif">
+              <div className="text-lg leading-relaxed text-gray-800 font-serif whitespace-pre-line">
                 {selectedSound.sound.simplePassage.content}
               </div>
-            </div>
-            
-            <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-              <h4 className="text-lg font-bold text-green-800 mb-3">🤔 Think About It:</h4>
-              <ul className="space-y-2">
-                {selectedSound.sound.simplePassage.comprehensionQuestions.map((question, index) => (
-                  <li key={index} className="text-green-700">• {question}</li>
-                ))}
-              </ul>
             </div>
           </div>
         )}

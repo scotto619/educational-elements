@@ -524,16 +524,8 @@ const BeginnerReaders = ({
               {displaySound.sound.simplePassage && (
                 <div className="bg-blue-50 border border-blue-200 rounded-xl p-8 mb-6">
                   <h3 className="text-2xl font-bold text-blue-800 mb-4 text-center">{displaySound.sound.simplePassage.title}</h3>
-                  <div className="text-xl leading-relaxed text-gray-800 whitespace-pre-wrap font-serif text-center mb-6">
+                  <div className="text-xl leading-relaxed text-gray-800 font-serif text-center mb-6 whitespace-pre-line">
                     {displaySound.sound.simplePassage.content}
-                  </div>
-                  <div className="mt-6">
-                    <h4 className="text-lg font-bold text-blue-700 mb-3">Comprehension Questions:</h4>
-                    <ul className="space-y-2">
-                      {displaySound.sound.simplePassage.comprehensionQuestions.map((question, index) => (
-                        <li key={index} className="text-blue-600">• {question}</li>
-                      ))}
-                    </ul>
                   </div>
                 </div>
               )}
