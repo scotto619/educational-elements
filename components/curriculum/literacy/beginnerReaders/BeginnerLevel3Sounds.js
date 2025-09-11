@@ -163,44 +163,32 @@ The little fly tried one more time. This time, it flew right up to the bright li
     practices: [
       {
         type: 'sound-recognition',
-        content: 'The long O sound can be spelled OA (like in boat 🚣) or OW (like in snow ❄️)',
-        instructions: 'Same sound, two different letter patterns'
+        content: '☀️ The long O sound can be spelled OA (like in boat 🚣) or OW (like in snow ❄️)\n🌙 The long O sound can be spelled OA (like in boat 🚣) or OW (like in snow ❄️)',
+        instructions: 'Partner Reading: Same sound, two different letter patterns'
       },
       {
         type: 'oa-words',
-        content: 'boat    coat    goat    road    soap    toast',
-        instructions: 'OA words - listen for the long O sound'
+        content: '☀️ boat    coat    goat    road    soap    toast\n🌙 float    throat    moat    toad    foam    roast',
+        instructions: 'Partner Reading: OA words - listen for the long O sound'
       },
       {
         type: 'ow-words',
-        content: 'snow    grow    show    slow    know    blow',
-        instructions: 'OW words - same long O sound'
+        content: '☀️ snow    grow    show    slow    know    blow\n🌙 flow    glow    throw    below    elbow    follow',
+        instructions: 'Partner Reading: OW words - same long O sound'
       },
       {
         type: 'mixed-practice',
-        content: 'slow boat    snow coat    show goat    grow road',
-        instructions: 'Practice both spellings together'
+        content: '☀️ slow boat    snow coat    show goat    grow road\n🌙 float snow    glow boat    throw soap    know toad',
+        instructions: 'Partner Reading: Practice both spellings together'
       }
     ],
     simplePassage: {
       title: 'The Slow Boat',
-      content: `There was a slow boat on the road of water. The boat had a white coat of paint.
-
-"Look at that goat on the boat!" said Joe.
-
-"How did the goat get on that boat?" asked Rose.
-
-The boat was moving very slow. Snow started to fall from the sky.
-
-"I know!" said Joe. "The goat wanted to go for a boat ride in the snow!"
-
-The goat seemed happy on the slow boat. It was a funny show to watch.`,
-      comprehensionQuestions: [
-        'What animal was on the boat?',
-        'What color was the boat?',
-        'What started to fall from the sky?',
-        'How was the boat moving?'
-      ]
+      content: `☀️ There was a slow boat on the water. The boat had a white coat of paint.
+🌙 "Look at that goat on the boat!" said Joe.
+☀️ Snow started to fall from the sky.
+🌙 "I know!" said Joe. "The goat wanted a boat ride in the snow!"
+☀️ The goat seemed happy on the slow boat.`
     },
     targetWords: ['slow', 'boat', 'road', 'coat', 'goat', 'snow', 'know', 'show'],
     soundFocus: 'Long O sound spelled as OA and OW'

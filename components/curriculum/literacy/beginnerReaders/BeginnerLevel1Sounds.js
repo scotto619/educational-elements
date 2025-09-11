@@ -167,23 +167,23 @@ export const BEGINNER_LEVEL_1_SOUNDS = [
     practices: [
       {
         type: 'sound-recognition',
-        content: 'N n n like nut! 🥜',
-        instructions: 'Point to each N and say "n" like nut'
+        content: '☀️ N n n like nut! 🥜\n🌙 N n n like nut! 🥜',
+        instructions: 'Partner Reading: Point to each N and say "n" like nut'
       },
       {
         type: 'letter-practice',
-        content: 'N n N n N n N n N n N n N n N n',
-        instructions: 'Trace each letter and say the sound'
+        content: '☀️ N n N n N n N n N n N n N n N n\n🌙 N n N n N n N n N n N n N n N n',
+        instructions: 'Partner Reading: Trace each letter and say the sound'
       },
       {
         type: 'word-beginning',
-        content: 'nut 🥜    net 🥅    no ❌    new ✨',
-        instructions: 'These words start with N sound'
+        content: '☀️ nut 🥜    net 🥅    no ❌    new ✨\n🌙 nail    nose    nine    night',
+        instructions: 'Partner Reading: These words start with N sound'
       },
       {
         type: 'simple-words',
-        content: 'an    in    on    no    not',
-        instructions: 'Read these simple N words'
+        content: '☀️ an    in    on    no    not\n🌙 net    nap    nod    now    nut',
+        instructions: 'Partner Reading: Read these simple N words'
       }
     ],
     targetWords: ['an', 'in', 'on', 'no', 'not'],

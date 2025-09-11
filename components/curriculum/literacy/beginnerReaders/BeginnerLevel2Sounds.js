@@ -167,23 +167,23 @@ export const BEGINNER_LEVEL_2_SOUNDS = [
     practices: [
       {
         type: 'sound-recognition',
-        content: 'QU makes the "kw" sound like in queen! 👑 Q always has U with it!',
-        instructions: 'Say "queen" and hear the "kw" sound at the start'
+        content: '☀️ QU makes the "kw" sound like in queen! 👑 Q always has U with it!\n🌙 QU makes the "kw" sound like in queen! 👑 Q always has U with it!',
+        instructions: 'Partner Reading: Say "queen" and hear the "kw" sound at the start'
       },
       {
         type: 'sound-mixing',
-        content: 'qu  s  a  qu  t  qu  p  qu  i  qu  n  qu',
-        instructions: 'Q and U are always together making "kw"'
+        content: '☀️ qu  s  a  qu  t  qu  p  qu  i  qu  n  qu\n🌙 qu  m  qu  o  qu  r  qu  e  qu  u  qu',
+        instructions: 'Partner Reading: Q and U are always together making "kw"'
       },
       {
         type: 'simple-words',
-        content: 'quit    quiz    quick    quiet    quack',
-        instructions: 'QU beginning words - hear the "kw" sound'
+        content: '☀️ quit    quiz    quick    quiet    quack\n🌙 queen    quite    quest    quote    quart',
+        instructions: 'Partner Reading: QU beginning words - hear the "kw" sound'
       },
       {
         type: 'tricky-words',
-        content: 'question    squirrel    aquarium    earthquake',
-        instructions: 'QU in longer words - can you find it?'
+        content: '☀️ question    squirrel    aquarium    earthquake\n🌙 quarter    squash    liquid    antique',
+        instructions: 'Partner Reading: QU in longer words - can you find it?'
       }
     ],
     targetWords: ['quit', 'quiz', 'quick', 'quiet', 'quack', 'queen', 'quite', 'quest'],
