@@ -276,7 +276,7 @@ const ACTIVITIES = [
     name: "Word Sorting", 
     icon: "📊", 
     color: "bg-orange-500",
-    instructions: "1. Look at all your spelling words\n2. Sort them into groups by:\n   • Number of letters\n   • Spelling patterns\n   • Word endings\n   • Vowel sounds\n3. Explain why you grouped them together\n4. Try sorting the same words in a different way"
+    instructions: "1. Look at all your spelling words\n2. Sort them into groups by:\n   â€¢ Number of letters\n   â€¢ Spelling patterns\n   â€¢ Word endings\n   â€¢ Vowel sounds\n3. Explain why you grouped them together\n4. Try sorting the same words in a different way"
   },
   { 
     id: "spelling_pyramid", 
@@ -295,7 +295,7 @@ const ACTIVITIES = [
   {
     id: "word_shapes",
     name: "Word Shapes",
-    icon: "🔷",
+    icon: "📐",
     color: "bg-pink-500",
     instructions: "1. Draw a box around each word\n2. Notice the shape made by tall letters (like b, d, h)\n3. Notice letters that go below the line (like g, j, p)\n4. Draw the 'shape' of each word without the letters\n5. Can you recognize words just by their shapes?"
   },
@@ -318,7 +318,7 @@ const ACTIVITIES = [
     name: "Syllable Clapping",
     icon: "👏",
     color: "bg-amber-500",
-    instructions: "1. Say each spelling word slowly\n2. Clap for each syllable (word part)\n3. Write the word with a dot between syllables\n4. Sort words by number of syllables\n\nExample: 'BUT•TER•FLY' (3 claps)\nHelps students break words into manageable parts."
+    instructions: "1. Say each spelling word slowly\n2. Clap for each syllable (word part)\n3. Write the word with a dot between syllables\n4. Sort words by number of syllables\n\nExample: 'BUTâ€¢TERâ€¢FLY' (3 claps)\nHelps students break words into manageable parts."
   },
   {
     id: "rhyme_time",
@@ -332,7 +332,7 @@ const ACTIVITIES = [
     name: "Word Detectives",
     icon: "🕵️",
     color: "bg-slate-500",
-    instructions: "1. Investigate each spelling word like a detective\n2. Find clues about the word:\n   • How many vowels?\n   • Any double letters?\n   • What does it rhyme with?\n   • Where might you see this word?\n3. Make a 'case file' for each word\n4. Present your findings!"
+    instructions: "1. Investigate each spelling word like a detective\n2. Find clues about the word:\n   â€¢ How many vowels?\n   â€¢ Any double letters?\n   â€¢ What does it rhyme with?\n   â€¢ Where might you see this word?\n3. Make a 'case file' for each word\n4. Present your findings!"
   },
   {
     id: "memory_palace",
@@ -363,12 +363,13 @@ const StudentSpelling = ({
   showToast 
 }) => {
   const [studentAssignments, setStudentAssignments] = useState(null);
-  const [selectedActivity, setSelectedActivity] = useState(null);
-  const [showActivityInstructions, setShowActivityInstructions] = useState(false);
+  const [completedActivities, setCompletedActivities] = useState([]);
+  const [showActivityInstructions, setShowActivityInstructions] = useState(null);
 
   useEffect(() => {
     if (studentData && classData) {
       findStudentAssignments();
+      loadCompletedActivities();
     }
   }, [studentData, classData]);
 
@@ -387,33 +388,88 @@ const StudentSpelling = ({
         SPELLING_LISTS.find(list => list.id === listId)
       ).filter(Boolean);
 
-      // Get assigned activity
-      const assignedActivity = studentGroup.assignedActivity ? 
-        ACTIVITIES.find(activity => activity.id === studentGroup.assignedActivity) : 
-        null;
-
       setStudentAssignments({
         groupName: studentGroup.name,
         groupColor: studentGroup.color,
-        lists: assignedLists,
-        activity: assignedActivity
+        lists: assignedLists
       });
     } else {
       setStudentAssignments(null);
     }
   };
 
+  const getCurrentWeek = () => {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), 0, 1);
+    const diff = now - start;
+    const oneWeek = 1000 * 60 * 60 * 24 * 7;
+    return Math.floor(diff / oneWeek);
+  };
+
+  const getStorageKey = () => {
+    const week = getCurrentWeek();
+    return `spelling_activities_${studentData.id}_week_${week}`;
+  };
+
+  const loadCompletedActivities = () => {
+    try {
+      const stored = localStorage.getItem(getStorageKey());
+      if (stored) {
+        setCompletedActivities(JSON.parse(stored));
+      } else {
+        setCompletedActivities([]);
+      }
+    } catch (error) {
+      console.error('Error loading completed activities:', error);
+      setCompletedActivities([]);
+    }
+  };
+
+  const saveCompletedActivities = (activities) => {
+    try {
+      localStorage.setItem(getStorageKey(), JSON.stringify(activities));
+      setCompletedActivities(activities);
+    } catch (error) {
+      console.error('Error saving completed activities:', error);
+    }
+  };
+
+  const toggleActivity = (activityId) => {
+    const newCompleted = completedActivities.includes(activityId)
+      ? completedActivities.filter(id => id !== activityId)
+      : [...completedActivities, activityId];
+    
+    saveCompletedActivities(newCompleted);
+    
+    if (newCompleted.includes(activityId)) {
+      if (showToast) {
+        showToast(`Activity completed! ${newCompleted.length}/5 activities done this week.`, 'success');
+      }
+    }
+  };
+
+  const getProgressPercentage = () => {
+    return Math.min((completedActivities.length / 5) * 100, 100);
+  };
+
+  const getProgressColor = () => {
+    const completed = completedActivities.length;
+    if (completed >= 5) return 'bg-green-500';
+    if (completed >= 3) return 'bg-yellow-500';
+    return 'bg-blue-500';
+  };
+
   if (!studentAssignments) {
     return (
       <div className="bg-white rounded-xl p-6 md:p-8 text-center">
-        <div className="text-4xl md:text-6xl mb-4">📤</div>
+        <div className="text-4xl md:text-6xl mb-4">ðŸ"¤</div>
         <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-4">No Spelling Assignment</h2>
         <p className="text-gray-600 text-sm md:text-base leading-relaxed">
           Your teacher hasn't assigned you to a spelling group yet, or there are no spelling lists assigned to your group.
         </p>
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
           <p className="text-blue-800 text-sm">
-            🎯 <strong>Ask your teacher</strong> to assign you to a spelling group in the Curriculum Corner!
+            ðŸŽ¯ <strong>Ask your teacher</strong> to assign you to a spelling group in the Curriculum Corner!
           </p>
         </div>
       </div>
@@ -426,7 +482,7 @@ const StudentSpelling = ({
       <div className={`${studentAssignments.groupColor} text-white rounded-xl p-6 md:p-8`}>
         <div className="text-center">
           <h1 className="text-2xl md:text-4xl font-bold mb-2 flex items-center justify-center">
-            <span className="mr-3">📝</span>
+            <span className="mr-3">ðŸ"</span>
             My Spelling Words
           </h1>
           <div className="text-lg md:text-xl opacity-90">
@@ -438,39 +494,95 @@ const StudentSpelling = ({
         </div>
       </div>
 
-      {/* Activity Instructions */}
-      {studentAssignments.activity && (
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200">
-          <div className={`${studentAssignments.activity.color} text-white p-4 rounded-t-xl`}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <span className="text-2xl md:text-3xl mr-3">{studentAssignments.activity.icon}</span>
-                <div>
-                  <h2 className="text-lg md:text-xl font-bold">{studentAssignments.activity.name}</h2>
-                  <p className="text-sm opacity-90">Today's spelling activity</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowActivityInstructions(!showActivityInstructions)}
-                className="bg-white bg-opacity-20 px-3 py-2 rounded-lg hover:bg-opacity-30 transition-colors"
-              >
-                {showActivityInstructions ? '📖 Hide' : '📋 Instructions'}
-              </button>
-            </div>
-          </div>
-          
-          {showActivityInstructions && (
-            <div className="p-6">
-              <h3 className="text-lg font-bold mb-4 text-gray-800">📋 How to do this activity:</h3>
-              <div className="bg-gray-50 rounded-lg p-4">
-                <pre className="whitespace-pre-wrap text-gray-800 leading-relaxed font-sans text-sm md:text-base">
-                  {studentAssignments.activity.instructions}
-                </pre>
-              </div>
-            </div>
-          )}
+      {/* Weekly Progress */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+        <div className="text-center mb-4">
+          <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">ðŸŽ¯ Weekly Spelling Challenge</h2>
+          <p className="text-gray-600">Complete 5 different spelling activities this week!</p>
         </div>
-      )}
+        
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-gray-700">
+              Progress: {completedActivities.length}/5 activities
+            </span>
+            <span className="text-sm font-medium text-gray-700">
+              {Math.round(getProgressPercentage())}%
+            </span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-3">
+            <div 
+              className={`h-3 rounded-full transition-all duration-300 ${getProgressColor()}`}
+              style={{ width: `${getProgressPercentage()}%` }}
+            ></div>
+          </div>
+        </div>
+
+        {completedActivities.length >= 5 && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+            <div className="text-2xl mb-2">ðŸŽ‰</div>
+            <h3 className="text-lg font-bold text-green-800">Congratulations!</h3>
+            <p className="text-green-700">You've completed your weekly spelling challenge!</p>
+          </div>
+        )}
+      </div>
+
+      {/* Spelling Activities Grid */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-200">
+        <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-4 md:p-6 rounded-t-xl">
+          <h2 className="text-xl md:text-2xl font-bold text-center">ðŸŽ² Choose Your Spelling Activities</h2>
+          <p className="text-sm md:text-base opacity-90 text-center mt-2">
+            Pick any activities you'd like to try with your spelling words!
+          </p>
+        </div>
+        
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {ACTIVITIES.map(activity => {
+              const isCompleted = completedActivities.includes(activity.id);
+              return (
+                <div 
+                  key={activity.id} 
+                  className={`border-2 rounded-xl p-4 transition-all duration-200 cursor-pointer ${
+                    isCompleted 
+                      ? 'border-green-500 bg-green-50' 
+                      : 'border-gray-200 hover:border-indigo-300 hover:shadow-md'
+                  }`}
+                  onClick={() => toggleActivity(activity.id)}
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center">
+                      <span className="text-2xl mr-3">{activity.icon}</span>
+                      <div>
+                        <h3 className="font-bold text-gray-800 text-sm md:text-base">
+                          {activity.name}
+                        </h3>
+                      </div>
+                    </div>
+                    <div className={`w-6 h-6 rounded border-2 flex items-center justify-center ${
+                      isCompleted 
+                        ? 'bg-green-500 border-green-500 text-white' 
+                        : 'border-gray-300'
+                    }`}>
+                      {isCompleted && 'âœ"'}
+                    </div>
+                  </div>
+                  
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowActivityInstructions(activity);
+                    }}
+                    className="text-xs text-blue-600 hover:text-blue-800 underline"
+                  >
+                    View Instructions
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
 
       {/* Spelling Lists */}
       <div className="grid gap-6">
@@ -506,33 +618,81 @@ const StudentSpelling = ({
 
       {/* Practice Tips */}
       <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-        <h2 className="text-xl font-bold text-gray-800 mb-4 text-center">🎯 Spelling Practice Tips</h2>
+        <h2 className="text-xl font-bold text-gray-800 mb-4 text-center">ðŸŽ¯ Spelling Practice Tips</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h3 className="font-bold text-blue-800 mb-2">📚 Study Tips:</h3>
+            <h3 className="font-bold text-blue-800 mb-2">ðŸ"š Study Tips:</h3>
             <ul className="text-sm text-blue-700 space-y-1">
-              <li>• Practice a little bit every day</li>
-              <li>• Say the letters out loud as you write</li>
-              <li>• Break long words into smaller parts</li>
-              <li>• Use the words in sentences</li>
+              <li>â€¢ Practice a little bit every day</li>
+              <li>â€¢ Say the letters out loud as you write</li>
+              <li>â€¢ Break long words into smaller parts</li>
+              <li>â€¢ Use the words in sentences</li>
             </ul>
           </div>
           <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-            <h3 className="font-bold text-green-800 mb-2">🏆 Challenge Yourself:</h3>
+            <h3 className="font-bold text-green-800 mb-2">ðŸ† Challenge Yourself:</h3>
             <ul className="text-sm text-green-700 space-y-1">
-              <li>• Try spelling words with your eyes closed</li>
-              <li>• Write words in different fonts or styles</li>
-              <li>• Make up memory tricks for tricky words</li>
-              <li>• Teach the words to a friend or family member</li>
+              <li>â€¢ Try spelling words with your eyes closed</li>
+              <li>â€¢ Write words in different fonts or styles</li>
+              <li>â€¢ Make up memory tricks for tricky words</li>
+              <li>â€¢ Teach the words to a friend or family member</li>
             </ul>
           </div>
         </div>
       </div>
 
+      {/* Activity Instructions Modal */}
+      {showActivityInstructions && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div className={`${showActivityInstructions.color} text-white p-6 rounded-t-xl`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <span className="text-4xl mr-4">{showActivityInstructions.icon}</span>
+                  <h2 className="text-2xl font-bold">{showActivityInstructions.name}</h2>
+                </div>
+                <button
+                  onClick={() => setShowActivityInstructions(null)}
+                  className="text-white hover:text-gray-200 text-2xl"
+                >
+                  Ã—
+                </button>
+              </div>
+            </div>
+            <div className="p-6">
+              <h3 className="text-lg font-bold mb-4">ðŸ"‹ How to do this activity:</h3>
+              <div className="bg-gray-50 rounded-lg p-4">
+                <pre className="whitespace-pre-wrap text-gray-800 leading-relaxed font-sans text-sm md:text-base">
+                  {showActivityInstructions.instructions}
+                </pre>
+              </div>
+              <div className="mt-4 flex justify-center">
+                <button
+                  onClick={() => {
+                    toggleActivity(showActivityInstructions.id);
+                    setShowActivityInstructions(null);
+                  }}
+                  className={`px-6 py-3 rounded-lg font-bold text-white transition-colors ${
+                    completedActivities.includes(showActivityInstructions.id)
+                      ? 'bg-green-500 hover:bg-green-600'
+                      : 'bg-blue-500 hover:bg-blue-600'
+                  }`}
+                >
+                  {completedActivities.includes(showActivityInstructions.id) 
+                    ? 'âœ" Mark as Not Done' 
+                    : 'âœ" Mark as Done'
+                  }
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* No assignments message */}
       {studentAssignments.lists.length === 0 && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 text-center">
-          <div className="text-4xl mb-4">📝</div>
+          <div className="text-4xl mb-4">ðŸ"</div>
           <h2 className="text-xl font-bold text-yellow-800 mb-2">No Spelling Lists Yet</h2>
           <p className="text-yellow-700">
             Your teacher hasn't assigned any spelling lists to your group yet. Check back later!
