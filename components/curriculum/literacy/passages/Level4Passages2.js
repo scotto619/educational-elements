@@ -1,5 +1,5 @@
 // components/curriculum/literacy/passages/Level4Passages2.js
-// LEVEL 4 FLUENCY PRACTICE PASSAGES - LEVELS 4.6 to 4.10 (For Ages 8-9)
+// LEVEL 4 FLUENCY PRACTICE PASSAGES - LEVELS 4.6 to 4.10 (For Ages 8-9) - WITH COMPREHENSION QUESTIONS
 import React from 'react';
 
 export const LEVEL_4_PASSAGES_2 = [
@@ -22,7 +22,34 @@ This August was special because Aunty had written a new book about an automatic 
 
 After the story, they went to the kitchen where Aunty taught Tommy to make real tomato sauce in an ordinary saucepan. She showed him how to pause and stir carefully so the sauce wouldn't burn.
 
-"Every good author needs to know about cooking," Aunty laughed. "How else can you write about food?" Tommy giggled as he stirred, thinking about dinosaurs and automatic cooking pots that filled kitchens with the sound of laughter.`
+"Every good author needs to know about cooking," Aunty laughed. "How else can you write about food?" Tommy giggled as he stirred, thinking about dinosaurs and automatic cooking pots that filled kitchens with the sound of laughter.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What did Aunty Margaret write books about?",
+            answer: "Dinosaurs for children"
+          },
+          {
+            type: "right-there",
+            question: "What was special about the saucepan in Aunty's new book?",
+            answer: "It was automatic and could cook dinosaur sauce all by itself"
+          },
+          {
+            type: "think-and-search",
+            question: "What did Aunty teach Tommy in the kitchen after reading the story?",
+            answer: "How to make real tomato sauce in an ordinary saucepan and how to pause and stir carefully so it wouldn't burn"
+          },
+          {
+            type: "author-and-me",
+            question: "Why do you think Aunty said 'Every good author needs to know about cooking'?",
+            answer: "Authors need real experiences to write believable stories, so knowing about cooking helps her write about food"
+          },
+          {
+            type: "on-my-own",
+            question: "What activity would you like to learn about so you could write a better story?",
+            answer: "Answers will vary - students should connect real experiences to writing"
+          }
+        ]
       },
       {
         type: "informational",
@@ -36,7 +63,34 @@ When an author finishes a book, they often receive applause from readers who hav
 
 Some authors, like your aunty who might write stories for family gatherings, discover their talent by accident. Others study writing formally and work toward becoming published authors over many years.
 
-Whether an author writes about ancient dinosaurs or modern automatic machines, their goal is always the same: to cause readers to think, feel, and sometimes burst into laughter while reading. The applause of satisfied readers makes all the hard work worthwhile.`
+Whether an author writes about ancient dinosaurs or modern automatic machines, their goal is always the same: to cause readers to think, feel, and sometimes burst into laughter while reading. The applause of satisfied readers makes all the hard work worthwhile.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "When do many authors begin writing according to the text?",
+            answer: "In August when summer gives them a pause from other responsibilities"
+          },
+          {
+            type: "right-there",
+            question: "What comparison is made between writing and cooking?",
+            answer: "Both require patience and attention - writing is like cooking a complex sauce in a saucepan"
+          },
+          {
+            type: "think-and-search",
+            question: "What are two ways people become authors mentioned in the text?",
+            answer: "Some discover their talent by accident, while others study writing formally over many years"
+          },
+          {
+            type: "author-and-me",
+            question: "What does the author mean by 'the cause of many writing problems is rushing'?",
+            answer: "Authors need to take time to revise and improve their work instead of trying to finish too quickly"
+          },
+          {
+            type: "on-my-own",
+            question: "What do you think is the most important quality for an author to have? Explain your reasoning.",
+            answer: "Answers will vary - students should consider qualities like patience, creativity, persistence, etc."
+          }
+        ]
       },
       {
         type: "persuasive",
@@ -50,7 +104,34 @@ Some students only read about dinosaurs, while others prefer modern stories abou
 
 Reading different authors is like tasting different types of sauce – each one offers a unique flavor that can surprise and delight you. You might discover that a book about cooking in a saucepan is just as exciting as a story about prehistoric dinosaurs.
 
-Take a pause from your regular reading routine and applaud yourself for being brave enough to try new authors. The laughter and knowledge you'll gain will automatically make you a better reader and a more interesting person.`
+Take a pause from your regular reading routine and applaud yourself for being brave enough to try new authors. The laughter and knowledge you'll gain will automatically make you a better reader and a more interesting person.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What should you make your automatic habit this August?",
+            answer: "Explore new books"
+          },
+          {
+            type: "right-there",
+            question: "Who can suggest wonderful books according to the text?",
+            answer: "Your aunty, teacher, or librarian"
+          },
+          {
+            type: "think-and-search",
+            question: "What comparison does the author make between reading different authors and food?",
+            answer: "Reading different authors is like tasting different types of sauce - each offers a unique flavor that can surprise and delight you"
+          },
+          {
+            type: "author-and-me",
+            question: "What does the author mean by saying reading different authors will make you 'a more interesting person'?",
+            answer: "Reading widely gives you more knowledge and experiences to share with others"
+          },
+          {
+            type: "on-my-own",
+            question: "What type of book would you like to try reading that you've never read before? Why?",
+            answer: "Answers will vary - students should identify a new genre and explain their interest"
+          }
+        ]
       },
       {
         type: "poetry",
@@ -84,7 +165,34 @@ Of bringing wonder every day.
 So when August comes around,
 Her laughter is the sweetest sound.
 An author's gift, so pure and true,
-Makes every story feel brand new.`
+Makes every story feel brand new.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "When does the aunty come to visit in the poem?",
+            answer: "In August when the summer's bright"
+          },
+          {
+            type: "right-there",
+            question: "What does the automatic bird do in the stories?",
+            answer: "It cooks and cleans with great applause"
+          },
+          {
+            type: "think-and-search",
+            question: "What are two things the aunty writes about according to the poem?",
+            answer: "Dinosaurs and sauce made by magic hand (or automatic birds that cook and clean)"
+          },
+          {
+            type: "author-and-me",
+            question: "What does the poet mean by saying the aunty's stories 'expand my mind'?",
+            answer: "The stories help the poet learn new things and think in creative ways"
+          },
+          {
+            type: "on-my-own",
+            question: "Who in your life brings you joy through stories or books? How do they do this?",
+            answer: "Answers will vary - students should reflect on people who share reading experiences with them"
+          }
+        ]
       }
     ]
   },
@@ -110,7 +218,34 @@ During the painting session, Emma noticed her friend Jake showing signs of regre
 
 By the end of the session, Emma had a clear impression that art was about more than just making pretty pictures. The group discussion had given her better comprehension of how artists use their work to show progression in thinking about important social issues.
 
-Mrs. Chen smiled at their thoughtful discussion, knowing this session had created lasting impressions on her students.`
+Mrs. Chen smiled at their thoughtful discussion, knowing this session had created lasting impressions on her students.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What was the highlight of Emma's week?",
+            answer: "Mrs. Chen's art session"
+          },
+          {
+            type: "right-there",
+            question: "What did Emma notice about her friend Jake during the painting session?",
+            answer: "He was showing signs of regression in his technique"
+          },
+          {
+            type: "think-and-search",
+            question: "How did Emma help her friend Jake during the art session?",
+            answer: "Instead of discussion, she quietly helped him improve his brush strokes with kindness rather than aggression"
+          },
+          {
+            type: "author-and-me",
+            question: "What does Mrs. Chen mean when she says art can 'fight oppression'?",
+            answer: "Art can be used to speak out against unfairness and help create positive change in society"
+          },
+          {
+            type: "on-my-own",
+            question: "How do you think art or creative expression can help solve problems in the world?",
+            answer: "Answers will vary - students should think about how creativity can address social issues"
+          }
+        ]
       },
       {
         type: "informational",
@@ -124,7 +259,34 @@ Historical comprehension requires understanding that change often comes through 
 
 Students often develop an obsession with one particular historical period, but it's important to study the progression of events over time. This prevents regression in our understanding and helps us maintain an accurate impression of how societies develop.
 
-The expression of ideas through art, literature, and discussion has always been crucial for fighting oppression. Each generation must have comprehensive understanding of the past to continue the progression toward a more just society.`
+The expression of ideas through art, literature, and discussion has always been crucial for fighting oppression. Each generation must have comprehensive understanding of the past to continue the progression toward a more just society.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What does history show us according to the text?",
+            answer: "The progression of human society from ancient times to the present"
+          },
+          {
+            type: "right-there",
+            question: "What prevents regression in our understanding of history?",
+            answer: "Studying the progression of events over time instead of focusing on just one period"
+          },
+          {
+            type: "think-and-search",
+            question: "What are two ways people have fought oppression throughout history?",
+            answer: "Through peaceful procession marches and more direct action"
+          },
+          {
+            type: "author-and-me",
+            question: "Why does the author say each generation must have comprehensive understanding of the past?",
+            answer: "To continue making progress toward a more just society and avoid repeating past mistakes"
+          },
+          {
+            type: "on-my-own",
+            question: "What period of history interests you most and why?",
+            answer: "Answers will vary - students should identify a historical period and explain their interest"
+          }
+        ]
       },
       {
         type: "persuasive",
@@ -140,7 +302,34 @@ Classroom discussion isn't about aggression or competition – it's about collec
 
 Each session where you participate actively contributes to your academic progression and helps prevent regression in communication skills. Make it your goal to contribute at least one comment or question to every class discussion.
 
-Your expression matters, and your participation creates a lasting impression that you're engaged in your education.`
+Your expression matters, and your participation creates a lasting impression that you're engaged in your education.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What does participation in discussions show according to the text?",
+            answer: "Progression in learning"
+          },
+          {
+            type: "right-there",
+            question: "What should be your goal for every class discussion?",
+            answer: "To contribute at least one comment or question"
+          },
+          {
+            type: "think-and-search",
+            question: "What problems can staying silent during discussions cause?",
+            answer: "It can lead to regression in confidence and you might develop an obsession with perfectionism that prevents learning progression"
+          },
+          {
+            type: "author-and-me",
+            question: "What does the author mean by saying discussion is about 'collective learning'?",
+            answer: "Everyone learns together when people share different ideas and viewpoints"
+          },
+          {
+            type: "on-my-own",
+            question: "What stops you from participating in class discussions, and how could you overcome this?",
+            answer: "Answers will vary - students should reflect on personal barriers and solutions"
+          }
+        ]
       },
       {
         type: "poetry",
@@ -174,7 +363,34 @@ The progression of the brain.
 Each session teaches us to see
 That discussion makes us free.
 Through expression we can find
-The impression on the mind.`
+The impression on the mind.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "According to the poem, what should our obsession be?",
+            answer: "Growth"
+          },
+          {
+            type: "right-there",
+            question: "What helps chase regression far away?",
+            answer: "The impression that we make today"
+          },
+          {
+            type: "think-and-search",
+            question: "What does the poem say discussion helps us do?",
+            answer: "Discussion helps our minds mend, makes us free, and helps us learn"
+          },
+          {
+            type: "author-and-me",
+            question: "What does the poet mean by 'progression toward being free'?",
+            answer: "Learning and discussing ideas helps free our minds from ignorance and limitations"
+          },
+          {
+            type: "on-my-own",
+            question: "How do you think sharing your ideas in class helps you grow as a person?",
+            answer: "Answers will vary - students should reflect on personal growth through participation"
+          }
+        ]
       }
     ]
   },
@@ -200,7 +416,34 @@ At the market, Sarah took a picture of their beautiful vegetables displayed for 
 
 A customer complimented the texture and moisture of their tomatoes, asking about their growing techniques. Sarah proudly shared their methods, knowing that this adventure in agriculture had taught her to nurture both plants and relationships.
 
-The picture she took that day would always capture the perfect moment when she understood the true feature of farming life.`
+The picture she took that day would always capture the perfect moment when she understood the true feature of farming life.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What did Sarah's grandfather teach her to check?",
+            answer: "The texture of the soil and proper moisture levels"
+          },
+          {
+            type: "right-there",
+            question: "What problem did Sarah notice one morning?",
+            answer: "A small fracture in the irrigation pipe that could cause a major rupture"
+          },
+          {
+            type: "think-and-search",
+            question: "What did Sarah learn agriculture was really about?",
+            answer: "More than growing food - it was about nurturing community culture and bringing people together"
+          },
+          {
+            type: "author-and-me",
+            question: "Why do you think the customer's compliment was important to Sarah?",
+            answer: "It showed that her family's careful nurturing methods produced high-quality vegetables that people appreciated"
+          },
+          {
+            type: "on-my-own",
+            question: "What adventure would you like to have to learn about growing or making something?",
+            answer: "Answers will vary - students should describe a hands-on learning experience they'd enjoy"
+          }
+        ]
       },
       {
         type: "informational",
@@ -216,7 +459,34 @@ When families plan their departure from traditional ways, something important ca
 
 Photography helps capture cultural moments that show the true texture of community life. Every picture becomes an adventure in preserving the moisture of human experience. Schools play an important role in nurturing cultural understanding and helping students appreciate the rich features of their heritage.
 
-Agriculture, art, and storytelling all work together to nurture culture and prevent the fracture of community connections.`
+Agriculture, art, and storytelling all work together to nurture culture and prevent the fracture of community connections.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What do museums and cultural centers work to capture?",
+            answer: "The essence of different traditions before they rupture from modern society"
+          },
+          {
+            type: "right-there",
+            question: "What role do schools play according to the text?",
+            answer: "Nurturing cultural understanding and helping students appreciate the rich features of their heritage"
+          },
+          {
+            type: "think-and-search",
+            question: "What are three things that work together to nurture culture?",
+            answer: "Agriculture, art, and storytelling"
+          },
+          {
+            type: "author-and-me",
+            question: "What does the author mean by 'the texture of cultural life becomes thinner'?",
+            answer: "When people abandon traditions, the community loses its rich cultural connections and becomes less meaningful"
+          },
+          {
+            type: "on-my-own",
+            question: "What tradition from your family or community do you think is important to preserve? Why?",
+            answer: "Answers will vary - students should identify a meaningful tradition and explain its value"
+          }
+        ]
       },
       {
         type: "persuasive",
@@ -230,7 +500,34 @@ Every small action you take to nurture the environment becomes an adventure in p
 
 The feature that makes Earth special is its ability to nurture life, but this delicate texture can fracture easily. Modern agriculture and industry have caused serious rupture in natural systems that require urgent attention.
 
-Don't wait for your departure from childhood to start caring about environmental issues. Capture every opportunity to nurture sustainable practices and help heal the fracture between human culture and natural systems.`
+Don't wait for your departure from childhood to start caring about environmental issues. Capture every opportunity to nurture sustainable practices and help heal the fracture between human culture and natural systems.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What has created a dangerous rupture between humans and nature?",
+            answer: "Our departure from sustainable agriculture"
+          },
+          {
+            type: "right-there",
+            question: "What makes Earth special according to the text?",
+            answer: "Its ability to nurture life"
+          },
+          {
+            type: "think-and-search",
+            question: "What are two small actions mentioned that can help the environment?",
+            answer: "Grow plants to add moisture to the air or take pictures to capture nature's beauty"
+          },
+          {
+            type: "author-and-me",
+            question: "What does the author mean by 'capture this moment to change direction'?",
+            answer: "We need to act now to change our harmful environmental practices before it's too late"
+          },
+          {
+            type: "on-my-own",
+            question: "What is one thing you could do to help protect the environment in your daily life?",
+            answer: "Answers will vary - students should identify practical environmental actions"
+          }
+        ]
       },
       {
         type: "poetry",
@@ -264,7 +561,34 @@ These treasures we must always keep.
 So let us capture nature's way,
 And nurture it from day to day.
 The picture shows what we can be
-When we protect what we can see.`
+When we protect what we can see.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What does the picture of morning dew capture?",
+            answer: "Moisture in the light"
+          },
+          {
+            type: "right-there",
+            question: "What runs deep according to the poem?",
+            answer: "The culture of the earth"
+          },
+          {
+            type: "think-and-search",
+            question: "What does the poet say we must nurture and capture?",
+            answer: "We must nurture what we hope to keep and capture memories, and nurture nature from day to day"
+          },
+          {
+            type: "author-and-me",
+            question: "What does the poet mean by 'these treasures we must always keep'?",
+            answer: "The natural world and its beauty are precious treasures that we must protect for the future"
+          },
+          {
+            type: "on-my-own",
+            question: "What natural place would you like to help protect and why?",
+            answer: "Answers will vary - students should identify a natural area and explain why it's important to them"
+          }
+        ]
       }
     ]
   },
@@ -288,7 +612,34 @@ The first clue showed parallel scratches on the door frame. The second sequel of
 
 After careful investigation, she discovered that Tommy had hidden the apparel in his locker because he was embarrassed about forgetting his lines. He didn't want to cancel the play, but he was afraid to perform.
 
-Detective Martinez helped counsel Tommy through his stage fright, and they decided not to quarrel about the missing costumes. The parallel lesson was clear: sometimes a scoundrel just needs understanding rather than punishment.`
+Detective Martinez helped counsel Tommy through his stage fright, and they decided not to quarrel about the missing costumes. The parallel lesson was clear: sometimes a scoundrel just needs understanding rather than punishment.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What was stolen from the school costume closet?",
+            answer: "All the costumes (apparel)"
+          },
+          {
+            type: "right-there",
+            question: "Who had hidden the costumes and where?",
+            answer: "Tommy had hidden the apparel in his locker"
+          },
+          {
+            type: "think-and-search",
+            question: "Why did Tommy hide the costumes instead of just admitting he forgot his lines?",
+            answer: "He was embarrassed about forgetting his lines and was afraid to perform, but didn't want to cancel the play"
+          },
+          {
+            type: "author-and-me",
+            question: "What was the 'parallel lesson' Detective Martinez learned?",
+            answer: "Sometimes people who seem like scoundrels just need understanding rather than punishment"
+          },
+          {
+            type: "on-my-own",
+            question: "Have you ever done something wrong because you were afraid or embarrassed? How did it turn out?",
+            answer: "Answers will vary - students should reflect on personal experiences with fear or embarrassment"
+          }
+        ]
       },
       {
         type: "informational",
@@ -304,7 +655,34 @@ Professional counselors advise students to examine parallel examples of similar 
 
 Whether you're working on math problems, science experiments, or social conflicts, the same parallel principles apply. Don't cancel your efforts too quickly, and don't let minor setbacks compel you to quit.
 
-Marvel at how much you can learn from each attempt, and remember that finding solutions often requires the ability to swivel your thinking toward unexpected possibilities.`
+Marvel at how much you can learn from each attempt, and remember that finding solutions often requires the ability to swivel your thinking toward unexpected possibilities.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What do professional counselors advise students to examine?",
+            answer: "Parallel examples of similar problems and their solutions"
+          },
+          {
+            type: "right-there",
+            question: "What shouldn't you do when you encounter a challenge?",
+            answer: "Quarrel with others or grovel for easy answers"
+          },
+          {
+            type: "think-and-search",
+            question: "What are three types of problems mentioned where the same principles apply?",
+            answer: "Math problems, science experiments, and social conflicts"
+          },
+          {
+            type: "author-and-me",
+            question: "What does the author mean by 'swivel your thinking toward unexpected possibilities'?",
+            answer: "Be flexible and willing to consider new or different approaches to solving problems"
+          },
+          {
+            type: "on-my-own",
+            question: "What problem-solving strategy works best for you when you're stuck?",
+            answer: "Answers will vary - students should reflect on their personal problem-solving approaches"
+          }
+        ]
       },
       {
         type: "persuasive",
@@ -320,7 +698,34 @@ Sometimes teachers must compel students to attempt challenging work, but this is
 
 The parallel between successful students and unsuccessful ones isn't natural ability – it's persistence. Don't let temporary setbacks propel you toward quitting or cause you to cancel your long-term goals.
 
-Counsel yourself with patience and determination. Marvel at how much you've already learned, and don't quarrel with the process of education that will ultimately propel you toward success.`
+Counsel yourself with patience and determination. Marvel at how much you've already learned, and don't quarrel with the process of education that will ultimately propel you toward success.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What is the parallel between successful and unsuccessful students?",
+            answer: "It's persistence, not natural ability"
+          },
+          {
+            type: "right-there",
+            question: "What comparison does the author make about choosing skills?",
+            answer: "Like choosing appropriate apparel for different occasions, you need different skills for different situations"
+          },
+          {
+            type: "think-and-search",
+            question: "What should you do when learning feels difficult according to the text?",
+            answer: "Don't cancel your dreams, marvel at your ability to learn, counsel yourself with patience, and don't quarrel with the educational process"
+          },
+          {
+            type: "author-and-me",
+            question: "What does the author mean by 'every sequel to your educational journey builds on previous knowledge'?",
+            answer: "Each new learning experience connects to and builds upon what you've already learned"
+          },
+          {
+            type: "on-my-own",
+            question: "What subject do you find most challenging, and how do you motivate yourself to keep trying?",
+            answer: "Answers will vary - students should identify challenges and personal motivation strategies"
+          }
+        ]
       },
       {
         type: "poetry",
@@ -354,7 +759,34 @@ Amazing things will come to you.
 I counsel patience, day by day,
 As you propel along your way.
 Don't quarrel with the path you're on,
-Just marvel how much you have grown.`
+Just marvel how much you have grown.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What does the poet counsel day by day?",
+            answer: "Patience"
+          },
+          {
+            type: "right-there",
+            question: "What should let learning be according to the poem?",
+            answer: "Your winning card"
+          },
+          {
+            type: "think-and-search",
+            question: "What does the poet say you should do when troubles make you want to grovel?",
+            answer: "Remember how your mind can swivel and don't quarrel with what you must do"
+          },
+          {
+            type: "author-and-me",
+            question: "What does the poet mean by 'parallel paths we link'?",
+            answer: "The connections between different learning experiences and how they work together"
+          },
+          {
+            type: "on-my-own",
+            question: "When you face a challenge, what helps you remember to 'marvel at how strong you are'?",
+            answer: "Answers will vary - students should reflect on sources of confidence and encouragement"
+          }
+        ]
       }
     ]
   },
@@ -380,7 +812,34 @@ Suddenly, a farmer began shouting about a caustic chemical spill near the hydrau
 
 The auctioneer paused the bidding because safety was the top priority. Jake's family moved away from the potential assault on their health, joining other families in a safe area.
 
-Later, they learned that Australia has strict rules about caustic materials because farming communities must protect everyone from harm. The auction resumed once the cleanup was complete, and Jake's family successfully bid on a box of fresh cauliflower.`
+Later, they learned that Australia has strict rules about caustic materials because farming communities must protect everyone from harm. The auction resumed once the cleanup was complete, and Jake's family successfully bid on a box of fresh cauliflower.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "Why did Jake's family move to Australia?",
+            answer: "Because his father got a job repairing hydraulic systems on farms"
+          },
+          {
+            type: "right-there",
+            question: "What caused the auction to be paused?",
+            answer: "A caustic chemical spill near the hydraulic equipment"
+          },
+          {
+            type: "think-and-search",
+            question: "What did Jake's family successfully bid on after the auction resumed?",
+            answer: "A box of fresh cauliflower"
+          },
+          {
+            type: "author-and-me",
+            question: "Why do you think Australia has strict rules about caustic materials?",
+            answer: "To protect farming communities from dangerous chemicals that could harm people's health"
+          },
+          {
+            type: "on-my-own",
+            question: "Have you ever been to an auction or similar event? What was it like?",
+            answer: "Answers will vary - students should describe experiences or imagine what it would be like"
+          }
+        ]
       },
       {
         type: "informational",
@@ -394,7 +853,34 @@ Hydraulic systems operate under extreme pressure and can cause serious injury if
 
 Storage facilities, including vault-like structures for chemicals and equipment, must meet specific safety standards. Caustic materials used in agriculture require special handling because they can cause serious harm through skin contact or inhalation.
 
-Safety training teaches workers that some accidents aren't anyone's fault, but prevention is always possible through careful attention to procedures. Whether you're operating hydraulic equipment or handling caustic substances, following safety protocols should never be considered optional.`
+Safety training teaches workers that some accidents aren't anyone's fault, but prevention is always possible through careful attention to procedures. Whether you're operating hydraulic equipment or handling caustic substances, following safety protocols should never be considered optional.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What should be the default response when equipment malfunctions?",
+            answer: "Follow proper safety procedures rather than taking dangerous shortcuts"
+          },
+          {
+            type: "right-there",
+            question: "Why do caustic materials require special handling?",
+            answer: "Because they can cause serious harm through skin contact or inhalation"
+          },
+          {
+            type: "think-and-search",
+            question: "What are three types of dangerous equipment or materials mentioned that farmers work with?",
+            answer: "Hydraulic machinery, caustic chemicals, and heavy equipment"
+          },
+          {
+            type: "author-and-me",
+            question: "What does the author mean by saying some accidents 'aren't anyone's fault'?",
+            answer: "Sometimes accidents happen despite people doing everything correctly, but they can still be prevented with good safety procedures"
+          },
+          {
+            type: "on-my-own",
+            question: "What safety rules do you think are most important in your daily life?",
+            answer: "Answers will vary - students should consider safety in school, home, sports, etc."
+          }
+        ]
       },
       {
         type: "persuasive",
@@ -408,7 +894,34 @@ Because global communication connects us all, cultural knowledge has become as e
 
 Learning about Australia's history, geography, and culture will help you perform intellectual somersaults that impress teachers and future employers. Don't assume it's not your fault if you struggle with geography – every student can improve through effort.
 
-The default setting for successful students is curiosity about the world beyond their immediate experience. Because international understanding prevents the assault of prejudice and ignorance, studying different countries should be a priority, not an optional activity.`
+The default setting for successful students is curiosity about the world beyond their immediate experience. Because international understanding prevents the assault of prejudice and ignorance, studying different countries should be a priority, not an optional activity.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What does the author say has become as essential as understanding safety warnings?",
+            answer: "Cultural knowledge"
+          },
+          {
+            type: "right-there",
+            question: "What is the default setting for successful students?",
+            answer: "Curiosity about the world beyond their immediate experience"
+          },
+          {
+            type: "think-and-search",
+            question: "What are three interesting things about Australia mentioned in the text?",
+            answer: "Fascinating wildlife, unique hydraulic mining operations, and agricultural innovations"
+          },
+          {
+            type: "author-and-me",
+            question: "What does the author mean by 'intellectual somersaults'?",
+            answer: "Amazing mental achievements or impressive thinking skills that show deep understanding"
+          },
+          {
+            type: "on-my-own",
+            question: "What country would you most like to learn about and why?",
+            answer: "Answers will vary - students should identify a country and explain their interest"
+          }
+        ]
       },
       {
         type: "poetry",
@@ -442,7 +955,34 @@ With stories from that southern hill.
 Because the world is wide and free,
 Australia waits for you and me.
 No default thinking holds me back,
-I'll somersault on learning's track.`
+I'll somersault on learning's track.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What does the poet dream of visiting?",
+            answer: "Australia (that land)"
+          },
+          {
+            type: "right-there",
+            question: "What is the default setting in Australia according to the poem?",
+            answer: "Care for land and livestock everywhere"
+          },
+          {
+            type: "think-and-search",
+            question: "What will the poet fill with stories from Australia?",
+            answer: "The vault of knowledge"
+          },
+          {
+            type: "author-and-me",
+            question: "What does the poet mean by 'I'll somersault on learning's track'?",
+            answer: "The poet will enthusiastically embrace learning about Australia and other places"
+          },
+          {
+            type: "on-my-own",
+            question: "What place in the world makes you dream of visiting it? What would you like to learn there?",
+            answer: "Answers will vary - students should identify a place and explain what they'd like to discover"
+          }
+        ]
       }
     ]
   }

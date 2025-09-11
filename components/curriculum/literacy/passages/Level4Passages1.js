@@ -1,5 +1,5 @@
 // components/curriculum/literacy/passages/Level4Passages1.js
-// LEVEL 4 FLUENCY PRACTICE PASSAGES - LEVELS 4.1 to 4.5 (For Ages 8-9)
+// LEVEL 4 FLUENCY PRACTICE PASSAGES - LEVELS 4.1 to 4.5 (For Ages 8-9) - WITH COMPREHENSION QUESTIONS
 import React from 'react';
 
 export const LEVEL_4_PASSAGES_1 = [
@@ -22,7 +22,34 @@ One day, Circe discovered a sentence carved into the cement wall near the cellar
 
 Without making a sound, she crept down to the dark cellar. The silence was complete except for the soft padding of her paws on the cold cement floor. In the corner, she found a small circular opening that led to a tunnel.
 
-Circe took her chance and squeezed through the opening. The tunnel led directly under the city to an underground circus where magical animals performed in perfect silence for an audience of one very amazed palace cat.`
+Circe took her chance and squeezed through the opening. The tunnel led directly under the city to an underground circus where magical animals performed in perfect silence for an audience of one very amazed palace cat.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What was the name of the cat in the story?",
+            answer: "Circe"
+          },
+          {
+            type: "right-there", 
+            question: "Where did Circe find the sentence carved into the wall?",
+            answer: "Near the cellar entrance"
+          },
+          {
+            type: "think-and-search",
+            question: "What did Circe do when she discovered the mysterious sentence?",
+            answer: "She went down to the cellar to investigate and found a tunnel that led to an underground circus"
+          },
+          {
+            type: "author-and-me",
+            question: "Why do you think the circus performed in 'perfect silence'?",
+            answer: "The circus was magical/secret and needed to stay hidden underground"
+          },
+          {
+            type: "on-my-own",
+            question: "What would you do if you found a mysterious message like Circe did?",
+            answer: "Answers will vary - students should explain their reasoning"
+          }
+        ]
       },
       {
         type: "informational",
@@ -36,7 +63,34 @@ In many cities, you'll find a palace or important government building at the cen
 
 Underground, beneath the cement sidewalks, lie important systems like water pipes and electrical cables. Even deep cellars and storage areas are planned carefully to make the best use of space.
 
-City planners must be very careful with each sentence they write in their proposals. One small mistake could affect thousands of people who will pounce on any chance to improve their community. The circular nature of good planning means every decision connects to every other decision in the city.`
+City planners must be very careful with each sentence they write in their proposals. One small mistake could affect thousands of people who will pounce on any chance to improve their community. The circular nature of good planning means every decision connects to every other decision in the city.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What do urban planners work hard to design?",
+            answer: "Communities that give everyone a fair chance at a good life"
+          },
+          {
+            type: "right-there",
+            question: "What lies underground beneath the cement sidewalks?",
+            answer: "Important systems like water pipes and electrical cables"
+          },
+          {
+            type: "think-and-search",
+            question: "How do circular roads help cities function better?",
+            answer: "They help traffic flow smoothly around important government buildings at the center"
+          },
+          {
+            type: "author-and-me",
+            question: "What does the author mean by 'the circular nature of good planning'?",
+            answer: "Every decision in city planning connects to and affects every other decision"
+          },
+          {
+            type: "on-my-own",
+            question: "What would be the most important thing to consider when planning a new city?",
+            answer: "Answers will vary - students should consider factors like safety, transportation, housing, etc."
+          }
+        ]
       },
       {
         type: "persuasive",
@@ -50,7 +104,34 @@ This isn't just about entertainment. The circus provides jobs for performers, mu
 
 The palace of memories created under that circular big top cannot be rebuilt once it's gone. In the silence after the final show, we'll realize what we've lost. But there's still time! Every citizen has a chance to help save this fancy tradition.
 
-Write one sentence to your city council. Make your voice heard. Don't let this circus slip away into the silence of forgotten dreams.`
+Write one sentence to your city council. Make your voice heard. Don't let this circus slip away into the silence of forgotten dreams.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What is stored in the cellar beneath the main tent?",
+            answer: "Costumes and equipment"
+          },
+          {
+            type: "right-there",
+            question: "What does the author want people to write to the city council?",
+            answer: "One sentence of support"
+          },
+          {
+            type: "think-and-search",
+            question: "What are two reasons the author gives for why the circus is important?",
+            answer: "It provides entertainment/joy for families and provides jobs for performers and workers"
+          },
+          {
+            type: "author-and-me",
+            question: "What does the author mean by calling the circus 'a palace of memories'?",
+            answer: "The circus is a special place where people create happy memories that last a lifetime"
+          },
+          {
+            type: "on-my-own",
+            question: "Do you think communities should fight to save historic places? Why or why not?",
+            answer: "Answers will vary - students should give reasons for their opinion"
+          }
+        ]
       },
       {
         type: "poetry",
@@ -84,7 +165,34 @@ While cement and dreams together help us grow.
 Once you've lived within a city's heart,
 You'll never want to be too far apart
 From all the chances that each new day brings,
-And all the joy that city living sings.`
+And all the joy that city living sings.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What does the poet call 'the sweetest sound'?",
+            answer: "Children's laughter"
+          },
+          {
+            type: "right-there",
+            question: "When does the poet watch the city wake up?",
+            answer: "In the early morning hour"
+          },
+          {
+            type: "think-and-search",
+            question: "What are three different sounds mentioned in the poem?",
+            answer: "Circus music, children's laughter, and sentences spoken in the morning air"
+          },
+          {
+            type: "author-and-me",
+            question: "What feeling does the poet have about city life overall?",
+            answer: "The poet loves city life and finds it full of opportunities, connections, and joy"
+          },
+          {
+            type: "on-my-own",
+            question: "Do you prefer city life or country life? Give two reasons for your choice.",
+            answer: "Answers will vary - students should give personal reasons"
+          }
+        ]
       }
     ]
   },
@@ -110,7 +218,34 @@ At the job site, they discovered a problem. The wrench they brought was too smal
 
 As they worked together, Jake wrote notes about each step. He even drew a little lamb in the corner of his notepad, which made Dad smile. By the end of the day, Jake had learned that being a plumber meant solving problems, and there was no doubt he wanted to learn more.
 
-The job was finished perfectly, with no wrong moves and no debt of unfinished work.`
+The job was finished perfectly, with no wrong moves and no debt of unfinished work.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What job were Jake and his dad working on?",
+            answer: "A plumbing job at the school"
+          },
+          {
+            type: "right-there",
+            question: "What problem did they discover at the job site?",
+            answer: "The wrench they brought was too small for the pipes"
+          },
+          {
+            type: "think-and-search",
+            question: "What did Jake's dad teach him about being a plumber?",
+            answer: "Never doubt the importance of having the right tools and that being a plumber means solving problems"
+          },
+          {
+            type: "author-and-me",
+            question: "Why do you think Jake drew a lamb on his notepad?",
+            answer: "He was probably doodling while taking notes, showing he was comfortable and enjoying working with his dad"
+          },
+          {
+            type: "on-my-own",
+            question: "What job would you like to learn about by working with a family member?",
+            answer: "Answers will vary - students should explain their choice"
+          }
+        ]
       },
       {
         type: "informational",
@@ -124,7 +259,34 @@ Teachers often write examples on the board to show proper letter formation. Like
 
 Some students doubt their ability to improve, but this is wrong thinking. Every famous author once wrote their very first sentence, probably with their thumb and wrist in an awkward position.
 
-Even if you wrote something incorrectly yesterday, today offers a new chance. Like a gentle lamb learning to walk, writers grow stronger with each word they write.`
+Even if you wrote something incorrectly yesterday, today offers a new chance. Like a gentle lamb learning to walk, writers grow stronger with each word they write.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "How should you hold a pencil according to the text?",
+            answer: "Rest it gently against your thumb and support it with your wrist"
+          },
+          {
+            type: "right-there",
+            question: "What comparison does the author make between plumbers and writers?",
+            answer: "Like a plumber who needs the right wrench for each job, writers need the right techniques for each letter and word"
+          },
+          {
+            type: "think-and-search",
+            question: "What does the author say about making mistakes when learning to write?",
+            answer: "Making mistakes is part of learning, there's no debt of shame in practicing, and even if you wrote incorrectly yesterday, today offers a new chance"
+          },
+          {
+            type: "author-and-me",
+            question: "Why does the author compare beginning writers to 'a gentle lamb learning to walk'?",
+            answer: "Both are starting something new and need to grow stronger gradually with practice"
+          },
+          {
+            type: "on-my-own",
+            question: "What advice would you give to someone who is frustrated with their handwriting?",
+            answer: "Answers will vary - students should give encouraging, practical advice"
+          }
+        ]
       },
       {
         type: "persuasive",
@@ -140,7 +302,34 @@ These careers don't require you to doubt your abilities if you're not naturally 
 
 Like a determined lamb that becomes a strong sheep, apprentices who start learning trades young often become master craftspeople. They wrote their own tickets to financial security by choosing skills that society truly needs.
 
-Don't let anyone convince you that working with your hands is the wrong choice for building a successful future.`
+Don't let anyone convince you that working with your hands is the wrong choice for building a successful future.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What three practical skills does the author mention at the beginning?",
+            answer: "Plumbing, carpentry, and electrical work"
+          },
+          {
+            type: "right-there",
+            question: "According to the author, what develops problem-solving skills that machines can't replicate?",
+            answer: "A plumber who has climbed under houses and through crawl spaces"
+          },
+          {
+            type: "think-and-search",
+            question: "What are two advantages of practical skills careers mentioned in the text?",
+            answer: "They offer stable employment and the satisfaction of solving real problems, and skilled workers are valuable to society"
+          },
+          {
+            type: "author-and-me",
+            question: "What does the author mean by saying skilled workers 'wrote their own tickets to financial security'?",
+            answer: "They created their own path to success and good income by developing valuable skills"
+          },
+          {
+            type: "on-my-own",
+            question: "Do you think practical skills are as important as academic skills? Explain your reasoning.",
+            answer: "Answers will vary - students should give thoughtful reasons for their opinion"
+          }
+        ]
       },
       {
         type: "poetry",
@@ -174,7 +363,34 @@ Silent letters can still be found.
 My wrist remembers every line
 I wrote to make these letters mine.
 There's no doubt I've climbed quite high
-In learning words that make me fly.`
+In learning words that make me fly.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "In the poem, what does the 'b' in 'thumb' do?",
+            answer: "It just sits there still"
+          },
+          {
+            type: "right-there",
+            question: "What grew tired as the poet wrote?",
+            answer: "The poet's wrist"
+          },
+          {
+            type: "think-and-search",
+            question: "What are three words with silent letters mentioned in the poem?",
+            answer: "Thumb, wrong, debt, doubt, lamb, wrote, wrench, wrist"
+          },
+          {
+            type: "author-and-me",
+            question: "What does the poet mean by saying silent letters are 'playing hide-and-seek with clues'?",
+            answer: "Silent letters are hidden in words but give us clues about spelling and meaning"
+          },
+          {
+            type: "on-my-own",
+            question: "Why do you think English has silent letters in some words?",
+            answer: "Answers will vary - students might mention historical reasons, word origins, etc."
+          }
+        ]
       }
     ]
   },
@@ -200,7 +416,34 @@ Suddenly, the graph on the wall began to glow, showing a magical land where swan
 
 "This phone connects to the world of imagination," Grandma explained. "Every child deserves a trophy for believing in magic, but sometimes you have to wash away your doubts first."
 
-Emma reached for the phone, ready to make her own magical call. She would watch carefully and learn how to use this wonderful gift that could swap ordinary moments for extraordinary adventures.`
+Emma reached for the phone, ready to make her own magical call. She would watch carefully and learn how to use this wonderful gift that could swap ordinary moments for extraordinary adventures.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "Where did Emma find the old phone?",
+            answer: "In her grandmother's attic"
+          },
+          {
+            type: "right-there",
+            question: "What did Grandma whisper into the phone?",
+            answer: "I'd like to swap my old trophy for a new adventure"
+          },
+          {
+            type: "think-and-search",
+            question: "What magical things happened when Grandma used the phone?",
+            answer: "The scent of lavender wafted through the air, the graph on the wall began to glow, and the windows filled with golden light"
+          },
+          {
+            type: "author-and-me",
+            question: "What do you think Grandma meant by 'wash away your doubts'?",
+            answer: "You need to believe in magic and stop doubting in order for it to work"
+          },
+          {
+            type: "on-my-own",
+            question: "If you could make a magical phone call to swap something ordinary for something extraordinary, what would you choose?",
+            answer: "Answers will vary - students should be creative and explain their choice"
+          }
+        ]
       },
       {
         type: "informational",
@@ -214,7 +457,34 @@ In medieval times, a messenger might squat by a river to wash their horse before
 
 The invention of the telephone created a communication trophy that changed everything. Now you could simply pick up a phone and talk to someone far away. No longer did you need to watch for signals or wait for a swan to carry your message.
 
-Today's graphic displays on our phones show information that would have seemed like magic to people long ago. The quad screen design allows us to swap between different apps instantly, making communication faster than ever before.`
+Today's graphic displays on our phones show information that would have seemed like magic to people long ago. The quad screen design allows us to swap between different apps instantly, making communication faster than ever before.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What did ancient people watch for to receive messages?",
+            answer: "Smoke signals"
+          },
+          {
+            type: "right-there",
+            question: "How did Native Americans create information displays?",
+            answer: "They used graphic symbols and pictures to create a kind of graph"
+          },
+          {
+            type: "think-and-search",
+            question: "What are two ways medieval messengers protected or helped their messages travel faster?",
+            answer: "They carried messages rolled around a wooden wand for protection and would swap horses at different stops to travel faster"
+          },
+          {
+            type: "author-and-me",
+            question: "Why does the author call the telephone a 'communication trophy'?",
+            answer: "It was a great achievement or prize in communication technology that changed everything"
+          },
+          {
+            type: "on-my-own",
+            question: "What do you think will be the next big change in how people communicate?",
+            answer: "Answers will vary - students should think creatively about future technology"
+          }
+        ]
       },
       {
         type: "persuasive",
@@ -228,7 +498,34 @@ Many young people treat their phones like a trophy, constantly checking for noti
 
 Try this challenge: every day, swap one hour of phone time for one hour of physical activity. You could wash your bike and go for a ride, or explore a quad of city blocks you've never visited before.
 
-Your phone should be a useful tool, not something you watch constantly. Take control of your time and don't let a graphic screen replace the beautiful, real world that's waiting for you to explore and enjoy.`
+Your phone should be a useful tool, not something you watch constantly. Take control of your time and don't let a graphic screen replace the beautiful, real world that's waiting for you to explore and enjoy.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What challenge does the author suggest?",
+            answer: "Every day, swap one hour of phone time for one hour of physical activity"
+          },
+          {
+            type: "right-there",
+            question: "What might you see when you spend time outdoors according to the text?",
+            answer: "A graceful swan gliding across a pond or a walking stick that looks like a magic wand"
+          },
+          {
+            type: "think-and-search",
+            question: "What problems does the author say phone use causes?",
+            answer: "It washes away your ability to connect with nature and people face-to-face, and prevents you from creating a balanced graph of activities"
+          },
+          {
+            type: "author-and-me",
+            question: "What does the author mean by saying people treat phones 'like a trophy'?",
+            answer: "People are overly proud of their phones and show them off constantly, checking them all the time"
+          },
+          {
+            type: "on-my-own",
+            question: "Do you think the author's advice about limiting phone time is good? Why or why not?",
+            answer: "Answers will vary - students should give reasons for their opinion about screen time balance"
+          }
+        ]
       },
       {
         type: "poetry",
@@ -262,7 +559,34 @@ While nature's signals never end.
 So let me squat and watch and see
 The swap between technology
 And natural wonders all around,
-Where graphic beauty can be found.`
+Where graphic beauty can be found.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What sits upon the shelf in the poem?",
+            answer: "A trophy"
+          },
+          {
+            type: "right-there",
+            question: "How do the birds take flight in the poem?",
+            answer: "In quad formation"
+          },
+          {
+            type: "think-and-search",
+            question: "What are two things the poet watches in the poem?",
+            answer: "The screen with colors bright and the world with wonder new"
+          },
+          {
+            type: "author-and-me",
+            question: "What 'swap' is the poet describing in the last stanza?",
+            answer: "The balance or exchange between technology and natural wonders"
+          },
+          {
+            type: "on-my-own",
+            question: "Do you think it's important to balance technology with nature like the poet suggests? Give a reason.",
+            answer: "Answers will vary - students should explain their thinking about technology-nature balance"
+          }
+        ]
       }
     ]
   },
@@ -286,7 +610,34 @@ The other animals thought Grace might exaggerate her abilities, but they urgentl
 
 Grace ate a large meal of her special vegetables and concentrated all her energy. Slowly, she began to generate a gentle electrical current that flowed from her tall body down to the broken engine. The motor hummed back to life, and clean water flowed again.
 
-The animals celebrated their intelligent friend who had saved them all. Grace smiled, knowing that her gentle nature and special vegetable diet had helped her become the legend she was meant to be.`
+The animals celebrated their intelligent friend who had saved them all. Grace smiled, knowing that her gentle nature and special vegetable diet had helped her become the legend she was meant to be.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What was the giraffe's name in the story?",
+            answer: "Grace"
+          },
+          {
+            type: "right-there",
+            question: "What had broken down that created a tragic situation?",
+            answer: "The engine that powered their water pump"
+          },
+          {
+            type: "think-and-search",
+            question: "How did Grace help solve the community's problem?",
+            answer: "She ate her special vegetables, concentrated her energy, and generated an electrical current that fixed the broken engine"
+          },
+          {
+            type: "author-and-me",
+            question: "Why do you think the other animals thought Grace might exaggerate her abilities?",
+            answer: "Her powers seemed too amazing to be true, so they were skeptical until they saw proof"
+          },
+          {
+            type: "on-my-own",
+            question: "If you could have one special power to help others, what would it be and how would you use it?",
+            answer: "Answers will vary - students should describe a helpful power and its use"
+          }
+        ]
       },
       {
         type: "informational",
@@ -300,7 +651,34 @@ Many people exaggerate how complicated engines are, but the basic principle is q
 
 According to automotive legend, the first engines were much less intelligent than modern ones. Today's engines can urgently adjust their performance based on driving conditions. They're like gentle giants that generate enormous power while being surprisingly fragile inside.
 
-It would be tragic to damage an engine by not maintaining it properly. Regular oil changes and tune-ups help keep these intelligent machines running smoothly. Even a vegetable oil engine, which some cars can use, needs careful attention to generate reliable energy.`
+It would be tragic to damage an engine by not maintaining it properly. Regular oil changes and tune-ups help keep these intelligent machines running smoothly. Even a vegetable oil engine, which some cars can use, needs careful attention to generate reliable energy.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What does an engine do according to the text?",
+            answer: "It generates power by converting energy from one form to another"
+          },
+          {
+            type: "right-there",
+            question: "What happens when fuel mixes with air in the engine chamber?",
+            answer: "When a spark ignites this combination, it creates energy that pushes pistons up and down"
+          },
+          {
+            type: "think-and-search",
+            question: "How are modern engines different from the first engines?",
+            answer: "Modern engines are more intelligent and can urgently adjust their performance based on driving conditions"
+          },
+          {
+            type: "author-and-me",
+            question: "Why does the author call engines 'gentle giants'?",
+            answer: "They generate enormous power but must be handled carefully because they are fragile inside"
+          },
+          {
+            type: "on-my-own",
+            question: "Why do you think it's important to understand how machines like engines work?",
+            answer: "Answers will vary - students might mention safety, maintenance, appreciation for technology, etc."
+          }
+        ]
       },
       {
         type: "persuasive",
@@ -314,7 +692,34 @@ Consider the giraffe, one of nature's most gentle giants. These intelligent anim
 
 Your parents aren't trying to be tragic when they encourage healthy eating. They understand that good nutrition is fragile and requires consistent effort. Like a well-maintained engine, your body will generate more energy when you fuel it properly.
 
-Don't exaggerate how difficult it is to enjoy vegetables. Start with gentle changes – add one new vegetable to your weekly meals. Your intelligent body will urgently thank you for this simple but powerful change.`
+Don't exaggerate how difficult it is to enjoy vegetables. Start with gentle changes – add one new vegetable to your weekly meals. Your intelligent body will urgently thank you for this simple but powerful change.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What does the author compare your body to?",
+            answer: "An intelligent engine"
+          },
+          {
+            type: "right-there",
+            question: "What do fresh vegetables generate according to the text?",
+            answer: "Vitamins and minerals"
+          },
+          {
+            type: "think-and-search",
+            question: "What example does the author use to show that vegetable-based diets work well?",
+            answer: "Giraffes, who thrive on a completely vegetable-based diet and generate enough energy to run gracefully"
+          },
+          {
+            type: "author-and-me",
+            question: "What does the author suggest when they say to start with 'gentle changes'?",
+            answer: "Make small, gradual improvements to your diet rather than trying to change everything at once"
+          },
+          {
+            type: "on-my-own",
+            question: "What are two ways you could add more vegetables to your diet?",
+            answer: "Answers will vary - students should suggest practical ways to eat more vegetables"
+          }
+        ]
       },
       {
         type: "poetry",
@@ -348,7 +753,34 @@ Energy flows from me to you.
 Legend says that those who try
 Generate power to reach the sky.
 With vegetable fuel and minds so bright,
-Intelligence creates its light.`
+Intelligence creates its light.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What does the giraffe draw energy from?",
+            answer: "Vegetable fare"
+          },
+          {
+            type: "right-there",
+            question: "According to the poem, what follows determined will?",
+            answer: "Energy"
+          },
+          {
+            type: "think-and-search",
+            question: "What does the poem say about people who try?",
+            answer: "Legend says that those who try generate power to reach the sky"
+          },
+          {
+            type: "author-and-me",
+            question: "What is the main message of this poem?",
+            answer: "With determination, proper fuel (like good food), and effort, people can achieve great things despite being fragile"
+          },
+          {
+            type: "on-my-own",
+            question: "What gives you energy to do your best work? Explain your answer.",
+            answer: "Answers will vary - students should reflect on what motivates and energizes them"
+          }
+        ]
       }
     ]
   },
@@ -372,7 +804,34 @@ When Luna finally reached the moon, the experience was far from brutal – it wa
 
 After hours of exploration, Luna spotted something glinting in a crater. The ruby was real! Its red surface caught the earthlight beautifully. Luna realized that her exclusive dedication and fluent preparation had made this moment possible.
 
-She carefully placed the precious ruby in her collection kit, knowing that this discovery would fund future lunar missions. Her frugal lifestyle and superb planning had led to the most elusive treasure in the solar system.`
+She carefully placed the precious ruby in her collection kit, knowing that this discovery would fund future lunar missions. Her frugal lifestyle and superb planning had led to the most elusive treasure in the solar system.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "How many languages was Luna fluent in?",
+            answer: "Three languages"
+          },
+          {
+            type: "right-there",
+            question: "What did Luna sleep on to practice living with minimal comfort?",
+            answer: "A simple futon"
+          },
+          {
+            type: "think-and-search",
+            question: "How did Luna prepare for her space mission?",
+            answer: "She slept on a simple futon to practice minimal comfort and followed a frugal lifestyle to save money for training"
+          },
+          {
+            type: "author-and-me",
+            question: "Why do you think Luna's discovery would fund future lunar missions?",
+            answer: "The ruby was very valuable and could be sold to pay for more space exploration"
+          },
+          {
+            type: "on-my-own",
+            question: "What would you be willing to sacrifice to achieve your biggest dream?",
+            answer: "Answers will vary - students should think about dedication and commitment to goals"
+          }
+        ]
       },
       {
         type: "informational",
@@ -386,7 +845,34 @@ The lunar surface contains no gemstones because the moon lacks the fluid geologi
 
 Many people follow frugal approaches to gem collecting, starting with less expensive stones before moving to exclusive pieces. The brutal reality is that high-quality rubies are extremely rare and valuable.
 
-Professional gemologists must be superb at identifying real stones from fake ones. They study the fluid patterns of light within each gem to determine its authenticity and value.`
+Professional gemologists must be superb at identifying real stones from fake ones. They study the fluid patterns of light within each gem to determine its authenticity and value.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What gives a ruby its beautiful red color?",
+            answer: "Chromium"
+          },
+          {
+            type: "right-there",
+            question: "Why doesn't the lunar surface contain gemstones?",
+            answer: "The moon lacks the fluid geological processes needed for their formation"
+          },
+          {
+            type: "think-and-search",
+            question: "What do professional gemologists study to identify real stones?",
+            answer: "They study the fluid patterns of light within each gem to determine authenticity and value"
+          },
+          {
+            type: "author-and-me",
+            question: "What does the author mean by calling ruby formation 'brutal in their intensity'?",
+            answer: "The natural processes involve extreme heat and pressure that are harsh and powerful"
+          },
+          {
+            type: "on-my-own",
+            question: "If you could explore space or deep underground for treasures, which would you choose and why?",
+            answer: "Answers will vary - students should explain their preference with reasons"
+          }
+        ]
       },
       {
         type: "persuasive",
@@ -400,7 +886,34 @@ Consider sleeping on a futon instead of buying an expensive bed, or choosing a r
 
 Your exclusive focus should be on experiences and education, not material possessions. Like astronauts preparing for lunar missions, you need superb discipline to reach your goals.
 
-Being frugal with money gives you the fluid flexibility to pursue your dreams. Don't let the elusive promise of happiness through shopping derail your personal crusade for a secure financial future.`
+Being frugal with money gives you the fluid flexibility to pursue your dreams. Don't let the elusive promise of happiness through shopping derail your personal crusade for a secure financial future.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What does the author say a frugal lifestyle will help you achieve?",
+            answer: "Your exclusive goals and dreams"
+          },
+          {
+            type: "right-there",
+            question: "What comparison does the author make with astronauts?",
+            answer: "Like astronauts preparing for lunar missions, you need superb discipline to reach your goals"
+          },
+          {
+            type: "think-and-search",
+            question: "What are two examples the author gives of frugal choices?",
+            answer: "Sleeping on a futon instead of an expensive bed, or choosing a ruby-colored shirt from a thrift store instead of designer brands"
+          },
+          {
+            type: "author-and-me",
+            question: "What does the author mean by 'the elusive promise of happiness through shopping'?",
+            answer: "The false idea that buying things will make you happy, which is hard to achieve and ultimately disappointing"
+          },
+          {
+            type: "on-my-own",
+            question: "Do you think living frugally is a good idea for young people? Give two reasons for your answer.",
+            answer: "Answers will vary - students should provide reasoned arguments for their position"
+          }
+        ]
       },
       {
         type: "poetry",
@@ -434,7 +947,34 @@ My space crusade keeps on expanding.
 Exclusive focus, day by day,
 Will help me find my stellar way.
 Though lunar flights seem elusive now,
-My frugal planning shows me how.`
+My frugal planning shows me how.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What does the poet dream of traveling to?",
+            answer: "Mars"
+          },
+          {
+            type: "right-there",
+            question: "What is waiting on the moon according to the poem?",
+            answer: "A ruby"
+          },
+          {
+            type: "think-and-search",
+            question: "How does the poet prepare for space travel?",
+            answer: "By living frugally, sleeping on a futon, and having exclusive focus and fluid planning"
+          },
+          {
+            type: "author-and-me",
+            question: "What does the poet mean by 'the brutal truth of reaching dreams'?",
+            answer: "Achieving big dreams requires hard work, sacrifice, and more effort than people might expect"
+          },
+          {
+            type: "on-my-own",
+            question: "What dream do you have that would require careful planning and saving money?",
+            answer: "Answers will vary - students should describe a meaningful goal and how they might prepare for it"
+          }
+        ]
       }
     ]
   }

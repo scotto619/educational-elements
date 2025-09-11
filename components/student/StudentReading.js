@@ -1,4 +1,4 @@
-// components/student/StudentReading.js - UPDATED WITH BEGINNER READERS SUPPORT
+// components/student/StudentReading.js - UPDATED WITH COMPREHENSION QUESTIONS SUPPORT
 import React, { useState, useEffect } from 'react';
 
 // Import reading passages from the actual passage files
@@ -124,6 +124,34 @@ const TEXT_TYPES = [
   }
 ];
 
+// Question type information for students
+const QUESTION_TYPES = {
+  "right-there": {
+    name: "Right There",
+    description: "The answer is right in the text",
+    icon: "👀",
+    color: "bg-green-100 border-green-300 text-green-800"
+  },
+  "think-and-search": {
+    name: "Think and Search", 
+    description: "Look in different parts of the text",
+    icon: "🔍",
+    color: "bg-blue-100 border-blue-300 text-blue-800"
+  },
+  "author-and-me": {
+    name: "Author and Me",
+    description: "Use the text and your own thinking",
+    icon: "🤔", 
+    color: "bg-purple-100 border-purple-300 text-purple-800"
+  },
+  "on-my-own": {
+    name: "On My Own",
+    description: "Use your own experience and ideas",
+    icon: "💡",
+    color: "bg-yellow-100 border-yellow-300 text-yellow-800"
+  }
+};
+
 const StudentReading = ({ 
   studentData, 
   classData, 
@@ -135,6 +163,7 @@ const StudentReading = ({
   const [selectedSound, setSelectedSound] = useState(null);
   const [readingMode, setReadingMode] = useState('practice'); // 'practice' or 'full'
   const [activeTab, setActiveTab] = useState('auto'); // 'auto', 'fluency', 'beginner'
+  const [showComprehension, setShowComprehension] = useState(false); // NEW: For comprehension questions
 
   useEffect(() => {
     if (studentData && classData) {
@@ -227,6 +256,147 @@ const StudentReading = ({
     }
   };
 
+  // NEW: Handle Day 3 comprehension questions
+  const handleDay3Click = () => {
+    if (selectedText && selectedText.text.comprehensionQuestions) {
+      setShowComprehension(true);
+    } else {
+      showToast('Comprehension questions coming soon for this passage!', 'info');
+    }
+  };
+
+  // Render comprehension questions modal
+  const renderComprehensionModal = () => {
+    if (!showComprehension || !selectedText?.text?.comprehensionQuestions) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-yellow-500 to-orange-600 text-white p-6 rounded-t-xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl md:text-3xl font-bold flex items-center">
+                  <span className="mr-3">❓</span>
+                  Day 3: Answer Questions
+                </h2>
+                <p className="text-lg opacity-90">{selectedText.text.title}</p>
+                <p className="text-sm opacity-80">{selectedText.passage.level}</p>
+              </div>
+              <button
+                onClick={() => setShowComprehension(false)}
+                className="text-white hover:text-red-200 text-4xl font-bold"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+
+          {/* Instructions */}
+          <div className="p-6 bg-blue-50 border-b border-blue-200">
+            <h3 className="text-lg font-bold text-blue-800 mb-3">📝 Instructions</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-white rounded-lg p-4 border border-blue-200">
+                <h4 className="font-bold text-blue-700 mb-2">1. Read to a Partner First</h4>
+                <p className="text-sm text-blue-600">Always start by reading the passage aloud to a partner before answering questions.</p>
+              </div>
+              <div className="bg-white rounded-lg p-4 border border-blue-200">
+                <h4 className="font-bold text-blue-700 mb-2">2. Write in Your Book</h4>
+                <p className="text-sm text-blue-600">Write your answers in your reading notebook or workbook.</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Question Types Guide */}
+          <div className="p-6 bg-gray-50 border-b border-gray-200">
+            <h3 className="text-lg font-bold text-gray-800 mb-3">🎯 Types of Questions</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+              {Object.entries(QUESTION_TYPES).map(([type, info]) => (
+                <div key={type} className={`p-3 rounded-lg border-2 ${info.color}`}>
+                  <div className="text-2xl mb-1">{info.icon}</div>
+                  <h4 className="font-bold text-sm">{info.name}</h4>
+                  <p className="text-xs opacity-90">{info.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Questions */}
+          <div className="p-6">
+            <h3 className="text-xl font-bold text-gray-800 mb-6 text-center">📚 Comprehension Questions</h3>
+            <div className="space-y-6">
+              {selectedText.text.comprehensionQuestions.map((question, index) => {
+                const questionType = QUESTION_TYPES[question.type];
+                return (
+                  <div key={index} className="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-lg">
+                    <div className="flex items-start gap-4">
+                      <div className={`p-3 rounded-lg border-2 ${questionType.color} flex-shrink-0`}>
+                        <div className="text-2xl">{questionType.icon}</div>
+                      </div>
+                      <div className="flex-grow">
+                        <div className="flex items-center gap-3 mb-3">
+                          <span className="bg-gray-800 text-white px-3 py-1 rounded-full text-sm font-bold">
+                            Question {index + 1}
+                          </span>
+                          <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${questionType.color}`}>
+                            {questionType.name}
+                          </span>
+                        </div>
+                        <h4 className="text-lg font-semibold text-gray-800 mb-4">{question.question}</h4>
+                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                          <p className="text-sm text-yellow-800 mb-2">
+                            <strong>💡 Hint:</strong> {questionType.description}
+                          </p>
+                          <div className="bg-white rounded border border-yellow-300 p-3 min-h-[60px]">
+                            <p className="text-gray-500 italic text-sm">Write your answer in your reading book...</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Sample Answer Section (for teacher reference - hidden by default) */}
+            <div className="mt-8 bg-red-50 border border-red-200 rounded-xl p-4">
+              <details className="cursor-pointer">
+                <summary className="font-bold text-red-800 mb-2">🔒 Teacher Answer Key (Students: Ask your teacher if you need help!)</summary>
+                <div className="space-y-3 mt-3">
+                  {selectedText.text.comprehensionQuestions.map((question, index) => (
+                    <div key={index} className="bg-white border border-red-200 rounded p-3">
+                      <p className="text-sm font-semibold text-gray-700 mb-1">Question {index + 1}:</p>
+                      <p className="text-sm text-red-700 italic">{question.answer}</p>
+                    </div>
+                  ))}
+                </div>
+              </details>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="bg-gray-50 p-4 rounded-b-xl text-center">
+            <button
+              onClick={() => setShowComprehension(false)}
+              className="bg-yellow-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-yellow-700 mr-4"
+            >
+              Close Questions
+            </button>
+            <button
+              onClick={() => {
+                setShowComprehension(false);
+                setReadingMode('full');
+              }}
+              className="bg-blue-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-blue-700"
+            >
+              Read Text Again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Render selected sound practice
   if (selectedSound) {
     return (
@@ -315,10 +485,13 @@ const StudentReading = ({
     );
   }
 
-  // Render selected text (same as before for fluency practice)
+  // Render selected text (UPDATED with comprehension questions support)
   if (selectedText) {
     return (
       <div className="space-y-6">
+        {/* Comprehension Questions Modal */}
+        {renderComprehensionModal()}
+
         {/* Reading Header */}
         <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl p-6">
           <div className="flex items-center justify-between">
@@ -400,7 +573,7 @@ const StudentReading = ({
           </div>
         </div>
 
-        {/* Daily Activities - same as before */}
+        {/* Daily Activities - UPDATED with comprehension questions */}
         <div className="bg-white rounded-xl shadow-lg p-6">
           <h3 className="text-lg font-bold text-gray-800 mb-4 text-center">📅 5-Day Reading Activities</h3>
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
@@ -422,13 +595,18 @@ const StudentReading = ({
               </div>
             </div>
             
-            <div className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-4">
+            <div className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-4 cursor-pointer hover:bg-yellow-100 transition-colors"
+                 onClick={handleDay3Click}>
               <div className="text-center">
                 <div className="text-2xl mb-2">❓</div>
                 <h4 className="font-bold text-yellow-800 mb-2">Day 3</h4>
                 <p className="text-sm text-yellow-700 font-semibold mb-2">Answer Questions</p>
                 <p className="text-xs text-yellow-600">After reading to a partner, complete the comprehension questions.</p>
-                <p className="text-xs text-yellow-500 italic mt-1">(Coming soon)</p>
+                {selectedText.text.comprehensionQuestions && (
+                  <div className="mt-2 bg-yellow-200 rounded px-2 py-1">
+                    <p className="text-xs text-yellow-800 font-bold">✅ Click here!</p>
+                  </div>
+                )}
               </div>
             </div>
             
@@ -482,7 +660,7 @@ const StudentReading = ({
     );
   }
 
-  // Main reading selection view
+  // Main reading selection view (unchanged)
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -536,6 +714,7 @@ const StudentReading = ({
         </div>
       )}
 
+      {/* Rest of the component remains unchanged... */}
       {/* Beginner Sounds Tab */}
       {activeTab === 'beginner' && beginnerAssignments && beginnerAssignments.sounds.length > 0 && (
         <div className="space-y-6">
@@ -632,13 +811,16 @@ const StudentReading = ({
           {/* Reading Passages */}
           <div className="grid gap-6">
             {studentAssignments.texts.map(textData => (
-              <div key={textData.id} className="bg-white rounded-xl shadow-lg border border-gray-200">
+              <div key={textData.id} className="bg-white rounded-xl shadow-lg border-2 border-gray-200">
                 <div className={`${textData.textType.color} text-white p-4 md:p-6 rounded-t-xl`}>
                   <div className="flex items-center justify-between">
                     <div>
                       <h2 className="text-xl md:text-2xl font-bold">{textData.text.title}</h2>
                       <p className="text-sm md:text-base opacity-90">{textData.passage.level} - {textData.textType.name}</p>
                       <p className="text-sm opacity-80">{textData.text.wordCount} words | {textData.passage.spellingFocus}</p>
+                      {textData.text.comprehensionQuestions && (
+                        <p className="text-xs opacity-90 mt-1">✅ Includes comprehension questions</p>
+                      )}
                     </div>
                     <div className="text-3xl md:text-4xl">{textData.textType.icon}</div>
                   </div>

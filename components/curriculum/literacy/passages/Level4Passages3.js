@@ -1,5 +1,5 @@
 // components/curriculum/literacy/passages/Level4Passages3.js
-// LEVEL 4 FLUENCY PRACTICE PASSAGES - LEVELS 4.11 to 4.15 (For Ages 8-9)
+// LEVEL 4 FLUENCY PRACTICE PASSAGES - LEVELS 4.11 to 4.15 (For Ages 8-9) - WITH COMPREHENSION QUESTIONS
 import React from 'react';
 
 export const LEVEL_4_PASSAGES_3 = [
@@ -22,7 +22,34 @@ Inside the box was a beautiful wreath made of silver wire and a mysterious writt
 
 Tommy began to wring his hands nervously as they searched room by room. The wreath seemed to shimmer whenever they got close to the right location. Finally, Jake noticed that the brass swordfish on the mantle had a small wrinkle in its fin.
 
-Behind the swordfish, they discovered the answer to the riddle: a small ceremonial sword that had belonged to their great-grandfather. The written instructions explained that the sword and wreath were family treasures, wrapped in mystery but meant to be found by curious grandchildren.`
+Behind the swordfish, they discovered the answer to the riddle: a small ceremonial sword that had belonged to their great-grandfather. The written instructions explained that the sword and wreath were family treasures, wrapped in mystery but meant to be found by curious grandchildren.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "Where did Tommy and Jake find the old wooden box?",
+            answer: "Hidden in the wreckage of their grandmother's attic"
+          },
+          {
+            type: "right-there", 
+            question: "What was the wreath made of?",
+            answer: "Silver wire"
+          },
+          {
+            type: "think-and-search",
+            question: "How did the boys know they were getting close to the right location?",
+            answer: "The wreath seemed to shimmer whenever they got close to the right location"
+          },
+          {
+            type: "author-and-me",
+            question: "Why do you think the great-grandfather wanted the treasures to be 'wrapped in mystery'?",
+            answer: "He wanted to create an exciting treasure hunt for future generations to enjoy discovering their family history"
+          },
+          {
+            type: "on-my-own",
+            question: "If you could hide a treasure for future family members to find, what would it be and where would you hide it?",
+            answer: "Answers will vary - students should describe a meaningful item and creative hiding place"
+          }
+        ]
       },
       {
         type: "informational",
@@ -38,7 +65,34 @@ Many cultures have written traditions about wrestling, including stories of hero
 
 Modern wrestling has evolved from these ancient traditions, though athletes no longer receive wreaths as prizes. The sport still teaches the same values: how to writhe through difficult situations, find answers through perseverance, and never let challenges wring the determination from your spirit.
 
-Written rules now govern the sport, preventing the wreckage of unfair competition.`
+Written rules now govern the sport, preventing the wreckage of unfair competition.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What would ancient civilizations wring into wreaths?",
+            answer: "Garlands to honor their greatest wrestling champions"
+          },
+          {
+            type: "right-there",
+            question: "What is a wrestler's uniform called?",
+            answer: "A singlet"
+          },
+          {
+            type: "think-and-search",
+            question: "What were ceremonial swords meant to symbolize for ancient wrestlers?",
+            answer: "They were symbols of warrior status and answers to questions about courage and strength"
+          },
+          {
+            type: "author-and-me",
+            question: "What does the author mean by saying wrestlers learn to 'writhe through difficult situations'?",
+            answer: "Wrestling teaches people how to struggle and work their way through challenges in life"
+          },
+          {
+            type: "on-my-own",
+            question: "What sport or activity do you think teaches the best life lessons? Explain your choice.",
+            answer: "Answers will vary - students should connect sports/activities to valuable life skills"
+          }
+        ]
       },
       {
         type: "persuasive",
@@ -52,7 +106,34 @@ Schools often treat traditional skills like wreckage from the past, but this att
 
 The answer to building confidence isn't just academic success – it's also learning to work with your hands. These skills prevent your creativity from writhing under the pressure of purely digital learning.
 
-Don't let traditional knowledge become wreckage of forgotten wisdom. Whether you're interested in making wreaths, learning swordplay, or any other traditional skill, these activities provide written proof of human ingenuity and creativity.`
+Don't let traditional knowledge become wreckage of forgotten wisdom. Whether you're interested in making wreaths, learning swordplay, or any other traditional skill, these activities provide written proof of human ingenuity and creativity.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What two traditional crafts are mentioned as examples?",
+            answer: "Weaving a wreath and forging a ceremonial sword"
+          },
+          {
+            type: "right-there",
+            question: "According to the author, what isn't the only answer to building confidence?",
+            answer: "Academic success"
+          },
+          {
+            type: "think-and-search",
+            question: "What does the author say traditional skills teach us?",
+            answer: "They provide answers to questions about creativity and problem-solving, teach persistence, and provide valuable lessons about working with your hands"
+          },
+          {
+            type: "author-and-me",
+            question: "What does the author mean by 'wrinkles in comprehensive education'?",
+            answer: "Problems or gaps in a complete education when important traditional skills are ignored"
+          },
+          {
+            type: "on-my-own",
+            question: "What traditional skill would you most like to learn and why?",
+            answer: "Answers will vary - students should identify a hands-on skill and explain their interest"
+          }
+        ]
       },
       {
         type: "poetry",
@@ -86,7 +167,34 @@ To honor past and present now.
 So wrestle with these timeless arts,
 They strengthen minds and heal our hearts.
 Written wisdom, tried and true,
-Will wring the best that's found in you.`
+Will wring the best that's found in you.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What does the poet wring around their hands?",
+            answer: "The cloth"
+          },
+          {
+            type: "right-there",
+            question: "What appears through the wreckage of passing years?",
+            answer: "Traditional wisdom"
+          },
+          {
+            type: "think-and-search",
+            question: "According to the poem, what do old skills help us do?",
+            answer: "They help us stay alive when modern life makes spirits writhe, and they strengthen minds and heal hearts"
+          },
+          {
+            type: "author-and-me",
+            question: "What does the poet mean by 'each wrinkle in the ancient page connects us to another age'?",
+            answer: "Old books and wisdom connect us to the people and knowledge of the past"
+          },
+          {
+            type: "on-my-own",
+            question: "How do you think learning about the past can help you in your daily life?",
+            answer: "Answers will vary - students should consider how historical knowledge applies to modern situations"
+          }
+        ]
       }
     ]
   },
@@ -112,7 +220,34 @@ Maya found the selection unusual but wonderful. Instead of offering unpopular or
 
 Maya realized it was unsuitable to make such an unequal decision without her parents. Though she was undecided between the hermit crabs and a small fish, she appreciated Mr. Chen's unselfish advice about waiting.
 
-"It's never unfortunate to take time making important decisions," Mr. Chen smiled. "Come back when you're more certain, and we'll find the perfect unusual pet for your unique situation."`
+"It's never unfortunate to take time making important decisions," Mr. Chen smiled. "Come back when you're more certain, and we'll find the perfect unusual pet for your unique situation."`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What made traditional pets unsuitable for Maya's lifestyle?",
+            answer: "Her apartment was small and unoccupied most of the day"
+          },
+          {
+            type: "right-there",
+            question: "What did Mr. Chen say about hermit crabs?",
+            answer: "They're quite stable, don't require unequal amounts of attention, are not unpleasant to care for, and are perfect for uncertain schedules"
+          },
+          {
+            type: "think-and-search",
+            question: "Why did Mr. Chen refuse to sell pets to uncertain customers?",
+            answer: "He was unselfish and didn't want animals placed in unsuitable homes where they might be unhappy"
+          },
+          {
+            type: "author-and-me",
+            question: "What does Mr. Chen's advice show about his character as a pet store owner?",
+            answer: "He cares more about the animals' wellbeing than making money, and he's patient and understanding with customers"
+          },
+          {
+            type: "on-my-own",
+            question: "What qualities do you think make someone a good pet owner?",
+            answer: "Answers will vary - students should consider responsibility, commitment, proper care, etc."
+          }
+        ]
       },
       {
         type: "informational",
@@ -128,7 +263,34 @@ Sometimes the most unselfish thing you can do is admit when you're undecided. Th
 
 Good decision-makers understand that being uncertain isn't the same as being unprepared. They know it's unsuitable to make unequal commitments when the situation is still unstable.
 
-The most unfortunate decisions often come from trying to appear certain when you're actually undecided about unsuitable options.`
+The most unfortunate decisions often come from trying to appear certain when you're actually undecided about unsuitable options.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What requires avoiding unsuitable choices according to the text?",
+            answer: "Making good decisions"
+          },
+          {
+            type: "right-there",
+            question: "What isn't the same as being unprepared?",
+            answer: "Being uncertain"
+          },
+          {
+            type: "think-and-search",
+            question: "Why is it actually unselfish to take time when you're uncertain about decisions?",
+            answer: "Because you're considering how your choices might affect others, and admitting uncertainty prevents unfortunate mistakes"
+          },
+          {
+            type: "author-and-me",
+            question: "What does the author mean by 'unequal pressure to make decisions quickly'?",
+            answer: "Unfair pressure from others to decide things faster than is wise or comfortable"
+          },
+          {
+            type: "on-my-own",
+            question: "Describe a time when taking your time to decide something led to a better outcome.",
+            answer: "Answers will vary - students should reflect on personal decision-making experiences"
+          }
+        ]
       },
       {
         type: "persuasive",
@@ -144,7 +306,34 @@ Don't let others convince you that being undecided is unsuitable or unpleasant. 
 
 The unselfish thing to do is consider how your decisions affect others. This prevents the unequal burden of unstable choices from falling on your friends and family.
 
-Being uncertain shows wisdom, not weakness. Don't let unsuitable pressure from others lead you toward unfortunate decisions that could create unpleasant situations for everyone involved.`
+Being uncertain shows wisdom, not weakness. Don't let unsuitable pressure from others lead you toward unfortunate decisions that could create unpleasant situations for everyone involved.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What does taking time to think prevent according to the text?",
+            answer: "Unfortunate decisions that could lead to unpleasant consequences"
+          },
+          {
+            type: "right-there",
+            question: "What does being uncertain show according to the author?",
+            answer: "Wisdom, not weakness"
+          },
+          {
+            type: "think-and-search",
+            question: "What are two reasons the author gives for why being undecided can be a good thing?",
+            answer: "It's unselfish to admit uncertainty rather than make unsuitable commitments, and it prevents unfortunate decisions"
+          },
+          {
+            type: "author-and-me",
+            question: "What does the author mean by 'unequal burden of unstable choices'?",
+            answer: "When you make poor decisions quickly, it unfairly affects others who have to deal with the consequences"
+          },
+          {
+            type: "on-my-own",
+            question: "How do you handle pressure from friends to make quick decisions? What strategies work for you?",
+            answer: "Answers will vary - students should reflect on peer pressure and coping strategies"
+          }
+        ]
       },
       {
         type: "poetry",
@@ -178,7 +367,34 @@ To make your choices truly shine.
 Uncertain moments help you grow,
 They teach you what you need to know.
 Though popular choices call your name,
-Thoughtful decisions bring no shame.`
+Thoughtful decisions bring no shame.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What does being undecided show according to the poem?",
+            answer: "Maturity"
+          },
+          {
+            type: "right-there",
+            question: "What will surely go to waste?",
+            answer: "Undesirable choices made in haste"
+          },
+          {
+            type: "think-and-search",
+            question: "What does the poem say uncertain moments do for you?",
+            answer: "They help you grow and teach you what you need to know"
+          },
+          {
+            type: "author-and-me",
+            question: "What does the poet mean by 'life's changing curtain'?",
+            answer: "Life is like a stage with changing scenes, and sometimes it's hard to see what's coming next"
+          },
+          {
+            type: "on-my-own",
+            question: "When you're uncertain about something important, who do you talk to for advice?",
+            answer: "Answers will vary - students should identify trusted advisors and support systems"
+          }
+        ]
       }
     ]
   },
@@ -204,7 +420,34 @@ The students learned that Dr. Sarah's predecessor had been a famous debtor who s
 
 During lunch, Emma asked if she could become an inspector like Dr. Sarah. "Every great scientist starts as a competitor against ignorance," Dr. Sarah smiled. "Your instructor at school is teaching you the basics, but curiosity is what makes a real collector of knowledge."
 
-Emma left the museum determined to be the successor to her own dreams.`
+Emma left the museum determined to be the successor to her own dreams.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What were Dr. Sarah's two jobs at the museum?",
+            answer: "An inspector and an editor of scientific journals, and a collector of rare fossils"
+          },
+          {
+            type: "right-there",
+            question: "How did Dr. Sarah start her career?",
+            answer: "As a competitor in science fairs before becoming an instructor's assistant"
+          },
+          {
+            type: "think-and-search",
+            question: "How was Dr. Sarah different from her predecessor?",
+            answer: "Her predecessor was a debtor who spent all his money collecting specimens, but she was more responsible with money while continuing his work"
+          },
+          {
+            type: "author-and-me",
+            question: "What does Dr. Sarah mean by saying scientists start as 'competitors against ignorance'?",
+            answer: "Scientists work to overcome not knowing things by learning and discovering new knowledge"
+          },
+          {
+            type: "on-my-own",
+            question: "If you could work at a museum, what type of exhibit would you most like to help create?",
+            answer: "Answers will vary - students should consider their interests and explain their choice"
+          }
+        ]
       },
       {
         type: "informational",
@@ -218,7 +461,34 @@ Laboratory work requires an inspector's attention to detail and a processor's ab
 
 Some scientists work as an instructor at universities while maintaining their role as a collector of research data. Others become a supervisor of large research teams or an exhibitor of scientific findings at conferences.
 
-The best scientists understand that being a competitor in research means collaborating with others, not working against them. Every successful researcher serves as both a predecessor for future scientists and a successor to earlier discoveries.`
+The best scientists understand that being a competitor in research means collaborating with others, not working against them. Every successful researcher serves as both a predecessor for future scientists and a successor to earlier discoveries.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What does a museum curator serve as?",
+            answer: "An exhibitor of scientific knowledge and a supervisor for research projects"
+          },
+          {
+            type: "right-there",
+            question: "What does laboratory work require?",
+            answer: "An inspector's attention to detail and a processor's ability to handle complex data"
+          },
+          {
+            type: "think-and-search",
+            question: "What are three different roles that scientists can have according to the text?",
+            answer: "Editor, collector, inspector, processor, instructor, supervisor, exhibitor, competitor (any three)"
+          },
+          {
+            type: "author-and-me",
+            question: "What does the author mean by saying good scientists understand that being a competitor means collaborating?",
+            answer: "The best scientists work together to make discoveries rather than trying to beat each other"
+          },
+          {
+            type: "on-my-own",
+            question: "Which science career role sounds most interesting to you and why?",
+            answer: "Answers will vary - students should choose a role and explain what appeals to them about it"
+          }
+        ]
       },
       {
         type: "persuasive",
@@ -232,7 +502,34 @@ Your teacher isn't just an instructor – they're also an editor of lesson plans
 
 Don't be afraid to become an instigator of your own learning by exploring different subjects and careers. Your future successor will benefit from the diverse skills you develop today.
 
-Being a competitor doesn't mean beating others – it means being the best version of yourself. Whether you become a debtor paying for education or an exhibitor of your talents, remember that every inspector of quality work appreciates diverse abilities in the people they supervise.`
+Being a competitor doesn't mean beating others – it means being the best version of yourself. Whether you become a debtor paying for education or an exhibitor of your talents, remember that every inspector of quality work appreciates diverse abilities in the people they supervise.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What should you become a collector of according to the text?",
+            answer: "Diverse skills"
+          },
+          {
+            type: "right-there",
+            question: "What are four roles your teacher serves as mentioned in the text?",
+            answer: "Instructor, editor of lesson plans, collector of teaching materials, and inspector of student progress"
+          },
+          {
+            type: "think-and-search",
+            question: "What does the author say being a competitor really means?",
+            answer: "Being the best version of yourself, not beating others"
+          },
+          {
+            type: "author-and-me",
+            question: "Why does the author encourage students to become 'instigators of their own learning'?",
+            answer: "Students should take charge of exploring different subjects and careers to develop diverse skills for future success"
+          },
+          {
+            type: "on-my-own",
+            question: "What are three different skills you would like to develop to prepare for your future?",
+            answer: "Answers will vary - students should identify diverse skills and explain their importance"
+          }
+        ]
       },
       {
         type: "poetry",
@@ -266,7 +563,34 @@ Success is where hard work goes.
 Whether you're a competitor strong
 Or instructor helping others along,
 Every role teaches something true
-About the best that lives in you.`
+About the best that lives in you.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "Who runs the longest race in the poem?",
+            answer: "A competitor"
+          },
+          {
+            type: "right-there",
+            question: "According to the poem, what is success based on?",
+            answer: "Where hard work goes"
+          },
+          {
+            type: "think-and-search",
+            question: "What does the poem say each role we play does for us?",
+            answer: "Helps cut through trouble like a knife and teaches something true about the best that lives in you"
+          },
+          {
+            type: "author-and-me",
+            question: "What does the poet mean by 'be an inspector of your dreams'?",
+            answer: "Carefully examine and pay attention to your goals and aspirations"
+          },
+          {
+            type: "on-my-own",
+            question: "Which role mentioned in the poem do you think best describes how you help others?",
+            answer: "Answers will vary - students should choose a role and explain how they help others in that way"
+          }
+        ]
       }
     ]
   },
@@ -292,7 +616,34 @@ As the day progressed, dark clouds began to gather, and the wind howled like a h
 
 When the flood waters finally arrived, everyone was safely inside. The outcome proved Grandma's knowledge once again. The shone sun returned the next day, and the grateful villagers realized they had found their permanent weather predictor.
 
-Someday, other villages would welcome Grandma's wisdom, but for now, her knowledge belonged to the people who had learned to trust her completely.`
+Someday, other villages would welcome Grandma's wisdom, but for now, her knowledge belonged to the people who had learned to trust her completely.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What did Grandma Wilson hope to become someday?",
+            answer: "The official weather predictor"
+          },
+          {
+            type: "right-there",
+            question: "What did Grandma serve to neighbors seeking shelter?",
+            answer: "Tea and fresh scones"
+          },
+          {
+            type: "think-and-search",
+            question: "How were the current villagers different from people in bygone days?",
+            answer: "Unlike bygone days when people ignored weather warnings, everyone now trusted Grandma's knowledge and warnings"
+          },
+          {
+            type: "author-and-me",
+            question: "Why do you think Grandma's blood pressure rose when she studied the clouds?",
+            answer: "She was worried or stressed because she could see dangerous weather coming and knew people could be hurt"
+          },
+          {
+            type: "on-my-own",
+            question: "Who in your life has special knowledge or skills that help keep others safe?",
+            answer: "Answers will vary - students should think about people with protective expertise"
+          }
+        ]
       },
       {
         type: "informational",
@@ -308,7 +659,34 @@ Emergency shelters welcome families who must evacuate flood-prone areas. These f
 
 Weather scientists know that flood patterns have become more unpredictable due to climate change. The sun may have shone peacefully yesterday, but today's outcome could include dangerous flooding.
 
-Like a wolf hunting for prey, severe weather seeks the most vulnerable areas. Communities that welcome scientific knowledge about flood prevention create better outcomes for everyone.`
+Like a wolf hunting for prey, severe weather seeks the most vulnerable areas. Communities that welcome scientific knowledge about flood prevention create better outcomes for everyone.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What do modern meteorologists welcome?",
+            answer: "Advanced technology that helps prevent flood disasters and saves lives"
+          },
+          {
+            type: "right-there",
+            question: "What do emergency shelters provide to displaced families?",
+            answer: "Basic necessities like fresh scones and warm beverages"
+          },
+          {
+            type: "think-and-search",
+            question: "How has weather prediction improved since bygone eras?",
+            answer: "It has become much more accurate with advanced technology instead of relying only on traditional signs"
+          },
+          {
+            type: "author-and-me",
+            question: "Why does the author compare severe weather to 'a wolf hunting for prey'?",
+            answer: "Severe weather is dangerous and targets the most vulnerable areas, just like a predator hunts weak prey"
+          },
+          {
+            type: "on-my-own",
+            question: "How do you think weather prediction might improve in the future?",
+            answer: "Answers will vary - students should think about technological advances and scientific improvements"
+          }
+        ]
       },
       {
         type: "persuasive",
@@ -322,7 +700,34 @@ When the sun has shone on human civilization for thousands of years, we've learn
 
 Scientific knowledge helps us prepare for everything from flood disasters to medical emergencies. Just as you would welcome a warm scone on a cold day, you should welcome factual information that could save lives.
 
-The bygone era of trusting superstition over science led to tragic outcomes. Don't let fear or stubbornness prevent you from accepting knowledge that could help your community become safer and more prosperous.`
+The bygone era of trusting superstition over science led to tragic outcomes. Don't let fear or stubbornness prevent you from accepting knowledge that could help your community become safer and more prosperous.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What should you welcome according to the text?",
+            answer: "Scientific knowledge and factual information"
+          },
+          {
+            type: "right-there",
+            question: "What does scientific knowledge help us prepare for?",
+            answer: "Everything from flood disasters to medical emergencies"
+          },
+          {
+            type: "think-and-search",
+            question: "What does the author say about how knowledge changes over time?",
+            answer: "Knowledge grows stronger with each generation, and we should welcome scientific knowledge while not clinging to bygone beliefs that contradict evidence"
+          },
+          {
+            type: "author-and-me",
+            question: "What does the author mean by comparing accepting scientific facts to welcoming 'a warm scone on a cold day'?",
+            answer: "Both are beneficial and comforting things you should gladly accept"
+          },
+          {
+            type: "on-my-own",
+            question: "Why do you think some people resist accepting new scientific discoveries?",
+            answer: "Answers will vary - students should consider fear of change, attachment to traditions, etc."
+          }
+        ]
       },
       {
         type: "poetry",
@@ -356,7 +761,34 @@ With wisdom flowing deep inside.
 The outcome of a learning heart
 Gives every person a fresh start.
 So welcome knowledge every day,
-It lights and guides you on your way.`
+It lights and guides you on your way.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What will someday be worth more than gold according to the poem?",
+            answer: "My knowledge"
+          },
+          {
+            type: "right-there",
+            question: "What does wisdom help the poet's mind do?",
+            answer: "Reach beyond the scone and simple bread to deeper truths"
+          },
+          {
+            type: "think-and-search",
+            question: "What qualities does the wise woman in the poem have?",
+            answer: "She has silver hair, knowledge gained through years of care, blood that runs steady and calm, and wisdom that flows deep inside"
+          },
+          {
+            type: "author-and-me",
+            question: "What does the poet mean by 'the outcome of a learning heart gives every person a fresh start'?",
+            answer: "When you're open to learning, it creates new opportunities and possibilities in your life"
+          },
+          {
+            type: "on-my-own",
+            question: "What kind of knowledge do you hope to gain as you grow older?",
+            answer: "Answers will vary - students should think about future learning goals and wisdom they want to acquire"
+          }
+        ]
       }
     ]
   },
@@ -382,8 +814,35 @@ During dinner, Sarah watched the family dog chews his bone contentedly by the ki
 
 The scene at the dinner table had seemed intimidating at first, but the lesson was simple: families who welcome a boarder from across any border create love that lessens fear and helps everyone choose kindness.
 
-Sarah's hoarse throat felt better as she learned that being seen and accepted was the greatest gift of all.`
-    },
+Sarah's hoarse throat felt better as she learned that being seen and accepted was the greatest gift of all.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "Where was Sarah from and what was she doing with the Johnson family?",
+            answer: "She was a foreign exchange student (boarder) living with the Johnson family"
+          },
+          {
+            type: "right-there",
+            question: "Why was Sarah's voice hoarse?",
+            answer: "It was still rough from her long journey"
+          },
+          {
+            type: "think-and-search",
+            question: "What lesson did Mrs. Johnson teach Sarah about participating in family prayers?",
+            answer: "Each person could choose their own way to participate - some pray silently while others just think grateful thoughts"
+          },
+          {
+            type: "author-and-me",
+            question: "What does the author mean by comparing Sarah to the dog who 'didn't worry about being prey to anxiety'?",
+            answer: "Sarah learned not to let her nervousness and fears take control of her, just like the dog was relaxed and content"
+          },
+          {
+            type: "on-my-own",
+            question: "If you were hosting a student from another country, how would you help them feel welcome?",
+            answer: "Answers will vary - students should think about kindness, patience, and cultural understanding"
+          }
+        ]
+      },
       {
         type: "informational",
         title: "International Student Exchange",
@@ -396,7 +855,34 @@ Language barriers can make students' voices sound hoarse as they struggle to com
 
 Students often pray that their experience will lessen homesickness and help them adapt to new environments. They've seen pictures of their destination, but living the scene is quite different from imagining it.
 
-Host families help boarder students choose appropriate responses to new situations. Just as a horse chews grass naturally, students gradually develop comfort with unfamiliar customs through daily practice and gentle lessons about cultural differences.`
+Host families help boarder students choose appropriate responses to new situations. Just as a horse chews grass naturally, students gradually develop comfort with unfamiliar customs through daily practice and gentle lessons about cultural differences.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What do international student exchange programs help lessen?",
+            answer: "Cultural misunderstandings"
+          },
+          {
+            type: "right-there",
+            question: "What can make students' voices sound hoarse?",
+            answer: "Language barriers as they struggle to communicate"
+          },
+          {
+            type: "think-and-search",
+            question: "What do students often pray for during their exchange experience?",
+            answer: "That their experience will lessen homesickness and help them adapt to new environments"
+          },
+          {
+            type: "author-and-me",
+            question: "What does the author mean by saying students 'prey on the patience of host families'?",
+            answer: "Students sometimes test or use up their host families' patience while they're learning and adjusting"
+          },
+          {
+            type: "on-my-own",
+            question: "Would you be interested in being an exchange student in another country? Why or why not?",
+            answer: "Answers will vary - students should consider benefits and challenges of cultural exchange"
+          }
+        ]
       },
       {
         type: "persuasive",
@@ -410,7 +896,34 @@ Some people pray that change will never come, but wise students pray for courage
 
 Like a horse that chews grass from many different fields, you should sample experiences from various cultures and backgrounds. The lesson you'll learn is that diversity helps you choose better solutions to life's challenges.
 
-Being a boarder in someone else's world, even temporarily, will lessen your prejudices and help you seen the beauty in different ways of living. Choose adventure over comfort, and let new experiences become the horse that carries you toward wisdom and understanding.`
+Being a boarder in someone else's world, even temporarily, will lessen your prejudices and help you seen the beauty in different ways of living. Choose adventure over comfort, and let new experiences become the horse that carries you toward wisdom and understanding.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What should you choose instead of letting anxiety lessen your potential?",
+            answer: "Choose to embrace new experiences"
+          },
+          {
+            type: "right-there",
+            question: "What comparison does the author make about sampling experiences?",
+            answer: "Like a horse that chews grass from many different fields, you should sample experiences from various cultures"
+          },
+          {
+            type: "think-and-search",
+            question: "What will being a boarder in someone else's world do for you?",
+            answer: "It will lessen your prejudices and help you see the beauty in different ways of living"
+          },
+          {
+            type: "author-and-me",
+            question: "What does the author mean by 'the border between different cultures is much smaller than they imagined'?",
+            answer: "People from different cultures have more in common than they think, and differences aren't as big as feared"
+          },
+          {
+            type: "on-my-own",
+            question: "What new experience would you like to try that might seem scary at first?",
+            answer: "Answers will vary - students should identify growth opportunities outside their comfort zone"
+          }
+        ]
       },
       {
         type: "poetry",
@@ -444,7 +957,34 @@ Is lesson none can ever destroy.
 So when you meet a stranger here,
 Help lessen all their doubt and fear.
 Let borders become bridges true,
-And lessons flow from me to you.`
+And lessons flow from me to you.`,
+        comprehensionQuestions: [
+          {
+            type: "right-there",
+            question: "What had the boarder never seen before?",
+            answer: "This kind of scene where families gather, calm and serene"
+          },
+          {
+            type: "right-there",
+            question: "What did the border become according to the poem?",
+            answer: "A bridge from side to side"
+          },
+          {
+            type: "think-and-search",
+            question: "What lesson did the boarder learn about belonging?",
+            answer: "She learned what true belonging means and that choosing to pray for others' joy is a lesson none can destroy"
+          },
+          {
+            type: "author-and-me",
+            question: "What does the poet mean by 'let borders become bridges true'?",
+            answer: "Turn the things that separate us into connections that bring us together"
+          },
+          {
+            type: "on-my-own",
+            question: "How can you help someone new to your school or community feel like they belong?",
+            answer: "Answers will vary - students should think about welcoming actions and inclusive behaviors"
+          }
+        ]
       }
     ]
   }
