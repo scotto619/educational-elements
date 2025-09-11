@@ -12,23 +12,27 @@ export const BEGINNER_LEVEL_2_SOUNDS = [
     practices: [
       {
         type: 'sound-recognition',
-        content: 'SH makes the "shh" sound like when we say be quiet! 🤫',
-        instructions: 'Say "shh" and put your finger to your lips'
+        content: `☀️ SH makes the "shh" sound like when we say be quiet! 🤫
+🌙 SH makes the "shh" sound like when we say be quiet! 🤫`,
+        instructions: 'Partner Reading: Say "shh" and put your finger to your lips'
       },
       {
         type: 'sound-mixing',
-        content: 'sh  s  t  sh  a  sh  p  sh  i  sh  n  sh',
-        instructions: 'Say each sound. Notice how SH is different from S'
+        content: `☀️ sh  s  t  sh  a  sh  p  sh  i  sh  n  sh
+🌙 sh  m  sh  o  sh  r  sh  e  sh  u  sh`,
+        instructions: 'Partner Reading: Say each sound. Notice how SH is different from S'
       },
       {
         type: 'simple-words',
-        content: 'she    shop    ship    shut    show',
-        instructions: 'Easy SH words - read them slowly'
+        content: `☀️ she    shop    ship    shut    show
+🌙 fish    dish    wash    push    rush`,
+        instructions: 'Partner Reading: Easy SH words - read them slowly'
       },
       {
         type: 'tricky-words',
-        content: 'shampoo    mushroom    fishing    sunshine',
-        instructions: 'Harder SH words - break them into parts'
+        content: `☀️ shampoo    mushroom    fishing    sunshine
+🌙 washing    brushing    crushing    splashing`,
+        instructions: 'Partner Reading: Harder SH words - break them into parts'
       }
     ],
     targetWords: ['she', 'shop', 'ship', 'shut', 'show', 'fish', 'dish', 'wish'],
@@ -43,23 +47,27 @@ export const BEGINNER_LEVEL_2_SOUNDS = [
     practices: [
       {
         type: 'sound-recognition',
-        content: 'CH makes the "ch" sound like a train! Choo choo! 🚂',
-        instructions: 'Say "ch ch ch" like a train starting up'
+        content: `☀️ CH makes the "ch" sound like a train! Choo choo! 🚂
+🌙 CH makes the "ch" sound like a train! Choo choo! 🚂`,
+        instructions: 'Partner Reading: Say "ch ch ch" like a train starting up'
       },
       {
         type: 'sound-mixing',
-        content: 'ch  s  a  ch  t  ch  p  ch  i  ch  n  ch',
-        instructions: 'Say each sound. Notice the special CH sound'
+        content: `☀️ ch  s  a  ch  t  ch  p  ch  i  ch  n  ch
+🌙 ch  m  ch  o  ch  r  ch  e  ch  u  ch`,
+        instructions: 'Partner Reading: Say each sound. Notice the special CH sound'
       },
       {
         type: 'simple-words',
-        content: 'chat    chip    chop    chin    much',
-        instructions: 'Easy CH words - sound them out'
+        content: `☀️ chat    chip    chop    chin    much
+🌙 rich    such    lunch    touch    teach`,
+        instructions: 'Partner Reading: Easy CH words - sound them out'
       },
       {
         type: 'tricky-words',
-        content: 'children    chocolate    sandwich    lunchtime',
-        instructions: 'Harder CH words - take your time'
+        content: `☀️ children    chocolate    sandwich    lunchtime
+🌙 teacher    kitchen    watching    crunching`,
+        instructions: 'Partner Reading: Harder CH words - take your time'
       }
     ],
     targetWords: ['chat', 'chip', 'chop', 'chin', 'much', 'rich', 'such', 'lunch'],
@@ -74,23 +82,27 @@ export const BEGINNER_LEVEL_2_SOUNDS = [
     practices: [
       {
         type: 'sound-recognition',
-        content: 'TH makes the "th" sound - put your tongue between your teeth! 👅',
-        instructions: 'Feel your tongue touch your teeth when you say "th"'
+        content: `☀️ TH makes the "th" sound - put your tongue between your teeth! 👅
+🌙 TH makes the "th" sound - put your tongue between your teeth! 👅`,
+        instructions: 'Partner Reading: Feel your tongue touch your teeth when you say "th"'
       },
       {
         type: 'sound-mixing',
-        content: 'th  s  a  th  t  th  p  th  i  th  n  th',
-        instructions: 'Say each sound. Feel the TH with your tongue'
+        content: `☀️ th  s  a  th  t  th  p  th  i  th  n  th
+🌙 th  m  th  o  th  r  th  e  th  u  th`,
+        instructions: 'Partner Reading: Say each sound. Feel the TH with your tongue'
       },
       {
         type: 'simple-words',
-        content: 'the    this    that    with    then',
-        instructions: 'Common TH words we use every day'
+        content: `☀️ the    this    that    with    then
+🌙 path    bath    math    teeth    cloth`,
+        instructions: 'Partner Reading: Common TH words we use every day'
       },
       {
         type: 'tricky-words',
-        content: 'things    mother    brother    together',
-        instructions: 'Longer TH words - break them down'
+        content: `☀️ things    mother    brother    together
+🌙 father    nothing    thinking    birthday`,
+        instructions: 'Partner Reading: Longer TH words - break them down'
       }
     ],
     targetWords: ['the', 'this', 'that', 'with', 'then', 'path', 'bath', 'math'],
@@ -105,23 +117,27 @@ export const BEGINNER_LEVEL_2_SOUNDS = [
     practices: [
       {
         type: 'sound-recognition',
-        content: 'CK makes the "k" sound at the end of words like duck! 🦆',
-        instructions: 'Say "quack" and hear the CK sound at the end'
+        content: `☀️ CK makes the "k" sound at the end of words like duck! 🦆
+🌙 CK makes the "k" sound at the end of words like duck! 🦆`,
+        instructions: 'Partner Reading: Say "quack" and hear the CK sound at the end'
       },
       {
         type: 'sound-mixing',
-        content: 'ck  s  a  ck  t  ck  p  ck  i  ck  n  ck',
-        instructions: 'CK usually comes at the end of words'
+        content: `☀️ ck  s  a  ck  t  ck  p  ck  i  ck  n  ck
+🌙 ck  m  ck  o  ck  r  ck  e  ck  u  ck`,
+        instructions: 'Partner Reading: CK usually comes at the end of words'
       },
       {
         type: 'simple-words',
-        content: 'back    kick    duck    rock    neck',
-        instructions: 'CK ending words - listen for the final sound'
+        content: `☀️ back    kick    duck    rock    neck
+🌙 sick    pick    luck    pack    tick`,
+        instructions: 'Partner Reading: CK ending words - listen for the final sound'
       },
       {
         type: 'tricky-words',
-        content: 'chicken    pocket    cricket    bucket',
-        instructions: 'Longer CK words - find the CK sound'
+        content: `☀️ chicken    pocket    cricket    bucket
+🌙 sticker    tracker    cracker    thicker`,
+        instructions: 'Partner Reading: Longer CK words - find the CK sound'
       }
     ],
     targetWords: ['back', 'kick', 'duck', 'rock', 'neck', 'sick', 'pick', 'luck'],
@@ -136,23 +152,27 @@ export const BEGINNER_LEVEL_2_SOUNDS = [
     practices: [
       {
         type: 'sound-recognition',
-        content: 'NG makes the "ng" sound like a bell ringing! 🔔 Ring ring!',
-        instructions: 'Say "ring" and feel the NG sound in your throat'
+        content: `☀️ NG makes the "ng" sound like a bell ringing! 🔔 Ring ring!
+🌙 NG makes the "ng" sound like a bell ringing! 🔔 Ring ring!`,
+        instructions: 'Partner Reading: Say "ring" and feel the NG sound in your throat'
       },
       {
         type: 'sound-mixing',
-        content: 'ng  s  a  ng  t  ng  p  ng  i  ng  n  ng',
-        instructions: 'NG makes a special sound - feel it in your throat'
+        content: `☀️ ng  s  a  ng  t  ng  p  ng  i  ng  n  ng
+🌙 ng  m  ng  o  ng  r  ng  e  ng  u  ng`,
+        instructions: 'Partner Reading: NG makes a special sound - feel it in your throat'
       },
       {
         type: 'simple-words',
-        content: 'ring    sing    long    king    wing',
-        instructions: 'NG ending words - feel the throat vibration'
+        content: `☀️ ring    sing    long    king    wing
+🌙 song    bang    hang    ding    rang`,
+        instructions: 'Partner Reading: NG ending words - feel the throat vibration'
       },
       {
         type: 'tricky-words',
-        content: 'morning    evening    nothing    something',
-        instructions: 'Longer NG words - listen carefully'
+        content: `☀️ morning    evening    nothing    something
+🌙 singing    bringing    playing    swinging`,
+        instructions: 'Partner Reading: Longer NG words - listen carefully'
       }
     ],
     targetWords: ['ring', 'sing', 'long', 'king', 'wing', 'song', 'bang', 'hang'],
@@ -167,22 +187,26 @@ export const BEGINNER_LEVEL_2_SOUNDS = [
     practices: [
       {
         type: 'sound-recognition',
-        content: '☀️ QU makes the "kw" sound like in queen! 👑 Q always has U with it!\n🌙 QU makes the "kw" sound like in queen! 👑 Q always has U with it!',
+        content: `☀️ QU makes the "kw" sound like in queen! 👑 Q always has U with it!
+🌙 QU makes the "kw" sound like in queen! 👑 Q always has U with it!`,
         instructions: 'Partner Reading: Say "queen" and hear the "kw" sound at the start'
       },
       {
         type: 'sound-mixing',
-        content: '☀️ qu  s  a  qu  t  qu  p  qu  i  qu  n  qu\n🌙 qu  m  qu  o  qu  r  qu  e  qu  u  qu',
+        content: `☀️ qu  s  a  qu  t  qu  p  qu  i  qu  n  qu
+🌙 qu  m  qu  o  qu  r  qu  e  qu  u  qu`,
         instructions: 'Partner Reading: Q and U are always together making "kw"'
       },
       {
         type: 'simple-words',
-        content: '☀️ quit    quiz    quick    quiet    quack\n🌙 queen    quite    quest    quote    quart',
+        content: `☀️ quit    quiz    quick    quiet    quack
+🌙 queen    quite    quest    quote    quart`,
         instructions: 'Partner Reading: QU beginning words - hear the "kw" sound'
       },
       {
         type: 'tricky-words',
-        content: '☀️ question    squirrel    aquarium    earthquake\n🌙 quarter    squash    liquid    antique',
+        content: `☀️ question    squirrel    aquarium    earthquake
+🌙 quarter    squash    liquid    antique`,
         instructions: 'Partner Reading: QU in longer words - can you find it?'
       }
     ],
