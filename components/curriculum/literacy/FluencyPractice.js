@@ -1,5 +1,5 @@
 // components/curriculum/literacy/FluencyPractice.js
-// FLUENCY PRACTICE - UPDATED TO USE ALL LEVEL 2 AND LEVEL 3 PASSAGE FILES
+// FLUENCY PRACTICE - UPDATED WITH BETTER LEVEL ORGANIZATION
 import React, { useState, useEffect } from 'react';
 import { LEVEL_1_PASSAGES } from './passages/Level1Passages';
 import { LEVEL_2_PASSAGES_1 } from './passages/Level2Passages1';
@@ -114,8 +114,32 @@ const READING_PASSAGES = [
   ...LEVEL_4_PASSAGES_11,
   ...LEVEL_4_PASSAGES_12,
   ...LEVEL_4_PASSAGES_13
-  // Level 4, etc. passages will be imported here when created
 ];
+
+// ===============================================
+// LEVEL ORGANIZATION - NEW IMPROVED STRUCTURE
+// ===============================================
+const organizePassagesByLevel = () => {
+  const levels = {
+    'Level 1': { id: 'level-1', name: 'Level 1', icon: '🌱', color: 'bg-green-500', passages: [] },
+    'Level 2': { id: 'level-2', name: 'Level 2', icon: '🌿', color: 'bg-blue-500', passages: [] },
+    'Level 3': { id: 'level-3', name: 'Level 3', icon: '🌳', color: 'bg-purple-500', passages: [] },
+    'Level 4': { id: 'level-4', name: 'Level 4', icon: '🎓', color: 'bg-orange-500', passages: [] }
+  };
+
+  READING_PASSAGES.forEach(passage => {
+    const levelNumber = passage.level.includes('Level 1') ? 'Level 1' :
+                       passage.level.includes('Level 2') ? 'Level 2' :
+                       passage.level.includes('Level 3') ? 'Level 3' :
+                       passage.level.includes('Level 4') ? 'Level 4' : null;
+    
+    if (levelNumber && levels[levelNumber]) {
+      levels[levelNumber].passages.push(passage);
+    }
+  });
+
+  return Object.values(levels).filter(level => level.passages.length > 0);
+};
 
 // ===============================================
 // MAIN FLUENCY PRACTICE COMPONENT
@@ -130,7 +154,8 @@ const FluencyPractice = ({
   const [isPresentationMode, setIsPresentationMode] = useState(false);
   const [showTextBrowser, setShowTextBrowser] = useState(false);
   const [viewingText, setViewingText] = useState(null);
-  const [selectedLevel, setSelectedLevel] = useState(null);
+  const [selectedMainLevel, setSelectedMainLevel] = useState(null); // NEW: Main level selection
+  const [selectedSubLevel, setSelectedSubLevel] = useState(null); // NEW: Sub level selection
   const [selectedTextType, setSelectedTextType] = useState(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showStudentAssignment, setShowStudentAssignment] = useState(false);
@@ -640,7 +665,7 @@ const FluencyPractice = ({
         </div>
       )}
 
-      {/* Text Browser Modal */}
+      {/* Text Browser Modal - UPDATED WITH BETTER LEVEL ORGANIZATION */}
       {showTextBrowser && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl max-w-6xl w-full max-h-[80vh] overflow-y-auto">
@@ -651,7 +676,8 @@ const FluencyPractice = ({
                   onClick={() => {
                     setShowTextBrowser(false);
                     setViewingText(null);
-                    setSelectedLevel(null);
+                    setSelectedMainLevel(null);
+                    setSelectedSubLevel(null);
                     setSelectedTextType(null);
                   }}
                   className="text-gray-500 hover:text-gray-700 text-2xl"
@@ -663,6 +689,7 @@ const FluencyPractice = ({
             
             <div className="p-6">
               {viewingText ? (
+                // Individual Text View
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
@@ -696,27 +723,28 @@ const FluencyPractice = ({
                     </div>
                   </div>
                 </div>
-              ) : selectedLevel ? (
+              ) : selectedSubLevel ? (
+                // Sub Level Text Types View
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-2xl font-bold text-gray-800">{selectedLevel.level}</h3>
-                      <p className="text-blue-600 italic">{selectedLevel.spellingFocus}</p>
+                      <h3 className="text-2xl font-bold text-gray-800">{selectedSubLevel.level}</h3>
+                      <p className="text-blue-600 italic">{selectedSubLevel.spellingFocus}</p>
                     </div>
                     <button
-                      onClick={() => setSelectedLevel(null)}
+                      onClick={() => setSelectedSubLevel(null)}
                       className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
                     >
-                      ← Back to Levels
+                      ← Back to {selectedMainLevel.name} Sub-levels
                     </button>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {selectedLevel.texts.map(text => {
+                    {selectedSubLevel.texts.map(text => {
                       const textType = TEXT_TYPES.find(t => t.id === text.type);
                       return (
                         <button
                           key={text.type}
-                          onClick={() => setViewingText({ ...text, passage: selectedLevel })}
+                          onClick={() => setViewingText({ ...text, passage: selectedSubLevel })}
                           className={`p-4 rounded-lg border-2 border-gray-200 hover:border-blue-300 text-left transition-all hover:scale-105 ${textType?.color || 'bg-gray-500'} text-white`}
                         >
                           <div className="text-3xl mb-2">{textType?.icon}</div>
@@ -728,29 +756,91 @@ const FluencyPractice = ({
                     })}
                   </div>
                 </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {READING_PASSAGES.map(passage => (
+              ) : selectedMainLevel ? (
+                // Sub Levels View
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-2xl font-bold text-gray-800 flex items-center">
+                        <span className="mr-3">{selectedMainLevel.icon}</span>
+                        {selectedMainLevel.name} Sub-levels
+                      </h3>
+                      <p className="text-gray-600">Choose a specific sub-level to browse texts</p>
+                    </div>
                     <button
-                      key={passage.id}
-                      onClick={() => setSelectedLevel(passage)}
-                      className="p-4 rounded-lg border-2 border-gray-200 hover:border-blue-300 hover:bg-blue-50 text-left transition-all hover:scale-105"
+                      onClick={() => setSelectedMainLevel(null)}
+                      className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
                     >
-                      <div className="font-bold text-lg mb-2">{passage.level}</div>
-                      <div className="text-sm text-blue-600 italic mb-2">{passage.spellingFocus}</div>
-                      <div className="text-xs text-gray-600 mb-2">{passage.texts.length} texts available</div>
-                      <div className="flex gap-1">
-                        {passage.texts.map(text => {
-                          const textType = TEXT_TYPES.find(t => t.id === text.type);
-                          return (
-                            <span key={text.type} className="text-lg" title={textType?.name}>
-                              {textType?.icon}
-                            </span>
-                          );
-                        })}
-                      </div>
+                      ← Back to Main Levels
                     </button>
-                  ))}
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {selectedMainLevel.passages.map(passage => (
+                      <button
+                        key={passage.id}
+                        onClick={() => setSelectedSubLevel(passage)}
+                        className="p-4 rounded-lg border-2 border-gray-200 hover:border-blue-300 hover:bg-blue-50 text-left transition-all hover:scale-105"
+                      >
+                        <div className="font-bold text-lg mb-2">{passage.level}</div>
+                        <div className="text-sm text-blue-600 italic mb-2">{passage.spellingFocus}</div>
+                        <div className="text-xs text-gray-600 mb-2">{passage.texts.length} texts available</div>
+                        <div className="flex gap-1">
+                          {passage.texts.map(text => {
+                            const textType = TEXT_TYPES.find(t => t.id === text.type);
+                            return (
+                              <span key={text.type} className="text-lg" title={textType?.name}>
+                                {textType?.icon}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                // Main Levels View - NEW ORGANIZED STRUCTURE
+                <div className="space-y-6">
+                  <div className="text-center">
+                    <h3 className="text-2xl font-bold text-gray-800 mb-4">Choose a Reading Level</h3>
+                    <p className="text-gray-600">Organized by main levels for easier navigation</p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {organizePassagesByLevel().map(level => (
+                      <button
+                        key={level.id}
+                        onClick={() => setSelectedMainLevel(level)}
+                        className={`p-6 rounded-xl border-2 border-gray-200 hover:border-blue-300 text-center transition-all hover:scale-105 ${level.color} text-white shadow-lg`}
+                      >
+                        <div className="text-5xl mb-4">{level.icon}</div>
+                        <h4 className="font-bold text-2xl mb-2">{level.name}</h4>
+                        <div className="text-lg opacity-90 mb-3">{level.passages.length} sub-levels</div>
+                        <div className="text-sm opacity-80">
+                          {level.passages.reduce((total, passage) => total + passage.texts.length, 0)} total texts
+                        </div>
+                        <div className="mt-3 bg-white bg-opacity-20 rounded-lg p-2">
+                          <div className="text-xs opacity-90">Click to browse sub-levels</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                  
+                  {/* Quick Stats */}
+                  <div className="bg-gray-50 rounded-xl p-6">
+                    <h4 className="text-lg font-bold text-gray-800 mb-4 text-center">📊 Reading Levels Overview</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {organizePassagesByLevel().map(level => (
+                        <div key={level.id} className="text-center p-3 bg-white rounded-lg border">
+                          <div className="text-2xl mb-1">{level.icon}</div>
+                          <div className="font-semibold text-gray-800">{level.name}</div>
+                          <div className="text-sm text-gray-600">{level.passages.length} sub-levels</div>
+                          <div className="text-xs text-blue-600">
+                            {level.passages.reduce((total, passage) => total + passage.texts.length, 0)} texts
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

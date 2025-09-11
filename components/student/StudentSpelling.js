@@ -276,7 +276,7 @@ const ACTIVITIES = [
     name: "Word Sorting", 
     icon: "📊", 
     color: "bg-orange-500",
-    instructions: "1. Look at all your spelling words\n2. Sort them into groups by:\n   â€¢ Number of letters\n   â€¢ Spelling patterns\n   â€¢ Word endings\n   â€¢ Vowel sounds\n3. Explain why you grouped them together\n4. Try sorting the same words in a different way"
+    instructions: "1. Look at all your spelling words\n2. Sort them into groups by:\n   • Number of letters\n   • Spelling patterns\n   • Word endings\n   • Vowel sounds\n3. Explain why you grouped them together\n4. Try sorting the same words in a different way"
   },
   { 
     id: "spelling_pyramid", 
@@ -318,7 +318,7 @@ const ACTIVITIES = [
     name: "Syllable Clapping",
     icon: "👏",
     color: "bg-amber-500",
-    instructions: "1. Say each spelling word slowly\n2. Clap for each syllable (word part)\n3. Write the word with a dot between syllables\n4. Sort words by number of syllables\n\nExample: 'BUTâ€¢TERâ€¢FLY' (3 claps)\nHelps students break words into manageable parts."
+    instructions: "1. Say each spelling word slowly\n2. Clap for each syllable (word part)\n3. Write the word with a dot between syllables\n4. Sort words by number of syllables\n\nExample: 'BUT•TER•FLY' (3 claps)\nHelps students break words into manageable parts."
   },
   {
     id: "rhyme_time",
@@ -332,7 +332,7 @@ const ACTIVITIES = [
     name: "Word Detectives",
     icon: "🕵️",
     color: "bg-slate-500",
-    instructions: "1. Investigate each spelling word like a detective\n2. Find clues about the word:\n   â€¢ How many vowels?\n   â€¢ Any double letters?\n   â€¢ What does it rhyme with?\n   â€¢ Where might you see this word?\n3. Make a 'case file' for each word\n4. Present your findings!"
+    instructions: "1. Investigate each spelling word like a detective\n2. Find clues about the word:\n   • How many vowels?\n   • Any double letters?\n   • What does it rhyme with?\n   • Where might you see this word?\n3. Make a 'case file' for each word\n4. Present your findings!"
   },
   {
     id: "memory_palace",
@@ -462,14 +462,14 @@ const StudentSpelling = ({
   if (!studentAssignments) {
     return (
       <div className="bg-white rounded-xl p-6 md:p-8 text-center">
-        <div className="text-4xl md:text-6xl mb-4">ðŸ"¤</div>
+        <div className="text-4xl md:text-6xl mb-4">📤</div>
         <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-4">No Spelling Assignment</h2>
         <p className="text-gray-600 text-sm md:text-base leading-relaxed">
           Your teacher hasn't assigned you to a spelling group yet, or there are no spelling lists assigned to your group.
         </p>
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
           <p className="text-blue-800 text-sm">
-            ðŸŽ¯ <strong>Ask your teacher</strong> to assign you to a spelling group in the Curriculum Corner!
+            📣 <strong>Ask your teacher</strong> to assign you to a spelling group in the Curriculum Corner!
           </p>
         </div>
       </div>
@@ -482,7 +482,7 @@ const StudentSpelling = ({
       <div className={`${studentAssignments.groupColor} text-white rounded-xl p-6 md:p-8`}>
         <div className="text-center">
           <h1 className="text-2xl md:text-4xl font-bold mb-2 flex items-center justify-center">
-            <span className="mr-3">ðŸ"</span>
+            <span className="mr-3">📝</span>
             My Spelling Words
           </h1>
           <div className="text-lg md:text-xl opacity-90">
@@ -497,7 +497,7 @@ const StudentSpelling = ({
       {/* Weekly Progress */}
       <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
         <div className="text-center mb-4">
-          <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">ðŸŽ¯ Weekly Spelling Challenge</h2>
+          <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">🎯 Weekly Spelling Challenge</h2>
           <p className="text-gray-600">Complete 5 different spelling activities this week!</p>
         </div>
         
@@ -520,7 +520,7 @@ const StudentSpelling = ({
 
         {completedActivities.length >= 5 && (
           <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-            <div className="text-2xl mb-2">ðŸŽ‰</div>
+            <div className="text-2xl mb-2">🎉</div>
             <h3 className="text-lg font-bold text-green-800">Congratulations!</h3>
             <p className="text-green-700">You've completed your weekly spelling challenge!</p>
           </div>
@@ -530,7 +530,7 @@ const StudentSpelling = ({
       {/* Spelling Activities Grid */}
       <div className="bg-white rounded-xl shadow-lg border border-gray-200">
         <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-4 md:p-6 rounded-t-xl">
-          <h2 className="text-xl md:text-2xl font-bold text-center">ðŸŽ² Choose Your Spelling Activities</h2>
+          <h2 className="text-xl md:text-2xl font-bold text-center">🎲 Choose Your Spelling Activities</h2>
           <p className="text-sm md:text-base opacity-90 text-center mt-2">
             Pick any activities you'd like to try with your spelling words!
           </p>
@@ -564,7 +564,7 @@ const StudentSpelling = ({
                         ? 'bg-green-500 border-green-500 text-white' 
                         : 'border-gray-300'
                     }`}>
-                      {isCompleted && 'âœ"'}
+                      {isCompleted && '✓'}
                     </div>
                   </div>
                   
@@ -618,24 +618,24 @@ const StudentSpelling = ({
 
       {/* Practice Tips */}
       <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-        <h2 className="text-xl font-bold text-gray-800 mb-4 text-center">ðŸŽ¯ Spelling Practice Tips</h2>
+        <h2 className="text-xl font-bold text-gray-800 mb-4 text-center">🎯 Spelling Practice Tips</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h3 className="font-bold text-blue-800 mb-2">ðŸ"š Study Tips:</h3>
+            <h3 className="font-bold text-blue-800 mb-2">📚 Study Tips:</h3>
             <ul className="text-sm text-blue-700 space-y-1">
-              <li>â€¢ Practice a little bit every day</li>
-              <li>â€¢ Say the letters out loud as you write</li>
-              <li>â€¢ Break long words into smaller parts</li>
-              <li>â€¢ Use the words in sentences</li>
+              <li>• Practice a little bit every day</li>
+              <li>• Say the letters out loud as you write</li>
+              <li>• Break long words into smaller parts</li>
+              <li>• Use the words in sentences</li>
             </ul>
           </div>
           <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-            <h3 className="font-bold text-green-800 mb-2">ðŸ† Challenge Yourself:</h3>
+            <h3 className="font-bold text-green-800 mb-2">🏆 Challenge Yourself:</h3>
             <ul className="text-sm text-green-700 space-y-1">
-              <li>â€¢ Try spelling words with your eyes closed</li>
-              <li>â€¢ Write words in different fonts or styles</li>
-              <li>â€¢ Make up memory tricks for tricky words</li>
-              <li>â€¢ Teach the words to a friend or family member</li>
+              <li>• Try spelling words with your eyes closed</li>
+              <li>• Write words in different fonts or styles</li>
+              <li>• Make up memory tricks for tricky words</li>
+              <li>• Teach the words to a friend or family member</li>
             </ul>
           </div>
         </div>
@@ -655,12 +655,12 @@ const StudentSpelling = ({
                   onClick={() => setShowActivityInstructions(null)}
                   className="text-white hover:text-gray-200 text-2xl"
                 >
-                  Ã—
+                  ×
                 </button>
               </div>
             </div>
             <div className="p-6">
-              <h3 className="text-lg font-bold mb-4">ðŸ"‹ How to do this activity:</h3>
+              <h3 className="text-lg font-bold mb-4">📋 How to do this activity:</h3>
               <div className="bg-gray-50 rounded-lg p-4">
                 <pre className="whitespace-pre-wrap text-gray-800 leading-relaxed font-sans text-sm md:text-base">
                   {showActivityInstructions.instructions}
@@ -679,8 +679,8 @@ const StudentSpelling = ({
                   }`}
                 >
                   {completedActivities.includes(showActivityInstructions.id) 
-                    ? 'âœ" Mark as Not Done' 
-                    : 'âœ" Mark as Done'
+                    ? '✓ Mark as Not Done' 
+                    : '✓ Mark as Done'
                   }
                 </button>
               </div>
@@ -692,7 +692,7 @@ const StudentSpelling = ({
       {/* No assignments message */}
       {studentAssignments.lists.length === 0 && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 text-center">
-          <div className="text-4xl mb-4">ðŸ"</div>
+          <div className="text-4xl mb-4">📝</div>
           <h2 className="text-xl font-bold text-yellow-800 mb-2">No Spelling Lists Yet</h2>
           <p className="text-yellow-700">
             Your teacher hasn't assigned any spelling lists to your group yet. Check back later!

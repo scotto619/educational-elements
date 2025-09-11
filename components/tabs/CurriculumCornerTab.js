@@ -1,4 +1,4 @@
-// components/tabs/CurriculumCornerTab.js - UPDATED WITH INTERACTIVE CLOCK
+// components/tabs/CurriculumCornerTab.js - UPDATED WITH BEGINNER READERS
 import React, { useState } from 'react';
 
 // Import activity components
@@ -8,12 +8,13 @@ import ReadingComprehension from '../curriculum/literacy/ReadingComprehension';
 import VisualWritingPrompts from '../curriculum/literacy/VisualWritingPrompts';
 import SpellingProgram from '../curriculum/literacy/SpellingProgram';
 import FluencyPractice from '../curriculum/literacy/FluencyPractice';
+import BeginnerReaders from '../curriculum/literacy/BeginnerReaders'; // NEW IMPORT
 import AreaPerimeterTool from '../curriculum/mathematics/AreaPerimeterTool';
 import MathWarmup from '../curriculum/mathematics/MathWarmup';
 import WorksheetGenerator from '../curriculum/mathematics/WorksheetGenerator';
 import NumbersBoard from '../curriculum/mathematics/NumbersBoard';
 import MathMentals from '../curriculum/mathematics/MathMentals';
-import InteractiveClock from '../curriculum/mathematics/InteractiveClock'; // NEW IMPORT
+import InteractiveClock from '../curriculum/mathematics/InteractiveClock';
 
 // ===============================================
 // COMING SOON COMPONENT
@@ -31,7 +32,7 @@ const ComingSoon = ({ toolName, description }) => (
 );
 
 // ===============================================
-// SUBJECT CONFIGURATION - UPDATED WITH INTERACTIVE CLOCK
+// SUBJECT CONFIGURATION - UPDATED WITH BEGINNER READERS
 // ===============================================
 const subjects = [
   {
@@ -41,6 +42,14 @@ const subjects = [
     color: 'from-blue-500 to-purple-600',
     description: 'Complete literacy toolkit: phonics, spelling, reading, writing & vocabulary',
     activities: [
+      {
+        id: 'beginner-readers', // NEW ACTIVITY ADDED FIRST
+        name: 'Beginner Readers',
+        icon: '🔤',
+        description: 'Early reading activities for beginning readers - sound recognition, phonics, and simple passages',
+        component: BeginnerReaders,
+        isNew: true
+      },
       {
         id: 'literacy-warmup',
         name: 'Literacy Warmup',
@@ -64,18 +73,19 @@ const subjects = [
         ]
       },
       {
+        id: 'fluency-practice',
+        name: 'Fluency Practice',
+        icon: '📖',
+        description: 'Reading passages aligned with spelling levels for fluency development',
+        component: FluencyPractice,
+        isUpdated: true
+      },
+      {
         id: 'spelling-program',
         name: 'Spelling Program',
         icon: '🔤',
         description: 'Structured spelling lists with activities and assessments',
         component: SpellingProgram
-      },
-      {
-        id: 'fluency-practice',
-        name: 'Fluency Practice',
-        icon: '📖',
-        description: 'Reading passages for fluency development and practice',
-        component: FluencyPractice
       },
       {
         id: 'reading-comprehension',
@@ -115,7 +125,7 @@ const subjects = [
       {
         id: 'handwriting-practice',
         name: 'Handwriting Practice',
-        icon: '✍️',
+        icon: '✏️',
         description: 'Letter formation and handwriting improvement',
         component: ComingSoon
       }
@@ -129,7 +139,7 @@ const subjects = [
     description: 'Math tools and number activities',
     activities: [
       {
-        id: 'interactive-clock', // NEW ACTIVITY ADDED
+        id: 'interactive-clock',
         name: 'Interactive Clock',
         icon: '🕐',
         description: 'Learn to tell time with draggable hands and digital display',
@@ -159,7 +169,7 @@ const subjects = [
       {
         id: 'area-perimeter',
         name: 'Area & Perimeter',
-        icon: '📏',
+        icon: '📐',
         description: 'Interactive tool for exploring area and perimeter concepts',
         component: AreaPerimeterTool
       },
@@ -323,7 +333,7 @@ const subjects = [
 ];
 
 // ===============================================
-// MAIN CURRICULUM CORNER COMPONENT - UPDATED TO SUPPORT INTERACTIVE CLOCK
+// MAIN CURRICULUM CORNER COMPONENT - UPDATED TO SUPPORT BEGINNER READERS
 // ===============================================
 const CurriculumCornerTab = ({ 
   students = [], 
@@ -383,7 +393,8 @@ const CurriculumCornerTab = ({
         activeActivity.id === 'spelling-program' ||
         activeActivity.id === 'fluency-practice' ||
         activeActivity.id === 'math-mentals' ||
-        activeActivity.id === 'interactive-clock') { // ADDED INTERACTIVE CLOCK HERE
+        activeActivity.id === 'interactive-clock' ||
+        activeActivity.id === 'beginner-readers') { // ADDED BEGINNER READERS HERE
       activityProps.saveData = saveData;
       activityProps.loadedData = loadedData;
     }
@@ -489,8 +500,20 @@ const CurriculumCornerTab = ({
             <button
               key={activity.id}
               onClick={() => handleActivitySelect(activity)}
-              className="bg-white rounded-xl shadow-sm p-6 text-left hover:shadow-md transition-all duration-300 hover:scale-105 border border-slate-200 hover:border-blue-300"
+              className="bg-white rounded-xl shadow-sm p-6 text-left hover:shadow-md transition-all duration-300 hover:scale-105 border border-slate-200 hover:border-blue-300 relative"
             >
+              {/* New/Updated Badge */}
+              {activity.isNew && (
+                <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full animate-pulse">
+                  NEW!
+                </div>
+              )}
+              {activity.isUpdated && (
+                <div className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                  UPDATED
+                </div>
+              )}
+              
               <div className="flex items-center gap-4 mb-4">
                 <div className="text-4xl">{activity.icon}</div>
                 <div>
@@ -567,13 +590,14 @@ const CurriculumCornerTab = ({
         </div>
       </div>
 
-      {/* Quick Stats - UPDATED TO HIGHLIGHT INTERACTIVE CLOCK */}
+      {/* Quick Stats - UPDATED TO HIGHLIGHT NEW BEGINNER READERS */}
       <div className="bg-white rounded-xl shadow-sm p-6">
         <h3 className="text-xl font-bold text-slate-800 mb-4">📊 Curriculum Overview</h3>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {subjects.map(subject => {
             const availableTools = subject.activities.filter(activity => activity.component !== ComingSoon).length;
             const totalTools = subject.activities.length;
+            const newTools = subject.activities.filter(activity => activity.isNew).length;
             
             return (
               <div key={subject.id} className="text-center p-4 bg-slate-50 rounded-lg">
@@ -588,15 +612,51 @@ const CurriculumCornerTab = ({
                     style={{ width: `${(availableTools / totalTools) * 100}%` }}
                   ></div>
                 </div>
-                {/* Highlight Interactive Clock */}
-                {subject.id === 'mathematics' && (
-                  <div className="text-xs text-green-600 font-semibold mt-1">
-                    🕐 New: Interactive Clock!
+                {/* Highlight New Tools */}
+                {newTools > 0 && (
+                  <div className="text-xs text-red-600 font-semibold mt-1 animate-pulse">
+                    🆕 {newTools} new tool{newTools > 1 ? 's' : ''}!
+                  </div>
+                )}
+                {/* Highlight Beginner Readers specifically */}
+                {subject.id === 'literacy' && (
+                  <div className="text-xs text-red-600 font-semibold mt-1">
+                    🔤 New: Beginner Readers!
                   </div>
                 )}
               </div>
             );
           })}
+        </div>
+      </div>
+
+      {/* What's New Section */}
+      <div className="bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-xl p-6">
+        <h3 className="text-xl font-bold text-red-800 mb-4 flex items-center">
+          <span className="mr-2">🆕</span>
+          What's New in Curriculum Corner
+        </h3>
+        <div className="space-y-3">
+          <div className="bg-white border border-red-200 rounded-lg p-4">
+            <h4 className="font-bold text-red-700 mb-2">🔤 New: Beginner Readers</h4>
+            <p className="text-sm text-red-600 mb-2">
+              A complete early reading system for beginning readers with 3 progressive levels:
+            </p>
+            <ul className="text-xs text-red-600 space-y-1 ml-4">
+              <li>• Level 1: Basic sound recognition with large fonts and images</li>
+              <li>• Level 2: Single letter and digraph focus with simple/complex words</li>
+              <li>• Level 3: Alternate spelling patterns with simple reading passages</li>
+            </ul>
+            <p className="text-xs text-red-500 italic mt-2">
+              Perfect for Prep/Foundation students and struggling readers
+            </p>
+          </div>
+          <div className="bg-white border border-orange-200 rounded-lg p-4">
+            <h4 className="font-bold text-orange-700 mb-2">📖 Updated: Fluency Practice</h4>
+            <p className="text-sm text-orange-600">
+              Better level organization! Browse passages by main levels (1, 2, 3, 4) then drill down to specific sub-levels for easier navigation.
+            </p>
+          </div>
         </div>
       </div>
     </div>
