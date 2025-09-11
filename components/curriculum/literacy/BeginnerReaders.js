@@ -420,7 +420,7 @@ const BeginnerReaders = ({
                     {sound.practices.map((practice, index) => (
                       <div key={index} className="bg-gray-100 border-2 border-gray-300 rounded-lg p-6 mb-4">
                         <h4 className="text-lg font-bold text-gray-700 mb-2">{practice.instructions}</h4>
-                        <div className="text-2xl leading-relaxed text-gray-800 text-center font-bold">
+                        <div className="text-2xl leading-relaxed text-gray-800 text-center font-bold whitespace-pre-line">
                           {practice.content}
                         </div>
                       </div>
@@ -514,7 +514,7 @@ const BeginnerReaders = ({
               {displaySound.sound.practices.map((practice, index) => (
                 <div key={index} className="bg-gray-50 border-2 border-gray-200 rounded-xl p-8 mb-6">
                   <h3 className="text-xl font-bold text-blue-800 mb-3">{practice.instructions}</h3>
-                  <div className="text-3xl leading-relaxed text-gray-800 text-center font-bold font-mono">
+                  <div className="text-3xl leading-relaxed text-gray-800 text-center font-bold font-mono whitespace-pre-line">
                     {practice.content}
                   </div>
                 </div>
@@ -603,7 +603,7 @@ const BeginnerReaders = ({
                   {viewingSound.practices.map((practice, index) => (
                     <div key={index} className="bg-gray-50 rounded-xl p-6">
                       <h4 className="text-lg font-bold text-gray-700 mb-2">{practice.instructions}</h4>
-                      <div className="text-xl leading-relaxed text-gray-800 font-mono text-center">
+                      <div className="text-xl leading-relaxed text-gray-800 font-mono text-center whitespace-pre-line">
                         {practice.content}
                       </div>
                     </div>

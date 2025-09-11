@@ -254,7 +254,7 @@ const StudentReading = ({
             <div key={index} className="bg-white rounded-xl shadow-lg p-6">
               <h3 className="text-lg font-bold text-gray-800 mb-4">{practice.instructions}</h3>
               <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6">
-                <div className="text-2xl md:text-4xl leading-relaxed text-gray-800 text-center font-bold font-mono">
+                <div className="text-2xl md:text-4xl leading-relaxed text-gray-800 text-center font-bold font-mono whitespace-pre-line">
                   {practice.content}
                 </div>
               </div>
