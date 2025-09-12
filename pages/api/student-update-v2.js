@@ -23,12 +23,12 @@ export default async function handler(req, res) {
   try {
     const {
       studentId,
-      classCode,          // required (used to validate / locate class)
+      classCode,          // required: used to validate/locate class
       updateData,         // e.g. { totalPoints: 1 } or { currency: -1 } or { clickerGameData: {...} }
       mode = 'increment', // 'increment' (numbers) or 'set' (objects)
       note = '',
-      opId,               // optional idempotency key (not stored yet, but ready)
-      teacherUserId,      // OPTIONAL: if present, prefer it in the V1 fallback
+      opId,               // optional idempotency key (not persisted yet)
+      teacherUserId,      // OPTIONAL: teacher UID from the dashboard (skips publicClassData lookup)
     } = req.body || {};
 
     if (!studentId || !classCode || !updateData) {
@@ -36,7 +36,7 @@ export default async function handler(req, res) {
     }
 
     const result = await db.runTransaction(async (tx) => {
-      // ---- Try V2 path first (after migration) ----
+      // ---- V2 path (after migration) ----
       const studentRef = db.collection('students').doc(studentId);
       const studentSnap = await tx.get(studentRef);
 
@@ -64,7 +64,7 @@ export default async function handler(req, res) {
       }
 
       // ---- V1 fallback (pre-migration): update nested array in users/{teacherId}.classes[] ----
-      // Prefer teacherUserId if provided (teacher UI). Otherwise resolve via publicClassData/{classCode}.
+      // Prefer teacherUserId if provided by the dashboard; otherwise resolve via publicClassData/{classCode}.
       let teacherId = teacherUserId;
       if (!teacherId) {
         const pubRef = db.collection('publicClassData').doc(classCode);
@@ -82,8 +82,7 @@ export default async function handler(req, res) {
       const classes = Array.isArray(userData.classes) ? [...userData.classes] : [];
 
       const ci = classes.findIndex(
-        c => c &&
-          (((c.classCode || '').toUpperCase() === (classCode || '').toUpperCase()) || c.id === classCode)
+        c => c && (((c.classCode || '').toUpperCase() === (classCode || '').toUpperCase()) || c.id === classCode)
       );
       if (ci < 0) throw new Error('Class not found in V1 user doc');
 
