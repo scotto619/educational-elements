@@ -1,4 +1,4 @@
-// utils/firebase-new.js - NEW DISTRIBUTED ARCHITECTURE UTILS
+// utils/firebase-new.js - FIXED DISTRIBUTED ARCHITECTURE UTILS
 import { 
   doc, 
   getDoc, 
@@ -12,11 +12,10 @@ import {
   writeBatch,
   runTransaction,
   onSnapshot,
-  serverTimestamp
+  serverTimestamp,
+  increment // FIXED: Import increment from firestore
 } from 'firebase/firestore';
 import { firestore } from './firebase';
-import { increment } from 'firebase/firestore';
-
 
 // ===============================================
 // CORE USER OPERATIONS
@@ -433,8 +432,7 @@ export async function updateStudentData(studentId, updates, reason = 'Update') {
  */
 export async function awardXPToStudent(studentId, amount, reason = 'XP Award') {
   return await updateStudentData(studentId, {
-totalPoints: increment(amount)
-
+    totalPoints: increment(amount)
   }, reason);
 }
 
@@ -443,7 +441,7 @@ totalPoints: increment(amount)
  */
 export async function awardCoinsToStudent(studentId, amount, reason = 'Coin Award') {
   return await updateStudentData(studentId, {
-currency: increment(amount)
+    currency: increment(amount)
   }, reason);
 }
 
@@ -520,9 +518,14 @@ export function listenToClassStudents(classId, callback, errorCallback) {
   return onSnapshot(membershipRef,
     async (doc) => {
       if (doc.exists()) {
-        const membershipData = doc.data();
-        const students = await getClassStudents(classId);
-        callback(students);
+        try {
+          const membershipData = doc.data();
+          const students = await getClassStudents(classId);
+          callback(students);
+        } catch (error) {
+          console.error('❌ Error loading students in listener:', error);
+          errorCallback && errorCallback(error);
+        }
       } else {
         callback([]);
       }

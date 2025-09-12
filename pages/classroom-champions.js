@@ -1,4 +1,4 @@
-// pages/classroom-champions.js - UPDATED FOR NEW DISTRIBUTED ARCHITECTURE
+// pages/classroom-champions.js - FIXED V1 FALLBACK BUGS
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import { auth } from '../utils/firebase';
@@ -9,8 +9,7 @@ import { postStudentUpdate } from '../utils/apiClient';
 import { getFirestore, doc, getDoc } from 'firebase/firestore';
 const db = getFirestore();
 
-
-// Import new Firebase utilities
+// Import new Firebase utilities (for post-migration)
 import {
   getUserData,
   getTeacherClasses,
@@ -150,33 +149,48 @@ const ClassroomChampions = () => {
   // Real-time listeners cleanup
   const [classDataUnsubscribe, setClassDataUnsubscribe] = useState(null);
   const [studentsUnsubscribe, setStudentsUnsubscribe] = useState(null);
+  
+  // Track architecture version
+  const [architectureVersion, setArchitectureVersion] = useState('unknown');
 
-// Read from old V1 structure: users/{uid}.classes[]
+// FIXED: Read from old V1 structure: users/{uid}.classes[]
 async function loadV1ClassAndStudents(userUid) {
+  console.log('🔄 Loading V1 class and students for user:', userUid);
+  
   const userSnap = await getDoc(doc(db, 'users', userUid));
   if (!userSnap.exists()) throw new Error('User not found (V1)');
 
   const u = userSnap.data() || {};
   const classes = Array.isArray(u.classes) ? u.classes : [];
+  
+  if (classes.length === 0) {
+    throw new Error('No classes found (V1)');
+  }
+  
+  // Find first non-archived class, or just use first class
   const cls = classes.find(c => c && c.archived === false) || classes[0];
-  if (!cls) throw new Error('No class found (V1)');
+  if (!cls) throw new Error('No valid class found (V1)');
 
   const students = Array.isArray(cls.students) ? cls.students : [];
+  
+  console.log('✅ V1 class loaded:', cls.name, 'with', students.length, 'students');
 
-  // normalise: shape similar to V2 class doc your UI expects
+  // FIXED: normalize class data shape to match what UI expects
   const classData = {
     id: cls.id || cls.classId || cls.classCode || 'v1',
     name: cls.name || 'My Class',
-    classCode: cls.classCode || '',
+    classCode: cls.classCode || '', // CRITICAL: ensure classCode exists
     xpCategories: cls.xpCategories || DEFAULT_XP_CATEGORIES,
     classRewards: cls.classRewards || [],
     toolkitData: cls.toolkitData || {},
     attendanceData: cls.attendanceData || {},
+    activeQuests: cls.activeQuests || [],
+    // Add all class properties that might be needed
+    ...cls
   };
 
   return { classData, students };
 }
-
 
   // AUTH & DATA LOADING - UPDATED FOR NEW ARCHITECTURE
   useEffect(() => {
@@ -194,35 +208,62 @@ async function loadV1ClassAndStudents(userUid) {
 const loadUserData = async (user) => {
   setLoading(true);
   setError(null);
+  
   try {
-    // 1) basic user info (your existing helper)
-    const userDataResult = await getUserData(user.uid);
-    if (!userDataResult) throw new Error('User not found');
+    console.log('🚀 Loading user data for:', user.uid);
+    
+    // 1) Try to get basic user info (your existing helper)
+    let userDataResult = null;
+    try {
+      userDataResult = await getUserData(user.uid);
+      console.log('✅ User data loaded via V2 helper');
+    } catch (e) {
+      console.warn('⚠️ getUserData failed, will try direct V1 access:', e?.message || e);
+    }
+
+    if (!userDataResult) {
+      // Direct V1 fallback if the getUserData helper doesn't work
+      const userSnap = await getDoc(doc(db, 'users', user.uid));
+      if (userSnap.exists()) {
+        userDataResult = userSnap.data();
+        console.log('✅ User data loaded via direct V1 access');
+      } else {
+        throw new Error('User document not found');
+      }
+    }
+
     setUserData(userDataResult);
     setWidgetSettings(userDataResult.widgetSettings || { showTimer: true, showNamePicker: true });
 
-    // 2) try V2 classes first (your existing helper)
+    // 2) Try V2 classes first (your existing helper)
     let teacherClasses = [];
     try {
       teacherClasses = await getTeacherClasses(user.uid);
+      if (teacherClasses && teacherClasses.length > 0) {
+        console.log('✅ V2 classes found:', teacherClasses.length);
+        setArchitectureVersion('v2');
+        const activeClassId = userDataResult.activeClassId || teacherClasses[0].id;
+        await loadClassData(activeClassId); // your existing listener-based loader
+        return; // Early return for V2 path
+      }
     } catch (e) {
-      console.warn('getTeacherClasses failed, will try V1 fallback:', e?.message || e);
+      console.warn('⚠️ getTeacherClasses failed, will try V1 fallback:', e?.message || e);
     }
 
-    if (teacherClasses && teacherClasses.length > 0) {
-      const activeClassId = userDataResult.activeClassId || teacherClasses[0].id;
-      await loadClassData(activeClassId); // your existing listener-based loader
-    } else {
-      // 3) V1 fallback
-      console.log('No V2 classes found — using V1 user doc fallback');
-      const { classData, students } = await loadV1ClassAndStudents(user.uid);
-      setCurrentClassData(classData);
-      setCurrentClassId(classData.id);
-      setXpCategories(classData.xpCategories || DEFAULT_XP_CATEGORIES);
-      setStudents(students);
-    }
+    // 3) V1 fallback - FIXED
+    console.log('🔄 No V2 classes found — using V1 user doc fallback');
+    setArchitectureVersion('v1');
+    
+    const { classData, students } = await loadV1ClassAndStudents(user.uid);
+    setCurrentClassData(classData);
+    setCurrentClassId(classData.id);
+    setXpCategories(classData.xpCategories || DEFAULT_XP_CATEGORIES);
+    setStudents(students);
+    
+    console.log('✅ V1 fallback completed successfully');
+    
   } catch (error) {
-    console.error('Error loading user data:', error);
+    console.error('❌ Error loading user data:', error);
     setError(error.message);
   }
   setLoading(false);
@@ -255,7 +296,7 @@ const loadUserData = async (user) => {
       setClassDataUnsubscribe(() => classUnsubscribe);
       
       // Set up real-time listeners for students
-      const studentsUnsubscribe = listenToClassStudents(
+      const studentsUnsubscribeFunc = listenToClassStudents(
         classId,
         (studentsData) => {
           console.log('Students data updated:', studentsData.length, 'students');
@@ -266,7 +307,7 @@ const loadUserData = async (user) => {
           setError('Failed to load students data');
         }
       );
-      setStudentsUnsubscribe(() => studentsUnsubscribe);
+      setStudentsUnsubscribe(() => studentsUnsubscribeFunc);
       
     } catch (error) {
       console.error('Error loading class data:', error);
@@ -295,49 +336,98 @@ const loadUserData = async (user) => {
     }
   }, [loading, user, students]);
 
-  // STUDENT UPDATE HANDLERS - UPDATED FOR NEW ARCHITECTURE
+  // STUDENT UPDATE HANDLERS - FIXED FOR V1 COMPATIBILITY
   
   const handleUpdateStudent = useCallback(async (studentId, updatedData) => {
     try {
-      console.log('Updating student:', studentId, Object.keys(updatedData));
+      console.log('🔄 Updating student:', studentId, Object.keys(updatedData));
       
-      const updatedStudent = await updateStudentData(studentId, updatedData, 'Manual Update');
+      if (architectureVersion === 'v2') {
+        // Use new architecture
+        const updatedStudent = await updateStudentData(studentId, updatedData, 'Manual Update');
+        setStudents(prev => prev.map(s => s.id === studentId ? { ...s, ...updatedStudent } : s));
+        return updatedStudent;
+      } else {
+        // V1 fallback - update in user document
+        await updateV1StudentData(user.uid, currentClassId, studentId, updatedData);
+        // Update local state
+        setStudents(prev => prev.map(s => s.id === studentId ? { ...s, ...updatedData } : s));
+        return { ...updatedData };
+      }
       
-      // Update local state optimistically (real-time listener will sync)
-      setStudents(prev => prev.map(s => s.id === studentId ? { ...s, ...updatedStudent } : s));
-      
-      return updatedStudent;
     } catch (error) {
-      console.error('Error updating student:', error);
+      console.error('❌ Error updating student:', error);
       showToast('Error updating student data', 'error');
       throw error;
     }
-  }, []);
+  }, [architectureVersion, user, currentClassId]);
+
+  // V1 student update helper
+  const updateV1StudentData = async (userId, classId, studentId, updatedData) => {
+    const userRef = doc(db, 'users', userId);
+    const userSnap = await getDoc(userRef);
+    
+    if (!userSnap.exists()) throw new Error('User not found');
+    
+    const userData = userSnap.data();
+    const classes = userData.classes || [];
+    
+    const updatedClasses = classes.map(cls => {
+      if (cls.id === classId || cls.classId === classId) {
+        const updatedStudents = cls.students.map(student => {
+          if (student.id === studentId) {
+            return { ...student, ...updatedData, updatedAt: new Date().toISOString() };
+          }
+          return student;
+        });
+        return { ...cls, students: updatedStudents, updatedAt: new Date().toISOString() };
+      }
+      return cls;
+    });
+    
+    await updateDoc(userRef, { classes: updatedClasses });
+  };
 
   const handleReorderStudents = (reorderedStudents) => {
     // For now, just update local state
-    // TODO: Implement ordering in Firebase if needed
     setStudents(reorderedStudents);
   };
 
   const handleBulkAward = useCallback(async (studentIds, amount, type) => {
     try {
-      console.log('Bulk awarding:', { studentIds: studentIds.length, amount, type });
+      console.log('💰 Bulk awarding:', { studentIds: studentIds.length, amount, type });
       
-      const updates = {};
-// Route each update via the API endpoint (transactional, race-safe)
-await Promise.allSettled(
-  studentIds.map((sid, i) =>
-    postStudentUpdate({
-      studentId: sid,
-      classCode: currentClassData?.classCode,         // make sure you have this available in state
-      updateData: type === 'xp' ? { totalPoints: amount } : { currency: amount },
-      mode: 'increment',
-      note: `Bulk ${type} Award`,
-      opId: `bulk-${type}-${sid}-${Date.now()}-${i}`,
-    })
-  )
-);
+      if (architectureVersion === 'v2') {
+        // Use new API for V2
+        await Promise.allSettled(
+          studentIds.map((sid, i) =>
+            postStudentUpdate({
+              studentId: sid,
+              classCode: currentClassData?.classCode,
+              updateData: type === 'xp' ? { totalPoints: amount } : { currency: amount },
+              mode: 'increment',
+              note: `Bulk ${type} Award`,
+              opId: `bulk-${type}-${sid}-${Date.now()}-${i}`,
+            })
+          )
+        );
+      } else {
+        // V1 fallback - direct updates
+        await Promise.allSettled(
+          studentIds.map(async (studentId) => {
+            const updateData = type === 'xp' 
+              ? { totalPoints: (students.find(s => s.id === studentId)?.totalPoints || 0) + amount }
+              : { currency: (students.find(s => s.id === studentId)?.currency || 0) + amount };
+            
+            await updateV1StudentData(user.uid, currentClassId, studentId, updateData);
+            
+            // Update local state immediately
+            setStudents(prev => prev.map(s => 
+              s.id === studentId ? { ...s, ...updateData } : s
+            ));
+          })
+        );
+      }
       
       // Check for level ups and pet unlocks
       students.forEach(student => {
@@ -365,10 +455,10 @@ await Promise.allSettled(
       playSound(type === 'xp' ? 'ding' : 'coins');
       
     } catch (error) {
-      console.error('Error in bulk award:', error);
+      console.error('❌ Error in bulk award:', error);
       showToast('Error awarding points', 'error');
     }
-  }, [students, handleUpdateStudent]);
+  }, [students, handleUpdateStudent, architectureVersion, currentClassData, user, currentClassId]);
 
   const awardXPToStudent = useCallback(async (studentId, amount, reason = '') => {
     try {
@@ -378,17 +468,28 @@ await Promise.allSettled(
         return;
       }
 
-      console.log(`Awarding ${amount} XP to ${student.firstName} for ${reason}`);
+      console.log(`⚡ Awarding ${amount} XP to ${student.firstName} for ${reason}`);
       
-      // Update student with Firebase increment to prevent race conditions
-await postStudentUpdate({
-  studentId,
-  classCode: currentClassData?.classCode,
-  updateData: { totalPoints: amount },
-  mode: 'increment',
-  note: `XP Award: ${reason || ''}`,
-  opId: `xp-${studentId}-${Date.now()}`,
-});
+      if (architectureVersion === 'v2' && currentClassData?.classCode) {
+        // Use new API for V2
+        await postStudentUpdate({
+          studentId,
+          classCode: currentClassData.classCode,
+          updateData: { totalPoints: amount },
+          mode: 'increment',
+          note: `XP Award: ${reason || ''}`,
+          opId: `xp-${studentId}-${Date.now()}`,
+        });
+      } else {
+        // V1 fallback
+        const newTotal = (student.totalPoints || 0) + amount;
+        await updateV1StudentData(user.uid, currentClassId, studentId, { totalPoints: newTotal });
+        
+        // Update local state
+        setStudents(prev => prev.map(s => 
+          s.id === studentId ? { ...s, totalPoints: newTotal } : s
+        ));
+      }
       
       // Check for level up
       const oldLevel = calculateAvatarLevel(student.totalPoints || 0);
@@ -409,13 +510,12 @@ await postStudentUpdate({
       }
       
       playSound('ding');
-      showToast(`${student.firstName} earned ${amount} XP${reason ? ` for ${reason}` : ''}!`, 'success');
       
     } catch (error) {
-      console.error('Error awarding XP:', error);
+      console.error('❌ Error awarding XP:', error);
       showToast('Error awarding XP', 'error');
     }
-  }, [students, handleUpdateStudent]);
+  }, [students, handleUpdateStudent, architectureVersion, currentClassData, user, currentClassId]);
 
   const awardCoinsToStudent = useCallback(async (studentId, amount, reason = '') => {
     try {
@@ -425,36 +525,81 @@ await postStudentUpdate({
         return;
       }
 
-      console.log(`Awarding ${amount} coins to ${student.firstName} for ${reason}`);
+      console.log(`🪙 Awarding ${amount} coins to ${student.firstName} for ${reason}`);
       
-await postStudentUpdate({
-  studentId,
-  classCode: currentClassData?.classCode,
-  updateData: { currency: amount },
-  mode: 'increment',
-  note: `Coin Award: ${reason || ''}`,
-  opId: `coin-${studentId}-${Date.now()}`,
-});
+      if (architectureVersion === 'v2' && currentClassData?.classCode) {
+        // Use new API for V2
+        await postStudentUpdate({
+          studentId,
+          classCode: currentClassData.classCode,
+          updateData: { currency: amount },
+          mode: 'increment',
+          note: `Coin Award: ${reason || ''}`,
+          opId: `coin-${studentId}-${Date.now()}`,
+        });
+      } else {
+        // V1 fallback
+        const newTotal = (student.currency || 0) + amount;
+        await updateV1StudentData(user.uid, currentClassId, studentId, { currency: newTotal });
+        
+        // Update local state
+        setStudents(prev => prev.map(s => 
+          s.id === studentId ? { ...s, currency: newTotal } : s
+        ));
+      }
       
       playSound('coins');
-      showToast(`${student.firstName} earned ${amount} coins${reason ? ` for ${reason}` : ''}!`, 'success');
       
     } catch (error) {
-      console.error('Error awarding coins:', error);
+      console.error('❌ Error awarding coins:', error);
       showToast('Error awarding coins', 'error');
     }
-  }, [students]);
+  }, [students, architectureVersion, currentClassData, user, currentClassId]);
 
   const addStudent = async () => {
     if (!newStudentFirstName.trim() || !currentClassId) return;
     
     try {
-      console.log('Creating new student:', newStudentFirstName, newStudentLastName);
+      console.log('👨‍🎓 Creating new student:', newStudentFirstName, newStudentLastName);
       
-      await createStudent(currentClassId, {
-        firstName: newStudentFirstName.trim(),
-        lastName: newStudentLastName.trim()
-      });
+      if (architectureVersion === 'v2') {
+        // Use new architecture
+        await createStudent(currentClassId, {
+          firstName: newStudentFirstName.trim(),
+          lastName: newStudentLastName.trim()
+        });
+      } else {
+        // V1 fallback - add to user document
+        const newStudent = {
+          id: `student_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          firstName: newStudentFirstName.trim(),
+          lastName: newStudentLastName.trim(),
+          totalPoints: 0,
+          currency: 0,
+          coinsSpent: 0,
+          avatarBase: 'Wizard F',
+          avatarLevel: 1,
+          ownedAvatars: ['Wizard F'],
+          ownedPets: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        
+        const userRef = doc(db, 'users', user.uid);
+        const userSnap = await getDoc(userRef);
+        const userData = userSnap.data();
+        const classes = userData.classes || [];
+        
+        const updatedClasses = classes.map(cls => {
+          if (cls.id === currentClassId || cls.classId === currentClassId) {
+            return { ...cls, students: [...(cls.students || []), newStudent] };
+          }
+          return cls;
+        });
+        
+        await updateDoc(userRef, { classes: updatedClasses });
+        setStudents(prev => [...prev, newStudent]);
+      }
       
       setNewStudentFirstName('');
       setNewStudentLastName('');
@@ -463,50 +608,94 @@ await postStudentUpdate({
       showToast('Student added successfully!', 'success');
       
     } catch (error) {
-      console.error('Error creating student:', error);
+      console.error('❌ Error creating student:', error);
       showToast('Error creating student', 'error');
     }
   };
 
-  // CLASS DATA HANDLERS - UPDATED FOR NEW ARCHITECTURE
+  // CLASS DATA HANDLERS - UPDATED FOR ARCHITECTURE COMPATIBILITY
   
   const handleUpdateCategories = async (newCategories) => {
     try {
-      await updateClassData(currentClassId, { xpCategories: newCategories });
+      if (architectureVersion === 'v2') {
+        await updateClassData(currentClassId, { xpCategories: newCategories });
+      } else {
+        // V1 fallback
+        await updateV1ClassData(user.uid, currentClassId, { xpCategories: newCategories });
+      }
       setXpCategories(newCategories);
     } catch (error) {
-      console.error('Error updating categories:', error);
+      console.error('❌ Error updating categories:', error);
       showToast('Error updating XP categories', 'error');
     }
   };
 
   const saveClassData = async (updates) => {
     try {
-      await updateClassData(currentClassId, updates);
+      if (architectureVersion === 'v2') {
+        await updateClassData(currentClassId, updates);
+      } else {
+        // V1 fallback
+        await updateV1ClassData(user.uid, currentClassId, updates);
+      }
     } catch (error) {
-      console.error('Error saving class data:', error);
+      console.error('❌ Error saving class data:', error);
       showToast('Error saving data', 'error');
       throw error;
     }
   };
 
+  // V1 class update helper
+  const updateV1ClassData = async (userId, classId, updatedData) => {
+    const userRef = doc(db, 'users', userId);
+    const userSnap = await getDoc(userRef);
+    
+    if (!userSnap.exists()) throw new Error('User not found');
+    
+    const userData = userSnap.data();
+    const classes = userData.classes || [];
+    
+    const updatedClasses = classes.map(cls => {
+      if (cls.id === classId || cls.classId === classId) {
+        return { ...cls, ...updatedData, updatedAt: new Date().toISOString() };
+      }
+      return cls;
+    });
+    
+    await updateDoc(userRef, { classes: updatedClasses });
+    
+    // Update local state
+    setCurrentClassData(prev => ({ ...prev, ...updatedData }));
+  };
+
   const saveWidgetSettings = async (newSettings) => {
     try {
-      await updateUserPreferences(user.uid, { widgetSettings: newSettings });
+      if (architectureVersion === 'v2') {
+        await updateUserPreferences(user.uid, { widgetSettings: newSettings });
+      } else {
+        // V1 fallback
+        const userRef = doc(db, 'users', user.uid);
+        await updateDoc(userRef, { widgetSettings: newSettings });
+      }
       setWidgetSettings(newSettings);
     } catch (error) {
-      console.error('Error saving widget settings:', error);
+      console.error('❌ Error saving widget settings:', error);
       showToast('Error saving widget settings', 'error');
     }
   };
 
-  // CLASS CODE MANAGEMENT
+  // CLASS CODE MANAGEMENT - FIXED
   
   const updateClassCode = async (newClassCode) => {
     try {
-      await updateClassData(currentClassId, { classCode: newClassCode });
+      if (architectureVersion === 'v2') {
+        await updateClassData(currentClassId, { classCode: newClassCode });
+      } else {
+        // V1 fallback
+        await updateV1ClassData(user.uid, currentClassId, { classCode: newClassCode });
+      }
     } catch (error) {
-      console.error('Error updating class code:', error);
+      console.error('❌ Error updating class code:', error);
       throw error;
     }
   };
@@ -536,7 +725,7 @@ await postStudentUpdate({
       await updateClassCode(newCode);
       showToast('New class code generated!', 'success');
     } catch (error) {
-      console.error('Error generating class code:', error);
+      console.error('❌ Error generating class code:', error);
       showToast('Error generating class code', 'error');
     }
   };
@@ -704,6 +893,9 @@ await postStudentUpdate({
           <div className="text-red-500 text-6xl mb-4">⚠️</div>
           <h2 className="text-2xl font-bold text-gray-800 mb-2">Something went wrong</h2>
           <p className="text-gray-600 mb-4">{error}</p>
+          <div className="text-sm text-gray-500 mb-4">
+            Architecture: {architectureVersion}
+          </div>
           <button 
             onClick={() => window.location.reload()}
             className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors"
@@ -760,6 +952,15 @@ await postStudentUpdate({
                     </div>
                     
                     <div className="flex items-center space-x-4">
+                        {/* Architecture Version Indicator (Development only) */}
+                        {process.env.NODE_ENV === 'development' && (
+                            <div className={`px-2 py-1 rounded text-xs font-semibold ${
+                              architectureVersion === 'v2' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                            }`}>
+                              {architectureVersion.toUpperCase()}
+                            </div>
+                        )}
+                        
                         {/* Class Code Display */}
                         {currentClassData?.classCode && (
                             <div className="flex items-center space-x-2">
@@ -793,7 +994,7 @@ await postStudentUpdate({
                                     onClick={handleGenerateNewCode}
                                     className="bg-green-500 text-white px-3 py-2 rounded-lg hover:bg-green-600 transition-colors text-sm font-semibold"
                                 >
-                                    📱 Generate Code
+                                    🔱 Generate Code
                                 </button>
                             </div>
                         )}
@@ -816,6 +1017,17 @@ await postStudentUpdate({
                 {/* Mobile Dropdown Menu */}
                 {showMobileMenu && (
                     <div className="lg:hidden mt-3 bg-gray-50 rounded-lg p-3 border">
+                        {/* Architecture Version (Development only) */}
+                        {process.env.NODE_ENV === 'development' && (
+                            <div className="mb-2">
+                                <div className={`inline-block px-2 py-1 rounded text-xs font-semibold ${
+                                  architectureVersion === 'v2' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                                }`}>
+                                  Architecture: {architectureVersion.toUpperCase()}
+                                </div>
+                            </div>
+                        )}
+                        
                         {currentClassData?.classCode ? (
                             <div className="mb-4 p-3 bg-white rounded-lg">
                                 <div className="text-sm text-gray-600 mb-2">Class Code:</div>
@@ -846,7 +1058,7 @@ await postStudentUpdate({
                                     onClick={handleGenerateNewCode}
                                     className="w-full bg-green-500 text-white px-3 py-2 rounded-lg hover:bg-green-600 transition-colors text-sm font-semibold"
                                 >
-                                    📱 Generate Class Code
+                                    🔱 Generate Class Code
                                 </button>
                             </div>
                         )}
