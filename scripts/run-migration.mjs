@@ -1,4 +1,8 @@
 // scripts/run-migration.js - SIMPLIFIED MIGRATION SCRIPT
+
+import { config } from 'dotenv';
+config({ path: '.env.local' });
+
 import admin from 'firebase-admin';
 import { writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
