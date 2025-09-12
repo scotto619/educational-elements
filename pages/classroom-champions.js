@@ -1,11 +1,27 @@
-// pages/classroom-champions.js - UPDATED WITH MOBILE-FRIENDLY RESPONSIVE DESIGN
-import React, { useState, useEffect } from 'react';
+// pages/classroom-champions.js - UPDATED FOR NEW DISTRIBUTED ARCHITECTURE
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
-import { auth, firestore } from '../utils/firebase';
+import { auth } from '../utils/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
 
-// Import components
+import { postStudentUpdate } from '../utils/apiClient';
+
+// Import new Firebase utilities
+import {
+  getUserData,
+  getTeacherClasses,
+  getClassData,
+  getClassStudents,
+  updateClassData,
+  updateStudentData,
+  createStudent,
+  bulkAwardStudents,
+  updateUserPreferences,
+  listenToClassData,
+  listenToClassStudents
+} from '../utils/firebase-new';
+
+// Import components (unchanged)
 import DashboardTab from '../components/tabs/DashboardTab';
 import StudentsTab from '../components/tabs/StudentsTab';
 import ShopTab from '../components/tabs/ShopTab';
@@ -17,118 +33,32 @@ import TeachersToolkitTab from '../components/tabs/TeachersToolkitTab';
 import CurriculumCornerTab from '../components/tabs/CurriculumCornerTab';
 import QuizShowTab from '../components/tabs/QuizShowTab';
 
-// NEW: Import floating widgets
+// Import floating widgets (unchanged)
 import FloatingTimer from '../components/widgets/FloatingTimer';
 import FloatingNamePicker from '../components/widgets/FloatingNamePicker';
 
-// ===============================================
-// CORE GAME CONSTANTS & UTILITIES
-// ===============================================
+// GAME CONSTANTS (unchanged)
 const GAME_CONFIG = { MAX_LEVEL: 4, COINS_PER_XP: 5, PET_UNLOCK_XP: 50 };
-const DEFAULT_XP_CATEGORIES = [ { id: 1, label: 'Respectful', amount: 1, color: 'bg-blue-500', icon: '🤝' }, { id: 2, label: 'Responsible', amount: 1, color: 'bg-green-500', icon: '✅' }, { id: 3, label: 'Safe', amount: 1, color: 'bg-yellow-500', icon: '🛡️' }, { id: 4, label: 'Learner', amount: 1, color: 'bg-purple-500', icon: '📚' }, { id: 5, label: 'Star Award', amount: 5, color: 'bg-yellow-600', icon: '⭐' } ];
+const DEFAULT_XP_CATEGORIES = [ 
+  { id: 1, label: 'Respectful', amount: 1, color: 'bg-blue-500', icon: '🤝' }, 
+  { id: 2, label: 'Responsible', amount: 1, color: 'bg-green-500', icon: '✅' }, 
+  { id: 3, label: 'Safe', amount: 1, color: 'bg-yellow-500', icon: '🛡️' }, 
+  { id: 4, label: 'Learner', amount: 1, color: 'bg-purple-500', icon: '📚' }, 
+  { id: 5, label: 'Star Award', amount: 5, color: 'bg-yellow-600', icon: '⭐' } 
+];
 
-// Standard Level-Up Avatars
+// Shop constants (unchanged)
 const AVAILABLE_AVATARS = [ 'Alchemist F', 'Alchemist M', 'Archer F', 'Archer M', 'Barbarian F', 'Barbarian M', 'Bard F', 'Bard M', 'Beastmaster F', 'Beastmaster M', 'Cleric F', 'Cleric M', 'Crystal Sage F', 'Crystal Sage M', 'Druid F', 'Druid M', 'Engineer F', 'Engineer M', 'Ice Mage F', 'Ice Mage M', 'Illusionist F', 'Illusionist M', 'Knight F', 'Knight M', 'Monk F', 'Monk M', 'Necromancer F', 'Necromancer M', 'Orc F', 'Orc M', 'Paladin F', 'Paladin M', 'Rogue F', 'Rogue M', 'Sky Knight F', 'Sky Knight M', 'Time Mage F', 'Time Mage M', 'Wizard F', 'Wizard M' ];
 
-// Standard Pets (Unlocked with XP)
-const PET_SPECIES = [ { name: 'Alchemist', type: 'alchemist', rarity: 'common' }, { name: 'Barbarian', type: 'barbarian', rarity: 'common' }, { name: 'Bard', type: 'bard', rarity: 'common' }, { name: 'Beastmaster', type: 'beastmaster', rarity: 'rare' }, { name: 'Cleric', type: 'cleric', rarity: 'common' }, { name: 'Crystal Knight', type: 'crystal knight', rarity: 'epic' }, { name: 'Crystal Sage', type: 'crystal sage', rarity: 'epic' }, { name: 'Engineer', type: 'engineer', rarity: 'rare' }, { name: 'Frost Mage', type: 'frost mage', rarity: 'rare' }, { name: 'Illusionist', type: 'illusionist', rarity: 'epic' }, { name: 'Knight', type: 'knight', rarity: 'common' }, { name: 'Lightning', type: 'lightning', rarity: 'legendary' }, { name: 'Monk', type: 'monk', rarity: 'common' }, { name: 'Necromancer', type: 'necromancer', rarity: 'epic' }, { name: 'Rogue', type: 'rogue', rarity: 'common' }, { name: 'Stealth', type: 'stealth', rarity: 'rare' }, { name: 'Time Knight', type: 'time knight', rarity: 'legendary' }, { name: 'Warrior', type: 'warrior', rarity: 'common' }, { name: 'Wizard', type: 'wizard', rarity: 'common' } ];
+const SHOP_BASIC_AVATARS = [ { name: 'Banana', price: 10, path: '/shop/Basic/Banana.png' }, { name: 'Basketball', price: 12, path: '/shop/Basic/Basketball.png' }, { name: 'BasketballGirl', price: 12, path: '/shop/Basic/BasketballGirl.png' }, { name: 'FarmerBoy', price: 15, path: '/shop/Basic/FarmerBoy.png' }, { name: 'FarmerGirl', price: 15, path: '/shop/Basic/FarmerGirl.png' }, { name: 'Goblin1', price: 15, path: '/shop/Basic/Goblin1.png' }, { name: 'GoblinGirl1', price: 15, path: '/shop/Basic/GoblinGirl1.png' }, { name: 'Guard1', price: 20, path: '/shop/Basic/Guard1.png' }, { name: 'GuardGirl1', price: 20, path: '/shop/Basic/GuardGirl1.png' }, { name: 'PirateBoy', price: 18, path: '/shop/Basic/PirateBoy.png' }, { name: 'PirateGirl', price: 18, path: '/shop/Basic/PirateGirl.png' }, { name: 'RoboKnight', price: 25, path: '/shop/Basic/RoboKnight.png' }, { name: 'RobotBoy', price: 22, path: '/shop/Basic/RobotBoy.png' }, { name: 'RobotGirl', price: 22, path: '/shop/Basic/RobotGirl.png' }, { name: 'SoccerBoy', price: 10, path: '/shop/Basic/SoccerBoy.png' }, { name: 'SoccerBoy2', price: 10, path: '/shop/Basic/SoccerBoy2.png' }, { name: 'SoccerGirl', price: 10, path: '/shop/Basic/SoccerGirl.png' }, { name: 'StreetBoy1', price: 15, path: '/shop/Basic/Streetboy1.png' }, { name: 'StreetGirl1', price: 15, path: '/shop/Basic/Streetgirl1.png' }, { name: 'Vampire1', price: 20, path: '/shop/Basic/Vampire1.png' } ];
 
-// ===============================================
-// CENTRALIZED SHOP ITEM DEFINITIONS (UPDATED WITH ALL PETS)
-// ===============================================
-const SHOP_BASIC_AVATARS = [ 
-  { name: 'Banana', price: 10, path: '/shop/Basic/Banana.png' }, 
-  { name: 'Basketball', price: 12, path: '/shop/Basic/Basketball.png' }, 
-  { name: 'BasketballGirl', price: 12, path: '/shop/Basic/BasketballGirl.png' }, 
-  { name: 'FarmerBoy', price: 15, path: '/shop/Basic/FarmerBoy.png' }, 
-  { name: 'FarmerGirl', price: 15, path: '/shop/Basic/FarmerGirl.png' }, 
-  { name: 'Goblin1', price: 15, path: '/shop/Basic/Goblin1.png' }, 
-  { name: 'GoblinGirl1', price: 15, path: '/shop/Basic/GoblinGirl1.png' }, 
-  { name: 'Guard1', price: 20, path: '/shop/Basic/Guard1.png' }, 
-  { name: 'GuardGirl1', price: 20, path: '/shop/Basic/GuardGirl1.png' }, 
-  { name: 'PirateBoy', price: 18, path: '/shop/Basic/PirateBoy.png' }, 
-  { name: 'PirateGirl', price: 18, path: '/shop/Basic/PirateGirl.png' }, 
-  { name: 'RoboKnight', price: 25, path: '/shop/Basic/RoboKnight.png' }, 
-  { name: 'RobotBoy', price: 22, path: '/shop/Basic/RobotBoy.png' }, 
-  { name: 'RobotGirl', price: 22, path: '/shop/Basic/RobotGirl.png' }, 
-  { name: 'SoccerBoy', price: 10, path: '/shop/Basic/SoccerBoy.png' }, 
-  { name: 'SoccerBoy2', price: 10, path: '/shop/Basic/SoccerBoy2.png' }, 
-  { name: 'SoccerGirl', price: 10, path: '/shop/Basic/SoccerGirl.png' }, 
-  { name: 'StreetBoy1', price: 15, path: '/shop/Basic/Streetboy1.png' }, 
-  { name: 'StreetGirl1', price: 15, path: '/shop/Basic/Streetgirl1.png' }, 
-  { name: 'Vampire1', price: 20, path: '/shop/Basic/Vampire1.png' } 
-];
+const SHOP_PREMIUM_AVATARS = [ { name: 'Dwarf', price: 45, path: '/shop/Premium/Dwarf.png' }, { name: 'Dwarf2', price: 45, path: '/shop/Premium/Dwarf2.png' }, { name: 'FarmerBoy Premium', price: 35, path: '/shop/Premium/FarmerBoy.png' }, { name: 'FarmerGirl Premium', price: 35, path: '/shop/Premium/FarmerGirl.png' }, { name: 'Goblin2', price: 30, path: '/shop/Premium/Goblin2.png' }, { name: 'GoblinGirl2', price: 30, path: '/shop/Premium/GoblinGirl2.png' }, { name: 'King', price: 60, path: '/shop/Premium/King.png' }, { name: 'MechanicGirl', price: 40, path: '/shop/Premium/MechanicGirl.png' }, { name: 'PirateBoy Premium', price: 42, path: '/shop/Premium/PirateBoy.png' }, { name: 'PirateGirl Premium', price: 42, path: '/shop/Premium/PirateGirl.png' }, { name: 'Queen', price: 60, path: '/shop/Premium/Queen.png' }, { name: 'RobotBoy Premium', price: 38, path: '/shop/Premium/RobotBoy.png' }, { name: 'RobotGirl Premium', price: 38, path: '/shop/Premium/RobotGirl.png' }, { name: 'Vampire2', price: 40, path: '/shop/Premium/Vampire2.png' }, { name: 'VampireGirl2', price: 40, path: '/shop/Premium/VampireGirl2.png' } ];
 
-const SHOP_PREMIUM_AVATARS = [ 
-  { name: 'Dwarf', price: 45, path: '/shop/Premium/Dwarf.png' }, 
-  { name: 'Dwarf2', price: 45, path: '/shop/Premium/Dwarf2.png' }, 
-  { name: 'FarmerBoy Premium', price: 35, path: '/shop/Premium/FarmerBoy.png' }, 
-  { name: 'FarmerGirl Premium', price: 35, path: '/shop/Premium/FarmerGirl.png' }, 
-  { name: 'Goblin2', price: 30, path: '/shop/Premium/Goblin2.png' }, 
-  { name: 'GoblinGirl2', price: 30, path: '/shop/Premium/GoblinGirl2.png' }, 
-  { name: 'King', price: 60, path: '/shop/Premium/King.png' }, 
-  { name: 'MechanicGirl', price: 40, path: '/shop/Premium/MechanicGirl.png' }, 
-  { name: 'PirateBoy Premium', price: 42, path: '/shop/Premium/PirateBoy.png' }, 
-  { name: 'PirateGirl Premium', price: 42, path: '/shop/Premium/PirateGirl.png' }, 
-  { name: 'Queen', price: 60, path: '/shop/Premium/Queen.png' }, 
-  { name: 'RobotBoy Premium', price: 38, path: '/shop/Premium/RobotBoy.png' }, 
-  { name: 'RobotGirl Premium', price: 38, path: '/shop/Premium/RobotGirl.png' }, 
-  { name: 'Vampire2', price: 40, path: '/shop/Premium/Vampire2.png' }, 
-  { name: 'VampireGirl2', price: 40, path: '/shop/Premium/VampireGirl2.png' } 
-];
+const SHOP_BASIC_PETS = [ { name: 'Alchemist Pet', price: 25, path: '/shop/BasicPets/Alchemist.png' }, { name: 'Barbarian Pet', price: 30, path: '/shop/BasicPets/Barbarian.png' }, { name: 'Bard Pet', price: 25, path: '/shop/BasicPets/Bard.png' }, { name: 'Beastmaster Pet', price: 35, path: '/shop/BasicPets/Beastmaster.png' }, { name: 'Cleric Pet', price: 25, path: '/shop/BasicPets/Cleric.png' }, { name: 'Crystal Knight Pet', price: 45, path: '/shop/BasicPets/Crystal Knight.png' }, { name: 'Crystal Sage Pet', price: 45, path: '/shop/BasicPets/Crystal Sage.png' }, { name: 'Dragon Pet', price: 50, path: '/shop/BasicPets/DragonPet.png' }, { name: 'Dream Pet', price: 40, path: '/shop/BasicPets/Dream.png' }, { name: 'Druid Pet', price: 35, path: '/shop/BasicPets/Druid.png' }, { name: 'Engineer Pet', price: 30, path: '/shop/BasicPets/Engineer.png' }, { name: 'Farm Pet 1', price: 20, path: '/shop/BasicPets/FarmPet1.png' }, { name: 'Farm Pet 2', price: 20, path: '/shop/BasicPets/FarmPet2.png' }, { name: 'Farm Pet 3', price: 20, path: '/shop/BasicPets/FarmPet3.png' }, { name: 'Frost Mage Pet', price: 35, path: '/shop/BasicPets/Frost Mage.png' }, { name: 'Goblin Pet', price: 25, path: '/shop/BasicPets/GoblinPet.png' }, { name: 'Illusionist Pet', price: 40, path: '/shop/BasicPets/Illusionist.png' }, { name: 'Knight Pet', price: 30, path: '/shop/BasicPets/Knight.png' }, { name: 'Lightning Pet', price: 50, path: '/shop/BasicPets/Lightning.png' }, { name: 'Monk Pet', price: 25, path: '/shop/BasicPets/Monk.png' }, { name: 'Necromancer Pet', price: 40, path: '/shop/BasicPets/Necromancer.png' }, { name: 'Orc Pet', price: 30, path: '/shop/BasicPets/Orc.png' }, { name: 'Paladin Pet', price: 35, path: '/shop/BasicPets/Paladin.png' }, { name: 'Pirate Pet 1', price: 25, path: '/shop/BasicPets/PiratePet1.png' }, { name: 'Pirate Pet 2', price: 25, path: '/shop/BasicPets/PiratePet2.png' }, { name: 'Pirate Pet 3', price: 25, path: '/shop/BasicPets/PiratePet3.png' }, { name: 'Rabbit Pet', price: 20, path: '/shop/BasicPets/RabbitPet.png' }, { name: 'Robot Boy Pet', price: 30, path: '/shop/BasicPets/RobotBoyPet.png' }, { name: 'Robot Girl Pet', price: 30, path: '/shop/BasicPets/RobotGirlPet.png' }, { name: 'Robot Pet 1', price: 30, path: '/shop/BasicPets/RobotPet1.png' }, { name: 'Robot Pet 2', price: 30, path: '/shop/BasicPets/RobotPet2.png' }, { name: 'Rogue Pet', price: 25, path: '/shop/BasicPets/Rogue.png' }, { name: 'Soccer Pet', price: 20, path: '/shop/BasicPets/SoccerPet.png' }, { name: 'Stealth Pet', price: 35, path: '/shop/BasicPets/Stealth.png' }, { name: 'Time Knight Pet', price: 50, path: '/shop/BasicPets/Time Knight.png' }, { name: 'Unicorn Pet', price: 35, path: '/shop/BasicPets/UnicornPet.png' }, { name: 'Warrior Pet', price: 30, path: '/shop/BasicPets/Warrior.png' }, { name: 'Wizard Pet', price: 25, path: '/shop/BasicPets/Wizard.png' } ];
 
-// UPDATED: Complete list of Basic Pets from Image 4
-const SHOP_BASIC_PETS = [
-  { name: 'Alchemist Pet', price: 25, path: '/shop/BasicPets/Alchemist.png' },
-  { name: 'Barbarian Pet', price: 30, path: '/shop/BasicPets/Barbarian.png' },
-  { name: 'Bard Pet', price: 25, path: '/shop/BasicPets/Bard.png' },
-  { name: 'Beastmaster Pet', price: 35, path: '/shop/BasicPets/Beastmaster.png' },
-  { name: 'Cleric Pet', price: 25, path: '/shop/BasicPets/Cleric.png' },
-  { name: 'Crystal Knight Pet', price: 45, path: '/shop/BasicPets/Crystal Knight.png' },
-  { name: 'Crystal Sage Pet', price: 45, path: '/shop/BasicPets/Crystal Sage.png' },
-  { name: 'Dragon Pet', price: 50, path: '/shop/BasicPets/DragonPet.png' },
-  { name: 'Dream Pet', price: 40, path: '/shop/BasicPets/Dream.png' },
-  { name: 'Druid Pet', price: 35, path: '/shop/BasicPets/Druid.png' },
-  { name: 'Engineer Pet', price: 30, path: '/shop/BasicPets/Engineer.png' },
-  { name: 'Farm Pet 1', price: 20, path: '/shop/BasicPets/FarmPet1.png' },
-  { name: 'Farm Pet 2', price: 20, path: '/shop/BasicPets/FarmPet2.png' },
-  { name: 'Farm Pet 3', price: 20, path: '/shop/BasicPets/FarmPet3.png' },
-  { name: 'Frost Mage Pet', price: 35, path: '/shop/BasicPets/Frost Mage.png' },
-  { name: 'Goblin Pet', price: 25, path: '/shop/BasicPets/GoblinPet.png' },
-  { name: 'Illusionist Pet', price: 40, path: '/shop/BasicPets/Illusionist.png' },
-  { name: 'Knight Pet', price: 30, path: '/shop/BasicPets/Knight.png' },
-  { name: 'Lightning Pet', price: 50, path: '/shop/BasicPets/Lightning.png' },
-  { name: 'Monk Pet', price: 25, path: '/shop/BasicPets/Monk.png' },
-  { name: 'Necromancer Pet', price: 40, path: '/shop/BasicPets/Necromancer.png' },
-  { name: 'Orc Pet', price: 30, path: '/shop/BasicPets/Orc.png' },
-  { name: 'Paladin Pet', price: 35, path: '/shop/BasicPets/Paladin.png' },
-  { name: 'Pirate Pet 1', price: 25, path: '/shop/BasicPets/PiratePet1.png' },
-  { name: 'Pirate Pet 2', price: 25, path: '/shop/BasicPets/PiratePet2.png' },
-  { name: 'Pirate Pet 3', price: 25, path: '/shop/BasicPets/PiratePet3.png' },
-  { name: 'Rabbit Pet', price: 20, path: '/shop/BasicPets/RabbitPet.png' },
-  { name: 'Robot Boy Pet', price: 30, path: '/shop/BasicPets/RobotBoyPet.png' },
-  { name: 'Robot Girl Pet', price: 30, path: '/shop/BasicPets/RobotGirlPet.png' },
-  { name: 'Robot Pet 1', price: 30, path: '/shop/BasicPets/RobotPet1.png' },
-  { name: 'Robot Pet 2', price: 30, path: '/shop/BasicPets/RobotPet2.png' },
-  { name: 'Rogue Pet', price: 25, path: '/shop/BasicPets/Rogue.png' },
-  { name: 'Soccer Pet', price: 20, path: '/shop/BasicPets/SoccerPet.png' },
-  { name: 'Stealth Pet', price: 35, path: '/shop/BasicPets/Stealth.png' },
-  { name: 'Time Knight Pet', price: 50, path: '/shop/BasicPets/Time Knight.png' },
-  { name: 'Unicorn Pet', price: 35, path: '/shop/BasicPets/UnicornPet.png' },
-  { name: 'Warrior Pet', price: 30, path: '/shop/BasicPets/Warrior.png' },
-  { name: 'Wizard Pet', price: 25, path: '/shop/BasicPets/Wizard.png' }
-];
+const SHOP_PREMIUM_PETS = [ { name: 'Lion Pet', price: 60, path: '/shop/PremiumPets/LionPet.png' }, { name: 'Snake Pet', price: 50, path: '/shop/PremiumPets/SnakePet.png' }, { name: 'Vampire Pet', price: 50, path: '/shop/PremiumPets/VampirePet.png' } ];
 
-// UPDATED: Complete list of Premium Pets from Image 3
-const SHOP_PREMIUM_PETS = [
-  { name: 'Lion Pet', price: 60, path: '/shop/PremiumPets/LionPet.png' },
-  { name: 'Snake Pet', price: 50, path: '/shop/PremiumPets/SnakePet.png' },
-  { name: 'Vampire Pet', price: 50, path: '/shop/PremiumPets/VampirePet.png' }
-];
-
-// ===============================================
-// SMART IMAGE HELPER FUNCTIONS
-// ===============================================
+// Helper functions (unchanged)
 const getAvatarImage = (avatarBase, level) => {
     const shopItem = [...SHOP_BASIC_AVATARS, ...SHOP_PREMIUM_AVATARS].find(a => a.name.toLowerCase() === avatarBase?.toLowerCase());
     if (shopItem) return shopItem.path;
@@ -137,45 +67,19 @@ const getAvatarImage = (avatarBase, level) => {
 
 const getPetImage = (pet) => {
     if (!pet || !pet.name) return '/Pets/Wizard.png';
-
-    // First, check if pet has a direct path (for shop pets)
     if (pet.path) return pet.path;
-
-    // Then, check shop items (case insensitive)
     const shopItem = [...SHOP_BASIC_PETS, ...SHOP_PREMIUM_PETS].find(p => p.name.toLowerCase() === pet.name.toLowerCase());
     if (shopItem) return shopItem.path;
-
-    // For standard pets
     const key = (pet.type || pet.name || '').toLowerCase();
-    const map = { 'alchemist': '/Pets/Alchemist.png', 'barbarian': '/Pets/Barbarian.png', 'bard': '/Pets/Bard.png', 'beastmaster': '/Pets/Beastmaster.png', 'cleric': '/Pets/Cleric.png', 'crystal knight': '/Pets/Crystal Knight.png', 'crystal sage': '/Pets/Crystal Sage.png', 'engineer': '/Pets/Engineer.png', 'frost mage': '/Pets/Frost Mage.png', 'illusionist': '/Pets/Illusionist.png', 'knight': '/Pets/Knight.png', 'lightning': '/Pets/Lightning.png', 'monk': '/Pets/Monk.png', 'necromancer': '/Pets/Necromancer.png', 'rogue': '/Pets/Rogue.png', 'stealth': '/Pets/Stealth.png', 'time knight': '/Pets/Time Knight.png', 'warrior': '/Pets/Warrior.png', 'wizard': '/Pets/Wizard.png', 'dragon': '/Pets/Lightning.png', 'phoenix': '/Pets/Crystal Sage.png', 'unicorn': '/Pets/Time Knight.png', 'wolf': '/Pets/Warrior.png', 'owl': '/Pets/Wizard.png', 'cat': '/Pets/Rogue.png', 'tiger': '/Pets/Barbarian.png', 'bear': '/Pets/Beastmaster.png', 'lion': '/Pets/Knight.png', 'eagle': '/Pets/Stealth.png' };
+    const map = { 'alchemist': '/Pets/Alchemist.png', 'barbarian': '/Pets/Barbarian.png', 'bard': '/Pets/Bard.png', 'beastmaster': '/Pets/Beastmaster.png', 'cleric': '/Pets/Cleric.png', 'crystal knight': '/Pets/Crystal Knight.png', 'crystal sage': '/Pets/Crystal Sage.png', 'engineer': '/Pets/Engineer.png', 'frost mage': '/Pets/Frost Mage.png', 'illusionist': '/Pets/Illusionist.png', 'knight': '/Pets/Knight.png', 'lightning': '/Pets/Lightning.png', 'monk': '/Pets/Monk.png', 'necromancer': '/Pets/Necromancer.png', 'rogue': '/Pets/Rogue.png', 'stealth': '/Pets/Stealth.png', 'time knight': '/Pets/Time Knight.png', 'warrior': '/Pets/Warrior.png', 'wizard': '/Pets/Wizard.png' };
     return map[key] || '/Pets/Wizard.png';
 };
 
 const calculateAvatarLevel = (xp) => (xp >= 300 ? 4 : xp >= 200 ? 3 : xp >= 100 ? 2 : 1);
 const calculateCoins = (student) => Math.max(0, Math.floor((student?.totalPoints || 0) / GAME_CONFIG.COINS_PER_XP) + (student?.currency || 0) - (student?.coinsSpent || 0));
 const playSound = (sound = 'ding') => { try { const audio = new Audio(`/sounds/${sound}.mp3`); audio.volume = 0.3; audio.play().catch(e => {}); } catch(e) {} };
-const shouldReceivePet = (student) => (student?.totalPoints || 0) >= GAME_CONFIG.PET_UNLOCK_XP && (!student?.ownedPets || student.ownedPets.length === 0);
-const getRandomPet = () => {
-    try {
-        const pet = PET_SPECIES[Math.floor(Math.random() * PET_SPECIES.length)];
-        return { id: `pet_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, name: pet.name, type: pet.type, rarity: pet.rarity, displayName: pet.name, imageType: pet.type };
-    } catch (error) {
-        return { id: `pet_${Date.now()}_failsafe`, name: 'Wizard', type: 'wizard', rarity: 'common', displayName: 'Wizard', imageType: 'wizard' };
-    }
-};
 
-const showToast = (message, type = 'info') => {
-  // Toast notifications disabled
-};
-
-// Function to open student portal
-const goToStudentPortal = () => {
-  window.open('https://educational-elements.com/student', '_blank');
-};
-
-// ===============================================
-// GROUPED NAVIGATION TABS (UPDATED FOR MOBILE LAYOUT)
-// ===============================================
+// Navigation tabs (unchanged)
 const CLASSROOM_CHAMPIONS_TABS = [ 
   { id: 'dashboard', name: 'Dashboard', icon: '🏠', shortName: 'Home', mobileIcon: '🏠' }, 
   { id: 'students', name: 'Students', icon: '👥', shortName: 'Students', mobileIcon: '👥' },
@@ -192,211 +96,390 @@ const EDUCATIONAL_ELEMENTS_TABS = [
   { id: 'settings', name: 'Settings', icon: '⚙️', shortName: 'Settings', mobileIcon: '⚙️' } 
 ];
 
-// ===============================================
-// MAIN COMPONENT
-// ===============================================
+const showToast = (message, type = 'info') => {
+  // Toast notifications disabled as per requirements
+};
+
+const goToStudentPortal = () => {
+  window.open('https://educational-elements.com/student', '_blank');
+};
+
+// MAIN COMPONENT - UPDATED FOR NEW ARCHITECTURE
 const ClassroomChampions = () => {
   const router = useRouter();
   
-  // States
+  // Core state
   const [user, setUser] = useState(null);
-  const [userData, setUserData] = useState({});
+  const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('dashboard'); // Default to dashboard
+  const [error, setError] = useState(null);
+  
+  // App state
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
+  
+  // Class and student data
+  const [currentClassId, setCurrentClassId] = useState(null);
+  const [currentClassData, setCurrentClassData] = useState(null);
   const [students, setStudents] = useState([]);
   const [xpCategories, setXpCategories] = useState(DEFAULT_XP_CATEGORIES);
-  const [currentClassId, setCurrentClassId] = useState(null);
+  
+  // UI state
   const [showAddStudentModal, setShowAddStudentModal] = useState(false);
   const [levelUpData, setLevelUpData] = useState(null);
   const [petUnlockData, setPetUnlockData] = useState(null);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [newStudentFirstName, setNewStudentFirstName] = useState('');
   const [newStudentLastName, setNewStudentLastName] = useState('');
-  const [attendanceData, setAttendanceData] = useState({});
-  const [activeQuests, setActiveQuests] = useState([]);
-  
-  // New state for reward management
-  const [classRewards, setClassRewards] = useState([]);
-  
-  // Welcome popup state
   const [showWelcomePopup, setShowWelcomePopup] = useState(false);
-
-  // NEW: Mobile-specific states
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
-
-  // NEW: Floating widget states
+  
+  // Widget settings
   const [widgetSettings, setWidgetSettings] = useState({
     showTimer: true,
     showNamePicker: true
   });
+  
+  // Real-time listeners cleanup
+  const [classDataUnsubscribe, setClassDataUnsubscribe] = useState(null);
+  const [studentsUnsubscribe, setStudentsUnsubscribe] = useState(null);
 
-  // AUTH & DATA LOADING
+  // AUTH & DATA LOADING - UPDATED FOR NEW ARCHITECTURE
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) { setUser(user); loadUserData(user); } 
-      else { router.push('/login'); }
+      if (user) { 
+        setUser(user); 
+        loadUserData(user);
+      } else { 
+        router.push('/login'); 
+      }
     });
     return () => unsubscribe();
   }, [router]);
 
+  const loadUserData = async (user) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      console.log('Loading user data with new architecture...');
+      
+      // Get user data (basic info only)
+      const userDataResult = await getUserData(user.uid);
+      if (!userDataResult) {
+        throw new Error('User not found');
+      }
+      
+      setUserData(userDataResult);
+      setWidgetSettings(userDataResult.widgetSettings || { showTimer: true, showNamePicker: true });
+      
+      // Get user's classes
+      const teacherClasses = await getTeacherClasses(user.uid);
+      
+      if (teacherClasses.length === 0) {
+        console.log('No classes found for user');
+        setLoading(false);
+        return;
+      }
+      
+      // Set active class
+      const activeClassId = userDataResult.activeClassId || teacherClasses[0].id;
+      await loadClassData(activeClassId);
+      
+    } catch (error) {
+      console.error("Error loading user data:", error);
+      setError(error.message);
+    }
+    
+    setLoading(false);
+  };
+
+  const loadClassData = async (classId) => {
+    try {
+      console.log('Loading class data:', classId);
+      
+      // Clean up existing listeners
+      if (classDataUnsubscribe) classDataUnsubscribe();
+      if (studentsUnsubscribe) studentsUnsubscribe();
+      
+      // Set up real-time listeners for class data
+      const classUnsubscribe = listenToClassData(
+        classId,
+        (classData) => {
+          if (classData) {
+            console.log('Class data updated:', classData.name);
+            setCurrentClassData(classData);
+            setCurrentClassId(classId);
+            setXpCategories(classData.xpCategories || DEFAULT_XP_CATEGORIES);
+          }
+        },
+        (error) => {
+          console.error('Class data listener error:', error);
+          setError('Failed to load class data');
+        }
+      );
+      setClassDataUnsubscribe(() => classUnsubscribe);
+      
+      // Set up real-time listeners for students
+      const studentsUnsubscribe = listenToClassStudents(
+        classId,
+        (studentsData) => {
+          console.log('Students data updated:', studentsData.length, 'students');
+          setStudents(studentsData || []);
+        },
+        (error) => {
+          console.error('Students listener error:', error);
+          setError('Failed to load students data');
+        }
+      );
+      setStudentsUnsubscribe(() => studentsUnsubscribe);
+      
+    } catch (error) {
+      console.error('Error loading class data:', error);
+      setError(error.message);
+    }
+  };
+
+  // Cleanup listeners on unmount
+  useEffect(() => {
+    return () => {
+      if (classDataUnsubscribe) classDataUnsubscribe();
+      if (studentsUnsubscribe) studentsUnsubscribe();
+    };
+  }, [classDataUnsubscribe, studentsUnsubscribe]);
+
   // Show welcome popup after data loads
   useEffect(() => {
     if (!loading && user && students.length > 0) {
-      // Show popup once per session
       const hasShownToday = sessionStorage.getItem('welcomePopupShown');
       if (!hasShownToday) {
         setTimeout(() => {
           setShowWelcomePopup(true);
           sessionStorage.setItem('welcomePopupShown', 'true');
-        }, 1000); // Small delay for better UX
+        }, 1000);
       }
     }
   }, [loading, user, students]);
 
-  const loadUserData = async (user) => {
-    setLoading(true);
+  // STUDENT UPDATE HANDLERS - UPDATED FOR NEW ARCHITECTURE
+  
+  const handleUpdateStudent = useCallback(async (studentId, updatedData) => {
     try {
-      const docRef = doc(firestore, 'users', user.uid);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const loadedUserData = docSnap.data();
-        setUserData(loadedUserData);
-        const activeClassId = loadedUserData.activeClassId || (loadedUserData.classes && loadedUserData.classes[0]?.id);
-        if (activeClassId) {
-          const activeClass = loadedUserData.classes.find(cls => cls.id === activeClassId);
-          setCurrentClassId(activeClass.id);
-          setStudents(activeClass.students || []);
-          setXpCategories(activeClass.xpCategories || DEFAULT_XP_CATEGORIES);
-          // Load additional data if available
-          setAttendanceData(activeClass.attendanceData || {});
-          setActiveQuests(activeClass.activeQuests || []);
-          // Load class rewards
-          setClassRewards(activeClass.classRewards || []);
-          // NEW: Load widget settings
-          setWidgetSettings(loadedUserData.widgetSettings || { showTimer: true, showNamePicker: true });
-        }
-      }
+      console.log('Updating student:', studentId, Object.keys(updatedData));
+      
+      const updatedStudent = await updateStudentData(studentId, updatedData, 'Manual Update');
+      
+      // Update local state optimistically (real-time listener will sync)
+      setStudents(prev => prev.map(s => s.id === studentId ? { ...s, ...updatedStudent } : s));
+      
+      return updatedStudent;
     } catch (error) {
-      console.error("Error loading user data:", error);
+      console.error('Error updating student:', error);
+      showToast('Error updating student data', 'error');
+      throw error;
     }
-    setLoading(false);
+  }, []);
+
+  const handleReorderStudents = (reorderedStudents) => {
+    // For now, just update local state
+    // TODO: Implement ordering in Firebase if needed
+    setStudents(reorderedStudents);
   };
 
-  // ===============================================
-  // FIREBASE SAVING FUNCTIONS
-  // ===============================================
-
-  // Main function to update and save class data
-  const updateAndSaveClass = async (updatedStudents, updatedCategories, additionalUpdates = {}) => {
-    if (!user || !currentClassId) return;
-    const docRef = doc(firestore, 'users', user.uid);
+  const handleBulkAward = useCallback(async (studentIds, amount, type) => {
     try {
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-            const loadedUserData = docSnap.data();
-            const updatedClasses = loadedUserData.classes.map(cls =>
-                cls.id === currentClassId 
-                    ? { 
-                        ...cls, 
-                        students: updatedStudents || cls.students, 
-                        xpCategories: updatedCategories || cls.xpCategories,
-                        ...additionalUpdates
-                      } 
-                    : cls
-            );
-            await updateDoc(docRef, { classes: updatedClasses });
-            
-            // Update local userData state to reflect changes
-            setUserData({
-              ...loadedUserData,
-              classes: updatedClasses
+      console.log('Bulk awarding:', { studentIds: studentIds.length, amount, type });
+      
+      const updates = {};
+// Route each update via the API endpoint (transactional, race-safe)
+await Promise.allSettled(
+  studentIds.map((sid, i) =>
+    postStudentUpdate({
+      studentId: sid,
+      classCode: activeClass?.classCode,         // make sure you have this available in state
+      updateData: type === 'xp' ? { totalPoints: amount } : { currency: amount },
+      mode: 'increment',
+      note: `Bulk ${type} Award`,
+      opId: `bulk-${type}-${sid}-${Date.now()}-${i}`,
+    })
+  )
+);
+      
+      // Check for level ups and pet unlocks
+      students.forEach(student => {
+        if (studentIds.includes(student.id) && type === 'xp') {
+          const oldLevel = calculateAvatarLevel(student.totalPoints || 0);
+          const newLevel = calculateAvatarLevel((student.totalPoints || 0) + amount);
+          
+          if (newLevel > oldLevel) {
+            setLevelUpData({ student, oldLevel, newLevel });
+          }
+          
+          // Check for pet unlock
+          const newTotalPoints = (student.totalPoints || 0) + amount;
+          if (newTotalPoints >= GAME_CONFIG.PET_UNLOCK_XP && (!student.ownedPets || student.ownedPets.length === 0)) {
+            const newPet = getRandomPet();
+            setPetUnlockData({ student, pet: newPet });
+            // Update student with pet
+            handleUpdateStudent(student.id, {
+              ownedPets: [newPet]
             });
+          }
         }
-    } catch (error) { 
-      console.error("Error saving class data:", error); 
-      showToast('Error saving data', 'error');
+      });
+      
+      playSound(type === 'xp' ? 'ding' : 'coins');
+      
+    } catch (error) {
+      console.error('Error in bulk award:', error);
+      showToast('Error awarding points', 'error');
     }
-  };
+  }, [students, handleUpdateStudent]);
 
-  // General save for tool data
-  const saveClassData = async (updates) => {
-    if (!user || !currentClassId) return;
-    const docRef = doc(firestore, 'users', user.uid);
+  const awardXPToStudent = useCallback(async (studentId, amount, reason = '') => {
     try {
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const loadedUserData = docSnap.data();
-        const updatedClasses = loadedUserData.classes.map(cls =>
-          cls.id === currentClassId ? { ...cls, ...updates } : cls
-        );
-        await updateDoc(docRef, { classes: updatedClasses });
-        
-        // Update local userData state to reflect changes
-        setUserData({
-          ...loadedUserData,
-          classes: updatedClasses
+      const student = students.find(s => s.id === studentId);
+      if (!student) {
+        console.error('Student not found:', studentId);
+        return;
+      }
+
+      console.log(`Awarding ${amount} XP to ${student.firstName} for ${reason}`);
+      
+      // Update student with Firebase increment to prevent race conditions
+await postStudentUpdate({
+  studentId,
+  classCode: activeClass?.classCode,
+  updateData: { totalPoints: amount },
+  mode: 'increment',
+  note: `XP Award: ${reason || ''}`,
+  opId: `xp-${studentId}-${Date.now()}`,
+});
+      
+      // Check for level up
+      const oldLevel = calculateAvatarLevel(student.totalPoints || 0);
+      const newLevel = calculateAvatarLevel((student.totalPoints || 0) + amount);
+      
+      if (newLevel > oldLevel) {
+        setLevelUpData({ student: { ...student, totalPoints: (student.totalPoints || 0) + amount }, oldLevel, newLevel });
+      }
+      
+      // Check for pet unlock
+      const newTotalPoints = (student.totalPoints || 0) + amount;
+      if (newTotalPoints >= GAME_CONFIG.PET_UNLOCK_XP && (!student.ownedPets || student.ownedPets.length === 0)) {
+        const newPet = getRandomPet();
+        setPetUnlockData({ student, pet: newPet });
+        await handleUpdateStudent(studentId, {
+          ownedPets: [newPet]
         });
       }
+      
+      playSound('ding');
+      showToast(`${student.firstName} earned ${amount} XP${reason ? ` for ${reason}` : ''}!`, 'success');
+      
     } catch (error) {
-      console.error("Error saving tool data:", error);
-      showToast('Error saving data', 'error');
+      console.error('Error awarding XP:', error);
+      showToast('Error awarding XP', 'error');
     }
-  };
+  }, [students, handleUpdateStudent]);
 
-  // NEW: Save widget settings
-  const saveWidgetSettings = async (newSettings) => {
-    if (!user) return;
-    const docRef = doc(firestore, 'users', user.uid);
+  const awardCoinsToStudent = useCallback(async (studentId, amount, reason = '') => {
     try {
-      await updateDoc(docRef, { 
-        widgetSettings: newSettings 
-      });
-      setWidgetSettings(newSettings);
-    } catch (error) {
-      console.error("Error saving widget settings:", error);
-      showToast('Error saving widget settings', 'error');
-    }
-  };
+      const student = students.find(s => s.id === studentId);
+      if (!student) {
+        console.error('Student not found:', studentId);
+        return;
+      }
 
-  // ===============================================
-  // CLASS CODE MANAGEMENT FUNCTION
-  // ===============================================
-  
-  const updateClassCode = async (newClassCode) => {
-    if (!user || !currentClassId) return;
+      console.log(`Awarding ${amount} coins to ${student.firstName} for ${reason}`);
+      
+await postStudentUpdate({
+  studentId,
+  classCode: activeClass?.classCode,
+  updateData: { currency: amount },
+  mode: 'increment',
+  note: `Coin Award: ${reason || ''}`,
+  opId: `coin-${studentId}-${Date.now()}`,
+});
+      
+      playSound('coins');
+      showToast(`${student.firstName} earned ${amount} coins${reason ? ` for ${reason}` : ''}!`, 'success');
+      
+    } catch (error) {
+      console.error('Error awarding coins:', error);
+      showToast('Error awarding coins', 'error');
+    }
+  }, [students]);
+
+  const addStudent = async () => {
+    if (!newStudentFirstName.trim() || !currentClassId) return;
     
     try {
-      const docRef = doc(firestore, 'users', user.uid);
-      const docSnap = await getDoc(docRef);
+      console.log('Creating new student:', newStudentFirstName, newStudentLastName);
       
-      if (docSnap.exists()) {
-        const loadedUserData = docSnap.data();
-        const updatedClasses = loadedUserData.classes.map(cls =>
-          cls.id === currentClassId 
-            ? { ...cls, classCode: newClassCode }
-            : cls
-        );
-        
-        await updateDoc(docRef, { classes: updatedClasses });
-        
-        // Update local state
-        setUserData({
-          ...loadedUserData,
-          classes: updatedClasses
-        });
-      }
+      await createStudent(currentClassId, {
+        firstName: newStudentFirstName.trim(),
+        lastName: newStudentLastName.trim()
+      });
+      
+      setNewStudentFirstName('');
+      setNewStudentLastName('');
+      setShowAddStudentModal(false);
+      
+      showToast('Student added successfully!', 'success');
+      
     } catch (error) {
-      console.error("Error updating class code:", error);
+      console.error('Error creating student:', error);
+      showToast('Error creating student', 'error');
+    }
+  };
+
+  // CLASS DATA HANDLERS - UPDATED FOR NEW ARCHITECTURE
+  
+  const handleUpdateCategories = async (newCategories) => {
+    try {
+      await updateClassData(currentClassId, { xpCategories: newCategories });
+      setXpCategories(newCategories);
+    } catch (error) {
+      console.error('Error updating categories:', error);
+      showToast('Error updating XP categories', 'error');
+    }
+  };
+
+  const saveClassData = async (updates) => {
+    try {
+      await updateClassData(currentClassId, updates);
+    } catch (error) {
+      console.error('Error saving class data:', error);
+      showToast('Error saving data', 'error');
       throw error;
     }
   };
 
-  // Helper functions for class code management in header
+  const saveWidgetSettings = async (newSettings) => {
+    try {
+      await updateUserPreferences(user.uid, { widgetSettings: newSettings });
+      setWidgetSettings(newSettings);
+    } catch (error) {
+      console.error('Error saving widget settings:', error);
+      showToast('Error saving widget settings', 'error');
+    }
+  };
+
+  // CLASS CODE MANAGEMENT
+  
+  const updateClassCode = async (newClassCode) => {
+    try {
+      await updateClassData(currentClassId, { classCode: newClassCode });
+    } catch (error) {
+      console.error('Error updating class code:', error);
+      throw error;
+    }
+  };
+
   const copyClassCode = () => {
-    const currentClass = userData.classes?.find(cls => cls.id === currentClassId);
-    if (currentClass?.classCode) {
-      navigator.clipboard.writeText(currentClass.classCode).then(() => {
-        // Code copied successfully
+    if (currentClassData?.classCode) {
+      navigator.clipboard.writeText(currentClassData.classCode).then(() => {
+        showToast('Class code copied!', 'success');
       }).catch(() => {
         console.error('Failed to copy class code');
       });
@@ -416,412 +499,152 @@ const ClassroomChampions = () => {
     const newCode = generateClassCode();
     try {
       await updateClassCode(newCode);
+      showToast('New class code generated!', 'success');
     } catch (error) {
       console.error('Error generating class code:', error);
+      showToast('Error generating class code', 'error');
     }
   };
 
-  // ===============================================
-  // REWARD MANAGEMENT FUNCTIONS
-  // ===============================================
-  
-  // Save rewards to Firebase and update local state
-  const saveRewards = async (updatedRewards) => {
-    if (!user || !currentClassId) return;
-    
+  // Helper functions for components
+  const getRandomPet = () => {
+    const PET_SPECIES = [ { name: 'Alchemist', type: 'alchemist', rarity: 'common' }, { name: 'Barbarian', type: 'barbarian', rarity: 'common' }, { name: 'Bard', type: 'bard', rarity: 'common' }, { name: 'Beastmaster', type: 'beastmaster', rarity: 'rare' }, { name: 'Cleric', type: 'cleric', rarity: 'common' }, { name: 'Crystal Knight', type: 'crystal knight', rarity: 'epic' }, { name: 'Crystal Sage', type: 'crystal sage', rarity: 'epic' }, { name: 'Engineer', type: 'engineer', rarity: 'rare' }, { name: 'Frost Mage', type: 'frost mage', rarity: 'rare' }, { name: 'Illusionist', type: 'illusionist', rarity: 'epic' }, { name: 'Knight', type: 'knight', rarity: 'common' }, { name: 'Lightning', type: 'lightning', rarity: 'legendary' }, { name: 'Monk', type: 'monk', rarity: 'common' }, { name: 'Necromancer', type: 'necromancer', rarity: 'epic' }, { name: 'Rogue', type: 'rogue', rarity: 'common' }, { name: 'Stealth', type: 'stealth', rarity: 'rare' }, { name: 'Time Knight', type: 'time knight', rarity: 'legendary' }, { name: 'Warrior', type: 'warrior', rarity: 'common' }, { name: 'Wizard', type: 'wizard', rarity: 'common' } ];
     try {
-      await saveClassData({ classRewards: updatedRewards });
-      console.log('✅ Rewards saved successfully');
+        const pet = PET_SPECIES[Math.floor(Math.random() * PET_SPECIES.length)];
+        return { id: `pet_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, name: pet.name, type: pet.type, rarity: pet.rarity, displayName: pet.name, imageType: pet.type };
     } catch (error) {
-      console.error('⚠ Error saving rewards:', error);
-      showToast('Error saving rewards', 'error');
-      throw error;
+        return { id: `pet_${Date.now()}_failsafe`, name: 'Wizard', type: 'wizard', rarity: 'common', displayName: 'Wizard', imageType: 'wizard' };
     }
   };
 
-  // Update local rewards state
-  const updateRewards = (updatedRewards) => {
-    setClassRewards(updatedRewards);
-  };
-
-  // Tool-specific save functions
-  const saveGroupDataToFirebase = async (groupData) => {
-    await saveClassData({ groupData });
-  };
-
-  const saveClassroomDataToFirebase = async (data, classId) => {
-    // Handle both students array (e.g., for birthday updates) and object (e.g., layout)
-    if (Array.isArray(data)) {
-      await updateAndSaveClass(data, xpCategories);
-    } else {
-      await saveClassData({ classroomData: data });
-    }
-  };
-
-  // Manual toolkit data save function for the toolkit components
-  const saveToolkitDataToFirebase = async (toolkitUpdates) => {
-    if (!user || !currentClassId) {
-      console.error('Cannot save toolkit data: missing user or currentClassId');
-      return;
-    }
-    
-    try {
-      const docRef = doc(firestore, 'users', user.uid);
-      const docSnap = await getDoc(docRef);
-      
-      if (docSnap.exists()) {
-        const loadedUserData = docSnap.data();
-        const updatedClasses = loadedUserData.classes.map(cls => {
-          if (cls.id === currentClassId) {
-            return {
-              ...cls,
-              toolkitData: {
-                ...cls.toolkitData,
-                ...toolkitUpdates,
-                lastUpdated: new Date().toISOString()
-              }
-            };
-          }
-          return cls;
-        });
-        
-        await updateDoc(docRef, { classes: updatedClasses });
-        
-        // Update local state immediately
-        setUserData({
-          ...loadedUserData,
-          classes: updatedClasses
-        });
-
-        console.log('✅ Toolkit data saved successfully');
-      }
-    } catch (error) {
-      console.error("⚠ Error saving toolkit data:", error);
-      throw error; // Re-throw to let the component handle it
-    }
-  };
-
-  // Get current class data for passing to components
-  const getCurrentClassData = () => {
-    if (!userData.classes || !currentClassId) return {};
-    return userData.classes.find(cls => cls.id === currentClassId) || {};
-  };
-
-  // Get current class toolkit data for passing to components
-  const getCurrentClassToolkitData = () => {
-    if (!userData.classes || !currentClassId) return {};
-    
-    const currentClass = userData.classes.find(cls => cls.id === currentClassId);
-    return currentClass?.toolkitData || {};
-  };
-
-  // ===============================================
-  // STUDENT UPDATE HANDLERS
-  // ===============================================
-  const handleReorderStudents = (reorderedStudents) => {
-    setStudents(reorderedStudents);
-    updateAndSaveClass(reorderedStudents, xpCategories);
-  };
-
-  const handleUpdateStudent = (studentId, updatedStudentData) => {
-    const newStudents = students.map(s => 
-      s.id === studentId ? { ...s, ...updatedStudentData } : s
-    );
-    setStudents(newStudents);
-    updateAndSaveClass(newStudents, xpCategories);
-  };
-
-  // Legacy support for old handleUpdateStudent signature
-  const handleUpdateStudentLegacy = (updatedStudent) => {
-    const newStudents = students.map(s => s.id === updatedStudent.id ? updatedStudent : s);
-    setStudents(newStudents);
-    updateAndSaveClass(newStudents, xpCategories);
-  };
-    
-  const handleUpdateCategories = (newCategories) => {
-    setXpCategories(newCategories);
-    updateAndSaveClass(students, newCategories);
-  };
-    
-  // Main bulk award function that handles both XP and coins properly
-  const handleBulkAward = (studentIds, amount, type) => {
-      const newStudents = students.map(student => {
-          if (studentIds.includes(student.id)) {
-              let updatedStudent = { ...student, lastUpdated: new Date().toISOString() };
-              if (type === 'xp') {
-                  const oldLevel = calculateAvatarLevel(updatedStudent.totalPoints || 0);
-                  updatedStudent.totalPoints = (updatedStudent.totalPoints || 0) + amount;
-                  const newLevel = calculateAvatarLevel(updatedStudent.totalPoints);
-                  if (newLevel > oldLevel) setLevelUpData({ student: updatedStudent, oldLevel, newLevel });
-                  if (shouldReceivePet(updatedStudent)) {
-                      const newPet = getRandomPet();
-                      updatedStudent.ownedPets = [...(updatedStudent.ownedPets || []), newPet];
-                      setPetUnlockData({ student: updatedStudent, pet: newPet });
-                  }
-                  playSound('ding');
-              } else { // 'coins'
-                  updatedStudent.currency = (updatedStudent.currency || 0) + amount;
-                  playSound('coins');
-              }
-              return updatedStudent;
-          }
-          return student;
-      });
-      setStudents(newStudents);
-      updateAndSaveClass(newStudents, xpCategories);
-  };
-
-  // ===============================================
-  // CLEAR XP AWARD PATHWAY FOR CLASSROOM JOBS
-  // ===============================================
-  
-  /**
-   * awardXPToStudent - Called from ClassroomJobs → onAwardXP pathway
-   * This function immutably updates the student, handles pet unlocks/level-ups,
-   * and calls updateAndSaveClass which writes to current class and persists to Firestore
-   */
-  const awardXPToStudent = (studentId, amount, reason = '') => {
-    console.log(`🎯 awardXPToStudent called: studentId=${studentId}, amount=${amount}, reason=${reason}`);
-    
-    const student = students.find(s => s.id === studentId);
-    if (!student) {
-      console.error(`⚠ Student not found: ${studentId}`);
-      return;
-    }
-
-    const oldLevel = calculateAvatarLevel(student.totalPoints || 0);
-    const newTotalPoints = (student.totalPoints || 0) + amount;
-    const newLevel = calculateAvatarLevel(newTotalPoints);
-    
-    // IMMUTABLY update the student
-    const updatedStudent = {
-      ...student,
-      totalPoints: newTotalPoints,
-      lastUpdated: new Date().toISOString()
-    };
-
-    // Check for level up
-    if (newLevel > oldLevel) {
-      setLevelUpData({ student: updatedStudent, oldLevel, newLevel });
-      console.log(`🆙 Level up! ${student.firstName}: ${oldLevel} → ${newLevel}`);
-    }
-
-    // Check for pet unlock
-    if (shouldReceivePet(updatedStudent)) {
-      const newPet = getRandomPet();
-      updatedStudent.ownedPets = [...(updatedStudent.ownedPets || []), newPet];
-      setPetUnlockData({ student: updatedStudent, pet: newPet });
-      console.log(`🐾 Pet unlocked! ${student.firstName} got ${newPet.name}`);
-    }
-
-    // Update students array (immutably)
-    const newStudents = students.map(s => s.id === studentId ? updatedStudent : s);
-    setStudents(newStudents);
-    
-    // Persist to Firestore via updateAndSaveClass
-    updateAndSaveClass(newStudents, xpCategories);
-    
-    // Feedback
-    playSound('ding');
-    showToast(`${student.firstName} earned ${amount} XP${reason ? ` for ${reason}` : ''}!`, 'success');
-    
-    console.log(`✅ XP awarded successfully: ${student.firstName} now has ${newTotalPoints} XP`);
-  };
-
-  /**
-   * awardCoinsToStudent - Called from ClassroomJobs → onAwardCoins pathway
-   * Similar to awardXPToStudent but for coins
-   */
-  const awardCoinsToStudent = (studentId, amount, reason = '') => {
-    console.log(`🪙 awardCoinsToStudent called: studentId=${studentId}, amount=${amount}, reason=${reason}`);
-    
-    const student = students.find(s => s.id === studentId);
-    if (!student) {
-      console.error(`⚠ Student not found: ${studentId}`);
-      return;
-    }
-
-    // IMMUTABLY update the student
-    const updatedStudent = {
-      ...student,
-      currency: (student.currency || 0) + amount,
-      lastUpdated: new Date().toISOString()
-    };
-
-    // Update students array (immutably)
-    const newStudents = students.map(s => s.id === studentId ? updatedStudent : s);
-    setStudents(newStudents);
-    
-    // Persist to Firestore via updateAndSaveClass
-    updateAndSaveClass(newStudents, xpCategories);
-    
-    // Feedback
-    playSound('coins');
-    showToast(`${student.firstName} earned ${amount} coins${reason ? ` for ${reason}` : ''}!`, 'success');
-    
-    console.log(`✅ Coins awarded successfully: ${student.firstName} now has ${updatedStudent.currency} coins`);
-  };
-  
-  const addStudent = () => {
-    if (!newStudentFirstName.trim()) return;
-    const newStudent = { id: `student_${Date.now()}`, firstName: newStudentFirstName.trim(), lastName: newStudentLastName.trim(), totalPoints: 0, currency: 0, coinsSpent: 0, avatarLevel: 1, avatarBase: 'Wizard F', avatar: getAvatarImage('Wizard F', 1), ownedAvatars: ['Wizard F'], ownedPets: [], createdAt: new Date().toISOString() };
-    const newStudents = [...students, newStudent];
-    setStudents(newStudents);
-    updateAndSaveClass(newStudents, xpCategories);
-    setNewStudentFirstName(''); setNewStudentLastName(''); setShowAddStudentModal(false);
-  };
-
-  // Mark attendance handler
-  const markAttendance = (studentId, status) => {
-    const today = new Date().toISOString().split('T')[0];
-    const updatedAttendance = {
-      ...attendanceData,
-      [today]: {
-        ...(attendanceData[today] || {}),
-        [studentId]: status,
-      },
-    };
-    setAttendanceData(updatedAttendance);
-    // Save to Firebase
-    saveClassData({ attendanceData: updatedAttendance });
-    showToast('Attendance updated!', 'success');
-  };
-
-  // Get current class data
-  const currentClassData = getCurrentClassData();
-
-  // RENDER LOGIC
+  // RENDER TAB CONTENT - UPDATED PROP PASSING
   const renderTabContent = () => {
+    const commonProps = {
+      students,
+      showToast,
+      getAvatarImage,
+      getPetImage,
+      calculateCoins,
+      calculateAvatarLevel,
+      user,
+      currentClassId
+    };
+
     switch (activeTab) {
       case 'dashboard':
         return <DashboardTab 
-                  students={students}
-                  showToast={showToast}
-                  getAvatarImage={getAvatarImage}
-                  getPetImage={getPetImage}
-                  calculateCoins={calculateCoins}
-                  calculateAvatarLevel={calculateAvatarLevel}
+                  {...commonProps}
                   SHOP_BASIC_AVATARS={SHOP_BASIC_AVATARS}
                   SHOP_PREMIUM_AVATARS={SHOP_PREMIUM_AVATARS}
                   SHOP_BASIC_PETS={SHOP_BASIC_PETS}
                   SHOP_PREMIUM_PETS={SHOP_PREMIUM_PETS}
                 />;
+      
       case 'students':
         return <StudentsTab 
-                  students={students} 
+                  {...commonProps}
                   xpCategories={xpCategories}
                   onUpdateCategories={handleUpdateCategories} 
                   onBulkAward={handleBulkAward} 
-                  onUpdateStudent={handleUpdateStudentLegacy} 
+                  onUpdateStudent={handleUpdateStudent} 
                   onReorderStudents={handleReorderStudents} 
                   onViewDetails={setSelectedStudent} 
                   onAddStudent={() => setShowAddStudentModal(true)}
-                  getAvatarImage={getAvatarImage}
-                  getPetImage={getPetImage}
-                  calculateCoins={calculateCoins}
-                  calculateAvatarLevel={calculateAvatarLevel}
                 />;
-                      case 'quests':
+      
+      case 'quests':
         return <QuestsTab
-                  students={students}
-                  user={user}
-                  showToast={showToast}
+                  {...commonProps}
                   userData={userData}
-                  currentClassId={currentClassId}
                   onAwardXP={awardXPToStudent}
                   onAwardCoins={awardCoinsToStudent}
                   saveClassData={saveClassData}
                 />;
-       case 'quizshow':
-  return <QuizShowTab 
-            students={students}
-            user={user}
-            showToast={showToast}
-            userData={userData}
-            currentClassId={currentClassId}
-            getAvatarImage={getAvatarImage}
-            calculateAvatarLevel={calculateAvatarLevel}
-            onAwardXP={awardXPToStudent}
-            onAwardCoins={awardCoinsToStudent}
-          />;         
+      
+      case 'quizshow':
+        return <QuizShowTab 
+                  {...commonProps}
+                  userData={userData}
+                  onAwardXP={awardXPToStudent}
+                  onAwardCoins={awardCoinsToStudent}
+                />;
+      
       case 'shop':
         return <ShopTab
-                  students={students}
-                  onUpdateStudent={handleUpdateStudentLegacy}
+                  {...commonProps}
+                  onUpdateStudent={handleUpdateStudent}
                   SHOP_BASIC_AVATARS={SHOP_BASIC_AVATARS}
                   SHOP_PREMIUM_AVATARS={SHOP_PREMIUM_AVATARS}
                   SHOP_BASIC_PETS={SHOP_BASIC_PETS}
                   SHOP_PREMIUM_PETS={SHOP_PREMIUM_PETS}
-                  showToast={showToast}
-                  getAvatarImage={getAvatarImage}
-                  getPetImage={getPetImage}
-                  calculateCoins={calculateCoins}
-                  calculateAvatarLevel={calculateAvatarLevel}
-                  // New reward management props
-                  classRewards={classRewards}
-                  onUpdateRewards={updateRewards}
-                  saveRewards={saveRewards}
+                  classRewards={currentClassData?.classRewards || []}
+                  onUpdateRewards={(rewards) => saveClassData({ classRewards: rewards })}
+                  saveRewards={(rewards) => saveClassData({ classRewards: rewards })}
                 />;
+      
       case 'petrace':
         return <PetRaceTab
-                  students={students}
+                  {...commonProps}
                   updateStudent={handleUpdateStudent}
-                  showToast={showToast}
                 />;
+      
       case 'games':
-        return <GamesTab
-                  students={students}
-                  showToast={showToast}
-                />;
+        return <GamesTab {...commonProps} />;
+      
       case 'curriculum':
         return <CurriculumCornerTab 
-                  students={students}
-                  showToast={showToast}
+                  {...commonProps}
                   saveData={saveClassData}
-                  loadedData={getCurrentClassToolkitData()}
+                  loadedData={currentClassData?.toolkitData || {}}
                 />;
+      
       case 'toolkit':
         return <TeachersToolkitTab 
-                  students={students}
-                  user={user}
-                  showToast={showToast}
+                  {...commonProps}
                   userData={userData}
-                  saveGroupDataToFirebase={saveGroupDataToFirebase}
-                  saveClassroomDataToFirebase={saveClassroomDataToFirebase}
-                  currentClassId={currentClassId}
-                  // ⭐ CLEAR PATHWAY: Pass the renamed functions to make the flow obvious
+                  saveGroupDataToFirebase={(data) => saveClassData({ groupData: data })}
+                  saveClassroomDataToFirebase={(data) => {
+                    if (Array.isArray(data)) {
+                      // Handle student array updates
+                      setStudents(data);
+                    } else {
+                      saveClassData({ classroomData: data });
+                    }
+                  }}
                   onAwardXP={awardXPToStudent}
                   onAwardCoins={awardCoinsToStudent}
                   onBulkAward={handleBulkAward}
-                  activeQuests={activeQuests}
-                  attendanceData={attendanceData}
-                  markAttendance={markAttendance}
+                  activeQuests={currentClassData?.activeQuests || []}
+                  attendanceData={currentClassData?.attendanceData || {}}
+                  markAttendance={(studentId, status) => {
+                    const today = new Date().toISOString().split('T')[0];
+                    const updatedAttendance = {
+                      ...currentClassData?.attendanceData,
+                      [today]: {
+                        ...(currentClassData?.attendanceData?.[today] || {}),
+                        [studentId]: status,
+                      },
+                    };
+                    saveClassData({ attendanceData: updatedAttendance });
+                  }}
                   completeQuest={() => showToast('Quest completed!', 'success')}
                   setShowQuestManagement={() => showToast('Quest management opened!', 'info')}
-                  getAvatarImage={getAvatarImage}
-                  calculateAvatarLevel={calculateAvatarLevel}
-                  saveToolkitData={saveToolkitDataToFirebase}
-                  loadedData={getCurrentClassToolkitData()}
+                  saveToolkitData={(data) => saveClassData({ toolkitData: { ...currentClassData?.toolkitData, ...data } })}
+                  loadedData={currentClassData?.toolkitData || {}}
                 />;
+      
       case 'settings':
         return <SettingsTab 
-                  user={user}
-                  currentClassId={currentClassId}
-                  students={students}
+                  {...commonProps}
                   setStudents={setStudents}
-                  updateAndSaveClass={updateAndSaveClass}
-                  showToast={showToast}
-                  getAvatarImage={getAvatarImage}
-                  calculateCoins={calculateCoins}
-                  calculateAvatarLevel={calculateAvatarLevel}
+                  updateAndSaveClass={() => {}} // Deprecated in new architecture
                   AVAILABLE_AVATARS={AVAILABLE_AVATARS}
-                  // Class code management moved here
-                  currentClassData={getCurrentClassData()}
+                  currentClassData={currentClassData}
                   updateClassCode={updateClassCode}
-                  // NEW: Widget settings
                   widgetSettings={widgetSettings}
                   onUpdateWidgetSettings={saveWidgetSettings}
                 />;
+      
       default:
         return <div className="p-8 text-center text-gray-500">This tab is under construction.</div>;
     }
@@ -833,20 +656,38 @@ const ClassroomChampions = () => {
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
           <p className="text-gray-600">Loading Educational Elements...</p>
+          {error && <p className="text-red-600 mt-2">{error}</p>}
         </div>
       </div>
     ); 
   }
+
+  if (error && !currentClassData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center px-4">
+        <div className="text-center bg-white p-8 rounded-xl shadow-lg">
+          <div className="text-red-500 text-6xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Something went wrong</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+          >
+            Reload Page
+          </button>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-        {/* UPDATED: Mobile-Friendly Header */}
+        {/* MOBILE-FRIENDLY HEADER */}
         <div className="bg-white shadow-lg border-b-4 border-blue-500">
             <div className="max-w-7xl mx-auto px-2 sm:px-4 py-3 sm:py-4">
                 
                 {/* Mobile Header Layout */}
                 <div className="flex items-center justify-between lg:hidden">
-                    {/* Mobile Logo & Title */}
                     <div className="flex items-center min-w-0 flex-1">
                         <img 
                             src="/Logo/LOGO_NoBG.png" 
@@ -860,7 +701,6 @@ const ClassroomChampions = () => {
                         </div>
                     </div>
                     
-                    {/* Mobile Menu Button */}
                     <button
                         onClick={() => setShowMobileMenu(!showMobileMenu)}
                         className="bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-600 transition-colors"
@@ -884,7 +724,6 @@ const ClassroomChampions = () => {
                         </h1>
                     </div>
                     
-                    {/* Desktop Class Code and Action Buttons */}
                     <div className="flex items-center space-x-4">
                         {/* Class Code Display */}
                         {currentClassData?.classCode && (
@@ -912,7 +751,6 @@ const ClassroomChampions = () => {
                             </div>
                         )}
                         
-                        {/* No class code set */}
                         {!currentClassData?.classCode && (
                             <div className="flex items-center space-x-2">
                                 <div className="text-sm text-orange-600 hidden md:block">No class code</div>
@@ -943,7 +781,6 @@ const ClassroomChampions = () => {
                 {/* Mobile Dropdown Menu */}
                 {showMobileMenu && (
                     <div className="lg:hidden mt-3 bg-gray-50 rounded-lg p-3 border">
-                        {/* Class Code Section for Mobile */}
                         {currentClassData?.classCode ? (
                             <div className="mb-4 p-3 bg-white rounded-lg">
                                 <div className="text-sm text-gray-600 mb-2">Class Code:</div>
@@ -979,7 +816,6 @@ const ClassroomChampions = () => {
                             </div>
                         )}
                         
-                        {/* Mobile Action Buttons */}
                         <div className="space-y-2">
                             <button 
                                 onClick={goToStudentPortal}
@@ -999,10 +835,9 @@ const ClassroomChampions = () => {
             </div>
         </div>
         
-        {/* UPDATED: Mobile-Friendly Navigation Tabs */}
+        {/* MOBILE-FRIENDLY NAVIGATION TABS */}
         <div className="bg-white shadow-sm border-b">
             <div className="max-w-7xl mx-auto">
-                {/* Section Headers - Mobile Responsive */}
                 <div className="hidden sm:flex items-center justify-center gap-8 px-4 py-2 bg-gray-50 border-b border-gray-200">
                   <h3 className="text-xs font-semibold text-purple-600 uppercase tracking-wider">
                     🏆 Classroom Champions
@@ -1012,10 +847,8 @@ const ClassroomChampions = () => {
                   </h3>
                 </div>
                 
-                {/* All Tabs - Mobile Responsive Layout */}
                 <div className="overflow-x-auto">
                     <div className="flex min-w-full">
-                        {/* Classroom Champions Tabs */}
                         {CLASSROOM_CHAMPIONS_TABS.map(tab => (
                             <button 
                                 key={tab.id} 
@@ -1035,10 +868,8 @@ const ClassroomChampions = () => {
                             </button>
                         ))}
                         
-                        {/* Divider */}
                         <div className="w-px bg-gray-300 mx-1 my-1"></div>
                         
-                        {/* Educational Tools Tabs */}
                         {EDUCATIONAL_ELEMENTS_TABS.map(tab => (
                             <button 
                                 key={tab.id} 
@@ -1062,10 +893,10 @@ const ClassroomChampions = () => {
             </div>
         </div>
         
-        {/* UPDATED: Mobile-Responsive Main Content */}
+        {/* MAIN CONTENT */}
         <main className="max-w-screen-2xl mx-auto px-2 sm:px-4 py-3 sm:py-6">{renderTabContent()}</main>
         
-        {/* UPDATED: Mobile-Optimized Floating Widgets */}
+        {/* FLOATING WIDGETS */}
         <div className="fixed inset-0 pointer-events-none z-50">
           {widgetSettings.showTimer && (
             <div className="pointer-events-auto">
@@ -1089,7 +920,7 @@ const ClassroomChampions = () => {
           )}
         </div>
         
-        {/* UPDATED: Mobile-Responsive Modals */}
+        {/* MODALS */}
         {showAddStudentModal && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
                 <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
@@ -1130,7 +961,6 @@ const ClassroomChampions = () => {
             </div>
         )}
         
-        {/* Level Up Modal - Mobile Responsive */}
         {levelUpData && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
                 <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md text-center p-4 sm:p-6">
@@ -1154,7 +984,6 @@ const ClassroomChampions = () => {
             </div>
         )}
         
-        {/* Pet Unlock Modal - Mobile Responsive */}
         {petUnlockData && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
                 <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md text-center p-4 sm:p-6">
@@ -1181,7 +1010,6 @@ const ClassroomChampions = () => {
             </div>
         )}
         
-        {/* Student Details Modal - Mobile Responsive */}
         {selectedStudent && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
                 <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
