@@ -76,6 +76,4 @@ export async function updateClassV2(req, res) {
 }
 
 // Export all functions for Next.js API routes
-export {
-  getClassDataV2 as default
-};
+export default updateClassV2;

@@ -91,3 +91,5 @@ export async function getClassDataV2(req, res) {
     res.status(500).json(errorResponse);
   }
 }
+
+export default getClassDataV2;
