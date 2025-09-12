@@ -23,12 +23,12 @@ export default async function handler(req, res) {
   try {
     const {
       studentId,
-      classCode,       // required for auth check (student portal too)
-      updateData,      // e.g., { totalPoints: 1 } or { currency: -1 } or { clickerGameData: {...} }
-      mode = 'increment',
+      classCode,          // required (used to validate / locate class)
+      updateData,         // e.g. { totalPoints: 1 } or { currency: -1 } or { clickerGameData: {...} }
+      mode = 'increment', // 'increment' (numbers) or 'set' (objects)
       note = '',
-      opId,            // optional idempotency key
-      teacherUserId,   // optional extra check (from teacher UI)
+      opId,               // optional idempotency key (not stored yet, but ready)
+      teacherUserId,      // OPTIONAL: if present, prefer it in the V1 fallback
     } = req.body || {};
 
     if (!studentId || !classCode || !updateData) {
@@ -36,51 +36,58 @@ export default async function handler(req, res) {
     }
 
     const result = await db.runTransaction(async (tx) => {
-      // -------- Try V2 first: students/{studentId} exists after migration --------
+      // ---- Try V2 path first (after migration) ----
       const studentRef = db.collection('students').doc(studentId);
       const studentSnap = await tx.get(studentRef);
 
       if (studentSnap.exists) {
-        const studentData = studentSnap.data();
-        if (!studentData.classId) throw new Error('Student missing classId (V2)');
+        const sData = studentSnap.data();
+        if (!sData.classId) throw new Error('Student missing classId (V2)');
 
-        const classRef = db.collection('classes').doc(studentData.classId);
+        const classRef = db.collection('classes').doc(sData.classId);
         const classSnap = await tx.get(classRef);
         if (!classSnap.exists) throw new Error('Class not found (V2)');
 
         const classData = classSnap.data();
-        const codeV2 = (classData.classCode || '').toUpperCase();
-        if (codeV2 !== (classCode || '').toUpperCase()) throw new Error('Invalid class code');
-        if (teacherUserId && classData.teacherId !== teacherUserId) throw new Error('Unauthorized (teacher mismatch)');
+        if ((classData.classCode || '').toUpperCase() !== (classCode || '').toUpperCase()) {
+          throw new Error('Invalid class code');
+        }
+        if (teacherUserId && classData.teacherId !== teacherUserId) {
+          throw new Error('Unauthorized (teacher mismatch)');
+        }
 
-        // Apply update
         const merged = buildMergedUpdate(updateData, mode);
         tx.set(studentRef, merged, { merge: true });
         tx.set(classRef, { lastActivity: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
 
-        return { schema: 'v2', student: { id: studentRef.id, ...studentData } };
+        return { schema: 'v2', studentId: studentRef.id };
       }
 
-      // -------- V1 fallback (pre-migration): update nested array in users/{teacherId}.classes[] --------
-      // 1) Find teacher via publicClassData/{classCode}
-      const pubRef = db.collection('publicClassData').doc(classCode);
-      const pubSnap = await tx.get(pubRef);
-      if (!pubSnap.exists) throw new Error('Class code not found (publicClassData)');
-      const teacherId = pubSnap.get('teacherId');
-      if (!teacherId) throw new Error('teacherId missing on publicClassData');
-      if (teacherUserId && teacherUserId !== teacherId) throw new Error('Unauthorized (teacher mismatch)');
+      // ---- V1 fallback (pre-migration): update nested array in users/{teacherId}.classes[] ----
+      // Prefer teacherUserId if provided (teacher UI). Otherwise resolve via publicClassData/{classCode}.
+      let teacherId = teacherUserId;
+      if (!teacherId) {
+        const pubRef = db.collection('publicClassData').doc(classCode);
+        const pubSnap = await tx.get(pubRef);
+        if (!pubSnap.exists) throw new Error('Class code not found (publicClassData)');
+        teacherId = pubSnap.get('teacherId');
+        if (!teacherId) throw new Error('teacherId missing on publicClassData');
+      }
 
-      // 2) Load users/{teacherId} and mutate class + student in the nested structure
       const userRef = db.collection('users').doc(teacherId);
       const userSnap = await tx.get(userRef);
       if (!userSnap.exists) throw new Error('Teacher user doc not found (V1)');
+
       const userData = userSnap.data() || {};
-
       const classes = Array.isArray(userData.classes) ? [...userData.classes] : [];
-      const ci = classes.findIndex(c => c && ((c.classCode || '').toUpperCase() === (classCode || '').toUpperCase() || c.id === classCode));
-      if (ci < 0) throw new Error('Class not found in V1 user doc');
-      const cls = { ...classes[ci] };
 
+      const ci = classes.findIndex(
+        c => c &&
+          (((c.classCode || '').toUpperCase() === (classCode || '').toUpperCase()) || c.id === classCode)
+      );
+      if (ci < 0) throw new Error('Class not found in V1 user doc');
+
+      const cls = { ...classes[ci] };
       const studs = Array.isArray(cls.students) ? [...cls.students] : [];
       const si = studs.findIndex(s => s && (s.id === studentId || s.studentId === studentId));
       if (si < 0) throw new Error('Student not found in V1 class');
@@ -105,7 +112,7 @@ export default async function handler(req, res) {
 
       tx.update(userRef, { classes });
 
-      return { schema: 'v1', student: s };
+      return { schema: 'v1', studentId };
     });
 
     return res.status(200).json({ success: true, ...result, note });
