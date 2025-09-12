@@ -156,6 +156,12 @@ export default function Dashboard() {
         router.push('/login');
       } else {
         setUser(user);
+
+              console.log('=== CURRENT USER DEBUG ===');
+      console.log('User ID:', user.uid);
+      console.log('User Email:', user.email);
+      console.log('User Display Name:', user.displayName);
+      console.log('========================');
         
         try {
           // Load user data
