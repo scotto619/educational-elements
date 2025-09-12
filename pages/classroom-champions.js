@@ -6,6 +6,10 @@ import { onAuthStateChanged } from 'firebase/auth';
 
 import { postStudentUpdate } from '../utils/apiClient';
 
+import { getFirestore, doc, getDoc } from 'firebase/firestore';
+const db = getFirestore();
+
+
 // Import new Firebase utilities
 import {
   getUserData,
@@ -60,9 +64,13 @@ const SHOP_PREMIUM_PETS = [ { name: 'Lion Pet', price: 60, path: '/shop/PremiumP
 
 // Helper functions (unchanged)
 const getAvatarImage = (avatarBase, level) => {
-    const shopItem = [...SHOP_BASIC_AVATARS, ...SHOP_PREMIUM_AVATARS].find(a => a.name.toLowerCase() === avatarBase?.toLowerCase());
-    if (shopItem) return shopItem.path;
-    return `/avatars/${avatarBase || 'Wizard F'}/Level ${Math.max(1, Math.min(level || 1, 4))}.png`;
+  const shopItem = [...SHOP_BASIC_AVATARS, ...SHOP_PREMIUM_AVATARS]
+    .find(a => a.name.toLowerCase() === (avatarBase || '').toLowerCase());
+  if (shopItem) return shopItem.path;
+
+  const lvl = Math.min(4, Math.max(1, Math.round(level || 1)));
+  const base = encodeURIComponent(avatarBase || 'Wizard F');
+  return `/avatars/${base}/Level ${lvl}.png`;
 };
 
 const getPetImage = (pet) => {
@@ -143,6 +151,33 @@ const ClassroomChampions = () => {
   const [classDataUnsubscribe, setClassDataUnsubscribe] = useState(null);
   const [studentsUnsubscribe, setStudentsUnsubscribe] = useState(null);
 
+// Read from old V1 structure: users/{uid}.classes[]
+async function loadV1ClassAndStudents(userUid) {
+  const userSnap = await getDoc(doc(db, 'users', userUid));
+  if (!userSnap.exists()) throw new Error('User not found (V1)');
+
+  const u = userSnap.data() || {};
+  const classes = Array.isArray(u.classes) ? u.classes : [];
+  const cls = classes.find(c => c && c.archived === false) || classes[0];
+  if (!cls) throw new Error('No class found (V1)');
+
+  const students = Array.isArray(cls.students) ? cls.students : [];
+
+  // normalise: shape similar to V2 class doc your UI expects
+  const classData = {
+    id: cls.id || cls.classId || cls.classCode || 'v1',
+    name: cls.name || 'My Class',
+    classCode: cls.classCode || '',
+    xpCategories: cls.xpCategories || DEFAULT_XP_CATEGORIES,
+    classRewards: cls.classRewards || [],
+    toolkitData: cls.toolkitData || {},
+    attendanceData: cls.attendanceData || {},
+  };
+
+  return { classData, students };
+}
+
+
   // AUTH & DATA LOADING - UPDATED FOR NEW ARCHITECTURE
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -156,42 +191,42 @@ const ClassroomChampions = () => {
     return () => unsubscribe();
   }, [router]);
 
-  const loadUserData = async (user) => {
-    setLoading(true);
-    setError(null);
-    
+const loadUserData = async (user) => {
+  setLoading(true);
+  setError(null);
+  try {
+    // 1) basic user info (your existing helper)
+    const userDataResult = await getUserData(user.uid);
+    if (!userDataResult) throw new Error('User not found');
+    setUserData(userDataResult);
+    setWidgetSettings(userDataResult.widgetSettings || { showTimer: true, showNamePicker: true });
+
+    // 2) try V2 classes first (your existing helper)
+    let teacherClasses = [];
     try {
-      console.log('Loading user data with new architecture...');
-      
-      // Get user data (basic info only)
-      const userDataResult = await getUserData(user.uid);
-      if (!userDataResult) {
-        throw new Error('User not found');
-      }
-      
-      setUserData(userDataResult);
-      setWidgetSettings(userDataResult.widgetSettings || { showTimer: true, showNamePicker: true });
-      
-      // Get user's classes
-      const teacherClasses = await getTeacherClasses(user.uid);
-      
-      if (teacherClasses.length === 0) {
-        console.log('No classes found for user');
-        setLoading(false);
-        return;
-      }
-      
-      // Set active class
-      const activeClassId = userDataResult.activeClassId || teacherClasses[0].id;
-      await loadClassData(activeClassId);
-      
-    } catch (error) {
-      console.error("Error loading user data:", error);
-      setError(error.message);
+      teacherClasses = await getTeacherClasses(user.uid);
+    } catch (e) {
+      console.warn('getTeacherClasses failed, will try V1 fallback:', e?.message || e);
     }
-    
-    setLoading(false);
-  };
+
+    if (teacherClasses && teacherClasses.length > 0) {
+      const activeClassId = userDataResult.activeClassId || teacherClasses[0].id;
+      await loadClassData(activeClassId); // your existing listener-based loader
+    } else {
+      // 3) V1 fallback
+      console.log('No V2 classes found — using V1 user doc fallback');
+      const { classData, students } = await loadV1ClassAndStudents(user.uid);
+      setCurrentClassData(classData);
+      setCurrentClassId(classData.id);
+      setXpCategories(classData.xpCategories || DEFAULT_XP_CATEGORIES);
+      setStudents(students);
+    }
+  } catch (error) {
+    console.error('Error loading user data:', error);
+    setError(error.message);
+  }
+  setLoading(false);
+};
 
   const loadClassData = async (classId) => {
     try {
@@ -295,7 +330,7 @@ await Promise.allSettled(
   studentIds.map((sid, i) =>
     postStudentUpdate({
       studentId: sid,
-      classCode: activeClass?.classCode,         // make sure you have this available in state
+      classCode: currentClassData?.classCode,         // make sure you have this available in state
       updateData: type === 'xp' ? { totalPoints: amount } : { currency: amount },
       mode: 'increment',
       note: `Bulk ${type} Award`,
@@ -348,7 +383,7 @@ await Promise.allSettled(
       // Update student with Firebase increment to prevent race conditions
 await postStudentUpdate({
   studentId,
-  classCode: activeClass?.classCode,
+  classCode: currentClassData?.classCode,
   updateData: { totalPoints: amount },
   mode: 'increment',
   note: `XP Award: ${reason || ''}`,
@@ -394,7 +429,7 @@ await postStudentUpdate({
       
 await postStudentUpdate({
   studentId,
-  classCode: activeClass?.classCode,
+  classCode: currentClassData?.classCode,
   updateData: { currency: amount },
   mode: 'increment',
   note: `Coin Award: ${reason || ''}`,
