@@ -1,7 +1,8 @@
-// pages/index.js - Mobile-Optimized Landing Page
+// pages/index.js - Mobile-Optimized Landing Page with Backend Update Notice
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
+import PropTypes from 'prop-types'; // Add if you want to use prop validation
 
 export default function Home() {
   const router = useRouter();
@@ -38,6 +39,12 @@ export default function Home() {
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  // Error handling for image loading
+  const handleImageError = (e) => {
+    e.target.style.display = 'none';
+    e.target.nextSibling.style.display = 'flex';
   };
 
   return (
@@ -94,6 +101,8 @@ export default function Home() {
                 <button
                   onClick={toggleMobileMenu}
                   className="text-gray-700 hover:text-purple-600 focus:outline-none focus:text-purple-600 p-2"
+                  aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+                  aria-expanded={isMobileMenuOpen}
                 >
                   <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     {isMobileMenuOpen ? (
@@ -139,8 +148,90 @@ export default function Home() {
           </div>
         </nav>
 
+        {/* Backend Update Notice Banner - Mobile Optimized */}
+        <section className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white relative overflow-hidden mt-16 md:mt-20">
+          {/* Animated Background Pattern */}
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.4%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%223%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E')] animate-pulse" />
+          </div>
+
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+            <div className="text-center">
+              {/* Icon and Status */}
+              <div className="flex items-center justify-center mb-4 md:mb-6">
+                <div className="bg-white/20 rounded-full p-3 md:p-4 mr-4 md:mr-5">
+                  <svg className="w-6 h-6 md:w-8 md:h-8 text-white animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </div>
+                <div className="text-left">
+                  <h3 className="text-xl md:text-3xl font-bold mb-1 md:mb-2">Major Platform Enhancement In Progress</h3>
+                  <div className="flex items-center">
+                    <div className="w-3 h-3 bg-green-400 rounded-full animate-ping mr-2"></div>
+                    <span className="text-sm md:text-lg text-white/90 font-medium">Live Backend Upgrade</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Main Message */}
+              <div className="max-w-5xl mx-auto">
+                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-white/20">
+                  <p className="text-lg md:text-xl leading-relaxed mb-4 md:mb-5 text-white">
+                    We're currently implementing <strong className="text-yellow-300">major backend improvements</strong> that will make Educational Elements <strong className="text-green-300">faster, more reliable, and significantly improve data saving success rates</strong>. This comprehensive upgrade will enhance your entire classroom experience!
+                  </p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-5 md:mb-6">
+                    <div className="bg-white/5 rounded-lg p-3 md:p-4 border border-white/10">
+                      <div className="text-2xl md:text-3xl mb-2">⚡</div>
+                      <h4 className="font-bold text-base md:text-lg mb-1">Faster Performance</h4>
+                      <p className="text-sm md:text-base text-white/90">Lightning-fast loading times and smoother interactions</p>
+                    </div>
+                    <div className="bg-white/5 rounded-lg p-3 md:p-4 border border-white/10">
+                      <div className="text-2xl md:text-3xl mb-2">💾</div>
+                      <h4 className="font-bold text-base md:text-lg mb-1">Better Data Saving</h4>
+                      <p className="text-sm md:text-base text-white/90">More reliable data persistence and backup systems</p>
+                    </div>
+                    <div className="bg-white/5 rounded-lg p-3 md:p-4 border border-white/10">
+                      <div className="text-2xl md:text-3xl mb-2">🎯</div>
+                      <h4 className="font-bold text-base md:text-lg mb-1">Enhanced Experience</h4>
+                      <p className="text-sm md:text-base text-white/90">Smoother workflows and improved user interface</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-yellow-500/20 border border-yellow-400/30 rounded-xl p-4 md:p-5 mb-4 md:mb-5">
+                    <div className="flex items-start">
+                      <div className="text-2xl md:text-3xl mr-3 md:mr-4">⚠️</div>
+                      <div className="text-left">
+                        <h4 className="font-bold text-base md:text-lg text-yellow-200 mb-2">Temporary Impact Notice</h4>
+                        <p className="text-sm md:text-base text-white/95 leading-relaxed">
+                          During this upgrade process, you may experience minimal issues with class data loading or saving. We're working hard to keep any disruptions to an absolute minimum, and most users should see no impact at all.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row items-center justify-center space-y-3 sm:space-y-0 sm:space-x-6 text-base md:text-lg">
+                    <div className="flex items-center">
+                      <div className="w-3 h-3 bg-green-400 rounded-full mr-2"></div>
+                      <span className="text-green-300 font-semibold">Estimated completion: Within 48 hours</span>
+                    </div>
+                    <div className="flex items-center">
+                      <div className="w-3 h-3 bg-blue-400 rounded-full mr-2"></div>
+                      <span className="text-blue-300 font-semibold">Platform remains fully operational</span>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-sm md:text-base text-white/80 mt-4 md:mt-5">
+                  Thank you for your patience as we make Educational Elements better than ever! 🚀
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Hero Section - Mobile Optimized */}
-        <section className="relative bg-gradient-to-br from-blue-50 to-indigo-200 pt-20 pb-12 md:pt-32 md:pb-20 lg:pt-48 lg:pb-32">
+        <section className="relative bg-gradient-to-br from-blue-50 to-indigo-200 pt-12 pb-12 md:pt-20 md:pb-20 lg:pt-32 lg:pb-32">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
               {/* Left Side - Content */}
@@ -187,10 +278,7 @@ export default function Home() {
                       className="rounded-lg object-cover w-full h-full cursor-pointer transition-transform duration-300 hover:scale-105"
                       onMouseEnter={() => setHoveredImage('/Screenshots/dashboard.png')}
                       onMouseLeave={() => setHoveredImage(null)}
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.nextSibling.style.display = 'flex';
-                      }}
+                      onError={handleImageError}
                     />
                     <div className="hidden rounded-lg bg-gradient-to-br from-blue-100 to-purple-100 w-full h-full items-center justify-center">
                       <div className="text-center">
@@ -402,10 +490,7 @@ export default function Home() {
                       className="rounded-lg w-full h-32 md:h-48 object-cover group-hover:scale-105 transition-transform duration-300 cursor-pointer"
                       onMouseEnter={() => setHoveredImage(item.src)}
                       onMouseLeave={() => setHoveredImage(null)}
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.nextSibling.style.display = 'flex';
-                      }}
+                      onError={handleImageError}
                     />
                     <div className="hidden rounded-lg bg-gradient-to-br from-blue-100 to-purple-100 w-full h-32 md:h-48 items-center justify-center">
                       <div className="text-center">
@@ -624,3 +709,44 @@ export default function Home() {
     </>
   );
 }
+
+// Error boundaries
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="text-center p-4">
+          <h1>Something went wrong.</h1>
+          <button onClick={() => window.location.reload()}>
+            Reload page
+          </button>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+// Wrap your export with the ErrorBoundary
+export default function HomeWithErrorBoundary() {
+  return (
+    <ErrorBoundary>
+      <Home />
+    </ErrorBoundary>
+  );
+}
+
+// Add PropTypes if you're using them
+Home.propTypes = {
+  // Add any props you might use in the future
+};
