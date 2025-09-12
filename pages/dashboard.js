@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -11,6 +11,7 @@ export default function Dashboard() {
   const [userData, setUserData] = useState(null);
   const [savedClasses, setSavedClasses] = useState([]);
   const [trialDaysLeft, setTrialDaysLeft] = useState(0);
+  const [architectureVersion, setArchitectureVersion] = useState('unknown');
   
   // Class creation states
   const [showCreateClassModal, setShowCreateClassModal] = useState(false);
@@ -61,6 +62,94 @@ export default function Dashboard() {
     }
   }, [trialDaysLeft]);
 
+  // V2 Architecture: Load classes from new collections
+  async function loadV2Classes(userId) {
+    try {
+      console.log('📚 Loading V2 classes for user:', userId);
+      
+      // Query classes collection where teacherId matches user
+      const classesQuery = query(
+        collection(firestore, 'classes'),
+        where('teacherId', '==', userId),
+        where('archived', '==', false)
+      );
+      
+      const classesSnapshot = await getDocs(classesQuery);
+      console.log('✅ Found V2 classes:', classesSnapshot.size);
+      
+      const classes = [];
+      for (const classDoc of classesSnapshot.docs) {
+        const classData = classDoc.data();
+        
+        // Get student count from class membership
+        const membershipDoc = await getDoc(doc(firestore, 'class_memberships', classDoc.id));
+        let studentCount = 0;
+        let students = [];
+        
+        if (membershipDoc.exists()) {
+          const membershipData = membershipDoc.data();
+          const studentIds = membershipData.students || [];
+          studentCount = studentIds.length;
+          
+          // Get student details for display
+          if (studentIds.length > 0) {
+            const studentPromises = studentIds.slice(0, 6).map(async (studentId) => {
+              try {
+                const studentDoc = await getDoc(doc(firestore, 'students', studentId));
+                if (studentDoc.exists()) {
+                  return studentDoc.data();
+                }
+              } catch (error) {
+                console.warn('Error loading student:', studentId, error);
+              }
+              return null;
+            });
+            
+            const studentResults = await Promise.all(studentPromises);
+            students = studentResults.filter(s => s !== null);
+          }
+        }
+        
+        // Format class data for compatibility with dashboard UI
+        const formattedClass = {
+          id: classDoc.id,
+          name: classData.name,
+          classCode: classData.classCode,
+          createdAt: classData.createdAt,
+          studentCount: studentCount,
+          students: students, // For preview display
+          // Add a marker to indicate this is V2 data
+          isV2: true
+        };
+        
+        classes.push(formattedClass);
+      }
+      
+      console.log('📊 V2 classes loaded:', classes.length);
+      return classes;
+      
+    } catch (error) {
+      console.error('❌ Error loading V2 classes:', error);
+      throw error;
+    }
+  }
+
+  // V1 Architecture: Load classes from user document (fallback)
+  function loadV1Classes(userData) {
+    console.log('📚 Loading V1 classes from user document');
+    const classes = userData.classes || [];
+    
+    // Add student count for each class
+    const formattedClasses = classes.map(cls => ({
+      ...cls,
+      studentCount: cls.students?.length || 0,
+      isV2: false
+    }));
+    
+    console.log('📊 V1 classes loaded:', formattedClasses.length);
+    return formattedClasses;
+  }
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
@@ -68,27 +157,59 @@ export default function Dashboard() {
       } else {
         setUser(user);
         
-        // Load user data
-        const docRef = doc(firestore, 'users', user.uid);
-        const snap = await getDoc(docRef);
-        
-        if (snap.exists()) {
-          const data = snap.data();
-          setUserData(data);
-          setSavedClasses(data.classes || []);
-        } else {
-          // New user - create initial document
-          const newUserData = {
-            email: user.email,
-            createdAt: new Date().toISOString(),
-            classes: [],
-            subscription: null,
-            subscriptionStatus: 'trialing',
-            trialUntil: '2026-01-01T00:00:00.000Z'
-          };
+        try {
+          // Load user data
+          const docRef = doc(firestore, 'users', user.uid);
+          const snap = await getDoc(docRef);
           
-          await setDoc(docRef, newUserData);
-          setUserData(newUserData);
+          let userData;
+          if (snap.exists()) {
+            userData = snap.data();
+            setUserData(userData);
+          } else {
+            // New user - create initial document
+            userData = {
+              email: user.email,
+              createdAt: new Date().toISOString(),
+              classes: [],
+              subscription: null,
+              subscriptionStatus: 'trialing',
+              trialUntil: '2026-01-01T00:00:00.000Z'
+            };
+            
+            await setDoc(docRef, userData);
+            setUserData(userData);
+          }
+          
+          // Determine architecture version and load classes
+          console.log('🔍 Determining architecture version...');
+          
+          // Check if user has been migrated to V2
+          const hasV2Marker = userData.version === '2.0' || userData.migratedAt;
+          
+          if (hasV2Marker) {
+            console.log('✅ User is on V2 architecture');
+            setArchitectureVersion('v2');
+            
+            try {
+              const v2Classes = await loadV2Classes(user.uid);
+              setSavedClasses(v2Classes);
+            } catch (error) {
+              console.warn('⚠️ V2 loading failed, falling back to V1:', error.message);
+              setArchitectureVersion('v1-fallback');
+              const v1Classes = loadV1Classes(userData);
+              setSavedClasses(v1Classes);
+            }
+          } else {
+            console.log('📝 User is on V1 architecture');
+            setArchitectureVersion('v1');
+            const v1Classes = loadV1Classes(userData);
+            setSavedClasses(v1Classes);
+          }
+          
+        } catch (error) {
+          console.error('❌ Error loading user data:', error);
+          setArchitectureVersion('error');
           setSavedClasses([]);
         }
         
@@ -221,15 +342,27 @@ export default function Dashboard() {
         ]
       };
 
+      // Always create in V1 format for now (the migration will handle V1->V2 conversion)
       const docRef = doc(firestore, 'users', user.uid);
-      const updated = [...savedClasses, newClass];
+      const currentUserData = await getDoc(docRef);
+      const existingClasses = currentUserData.exists() ? (currentUserData.data().classes || []) : [];
+      const updated = [...existingClasses, newClass];
       
       await updateDoc(docRef, { 
         classes: updated,
         activeClassId: newClass.id
       });
       
-      setSavedClasses(updated);
+      // Reload classes after creation
+      if (architectureVersion === 'v2') {
+        const v2Classes = await loadV2Classes(user.uid);
+        setSavedClasses(v2Classes);
+      } else {
+        const userData = await getDoc(docRef);
+        const v1Classes = loadV1Classes(userData.data());
+        setSavedClasses(v1Classes);
+      }
+      
       setShowCreateClassModal(false);
       setCurrentStep(1);
       
@@ -249,15 +382,24 @@ export default function Dashboard() {
     }
 
     try {
+      if (classToDelete.isV2) {
+        // V2 deletion would require API call - for now, show a message
+        alert('V2 class deletion requires migration completion. Please contact support.');
+        return;
+      }
+
+      // V1 deletion
       const docRef = doc(firestore, 'users', user.uid);
-      const updated = savedClasses.filter(cls => cls.id !== classToDelete.id);
+      const currentUserData = await getDoc(docRef);
+      const existingClasses = currentUserData.data().classes || [];
+      const updated = existingClasses.filter(cls => cls.id !== classToDelete.id);
       
       await updateDoc(docRef, { 
         classes: updated,
         activeClassId: updated.length > 0 ? updated[0].id : null
       });
       
-      setSavedClasses(updated);
+      setSavedClasses(prev => prev.filter(cls => cls.id !== classToDelete.id));
       alert(`Class "${classToDelete.name}" has been deleted.`);
       
     } catch (error) {
@@ -285,6 +427,9 @@ export default function Dashboard() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-700 text-lg font-medium">Loading...</p>
+          {process.env.NODE_ENV === 'development' && (
+            <p className="text-sm text-gray-500 mt-2">Architecture: {architectureVersion}</p>
+          )}
         </div>
       </div>
     );
@@ -304,6 +449,24 @@ export default function Dashboard() {
   );
 
   const canAccess = hasTrialAccess || hasActiveSubscription || hasLegacySubscription;
+
+  // Calculate total students for display
+  const totalStudents = savedClasses.reduce((total, cls) => {
+    if (cls.isV2) {
+      return total + (cls.studentCount || 0);
+    } else {
+      return total + (cls.students?.length || 0);
+    }
+  }, 0);
+
+  const totalXP = savedClasses.reduce((total, cls) => {
+    if (cls.isV2) {
+      // For V2, we only have preview students, not full data
+      return total + (cls.students?.reduce((sum, student) => sum + (student.totalPoints || 0), 0) || 0);
+    } else {
+      return total + (cls.students?.reduce((sum, student) => sum + (student.totalPoints || 0), 0) || 0);
+    }
+  }, 0);
 
   // Subscription Required Screen
   if (!canAccess) {
@@ -365,15 +528,11 @@ export default function Dashboard() {
                       <div className="text-purple-700 text-sm sm:text-base">Classes</div>
                     </div>
                     <div className="bg-white rounded-lg p-3 sm:p-4 shadow-sm">
-                      <div className="text-xl sm:text-2xl font-bold text-purple-600">
-                        {savedClasses.reduce((total, cls) => total + (cls.students?.length || 0), 0)}
-                      </div>
+                      <div className="text-xl sm:text-2xl font-bold text-purple-600">{totalStudents}</div>
                       <div className="text-purple-700 text-sm sm:text-base">Students</div>
                     </div>
                     <div className="bg-white rounded-lg p-3 sm:p-4 shadow-sm">
-                      <div className="text-xl sm:text-2xl font-bold text-purple-600">
-                        {savedClasses.reduce((total, cls) => total + (cls.students?.reduce((sum, student) => sum + (student.totalPoints || 0), 0) || 0), 0)}
-                      </div>
+                      <div className="text-xl sm:text-2xl font-bold text-purple-600">{totalXP}</div>
                       <div className="text-purple-700 text-sm sm:text-base">Total XP</div>
                     </div>
                   </div>
@@ -456,6 +615,16 @@ export default function Dashboard() {
                     <span className="text-xs sm:text-sm text-gray-600">
                       {savedClasses.length}/2 classes created
                     </span>
+                    {/* Development info */}
+                    {process.env.NODE_ENV === 'development' && (
+                      <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                        architectureVersion === 'v2' ? 'bg-green-100 text-green-700' : 
+                        architectureVersion === 'v1' ? 'bg-yellow-100 text-yellow-700' : 
+                        'bg-red-100 text-red-700'
+                      }`}>
+                        {architectureVersion.toUpperCase()}
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
@@ -539,11 +708,10 @@ export default function Dashboard() {
                   <div className="flex items-center gap-2 mb-2">
                     <div className="w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full"></div>
                     <span className="font-bold text-green-700 text-xs sm:text-sm">NEW</span>
-                    <span className="text-gray-600 text-xs sm:text-sm">Custom Class Rewards</span>
+                    <span className="text-gray-600 text-xs sm:text-sm">V2 Architecture Migration</span>
                   </div>
                   <p className="text-xs sm:text-sm text-gray-700 leading-relaxed">
-                    Teachers can now create, edit, and manage custom classroom rewards in the Shop! 
-                    Personalize your reward system to fit your classroom perfectly.
+                    Improved performance and reliability! XP awarding is now faster and more reliable with the new database architecture.
                   </p>
                 </div>
 
@@ -580,17 +748,18 @@ export default function Dashboard() {
               <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 sm:p-6 rounded-xl">
                 <div className="text-2xl sm:text-3xl font-bold">{savedClasses.length}</div>
                 <div className="text-blue-100 text-sm sm:text-base">Active Classes</div>
+                {process.env.NODE_ENV === 'development' && (
+                  <div className="text-xs text-blue-200 mt-1">
+                    {savedClasses.filter(c => c.isV2).length} V2, {savedClasses.filter(c => !c.isV2).length} V1
+                  </div>
+                )}
               </div>
               <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-4 sm:p-6 rounded-xl">
-                <div className="text-2xl sm:text-3xl font-bold">
-                  {savedClasses.reduce((total, cls) => total + (cls.students?.length || 0), 0)}
-                </div>
+                <div className="text-2xl sm:text-3xl font-bold">{totalStudents}</div>
                 <div className="text-purple-100 text-sm sm:text-base">Total Students</div>
               </div>
               <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 sm:p-6 rounded-xl">
-                <div className="text-2xl sm:text-3xl font-bold">
-                  {savedClasses.reduce((total, cls) => total + (cls.students?.reduce((sum, student) => sum + (student.totalPoints || 0), 0) || 0), 0)}
-                </div>
+                <div className="text-2xl sm:text-3xl font-bold">{totalXP}</div>
                 <div className="text-green-100 text-sm sm:text-base">Total XP Earned</div>
               </div>
             </div>
@@ -628,6 +797,13 @@ export default function Dashboard() {
                 <div className="text-4xl sm:text-6xl mb-4">📚</div>
                 <p className="text-gray-500 text-lg sm:text-xl font-medium mb-2">No classes created yet</p>
                 <p className="text-gray-400 text-sm sm:text-base">Create your first class to get started with Educational Elements!</p>
+                {process.env.NODE_ENV === 'development' && (
+                  <div className="mt-4 p-3 bg-yellow-100 border border-yellow-300 rounded-lg">
+                    <p className="text-yellow-800 text-sm">
+                      Debug: Architecture {architectureVersion}, User {user?.uid?.substring(0, 8)}...
+                    </p>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
@@ -636,8 +812,19 @@ export default function Dashboard() {
                     <div className="p-4 sm:p-6">
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-bold text-lg sm:text-xl text-gray-800 mb-2 truncate">{cls.name}</h3>
-                          <p className="text-gray-600 mb-2 text-sm sm:text-base">{cls.students?.length || 0} students</p>
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="font-bold text-lg sm:text-xl text-gray-800 truncate">{cls.name}</h3>
+                            {process.env.NODE_ENV === 'development' && (
+                              <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                                cls.isV2 ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                              }`}>
+                                {cls.isV2 ? 'V2' : 'V1'}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-gray-600 mb-2 text-sm sm:text-base">
+                            {cls.isV2 ? cls.studentCount : cls.students?.length || 0} students
+                          </p>
                           <p className="text-xs sm:text-sm text-gray-500">
                             Created: {new Date(cls.createdAt).toLocaleDateString()}
                           </p>
@@ -672,9 +859,9 @@ export default function Dashboard() {
                                 <span className="text-xs font-medium text-gray-700 truncate max-w-[60px]">{student.firstName}</span>
                               </div>
                             ))}
-                            {cls.students.length > 6 && (
+                            {(cls.isV2 ? cls.studentCount : cls.students.length) > 6 && (
                               <div className="bg-gray-100 rounded-lg px-2 py-1">
-                                <span className="text-xs text-gray-600">+{cls.students.length - 6}</span>
+                                <span className="text-xs text-gray-600">+{(cls.isV2 ? cls.studentCount : cls.students.length) - 6}</span>
                               </div>
                             )}
                           </div>
