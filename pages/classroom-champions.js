@@ -244,6 +244,7 @@ const loadUserData = async (user) => {
         setArchitectureVersion('v2');
         const activeClassId = userDataResult.activeClassId || teacherClasses[0].id;
         await loadClassData(activeClassId); // your existing listener-based loader
+        setLoading(false);
         return; // Early return for V2 path
       }
     } catch (e) {
