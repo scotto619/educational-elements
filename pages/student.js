@@ -1,7 +1,7 @@
 // pages/student.js - UPDATED WITH DIRECT PASSWORD VERIFICATION (NO APIs)
 import React, { useState, useEffect } from 'react';
 import { firestore } from '../utils/firebase';
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
 
 // Import the direct password helpers (no APIs needed)
 import { verifyStudentPasswordDirect, getDefaultPassword } from '../utils/passwordHelpers';
