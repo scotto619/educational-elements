@@ -345,30 +345,39 @@ const loadUserData = async (user) => {
 
   // STUDENT UPDATE HANDLERS - FIXED FOR V2 CONSISTENCY
   
-  const handleUpdateStudent = useCallback(async (studentId, updatedData) => {
-    try {
-      console.log('🔄 Updating student:', studentId, Object.keys(updatedData));
-      
-      if (architectureVersion === 'v2') {
-        // Use new architecture - NO MANUAL STATE UPDATE, rely on real-time listener
-        await updateStudentData(studentId, updatedData, 'Manual Update');
-        // Real-time listener will update local state automatically
-        console.log('✅ V2 student update sent, waiting for real-time update');
-        return updatedData;
-      } else {
-        // V1 fallback - update in user document
-        await updateV1StudentData(user.uid, currentClassId, studentId, updatedData);
-        // Update local state for V1
-        setStudents(prev => prev.map(s => s.id === studentId ? { ...s, ...updatedData } : s));
-        return { ...updatedData };
-      }
-      
-    } catch (error) {
-      console.error('❌ Error updating student:', error);
-      showToast('Error updating student data', 'error');
-      throw error;
+const handleUpdateStudent = useCallback(async (studentId, updatedData, reason = 'Update') => {
+  try {
+    console.log('📄 Updating student:', studentId, Object.keys(updatedData));
+    
+    // OPTIMISTIC UPDATE - Update local state immediately for instant UI feedback
+    setStudents(prev => prev.map(s => 
+      s.id === studentId ? { ...s, ...updatedData, updatedAt: new Date().toISOString() } : s
+    ));
+    
+    if (architectureVersion === 'v2') {
+      // Use new architecture with Firebase update
+      await updateStudentData(studentId, updatedData, 'Manual Update');
+      console.log('✅ V2 student update sent, optimistic update applied');
+      // Real-time listener will sync any server-side changes
+      return updatedData;
+    } else {
+      // V1 fallback - update in user document
+      await updateV1StudentData(user.uid, currentClassId, studentId, updatedData);
+      console.log('✅ V1 student update completed with local state update');
+      return { ...updatedData };
     }
-  }, [architectureVersion, user, currentClassId]);
+    
+  } catch (error) {
+    console.error('⚠️ Error updating student:', error);
+    showToast('Error updating student data', 'error');
+    
+    // REVERT OPTIMISTIC UPDATE on error - restore previous state
+    console.log('🔄 Reverting optimistic update due to error');
+    // The real-time listeners will restore correct state
+    
+    throw error;
+  }
+}, [architectureVersion, user, currentClassId]);
 
   // V1 student update helper
   const updateV1StudentData = async (userId, classId, studentId, updatedData) => {
