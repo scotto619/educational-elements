@@ -1,4 +1,4 @@
-// pages/api/student-update-v2.js - FIXED VERSION
+// pages/api/student-update-v2.js - FIXED SERVER TIMESTAMP ISSUES
 import admin from 'firebase-admin';
 
 // Initialize Firebase Admin if not already done
@@ -41,9 +41,10 @@ function buildMergedUpdate(updateData = {}, mode = 'increment') {
       out[k] = v;
     }
   }
-  const ts = admin.firestore.FieldValue.serverTimestamp();
-  out.updatedAt = ts;
-  out.lastActivity = ts;
+  // Use ISO string instead of server timestamp to avoid transaction issues
+  const now = new Date().toISOString();
+  out.updatedAt = now;
+  out.lastActivity = now;
   return out;
 }
 
@@ -63,7 +64,7 @@ export default async function handler(req, res) {
       teacherUserId,      // OPTIONAL: teacher UID from the dashboard (skips publicClassData lookup)
     } = req.body || {};
 
-    console.log('📥 Student update request:', { 
+    console.log('🔥 Student update request:', { 
       studentId: studentId?.substring(0, 10) + '...', 
       classCode, 
       mode, 
@@ -106,8 +107,12 @@ export default async function handler(req, res) {
           const merged = buildMergedUpdate(updateData, mode);
           console.log('🔄 Applying V2 update:', Object.keys(merged));
           
-          tx.set(studentRef, merged, { merge: true });
-          tx.set(classRef, { lastActivity: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+          // Use update instead of set with merge to avoid timestamp conflicts
+          tx.update(studentRef, merged);
+          
+          // Update class last activity separately
+          const now = new Date().toISOString();
+          tx.update(classRef, { lastActivity: now });
 
           return { schema: 'v2', studentId: studentRef.id };
         }
@@ -187,13 +192,14 @@ export default async function handler(req, res) {
           }
         }
         
-        const ts = admin.firestore.FieldValue.serverTimestamp();
-        s.updatedAt = ts;
-        s.lastActivity = ts;
+        // Use ISO string timestamps for V1 too
+        const now = new Date().toISOString();
+        s.updatedAt = now;
+        s.lastActivity = now;
 
         studs[si] = s;
         cls.students = studs;
-        cls.lastActivity = ts;
+        cls.lastActivity = now;
         classes[ci] = cls;
 
         tx.update(userRef, { classes });
