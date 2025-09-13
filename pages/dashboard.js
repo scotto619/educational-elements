@@ -157,11 +157,11 @@ export default function Dashboard() {
       } else {
         setUser(user);
 
-              console.log('=== CURRENT USER DEBUG ===');
-      console.log('User ID:', user.uid);
-      console.log('User Email:', user.email);
-      console.log('User Display Name:', user.displayName);
-      console.log('========================');
+        console.log('=== CURRENT USER DEBUG ===');
+        console.log('User ID:', user.uid);
+        console.log('User Email:', user.email);
+        console.log('User Display Name:', user.displayName);
+        console.log('========================');
         
         try {
           // Load user data
@@ -207,7 +207,7 @@ export default function Dashboard() {
               setSavedClasses(v1Classes);
             }
           } else {
-            console.log('📝 User is on V1 architecture');
+            console.log('🔍 User is on V1 architecture');
             setArchitectureVersion('v1');
             const v1Classes = loadV1Classes(userData);
             setSavedClasses(v1Classes);
@@ -441,10 +441,14 @@ export default function Dashboard() {
     );
   }
 
-  // Access Logic
+  // FIXED: Access Logic - Now checks both V1 and V2 formats
   const hasTrialAccess = userData?.subscriptionStatus === 'trialing' || 
-                        (userData?.trialUntil && new Date(userData.trialUntil) > new Date());
+                        (userData?.trialUntil && new Date(userData.trialUntil) > new Date()) ||
+                        (userData?.freeAccessUntil && new Date(userData.freeAccessUntil) > new Date()) ||
+                        (userData?.isTrialUser === true);
+
   const hasActiveSubscription = userData?.subscriptionStatus === 'active';
+
   const hasLegacySubscription = (
     (userData?.subscription && 
      userData?.subscription !== 'cancelled' && 
@@ -455,6 +459,26 @@ export default function Dashboard() {
   );
 
   const canAccess = hasTrialAccess || hasActiveSubscription || hasLegacySubscription;
+
+  // DEBUGGING: Add this temporarily to see what's in the user data
+  if (process.env.NODE_ENV === 'development') {
+    console.log('=== TRIAL ACCESS DEBUG ===');
+    console.log('User Data:', {
+      subscriptionStatus: userData?.subscriptionStatus,
+      trialUntil: userData?.trialUntil,
+      freeAccessUntil: userData?.freeAccessUntil,
+      isTrialUser: userData?.isTrialUser,
+      subscription: userData?.subscription,
+      stripeCustomerId: userData?.stripeCustomerId
+    });
+    console.log('Access Checks:', {
+      hasTrialAccess,
+      hasActiveSubscription,
+      hasLegacySubscription,
+      canAccess
+    });
+    console.log('========================');
+  }
 
   // Calculate total students for display
   const totalStudents = savedClasses.reduce((total, cls) => {
