@@ -1,4 +1,4 @@
-// components/tabs/ShopTab.js - MOBILE-OPTIMIZED SHOP WITH MYSTERY BOX AND SELLING FEATURE
+// components/tabs/ShopTab.js - MOBILE-OPTIMIZED SHOP WITH MYSTERY BOX AND SELLING FEATURE - FIXED PURCHASE FUNCTIONS
 import React, { useState, useEffect } from 'react';
 
 // ===============================================
@@ -286,12 +286,11 @@ const ShopTab = ({
   const confirmMysteryBoxPurchase = async () => {
     if (!selectedStudent) return;
     
-    // Deduct coins first
-    const updatedStudent = { 
-      ...selectedStudent, 
+    // Deduct coins first - FIXED: Pass studentId and updates separately
+    const updates = { 
       coinsSpent: (selectedStudent.coinsSpent || 0) + MYSTERY_BOX_PRICE 
     };
-    onUpdateStudent(updatedStudent);
+    onUpdateStudent(selectedStudent.id, updates);
     
     // Start the opening sequence
     setMysteryBoxModal({ visible: true, stage: 'opening' });
@@ -315,35 +314,36 @@ const ShopTab = ({
       setIsSpinning(false);
       setMysteryBoxModal({ visible: true, stage: 'reveal' });
       
-      // Award the prize
+      // Award the prize - pass the updated student with the coins already deducted
+      const updatedStudent = { ...selectedStudent, coinsSpent: (selectedStudent.coinsSpent || 0) + MYSTERY_BOX_PRICE };
       awardMysteryBoxPrize(selectedPrize, updatedStudent);
     }, 3000);
   };
   
   const awardMysteryBoxPrize = (prize, student) => {
-    let finalUpdatedStudent = { ...student };
+    let updates = {};
     let message = '';
     
     switch (prize.type) {
       case 'avatar':
         if (!student.ownedAvatars?.includes(prize.item.name)) {
-          finalUpdatedStudent.ownedAvatars = [...new Set([...(student.ownedAvatars || []), prize.item.name])];
+          updates.ownedAvatars = [...new Set([...(student.ownedAvatars || []), prize.item.name])];
           message = `${student.firstName} won the ${prize.item.name} avatar!`;
         } else {
           // Already owned, give coins instead
-          finalUpdatedStudent.currency = (student.currency || 0) + 5;
+          updates.currency = (student.currency || 0) + 5;
           message = `${student.firstName} already had the ${prize.item.name} avatar, so got 5 bonus coins instead!`;
         }
         break;
         
       case 'pet':
         const newPet = { ...prize.item, id: `pet_${Date.now()}` };
-        finalUpdatedStudent.ownedPets = [...(student.ownedPets || []), newPet];
+        updates.ownedPets = [...(student.ownedPets || []), newPet];
         message = `${student.firstName} won a ${prize.item.name}!`;
         break;
         
       case 'reward':
-        finalUpdatedStudent.rewardsPurchased = [...(student.rewardsPurchased || []), { 
+        updates.rewardsPurchased = [...(student.rewardsPurchased || []), { 
           ...prize.item, 
           purchasedAt: new Date().toISOString() 
         }];
@@ -351,17 +351,18 @@ const ShopTab = ({
         break;
         
       case 'xp':
-        finalUpdatedStudent.totalPoints = (student.totalPoints || 0) + prize.amount;
+        updates.totalPoints = (student.totalPoints || 0) + prize.amount;
         message = `${student.firstName} won ${prize.amount} bonus XP!`;
         break;
         
       case 'coins':
-        finalUpdatedStudent.currency = (student.currency || 0) + prize.amount;
+        updates.currency = (student.currency || 0) + prize.amount;
         message = `${student.firstName} won ${prize.amount} bonus coins!`;
         break;
     }
     
-    onUpdateStudent(finalUpdatedStudent);
+    // FIXED: Pass studentId and updates separately
+    onUpdateStudent(student.id, updates);
     showToast(message, 'success');
   };
   
@@ -425,29 +426,30 @@ const ShopTab = ({
   const confirmSell = () => {
     if (!selectedStudent || !sellModal.item) return;
     
-    let updatedStudent = { ...selectedStudent };
-    updatedStudent.currency = (updatedStudent.currency || 0) + sellModal.price;
-    updatedStudent.lastUpdated = new Date().toISOString();
+    let updates = {
+      currency: (selectedStudent.currency || 0) + sellModal.price
+    };
     
     // Remove the item from inventory
     if (sellModal.type === 'avatar') {
-      updatedStudent.ownedAvatars = updatedStudent.ownedAvatars.filter(a => a !== sellModal.item);
+      updates.ownedAvatars = selectedStudent.ownedAvatars.filter(a => a !== sellModal.item);
     } else if (sellModal.type === 'pet') {
-      updatedStudent.ownedPets = updatedStudent.ownedPets.filter(p => p.id !== sellModal.item.id);
+      updates.ownedPets = selectedStudent.ownedPets.filter(p => p.id !== sellModal.item.id);
     } else if (sellModal.type === 'reward') {
       // For rewards, find by name and remove first match
-      const rewardIndex = updatedStudent.rewardsPurchased?.findIndex(r => 
+      const rewardIndex = selectedStudent.rewardsPurchased?.findIndex(r => 
         r.name === sellModal.item.name && r.purchasedAt === sellModal.item.purchasedAt
       );
       if (rewardIndex >= 0) {
-        updatedStudent.rewardsPurchased = [
-          ...updatedStudent.rewardsPurchased.slice(0, rewardIndex),
-          ...updatedStudent.rewardsPurchased.slice(rewardIndex + 1)
+        updates.rewardsPurchased = [
+          ...selectedStudent.rewardsPurchased.slice(0, rewardIndex),
+          ...selectedStudent.rewardsPurchased.slice(rewardIndex + 1)
         ];
       }
     }
     
-    onUpdateStudent(updatedStudent);
+    // FIXED: Pass studentId and updates separately
+    onUpdateStudent(selectedStudent.id, updates);
     setSellModal({ visible: false, item: null, type: null, price: 0 });
     
     const itemDisplayName = sellModal.type === 'pet' ? sellModal.item.name : 
@@ -526,7 +528,7 @@ const ShopTab = ({
   };
 
   // ===============================================
-  // PURCHASE LOGIC
+  // PURCHASE LOGIC - FIXED
   // ===============================================
 
   const handlePurchase = () => {
@@ -538,44 +540,52 @@ const ShopTab = ({
       return;
     }
 
-    let updatedStudent = { ...selectedStudent };
-    updatedStudent.coinsSpent = (updatedStudent.coinsSpent || 0) + purchaseModal.item.price;
+    let updates = {
+      coinsSpent: (selectedStudent.coinsSpent || 0) + purchaseModal.item.price
+    };
 
     switch (purchaseModal.type) {
       case 'avatar':
-        updatedStudent.ownedAvatars = [...new Set([...(updatedStudent.ownedAvatars || []), purchaseModal.item.name])];
+        updates.ownedAvatars = [...new Set([...(selectedStudent.ownedAvatars || []), purchaseModal.item.name])];
         showToast(`${selectedStudent.firstName} bought the ${purchaseModal.item.name} avatar!`, 'success');
         break;
       case 'pet':
         const newPet = { ...purchaseModal.item, id: `pet_${Date.now()}` };
-        updatedStudent.ownedPets = [...(updatedStudent.ownedPets || []), newPet];
+        updates.ownedPets = [...(selectedStudent.ownedPets || []), newPet];
         showToast(`${selectedStudent.firstName} adopted a ${purchaseModal.item.name}!`, 'success');
         break;
       case 'reward':
-        updatedStudent.rewardsPurchased = [...(updatedStudent.rewardsPurchased || []), { ...purchaseModal.item, purchasedAt: new Date().toISOString() }];
+        updates.rewardsPurchased = [...(selectedStudent.rewardsPurchased || []), { 
+          ...purchaseModal.item, 
+          purchasedAt: new Date().toISOString() 
+        }];
         showToast(`${selectedStudent.firstName} earned ${purchaseModal.item.name}!`, 'success');
         break;
       default: return;
     }
 
-    onUpdateStudent(updatedStudent);
+    // FIXED: Pass studentId and updates separately
+    onUpdateStudent(selectedStudent.id, updates);
     setPurchaseModal({ visible: false, item: null, type: null });
   };
   
   const handleEquip = (type, value) => {
     if (!selectedStudent) return;
-    let updatedStudent = { ...selectedStudent };
+    
+    let updates = {};
 
     if (type === 'avatar') {
-        updatedStudent.avatarBase = value;
+      updates.avatarBase = value;
+      showToast('Avatar equipped!', 'success');
     } else if (type === 'pet') {
-        const petToEquip = updatedStudent.ownedPets.find(p => p.id === value);
-        const otherPets = updatedStudent.ownedPets.filter(p => p.id !== value);
-        updatedStudent.ownedPets = [petToEquip, ...otherPets];
+      const petToEquip = selectedStudent.ownedPets.find(p => p.id === value);
+      const otherPets = selectedStudent.ownedPets.filter(p => p.id !== value);
+      updates.ownedPets = [petToEquip, ...otherPets];
+      showToast('Pet equipped!', 'success');
     }
     
-    onUpdateStudent(updatedStudent);
-    showToast('Item equipped!', 'success');
+    // FIXED: Pass studentId and updates separately
+    onUpdateStudent(selectedStudent.id, updates);
   };
 
   const SHOP_CATEGORIES = [
