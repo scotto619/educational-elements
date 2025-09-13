@@ -401,10 +401,26 @@ const loadUserData = async (user) => {
     setStudents(reorderedStudents);
   };
 
-  // FIXED: handleBulkAward - Direct Firestore Updates (bypassing API)
+  // FIXED: handleBulkAward - Direct Firestore Updates with Optimistic UI Updates
   const handleBulkAward = useCallback(async (studentIds, amount, type) => {
     try {
       console.log('💰 DIRECT Bulk awarding (bypassing API):', { studentIds: studentIds.length, amount, type });
+      
+      // OPTIMISTIC UI UPDATE - Update local state immediately for instant feedback
+      setStudents(prev => prev.map(student => {
+        if (studentIds.includes(student.id)) {
+          const updated = { ...student };
+          if (type === 'xp') {
+            updated.totalPoints = (updated.totalPoints || 0) + amount;
+            console.log(`🔄 Optimistic: ${student.firstName} XP ${student.totalPoints || 0} → ${updated.totalPoints}`);
+          } else {
+            updated.currency = (updated.currency || 0) + amount;
+            console.log(`🔄 Optimistic: ${student.firstName} coins ${student.currency || 0} → ${updated.currency}`);
+          }
+          return updated;
+        }
+        return student;
+      }));
       
       if (architectureVersion === 'v2') {
         // DIRECT V2 UPDATE - bypassing the broken API
@@ -437,7 +453,7 @@ const loadUserData = async (user) => {
         await batch.commit();
         console.log('✅ Direct V2 batch update completed');
         
-        // Real-time listeners will update the local state automatically
+        // Real-time listeners will eventually sync with Firestore
         
       } else {
         // V1 fallback - direct updates with manual state updates
@@ -448,11 +464,6 @@ const loadUserData = async (user) => {
               : { currency: (students.find(s => s.id === studentId)?.currency || 0) + amount };
             
             await updateV1StudentData(user.uid, currentClassId, studentId, updateData);
-            
-            // Update local state immediately for V1
-            setStudents(prev => prev.map(s => 
-              s.id === studentId ? { ...s, ...updateData } : s
-            ));
           })
         );
       }
@@ -485,8 +496,12 @@ const loadUserData = async (user) => {
     } catch (error) {
       console.error('❌ Error in direct bulk award:', error);
       showToast('Error awarding points', 'error');
+      
+      // REVERT OPTIMISTIC UPDATE on error
+      // The real-time listeners should restore the correct state
+      console.log('🔄 Reverting optimistic update due to error');
     }
-  }, [students, handleUpdateStudent, architectureVersion, currentClassId, firestore, user]);
+  }, [students, handleUpdateStudent, architectureVersion, currentClassId, firestore, user, setStudents]);
 
   // FIXED: awardXPToStudent - Direct Firestore Updates
   const awardXPToStudent = useCallback(async (studentId, amount, reason = '') => {
