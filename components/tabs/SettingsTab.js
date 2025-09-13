@@ -1,5 +1,6 @@
 // components/tabs/SettingsTab.js - FIXED PASSWORD BUGS + RESTORED ORIGINAL FUNCTIONALITY
 import React, { useState, useEffect } from 'react';
+import DebugPasswordTest from '../DebugPasswordTest';
 
 const SettingsTab = ({ 
   user,
@@ -615,6 +616,11 @@ Time: ${new Date().toISOString()}
                   <li>• Students can ask you to reset their password if forgotten</li>
                 </ul>
               </div>
+
+<DebugPasswordTest 
+  students={students}
+  currentClassData={currentClassData}
+/>
 
               {/* Individual Password Management */}
               <div className="bg-white rounded-xl shadow-lg p-6">

@@ -1,4 +1,4 @@
-// pages/api/verify-student-password.js - Student Password Verification API
+// pages/api/verify-student-password.js - FIXED VERSION
 import admin from 'firebase-admin';
 import bcrypt from 'bcryptjs';
 
@@ -9,6 +9,11 @@ if (!admin.apps.length) {
       ? process.env.FIREBASE_ADMIN_PRIVATE_KEY.replace(/\\n/g, '\n')
       : undefined;
 
+    if (!privateKey || !process.env.FIREBASE_ADMIN_CLIENT_EMAIL || !process.env.FIREBASE_ADMIN_PROJECT_ID) {
+      console.error('❌ Missing Firebase Admin SDK environment variables');
+      throw new Error('Missing Firebase Admin SDK environment variables');
+    }
+
     admin.initializeApp({
       credential: admin.credential.cert({
         projectId: process.env.FIREBASE_ADMIN_PROJECT_ID,
@@ -17,6 +22,8 @@ if (!admin.apps.length) {
       }),
       projectId: process.env.FIREBASE_ADMIN_PROJECT_ID,
     });
+
+    console.log('✅ Firebase Admin SDK initialized for password verification');
   } catch (error) {
     console.error('❌ Failed to initialize Firebase Admin SDK:', error);
   }
@@ -53,15 +60,14 @@ export default async function handler(req, res) {
     }
 
     // Try V2 architecture first
+    console.log('🔍 Trying V2 architecture...');
     try {
-      console.log('🔍 Checking V2 architecture...');
-      
       const studentRef = db.collection('students').doc(studentId);
       const studentDoc = await studentRef.get();
       
       if (studentDoc.exists) {
         const studentData = studentDoc.data();
-        console.log('✅ Found student in V2 architecture');
+        console.log('✅ Found student in V2:', studentData.firstName);
         
         // Verify class code through class document
         if (!studentData.classId) {
@@ -77,44 +83,40 @@ export default async function handler(req, res) {
         
         const classData = classDoc.data();
         if ((classData.classCode || '').toUpperCase() !== (classCode || '').toUpperCase()) {
-          throw new Error(`Invalid class code (V2)`);
+          throw new Error(`Invalid class code (V2). Expected: ${classData.classCode}, Got: ${classCode}`);
         }
         
-        // Check if student has a password set
+        // FIXED: Password verification logic
+        let passwordMatch = false;
+        
         if (!studentData.passwordHash) {
-          console.log('⚠️ Student has no password set, generating default...');
-          
-          // Generate default password: firstName + "123"
+          // No custom password set - check against default password (firstName + "123")
           const defaultPassword = (studentData.firstName || 'student').toLowerCase() + '123';
-          const defaultPasswordHash = await bcrypt.hash(defaultPassword, 10);
+          console.log('🔑 Checking against default password for:', studentData.firstName);
+          passwordMatch = (password.toLowerCase() === defaultPassword);
           
-          // Update student with default password
-          await studentRef.update({
-            passwordHash: defaultPasswordHash,
-            passwordLastUpdated: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          });
-          
-          console.log('🔑 Generated default password for student');
-          
-          // Check if provided password matches default
-          const passwordMatch = await bcrypt.compare(password, defaultPasswordHash);
-          if (!passwordMatch) {
-            return res.status(401).json({ 
-              error: 'Invalid password',
-              message: 'Your password is your first name followed by "123" (all lowercase). Ask your teacher if you need help.',
-              suggestion: `Try: ${(studentData.firstName || 'student').toLowerCase()}123`
+          if (passwordMatch) {
+            console.log('✅ Default password verified');
+            // Optionally create the hash for future use
+            const passwordHash = await bcrypt.hash(password, 10);
+            await studentRef.update({
+              passwordHash: passwordHash,
+              passwordLastUpdated: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
             });
           }
         } else {
-          // Verify existing password
-          const passwordMatch = await bcrypt.compare(password, studentData.passwordHash);
-          if (!passwordMatch) {
-            return res.status(401).json({ 
-              error: 'Invalid password',
-              message: 'Incorrect password. Please try again or ask your teacher for help.'
-            });
-          }
+          // Custom password set - verify against hash
+          console.log('🔑 Checking against custom password hash');
+          passwordMatch = await bcrypt.compare(password, studentData.passwordHash);
+        }
+        
+        if (!passwordMatch) {
+          const defaultPassword = (studentData.firstName || 'student').toLowerCase() + '123';
+          return res.status(401).json({ 
+            error: 'Invalid password',
+            message: `Incorrect password. ${!studentData.passwordHash ? `Try: ${defaultPassword}` : 'Please try again or ask your teacher for help.'}`
+          });
         }
         
         console.log('✅ V2 password verification successful');
@@ -134,6 +136,7 @@ export default async function handler(req, res) {
     console.log('🔄 Falling back to V1 architecture...');
     
     const usersSnapshot = await db.collection('users').get();
+    console.log('👥 Scanning', usersSnapshot.size, 'user documents');
     
     for (const userDoc of usersSnapshot.docs) {
       const userData = userDoc.data();
@@ -146,61 +149,58 @@ export default async function handler(req, res) {
             
             const student = classData.students.find(s => s.id === studentId);
             if (student) {
-              console.log('✅ Found student in V1 architecture');
+              console.log('✅ Found student in V1:', student.firstName);
               
-              // Check if student has a password set
+              // FIXED: Password verification logic for V1
+              let passwordMatch = false;
+              
               if (!student.passwordHash) {
-                console.log('⚠️ V1 student has no password set, generating default...');
-                
-                // Generate default password
+                // No custom password - check against default
                 const defaultPassword = (student.firstName || 'student').toLowerCase() + '123';
-                const defaultPasswordHash = await bcrypt.hash(defaultPassword, 10);
+                console.log('🔑 V1: Checking against default password for:', student.firstName);
+                passwordMatch = (password.toLowerCase() === defaultPassword);
                 
-                // Update student in nested array
-                const updatedClasses = userData.classes.map(cls => {
-                  if (cls.classCode && cls.classCode.toUpperCase() === classCode.toUpperCase()) {
-                    return {
-                      ...cls,
-                      students: cls.students.map(s => {
-                        if (s.id === studentId) {
-                          return {
-                            ...s,
-                            passwordHash: defaultPasswordHash,
-                            passwordLastUpdated: new Date().toISOString(),
-                            updatedAt: new Date().toISOString()
-                          };
-                        }
-                        return s;
-                      })
-                    };
-                  }
-                  return cls;
-                });
-                
-                await db.collection('users').doc(userDoc.id).update({
-                  classes: updatedClasses
-                });
-                
-                console.log('🔑 Generated default password for V1 student');
-                
-                // Check if provided password matches default
-                const passwordMatch = await bcrypt.compare(password, defaultPasswordHash);
-                if (!passwordMatch) {
-                  return res.status(401).json({ 
-                    error: 'Invalid password',
-                    message: 'Your password is your first name followed by "123" (all lowercase). Ask your teacher if you need help.',
-                    suggestion: `Try: ${(student.firstName || 'student').toLowerCase()}123`
+                if (passwordMatch) {
+                  console.log('✅ V1: Default password verified');
+                  // Update V1 structure with password hash
+                  const passwordHash = await bcrypt.hash(password, 10);
+                  
+                  const updatedClasses = userData.classes.map(cls => {
+                    if (cls.classCode && cls.classCode.toUpperCase() === classCode.toUpperCase()) {
+                      return {
+                        ...cls,
+                        students: cls.students.map(s => {
+                          if (s.id === studentId) {
+                            return {
+                              ...s,
+                              passwordHash: passwordHash,
+                              passwordLastUpdated: new Date().toISOString(),
+                              updatedAt: new Date().toISOString()
+                            };
+                          }
+                          return s;
+                        })
+                      };
+                    }
+                    return cls;
+                  });
+                  
+                  await db.collection('users').doc(userDoc.id).update({
+                    classes: updatedClasses
                   });
                 }
               } else {
-                // Verify existing password
-                const passwordMatch = await bcrypt.compare(password, student.passwordHash);
-                if (!passwordMatch) {
-                  return res.status(401).json({ 
-                    error: 'Invalid password',
-                    message: 'Incorrect password. Please try again or ask your teacher for help.'
-                  });
-                }
+                // Custom password - verify against hash
+                console.log('🔑 V1: Checking against custom password hash');
+                passwordMatch = await bcrypt.compare(password, student.passwordHash);
+              }
+              
+              if (!passwordMatch) {
+                const defaultPassword = (student.firstName || 'student').toLowerCase() + '123';
+                return res.status(401).json({ 
+                  error: 'Invalid password',
+                  message: `Incorrect password. ${!student.passwordHash ? `Try: ${defaultPassword}` : 'Please try again or ask your teacher for help.'}`
+                });
               }
               
               console.log('✅ V1 password verification successful');
@@ -219,6 +219,7 @@ export default async function handler(req, res) {
     }
 
     // Student not found
+    console.log('❌ Student not found in any architecture');
     return res.status(404).json({
       error: 'Student not found',
       message: 'Student not found in any class with the provided class code'
@@ -229,7 +230,8 @@ export default async function handler(req, res) {
     
     return res.status(500).json({
       error: 'Password verification failed',
-      message: 'An error occurred while verifying the password. Please try again.'
+      message: 'An error occurred while verifying the password. Please try again.',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 }
