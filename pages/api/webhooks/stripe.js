@@ -1,7 +1,27 @@
-// pages/api/webhooks/stripe.js - FIXED VERSION with consistent imports
+// pages/api/webhooks/stripe.js - FIXED VERSION for V2 trial format
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const { firestore } = require('../../../utils/firebase');
-const { doc, setDoc, getDoc, updateDoc } = require('firebase/firestore');
+
+// Use Firebase Admin SDK for server-side operations
+let adminFirestore;
+try {
+  const admin = require('firebase-admin');
+  
+  if (!admin.apps.length) {
+    const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(/\\n/g, '\n');
+    
+    admin.initializeApp({
+      credential: admin.credential.cert({
+        projectId: process.env.FIREBASE_ADMIN_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
+        privateKey: privateKey,
+      }),
+    });
+  }
+  
+  adminFirestore = admin.firestore();
+} catch (error) {
+  console.error('Failed to initialize Firebase Admin:', error);
+}
 
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -47,12 +67,8 @@ export default async function handler(req, res) {
         await handleCheckoutCompleted(event.data.object);
         break;
       
-      case 'invoice.payment_succeeded':
-        await handlePaymentSucceeded(event.data.object);
-        break;
-      
-      case 'invoice.payment_failed':
-        await handlePaymentFailed(event.data.object);
+      case 'customer.subscription.created':
+        await handleSubscriptionCreated(event.data.object);
         break;
       
       case 'customer.subscription.updated':
@@ -61,6 +77,14 @@ export default async function handler(req, res) {
       
       case 'customer.subscription.deleted':
         await handleSubscriptionDeleted(event.data.object);
+        break;
+      
+      case 'invoice.payment_succeeded':
+        await handlePaymentSucceeded(event.data.object);
+        break;
+      
+      case 'invoice.payment_failed':
+        await handlePaymentFailed(event.data.object);
         break;
 
       default:
@@ -75,11 +99,12 @@ export default async function handler(req, res) {
 }
 
 async function handleCheckoutCompleted(session) {
-  const firebaseUid = session.metadata.firebaseUid;
-  const plan = session.metadata.plan;
+  // FIXED: Use correct field name that matches create-checkout-session.js
+  const firebaseUserId = session.metadata?.firebaseUserId;
+  const customerId = session.customer;
 
-  if (!firebaseUid) {
-    console.error('No Firebase UID in session metadata');
+  if (!firebaseUserId) {
+    console.error('No Firebase user ID in checkout session metadata');
     return;
   }
 
@@ -87,112 +112,246 @@ async function handleCheckoutCompleted(session) {
     // Get subscription details
     const subscription = await stripe.subscriptions.retrieve(session.subscription);
     
-    // Update user record in Firebase
-    const userDocRef = doc(firestore, 'users', firebaseUid);
-    const userDoc = await getDoc(userDocRef);
+    // Update user record in Firebase with V2 trial format
+    const userRef = adminFirestore.collection('users').doc(firebaseUserId);
     
-    const userData = userDoc.exists() ? userDoc.data() : { classes: [] };
-    
-    await setDoc(userDocRef, {
-      ...userData,
-      subscription: plan,
-      stripeCustomerId: session.customer,
-      stripeSubscriptionId: subscription.id,
+    const updateData = {
+      stripeCustomerId: customerId,
+      subscription: 'educational-elements',
+      subscriptionId: subscription.id,
       subscriptionStatus: subscription.status,
+      planType: 'educational-elements',
       currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-      subscriptionStarted: new Date(),
-      lastPayment: new Date()
-    }, { merge: true });
+      updatedAt: new Date().toISOString(),
+      lastPayment: new Date().toISOString()
+    };
 
-    console.log(`✅ Subscription activated for user ${firebaseUid}: ${plan}`);
+    // FIXED: Set V2 trial format that dashboard expects
+    if (subscription.status === 'trialing' && subscription.trial_end) {
+      updateData.freeAccessUntil = new Date(subscription.trial_end * 1000).toISOString();
+      updateData.isTrialUser = true;
+      updateData.trialUntil = new Date(subscription.trial_end * 1000).toISOString(); // Keep V1 for compatibility
+      console.log(`🆓 Trial subscription created for user ${firebaseUserId} until ${updateData.freeAccessUntil}`);
+    }
+
+    await userRef.update(updateData);
+
+    console.log(`✅ Subscription activated for user ${firebaseUserId}: educational-elements`);
   } catch (error) {
     console.error('Error handling checkout completion:', error);
   }
 }
 
-async function handlePaymentSucceeded(invoice) {
-  const subscription = await stripe.subscriptions.retrieve(invoice.subscription);
-  const firebaseUid = subscription.metadata.firebaseUid;
+async function handleSubscriptionCreated(subscription) {
+  const firebaseUserId = subscription.metadata?.firebaseUserId;
+  const customerId = subscription.customer;
 
-  if (!firebaseUid) return;
-
-  try {
-    const userDocRef = doc(firestore, 'users', firebaseUid);
-    await updateDoc(userDocRef, {
-      subscriptionStatus: 'active',
-      lastPayment: new Date(),
-      currentPeriodEnd: new Date(subscription.current_period_end * 1000)
-    });
-
-    console.log(`✅ Payment succeeded for user ${firebaseUid}`);
-  } catch (error) {
-    console.error('Error handling payment success:', error);
+  if (!firebaseUserId) {
+    console.error('No Firebase user ID in subscription metadata');
+    return;
   }
-}
-
-async function handlePaymentFailed(invoice) {
-  const subscription = await stripe.subscriptions.retrieve(invoice.subscription);
-  const firebaseUid = subscription.metadata.firebaseUid;
-
-  if (!firebaseUid) return;
 
   try {
-    const userDocRef = doc(firestore, 'users', firebaseUid);
-    await updateDoc(userDocRef, {
-      subscriptionStatus: 'past_due',
-      paymentFailed: new Date()
-    });
+    const userRef = adminFirestore.collection('users').doc(firebaseUserId);
+    
+    const updateData = {
+      stripeCustomerId: customerId,
+      subscription: 'educational-elements',
+      subscriptionId: subscription.id,
+      subscriptionStatus: subscription.status,
+      planType: 'educational-elements',
+      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+      updatedAt: new Date().toISOString()
+    };
 
-    console.log(`❌ Payment failed for user ${firebaseUid}`);
+    // FIXED: Handle trial subscriptions with V2 format
+    if (subscription.status === 'trialing' && subscription.trial_end) {
+      updateData.freeAccessUntil = new Date(subscription.trial_end * 1000).toISOString();
+      updateData.isTrialUser = true;
+      updateData.trialUntil = new Date(subscription.trial_end * 1000).toISOString(); // Keep V1 for compatibility
+      console.log(`🆓 Trial user created: ${firebaseUserId} until ${updateData.freeAccessUntil}`);
+    }
+
+    await userRef.update(updateData);
+
+    console.log(`✅ Created subscription for user ${firebaseUserId}`);
+
   } catch (error) {
-    console.error('Error handling payment failure:', error);
+    console.error('Error handling subscription created:', error);
   }
 }
 
 async function handleSubscriptionUpdated(subscription) {
-  const firebaseUid = subscription.metadata.firebaseUid;
+  let firebaseUserId = subscription.metadata?.firebaseUserId;
 
-  if (!firebaseUid) return;
+  if (!firebaseUserId) {
+    // Try to find user by customer ID
+    try {
+      const usersSnapshot = await adminFirestore.collection('users')
+        .where('stripeCustomerId', '==', subscription.customer)
+        .limit(1)
+        .get();
+
+      if (usersSnapshot.empty) {
+        console.error('No user found for customer ID:', subscription.customer);
+        return;
+      }
+
+      const userDoc = usersSnapshot.docs[0];
+      firebaseUserId = userDoc.id;
+    } catch (error) {
+      console.error('Error finding user by customer ID:', error);
+      return;
+    }
+  }
 
   try {
-    // Determine plan from price ID
-    let plan = 'basic';
-    if (subscription.items.data[0]) {
-      const priceId = subscription.items.data[0].price.id;
-      // Update with your actual Pro price ID
-      if (priceId === 'price_1RhLfRCkfn6vIQTWRXsduvSu') {
-        plan = 'pro';
+    const userRef = adminFirestore.collection('users').doc(firebaseUserId);
+    
+    const updateData = {
+      subscriptionStatus: subscription.status,
+      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+      updatedAt: new Date().toISOString()
+    };
+
+    // Handle subscription status changes with V2 trial format
+    if (subscription.status === 'active') {
+      updateData.subscription = 'educational-elements';
+      
+      // If transitioning from trial to active, clear trial data
+      if (subscription.trial_end && new Date() > new Date(subscription.trial_end * 1000)) {
+        updateData.isTrialUser = false;
+        updateData.freeAccessUntil = null;
+        updateData.trialUntil = null; // Clear V1 field too
+        console.log(`🔄 User ${firebaseUserId} trial ended, now active subscriber`);
       }
+    } else if (subscription.status === 'trialing') {
+      updateData.subscription = 'educational-elements';
+      updateData.isTrialUser = true;
+      updateData.freeAccessUntil = new Date(subscription.trial_end * 1000).toISOString();
+      updateData.trialUntil = new Date(subscription.trial_end * 1000).toISOString(); // Keep V1 for compatibility
+      console.log(`🆓 User ${firebaseUserId} in trial until ${updateData.freeAccessUntil}`);
+    } else if (['canceled', 'unpaid', 'past_due'].includes(subscription.status)) {
+      updateData.subscription = 'cancelled';
+      updateData.isTrialUser = false;
+      updateData.freeAccessUntil = null;
+      updateData.trialUntil = null;
     }
 
-    const userDocRef = doc(firestore, 'users', firebaseUid);
-    await updateDoc(userDocRef, {
-      subscription: plan,
-      subscriptionStatus: subscription.status,
-      currentPeriodEnd: new Date(subscription.current_period_end * 1000)
-    });
+    await userRef.update(updateData);
 
-    console.log(`🔄 Subscription updated for user ${firebaseUid}: ${plan}`);
+    console.log(`✅ Updated subscription for user ${firebaseUserId}, status: ${subscription.status}`);
+
   } catch (error) {
-    console.error('Error handling subscription update:', error);
+    console.error('Error handling subscription updated:', error);
   }
 }
 
 async function handleSubscriptionDeleted(subscription) {
-  const firebaseUid = subscription.metadata.firebaseUid;
+  let firebaseUserId = subscription.metadata?.firebaseUserId;
 
-  if (!firebaseUid) return;
+  if (!firebaseUserId) {
+    // Try to find user by customer ID
+    try {
+      const usersSnapshot = await adminFirestore.collection('users')
+        .where('stripeCustomerId', '==', subscription.customer)
+        .limit(1)
+        .get();
+
+      if (usersSnapshot.empty) {
+        console.error('No user found for customer ID:', subscription.customer);
+        return;
+      }
+
+      const userDoc = usersSnapshot.docs[0];
+      firebaseUserId = userDoc.id;
+    } catch (error) {
+      console.error('Error finding user by customer ID:', error);
+      return;
+    }
+  }
 
   try {
-    const userDocRef = doc(firestore, 'users', firebaseUid);
-    await updateDoc(userDocRef, {
+    const userRef = adminFirestore.collection('users').doc(firebaseUserId);
+    
+    await userRef.update({
       subscription: 'cancelled',
       subscriptionStatus: 'canceled',
-      cancelledAt: new Date()
+      isTrialUser: false,
+      freeAccessUntil: null,
+      trialUntil: null,
+      canceledAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     });
 
-    console.log(`🚫 Subscription cancelled for user ${firebaseUid}`);
+    console.log(`🚫 Subscription cancelled for user ${firebaseUserId}`);
+
   } catch (error) {
-    console.error('Error handling subscription deletion:', error);
+    console.error('Error handling subscription deleted:', error);
+  }
+}
+
+async function handlePaymentSucceeded(invoice) {
+  const subscriptionId = invoice.subscription;
+  
+  if (!subscriptionId) {
+    console.log('Invoice not associated with subscription, skipping');
+    return;
+  }
+
+  try {
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    const firebaseUserId = subscription.metadata?.firebaseUserId;
+
+    if (!firebaseUserId) {
+      console.error('No Firebase user ID in subscription metadata');
+      return;
+    }
+
+    const userRef = adminFirestore.collection('users').doc(firebaseUserId);
+    
+    await userRef.update({
+      subscriptionStatus: 'active',
+      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+      lastPaymentDate: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    });
+
+    console.log(`✅ Payment succeeded for user ${firebaseUserId}`);
+
+  } catch (error) {
+    console.error('Error handling payment succeeded:', error);
+  }
+}
+
+async function handlePaymentFailed(invoice) {
+  const subscriptionId = invoice.subscription;
+  
+  if (!subscriptionId) {
+    console.log('Invoice not associated with subscription, skipping');
+    return;
+  }
+
+  try {
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    const firebaseUserId = subscription.metadata?.firebaseUserId;
+
+    if (!firebaseUserId) {
+      console.error('No Firebase user ID in subscription metadata');
+      return;
+    }
+
+    const userRef = adminFirestore.collection('users').doc(firebaseUserId);
+    
+    await userRef.update({
+      subscriptionStatus: 'past_due',
+      lastFailedPaymentDate: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    });
+
+    console.log(`⚠️ Payment failed for user ${firebaseUserId}`);
+
+  } catch (error) {
+    console.error('Error handling payment failed:', error);
   }
 }
