@@ -1,12 +1,18 @@
-// pages/classroom-champions.js - FIXED XP AWARDING FOR V2 ARCHITECTURE
+// pages/classroom-champions.js - FIXED XP AWARDING WITH DIRECT FIRESTORE UPDATES
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
-import { auth } from '../utils/firebase';
+import { auth, firestore } from '../utils/firebase'; // Import firestore instance
 import { onAuthStateChanged } from 'firebase/auth';
 
-import { postStudentUpdate } from '../utils/apiClient';
-
-import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
+// UPDATED IMPORTS - Added missing Firestore functions
+import { 
+  getFirestore, 
+  doc, 
+  getDoc, 
+  updateDoc, 
+  writeBatch, 
+  increment 
+} from 'firebase/firestore';
 const db = getFirestore();
 
 // Import new Firebase utilities (for post-migration)
@@ -395,29 +401,43 @@ const loadUserData = async (user) => {
     setStudents(reorderedStudents);
   };
 
-  // FIXED: handleBulkAward - Remove manual state updates for V2
+  // FIXED: handleBulkAward - Direct Firestore Updates (bypassing API)
   const handleBulkAward = useCallback(async (studentIds, amount, type) => {
     try {
-      console.log('💰 Bulk awarding:', { studentIds: studentIds.length, amount, type });
+      console.log('💰 DIRECT Bulk awarding (bypassing API):', { studentIds: studentIds.length, amount, type });
       
       if (architectureVersion === 'v2') {
-        // Use new API for V2 - NO MANUAL STATE UPDATE
-        const promises = studentIds.map((sid, i) =>
-          postStudentUpdate({
-            studentId: sid,
-            classCode: currentClassData?.classCode,
-            updateData: type === 'xp' ? { totalPoints: amount } : { currency: amount },
-            mode: 'increment',
-            note: `Bulk ${type} Award`,
-            opId: `bulk-${type}-${sid}-${Date.now()}-${i}`,
-          })
-        );
+        // DIRECT V2 UPDATE - bypassing the broken API
+        const batch = writeBatch(firestore);
         
-        await Promise.allSettled(promises);
-        console.log('✅ V2 bulk award sent, waiting for real-time updates');
+        studentIds.forEach(studentId => {
+          const studentRef = doc(firestore, 'students', studentId);
+          const updateData = {
+            updatedAt: new Date().toISOString(),
+            lastActivity: new Date().toISOString()
+          };
+          
+          if (type === 'xp') {
+            updateData.totalPoints = increment(amount);
+          } else {
+            updateData.currency = increment(amount);
+          }
+          
+          batch.update(studentRef, updateData);
+        });
+        
+        // Update class last activity
+        if (currentClassId) {
+          const classRef = doc(firestore, 'classes', currentClassId);
+          batch.update(classRef, {
+            lastActivity: new Date().toISOString()
+          });
+        }
+        
+        await batch.commit();
+        console.log('✅ Direct V2 batch update completed');
         
         // Real-time listeners will update the local state automatically
-        // NO manual state updates here
         
       } else {
         // V1 fallback - direct updates with manual state updates
@@ -463,12 +483,12 @@ const loadUserData = async (user) => {
       playSound(type === 'xp' ? 'ding' : 'coins');
       
     } catch (error) {
-      console.error('❌ Error in bulk award:', error);
+      console.error('❌ Error in direct bulk award:', error);
       showToast('Error awarding points', 'error');
     }
-  }, [students, handleUpdateStudent, architectureVersion, currentClassData, user, currentClassId]);
+  }, [students, handleUpdateStudent, architectureVersion, currentClassId, firestore, user]);
 
-  // FIXED: awardXPToStudent - Remove manual state updates for V2
+  // FIXED: awardXPToStudent - Direct Firestore Updates
   const awardXPToStudent = useCallback(async (studentId, amount, reason = '') => {
     try {
       const student = students.find(s => s.id === studentId);
@@ -477,20 +497,18 @@ const loadUserData = async (user) => {
         return;
       }
 
-      console.log(`⭐ Awarding ${amount} XP to ${student.firstName} for ${reason}`);
+      console.log(`⭐ DIRECT Awarding ${amount} XP to ${student.firstName} for ${reason}`);
       
-      if (architectureVersion === 'v2' && currentClassData?.classCode) {
-        // Use new API for V2 - NO MANUAL STATE UPDATE
-        await postStudentUpdate({
-          studentId,
-          classCode: currentClassData.classCode,
-          updateData: { totalPoints: amount },
-          mode: 'increment',
-          note: `XP Award: ${reason || ''}`,
-          opId: `xp-${studentId}-${Date.now()}`,
+      if (architectureVersion === 'v2') {
+        // DIRECT V2 UPDATE - bypassing the broken API
+        const studentRef = doc(firestore, 'students', studentId);
+        await updateDoc(studentRef, {
+          totalPoints: increment(amount),
+          updatedAt: new Date().toISOString(),
+          lastActivity: new Date().toISOString()
         });
         
-        console.log('✅ V2 XP award sent, waiting for real-time update');
+        console.log('✅ Direct V2 XP award completed');
         // Real-time listener will update local state automatically
         
       } else {
@@ -525,12 +543,12 @@ const loadUserData = async (user) => {
       playSound('ding');
       
     } catch (error) {
-      console.error('❌ Error awarding XP:', error);
+      console.error('❌ Error in direct XP award:', error);
       showToast('Error awarding XP', 'error');
     }
-  }, [students, handleUpdateStudent, architectureVersion, currentClassData, user, currentClassId]);
+  }, [students, handleUpdateStudent, architectureVersion, firestore, user, currentClassId]);
 
-  // FIXED: awardCoinsToStudent - Remove manual state updates for V2
+  // FIXED: awardCoinsToStudent - Direct Firestore Updates
   const awardCoinsToStudent = useCallback(async (studentId, amount, reason = '') => {
     try {
       const student = students.find(s => s.id === studentId);
@@ -539,20 +557,18 @@ const loadUserData = async (user) => {
         return;
       }
 
-      console.log(`🪙 Awarding ${amount} coins to ${student.firstName} for ${reason}`);
+      console.log(`🪙 DIRECT Awarding ${amount} coins to ${student.firstName} for ${reason}`);
       
-      if (architectureVersion === 'v2' && currentClassData?.classCode) {
-        // Use new API for V2 - NO MANUAL STATE UPDATE
-        await postStudentUpdate({
-          studentId,
-          classCode: currentClassData.classCode,
-          updateData: { currency: amount },
-          mode: 'increment',
-          note: `Coin Award: ${reason || ''}`,
-          opId: `coin-${studentId}-${Date.now()}`,
+      if (architectureVersion === 'v2') {
+        // DIRECT V2 UPDATE - bypassing the broken API
+        const studentRef = doc(firestore, 'students', studentId);
+        await updateDoc(studentRef, {
+          currency: increment(amount),
+          updatedAt: new Date().toISOString(),
+          lastActivity: new Date().toISOString()
         });
         
-        console.log('✅ V2 coin award sent, waiting for real-time update');
+        console.log('✅ Direct V2 coin award completed');
         // Real-time listener will update local state automatically
         
       } else {
@@ -569,10 +585,10 @@ const loadUserData = async (user) => {
       playSound('coins');
       
     } catch (error) {
-      console.error('❌ Error awarding coins:', error);
+      console.error('❌ Error in direct coin award:', error);
       showToast('Error awarding coins', 'error');
     }
-  }, [students, architectureVersion, currentClassData, user, currentClassId]);
+  }, [students, architectureVersion, firestore, user, currentClassId]);
 
   const addStudent = async () => {
     if (!newStudentFirstName.trim() || !currentClassId) return;
