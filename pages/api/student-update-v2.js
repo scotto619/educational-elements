@@ -1,4 +1,4 @@
-// pages/api/student-update-v2.js - FIXED SERVER TIMESTAMP ISSUES
+// pages/api/student-update-v2.js - SIMPLIFIED VERSION WITHOUT TIMESTAMP ISSUES
 import admin from 'firebase-admin';
 
 // Initialize Firebase Admin if not already done
@@ -31,23 +31,6 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
-// Build an update object that uses FieldValue.increment for numerics when mode==='increment'
-function buildMergedUpdate(updateData = {}, mode = 'increment') {
-  const out = {};
-  for (const [k, v] of Object.entries(updateData)) {
-    if (typeof v === 'number' && mode === 'increment') {
-      out[k] = admin.firestore.FieldValue.increment(v);
-    } else {
-      out[k] = v;
-    }
-  }
-  // Use ISO string instead of server timestamp to avoid transaction issues
-  const now = new Date().toISOString();
-  out.updatedAt = now;
-  out.lastActivity = now;
-  return out;
-}
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -56,12 +39,11 @@ export default async function handler(req, res) {
   try {
     const {
       studentId,
-      classCode,          // required: used to validate/locate class
-      updateData,         // e.g. { totalPoints: 1 } or { currency: -1 } or { clickerGameData: {...} }
-      mode = 'increment', // 'increment' (numbers) or 'set' (objects)
+      classCode,
+      updateData,
+      mode = 'increment',
       note = '',
-      opId,               // optional idempotency key (not persisted yet)
-      teacherUserId,      // OPTIONAL: teacher UID from the dashboard (skips publicClassData lookup)
+      teacherUserId,
     } = req.body || {};
 
     console.log('🔥 Student update request:', { 
@@ -72,6 +54,7 @@ export default async function handler(req, res) {
       teacherProvided: !!teacherUserId 
     });
 
+    // Validate required fields
     if (!studentId || !classCode || !updateData) {
       return res.status(400).json({ 
         error: 'Missing required fields', 
@@ -80,141 +63,176 @@ export default async function handler(req, res) {
       });
     }
 
-    const result = await db.runTransaction(async (tx) => {
-      try {
-        // ---- V2 path (after migration) ----
-        console.log('🔍 Checking V2 architecture first...');
-        const studentRef = db.collection('students').doc(studentId);
-        const studentSnap = await tx.get(studentRef);
+    // Use non-transaction approach for better reliability
+    console.log('🔍 Checking V2 architecture...');
+    const studentRef = db.collection('students').doc(studentId);
+    const studentDoc = await studentRef.get();
 
-        if (studentSnap.exists) {
-          console.log('✅ Found student in V2 architecture');
-          const sData = studentSnap.data();
-          if (!sData.classId) throw new Error('Student missing classId (V2)');
-
-          const classRef = db.collection('classes').doc(sData.classId);
-          const classSnap = await tx.get(classRef);
-          if (!classSnap.exists) throw new Error('Class not found (V2)');
-
-          const classData = classSnap.data();
-          if ((classData.classCode || '').toUpperCase() !== (classCode || '').toUpperCase()) {
-            throw new Error(`Invalid class code. Expected: ${classData.classCode}, Got: ${classCode}`);
-          }
-          if (teacherUserId && classData.teacherId !== teacherUserId) {
-            throw new Error('Unauthorized (teacher mismatch)');
-          }
-
-          const merged = buildMergedUpdate(updateData, mode);
-          console.log('🔄 Applying V2 update:', Object.keys(merged));
-          
-          // Use update instead of set with merge to avoid timestamp conflicts
-          tx.update(studentRef, merged);
-          
-          // Update class last activity separately
-          const now = new Date().toISOString();
-          tx.update(classRef, { lastActivity: now });
-
-          return { schema: 'v2', studentId: studentRef.id };
-        }
-
-        // ---- V1 fallback (pre-migration): update nested array in users/{teacherId}.classes[] ----
-        console.log('🔄 Falling back to V1 architecture...');
-        
-        // Prefer teacherUserId if provided by the dashboard; otherwise resolve via publicClassData/{classCode}.
-        let teacherId = teacherUserId;
-        if (!teacherId) {
-          console.log('🔍 Looking up teacher via publicClassData...');
-          const pubRef = db.collection('publicClassData').doc(classCode);
-          const pubSnap = await tx.get(pubRef);
-          if (!pubSnap.exists) {
-            // Try to find teacher by scanning user documents (fallback)
-            console.log('⚠️ No publicClassData, scanning user documents...');
-            const usersSnapshot = await db.collection('users').get();
-            let foundTeacherId = null;
-            
-            for (const userDoc of usersSnapshot.docs) {
-              const userData = userDoc.data();
-              if (userData.classes) {
-                const hasClass = userData.classes.some(cls => 
-                  cls.classCode && cls.classCode.toUpperCase() === classCode.toUpperCase()
-                );
-                if (hasClass) {
-                  foundTeacherId = userDoc.id;
-                  break;
-                }
-              }
-            }
-            
-            if (!foundTeacherId) {
-              throw new Error(`Class code not found: ${classCode}`);
-            }
-            teacherId = foundTeacherId;
-          } else {
-            teacherId = pubSnap.get('teacherId');
-            if (!teacherId) throw new Error('teacherId missing on publicClassData');
-          }
-        }
-
-        console.log('👨‍🏫 Using teacher ID:', teacherId?.substring(0, 10) + '...');
-
-        const userRef = db.collection('users').doc(teacherId);
-        const userSnap = await tx.get(userRef);
-        if (!userSnap.exists) throw new Error('Teacher user doc not found (V1)');
-
-        const userData = userSnap.data() || {};
-        const classes = Array.isArray(userData.classes) ? [...userData.classes] : [];
-
-        const ci = classes.findIndex(
-          c => c && (
-            ((c.classCode || '').toUpperCase() === (classCode || '').toUpperCase()) || 
-            c.id === classCode ||
-            c.classId === classCode
-          )
-        );
-        if (ci < 0) throw new Error(`Class not found in V1 user doc for code: ${classCode}`);
-
-        const cls = { ...classes[ci] };
-        const studs = Array.isArray(cls.students) ? [...cls.students] : [];
-        const si = studs.findIndex(s => s && (s.id === studentId || s.studentId === studentId));
-        if (si < 0) throw new Error(`Student not found in V1 class: ${studentId}`);
-
-        const s = { ...studs[si] };
-        
-        // Apply updates
-        console.log('🔄 Applying V1 updates:', Object.keys(updateData));
-        for (const [k, v] of Object.entries(updateData)) {
-          if (typeof v === 'number' && mode === 'increment') {
-            const curr = Number(s[k] || 0);
-            s[k] = Math.max(0, curr + v); // Prevent negative values
-            console.log(`  ${k}: ${curr} + ${v} = ${s[k]}`);
-          } else {
-            s[k] = v;
-          }
-        }
-        
-        // Use ISO string timestamps for V1 too
-        const now = new Date().toISOString();
-        s.updatedAt = now;
-        s.lastActivity = now;
-
-        studs[si] = s;
-        cls.students = studs;
-        cls.lastActivity = now;
-        classes[ci] = cls;
-
-        tx.update(userRef, { classes });
-
-        return { schema: 'v1', studentId, teacherId };
-        
-      } catch (txError) {
-        console.error('💥 Transaction error:', txError);
-        throw txError;
+    if (studentDoc.exists) {
+      console.log('✅ Found student in V2 architecture');
+      const studentData = studentDoc.data();
+      
+      if (!studentData.classId) {
+        throw new Error('Student missing classId (V2)');
       }
+
+      // Verify class and permissions
+      const classRef = db.collection('classes').doc(studentData.classId);
+      const classDoc = await classRef.get();
+      
+      if (!classDoc.exists) {
+        throw new Error('Class not found (V2)');
+      }
+
+      const classData = classDoc.data();
+      if ((classData.classCode || '').toUpperCase() !== (classCode || '').toUpperCase()) {
+        throw new Error(`Invalid class code. Expected: ${classData.classCode}, Got: ${classCode}`);
+      }
+      
+      if (teacherUserId && classData.teacherId !== teacherUserId) {
+        throw new Error('Unauthorized (teacher mismatch)');
+      }
+
+      // Prepare updates without server timestamps
+      const now = new Date().toISOString();
+      const updateFields = { ...updateData };
+      
+      // Handle increment operations manually
+      if (mode === 'increment') {
+        for (const [key, value] of Object.entries(updateData)) {
+          if (typeof value === 'number') {
+            const currentValue = Number(studentData[key] || 0);
+            updateFields[key] = Math.max(0, currentValue + value);
+            console.log(`🔄 ${key}: ${currentValue} + ${value} = ${updateFields[key]}`);
+          }
+        }
+      }
+
+      // Add timestamps
+      updateFields.updatedAt = now;
+      updateFields.lastActivity = now;
+
+      console.log('🔄 Applying V2 update:', Object.keys(updateFields));
+      
+      // Update student document
+      await studentRef.update(updateFields);
+      
+      // Update class last activity separately
+      await classRef.update({ lastActivity: now });
+
+      console.log('✅ V2 student update completed successfully');
+      
+      return res.status(200).json({ 
+        success: true, 
+        schema: 'v2', 
+        studentId: studentRef.id,
+        note 
+      });
+    }
+
+    // V1 fallback path
+    console.log('🔄 Falling back to V1 architecture...');
+    
+    let teacherId = teacherUserId;
+    if (!teacherId) {
+      // Try to find teacher by class code
+      const usersSnapshot = await db.collection('users').get();
+      let foundTeacherId = null;
+      
+      for (const userDoc of usersSnapshot.docs) {
+        const userData = userDoc.data();
+        if (userData.classes && Array.isArray(userData.classes)) {
+          const hasClass = userData.classes.some(cls => 
+            cls.classCode && cls.classCode.toUpperCase() === classCode.toUpperCase()
+          );
+          if (hasClass) {
+            foundTeacherId = userDoc.id;
+            break;
+          }
+        }
+      }
+      
+      if (!foundTeacherId) {
+        throw new Error(`Class code not found: ${classCode}`);
+      }
+      teacherId = foundTeacherId;
+    }
+
+    console.log('👨‍🏫 Using teacher ID:', teacherId?.substring(0, 10) + '...');
+
+    // Get user document
+    const userRef = db.collection('users').doc(teacherId);
+    const userDoc = await userRef.get();
+    
+    if (!userDoc.exists) {
+      throw new Error('Teacher user doc not found (V1)');
+    }
+
+    const userData = userDoc.data() || {};
+    const classes = Array.isArray(userData.classes) ? [...userData.classes] : [];
+
+    // Find the class
+    const classIndex = classes.findIndex(
+      c => c && (
+        ((c.classCode || '').toUpperCase() === (classCode || '').toUpperCase()) || 
+        c.id === classCode ||
+        c.classId === classCode
+      )
+    );
+    
+    if (classIndex < 0) {
+      throw new Error(`Class not found in V1 user doc for code: ${classCode}`);
+    }
+
+    const targetClass = { ...classes[classIndex] };
+    const students = Array.isArray(targetClass.students) ? [...targetClass.students] : [];
+    
+    // Find the student
+    const studentIndex = students.findIndex(s => s && (s.id === studentId || s.studentId === studentId));
+    
+    if (studentIndex < 0) {
+      throw new Error(`Student not found in V1 class: ${studentId}`);
+    }
+
+    const student = { ...students[studentIndex] };
+    
+    // Apply updates manually for V1
+    console.log('🔄 Applying V1 updates:', Object.keys(updateData));
+    const now = new Date().toISOString();
+    
+    for (const [key, value] of Object.entries(updateData)) {
+      if (typeof value === 'number' && mode === 'increment') {
+        const current = Number(student[key] || 0);
+        student[key] = Math.max(0, current + value);
+        console.log(`  ${key}: ${current} + ${value} = ${student[key]}`);
+      } else {
+        student[key] = value;
+      }
+    }
+    
+    // Update timestamps
+    student.updatedAt = now;
+    student.lastActivity = now;
+
+    // Update arrays
+    students[studentIndex] = student;
+    targetClass.students = students;
+    targetClass.lastActivity = now;
+    classes[classIndex] = targetClass;
+
+    // Update user document
+    await userRef.update({ classes });
+
+    console.log('✅ V1 student update completed successfully');
+
+    return res.status(200).json({ 
+      success: true, 
+      schema: 'v1', 
+      studentId, 
+      teacherId,
+      note 
     });
 
-    console.log('✅ Student update completed:', result);
-    return res.status(200).json({ success: true, ...result, note });
-    
   } catch (err) {
     console.error('💥 student-update-v2 failed:', err);
     
@@ -224,7 +242,7 @@ export default async function handler(req, res) {
       timestamp: new Date().toISOString()
     };
     
-    // Add stack trace in development
+    // Add detailed error info in development
     if (process.env.NODE_ENV === 'development') {
       errorResponse.stack = err?.stack;
       errorResponse.details = {
