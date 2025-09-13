@@ -915,6 +915,9 @@ const loadUserData = async (user) => {
                   updateClassCode={updateClassCode}
                   widgetSettings={widgetSettings}
                   onUpdateWidgetSettings={saveWidgetSettings}
+                      onUpdateStudent={handleUpdateStudent} // Add this
+    architectureVersion={architectureVersion} // Add this
+    user={user} // Add this
                 />;
       
       default:

@@ -1,4 +1,4 @@
-// pages/student.js - FIXED WITH MATH MENTALS PROGRESS PERSISTENCE
+// pages/student.js - UPDATED WITH INDIVIDUAL STUDENT PASSWORD AUTHENTICATION
 import React, { useState, useEffect } from 'react';
 import { firestore } from '../utils/firebase';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
@@ -9,7 +9,7 @@ import StudentGames from '../components/student/StudentGames';
 import StudentDashboard from '../components/student/StudentDashboard';
 import StudentSpelling from '../components/student/StudentSpelling';
 import StudentReading from '../components/student/StudentReading';
-import StudentMathMentals from '../components/student/StudentMathMentals'; // NEW IMPORT
+import StudentMathMentals from '../components/student/StudentMathMentals';
 
 // Import from the correct gameHelpers file
 import { 
@@ -28,15 +28,22 @@ const StudentPortal = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [classCode, setClassCode] = useState('');
   const [availableStudents, setAvailableStudents] = useState([]);
-  const [selectedStudentId, setSelectedStudentId] = useState('');
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [studentPassword, setStudentPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
   const [error, setError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
 
   // Student data states
   const [studentData, setStudentData] = useState(null);
   const [classData, setClassData] = useState(null);
   const [teacherUserId, setTeacherUserId] = useState(null);
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [architectureVersion, setArchitectureVersion] = useState('unknown');
+
+  // Login flow states
+  const [loginStep, setLoginStep] = useState('classCode'); // 'classCode', 'studentSelect', 'password'
 
   // Check for existing session on load
   useEffect(() => {
@@ -48,6 +55,7 @@ const StudentPortal = () => {
         setStudentData(session.studentData);
         setClassData(session.classData);
         setTeacherUserId(session.teacherUserId);
+        setArchitectureVersion(session.architectureVersion || 'unknown');
         setActiveTab('dashboard');
       } catch (error) {
         console.error('Error parsing saved session:', error);
@@ -56,6 +64,10 @@ const StudentPortal = () => {
     }
   }, []);
 
+  // ===============================================
+  // STEP 1: CLASS CODE SEARCH
+  // ===============================================
+  
   const handleClassCodeSubmit = async (e) => {
     e.preventDefault();
     if (!classCode.trim()) {
@@ -69,124 +81,234 @@ const StudentPortal = () => {
     try {
       console.log('🔍 Searching for class code:', classCode.trim());
       
-      const usersRef = collection(firestore, 'users');
-      let usersSnapshot;
+      // Try V2 architecture first, then V1 fallback
+      let classResult = await searchV2Architecture(classCode.trim());
       
-      try {
-        usersSnapshot = await getDocs(usersRef);
-        console.log('✅ Successfully retrieved users collection');
-      } catch (firebaseError) {
-        console.error('❌ Firebase security rules blocking users collection access:', firebaseError);
-        setError('Unable to connect to class database. Please check your internet connection and try again.');
-        setLoading(false);
-        return;
+      if (!classResult) {
+        console.log('🔄 V2 search failed, trying V1 fallback...');
+        classResult = await searchV1Architecture(classCode.trim());
       }
       
-      let foundClass = null;
-      let foundTeacherUserId = null;
-
-      for (const userDoc of usersSnapshot.docs) {
-        try {
-          const userData = userDoc.data();
-          console.log('👥 Checking user:', userDoc.id, 'has classes:', !!userData.classes);
-          
-          if (userData.classes && Array.isArray(userData.classes)) {
-            const matchingClass = userData.classes.find(cls => 
-              cls.classCode && cls.classCode.trim().toUpperCase() === classCode.trim().toUpperCase()
-            );
-            
-            if (matchingClass) {
-              console.log('🎯 Found matching class!', matchingClass.name);
-              
-              // ENHANCEMENT: Get additional teacher data including toolkitData
-              const teacherDocRef = doc(firestore, 'users', userDoc.id);
-              const teacherDocSnap = await getDoc(teacherDocRef);
-              
-              if (teacherDocSnap.exists()) {
-                const fullTeacherData = teacherDocSnap.data();
-                const fullClassData = fullTeacherData.classes.find(cls => cls.id === matchingClass.id);
-                
-                // Include toolkit data for spelling/reading/math assignments
-                foundClass = {
-                  ...fullClassData,
-                  toolkitData: fullTeacherData.classes.find(cls => cls.id === matchingClass.id)?.toolkitData || {}
-                };
-                
-                console.log('📚 Loaded class with toolkit data:', foundClass.toolkitData ? 'Yes' : 'No');
-              } else {
-                foundClass = matchingClass;
-              }
-              
-              foundTeacherUserId = userDoc.id;
-              break;
-            }
-          }
-        } catch (userError) {
-          console.warn('⚠️ Error processing user document:', userDoc.id, userError);
-        }
-      }
-
-      if (!foundClass) {
-        console.log('❌ No class found with code:', classCode.trim());
+      if (!classResult) {
         setError('Class code not found. Please check with your teacher and make sure the code is correct.');
         setLoading(false);
         return;
       }
 
-      console.log('✅ Class found with', foundClass.students?.length || 0, 'students');
+      console.log('✅ Class found:', classResult.classData.name, 'Architecture:', classResult.architectureVersion);
 
-      if (!foundClass.students || foundClass.students.length === 0) {
+      if (!classResult.students || classResult.students.length === 0) {
         setError('This class has no students yet. Please check with your teacher.');
         setLoading(false);
         return;
       }
 
-      setAvailableStudents(foundClass.students || []);
-      setClassData(foundClass);
-      setTeacherUserId(foundTeacherUserId);
+      setAvailableStudents(classResult.students);
+      setClassData(classResult.classData);
+      setTeacherUserId(classResult.teacherUserId);
+      setArchitectureVersion(classResult.architectureVersion);
+      setLoginStep('studentSelect');
       
     } catch (error) {
-      console.error('💥 Unexpected error finding class:', error);
-      
-      if (error.code === 'permission-denied') {
-        setError('Access denied. Please check your internet connection and try again.');
-      } else if (error.code === 'unavailable') {
-        setError('Service temporarily unavailable. Please try again in a moment.');
-      } else {
-        setError('Unable to connect to class. Please check your internet connection and try again.');
-      }
+      console.error('💥 Error finding class:', error);
+      setError('Unable to connect to class. Please check your internet connection and try again.');
     }
 
     setLoading(false);
   };
 
-  const handleStudentSelect = (studentId) => {
-    const student = availableStudents.find(s => s.id === studentId);
-    if (!student) {
-      console.error('Student not found:', studentId);
+  // ===============================================
+  // STEP 2: STUDENT SELECTION
+  // ===============================================
+  
+  const handleStudentSelect = (student) => {
+    console.log('👤 Student selected:', student.firstName);
+    setSelectedStudent(student);
+    setStudentPassword('');
+    setPasswordError('');
+    setLoginStep('password');
+  };
+
+  // ===============================================
+  // STEP 3: PASSWORD VERIFICATION
+  // ===============================================
+  
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+    if (!studentPassword.trim()) {
+      setPasswordError('Please enter your password');
       return;
     }
 
-    console.log('👤 Student selected:', student.firstName);
+    setPasswordLoading(true);
+    setPasswordError('');
 
-    const session = {
-      studentData: student,
-      classData: classData,
-      teacherUserId: teacherUserId,
-      loginTime: new Date().toISOString()
-    };
-    
     try {
-      sessionStorage.setItem('studentSession', JSON.stringify(session));
-    } catch (sessionError) {
-      console.warn('⚠️ Could not save session to sessionStorage:', sessionError);
+      console.log('🔐 Verifying password for:', selectedStudent.firstName);
+      
+      const response = await fetch('/api/verify-student-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          studentId: selectedStudent.id,
+          password: studentPassword,
+          classCode: classData.classCode,
+          architectureVersion: architectureVersion
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          setPasswordError('Incorrect password. Please try again or ask your teacher for help.');
+        } else if (response.status === 404) {
+          setPasswordError('Student account not found. Please contact your teacher.');
+        } else {
+          setPasswordError('Unable to verify password. Please try again.');
+        }
+        setPasswordLoading(false);
+        return;
+      }
+
+      console.log('✅ Password verified successfully');
+
+      // Login successful - create session
+      const session = {
+        studentData: selectedStudent,
+        classData: classData,
+        teacherUserId: teacherUserId,
+        architectureVersion: architectureVersion,
+        loginTime: new Date().toISOString()
+      };
+      
+      try {
+        sessionStorage.setItem('studentSession', JSON.stringify(session));
+      } catch (sessionError) {
+        console.warn('⚠️ Could not save session to sessionStorage:', sessionError);
+      }
+      
+      setStudentData(selectedStudent);
+      setIsLoggedIn(true);
+      setActiveTab('dashboard');
+      
+    } catch (error) {
+      console.error('❌ Password verification error:', error);
+      setPasswordError('Network error. Please check your connection and try again.');
     }
-    
-    setStudentData(student);
-    setIsLoggedIn(true);
-    setActiveTab('dashboard');
+
+    setPasswordLoading(false);
   };
 
+  // ===============================================
+  // ARCHITECTURE SEARCH FUNCTIONS (Same as before)
+  // ===============================================
+  
+  const searchV2Architecture = async (classCodeInput) => {
+    try {
+      console.log('🔍 V2 Search: Querying classes collection...');
+      
+      const classesQuery = query(
+        collection(firestore, 'classes'),
+        where('classCode', '==', classCodeInput.toUpperCase())
+      );
+      
+      const classesSnapshot = await getDocs(classesQuery);
+      
+      if (classesSnapshot.empty) {
+        return null;
+      }
+
+      const classDoc = classesSnapshot.docs[0];
+      const classData = { id: classDoc.id, ...classDoc.data() };
+      
+      // Get class membership and students
+      const membershipDoc = await getDoc(doc(firestore, 'class_memberships', classDoc.id));
+      
+      let students = [];
+      if (membershipDoc.exists()) {
+        const membershipData = membershipDoc.data();
+        const studentIds = membershipData.students || [];
+        
+        if (studentIds.length > 0) {
+          const studentPromises = studentIds.map(async (studentId) => {
+            try {
+              const studentDoc = await getDoc(doc(firestore, 'students', studentId));
+              if (studentDoc.exists()) {
+                return { id: studentDoc.id, ...studentDoc.data() };
+              }
+            } catch (error) {
+              console.warn('⚠️ Error loading student:', studentId, error);
+            }
+            return null;
+          });
+          
+          const studentResults = await Promise.all(studentPromises);
+          students = studentResults.filter(s => s !== null);
+        }
+      }
+
+      return {
+        classData: { ...classData, toolkitData: classData.toolkitData || {} },
+        students: students,
+        teacherUserId: classData.teacherId,
+        architectureVersion: 'v2'
+      };
+
+    } catch (error) {
+      console.error('❌ V2 search error:', error);
+      return null;
+    }
+  };
+
+  const searchV1Architecture = async (classCodeInput) => {
+    try {
+      console.log('🔄 V1 Fallback: Scanning user documents...');
+      
+      const usersRef = collection(firestore, 'users');
+      const usersSnapshot = await getDocs(usersRef);
+      
+      for (const userDoc of usersSnapshot.docs) {
+        try {
+          const userData = userDoc.data();
+          
+          if (userData.classes && Array.isArray(userData.classes)) {
+            const matchingClass = userData.classes.find(cls => 
+              cls.classCode && cls.classCode.trim().toUpperCase() === classCodeInput.toUpperCase()
+            );
+            
+            if (matchingClass) {
+              return {
+                classData: {
+                  ...matchingClass,
+                  id: matchingClass.id || matchingClass.classId || classCodeInput,
+                  toolkitData: matchingClass.toolkitData || {}
+                },
+                students: matchingClass.students || [],
+                teacherUserId: userDoc.id,
+                architectureVersion: 'v1'
+              };
+            }
+          }
+        } catch (userError) {
+          console.warn('⚠️ V1: Error processing user document:', userDoc.id, userError);
+        }
+      }
+
+      return null;
+      
+    } catch (error) {
+      console.error('❌ V1 search error:', error);
+      return null;
+    }
+  };
+
+  // ===============================================
+  // LOGOUT AND BACK NAVIGATION
+  // ===============================================
+  
   const handleLogout = () => {
     try {
       sessionStorage.removeItem('studentSession');
@@ -198,13 +320,35 @@ const StudentPortal = () => {
     setStudentData(null);
     setClassData(null);
     setTeacherUserId(null);
+    setArchitectureVersion('unknown');
     setClassCode('');
     setAvailableStudents([]);
+    setSelectedStudent(null);
+    setStudentPassword('');
     setError('');
+    setPasswordError('');
+    setLoginStep('classCode');
+  };
+
+  const handleBackToClassCode = () => {
+    setAvailableStudents([]);
+    setSelectedStudent(null);
+    setStudentPassword('');
+    setClassCode('');
+    setError('');
+    setPasswordError('');
+    setLoginStep('classCode');
+  };
+
+  const handleBackToStudentSelect = () => {
+    setSelectedStudent(null);
+    setStudentPassword('');
+    setPasswordError('');
+    setLoginStep('studentSelect');
   };
 
   // ===============================================
-  // FIXED UPDATE FUNCTION - ENHANCED FOR MATH MENTALS PROGRESS PERSISTENCE
+  // ENHANCED UPDATE FUNCTION
   // ===============================================
   
   const updateStudentData = async (updatedStudentData) => {
@@ -215,104 +359,47 @@ const StudentPortal = () => {
     }
 
     try {
-      console.log('💾 Updating student data via API for:', studentData.firstName);
+      console.log('💾 Updating student data via V2 API:', studentData.firstName);
       
-      // Use the server API instead of direct Firestore writes
-      const response = await fetch('/api/student-update', {
+      const response = await fetch('/api/student-update-v2', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          teacherUserId: teacherUserId,
-          classId: classData.id,
           studentId: studentData.id,
+          classCode: classData.classCode,
           updateData: updatedStudentData,
-          classCode: classData.classCode
+          mode: 'increment',
+          teacherUserId: teacherUserId,
+          note: `Student portal update - ${Object.keys(updatedStudentData).join(', ')}`
         }),
       });
 
       const result = await response.json();
 
       if (!response.ok) {
-        console.error('❌ API Error:', result);
-        
-        if (response.status === 404) {
-          showToast('Class or student not found. Please try logging in again.', 'error');
-        } else if (response.status === 400) {
-          showToast('Invalid update request. Please contact your teacher.', 'error');
-        } else {
-          showToast('Unable to save changes. Please try again.', 'error');
-        }
-        
+        console.error('❌ V2 API Error:', result);
+        showToast('Unable to save changes. Please try again.', 'error');
         return false;
       }
 
-      // CRITICAL FIX: Update local state with the response data
-      const updatedStudent = result.student;
-      setStudentData(updatedStudent);
+      setStudentData(prev => ({ ...prev, ...updatedStudentData }));
       
-      // CRITICAL FIX: For Math Mentals updates, also update classData to keep everything in sync
-      if (updatedStudentData.mathMentalsProgress) {
-        console.log('🧮 Math Mentals update detected - syncing local class data...');
-        
-        // Update the math groups in classData to reflect the new progress
-        const updatedClassData = { ...classData };
-        if (updatedClassData.toolkitData?.mathMentalsGroups) {
-          updatedClassData.toolkitData.mathMentalsGroups = updatedClassData.toolkitData.mathMentalsGroups.map(group => ({
-            ...group,
-            students: group.students.map(student => {
-              if (student.id === studentData.id) {
-                return {
-                  ...student,
-                  progress: updatedStudentData.mathMentalsProgress.progress,
-                  streak: updatedStudentData.mathMentalsProgress.streak,
-                  currentLevel: updatedStudentData.mathMentalsProgress.currentLevel,
-                  lastUpdated: new Date().toISOString()
-                };
-              }
-              return student;
-            })
-          }));
-          
-          console.log('✅ Local math group data synchronized');
-        }
-        setClassData(updatedClassData);
-        
-        // Update session storage with both updated student and class data
-        try {
-          const session = JSON.parse(sessionStorage.getItem('studentSession') || '{}');
-          session.studentData = updatedStudent;
-          session.classData = updatedClassData; // Include updated class data
-          sessionStorage.setItem('studentSession', JSON.stringify(session));
-          console.log('✅ Session storage updated with synced data');
-        } catch (sessionError) {
-          console.warn('Could not update session storage:', sessionError);
-        }
-      } else {
-        // For non-Math Mentals updates, just update session storage normally
-        try {
-          const session = JSON.parse(sessionStorage.getItem('studentSession') || '{}');
-          session.studentData = updatedStudent;
-          sessionStorage.setItem('studentSession', JSON.stringify(session));
-        } catch (sessionError) {
-          console.warn('Could not update session storage:', sessionError);
-        }
+      // Update session storage
+      try {
+        const session = JSON.parse(sessionStorage.getItem('studentSession') || '{}');
+        session.studentData = { ...session.studentData, ...updatedStudentData };
+        sessionStorage.setItem('studentSession', JSON.stringify(session));
+      } catch (sessionError) {
+        console.warn('Could not update session storage:', sessionError);
       }
       
-      console.log('✅ Student data updated successfully via API');
       return true;
       
     } catch (error) {
       console.error('❌ Network error updating student data:', error);
-      
-      // Check if it's a network connectivity issue
-      if (error.name === 'TypeError' && error.message.includes('fetch')) {
-        showToast('Network connection error. Please check your internet and try again.', 'error');
-      } else {
-        showToast('Failed to save changes. Please try again.', 'error');
-      }
-      
+      showToast('Failed to save changes. Please try again.', 'error');
       return false;
     }
   };
@@ -333,11 +420,11 @@ const StudentPortal = () => {
       if (toastElement.parentNode) {
         toastElement.parentNode.removeChild(toastElement);
       }
-    }, 4000); // Show longer for error messages
+    }, 4000);
   };
 
   // ===============================================
-  // RENDER LOGIN SCREEN - MOBILE OPTIMIZED
+  // RENDER LOGIN SCREEN WITH STEPS
   // ===============================================
   
   if (!isLoggedIn) {
@@ -350,9 +437,7 @@ const StudentPortal = () => {
               src="/Logo/LOGO_NoBG.png" 
               alt="Educational Elements Logo" 
               className="h-12 w-12 md:h-16 md:w-16 mx-auto mb-3 md:mb-4"
-              onError={(e) => {
-                e.target.style.display = 'none';
-              }}
+              onError={(e) => { e.target.style.display = 'none'; }}
             />
             <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               Student Portal
@@ -360,8 +445,32 @@ const StudentPortal = () => {
             <p className="text-gray-600 mt-2 text-sm md:text-base">Access your classroom adventure!</p>
           </div>
 
-          {/* Class Code Entry */}
-          {availableStudents.length === 0 && (
+          {/* Step Indicator */}
+          <div className="flex items-center justify-center mb-6">
+            <div className="flex items-center space-x-2">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold ${
+                loginStep === 'classCode' ? 'bg-blue-500 text-white' : 'bg-green-500 text-white'
+              }`}>
+                1
+              </div>
+              <div className={`w-8 h-1 ${loginStep !== 'classCode' ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold ${
+                loginStep === 'studentSelect' ? 'bg-blue-500 text-white' : 
+                loginStep === 'password' ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'
+              }`}>
+                2
+              </div>
+              <div className={`w-8 h-1 ${loginStep === 'password' ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold ${
+                loginStep === 'password' ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-600'
+              }`}>
+                3
+              </div>
+            </div>
+          </div>
+
+          {/* STEP 1: Class Code Entry */}
+          {loginStep === 'classCode' && (
             <form onSubmit={handleClassCodeSubmit} className="space-y-4 md:space-y-6">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -407,8 +516,8 @@ const StudentPortal = () => {
             </form>
           )}
 
-          {/* Student Selection - Mobile Optimized */}
-          {availableStudents.length > 0 && (
+          {/* STEP 2: Student Selection */}
+          {loginStep === 'studentSelect' && (
             <div className="space-y-4 md:space-y-6">
               <div className="text-center">
                 <h2 className="text-lg md:text-xl font-bold text-gray-800 mb-2">Select Your Name</h2>
@@ -420,16 +529,14 @@ const StudentPortal = () => {
                 {availableStudents.map(student => (
                   <button
                     key={student.id}
-                    onClick={() => handleStudentSelect(student.id)}
+                    onClick={() => handleStudentSelect(student)}
                     className="flex items-center space-x-3 p-3 md:p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all active:scale-95"
                   >
                     <img 
                       src={getAvatarImage(student.avatarBase, calculateAvatarLevel(student.totalPoints))} 
                       alt={student.firstName}
                       className="w-10 h-10 md:w-12 md:h-12 rounded-full border-2 border-gray-300 flex-shrink-0"
-                      onError={(e) => {
-                        e.target.src = '/shop/Basic/Banana.png';
-                      }}
+                      onError={(e) => { e.target.src = '/shop/Basic/Banana.png'; }}
                     />
                     <div className="text-left flex-1 min-w-0">
                       <p className="font-semibold text-gray-800 text-sm md:text-base truncate">
@@ -444,16 +551,80 @@ const StudentPortal = () => {
               </div>
               
               <button
-                onClick={() => {
-                  setAvailableStudents([]);
-                  setClassCode('');
-                  setError('');
-                }}
+                onClick={handleBackToClassCode}
                 className="w-full py-2 md:py-3 text-gray-600 hover:text-gray-800 transition-colors text-sm md:text-base"
               >
                 ← Back to Class Code
               </button>
             </div>
+          )}
+
+          {/* STEP 3: Password Entry */}
+          {loginStep === 'password' && selectedStudent && (
+            <form onSubmit={handlePasswordSubmit} className="space-y-4 md:space-y-6">
+              <div className="text-center">
+                <img 
+                  src={getAvatarImage(selectedStudent.avatarBase, calculateAvatarLevel(selectedStudent.totalPoints))} 
+                  alt={selectedStudent.firstName}
+                  className="w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-blue-300 mx-auto mb-3"
+                  onError={(e) => { e.target.src = '/shop/Basic/Banana.png'; }}
+                />
+                <h2 className="text-lg md:text-xl font-bold text-gray-800 mb-1">
+                  Welcome, {selectedStudent.firstName}!
+                </h2>
+                <p className="text-gray-600 text-sm md:text-base">Please enter your password</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Your Password
+                </label>
+                <input
+                  type="password"
+                  value={studentPassword}
+                  onChange={(e) => setStudentPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  className="w-full px-4 py-3 md:py-4 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none text-center text-lg md:text-xl font-semibold"
+                  disabled={passwordLoading}
+                  autoFocus
+                />
+                <p className="text-xs text-gray-500 mt-1 text-center">
+                  Ask your teacher if you forgot your password
+                </p>
+              </div>
+              
+              {passwordError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                  <p className="text-red-600 text-sm">{passwordError}</p>
+                </div>
+              )}
+              
+              <button
+                type="submit"
+                disabled={passwordLoading || !studentPassword.trim()}
+                className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3 md:py-4 rounded-lg font-semibold text-base md:text-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {passwordLoading ? (
+                  <span className="flex items-center justify-center">
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Signing In...
+                  </span>
+                ) : (
+                  'Sign In'
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleBackToStudentSelect}
+                className="w-full py-2 md:py-3 text-gray-600 hover:text-gray-800 transition-colors text-sm md:text-base"
+              >
+                ← Choose Different Student
+              </button>
+            </form>
           )}
         </div>
       </div>
@@ -461,15 +632,15 @@ const StudentPortal = () => {
   }
 
   // ===============================================
-  // RENDER MAIN PORTAL - UPDATED WITH MATH MENTALS TAB
+  // RENDER MAIN PORTAL (Same as before)
   // ===============================================
   
   const tabs = [
     { id: 'dashboard', name: 'Home', icon: '🏠', shortName: 'Home' },
-    { id: 'mathmentals', name: 'Math Mentals', icon: '🧮', shortName: 'Math' }, // NEW TAB
+    { id: 'mathmentals', name: 'Math Mentals', icon: '🧮', shortName: 'Math' },
     { id: 'spelling', name: 'Spelling', icon: '📝', shortName: 'Spelling' },
     { id: 'reading', name: 'Reading', icon: '📖', shortName: 'Reading' },
-    { id: 'shop', name: 'Shop', icon: '🛍️', shortName: 'Shop' },
+    { id: 'shop', name: 'Shop', icon: '🛒', shortName: 'Shop' },
     { id: 'games', name: 'Games', icon: '🎮', shortName: 'Games' },
     { id: 'quizshow', name: 'Quiz Show', icon: '🎪', shortName: 'Quiz' }
   ];
@@ -487,7 +658,7 @@ const StudentPortal = () => {
             calculateAvatarLevel={calculateAvatarLevel}
           />
         );
-      case 'mathmentals': // NEW CASE FOR MATH MENTALS
+      case 'mathmentals':
         return (
           <StudentMathMentals 
             studentData={studentData}
@@ -563,7 +734,7 @@ const StudentPortal = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-100">
-      {/* Header - Mobile Optimized */}
+      {/* Header */}
       <div className="bg-white shadow-lg border-b-4 border-blue-500">
         <div className="max-w-6xl mx-auto px-3 md:px-4 py-3 md:py-4 flex items-center justify-between">
           <div className="flex items-center min-w-0 flex-1">
@@ -571,9 +742,7 @@ const StudentPortal = () => {
               src="/Logo/LOGO_NoBG.png" 
               alt="Educational Elements Logo" 
               className="h-8 w-8 md:h-10 md:w-10 mr-2 md:mr-3 flex-shrink-0"
-              onError={(e) => {
-                e.target.style.display = 'none';
-              }}
+              onError={(e) => { e.target.style.display = 'none'; }}
             />
             <div className="min-w-0 flex-1">
               <h1 className="text-base md:text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent truncate">
@@ -594,7 +763,7 @@ const StudentPortal = () => {
         </div>
       </div>
 
-      {/* Navigation - UPDATED TO HANDLE 7 TABS ON MOBILE */}
+      {/* Navigation */}
       <div className="bg-white shadow-sm border-b sticky top-0 z-10">
         <div className="max-w-6xl mx-auto">
           <div className="flex overflow-x-auto">
@@ -617,7 +786,7 @@ const StudentPortal = () => {
         </div>
       </div>
 
-      {/* Main Content - Mobile Optimized */}
+      {/* Main Content */}
       <main className="max-w-6xl mx-auto px-3 md:px-4 py-4 md:py-6">
         {renderTabContent()}
       </main>
