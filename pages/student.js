@@ -1,7 +1,10 @@
-// pages/student.js - UPDATED WITH INDIVIDUAL STUDENT PASSWORD AUTHENTICATION
+// pages/student.js - UPDATED WITH DIRECT PASSWORD VERIFICATION (NO APIs)
 import React, { useState, useEffect } from 'react';
 import { firestore } from '../utils/firebase';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+
+// Import the direct password helpers (no APIs needed)
+import { verifyStudentPasswordDirect, getDefaultPassword } from '../utils/passwordHelpers';
 
 // Import reusable components
 import StudentShop from '../components/student/StudentShop';
@@ -65,7 +68,7 @@ const StudentPortal = () => {
   }, []);
 
   // ===============================================
-  // STEP 1: CLASS CODE SEARCH
+  // STEP 1: CLASS CODE SEARCH (Same as before)
   // ===============================================
   
   const handleClassCodeSubmit = async (e) => {
@@ -117,95 +120,7 @@ const StudentPortal = () => {
     setLoading(false);
   };
 
-  // ===============================================
-  // STEP 2: STUDENT SELECTION
-  // ===============================================
-  
-  const handleStudentSelect = (student) => {
-    console.log('👤 Student selected:', student.firstName);
-    setSelectedStudent(student);
-    setStudentPassword('');
-    setPasswordError('');
-    setLoginStep('password');
-  };
-
-  // ===============================================
-  // STEP 3: PASSWORD VERIFICATION
-  // ===============================================
-  
-  const handlePasswordSubmit = async (e) => {
-    e.preventDefault();
-    if (!studentPassword.trim()) {
-      setPasswordError('Please enter your password');
-      return;
-    }
-
-    setPasswordLoading(true);
-    setPasswordError('');
-
-    try {
-      console.log('🔐 Verifying password for:', selectedStudent.firstName);
-      
-      const response = await fetch('/api/verify-student-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          studentId: selectedStudent.id,
-          password: studentPassword,
-          classCode: classData.classCode,
-          architectureVersion: architectureVersion
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          setPasswordError('Incorrect password. Please try again or ask your teacher for help.');
-        } else if (response.status === 404) {
-          setPasswordError('Student account not found. Please contact your teacher.');
-        } else {
-          setPasswordError('Unable to verify password. Please try again.');
-        }
-        setPasswordLoading(false);
-        return;
-      }
-
-      console.log('✅ Password verified successfully');
-
-      // Login successful - create session
-      const session = {
-        studentData: selectedStudent,
-        classData: classData,
-        teacherUserId: teacherUserId,
-        architectureVersion: architectureVersion,
-        loginTime: new Date().toISOString()
-      };
-      
-      try {
-        sessionStorage.setItem('studentSession', JSON.stringify(session));
-      } catch (sessionError) {
-        console.warn('⚠️ Could not save session to sessionStorage:', sessionError);
-      }
-      
-      setStudentData(selectedStudent);
-      setIsLoggedIn(true);
-      setActiveTab('dashboard');
-      
-    } catch (error) {
-      console.error('❌ Password verification error:', error);
-      setPasswordError('Network error. Please check your connection and try again.');
-    }
-
-    setPasswordLoading(false);
-  };
-
-  // ===============================================
-  // ARCHITECTURE SEARCH FUNCTIONS (Same as before)
-  // ===============================================
-  
+  // V2 Architecture Search
   const searchV2Architecture = async (classCodeInput) => {
     try {
       console.log('🔍 V2 Search: Querying classes collection...');
@@ -263,6 +178,7 @@ const StudentPortal = () => {
     }
   };
 
+  // V1 Architecture Search
   const searchV1Architecture = async (classCodeInput) => {
     try {
       console.log('🔄 V1 Fallback: Scanning user documents...');
@@ -306,7 +222,163 @@ const StudentPortal = () => {
   };
 
   // ===============================================
-  // LOGOUT AND BACK NAVIGATION
+  // STEP 2: STUDENT SELECTION (Same as before)
+  // ===============================================
+  
+  const handleStudentSelect = (student) => {
+    console.log('👤 Student selected:', student.firstName);
+    setSelectedStudent(student);
+    setStudentPassword('');
+    setPasswordError('');
+    setLoginStep('password');
+  };
+
+  // ===============================================
+  // STEP 3: PASSWORD VERIFICATION - DIRECT (NO APIs)
+  // ===============================================
+  
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+    if (!studentPassword.trim()) {
+      setPasswordError('Please enter your password');
+      return;
+    }
+
+    setPasswordLoading(true);
+    setPasswordError('');
+
+    try {
+      console.log('🔐 Verifying password directly (no API) for:', selectedStudent.firstName);
+      
+      // Use direct password verification (bypasses problematic APIs)
+      const result = await verifyStudentPasswordDirect(
+        selectedStudent.id, 
+        studentPassword, 
+        classData.classCode
+      );
+
+      if (!result.success) {
+        const defaultPassword = getDefaultPassword(selectedStudent.firstName);
+        setPasswordError(
+          result.error === 'Invalid password' 
+            ? `Incorrect password. Try: ${defaultPassword}` 
+            : 'Unable to verify password. Please try again.'
+        );
+        setPasswordLoading(false);
+        return;
+      }
+
+      console.log('✅ Password verified successfully via direct method');
+
+      // Login successful - create session
+      const session = {
+        studentData: selectedStudent,
+        classData: classData,
+        teacherUserId: teacherUserId,
+        architectureVersion: architectureVersion,
+        loginTime: new Date().toISOString()
+      };
+      
+      try {
+        sessionStorage.setItem('studentSession', JSON.stringify(session));
+      } catch (sessionError) {
+        console.warn('⚠️ Could not save session to sessionStorage:', sessionError);
+      }
+      
+      setStudentData(selectedStudent);
+      setIsLoggedIn(true);
+      setActiveTab('dashboard');
+      
+    } catch (error) {
+      console.error('❌ Direct password verification error:', error);
+      setPasswordError('Network error. Please check your connection and try again.');
+    }
+
+    setPasswordLoading(false);
+  };
+
+  // ===============================================
+  // ENHANCED UPDATE FUNCTION - DIRECT (NO APIs)
+  // ===============================================
+  
+  const updateStudentData = async (updatedStudentData) => {
+    if (!teacherUserId || !classData || !studentData) {
+      console.error('Missing required data for student update');
+      showToast('Unable to save changes. Please try logging in again.', 'error');
+      return false;
+    }
+
+    try {
+      console.log('💾 Updating student data directly (no API):', studentData.firstName);
+      
+      // Use the same direct approach you used for XP (bypass APIs completely)
+      // This should work just like your existing XP system
+      if (architectureVersion === 'v2') {
+        // Direct V2 update (like your XP system)
+        const studentRef = doc(firestore, 'students', studentData.id);
+        const updates = {
+          ...updatedStudentData,
+          updatedAt: new Date().toISOString(),
+          lastActivity: new Date().toISOString()
+        };
+        
+        await updateDoc(studentRef, updates);
+        console.log('✅ V2 direct student update completed');
+        
+      } else {
+        // Direct V1 update (like your XP system)
+        const userRef = doc(firestore, 'users', teacherUserId);
+        const userDoc = await getDoc(userRef);
+        
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          const updatedClasses = userData.classes.map(cls => {
+            if (cls.classCode?.toUpperCase() === classData.classCode?.toUpperCase()) {
+              return {
+                ...cls,
+                students: cls.students.map(s => {
+                  if (s.id === studentData.id) {
+                    return { 
+                      ...s, 
+                      ...updatedStudentData,
+                      updatedAt: new Date().toISOString() 
+                    };
+                  }
+                  return s;
+                })
+              };
+            }
+            return cls;
+          });
+          
+          await updateDoc(userRef, { classes: updatedClasses });
+          console.log('✅ V1 direct student update completed');
+        }
+      }
+
+      // Update local state
+      setStudentData(prev => ({ ...prev, ...updatedStudentData }));
+      
+      // Update session storage
+      try {
+        const session = JSON.parse(sessionStorage.getItem('studentSession') || '{}');
+        session.studentData = { ...session.studentData, ...updatedStudentData };
+        sessionStorage.setItem('studentSession', JSON.stringify(session));
+      } catch (sessionError) {
+        console.warn('Could not update session storage:', sessionError);
+      }
+      
+      return true;
+      
+    } catch (error) {
+      console.error('❌ Direct student update error:', error);
+      showToast('Failed to save changes. Please try again.', 'error');
+      return false;
+    }
+  };
+
+  // ===============================================
+  // LOGOUT AND NAVIGATION (Same as before)
   // ===============================================
   
   const handleLogout = () => {
@@ -347,63 +419,6 @@ const StudentPortal = () => {
     setLoginStep('studentSelect');
   };
 
-  // ===============================================
-  // ENHANCED UPDATE FUNCTION
-  // ===============================================
-  
-  const updateStudentData = async (updatedStudentData) => {
-    if (!teacherUserId || !classData || !studentData) {
-      console.error('Missing required data for student update');
-      showToast('Unable to save changes. Please try logging in again.', 'error');
-      return false;
-    }
-
-    try {
-      console.log('💾 Updating student data via V2 API:', studentData.firstName);
-      
-      const response = await fetch('/api/student-update-v2', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          studentId: studentData.id,
-          classCode: classData.classCode,
-          updateData: updatedStudentData,
-          mode: 'increment',
-          teacherUserId: teacherUserId,
-          note: `Student portal update - ${Object.keys(updatedStudentData).join(', ')}`
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        console.error('❌ V2 API Error:', result);
-        showToast('Unable to save changes. Please try again.', 'error');
-        return false;
-      }
-
-      setStudentData(prev => ({ ...prev, ...updatedStudentData }));
-      
-      // Update session storage
-      try {
-        const session = JSON.parse(sessionStorage.getItem('studentSession') || '{}');
-        session.studentData = { ...session.studentData, ...updatedStudentData };
-        sessionStorage.setItem('studentSession', JSON.stringify(session));
-      } catch (sessionError) {
-        console.warn('Could not update session storage:', sessionError);
-      }
-      
-      return true;
-      
-    } catch (error) {
-      console.error('❌ Network error updating student data:', error);
-      showToast('Failed to save changes. Please try again.', 'error');
-      return false;
-    }
-  };
-
   const showToast = (message, type = 'info') => {
     const toastElement = document.createElement('div');
     toastElement.className = `fixed top-4 left-4 right-4 md:top-4 md:right-4 md:left-auto z-50 p-4 rounded-lg shadow-lg text-white font-semibold text-center md:text-left max-w-sm mx-auto md:mx-0 ${
@@ -424,7 +439,7 @@ const StudentPortal = () => {
   };
 
   // ===============================================
-  // RENDER LOGIN SCREEN WITH STEPS
+  // RENDER LOGIN SCREEN - SHOW HELPFUL PASSWORD HINTS
   // ===============================================
   
   if (!isLoggedIn) {
@@ -559,7 +574,7 @@ const StudentPortal = () => {
             </div>
           )}
 
-          {/* STEP 3: Password Entry */}
+          {/* STEP 3: Password Entry - WITH HELPFUL HINTS */}
           {loginStep === 'password' && selectedStudent && (
             <form onSubmit={handlePasswordSubmit} className="space-y-4 md:space-y-6">
               <div className="text-center">
@@ -573,6 +588,14 @@ const StudentPortal = () => {
                   Welcome, {selectedStudent.firstName}!
                 </h2>
                 <p className="text-gray-600 text-sm md:text-base">Please enter your password</p>
+              </div>
+
+              {/* PASSWORD HINT */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-sm text-blue-800 text-center">
+                  💡 <strong>Hint:</strong> Your password is usually your first name + "123"<br/>
+                  Try: <code className="bg-blue-100 px-1 rounded">{getDefaultPassword(selectedStudent.firstName)}</code>
+                </p>
               </div>
 
               <div>
