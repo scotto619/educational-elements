@@ -1,4 +1,4 @@
-// pages/classroom-champions.js - FIXED V1 FALLBACK BUGS
+// pages/classroom-champions.js - FIXED V1 FALLBACK BUGS + XP AWARDING FIXES
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import { auth } from '../utils/firebase';
@@ -6,7 +6,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 
 import { postStudentUpdate } from '../utils/apiClient';
 
-import { getFirestore, doc, getDoc } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
 const db = getFirestore();
 
 // Import new Firebase utilities (for post-migration)
@@ -93,7 +93,7 @@ const CLASSROOM_CHAMPIONS_TABS = [
   { id: 'quizshow', name: 'Quiz Show', icon: '🎪', shortName: 'Quiz', mobileIcon: '🎪' }, 
   { id: 'quests', name: 'Quests', icon: '📜', shortName: 'Quests', mobileIcon: '📜' }, 
   { id: 'shop', name: 'Shop', icon: '🛒', shortName: 'Shop', mobileIcon: '🛒' }, 
-  { id: 'petrace', name: 'Pet Race', icon: '🏇', shortName: 'Race', mobileIcon: '🏇' }
+  { id: 'petrace', name: 'Pet Race', icon: '🏁', shortName: 'Race', mobileIcon: '🏁' }
 ];
 
 const EDUCATIONAL_ELEMENTS_TABS = [
@@ -155,7 +155,7 @@ const ClassroomChampions = () => {
 
 // FIXED: Read from old V1 structure: users/{uid}.classes[]
 async function loadV1ClassAndStudents(userUid) {
-  console.log('🔄 Loading V1 class and students for user:', userUid);
+  console.log('ðŸ"„ Loading V1 class and students for user:', userUid);
   
   const userSnap = await getDoc(doc(db, 'users', userUid));
   if (!userSnap.exists()) throw new Error('User not found (V1)');
@@ -173,7 +173,7 @@ async function loadV1ClassAndStudents(userUid) {
 
   const students = Array.isArray(cls.students) ? cls.students : [];
   
-  console.log('✅ V1 class loaded:', cls.name, 'with', students.length, 'students');
+  console.log('âœ… V1 class loaded:', cls.name, 'with', students.length, 'students');
 
   // FIXED: normalize class data shape to match what UI expects
   const classData = {
@@ -210,15 +210,15 @@ const loadUserData = async (user) => {
   setError(null);
   
   try {
-    console.log('🚀 Loading user data for:', user.uid);
+    console.log('ðŸš€ Loading user data for:', user.uid);
     
     // 1) Try to get basic user info (your existing helper)
     let userDataResult = null;
     try {
       userDataResult = await getUserData(user.uid);
-      console.log('✅ User data loaded via V2 helper');
+      console.log('âœ… User data loaded via V2 helper');
     } catch (e) {
-      console.warn('⚠️ getUserData failed, will try direct V1 access:', e?.message || e);
+      console.warn('âš ï¸ getUserData failed, will try direct V1 access:', e?.message || e);
     }
 
     if (!userDataResult) {
@@ -226,7 +226,7 @@ const loadUserData = async (user) => {
       const userSnap = await getDoc(doc(db, 'users', user.uid));
       if (userSnap.exists()) {
         userDataResult = userSnap.data();
-        console.log('✅ User data loaded via direct V1 access');
+        console.log('âœ… User data loaded via direct V1 access');
       } else {
         throw new Error('User document not found');
       }
@@ -240,7 +240,7 @@ const loadUserData = async (user) => {
     try {
       teacherClasses = await getTeacherClasses(user.uid);
       if (teacherClasses && teacherClasses.length > 0) {
-        console.log('✅ V2 classes found:', teacherClasses.length);
+        console.log('âœ… V2 classes found:', teacherClasses.length);
         setArchitectureVersion('v2');
         const activeClassId = userDataResult.activeClassId || teacherClasses[0].id;
         await loadClassData(activeClassId); // your existing listener-based loader
@@ -248,11 +248,11 @@ const loadUserData = async (user) => {
         return; // Early return for V2 path
       }
     } catch (e) {
-      console.warn('⚠️ getTeacherClasses failed, will try V1 fallback:', e?.message || e);
+      console.warn('âš ï¸ getTeacherClasses failed, will try V1 fallback:', e?.message || e);
     }
 
     // 3) V1 fallback - FIXED
-    console.log('🔄 No V2 classes found — using V1 user doc fallback');
+    console.log('ðŸ"„ No V2 classes found â€" using V1 user doc fallback');
     setArchitectureVersion('v1');
     
     const { classData, students } = await loadV1ClassAndStudents(user.uid);
@@ -261,10 +261,10 @@ const loadUserData = async (user) => {
     setXpCategories(classData.xpCategories || DEFAULT_XP_CATEGORIES);
     setStudents(students);
     
-    console.log('✅ V1 fallback completed successfully');
+    console.log('âœ… V1 fallback completed successfully');
     
   } catch (error) {
-    console.error('❌ Error loading user data:', error);
+    console.error('âŒ Error loading user data:', error);
     setError(error.message);
   }
   setLoading(false);
@@ -341,7 +341,7 @@ const loadUserData = async (user) => {
   
   const handleUpdateStudent = useCallback(async (studentId, updatedData) => {
     try {
-      console.log('🔄 Updating student:', studentId, Object.keys(updatedData));
+      console.log('ðŸ"„ Updating student:', studentId, Object.keys(updatedData));
       
       if (architectureVersion === 'v2') {
         // Use new architecture
@@ -357,7 +357,7 @@ const loadUserData = async (user) => {
       }
       
     } catch (error) {
-      console.error('❌ Error updating student:', error);
+      console.error('âŒ Error updating student:', error);
       showToast('Error updating student data', 'error');
       throw error;
     }
@@ -394,24 +394,47 @@ const loadUserData = async (user) => {
     setStudents(reorderedStudents);
   };
 
+  // FIXED: handleBulkAward with immediate local state updates
   const handleBulkAward = useCallback(async (studentIds, amount, type) => {
     try {
-      console.log('💰 Bulk awarding:', { studentIds: studentIds.length, amount, type });
+ // Replace the line with proper emoji:
+console.log('💰 Bulk awarding:', { studentIds: studentIds.length, amount, type });
       
       if (architectureVersion === 'v2') {
         // Use new API for V2
-        await Promise.allSettled(
-          studentIds.map((sid, i) =>
-            postStudentUpdate({
-              studentId: sid,
-              classCode: currentClassData?.classCode,
-              updateData: type === 'xp' ? { totalPoints: amount } : { currency: amount },
-              mode: 'increment',
-              note: `Bulk ${type} Award`,
-              opId: `bulk-${type}-${sid}-${Date.now()}-${i}`,
-            })
-          )
+        const promises = studentIds.map((sid, i) =>
+          postStudentUpdate({
+            studentId: sid,
+            classCode: currentClassData?.classCode,
+            updateData: type === 'xp' ? { totalPoints: amount } : { currency: amount },
+            mode: 'increment',
+            note: `Bulk ${type} Award`,
+            opId: `bulk-${type}-${sid}-${Date.now()}-${i}`,
+          })
         );
+        
+        await Promise.allSettled(promises);
+        
+        // FIXED: Update local state immediately after API calls
+        setStudents(prev => prev.map(student => {
+          if (studentIds.includes(student.id)) {
+            if (type === 'xp') {
+              return { 
+                ...student, 
+                totalPoints: (student.totalPoints || 0) + amount,
+                updatedAt: new Date().toISOString() 
+              };
+            } else {
+              return { 
+                ...student, 
+                currency: (student.currency || 0) + amount,
+                updatedAt: new Date().toISOString() 
+              };
+            }
+          }
+          return student;
+        }));
+        
       } else {
         // V1 fallback - direct updates
         await Promise.allSettled(
@@ -456,11 +479,12 @@ const loadUserData = async (user) => {
       playSound(type === 'xp' ? 'ding' : 'coins');
       
     } catch (error) {
-      console.error('❌ Error in bulk award:', error);
+      console.error('âŒ Error in bulk award:', error);
       showToast('Error awarding points', 'error');
     }
   }, [students, handleUpdateStudent, architectureVersion, currentClassData, user, currentClassId]);
 
+  // FIXED: awardXPToStudent with immediate local state updates
   const awardXPToStudent = useCallback(async (studentId, amount, reason = '') => {
     try {
       const student = students.find(s => s.id === studentId);
@@ -469,7 +493,7 @@ const loadUserData = async (user) => {
         return;
       }
 
-      console.log(`⚡ Awarding ${amount} XP to ${student.firstName} for ${reason}`);
+      console.log(`âš¡ Awarding ${amount} XP to ${student.firstName} for ${reason}`);
       
       if (architectureVersion === 'v2' && currentClassData?.classCode) {
         // Use new API for V2
@@ -481,6 +505,17 @@ const loadUserData = async (user) => {
           note: `XP Award: ${reason || ''}`,
           opId: `xp-${studentId}-${Date.now()}`,
         });
+        
+        // FIXED: Update local state immediately
+        const newTotalPoints = (student.totalPoints || 0) + amount;
+        setStudents(prev => prev.map(s => 
+          s.id === studentId ? { 
+            ...s, 
+            totalPoints: newTotalPoints,
+            updatedAt: new Date().toISOString() 
+          } : s
+        ));
+        
       } else {
         // V1 fallback
         const newTotal = (student.totalPoints || 0) + amount;
@@ -513,11 +548,12 @@ const loadUserData = async (user) => {
       playSound('ding');
       
     } catch (error) {
-      console.error('❌ Error awarding XP:', error);
+      console.error('âŒ Error awarding XP:', error);
       showToast('Error awarding XP', 'error');
     }
   }, [students, handleUpdateStudent, architectureVersion, currentClassData, user, currentClassId]);
 
+  // FIXED: awardCoinsToStudent with immediate local state updates
   const awardCoinsToStudent = useCallback(async (studentId, amount, reason = '') => {
     try {
       const student = students.find(s => s.id === studentId);
@@ -526,7 +562,7 @@ const loadUserData = async (user) => {
         return;
       }
 
-      console.log(`🪙 Awarding ${amount} coins to ${student.firstName} for ${reason}`);
+      console.log(`ðŸª™ Awarding ${amount} coins to ${student.firstName} for ${reason}`);
       
       if (architectureVersion === 'v2' && currentClassData?.classCode) {
         // Use new API for V2
@@ -538,6 +574,17 @@ const loadUserData = async (user) => {
           note: `Coin Award: ${reason || ''}`,
           opId: `coin-${studentId}-${Date.now()}`,
         });
+        
+        // FIXED: Update local state immediately
+        const newTotal = (student.currency || 0) + amount;
+        setStudents(prev => prev.map(s => 
+          s.id === studentId ? { 
+            ...s, 
+            currency: newTotal,
+            updatedAt: new Date().toISOString() 
+          } : s
+        ));
+        
       } else {
         // V1 fallback
         const newTotal = (student.currency || 0) + amount;
@@ -552,7 +599,7 @@ const loadUserData = async (user) => {
       playSound('coins');
       
     } catch (error) {
-      console.error('❌ Error awarding coins:', error);
+      console.error('âŒ Error awarding coins:', error);
       showToast('Error awarding coins', 'error');
     }
   }, [students, architectureVersion, currentClassData, user, currentClassId]);
@@ -561,8 +608,7 @@ const loadUserData = async (user) => {
     if (!newStudentFirstName.trim() || !currentClassId) return;
     
     try {
-      console.log('👨‍🎓 Creating new student:', newStudentFirstName, newStudentLastName);
-      
+console.log('👨‍🎓 Creating new student:', newStudentFirstName, newStudentLastName);      
       if (architectureVersion === 'v2') {
         // Use new architecture
         await createStudent(currentClassId, {
@@ -609,7 +655,7 @@ const loadUserData = async (user) => {
       showToast('Student added successfully!', 'success');
       
     } catch (error) {
-      console.error('❌ Error creating student:', error);
+      console.error('âŒ Error creating student:', error);
       showToast('Error creating student', 'error');
     }
   };
@@ -626,7 +672,7 @@ const loadUserData = async (user) => {
       }
       setXpCategories(newCategories);
     } catch (error) {
-      console.error('❌ Error updating categories:', error);
+      console.error('âŒ Error updating categories:', error);
       showToast('Error updating XP categories', 'error');
     }
   };
@@ -640,7 +686,7 @@ const loadUserData = async (user) => {
         await updateV1ClassData(user.uid, currentClassId, updates);
       }
     } catch (error) {
-      console.error('❌ Error saving class data:', error);
+      console.error('âŒ Error saving class data:', error);
       showToast('Error saving data', 'error');
       throw error;
     }
@@ -680,7 +726,7 @@ const loadUserData = async (user) => {
       }
       setWidgetSettings(newSettings);
     } catch (error) {
-      console.error('❌ Error saving widget settings:', error);
+      console.error('âŒ Error saving widget settings:', error);
       showToast('Error saving widget settings', 'error');
     }
   };
@@ -696,7 +742,7 @@ const loadUserData = async (user) => {
         await updateV1ClassData(user.uid, currentClassId, { classCode: newClassCode });
       }
     } catch (error) {
-      console.error('❌ Error updating class code:', error);
+      console.error('âŒ Error updating class code:', error);
       throw error;
     }
   };
@@ -726,7 +772,7 @@ const loadUserData = async (user) => {
       await updateClassCode(newCode);
       showToast('New class code generated!', 'success');
     } catch (error) {
-      console.error('❌ Error generating class code:', error);
+      console.error('âŒ Error generating class code:', error);
       showToast('Error generating class code', 'error');
     }
   };
@@ -891,7 +937,7 @@ const loadUserData = async (user) => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center px-4">
         <div className="text-center bg-white p-8 rounded-xl shadow-lg">
-          <div className="text-red-500 text-6xl mb-4">⚠️</div>
+          <div className="text-red-500 text-6xl mb-4">âš ï¸</div>
           <h2 className="text-2xl font-bold text-gray-800 mb-2">Something went wrong</h2>
           <p className="text-gray-600 mb-4">{error}</p>
           <div className="text-sm text-gray-500 mb-4">
@@ -975,14 +1021,14 @@ const loadUserData = async (user) => {
                                     onClick={copyClassCode}
                                     className="bg-blue-500 text-white px-2 py-2 rounded-lg hover:bg-blue-600 transition-colors text-sm"
                                     title="Copy class code"
-                                >
+                                  >
                                     📋
                                 </button>
                                 <button
                                     onClick={handleGenerateNewCode}
                                     className="bg-orange-500 text-white px-2 py-2 rounded-lg hover:bg-orange-600 transition-colors text-sm"
                                     title="Generate new code"
-                                >
+                                  >
                                     🔄
                                 </button>
                             </div>
@@ -995,7 +1041,7 @@ const loadUserData = async (user) => {
                                     onClick={handleGenerateNewCode}
                                     className="bg-green-500 text-white px-3 py-2 rounded-lg hover:bg-green-600 transition-colors text-sm font-semibold"
                                 >
-                                    🔱 Generate Code
+                                    📱 Generate Code
                                 </button>
                             </div>
                         )}
@@ -1059,7 +1105,7 @@ const loadUserData = async (user) => {
                                     onClick={handleGenerateNewCode}
                                     className="w-full bg-green-500 text-white px-3 py-2 rounded-lg hover:bg-green-600 transition-colors text-sm font-semibold"
                                 >
-                                    🔱 Generate Class Code
+                                    📱 Generate Class Code
                                 </button>
                             </div>
                         )}
@@ -1266,7 +1312,7 @@ const loadUserData = async (user) => {
                             onClick={() => setSelectedStudent(null)} 
                             className="float-right text-2xl font-bold"
                         >
-                            ×
+                            Ã—
                         </button>
                         <h2 className="text-xl sm:text-2xl font-bold">
                             {selectedStudent.firstName} {selectedStudent.lastName}
