@@ -1185,7 +1185,7 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
           </div>
         </div>
 
-        {/* Winner Modal */}
+        {/* Winner Modal - UPDATED: Show wins and Play Again option */}
         {winner && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-2xl p-8 text-center max-w-md">
@@ -1193,21 +1193,47 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
               <h2 className="text-2xl font-bold mb-2">
                 {winner === playerInfo.id ? 'You Won!' : `${players.find(p => p.id === winner)?.name} Wins!`}
               </h2>
-              <div className="space-y-2 mb-6">
-                {players
-                  .sort((a, b) => (scores[b.id] || 0) - (scores[a.id] || 0))
-                  .map((player, index) => (
-                    <div key={player.id} className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <span>{index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '👤'}</span>
-                        <span className={player.id === winner ? 'font-bold' : ''}>
-                          {player.name}
-                        </span>
+              
+              {/* Game Results */}
+              <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                <h3 className="font-semibold mb-3">Game Results</h3>
+                <div className="space-y-2">
+                  {players
+                    .sort((a, b) => (scores[b.id] || 0) - (scores[a.id] || 0))
+                    .map((player, index) => (
+                      <div key={player.id} className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <span>{index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '👤'}</span>
+                          <span className={player.id === winner ? 'font-bold' : ''}>
+                            {player.name}
+                          </span>
+                        </div>
+                        <span className="font-bold">{scores[player.id] || 0} matches</span>
                       </div>
-                      <span className="font-bold">{scores[player.id] || 0}</span>
-                    </div>
-                  ))}
+                    ))}
+                </div>
               </div>
+
+              {/* Overall Wins Leaderboard */}
+              <div className="bg-green-50 rounded-lg p-4 mb-6">
+                <h3 className="font-semibold mb-3">🏆 Total Wins</h3>
+                <div className="space-y-2">
+                  {players
+                    .sort((a, b) => (wins[b.id] || 0) - (wins[a.id] || 0))
+                    .map((player, index) => (
+                      <div key={player.id} className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <span>{index === 0 ? '👑' : index === 1 ? '🥈' : index === 2 ? '🥉' : '👤'}</span>
+                          <span className={(wins[player.id] || 0) === Math.max(...Object.values(wins)) && (wins[player.id] || 0) > 0 ? 'font-bold text-green-600' : ''}>
+                            {player.name}
+                          </span>
+                        </div>
+                        <span className="font-bold text-green-600">{wins[player.id] || 0} wins</span>
+                      </div>
+                    ))}
+                </div>
+              </div>
+
               <div className="flex space-x-3">
                 <button
                   onClick={resetGame}
@@ -1216,10 +1242,10 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
                   Leave Game
                 </button>
                 <button
-                  onClick={() => setWinner(null)}
-                  className="flex-1 bg-purple-500 text-white py-3 rounded-lg font-semibold hover:bg-purple-600"
+                  onClick={playAgainMultiplayer}
+                  className="flex-1 bg-green-500 text-white py-3 rounded-lg font-semibold hover:bg-green-600"
                 >
-                  Continue
+                  🔄 Play Again
                 </button>
               </div>
             </div>
