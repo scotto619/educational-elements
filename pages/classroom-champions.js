@@ -870,7 +870,13 @@ const handleUpdateStudent = useCallback(async (studentId, updatedData, reason = 
                 />;
       
       case 'games':
-        return <GamesTab {...commonProps} />;
+  return <GamesTab 
+            {...commonProps}
+            onAwardXP={awardXPToStudent}        // ADD THIS
+            onAwardCoins={awardCoinsToStudent}  // ADD THIS  
+            currentClassData={currentClassData} // ADD THIS
+            user={user}                         // ADD THIS
+          />;
       
       case 'curriculum':
         return <CurriculumCornerTab 
