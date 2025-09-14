@@ -1,4 +1,4 @@
-// components/student/StudentReading.js - UPDATED WITH READING FOR FUN INTEGRATION
+// components/student/StudentReading.js - FIXED WITH ALL IMPORTS PRESERVED
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 
@@ -49,52 +49,52 @@ import { BEGINNER_LEVEL_3_SOUNDS } from '../curriculum/literacy/beginnerReaders/
 // Import Reading for Fun component
 import StudentReadingForFun from './StudentReadingForFun';
 
-// Consolidated reading passages from all levels
+// Consolidated reading passages from all levels - WITH SAFETY CHECKS
 const READING_PASSAGES = [
-  ...LEVEL_1_PASSAGES,
-  ...LEVEL_2_PASSAGES_1,
-  ...LEVEL_2_PASSAGES_2,
-  ...LEVEL_2_PASSAGES_3,
-  ...LEVEL_2_PASSAGES_4,
-  ...LEVEL_2_PASSAGES_5,
-  ...LEVEL_2_PASSAGES_6,
-  ...LEVEL_2_PASSAGES_7,
-  ...LEVEL_2_PASSAGES_8,
-  ...LEVEL_2_PASSAGES_9,
-  ...LEVEL_2_PASSAGES_10,
-  ...LEVEL_3_PASSAGES_1,
-  ...LEVEL_3_PASSAGES_2,
-  ...LEVEL_3_PASSAGES_3,
-  ...LEVEL_3_PASSAGES_4,
-  ...LEVEL_3_PASSAGES_5,
-  ...LEVEL_3_PASSAGES_6,
-  ...LEVEL_3_PASSAGES_7,
-  ...LEVEL_3_PASSAGES_8,
-  ...LEVEL_3_PASSAGES_9,
-  ...LEVEL_3_PASSAGES_10,
-  ...LEVEL_3_PASSAGES_11,
-  ...LEVEL_3_PASSAGES_12,
-  ...LEVEL_3_PASSAGES_13,
-  ...LEVEL_4_PASSAGES_1,
-  ...LEVEL_4_PASSAGES_2,
-  ...LEVEL_4_PASSAGES_3,
-  ...LEVEL_4_PASSAGES_4,
-  ...LEVEL_4_PASSAGES_5,
-  ...LEVEL_4_PASSAGES_6,
-  ...LEVEL_4_PASSAGES_7,
-  ...LEVEL_4_PASSAGES_8,
-  ...LEVEL_4_PASSAGES_9,
-  ...LEVEL_4_PASSAGES_10,
-  ...LEVEL_4_PASSAGES_11,
-  ...LEVEL_4_PASSAGES_12,
-  ...LEVEL_4_PASSAGES_13
+  ...(LEVEL_1_PASSAGES || []),
+  ...(LEVEL_2_PASSAGES_1 || []),
+  ...(LEVEL_2_PASSAGES_2 || []),
+  ...(LEVEL_2_PASSAGES_3 || []),
+  ...(LEVEL_2_PASSAGES_4 || []),
+  ...(LEVEL_2_PASSAGES_5 || []),
+  ...(LEVEL_2_PASSAGES_6 || []),
+  ...(LEVEL_2_PASSAGES_7 || []),
+  ...(LEVEL_2_PASSAGES_8 || []),
+  ...(LEVEL_2_PASSAGES_9 || []),
+  ...(LEVEL_2_PASSAGES_10 || []),
+  ...(LEVEL_3_PASSAGES_1 || []),
+  ...(LEVEL_3_PASSAGES_2 || []),
+  ...(LEVEL_3_PASSAGES_3 || []),
+  ...(LEVEL_3_PASSAGES_4 || []),
+  ...(LEVEL_3_PASSAGES_5 || []),
+  ...(LEVEL_3_PASSAGES_6 || []),
+  ...(LEVEL_3_PASSAGES_7 || []),
+  ...(LEVEL_3_PASSAGES_8 || []),
+  ...(LEVEL_3_PASSAGES_9 || []),
+  ...(LEVEL_3_PASSAGES_10 || []),
+  ...(LEVEL_3_PASSAGES_11 || []),
+  ...(LEVEL_3_PASSAGES_12 || []),
+  ...(LEVEL_3_PASSAGES_13 || []),
+  ...(LEVEL_4_PASSAGES_1 || []),
+  ...(LEVEL_4_PASSAGES_2 || []),
+  ...(LEVEL_4_PASSAGES_3 || []),
+  ...(LEVEL_4_PASSAGES_4 || []),
+  ...(LEVEL_4_PASSAGES_5 || []),
+  ...(LEVEL_4_PASSAGES_6 || []),
+  ...(LEVEL_4_PASSAGES_7 || []),
+  ...(LEVEL_4_PASSAGES_8 || []),
+  ...(LEVEL_4_PASSAGES_9 || []),
+  ...(LEVEL_4_PASSAGES_10 || []),
+  ...(LEVEL_4_PASSAGES_11 || []),
+  ...(LEVEL_4_PASSAGES_12 || []),
+  ...(LEVEL_4_PASSAGES_13 || [])
 ];
 
-// Consolidated beginner sounds
+// Consolidated beginner sounds - WITH SAFETY CHECKS
 const BEGINNER_SOUNDS = [
-  ...BEGINNER_LEVEL_1_SOUNDS,
-  ...BEGINNER_LEVEL_2_SOUNDS,
-  ...BEGINNER_LEVEL_3_SOUNDS
+  ...(BEGINNER_LEVEL_1_SOUNDS || []),
+  ...(BEGINNER_LEVEL_2_SOUNDS || []),
+  ...(BEGINNER_LEVEL_3_SOUNDS || [])
 ];
 
 const TEXT_TYPES = [
@@ -163,13 +163,13 @@ const StudentReading = ({
 }) => {
   const [studentAssignments, setStudentAssignments] = useState(null);
   const [beginnerAssignments, setBeginnerAssignments] = useState(null);
-  const [funReadingAssignments, setFunReadingAssignments] = useState(null); // NEW
+  const [funReadingAssignments, setFunReadingAssignments] = useState(null);
   const [selectedText, setSelectedText] = useState(null);
   const [selectedSound, setSelectedSound] = useState(null);
-  const [readingMode, setReadingMode] = useState('practice'); // 'practice' or 'full'
-  const [activeTab, setActiveTab] = useState('auto'); // 'auto', 'fluency', 'beginner', 'fun-reading'
+  const [readingMode, setReadingMode] = useState('practice');
+  const [activeTab, setActiveTab] = useState('auto');
   const [showComprehension, setShowComprehension] = useState(false);
-  const [isLoading, setIsLoading] = useState(true); // NEW
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (studentData && classData) {
@@ -180,7 +180,9 @@ const StudentReading = ({
         findFunReadingAssignments();
       } catch (error) {
         console.error('Error loading assignments:', error);
-        showToast('Error loading assignments', 'error');
+        if (showToast) {
+          showToast('Error loading assignments', 'error');
+        }
       } finally {
         setIsLoading(false);
       }
@@ -188,130 +190,177 @@ const StudentReading = ({
   }, [studentData, classData]);
 
   useEffect(() => {
-    // Auto-determine which tab to show based on assignments - UPDATED
-    if (funReadingAssignments && funReadingAssignments.texts.length > 0) {
-      setActiveTab('fun-reading');
-    } else if (beginnerAssignments && beginnerAssignments.sounds.length > 0) {
-      setActiveTab('beginner');
-    } else if (studentAssignments && studentAssignments.texts.length > 0) {
-      setActiveTab('fluency');
-    } else {
+    // Auto-determine which tab to show based on assignments - WITH SAFE CHECKS
+    try {
+      if (funReadingAssignments && funReadingAssignments.texts && funReadingAssignments.texts.length > 0) {
+        setActiveTab('fun-reading');
+      } else if (beginnerAssignments && beginnerAssignments.sounds && beginnerAssignments.sounds.length > 0) {
+        setActiveTab('beginner');
+      } else if (studentAssignments && studentAssignments.texts && studentAssignments.texts.length > 0) {
+        setActiveTab('fluency');
+      } else {
+        setActiveTab('auto');
+      }
+    } catch (error) {
+      console.error('Error determining active tab:', error);
       setActiveTab('auto');
     }
   }, [studentAssignments, beginnerAssignments, funReadingAssignments]);
 
   const findStudentAssignments = () => {
-    if (!classData?.toolkitData?.fluencyGroups) {
-      console.log('No fluency groups found');
-      setStudentAssignments(null);
-      return;
-    }
+    try {
+      if (!classData?.toolkitData?.fluencyGroups || !Array.isArray(classData.toolkitData.fluencyGroups)) {
+        console.log('No fluency groups found');
+        setStudentAssignments(null);
+        return;
+      }
 
-    // Get fluency groups from class toolkit data
-    const fluencyGroups = classData.toolkitData.fluencyGroups;
-    
-    // Find which group this student belongs to
-    const studentGroup = fluencyGroups.find(group => 
-      group.students?.some(s => s.id === studentData?.id)
-    );
-
-    if (studentGroup) {
-      // Get assigned reading texts
-      const assignedTexts = [];
+      // Get fluency groups from class toolkit data
+      const fluencyGroups = classData.toolkitData.fluencyGroups;
       
-      studentGroup.assignedTexts.forEach(textId => {
-        const [levelId, textType] = textId.split('-');
-        // Find passage from imported data
-        const passage = READING_PASSAGES.find(p => p.id === levelId);
-        if (passage) {
-          const text = passage.texts.find(t => t.type === textType);
-          if (text) {
-            assignedTexts.push({
-              id: textId,
-              passage: passage,
-              text: text,
-              textType: TEXT_TYPES.find(t => t.id === textType)
-            });
-          }
-        }
-      });
+      // Find which group this student belongs to
+      const studentGroup = fluencyGroups.find(group => 
+        group && group.students && Array.isArray(group.students) &&
+        group.students.some(s => s && s.id === studentData?.id)
+      );
 
-      setStudentAssignments({
-        groupName: studentGroup.name,
-        groupColor: studentGroup.color,
-        texts: assignedTexts
-      });
-    } else {
+      if (studentGroup) {
+        // Get assigned reading texts
+        const assignedTexts = [];
+        
+        if (studentGroup.assignedTexts && Array.isArray(studentGroup.assignedTexts)) {
+          studentGroup.assignedTexts.forEach(textId => {
+            if (typeof textId === 'string') {
+              const [levelId, textType] = textId.split('-');
+              // Find passage from imported data
+              const passage = READING_PASSAGES.find(p => p && p.id === levelId);
+              if (passage && passage.texts && Array.isArray(passage.texts)) {
+                const text = passage.texts.find(t => t && t.type === textType);
+                if (text) {
+                  assignedTexts.push({
+                    id: textId,
+                    passage: passage,
+                    text: text,
+                    textType: TEXT_TYPES.find(t => t.id === textType) || TEXT_TYPES[0]
+                  });
+                }
+              }
+            }
+          });
+        }
+
+        setStudentAssignments({
+          groupName: studentGroup.name || 'Reading Group',
+          groupColor: studentGroup.color || 'bg-blue-500',
+          texts: assignedTexts
+        });
+      } else {
+        setStudentAssignments(null);
+      }
+    } catch (error) {
+      console.error('Error in findStudentAssignments:', error);
       setStudentAssignments(null);
     }
   };
 
   const findBeginnerAssignments = () => {
-    // Get beginner groups from class toolkit data
-    const beginnerGroups = classData?.toolkitData?.beginnerGroups || [];
-    
-    // Find which group this student belongs to
-    const studentGroup = beginnerGroups.find(group => 
-      group.students.some(s => s.id === studentData.id)
-    );
-
-    if (studentGroup) {
-      // Get assigned sounds
-      const assignedSounds = [];
+    try {
+      // Get beginner groups from class toolkit data
+      const beginnerGroups = classData?.toolkitData?.beginnerGroups || [];
       
-      studentGroup.assignedSounds.forEach(soundId => {
-        const sound = BEGINNER_SOUNDS.find(s => s.id === soundId);
-        if (sound) {
-          assignedSounds.push({
-            id: soundId,
-            sound: sound
+      if (!Array.isArray(beginnerGroups)) {
+        setBeginnerAssignments(null);
+        return;
+      }
+      
+      // Find which group this student belongs to
+      const studentGroup = beginnerGroups.find(group => 
+        group && group.students && Array.isArray(group.students) &&
+        group.students.some(s => s && s.id === studentData?.id)
+      );
+
+      if (studentGroup) {
+        // Get assigned sounds
+        const assignedSounds = [];
+        
+        if (studentGroup.assignedSounds && Array.isArray(studentGroup.assignedSounds)) {
+          studentGroup.assignedSounds.forEach(soundId => {
+            const sound = BEGINNER_SOUNDS.find(s => s && s.id === soundId);
+            if (sound) {
+              assignedSounds.push({
+                id: soundId,
+                sound: sound
+              });
+            }
           });
         }
-      });
 
-      setBeginnerAssignments({
-        groupName: studentGroup.name,
-        groupColor: studentGroup.color,
-        sounds: assignedSounds
-      });
-    } else {
+        setBeginnerAssignments({
+          groupName: studentGroup.name || 'Beginning Readers',
+          groupColor: studentGroup.color || 'bg-red-500',
+          sounds: assignedSounds
+        });
+      } else {
+        setBeginnerAssignments(null);
+      }
+    } catch (error) {
+      console.error('Error in findBeginnerAssignments:', error);
       setBeginnerAssignments(null);
     }
   };
 
-  // NEW: Find Fun Reading Assignments
   const findFunReadingAssignments = () => {
-    // Get fun reading groups from class toolkit data
-    const funReadingGroups = classData?.toolkitData?.funReadingGroups || [];
-    
-    // Find which group this student belongs to
-    const studentGroup = funReadingGroups.find(group => 
-      group.students.some(s => s.id === studentData.id)
-    );
+    try {
+      // Get fun reading groups from class toolkit data
+      const funReadingGroups = classData?.toolkitData?.funReadingGroups || [];
+      
+      if (!Array.isArray(funReadingGroups)) {
+        setFunReadingAssignments(null);
+        return;
+      }
+      
+      // Find which group this student belongs to
+      const studentGroup = funReadingGroups.find(group => 
+        group && group.students && Array.isArray(group.students) &&
+        group.students.some(s => s && s.id === studentData?.id)
+      );
 
-    if (studentGroup && studentGroup.assignedTexts.length > 0) {
-      setFunReadingAssignments({
-        groupName: studentGroup.name,
-        groupColor: studentGroup.color,
-        hasAssignments: true
-      });
-    } else {
+      if (studentGroup && studentGroup.assignedTexts && Array.isArray(studentGroup.assignedTexts) && studentGroup.assignedTexts.length > 0) {
+        setFunReadingAssignments({
+          groupName: studentGroup.name || 'Fun Readers',
+          groupColor: studentGroup.color || 'bg-purple-500',
+          hasAssignments: true
+        });
+      } else {
+        setFunReadingAssignments(null);
+      }
+    } catch (error) {
+      console.error('Error in findFunReadingAssignments:', error);
       setFunReadingAssignments(null);
     }
   };
 
-  // NEW: Handle Day 3 comprehension questions
+  // Handle Day 3 comprehension questions
   const handleDay3Click = () => {
-    if (selectedText && selectedText.text.comprehensionQuestions) {
-      setShowComprehension(true);
-    } else {
-      showToast('Comprehension questions coming soon for this passage!', 'info');
+    try {
+      if (selectedText && selectedText.text && selectedText.text.comprehensionQuestions && Array.isArray(selectedText.text.comprehensionQuestions)) {
+        setShowComprehension(true);
+      } else {
+        if (showToast) {
+          showToast('Comprehension questions coming soon for this passage!', 'info');
+        }
+      }
+    } catch (error) {
+      console.error('Error handling Day 3 click:', error);
+      if (showToast) {
+        showToast('Error accessing comprehension questions', 'error');
+      }
     }
   };
 
   // Render comprehension questions modal
   const renderComprehensionModal = () => {
-    if (!showComprehension || !selectedText?.text?.comprehensionQuestions) return null;
+    if (!showComprehension || !selectedText?.text?.comprehensionQuestions || !Array.isArray(selectedText.text.comprehensionQuestions)) return null;
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
@@ -324,8 +373,8 @@ const StudentReading = ({
                   <span className="mr-3">❓</span>
                   Day 3: Answer Questions
                 </h2>
-                <p className="text-lg opacity-90">{selectedText.text.title}</p>
-                <p className="text-sm opacity-80">{selectedText.passage.level}</p>
+                <p className="text-lg opacity-90">{selectedText.text?.title || 'Reading Passage'}</p>
+                <p className="text-sm opacity-80">{selectedText.passage?.level || 'Level Unknown'}</p>
               </div>
               <button
                 onClick={() => setShowComprehension(false)}
@@ -370,7 +419,9 @@ const StudentReading = ({
             <h3 className="text-xl font-bold text-gray-800 mb-6 text-center">📚 Comprehension Questions</h3>
             <div className="space-y-6">
               {selectedText.text.comprehensionQuestions.map((question, index) => {
-                const questionType = QUESTION_TYPES[question.type];
+                if (!question || typeof question !== 'object') return null;
+                
+                const questionType = QUESTION_TYPES[question.type] || QUESTION_TYPES['right-there'];
                 return (
                   <div key={index} className="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-lg">
                     <div className="flex items-start gap-4">
@@ -386,7 +437,7 @@ const StudentReading = ({
                             {questionType.name}
                           </span>
                         </div>
-                        <h4 className="text-lg font-semibold text-gray-800 mb-4">{question.question}</h4>
+                        <h4 className="text-lg font-semibold text-gray-800 mb-4">{question.question || 'Question text not available'}</h4>
                         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                           <p className="text-sm text-yellow-800 mb-2">
                             <strong>💡 Hint:</strong> {questionType.description}
@@ -405,12 +456,12 @@ const StudentReading = ({
             {/* Sample Answer Section (for teacher reference - hidden by default) */}
             <div className="mt-8 bg-red-50 border border-red-200 rounded-xl p-4">
               <details className="cursor-pointer">
-                <summary className="font-bold text-red-800 mb-2">🔐 Teacher Answer Key (Students: Ask your teacher if you need help!)</summary>
+                <summary className="font-bold text-red-800 mb-2">🔍 Teacher Answer Key (Students: Ask your teacher if you need help!)</summary>
                 <div className="space-y-3 mt-3">
                   {selectedText.text.comprehensionQuestions.map((question, index) => (
                     <div key={index} className="bg-white border border-red-200 rounded p-3">
                       <p className="text-sm font-semibold text-gray-700 mb-1">Question {index + 1}:</p>
-                      <p className="text-sm text-red-700 italic">{question.answer}</p>
+                      <p className="text-sm text-red-700 italic">{question.answer || 'Answer not available'}</p>
                     </div>
                   ))}
                 </div>
@@ -449,9 +500,11 @@ const StudentReading = ({
         <div className="bg-gradient-to-r from-red-500 to-orange-600 text-white rounded-xl p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold">{selectedSound.sound.title} {selectedSound.sound.image}</h1>
-              <p className="text-lg opacity-90">{selectedSound.sound.description}</p>
-              <p className="text-sm opacity-80">{selectedSound.sound.soundFocus}</p>
+              <h1 className="text-2xl md:text-3xl font-bold">
+                {selectedSound.sound?.title || 'Sound Practice'} {selectedSound.sound?.image || ''}
+              </h1>
+              <p className="text-lg opacity-90">{selectedSound.sound?.description || ''}</p>
+              <p className="text-sm opacity-80">{selectedSound.sound?.soundFocus || ''}</p>
             </div>
             <button
               onClick={() => setSelectedSound(null)}
@@ -464,12 +517,13 @@ const StudentReading = ({
 
         {/* Sound Practice Activities */}
         <div className="space-y-4">
-          {selectedSound.sound.practices.map((practice, index) => (
+          {selectedSound.sound?.practices && Array.isArray(selectedSound.sound.practices) && 
+           selectedSound.sound.practices.map((practice, index) => (
             <div key={index} className="bg-white rounded-xl shadow-lg p-6">
-              <h3 className="text-lg font-bold text-gray-800 mb-4">{practice.instructions}</h3>
+              <h3 className="text-lg font-bold text-gray-800 mb-4">{practice?.instructions || 'Practice Activity'}</h3>
               <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6">
                 <div className="text-2xl md:text-4xl leading-relaxed text-gray-800 text-center font-bold font-mono whitespace-pre-line">
-                  {practice.content}
+                  {practice?.content || ''}
                 </div>
               </div>
             </div>
@@ -477,13 +531,15 @@ const StudentReading = ({
         </div>
 
         {/* Simple Passage for Level 3 */}
-        {selectedSound.sound.simplePassage && (
+        {selectedSound.sound?.simplePassage && (
           <div className="bg-white rounded-xl shadow-lg p-6">
             <h3 className="text-xl font-bold text-gray-800 mb-4 text-center">📖 Reading Practice</h3>
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-4">
-              <h4 className="text-lg font-bold text-blue-800 mb-4 text-center">{selectedSound.sound.simplePassage.title}</h4>
+              <h4 className="text-lg font-bold text-blue-800 mb-4 text-center">
+                {selectedSound.sound.simplePassage.title || 'Reading Passage'}
+              </h4>
               <div className="text-lg leading-relaxed text-gray-800 font-serif whitespace-pre-line">
-                {selectedSound.sound.simplePassage.content}
+                {selectedSound.sound.simplePassage.content || ''}
               </div>
             </div>
           </div>
@@ -493,7 +549,8 @@ const StudentReading = ({
         <div className="bg-white rounded-xl shadow-lg p-6">
           <h3 className="text-lg font-bold text-gray-800 mb-4 text-center">🎯 Focus Words</h3>
           <div className="flex flex-wrap justify-center gap-3">
-            {selectedSound.sound.targetWords.map(word => (
+            {selectedSound.sound?.targetWords && Array.isArray(selectedSound.sound.targetWords) &&
+             selectedSound.sound.targetWords.map(word => (
               <span key={word} className="bg-red-200 border-2 border-red-400 px-4 py-2 rounded-lg text-lg font-bold text-gray-800">
                 {word}
               </span>
@@ -514,7 +571,7 @@ const StudentReading = ({
               <p className="text-sm text-blue-700">Look at each sound and say it out loud</p>
             </div>
             <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-              <div className="text-2xl mb-2">📊</div>
+              <div className="text-2xl mb-2">🔊</div>
               <h4 className="font-bold text-green-800 mb-2">Step 2: Practice</h4>
               <p className="text-sm text-green-700">Practice the sounds and words</p>
             </div>
@@ -540,9 +597,11 @@ const StudentReading = ({
         <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold">{selectedText.text.title}</h1>
-              <p className="text-lg opacity-90">{selectedText.passage.level} - {selectedText.textType.name}</p>
-              <p className="text-sm opacity-80">{selectedText.text.wordCount} words</p>
+              <h1 className="text-2xl md:text-3xl font-bold">{selectedText.text?.title || 'Reading Text'}</h1>
+              <p className="text-lg opacity-90">
+                {selectedText.passage?.level || 'Unknown Level'} - {selectedText.textType?.name || 'Reading'}
+              </p>
+              <p className="text-sm opacity-80">{selectedText.text?.wordCount || 0} words</p>
             </div>
             <button
               onClick={() => setSelectedText(null)}
@@ -580,28 +639,30 @@ const StudentReading = ({
         </div>
 
         {/* Focus Words */}
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <h3 className="text-lg font-bold text-gray-800 mb-4 text-center">🎯 Focus Words</h3>
-          <div className="flex flex-wrap justify-center gap-3">
-            {selectedText.passage.targetWords.map(word => (
-              <span key={word} className="bg-yellow-200 border-2 border-yellow-400 px-4 py-2 rounded-lg text-lg font-bold text-gray-800">
-                {word}
-              </span>
-            ))}
+        {selectedText.passage?.targetWords && Array.isArray(selectedText.passage.targetWords) && (
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <h3 className="text-lg font-bold text-gray-800 mb-4 text-center">🎯 Focus Words</h3>
+            <div className="flex flex-wrap justify-center gap-3">
+              {selectedText.passage.targetWords.map(word => (
+                <span key={word} className="bg-yellow-200 border-2 border-yellow-400 px-4 py-2 rounded-lg text-lg font-bold text-gray-800">
+                  {word}
+                </span>
+              ))}
+            </div>
+            <p className="text-center text-sm text-gray-600 mt-3">
+              Look for these words while you read!
+            </p>
           </div>
-          <p className="text-center text-sm text-gray-600 mt-3">
-            Look for these words while you read!
-          </p>
-        </div>
+        )}
 
         {/* Reading Text */}
         <div className={`bg-white rounded-xl shadow-lg ${
           readingMode === 'full' ? 'p-8 md:p-12' : 'p-6'
         }`}>
-          <div className={`${selectedText.textType.color} text-white p-4 rounded-lg mb-6 text-center`}>
-            <div className="text-3xl mb-2">{selectedText.textType.icon}</div>
-            <h3 className="text-xl font-bold">{selectedText.textType.name}</h3>
-            <p className="text-sm opacity-90">{selectedText.textType.description}</p>
+          <div className={`${selectedText.textType?.color || 'bg-blue-500'} text-white p-4 rounded-lg mb-6 text-center`}>
+            <div className="text-3xl mb-2">{selectedText.textType?.icon || '📖'}</div>
+            <h3 className="text-xl font-bold">{selectedText.textType?.name || 'Reading'}</h3>
+            <p className="text-sm opacity-90">{selectedText.textType?.description || 'Reading practice'}</p>
           </div>
           
           <div className={`bg-gray-50 border-2 border-gray-200 rounded-xl p-6 ${
@@ -612,7 +673,7 @@ const StudentReading = ({
                 ? 'text-xl md:text-3xl text-center' 
                 : 'text-lg md:text-xl'
             }`}>
-              {selectedText.text.content}
+              {selectedText.text?.content || 'Text content not available'}
             </div>
           </div>
         </div>
@@ -632,7 +693,7 @@ const StudentReading = ({
             
             <div className="bg-orange-50 border-2 border-orange-200 rounded-lg p-4">
               <div className="text-center">
-                <div className="text-2xl mb-2">📍</div>
+                <div className="text-2xl mb-2">🔍</div>
                 <h4 className="font-bold text-orange-800 mb-2">Day 2</h4>
                 <p className="text-sm text-orange-700 font-semibold mb-2">Find Focus Words</p>
                 <p className="text-xs text-orange-600">After reading to a partner, find each of the focus words in the text. Are there any other words that have a similar pattern?</p>
@@ -646,7 +707,7 @@ const StudentReading = ({
                 <h4 className="font-bold text-yellow-800 mb-2">Day 3</h4>
                 <p className="text-sm text-yellow-700 font-semibold mb-2">Answer Questions</p>
                 <p className="text-xs text-yellow-600">After reading to a partner, complete the comprehension questions.</p>
-                {selectedText.text.comprehensionQuestions && (
+                {selectedText.text?.comprehensionQuestions && Array.isArray(selectedText.text.comprehensionQuestions) && (
                   <div className="mt-2 bg-yellow-200 rounded px-2 py-1">
                     <p className="text-xs text-yellow-800 font-bold">✅ Click here!</p>
                   </div>
@@ -689,7 +750,7 @@ const StudentReading = ({
               <p className="text-sm text-blue-700">Read each word slowly and carefully</p>
             </div>
             <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-              <div className="text-2xl mb-2">📊</div>
+              <div className="text-2xl mb-2">🔊</div>
               <h4 className="font-bold text-green-800 mb-2">Read Aloud</h4>
               <p className="text-sm text-green-700">Practice reading out loud with expression</p>
             </div>
@@ -704,7 +765,31 @@ const StudentReading = ({
     );
   }
 
-  // Main reading selection view - UPDATED WITH FUN READING TAB
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl p-6 md:p-8">
+          <div className="text-center">
+            <h1 className="text-2xl md:text-4xl font-bold mb-2 flex items-center justify-center">
+              <span className="mr-3">📖</span>
+              My Reading Activities
+            </h1>
+            <div className="text-lg md:text-xl opacity-90">
+              Loading your reading assignments...
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white rounded-xl p-6 text-center">
+          <div className="animate-spin text-4xl mb-4">📚</div>
+          <p className="text-gray-600">Please wait while we load your reading materials...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Main reading selection view
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -715,16 +800,16 @@ const StudentReading = ({
             My Reading Activities
           </h1>
           <div className="text-lg md:text-xl opacity-90">
-            {studentData.firstName}'s Reading Corner
+            {studentData?.firstName || 'Student'}'s Reading Corner
           </div>
         </div>
       </div>
 
-      {/* Tab Navigation - UPDATED */}
+      {/* Tab Navigation */}
       {(studentAssignments || beginnerAssignments || funReadingAssignments) && (
         <div className="bg-white rounded-xl shadow-lg p-4">
           <div className="flex items-center justify-center gap-4 flex-wrap">
-            {beginnerAssignments && beginnerAssignments.sounds.length > 0 && (
+            {beginnerAssignments && beginnerAssignments.sounds && Array.isArray(beginnerAssignments.sounds) && beginnerAssignments.sounds.length > 0 && (
               <button
                 onClick={() => setActiveTab('beginner')}
                 className={`px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2 ${
@@ -739,7 +824,7 @@ const StudentReading = ({
                 </span>
               </button>
             )}
-            {studentAssignments && studentAssignments.texts.length > 0 && (
+            {studentAssignments && studentAssignments.texts && Array.isArray(studentAssignments.texts) && studentAssignments.texts.length > 0 && (
               <button
                 onClick={() => setActiveTab('fluency')}
                 className={`px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2 ${
@@ -754,7 +839,6 @@ const StudentReading = ({
                 </span>
               </button>
             )}
-            {/* NEW: Fun Reading Tab */}
             {funReadingAssignments && (
               <button
                 onClick={() => setActiveTab('fun-reading')}
@@ -775,7 +859,7 @@ const StudentReading = ({
       )}
 
       {/* Beginner Sounds Tab */}
-      {activeTab === 'beginner' && beginnerAssignments && beginnerAssignments.sounds.length > 0 && (
+      {activeTab === 'beginner' && beginnerAssignments && beginnerAssignments.sounds && Array.isArray(beginnerAssignments.sounds) && beginnerAssignments.sounds.length > 0 && (
         <div className="space-y-6">
           {/* Group Header */}
           <div className={`${beginnerAssignments.groupColor} text-white rounded-xl p-6`}>
@@ -800,37 +884,43 @@ const StudentReading = ({
                 <div className="bg-red-500 text-white p-4 md:p-6 rounded-t-xl">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h2 className="text-xl md:text-2xl font-bold">{soundData.sound.title} {soundData.sound.image}</h2>
-                      <p className="text-sm md:text-base opacity-90">{soundData.sound.description}</p>
-                      <p className="text-sm opacity-80">{soundData.sound.soundFocus}</p>
+                      <h2 className="text-xl md:text-2xl font-bold">
+                        {soundData.sound?.title || 'Sound Practice'} {soundData.sound?.image || ''}
+                      </h2>
+                      <p className="text-sm md:text-base opacity-90">{soundData.sound?.description || ''}</p>
+                      <p className="text-sm opacity-80">{soundData.sound?.soundFocus || ''}</p>
                     </div>
                   </div>
                 </div>
                 
                 <div className="p-4 md:p-6">
                   {/* Preview of practices */}
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-                    <div className="text-gray-800 text-lg md:text-xl font-bold text-center">
-                      {soundData.sound.practices[0]?.content.substring(0, 50)}...
+                  {soundData.sound?.practices && Array.isArray(soundData.sound.practices) && soundData.sound.practices[0] && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                      <div className="text-gray-800 text-lg md:text-xl font-bold text-center">
+                        {soundData.sound.practices[0].content?.substring(0, 50) || ''}...
+                      </div>
                     </div>
-                  </div>
+                  )}
                   
                   {/* Focus words preview */}
-                  <div className="mb-4">
-                    <h4 className="font-bold text-gray-700 mb-2 text-sm md:text-base">Practice Words:</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {soundData.sound.targetWords.slice(0, 4).map(word => (
-                        <span key={word} className="bg-red-100 border border-red-300 px-2 py-1 rounded text-sm font-semibold text-gray-800">
-                          {word}
-                        </span>
-                      ))}
-                      {soundData.sound.targetWords.length > 4 && (
-                        <span className="bg-gray-100 border border-gray-300 px-2 py-1 rounded text-sm text-gray-600">
-                          +{soundData.sound.targetWords.length - 4} more
-                        </span>
-                      )}
+                  {soundData.sound?.targetWords && Array.isArray(soundData.sound.targetWords) && (
+                    <div className="mb-4">
+                      <h4 className="font-bold text-gray-700 mb-2 text-sm md:text-base">Practice Words:</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {soundData.sound.targetWords.slice(0, 4).map(word => (
+                          <span key={word} className="bg-red-100 border border-red-300 px-2 py-1 rounded text-sm font-semibold text-gray-800">
+                            {word}
+                          </span>
+                        ))}
+                        {soundData.sound.targetWords.length > 4 && (
+                          <span className="bg-gray-100 border border-gray-300 px-2 py-1 rounded text-sm text-gray-600">
+                            +{soundData.sound.targetWords.length - 4} more
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Practice button */}
                   <div className="text-center">
@@ -849,7 +939,7 @@ const StudentReading = ({
       )}
 
       {/* Fluency Practice Tab */}
-      {activeTab === 'fluency' && studentAssignments && studentAssignments.texts.length > 0 && (
+      {activeTab === 'fluency' && studentAssignments && studentAssignments.texts && Array.isArray(studentAssignments.texts) && studentAssignments.texts.length > 0 && (
         <div className="space-y-6">
           {/* Group Header */}
           <div className={`${studentAssignments.groupColor} text-white rounded-xl p-6`}>
@@ -871,17 +961,21 @@ const StudentReading = ({
           <div className="grid gap-6">
             {studentAssignments.texts.map(textData => (
               <div key={textData.id} className="bg-white rounded-xl shadow-lg border-2 border-gray-200">
-                <div className={`${textData.textType.color} text-white p-4 md:p-6 rounded-t-xl`}>
+                <div className={`${textData.textType?.color || 'bg-blue-500'} text-white p-4 md:p-6 rounded-t-xl`}>
                   <div className="flex items-center justify-between">
                     <div>
-                      <h2 className="text-xl md:text-2xl font-bold">{textData.text.title}</h2>
-                      <p className="text-sm md:text-base opacity-90">{textData.passage.level} - {textData.textType.name}</p>
-                      <p className="text-sm opacity-80">{textData.text.wordCount} words | {textData.passage.spellingFocus}</p>
-                      {textData.text.comprehensionQuestions && (
+                      <h2 className="text-xl md:text-2xl font-bold">{textData.text?.title || 'Reading Passage'}</h2>
+                      <p className="text-sm md:text-base opacity-90">
+                        {textData.passage?.level || 'Unknown Level'} - {textData.textType?.name || 'Reading'}
+                      </p>
+                      <p className="text-sm opacity-80">
+                        {textData.text?.wordCount || 0} words | {textData.passage?.spellingFocus || 'Reading Focus'}
+                      </p>
+                      {textData.text?.comprehensionQuestions && Array.isArray(textData.text.comprehensionQuestions) && (
                         <p className="text-xs opacity-90 mt-1">✅ Includes comprehension questions</p>
                       )}
                     </div>
-                    <div className="text-3xl md:text-4xl">{textData.textType.icon}</div>
+                    <div className="text-3xl md:text-4xl">{textData.textType?.icon || '📖'}</div>
                   </div>
                 </div>
                 
@@ -889,33 +983,35 @@ const StudentReading = ({
                   {/* Preview of text */}
                   <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
                     <div className="text-gray-800 text-sm md:text-base leading-relaxed">
-                      {textData.text.content.substring(0, 120)}
-                      {textData.text.content.length > 120 && '...'}
+                      {textData.text?.content?.substring(0, 120) || 'Text content not available'}
+                      {textData.text?.content?.length > 120 && '...'}
                     </div>
                   </div>
                   
                   {/* Focus words preview */}
-                  <div className="mb-4">
-                    <h4 className="font-bold text-gray-700 mb-2 text-sm md:text-base">Focus Words:</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {textData.passage.targetWords.slice(0, 4).map(word => (
-                        <span key={word} className="bg-yellow-100 border border-yellow-300 px-2 py-1 rounded text-sm font-semibold text-gray-800">
-                          {word}
-                        </span>
-                      ))}
-                      {textData.passage.targetWords.length > 4 && (
-                        <span className="bg-gray-100 border border-gray-300 px-2 py-1 rounded text-sm text-gray-600">
-                          +{textData.passage.targetWords.length - 4} more
-                        </span>
-                      )}
+                  {textData.passage?.targetWords && Array.isArray(textData.passage.targetWords) && (
+                    <div className="mb-4">
+                      <h4 className="font-bold text-gray-700 mb-2 text-sm md:text-base">Focus Words:</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {textData.passage.targetWords.slice(0, 4).map(word => (
+                          <span key={word} className="bg-yellow-100 border border-yellow-300 px-2 py-1 rounded text-sm font-semibold text-gray-800">
+                            {word}
+                          </span>
+                        ))}
+                        {textData.passage.targetWords.length > 4 && (
+                          <span className="bg-gray-100 border border-gray-300 px-2 py-1 rounded text-sm text-gray-600">
+                            +{textData.passage.targetWords.length - 4} more
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Read button */}
                   <div className="text-center">
                     <button
                       onClick={() => setSelectedText(textData)}
-                      className={`${textData.textType.color} text-white px-6 py-3 rounded-lg font-semibold text-sm md:text-base hover:opacity-90 transition-opacity`}
+                      className={`${textData.textType?.color || 'bg-blue-500'} text-white px-6 py-3 rounded-lg font-semibold text-sm md:text-base hover:opacity-90 transition-opacity`}
                     >
                       📖 Start Reading
                     </button>
@@ -927,7 +1023,7 @@ const StudentReading = ({
         </div>
       )}
 
-      {/* NEW: Reading for Fun Tab */}
+      {/* Reading for Fun Tab */}
       {activeTab === 'fun-reading' && (
         <StudentReadingForFun 
           studentData={studentData}
@@ -936,9 +1032,10 @@ const StudentReading = ({
         />
       )}
 
-      {/* No Assignments View - UPDATED */}
-      {activeTab === 'auto' && (!studentAssignments || studentAssignments.texts.length === 0) && 
-       (!beginnerAssignments || beginnerAssignments.sounds.length === 0) && 
+      {/* No Assignments View */}
+      {activeTab === 'auto' && 
+       (!studentAssignments || !studentAssignments.texts || studentAssignments.texts.length === 0) && 
+       (!beginnerAssignments || !beginnerAssignments.sounds || beginnerAssignments.sounds.length === 0) && 
        !funReadingAssignments && (
         <div className="bg-white rounded-xl p-6 md:p-8 text-center">
           <div className="text-4xl md:text-6xl mb-4">📚</div>
@@ -1001,14 +1098,6 @@ const StudentReading = ({
           </div>
         </div>
       </div>
-
-      {/* Loading State - NEW */}
-      {isLoading && (
-        <div className="bg-white rounded-xl p-6 text-center">
-          <div className="animate-spin text-4xl mb-4">📚</div>
-          <p className="text-gray-600">Loading your reading assignments...</p>
-        </div>
-      )}
     </div>
   );
 };
