@@ -1,8 +1,8 @@
-// components/games/EducationalMemoryGame.js - COMPLETELY FIXED VERSION
+// components/games/EducationalMemoryGame.js - INTEGRATED WITH MAIN APP ARCHITECTURE
 import React, { useState, useEffect, useCallback } from 'react';
 
-const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
-  // Firebase setup
+const EducationalMemoryGame = ({ studentData, showToast, classData, updateStudentData, students = [], onAwardXP, onAwardCoins }) => {
+  // Firebase setup for multiplayer coordination only (not student data)
   const [firebaseReady, setFirebaseReady] = useState(false);
   const [firebase, setFirebase] = useState(null);
   const [connectionStatus, setConnectionStatus] = useState('connecting');
@@ -27,24 +27,26 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
   const [flippedCards, setFlippedCards] = useState([]);
   const [matchedCards, setMatchedCards] = useState([]);
   const [currentTurn, setCurrentTurn] = useState(0);
-  const [players, setPlayers] = useState([]);
-  const [scores, setScores] = useState({});
+  const [gamePlayers, setGamePlayers] = useState([]);
   const [gameStarted, setGameStarted] = useState(false);
   const [winner, setWinner] = useState(null);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [gameScores, setGameScores] = useState({}); // Temporary game scores
+  const [totalMatches, setTotalMatches] = useState(0); // Track total matches made
 
-  // Player info
+  // Player info - integrate with actual student data
   const playerInfo = {
     id: studentData?.id || `player_${Date.now()}`,
     name: studentData?.firstName || 'Anonymous',
     avatar: studentData?.avatarBase || 'Wizard F',
+    studentData: studentData, // Include full student data
     color: getPlayerColor(0)
   };
 
   // Preset themes with educational content
   const PRESET_THEMES = {
     addition: {
-      name: '➕ Addition Facts',
+      name: 'Addition Facts',
       description: 'Match math problems with their answers',
       color: 'from-green-500 to-emerald-600',
       pairs: [
@@ -55,7 +57,7 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
       ]
     },
     subtraction: {
-      name: '➖ Subtraction Facts',
+      name: 'Subtraction Facts',
       description: 'Match subtraction problems with answers',
       color: 'from-red-500 to-pink-600',
       pairs: [
@@ -66,7 +68,7 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
       ]
     },
     multiplication: {
-      name: '✖️ Times Tables',
+      name: 'Times Tables',
       description: 'Match multiplication problems with answers',
       color: 'from-purple-500 to-indigo-600',
       pairs: [
@@ -77,29 +79,18 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
       ]
     },
     reading_animals: {
-      name: '🐾 Animal Words',
+      name: 'Animal Words',
       description: 'Match animal words with emojis',
       color: 'from-orange-500 to-yellow-600',
       pairs: [
-        ['Dog', '🐶'], ['Cat', '🐱'], ['Bird', '🐦'], ['Fish', '🐠'],
+        ['Dog', '🐶'], ['Cat', '🐱'], ['Bird', '🦅'], ['Fish', '🐠'],
         ['Lion', '🦁'], ['Tiger', '🐅'], ['Bear', '🐻'], ['Fox', '🦊'],
         ['Elephant', '🐘'], ['Monkey', '🐵'], ['Rabbit', '🐰'], ['Frog', '🐸'],
         ['Cow', '🐄'], ['Pig', '🐷'], ['Horse', '🐴'], ['Sheep', '🐑']
       ]
     },
-    reading_food: {
-      name: '🍎 Food Words',
-      description: 'Match food words with emojis',
-      color: 'from-red-500 to-orange-600',
-      pairs: [
-        ['Apple', '🍎'], ['Banana', '🍌'], ['Orange', '🍊'], ['Pizza', '🍕'],
-        ['Burger', '🍔'], ['Cake', '🎂'], ['Cookie', '🍪'], ['Ice Cream', '🍦'],
-        ['Bread', '🍞'], ['Cheese', '🧀'], ['Carrot', '🥕'], ['Broccoli', '🥦'],
-        ['Strawberry', '🍓'], ['Grapes', '🍇'], ['Watermelon', '🍉'], ['Donut', '🍩']
-      ]
-    },
     shapes: {
-      name: '📐 Shapes & Colors',
+      name: 'Shapes & Colors',
       description: 'Match shape names with symbols',
       color: 'from-blue-500 to-cyan-600',
       pairs: [
@@ -107,28 +98,6 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
         ['Heart', '💗'], ['Diamond', '💎'], ['Rectangle', '⬜'], ['Oval', '🥚'],
         ['Red', '🔴'], ['Blue', '🔵'], ['Yellow', '🟡'], ['Green', '🟢'],
         ['Purple', '🟣'], ['Orange', '🟠'], ['Pink', '🩷'], ['Black', '⚫']
-      ]
-    },
-    phonics: {
-      name: '🔤 Phonics',
-      description: 'Match letters with their sounds',
-      color: 'from-pink-500 to-purple-600',
-      pairs: [
-        ['A', 'Apple 🍎'], ['B', 'Ball ⚽'], ['C', 'Cat 🐱'], ['D', 'Dog 🐶'],
-        ['E', 'Elephant 🐘'], ['F', 'Fish 🐠'], ['G', 'Giraffe 🦒'], ['H', 'Hat 👒'],
-        ['I', 'Ice 🧊'], ['J', 'Jump 🦘'], ['K', 'Key 🔑'], ['L', 'Lion 🦁'],
-        ['M', 'Moon 🌙'], ['N', 'Net 🕸️'], ['O', 'Orange 🍊'], ['P', 'Pig 🐷']
-      ]
-    },
-    countries: {
-      name: '🌍 Countries & Flags',
-      description: 'Match countries with their flags',
-      color: 'from-teal-500 to-blue-600',
-      pairs: [
-        ['USA', '🇺🇸'], ['Canada', '🇨🇦'], ['UK', '🇬🇧'], ['France', '🇫🇷'],
-        ['Germany', '🇩🇪'], ['Italy', '🇮🇹'], ['Spain', '🇪🇸'], ['Japan', '🇯🇵'],
-        ['China', '🇨🇳'], ['India', '🇮🇳'], ['Brazil', '🇧🇷'], ['Mexico', '🇲🇽'],
-        ['Australia', '🇦🇺'], ['Russia', '🇷🇺'], ['Egypt', '🇪🇬'], ['South Africa', '🇿🇦']
       ]
     }
   };
@@ -141,12 +110,6 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
     '5x6': { rows: 5, cols: 6, pairs: 15, name: 'Extra Large (5×6)' }
   };
 
-  // Special tiles - FIXED: Only double for single player
-  const SPECIAL_TILES = [
-    { type: 'double', icon: '⭐', color: 'ring-yellow-400', description: 'Double Points!' },
-    { type: 'extra', icon: '🎯', color: 'ring-green-400', description: 'Extra Turn!' } // Only for multiplayer
-  ];
-
   function getPlayerColor(index) {
     const colors = [
       'bg-blue-500', 'bg-red-500', 'bg-green-500', 'bg-yellow-500'
@@ -154,13 +117,13 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
     return colors[index % colors.length];
   }
 
-  // Initialize Firebase
+  // Initialize Firebase for multiplayer coordination only
   useEffect(() => {
     let mounted = true;
     
     const initFirebase = async () => {
       try {
-        console.log('🔄 Initializing Firebase for Memory Game...');
+        console.log('🔄 Initializing Firebase for Memory Game coordination...');
         
         const [
           { database }, 
@@ -181,7 +144,7 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
             if (connected && !firebaseReady) {
               setFirebase({ database, ref, onValue, set, update, remove, off });
               setFirebaseReady(true);
-              console.log('✅ Firebase ready for Memory Game');
+              console.log('✅ Firebase ready for Memory Game coordination');
             }
           }
         });
@@ -240,8 +203,7 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
         content: pair[0],
         type: 'question',
         isFlipped: false,
-        isMatched: false,
-        specialTile: null
+        isMatched: false
       });
       gameCards.push({
         id: `card_${pairIndex}_1`,
@@ -249,46 +211,65 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
         content: pair[1],
         type: 'answer',
         isFlipped: false,
-        isMatched: false,
-        specialTile: null
+        isMatched: false
       });
-    });
-
-    // Add special tiles - FIXED: Only double for single player
-    gameCards.forEach(card => {
-      if (Math.random() < 0.1) {
-        if (gameMode === 'single') {
-          // Single player: only double points
-          card.specialTile = SPECIAL_TILES.find(tile => tile.type === 'double');
-        } else {
-          // Multiplayer: both types
-          const randomSpecial = SPECIAL_TILES[Math.floor(Math.random() * SPECIAL_TILES.length)];
-          card.specialTile = randomSpecial;
-        }
-      }
     });
 
     // Shuffle cards
     return gameCards.sort(() => Math.random() - 0.5);
-  }, [selectedTheme, boardSize, customPairs, gameMode]);
+  }, [selectedTheme, boardSize, customPairs]);
 
   // Start single player game
   const startSinglePlayer = () => {
     const newCards = generateCards();
     setCards(newCards);
-    setPlayers([{ ...playerInfo, score: 0 }]);
-    setScores({ [playerInfo.id]: 0 });
+    setGamePlayers([{ ...playerInfo, score: 0 }]);
+    setGameScores({ [playerInfo.id]: 0 });
     setGameStarted(true);
     setGameMode('single');
     setFlippedCards([]);
     setMatchedCards([]);
+    setTotalMatches(0);
+    setWinner(null);
     showToast('Memory game started! Find all the matches!', 'success');
   };
+
+  // Award XP to student using main app's system
+  const awardStudentXP = useCallback(async (studentId, amount, reason) => {
+    if (gameMode === 'single' && studentId === studentData?.id) {
+      // Single player - use the updateStudentData function
+      if (updateStudentData) {
+        try {
+          await updateStudentData({
+            totalPoints: (studentData.totalPoints || 0) + amount
+          });
+          console.log(`✅ Awarded ${amount} XP to ${studentData.firstName} for ${reason}`);
+        } catch (error) {
+          console.error('Error awarding XP:', error);
+        }
+      }
+    } else if (gameMode === 'multiplayer') {
+      // Multiplayer - use the onAwardXP function if available
+      if (onAwardXP) {
+        try {
+          await onAwardXP(studentId, amount, reason);
+          console.log(`✅ Awarded ${amount} XP to student ${studentId} for ${reason}`);
+        } catch (error) {
+          console.error('Error awarding XP in multiplayer:', error);
+        }
+      }
+    }
+  }, [gameMode, studentData, updateStudentData, onAwardXP]);
 
   // Create multiplayer game
   const createMultiplayerGame = async () => {
     if (!firebaseReady || !firebase) {
       showToast('Connection not ready. Please wait or try single player.', 'error');
+      return;
+    }
+
+    if (!classData?.classCode) {
+      showToast('Class code required for multiplayer games.', 'error');
       return;
     }
 
@@ -300,9 +281,15 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
       const initialData = {
         roomCode: newRoomCode,
         gameType: 'memory',
+        classCode: classData.classCode,
         host: playerInfo.id,
         players: {
-          [playerInfo.id]: { ...playerInfo, score: 0, ready: false }
+          [playerInfo.id]: { 
+            ...playerInfo, 
+            score: 0, 
+            ready: false,
+            actualStudentId: studentData?.id // Track actual student ID
+          }
         },
         settings: {
           theme: selectedTheme,
@@ -314,7 +301,7 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
         cards: [],
         flippedCards: [],
         matchedCards: [],
-        scores: { [playerInfo.id]: 0 },
+        gameScores: { [playerInfo.id]: 0 },
         createdAt: Date.now()
       };
       
@@ -344,6 +331,11 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
       showToast('Please enter a room code', 'error');
       return;
     }
+
+    if (!classData?.classCode) {
+      showToast('Class code required for multiplayer games.', 'error');
+      return;
+    }
     
     setLoading(true);
     
@@ -365,6 +357,13 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
         setLoading(false);
         return;
       }
+
+      // Check if game is from same class
+      if (gameData.classCode !== classData.classCode) {
+        showToast('This game is from a different class', 'error');
+        setLoading(false);
+        return;
+      }
       
       if (Object.keys(gameData.players || {}).length >= 4) {
         showToast('Game is full (max 4 players)', 'error');
@@ -374,12 +373,17 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
       
       // Join the game
       const playerCount = Object.keys(gameData.players || {}).length;
-      const newPlayer = { ...playerInfo, score: 0, ready: false };
+      const newPlayer = { 
+        ...playerInfo, 
+        score: 0, 
+        ready: false,
+        actualStudentId: studentData?.id
+      };
       newPlayer.color = getPlayerColor(playerCount);
       
       await firebase.update(gameRef, {
         [`players/${playerInfo.id}`]: newPlayer,
-        [`scores/${playerInfo.id}`]: 0
+        [`gameScores/${playerInfo.id}`]: 0
       });
       
       setGameRoom(joinCode.toUpperCase());
@@ -414,8 +418,8 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
       }
       
       setGameData(data);
-      setPlayers(Object.values(data.players || {}));
-      setScores(data.scores || {});
+      setGamePlayers(Object.values(data.players || {}));
+      setGameScores(data.gameScores || {});
       setCards(data.cards || []);
       setFlippedCards(data.flippedCards || []);
       setMatchedCards(data.matchedCards || []);
@@ -430,8 +434,8 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
       // Check for winner
       if (data.winner) {
         setWinner(data.winner);
-        const winnerName = Object.values(data.players).find(p => p.id === data.winner)?.name;
-        showToast(data.winner === playerInfo.id ? 'You won! 🎉' : `${winnerName} won!`, 'success');
+        const winnerPlayer = Object.values(data.players).find(p => p.id === data.winner);
+        showToast(data.winner === playerInfo.id ? 'You won!' : `${winnerPlayer?.name} won!`, 'success');
       }
     };
     
@@ -443,18 +447,17 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
     };
   }, [firebaseReady, firebase, gameRoom, gameMode, gameStarted, playerInfo.id]);
 
-  // Handle card flip - FIXED: Properly prevent clicking matched cards
+  // Handle card flip
   const flipCard = async (cardIndex) => {
     const card = cards[cardIndex];
     
-    // FIXED: Prevent clicking matched cards
     if (!card || card.isMatched || flippedCards.includes(cardIndex) || flippedCards.length >= 2) {
       return;
     }
     
     if (gameMode === 'multiplayer') {
       // Check if it's player's turn
-      const currentPlayer = players[currentTurn];
+      const currentPlayer = gamePlayers[currentTurn];
       if (currentPlayer?.id !== playerInfo.id) {
         showToast("Not your turn!", 'warning');
         return;
@@ -475,7 +478,7 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
     }
   };
 
-  // Check for matches - COMPLETELY FIXED
+  // Check for matches - FIXED with proper player identification and XP awarding
   useEffect(() => {
     if (flippedCards.length === 2) {
       const [firstIndex, secondIndex] = flippedCards;
@@ -489,58 +492,64 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
           if (isMatch) {
             // Handle match
             const newMatchedCards = [...matchedCards, firstIndex, secondIndex];
-            let pointsEarned = 1;
-            
-            // Check for special tiles
-            const specialTile = firstCard.specialTile || secondCard.specialTile;
-            if (specialTile) {
-              if (specialTile.type === 'double') {
-                pointsEarned = 2;
-                showToast('Double points! ⭐', 'success');
-              } else if (specialTile.type === 'extra' && gameMode === 'multiplayer') {
-                showToast('Extra turn! 🎯', 'success');
-              }
-            }
+            const pointsEarned = 2; // XP for educational match
             
             if (gameMode === 'multiplayer' && firebase && gameRoom) {
-              // FIXED: Use current player's ID, not always playerInfo.id
-              const gameRef = firebase.ref(firebase.database, `memory_game/${gameRoom}`);
-              const currentPlayerId = players[currentTurn]?.id || playerInfo.id;
-              const newScores = { ...scores };
-              newScores[currentPlayerId] = (newScores[currentPlayerId] || 0) + pointsEarned;
+              // Get current player info
+              const currentPlayer = gamePlayers[currentTurn];
+              const currentPlayerId = currentPlayer?.id;
+              const actualStudentId = currentPlayer?.actualStudentId;
               
-              // FIXED: Update cards in Firebase to mark as matched
-              const updatedCards = cards.map((card, index) => {
-                if (index === firstIndex || index === secondIndex) {
-                  return { ...card, isMatched: true };
+              console.log(`🎯 Match found! Current player: ${currentPlayer?.name} (${currentPlayerId}), Student ID: ${actualStudentId}`);
+              
+              if (currentPlayerId && actualStudentId) {
+                // Update game state
+                const gameRef = firebase.ref(firebase.database, `memory_game/${gameRoom}`);
+                const newGameScores = { ...gameScores };
+                newGameScores[currentPlayerId] = (newGameScores[currentPlayerId] || 0) + 1;
+                
+                const updatedCards = cards.map((card, index) => {
+                  if (index === firstIndex || index === secondIndex) {
+                    return { ...card, isMatched: true };
+                  }
+                  return card;
+                });
+                
+                const updates = {
+                  cards: updatedCards,
+                  matchedCards: newMatchedCards,
+                  flippedCards: [],
+                  gameScores: newGameScores,
+                  currentTurn: (currentTurn + 1) % gamePlayers.length
+                };
+                
+                // Award XP to the actual student
+                try {
+                  await awardStudentXP(actualStudentId, pointsEarned, 'Memory Match');
+                  showToast(`${currentPlayer.name} found a match! +${pointsEarned} XP`, 'success');
+                } catch (error) {
+                  console.error('Error awarding XP:', error);
                 }
-                return card;
-              });
-              
-              const updates = {
-                cards: updatedCards,
-                matchedCards: newMatchedCards,
-                flippedCards: [],
-                scores: newScores
-              };
-              
-              // Only advance turn if not extra turn special tile
-              if (!specialTile || specialTile.type !== 'extra') {
-                updates.currentTurn = (currentTurn + 1) % players.length;
+                
+                // Check for win condition
+                if (newMatchedCards.length === cards.length) {
+                  const winnerPlayerId = Object.entries(newGameScores).reduce((a, b) => 
+                    newGameScores[a[0]] > newGameScores[b[0]] ? a : b
+                  )[0];
+                  updates.winner = winnerPlayerId;
+                  updates.phase = 'finished';
+                  
+                  // Award bonus XP to winner
+                  const winnerPlayer = gamePlayers.find(p => p.id === winnerPlayerId);
+                  if (winnerPlayer?.actualStudentId) {
+                    await awardStudentXP(winnerPlayer.actualStudentId, 5, 'Memory Game Winner');
+                  }
+                }
+                
+                await firebase.update(gameRef, updates);
               }
-              
-              // Check for win condition
-              if (newMatchedCards.length === cards.length) {
-                const winnerPlayerId = Object.entries(newScores).reduce((a, b) => 
-                  newScores[a[0]] > newScores[b[0]] ? a : b
-                )[0];
-                updates.winner = winnerPlayerId;
-                updates.phase = 'finished';
-              }
-              
-              await firebase.update(gameRef, updates);
             } else {
-              // Single player - FIXED: Mark cards as matched
+              // Single player
               const updatedCards = cards.map((card, index) => {
                 if (index === firstIndex || index === secondIndex) {
                   return { ...card, isMatched: true };
@@ -550,13 +559,20 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
               
               setCards(updatedCards);
               setMatchedCards(newMatchedCards);
-              setScores(prev => ({ ...prev, [playerInfo.id]: (prev[playerInfo.id] || 0) + pointsEarned }));
+              setGameScores(prev => ({ ...prev, [playerInfo.id]: (prev[playerInfo.id] || 0) + 1 }));
               setFlippedCards([]);
+              setTotalMatches(prev => prev + 1);
+              
+              // Award XP using main app's system
+              await awardStudentXP(studentData?.id, pointsEarned, 'Memory Match');
+              showToast(`Great match! +${pointsEarned} XP`, 'success');
               
               // Check win condition
               if (newMatchedCards.length === cards.length) {
                 setWinner(playerInfo.id);
-                showToast('Congratulations! You found all matches! 🎉', 'success');
+                // Award bonus XP for completing the game
+                await awardStudentXP(studentData?.id, 5, 'Memory Game Complete');
+                showToast('Congratulations! You found all matches! +5 bonus XP', 'success');
               }
             }
             
@@ -567,7 +583,7 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
               const gameRef = firebase.ref(firebase.database, `memory_game/${gameRoom}`);
               await firebase.update(gameRef, {
                 flippedCards: [],
-                currentTurn: (currentTurn + 1) % players.length
+                currentTurn: (currentTurn + 1) % gamePlayers.length
               });
             } else {
               setFlippedCards([]);
@@ -577,7 +593,7 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
         }, 1500);
       }
     }
-  }, [flippedCards, cards, matchedCards, gameMode, currentTurn, players, scores, firebase, gameRoom, playerInfo.id]);
+  }, [flippedCards, cards, matchedCards, gameMode, currentTurn, gamePlayers, gameScores, firebase, gameRoom, playerInfo.id, awardStudentXP, studentData]);
 
   // Play sound effects
   const playSound = (type) => {
@@ -595,7 +611,7 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
     if (!firebase || !gameRoom) return;
     
     const gameRef = firebase.ref(firebase.database, `memory_game/${gameRoom}`);
-    const currentPlayer = players.find(p => p.id === playerInfo.id);
+    const currentPlayer = gamePlayers.find(p => p.id === playerInfo.id);
     await firebase.update(gameRef, {
       [`players/${playerInfo.id}/ready`]: !currentPlayer?.ready
     });
@@ -629,28 +645,27 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
     setFlippedCards([]);
     setMatchedCards([]);
     setCurrentTurn(0);
-    setPlayers([]);
-    setScores({});
+    setGamePlayers([]);
+    setGameScores({});
     setGameStarted(false);
     setWinner(null);
+    setTotalMatches(0);
   };
 
-  // Render card - FIXED: Much bigger emojis and proper matched card handling
+  // Render card
   const renderCard = (card, index) => {
     const isFlipped = flippedCards.includes(index) || card.isMatched;
     const { rows, cols } = BOARD_SIZES[boardSize];
     
-    // FIXED: Much bigger emoji sizes
-    let emojiSize = 'text-4xl'; // Default huge
+    let emojiSize = 'text-4xl';
     if (cols <= 4) {
-      emojiSize = 'text-5xl'; // Massive for small boards
+      emojiSize = 'text-5xl';
     } else if (cols === 5) {
-      emojiSize = 'text-3xl'; // Large for medium boards
+      emojiSize = 'text-3xl';
     } else {
-      emojiSize = 'text-2xl'; // Medium-large for big boards
+      emojiSize = 'text-2xl';
     }
     
-    // Determine text size for non-emoji content
     let textSize = 'text-lg';
     if (cols <= 4) {
       textSize = card.content.length > 8 ? 'text-base' : 'text-xl';
@@ -660,7 +675,6 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
       textSize = card.content.length > 8 ? 'text-xs' : 'text-base';
     }
     
-    // Check if content is emoji/single character
     const isEmoji = card.content.length <= 2 || /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/u.test(card.content);
     
     return (
@@ -676,21 +690,13 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
               : 'bg-blue-100 border-blue-400 text-blue-800'
             : 'bg-gradient-to-br from-purple-400 to-pink-500 border-purple-300 text-white hover:from-purple-500 hover:to-pink-600'
           }
-          ${card.specialTile ? `ring-4 ${card.specialTile.color}` : ''}
           ${card.isMatched ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'}
           font-bold
         `}
       >
         {isFlipped ? (
-          <div className="flex flex-col items-center justify-center w-full h-full">
-            <div className={`leading-tight text-center max-w-full overflow-hidden ${isEmoji ? emojiSize : textSize}`}>
-              {card.content}
-            </div>
-            {card.specialTile && (
-              <div className="text-2xl mt-2 animate-pulse">
-                {card.specialTile.icon}
-              </div>
-            )}
+          <div className={`leading-tight text-center max-w-full overflow-hidden ${isEmoji ? emojiSize : textSize}`}>
+            {card.content}
           </div>
         ) : (
           <div className="text-4xl">🧩</div>
@@ -716,7 +722,7 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
           <div className="p-6">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold">✏️ Create Custom Theme</h2>
+              <h2 className="text-2xl font-bold">Create Custom Theme</h2>
               <button
                 onClick={() => setShowCustomEditor(false)}
                 className="text-2xl font-bold text-gray-500 hover:text-gray-700"
@@ -762,7 +768,7 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
                     }}
                     className="bg-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-600"
                   >
-                    🗑️
+                    Delete
                   </button>
                 </div>
               ))}
@@ -811,14 +817,19 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
       <div className="max-w-4xl mx-auto space-y-6 p-4">
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent mb-2">
-            🧩 Memory Masters
+            Memory Masters
           </h2>
           <p className="text-gray-600">Match educational content and challenge your memory!</p>
+          {studentData && (
+            <p className="text-sm text-blue-600 mt-2">
+              Playing as: {studentData.firstName} • Level {Math.floor((studentData.totalPoints || 0) / 100) + 1}
+            </p>
+          )}
         </div>
 
         {/* Theme Selection */}
         <div className="bg-white rounded-xl p-6 shadow-lg">
-          <h3 className="text-xl font-bold mb-4">🎨 Choose Your Theme</h3>
+          <h3 className="text-xl font-bold mb-4">Choose Your Theme</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {Object.entries(PRESET_THEMES).map(([key, theme]) => (
               <button
@@ -846,7 +857,7 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
               }`}
             >
               <div className="inline-block px-3 py-1 rounded-full text-white text-sm mb-2 bg-gradient-to-r from-gray-500 to-gray-600">
-                ✏️ Custom Theme
+                Custom Theme
               </div>
               <p className="text-gray-600 text-sm">Create your own matching pairs</p>
             </button>
@@ -855,7 +866,7 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
 
         {/* Board Size Selection */}
         <div className="bg-white rounded-xl p-6 shadow-lg">
-          <h3 className="text-xl font-bold mb-4">📏 Board Size</h3>
+          <h3 className="text-xl font-bold mb-4">Board Size</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {Object.entries(BOARD_SIZES).map(([key, size]) => (
               <button
@@ -877,54 +888,60 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
         {/* Game Mode Selection */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-white rounded-xl p-6 shadow-lg">
-            <h3 className="text-xl font-bold mb-4">🏆 Single Player</h3>
-            <p className="text-gray-600 mb-4">Practice your memory skills at your own pace.</p>
+            <h3 className="text-xl font-bold mb-4">Single Player</h3>
+            <p className="text-gray-600 mb-4">Practice your memory skills and earn XP!</p>
             <button
               onClick={startSinglePlayer}
               className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all"
             >
-              🎯 Start Solo Game
+              Start Solo Game
             </button>
           </div>
 
           <div className="bg-white rounded-xl p-6 shadow-lg">
-            <h3 className="text-xl font-bold mb-4">👥 Multiplayer</h3>
-            <p className="text-gray-600 mb-4">Challenge up to 3 friends in turn-based matches!</p>
+            <h3 className="text-xl font-bold mb-4">Multiplayer</h3>
+            <p className="text-gray-600 mb-4">Challenge up to 3 classmates!</p>
             
-            <div className="space-y-3">
-              <button
-                onClick={createMultiplayerGame}
-                disabled={loading || !firebaseReady}
-                className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50"
-              >
-                {loading ? 'Creating...' : '🎮 Create Game'}
-              </button>
-              
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300"></div>
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">or</span>
-                </div>
+            {!classData?.classCode ? (
+              <div className="text-center py-4 bg-orange-50 rounded-lg">
+                <p className="text-orange-600 text-sm">Class code required for multiplayer</p>
               </div>
-              
-              <input
-                type="text"
-                value={joinCode}
-                onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                placeholder="Enter game code"
-                className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none text-center font-mono tracking-wider"
-                maxLength="6"
-              />
-              <button
-                onClick={joinMultiplayerGame}
-                disabled={loading || !joinCode.trim() || !firebaseReady}
-                className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50"
-              >
-                {loading ? 'Joining...' : '🚀 Join Game'}
-              </button>
-            </div>
+            ) : (
+              <div className="space-y-3">
+                <button
+                  onClick={createMultiplayerGame}
+                  disabled={loading || !firebaseReady}
+                  className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50"
+                >
+                  {loading ? 'Creating...' : 'Create Game'}
+                </button>
+                
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-300"></div>
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-2 bg-white text-gray-500">or</span>
+                  </div>
+                </div>
+                
+                <input
+                  type="text"
+                  value={joinCode}
+                  onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                  placeholder="Enter game code"
+                  className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none text-center font-mono tracking-wider"
+                  maxLength="6"
+                />
+                <button
+                  onClick={joinMultiplayerGame}
+                  disabled={loading || !joinCode.trim() || !firebaseReady}
+                  className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50"
+                >
+                  {loading ? 'Joining...' : 'Join Game'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -933,15 +950,15 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
 
   // Multiplayer waiting room
   if (gameMode === 'multiplayer' && !gameStarted) {
-    const allPlayersReady = players.length > 1 && players.every(p => p.ready);
+    const allPlayersReady = gamePlayers.length > 1 && gamePlayers.every(p => p.ready);
     const isHost = playerInfo.id === gameData?.host;
     
     return (
       <div className="max-w-2xl mx-auto space-y-6 p-4">
         <div className="bg-white rounded-xl p-6 shadow-lg text-center">
-          <h2 className="text-2xl font-bold mb-2">🎮 Game Lobby</h2>
+          <h2 className="text-2xl font-bold mb-2">Game Lobby</h2>
           <div className="bg-gray-100 rounded-lg p-4 mb-4">
-            <p className="text-gray-600 mb-2">Share this code with friends:</p>
+            <p className="text-gray-600 mb-2">Share this code with classmates:</p>
             <div className="font-mono text-3xl font-bold tracking-wider text-purple-600">
               {roomCode}
             </div>
@@ -954,12 +971,12 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
             }}
             className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 mb-6"
           >
-            📋 Copy Code
+            Copy Code
           </button>
 
           {/* Players List */}
           <div className="grid grid-cols-2 gap-4 mb-6">
-            {players.map((player, index) => (
+            {gamePlayers.map((player, index) => (
               <div
                 key={player.id}
                 className={`p-4 rounded-xl border-2 ${
@@ -978,7 +995,7 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
             ))}
             
             {/* Empty slots */}
-            {Array.from({ length: 4 - players.length }, (_, i) => (
+            {Array.from({ length: 4 - gamePlayers.length }, (_, i) => (
               <div key={`empty-${i}`} className="p-4 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50">
                 <div className="w-8 h-8 rounded-full bg-gray-300 mx-auto mb-2"></div>
                 <div className="text-gray-500">Waiting...</div>
@@ -1005,19 +1022,19 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
             <button
               onClick={toggleReady}
               className={`flex-1 py-3 rounded-lg font-semibold ${
-                players.find(p => p.id === playerInfo.id)?.ready
+                gamePlayers.find(p => p.id === playerInfo.id)?.ready
                   ? 'bg-orange-500 text-white hover:bg-orange-600'
                   : 'bg-green-500 text-white hover:bg-green-600'
               }`}
             >
-              {players.find(p => p.id === playerInfo.id)?.ready ? 'Not Ready' : 'Ready Up!'}
+              {gamePlayers.find(p => p.id === playerInfo.id)?.ready ? 'Not Ready' : 'Ready Up!'}
             </button>
             {isHost && allPlayersReady && (
               <button
                 onClick={startMultiplayerGame}
                 className="flex-1 bg-purple-500 text-white py-3 rounded-lg hover:bg-purple-600 font-semibold animate-pulse"
               >
-                🚀 Start Game!
+                Start Game!
               </button>
             )}
           </div>
@@ -1044,7 +1061,7 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
                 ← Menu
               </button>
               <div>
-                <h2 className="text-2xl font-bold">🧩 Memory Masters</h2>
+                <h2 className="text-2xl font-bold">Memory Masters</h2>
                 <p className="text-gray-600">
                   {PRESET_THEMES[selectedTheme]?.name || 'Custom Theme'}
                 </p>
@@ -1052,7 +1069,7 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
             </div>
             <div className="text-right">
               <div className="text-2xl font-bold text-purple-600">
-                {scores[playerInfo.id] || 0} matches
+                {gameScores[playerInfo.id] || 0} matches
               </div>
               <div className="text-gray-600">
                 {matchedCards.length / 2} / {cards.length / 2}
@@ -1089,7 +1106,7 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
                 You found all {cards.length / 2} matches!
               </p>
               <div className="text-4xl font-bold text-purple-600 mb-6">
-                {scores[playerInfo.id]} points
+                {gameScores[playerInfo.id]} points
               </div>
               <div className="flex space-x-3">
                 <button
@@ -1118,7 +1135,7 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
   // Multiplayer game
   if (gameMode === 'multiplayer' && gameStarted) {
     const { rows, cols } = BOARD_SIZES[gameData?.settings?.boardSize || boardSize];
-    const currentPlayer = players[currentTurn];
+    const currentPlayer = gamePlayers[currentTurn];
     const isMyTurn = currentPlayer?.id === playerInfo.id;
     const progress = cards.length > 0 ? (matchedCards.length / cards.length) * 100 : 0;
     
@@ -1135,7 +1152,7 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
                 ← Leave
               </button>
               <div>
-                <h2 className="text-2xl font-bold">🧩 Memory Masters</h2>
+                <h2 className="text-2xl font-bold">Memory Masters</h2>
                 <p className="text-gray-600">Room: {roomCode}</p>
               </div>
             </div>
@@ -1156,7 +1173,7 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
 
           {/* Player Scores */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {players.map((player, index) => (
+            {gamePlayers.map((player, index) => (
               <div
                 key={player.id}
                 className={`p-3 rounded-lg text-center ${
@@ -1168,7 +1185,7 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
                 <div className={`w-6 h-6 rounded-full ${player.color || getPlayerColor(index)} mx-auto mb-1`}></div>
                 <div className="font-semibold text-sm">{player.name}</div>
                 <div className="text-2xl font-bold text-purple-600">
-                  {scores[player.id] || 0}
+                  {gameScores[player.id] || 0}
                 </div>
               </div>
             ))}
@@ -1185,21 +1202,21 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
           </div>
         </div>
 
-        {/* Winner Modal - UPDATED: Show wins and Play Again option */}
+        {/* Winner Modal */}
         {winner && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-2xl p-8 text-center max-w-md">
               <div className="text-6xl mb-4">🏆</div>
               <h2 className="text-2xl font-bold mb-2">
-                {winner === playerInfo.id ? 'You Won!' : `${players.find(p => p.id === winner)?.name} Wins!`}
+                {winner === playerInfo.id ? 'You Won!' : `${gamePlayers.find(p => p.id === winner)?.name} Wins!`}
               </h2>
               
               {/* Game Results */}
-              <div className="bg-gray-50 rounded-lg p-4 mb-4">
+              <div className="bg-gray-50 rounded-lg p-4 mb-6">
                 <h3 className="font-semibold mb-3">Game Results</h3>
                 <div className="space-y-2">
-                  {players
-                    .sort((a, b) => (scores[b.id] || 0) - (scores[a.id] || 0))
+                  {gamePlayers
+                    .sort((a, b) => (gameScores[b.id] || 0) - (gameScores[a.id] || 0))
                     .map((player, index) => (
                       <div key={player.id} className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
@@ -1208,27 +1225,7 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
                             {player.name}
                           </span>
                         </div>
-                        <span className="font-bold">{scores[player.id] || 0} matches</span>
-                      </div>
-                    ))}
-                </div>
-              </div>
-
-              {/* Overall Wins Leaderboard */}
-              <div className="bg-green-50 rounded-lg p-4 mb-6">
-                <h3 className="font-semibold mb-3">🏆 Total Wins</h3>
-                <div className="space-y-2">
-                  {players
-                    .sort((a, b) => (wins[b.id] || 0) - (wins[a.id] || 0))
-                    .map((player, index) => (
-                      <div key={player.id} className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <span>{index === 0 ? '👑' : index === 1 ? '🥈' : index === 2 ? '🥉' : '👤'}</span>
-                          <span className={(wins[player.id] || 0) === Math.max(...Object.values(wins)) && (wins[player.id] || 0) > 0 ? 'font-bold text-green-600' : ''}>
-                            {player.name}
-                          </span>
-                        </div>
-                        <span className="font-bold text-green-600">{wins[player.id] || 0} wins</span>
+                        <span className="font-bold">{gameScores[player.id] || 0} matches</span>
                       </div>
                     ))}
                 </div>
@@ -1242,7 +1239,14 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
                   Leave Game
                 </button>
                 <button
-                  onClick={playAgainMultiplayer}
+                  onClick={() => {
+                    setWinner(null);
+                    setGameStarted(false);
+                    setCards([]);
+                    setMatchedCards([]);
+                    setFlippedCards([]);
+                    setGameScores({});
+                  }}
                   className="flex-1 bg-green-500 text-white py-3 rounded-lg font-semibold hover:bg-green-600"
                 >
                   🔄 Play Again
