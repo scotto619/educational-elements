@@ -189,7 +189,7 @@ const BeginnerReaders = ({
     ));
   };
 
-  // FIXED PRINTING FUNCTION - Clean A4 Layout
+  // FIXED PRINTING FUNCTION - Clean A4 Layout with Level-Specific Scaling
   const printSounds = (soundIds) => {
     if (soundIds.length === 0) {
       showToast('No sounds to print', 'error');
@@ -211,10 +211,13 @@ const BeginnerReaders = ({
       return;
     }
 
-    // Create print content
+    // Create print content with level-specific scaling and focus words removal for Level 3
     const printContent = soundsToPrint.map(soundData => {
+      const isLevel3 = soundData.level?.id === 'level3';
+      const levelClass = soundData.level?.id || 'level1';
+      
       return `
-        <div class="sound-page">
+        <div class="sound-page ${levelClass}">
           <div class="page-header">
             <h1 class="sound-title">${soundData.title} ${soundData.image}</h1>
             <p class="sound-info">${soundData.level?.name || 'Beginner Reading'} - ${soundData.description}</p>
@@ -237,10 +240,12 @@ const BeginnerReaders = ({
             ` : ''}
           </div>
           
-          <div class="target-words">
-            <h3>🎯 Focus Words:</h3>
-            <div class="words-list">${soundData.targetWords.join(' • ')}</div>
-          </div>
+          ${!isLevel3 ? `
+            <div class="target-words">
+              <h3>🎯 Focus Words:</h3>
+              <div class="words-list">${soundData.targetWords.join(' • ')}</div>
+            </div>
+          ` : ''}
         </div>
       `;
     }).join('');
@@ -391,6 +396,21 @@ const BeginnerReaders = ({
               
               .practice-content {
                 font-size: 18px;
+              }
+              
+              /* Level-specific scaling */
+              .level1, .level2 {
+                transform: scale(0.9);
+                transform-origin: top left;
+                width: 111.11%; /* Compensate for scale */
+                height: 111.11%; /* Compensate for scale */
+              }
+              
+              .level3 {
+                transform: scale(0.8);
+                transform-origin: top left;
+                width: 125%; /* Compensate for scale */
+                height: 125%; /* Compensate for scale */
               }
             }
           </style>
