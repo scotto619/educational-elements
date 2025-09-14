@@ -1,4 +1,4 @@
-// components/student/StudentReading.js - UPDATED WITH COMPREHENSION QUESTIONS SUPPORT
+// components/student/StudentReading.js - UPDATED WITH READING FOR FUN INTEGRATION
 import React, { useState, useEffect } from 'react';
 
 // Import reading passages from the actual passage files
@@ -44,6 +44,9 @@ import { LEVEL_4_PASSAGES_13 } from '../curriculum/literacy/passages/Level4Passa
 import { BEGINNER_LEVEL_1_SOUNDS } from '../curriculum/literacy/beginnerReaders/BeginnerLevel1Sounds';
 import { BEGINNER_LEVEL_2_SOUNDS } from '../curriculum/literacy/beginnerReaders/BeginnerLevel2Sounds';
 import { BEGINNER_LEVEL_3_SOUNDS } from '../curriculum/literacy/beginnerReaders/BeginnerLevel3Sounds';
+
+// Import Reading for Fun component
+import StudentReadingForFun from './StudentReadingForFun';
 
 // Consolidated reading passages from all levels
 const READING_PASSAGES = [
@@ -159,29 +162,33 @@ const StudentReading = ({
 }) => {
   const [studentAssignments, setStudentAssignments] = useState(null);
   const [beginnerAssignments, setBeginnerAssignments] = useState(null);
+  const [funReadingAssignments, setFunReadingAssignments] = useState(null); // NEW
   const [selectedText, setSelectedText] = useState(null);
   const [selectedSound, setSelectedSound] = useState(null);
   const [readingMode, setReadingMode] = useState('practice'); // 'practice' or 'full'
-  const [activeTab, setActiveTab] = useState('auto'); // 'auto', 'fluency', 'beginner'
-  const [showComprehension, setShowComprehension] = useState(false); // NEW: For comprehension questions
+  const [activeTab, setActiveTab] = useState('auto'); // 'auto', 'fluency', 'beginner', 'fun-reading'
+  const [showComprehension, setShowComprehension] = useState(false);
 
   useEffect(() => {
     if (studentData && classData) {
       findStudentAssignments();
       findBeginnerAssignments();
+      findFunReadingAssignments(); // NEW
     }
   }, [studentData, classData]);
 
   useEffect(() => {
-    // Auto-determine which tab to show based on assignments
-    if (beginnerAssignments && beginnerAssignments.sounds.length > 0) {
+    // Auto-determine which tab to show based on assignments - UPDATED
+    if (funReadingAssignments && funReadingAssignments.texts.length > 0) {
+      setActiveTab('fun-reading');
+    } else if (beginnerAssignments && beginnerAssignments.sounds.length > 0) {
       setActiveTab('beginner');
     } else if (studentAssignments && studentAssignments.texts.length > 0) {
       setActiveTab('fluency');
     } else {
       setActiveTab('auto');
     }
-  }, [studentAssignments, beginnerAssignments]);
+  }, [studentAssignments, beginnerAssignments, funReadingAssignments]);
 
   const findStudentAssignments = () => {
     // Get fluency groups from class toolkit data
@@ -253,6 +260,27 @@ const StudentReading = ({
       });
     } else {
       setBeginnerAssignments(null);
+    }
+  };
+
+  // NEW: Find Fun Reading Assignments
+  const findFunReadingAssignments = () => {
+    // Get fun reading groups from class toolkit data
+    const funReadingGroups = classData?.toolkitData?.funReadingGroups || [];
+    
+    // Find which group this student belongs to
+    const studentGroup = funReadingGroups.find(group => 
+      group.students.some(s => s.id === studentData.id)
+    );
+
+    if (studentGroup && studentGroup.assignedTexts.length > 0) {
+      setFunReadingAssignments({
+        groupName: studentGroup.name,
+        groupColor: studentGroup.color,
+        hasAssignments: true
+      });
+    } else {
+      setFunReadingAssignments(null);
     }
   };
 
@@ -361,7 +389,7 @@ const StudentReading = ({
             {/* Sample Answer Section (for teacher reference - hidden by default) */}
             <div className="mt-8 bg-red-50 border border-red-200 rounded-xl p-4">
               <details className="cursor-pointer">
-                <summary className="font-bold text-red-800 mb-2">🔒 Teacher Answer Key (Students: Ask your teacher if you need help!)</summary>
+                <summary className="font-bold text-red-800 mb-2">🔐 Teacher Answer Key (Students: Ask your teacher if you need help!)</summary>
                 <div className="space-y-3 mt-3">
                   {selectedText.text.comprehensionQuestions.map((question, index) => (
                     <div key={index} className="bg-white border border-red-200 rounded p-3">
@@ -470,7 +498,7 @@ const StudentReading = ({
               <p className="text-sm text-blue-700">Look at each sound and say it out loud</p>
             </div>
             <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-              <div className="text-2xl mb-2">🔊</div>
+              <div className="text-2xl mb-2">📊</div>
               <h4 className="font-bold text-green-800 mb-2">Step 2: Practice</h4>
               <p className="text-sm text-green-700">Practice the sounds and words</p>
             </div>
@@ -485,7 +513,7 @@ const StudentReading = ({
     );
   }
 
-  // Render selected text (UPDATED with comprehension questions support)
+  // Render selected text (with comprehension questions support)
   if (selectedText) {
     return (
       <div className="space-y-6">
@@ -573,7 +601,7 @@ const StudentReading = ({
           </div>
         </div>
 
-        {/* Daily Activities - UPDATED with comprehension questions */}
+        {/* Daily Activities - with comprehension questions */}
         <div className="bg-white rounded-xl shadow-lg p-6">
           <h3 className="text-lg font-bold text-gray-800 mb-4 text-center">📅 5-Day Reading Activities</h3>
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
@@ -588,7 +616,7 @@ const StudentReading = ({
             
             <div className="bg-orange-50 border-2 border-orange-200 rounded-lg p-4">
               <div className="text-center">
-                <div className="text-2xl mb-2">🔍</div>
+                <div className="text-2xl mb-2">📍</div>
                 <h4 className="font-bold text-orange-800 mb-2">Day 2</h4>
                 <p className="text-sm text-orange-700 font-semibold mb-2">Find Focus Words</p>
                 <p className="text-xs text-orange-600">After reading to a partner, find each of the focus words in the text. Are there any other words that have a similar pattern?</p>
@@ -645,7 +673,7 @@ const StudentReading = ({
               <p className="text-sm text-blue-700">Read each word slowly and carefully</p>
             </div>
             <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-              <div className="text-2xl mb-2">🔊</div>
+              <div className="text-2xl mb-2">📊</div>
               <h4 className="font-bold text-green-800 mb-2">Read Aloud</h4>
               <p className="text-sm text-green-700">Practice reading out loud with expression</p>
             </div>
@@ -660,7 +688,7 @@ const StudentReading = ({
     );
   }
 
-  // Main reading selection view (unchanged)
+  // Main reading selection view - UPDATED WITH FUN READING TAB
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -676,10 +704,10 @@ const StudentReading = ({
         </div>
       </div>
 
-      {/* Tab Navigation */}
-      {(studentAssignments || beginnerAssignments) && (
+      {/* Tab Navigation - UPDATED */}
+      {(studentAssignments || beginnerAssignments || funReadingAssignments) && (
         <div className="bg-white rounded-xl shadow-lg p-4">
-          <div className="flex items-center justify-center gap-4">
+          <div className="flex items-center justify-center gap-4 flex-wrap">
             {beginnerAssignments && beginnerAssignments.sounds.length > 0 && (
               <button
                 onClick={() => setActiveTab('beginner')}
@@ -710,11 +738,26 @@ const StudentReading = ({
                 </span>
               </button>
             )}
+            {/* NEW: Fun Reading Tab */}
+            {funReadingAssignments && (
+              <button
+                onClick={() => setActiveTab('fun-reading')}
+                className={`px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2 ${
+                  activeTab === 'fun-reading' 
+                    ? 'bg-purple-500 text-white' 
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                🎉 Reading for Fun
+                <span className="bg-white bg-opacity-20 px-2 py-1 rounded text-xs">
+                  Advanced
+                </span>
+              </button>
+            )}
           </div>
         </div>
       )}
 
-      {/* Rest of the component remains unchanged... */}
       {/* Beginner Sounds Tab */}
       {activeTab === 'beginner' && beginnerAssignments && beginnerAssignments.sounds.length > 0 && (
         <div className="space-y-6">
@@ -868,15 +911,26 @@ const StudentReading = ({
         </div>
       )}
 
-      {/* No Assignments View */}
-      {activeTab === 'auto' && (!studentAssignments || studentAssignments.texts.length === 0) && (!beginnerAssignments || beginnerAssignments.sounds.length === 0) && (
+      {/* NEW: Reading for Fun Tab */}
+      {activeTab === 'fun-reading' && (
+        <StudentReadingForFun 
+          studentData={studentData}
+          classData={classData}
+          showToast={showToast}
+        />
+      )}
+
+      {/* No Assignments View - UPDATED */}
+      {activeTab === 'auto' && (!studentAssignments || studentAssignments.texts.length === 0) && 
+       (!beginnerAssignments || beginnerAssignments.sounds.length === 0) && 
+       !funReadingAssignments && (
         <div className="bg-white rounded-xl p-6 md:p-8 text-center">
           <div className="text-4xl md:text-6xl mb-4">📚</div>
           <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-4">No Reading Assignments</h2>
           <p className="text-gray-600 text-sm md:text-base leading-relaxed mb-6">
             Your teacher hasn't assigned you to any reading groups yet. They can assign you to:
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto">
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
               <div className="text-3xl mb-2">🔤</div>
               <h3 className="font-bold text-red-800 mb-2">Beginning Sounds</h3>
@@ -889,6 +943,13 @@ const StudentReading = ({
               <h3 className="font-bold text-blue-800 mb-2">Reading Passages</h3>
               <p className="text-blue-600 text-sm">
                 Longer texts for fluency practice and reading comprehension
+              </p>
+            </div>
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+              <div className="text-3xl mb-2">🎉</div>
+              <h3 className="font-bold text-purple-800 mb-2">Reading for Fun</h3>
+              <p className="text-purple-600 text-sm">
+                Engaging stories, facts, poems, comedy & theatre for advanced readers
               </p>
             </div>
           </div>

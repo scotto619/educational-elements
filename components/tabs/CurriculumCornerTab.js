@@ -1,14 +1,16 @@
-// components/tabs/CurriculumCornerTab.js - UPDATED WITH BEGINNER READERS
+// components/tabs/CurriculumCornerTab.js - COMPLETE REWRITE WITH ALL COMPONENTS
 import React, { useState } from 'react';
 
-// Import activity components
+// Import all activity components
 import LiteracyWarmup from '../curriculum/literacy/LiteracyWarmup';
 import PrepLiteracyWarmup from '../curriculum/literacy/PrepLiteracyWarmUp';
 import ReadingComprehension from '../curriculum/literacy/ReadingComprehension';
 import VisualWritingPrompts from '../curriculum/literacy/VisualWritingPrompts';
 import SpellingProgram from '../curriculum/literacy/SpellingProgram';
 import FluencyPractice from '../curriculum/literacy/FluencyPractice';
-import BeginnerReaders from '../curriculum/literacy/BeginnerReaders'; // NEW IMPORT
+import BeginnerReaders from '../curriculum/literacy/BeginnerReaders';
+import ReadingForFun from '../curriculum/literacy/ReadingForFun'; // NEW
+import ReadersTheatre from '../curriculum/literacy/ReadersTheatre'; // NEW
 import AreaPerimeterTool from '../curriculum/mathematics/AreaPerimeterTool';
 import MathWarmup from '../curriculum/mathematics/MathWarmup';
 import WorksheetGenerator from '../curriculum/mathematics/WorksheetGenerator';
@@ -32,7 +34,7 @@ const ComingSoon = ({ toolName, description }) => (
 );
 
 // ===============================================
-// SUBJECT CONFIGURATION - UPDATED WITH BEGINNER READERS
+// COMPLETE SUBJECT CONFIGURATION
 // ===============================================
 const subjects = [
   {
@@ -40,14 +42,29 @@ const subjects = [
     name: 'Literacy & Language Arts',
     icon: '📚',
     color: 'from-blue-500 to-purple-600',
-    description: 'Complete literacy toolkit: phonics, spelling, reading, writing & vocabulary',
+    description: 'Complete literacy toolkit: phonics, spelling, reading, writing, drama & vocabulary',
     activities: [
       {
-        id: 'beginner-readers', // NEW ACTIVITY ADDED FIRST
+        id: 'beginner-readers',
         name: 'Beginner Readers',
         icon: '🔤',
         description: 'Early reading activities for beginning readers - sound recognition, phonics, and simple passages',
-        component: BeginnerReaders,
+        component: BeginnerReaders
+      },
+      {
+        id: 'reading-for-fun',
+        name: 'Reading for Fun',
+        icon: '🎉',
+        description: 'Engaging texts for advanced readers - longer passages with modern topics kids love',
+        component: ReadingForFun,
+        isNew: true
+      },
+      {
+        id: 'readers-theatre',
+        name: 'Readers Theatre',
+        icon: '🎭',
+        description: 'Drama scripts with character roles for student performances and oral reading practice',
+        component: ReadersTheatre,
         isNew: true
       },
       {
@@ -83,7 +100,7 @@ const subjects = [
       {
         id: 'spelling-program',
         name: 'Spelling Program',
-        icon: '🔤',
+        icon: '🔡',
         description: 'Structured spelling lists with activities and assessments',
         component: SpellingProgram
       },
@@ -125,7 +142,7 @@ const subjects = [
       {
         id: 'handwriting-practice',
         name: 'Handwriting Practice',
-        icon: '✏️',
+        icon: '✍️',
         description: 'Letter formation and handwriting improvement',
         component: ComingSoon
       }
@@ -333,7 +350,7 @@ const subjects = [
 ];
 
 // ===============================================
-// MAIN CURRICULUM CORNER COMPONENT - UPDATED TO SUPPORT BEGINNER READERS
+// MAIN CURRICULUM CORNER COMPONENT
 // ===============================================
 const CurriculumCornerTab = ({ 
   students = [], 
@@ -394,7 +411,9 @@ const CurriculumCornerTab = ({
         activeActivity.id === 'fluency-practice' ||
         activeActivity.id === 'math-mentals' ||
         activeActivity.id === 'interactive-clock' ||
-        activeActivity.id === 'beginner-readers') { // ADDED BEGINNER READERS HERE
+        activeActivity.id === 'beginner-readers' ||
+        activeActivity.id === 'reading-for-fun' ||
+        activeActivity.id === 'readers-theatre') { // ALL FIREBASE ACTIVITIES
       activityProps.saveData = saveData;
       activityProps.loadedData = loadedData;
     }
@@ -590,7 +609,7 @@ const CurriculumCornerTab = ({
         </div>
       </div>
 
-      {/* Quick Stats - UPDATED TO HIGHLIGHT NEW BEGINNER READERS */}
+      {/* Quick Stats */}
       <div className="bg-white rounded-xl shadow-sm p-6">
         <h3 className="text-xl font-bold text-slate-800 mb-4">📊 Curriculum Overview</h3>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -618,10 +637,10 @@ const CurriculumCornerTab = ({
                     🆕 {newTools} new tool{newTools > 1 ? 's' : ''}!
                   </div>
                 )}
-                {/* Highlight Beginner Readers specifically */}
+                {/* Special highlights */}
                 {subject.id === 'literacy' && (
-                  <div className="text-xs text-red-600 font-semibold mt-1">
-                    🔤 New: Beginner Readers!
+                  <div className="text-xs text-purple-600 font-semibold mt-1">
+                    ✨ 2 New Literacy Tools!
                   </div>
                 )}
               </div>
@@ -630,31 +649,40 @@ const CurriculumCornerTab = ({
         </div>
       </div>
 
-      {/* What's New Section */}
+      {/* What's New Section - UPDATED WITH BOTH NEW TOOLS */}
       <div className="bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-xl p-6">
         <h3 className="text-xl font-bold text-red-800 mb-4 flex items-center">
           <span className="mr-2">🆕</span>
           What's New in Curriculum Corner
         </h3>
         <div className="space-y-3">
-          <div className="bg-white border border-red-200 rounded-lg p-4">
-            <h4 className="font-bold text-red-700 mb-2">🔤 New: Beginner Readers</h4>
-            <p className="text-sm text-red-600 mb-2">
-              A complete early reading system for beginning readers with 3 progressive levels:
+          <div className="bg-white border border-purple-200 rounded-lg p-4">
+            <h4 className="font-bold text-purple-700 mb-2">🎉 New: Reading for Fun</h4>
+            <p className="text-sm text-purple-600 mb-2">
+              Engaging texts for advanced readers with 6 exciting categories:
             </p>
-            <ul className="text-xs text-red-600 space-y-1 ml-4">
-              <li>• Level 1: Basic sound recognition with large fonts and images</li>
-              <li>• Level 2: Single letter and digraph focus with simple/complex words</li>
-              <li>• Level 3: Alternate spelling patterns with simple reading passages</li>
+            <ul className="text-xs text-purple-600 space-y-1 ml-4">
+              <li>• 🚀 Adventure Stories - Epic tales and exciting journeys</li>
+              <li>• 🤯 Cool Facts - Amazing info about gaming, tech, and trends</li>
+              <li>• ⚡ Debate Zone - Persuasive texts about topics kids care about</li>
+              <li>• 🎵 Rhythm & Rhyme - Modern poems and verses with attitude</li>
+              <li>• 😂 Laugh Zone - Jokes, funny stories, and silly situations</li>
+              <li>• 🎭 Readers Theatre - Drama scripts with character roles</li>
             </ul>
-            <p className="text-xs text-red-500 italic mt-2">
-              Perfect for Prep/Foundation students and struggling readers
+            <p className="text-xs text-purple-500 italic mt-2">
+              Perfect for students who have mastered fluency and want engaging content!
+            </p>
+          </div>
+          <div className="bg-white border border-red-200 rounded-lg p-4">
+            <h4 className="font-bold text-red-700 mb-2">🔤 Beginner Readers</h4>
+            <p className="text-sm text-red-600 mb-2">
+              A complete early reading system with 3 progressive levels for beginning readers.
             </p>
           </div>
           <div className="bg-white border border-orange-200 rounded-lg p-4">
             <h4 className="font-bold text-orange-700 mb-2">📖 Updated: Fluency Practice</h4>
             <p className="text-sm text-orange-600">
-              Better level organization! Browse passages by main levels (1, 2, 3, 4) then drill down to specific sub-levels for easier navigation.
+              Better level organization and comprehension question support.
             </p>
           </div>
         </div>
