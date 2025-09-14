@@ -1,4 +1,4 @@
-// components/tabs/GamesTab.js - Updated to pass required props
+// components/tabs/GamesTab.js - Complete Working Version with Battle Royale
 import React, { useState } from 'react';
 
 // Import all individual game components
@@ -9,10 +9,10 @@ import NoggleGame from '../games/NoggleGame';
 import WordSearchGame from '../games/WordSearchGame';
 import CrosswordGame from '../games/CrosswordGame';
 import Match3BattleGame from '../games/Match3BattleGame';
-import BattleRoyaleGame from '../games/BattleRoyaleGame'; // NEW BATTLE ROYALE!
+import BattleRoyaleGame from '../games/BattleRoyaleGame';
 
 // ===============================================
-// GAME DEFINITIONS (same as before)
+// COMPLETE GAME DEFINITIONS
 // ===============================================
 const AVAILABLE_GAMES = [
   {
@@ -30,19 +30,97 @@ const AVAILABLE_GAMES = [
     multiplayer: true,
     realtime: true
   },
-  // ... rest of games remain the same
+  {
+    id: 'match3battle',
+    name: 'Match-3 Battle Arena',
+    icon: '⚔️',
+    description: 'Epic fantasy RPG match-3 combat! Battle enemies, collect upgrades, and climb the tower of challenges!',
+    component: Match3BattleGame,
+    color: 'from-red-500 to-purple-600',
+    difficulty: 'Medium - Expert',
+    players: '1 player (Multiplayer coming)',
+    time: '5-30 minutes',
+    special: true,
+    featured: false
+  },
+  {
+    id: 'crossword',
+    name: 'Crossword Puzzle',
+    icon: '🧩',
+    description: 'Create custom crossword puzzles with your own clues and print them for class use',
+    component: CrosswordGame,
+    color: 'from-indigo-500 to-purple-600',
+    difficulty: 'Easy - Hard',
+    players: '1-30 students',
+    time: '10-30 minutes'
+  },
+  {
+    id: 'word-search',
+    name: 'Word Search',
+    icon: '🔍',
+    description: 'Find hidden words in the grid with custom word lists and printing options',
+    component: WordSearchGame,
+    color: 'from-blue-500 to-blue-600',
+    difficulty: 'Easy - Medium',
+    players: '1-30 students',
+    time: '5-15 minutes'
+  },
+  {
+    id: 'math-race',
+    name: 'Math Race',
+    icon: '🧮',
+    description: 'Fast-paced math problem solving with different difficulty levels',
+    component: MathRaceGame,
+    color: 'from-green-500 to-green-600',
+    difficulty: 'Easy - Hard',
+    players: '1-30 students',
+    time: '2-5 minutes'
+  },
+  {
+    id: 'memory-match',
+    name: 'Memory Match',
+    icon: '🧠',
+    description: 'Classic memory card matching game with multiple themes',
+    component: MemoryMatchGame,
+    color: 'from-purple-500 to-purple-600',
+    difficulty: 'Easy - Expert',
+    players: '1-10 students',
+    time: '3-8 minutes'
+  },
+  {
+    id: 'boggle',
+    name: 'Word Boggle',
+    icon: '🔤',
+    description: 'Form words by connecting adjacent letters in the grid',
+    component: BoggleGame,
+    color: 'from-yellow-500 to-orange-500',
+    difficulty: 'Medium - Hard',
+    players: '1-30 students',
+    time: '3-5 minutes'
+  },
+  {
+    id: 'noggle',
+    name: 'Number Noggle',
+    icon: '🔢',
+    description: 'Create sums by connecting adjacent numbers to hit target values',
+    component: NoggleGame,
+    color: 'from-red-500 to-pink-500',
+    difficulty: 'Medium - Hard',
+    players: '1-30 students',
+    time: '3-5 minutes'
+  }
 ];
 
 // ===============================================
-// MAIN GAMES TAB COMPONENT - UPDATED PROPS
+// MAIN GAMES TAB COMPONENT
 // ===============================================
 const GamesTab = ({ 
   students = [], 
   showToast = () => {},
-  onAwardXP = null,          // NEW: XP awarding function
-  onAwardCoins = null,       // NEW: Coin awarding function  
-  currentClassData = null,   // NEW: Class data with class code
-  user = null                // NEW: User data
+  onAwardXP = null,
+  onAwardCoins = null,
+  currentClassData = null,
+  user = null
 }) => {
   const [selectedGame, setSelectedGame] = useState(null);
   const [gameMode, setGameMode] = useState('digital');
@@ -55,9 +133,14 @@ const GamesTab = ({
     setSelectedGame(null);
   };
 
+  console.log('🎮 GamesTab loaded - Students:', students.length, 'ClassCode:', currentClassData?.classCode);
+
   // Render individual game
   if (selectedGame) {
     const GameComponent = selectedGame.component;
+    
+    console.log('🎮 Loading game:', selectedGame.name, 'Mode:', gameMode);
+    
     return (
       <div className="space-y-6">
         {/* Game Header */}
@@ -134,7 +217,7 @@ const GamesTab = ({
           </div>
         </div>
 
-        {/* Game Component - UPDATED WITH ALL REQUIRED PROPS */}
+        {/* Game Component - WITH ALL REQUIRED PROPS */}
         <div className="bg-white rounded-xl shadow-lg p-6">
           <GameComponent 
             gameMode={selectedGame.id === 'match3battle' || selectedGame.id === 'battle-royale' ? 'digital' : gameMode}
@@ -143,7 +226,7 @@ const GamesTab = ({
             studentData={students.length > 0 ? students[0] : null}
             updateStudentData={null}
             
-            // NEW: Additional props for Battle Royale and other advanced games
+            // Battle Royale specific props
             onAwardXP={onAwardXP}
             onAwardCoins={onAwardCoins}
             classData={currentClassData}
@@ -154,8 +237,7 @@ const GamesTab = ({
     );
   }
 
-  // Rest of the component remains exactly the same...
-  // Game Selection Menu, Featured Game Spotlight, etc.
+  // Game Selection Menu
   return (
     <div className="space-y-6">
       {/* Enhanced Header */}
@@ -180,7 +262,6 @@ const GamesTab = ({
               <span>⚡</span>
               <span>Quick setup</span>
             </div>
-            {/* Show class code status */}
             {currentClassData?.classCode && (
               <div className="flex items-center space-x-1">
                 <span>🔴</span>
@@ -203,7 +284,6 @@ const GamesTab = ({
               Epic multiplayer learning battle! Students compete to be the last survivor by answering math questions correctly. First correct answer protects you and attacks another player!
             </p>
             
-            {/* Show class code requirement */}
             {!currentClassData?.classCode && (
               <div className="bg-orange-100 text-orange-800 rounded-lg p-4 mb-4 max-w-md mx-auto">
                 <p className="text-sm font-semibold">⚠️ Class code required for multiplayer battles</p>
@@ -239,7 +319,38 @@ const GamesTab = ({
         </div>
       )}
 
-      {/* Available Games */}
+      {/* Game Mode Selection */}
+      <div className="bg-white rounded-xl shadow-lg p-6">
+        <h3 className="text-xl font-bold text-gray-800 mb-4">🖥️ Choose Game Mode</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div 
+            onClick={() => setGameMode('digital')}
+            className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+              gameMode === 'digital' 
+                ? 'border-blue-500 bg-blue-50' 
+                : 'border-gray-200 hover:border-gray-300'
+            }`}
+          >
+            <div className="text-2xl mb-2">🖥️</div>
+            <h4 className="font-bold text-gray-800">Digital Mode</h4>
+            <p className="text-sm text-gray-600">Students interact directly with the game. Perfect for individual or small group play.</p>
+          </div>
+          <div 
+            onClick={() => setGameMode('projector')}
+            className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+              gameMode === 'projector' 
+                ? 'border-blue-500 bg-blue-50' 
+                : 'border-gray-200 hover:border-gray-300'
+            }`}
+          >
+            <div className="text-2xl mb-2">📽️</div>
+            <h4 className="font-bold text-gray-800">Projector Mode</h4>
+            <p className="text-sm text-gray-600">Display on projector for whole class participation. Teacher controls the game.</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Available Games Grid */}
       <div className="bg-white rounded-xl shadow-lg p-6">
         <h3 className="text-xl font-bold text-gray-800 mb-6">🎯 Select a Game</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -363,7 +474,6 @@ const GamesTab = ({
           </div>
         </div>
       </div>
-      
     </div>
   );
 };
