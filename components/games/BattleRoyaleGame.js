@@ -429,8 +429,19 @@ const BattleRoyaleGame = ({ gameMode, showToast, students = [], onAwardXP, onAwa
     setQuestionNumber(0);
   };
 
-  // RENDER: Menu (Teacher - Create Game)
-  if (gamePhase === 'menu' && isTeacher) {
+  // Add debug logging to see what's happening
+  useEffect(() => {
+    console.log('🎮 Battle Royale State Check:', {
+      gamePhase,
+      isTeacher,
+      firebaseReady,
+      studentsCount: students?.length || 0,
+      hasClassCode: !!classData?.classCode
+    });
+  }, [gamePhase, isTeacher, firebaseReady, students, classData]);
+
+  // RENDER: Menu (Teacher - Create Game) - ALWAYS SHOW IF TEACHER
+  if (isTeacher && gamePhase === 'menu') {
     console.log('🎮 Rendering teacher menu interface');
     return (
       <div className="max-w-2xl mx-auto space-y-6 p-4">
@@ -439,6 +450,17 @@ const BattleRoyaleGame = ({ gameMode, showToast, students = [], onAwardXP, onAwa
             ⚔️ Battle Royale Learning
           </h2>
           <p className="text-gray-600">Create a multiplayer learning battle where students compete to be the last survivor!</p>
+          
+          {/* Show class code status */}
+          {classData?.classCode ? (
+            <div className="mt-4 inline-block bg-green-100 border border-green-300 rounded-lg px-4 py-2">
+              <span className="text-green-700 font-semibold">✅ Class Code Ready: {classData.classCode}</span>
+            </div>
+          ) : (
+            <div className="mt-4 inline-block bg-orange-100 border border-orange-300 rounded-lg px-4 py-2">
+              <span className="text-orange-700 font-semibold">⚠️ No class code - generate one in Settings</span>
+            </div>
+          )}
         </div>
 
         {!firebaseReady && (
@@ -492,13 +514,19 @@ const BattleRoyaleGame = ({ gameMode, showToast, students = [], onAwardXP, onAwa
 
           <button
             onClick={createGame}
-            disabled={loading || !firebaseReady}
+            disabled={loading || !firebaseReady || !classData?.classCode}
             className="w-full mt-6 bg-gradient-to-r from-red-600 to-orange-600 text-white py-3 rounded-lg font-bold text-lg hover:shadow-lg transition-all disabled:opacity-50"
           >
             {loading ? 'Creating Battle Arena...' : 
              !firebaseReady ? 'Connecting to Battle Servers...' :
+             !classData?.classCode ? 'Class Code Required - Check Settings' :
              'Create Battle Arena'}
           </button>
+        </div>
+        
+        {/* Debug info */}
+        <div className="bg-gray-100 rounded-lg p-3 text-xs text-gray-600">
+          Debug: gamePhase={gamePhase}, isTeacher={isTeacher.toString()}, firebaseReady={firebaseReady.toString()}, classCode={classData?.classCode || 'none'}
         </div>
       </div>
     );
