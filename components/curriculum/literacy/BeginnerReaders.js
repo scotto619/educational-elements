@@ -189,157 +189,232 @@ const BeginnerReaders = ({
     ));
   };
 
+  // FIXED PRINTING FUNCTION - Clean A4 Layout
   const printSounds = (soundIds) => {
+    if (soundIds.length === 0) {
+      showToast('No sounds to print', 'error');
+      return;
+    }
+
     const soundsToPrint = [];
     soundIds.forEach(soundId => {
-      const [levelId, soundIdOnly] = soundId.split('-', 2);
-      const levelSounds = levelId === 'level1' ? BEGINNER_LEVEL_1_SOUNDS :
-                         levelId === 'level2' ? BEGINNER_LEVEL_2_SOUNDS :
-                         levelId === 'level3' ? BEGINNER_LEVEL_3_SOUNDS : [];
-      
-      const sound = levelSounds.find(s => s.id === soundId);
+      const allSounds = [...BEGINNER_LEVEL_1_SOUNDS, ...BEGINNER_LEVEL_2_SOUNDS, ...BEGINNER_LEVEL_3_SOUNDS];
+      const sound = allSounds.find(s => s.id === soundId);
       if (sound) {
-        soundsToPrint.push({ ...sound, level: levelId });
+        const level = BEGINNER_LEVELS.find(l => l.sounds.includes(sound));
+        soundsToPrint.push({ ...sound, level: level });
       }
     });
     
-    if (soundsToPrint.length === 0) return;
-    
-    const printWindow = window.open('', 'Print', 'height=800,width=600');
-    
-    const generateSoundCopies = (sound) => {
-      let copiesHtml = '';
-      for (let i = 0; i < 6; i++) {
-        copiesHtml += `
-          <div class="sound-copy">
-            <div class="sound-header">
-              <div class="sound-title">${sound.title} ${sound.image}</div>
-              <div class="sound-info">${sound.description}</div>
-            </div>
-            <div class="sound-content">
-              ${sound.practices.map(practice => `
-                <div class="practice-section">
-                  <h4>${practice.instructions}</h4>
-                  <div class="practice-content">${practice.content.replace(/\n/g, '<br>')}</div>
-                </div>
-              `).join('')}
-            </div>
-            <div class="target-words">
-              <strong>Focus Words:</strong> ${sound.targetWords.join(', ')}
-            </div>
+    if (soundsToPrint.length === 0) {
+      showToast('No valid sounds found to print', 'error');
+      return;
+    }
+
+    // Create print content
+    const printContent = soundsToPrint.map(soundData => {
+      return `
+        <div class="sound-page">
+          <div class="page-header">
+            <h1 class="sound-title">${soundData.title} ${soundData.image}</h1>
+            <p class="sound-info">${soundData.level?.name || 'Beginner Reading'} - ${soundData.description}</p>
+            <p class="sound-focus">${soundData.soundFocus}</p>
           </div>
-        `;
-      }
-      return copiesHtml;
-    };
+          
+          <div class="content-sections">
+            ${soundData.practices.map(practice => `
+              <div class="practice-section">
+                <h2 class="section-title">${practice.instructions}</h2>
+                <div class="practice-content">${practice.content.replace(/\n/g, '<br>')}</div>
+              </div>
+            `).join('')}
+            
+            ${soundData.simplePassage ? `
+              <div class="practice-section passage-section">
+                <h2 class="section-title">📖 Reading Practice: ${soundData.simplePassage.title}</h2>
+                <div class="passage-content">${soundData.simplePassage.content.replace(/\n/g, '<br>')}</div>
+              </div>
+            ` : ''}
+          </div>
+          
+          <div class="target-words">
+            <h3>🎯 Focus Words:</h3>
+            <div class="words-list">${soundData.targetWords.join(' • ')}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Create and style print window
+    const printWindow = window.open('', 'PrintSounds', 'width=800,height=600');
     
     printWindow.document.write(`
+      <!DOCTYPE html>
       <html>
         <head>
-          <title>Beginner Reading Sounds - 6 Copies</title>
+          <title>Beginner Reading Sounds</title>
           <style>
-            body { 
-              font-family: 'Comic Sans MS', cursive; 
-              margin: 10px; 
+            * {
+              margin: 0;
               padding: 0;
-              font-size: 16px;
-              line-height: 1.8;
+              box-sizing: border-box;
             }
+            
+            @page {
+              size: A4;
+              margin: 20mm;
+            }
+            
+            body { 
+              font-family: 'Comic Sans MS', 'Trebuchet MS', Arial, sans-serif;
+              color: #333;
+              background: white;
+            }
+            
             .sound-page {
               page-break-after: always;
-              margin-bottom: 20px;
-            }
-            .sound-page:last-child {
-              page-break-after: auto;
-            }
-            .copies-container { 
-              display: grid; 
-              grid-template-columns: repeat(2, 1fr); 
-              grid-template-rows: repeat(3, 1fr);
-              gap: 15px; 
-              width: 100%;
-              height: 95vh;
-            }
-            .sound-copy { 
-              border: 3px solid #333; 
-              padding: 12px;
-              break-inside: avoid;
+              min-height: 90vh;
               display: flex;
               flex-direction: column;
+              padding: 10px;
             }
-            .sound-header {
-              border-bottom: 2px solid #666;
-              margin-bottom: 10px;
-              padding-bottom: 8px;
+            
+            .sound-page:last-child {
+              page-break-after: avoid;
+            }
+            
+            .page-header {
               text-align: center;
+              border-bottom: 3px solid #e74c3c;
+              padding-bottom: 15px;
+              margin-bottom: 20px;
             }
+            
             .sound-title { 
-              font-weight: bold; 
-              font-size: 18px;
-              margin-bottom: 4px;
+              font-size: 32px;
+              font-weight: bold;
+              color: #e74c3c;
+              margin-bottom: 8px;
             }
+            
             .sound-info {
-              font-size: 14px;
-              color: #666;
-              margin-bottom: 4px;
-            }
-            .sound-content { 
-              flex-grow: 1;
               font-size: 16px;
-              line-height: 2.0;
-              margin-bottom: 10px;
-            }
-            .practice-section {
-              margin-bottom: 15px;
-            }
-            .practice-section h4 {
-              font-size: 14px;
-              color: #444;
+              color: #666;
               margin-bottom: 5px;
             }
-            .practice-content {
+            
+            .sound-focus {
+              font-size: 14px;
+              color: #3498db;
+              font-style: italic;
+            }
+            
+            .content-sections {
+              flex-grow: 1;
+              margin-bottom: 20px;
+            }
+            
+            .practice-section {
+              background: #f9f9f9;
+              border: 2px solid #ddd;
+              border-radius: 10px;
+              padding: 15px;
+              margin-bottom: 15px;
+            }
+            
+            .section-title {
               font-size: 18px;
+              color: #2c3e50;
+              margin-bottom: 10px;
+              border-bottom: 1px solid #bdc3c7;
+              padding-bottom: 5px;
+            }
+            
+            .practice-content {
+              font-size: 20px;
+              line-height: 2.2;
               font-weight: bold;
               text-align: center;
-              background: #f9f9f9;
-              padding: 8px;
+              background: white;
+              padding: 15px;
               border-radius: 5px;
+              border: 1px solid #ecf0f1;
             }
+            
+            .passage-section {
+              background: #e8f5e8;
+              border-color: #27ae60;
+            }
+            
+            .passage-content {
+              font-size: 16px;
+              line-height: 1.8;
+              text-align: left;
+              font-weight: normal;
+            }
+            
             .target-words {
-              font-size: 12px;
-              color: #666;
-              border-top: 1px solid #ddd;
-              padding-top: 6px;
+              background: #fff3cd;
+              border: 2px solid #ffc107;
+              border-radius: 10px;
+              padding: 15px;
               text-align: center;
             }
+            
+            .target-words h3 {
+              font-size: 18px;
+              color: #856404;
+              margin-bottom: 10px;
+            }
+            
+            .words-list {
+              font-size: 16px;
+              font-weight: bold;
+              color: #856404;
+              line-height: 1.5;
+            }
+            
             @media print {
-              body { margin: 5px; }
-              .copies-container { 
-                gap: 10px; 
-                height: 97vh;
+              body { 
+                margin: 0;
+                font-size: 14px;
               }
-              .sound-copy { 
-                padding: 8px; 
+              
+              .sound-page {
+                margin: 0;
+                padding: 5px;
+              }
+              
+              .sound-title {
+                font-size: 28px;
+              }
+              
+              .practice-content {
+                font-size: 18px;
               }
             }
           </style>
         </head>
         <body>
-          ${soundsToPrint.map(soundData => `
-            <div class="sound-page">
-              <div class="copies-container">
-                ${generateSoundCopies(soundData)}
-              </div>
-            </div>
-          `).join('')}
+          ${printContent}
         </body>
       </html>
     `);
     
     printWindow.document.close();
-    printWindow.focus();
-    printWindow.print();
-    printWindow.close();
+    
+    // Wait for content to load then print
+    printWindow.onload = () => {
+      setTimeout(() => {
+        printWindow.focus();
+        printWindow.print();
+        setTimeout(() => {
+          printWindow.close();
+        }, 1000);
+      }, 500);
+    };
+    
+    showToast(`Printing ${soundsToPrint.length} sound page(s)...`, 'success');
   };
 
   const getAssignedStudents = () => {
