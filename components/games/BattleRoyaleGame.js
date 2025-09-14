@@ -685,25 +685,40 @@ const BattleRoyaleGame = ({ gameMode, showToast, students = [], onAwardXP, onAwa
     );
   }
 
-  // RENDER: Not available message (for students accessing from teacher tab)
+  // RENDER: Loading state
+  if (!firebaseReady) {
+    return (
+      <div className="max-w-2xl mx-auto text-center p-8">
+        <div className="bg-white rounded-xl p-8 shadow-lg">
+          <div className="text-4xl mb-4">⚔️</div>
+          <h2 className="text-2xl font-bold mb-4">Battle Royale Loading...</h2>
+          <div className="animate-spin rounded-full h-8 w-8 border-4 border-red-600 border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-600">Connecting to battle servers...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // RENDER: Default fallback - should not reach here normally
   return (
     <div className="max-w-2xl mx-auto text-center p-8">
       <div className="bg-white rounded-xl p-8 shadow-lg">
         <div className="text-4xl mb-4">⚔️</div>
         <h2 className="text-2xl font-bold mb-4">Battle Royale Learning</h2>
+        <p className="text-gray-600 mb-4">
+          Debug Info: gameMode={gameMode}, students={students?.length || 0}, isTeacher={isTeacher}
+        </p>
         <p className="text-gray-600 mb-6">
           {isTeacher ? (
-            "This is the teacher control panel for Battle Royale games."
+            "Teacher interface should have loaded above. If you see this, there may be an integration issue."
           ) : (
             "Students join Battle Royale games through the student portal using the game code provided by their teacher."
           )}
         </p>
         
-        {!firebaseReady && (
-          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-            <p className="text-orange-600 text-sm">Connecting to multiplayer services...</p>
-          </div>
-        )}
+        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+          <p className="text-orange-600 text-sm">If this message persists, please refresh the page.</p>
+        </div>
       </div>
     </div>
   );
