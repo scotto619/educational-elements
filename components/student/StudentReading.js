@@ -1,5 +1,6 @@
 // components/student/StudentReading.js - UPDATED WITH READING FOR FUN INTEGRATION
 import React, { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 
 // Import reading passages from the actual passage files
 import { LEVEL_1_PASSAGES } from '../curriculum/literacy/passages/Level1Passages';
@@ -168,12 +169,21 @@ const StudentReading = ({
   const [readingMode, setReadingMode] = useState('practice'); // 'practice' or 'full'
   const [activeTab, setActiveTab] = useState('auto'); // 'auto', 'fluency', 'beginner', 'fun-reading'
   const [showComprehension, setShowComprehension] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // NEW
 
   useEffect(() => {
     if (studentData && classData) {
-      findStudentAssignments();
-      findBeginnerAssignments();
-      findFunReadingAssignments(); // NEW
+      setIsLoading(true);
+      try {
+        findStudentAssignments();
+        findBeginnerAssignments();
+        findFunReadingAssignments();
+      } catch (error) {
+        console.error('Error loading assignments:', error);
+        showToast('Error loading assignments', 'error');
+      } finally {
+        setIsLoading(false);
+      }
     }
   }, [studentData, classData]);
 
@@ -191,12 +201,18 @@ const StudentReading = ({
   }, [studentAssignments, beginnerAssignments, funReadingAssignments]);
 
   const findStudentAssignments = () => {
+    if (!classData?.toolkitData?.fluencyGroups) {
+      console.log('No fluency groups found');
+      setStudentAssignments(null);
+      return;
+    }
+
     // Get fluency groups from class toolkit data
-    const fluencyGroups = classData?.toolkitData?.fluencyGroups || [];
+    const fluencyGroups = classData.toolkitData.fluencyGroups;
     
     // Find which group this student belongs to
     const studentGroup = fluencyGroups.find(group => 
-      group.students.some(s => s.id === studentData.id)
+      group.students?.some(s => s.id === studentData?.id)
     );
 
     if (studentGroup) {
@@ -985,8 +1001,22 @@ const StudentReading = ({
           </div>
         </div>
       </div>
+
+      {/* Loading State - NEW */}
+      {isLoading && (
+        <div className="bg-white rounded-xl p-6 text-center">
+          <div className="animate-spin text-4xl mb-4">📚</div>
+          <p className="text-gray-600">Loading your reading assignments...</p>
+        </div>
+      )}
     </div>
   );
+};
+
+StudentReading.propTypes = {
+  studentData: PropTypes.object.isRequired,
+  classData: PropTypes.object.isRequired,
+  showToast: PropTypes.func.isRequired
 };
 
 export default StudentReading;
