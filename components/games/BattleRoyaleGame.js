@@ -431,6 +431,7 @@ const BattleRoyaleGame = ({ gameMode, showToast, students = [], onAwardXP, onAwa
 
   // RENDER: Menu (Teacher - Create Game)
   if (gamePhase === 'menu' && isTeacher) {
+    console.log('🎮 Rendering teacher menu interface');
     return (
       <div className="max-w-2xl mx-auto space-y-6 p-4">
         <div className="text-center">
@@ -439,6 +440,13 @@ const BattleRoyaleGame = ({ gameMode, showToast, students = [], onAwardXP, onAwa
           </h2>
           <p className="text-gray-600">Create a multiplayer learning battle where students compete to be the last survivor!</p>
         </div>
+
+        {!firebaseReady && (
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 text-center">
+            <div className="animate-spin rounded-full h-6 w-6 border-4 border-orange-600 border-t-transparent mx-auto mb-2"></div>
+            <p className="text-orange-600 text-sm">Connecting to battle servers...</p>
+          </div>
+        )}
 
         <div className="bg-white rounded-xl p-6 shadow-lg">
           <h3 className="text-xl font-bold mb-4">Game Settings</h3>
@@ -487,7 +495,9 @@ const BattleRoyaleGame = ({ gameMode, showToast, students = [], onAwardXP, onAwa
             disabled={loading || !firebaseReady}
             className="w-full mt-6 bg-gradient-to-r from-red-600 to-orange-600 text-white py-3 rounded-lg font-bold text-lg hover:shadow-lg transition-all disabled:opacity-50"
           >
-            {loading ? 'Creating...' : 'Create Battle Arena'}
+            {loading ? 'Creating Battle Arena...' : 
+             !firebaseReady ? 'Connecting to Battle Servers...' :
+             'Create Battle Arena'}
           </button>
         </div>
       </div>

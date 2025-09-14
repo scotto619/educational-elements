@@ -239,8 +239,130 @@ const GamesTab = ({
         </div>
       )}
 
-      {/* Rest of the game selection interface remains the same... */}
-      {/* Game Mode Selection, Available Games grid, Tips, etc. */}
+      {/* Available Games */}
+      <div className="bg-white rounded-xl shadow-lg p-6">
+        <h3 className="text-xl font-bold text-gray-800 mb-6">🎯 Select a Game</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {AVAILABLE_GAMES.map((game) => (
+            <div
+              key={game.id}
+              onClick={() => handleGameSelect(game)}
+              className={`group cursor-pointer rounded-xl p-6 border-2 border-transparent hover:border-gray-300 hover:shadow-lg transition-all duration-200 relative ${
+                game.special 
+                  ? 'bg-gradient-to-br from-yellow-50 to-orange-50 ring-2 ring-yellow-400 ring-opacity-50' 
+                  : game.realtime
+                  ? 'bg-gradient-to-br from-red-50 to-pink-50 ring-2 ring-red-400 ring-opacity-50'
+                  : 'bg-gray-50'
+              }`}
+            >
+              {game.special && !game.realtime && (
+                <div className="absolute -top-2 -right-2 bg-gradient-to-r from-yellow-500 to-orange-600 text-white text-xs font-bold px-3 py-1 rounded-full z-10 animate-bounce">
+                  NEW!
+                </div>
+              )}
+              
+              {game.realtime && (
+                <div className="absolute -top-2 -right-2 bg-gradient-to-r from-red-500 to-pink-600 text-white text-xs font-bold px-3 py-1 rounded-full z-10">
+                  🔴 LIVE
+                </div>
+              )}
+              
+              {/* Game Icon & Header */}
+              <div className="flex items-center space-x-3 mb-4">
+                <div className={`w-12 h-12 rounded-full bg-gradient-to-r ${game.color} flex items-center justify-center text-2xl group-hover:scale-110 transition-transform ${
+                  game.special || game.realtime ? 'animate-pulse' : ''
+                }`}>
+                  {game.icon}
+                </div>
+                <div>
+                  <h4 className="text-lg font-bold text-gray-800 group-hover:text-blue-600 transition-colors flex items-center">
+                    {game.name}
+                    {game.featured && <span className="ml-2 text-yellow-500">⭐</span>}
+                    {game.realtime && <span className="ml-2 text-red-500">🔴</span>}
+                  </h4>
+                </div>
+              </div>
+
+              {/* Game Description */}
+              <p className="text-gray-600 text-sm mb-4 leading-relaxed">
+                {game.description}
+              </p>
+
+              {/* Game Details */}
+              <div className="space-y-2 text-xs text-gray-500">
+                <div className="flex justify-between">
+                  <span>⚡ Difficulty:</span>
+                  <span className="font-medium">{game.difficulty}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>👥 Players:</span>
+                  <span className="font-medium">{game.players}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>⏱️ Duration:</span>
+                  <span className="font-medium">{game.time}</span>
+                </div>
+                {game.multiplayer && (
+                  <div className="flex justify-between">
+                    <span>🎮 Type:</span>
+                    <span className="font-medium text-purple-600">
+                      {game.realtime ? 'Real-time Battle' : 'Multiplayer'}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Play Button */}
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className={`w-full py-2 px-4 rounded-lg bg-gradient-to-r ${game.color} text-white text-center font-semibold group-hover:shadow-md transition-all ${
+                  game.special || game.realtime ? 'animate-pulse' : ''
+                }`}>
+                  {game.realtime ? '⚔️ HOST BATTLE' : 
+                   game.special ? '⚔️ PLAY EPIC GAME' : 
+                   '🎮 Play Game'}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Enhanced Quick Tips */}
+      <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-200">
+        <h3 className="text-lg font-bold text-blue-800 mb-3">💡 Game Tips</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+          <div className="bg-white rounded-lg p-3">
+            <div className="font-semibold text-red-700 mb-1">⚔️ Battle Royale</div>
+            <div className="text-gray-600">Host epic multiplayer math battles with up to 30 students competing to survive!</div>
+          </div>
+          <div className="bg-white rounded-lg p-3">
+            <div className="font-semibold text-blue-700 mb-1">🖥️ Digital Mode</div>
+            <div className="text-gray-600">Best for individual practice and small groups</div>
+          </div>
+          <div className="bg-white rounded-lg p-3">
+            <div className="font-semibold text-purple-700 mb-1">📽️ Projector Mode</div>
+            <div className="text-gray-600">Perfect for whole class activities and competitions</div>
+          </div>
+          <div className="bg-white rounded-lg p-3">
+            <div className="font-semibold text-green-700 mb-1">⏱️ Quick Games</div>
+            <div className="text-gray-600">Great for brain breaks and transitions</div>
+          </div>
+        </div>
+        
+        {/* Special tip for Battle Royale */}
+        <div className="mt-4 p-4 bg-gradient-to-r from-red-100 to-orange-100 rounded-lg border border-red-300">
+          <div className="flex items-start space-x-3">
+            <span className="text-2xl">⚔️</span>
+            <div>
+              <h4 className="font-bold text-red-800 mb-1">Battle Royale Setup Tips</h4>
+              <p className="text-red-700 text-sm">
+                Create a 6-character game code that students enter at educational-elements.com/student. 
+                Choose math category and difficulty, then watch the epic battles unfold! Perfect for review sessions and competitive learning.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
       
     </div>
   );
