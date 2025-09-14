@@ -6,9 +6,10 @@ import { FUN_INFORMATIONAL_TEXTS } from './funTexts/FunInformationalTexts';
 import { FUN_PERSUASIVE_TEXTS } from './funTexts/FunPersuasiveTexts';
 import { FUN_POETRY_TEXTS } from './funTexts/FunPoetryTexts';
 import { FUN_COMEDY_TEXTS } from './funTexts/FunComedyTexts';
+import { FUN_READERS_THEATRE_TEXTS } from './funTexts/FunReadersTheatreTexts'; // NEW IMPORT
 
 // ===============================================
-// TEXT TYPE CONFIGURATIONS FOR FUN READING
+// TEXT TYPE CONFIGURATIONS FOR FUN READING - UPDATED WITH THEATRE
 // ===============================================
 const FUN_TEXT_TYPES = [
   { 
@@ -50,6 +51,14 @@ const FUN_TEXT_TYPES = [
     color: "bg-pink-500", 
     description: "Jokes, funny stories, and silly situations",
     texts: FUN_COMEDY_TEXTS
+  },
+  { 
+    id: "theatre", 
+    name: "Drama Scripts", 
+    icon: "🎭", 
+    color: "bg-indigo-500", 
+    description: "Readers theatre scripts with character roles",
+    texts: FUN_READERS_THEATRE_TEXTS // NEW CATEGORY
   }
 ];
 
@@ -79,9 +88,9 @@ const ReadingForFun = ({
       console.log('🎉 Loaded fun reading groups from Firebase:', loadedData.funReadingGroups);
     } else if (loadedData !== undefined && groups.length === 0) {
       const defaultGroups = [
-        { id: 1, name: "Advanced Readers", color: "bg-purple-600", students: [], assignedTexts: [] },
-        { id: 2, name: "Fun Readers", color: "bg-blue-600", students: [], assignedTexts: [] },
-        { id: 3, name: "Independent Readers", color: "bg-green-600", students: [], assignedTexts: [] }
+        { id: 1, name: "Advanced Readers", color: "bg-purple-600", students: [], assignedTexts: [], characterAssignments: {} },
+        { id: 2, name: "Fun Readers", color: "bg-blue-600", students: [], assignedTexts: [], characterAssignments: {} },
+        { id: 3, name: "Independent Readers", color: "bg-green-600", students: [], assignedTexts: [], characterAssignments: {} }
       ];
       setGroups(defaultGroups);
       setHasUnsavedChanges(true);
@@ -173,7 +182,8 @@ const ReadingForFun = ({
       name: `Reading Group ${groups.length + 1}`,
       color: colors[groups.length % colors.length],
       students: [],
-      assignedTexts: []
+      assignedTexts: [],
+      characterAssignments: {} // NEW: For theatre character assignments
     };
     updateGroups([...groups, newGroup]);
   };
@@ -204,6 +214,27 @@ const ReadingForFun = ({
     ));
   };
 
+  // NEW: Assign character to student for theatre texts
+  const assignCharacterToStudent = (groupId, studentId, character) => {
+    updateGroups(groups.map(group => {
+      if (group.id === groupId) {
+        const newAssignments = { ...group.characterAssignments };
+        // Remove student from any existing character
+        Object.keys(newAssignments).forEach(char => {
+          if (newAssignments[char] === studentId) {
+            delete newAssignments[char];
+          }
+        });
+        // Assign new character
+        if (character) {
+          newAssignments[character] = studentId;
+        }
+        return { ...group, characterAssignments: newAssignments };
+      }
+      return group;
+    }));
+  };
+
   // Print texts with fun formatting
   const printTexts = (textIds) => {
     const textsToPrint = [];
@@ -230,6 +261,7 @@ const ReadingForFun = ({
             <span class="category">${textData.category.name}</span> | 
             <span class="word-count">${textData.wordCount} words</span>
             <span class="reading-time">~${Math.ceil(textData.wordCount / 200)} min read</span>
+            ${textData.characters ? `<span class="characters">• ${textData.characters.length} characters</span>` : ''}
           </div>
         </div>
         <div class="text-content">${textData.content.replace(/\n/g, '<br>')}</div>
@@ -385,6 +417,9 @@ const ReadingForFun = ({
                   <div key={textId} className="mb-6">
                     <h3 className="text-3xl font-bold text-center mb-2 text-gray-800">{text.title}</h3>
                     <p className="text-lg text-center mb-4 text-purple-600 italic">{category.name} • {text.wordCount} words</p>
+                    {text.characters && (
+                      <p className="text-md text-center mb-4 text-indigo-600">🎭 {text.characters.length} characters</p>
+                    )}
                     <div className="bg-gray-100 border-2 border-gray-300 rounded-lg p-6">
                       <div className="text-lg leading-relaxed text-gray-800 whitespace-pre-wrap">
                         {text.content.length > 500 ? text.content.substring(0, 500) + '...' : text.content}
@@ -411,7 +446,7 @@ const ReadingForFun = ({
               Reading for Fun
             </h1>
             <p className="text-lg opacity-90">Awesome texts for advanced readers who love reading!</p>
-            <p className="text-sm opacity-75 mt-1">✨ Engaging stories, cool facts, debates, poems, and laughs</p>
+            <p className="text-sm opacity-75 mt-1">✨ Stories, facts, debates, poems, comedy & theatre scripts</p>
             {loadedData?.funReadingGroups && loadedData.funReadingGroups.length > 0 && !hasUnsavedChanges && (
               <p className="text-sm opacity-75 mt-1">✅ Groups loaded from your saved data</p>
             )}
@@ -460,6 +495,9 @@ const ReadingForFun = ({
                   <h2 className="text-3xl font-bold">{displayText.text.title}</h2>
                   <p className="text-xl opacity-90">{displayText.category.name} • {displayText.text.wordCount} words</p>
                   <p className="text-lg opacity-80">Reading time: ~{Math.ceil(displayText.text.wordCount / 200)} minutes</p>
+                  {displayText.text.characters && (
+                    <p className="text-lg opacity-80">🎭 Characters: {displayText.text.characters.join(', ')}</p>
+                  )}
                 </div>
                 <button
                   onClick={() => setDisplayingText(null)}
@@ -516,6 +554,9 @@ const ReadingForFun = ({
                       <h3 className="text-2xl font-bold text-gray-800">{viewingText.title}</h3>
                       <p className="text-purple-600 italic">{viewingText.category} • {viewingText.wordCount} words</p>
                       <p className="text-gray-600">~{Math.ceil(viewingText.wordCount / 200)} minute read</p>
+                      {viewingText.characters && (
+                        <p className="text-indigo-600">🎭 Characters: {viewingText.characters.join(', ')}</p>
+                      )}
                     </div>
                     <div className="flex gap-3">
                       <button
@@ -568,7 +609,10 @@ const ReadingForFun = ({
                         className="p-4 rounded-lg border-2 border-gray-200 hover:border-purple-300 text-left transition-all hover:scale-105 bg-white shadow-sm hover:shadow-md"
                       >
                         <div className="font-bold text-lg mb-2">{text.title}</div>
-                        <div className="text-sm text-gray-600 mb-2">{text.wordCount} words • ~{Math.ceil(text.wordCount / 200)} min</div>
+                        <div className="text-sm text-gray-600 mb-2">
+                          {text.wordCount} words • ~{Math.ceil(text.wordCount / 200)} min
+                          {text.characters && ` • ${text.characters.length} characters`}
+                        </div>
                         <div className="text-sm text-gray-700">
                           {text.content.substring(0, 100)}...
                         </div>

@@ -8,8 +8,9 @@ import { FUN_INFORMATIONAL_TEXTS } from '../curriculum/literacy/funTexts/FunInfo
 import { FUN_PERSUASIVE_TEXTS } from '../curriculum/literacy/funTexts/FunPersuasiveTexts';
 import { FUN_POETRY_TEXTS } from '../curriculum/literacy/funTexts/FunPoetryTexts';
 import { FUN_COMEDY_TEXTS } from '../curriculum/literacy/funTexts/FunComedyTexts';
+import { FUN_READERS_THEATRE_TEXTS } from '../curriculum/literacy/funTexts/FunReadersTheatreTexts'; // NEW IMPORT
 
-// Text category configurations
+// Text category configurations - UPDATED WITH THEATRE
 const FUN_TEXT_CATEGORIES = [
   { 
     id: "narrative", 
@@ -50,6 +51,14 @@ const FUN_TEXT_CATEGORIES = [
     color: "bg-pink-500", 
     description: "Jokes and funny stories",
     texts: FUN_COMEDY_TEXTS
+  },
+  { 
+    id: "theatre", 
+    name: "Drama Scripts", 
+    icon: "🎭", 
+    color: "bg-indigo-500", 
+    description: "Readers theatre scripts with character roles",
+    texts: FUN_READERS_THEATRE_TEXTS // NEW CATEGORY
   }
 ];
 
@@ -140,8 +149,10 @@ const StudentReadingForFun = ({
     return Math.ceil(wordCount / 225);
   };
 
-  // Render selected text for reading
+  // Render selected text for reading - UPDATED WITH THEATRE SUPPORT
   if (selectedText) {
+    const isTheatreScript = selectedText.category.id === 'theatre';
+    
     return (
       <div className="space-y-6">
         {/* Reading Header */}
@@ -153,7 +164,15 @@ const StudentReadingForFun = ({
               <div className="flex items-center gap-4 text-sm opacity-80 mt-2">
                 <span>📖 {selectedText.text.wordCount} words</span>
                 <span>⏱️ ~{getReadingTime(selectedText.text.wordCount)} min read</span>
+                {isTheatreScript && selectedText.text.characters && (
+                  <span>🎭 {selectedText.text.characters.length} characters</span>
+                )}
               </div>
+              {selectedText.myCharacter && (
+                <div className="mt-2 bg-white bg-opacity-20 rounded-lg px-3 py-1">
+                  <p className="text-sm font-bold">Your Character: {selectedText.myCharacter}</p>
+                </div>
+              )}
             </div>
             <button
               onClick={() => setSelectedText(null)}
@@ -206,6 +225,44 @@ const StudentReadingForFun = ({
           </div>
         </div>
 
+        {/* Theatre-specific character info */}
+        {isTheatreScript && selectedText.text.characters && (
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <h3 className="text-lg font-bold text-gray-800 mb-4 text-center">🎭 Characters in This Script</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {selectedText.text.characters.map(character => (
+                <div 
+                  key={character} 
+                  className={`p-3 rounded-lg border text-center ${
+                    character === selectedText.myCharacter 
+                      ? 'bg-indigo-100 border-indigo-400 text-indigo-800 font-bold' 
+                      : 'bg-gray-100 border-gray-300 text-gray-700'
+                  }`}
+                >
+                  {character}
+                  {character === selectedText.myCharacter && (
+                    <div className="text-xs mt-1">👆 That's you!</div>
+                  )}
+                </div>
+              ))}
+            </div>
+            {selectedText.myCharacter && (
+              <div className="mt-4 bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+                <h4 className="font-bold text-indigo-800 mb-2">🎯 Your Role: {selectedText.myCharacter}</h4>
+                <p className="text-indigo-700 text-sm">
+                  Look for your character's lines in the script below. Practice reading them with expression!
+                </p>
+              </div>
+            )}
+            {selectedText.text.estimatedTime && (
+              <div className="mt-4 text-center">
+                <p className="text-gray-600">⏱️ Performance Time: {selectedText.text.estimatedTime}</p>
+                <p className="text-gray-600">📊 Difficulty: {selectedText.text.difficulty}</p>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Reading Text */}
         <div className={`bg-white rounded-xl shadow-lg ${
           readingMode === 'focus' ? 'p-8 md:p-12' : 'p-6'
@@ -219,53 +276,143 @@ const StudentReadingForFun = ({
           <div className={`bg-gray-50 border-2 border-gray-200 rounded-xl p-6 ${
             readingMode === 'focus' ? 'md:p-12' : 'md:p-8'
           }`}>
-            <div className={`text-gray-800 whitespace-pre-wrap leading-relaxed ${
-              readingMode === 'focus' 
-                ? 'text-xl md:text-2xl font-serif text-center' 
-                : 'text-base md:text-lg font-serif'
-            }`}>
-              {selectedText.text.content}
-            </div>
+            {isTheatreScript ? (
+              // Special formatting for theatre scripts
+              <div className={`text-gray-800 leading-relaxed ${
+                readingMode === 'focus' 
+                  ? 'text-lg md:text-xl' 
+                  : 'text-base md:text-lg'
+              }`}>
+                {selectedText.text.content.split('\n').map((line, index) => {
+                  line = line.trim();
+                  if (line.startsWith('**') && line.endsWith('**')) {
+                    const content = line.substring(2, line.length - 2);
+                    if (content.includes(':** (')) {
+                      const [character, rest] = content.split(':** (');
+                      const isMyCharacter = character === selectedText.myCharacter;
+                      return (
+                        <div key={index} className={`mb-3 ${isMyCharacter ? 'bg-indigo-100 p-2 rounded border-l-4 border-indigo-500' : ''}`}>
+                          <span className={`font-bold ${isMyCharacter ? 'text-indigo-800 text-lg' : 'text-purple-800'}`}>
+                            {character}:
+                          </span>
+                          <span className="text-gray-600 italic"> ({rest}</span>
+                        </div>
+                      );
+                    } else if (content.includes(':** ')) {
+                      const [character, dialogue] = content.split(':** ');
+                      const isMyCharacter = character === selectedText.myCharacter;
+                      return (
+                        <div key={index} className={`mb-3 ${isMyCharacter ? 'bg-indigo-100 p-2 rounded border-l-4 border-indigo-500' : ''}`}>
+                          <span className={`font-bold ${isMyCharacter ? 'text-indigo-800 text-lg' : 'text-purple-800'}`}>
+                            {character}:
+                          </span>
+                          <span className="ml-2">{dialogue}</span>
+                        </div>
+                      );
+                    }
+                  }
+                  return (
+                    <div key={index} className="mb-2 text-gray-600 italic">
+                      {line}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              // Regular text formatting
+              <div className={`text-gray-800 whitespace-pre-wrap leading-relaxed ${
+                readingMode === 'focus' 
+                  ? 'text-xl md:text-2xl font-serif text-center' 
+                  : 'text-base md:text-lg font-serif'
+              }`}>
+                {selectedText.text.content}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Reading Tips for Advanced Readers */}
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <h3 className="text-lg font-bold text-gray-800 mb-4 text-center">📚 Advanced Reading Tips</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
-              <div className="text-2xl mb-2">🤔</div>
-              <h4 className="font-bold text-blue-800 mb-2">Think Critically</h4>
-              <p className="text-sm text-blue-700">Question what you read and form your own opinions</p>
-            </div>
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-              <div className="text-2xl mb-2">🔗</div>
-              <h4 className="font-bold text-green-800 mb-2">Make Connections</h4>
-              <p className="text-sm text-green-700">Connect what you read to your life and other texts</p>
-            </div>
-            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 text-center">
-              <div className="text-2xl mb-2">💭</div>
-              <h4 className="font-bold text-purple-800 mb-2">Visualize & Imagine</h4>
-              <p className="text-sm text-purple-700">Create mental images of what you're reading</p>
+        {/* Theatre-specific tips */}
+        {isTheatreScript ? (
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <h3 className="text-lg font-bold text-gray-800 mb-4 text-center">🎭 Readers Theatre Tips</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 text-center">
+                <div className="text-2xl mb-2">🎯</div>
+                <h4 className="font-bold text-purple-800 mb-2">Know Your Character</h4>
+                <p className="text-sm text-purple-700">Practice your lines and think about your character's personality</p>
+              </div>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+                <div className="text-2xl mb-2">🔊</div>
+                <h4 className="font-bold text-blue-800 mb-2">Use Your Voice</h4>
+                <p className="text-sm text-blue-700">Change your tone and volume to bring your character to life</p>
+              </div>
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                <div className="text-2xl mb-2">👥</div>
+                <h4 className="font-bold text-green-800 mb-2">Work Together</h4>
+                <p className="text-sm text-green-700">Listen to other actors and react to what they say</p>
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          // Regular reading tips for advanced readers
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <h3 className="text-lg font-bold text-gray-800 mb-4 text-center">📚 Advanced Reading Tips</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+                <div className="text-2xl mb-2">🤔</div>
+                <h4 className="font-bold text-blue-800 mb-2">Think Critically</h4>
+                <p className="text-sm text-blue-700">Question what you read and form your own opinions</p>
+              </div>
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                <div className="text-2xl mb-2">🔗</div>
+                <h4 className="font-bold text-green-800 mb-2">Make Connections</h4>
+                <p className="text-sm text-green-700">Connect what you read to your life and other texts</p>
+              </div>
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 text-center">
+                <div className="text-2xl mb-2">💭</div>
+                <h4 className="font-bold text-purple-800 mb-2">Visualize & Imagine</h4>
+                <p className="text-sm text-purple-700">Create mental images of what you're reading</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Post-Reading Reflection */}
         <div className="bg-white rounded-xl shadow-lg p-6">
-          <h3 className="text-lg font-bold text-gray-800 mb-4 text-center">✨ After Reading Reflection</h3>
+          <h3 className="text-lg font-bold text-gray-800 mb-4 text-center">
+            {isTheatreScript ? '🎭 After Performing' : '✨ After Reading'} Reflection
+          </h3>
           <div className="space-y-3">
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <h4 className="font-bold text-gray-700 mb-2">🎯 What was the main message or theme?</h4>
-              <p className="text-sm text-gray-600">Think about the central idea the author was trying to communicate.</p>
+              <h4 className="font-bold text-gray-700 mb-2">
+                {isTheatreScript ? '🎯 How did your character make you feel?' : '🎯 What was the main message or theme?'}
+              </h4>
+              <p className="text-sm text-gray-600">
+                {isTheatreScript 
+                  ? 'Think about what it was like to be that character and how they might think or feel.'
+                  : 'Think about the central idea the author was trying to communicate.'
+                }
+              </p>
             </div>
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <h4 className="font-bold text-gray-700 mb-2">⭐ What did you like or dislike about this text?</h4>
-              <p className="text-sm text-gray-600">Consider the style, content, and how it made you feel.</p>
+              <h4 className="font-bold text-gray-700 mb-2">
+                {isTheatreScript ? '⭐ What was your favorite part to perform?' : '⭐ What did you like or dislike about this text?'}
+              </h4>
+              <p className="text-sm text-gray-600">
+                {isTheatreScript
+                  ? 'Which lines or scenes were the most fun or challenging to perform?'
+                  : 'Consider the style, content, and how it made you feel.'
+                }
+              </p>
             </div>
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
               <h4 className="font-bold text-gray-700 mb-2">🤝 Would you recommend this to a friend? Why?</h4>
-              <p className="text-sm text-gray-600">Think about who might enjoy this text and why.</p>
+              <p className="text-sm text-gray-600">
+                {isTheatreScript
+                  ? 'Think about who might enjoy performing this script and why.'
+                  : 'Think about who might enjoy this text and why.'
+                }
+              </p>
             </div>
           </div>
         </div>
@@ -287,7 +434,7 @@ const StudentReadingForFun = ({
             {studentData.firstName}'s Advanced Reading Corner
           </div>
           <div className="text-sm md:text-base opacity-80 mt-2">
-            Awesome texts for readers who love to read!
+            Stories, facts, debates, poems, comedy & theatre scripts!
           </div>
         </div>
       </div>
@@ -341,6 +488,7 @@ const StudentReadingForFun = ({
               const progress = readingProgress[textData.id];
               const isReading = progress?.status === 'reading';
               const isCompleted = progress?.status === 'completed';
+              const isTheatreScript = textData.category.id === 'theatre';
 
               return (
                 <div key={textData.id} className="bg-white rounded-xl shadow-lg border-2 border-gray-200">
@@ -365,7 +513,15 @@ const StudentReadingForFun = ({
                         <div className="flex items-center gap-4 text-xs md:text-sm opacity-80 mt-2">
                           <span>📖 {textData.text.wordCount} words</span>
                           <span>⏱️ ~{getReadingTime(textData.text.wordCount)} min read</span>
+                          {isTheatreScript && textData.text.characters && (
+                            <span>🎭 {textData.text.characters.length} characters</span>
+                          )}
                         </div>
+                        {textData.myCharacter && (
+                          <div className="mt-2 bg-white bg-opacity-20 rounded px-2 py-1">
+                            <p className="text-xs font-bold">Your Role: {textData.myCharacter}</p>
+                          </div>
+                        )}
                       </div>
                       <div className="text-3xl md:text-4xl">{textData.category.icon}</div>
                     </div>
@@ -384,16 +540,21 @@ const StudentReadingForFun = ({
                     <div className="mb-4">
                       <p className="text-gray-600 text-sm md:text-base italic">
                         {textData.category.description}
+                        {isTheatreScript && ' - Get ready to perform!'}
                       </p>
                     </div>
 
-                    {/* Read button */}
+                    {/* Read/Perform button */}
                     <div className="text-center">
                       <button
                         onClick={() => setSelectedText(textData)}
                         className={`${textData.category.color} text-white px-6 py-3 rounded-lg font-semibold text-sm md:text-base hover:opacity-90 transition-opacity`}
                       >
-                        {isCompleted ? '📖 Read Again' : isReading ? '📖 Continue Reading' : '🚀 Start Reading'}
+                        {isTheatreScript ? (
+                          isCompleted ? '🎭 Perform Again' : isReading ? '🎭 Continue Script' : '🎭 Start Script'
+                        ) : (
+                          isCompleted ? '📖 Read Again' : isReading ? '📖 Continue Reading' : '🚀 Start Reading'
+                        )}
                       </button>
                     </div>
                   </div>
@@ -403,14 +564,14 @@ const StudentReadingForFun = ({
           </div>
         </div>
       ) : (
-        // No Assignments View
+        // No Assignments View - UPDATED
         <div className="bg-white rounded-xl p-6 md:p-8 text-center">
           <div className="text-4xl md:text-6xl mb-4">🎉</div>
           <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-4">No Fun Reading Assigned Yet</h2>
           <p className="text-gray-600 text-sm md:text-base leading-relaxed mb-6">
             Your teacher hasn't assigned you to a fun reading group yet. When they do, you'll find awesome texts here including:
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl mx-auto">
             {FUN_TEXT_CATEGORIES.map(category => (
               <div key={category.id} className={`${category.color} text-white rounded-lg p-4`}>
                 <div className="text-3xl mb-2">{category.icon}</div>
@@ -430,7 +591,7 @@ const StudentReadingForFun = ({
         </div>
       )}
 
-      {/* Reading Benefits for Advanced Readers */}
+      {/* Reading Benefits for Advanced Readers - UPDATED */}
       <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
         <h2 className="text-xl font-bold text-gray-800 mb-4 text-center">🌟 Why Reading for Fun Makes You Even Smarter</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -441,6 +602,7 @@ const StudentReadingForFun = ({
               <li>• Improves critical thinking abilities</li>
               <li>• Enhances creativity and imagination</li>
               <li>• Develops empathy and understanding</li>
+              <li>• Builds performance and presentation skills (theatre)</li>
             </ul>
           </div>
           <div className="bg-green-50 border border-green-200 rounded-lg p-4">
@@ -448,6 +610,7 @@ const StudentReadingForFun = ({
             <ul className="text-sm text-green-700 space-y-1">
               <li>• Better communication and writing</li>
               <li>• Increased cultural awareness</li>
+              <li>• Confidence in public speaking (theatre)</li>
               <li>• Stress relief and relaxation</li>
               <li>• Preparation for advanced academics</li>
             </ul>
