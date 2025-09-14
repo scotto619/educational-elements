@@ -255,11 +255,23 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
       });
     });
 
-    // Add special tiles randomly (15% chance)
+    // Add special tiles randomly (10% chance) - FIXED: Appropriate for game mode
     gameCards.forEach(card => {
-      if (Math.random() < 0.15) {
-        const randomSpecial = SPECIAL_TILES[Math.floor(Math.random() * SPECIAL_TILES.length)];
-        card.specialTile = randomSpecial;
+      if (Math.random() < 0.1) {
+        let availableSpecials = SPECIAL_TILES;
+        
+        // Filter special tiles based on game mode
+        if (selectedTheme === 'custom' || gameMode === 'single') {
+          // Single player: only double and bonus points make sense
+          availableSpecials = SPECIAL_TILES.filter(tile => 
+            tile.type === 'double' || tile.type === 'bonus'
+          );
+        }
+        
+        if (availableSpecials.length > 0) {
+          const randomSpecial = availableSpecials[Math.floor(Math.random() * availableSpecials.length)];
+          card.specialTile = randomSpecial;
+        }
       }
     });
 

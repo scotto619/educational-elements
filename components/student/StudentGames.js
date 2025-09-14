@@ -389,7 +389,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div className="bg-white rounded-lg p-3">
             <div className="font-semibold text-pink-700 mb-1">🧩 Memory Masters</div>
-            <div className="text-gray-600">Our newest game! Match educational content with friends or solo. Try different themes!</div>
+            <div className="text-gray-600">Educational memory matching! Choose themes like math, reading, or create custom pairs. Play solo or with friends!</div>
           </div>
           <div className="bg-white rounded-lg p-3">
             <div className="font-semibold text-red-700 mb-1">⚔️ Battle Games</div>
