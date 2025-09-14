@@ -1,4 +1,4 @@
-// components/games/EducationalMemoryGame.js - COMPLETE EDUCATIONAL MEMORY MATCHING GAME
+// components/games/EducationalMemoryGame.js - COMPLETELY FIXED VERSION
 import React, { useState, useEffect, useCallback } from 'react';
 
 const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
@@ -141,11 +141,10 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
     '5x6': { rows: 5, cols: 6, pairs: 15, name: 'Extra Large (5×6)' }
   };
 
-  // Special tiles that can appear randomly
+  // Special tiles - FIXED: Only double for single player
   const SPECIAL_TILES = [
     { type: 'double', icon: '⭐', color: 'ring-yellow-400', description: 'Double Points!' },
-    { type: 'steal', icon: '💰', color: 'ring-purple-400', description: 'Steal a Point!' },
-    { type: 'extra', icon: '🎯', color: 'ring-green-400', description: 'Extra Turn!' }
+    { type: 'extra', icon: '🎯', color: 'ring-green-400', description: 'Extra Turn!' } // Only for multiplayer
   ];
 
   function getPlayerColor(index) {
@@ -255,21 +254,15 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
       });
     });
 
-    // Add special tiles randomly (10% chance) - FIXED: Appropriate for game mode
+    // Add special tiles - FIXED: Only double for single player
     gameCards.forEach(card => {
       if (Math.random() < 0.1) {
-        let availableSpecials = SPECIAL_TILES;
-        
-        // Filter special tiles based on game mode
-        if (selectedTheme === 'custom' || gameMode === 'single') {
-          // Single player: only double and bonus points make sense
-          availableSpecials = SPECIAL_TILES.filter(tile => 
-            tile.type === 'double' || tile.type === 'bonus'
-          );
-        }
-        
-        if (availableSpecials.length > 0) {
-          const randomSpecial = availableSpecials[Math.floor(Math.random() * availableSpecials.length)];
+        if (gameMode === 'single') {
+          // Single player: only double points
+          card.specialTile = SPECIAL_TILES.find(tile => tile.type === 'double');
+        } else {
+          // Multiplayer: both types
+          const randomSpecial = SPECIAL_TILES[Math.floor(Math.random() * SPECIAL_TILES.length)];
           card.specialTile = randomSpecial;
         }
       }
@@ -277,7 +270,7 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
 
     // Shuffle cards
     return gameCards.sort(() => Math.random() - 0.5);
-  }, [selectedTheme, boardSize, customPairs]);
+  }, [selectedTheme, boardSize, customPairs, gameMode]);
 
   // Start single player game
   const startSinglePlayer = () => {
@@ -450,10 +443,11 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
     };
   }, [firebaseReady, firebase, gameRoom, gameMode, gameStarted, playerInfo.id]);
 
-  // Handle card flip
+  // Handle card flip - FIXED: Properly prevent clicking matched cards
   const flipCard = async (cardIndex) => {
     const card = cards[cardIndex];
     
+    // FIXED: Prevent clicking matched cards
     if (!card || card.isMatched || flippedCards.includes(cardIndex) || flippedCards.length >= 2) {
       return;
     }
@@ -481,7 +475,7 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
     }
   };
 
-  // Check for matches
+  // Check for matches - COMPLETELY FIXED
   useEffect(() => {
     if (flippedCards.length === 2) {
       const [firstIndex, secondIndex] = flippedCards;
@@ -500,27 +494,31 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
             // Check for special tiles
             const specialTile = firstCard.specialTile || secondCard.specialTile;
             if (specialTile) {
-              switch (specialTile.type) {
-                case 'double':
-                  pointsEarned = 2;
-                  showToast('Double points! ⭐', 'success');
-                  break;
-                case 'extra':
-                  showToast('Extra turn! 🎯', 'success');
-                  break;
-                case 'steal':
-                  showToast('Steal power! 💰', 'success');
-                  break;
+              if (specialTile.type === 'double') {
+                pointsEarned = 2;
+                showToast('Double points! ⭐', 'success');
+              } else if (specialTile.type === 'extra' && gameMode === 'multiplayer') {
+                showToast('Extra turn! 🎯', 'success');
               }
             }
             
             if (gameMode === 'multiplayer' && firebase && gameRoom) {
-              // Update multiplayer game
+              // FIXED: Use current player's ID, not always playerInfo.id
               const gameRef = firebase.ref(firebase.database, `memory_game/${gameRoom}`);
+              const currentPlayerId = players[currentTurn]?.id || playerInfo.id;
               const newScores = { ...scores };
-              newScores[playerInfo.id] = (newScores[playerInfo.id] || 0) + pointsEarned;
+              newScores[currentPlayerId] = (newScores[currentPlayerId] || 0) + pointsEarned;
+              
+              // FIXED: Update cards in Firebase to mark as matched
+              const updatedCards = cards.map((card, index) => {
+                if (index === firstIndex || index === secondIndex) {
+                  return { ...card, isMatched: true };
+                }
+                return card;
+              });
               
               const updates = {
+                cards: updatedCards,
                 matchedCards: newMatchedCards,
                 flippedCards: [],
                 scores: newScores
@@ -542,9 +540,18 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
               
               await firebase.update(gameRef, updates);
             } else {
-              // Single player
+              // Single player - FIXED: Mark cards as matched
+              const updatedCards = cards.map((card, index) => {
+                if (index === firstIndex || index === secondIndex) {
+                  return { ...card, isMatched: true };
+                }
+                return card;
+              });
+              
+              setCards(updatedCards);
               setMatchedCards(newMatchedCards);
               setScores(prev => ({ ...prev, [playerInfo.id]: (prev[playerInfo.id] || 0) + pointsEarned }));
+              setFlippedCards([]);
               
               // Check win condition
               if (newMatchedCards.length === cards.length) {
@@ -563,17 +570,14 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
                 currentTurn: (currentTurn + 1) % players.length
               });
             } else {
+              setFlippedCards([]);
               playSound('miss');
             }
-          }
-          
-          if (gameMode === 'single') {
-            setFlippedCards([]);
           }
         }, 1500);
       }
     }
-  }, [flippedCards, cards, matchedCards, gameMode, currentTurn, players.length, scores, firebase, gameRoom, playerInfo.id]);
+  }, [flippedCards, cards, matchedCards, gameMode, currentTurn, players, scores, firebase, gameRoom, playerInfo.id]);
 
   // Play sound effects
   const playSound = (type) => {
@@ -631,41 +635,65 @@ const EducationalMemoryGame = ({ studentData, showToast, classData }) => {
     setWinner(null);
   };
 
-  // Render card
+  // Render card - FIXED: Much bigger emojis and proper matched card handling
   const renderCard = (card, index) => {
     const isFlipped = flippedCards.includes(index) || card.isMatched;
     const { rows, cols } = BOARD_SIZES[boardSize];
+    
+    // FIXED: Much bigger emoji sizes
+    let emojiSize = 'text-4xl'; // Default huge
+    if (cols <= 4) {
+      emojiSize = 'text-5xl'; // Massive for small boards
+    } else if (cols === 5) {
+      emojiSize = 'text-3xl'; // Large for medium boards
+    } else {
+      emojiSize = 'text-2xl'; // Medium-large for big boards
+    }
+    
+    // Determine text size for non-emoji content
+    let textSize = 'text-lg';
+    if (cols <= 4) {
+      textSize = card.content.length > 8 ? 'text-base' : 'text-xl';
+    } else if (cols === 5) {
+      textSize = card.content.length > 8 ? 'text-sm' : 'text-lg';
+    } else {
+      textSize = card.content.length > 8 ? 'text-xs' : 'text-base';
+    }
+    
+    // Check if content is emoji/single character
+    const isEmoji = card.content.length <= 2 || /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/u.test(card.content);
     
     return (
       <div
         key={card.id}
         onClick={() => flipCard(index)}
         className={`
-          aspect-square border-2 rounded-xl transition-all duration-300 transform cursor-pointer
-          hover:scale-105 active:scale-95 flex items-center justify-center text-center p-1
+          aspect-square border-2 rounded-xl transition-all duration-300 transform
+          hover:scale-105 active:scale-95 flex items-center justify-center text-center p-3
           ${isFlipped 
             ? card.isMatched 
               ? 'bg-green-100 border-green-400 text-green-800' 
               : 'bg-blue-100 border-blue-400 text-blue-800'
             : 'bg-gradient-to-br from-purple-400 to-pink-500 border-purple-300 text-white hover:from-purple-500 hover:to-pink-600'
           }
-          ${card.specialTile ? `ring-2 ${card.specialTile.color}` : ''}
-          ${cols > 5 ? 'text-xs' : cols > 4 ? 'text-sm' : 'text-base'}
+          ${card.specialTile ? `ring-4 ${card.specialTile.color}` : ''}
+          ${card.isMatched ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'}
+          font-bold
         `}
       >
         {isFlipped ? (
-          <div className="flex flex-col items-center justify-center">
-            <div className="font-bold leading-tight break-words">
+          <div className="flex flex-col items-center justify-center w-full h-full">
+            <div className={`leading-tight text-center max-w-full overflow-hidden ${isEmoji ? emojiSize : textSize}`}>
               {card.content}
             </div>
             {card.specialTile && (
-              <div className="text-xs mt-1">
+              <div className="text-2xl mt-2 animate-pulse">
                 {card.specialTile.icon}
               </div>
             )}
           </div>
         ) : (
-          <div className="text-2xl">🧩</div>
+          <div className="text-4xl">🧩</div>
         )}
       </div>
     );
