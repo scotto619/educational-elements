@@ -30,8 +30,8 @@ export const BEGINNER_LEVEL_3_SOUNDS = [
       },
       {
         type: 'mixed-practice',
-        content: `☀️ rain or ray?    pain or pay?    main or may?
-🌙 tail or tray?    snail or spray?    train or gray?`,
+        content: `☀️ rain ray    pain pay    main may 
+🌙 tail tray    snail spray    train gray`,
         instructions: 'Partner Reading: Both spellings make the same sound!'
       }
     ],
@@ -73,8 +73,8 @@ export const BEGINNER_LEVEL_3_SOUNDS = [
       },
       {
         type: 'mixed-practice',
-        content: `☀️ tree or tea?    see or sea?    bee or beach?
-🌙 green or cream?    three or dream?    free or team?`,
+        content: `☀️ tree tea    see sea    bee beach
+🌙 green cream    three dream    free team`,
         instructions: 'Partner Reading: Listen carefully to hear they sound the same'
       }
     ],
