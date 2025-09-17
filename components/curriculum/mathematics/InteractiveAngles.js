@@ -15,6 +15,9 @@ const InteractiveAngles = ({ showToast = () => {}, saveData = () => {}, loadedDa
   const [createdAngle, setCreatedAngle] = useState(90);
   const [dragStart, setDragStart] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [hideAngleMeasurement, setHideAngleMeasurement] = useState(false);
+  const [protractorPosition, setProtractorPosition] = useState({ x: 0, y: 0 });
+  const [protractorDragging, setProtractorDragging] = useState(false);
 
   // Canvas refs for interactive drawing
   const canvasRef = useRef(null);
@@ -151,6 +154,51 @@ const InteractiveAngles = ({ showToast = () => {}, saveData = () => {}, loadedDa
     setDragStart(null);
   };
 
+  // Protractor drag handlers
+  const handleProtractorMouseDown = (e) => {
+    if (activeMode === 'measure' && showProtractor) {
+      e.stopPropagation();
+      setProtractorDragging(true);
+      const rect = e.currentTarget.getBoundingClientRect();
+      setDragStart({
+        x: e.clientX - protractorPosition.x,
+        y: e.clientY - protractorPosition.y
+      });
+    }
+  };
+
+  const handleProtractorMouseMove = (e) => {
+    if (protractorDragging && dragStart && activeMode === 'measure') {
+      const newX = e.clientX - dragStart.x;
+      const newY = e.clientY - dragStart.y;
+      
+      // Keep protractor within reasonable bounds
+      const containerRect = canvasRef.current?.getBoundingClientRect();
+      if (containerRect) {
+        const boundedX = Math.max(-100, Math.min(containerRect.width - 100, newX));
+        const boundedY = Math.max(-50, Math.min(containerRect.height - 50, newY));
+        setProtractorPosition({ x: boundedX, y: boundedY });
+      }
+    }
+  };
+
+  const handleProtractorMouseUp = () => {
+    setProtractorDragging(false);
+    setDragStart(null);
+  };
+
+  // Add event listeners for protractor dragging
+  React.useEffect(() => {
+    if (protractorDragging) {
+      document.addEventListener('mousemove', handleProtractorMouseMove);
+      document.addEventListener('mouseup', handleProtractorMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleProtractorMouseMove);
+        document.removeEventListener('mouseup', handleProtractorMouseUp);
+      };
+    }
+  }, [protractorDragging, dragStart]);
+
   // Initialize canvas when mode changes
   useEffect(() => {
     if (activeMode === 'learn' || activeMode === 'identify' || activeMode === 'game' || activeMode === 'measure') {
@@ -285,7 +333,7 @@ const InteractiveAngles = ({ showToast = () => {}, saveData = () => {}, loadedDa
           <div className="bg-white rounded-xl p-6 shadow-sm border">
             <h3 className="text-xl font-bold mb-4 text-center">Measure Angles with a Protractor</h3>
             
-            <div className="text-center mb-6 relative">
+            <div className="text-center mb-6 relative" style={{ height: '450px' }}>
               <canvas
                 ref={canvasRef}
                 width={400}
@@ -295,17 +343,23 @@ const InteractiveAngles = ({ showToast = () => {}, saveData = () => {}, loadedDa
               
               {showProtractor && (
                 <div 
-                  className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-                  style={{ marginTop: '-50px' }}
+                  className="absolute cursor-move select-none"
+                  style={{ 
+                    left: `50%`,
+                    top: `50%`,
+                    transform: `translate(calc(-50% + ${protractorPosition.x}px), calc(-50% + ${protractorPosition.y}px))`,
+                    zIndex: 10
+                  }}
+                  onMouseDown={handleProtractorMouseDown}
                 >
-                  <div className="relative w-48 h-24">
-                    {/* Simple protractor overlay */}
-                    <svg width="192" height="96" viewBox="0 0 192 96" className="opacity-80">
+                  <div className="relative w-48 h-24 bg-yellow-100 bg-opacity-90 rounded-t-full border-2 border-yellow-400">
+                    {/* Draggable protractor */}
+                    <svg width="192" height="96" viewBox="0 0 192 96" className="opacity-90">
                       {/* Semicircle background */}
                       <path 
                         d="M 16 80 A 80 80 0 0 1 176 80 Z" 
-                        fill="rgba(255, 255, 255, 0.9)" 
-                        stroke="#374151" 
+                        fill="rgba(255, 235, 59, 0.8)" 
+                        stroke="#F59E0B" 
                         strokeWidth="2"
                       />
                       
@@ -328,7 +382,7 @@ const InteractiveAngles = ({ showToast = () => {}, saveData = () => {}, loadedDa
                           <g key={angle}>
                             <line 
                               x1={x1} y1={y1} x2={x2} y2={y2} 
-                              stroke="#374151" 
+                              stroke="#F59E0B" 
                               strokeWidth={angle % 30 === 0 ? "2" : "1"}
                             />
                             {angle % 30 === 0 && (
@@ -336,7 +390,7 @@ const InteractiveAngles = ({ showToast = () => {}, saveData = () => {}, loadedDa
                                 x={textX} y={textY + 4} 
                                 fontSize="10" 
                                 textAnchor="middle" 
-                                fill="#374151"
+                                fill="#92400E"
                                 fontWeight="bold"
                               >
                                 {angle}°
@@ -347,47 +401,122 @@ const InteractiveAngles = ({ showToast = () => {}, saveData = () => {}, loadedDa
                       })}
                       
                       {/* Center point */}
-                      <circle cx="96" cy="80" r="2" fill="#374151"/>
+                      <circle cx="96" cy="80" r="3" fill="#F59E0B"/>
                       
                       {/* Base line */}
-                      <line x1="16" y1="80" x2="176" y2="80" stroke="#374151" strokeWidth="2"/>
+                      <line x1="16" y1="80" x2="176" y2="80" stroke="#F59E0B" strokeWidth="3"/>
+                      
+                      {/* Drag indicator */}
+                      <text x="96" y="20" fontSize="8" textAnchor="middle" fill="#92400E" fontWeight="bold">
+                        DRAG ME
+                      </text>
                     </svg>
                   </div>
                 </div>
               )}
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="text-center">
                 <button
                   onClick={() => setCurrentAngle(Math.floor(Math.random() * 180) + 1)}
-                  className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 mb-2"
+                  className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 mb-2 w-full"
                 >
                   New Random Angle
                 </button>
-                <p className="text-sm text-gray-600">Generate a random angle to measure</p>
+                <p className="text-sm text-gray-600">Generate a random angle</p>
               </div>
               
               <div className="text-center">
                 <button
                   onClick={() => setShowProtractor(!showProtractor)}
-                  className={`px-4 py-2 rounded-lg mb-2 ${
+                  className={`px-4 py-2 rounded-lg mb-2 w-full ${
                     showProtractor ? 'bg-green-500 text-white hover:bg-green-600' : 'bg-gray-500 text-white hover:bg-gray-600'
                   }`}
                 >
                   {showProtractor ? 'Hide' : 'Show'} Protractor
                 </button>
-                <p className="text-sm text-gray-600">Toggle the measuring tool</p>
+                <p className="text-sm text-gray-600">Toggle measuring tool</p>
               </div>
               
               <div className="text-center">
-                <div className="text-lg font-bold text-gray-800">
-                  Angle: {currentAngle}°
-                </div>
-                <div className="text-sm" style={{ color: angleTypes[getAngleType(currentAngle)].color }}>
-                  {angleTypes[getAngleType(currentAngle)].name}
-                </div>
+                <button
+                  onClick={() => setHideAngleMeasurement(!hideAngleMeasurement)}
+                  className={`px-4 py-2 rounded-lg mb-2 w-full ${
+                    hideAngleMeasurement ? 'bg-orange-500 text-white hover:bg-orange-600' : 'bg-purple-500 text-white hover:bg-purple-600'
+                  }`}
+                >
+                  {hideAngleMeasurement ? 'Show' : 'Hide'} Answer
+                </button>
+                <p className="text-sm text-gray-600">Practice measuring</p>
               </div>
+              
+              <div className="text-center">
+                <button
+                  onClick={() => setProtractorPosition({ x: 0, y: 0 })}
+                  className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 mb-2 w-full"
+                >
+                  Reset Position
+                </button>
+                <p className="text-sm text-gray-600">Center protractor</p>
+              </div>
+            </div>
+            
+            <div className="mt-6 text-center">
+              {!hideAngleMeasurement ? (
+                <div>
+                  <div className="text-2xl font-bold text-gray-800 mb-2">
+                    Angle: {currentAngle}°
+                  </div>
+                  <div className="text-lg" style={{ color: angleTypes[getAngleType(currentAngle)].color }}>
+                    {angleTypes[getAngleType(currentAngle)].name}
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-gray-100 rounded-lg p-4 max-w-md mx-auto">
+                  <div className="text-lg font-bold text-gray-700 mb-2">
+                    What's your measurement?
+                  </div>
+                  <div className="flex items-center justify-center space-x-3">
+                    <input
+                      type="number"
+                      value={userGuess}
+                      onChange={(e) => setUserGuess(e.target.value)}
+                      placeholder="Enter degrees"
+                      className="px-3 py-2 border rounded-lg text-center font-bold w-24"
+                      min="0"
+                      max="360"
+                    />
+                    <span className="font-bold">°</span>
+                    <button
+                      onClick={() => {
+                        if (!userGuess) {
+                          showToast('Please enter your measurement first!', 'error');
+                          return;
+                        }
+                        const guess = parseInt(userGuess);
+                        const difference = Math.abs(guess - currentAngle);
+                        
+                        if (difference <= 2) {
+                          showToast(`Perfect! The angle is ${currentAngle}°`, 'success');
+                        } else if (difference <= 5) {
+                          showToast(`Very close! The angle is ${currentAngle}°`, 'success');
+                        } else {
+                          showToast(`Good try! The angle is ${currentAngle}°. You were ${difference}° off.`, 'info');
+                        }
+                        
+                        setUserGuess('');
+                      }}
+                      className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+                    >
+                      Check
+                    </button>
+                  </div>
+                  <p className="text-sm text-gray-600 mt-2">
+                    Drag the protractor to line it up with the angle, then measure!
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         );
