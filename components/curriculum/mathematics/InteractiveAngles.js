@@ -153,10 +153,10 @@ const InteractiveAngles = ({ showToast = () => {}, saveData = () => {}, loadedDa
 
   // Initialize canvas when mode changes
   useEffect(() => {
-    if (activeMode === 'learn' || activeMode === 'identify' || activeMode === 'game') {
+    if (activeMode === 'learn' || activeMode === 'identify' || activeMode === 'game' || activeMode === 'measure') {
       const canvas = canvasRef.current;
       if (canvas) {
-        drawAngle(canvas, currentAngle, activeMode === 'learn', activeMode === 'learn');
+        drawAngle(canvas, currentAngle, activeMode === 'learn' || activeMode === 'measure', activeMode === 'learn');
       }
     } else if (activeMode === 'create') {
       const canvas = canvasRef.current;
@@ -285,42 +285,72 @@ const InteractiveAngles = ({ showToast = () => {}, saveData = () => {}, loadedDa
           <div className="bg-white rounded-xl p-6 shadow-sm border">
             <h3 className="text-xl font-bold mb-4 text-center">Measure Angles with a Protractor</h3>
             
-            <div className="text-center mb-6">
+            <div className="text-center mb-6 relative">
               <canvas
                 ref={canvasRef}
                 width={400}
                 height={400}
-                className="border rounded-lg mx-auto relative"
+                className="border rounded-lg mx-auto"
               />
               
               {showProtractor && (
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="relative">
-                    <svg width="200" height="100" className="protractor">
-                      <defs>
-                        <pattern id="protractorPattern" patternUnits="userSpaceOnUse" width="200" height="100">
-                          {/* Create protractor markings */}
-                          {Array.from({ length: 19 }, (_, i) => {
-                            const angle = i * 10;
-                            const radian = (angle * Math.PI) / 180;
-                            const x1 = 100 + 80 * Math.cos(radian);
-                            const y1 = 95 - 80 * Math.sin(radian);
-                            const x2 = 100 + 85 * Math.cos(radian);
-                            const y2 = 95 - 85 * Math.sin(radian);
-                            return (
-                              <g key={angle}>
-                                <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#374151" strokeWidth="1"/>
-                                <text x={100 + 90 * Math.cos(radian)} y={95 - 90 * Math.sin(radian)} 
-                                      fontSize="8" textAnchor="middle" fill="#374151">
-                                  {angle}
-                                </text>
-                              </g>
-                            );
-                          })}
-                        </pattern>
-                      </defs>
-                      <path d="M 20 95 A 80 80 0 0 1 180 95 Z" fill="rgba(59, 130, 246, 0.3)" stroke="#3B82F6" strokeWidth="2"/>
-                      <rect width="200" height="100" fill="url(#protractorPattern)"/>
+                <div 
+                  className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+                  style={{ marginTop: '-50px' }}
+                >
+                  <div className="relative w-48 h-24">
+                    {/* Simple protractor overlay */}
+                    <svg width="192" height="96" viewBox="0 0 192 96" className="opacity-80">
+                      {/* Semicircle background */}
+                      <path 
+                        d="M 16 80 A 80 80 0 0 1 176 80 Z" 
+                        fill="rgba(255, 255, 255, 0.9)" 
+                        stroke="#374151" 
+                        strokeWidth="2"
+                      />
+                      
+                      {/* Degree markings */}
+                      {Array.from({ length: 19 }, (_, i) => {
+                        const angle = i * 10;
+                        const radian = (angle * Math.PI) / 180;
+                        const innerRadius = 72;
+                        const outerRadius = 78;
+                        const textRadius = 65;
+                        
+                        const x1 = 96 + innerRadius * Math.cos(radian);
+                        const y1 = 80 - innerRadius * Math.sin(radian);
+                        const x2 = 96 + outerRadius * Math.cos(radian);
+                        const y2 = 80 - outerRadius * Math.sin(radian);
+                        const textX = 96 + textRadius * Math.cos(radian);
+                        const textY = 80 - textRadius * Math.sin(radian);
+                        
+                        return (
+                          <g key={angle}>
+                            <line 
+                              x1={x1} y1={y1} x2={x2} y2={y2} 
+                              stroke="#374151" 
+                              strokeWidth={angle % 30 === 0 ? "2" : "1"}
+                            />
+                            {angle % 30 === 0 && (
+                              <text 
+                                x={textX} y={textY + 4} 
+                                fontSize="10" 
+                                textAnchor="middle" 
+                                fill="#374151"
+                                fontWeight="bold"
+                              >
+                                {angle}°
+                              </text>
+                            )}
+                          </g>
+                        );
+                      })}
+                      
+                      {/* Center point */}
+                      <circle cx="96" cy="80" r="2" fill="#374151"/>
+                      
+                      {/* Base line */}
+                      <line x1="16" y1="80" x2="176" y2="80" stroke="#374151" strokeWidth="2"/>
                     </svg>
                   </div>
                 </div>
@@ -457,40 +487,74 @@ const InteractiveAngles = ({ showToast = () => {}, saveData = () => {}, loadedDa
             
             <div className="text-center space-y-4">
               <p className="text-lg font-semibold">What type of angle is this?</p>
+              <p className="text-sm text-gray-600">Current angle: {showAnswer ? `${currentAngle}°` : '???'}</p>
               
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {Object.entries(angleTypes).map(([key, type]) => (
-                  <button
-                    key={key}
-                    onClick={() => {
-                      const correct = key === getAngleType(currentAngle);
-                      if (correct) {
-                        showToast('Correct! Well done!', 'success');
-                        setTimeout(() => setCurrentAngle(Math.floor(Math.random() * 359) + 1), 1000);
-                      } else {
-                        showToast(`Not quite! This is a ${angleTypes[getAngleType(currentAngle)].name}`, 'error');
-                      }
-                    }}
-                    className="px-4 py-3 rounded-lg border-2 border-gray-200 hover:border-blue-300 transition-all"
-                    style={{ 
-                      borderColor: showAnswer && key === getAngleType(currentAngle) ? type.color : undefined,
-                      backgroundColor: showAnswer && key === getAngleType(currentAngle) ? type.color + '20' : undefined
-                    }}
-                  >
-                    <div className="font-bold" style={{ color: type.color }}>
-                      {type.name}
-                    </div>
-                    <div className="text-xs text-gray-600 mt-1">{type.range}</div>
-                  </button>
-                ))}
+                {Object.entries(angleTypes).map(([key, type]) => {
+                  const isCorrectAnswer = key === getAngleType(currentAngle);
+                  const buttonStyle = showAnswer ? 
+                    (isCorrectAnswer ? 
+                      { borderColor: type.color, backgroundColor: type.color + '20', transform: 'scale(1.05)' } : 
+                      { opacity: '0.6' }) : 
+                    {};
+                    
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => {
+                        if (showAnswer) return; // Don't allow clicks during answer display
+                        
+                        const correct = isCorrectAnswer;
+                        setShowAnswer(true);
+                        
+                        if (correct) {
+                          showToast('Correct! Well done!', 'success');
+                        } else {
+                          showToast(`Not quite! This is a ${angleTypes[getAngleType(currentAngle)].name}`, 'error');
+                        }
+                        
+                        // Auto-generate new challenge after 2 seconds
+                        setTimeout(() => {
+                          setCurrentAngle(Math.floor(Math.random() * 359) + 1);
+                          setShowAnswer(false);
+                        }, 2000);
+                      }}
+                      disabled={showAnswer}
+                      className={`px-4 py-3 rounded-lg border-2 transition-all duration-300 ${
+                        showAnswer ? 'cursor-not-allowed' : 'border-gray-200 hover:border-blue-300 hover:scale-105'
+                      }`}
+                      style={buttonStyle}
+                    >
+                      <div className="font-bold" style={{ color: type.color }}>
+                        {type.name}
+                        {showAnswer && isCorrectAnswer && ' ✓'}
+                      </div>
+                      <div className="text-xs text-gray-600 mt-1">{type.range}</div>
+                    </button>
+                  );
+                })}
               </div>
               
-              <button
-                onClick={() => setCurrentAngle(Math.floor(Math.random() * 359) + 1)}
-                className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600"
-              >
-                New Challenge
-              </button>
+              <div className="flex justify-center space-x-3 mt-6">
+                <button
+                  onClick={() => {
+                    setCurrentAngle(Math.floor(Math.random() * 359) + 1);
+                    setShowAnswer(false);
+                  }}
+                  className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600"
+                >
+                  New Challenge
+                </button>
+                
+                <button
+                  onClick={() => {
+                    setShowAnswer(!showAnswer);
+                  }}
+                  className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600"
+                >
+                  {showAnswer ? 'Hide' : 'Show'} Answer
+                </button>
+              </div>
             </div>
           </div>
         );

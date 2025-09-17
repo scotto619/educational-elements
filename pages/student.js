@@ -660,7 +660,7 @@ const StudentPortal = () => {
   
   const tabs = [
     { id: 'dashboard', name: 'Home', icon: '🏠', shortName: 'Home' },
-    { id: 'mathmentals', name: 'Math Mentals', icon: '🧮', shortName: 'Math' },
+    { id: 'maths', name: 'Maths', icon: '🔢', shortName: 'Maths' },
     { id: 'spelling', name: 'Spelling', icon: '📝', shortName: 'Spelling' },
     { id: 'reading', name: 'Reading', icon: '📖', shortName: 'Reading' },
     { id: 'shop', name: 'Shop', icon: '🛒', shortName: 'Shop' },
@@ -681,15 +681,15 @@ const StudentPortal = () => {
             calculateAvatarLevel={calculateAvatarLevel}
           />
         );
-      case 'mathmentals':
-        return (
-          <StudentMathMentals 
-            studentData={studentData}
-            classData={classData}
-            showToast={showToast}
-            updateStudentData={updateStudentData}
-          />
-        );
+      case 'maths':  // Changed from 'mathmentals'
+  return (
+    <StudentMaths 
+      studentData={studentData}
+      classData={classData}
+      showToast={showToast}
+      updateStudentData={updateStudentData}
+    />
+  );
       case 'spelling':
         return (
           <StudentSpelling 
