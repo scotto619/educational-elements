@@ -172,11 +172,11 @@ const InteractiveAngles = ({ showToast = () => {}, saveData = () => {}, loadedDa
       const newX = e.clientX - dragStart.x;
       const newY = e.clientY - dragStart.y;
       
-      // Keep protractor within reasonable bounds
+      // Expand bounds so protractor can reach all areas of the angle
       const containerRect = canvasRef.current?.getBoundingClientRect();
       if (containerRect) {
-        const boundedX = Math.max(-100, Math.min(containerRect.width - 100, newX));
-        const boundedY = Math.max(-50, Math.min(containerRect.height - 50, newY));
+        const boundedX = Math.max(-150, Math.min(containerRect.width - 50, newX));
+        const boundedY = Math.max(-100, Math.min(containerRect.height - 20, newY));
         setProtractorPosition({ x: boundedX, y: boundedY });
       }
     }
@@ -433,11 +433,6 @@ const InteractiveAngles = ({ showToast = () => {}, saveData = () => {}, loadedDa
                     
                     {/* Base line */}
                     <line x1="20" y1="85" x2="180" y2="85" stroke="rgba(59, 130, 246, 0.8)" strokeWidth="2"/>
-                    
-                    {/* Small drag indicator */}
-                    <text x="100" y="15" fontSize="10" textAnchor="middle" fill="rgba(59, 130, 246, 0.8)" fontWeight="bold">
-                      DRAG
-                    </text>
                   </svg>
                 </div>
               )}
