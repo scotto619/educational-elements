@@ -18,6 +18,7 @@ const InteractiveAngles = ({ showToast = () => {}, saveData = () => {}, loadedDa
   const [hideAngleMeasurement, setHideAngleMeasurement] = useState(true); // Start with answer hidden
   const [protractorPosition, setProtractorPosition] = useState({ x: 0, y: 0 });
   const [protractorDragging, setProtractorDragging] = useState(false);
+  const [measureFeedback, setMeasureFeedback] = useState(''); // Add feedback state
 
   // Canvas refs for interactive drawing
   const canvasRef = useRef(null);
@@ -513,23 +514,27 @@ const InteractiveAngles = ({ showToast = () => {}, saveData = () => {}, loadedDa
                     <button
                       onClick={() => {
                         if (!userGuess) {
-                          showToast('Please enter your measurement first!', 'error');
+                          setMeasureFeedback('Please enter your measurement first!');
                           return;
                         }
                         const guess = parseInt(userGuess);
                         const difference = Math.abs(guess - currentAngle);
                         
                         if (difference === 0) {
+                          setMeasureFeedback('CORRECT! Perfect measurement! 🎉');
                           showToast(`CORRECT! Perfect measurement!`, 'success');
                           // Move to new angle after showing correct
                           setTimeout(() => {
                             setCurrentAngle(Math.floor(Math.random() * 180) + 1);
                             setUserGuess('');
-                          }, 1500);
+                            setMeasureFeedback('');
+                          }, 2000);
                         } else if (difference <= 5) {
+                          setMeasureFeedback(`CLOSE! You're within ${difference} degrees. Try again!`);
                           showToast(`CLOSE! Try again - you're within 5 degrees!`, 'info');
                           setUserGuess(''); // Clear input but don't change angle
                         } else {
+                          setMeasureFeedback(`TRY AGAIN! You were ${difference} degrees off. Check your protractor alignment.`);
                           showToast(`TRY AGAIN! Check your protractor alignment.`, 'error');
                           setUserGuess(''); // Clear input but don't change angle
                         }
@@ -542,6 +547,18 @@ const InteractiveAngles = ({ showToast = () => {}, saveData = () => {}, loadedDa
                   <p className="text-sm text-gray-600 mt-2">
                     Drag the protractor to line it up with the angle, then measure!
                   </p>
+                  
+                  {/* Visual feedback display */}
+                  {measureFeedback && (
+                    <div className={`mt-3 p-3 rounded-lg border-2 text-center font-semibold ${
+                      measureFeedback.includes('CORRECT') ? 'bg-green-50 border-green-200 text-green-800' :
+                      measureFeedback.includes('CLOSE') ? 'bg-blue-50 border-blue-200 text-blue-800' :
+                      measureFeedback.includes('TRY AGAIN') ? 'bg-red-50 border-red-200 text-red-800' :
+                      'bg-gray-50 border-gray-200 text-gray-800'
+                    }`}>
+                      {measureFeedback}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
