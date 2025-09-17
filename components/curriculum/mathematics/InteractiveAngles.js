@@ -519,15 +519,20 @@ const InteractiveAngles = ({ showToast = () => {}, saveData = () => {}, loadedDa
                         const guess = parseInt(userGuess);
                         const difference = Math.abs(guess - currentAngle);
                         
-                        if (difference <= 2) {
-                          showToast(`Perfect! The angle is ${currentAngle}°`, 'success');
+                        if (difference === 0) {
+                          showToast(`CORRECT! Perfect measurement!`, 'success');
+                          // Move to new angle after showing correct
+                          setTimeout(() => {
+                            setCurrentAngle(Math.floor(Math.random() * 180) + 1);
+                            setUserGuess('');
+                          }, 1500);
                         } else if (difference <= 5) {
-                          showToast(`Very close! The angle is ${currentAngle}°`, 'success');
+                          showToast(`CLOSE! Try again - you're within 5 degrees!`, 'info');
+                          setUserGuess(''); // Clear input but don't change angle
                         } else {
-                          showToast(`Good try! The angle is ${currentAngle}°. You were ${difference}° off.`, 'info');
+                          showToast(`TRY AGAIN! Check your protractor alignment.`, 'error');
+                          setUserGuess(''); // Clear input but don't change angle
                         }
-                        
-                        setUserGuess('');
                       }}
                       className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
                     >
