@@ -15,7 +15,7 @@ const InteractiveAngles = ({ showToast = () => {}, saveData = () => {}, loadedDa
   const [createdAngle, setCreatedAngle] = useState(90);
   const [dragStart, setDragStart] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [hideAngleMeasurement, setHideAngleMeasurement] = useState(false);
+  const [hideAngleMeasurement, setHideAngleMeasurement] = useState(true); // Start with answer hidden
   const [protractorPosition, setProtractorPosition] = useState({ x: 0, y: 0 });
   const [protractorDragging, setProtractorDragging] = useState(false);
 
@@ -201,10 +201,16 @@ const InteractiveAngles = ({ showToast = () => {}, saveData = () => {}, loadedDa
 
   // Initialize canvas when mode changes
   useEffect(() => {
-    if (activeMode === 'learn' || activeMode === 'identify' || activeMode === 'game' || activeMode === 'measure') {
+    if (activeMode === 'learn' || activeMode === 'identify' || activeMode === 'game') {
       const canvas = canvasRef.current;
       if (canvas) {
-        drawAngle(canvas, currentAngle, activeMode === 'learn' || activeMode === 'measure', activeMode === 'learn');
+        drawAngle(canvas, currentAngle, activeMode === 'learn', activeMode === 'learn');
+      }
+    } else if (activeMode === 'measure') {
+      const canvas = canvasRef.current;
+      if (canvas) {
+        // In measure mode, only show measurement if not hidden
+        drawAngle(canvas, currentAngle, !hideAngleMeasurement, false);
       }
     } else if (activeMode === 'create') {
       const canvas = canvasRef.current;
@@ -212,7 +218,7 @@ const InteractiveAngles = ({ showToast = () => {}, saveData = () => {}, loadedDa
         drawAngle(canvas, createdAngle, true, true);
       }
     }
-  }, [activeMode, currentAngle, createdAngle]);
+  }, [activeMode, currentAngle, createdAngle, hideAngleMeasurement]);
 
   // Game logic
   const checkAnswer = () => {
@@ -348,70 +354,91 @@ const InteractiveAngles = ({ showToast = () => {}, saveData = () => {}, loadedDa
                     left: `50%`,
                     top: `50%`,
                     transform: `translate(calc(-50% + ${protractorPosition.x}px), calc(-50% + ${protractorPosition.y}px))`,
-                    zIndex: 10
+                    zIndex: 10,
+                    pointerEvents: protractorDragging ? 'auto' : 'auto'
                   }}
                   onMouseDown={handleProtractorMouseDown}
                 >
-                  <div className="relative w-48 h-24 bg-yellow-100 bg-opacity-90 rounded-t-full border-2 border-yellow-400">
-                    {/* Draggable protractor */}
-                    <svg width="192" height="96" viewBox="0 0 192 96" className="opacity-90">
-                      {/* Semicircle background */}
-                      <path 
-                        d="M 16 80 A 80 80 0 0 1 176 80 Z" 
-                        fill="rgba(255, 235, 59, 0.8)" 
-                        stroke="#F59E0B" 
-                        strokeWidth="2"
-                      />
+                  {/* Clean, transparent protractor */}
+                  <svg width="200" height="100" viewBox="0 0 200 100" className="drop-shadow-sm">
+                    {/* Semi-transparent semicircle */}
+                    <path 
+                      d="M 20 85 A 80 80 0 0 1 180 85 Z" 
+                      fill="rgba(255, 255, 255, 0.1)" 
+                      stroke="rgba(59, 130, 246, 0.8)" 
+                      strokeWidth="2"
+                    />
+                    
+                    {/* Degree markings - only major ones to avoid clutter */}
+                    {Array.from({ length: 7 }, (_, i) => {
+                      const angle = i * 30; // Every 30 degrees: 0, 30, 60, 90, 120, 150, 180
+                      const radian = (angle * Math.PI) / 180;
+                      const innerRadius = 70;
+                      const outerRadius = 78;
+                      const textRadius = 62;
                       
-                      {/* Degree markings */}
-                      {Array.from({ length: 19 }, (_, i) => {
-                        const angle = i * 10;
-                        const radian = (angle * Math.PI) / 180;
-                        const innerRadius = 72;
-                        const outerRadius = 78;
-                        const textRadius = 65;
-                        
-                        const x1 = 96 + innerRadius * Math.cos(radian);
-                        const y1 = 80 - innerRadius * Math.sin(radian);
-                        const x2 = 96 + outerRadius * Math.cos(radian);
-                        const y2 = 80 - outerRadius * Math.sin(radian);
-                        const textX = 96 + textRadius * Math.cos(radian);
-                        const textY = 80 - textRadius * Math.sin(radian);
-                        
-                        return (
-                          <g key={angle}>
-                            <line 
-                              x1={x1} y1={y1} x2={x2} y2={y2} 
-                              stroke="#F59E0B" 
-                              strokeWidth={angle % 30 === 0 ? "2" : "1"}
-                            />
-                            {angle % 30 === 0 && (
-                              <text 
-                                x={textX} y={textY + 4} 
-                                fontSize="10" 
-                                textAnchor="middle" 
-                                fill="#92400E"
-                                fontWeight="bold"
-                              >
-                                {angle}°
-                              </text>
-                            )}
-                          </g>
-                        );
-                      })}
+                      const x1 = 100 + innerRadius * Math.cos(radian);
+                      const y1 = 85 - innerRadius * Math.sin(radian);
+                      const x2 = 100 + outerRadius * Math.cos(radian);
+                      const y2 = 85 - outerRadius * Math.sin(radian);
+                      const textX = 100 + textRadius * Math.cos(radian);
+                      const textY = 85 - textRadius * Math.sin(radian);
                       
-                      {/* Center point */}
-                      <circle cx="96" cy="80" r="3" fill="#F59E0B"/>
+                      return (
+                        <g key={angle}>
+                          <line 
+                            x1={x1} y1={y1} x2={x2} y2={y2} 
+                            stroke="rgba(59, 130, 246, 0.9)" 
+                            strokeWidth="2"
+                          />
+                          <text 
+                            x={textX} y={textY + 4} 
+                            fontSize="12" 
+                            textAnchor="middle" 
+                            fill="rgba(59, 130, 246, 0.9)"
+                            fontWeight="bold"
+                          >
+                            {angle}°
+                          </text>
+                        </g>
+                      );
+                    })}
+                    
+                    {/* Minor markings every 10 degrees */}
+                    {Array.from({ length: 19 }, (_, i) => {
+                      const angle = i * 10;
+                      if (angle % 30 === 0) return null; // Skip major markings
                       
-                      {/* Base line */}
-                      <line x1="16" y1="80" x2="176" y2="80" stroke="#F59E0B" strokeWidth="3"/>
+                      const radian = (angle * Math.PI) / 180;
+                      const innerRadius = 74;
+                      const outerRadius = 78;
                       
-                      {/* Drag indicator */}
-                      <text x="96" y="20" fontSize="8" textAnchor="middle" fill="#92400E" fontWeight="bold">
-                        DRAG ME
-                      </text>
-                    </svg>
-                  </div>
+                      const x1 = 100 + innerRadius * Math.cos(radian);
+                      const y1 = 85 - innerRadius * Math.sin(radian);
+                      const x2 = 100 + outerRadius * Math.cos(radian);
+                      const y2 = 85 - outerRadius * Math.sin(radian);
+                      
+                      return (
+                        <line 
+                          key={angle}
+                          x1={x1} y1={y1} x2={x2} y2={y2} 
+                          stroke="rgba(59, 130, 246, 0.6)" 
+                          strokeWidth="1"
+                        />
+                      );
+                    })}
+                    
+                    {/* Center point - small and subtle */}
+                    <circle cx="100" cy="85" r="2" fill="rgba(59, 130, 246, 0.8)"/>
+                    
+                    {/* Base line */}
+                    <line x1="20" y1="85" x2="180" y2="85" stroke="rgba(59, 130, 246, 0.8)" strokeWidth="2"/>
+                    
+                    {/* Small drag indicator */}
+                    <text x="100" y="15" fontSize="10" textAnchor="middle" fill="rgba(59, 130, 246, 0.8)" fontWeight="bold">
+                      DRAG
+                    </text>
+                  </svg>
                 </div>
               )}
             </div>
@@ -654,7 +681,7 @@ const InteractiveAngles = ({ showToast = () => {}, saveData = () => {}, loadedDa
                       }`}
                       style={buttonStyle}
                     >
-                      <div className="font-bold" style={{ color: type.color }}>
+                      <div className={`font-bold ${showAnswer && isCorrectAnswer ? 'text-green-600' : 'text-gray-800'}`}>
                         {type.name}
                         {showAnswer && isCorrectAnswer && ' ✓'}
                       </div>
