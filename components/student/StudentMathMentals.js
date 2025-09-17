@@ -1,7 +1,9 @@
-// components/student/StudentMathMentals.js - FIXED PROGRESS PERSISTENCE & UI
+// components/student/StudentMathMentals.js - FIXED FOR V2 ARCHITECTURE WITH DIRECT FIRESTORE UPDATES
 import React, { useState, useEffect } from 'react';
+import { doc, updateDoc, getDoc } from 'firebase/firestore';
+import { firestore } from '../../utils/firebase';
 
-// [Include all the constants from before]
+// [Include all the constants from before - keeping them exactly the same]
 const MATH_LEVELS = {
   1: {
     name: "Level 1 - Prep/Grade 1",
@@ -119,7 +121,7 @@ const MATH_SUBLEVELS = {
   "4.20": { name: "Mixed Advanced", type: "mixed_advanced", max: 1000 }
 };
 
-// IMPROVED Question generator
+// IMPROVED Question generator (keeping same logic)
 const generateQuestion = (sublevel, config, seed = 0) => {
   const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 
@@ -196,8 +198,7 @@ const generateQuestion = (sublevel, config, seed = 0) => {
 const StudentMathMentals = ({ 
   studentData, 
   classData, 
-  showToast,
-  updateStudentData
+  showToast
 }) => {
   const [studentAssignment, setStudentAssignment] = useState(null);
   const [currentTest, setCurrentTest] = useState(null);
@@ -210,13 +211,26 @@ const StudentMathMentals = ({
   const [hasAttemptedToday, setHasAttemptedToday] = useState(false);
   const [testStarted, setTestStarted] = useState(false);
 
+  // Detect architecture version from session storage
+  const [architectureVersion, setArchitectureVersion] = useState('unknown');
+  const [teacherUserId, setTeacherUserId] = useState(null);
+
   useEffect(() => {
+    // Get architecture info from session
+    try {
+      const session = JSON.parse(sessionStorage.getItem('studentSession') || '{}');
+      setArchitectureVersion(session.architectureVersion || 'unknown');
+      setTeacherUserId(session.teacherUserId);
+    } catch (error) {
+      console.warn('Could not parse session storage:', error);
+    }
+
     if (studentData && classData) {
       findStudentAssignment();
     }
   }, [studentData, classData]);
 
-  // Timer effect
+  // Timer effect (keeping same)
   useEffect(() => {
     if (testStarted && timeLeft > 0 && !showResults) {
       const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
@@ -227,7 +241,7 @@ const StudentMathMentals = ({
   }, [timeLeft, testStarted, showResults, userAnswers]);
 
   const findStudentAssignment = () => {
-    // Get math groups from class data
+    // Get math groups from class data (keeping same logic)
     const mathGroups = classData?.toolkitData?.mathMentalsGroups || [];
     
     // Find which group this student belongs to
@@ -278,6 +292,80 @@ const StudentMathMentals = ({
     }
   };
 
+  // FIXED: Direct database update function (no API calls)
+  const updateStudentDataDirect = async (updatedStudentData) => {
+    if (!teacherUserId || !classData || !studentData) {
+      console.error('❌ Missing required data for student update');
+      showToast('Unable to save changes. Please try logging in again.', 'error');
+      return false;
+    }
+
+    try {
+      console.log('💾 DIRECT: Updating student math progress (no API):', studentData.firstName);
+      
+      if (architectureVersion === 'v2') {
+        // DIRECT V2 UPDATE - bypassing problematic APIs (same as XP system)
+        const studentRef = doc(firestore, 'students', studentData.id);
+        const updates = {
+          ...updatedStudentData,
+          updatedAt: new Date().toISOString(),
+          lastActivity: new Date().toISOString()
+        };
+        
+        await updateDoc(studentRef, updates);
+        console.log('✅ V2 direct math progress update completed');
+        
+      } else {
+        // DIRECT V1 UPDATE - update in user document (same as XP system)
+        const userRef = doc(firestore, 'users', teacherUserId);
+        const userDoc = await getDoc(userRef);
+        
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          const updatedClasses = userData.classes.map(cls => {
+            if (cls.classCode?.toUpperCase() === classData.classCode?.toUpperCase()) {
+              return {
+                ...cls,
+                students: cls.students.map(s => {
+                  if (s.id === studentData.id) {
+                    return { 
+                      ...s, 
+                      ...updatedStudentData,
+                      updatedAt: new Date().toISOString() 
+                    };
+                  }
+                  return s;
+                })
+              };
+            }
+            return cls;
+          });
+          
+          await updateDoc(userRef, { classes: updatedClasses });
+          console.log('✅ V1 direct math progress update completed');
+        }
+      }
+
+      // Update session storage if it exists
+      try {
+        const session = JSON.parse(sessionStorage.getItem('studentSession') || '{}');
+        if (session.studentData) {
+          session.studentData = { ...session.studentData, ...updatedStudentData };
+          sessionStorage.setItem('studentSession', JSON.stringify(session));
+        }
+      } catch (sessionError) {
+        console.warn('Could not update session storage:', sessionError);
+      }
+      
+      return true;
+      
+    } catch (error) {
+      console.error('❌ Direct math progress update error:', error);
+      showToast('Failed to save progress. Please try again.', 'error');
+      return false;
+    }
+  };
+
   const startTest = () => {
     if (!studentAssignment || hasAttemptedToday) {
       console.log('⚠️ Cannot start test:', { hasAssignment: !!studentAssignment, hasAttemptedToday });
@@ -291,7 +379,7 @@ const StudentMathMentals = ({
       return;
     }
 
-    // Generate 10 truly unique questions
+    // Generate 10 truly unique questions (keeping same logic)
     const newQuestions = [];
     const usedQuestionIds = new Set();
     const maxAttempts = 100;
@@ -355,6 +443,7 @@ const StudentMathMentals = ({
     }
   };
 
+  // FIXED: Direct database saving in finishTest
   const finishTest = async (finalAnswers) => {
     setShowResults(true);
     setCurrentTest(false);
@@ -365,7 +454,7 @@ const StudentMathMentals = ({
 
     console.log('🏆 Test completed:', { score, today, totalQuestions: finalAnswers.length });
 
-    // Calculate new progress data
+    // Calculate new progress data (keeping same logic)
     const updatedProgress = {
       ...studentAssignment.progress,
       [today]: {
@@ -381,7 +470,7 @@ const StudentMathMentals = ({
     let newCurrentLevel = studentAssignment.currentLevel;
     let shouldAdvance = false;
 
-    // Streak and advancement logic
+    // Streak and advancement logic (keeping same)
     if (score === 10) {
       newStreak += 1;
       
@@ -399,10 +488,11 @@ const StudentMathMentals = ({
       newStreak = 0;
     }
 
-    // Save to server
+    // FIXED: Use direct database update instead of broken API
     try {
-      console.log('💾 Saving progress to server...');
-      const success = await updateStudentData({
+      console.log('💾 Saving progress to database directly (no API)...');
+      
+      const success = await updateStudentDataDirect({
         mathMentalsProgress: {
           currentLevel: newCurrentLevel,
           progress: updatedProgress,
@@ -412,9 +502,9 @@ const StudentMathMentals = ({
       });
 
       if (success) {
-        console.log('✅ Progress saved successfully to server');
+        console.log('✅ Progress saved successfully via direct database update');
         
-        // CRITICAL FIX: Update local assignment state immediately 
+        // Update local assignment state immediately 
         const newAssignment = {
           ...studentAssignment,
           currentLevel: newCurrentLevel,
@@ -435,11 +525,11 @@ const StudentMathMentals = ({
           showToast(`You scored ${score}/10. Keep practicing!`, 'info');
         }
       } else {
-        console.error('❌ API call failed');
+        console.error('❌ Direct database update failed');
         showToast('Error saving results. Please try again.', 'error');
       }
     } catch (error) {
-      console.error('❌ Network error saving progress:', error);
+      console.error('❌ Network error saving progress via direct update:', error);
       showToast('Error saving results. Please check your internet connection.', 'error');
     }
   };
@@ -467,6 +557,7 @@ const StudentMathMentals = ({
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // REST OF COMPONENT RENDERING (keeping exactly the same)
   if (!studentAssignment) {
     return (
       <div className="bg-white rounded-xl p-6 md:p-8 text-center">
@@ -484,14 +575,14 @@ const StudentMathMentals = ({
     );
   }
 
-  // FIXED: Test interface with better contrast
+  // Test interface
   if (currentTest && !showResults) {
     const currentQuestion = questions[currentQuestionIndex];
     const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
 
     return (
       <div className="space-y-6">
-        {/* FIXED: Header with better contrast and readability */}
+        {/* Header */}
         <div className="bg-white rounded-xl shadow-lg border-l-4 border-blue-500 p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -643,7 +734,7 @@ const StudentMathMentals = ({
   // Main dashboard
   return (
     <div className="space-y-6">
-      {/* Header - FIXED: Better contrast */}
+      {/* Header */}
       <div className="bg-white rounded-xl shadow-lg border-l-4 border-blue-500 p-6">
         <div className="text-center">
           <h1 className="text-2xl md:text-4xl font-bold mb-2 flex items-center justify-center text-gray-800">
