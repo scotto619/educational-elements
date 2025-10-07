@@ -1,9 +1,9 @@
-// components/student/StudentMathMentals.js - FIXED FOR V2 ARCHITECTURE WITH DIRECT FIRESTORE UPDATES
+// components/student/StudentMathMentals.js - FIXED WITH PROPER DATA VALIDATION FOR FIRESTORE
 import React, { useState, useEffect } from 'react';
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import { firestore } from '../../utils/firebase';
 
-// [Include all the constants from before - keeping them exactly the same]
+// [All the constants remain the same - MATH_LEVELS, MATH_SUBLEVELS, etc.]
 const MATH_LEVELS = {
   1: {
     name: "Level 1 - Prep/Grade 1",
@@ -121,7 +121,6 @@ const MATH_SUBLEVELS = {
   "4.20": { name: "Mixed Advanced", type: "mixed_advanced", max: 1000 }
 };
 
-// IMPROVED Question generator (keeping same logic)
 const generateQuestion = (sublevel, config, seed = 0) => {
   const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 
@@ -210,13 +209,10 @@ const StudentMathMentals = ({
   const [timeLeft, setTimeLeft] = useState(120);
   const [hasAttemptedToday, setHasAttemptedToday] = useState(false);
   const [testStarted, setTestStarted] = useState(false);
-
-  // Detect architecture version from session storage
   const [architectureVersion, setArchitectureVersion] = useState('unknown');
   const [teacherUserId, setTeacherUserId] = useState(null);
 
   useEffect(() => {
-    // Get architecture info from session
     try {
       const session = JSON.parse(sessionStorage.getItem('studentSession') || '{}');
       setArchitectureVersion(session.architectureVersion || 'unknown');
@@ -230,7 +226,6 @@ const StudentMathMentals = ({
     }
   }, [studentData, classData]);
 
-  // Timer effect (keeping same)
   useEffect(() => {
     if (testStarted && timeLeft > 0 && !showResults) {
       const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
@@ -241,44 +236,30 @@ const StudentMathMentals = ({
   }, [timeLeft, testStarted, showResults, userAnswers]);
 
   const findStudentAssignment = () => {
-    // Get math groups from class data (keeping same logic)
     const mathGroups = classData?.toolkitData?.mathMentalsGroups || [];
     
-    // Find which group this student belongs to
     const studentGroup = mathGroups.find(group => 
       group.students.some(s => s.id === studentData.id)
     );
 
     if (studentGroup) {
       const studentInfo = studentGroup.students.find(s => s.id === studentData.id);
-      
-      // CRITICAL FIX: Prioritize student's main progress data over group data
       const today = new Date().toISOString().split('T')[0];
       
-      // Use student's main progress as the authoritative source
       const studentMainProgress = studentData.mathMentalsProgress?.progress || {};
       const groupProgress = studentInfo.progress || {};
-      
-      // Prioritize student main progress, fallback to group progress
       const combinedProgress = { ...groupProgress, ...studentMainProgress };
-      
       const todayAttempt = combinedProgress[today];
       
-      console.log('📅 FIXED Date check:', {
+      console.log('📅 Date check:', {
         today,
         hasAttempt: !!todayAttempt,
-        studentMainProgressKeys: Object.keys(studentMainProgress),
-        groupProgressKeys: Object.keys(groupProgress),
-        combinedProgressKeys: Object.keys(combinedProgress),
-        studentName: studentInfo.firstName,
-        todayAttempt,
-        usingMainProgress: Object.keys(studentMainProgress).length > 0
+        studentName: studentInfo.firstName
       });
       
       setStudentAssignment({
         groupName: studentGroup.name,
         groupColor: studentGroup.color,
-        // PRIORITIZE student main data over group data
         currentLevel: studentData.mathMentalsProgress?.currentLevel || studentInfo.currentLevel,
         progress: combinedProgress,
         streak: studentData.mathMentalsProgress?.streak ?? studentInfo.streak ?? 0,
@@ -292,7 +273,7 @@ const StudentMathMentals = ({
     }
   };
 
-  // FIXED: Direct database update function (no API calls)
+  // FIXED: Direct database update with proper data validation
   const updateStudentDataDirect = async (updatedStudentData) => {
     if (!teacherUserId || !classData || !studentData) {
       console.error('❌ Missing required data for student update');
@@ -301,22 +282,36 @@ const StudentMathMentals = ({
     }
 
     try {
-      console.log('💾 DIRECT: Updating student math progress (no API):', studentData.firstName);
+      console.log('💾 DIRECT: Updating student math progress:', studentData.firstName);
+      
+      // CRITICAL FIX: Clean and validate data to prevent undefined values
+      const cleanMathProgress = {};
+      if (updatedStudentData.mathMentalsProgress) {
+        const mp = updatedStudentData.mathMentalsProgress;
+        
+        // Only include defined values - Firestore rejects undefined
+        if (mp.currentLevel !== undefined) cleanMathProgress.currentLevel = mp.currentLevel;
+        if (mp.progress !== undefined) cleanMathProgress.progress = mp.progress;
+        if (mp.streak !== undefined && mp.streak !== null) cleanMathProgress.streak = mp.streak;
+        if (mp.lastAttempt !== undefined) cleanMathProgress.lastAttempt = mp.lastAttempt;
+      }
+      
+      console.log('📦 Cleaned data for Firestore:', cleanMathProgress);
       
       if (architectureVersion === 'v2') {
-        // DIRECT V2 UPDATE - bypassing problematic APIs (same as XP system)
         const studentRef = doc(firestore, 'students', studentData.id);
+        
         const updates = {
-          ...updatedStudentData,
+          mathMentalsProgress: cleanMathProgress,
           updatedAt: new Date().toISOString(),
           lastActivity: new Date().toISOString()
         };
         
+        console.log('🔥 Firestore V2 update');
         await updateDoc(studentRef, updates);
-        console.log('✅ V2 direct math progress update completed');
+        console.log('✅ V2 direct math progress saved');
         
       } else {
-        // DIRECT V1 UPDATE - update in user document (same as XP system)
         const userRef = doc(firestore, 'users', teacherUserId);
         const userDoc = await getDoc(userRef);
         
@@ -330,7 +325,7 @@ const StudentMathMentals = ({
                   if (s.id === studentData.id) {
                     return { 
                       ...s, 
-                      ...updatedStudentData,
+                      mathMentalsProgress: cleanMathProgress,
                       updatedAt: new Date().toISOString() 
                     };
                   }
@@ -341,16 +336,20 @@ const StudentMathMentals = ({
             return cls;
           });
           
+          console.log('🔥 Firestore V1 update');
           await updateDoc(userRef, { classes: updatedClasses });
-          console.log('✅ V1 direct math progress update completed');
+          console.log('✅ V1 direct math progress saved');
         }
       }
 
-      // Update session storage if it exists
+      // Update session storage with cleaned data
       try {
         const session = JSON.parse(sessionStorage.getItem('studentSession') || '{}');
         if (session.studentData) {
-          session.studentData = { ...session.studentData, ...updatedStudentData };
+          session.studentData = { 
+            ...session.studentData, 
+            mathMentalsProgress: cleanMathProgress 
+          };
           sessionStorage.setItem('studentSession', JSON.stringify(session));
         }
       } catch (sessionError) {
@@ -361,7 +360,8 @@ const StudentMathMentals = ({
       
     } catch (error) {
       console.error('❌ Direct math progress update error:', error);
-      showToast('Failed to save progress. Please try again.', 'error');
+      console.error('Error details:', error.message);
+      showToast('Failed to save progress: ' + error.message, 'error');
       return false;
     }
   };
@@ -379,7 +379,6 @@ const StudentMathMentals = ({
       return;
     }
 
-    // Generate 10 truly unique questions (keeping same logic)
     const newQuestions = [];
     const usedQuestionIds = new Set();
     const maxAttempts = 100;
@@ -398,7 +397,6 @@ const StudentMathMentals = ({
       attempts++;
     }
     
-    // Fill remaining if needed
     while (newQuestions.length < 10) {
       const question = generateQuestion(studentAssignment.currentLevel, levelConfig, Date.now() + newQuestions.length);
       newQuestions.push({
@@ -443,7 +441,6 @@ const StudentMathMentals = ({
     }
   };
 
-  // FIXED: Direct database saving in finishTest
   const finishTest = async (finalAnswers) => {
     setShowResults(true);
     setCurrentTest(false);
@@ -454,7 +451,6 @@ const StudentMathMentals = ({
 
     console.log('🏆 Test completed:', { score, today, totalQuestions: finalAnswers.length });
 
-    // Calculate new progress data (keeping same logic)
     const updatedProgress = {
       ...studentAssignment.progress,
       [today]: {
@@ -470,7 +466,6 @@ const StudentMathMentals = ({
     let newCurrentLevel = studentAssignment.currentLevel;
     let shouldAdvance = false;
 
-    // Streak and advancement logic (keeping same)
     if (score === 10) {
       newStreak += 1;
       
@@ -488,9 +483,8 @@ const StudentMathMentals = ({
       newStreak = 0;
     }
 
-    // FIXED: Use direct database update instead of broken API
     try {
-      console.log('💾 Saving progress to database directly (no API)...');
+      console.log('💾 Saving progress to database...');
       
       const success = await updateStudentDataDirect({
         mathMentalsProgress: {
@@ -502,9 +496,8 @@ const StudentMathMentals = ({
       });
 
       if (success) {
-        console.log('✅ Progress saved successfully via direct database update');
+        console.log('✅ Progress saved successfully');
         
-        // Update local assignment state immediately 
         const newAssignment = {
           ...studentAssignment,
           currentLevel: newCurrentLevel,
@@ -515,7 +508,6 @@ const StudentMathMentals = ({
         setStudentAssignment(newAssignment);
         setHasAttemptedToday(true);
         
-        // Show success message
         if (shouldAdvance) {
           showToast(`Amazing! You've advanced to ${newCurrentLevel}!`, 'success');
         } else if (score === 10) {
@@ -525,11 +517,11 @@ const StudentMathMentals = ({
           showToast(`You scored ${score}/10. Keep practicing!`, 'info');
         }
       } else {
-        console.error('❌ Direct database update failed');
+        console.error('❌ Save failed');
         showToast('Error saving results. Please try again.', 'error');
       }
     } catch (error) {
-      console.error('❌ Network error saving progress via direct update:', error);
+      console.error('❌ Error saving progress:', error);
       showToast('Error saving results. Please check your internet connection.', 'error');
     }
   };
@@ -557,7 +549,7 @@ const StudentMathMentals = ({
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // REST OF COMPONENT RENDERING (keeping exactly the same)
+  // [REST OF RENDERING CODE - keeping exactly the same as original...]
   if (!studentAssignment) {
     return (
       <div className="bg-white rounded-xl p-6 md:p-8 text-center">
@@ -575,14 +567,12 @@ const StudentMathMentals = ({
     );
   }
 
-  // Test interface
   if (currentTest && !showResults) {
     const currentQuestion = questions[currentQuestionIndex];
     const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
 
     return (
       <div className="space-y-6">
-        {/* Header */}
         <div className="bg-white rounded-xl shadow-lg border-l-4 border-blue-500 p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -604,7 +594,6 @@ const StudentMathMentals = ({
             </span>
           </div>
           
-          {/* Progress bar */}
           <div className="w-full bg-gray-200 rounded-full h-3">
             <div 
               className="bg-blue-500 h-3 rounded-full transition-all duration-300"
@@ -619,7 +608,6 @@ const StudentMathMentals = ({
           )}
         </div>
 
-        {/* Question */}
         <div className="bg-white rounded-xl shadow-lg p-8 text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-6">
             {currentQuestion.question}
@@ -654,14 +642,12 @@ const StudentMathMentals = ({
     );
   }
 
-  // Results screen
   if (showResults) {
     const score = userAnswers.filter(a => a.isCorrect).length;
     const percentage = Math.round((score / userAnswers.length) * 100);
 
     return (
       <div className="space-y-6">
-        {/* Results Header */}
         <div className="bg-white rounded-xl shadow-lg p-6 text-center border-l-4 border-green-500">
           <div className="text-6xl mb-4">
             {score === 10 ? '🏆' : score >= 7 ? '⭐' : '📈'}
@@ -683,7 +669,6 @@ const StudentMathMentals = ({
           )}
         </div>
 
-        {/* Answer Review */}
         <div className="bg-white rounded-xl shadow-lg p-6">
           <h2 className="text-xl font-bold mb-6 text-gray-800">Review Your Answers</h2>
           <div className="space-y-4">
@@ -731,10 +716,8 @@ const StudentMathMentals = ({
     );
   }
 
-  // Main dashboard
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="bg-white rounded-xl shadow-lg border-l-4 border-blue-500 p-6">
         <div className="text-center">
           <h1 className="text-2xl md:text-4xl font-bold mb-2 flex items-center justify-center text-gray-800">
@@ -750,7 +733,6 @@ const StudentMathMentals = ({
         </div>
       </div>
 
-      {/* Current Level Info */}
       <div className="bg-white rounded-xl shadow-lg p-6">
         <div className="text-center mb-6">
           <h2 className="text-2xl font-bold text-gray-800 mb-2">
@@ -766,7 +748,6 @@ const StudentMathMentals = ({
           </div>
         </div>
 
-        {/* Daily Test Button */}
         <div className="text-center">
           {hasAttemptedToday ? (
             <div className="bg-gray-50 rounded-xl p-8">
@@ -804,7 +785,6 @@ const StudentMathMentals = ({
         </div>
       </div>
 
-      {/* Progress Summary */}
       <div className="bg-white rounded-xl shadow-lg p-6">
         <h2 className="text-xl font-bold text-gray-800 mb-4">Recent Progress</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -826,7 +806,6 @@ const StudentMathMentals = ({
         </div>
       </div>
 
-      {/* Tips */}
       <div className="bg-white rounded-xl shadow-lg p-6">
         <h2 className="text-xl font-bold text-gray-800 mb-4">💡 Tips for Success</h2>
         <div className="grid md:grid-cols-2 gap-4">
