@@ -273,7 +273,7 @@ const StudentMathMentals = ({
     }
   };
 
-  // FIXED: Direct database update with proper data validation
+  // FIXED: Direct database update with deep data validation
   const updateStudentDataDirect = async (updatedStudentData) => {
     if (!teacherUserId || !classData || !studentData) {
       console.error('❌ Missing required data for student update');
@@ -284,19 +284,56 @@ const StudentMathMentals = ({
     try {
       console.log('💾 DIRECT: Updating student math progress:', studentData.firstName);
       
-      // CRITICAL FIX: Clean and validate data to prevent undefined values
+      // CRITICAL FIX: Deep clean all data to prevent undefined values
       const cleanMathProgress = {};
       if (updatedStudentData.mathMentalsProgress) {
         const mp = updatedStudentData.mathMentalsProgress;
         
-        // Only include defined values - Firestore rejects undefined
-        if (mp.currentLevel !== undefined) cleanMathProgress.currentLevel = mp.currentLevel;
-        if (mp.progress !== undefined) cleanMathProgress.progress = mp.progress;
-        if (mp.streak !== undefined && mp.streak !== null) cleanMathProgress.streak = mp.streak;
-        if (mp.lastAttempt !== undefined) cleanMathProgress.lastAttempt = mp.lastAttempt;
+        // Clean primitive values
+        if (mp.currentLevel !== undefined && mp.currentLevel !== null) {
+          cleanMathProgress.currentLevel = mp.currentLevel;
+        }
+        
+        if (mp.streak !== undefined && mp.streak !== null) {
+          cleanMathProgress.streak = mp.streak;
+        }
+        
+        if (mp.lastAttempt !== undefined && mp.lastAttempt !== null) {
+          cleanMathProgress.lastAttempt = mp.lastAttempt;
+        }
+        
+        // Deep clean progress object (contains daily results)
+        if (mp.progress !== undefined && mp.progress !== null && typeof mp.progress === 'object') {
+          cleanMathProgress.progress = {};
+          
+          // Clean each date entry
+          for (const [date, result] of Object.entries(mp.progress)) {
+            if (result && typeof result === 'object') {
+              cleanMathProgress.progress[date] = {
+                level: result.level || '',
+                score: result.score || 0,
+                totalQuestions: result.totalQuestions || 10,
+                timestamp: result.timestamp || new Date().toISOString(),
+                // Clean answers array if it exists
+                answers: Array.isArray(result.answers) ? result.answers.map(a => ({
+                  question: a?.question || '',
+                  userAnswer: a?.userAnswer || '',
+                  correctAnswer: a?.correctAnswer || 0,
+                  isCorrect: a?.isCorrect || false,
+                  display: a?.display || ''
+                })) : []
+              };
+            }
+          }
+        }
       }
       
-      console.log('📦 Cleaned data for Firestore:', cleanMathProgress);
+      console.log('📦 Deeply cleaned data for Firestore:', {
+        hasCurrentLevel: !!cleanMathProgress.currentLevel,
+        hasProgress: !!cleanMathProgress.progress,
+        progressKeys: cleanMathProgress.progress ? Object.keys(cleanMathProgress.progress).length : 0,
+        streak: cleanMathProgress.streak
+      });
       
       if (architectureVersion === 'v2') {
         const studentRef = doc(firestore, 'students', studentData.id);
@@ -451,6 +488,15 @@ const StudentMathMentals = ({
 
     console.log('🏆 Test completed:', { score, today, totalQuestions: finalAnswers.length });
 
+    // CRITICAL FIX: Clean answers to remove any undefined values
+    const cleanAnswers = finalAnswers.map(answer => ({
+      question: answer.question || '',
+      userAnswer: answer.userAnswer || '',
+      correctAnswer: answer.correctAnswer || 0,
+      isCorrect: answer.isCorrect || false,
+      display: answer.display || ''
+    }));
+
     const updatedProgress = {
       ...studentAssignment.progress,
       [today]: {
@@ -458,7 +504,7 @@ const StudentMathMentals = ({
         score: score,
         totalQuestions: 10,
         timestamp: new Date().toISOString(),
-        answers: finalAnswers
+        answers: cleanAnswers  // Use cleaned answers
       }
     };
 
