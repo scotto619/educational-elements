@@ -1,4 +1,4 @@
-// pages/student.js - UPDATED WITH DIRECT PASSWORD VERIFICATION (NO APIs)
+// pages/student.js - FIXED: Added StudentMaths import
 import React, { useState, useEffect } from 'react';
 import { firestore } from '../utils/firebase';
 import { collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
@@ -13,6 +13,7 @@ import StudentDashboard from '../components/student/StudentDashboard';
 import StudentSpelling from '../components/student/StudentSpelling';
 import StudentReading from '../components/student/StudentReading';
 import StudentMathMentals from '../components/student/StudentMathMentals';
+import StudentMaths from '../components/student/StudentMaths'; // ADDED THIS LINE
 
 // Import from the correct gameHelpers file
 import { 
@@ -681,15 +682,15 @@ const StudentPortal = () => {
             calculateAvatarLevel={calculateAvatarLevel}
           />
         );
-      case 'maths':  // Changed from 'mathmentals'
-  return (
-    <StudentMaths 
-      studentData={studentData}
-      classData={classData}
-      showToast={showToast}
-      updateStudentData={updateStudentData}
-    />
-  );
+      case 'maths':
+        return (
+          <StudentMaths 
+            studentData={studentData}
+            classData={classData}
+            showToast={showToast}
+            updateStudentData={updateStudentData}
+          />
+        );
       case 'spelling':
         return (
           <StudentSpelling 
