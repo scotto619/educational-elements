@@ -1,4 +1,4 @@
-// components/student/StudentGames.js - CLEANED UP VERSION
+// components/student/StudentGames.js - WITH BINGO GAME
 import React, { useState } from 'react';
 
 // Import existing game components
@@ -15,7 +15,8 @@ import Match3BattleGame from '../games/Match3BattleGame';
 import MathSpaceInvadersGame from '../games/MathSpaceInvadersGame';
 import MultiplayerAgarGame from '../games/MultiplayerAgarGame';
 import StudentBattleRoyale from '../student/StudentBattleRoyale';
-import EducationalMemoryGame from '../games/EducationalMemoryGame'; // NEW MEMORY GAME
+import EducationalMemoryGame from '../games/EducationalMemoryGame';
+import StudentBingo from '../student/StudentBingo';
 
 const StudentGames = ({ studentData, showToast, updateStudentData, classData }) => {
   const [selectedGame, setSelectedGame] = useState(null);
@@ -24,17 +25,32 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
   const availableGames = [
     // Featured/New Games
     {
+      id: 'bingo',
+      name: 'Educational BINGO',
+      icon: '🎲',
+      description: 'Play BINGO with your class! Choose the same category as your teacher and mark off squares to win.',
+      component: StudentBingo,
+      color: 'from-pink-500 to-purple-600',
+      difficulty: 'Easy',
+      time: '15-30 minutes',
+      multiplayer: true,
+      featured: true,
+      new: true,
+      category: 'featured',
+      educational: true,
+      requiresTeacher: true
+    },
+    {
       id: 'educational-memory',
       name: 'Memory Masters',
       icon: '🧩',
       description: 'Match educational content! Play solo or challenge up to 3 friends with custom themes like math, reading, and more.',
       component: EducationalMemoryGame,
-      color: 'from-pink-500 to-purple-600',
+      color: 'from-purple-500 to-pink-600',
       difficulty: 'Easy - Hard',
       time: '5-15 minutes',
       multiplayer: true,
       featured: true,
-      new: true,
       category: 'featured',
       educational: true
     },
@@ -108,7 +124,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
     {
       id: 'match3battle',
       name: 'Match-3 Battle Arena',
-      icon: '⚔️',
+      icon: 'âš"ï¸',
       description: 'Epic fantasy RPG adventure with strategic match-3 combat!',
       component: Match3BattleGame,
       color: 'from-red-500 to-purple-600',
@@ -119,7 +135,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
     {
       id: 'clicker',
       name: 'Hero Forge',
-      icon: '⚡',
+      icon: 'âš¡',
       description: 'Build your fantasy empire in this epic incremental adventure!',
       component: ClickerGame,
       color: 'from-yellow-500 to-orange-600',
@@ -129,6 +145,19 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
     },
 
     // Educational Games
+    {
+      id: 'bingo-edu',
+      name: 'Classroom BINGO',
+      icon: 'ðŸŽ²',
+      description: 'Join your class BINGO game! Listen for questions and mark your card.',
+      component: StudentBingo,
+      color: 'from-pink-500 to-purple-600',
+      difficulty: 'Easy',
+      time: '15-30 minutes',
+      category: 'educational',
+      educational: true,
+      requiresTeacher: true
+    },
     {
       id: 'math-race',
       name: 'Math Race',
@@ -143,7 +172,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
     {
       id: 'crossword',
       name: 'Crossword Puzzle',
-      icon: '🧩',
+      icon: 'ðŸ§©',
       description: 'Solve crossword puzzles and expand your vocabulary.',
       component: CrosswordGame,
       color: 'from-indigo-500 to-purple-600',
@@ -154,7 +183,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
     {
       id: 'word-search',
       name: 'Word Search',
-      icon: '🔍',
+      icon: '📝',
       description: 'Find hidden words in the letter grid.',
       component: WordSearchGame,
       color: 'from-blue-500 to-blue-600',
@@ -165,7 +194,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
     {
       id: 'boggle',
       name: 'Word Boggle',
-      icon: '🔤',
+      icon: '📤',
       description: 'Create words by connecting letters.',
       component: BoggleGame,
       color: 'from-yellow-500 to-orange-500',
@@ -176,7 +205,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
     {
       id: 'noggle',
       name: 'Number Noggle',
-      icon: '🔢',
+      icon: '📢',
       description: 'Connect numbers to create target sums.',
       component: NoggleGame,
       color: 'from-red-500 to-pink-500',
@@ -201,7 +230,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
 
   const categories = [
     { id: 'featured', name: 'Featured', icon: '⭐', description: 'New and popular games' },
-    { id: 'multiplayer', name: 'Multiplayer', icon: '👥', description: 'Play with friends' },
+    { id: 'multiplayer', name: 'Multiplayer', icon: '🔥', description: 'Play with friends' },
     { id: 'educational', name: 'Educational', icon: '📚', description: 'Learn while playing' },
     { id: 'adventure', name: 'Adventure', icon: '🏰', description: 'Epic quests and battles' },
     { id: 'brain', name: 'Brain Training', icon: '🧠', description: 'Memory and logic games' }
@@ -303,7 +332,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       {/* No class code warning for multiplayer */}
       {selectedCategory === 'multiplayer' && !classData?.classCode && (
         <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 text-center">
-          <div className="text-2xl mb-2">⚠️</div>
+          <div className="text-2xl mb-2">âš ï¸</div>
           <h3 className="text-lg font-semibold text-orange-800 mb-2">Multiplayer Games Unavailable</h3>
           <p className="text-orange-700 text-sm">
             Ask your teacher to set up a class code to unlock multiplayer games!
@@ -331,7 +360,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
             {/* Featured Badge */}
             {game.featured && !game.new && (
               <div className="absolute -top-2 -right-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white text-xs font-bold px-2 py-1 rounded-full z-10">
-                ⭐ HOT
+                â­ HOT
               </div>
             )}
             
@@ -345,10 +374,19 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
                 </h4>
                 <div className="flex items-center space-x-2 text-xs">
                   {game.multiplayer && (
-                    <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full">👥 Multiplayer</span>
+                    <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full">
+                      🔥 Multiplayer
+                    </span>
                   )}
                   {game.educational && (
-                    <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded-full">📚 Educational</span>
+                    <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded-full">
+                      📚 Educational
+                    </span>
+                  )}
+                  {game.requiresTeacher && (
+                    <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+                      👨‍🏫 Class Game
+                    </span>
                   )}
                 </div>
               </div>
@@ -360,19 +398,20 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
 
             <div className="space-y-1 text-xs text-gray-500 mb-3 md:mb-4">
               <div className="flex justify-between">
-                <span>⚡ Difficulty:</span>
+                <span>âš¡ Difficulty:</span>
                 <span className="font-medium">{game.difficulty}</span>
               </div>
               <div className="flex justify-between">
-                <span>⏱️ Time:</span>
+                <span>â±ï¸ Time:</span>
                 <span className="font-medium">{game.time}</span>
               </div>
             </div>
 
             <div className="pt-3 border-t border-gray-200">
               <div className={`w-full py-2 md:py-3 px-4 rounded-lg bg-gradient-to-r ${game.color} text-white text-center font-semibold group-hover:shadow-md transition-all text-sm md:text-base`}>
-                {game.multiplayer && game.requiresClassCode ? '🔴 Join Battle' :
-                 game.multiplayer ? '👥 Play vs Friend' : 
+                {game.requiresTeacher ? '🔥 Join Game' :
+                 game.multiplayer && game.requiresClassCode ? '🧬 Join Battle' :
+                 game.multiplayer ? '🔥 Play vs Friend' : 
                  '🎮 Play Game'}
               </div>
             </div>
@@ -388,20 +427,20 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div className="bg-white rounded-lg p-3">
-            <div className="font-semibold text-pink-700 mb-1">🧩 Memory Masters</div>
+            <div className="font-semibold text-pink-700 mb-1">ðŸŽ² Educational BINGO</div>
+            <div className="text-gray-600">Select the same category as your teacher to get your BINGO card! Listen carefully and mark your squares to win.</div>
+          </div>
+          <div className="bg-white rounded-lg p-3">
+            <div className="font-semibold text-purple-700 mb-1">ðŸ§© Memory Masters</div>
             <div className="text-gray-600">Educational memory matching! Choose themes like math, reading, or create custom pairs. Play solo or with friends!</div>
           </div>
           <div className="bg-white rounded-lg p-3">
-            <div className="font-semibold text-red-700 mb-1">⚔️ Battle Games</div>
+            <div className="font-semibold text-red-700 mb-1">âš"ï¸ Battle Games</div>
             <div className="text-gray-600">Test your skills against classmates in real-time multiplayer battles!</div>
           </div>
           <div className="bg-white rounded-lg p-3">
-            <div className="font-semibold text-blue-700 mb-1">🚀 Adventure Games</div>
+            <div className="font-semibold text-blue-700 mb-1">ðŸš€ Adventure Games</div>
             <div className="text-gray-600">Your progress saves automatically - come back anytime to continue!</div>
-          </div>
-          <div className="bg-white rounded-lg p-3">
-            <div className="font-semibold text-green-700 mb-1">📚 Educational Games</div>
-            <div className="text-gray-600">Learn while you play! Perfect for practicing math, reading, and vocabulary.</div>
           </div>
         </div>
       </div>
