@@ -1,4 +1,4 @@
-// components/tabs/StudentsTab.js - UPDATED WITH MOBILE-FRIENDLY RESPONSIVE DESIGN
+// components/tabs/StudentsTab.js - UPDATED WITH TRAFFIC LIGHTS, ATTENDANCE & AUTO-REFRESH
 import React, { useState, useEffect, useRef } from 'react';
 
 // ===============================================
@@ -13,6 +13,11 @@ const getGridClasses = (studentCount) => {
     if (studentCount <= 24) return 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8';
     if (studentCount <= 32) return 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8';
     return 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-10';
+};
+
+// Get today's date in YYYY-MM-DD format
+const getTodayDate = () => {
+    return new Date().toISOString().split('T')[0];
 };
 
 // Play award sound
@@ -270,6 +275,13 @@ const StudentsTab = ({
     const [hoverPreview, setHoverPreview] = useState(null);
     const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
     const [awardNotification, setAwardNotification] = useState(null);
+    const [refreshKey, setRefreshKey] = useState(0);
+    
+    // Auto-refresh when tab becomes visible
+    useEffect(() => {
+        console.log('📊 Students tab refreshed - student data updated');
+        setRefreshKey(prev => prev + 1);
+    }, [students]);
     
     const filteredStudents = students.filter(student =>
         student.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -344,6 +356,42 @@ const StudentsTab = ({
                 ? prev.filter(id => id !== studentId)
                 : [...prev, studentId]
         );
+    };
+
+    // NEW: Handle traffic light click
+    const handleTrafficLightClick = (student, color) => {
+        const updatedStudent = {
+            ...student,
+            behaviorStatus: student.behaviorStatus === color ? null : color
+        };
+        onUpdateStudent(student.id, { behaviorStatus: updatedStudent.behaviorStatus });
+    };
+
+    // NEW: Handle attendance toggle
+    const handleAttendanceToggle = (student) => {
+        const today = getTodayDate();
+        const currentAttendance = student.attendance?.[today];
+        
+        let newStatus;
+        if (!currentAttendance) {
+            newStatus = 'present';
+        } else if (currentAttendance === 'present') {
+            newStatus = 'absent';
+        } else {
+            newStatus = null;
+        }
+        
+        const updatedAttendance = {
+            ...(student.attendance || {}),
+            [today]: newStatus
+        };
+        
+        // Remove null entries to keep data clean
+        if (newStatus === null) {
+            delete updatedAttendance[today];
+        }
+        
+        onUpdateStudent(student.id, { attendance: updatedAttendance });
     };
     
     return (
@@ -439,7 +487,7 @@ const StudentsTab = ({
             </div>
 
             {/* MOBILE-OPTIMIZED STUDENT GRID */}
-            <div className={`grid ${getGridClasses(filteredStudents.length)} gap-2 sm:gap-3 md:gap-4`}>
+            <div className={`grid ${getGridClasses(filteredStudents.length)} gap-2 sm:gap-3 md:gap-4`} key={refreshKey}>
                 {filteredStudents.map((student) => (
                     <StudentCard
                         key={student.id}
@@ -459,6 +507,8 @@ const StudentsTab = ({
                         calculateAvatarLevel={calculateAvatarLevelFunc}
                         onQuickAward={handleQuickAward}
                         onToggleSelection={toggleStudentSelection}
+                        onTrafficLightClick={handleTrafficLightClick}
+                        onAttendanceToggle={handleAttendanceToggle}
                     />
                 ))}
             </div>
@@ -507,7 +557,7 @@ const StudentsTab = ({
 };
 
 // ===============================================
-// MOBILE-OPTIMIZED STUDENT CARD COMPONENT
+// MOBILE-OPTIMIZED STUDENT CARD COMPONENT - WITH TRAFFIC LIGHTS & ATTENDANCE
 // ===============================================
 const StudentCard = ({ 
     student, 
@@ -525,7 +575,9 @@ const StudentCard = ({
     calculateCoins, 
     calculateAvatarLevel, 
     onQuickAward, 
-    onToggleSelection 
+    onToggleSelection,
+    onTrafficLightClick,
+    onAttendanceToggle
 }) => {
     const level = calculateAvatarLevel(student.totalPoints);
     const coins = calculateCoins(student);
@@ -533,6 +585,10 @@ const StudentCard = ({
     const avatarImg = getAvatarImage(student.avatarBase, level);
     const pet = student.ownedPets?.[0];
     const petImg = pet ? getPetImage(pet) : null;
+
+    // Get today's attendance
+    const today = getTodayDate();
+    const todayAttendance = student.attendance?.[today];
 
     // Get clicker data from clickerGameData
     const clickerGameData = student.clickerGameData || null;
@@ -583,6 +639,16 @@ const StudentCard = ({
         }
     };
 
+    const handleTrafficLightClickInternal = (e, color) => {
+        e.stopPropagation();
+        onTrafficLightClick(student, color);
+    };
+
+    const handleAttendanceClickInternal = (e) => {
+        e.stopPropagation();
+        onAttendanceToggle(student);
+    };
+
     // Apply theme styling when clicker data exists
     const themeBorder = hasClickerData 
         ? getThemeBorder(clickerAchievements.themeName) 
@@ -615,6 +681,52 @@ const StudentCard = ({
                 isDragged ? 'opacity-30 ring-2 ring-blue-500' : ''
             }`}
         >
+            {/* TRAFFIC LIGHTS - Top Left Corner */}
+            <div className="absolute top-1 left-1 flex flex-col space-y-0.5 z-10">
+                <button
+                    onClick={(e) => handleTrafficLightClickInternal(e, 'green')}
+                    className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full border-2 transition-all ${
+                        student.behaviorStatus === 'green' 
+                            ? 'bg-green-500 border-green-700 shadow-lg scale-110' 
+                            : 'bg-green-200 border-green-400 hover:bg-green-300'
+                    }`}
+                    title="Good behavior"
+                />
+                <button
+                    onClick={(e) => handleTrafficLightClickInternal(e, 'yellow')}
+                    className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full border-2 transition-all ${
+                        student.behaviorStatus === 'yellow' 
+                            ? 'bg-yellow-500 border-yellow-700 shadow-lg scale-110' 
+                            : 'bg-yellow-200 border-yellow-400 hover:bg-yellow-300'
+                    }`}
+                    title="Warning"
+                />
+                <button
+                    onClick={(e) => handleTrafficLightClickInternal(e, 'red')}
+                    className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full border-2 transition-all ${
+                        student.behaviorStatus === 'red' 
+                            ? 'bg-red-500 border-red-700 shadow-lg scale-110' 
+                            : 'bg-red-200 border-red-400 hover:bg-red-300'
+                    }`}
+                    title="Needs attention"
+                />
+            </div>
+
+            {/* ATTENDANCE BUTTON - Top Right Corner */}
+            <button
+                onClick={handleAttendanceClickInternal}
+                className={`absolute top-1 right-1 w-5 h-5 sm:w-6 sm:h-6 rounded border-2 flex items-center justify-center text-xs font-bold transition-all z-10 ${
+                    todayAttendance === 'present' 
+                        ? 'bg-green-500 border-green-700 text-white shadow-md' 
+                        : todayAttendance === 'absent'
+                        ? 'bg-red-500 border-red-700 text-white shadow-md'
+                        : 'bg-gray-100 border-gray-300 hover:bg-gray-200'
+                }`}
+                title={todayAttendance === 'present' ? 'Present' : todayAttendance === 'absent' ? 'Absent' : 'Mark attendance'}
+            >
+                {todayAttendance === 'present' ? '✓' : todayAttendance === 'absent' ? 'A' : ''}
+            </button>
+
             <div className="flex flex-col items-center text-center">
                 <div className="relative">
                     <img 
@@ -666,7 +778,7 @@ const StudentCard = ({
                 </div>
                 
                 {isSelected && (
-                    <div className="absolute top-1 right-1 bg-purple-500 text-white rounded-full w-4 h-4 sm:w-6 sm:h-6 flex items-center justify-center text-xs sm:text-sm font-bold">
+                    <div className="absolute top-1 left-1/2 transform -translate-x-1/2 bg-purple-500 text-white rounded-full w-4 h-4 sm:w-6 sm:h-6 flex items-center justify-center text-xs sm:text-sm font-bold">
                         ✓
                     </div>
                 )}
