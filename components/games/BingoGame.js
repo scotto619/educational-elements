@@ -1,10 +1,10 @@
-// components/games/BingoGame.js - Teacher Bingo Game Controller
+// components/games/BingoGame.js - Teacher BINGO Game Controller (HIDDEN ANSWERS VERSION)
 import React, { useState, useEffect } from 'react';
 
 const BINGO_CATEGORIES = {
   'times-tables': {
     name: 'Times Tables',
-    icon: '✖️',  // was âœ–ï¸
+    icon: '✖️',
     color: 'from-blue-500 to-cyan-600',
     questions: [
       { question: '2 × 3', answer: '6' },
@@ -36,7 +36,7 @@ const BINGO_CATEGORIES = {
   },
   'vocabulary': {
     name: 'Vocabulary',
-    icon: '📚',  // was ðŸ"š
+    icon: '📚',
     color: 'from-purple-500 to-pink-600',
     questions: [
       { question: 'A large, natural stream of water', answer: 'River' },
@@ -68,7 +68,7 @@ const BINGO_CATEGORIES = {
   },
   'science': {
     name: 'Science Facts',
-    icon: '🔬',  // was ðŸ"¬
+    icon: '🔬',
     color: 'from-green-500 to-emerald-600',
     questions: [
       { question: 'The center of an atom', answer: 'Nucleus' },
@@ -100,7 +100,7 @@ const BINGO_CATEGORIES = {
   },
   'history': {
     name: 'History',
-    icon: '⚔️',  // was ðŸ›ï¸
+    icon: '🏛️',
     color: 'from-orange-500 to-red-600',
     questions: [
       { question: 'First president of USA', answer: 'Washington' },
@@ -132,7 +132,7 @@ const BINGO_CATEGORIES = {
   },
   'geography': {
     name: 'Geography',
-    icon: '🗺️',  // was ðŸ—ºï¸
+    icon: '🗺️',
     color: 'from-teal-500 to-blue-600',
     questions: [
       { question: 'Largest ocean', answer: 'Pacific' },
@@ -170,6 +170,8 @@ const BingoGame = ({ showToast }) => {
   const [currentQuestion, setCurrentQuestion] = useState(null);
   const [calledQuestions, setCalledQuestions] = useState([]);
   const [availableQuestions, setAvailableQuestions] = useState([]);
+  const [showCurrentAnswer, setShowCurrentAnswer] = useState(false);
+  const [revealedAnswers, setRevealedAnswers] = useState(new Set());
 
   useEffect(() => {
     if (selectedCategory) {
@@ -186,6 +188,7 @@ const BingoGame = ({ showToast }) => {
     setCalledQuestions([]);
     setCurrentQuestion(null);
     setAvailableQuestions([...BINGO_CATEGORIES[selectedCategory].questions]);
+    setRevealedAnswers(new Set());
     showToast(`${BINGO_CATEGORIES[selectedCategory].name} BINGO Started!`, 'success');
   };
 
@@ -199,8 +202,19 @@ const BingoGame = ({ showToast }) => {
     const question = availableQuestions[randomIndex];
     
     setCurrentQuestion(question);
+    setShowCurrentAnswer(false); // Hide answer by default for new question
     setCalledQuestions(prev => [...prev, question]);
     setAvailableQuestions(prev => prev.filter((_, index) => index !== randomIndex));
+  };
+
+  const toggleAnswerReveal = (questionIndex) => {
+    const newRevealed = new Set(revealedAnswers);
+    if (newRevealed.has(questionIndex)) {
+      newRevealed.delete(questionIndex);
+    } else {
+      newRevealed.add(questionIndex);
+    }
+    setRevealedAnswers(newRevealed);
   };
 
   const handleReset = () => {
@@ -209,6 +223,8 @@ const BingoGame = ({ showToast }) => {
     setCalledQuestions([]);
     setSelectedCategory(null);
     setAvailableQuestions([]);
+    setShowCurrentAnswer(false);
+    setRevealedAnswers(new Set());
     showToast('Game reset!', 'info');
   };
 
@@ -271,10 +287,14 @@ const BingoGame = ({ showToast }) => {
             </li>
             <li className="flex items-start">
               <span className="font-bold text-blue-600 mr-2">3.</span>
-              <span>Click "Call Next" to display questions - students mark matching answers on their cards</span>
+              <span>Click "Call Next" to display questions - <strong>answers are hidden by default</strong></span>
             </li>
             <li className="flex items-start">
               <span className="font-bold text-blue-600 mr-2">4.</span>
+              <span>Click "Reveal Answer" when ready to show the correct answer to students</span>
+            </li>
+            <li className="flex items-start">
+              <span className="font-bold text-blue-600 mr-2">5.</span>
               <span>First student to get 5 in a row (horizontal, vertical, or diagonal) wins!</span>
             </li>
           </ol>
@@ -303,7 +323,7 @@ const BingoGame = ({ showToast }) => {
             onClick={handleReset}
             className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-6 py-3 rounded-lg font-semibold transition-all"
           >
-            📄 Change Category
+            🔄 Change Category
           </button>
         </div>
       </div>
@@ -332,11 +352,38 @@ const BingoGame = ({ showToast }) => {
                 <div className={`bg-gradient-to-r ${category.color} text-white rounded-2xl p-12 mb-6 transform hover:scale-105 transition-transform`}>
                   <div className="text-2xl font-semibold mb-4 opacity-90">Question:</div>
                   <div className="text-6xl font-bold mb-6">{currentQuestion.question}</div>
-                  <div className="text-3xl font-semibold opacity-90">Answer:</div>
-                  <div className="text-5xl font-bold mt-2">{currentQuestion.answer}</div>
+                  
+                  {/* Answer Section - Hidden by Default */}
+                  <div className="border-t-2 border-white border-opacity-30 pt-6 mt-6">
+                    {showCurrentAnswer ? (
+                      <div className="animate-fade-in">
+                        <div className="text-3xl font-semibold opacity-90">Answer:</div>
+                        <div className="text-5xl font-bold mt-2">{currentQuestion.answer}</div>
+                      </div>
+                    ) : (
+                      <div className="text-2xl font-semibold opacity-75">
+                        🔒 Answer Hidden
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="text-gray-500 text-lg">
-                  Students: Mark "{currentQuestion.answer}" on your BINGO card!
+                
+                {/* Reveal Answer Button */}
+                <button
+                  onClick={() => setShowCurrentAnswer(!showCurrentAnswer)}
+                  className={`px-8 py-4 rounded-xl font-bold text-xl transition-all transform hover:scale-105 ${
+                    showCurrentAnswer 
+                      ? 'bg-gray-500 hover:bg-gray-600 text-white' 
+                      : `bg-gradient-to-r ${category.color} text-white hover:shadow-xl`
+                  }`}
+                >
+                  {showCurrentAnswer ? '🔒 Hide Answer' : '👁️ Reveal Answer'}
+                </button>
+                
+                <div className="text-gray-500 text-lg mt-4">
+                  {showCurrentAnswer 
+                    ? 'Students: Mark this answer on your BINGO card!' 
+                    : 'Click to reveal the answer to students'}
                 </div>
               </div>
             ) : (
@@ -365,7 +412,7 @@ const BingoGame = ({ showToast }) => {
               onClick={handleReset}
               className="bg-gray-500 hover:bg-gray-600 text-white px-8 py-6 rounded-xl font-bold text-xl transition-all"
             >
-              📄 Reset Game
+              🔄 Reset Game
             </button>
           </div>
 
@@ -376,15 +423,34 @@ const BingoGame = ({ showToast }) => {
                 <span className="mr-2">📜</span>
                 Called Questions ({calledQuestions.length})
               </h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-96 overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-96 overflow-y-auto">
                 {calledQuestions.map((q, index) => (
                   <div
                     key={index}
-                    className={`bg-gradient-to-br ${category.color} bg-opacity-10 border-2 border-gray-200 rounded-lg p-4 text-center`}
+                    className={`bg-gradient-to-br ${category.color} bg-opacity-10 border-2 border-gray-200 rounded-lg p-4 relative`}
                   >
-                    <div className="text-sm font-semibold text-gray-600 mb-1">#{index + 1}</div>
-                    <div className="font-bold text-gray-800 text-lg">{q.answer}</div>
-                    <div className="text-xs text-gray-500 mt-1">{q.question}</div>
+                    <div className="text-sm font-semibold text-gray-600 mb-2">#{index + 1}</div>
+                    <div className="text-sm text-gray-600 mb-2">{q.question}</div>
+                    
+                    {/* Answer Toggle for History */}
+                    {revealedAnswers.has(index) ? (
+                      <div className="mt-2 pt-2 border-t border-gray-300">
+                        <div className="font-bold text-gray-800 text-lg mb-1">{q.answer}</div>
+                        <button
+                          onClick={() => toggleAnswerReveal(index)}
+                          className="text-xs text-gray-500 hover:text-gray-700 underline"
+                        >
+                          Hide Answer
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => toggleAnswerReveal(index)}
+                        className="mt-2 w-full bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 rounded text-xs font-semibold transition-all"
+                      >
+                        👁️ Show Answer
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
