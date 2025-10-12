@@ -690,7 +690,6 @@ const StudentCard = ({
                             ? 'bg-green-500 border-green-700 shadow-lg scale-110' 
                             : 'bg-green-200 border-green-400 hover:bg-green-300'
                     }`}
-                    title="Good behavior"
                 />
                 <button
                     onClick={(e) => handleTrafficLightClickInternal(e, 'yellow')}
@@ -699,7 +698,6 @@ const StudentCard = ({
                             ? 'bg-yellow-500 border-yellow-700 shadow-lg scale-110' 
                             : 'bg-yellow-200 border-yellow-400 hover:bg-yellow-300'
                     }`}
-                    title="Warning"
                 />
                 <button
                     onClick={(e) => handleTrafficLightClickInternal(e, 'red')}
@@ -708,7 +706,6 @@ const StudentCard = ({
                             ? 'bg-red-500 border-red-700 shadow-lg scale-110' 
                             : 'bg-red-200 border-red-400 hover:bg-red-300'
                     }`}
-                    title="Needs attention"
                 />
             </div>
 
