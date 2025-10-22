@@ -1,4 +1,4 @@
-// components/tabs/TeachersToolkitTab.js - UPDATED WITH SPECIALIST TIMETABLE
+// components/tabs/TeachersToolkitTab.js - UPDATED WITH SPECIALIST TIMETABLE CREATOR
 import React, { useState, useEffect } from 'react';
 
 // Import tool components from the tools folder
@@ -182,21 +182,21 @@ const BirthdayWall = ({ students, showNotification, saveClassroomDataToFirebase,
                     type="date"
                     value={birthdayInput}
                     onChange={(e) => setBirthdayInput(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
                   />
-                  <label className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2">
                     <input
                       type="checkbox"
                       checked={assignBirthdayAvatar}
                       onChange={(e) => setAssignBirthdayAvatar(e.target.checked)}
-                      className="rounded text-pink-600"
+                      className="w-4 h-4"
                     />
-                    <span className="text-sm text-gray-700">Assign Birthday Avatar</span>
-                  </label>
-                  <div className="flex gap-2">
+                    <label className="text-sm text-gray-700">Assign birthday avatar</label>
+                  </div>
+                  <div className="flex space-x-2">
                     <button
                       onClick={() => handleSetBirthday(student.id)}
-                      className="flex-1 bg-pink-600 text-white px-3 py-2 rounded-lg hover:bg-pink-700 transition text-sm"
+                      className="flex-1 bg-green-500 text-white px-3 py-2 rounded-lg hover:bg-green-600 transition"
                     >
                       Save
                     </button>
@@ -206,7 +206,7 @@ const BirthdayWall = ({ students, showNotification, saveClassroomDataToFirebase,
                         setBirthdayInput('');
                         setAssignBirthdayAvatar(false);
                       }}
-                      className="flex-1 bg-gray-300 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-400 transition text-sm"
+                      className="flex-1 bg-gray-400 text-white px-3 py-2 rounded-lg hover:bg-gray-500 transition"
                     >
                       Cancel
                     </button>
@@ -218,7 +218,7 @@ const BirthdayWall = ({ students, showNotification, saveClassroomDataToFirebase,
                     setEditingStudentId(student.id);
                     setBirthdayInput(student.birthday || '');
                   }}
-                  className="w-full bg-pink-500 text-white px-3 py-2 rounded-lg hover:bg-pink-600 transition text-sm"
+                  className="w-full bg-pink-500 text-white px-3 py-2 rounded-lg hover:bg-pink-600 transition"
                 >
                   {student.birthday ? 'Edit Birthday' : 'Set Birthday'}
                 </button>
@@ -232,20 +232,230 @@ const BirthdayWall = ({ students, showNotification, saveClassroomDataToFirebase,
 };
 
 // ===============================================
-// MAIN TOOLKIT COMPONENT
+// ATTENDANCE TRACKER COMPONENT
+// ===============================================
+const AttendanceTracker = ({ students, showNotification, saveClassroomDataToFirebase, currentClassId }) => {
+  const [attendance, setAttendance] = useState({});
+  const today = new Date().toISOString().split('T')[0];
+
+  useEffect(() => {
+    const todayAttendance = {};
+    students.forEach(student => {
+      todayAttendance[student.id] = student.attendance?.[today] || 'present';
+    });
+    setAttendance(todayAttendance);
+  }, [students, today]);
+
+  const toggleAttendance = (studentId, status) => {
+    const updatedAttendance = { ...attendance, [studentId]: status };
+    setAttendance(updatedAttendance);
+
+    const updatedStudents = students.map(student =>
+      student.id === studentId
+        ? { ...student, attendance: { ...student.attendance, [today]: status } }
+        : student
+    );
+    saveClassroomDataToFirebase(updatedStudents, currentClassId);
+    showNotification(`Attendance updated`, 'success');
+  };
+
+  const getAttendanceStats = () => {
+    const present = Object.values(attendance).filter(status => status === 'present').length;
+    const absent = Object.values(attendance).filter(status => status === 'absent').length;
+    const late = Object.values(attendance).filter(status => status === 'late').length;
+    const total = students.length;
+    const percentage = total > 0 ? ((present / total) * 100).toFixed(1) : 0;
+
+    return { present, absent, late, total, percentage };
+  };
+
+  const stats = getAttendanceStats();
+
+  return (
+    <div className="space-y-6">
+      <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+        ✅ Attendance Tracker
+      </h3>
+
+      {/* Stats Overview */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-green-100 rounded-xl p-4 text-center">
+          <div className="text-3xl font-bold text-green-600">{stats.present}</div>
+          <div className="text-sm text-gray-600">Present</div>
+        </div>
+        <div className="bg-red-100 rounded-xl p-4 text-center">
+          <div className="text-3xl font-bold text-red-600">{stats.absent}</div>
+          <div className="text-sm text-gray-600">Absent</div>
+        </div>
+        <div className="bg-yellow-100 rounded-xl p-4 text-center">
+          <div className="text-3xl font-bold text-yellow-600">{stats.late}</div>
+          <div className="text-sm text-gray-600">Late</div>
+        </div>
+        <div className="bg-blue-100 rounded-xl p-4 text-center">
+          <div className="text-3xl font-bold text-blue-600">{stats.percentage}%</div>
+          <div className="text-sm text-gray-600">Attendance</div>
+        </div>
+      </div>
+
+      {/* Student Attendance */}
+      <div className="bg-white rounded-xl p-6 shadow-lg">
+        <h4 className="font-bold text-lg text-gray-800 mb-4">Mark Attendance - {new Date().toLocaleDateString()}</h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {students.map(student => (
+            <div key={student.id} className="bg-gray-50 rounded-lg p-4">
+              <div className="flex items-center space-x-3 mb-3">
+                <img
+                  src={student.avatarUrl || '/avatars/Wizard F/Level 1.png'}
+                  alt={`${student.firstName}'s Avatar`}
+                  className="w-10 h-10 rounded-full border-2 border-gray-300"
+                  onError={(e) => (e.target.src = '/avatars/Wizard F/Level 1.png')}
+                />
+                <div className="font-semibold">{student.firstName} {student.lastName}</div>
+              </div>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => toggleAttendance(student.id, 'present')}
+                  className={`flex-1 px-3 py-2 rounded-lg transition ${
+                    attendance[student.id] === 'present'
+                      ? 'bg-green-500 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Present
+                </button>
+                <button
+                  onClick={() => toggleAttendance(student.id, 'absent')}
+                  className={`flex-1 px-3 py-2 rounded-lg transition ${
+                    attendance[student.id] === 'absent'
+                      ? 'bg-red-500 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Absent
+                </button>
+                <button
+                  onClick={() => toggleAttendance(student.id, 'late')}
+                  className={`flex-1 px-3 py-2 rounded-lg transition ${
+                    attendance[student.id] === 'late'
+                      ? 'bg-yellow-500 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Late
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ===============================================
+// ANALYTICS COMPONENT
+// ===============================================
+const AnalyticsComponent = ({ students }) => {
+  const calculateAnalytics = () => {
+    const totalStudents = students.length;
+    const totalPoints = students.reduce((sum, s) => sum + (s.totalPoints || 0), 0);
+    const averagePoints = totalStudents > 0 ? (totalPoints / totalStudents).toFixed(1) : 0;
+    const totalCoins = students.reduce((sum, s) => sum + (s.coins || 0), 0);
+    const averageCoins = totalStudents > 0 ? (totalCoins / totalStudents).toFixed(1) : 0;
+
+    const topPerformers = [...students]
+      .sort((a, b) => (b.totalPoints || 0) - (a.totalPoints || 0))
+      .slice(0, 5);
+
+    return {
+      totalStudents,
+      totalPoints,
+      averagePoints,
+      totalCoins,
+      averageCoins,
+      topPerformers,
+    };
+  };
+
+  const analytics = calculateAnalytics();
+
+  return (
+    <div className="space-y-6">
+      <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+        📊 Class Analytics
+      </h3>
+
+      {/* Overview Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-purple-100 rounded-xl p-4 text-center">
+          <div className="text-3xl font-bold text-purple-600">{analytics.totalStudents}</div>
+          <div className="text-sm text-gray-600">Total Students</div>
+        </div>
+        <div className="bg-blue-100 rounded-xl p-4 text-center">
+          <div className="text-3xl font-bold text-blue-600">{analytics.averagePoints}</div>
+          <div className="text-sm text-gray-600">Average XP</div>
+        </div>
+        <div className="bg-yellow-100 rounded-xl p-4 text-center">
+          <div className="text-3xl font-bold text-yellow-600">{analytics.totalPoints}</div>
+          <div className="text-sm text-gray-600">Total XP</div>
+        </div>
+        <div className="bg-green-100 rounded-xl p-4 text-center">
+          <div className="text-3xl font-bold text-green-600">{analytics.averageCoins}</div>
+          <div className="text-sm text-gray-600">Average Coins</div>
+        </div>
+      </div>
+
+      {/* Top Performers */}
+      <div className="bg-white rounded-xl p-6 shadow-lg">
+        <h4 className="font-bold text-lg text-gray-800 mb-4">🏆 Top 5 Performers</h4>
+        <div className="space-y-3">
+          {analytics.topPerformers.map((student, index) => (
+            <div
+              key={student.id}
+              className="flex items-center space-x-4 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg p-4"
+            >
+              <div className="text-2xl font-bold text-gray-600">#{index + 1}</div>
+              <img
+                src={student.avatarUrl || '/avatars/Wizard F/Level 1.png'}
+                alt={`${student.firstName}'s Avatar`}
+                className="w-12 h-12 rounded-full border-2 border-gray-300"
+                onError={(e) => (e.target.src = '/avatars/Wizard F/Level 1.png')}
+              />
+              <div className="flex-1">
+                <div className="font-semibold text-gray-800">
+                  {student.firstName} {student.lastName}
+                </div>
+                <div className="text-sm text-gray-600">
+                  {student.totalPoints || 0} XP • {student.coins || 0} Coins
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ===============================================
+// MAIN TEACHERS TOOLKIT COMPONENT
 // ===============================================
 const TeachersToolkitTab = ({ 
   students, 
-  currentClassId, 
   saveClassroomDataToFirebase, 
-  getAvatarImage, 
-  calculateAvatarLevel,
-  attendanceStats,
-  analytics
+  currentClassId,
+  getAvatarImage,
+  calculateAvatarLevel
 }) => {
   const [activeToolkitTab, setActiveToolkitTab] = useState(null);
   const [notifications, setNotifications] = useState([]);
-  const [timerSettings, setTimerSettings] = useState({ type: 'countdown', duration: 300 });
+  const [attendanceStats, setAttendanceStats] = useState({ averageAttendance: 95 });
+  const [analytics, setAnalytics] = useState({ totalStudents: students.length });
+  const [timerSettings, setTimerSettings] = useState({
+    isRunning: false,
+    timeLeft: 0,
+    mode: 'countdown'
+  });
 
   const showNotification = (message, type = 'success') => {
     const id = Date.now();
@@ -255,44 +465,37 @@ const TeachersToolkitTab = ({
     }, 3000);
   };
 
-  // If a specific tool is active, render only that tool with a back button
+  // If a specific tool is active, render it
   if (activeToolkitTab) {
     return (
       <div className="space-y-6">
-        {/* Notifications */}
-        {notifications.map(notification => (
-          <AutoNotification 
-            key={notification.id} 
-            message={notification.message} 
-            type={notification.type} 
-          />
-        ))}
-
-        {/* Back Button */}
+        {/* Back button */}
         <button
           onClick={() => setActiveToolkitTab(null)}
-          className="bg-gradient-to-r from-gray-600 to-gray-700 text-white px-6 py-3 rounded-xl hover:from-gray-700 hover:to-gray-800 transition-all shadow-lg font-semibold"
+          className="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition-all font-semibold flex items-center gap-2"
         >
           ← Back to Toolkit
         </button>
 
-        {/* Active Tool Content */}
-        <div className="bg-white rounded-2xl shadow-xl p-6">
+        {/* Render the selected tool */}
+        <div>
           {activeToolkitTab === 'classroom-jobs' && (
-            <ClassroomJobs 
-              students={students} 
+            <ClassroomJobs
+              students={students}
               showToast={showNotification}
               saveClassroomDataToFirebase={saveClassroomDataToFirebase}
               currentClassId={currentClassId}
             />
           )}
           {activeToolkitTab === 'timetable' && (
-            <TimetableCreator 
+            <TimetableCreator
               showToast={showNotification}
             />
           )}
           {activeToolkitTab === 'specialist-timetable' && (
-            <SpecialistTimetable />
+            <SpecialistTimetable
+              showNotification={showNotification}
+            />
           )}
           {activeToolkitTab === 'birthday-wall' && (
             <BirthdayWall
@@ -314,35 +517,24 @@ const TeachersToolkitTab = ({
               showToast={showNotification}
             />
           )}
+          {activeToolkitTab === 'attendance' && (
+            <AttendanceTracker
+              students={students}
+              showNotification={showNotification}
+              saveClassroomDataToFirebase={saveClassroomDataToFirebase}
+              currentClassId={currentClassId}
+            />
+          )}
+          {activeToolkitTab === 'analytics' && (
+            <AnalyticsComponent
+              students={students}
+            />
+          )}
           {activeToolkitTab === 'help-queue' && (
             <StudentHelpQueue 
               students={students} 
               showToast={showNotification}
             />
-          )}
-          {activeToolkitTab === 'attendance' && (
-            <div className="space-y-6">
-              <h2 className="text-3xl font-bold text-gray-800">Attendance Tracking</h2>
-              <div className="bg-gradient-to-r from-teal-50 to-green-50 rounded-xl p-6 border-2 border-teal-200">
-                <p className="text-gray-600 text-lg">Attendance tracking feature coming soon!</p>
-                <div className="mt-4 p-4 bg-white rounded-lg shadow">
-                  <p className="font-semibold text-gray-800">Current Stats:</p>
-                  <p className="text-gray-600 mt-2">Average Attendance: {attendanceStats?.averageAttendance || 0}%</p>
-                </div>
-              </div>
-            </div>
-          )}
-          {activeToolkitTab === 'analytics' && (
-            <div className="space-y-6">
-              <h2 className="text-3xl font-bold text-gray-800">Analytics Dashboard</h2>
-              <div className="bg-gradient-to-r from-violet-50 to-purple-50 rounded-xl p-6 border-2 border-violet-200">
-                <p className="text-gray-600 text-lg">Advanced analytics coming soon!</p>
-                <div className="mt-4 p-4 bg-white rounded-lg shadow">
-                  <p className="font-semibold text-gray-800">Current Stats:</p>
-                  <p className="text-gray-600 mt-2">Total Students: {analytics?.totalStudents || students.length}</p>
-                </div>
-              </div>
-            </div>
           )}
           {activeToolkitTab === 'group-maker' && (
             <GroupMaker 
@@ -431,9 +623,9 @@ const TeachersToolkitTab = ({
           onClick={() => setActiveToolkitTab('specialist-timetable')}
           className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white p-6 rounded-xl hover:shadow-lg transition-all text-center"
         >
-          <div className="text-4xl mb-3">🎨</div>
+          <div className="text-4xl mb-3">📊</div>
           <div className="text-lg font-bold mb-1">Specialist Timetable</div>
-          <div className="text-sm opacity-90">Automated specialist scheduling</div>
+          <div className="text-sm opacity-90">Create specialist schedules</div>
         </button>
 
         <button
@@ -478,7 +670,7 @@ const TeachersToolkitTab = ({
         >
           <div className="text-4xl mb-3">✅</div>
           <div className="text-lg font-bold mb-1">Attendance</div>
-          <div className="text-sm opacity-90">{attendanceStats?.averageAttendance || 0}% average</div>
+          <div className="text-sm opacity-90">{attendanceStats.averageAttendance}% average</div>
         </button>
 
         <button
@@ -487,7 +679,7 @@ const TeachersToolkitTab = ({
         >
           <div className="text-4xl mb-3">📊</div>
           <div className="text-lg font-bold mb-1">Analytics</div>
-          <div className="text-sm opacity-90">{analytics?.totalStudents || students.length} students</div>
+          <div className="text-sm opacity-90">{analytics.totalStudents} students</div>
         </button>
 
         <button
