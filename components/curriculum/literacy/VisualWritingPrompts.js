@@ -1,6 +1,6 @@
 // components/curriculum/literacy/VisualWritingPrompts.js
-// VISUAL WRITING PROMPTS COMPONENT - ENGAGING IMAGE-BASED WRITING ACTIVITIES
-import React, { useState, useRef } from 'react';
+// UPDATED: Removed writing timer, moved techniques to bottom
+import React, { useState } from 'react';
 
 // ===============================================
 // VISUAL WRITING PROMPTS DATA
@@ -120,202 +120,6 @@ const DAILY_WRITE_STRUCTURE = {
 };
 
 // ===============================================
-// WRITING TIMER COMPONENT
-// ===============================================
-const WritingTimer = ({ isPresentationMode }) => {
-  const [timeLeft, setTimeLeft] = useState(0);
-  const [isRunning, setIsRunning] = useState(false);
-  const [initialTime, setInitialTime] = useState(0);
-  const intervalRef = useRef(null);
-
-  const startTimer = (duration) => {
-    setTimeLeft(duration);
-    setInitialTime(duration);
-    setIsRunning(true);
-  };
-
-  const stopTimer = () => {
-    setIsRunning(false);
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-    }
-  };
-
-  const resetTimer = () => {
-    stopTimer();
-    setTimeLeft(0);
-    setInitialTime(0);
-  };
-
-  React.useEffect(() => {
-    if (isRunning && timeLeft > 0) {
-      intervalRef.current = setInterval(() => {
-        setTimeLeft(prev => {
-          if (prev <= 1) {
-            setIsRunning(false);
-            try {
-              const audio = new Audio('/sounds/ding.mp3');
-              audio.volume = 0.5;
-              audio.play().catch(e => {});
-            } catch(e) {}
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } else {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    }
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, [isRunning, timeLeft]);
-
-  const formatTime = (seconds) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-  };
-
-  const getTimerColor = () => {
-    if (timeLeft === 0 && !isRunning && initialTime > 0) return 'text-red-600';
-    if (timeLeft <= 30) return 'text-red-500';
-    if (timeLeft <= 60) return 'text-yellow-500';
-    return 'text-green-600';
-  };
-
-  const getProgressPercentage = () => {
-    if (initialTime === 0) return 0;
-    return ((initialTime - timeLeft) / initialTime) * 100;
-  };
-
-  return (
-    <div className={`bg-purple-50 border border-purple-300 rounded-lg p-4 ${isPresentationMode ? 'p-8' : ''}`}>
-      <div className="text-center">
-        <div className="flex items-center justify-center gap-3 mb-4">
-          <span className={`${isPresentationMode ? 'text-4xl' : 'text-2xl'}`}>✏️</span>
-          <div>
-            <h4 className={`font-bold text-purple-800 ${isPresentationMode ? 'text-3xl' : 'text-lg'}`}>Writing Timer</h4>
-            <p className={`font-mono font-bold ${getTimerColor()} ${isPresentationMode ? 'text-4xl' : 'text-2xl'}`}>
-              {formatTime(timeLeft)}
-              {timeLeft === 0 && !isRunning && initialTime > 0 && <span className="text-red-600 ml-2 animate-pulse">✅</span>}
-            </p>
-          </div>
-        </div>
-        
-        {/* Progress Bar */}
-        {initialTime > 0 && (
-          <div className="w-full bg-gray-200 rounded-full h-3 mb-4">
-            <div 
-              className="bg-purple-500 h-3 rounded-full transition-all duration-1000"
-              style={{ width: `${getProgressPercentage()}%` }}
-            ></div>
-          </div>
-        )}
-        
-        <div className="flex flex-wrap justify-center gap-2">
-          <button 
-            onClick={() => startTimer(300)} // 5 minutes
-            disabled={isRunning}
-            className={`bg-green-500 text-white rounded font-bold hover:bg-green-600 transition-all disabled:opacity-50 ${isPresentationMode ? 'px-6 py-3 text-xl' : 'px-3 py-2 text-sm'}`}
-          >
-            5 min
-          </button>
-          <button 
-            onClick={() => startTimer(600)} // 10 minutes
-            disabled={isRunning}
-            className={`bg-blue-500 text-white rounded font-bold hover:bg-blue-600 transition-all disabled:opacity-50 ${isPresentationMode ? 'px-6 py-3 text-xl' : 'px-3 py-2 text-sm'}`}
-          >
-            10 min
-          </button>
-          <button 
-            onClick={() => startTimer(900)} // 15 minutes
-            disabled={isRunning}
-            className={`bg-purple-500 text-white rounded font-bold hover:bg-purple-600 transition-all disabled:opacity-50 ${isPresentationMode ? 'px-6 py-3 text-xl' : 'px-3 py-2 text-sm'}`}
-          >
-            15 min
-          </button>
-          <button 
-            onClick={() => startTimer(1200)} // 20 minutes
-            disabled={isRunning}
-            className={`bg-indigo-500 text-white rounded font-bold hover:bg-indigo-600 transition-all disabled:opacity-50 ${isPresentationMode ? 'px-6 py-3 text-xl' : 'px-3 py-2 text-sm'}`}
-          >
-            20 min
-          </button>
-          <button 
-            onClick={isRunning ? stopTimer : resetTimer}
-            className={`bg-gray-500 text-white rounded font-bold hover:bg-gray-600 transition-all ${isPresentationMode ? 'px-6 py-3 text-xl' : 'px-3 py-2 text-sm'}`}
-          >
-            {isRunning ? '⏸️' : '🔄'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// ===============================================
-// WRITING TECHNIQUES HELPER
-// ===============================================
-const WritingTechniques = ({ isPresentationMode, promptType }) => {
-  const [showTechniques, setShowTechniques] = useState(false);
-
-  const narrativeTechniques = [
-    { name: "5 W's + H", description: "Who, What, Where, When, Why, How", icon: "❓" },
-    { name: "Show Don't Tell", description: "Use actions and senses instead of stating facts", icon: "👁️" },
-    { name: "Dialogue", description: "Make characters talk to bring your story to life", icon: "💬" },
-    { name: "Sensory Details", description: "What do you see, hear, smell, taste, feel?", icon: "👃" },
-    { name: "Character Feelings", description: "How do characters feel? Show their emotions", icon: "😊" },
-    { name: "Plot Structure", description: "Beginning, middle, end with clear conflict", icon: "📖" }
-  ];
-
-  const persuasiveTechniques = [
-    { name: "Strong Position", description: "State your opinion clearly and confidently", icon: "📢" },
-    { name: "Facts & Statistics", description: "Use numbers and research to prove your point", icon: "📊" },
-    { name: "Expert Opinions", description: "Quote people who know about your topic", icon: "🎓" },
-    { name: "Emotional Appeals", description: "Help readers feel strongly about your topic", icon: "❤️" },
-    { name: "Call to Action", description: "Tell readers exactly what they should do", icon: "🎯" },
-    { name: "Counter Arguments", description: "Address what others might say against you", icon: "⚖️" }
-  ];
-
-  const techniques = promptType === 'narrative' ? narrativeTechniques : persuasiveTechniques;
-
-  return (
-    <div className={`bg-yellow-50 border border-yellow-300 rounded-lg p-4 ${isPresentationMode ? 'p-8' : ''}`}>
-      <button
-        onClick={() => setShowTechniques(!showTechniques)}
-        className={`w-full flex items-center justify-between font-bold text-yellow-800 hover:text-yellow-900 transition-colors ${isPresentationMode ? 'text-3xl' : 'text-lg'}`}
-      >
-        <span className="flex items-center gap-2">
-          <span className={`${isPresentationMode ? 'text-4xl' : 'text-2xl'}`}>💡</span>
-          {promptType === 'narrative' ? 'Narrative' : 'Persuasive'} Writing Techniques
-        </span>
-        <span>{showTechniques ? '▼' : '▶'}</span>
-      </button>
-      
-      {showTechniques && (
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-          {techniques.map((technique, index) => (
-            <div key={index} className={`bg-white p-3 rounded-lg border border-yellow-200 ${isPresentationMode ? 'p-6' : ''}`}>
-              <div className="flex items-center gap-2 mb-2">
-                <span className={`${isPresentationMode ? 'text-3xl' : 'text-xl'}`}>{technique.icon}</span>
-                <h5 className={`font-bold text-yellow-800 ${isPresentationMode ? 'text-2xl' : 'text-sm'}`}>{technique.name}</h5>
-              </div>
-              <p className={`text-yellow-700 ${isPresentationMode ? 'text-xl' : 'text-xs'}`}>{technique.description}</p>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
-
-// ===============================================
 // DAILY WRITE COMPONENT
 // ===============================================
 const DailyWrite = ({ isPresentationMode, promptType, selectedDay, setSelectedDay }) => {
@@ -331,7 +135,7 @@ const DailyWrite = ({ isPresentationMode, promptType, selectedDay, setSelectedDa
         
         {/* Day Selector */}
         <div className="flex justify-center gap-2 mb-6">
-          {dailyStructure.map((day, index) => (
+          {dailyStructure.map((day) => (
             <button
               key={day.day}
               onClick={() => setSelectedDay(day.day)}
@@ -385,15 +189,14 @@ const DailyWrite = ({ isPresentationMode, promptType, selectedDay, setSelectedDa
 // MAIN VISUAL WRITING PROMPTS COMPONENT
 // ===============================================
 const VisualWritingPrompts = ({ showToast = () => {}, students = [] }) => {
-  const [promptType, setPromptType] = useState('narrative'); // 'narrative' or 'persuasive'
+  const [promptType, setPromptType] = useState('narrative');
   const [currentPromptIndex, setCurrentPromptIndex] = useState(0);
   const [isPresentationMode, setIsPresentationMode] = useState(false);
   const [showWords, setShowWords] = useState(true);
-  const [viewMode, setViewMode] = useState('single'); // 'single', 'gallery'
+  const [viewMode, setViewMode] = useState('single');
   const [imageError, setImageError] = useState({});
-  const [selectedDay, setSelectedDay] = useState(1); // For Daily Write
+  const [selectedDay, setSelectedDay] = useState(1);
 
-  // Generate prompts based on current type
   const WRITING_PROMPTS = generatePrompts(promptType);
   const currentPrompt = WRITING_PROMPTS[currentPromptIndex];
 
@@ -501,7 +304,6 @@ const VisualWritingPrompts = ({ showToast = () => {}, students = [] }) => {
   if (viewMode === 'gallery') {
     return (
       <div className="space-y-6">
-        {/* Header */}
         <div className="bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-xl p-6 shadow-lg">
           <div className="flex items-center justify-between">
             <div>
@@ -528,7 +330,6 @@ const VisualWritingPrompts = ({ showToast = () => {}, students = [] }) => {
           </div>
         </div>
 
-        {/* Gallery Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {WRITING_PROMPTS.map((prompt, index) => (
             <button
@@ -604,17 +405,6 @@ const VisualWritingPrompts = ({ showToast = () => {}, students = [] }) => {
         </div>
       </div>
 
-      {/* Classroom Tools - Sticky */}
-      {!isPresentationMode && (
-        <div className="sticky top-4 z-50 bg-white rounded-xl shadow-xl border-2 border-gray-200 p-4 mb-6 backdrop-blur-sm bg-opacity-95">
-          <h4 className="font-bold text-gray-800 mb-3 text-center text-sm">🛠️ Writing Tools</h4>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-            <WritingTimer isPresentationMode={isPresentationMode} />
-            <WritingTechniques isPresentationMode={isPresentationMode} promptType={promptType} />
-          </div>
-        </div>
-      )}
-
       {/* Prompt Navigation */}
       {!isPresentationMode && (
         <div className="bg-white rounded-xl shadow-lg p-6">
@@ -625,7 +415,6 @@ const VisualWritingPrompts = ({ showToast = () => {}, students = [] }) => {
             </div>
           </div>
           
-          {/* Quick navigation buttons */}
           <div className="flex flex-wrap gap-2 mb-4">
             {WRITING_PROMPTS.map((prompt, index) => (
               <button
@@ -642,7 +431,6 @@ const VisualWritingPrompts = ({ showToast = () => {}, students = [] }) => {
             ))}
           </div>
 
-          {/* Word bank toggle */}
           <div className="flex items-center justify-between">
             <label className="flex items-center gap-2">
               <input
@@ -717,7 +505,7 @@ const VisualWritingPrompts = ({ showToast = () => {}, students = [] }) => {
                     <div className="text-center">
                       <span className="text-6xl">🖼️</span>
                       <p className="text-xl font-semibold text-gray-600 mt-2">{currentPrompt.title}</p>
-                      <p className="text-sm text-gray-500">Image not found at: {currentPrompt.imagePath}</p>
+                      <p className="text-sm text-gray-500">Image not found</p>
                     </div>
                   </div>
                 )}
@@ -741,7 +529,7 @@ const VisualWritingPrompts = ({ showToast = () => {}, students = [] }) => {
                       <div className="text-center">
                         <span className="text-6xl">📝</span>
                         <p className="text-xl font-semibold text-gray-600 mt-2">Word Bank {currentPrompt.id}</p>
-                        <p className="text-sm text-gray-500">Image not found at: {currentPrompt.wordsPath}</p>
+                        <p className="text-sm text-gray-500">Image not found</p>
                       </div>
                     </div>
                   )}
@@ -769,7 +557,7 @@ const VisualWritingPrompts = ({ showToast = () => {}, students = [] }) => {
           className={`flex items-center gap-2 bg-white border-2 border-gray-300 rounded-lg shadow font-semibold hover:bg-gray-50 transition-all ${isPresentationMode ? 'px-16 py-8 text-4xl transform hover:scale-105' : 'px-6 py-3'}`}
         >
           <span>⬅️</span>
-          Previous Prompt
+          Previous
         </button>
         
         <div className="text-center">
@@ -794,10 +582,124 @@ const VisualWritingPrompts = ({ showToast = () => {}, students = [] }) => {
           onClick={goToNext}
           className={`flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg shadow font-semibold hover:from-purple-600 hover:to-pink-600 transition-all ${isPresentationMode ? 'px-16 py-8 text-4xl transform hover:scale-105' : 'px-6 py-3'}`}
         >
-          Next Prompt
+          Next
           <span>➡️</span>
         </button>
       </div>
+
+      {/* Writing Techniques - At Bottom */}
+      {!isPresentationMode && (
+        <div className="bg-yellow-50 border-2 border-yellow-300 rounded-xl p-6">
+          <h4 className="text-2xl font-bold text-yellow-800 mb-4 flex items-center gap-2">
+            <span className="text-3xl">💡</span>
+            {promptType === 'narrative' ? 'Narrative' : 'Persuasive'} Writing Techniques
+          </h4>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {promptType === 'narrative' ? (
+              <>
+                <div className="bg-white p-4 rounded-lg border border-yellow-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-2xl">💬</span>
+                    <h5 className="font-bold text-yellow-800 text-base">Dialogue</h5>
+                  </div>
+                  <p className="text-yellow-700 text-sm">Make characters talk to bring your story to life</p>
+                </div>
+                
+                <div className="bg-white p-4 rounded-lg border border-yellow-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-2xl">👃</span>
+                    <h5 className="font-bold text-yellow-800 text-base">Sensory Details</h5>
+                  </div>
+                  <p className="text-yellow-700 text-sm">What do you see, hear, smell, taste, feel?</p>
+                </div>
+                
+                <div className="bg-white p-4 rounded-lg border border-yellow-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-2xl">😊</span>
+                    <h5 className="font-bold text-yellow-800 text-base">Character Feelings</h5>
+                  </div>
+                  <p className="text-yellow-700 text-sm">How do characters feel? Show their emotions</p>
+                </div>
+                
+                <div className="bg-white p-4 rounded-lg border border-yellow-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-2xl">📖</span>
+                    <h5 className="font-bold text-yellow-800 text-base">Plot Structure</h5>
+                  </div>
+                  <p className="text-yellow-700 text-sm">Beginning, middle, end with clear conflict</p>
+                </div>
+                
+                <div className="bg-white p-4 rounded-lg border border-yellow-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-2xl">❓</span>
+                    <h5 className="font-bold text-yellow-800 text-base">5 W's + H</h5>
+                  </div>
+                  <p className="text-yellow-700 text-sm">Who, What, Where, When, Why, How</p>
+                </div>
+                
+                <div className="bg-white p-4 rounded-lg border border-yellow-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-2xl">👁️</span>
+                    <h5 className="font-bold text-yellow-800 text-base">Show Don't Tell</h5>
+                  </div>
+                  <p className="text-yellow-700 text-sm">Use actions and senses instead of stating facts</p>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="bg-white p-4 rounded-lg border border-yellow-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-2xl">📢</span>
+                    <h5 className="font-bold text-yellow-800 text-base">Strong Position</h5>
+                  </div>
+                  <p className="text-yellow-700 text-sm">State your opinion clearly and confidently</p>
+                </div>
+                
+                <div className="bg-white p-4 rounded-lg border border-yellow-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-2xl">📊</span>
+                    <h5 className="font-bold text-yellow-800 text-base">Facts & Statistics</h5>
+                  </div>
+                  <p className="text-yellow-700 text-sm">Use numbers and research to prove your point</p>
+                </div>
+                
+                <div className="bg-white p-4 rounded-lg border border-yellow-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-2xl">🎓</span>
+                    <h5 className="font-bold text-yellow-800 text-base">Expert Opinions</h5>
+                  </div>
+                  <p className="text-yellow-700 text-sm">Quote people who know about your topic</p>
+                </div>
+                
+                <div className="bg-white p-4 rounded-lg border border-yellow-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-2xl">❤️</span>
+                    <h5 className="font-bold text-yellow-800 text-base">Emotional Appeals</h5>
+                  </div>
+                  <p className="text-yellow-700 text-sm">Help readers feel strongly about your topic</p>
+                </div>
+                
+                <div className="bg-white p-4 rounded-lg border border-yellow-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-2xl">🎯</span>
+                    <h5 className="font-bold text-yellow-800 text-base">Call to Action</h5>
+                  </div>
+                  <p className="text-yellow-700 text-sm">Tell readers exactly what they should do</p>
+                </div>
+                
+                <div className="bg-white p-4 rounded-lg border border-yellow-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-2xl">⚖️</span>
+                    <h5 className="font-bold text-yellow-800 text-base">Counter Arguments</h5>
+                  </div>
+                  <p className="text-yellow-700 text-sm">Address what others might say against you</p>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Teaching Tips */}
       {!isPresentationMode && (
