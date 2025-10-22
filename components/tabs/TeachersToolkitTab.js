@@ -12,7 +12,7 @@ import ClassroomJobs from '../tools/ClassroomJobs';
 import TimetableCreator from '../tools/TimetableCreator';
 import BrainBreaks from '../tools/BrainBreaks';
 import VisualChecklist from '../tools/VisualChecklist';
-import SpecialistTimetable from '../tools/SpecialistCreator';
+import SpecialistCreator from '../tools/SpecialistCreator'; // UPDATED IMPORT
 
 // ===============================================
 // AUTO-DISMISSING NOTIFICATION COMPONENT
@@ -101,102 +101,68 @@ const BirthdayWall = ({ students, showNotification, saveClassroomDataToFirebase,
 
   return (
     <div className="space-y-6">
-      <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-        🎂 Birthday Wall
-      </h3>
-
-      {/* Upcoming Birthdays Section */}
-      <div className="bg-gradient-to-r from-pink-50 to-yellow-50 rounded-xl p-6 shadow-lg">
-        <h4 className="font-bold text-lg text-pink-800 mb-4">Upcoming Birthdays</h4>
-        {upcomingBirthdays.length === 0 ? (
-          <p className="text-gray-600">No birthdays in the next 7 days.</p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {upcomingBirthdays.map(student => (
-              <div
-                key={student.id}
-                className={`p-4 rounded-lg shadow-md flex items-center space-x-4 transition-all duration-300 ${
-                  student.isToday ? 'bg-yellow-100 border-2 border-yellow-400 animate-pulse' : 'bg-white'
-                }`}
-              >
-                <img
-                  src={
-                    student.isToday && student.birthdayAvatar
-                      ? BIRTHDAY_AVATARS.find(a => a.name === student.birthdayAvatar)?.path ||
-                        getAvatarImage(student.avatarBase, calculateAvatarLevel(student.totalPoints))
-                      : getAvatarImage(student.avatarBase, calculateAvatarLevel(student.totalPoints))
-                  }
-                  alt={`${student.firstName}'s Avatar`}
-                  className="w-12 h-12 rounded-full border-2 border-gray-300"
-                  onError={(e) => (e.target.src = '/avatars/Wizard F/Level 1.png')}
-                />
-                <div>
-                  <p className="font-semibold text-gray-800">
-                    {student.firstName} {student.lastName}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    {new Date(student.birthday).toLocaleDateString('en-US', {
-                      month: 'long',
-                      day: 'numeric',
-                    })}
-                    {student.isToday && (
-                      <span className="ml-2 text-yellow-600 font-bold">🎉 Today!</span>
-                    )}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+      <div className="bg-gradient-to-r from-pink-500 to-red-500 rounded-xl p-6 shadow-lg">
+        <h2 className="text-3xl font-bold text-white flex items-center">
+          <span className="text-4xl mr-3">🎂</span>
+          Birthday Wall
+        </h2>
+        <p className="text-white opacity-90 mt-2">Track and celebrate student birthdays</p>
       </div>
 
-      {/* Manage Birthdays Section */}
-      <div className="bg-white rounded-xl p-6 shadow-lg">
-        <h4 className="font-bold text-lg text-gray-800 mb-4">Manage Student Birthdays</h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {students.map(student => (
-            <div key={student.id} className="bg-gray-50 rounded-lg p-4">
-              <div className="flex items-center space-x-3 mb-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {students.map(student => {
+          const birthData = upcomingBirthdays.find(s => s.id === student.id);
+          return (
+            <div
+              key={student.id}
+              className={`bg-white rounded-xl p-6 shadow-md hover:shadow-lg transition-all ${
+                birthData?.isToday ? 'border-4 border-pink-500 bg-gradient-to-br from-pink-50 to-red-50' :
+                birthData?.isUpcoming ? 'border-2 border-yellow-400 bg-yellow-50' : ''
+              }`}
+            >
+              <div className="flex items-center space-x-4">
                 <img
-                  src={getAvatarImage(student.avatarBase, calculateAvatarLevel(student.totalPoints))}
-                  alt={`${student.firstName}'s Avatar`}
-                  className="w-10 h-10 rounded-full border-2 border-gray-300"
-                  onError={(e) => (e.target.src = '/avatars/Wizard F/Level 1.png')}
+                  src={getAvatarImage(student.avatarBase, calculateAvatarLevel(student.totalPoints)) || '/avatars/Wizard F/Level 1.png'}
+                  alt={`${student.firstName}'s avatar`}
+                  className="w-16 h-16 rounded-full border-2 border-gray-300"
                 />
-                <div>
-                  <div className="font-semibold">{student.firstName} {student.lastName}</div>
-                  <div className="text-sm text-gray-500">
-                    {student.birthday
-                      ? new Date(student.birthday).toLocaleDateString('en-US', {
-                          month: 'long',
-                          day: 'numeric',
-                          year: 'numeric',
-                        })
-                      : 'No birthday set'}
-                  </div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-lg text-gray-800">
+                    {student.firstName} {student.lastName}
+                  </h3>
+                  {student.birthday ? (
+                    <p className="text-sm text-gray-600">
+                      🎂 {new Date(student.birthday).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
+                    </p>
+                  ) : (
+                    <p className="text-sm text-gray-500 italic">No birthday set</p>
+                  )}
                 </div>
+                {birthData?.isToday && (
+                  <div className="text-4xl animate-bounce">🎉</div>
+                )}
               </div>
+
               {editingStudentId === student.id ? (
-                <div className="space-y-3">
+                <div className="mt-4 space-y-3">
                   <input
                     type="date"
                     value={birthdayInput}
                     onChange={(e) => setBirthdayInput(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
+                    className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg"
                   />
-                  <div className="flex items-center space-x-2">
+                  <label className="flex items-center space-x-2">
                     <input
                       type="checkbox"
                       checked={assignBirthdayAvatar}
                       onChange={(e) => setAssignBirthdayAvatar(e.target.checked)}
-                      className="w-4 h-4"
                     />
-                    <label className="text-sm text-gray-700">Assign birthday avatar</label>
-                  </div>
-                  <div className="flex space-x-2">
+                    <span className="text-sm text-gray-700">Assign birthday avatar</span>
+                  </label>
+                  <div className="flex gap-2">
                     <button
                       onClick={() => handleSetBirthday(student.id)}
-                      className="flex-1 bg-green-500 text-white px-3 py-2 rounded-lg hover:bg-green-600 transition"
+                      className="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-all"
                     >
                       Save
                     </button>
@@ -206,7 +172,7 @@ const BirthdayWall = ({ students, showNotification, saveClassroomDataToFirebase,
                         setBirthdayInput('');
                         setAssignBirthdayAvatar(false);
                       }}
-                      className="flex-1 bg-gray-400 text-white px-3 py-2 rounded-lg hover:bg-gray-500 transition"
+                      className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-all"
                     >
                       Cancel
                     </button>
@@ -218,14 +184,14 @@ const BirthdayWall = ({ students, showNotification, saveClassroomDataToFirebase,
                     setEditingStudentId(student.id);
                     setBirthdayInput(student.birthday || '');
                   }}
-                  className="w-full bg-pink-500 text-white px-3 py-2 rounded-lg hover:bg-pink-600 transition"
+                  className="mt-4 w-full bg-gradient-to-r from-pink-500 to-red-500 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all"
                 >
                   {student.birthday ? 'Edit Birthday' : 'Set Birthday'}
                 </button>
               )}
             </div>
-          ))}
-        </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -234,118 +200,71 @@ const BirthdayWall = ({ students, showNotification, saveClassroomDataToFirebase,
 // ===============================================
 // ATTENDANCE TRACKER COMPONENT
 // ===============================================
-const AttendanceTracker = ({ students, showNotification, saveClassroomDataToFirebase, currentClassId }) => {
+const AttendanceTracker = ({ students, showNotification }) => {
   const [attendance, setAttendance] = useState({});
   const today = new Date().toISOString().split('T')[0];
 
   useEffect(() => {
-    const todayAttendance = {};
-    students.forEach(student => {
-      todayAttendance[student.id] = student.attendance?.[today] || 'present';
-    });
-    setAttendance(todayAttendance);
-  }, [students, today]);
+    const savedAttendance = localStorage.getItem('attendance');
+    if (savedAttendance) {
+      setAttendance(JSON.parse(savedAttendance));
+    }
+  }, []);
 
-  const toggleAttendance = (studentId, status) => {
-    const updatedAttendance = { ...attendance, [studentId]: status };
-    setAttendance(updatedAttendance);
-
-    const updatedStudents = students.map(student =>
-      student.id === studentId
-        ? { ...student, attendance: { ...student.attendance, [today]: status } }
-        : student
-    );
-    saveClassroomDataToFirebase(updatedStudents, currentClassId);
-    showNotification(`Attendance updated`, 'success');
+  const markAttendance = (studentId, status) => {
+    const newAttendance = {
+      ...attendance,
+      [today]: {
+        ...(attendance[today] || {}),
+        [studentId]: status,
+      },
+    };
+    setAttendance(newAttendance);
+    localStorage.setItem('attendance', JSON.stringify(newAttendance));
+    showNotification(`Marked ${status} for student`, 'success');
   };
-
-  const getAttendanceStats = () => {
-    const present = Object.values(attendance).filter(status => status === 'present').length;
-    const absent = Object.values(attendance).filter(status => status === 'absent').length;
-    const late = Object.values(attendance).filter(status => status === 'late').length;
-    const total = students.length;
-    const percentage = total > 0 ? ((present / total) * 100).toFixed(1) : 0;
-
-    return { present, absent, late, total, percentage };
-  };
-
-  const stats = getAttendanceStats();
 
   return (
     <div className="space-y-6">
-      <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-        ✅ Attendance Tracker
-      </h3>
-
-      {/* Stats Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-green-100 rounded-xl p-4 text-center">
-          <div className="text-3xl font-bold text-green-600">{stats.present}</div>
-          <div className="text-sm text-gray-600">Present</div>
-        </div>
-        <div className="bg-red-100 rounded-xl p-4 text-center">
-          <div className="text-3xl font-bold text-red-600">{stats.absent}</div>
-          <div className="text-sm text-gray-600">Absent</div>
-        </div>
-        <div className="bg-yellow-100 rounded-xl p-4 text-center">
-          <div className="text-3xl font-bold text-yellow-600">{stats.late}</div>
-          <div className="text-sm text-gray-600">Late</div>
-        </div>
-        <div className="bg-blue-100 rounded-xl p-4 text-center">
-          <div className="text-3xl font-bold text-blue-600">{stats.percentage}%</div>
-          <div className="text-sm text-gray-600">Attendance</div>
-        </div>
+      <div className="bg-gradient-to-r from-teal-500 to-green-600 rounded-xl p-6 shadow-lg">
+        <h2 className="text-3xl font-bold text-white flex items-center">
+          <span className="text-4xl mr-3">✅</span>
+          Attendance Tracker
+        </h2>
+        <p className="text-white opacity-90 mt-2">Track daily student attendance</p>
       </div>
 
-      {/* Student Attendance */}
-      <div className="bg-white rounded-xl p-6 shadow-lg">
-        <h4 className="font-bold text-lg text-gray-800 mb-4">Mark Attendance - {new Date().toLocaleDateString()}</h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {students.map(student => (
-            <div key={student.id} className="bg-gray-50 rounded-lg p-4">
-              <div className="flex items-center space-x-3 mb-3">
-                <img
-                  src={student.avatarUrl || '/avatars/Wizard F/Level 1.png'}
-                  alt={`${student.firstName}'s Avatar`}
-                  className="w-10 h-10 rounded-full border-2 border-gray-300"
-                  onError={(e) => (e.target.src = '/avatars/Wizard F/Level 1.png')}
-                />
-                <div className="font-semibold">{student.firstName} {student.lastName}</div>
+      <div className="bg-white rounded-xl p-6 shadow-md">
+        <h3 className="font-bold text-xl mb-4">Today: {new Date(today).toLocaleDateString()}</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {students.map(student => {
+            const status = attendance[today]?.[student.id] || 'unmarked';
+            return (
+              <div key={student.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <span className="font-medium">{student.firstName} {student.lastName}</span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => markAttendance(student.id, 'present')}
+                    className={`px-3 py-1 rounded ${status === 'present' ? 'bg-green-500 text-white' : 'bg-gray-200'}`}
+                  >
+                    ✓
+                  </button>
+                  <button
+                    onClick={() => markAttendance(student.id, 'absent')}
+                    className={`px-3 py-1 rounded ${status === 'absent' ? 'bg-red-500 text-white' : 'bg-gray-200'}`}
+                  >
+                    ✕
+                  </button>
+                  <button
+                    onClick={() => markAttendance(student.id, 'late')}
+                    className={`px-3 py-1 rounded ${status === 'late' ? 'bg-yellow-500 text-white' : 'bg-gray-200'}`}
+                  >
+                    ⏰
+                  </button>
+                </div>
               </div>
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => toggleAttendance(student.id, 'present')}
-                  className={`flex-1 px-3 py-2 rounded-lg transition ${
-                    attendance[student.id] === 'present'
-                      ? 'bg-green-500 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  Present
-                </button>
-                <button
-                  onClick={() => toggleAttendance(student.id, 'absent')}
-                  className={`flex-1 px-3 py-2 rounded-lg transition ${
-                    attendance[student.id] === 'absent'
-                      ? 'bg-red-500 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  Absent
-                </button>
-                <button
-                  onClick={() => toggleAttendance(student.id, 'late')}
-                  className={`flex-1 px-3 py-2 rounded-lg transition ${
-                    attendance[student.id] === 'late'
-                      ? 'bg-yellow-500 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  Late
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
@@ -356,52 +275,47 @@ const AttendanceTracker = ({ students, showNotification, saveClassroomDataToFire
 // ANALYTICS COMPONENT
 // ===============================================
 const AnalyticsComponent = ({ students }) => {
-  const calculateAnalytics = () => {
-    const totalStudents = students.length;
-    const totalPoints = students.reduce((sum, s) => sum + (s.totalPoints || 0), 0);
-    const averagePoints = totalStudents > 0 ? (totalPoints / totalStudents).toFixed(1) : 0;
-    const totalCoins = students.reduce((sum, s) => sum + (s.coins || 0), 0);
-    const averageCoins = totalStudents > 0 ? (totalCoins / totalStudents).toFixed(1) : 0;
-
-    const topPerformers = [...students]
+  const analytics = {
+    totalStudents: students.length,
+    averageXP: Math.round(students.reduce((acc, s) => acc + (s.totalPoints || 0), 0) / students.length) || 0,
+    averageCoins: Math.round(students.reduce((acc, s) => acc + (s.currency || 0), 0) / students.length) || 0,
+    topPerformers: students
       .sort((a, b) => (b.totalPoints || 0) - (a.totalPoints || 0))
-      .slice(0, 5);
-
-    return {
-      totalStudents,
-      totalPoints,
-      averagePoints,
-      totalCoins,
-      averageCoins,
-      topPerformers,
-    };
+      .slice(0, 5)
+      .map(s => ({
+        ...s,
+        avatarUrl: `/avatars/${s.avatarBase}/Level ${Math.min(4, Math.floor((s.totalPoints || 0) / 100) + 1)}.png`,
+      })),
+    needsAttention: students.filter(s => (s.totalPoints || 0) < 50).length,
   };
-
-  const analytics = calculateAnalytics();
 
   return (
     <div className="space-y-6">
-      <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-        📊 Class Analytics
-      </h3>
+      <div className="bg-gradient-to-r from-violet-500 to-purple-600 rounded-xl p-6 shadow-lg">
+        <h2 className="text-3xl font-bold text-white flex items-center">
+          <span className="text-4xl mr-3">📊</span>
+          Class Analytics
+        </h2>
+        <p className="text-white opacity-90 mt-2">Performance insights and statistics</p>
+      </div>
 
-      {/* Overview Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-purple-100 rounded-xl p-4 text-center">
-          <div className="text-3xl font-bold text-purple-600">{analytics.totalStudents}</div>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="bg-blue-100 rounded-xl p-4 text-center">
+          <div className="text-3xl font-bold text-blue-600">{analytics.totalStudents}</div>
           <div className="text-sm text-gray-600">Total Students</div>
         </div>
-        <div className="bg-blue-100 rounded-xl p-4 text-center">
-          <div className="text-3xl font-bold text-blue-600">{analytics.averagePoints}</div>
+        <div className="bg-purple-100 rounded-xl p-4 text-center">
+          <div className="text-3xl font-bold text-purple-600">{analytics.averageXP}</div>
           <div className="text-sm text-gray-600">Average XP</div>
-        </div>
-        <div className="bg-yellow-100 rounded-xl p-4 text-center">
-          <div className="text-3xl font-bold text-yellow-600">{analytics.totalPoints}</div>
-          <div className="text-sm text-gray-600">Total XP</div>
         </div>
         <div className="bg-green-100 rounded-xl p-4 text-center">
           <div className="text-3xl font-bold text-green-600">{analytics.averageCoins}</div>
           <div className="text-sm text-gray-600">Average Coins</div>
+        </div>
+        <div className="bg-orange-100 rounded-xl p-4 text-center">
+          <div className="text-3xl font-bold text-orange-600">{analytics.needsAttention}</div>
+          <div className="text-sm text-gray-600">Need Support</div>
         </div>
       </div>
 
@@ -426,7 +340,7 @@ const AnalyticsComponent = ({ students }) => {
                   {student.firstName} {student.lastName}
                 </div>
                 <div className="text-sm text-gray-600">
-                  {student.totalPoints || 0} XP • {student.coins || 0} Coins
+                  {student.totalPoints || 0} XP • {student.currency || 0} Coins
                 </div>
               </div>
             </div>
@@ -442,7 +356,9 @@ const AnalyticsComponent = ({ students }) => {
 // ===============================================
 const TeachersToolkitTab = ({ 
   students, 
-  saveClassroomDataToFirebase, 
+  saveClassroomDataToFirebase,
+  saveToolkitData, // NEW: For saving toolkit data to Firebase
+  loadedData = {}, // NEW: For loading toolkit data from Firebase
   currentClassId,
   getAvatarImage,
   calculateAvatarLevel
@@ -489,12 +405,18 @@ const TeachersToolkitTab = ({
           )}
           {activeToolkitTab === 'timetable' && (
             <TimetableCreator
+              students={students}
               showToast={showNotification}
+              saveData={saveToolkitData}
+              loadedData={loadedData}
             />
           )}
           {activeToolkitTab === 'specialist-timetable' && (
-            <SpecialistTimetable
-              showNotification={showNotification}
+            <SpecialistCreator
+              students={students}
+              showToast={showNotification}
+              saveData={saveToolkitData}
+              loadedData={loadedData}
             />
           )}
           {activeToolkitTab === 'birthday-wall' && (
@@ -623,7 +545,7 @@ const TeachersToolkitTab = ({
           onClick={() => setActiveToolkitTab('specialist-timetable')}
           className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white p-6 rounded-xl hover:shadow-lg transition-all text-center"
         >
-          <div className="text-4xl mb-3">📊</div>
+          <div className="text-4xl mb-3">👨‍🏫</div>
           <div className="text-lg font-bold mb-1">Specialist Timetable</div>
           <div className="text-sm opacity-90">Create specialist schedules</div>
         </button>

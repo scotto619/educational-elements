@@ -1,13 +1,135 @@
-import React, { useState } from 'react';
-import { Plus, Trash2, Upload, Download, Wand2, RefreshCw, Save } from 'lucide-react';
+// components/tools/SpecialistCreator.js - Remade to match site structure
+import React, { useState, useEffect } from 'react';
 
-const SpecialistTimetable = ({ showNotification }) => {
-  const generateDefaultPeriods = () => {
+// ===============================================
+// SPECIALIST TIMETABLE CREATOR COMPONENT
+// ===============================================
+
+const SpecialistCreator = ({ 
+  students = [], 
+  showToast = () => {},
+  saveData = () => {}, // Function to save data to Firebase
+  loadedData = {} // Pre-loaded data from Firebase
+}) => {
+  // ===============================================
+  // STATE MANAGEMENT
+  // ===============================================
+  
+  // Core data
+  const [specialists, setSpecialists] = useState([
+    { id: 1, name: 'Junior PE', duration: 60, color: '#3b82f6', icon: '⚽', yearLevels: ['Prep', 'Year 1', 'Year 2'] },
+    { id: 2, name: 'Senior PE', duration: 60, color: '#3b82f6', icon: '⚽', yearLevels: ['Year 3', 'Year 4', 'Year 5', 'Year 6'] },
+    { id: 3, name: 'Junior ART', duration: 60, color: '#8b5cf6', icon: '🎨', yearLevels: ['Prep', 'Year 1', 'Year 2'] },
+    { id: 4, name: 'Senior ART', duration: 60, color: '#8b5cf6', icon: '🎨', yearLevels: ['Year 3', 'Year 4', 'Year 5', 'Year 6'] },
+    { id: 5, name: 'Health', duration: 30, color: '#ec4899', icon: '❤️', yearLevels: [] },
+    { id: 6, name: 'Music', duration: 30, color: '#f59e0b', icon: '🎵', yearLevels: [] },
+    { id: 7, name: 'LOTE', duration: 30, color: '#ef4444', icon: '🌍', yearLevels: [] },
+  ]);
+  
+  const [classes, setClasses] = useState([]);
+  const [timePeriods, setTimePeriods] = useState([]);
+  const [timetable, setTimetable] = useState({});
+  const [breaks, setBreaks] = useState([
+    { id: 1, name: 'Recess', start: '10:30', end: '11:10' },
+    { id: 2, name: 'Lunch', start: '13:10', end: '13:50' }
+  ]);
+  const [constraints, setConstraints] = useState([
+    { id: 1, yearLevel: 'Prep', type: 'avoid', startTime: '08:30', endTime: '10:30', day: 'all' },
+    { id: 2, yearLevel: 'Year 1', type: 'avoid', startTime: '08:30', endTime: '10:30', day: 'all' },
+    { id: 3, yearLevel: 'Year 2', type: 'avoid', startTime: '08:30', endTime: '10:30', day: 'all' },
+  ]);
+  
+  // UI state
+  const [currentView, setCurrentView] = useState('timetable'); // timetable, specialists, classes, settings
+  const [timetableView, setTimetableView] = useState('by-class'); // by-class, by-specialist
+  const [selectedClassId, setSelectedClassId] = useState(null);
+  const [selectedSpecialistId, setSelectedSpecialistId] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  
+  // Modal states
+  const [showSpecialistModal, setShowSpecialistModal] = useState(false);
+  const [showClassModal, setShowClassModal] = useState(false);
+  const [showBreakModal, setShowBreakModal] = useState(false);
+  const [showConstraintModal, setShowConstraintModal] = useState(false);
+  const [showPeriodModal, setShowPeriodModal] = useState(false);
+  const [editingCell, setEditingCell] = useState(null);
+  
+  // Form states
+  const [newSpecialist, setNewSpecialist] = useState({ 
+    name: '', 
+    duration: 30, 
+    color: '#3b82f6', 
+    icon: '📚',
+    yearLevels: [] 
+  });
+  const [newClass, setNewClass] = useState('');
+  const [newBreak, setNewBreak] = useState({ name: '', start: '', end: '' });
+  const [newConstraint, setNewConstraint] = useState({ 
+    yearLevel: 'Prep', 
+    type: 'avoid', 
+    startTime: '', 
+    endTime: '', 
+    day: 'all' 
+  });
+  const [newPeriod, setNewPeriod] = useState({ start: '', end: '', day: 'Monday' });
+  
+  // Constants
+  const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+  const YEAR_LEVELS = ['Prep', 'Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5', 'Year 6'];
+  const COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#ef4444', '#06b6d4', '#84cc16'];
+  const ICONS = ['⚽', '🎨', '🎵', '🌍', '❤️', '🧪', '📖', '💻', '🏃', '🎭'];
+  
+  // ===============================================
+  // DATA INITIALIZATION
+  // ===============================================
+  
+  useEffect(() => {
+    // Generate default time periods
+    const defaultPeriods = generateDefaultPeriods();
+    setTimePeriods(defaultPeriods);
+    
+    // Generate default classes
+    const defaultClasses = generateDefaultClasses();
+    setClasses(defaultClasses);
+    
+    // Set first class and specialist as selected
+    if (defaultClasses.length > 0) setSelectedClassId(defaultClasses[0].id);
+    if (specialists.length > 0) setSelectedSpecialistId(specialists[0].id);
+  }, []);
+  
+  // Load saved data from Firebase
+  useEffect(() => {
+    if (loadedData.specialistTimetableData) {
+      const { 
+        specialists: savedSpecialists, 
+        classes: savedClasses, 
+        timePeriods: savedPeriods, 
+        timetable: savedTimetable,
+        breaks: savedBreaks,
+        constraints: savedConstraints 
+      } = loadedData.specialistTimetableData;
+      
+      if (savedSpecialists) setSpecialists(savedSpecialists);
+      if (savedClasses) setClasses(savedClasses);
+      if (savedPeriods) setTimePeriods(savedPeriods);
+      if (savedTimetable) setTimetable(savedTimetable);
+      if (savedBreaks) setBreaks(savedBreaks);
+      if (savedConstraints) setConstraints(savedConstraints);
+      
+      console.log('📖 Loaded Specialist Timetable data from Firebase');
+    }
+  }, [loadedData]);
+  
+  // ===============================================
+  // UTILITY FUNCTIONS
+  // ===============================================
+  
+  function generateDefaultPeriods() {
     const periods = [];
-    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
     let id = 1;
     
-    days.forEach(day => {
+    DAYS.forEach(day => {
       const morning = [
         ['08:30', '09:00'],
         ['09:00', '09:30'],
@@ -32,76 +154,119 @@ const SpecialistTimetable = ({ showNotification }) => {
     });
     
     return periods;
-  };
-
-  const [specialists, setSpecialists] = useState([
-    { id: 1, name: 'Junior PE', duration: 60, color: '#3b82f6', yearLevels: ['Prep', 'Year 1', 'Year 2'] },
-    { id: 2, name: 'Senior PE', duration: 60, color: '#3b82f6', yearLevels: ['Year 3', 'Year 4', 'Year 5', 'Year 6'] },
-    { id: 3, name: 'Junior ART', duration: 60, color: '#8b5cf6', yearLevels: ['Prep', 'Year 1', 'Year 2'] },
-    { id: 4, name: 'Senior ART', duration: 60, color: '#8b5cf6', yearLevels: ['Year 3', 'Year 4', 'Year 5', 'Year 6'] },
-    { id: 5, name: 'Health', duration: 30, color: '#ec4899', yearLevels: [] },
-    { id: 6, name: 'Music', duration: 30, color: '#f59e0b', yearLevels: [] },
-    { id: 7, name: 'LOTE', duration: 30, color: '#ef4444', yearLevels: [] },
-  ]);
+  }
   
-  const generateDefaultClasses = () => {
+  function generateDefaultClasses() {
     const classes = [];
-    const yearLevels = ['Prep', 'Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5', 'Year 6'];
     const classLetters = ['A', 'B', 'C', 'D'];
     let id = 1;
     
-    yearLevels.forEach(year => {
+    YEAR_LEVELS.forEach(year => {
       classLetters.forEach(letter => {
-        classes.push({ id: id++, name: `${year}${letter}` });
+        classes.push({ 
+          id: id++, 
+          name: `${year}${letter}`,
+          yearLevel: year
+        });
       });
     });
     
     return classes;
-  };
+  }
   
-  const [classes, setClasses] = useState(generateDefaultClasses());
-  const [timePeriods, setTimePeriods] = useState(generateDefaultPeriods());
-  const [timetable, setTimetable] = useState({});
-  const [breaks, setBreaks] = useState([
-    { id: 1, name: 'Recess', start: '10:30', end: '11:10' },
-    { id: 2, name: 'Lunch', start: '13:10', end: '13:50' }
-  ]);
-  const [constraints, setConstraints] = useState([
-    { id: 1, yearLevel: 'Prep', type: 'avoid', startTime: '08:30', endTime: '10:30', day: 'all' },
-    { id: 2, yearLevel: 'Year 1', type: 'avoid', startTime: '08:30', endTime: '10:30', day: 'all' },
-    { id: 3, yearLevel: 'Year 2', type: 'avoid', startTime: '08:30', endTime: '10:30', day: 'all' },
-    { id: 4, yearLevel: 'Year 3', type: 'minimize', startTime: '11:10', endTime: '13:10', day: 'all' },
-    { id: 5, yearLevel: 'Year 4', type: 'minimize', startTime: '11:10', endTime: '13:10', day: 'all' },
-    { id: 6, yearLevel: 'Year 5', type: 'minimize', startTime: '11:10', endTime: '13:10', day: 'all' },
-    { id: 7, yearLevel: 'Year 6', type: 'minimize', startTime: '11:10', endTime: '13:10', day: 'all' },
-  ]);
-  const [newConstraint, setNewConstraint] = useState({ yearLevel: 'Prep', type: 'avoid', startTime: '', endTime: '', day: 'all' });
-  const [view, setView] = useState('timetable');
-  const [timetableView, setTimetableView] = useState('by-class');
-  const [specialistOrientation, setSpecialistOrientation] = useState('horizontal');
-  const [selectedClassId, setSelectedClassId] = useState(null);
-  const [selectedSpecialistId, setSelectedSpecialistId] = useState(null);
-  const [editingCell, setEditingCell] = useState(null);
-  const [newSpecialist, setNewSpecialist] = useState({ name: '', duration: 30, color: '#3b82f6', yearLevels: [] });
-  const [newClass, setNewClass] = useState('');
-  const [newPeriod, setNewPeriod] = useState({ start: '', end: '', day: 'Monday' });
-  const [newBreak, setNewBreak] = useState({ name: '', start: '', end: '' });
-  const [generating, setGenerating] = useState(false);
-
-  const colors = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#ef4444', '#06b6d4', '#84cc16'];
-  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-  const availableYearLevels = ['Prep', 'Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5', 'Year 6'];
-
-  const addSpecialist = () => {
-    if (newSpecialist.name) {
-      setSpecialists([...specialists, { ...newSpecialist, id: Date.now() }]);
-      setNewSpecialist({ name: '', duration: 30, color: '#3b82f6', yearLevels: [] });
-      if (showNotification) showNotification('Specialist added successfully!', 'success');
+  function isBreakTime(period) {
+    return breaks.some(breakPeriod => {
+      return period.start >= breakPeriod.start && period.start < breakPeriod.end;
+    });
+  }
+  
+  function getTimetableKey(classId, periodId) {
+    return `${classId}-${periodId}`;
+  }
+  
+  function parseTime(timeString) {
+    const [hours, minutes] = timeString.split(':').map(Number);
+    return hours * 60 + minutes;
+  }
+  
+  function checkConstraints(classObj, period) {
+    const relevantConstraints = constraints.filter(c => 
+      c.yearLevel === classObj.yearLevel && 
+      (c.day === 'all' || c.day === period.day)
+    );
+    
+    const periodStart = parseTime(period.start);
+    
+    for (const constraint of relevantConstraints) {
+      const constraintStart = parseTime(constraint.startTime);
+      const constraintEnd = parseTime(constraint.endTime);
+      
+      if (periodStart >= constraintStart && periodStart < constraintEnd) {
+        return constraint.type; // 'avoid' or 'minimize'
+      }
+    }
+    
+    return null;
+  }
+  
+  // ===============================================
+  // SAVE FUNCTION
+  // ===============================================
+  
+  const handleManualSave = async () => {
+    setIsSaving(true);
+    try {
+      const specialistTimetableData = {
+        specialists,
+        classes,
+        timePeriods,
+        timetable,
+        breaks,
+        constraints,
+        lastUpdated: new Date().toISOString()
+      };
+      
+      await saveData({ specialistTimetableData });
+      setHasUnsavedChanges(false);
+      showToast('Specialist Timetable saved successfully!', 'success');
+    } catch (error) {
+      console.error('Error saving specialist timetable:', error);
+      showToast('Error saving timetable. Please try again.', 'error');
+    } finally {
+      setIsSaving(false);
     }
   };
-
+  
+  // ===============================================
+  // SPECIALIST MANAGEMENT
+  // ===============================================
+  
+  const addSpecialist = () => {
+    if (!newSpecialist.name) {
+      showToast('Please enter a specialist name!', 'error');
+      return;
+    }
+    
+    const specialist = {
+      ...newSpecialist,
+      id: Date.now()
+    };
+    
+    setSpecialists([...specialists, specialist]);
+    setHasUnsavedChanges(true);
+    setNewSpecialist({ name: '', duration: 30, color: '#3b82f6', icon: '📚', yearLevels: [] });
+    setShowSpecialistModal(false);
+    showToast('Specialist added! Click "Save Timetable" to save.', 'info');
+  };
+  
   const deleteSpecialist = (id) => {
+    if (!confirm('Are you sure you want to delete this specialist? This will remove all their timetable entries.')) {
+      return;
+    }
+    
     setSpecialists(specialists.filter(s => s.id !== id));
+    
+    // Remove all timetable entries for this specialist
     const newTimetable = { ...timetable };
     Object.keys(newTimetable).forEach(key => {
       if (newTimetable[key].specialistId === id) {
@@ -109,19 +274,51 @@ const SpecialistTimetable = ({ showNotification }) => {
       }
     });
     setTimetable(newTimetable);
-    if (showNotification) showNotification('Specialist removed', 'success');
+    
+    setHasUnsavedChanges(true);
+    showToast('Specialist removed! Click "Save Timetable" to save.', 'info');
   };
-
+  
+  // ===============================================
+  // CLASS MANAGEMENT
+  // ===============================================
+  
   const addClass = () => {
-    if (newClass) {
-      setClasses([...classes, { id: Date.now(), name: newClass }]);
-      setNewClass('');
-      if (showNotification) showNotification('Class added successfully!', 'success');
+    if (!newClass) {
+      showToast('Please enter a class name!', 'error');
+      return;
     }
+    
+    // Detect year level from class name
+    let yearLevel = '';
+    for (const year of YEAR_LEVELS) {
+      if (newClass.includes(year.replace(' ', ''))) {
+        yearLevel = year;
+        break;
+      }
+    }
+    
+    const classObj = {
+      id: Date.now(),
+      name: newClass,
+      yearLevel: yearLevel
+    };
+    
+    setClasses([...classes, classObj]);
+    setHasUnsavedChanges(true);
+    setNewClass('');
+    setShowClassModal(false);
+    showToast('Class added! Click "Save Timetable" to save.', 'info');
   };
-
+  
   const deleteClass = (id) => {
+    if (!confirm('Are you sure you want to delete this class? This will remove all their timetable entries.')) {
+      return;
+    }
+    
     setClasses(classes.filter(c => c.id !== id));
+    
+    // Remove all timetable entries for this class
     const newTimetable = { ...timetable };
     Object.keys(newTimetable).forEach(key => {
       if (key.startsWith(`${id}-`)) {
@@ -129,1057 +326,1122 @@ const SpecialistTimetable = ({ showNotification }) => {
       }
     });
     setTimetable(newTimetable);
-    if (showNotification) showNotification('Class removed', 'success');
+    
+    setHasUnsavedChanges(true);
+    showToast('Class removed! Click "Save Timetable" to save.', 'info');
   };
-
+  
+  // ===============================================
+  // BREAK MANAGEMENT
+  // ===============================================
+  
   const addBreak = () => {
-    if (newBreak.name && newBreak.start && newBreak.end) {
-      setBreaks([...breaks, { ...newBreak, id: Date.now() }]);
-      setNewBreak({ name: '', start: '', end: '' });
-      if (showNotification) showNotification('Break added successfully!', 'success');
+    if (!newBreak.name || !newBreak.start || !newBreak.end) {
+      showToast('Please fill in all break fields!', 'error');
+      return;
     }
+    
+    const breakObj = {
+      ...newBreak,
+      id: Date.now()
+    };
+    
+    setBreaks([...breaks, breakObj]);
+    setHasUnsavedChanges(true);
+    setNewBreak({ name: '', start: '', end: '' });
+    setShowBreakModal(false);
+    showToast('Break added! Click "Save Timetable" to save.', 'info');
   };
-
+  
   const deleteBreak = (id) => {
     setBreaks(breaks.filter(b => b.id !== id));
-    if (showNotification) showNotification('Break removed', 'success');
+    setHasUnsavedChanges(true);
+    showToast('Break removed! Click "Save Timetable" to save.', 'info');
   };
-
-  const isBreakTime = (period) => {
-    return breaks.some(breakPeriod => {
-      return period.start >= breakPeriod.start && period.start < breakPeriod.end;
-    });
-  };
-
+  
+  // ===============================================
+  // CONSTRAINT MANAGEMENT
+  // ===============================================
+  
   const addConstraint = () => {
-    if (newConstraint.yearLevel && newConstraint.startTime && newConstraint.endTime) {
-      setConstraints([...constraints, { ...newConstraint, id: Date.now() }]);
-      setNewConstraint({ yearLevel: 'Prep', type: 'avoid', startTime: '', endTime: '', day: 'all' });
-      if (showNotification) showNotification('Constraint added successfully!', 'success');
+    if (!newConstraint.yearLevel || !newConstraint.startTime || !newConstraint.endTime) {
+      showToast('Please fill in all constraint fields!', 'error');
+      return;
     }
+    
+    const constraint = {
+      ...newConstraint,
+      id: Date.now()
+    };
+    
+    setConstraints([...constraints, constraint]);
+    setHasUnsavedChanges(true);
+    setNewConstraint({ yearLevel: 'Prep', type: 'avoid', startTime: '', endTime: '', day: 'all' });
+    setShowConstraintModal(false);
+    showToast('Constraint added! Click "Save Timetable" to save.', 'info');
   };
-
+  
   const deleteConstraint = (id) => {
     setConstraints(constraints.filter(c => c.id !== id));
-    if (showNotification) showNotification('Constraint removed', 'success');
+    setHasUnsavedChanges(true);
+    showToast('Constraint removed! Click "Save Timetable" to save.', 'info');
   };
-
+  
+  // ===============================================
+  // TIMETABLE CELL MANAGEMENT
+  // ===============================================
+  
   const handleCellClick = (classId, periodId) => {
-    const key = `${classId}-${periodId}`;
-    const existing = timetable[key];
-    setEditingCell({ classId, periodId, current: existing });
+    const key = getTimetableKey(classId, periodId);
+    const currentEntry = timetable[key];
+    
+    setEditingCell({
+      classId,
+      periodId,
+      current: currentEntry
+    });
   };
-
+  
   const assignSpecialist = (specialistId) => {
     if (!editingCell) return;
-
+    
     const { classId, periodId } = editingCell;
-    const key = `${classId}-${periodId}`;
-    const period = timePeriods.find(p => p.id === periodId);
+    const key = getTimetableKey(classId, periodId);
     
-    if (!period) return;
-
     if (specialistId === null) {
+      // Remove entry
       const newTimetable = { ...timetable };
-      const entry = newTimetable[key];
-      
-      if (entry && entry.slots) {
-        entry.slots.forEach(slotPeriodId => {
-          delete newTimetable[`${classId}-${slotPeriodId}`];
-        });
-      }
-      
+      delete newTimetable[key];
       setTimetable(newTimetable);
-      setEditingCell(null);
-      if (showNotification) showNotification('Entry removed', 'success');
-      return;
-    }
-
-    if (specialistId === 'NCT') {
-      const newTimetable = { ...timetable };
-      Object.keys(newTimetable).forEach(k => {
-        if (k.startsWith(`${classId}-${periodId}`)) {
-          delete newTimetable[k];
+    } else if (specialistId === 'NCT') {
+      // Non-contact time
+      setTimetable({
+        ...timetable,
+        [key]: {
+          specialistId: 'NCT',
+          type: 'NCT',
+          isFirst: true
         }
       });
+    } else {
+      // Assign specialist
+      const specialist = specialists.find(s => s.id === specialistId);
+      if (!specialist) return;
       
-      newTimetable[key] = {
-        specialistId: 'NCT',
-        name: 'NCT',
-        isFirst: true,
-        slots: [periodId]
-      };
+      const period = timePeriods.find(p => p.id === periodId);
+      const periodDuration = 30; // Assuming 30-minute slots
+      const slotsNeeded = Math.ceil(specialist.duration / periodDuration);
       
-      setTimetable(newTimetable);
-      setEditingCell(null);
-      if (showNotification) showNotification('NCT assigned', 'success');
-      return;
-    }
-
-    const specialist = specialists.find(s => s.id === specialistId);
-    if (!specialist) return;
-
-    const blocksNeeded = Math.ceil(specialist.duration / 30);
-    const sameDayPeriods = timePeriods
-      .filter(p => p.day === period.day)
-      .sort((a, b) => a.start.localeCompare(b.start));
-    
-    const startIndex = sameDayPeriods.findIndex(p => p.id === periodId);
-    if (startIndex === -1) return;
-
-    const requiredSlots = [];
-    for (let i = 0; i < blocksNeeded; i++) {
-      const slotPeriod = sameDayPeriods[startIndex + i];
-      if (!slotPeriod) {
-        if (showNotification) showNotification(`Not enough consecutive blocks for ${specialist.name}`, 'error');
+      // Find consecutive periods for this slot
+      const periodIndex = timePeriods.findIndex(p => p.id === periodId);
+      const consecutivePeriods = timePeriods
+        .slice(periodIndex, periodIndex + slotsNeeded)
+        .filter(p => p.day === period.day);
+      
+      if (consecutivePeriods.length < slotsNeeded) {
+        showToast(`Not enough consecutive time slots for ${specialist.name} (needs ${specialist.duration} minutes)`, 'error');
         return;
       }
       
-      if (isBreakTime(slotPeriod)) {
-        if (showNotification) showNotification('Cannot schedule during break time', 'error');
-        return;
-      }
-      
-      const slotKey = `${classId}-${slotPeriod.id}`;
-      if (timetable[slotKey] && timetable[slotKey].specialistId !== specialistId) {
-        if (showNotification) showNotification('Time slot already occupied', 'error');
-        return;
-      }
-      
-      requiredSlots.push(slotPeriod.id);
-    }
-
-    const newTimetable = { ...timetable };
-    
-    Object.keys(newTimetable).forEach(k => {
-      if (requiredSlots.some(slot => k === `${classId}-${slot}`)) {
+      // Clear any existing entries in these slots
+      const newTimetable = { ...timetable };
+      consecutivePeriods.forEach(p => {
+        const k = getTimetableKey(classId, p.id);
         delete newTimetable[k];
-      }
-    });
-
-    requiredSlots.forEach((slotId, index) => {
-      const slotKey = `${classId}-${slotId}`;
-      newTimetable[slotKey] = {
-        specialistId: specialist.id,
-        name: specialist.name,
-        color: specialist.color,
-        duration: specialist.duration,
-        isFirst: index === 0,
-        slots: requiredSlots
-      };
-    });
-
-    setTimetable(newTimetable);
-    setEditingCell(null);
-    if (showNotification) showNotification(`${specialist.name} assigned successfully!`, 'success');
-  };
-
-  const generateTimetable = () => {
-    setGenerating(true);
-    if (showNotification) showNotification('Generating timetable...', 'info');
-
-    setTimeout(() => {
-      const newTimetable = {};
-      const classSchedules = {};
-      
-      classes.forEach(cls => {
-        classSchedules[cls.id] = {};
-        days.forEach(day => {
-          classSchedules[cls.id][day] = [];
-        });
       });
-
-      const specialistQueue = [...specialists].sort((a, b) => b.duration - a.duration);
-
-      const getYearLevel = (className) => {
-        const match = className.match(/^(Prep|Year \d)/);
-        return match ? match[0] : null;
-      };
-
-      const violatesConstraint = (cls, period) => {
-        const yearLevel = getYearLevel(cls.name);
-        if (!yearLevel) return false;
-
-        return constraints.some(constraint => {
-          if (constraint.yearLevel !== yearLevel) return false;
-          if (constraint.day !== 'all' && constraint.day !== period.day) return false;
-          if (constraint.type === 'avoid') {
-            return period.start >= constraint.startTime && period.start < constraint.endTime;
-          }
-          return false;
-        });
-      };
-
-      const isSlotAvailable = (cls, period, blocksNeeded) => {
-        const sameDayPeriods = timePeriods
-          .filter(p => p.day === period.day)
-          .sort((a, b) => a.start.localeCompare(b.start));
-        
-        const startIndex = sameDayPeriods.findIndex(p => p.id === period.id);
-        if (startIndex === -1) return false;
-
-        for (let i = 0; i < blocksNeeded; i++) {
-          const slotPeriod = sameDayPeriods[startIndex + i];
-          if (!slotPeriod) return false;
-          if (isBreakTime(slotPeriod)) return false;
-          
-          const slotKey = `${cls.id}-${slotPeriod.id}`;
-          if (newTimetable[slotKey]) return false;
-          
-          if (violatesConstraint(cls, slotPeriod)) return false;
+      
+      // Add new entries
+      consecutivePeriods.forEach((p, index) => {
+        const k = getTimetableKey(classId, p.id);
+        newTimetable[k] = {
+          specialistId,
+          specialistName: specialist.name,
+          color: specialist.color,
+          icon: specialist.icon,
+          duration: specialist.duration,
+          isFirst: index === 0
+        };
+      });
+      
+      setTimetable(newTimetable);
+    }
+    
+    setHasUnsavedChanges(true);
+    setEditingCell(null);
+  };
+  
+  // ===============================================
+  // AUTO-SCHEDULE FUNCTION
+  // ===============================================
+  
+  const autoSchedule = () => {
+    if (!confirm('This will clear the current timetable and create a new schedule. Continue?')) {
+      return;
+    }
+    
+    showToast('Generating timetable... This may take a moment.', 'info');
+    
+    const newTimetable = {};
+    const usedSlots = {}; // Track which specialist is teaching at which time
+    
+    // For each class, try to schedule all specialists
+    classes.forEach(classObj => {
+      specialists.forEach(specialist => {
+        // Check if this specialist is relevant for this year level
+        if (specialist.yearLevels.length > 0 && !specialist.yearLevels.includes(classObj.yearLevel)) {
+          return;
         }
         
-        return true;
-      };
-
-      specialistQueue.forEach(specialist => {
-        const eligibleClasses = specialist.yearLevels.length > 0
-          ? classes.filter(cls => {
-              const yearLevel = getYearLevel(cls.name);
-              return yearLevel && specialist.yearLevels.includes(yearLevel);
-            })
-          : classes;
-
-        const shuffledClasses = [...eligibleClasses].sort(() => Math.random() - 0.5);
-
-        shuffledClasses.forEach(cls => {
-          let assigned = false;
-          const blocksNeeded = Math.ceil(specialist.duration / 30);
+        // Try to find a suitable time slot
+        let scheduled = false;
+        
+        for (let dayIndex = 0; dayIndex < DAYS.length && !scheduled; dayIndex++) {
+          const day = DAYS[dayIndex];
+          const dayPeriods = timePeriods.filter(p => p.day === day);
           
-          const shuffledPeriods = [...timePeriods].sort(() => Math.random() - 0.5);
-          
-          for (const period of shuffledPeriods) {
-            if (assigned) break;
+          for (let i = 0; i < dayPeriods.length && !scheduled; i++) {
+            const period = dayPeriods[i];
             
-            if (isSlotAvailable(cls, period, blocksNeeded)) {
-              const sameDayPeriods = timePeriods
-                .filter(p => p.day === period.day)
-                .sort((a, b) => a.start.localeCompare(b.start));
-              
-              const startIndex = sameDayPeriods.findIndex(p => p.id === period.id);
-              const requiredSlots = [];
-              
-              for (let i = 0; i < blocksNeeded; i++) {
-                requiredSlots.push(sameDayPeriods[startIndex + i].id);
-              }
-
-              requiredSlots.forEach((slotId, index) => {
-                const slotKey = `${cls.id}-${slotId}`;
-                newTimetable[slotKey] = {
-                  specialistId: specialist.id,
-                  name: specialist.name,
-                  color: specialist.color,
-                  duration: specialist.duration,
-                  isFirst: index === 0,
-                  slots: requiredSlots
-                };
-              });
-
-              assigned = true;
+            // Skip breaks
+            if (isBreakTime(period)) continue;
+            
+            // Check constraints
+            const constraint = checkConstraints(classObj, period);
+            if (constraint === 'avoid') continue;
+            
+            // Check if specialist is available
+            const slotKey = `${day}-${period.start}`;
+            if (usedSlots[slotKey] && usedSlots[slotKey] === specialist.id) {
+              continue; // Specialist already teaching at this time
             }
+            
+            // Check if we have enough consecutive slots
+            const periodDuration = 30;
+            const slotsNeeded = Math.ceil(specialist.duration / periodDuration);
+            const consecutivePeriods = dayPeriods.slice(i, i + slotsNeeded);
+            
+            if (consecutivePeriods.length < slotsNeeded) continue;
+            
+            // Check if all consecutive slots are free
+            let allFree = true;
+            for (const p of consecutivePeriods) {
+              const k = getTimetableKey(classObj.id, p.id);
+              const sk = `${day}-${p.start}`;
+              if (newTimetable[k] || (usedSlots[sk] && usedSlots[sk] === specialist.id)) {
+                allFree = false;
+                break;
+              }
+            }
+            
+            if (!allFree) continue;
+            
+            // Schedule it!
+            consecutivePeriods.forEach((p, index) => {
+              const k = getTimetableKey(classObj.id, p.id);
+              const sk = `${day}-${p.start}`;
+              
+              newTimetable[k] = {
+                specialistId: specialist.id,
+                specialistName: specialist.name,
+                color: specialist.color,
+                icon: specialist.icon,
+                duration: specialist.duration,
+                isFirst: index === 0
+              };
+              
+              usedSlots[sk] = specialist.id;
+            });
+            
+            scheduled = true;
           }
-        });
+        }
+        
+        if (!scheduled) {
+          console.warn(`Could not schedule ${specialist.name} for ${classObj.name}`);
+        }
       });
-
-      setTimetable(newTimetable);
-      setGenerating(false);
-      if (showNotification) showNotification('Timetable generated successfully!', 'success');
-    }, 500);
+    });
+    
+    setTimetable(newTimetable);
+    setHasUnsavedChanges(true);
+    showToast('Auto-schedule complete! Review and click "Save Timetable" to save.', 'success');
   };
-
-  const clearTimetable = () => {
-    setTimetable({});
-    if (showNotification) showNotification('Timetable cleared', 'success');
+  
+  // ===============================================
+  // RENDER HELPERS
+  // ===============================================
+  
+  const renderTimetableGrid = () => {
+    if (timetableView === 'by-class' && !selectedClassId) return null;
+    if (timetableView === 'by-specialist' && !selectedSpecialistId) return null;
+    
+    // Group periods by day
+    const periodsByDay = {};
+    DAYS.forEach(day => {
+      periodsByDay[day] = timePeriods
+        .filter(p => p.day === day)
+        .filter((period, index, self) => 
+          index === self.findIndex(p => p.start === period.start && p.end === period.end)
+        );
+    });
+    
+    if (timetableView === 'by-class') {
+      const selectedClass = classes.find(c => c.id === selectedClassId);
+      if (!selectedClass) return null;
+      
+      return (
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
+            <h2 className="text-2xl font-bold text-white flex items-center">
+              <span className="text-3xl mr-3">📚</span>
+              {selectedClass.name} - Weekly Schedule
+            </h2>
+          </div>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr>
+                  <th className="p-3 bg-indigo-100 text-indigo-900 font-bold border border-indigo-200">
+                    Time
+                  </th>
+                  {DAYS.map(day => (
+                    <th key={day} className="p-3 bg-indigo-100 text-indigo-900 font-bold border border-indigo-200 min-w-[120px]">
+                      {day}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(periodsByDay).length > 0 && 
+                  periodsByDay[DAYS[0]].map(uniquePeriod => (
+                    <tr key={`${uniquePeriod.start}-${uniquePeriod.end}`}>
+                      <td className="p-2 bg-gray-50 font-medium border border-gray-300 text-sm whitespace-nowrap">
+                        {uniquePeriod.start} - {uniquePeriod.end}
+                      </td>
+                      {DAYS.map(day => {
+                        const dayPeriod = periodsByDay[day]?.find(
+                          p => p.start === uniquePeriod.start && p.end === uniquePeriod.end
+                        );
+                        
+                        if (!dayPeriod) {
+                          return <td key={day} className="border border-gray-300 bg-gray-100"></td>;
+                        }
+                        
+                        if (isBreakTime(dayPeriod)) {
+                          const breakInfo = breaks.find(b => 
+                            dayPeriod.start >= b.start && dayPeriod.start < b.end
+                          );
+                          return (
+                            <td key={day} className="p-2 border border-gray-300 bg-gray-200 text-center">
+                              <div className="text-gray-600 font-medium text-sm">
+                                ☕ {breakInfo?.name}
+                              </div>
+                            </td>
+                          );
+                        }
+                        
+                        const key = getTimetableKey(selectedClassId, dayPeriod.id);
+                        const entry = timetable[key];
+                        const constraint = checkConstraints(selectedClass, dayPeriod);
+                        
+                        return (
+                          <td
+                            key={day}
+                            onClick={() => handleCellClick(selectedClassId, dayPeriod.id)}
+                            className={`p-1 border border-gray-300 cursor-pointer hover:bg-gray-50 transition text-center ${
+                              constraint === 'avoid' ? 'bg-red-50' : 
+                              constraint === 'minimize' ? 'bg-yellow-50' : ''
+                            }`}
+                          >
+                            {entry && entry.isFirst && (
+                              <div
+                                className="px-2 py-2 rounded-lg text-white font-semibold text-sm shadow-md flex flex-col items-center justify-center"
+                                style={{ backgroundColor: entry.color }}
+                              >
+                                <div className="text-lg mb-1">{entry.icon}</div>
+                                <div className="text-xs">{entry.specialistName}</div>
+                                <div className="text-xs opacity-90">{entry.duration}min</div>
+                              </div>
+                            )}
+                            {entry && !entry.isFirst && (
+                              <div
+                                className="h-full flex items-center justify-center text-white text-xs opacity-75 py-2 rounded"
+                                style={{ backgroundColor: entry.color }}
+                              >
+                                •••
+                              </div>
+                            )}
+                            {entry && entry.type === 'NCT' && (
+                              <div className="px-2 py-2 bg-gray-700 text-white rounded-lg font-semibold text-xs">
+                                NCT
+                              </div>
+                            )}
+                            {constraint === 'avoid' && !entry && (
+                              <div className="text-red-500 text-xs">⚠️</div>
+                            )}
+                            {constraint === 'minimize' && !entry && (
+                              <div className="text-yellow-500 text-xs">⚡</div>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))
+                }
+              </tbody>
+            </table>
+          </div>
+          
+          {/* Legend */}
+          <div className="p-4 bg-gray-50 border-t border-gray-200 flex items-center gap-6 text-sm flex-wrap">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-red-50 border border-red-200 rounded"></div>
+              <span className="text-gray-700">⚠️ Avoid Time</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-yellow-50 border border-yellow-200 rounded"></div>
+              <span className="text-gray-700">⚡ Minimize</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-gray-200 border border-gray-300 rounded"></div>
+              <span className="text-gray-700">☕ Break</span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    
+    if (timetableView === 'by-specialist') {
+      const selectedSpecialist = specialists.find(s => s.id === selectedSpecialistId);
+      if (!selectedSpecialist) return null;
+      
+      return (
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+          <div className="p-6" style={{ backgroundColor: selectedSpecialist.color }}>
+            <h2 className="text-2xl font-bold text-white flex items-center">
+              <span className="text-3xl mr-3">{selectedSpecialist.icon}</span>
+              {selectedSpecialist.name} - Weekly Schedule
+            </h2>
+          </div>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr>
+                  <th className="p-3 text-white font-bold border" style={{ backgroundColor: selectedSpecialist.color }}>
+                    Time
+                  </th>
+                  {DAYS.map(day => (
+                    <th key={day} className="p-3 text-white font-bold border min-w-[120px]" style={{ backgroundColor: selectedSpecialist.color }}>
+                      {day}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(periodsByDay).length > 0 && 
+                  periodsByDay[DAYS[0]].map(uniquePeriod => (
+                    <tr key={`${uniquePeriod.start}-${uniquePeriod.end}`}>
+                      <td className="p-2 bg-gray-50 font-medium border border-gray-300 text-sm whitespace-nowrap">
+                        {uniquePeriod.start} - {uniquePeriod.end}
+                      </td>
+                      {DAYS.map(day => {
+                        const dayPeriod = periodsByDay[day]?.find(
+                          p => p.start === uniquePeriod.start && p.end === uniquePeriod.end
+                        );
+                        
+                        if (!dayPeriod) {
+                          return <td key={day} className="border border-gray-300 bg-gray-100"></td>;
+                        }
+                        
+                        const classWithSpecialist = classes.find(cls => {
+                          const key = getTimetableKey(cls.id, dayPeriod.id);
+                          return timetable[key] && timetable[key].specialistId === selectedSpecialistId;
+                        });
+                        
+                        const entry = classWithSpecialist ? timetable[getTimetableKey(classWithSpecialist.id, dayPeriod.id)] : null;
+                        
+                        return (
+                          <td
+                            key={day}
+                            onClick={() => classWithSpecialist && handleCellClick(classWithSpecialist.id, dayPeriod.id)}
+                            className="p-1 border border-gray-300 cursor-pointer hover:bg-gray-50 transition text-center"
+                            style={{ backgroundColor: classWithSpecialist ? selectedSpecialist.color + '20' : 'white' }}
+                          >
+                            {classWithSpecialist && entry && entry.isFirst && (
+                              <div
+                                className="px-2 py-2 rounded-lg text-white font-semibold text-sm shadow-md"
+                                style={{ backgroundColor: selectedSpecialist.color }}
+                              >
+                                <div>{classWithSpecialist.name}</div>
+                                <div className="text-xs opacity-90">{selectedSpecialist.duration}min</div>
+                              </div>
+                            )}
+                            {classWithSpecialist && entry && !entry.isFirst && (
+                              <div
+                                className="h-full flex items-center justify-center text-white text-xs opacity-75 py-2"
+                                style={{ backgroundColor: selectedSpecialist.color }}
+                              >
+                                •••
+                              </div>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      );
+    }
+    
+    return null;
   };
-
-  const exportData = () => {
-    const data = {
-      specialists,
-      classes,
-      timePeriods,
-      timetable,
-      breaks,
-      constraints
-    };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'specialist-timetable.json';
-    a.click();
-    URL.revokeObjectURL(url);
-    if (showNotification) showNotification('Timetable exported successfully!', 'success');
-  };
-
-  const importData = (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const data = JSON.parse(e.target?.result);
-        if (data.specialists) setSpecialists(data.specialists);
-        if (data.classes) setClasses(data.classes);
-        if (data.timePeriods) setTimePeriods(data.timePeriods);
-        if (data.timetable) setTimetable(data.timetable);
-        if (data.breaks) setBreaks(data.breaks);
-        if (data.constraints) setConstraints(data.constraints);
-        if (showNotification) showNotification('Timetable imported successfully!', 'success');
-      } catch (error) {
-        if (showNotification) showNotification('Failed to import timetable', 'error');
-      }
-    };
-    reader.readAsText(file);
-  };
-
-  const sortedDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-  const periodsByDay = timePeriods.reduce((acc, period) => {
-    if (!acc[period.day]) acc[period.day] = [];
-    acc[period.day].push(period);
-    return acc;
-  }, {});
-
-  Object.keys(periodsByDay).forEach(day => {
-    periodsByDay[day].sort((a, b) => a.start.localeCompare(b.start));
-  });
-
+  
+  // ===============================================
+  // MAIN RENDER
+  // ===============================================
+  
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-          <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white p-8">
-            <h1 className="text-4xl font-bold mb-2 flex items-center gap-3">
-              <span className="text-5xl">📅</span>
+    <div className="space-y-6 p-6">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-6 shadow-lg">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-white flex items-center mb-2">
+              <span className="text-4xl mr-3">📅</span>
               Specialist Timetable Creator
             </h1>
-            <p className="text-indigo-100 text-lg">Professional timetable scheduling for specialists</p>
+            <p className="text-indigo-100">
+              Create and manage your specialist teacher timetables with ease
+            </p>
           </div>
-
-          <div className="p-6">
-            <div className="flex gap-4 mb-6 flex-wrap">
-              <button
-                onClick={() => setView('timetable')}
-                className={`px-6 py-3 rounded-lg font-semibold transition-all ${
-                  view === 'timetable'
-                    ? 'bg-indigo-600 text-white shadow-lg'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
-              >
-                📊 Timetable
-              </button>
-              <button
-                onClick={() => setView('specialists')}
-                className={`px-6 py-3 rounded-lg font-semibold transition-all ${
-                  view === 'specialists'
-                    ? 'bg-purple-600 text-white shadow-lg'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
-              >
-                👨‍🏫 Specialists
-              </button>
-              <button
-                onClick={() => setView('classes')}
-                className={`px-6 py-3 rounded-lg font-semibold transition-all ${
-                  view === 'classes'
-                    ? 'bg-pink-600 text-white shadow-lg'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
-              >
-                🎓 Classes
-              </button>
-              <button
-                onClick={() => setView('schedule')}
-                className={`px-6 py-3 rounded-lg font-semibold transition-all ${
-                  view === 'schedule'
-                    ? 'bg-teal-600 text-white shadow-lg'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
-              >
-                ⏰ Schedule
-              </button>
-              <button
-                onClick={() => setView('constraints')}
-                className={`px-6 py-3 rounded-lg font-semibold transition-all ${
-                  view === 'constraints'
-                    ? 'bg-orange-600 text-white shadow-lg'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
-              >
-                ⚙️ Constraints
-              </button>
-            </div>
-
-            {view === 'specialists' && (
-              <div className="space-y-6">
-                <div className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl p-6">
-                  <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                    <span className="text-3xl">➕</span>
-                    Add New Specialist
-                  </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                    <input
-                      type="text"
-                      placeholder="Specialist name"
-                      value={newSpecialist.name}
-                      onChange={(e) => setNewSpecialist({ ...newSpecialist, name: e.target.value })}
-                      className="px-4 py-3 border-2 border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 font-medium"
-                    />
-                    <input
-                      type="number"
-                      placeholder="Duration (min)"
-                      value={newSpecialist.duration}
-                      onChange={(e) => setNewSpecialist({ ...newSpecialist, duration: parseInt(e.target.value) || 30 })}
-                      className="px-4 py-3 border-2 border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 font-medium"
-                    />
-                    <select
-                      value={newSpecialist.color}
-                      onChange={(e) => setNewSpecialist({ ...newSpecialist, color: e.target.value })}
-                      className="px-4 py-3 border-2 border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 font-medium"
-                    >
-                      {colors.map(color => (
-                        <option key={color} value={color}>
-                          {color}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      onClick={addSpecialist}
-                      className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all font-semibold flex items-center justify-center gap-2"
-                    >
-                      <Plus size={20} />
-                      Add Specialist
-                    </button>
-                  </div>
+          <button
+            onClick={handleManualSave}
+            disabled={!hasUnsavedChanges || isSaving}
+            className={`px-6 py-3 rounded-lg font-bold transition-all shadow-lg flex items-center space-x-2 ${
+              hasUnsavedChanges && !isSaving
+                ? 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:shadow-xl transform hover:scale-105'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            }`}
+          >
+            {isSaving ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>Saving...</span>
+              </>
+            ) : (
+              <>
+                <span className="text-xl">💾</span>
+                <span>Save Timetable</span>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+      
+      {/* Navigation Tabs */}
+      <div className="bg-white rounded-xl p-2 shadow-md flex gap-2 flex-wrap">
+        {[
+          { id: 'timetable', label: 'Timetable View', icon: '📅' },
+          { id: 'specialists', label: 'Manage Specialists', icon: '👨‍🏫' },
+          { id: 'classes', label: 'Manage Classes', icon: '🏫' },
+          { id: 'settings', label: 'Settings', icon: '⚙️' }
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setCurrentView(tab.id)}
+            className={`flex-1 min-w-[150px] px-4 py-3 rounded-lg font-semibold transition-all ${
+              currentView === tab.id
+                ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            <span className="mr-2">{tab.icon}</span>
+            {tab.label}
+          </button>
+        ))}
+      </div>
+      
+      {/* Main Content */}
+      <div className="space-y-6">
+        {/* TIMETABLE VIEW */}
+        {currentView === 'timetable' && (
+          <div className="space-y-4">
+            {/* View Controls */}
+            <div className="bg-white rounded-xl p-6 shadow-md">
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex items-center gap-4">
+                  <label className="font-semibold text-gray-700">View By:</label>
+                  <select
+                    value={timetableView}
+                    onChange={(e) => setTimetableView(e.target.value)}
+                    className="px-4 py-2 border-2 border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-medium"
+                  >
+                    <option value="by-class">By Class</option>
+                    <option value="by-specialist">By Specialist</option>
+                  </select>
                   
-                  <div className="mb-4">
-                    <label className="block text-gray-700 font-semibold mb-2">Year Level Restrictions:</label>
-                    <div className="flex flex-wrap gap-2">
-                      {availableYearLevels.map(level => (
-                        <button
-                          key={level}
-                          onClick={() => {
-                            const updated = newSpecialist.yearLevels.includes(level)
-                              ? newSpecialist.yearLevels.filter(l => l !== level)
-                              : [...newSpecialist.yearLevels, level];
-                            setNewSpecialist({ ...newSpecialist, yearLevels: updated });
-                          }}
-                          className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                            newSpecialist.yearLevels.includes(level)
-                              ? 'bg-purple-600 text-white shadow-md'
-                              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                          }`}
-                        >
-                          {level}
-                        </button>
-                      ))}
-                    </div>
-                    <p className="text-sm text-gray-600 mt-2">
-                      {newSpecialist.yearLevels.length === 0 
-                        ? 'No restrictions - available for all year levels' 
-                        : `Only for: ${newSpecialist.yearLevels.join(', ')}`}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {specialists.map(specialist => (
-                    <div
-                      key={specialist.id}
-                      className="bg-white border-2 border-gray-200 rounded-xl p-5 hover:shadow-lg transition-all"
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className="w-6 h-6 rounded-full shadow-md"
-                            style={{ backgroundColor: specialist.color }}
-                          />
-                          <div>
-                            <h3 className="font-bold text-lg text-gray-800">{specialist.name}</h3>
-                            <p className="text-sm text-gray-600">{specialist.duration} minutes</p>
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => deleteSpecialist(specialist.id)}
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-all"
-                        >
-                          <Trash2 size={20} />
-                        </button>
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        {specialist.yearLevels.length === 0 
-                          ? '✅ All year levels' 
-                          : `📚 ${specialist.yearLevels.join(', ')}`}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {view === 'classes' && (
-              <div className="space-y-6">
-                <div className="bg-gradient-to-r from-pink-100 to-rose-100 rounded-xl p-6">
-                  <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                    <span className="text-3xl">➕</span>
-                    Add New Class
-                  </h2>
-                  <div className="flex gap-4">
-                    <input
-                      type="text"
-                      placeholder="Class name (e.g., 5A)"
-                      value={newClass}
-                      onChange={(e) => setNewClass(e.target.value)}
-                      className="flex-1 px-4 py-3 border-2 border-pink-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 font-medium"
-                    />
-                    <button
-                      onClick={addClass}
-                      className="bg-gradient-to-r from-pink-600 to-rose-600 text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all font-semibold flex items-center gap-2"
-                    >
-                      <Plus size={20} />
-                      Add Class
-                    </button>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                  {classes.map(cls => (
-                    <div
-                      key={cls.id}
-                      className="bg-white border-2 border-gray-200 rounded-lg p-4 hover:shadow-lg transition-all"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-lg text-gray-800">{cls.name}</span>
-                        <button
-                          onClick={() => deleteClass(cls.id)}
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded transition-all"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {view === 'schedule' && (
-              <div className="space-y-6">
-                <div className="bg-gradient-to-r from-teal-100 to-cyan-100 rounded-xl p-6">
-                  <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                    <span className="text-3xl">🕐</span>
-                    Manage Breaks
-                  </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                    <input
-                      type="text"
-                      placeholder="Break name"
-                      value={newBreak.name}
-                      onChange={(e) => setNewBreak({ ...newBreak, name: e.target.value })}
-                      className="px-4 py-3 border-2 border-teal-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium"
-                    />
-                    <input
-                      type="time"
-                      value={newBreak.start}
-                      onChange={(e) => setNewBreak({ ...newBreak, start: e.target.value })}
-                      className="px-4 py-3 border-2 border-teal-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium"
-                    />
-                    <input
-                      type="time"
-                      value={newBreak.end}
-                      onChange={(e) => setNewBreak({ ...newBreak, end: e.target.value })}
-                      className="px-4 py-3 border-2 border-teal-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium"
-                    />
-                    <button
-                      onClick={addBreak}
-                      className="bg-gradient-to-r from-teal-600 to-cyan-600 text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all font-semibold flex items-center justify-center gap-2"
-                    >
-                      <Plus size={20} />
-                      Add Break
-                    </button>
-                  </div>
-
-                  <div className="space-y-3">
-                    {breaks.map(breakItem => (
-                      <div
-                        key={breakItem.id}
-                        className="bg-white border-2 border-gray-200 rounded-lg p-4 flex items-center justify-between hover:shadow-md transition-all"
-                      >
-                        <div>
-                          <span className="font-bold text-gray-800 text-lg">{breakItem.name}</span>
-                          <span className="text-gray-600 ml-4">
-                            {breakItem.start} - {breakItem.end}
-                          </span>
-                        </div>
-                        <button
-                          onClick={() => deleteBreak(breakItem.id)}
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-all"
-                        >
-                          <Trash2 size={20} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {view === 'constraints' && (
-              <div className="space-y-6">
-                <div className="bg-gradient-to-r from-orange-100 to-amber-100 rounded-xl p-6">
-                  <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                    <span className="text-3xl">⚙️</span>
-                    Add Scheduling Constraint
-                  </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
-                    <select
-                      value={newConstraint.yearLevel}
-                      onChange={(e) => setNewConstraint({ ...newConstraint, yearLevel: e.target.value })}
-                      className="px-4 py-3 border-2 border-orange-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 font-medium"
-                    >
-                      {availableYearLevels.map(level => (
-                        <option key={level} value={level}>{level}</option>
-                      ))}
-                    </select>
-                    <select
-                      value={newConstraint.type}
-                      onChange={(e) => setNewConstraint({ ...newConstraint, type: e.target.value })}
-                      className="px-4 py-3 border-2 border-orange-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 font-medium"
-                    >
-                      <option value="avoid">Avoid</option>
-                      <option value="minimize">Minimize</option>
-                    </select>
-                    <input
-                      type="time"
-                      value={newConstraint.startTime}
-                      onChange={(e) => setNewConstraint({ ...newConstraint, startTime: e.target.value })}
-                      className="px-4 py-3 border-2 border-orange-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 font-medium"
-                    />
-                    <input
-                      type="time"
-                      value={newConstraint.endTime}
-                      onChange={(e) => setNewConstraint({ ...newConstraint, endTime: e.target.value })}
-                      className="px-4 py-3 border-2 border-orange-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 font-medium"
-                    />
-                    <button
-                      onClick={addConstraint}
-                      className="bg-gradient-to-r from-orange-600 to-amber-600 text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all font-semibold flex items-center justify-center gap-2"
-                    >
-                      <Plus size={20} />
-                      Add
-                    </button>
-                  </div>
-
-                  <div className="space-y-3">
-                    {constraints.map(constraint => (
-                      <div
-                        key={constraint.id}
-                        className="bg-white border-2 border-gray-200 rounded-lg p-4 flex items-center justify-between hover:shadow-md transition-all"
-                      >
-                        <div className="flex items-center gap-4">
-                          <span className="font-bold text-gray-800">{constraint.yearLevel}</span>
-                          <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                            constraint.type === 'avoid' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'
-                          }`}>
-                            {constraint.type}
-                          </span>
-                          <span className="text-gray-600">
-                            {constraint.startTime} - {constraint.endTime}
-                          </span>
-                        </div>
-                        <button
-                          onClick={() => deleteConstraint(constraint.id)}
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-all"
-                        >
-                          <Trash2 size={20} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {view === 'timetable' && (
-              <div className="space-y-6">
-                <div className="bg-gradient-to-r from-indigo-100 to-purple-100 rounded-xl p-6">
-                  <div className="flex flex-wrap gap-4 mb-4">
-                    <button
-                      onClick={generateTimetable}
-                      disabled={generating}
-                      className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all font-semibold flex items-center gap-2 disabled:opacity-50"
-                    >
-                      <Wand2 size={20} />
-                      {generating ? 'Generating...' : 'Auto Generate'}
-                    </button>
-                    <button
-                      onClick={clearTimetable}
-                      className="bg-gradient-to-r from-red-600 to-rose-600 text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all font-semibold flex items-center gap-2"
-                    >
-                      <RefreshCw size={20} />
-                      Clear All
-                    </button>
-                    <button
-                      onClick={exportData}
-                      className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all font-semibold flex items-center gap-2"
-                    >
-                      <Download size={20} />
-                      Export
-                    </button>
-                    <label className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all font-semibold flex items-center gap-2 cursor-pointer">
-                      <Upload size={20} />
-                      Import
-                      <input
-                        type="file"
-                        accept=".json"
-                        onChange={importData}
-                        className="hidden"
-                      />
-                    </label>
-                  </div>
-
-                  <div className="flex gap-4 mb-4">
-                    <button
-                      onClick={() => setTimetableView('by-class')}
-                      className={`px-6 py-2 rounded-lg font-semibold transition-all ${
-                        timetableView === 'by-class'
-                          ? 'bg-indigo-600 text-white'
-                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                      }`}
-                    >
-                      View by Class
-                    </button>
-                    <button
-                      onClick={() => setTimetableView('all-specialists')}
-                      className={`px-6 py-2 rounded-lg font-semibold transition-all ${
-                        timetableView === 'all-specialists'
-                          ? 'bg-indigo-600 text-white'
-                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                      }`}
-                    >
-                      All Specialists
-                    </button>
-                    <button
-                      onClick={() => setTimetableView('individual-specialist')}
-                      className={`px-6 py-2 rounded-lg font-semibold transition-all ${
-                        timetableView === 'individual-specialist'
-                          ? 'bg-indigo-600 text-white'
-                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                      }`}
-                    >
-                      Individual Specialist
-                    </button>
-                  </div>
-                </div>
-
-                {timetableView === 'by-class' && (
-                  <div>
-                    <div className="mb-4 flex items-center gap-4">
-                      <label className="font-semibold text-gray-700 text-lg">Select Class:</label>
+                  {timetableView === 'by-class' && (
+                    <>
+                      <label className="font-semibold text-gray-700">Select Class:</label>
                       <select
                         value={selectedClassId || ''}
                         onChange={(e) => setSelectedClassId(parseInt(e.target.value))}
-                        className="px-4 py-2 border-2 border-indigo-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium text-lg"
+                        className="px-4 py-2 border-2 border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-medium"
                       >
                         {classes.map(cls => (
                           <option key={cls.id} value={cls.id}>{cls.name}</option>
                         ))}
                       </select>
-                    </div>
-
-                    {selectedClassId && (
-                      <div className="overflow-x-auto rounded-xl shadow-lg">
-                        <table className="w-full border-collapse bg-white">
-                          <thead>
-                            <tr>
-                              <th className="p-4 bg-indigo-600 text-white font-bold border border-indigo-700 text-lg">
-                                Time
-                              </th>
-                              {sortedDays.map(day => (
-                                <th key={day} className="p-4 bg-indigo-600 text-white font-bold border border-indigo-700 text-lg">
-                                  {day}
-                                </th>
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {timePeriods.filter((period, index, self) => 
-                              index === self.findIndex(p => p.start === period.start && p.end === period.end)
-                            ).map(uniquePeriod => (
-                              <tr key={`${uniquePeriod.start}-${uniquePeriod.end}`}>
-                                <td className="p-3 bg-gray-100 font-semibold border border-gray-300">
-                                  {uniquePeriod.start} - {uniquePeriod.end}
-                                </td>
-                                {sortedDays.map(day => {
-                                  const dayPeriod = periodsByDay[day]?.find(
-                                    p => p.start === uniquePeriod.start && p.end === uniquePeriod.end
-                                  );
-                                  
-                                  if (!dayPeriod) {
-                                    return <td key={day} className="p-3 border border-gray-300 bg-white"></td>;
-                                  }
-
-                                  const key = `${selectedClassId}-${dayPeriod.id}`;
-                                  const entry = timetable[key];
-                                  const isFirst = entry?.isFirst;
-                                  const isBreak = isBreakTime(dayPeriod);
-
-                                  return (
-                                    <td
-                                      key={day}
-                                      onClick={() => !isBreak && handleCellClick(selectedClassId, dayPeriod.id)}
-                                      className={`p-2 border border-gray-300 transition-all ${
-                                        isBreak 
-                                          ? 'bg-gray-200 cursor-not-allowed' 
-                                          : 'cursor-pointer hover:bg-gray-50'
-                                      }`}
-                                      style={entry && !isBreak ? { backgroundColor: entry.color + '20' } : {}}
-                                    >
-                                      {isBreak && (
-                                        <div className="text-center text-gray-600 font-medium py-2">
-                                          Break
-                                        </div>
-                                      )}
-                                      {!isBreak && entry && isFirst && (
-                                        <div
-                                          className="px-3 py-2 rounded-lg text-white font-semibold shadow-md text-center"
-                                          style={{ backgroundColor: entry.color }}
-                                        >
-                                          <div className="text-sm">{entry.name}</div>
-                                          <div className="text-xs opacity-90 mt-1">{entry.duration}min</div>
-                                        </div>
-                                      )}
-                                      {!isBreak && entry && !isFirst && (
-                                        <div
-                                          className="h-full flex items-center justify-center text-white text-sm py-2 rounded-lg"
-                                          style={{ backgroundColor: entry.color }}
-                                        >
-                                          •••
-                                        </div>
-                                      )}
-                                    </td>
-                                  );
-                                })}
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {timetableView === 'all-specialists' && (
-                  <div>
-                    {specialists.length === 0 ? (
-                      <div className="text-center text-gray-600 py-12 bg-gray-50 rounded-xl">
-                        <p className="text-xl">No specialists added yet. Add specialists to view their timetables.</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-8">
-                        {specialists.map(specialist => (
-                          <div key={specialist.id} className="bg-white rounded-xl shadow-lg p-6">
-                            <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-3">
-                              <div className="w-6 h-6 rounded-full" style={{ backgroundColor: specialist.color }} />
-                              {specialist.name} - Weekly Schedule
-                            </h2>
-                            <div className="overflow-x-auto">
-                              <table className="w-full border-collapse">
-                                <thead>
-                                  <tr>
-                                    <th className="p-3 text-white font-semibold border" style={{ backgroundColor: specialist.color }}>
-                                      Time
-                                    </th>
-                                    {sortedDays.map(day => (
-                                      <th key={day} className="p-3 text-white font-semibold border" style={{ backgroundColor: specialist.color }}>
-                                        {day}
-                                      </th>
-                                    ))}
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {timePeriods.filter((period, index, self) => 
-                                    index === self.findIndex(p => p.start === period.start && p.end === period.end)
-                                  ).map(uniquePeriod => (
-                                    <tr key={`${uniquePeriod.start}-${uniquePeriod.end}`}>
-                                      <td className="p-2 bg-gray-100 font-medium border border-gray-300 text-sm">
-                                        {uniquePeriod.start} - {uniquePeriod.end}
-                                      </td>
-                                      {sortedDays.map(day => {
-                                        const dayPeriod = periodsByDay[day]?.find(
-                                          p => p.start === uniquePeriod.start && p.end === uniquePeriod.end
-                                        );
-                                        
-                                        const classWithSpecialist = dayPeriod ? classes.find(cls => {
-                                          const key = `${cls.id}-${dayPeriod.id}`;
-                                          return timetable[key] && timetable[key].specialistId === specialist.id;
-                                        }) : null;
-                                        
-                                        const entry = classWithSpecialist && dayPeriod ? timetable[`${classWithSpecialist.id}-${dayPeriod.id}`] : null;
-                                        const isFirst = entry?.isFirst;
-                                        
-                                        return (
-                                          <td
-                                            key={day}
-                                            onClick={() => classWithSpecialist && dayPeriod && handleCellClick(classWithSpecialist.id, dayPeriod.id)}
-                                            className="p-1 border border-gray-300 cursor-pointer hover:bg-gray-50 transition text-center"
-                                            style={{ backgroundColor: classWithSpecialist ? specialist.color + '20' : 'white' }}
-                                          >
-                                            {classWithSpecialist && isFirst && (
-                                              <div
-                                                className="px-2 py-2 rounded text-white font-medium text-sm shadow-sm"
-                                                style={{ backgroundColor: specialist.color }}
-                                              >
-                                                <div className="whitespace-nowrap overflow-hidden text-ellipsis">{classWithSpecialist.name}</div>
-                                                <div className="text-xs opacity-90">{specialist.duration}min</div>
-                                              </div>
-                                            )}
-                                            {classWithSpecialist && !isFirst && (
-                                              <div
-                                                className="h-full flex items-center justify-center text-white text-xs opacity-75 py-2"
-                                                style={{ backgroundColor: specialist.color }}
-                                              >
-                                                •••
-                                              </div>
-                                            )}
-                                          </td>
-                                        );
-                                      })}
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {timetableView === 'individual-specialist' && (
-                  <div>
-                    <div className="mb-4 flex items-center gap-4">
-                      <label className="font-semibold text-gray-700 text-lg">Select Specialist:</label>
+                    </>
+                  )}
+                  
+                  {timetableView === 'by-specialist' && (
+                    <>
+                      <label className="font-semibold text-gray-700">Select Specialist:</label>
                       <select
                         value={selectedSpecialistId || ''}
                         onChange={(e) => setSelectedSpecialistId(parseInt(e.target.value))}
-                        className="px-4 py-2 border-2 border-indigo-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium text-lg"
+                        className="px-4 py-2 border-2 border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-medium"
                       >
                         {specialists.map(spec => (
-                          <option key={spec.id} value={spec.id}>{spec.name}</option>
+                          <option key={spec.id} value={spec.id}>
+                            {spec.icon} {spec.name}
+                          </option>
                         ))}
                       </select>
+                    </>
+                  )}
+                </div>
+                
+                <button
+                  onClick={autoSchedule}
+                  className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-lg hover:shadow-lg transition-all transform hover:scale-105"
+                >
+                  ✨ Auto-Schedule
+                </button>
+              </div>
+            </div>
+            
+            {/* Timetable Grid */}
+            {renderTimetableGrid()}
+          </div>
+        )}
+        
+        {/* SPECIALISTS VIEW */}
+        {currentView === 'specialists' && (
+          <div className="space-y-4">
+            <div className="bg-white rounded-xl p-6 shadow-md">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-800">Manage Specialists</h2>
+                <button
+                  onClick={() => setShowSpecialistModal(true)}
+                  className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-lg hover:shadow-lg transition-all"
+                >
+                  + Add Specialist
+                </button>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {specialists.map(specialist => (
+                  <div
+                    key={specialist.id}
+                    className="border-2 rounded-xl p-4 hover:shadow-lg transition-all"
+                    style={{ borderColor: specialist.color }}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center space-x-3">
+                        <div
+                          className="w-12 h-12 rounded-full flex items-center justify-center text-2xl"
+                          style={{ backgroundColor: specialist.color + '20' }}
+                        >
+                          {specialist.icon}
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-gray-800">{specialist.name}</h3>
+                          <p className="text-sm text-gray-600">{specialist.duration} minutes</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => deleteSpecialist(specialist.id)}
+                        className="text-red-600 hover:text-red-800 text-xl"
+                      >
+                        🗑️
+                      </button>
                     </div>
-
-                    {selectedSpecialistId && (
-                      <div>
-                        {(() => {
-                          const specialist = specialists.find(s => s.id === selectedSpecialistId);
-                          return (
-                            <div className="bg-white rounded-xl shadow-lg p-6">
-                              <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-3">
-                                <div className="w-6 h-6 rounded-full" style={{ backgroundColor: specialist?.color }} />
-                                {specialist?.name} - Weekly Schedule
-                              </h2>
-                              <div className="overflow-x-auto">
-                                <table className="w-full border-collapse">
-                                  <thead>
-                                    <tr>
-                                      <th className="p-3 text-white font-semibold border" style={{ backgroundColor: specialist?.color }}>
-                                        Time
-                                      </th>
-                                      {sortedDays.map(day => (
-                                        <th key={day} className="p-3 text-white font-semibold border" style={{ backgroundColor: specialist?.color }}>
-                                          {day}
-                                        </th>
-                                      ))}
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {timePeriods.filter((period, index, self) => 
-                                      index === self.findIndex(p => p.start === period.start && p.end === period.end)
-                                    ).map(uniquePeriod => (
-                                      <tr key={`${uniquePeriod.start}-${uniquePeriod.end}`}>
-                                        <td className="p-2 bg-gray-100 font-medium border border-gray-300 text-sm">
-                                          {uniquePeriod.start} - {uniquePeriod.end}
-                                        </td>
-                                        {sortedDays.map(day => {
-                                          const dayPeriod = periodsByDay[day]?.find(
-                                            p => p.start === uniquePeriod.start && p.end === uniquePeriod.end
-                                          );
-                                          
-                                          const classWithSpecialist = dayPeriod ? classes.find(cls => {
-                                            const key = `${cls.id}-${dayPeriod.id}`;
-                                            return timetable[key] && timetable[key].specialistId === selectedSpecialistId;
-                                          }) : null;
-                                          
-                                          const entry = classWithSpecialist && dayPeriod ? timetable[`${classWithSpecialist.id}-${dayPeriod.id}`] : null;
-                                          const isFirst = entry?.isFirst;
-                                          
-                                          return (
-                                            <td
-                                              key={day}
-                                              onClick={() => classWithSpecialist && dayPeriod && handleCellClick(classWithSpecialist.id, dayPeriod.id)}
-                                              className="p-1 border border-gray-300 cursor-pointer hover:bg-gray-50 transition text-center"
-                                              style={{ backgroundColor: classWithSpecialist ? specialist?.color + '20' : 'white' }}
-                                            >
-                                              {classWithSpecialist && isFirst && (
-                                                <div
-                                                  className="px-2 py-2 rounded text-white font-medium text-sm shadow-sm"
-                                                  style={{ backgroundColor: specialist?.color }}
-                                                >
-                                                  <div className="whitespace-nowrap overflow-hidden text-ellipsis">{classWithSpecialist.name}</div>
-                                                  <div className="text-xs opacity-90">{specialist?.duration}min</div>
-                                                </div>
-                                              )}
-                                              {classWithSpecialist && !isFirst && (
-                                                <div
-                                                  className="h-full flex items-center justify-center text-white text-xs opacity-75 py-2"
-                                                  style={{ backgroundColor: specialist?.color }}
-                                                >
-                                                  •••
-                                                </div>
-                                              )}
-                                            </td>
-                                          );
-                                        })}
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
-                              </div>
-                            </div>
-                          );
-                        })()}
+                    
+                    {specialist.yearLevels.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-gray-200">
+                        <p className="text-xs text-gray-600 mb-1">Year Levels:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {specialist.yearLevels.map(year => (
+                            <span
+                              key={year}
+                              className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded"
+                            >
+                              {year}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
-                )}
+                ))}
               </div>
-            )}
+            </div>
+          </div>
+        )}
+        
+        {/* CLASSES VIEW */}
+        {currentView === 'classes' && (
+          <div className="space-y-4">
+            <div className="bg-white rounded-xl p-6 shadow-md">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-800">Manage Classes</h2>
+                <button
+                  onClick={() => setShowClassModal(true)}
+                  className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-lg hover:shadow-lg transition-all"
+                >
+                  + Add Class
+                </button>
+              </div>
+              
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                {classes.map(cls => (
+                  <div
+                    key={cls.id}
+                    className="bg-gradient-to-br from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-lg p-4 hover:shadow-md transition-all relative group"
+                  >
+                    <button
+                      onClick={() => deleteClass(cls.id)}
+                      className="absolute top-1 right-1 text-red-600 hover:text-red-800 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      ✕
+                    </button>
+                    <div className="text-center">
+                      <div className="text-2xl mb-2">🎓</div>
+                      <h3 className="font-bold text-gray-800">{cls.name}</h3>
+                      {cls.yearLevel && (
+                        <p className="text-xs text-gray-600 mt-1">{cls.yearLevel}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* SETTINGS VIEW */}
+        {currentView === 'settings' && (
+          <div className="space-y-4">
+            {/* Breaks */}
+            <div className="bg-white rounded-xl p-6 shadow-md">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-800">Break Times</h2>
+                <button
+                  onClick={() => setShowBreakModal(true)}
+                  className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-lg hover:shadow-lg transition-all"
+                >
+                  + Add Break
+                </button>
+              </div>
+              
+              <div className="space-y-3">
+                {breaks.map(breakItem => (
+                  <div
+                    key={breakItem.id}
+                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+                  >
+                    <div>
+                      <h3 className="font-bold text-gray-800">☕ {breakItem.name}</h3>
+                      <p className="text-sm text-gray-600">
+                        {breakItem.start} - {breakItem.end}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => deleteBreak(breakItem.id)}
+                      className="text-red-600 hover:text-red-800"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* Constraints */}
+            <div className="bg-white rounded-xl p-6 shadow-md">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-800">Scheduling Constraints</h2>
+                <button
+                  onClick={() => setShowConstraintModal(true)}
+                  className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-lg hover:shadow-lg transition-all"
+                >
+                  + Add Constraint
+                </button>
+              </div>
+              
+              <div className="space-y-3">
+                {constraints.map(constraint => (
+                  <div
+                    key={constraint.id}
+                    className={`flex items-center justify-between p-4 rounded-lg ${
+                      constraint.type === 'avoid' ? 'bg-red-50 border-2 border-red-200' : 'bg-yellow-50 border-2 border-yellow-200'
+                    }`}
+                  >
+                    <div>
+                      <h3 className="font-bold text-gray-800">
+                        {constraint.type === 'avoid' ? '⚠️' : '⚡'} {constraint.yearLevel}
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        {constraint.type === 'avoid' ? 'Avoid' : 'Minimize'}: {constraint.startTime} - {constraint.endTime}
+                        {constraint.day !== 'all' && ` on ${constraint.day}`}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => deleteConstraint(constraint.id)}
+                      className="text-red-600 hover:text-red-800"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+      
+      {/* MODALS */}
+      
+      {/* Add Specialist Modal */}
+      {showSpecialistModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-2xl">
+            <h3 className="text-2xl font-bold mb-6 text-gray-800">Add New Specialist</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
+                <input
+                  type="text"
+                  value={newSpecialist.name}
+                  onChange={(e) => setNewSpecialist({...newSpecialist, name: e.target.value})}
+                  className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  placeholder="e.g., PE, Art, Music"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Duration (minutes)</label>
+                <select
+                  value={newSpecialist.duration}
+                  onChange={(e) => setNewSpecialist({...newSpecialist, duration: parseInt(e.target.value)})}
+                  className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                >
+                  <option value={30}>30 minutes</option>
+                  <option value={60}>60 minutes</option>
+                  <option value={90}>90 minutes</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Icon</label>
+                <div className="grid grid-cols-5 gap-2">
+                  {ICONS.map(icon => (
+                    <button
+                      key={icon}
+                      onClick={() => setNewSpecialist({...newSpecialist, icon})}
+                      className={`p-3 text-2xl rounded-lg border-2 transition-all ${
+                        newSpecialist.icon === icon
+                          ? 'border-indigo-500 bg-indigo-50'
+                          : 'border-gray-300 hover:border-indigo-300'
+                      }`}
+                    >
+                      {icon}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Color</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {COLORS.map(color => (
+                    <button
+                      key={color}
+                      onClick={() => setNewSpecialist({...newSpecialist, color})}
+                      className={`h-12 rounded-lg border-2 transition-all ${
+                        newSpecialist.color === color
+                          ? 'border-gray-800 scale-110'
+                          : 'border-gray-300'
+                      }`}
+                      style={{ backgroundColor: color }}
+                    />
+                  ))}
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Year Levels (Optional)</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {YEAR_LEVELS.map(year => (
+                    <label key={year} className="flex items-center space-x-2 p-2 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100">
+                      <input
+                        type="checkbox"
+                        checked={newSpecialist.yearLevels.includes(year)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setNewSpecialist({
+                              ...newSpecialist,
+                              yearLevels: [...newSpecialist.yearLevels, year]
+                            });
+                          } else {
+                            setNewSpecialist({
+                              ...newSpecialist,
+                              yearLevels: newSpecialist.yearLevels.filter(y => y !== year)
+                            });
+                          }
+                        }}
+                        className="rounded"
+                      />
+                      <span className="text-sm">{year}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+            
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={addSpecialist}
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-lg hover:shadow-lg transition-all"
+              >
+                Add Specialist
+              </button>
+              <button
+                onClick={() => setShowSpecialistModal(false)}
+                className="px-4 py-3 bg-gray-300 text-gray-800 font-bold rounded-lg hover:bg-gray-400 transition-all"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-
+      )}
+      
+      {/* Add Class Modal */}
+      {showClassModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-2xl">
+            <h3 className="text-2xl font-bold mb-6 text-gray-800">Add New Class</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Class Name</label>
+                <input
+                  type="text"
+                  value={newClass}
+                  onChange={(e) => setNewClass(e.target.value)}
+                  className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  placeholder="e.g., 5A, PrepB"
+                />
+                <p className="mt-2 text-xs text-gray-500">
+                  Tip: Include the year level in the name (e.g., Prep, Year1, Year2)
+                </p>
+              </div>
+            </div>
+            
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={addClass}
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-lg hover:shadow-lg transition-all"
+              >
+                Add Class
+              </button>
+              <button
+                onClick={() => setShowClassModal(false)}
+                className="px-4 py-3 bg-gray-300 text-gray-800 font-bold rounded-lg hover:bg-gray-400 transition-all"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Add Break Modal */}
+      {showBreakModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-2xl">
+            <h3 className="text-2xl font-bold mb-6 text-gray-800">Add Break Time</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Break Name</label>
+                <input
+                  type="text"
+                  value={newBreak.name}
+                  onChange={(e) => setNewBreak({...newBreak, name: e.target.value})}
+                  className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  placeholder="e.g., Recess, Lunch"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Start Time</label>
+                  <input
+                    type="time"
+                    value={newBreak.start}
+                    onChange={(e) => setNewBreak({...newBreak, start: e.target.value})}
+                    className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">End Time</label>
+                  <input
+                    type="time"
+                    value={newBreak.end}
+                    onChange={(e) => setNewBreak({...newBreak, end: e.target.value})}
+                    className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={addBreak}
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-lg hover:shadow-lg transition-all"
+              >
+                Add Break
+              </button>
+              <button
+                onClick={() => setShowBreakModal(false)}
+                className="px-4 py-3 bg-gray-300 text-gray-800 font-bold rounded-lg hover:bg-gray-400 transition-all"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Add Constraint Modal */}
+      {showConstraintModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-2xl">
+            <h3 className="text-2xl font-bold mb-6 text-gray-800">Add Scheduling Constraint</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Year Level</label>
+                <select
+                  value={newConstraint.yearLevel}
+                  onChange={(e) => setNewConstraint({...newConstraint, yearLevel: e.target.value})}
+                  className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                >
+                  {YEAR_LEVELS.map(year => (
+                    <option key={year} value={year}>{year}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Constraint Type</label>
+                <select
+                  value={newConstraint.type}
+                  onChange={(e) => setNewConstraint({...newConstraint, type: e.target.value})}
+                  className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                >
+                  <option value="avoid">⚠️ Avoid (Don't schedule)</option>
+                  <option value="minimize">⚡ Minimize (Try to avoid)</option>
+                </select>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Start Time</label>
+                  <input
+                    type="time"
+                    value={newConstraint.startTime}
+                    onChange={(e) => setNewConstraint({...newConstraint, startTime: e.target.value})}
+                    className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">End Time</label>
+                  <input
+                    type="time"
+                    value={newConstraint.endTime}
+                    onChange={(e) => setNewConstraint({...newConstraint, endTime: e.target.value})}
+                    className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Day</label>
+                <select
+                  value={newConstraint.day}
+                  onChange={(e) => setNewConstraint({...newConstraint, day: e.target.value})}
+                  className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                >
+                  <option value="all">All Days</option>
+                  {DAYS.map(day => (
+                    <option key={day} value={day}>{day}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={addConstraint}
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-lg hover:shadow-lg transition-all"
+              >
+                Add Constraint
+              </button>
+              <button
+                onClick={() => setShowConstraintModal(false)}
+                className="px-4 py-3 bg-gray-300 text-gray-800 font-bold rounded-lg hover:bg-gray-400 transition-all"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Cell Edit Modal */}
       {editingCell && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
-            <h3 className="text-2xl font-bold mb-6 text-gray-800">
-              Assign Specialist
-            </h3>
+          <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-2xl">
+            <h3 className="text-2xl font-bold mb-6 text-gray-800">Assign Specialist</h3>
+            
             <div className="space-y-3 mb-6">
               {specialists.map(specialist => (
                 <button
                   key={specialist.id}
                   onClick={() => assignSpecialist(specialist.id)}
-                  className="w-full p-4 rounded-lg text-white font-semibold hover:opacity-90 transition-all shadow-md hover:shadow-lg"
+                  className="w-full p-4 rounded-lg text-white font-semibold hover:opacity-90 transition-all shadow-md hover:shadow-lg flex items-center space-x-3"
                   style={{ backgroundColor: specialist.color }}
                 >
-                  <div className="text-lg">{specialist.name}</div>
-                  <div className="text-sm opacity-90">({specialist.duration} minutes)</div>
+                  <span className="text-2xl">{specialist.icon}</span>
+                  <div className="text-left">
+                    <div className="text-lg">{specialist.name}</div>
+                    <div className="text-sm opacity-90">({specialist.duration} minutes)</div>
+                  </div>
                 </button>
               ))}
+              
               <button
                 onClick={() => assignSpecialist('NCT')}
                 className="w-full p-4 rounded-lg bg-gray-700 text-white font-semibold hover:bg-gray-800 transition-all shadow-md hover:shadow-lg"
@@ -1187,6 +1449,7 @@ const SpecialistTimetable = ({ showNotification }) => {
                 <div className="text-lg">NCT</div>
                 <div className="text-sm opacity-90">(Non Contact Time)</div>
               </button>
+              
               {editingCell.current && (
                 <button
                   onClick={() => assignSpecialist(null)}
@@ -1196,6 +1459,7 @@ const SpecialistTimetable = ({ showNotification }) => {
                 </button>
               )}
             </div>
+            
             <button
               onClick={() => setEditingCell(null)}
               className="w-full p-4 rounded-lg bg-gray-300 text-gray-800 font-semibold hover:bg-gray-400 transition-all"
@@ -1209,4 +1473,4 @@ const SpecialistTimetable = ({ showNotification }) => {
   );
 };
 
-export default SpecialistTimetable;
+export default SpecialistCreator;
