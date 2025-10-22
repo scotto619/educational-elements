@@ -1,4 +1,4 @@
-// pages/student.js - FIXED: Added StudentMaths import
+// pages/student.js - UPDATED WITH LITERACY TAB
 import React, { useState, useEffect } from 'react';
 import { firestore } from '../utils/firebase';
 import { collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
@@ -10,10 +10,9 @@ import { verifyStudentPasswordDirect, getDefaultPassword } from '../utils/passwo
 import StudentShop from '../components/student/StudentShop';
 import StudentGames from '../components/student/StudentGames';
 import StudentDashboard from '../components/student/StudentDashboard';
-import StudentSpelling from '../components/student/StudentSpelling';
-import StudentReading from '../components/student/StudentReading';
 import StudentMathMentals from '../components/student/StudentMathMentals';
-import StudentMaths from '../components/student/StudentMaths'; // ADDED THIS LINE
+import StudentMaths from '../components/student/StudentMaths';
+import StudentLiteracy from '../components/student/StudentLiteracy'; // NEW IMPORT
 
 // Import from the correct gameHelpers file
 import { 
@@ -69,7 +68,7 @@ const StudentPortal = () => {
   }, []);
 
   // ===============================================
-  // STEP 1: CLASS CODE SEARCH (Same as before)
+  // STEP 1: CLASS CODE SEARCH
   // ===============================================
   
   const handleClassCodeSubmit = async (e) => {
@@ -99,135 +98,104 @@ const StudentPortal = () => {
         return;
       }
 
-      console.log('✅ Class found:', classResult.classData.name, 'Architecture:', classResult.architectureVersion);
-
-      if (!classResult.students || classResult.students.length === 0) {
-        setError('This class has no students yet. Please check with your teacher.');
-        setLoading(false);
-        return;
-      }
-
+      console.log('✅ Class found:', classResult);
       setAvailableStudents(classResult.students);
-      setClassData(classResult.classData);
       setTeacherUserId(classResult.teacherUserId);
+      setClassData(classResult.classData);
       setArchitectureVersion(classResult.architectureVersion);
       setLoginStep('studentSelect');
+      setLoading(false);
       
     } catch (error) {
-      console.error('💥 Error finding class:', error);
-      setError('Unable to connect to class. Please check your internet connection and try again.');
-    }
-
-    setLoading(false);
-  };
-
-  // V2 Architecture Search
-  const searchV2Architecture = async (classCodeInput) => {
-    try {
-      console.log('🔍 V2 Search: Querying classes collection...');
-      
-      const classesQuery = query(
-        collection(firestore, 'classes'),
-        where('classCode', '==', classCodeInput.toUpperCase())
-      );
-      
-      const classesSnapshot = await getDocs(classesQuery);
-      
-      if (classesSnapshot.empty) {
-        return null;
-      }
-
-      const classDoc = classesSnapshot.docs[0];
-      const classData = { id: classDoc.id, ...classDoc.data() };
-      
-      // Get class membership and students
-      const membershipDoc = await getDoc(doc(firestore, 'class_memberships', classDoc.id));
-      
-      let students = [];
-      if (membershipDoc.exists()) {
-        const membershipData = membershipDoc.data();
-        const studentIds = membershipData.students || [];
-        
-        if (studentIds.length > 0) {
-          const studentPromises = studentIds.map(async (studentId) => {
-            try {
-              const studentDoc = await getDoc(doc(firestore, 'students', studentId));
-              if (studentDoc.exists()) {
-                return { id: studentDoc.id, ...studentDoc.data() };
-              }
-            } catch (error) {
-              console.warn('⚠️ Error loading student:', studentId, error);
-            }
-            return null;
-          });
-          
-          const studentResults = await Promise.all(studentPromises);
-          students = studentResults.filter(s => s !== null);
-        }
-      }
-
-      return {
-        classData: { ...classData, toolkitData: classData.toolkitData || {} },
-        students: students,
-        teacherUserId: classData.teacherId,
-        architectureVersion: 'v2'
-      };
-
-    } catch (error) {
-      console.error('❌ V2 search error:', error);
-      return null;
+      console.error('❌ Error finding class:', error);
+      setError('Something went wrong. Please try again or contact your teacher.');
+      setLoading(false);
     }
   };
 
-  // V1 Architecture Search
-  const searchV1Architecture = async (classCodeInput) => {
+  // Search V2 Architecture
+  const searchV2Architecture = async (code) => {
     try {
-      console.log('🔄 V1 Fallback: Scanning user documents...');
-      
       const usersRef = collection(firestore, 'users');
-      const usersSnapshot = await getDocs(usersRef);
-      
-      for (const userDoc of usersSnapshot.docs) {
-        try {
-          const userData = userDoc.data();
+      const q = query(usersRef, where('classCode', '==', code.toUpperCase()));
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        const teacherDoc = querySnapshot.docs[0];
+        const teacherData = teacherDoc.data();
+        const teacherId = teacherDoc.id;
+
+        console.log('📖 V2: Found teacher with matching class code');
+        
+        // V2 uses "users/{userId}/classes" structure
+        const classesRef = collection(firestore, `users/${teacherId}/classes`);
+        const classesSnapshot = await getDocs(classesRef);
+
+        if (!classesSnapshot.empty) {
+          // Get the first class (there's typically only one class per teacher in this structure)
+          const classDoc = classesSnapshot.docs[0];
+          const classData = classDoc.data();
           
-          if (userData.classes && Array.isArray(userData.classes)) {
-            const matchingClass = userData.classes.find(cls => 
-              cls.classCode && cls.classCode.trim().toUpperCase() === classCodeInput.toUpperCase()
-            );
-            
-            if (matchingClass) {
-              return {
-                classData: {
-                  ...matchingClass,
-                  id: matchingClass.id || matchingClass.classId || classCodeInput,
-                  toolkitData: matchingClass.toolkitData || {}
-                },
-                students: matchingClass.students || [],
-                teacherUserId: userDoc.id,
-                architectureVersion: 'v1'
-              };
-            }
-          }
-        } catch (userError) {
-          console.warn('⚠️ V1: Error processing user document:', userDoc.id, userError);
+          return {
+            students: classData.students || [],
+            teacherUserId: teacherId,
+            classData: {
+              ...classData,
+              classId: classDoc.id,
+              className: classData.name || 'My Class'
+            },
+            architectureVersion: 'v2'
+          };
         }
       }
-
-      return null;
       
+      return null;
     } catch (error) {
-      console.error('❌ V1 search error:', error);
+      console.error('V2 search error:', error);
+      return null;
+    }
+  };
+
+  // Search V1 Architecture (Fallback)
+  const searchV1Architecture = async (code) => {
+    try {
+      const usersRef = collection(firestore, 'users');
+      const querySnapshot = await getDocs(usersRef);
+
+      for (const userDoc of querySnapshot.docs) {
+        const userData = userDoc.data();
+        const classes = userData.classes || [];
+        
+        for (const classDoc of classes) {
+          if (classDoc.classCode === code.toUpperCase()) {
+            console.log('📖 V1: Found matching class in user document');
+            
+            return {
+              students: classDoc.students || [],
+              teacherUserId: userDoc.id,
+              classData: {
+                ...classDoc,
+                classId: classDoc.id,
+                className: classDoc.name || 'My Class'
+              },
+              architectureVersion: 'v1'
+            };
+          }
+        }
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('V1 search error:', error);
       return null;
     }
   };
 
   // ===============================================
-  // STEP 2: STUDENT SELECTION (Same as before)
+  // STEP 2: STUDENT SELECTION
   // ===============================================
   
   const handleStudentSelect = (student) => {
-    console.log('👤 Student selected:', student.firstName);
     setSelectedStudent(student);
     setStudentPassword('');
     setPasswordError('');
@@ -235,7 +203,7 @@ const StudentPortal = () => {
   };
 
   // ===============================================
-  // STEP 3: PASSWORD VERIFICATION - DIRECT (NO APIs)
+  // STEP 3: PASSWORD VERIFICATION
   // ===============================================
   
   const handlePasswordSubmit = async (e) => {
@@ -249,104 +217,94 @@ const StudentPortal = () => {
     setPasswordError('');
 
     try {
-      console.log('🔐 Verifying password directly (no API) for:', selectedStudent.firstName);
+      console.log('🔐 Attempting direct password verification...');
       
-      // Use direct password verification (bypasses problematic APIs)
-      const result = await verifyStudentPasswordDirect(
-        selectedStudent.id, 
-        studentPassword, 
-        classData.classCode
+      // Use the direct password verification helper
+      const isValid = await verifyStudentPasswordDirect(
+        teacherUserId,
+        selectedStudent.id,
+        studentPassword,
+        architectureVersion
       );
 
-      if (!result.success) {
-        const defaultPassword = getDefaultPassword(selectedStudent.firstName);
-        setPasswordError(
-          result.error === 'Invalid password' 
-            ? `Incorrect password. Try: ${defaultPassword}` 
-            : 'Unable to verify password. Please try again.'
-        );
-        setPasswordLoading(false);
-        return;
-      }
-
-      console.log('✅ Password verified successfully via direct method');
-
-      // Login successful - create session
-      const session = {
-        studentData: selectedStudent,
-        classData: classData,
-        teacherUserId: teacherUserId,
-        architectureVersion: architectureVersion,
-        loginTime: new Date().toISOString()
-      };
-      
-      try {
+      if (isValid) {
+        console.log('✅ Password correct! Logging in student...');
+        
+        // Save session
+        const session = {
+          studentData: selectedStudent,
+          classData: classData,
+          teacherUserId: teacherUserId,
+          architectureVersion: architectureVersion
+        };
         sessionStorage.setItem('studentSession', JSON.stringify(session));
-      } catch (sessionError) {
-        console.warn('⚠️ Could not save session to sessionStorage:', sessionError);
+        
+        setStudentData(selectedStudent);
+        setIsLoggedIn(true);
+        setActiveTab('dashboard');
+      } else {
+        console.log('❌ Password incorrect');
+        setPasswordError('Incorrect password. Please try again or ask your teacher for help.');
       }
       
-      setStudentData(selectedStudent);
-      setIsLoggedIn(true);
-      setActiveTab('dashboard');
+      setPasswordLoading(false);
       
     } catch (error) {
-      console.error('❌ Direct password verification error:', error);
-      setPasswordError('Network error. Please check your connection and try again.');
+      console.error('❌ Password verification error:', error);
+      setPasswordError('Something went wrong. Please try again.');
+      setPasswordLoading(false);
     }
-
-    setPasswordLoading(false);
   };
 
   // ===============================================
-  // ENHANCED UPDATE FUNCTION - DIRECT (NO APIs)
+  // UPDATE STUDENT DATA (For shop purchases, games, etc.)
   // ===============================================
   
   const updateStudentData = async (updatedStudentData) => {
-    if (!teacherUserId || !classData || !studentData) {
-      console.error('Missing required data for student update');
-      showToast('Unable to save changes. Please try logging in again.', 'error');
-      return false;
-    }
-
     try {
-      console.log('💾 Updating student data directly (no API):', studentData.firstName);
-      
-      // Use the same direct approach you used for XP (bypass APIs completely)
-      // This should work just like your existing XP system
+      console.log('💾 Updating student data...', {
+        architectureVersion,
+        teacherId: teacherUserId,
+        studentId: studentData.id,
+        updates: Object.keys(updatedStudentData)
+      });
+
+      // V2 Architecture - Update in Firestore subcollection
       if (architectureVersion === 'v2') {
-        // Direct V2 update (like your XP system)
-        const studentRef = doc(firestore, 'students', studentData.id);
-        const updates = {
-          ...updatedStudentData,
-          updatedAt: new Date().toISOString(),
-          lastActivity: new Date().toISOString()
-        };
+        console.log('📝 V2: Updating in subcollection structure');
         
-        await updateDoc(studentRef, updates);
-        console.log('✅ V2 direct student update completed');
+        const classesRef = collection(firestore, `users/${teacherUserId}/classes`);
+        const classesSnapshot = await getDocs(classesRef);
         
-      } else {
-        // Direct V1 update (like your XP system)
+        if (!classesSnapshot.empty) {
+          const classDoc = classesSnapshot.docs[0];
+          const classDocRef = doc(firestore, `users/${teacherUserId}/classes/${classDoc.id}`);
+          const classData = classDoc.data();
+          
+          const updatedStudents = classData.students.map(s => 
+            s.id === studentData.id ? { ...s, ...updatedStudentData } : s
+          );
+          
+          await updateDoc(classDocRef, { students: updatedStudents });
+          console.log('✅ V2 student update completed');
+        }
+      } 
+      // V1 Architecture - Update in user document
+      else {
+        console.log('📝 V1: Updating in user document');
+        
         const userRef = doc(firestore, 'users', teacherUserId);
         const userDoc = await getDoc(userRef);
         
         if (userDoc.exists()) {
           const userData = userDoc.data();
           const updatedClasses = userData.classes.map(cls => {
-            if (cls.classCode?.toUpperCase() === classData.classCode?.toUpperCase()) {
+            if (cls.classCode === classData.classCode) {
               return {
                 ...cls,
-                students: cls.students.map(s => {
-                  if (s.id === studentData.id) {
-                    return { 
-                      ...s, 
-                      ...updatedStudentData,
-                      updatedAt: new Date().toISOString() 
-                    };
-                  }
-                  return s;
-                })
+                students: cls.students.map(s => 
+                  s.id === studentData.id ? { ...s, ...updatedStudentData } : s
+                )
               };
             }
             return cls;
@@ -379,7 +337,7 @@ const StudentPortal = () => {
   };
 
   // ===============================================
-  // LOGOUT AND NAVIGATION (Same as before)
+  // LOGOUT AND NAVIGATION
   // ===============================================
   
   const handleLogout = () => {
@@ -440,7 +398,7 @@ const StudentPortal = () => {
   };
 
   // ===============================================
-  // RENDER LOGIN SCREEN - SHOW HELPFUL PASSWORD HINTS
+  // RENDER LOGIN SCREEN
   // ===============================================
   
   if (!isLoggedIn) {
@@ -449,69 +407,38 @@ const StudentPortal = () => {
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 md:p-8">
           {/* Header */}
           <div className="text-center mb-6 md:mb-8">
-            <img 
-              src="/Logo/LOGO_NoBG.png" 
-              alt="Educational Elements Logo" 
-              className="h-12 w-12 md:h-16 md:w-16 mx-auto mb-3 md:mb-4"
-              onError={(e) => { e.target.style.display = 'none'; }}
-            />
-            <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Student Portal
-            </h1>
-            <p className="text-gray-600 mt-2 text-sm md:text-base">Access your classroom adventure!</p>
+            <div className="text-4xl md:text-5xl mb-3">🎓</div>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">Student Portal</h1>
+            <p className="text-sm md:text-base text-gray-600">Welcome back! Let's learn together</p>
           </div>
 
-          {/* Step Indicator */}
-          <div className="flex items-center justify-center mb-6">
-            <div className="flex items-center space-x-2">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold ${
-                loginStep === 'classCode' ? 'bg-blue-500 text-white' : 'bg-green-500 text-white'
-              }`}>
-                1
-              </div>
-              <div className={`w-8 h-1 ${loginStep !== 'classCode' ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold ${
-                loginStep === 'studentSelect' ? 'bg-blue-500 text-white' : 
-                loginStep === 'password' ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'
-              }`}>
-                2
-              </div>
-              <div className={`w-8 h-1 ${loginStep === 'password' ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold ${
-                loginStep === 'password' ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-600'
-              }`}>
-                3
-              </div>
-            </div>
-          </div>
-
-          {/* STEP 1: Class Code Entry */}
+          {/* Step 1: Class Code Entry */}
           {loginStep === 'classCode' && (
             <form onSubmit={handleClassCodeSubmit} className="space-y-4 md:space-y-6">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Class Code
+                  Enter Your Class Code
                 </label>
                 <input
                   type="text"
                   value={classCode}
                   onChange={(e) => setClassCode(e.target.value.toUpperCase())}
-                  placeholder="Enter your class code"
-                  className="w-full px-4 py-3 md:py-4 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none text-center text-lg md:text-xl font-semibold tracking-wider uppercase"
-                  maxLength="10"
+                  placeholder="ABC123"
+                  className="w-full px-4 py-3 md:py-4 border-2 border-gray-300 rounded-lg text-center text-lg md:text-xl font-bold uppercase focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                  maxLength={6}
                   disabled={loading}
                 />
-                <p className="text-xs text-gray-500 mt-1 text-center">
-                  Ask your teacher for the 6-character class code
+                <p className="text-xs md:text-sm text-gray-500 mt-2 text-center">
+                  Ask your teacher for the class code
                 </p>
               </div>
-              
+
               {error && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                   <p className="text-red-600 text-sm">{error}</p>
                 </div>
               )}
-              
+
               <button
                 type="submit"
                 disabled={loading || !classCode.trim()}
@@ -526,46 +453,44 @@ const StudentPortal = () => {
                     Finding Class...
                   </span>
                 ) : (
-                  'Find My Class'
+                  'Continue'
                 )}
               </button>
             </form>
           )}
 
-          {/* STEP 2: Student Selection */}
+          {/* Step 2: Student Selection */}
           {loginStep === 'studentSelect' && (
-            <div className="space-y-4 md:space-y-6">
-              <div className="text-center">
-                <h2 className="text-lg md:text-xl font-bold text-gray-800 mb-2">Select Your Name</h2>
-                <p className="text-gray-600 text-sm md:text-base">Class: {classData?.name || 'Unknown Class'}</p>
-                <p className="text-xs md:text-sm text-gray-500">Found {availableStudents.length} students</p>
+            <div className="space-y-4">
+              <div className="text-center mb-4">
+                <h2 className="text-lg md:text-xl font-bold text-gray-800">Select Your Name</h2>
+                <p className="text-xs md:text-sm text-gray-600 mt-1">Click on your name to continue</p>
               </div>
-              
-              <div className="grid grid-cols-1 gap-2 md:gap-3 max-h-64 md:max-h-80 overflow-y-auto">
+
+              <div className="max-h-96 overflow-y-auto space-y-2">
                 {availableStudents.map(student => (
                   <button
                     key={student.id}
                     onClick={() => handleStudentSelect(student)}
-                    className="flex items-center space-x-3 p-3 md:p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all active:scale-95"
+                    className="w-full p-3 md:p-4 bg-gradient-to-r from-green-50 to-blue-50 hover:from-green-100 hover:to-blue-100 border-2 border-gray-200 rounded-lg text-left transition-all hover:shadow-md"
                   >
-                    <img 
-                      src={getAvatarImage(student.avatarBase, calculateAvatarLevel(student.totalPoints))} 
-                      alt={student.firstName}
-                      className="w-10 h-10 md:w-12 md:h-12 rounded-full border-2 border-gray-300 flex-shrink-0"
-                      onError={(e) => { e.target.src = '/shop/Basic/Banana.png'; }}
-                    />
-                    <div className="text-left flex-1 min-w-0">
-                      <p className="font-semibold text-gray-800 text-sm md:text-base truncate">
-                        {student.firstName} {student.lastName}
-                      </p>
-                      <p className="text-xs md:text-sm text-gray-600">
-                        Level {calculateAvatarLevel(student.totalPoints)} • {student.totalPoints || 0} XP
-                      </p>
+                    <div className="flex items-center space-x-3">
+                      <div className="text-2xl md:text-3xl">
+                        {getAvatarImage(calculateAvatarLevel(student.totalPoints || 0))}
+                      </div>
+                      <div>
+                        <p className="font-bold text-gray-800 text-sm md:text-base">
+                          {student.firstName} {student.lastName}
+                        </p>
+                        <p className="text-xs text-gray-600">
+                          Level {calculateAvatarLevel(student.totalPoints || 0)} • {student.totalPoints || 0} XP
+                        </p>
+                      </div>
                     </div>
                   </button>
                 ))}
               </div>
-              
+
               <button
                 onClick={handleBackToClassCode}
                 className="w-full py-2 md:py-3 text-gray-600 hover:text-gray-800 transition-colors text-sm md:text-base"
@@ -575,48 +500,37 @@ const StudentPortal = () => {
             </div>
           )}
 
-          {/* STEP 3: Password Entry - WITH HELPFUL HINTS */}
-          {loginStep === 'password' && selectedStudent && (
+          {/* Step 3: Password Entry */}
+          {loginStep === 'password' && (
             <form onSubmit={handlePasswordSubmit} className="space-y-4 md:space-y-6">
-              <div className="text-center">
-                <img 
-                  src={getAvatarImage(selectedStudent.avatarBase, calculateAvatarLevel(selectedStudent.totalPoints))} 
-                  alt={selectedStudent.firstName}
-                  className="w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-blue-300 mx-auto mb-3"
-                  onError={(e) => { e.target.src = '/shop/Basic/Banana.png'; }}
-                />
-                <h2 className="text-lg md:text-xl font-bold text-gray-800 mb-1">
-                  Welcome, {selectedStudent.firstName}!
+              <div className="text-center mb-4">
+                <div className="text-3xl md:text-4xl mb-2">
+                  {getAvatarImage(calculateAvatarLevel(selectedStudent?.totalPoints || 0))}
+                </div>
+                <h2 className="text-lg md:text-xl font-bold text-gray-800">
+                  Welcome, {selectedStudent?.firstName}!
                 </h2>
-                <p className="text-gray-600 text-sm md:text-base">Please enter your password</p>
-              </div>
-
-              {/* PASSWORD HINT */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <p className="text-sm text-blue-800 text-center">
-                  💡 <strong>Hint:</strong> Your password is usually your first name + "123"<br/>
-                  Try: <code className="bg-blue-100 px-1 rounded">{getDefaultPassword(selectedStudent.firstName)}</code>
-                </p>
+                <p className="text-xs md:text-sm text-gray-600 mt-1">Enter your password to continue</p>
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Your Password
+                  Password
                 </label>
                 <input
                   type="password"
                   value={studentPassword}
                   onChange={(e) => setStudentPassword(e.target.value)}
                   placeholder="Enter your password"
-                  className="w-full px-4 py-3 md:py-4 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none text-center text-lg md:text-xl font-semibold"
+                  className="w-full px-4 py-3 md:py-4 border-2 border-gray-300 rounded-lg text-base md:text-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all"
                   disabled={passwordLoading}
                   autoFocus
                 />
-                <p className="text-xs text-gray-500 mt-1 text-center">
-                  Ask your teacher if you forgot your password
+                <p className="text-xs md:text-sm text-gray-500 mt-2">
+                  💡 Default password is your first name (lowercase)
                 </p>
               </div>
-              
+
               {passwordError && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                   <p className="text-red-600 text-sm">{passwordError}</p>
@@ -656,14 +570,13 @@ const StudentPortal = () => {
   }
 
   // ===============================================
-  // RENDER MAIN PORTAL (Same as before)
+  // RENDER MAIN PORTAL WITH NEW LITERACY TAB
   // ===============================================
   
   const tabs = [
     { id: 'dashboard', name: 'Home', icon: '🏠', shortName: 'Home' },
     { id: 'maths', name: 'Maths', icon: '🔢', shortName: 'Maths' },
-    { id: 'spelling', name: 'Spelling', icon: '📝', shortName: 'Spelling' },
-    { id: 'reading', name: 'Reading', icon: '📖', shortName: 'Reading' },
+    { id: 'literacy', name: 'Literacy', icon: '📚', shortName: 'Literacy' }, // NEW LITERACY TAB
     { id: 'shop', name: 'Shop', icon: '🛒', shortName: 'Shop' },
     { id: 'games', name: 'Games', icon: '🎮', shortName: 'Games' },
     { id: 'quizshow', name: 'Quiz Show', icon: '🎪', shortName: 'Quiz' }
@@ -691,20 +604,13 @@ const StudentPortal = () => {
             updateStudentData={updateStudentData}
           />
         );
-      case 'spelling':
+      case 'literacy':
         return (
-          <StudentSpelling 
+          <StudentLiteracy 
             studentData={studentData}
             classData={classData}
             showToast={showToast}
-          />
-        );
-      case 'reading':
-        return (
-          <StudentReading 
-            studentData={studentData}
-            classData={classData}
-            showToast={showToast}
+            updateStudentData={updateStudentData}
           />
         );
       case 'shop':
@@ -760,50 +666,55 @@ const StudentPortal = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-100">
       {/* Header */}
       <div className="bg-white shadow-lg border-b-4 border-blue-500">
-        <div className="max-w-6xl mx-auto px-3 md:px-4 py-3 md:py-4 flex items-center justify-between">
-          <div className="flex items-center min-w-0 flex-1">
-            <img 
-              src="/Logo/LOGO_NoBG.png" 
-              alt="Educational Elements Logo" 
-              className="h-8 w-8 md:h-10 md:w-10 mr-2 md:mr-3 flex-shrink-0"
-              onError={(e) => { e.target.style.display = 'none'; }}
-            />
-            <div className="min-w-0 flex-1">
-              <h1 className="text-base md:text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent truncate">
-                Welcome, {studentData?.firstName}!
-              </h1>
-              <p className="text-xs md:text-sm text-gray-600 truncate">
-                Level {calculateAvatarLevel(studentData?.totalPoints)} Champion • {calculateCoins(studentData)} coins
-              </p>
+        <div className="max-w-7xl mx-auto px-4 py-3 md:py-4">
+          <div className="flex items-center justify-between">
+            {/* Student Info */}
+            <div className="flex items-center space-x-2 md:space-x-3">
+              <div className="text-2xl md:text-3xl">
+                {getAvatarImage(calculateAvatarLevel(studentData?.totalPoints || 0))}
+              </div>
+              <div>
+                <h1 className="text-sm md:text-lg font-bold text-gray-800">
+                  {studentData?.firstName} {studentData?.lastName}
+                </h1>
+                <p className="text-xs md:text-sm text-gray-600">
+                  Level {calculateAvatarLevel(studentData?.totalPoints || 0)} • {studentData?.totalPoints || 0} XP • {calculateCoins(studentData)} 🪙
+                </p>
+              </div>
             </div>
+
+            {/* Logout Button */}
+            <button
+              onClick={handleLogout}
+              className="px-3 md:px-4 py-2 bg-red-500 text-white rounded-lg text-xs md:text-sm font-semibold hover:bg-red-600 transition-colors"
+            >
+              Logout
+            </button>
           </div>
-          
-          <button 
-            onClick={handleLogout}
-            className="bg-gray-500 text-white px-3 md:px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors text-sm md:text-base flex-shrink-0"
-          >
-            Logout
-          </button>
         </div>
       </div>
 
-      {/* Navigation */}
-      <div className="bg-white shadow-sm border-b sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex overflow-x-auto">
+      {/* Tab Navigation */}
+      <div className="bg-white shadow-md">
+        <div className="max-w-7xl mx-auto px-2 md:px-4">
+          <div className="flex overflow-x-auto space-x-1 md:space-x-2 py-2">
             {tabs.map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-shrink-0 flex flex-col md:flex-row items-center justify-center space-y-1 md:space-y-0 md:space-x-2 px-2 md:px-4 py-2 md:py-3 transition-all duration-200 min-w-[70px] md:min-w-0 ${
-                  activeTab === tab.id 
-                    ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50 font-semibold' 
-                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                }`}
+                className={`
+                  flex-shrink-0 flex flex-col items-center justify-center
+                  px-3 md:px-6 py-2 md:py-3 rounded-lg
+                  font-semibold text-xs md:text-sm
+                  transition-all duration-200
+                  ${activeTab === tab.id 
+                    ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg' 
+                    : 'text-gray-600 hover:bg-gray-100'
+                  }
+                `}
               >
-                <span className="text-lg md:text-xl">{tab.icon}</span>
-                <span className="text-xs md:text-base md:hidden">{tab.shortName}</span>
-                <span className="hidden md:inline text-sm lg:text-base">{tab.name}</span>
+                <span className="text-lg md:text-2xl mb-1">{tab.icon}</span>
+                <span className="whitespace-nowrap">{tab.shortName}</span>
               </button>
             ))}
           </div>
@@ -811,9 +722,9 @@ const StudentPortal = () => {
       </div>
 
       {/* Main Content */}
-      <main className="max-w-6xl mx-auto px-3 md:px-4 py-4 md:py-6">
+      <div className="max-w-7xl mx-auto px-4 py-4 md:py-6">
         {renderTabContent()}
-      </main>
+      </div>
     </div>
   );
 };
