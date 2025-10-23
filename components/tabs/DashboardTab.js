@@ -163,28 +163,30 @@ const DashboardTab = ({
                   <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-blue-600">
                     {featuredStudent.totalPoints || 0}
                   </div>
-                  <div className="text-xs sm:text-sm text-gray-600">⚡ Total XP</div>
+                  <div className="text-xs sm:text-sm text-gray-600">XP Points</div>
                 </div>
                 <div className="bg-white rounded-lg p-3 sm:p-4 shadow-sm">
                   <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-yellow-600">
                     {calculateCoins(featuredStudent)}
                   </div>
-                  <div className="text-xs sm:text-sm text-gray-600">💰 Coins</div>
+                  <div className="text-xs sm:text-sm text-gray-600">Coins</div>
                 </div>
               </div>
 
-              {/* Featured Student's Pet - MOBILE RESPONSIVE */}
+              {/* Featured Student's Pet */}
               {featuredStudent.ownedPets && featuredStudent.ownedPets.length > 0 && (
                 <div className="bg-white rounded-lg p-3 sm:p-4 shadow-sm">
-                  <div className="flex flex-col sm:flex-row lg:flex-row items-center gap-3 sm:gap-4">
+                  <div className="flex items-center justify-center lg:justify-start gap-2 sm:gap-3">
                     <img 
                       src={getPetImage(featuredStudent.ownedPets[0])} 
                       alt={featuredStudent.ownedPets[0].name}
-                      className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 xl:w-32 xl:h-32 rounded-full border-2 sm:border-3 border-purple-300 shadow-md"
+                      className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-gray-300"
                     />
-                    <div className="text-center sm:text-left lg:text-left">
-                      <p className="text-xs sm:text-sm text-gray-600">Companion Pet</p>
-                      <p className="font-bold text-sm sm:text-base text-purple-600">{featuredStudent.ownedPets[0].name}</p>
+                    <div className="text-left">
+                      <div className="text-sm sm:text-base font-semibold text-gray-800">
+                        {featuredStudent.ownedPets[0].name}
+                      </div>
+                      <div className="text-xs text-gray-600">Companion Pet</div>
                     </div>
                   </div>
                 </div>
@@ -193,20 +195,21 @@ const DashboardTab = ({
           </div>
         </div>
 
-        {/* Class Statistics - MOBILE RESPONSIVE */}
+        {/* MOBILE-OPTIMIZED Class Stats */}
         <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg">
           <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4 flex items-center gap-2">
             📊 Class Stats
           </h2>
+          
           <div className="space-y-3 sm:space-y-4">
             <div className="flex justify-between items-center p-2 sm:p-3 bg-blue-50 rounded-lg">
-              <span className="text-sm sm:text-base text-gray-700">👥 Total Champions</span>
+              <span className="text-sm sm:text-base text-gray-700">👥 Total Students</span>
               <span className="font-bold text-blue-600 text-lg sm:text-xl">{classStats.totalStudents}</span>
             </div>
             
             <div className="flex justify-between items-center p-2 sm:p-3 bg-green-50 rounded-lg">
-              <span className="text-sm sm:text-base text-gray-700">⚡ Average XP</span>
-              <span className="font-bold text-green-600 text-lg sm:text-xl">{classStats.averageXP}</span>
+              <span className="text-sm sm:text-base text-gray-700">⭐ Total XP</span>
+              <span className="font-bold text-green-600 text-lg sm:text-xl">{classStats.totalXP}</span>
             </div>
             
             <div className="flex justify-between items-center p-2 sm:p-3 bg-yellow-50 rounded-lg">
