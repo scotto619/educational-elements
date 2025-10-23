@@ -255,8 +255,22 @@ const ShopTab = ({
 
     if (allShopItems.length > 0) {
       // Use date as seed for consistent daily featured items
-      const today = new Date().getDate() + new Date().getMonth() * 31;
-      const shuffled = allShopItems.sort(() => 0.5 - Math.sin(today * 1000));
+// Create a proper daily seed using year, month, and day
+const now = new Date();
+const seed = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
+
+// Seeded random function for consistent daily results
+const seededRandom = (s) => {
+  const x = Math.sin(s) * 10000;
+  return x - Math.floor(x);
+};
+
+// Shuffle array using seeded random
+const shuffled = [...allShopItems];
+for (let i = shuffled.length - 1; i > 0; i--) {
+  const j = Math.floor(seededRandom(seed + i) * (i + 1));
+  [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+}
       const featured = shuffled.slice(0, 3).map(item => ({
         ...item,
         originalPrice: item.price,
