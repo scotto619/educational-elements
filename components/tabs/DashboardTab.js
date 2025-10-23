@@ -1,5 +1,6 @@
 // components/tabs/DashboardTab.js - MOBILE-OPTIMIZED DASHBOARD
 import React, { useState, useEffect } from 'react';
+import { getDailyFeaturedItems } from './ShopTab';
 
 const DashboardTab = ({ 
   students = [], 
@@ -16,6 +17,27 @@ const DashboardTab = ({
   const [featuredStudent, setFeaturedStudent] = useState(null);
   const [featuredShopItem, setFeaturedShopItem] = useState(null);
   const [classStats, setClassStats] = useState({});
+  const [currentRewards, setCurrentRewards] = useState([]);
+
+  // Load teacher rewards from localStorage
+  useEffect(() => {
+    const savedRewards = localStorage.getItem('teacherRewards');
+    if (savedRewards) {
+      setCurrentRewards(JSON.parse(savedRewards));
+    } else {
+      // Default rewards if none saved
+      setCurrentRewards([
+        { id: 'reward_1', name: 'Extra Computer Time', price: 20, category: 'technology', icon: '💻' },
+        { id: 'reward_2', name: 'Class Game Session', price: 30, category: 'fun', icon: '🎮' },
+        { id: 'reward_3', name: 'No Homework Pass', price: 25, category: 'privileges', icon: '📝' },
+        { id: 'reward_4', name: 'Choose Class Music', price: 15, category: 'privileges', icon: '🎵' },
+        { id: 'reward_5', name: 'Line Leader for a Week', price: 10, category: 'privileges', icon: '🎯' },
+        { id: 'reward_6', name: 'Sit Anywhere Day', price: 12, category: 'privileges', icon: '💺' },
+        { id: 'reward_7', name: 'Extra Recess Time', price: 18, category: 'fun', icon: '⏰' },
+        { id: 'reward_8', name: 'Teach the Class', price: 35, category: 'special', icon: '🎓' },
+      ]);
+    }
+  }, []);
 
   // Calculate class statistics
   useEffect(() => {
@@ -44,27 +66,30 @@ const DashboardTab = ({
       });
 
       // Set featured student (rotate daily based on date)
-      const today = new Date().getDate();
-      const featuredIndex = today % students.length;
+      const today = new Date();
+      const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
+      const featuredIndex = seed % students.length;
       setFeaturedStudent(students[featuredIndex]);
     }
   }, [students, calculateCoins, calculateAvatarLevel]);
 
-  // Set featured shop item (rotate daily)
+  // Set featured shop item - UPDATED TO USE SAME FUNCTION AS SHOP TAB
   useEffect(() => {
-    const allShopItems = [
-      ...SHOP_BASIC_AVATARS.map(item => ({ ...item, type: 'Basic Avatar', category: 'avatar' })),
-      ...SHOP_PREMIUM_AVATARS.map(item => ({ ...item, type: 'Premium Avatar', category: 'avatar' })),
-      ...SHOP_BASIC_PETS.map(item => ({ ...item, type: 'Basic Pet', category: 'pet' })),
-      ...SHOP_PREMIUM_PETS.map(item => ({ ...item, type: 'Premium Pet', category: 'pet' }))
-    ];
-    
-    if (allShopItems.length > 0) {
-      const today = new Date().getDate();
-      const featuredIndex = today % allShopItems.length;
-      setFeaturedShopItem(allShopItems[featuredIndex]);
+    if (SHOP_BASIC_AVATARS && SHOP_PREMIUM_AVATARS && SHOP_BASIC_PETS && SHOP_PREMIUM_PETS && currentRewards.length > 0) {
+      const featuredItems = getDailyFeaturedItems(
+        SHOP_BASIC_AVATARS, 
+        SHOP_PREMIUM_AVATARS, 
+        SHOP_BASIC_PETS, 
+        SHOP_PREMIUM_PETS, 
+        currentRewards
+      );
+      
+      // Display the first featured item
+      if (featuredItems.length > 0) {
+        setFeaturedShopItem(featuredItems[0]);
+      }
     }
-  }, [SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, SHOP_BASIC_PETS, SHOP_PREMIUM_PETS]);
+  }, [SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, SHOP_BASIC_PETS, SHOP_PREMIUM_PETS, currentRewards]);
 
   const getLevelBadgeColor = (level) => {
     switch(level) {
@@ -158,10 +183,8 @@ const DashboardTab = ({
                       className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 xl:w-32 xl:h-32 rounded-full border-2 sm:border-3 border-purple-300 shadow-md"
                     />
                     <div className="text-center sm:text-left lg:text-left">
-                      <div className="text-base sm:text-lg lg:text-xl font-bold text-gray-800">
-                        Companion: {featuredStudent.ownedPets[0].name}
-                      </div>
-                      <div className="text-xs sm:text-sm text-gray-600">🐾 Faithful Friend</div>
+                      <p className="text-xs sm:text-sm text-gray-600">Companion Pet</p>
+                      <p className="font-bold text-sm sm:text-base text-purple-600">{featuredStudent.ownedPets[0].name}</p>
                     </div>
                   </div>
                 </div>
@@ -170,12 +193,11 @@ const DashboardTab = ({
           </div>
         </div>
 
-        {/* MOBILE-OPTIMIZED Class Stats Card */}
+        {/* Class Statistics - MOBILE RESPONSIVE */}
         <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg">
           <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4 flex items-center gap-2">
-            📊 Class Statistics
+            📊 Class Stats
           </h2>
-          
           <div className="space-y-3 sm:space-y-4">
             <div className="flex justify-between items-center p-2 sm:p-3 bg-blue-50 rounded-lg">
               <span className="text-sm sm:text-base text-gray-700">👥 Total Champions</span>
@@ -231,14 +253,28 @@ const DashboardTab = ({
             </div>
             
             <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
-              <img 
-                src={featuredShopItem.path} 
-                alt={featuredShopItem.name}
-                className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg border-2 border-purple-300 shadow-sm object-contain"
-              />
+              {featuredShopItem.type === 'reward' ? (
+                <div className="text-4xl sm:text-5xl">
+                  {featuredShopItem.icon}
+                </div>
+              ) : (
+                <img 
+                  src={featuredShopItem.path} 
+                  alt={featuredShopItem.name}
+                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg border-2 border-purple-300 shadow-sm object-contain"
+                />
+              )}
               <div className="flex-1 text-center sm:text-left">
                 <h3 className="text-base sm:text-lg font-bold text-gray-800">{featuredShopItem.name}</h3>
-                <p className="text-xs sm:text-sm text-purple-600 font-semibold">{featuredShopItem.type}</p>
+                <p className="text-xs sm:text-sm text-purple-600 font-semibold capitalize">{featuredShopItem.type}</p>
+                {featuredShopItem.originalPrice && (
+                  <div className="mt-1 flex items-center justify-center sm:justify-start gap-2">
+                    <span className="text-sm text-gray-500 line-through">💰 {featuredShopItem.originalPrice}</span>
+                    <span className="bg-red-500 text-white px-2 py-0.5 rounded text-xs font-bold">
+                      -{featuredShopItem.salePercentage}%
+                    </span>
+                  </div>
+                )}
                 <div className="mt-1 sm:mt-2 flex items-center justify-center sm:justify-start gap-2">
                   <span className="text-lg sm:text-2xl font-bold text-yellow-600">💰 {featuredShopItem.price}</span>
                   <span className="text-xs sm:text-sm text-gray-600">coins</span>

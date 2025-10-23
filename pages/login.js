@@ -151,7 +151,7 @@ export default function Login() {
         {/* Security Notice */}
         <div className="bg-gray-50 px-8 py-4 text-center">
           <p className="text-xs text-gray-500">
-            Having trouble? <a href="mailto:support@educationalelements.com" className="text-blue-600 hover:underline">Contact Support</a>
+            Having trouble? <a href="mailto:admin@educational-elements.com" className="text-blue-600 hover:underline">Contact Support</a>
           </p>
         </div>
       </div>
