@@ -1,4 +1,4 @@
-// components/tabs/ShopTab.js - MOBILE-OPTIMIZED SHOP WITH MYSTERY BOX AND SELLING FEATURE - FIXED DAILY SPECIALS
+// components/tabs/ShopTab.js - MOBILE-OPTIMIZED SHOP WITH MYSTERY BOX AND SELLING FEATURE - FIXED PURCHASE FUNCTIONS
 import React, { useState, useEffect } from 'react';
 
 // ===============================================
@@ -17,57 +17,6 @@ const DEFAULT_TEACHER_REWARDS = [
 
 // Available icons for new rewards
 const REWARD_ICONS = ['💻', '🎮', '📝', '🎵', '🎯', '💺', '⏰', '🎓', '🏆', '⭐', '🎨', '📚', '🏃‍♂️', '🎁', '🎭', '🎪', '🎯', '🎲', '🎊', '🎉', '👑', '🏅', '🥇', '🎀', '🌟', '✨', '🔮', '🎈', '🎂', '🍕', '🍪', '🧸', '🚀', '🌈', '⚡', '🔥', '💎', '🍭'];
-
-// ===============================================
-// DAILY FEATURED ITEMS SYSTEM
-// ===============================================
-
-// Function to generate daily featured items - EXPORTED for use in DashboardTab
-export const getDailyFeaturedItems = (SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, SHOP_BASIC_PETS, SHOP_PREMIUM_PETS, currentRewards) => {
-  const allShopItems = [
-    ...SHOP_BASIC_AVATARS.map(item => ({ ...item, category: 'basic_avatars', type: 'Basic Avatar' })),
-    ...SHOP_PREMIUM_AVATARS.map(item => ({ ...item, category: 'premium_avatars', type: 'Premium Avatar' })),
-    ...SHOP_BASIC_PETS.map(item => ({ ...item, category: 'basic_pets', type: 'Basic Pet' })),
-    ...SHOP_PREMIUM_PETS.map(item => ({ ...item, category: 'premium_pets', type: 'Premium Pet' })),
-    ...currentRewards.map(item => ({ ...item, category: 'rewards', type: 'reward' }))
-  ];
-
-  if (allShopItems.length === 0) return [];
-
-  // Use date as seed for consistent daily featured items
-  const today = new Date();
-  const dateString = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
-  
-  // Create a simple seeded random function
-  const seededRandom = (seed) => {
-    let x = Math.sin(seed) * 10000;
-    return x - Math.floor(x);
-  };
-  
-  // Convert date string to a number for seeding
-  let seed = 0;
-  for (let i = 0; i < dateString.length; i++) {
-    seed += dateString.charCodeAt(i);
-  }
-  
-  // Shuffle items using seeded random
-  const shuffled = [...allShopItems];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    seed = seed * 9301 + 49297; // Linear congruential generator
-    const j = Math.floor(seededRandom(seed) * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  
-  // Get 3 featured items with 30% discount
-  const featured = shuffled.slice(0, 3).map(item => ({
-    ...item,
-    originalPrice: item.price,
-    price: Math.max(1, Math.floor(item.price * 0.7)), // 30% discount
-    salePercentage: 30
-  }));
-  
-  return featured;
-};
 
 // ===============================================
 // MYSTERY BOX SYSTEM
@@ -222,24 +171,26 @@ const getRarityBg = (rarity) => {
 // SELLING SYSTEM - NEW FEATURE
 // ===============================================
 
-// Helper function to calculate sell price (50% of original price)
-const calculateSellPrice = (itemName, itemType, SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, SHOP_BASIC_PETS, SHOP_PREMIUM_PETS, currentRewards) => {
-  let originalPrice = 10; // Default fallback
+// Calculate sell price (25% of original cost)
+const calculateSellPrice = (originalPrice) => {
+  return Math.max(1, Math.floor(originalPrice * 0.25));
+};
 
+// Find original item price from shop data
+const findOriginalPrice = (itemName, itemType, SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, SHOP_BASIC_PETS, SHOP_PREMIUM_PETS, currentRewards) => {
   if (itemType === 'avatar') {
     const basicAvatar = SHOP_BASIC_AVATARS.find(a => a.name === itemName);
     const premiumAvatar = SHOP_PREMIUM_AVATARS.find(a => a.name === itemName);
-    originalPrice = basicAvatar?.price || premiumAvatar?.price || 15;
+    return basicAvatar?.price || premiumAvatar?.price || 10; // Default if not found
   } else if (itemType === 'pet') {
-    const basicPet = SHOP_BASIC_PETS.find(p => p.name === itemName || p.species === itemName);
-    const premiumPet = SHOP_PREMIUM_PETS.find(p => p.name === itemName || p.species === itemName);
-    originalPrice = basicPet?.price || premiumPet?.price || 15;
+    const basicPet = SHOP_BASIC_PETS.find(p => p.name === itemName);
+    const premiumPet = SHOP_PREMIUM_PETS.find(p => p.name === itemName);
+    return basicPet?.price || premiumPet?.price || 15; // Default if not found
   } else if (itemType === 'reward') {
     const reward = currentRewards.find(r => r.id === itemName || r.name === itemName);
-    originalPrice = reward?.price || 10;
+    return reward?.price || 10; // Default if not found
   }
-
-  return Math.floor(originalPrice * 0.5); // 50% of original price
+  return 10; // Fallback default
 };
 
 // ===============================================
@@ -292,16 +243,26 @@ const ShopTab = ({
 
   const selectedStudent = students.find(s => s.id === selectedStudentId);
 
-  // Generate featured items daily - UPDATED TO USE NEW FUNCTION
+  // Generate featured items (3 random items on sale)
   useEffect(() => {
-    if (SHOP_BASIC_AVATARS.length > 0 || SHOP_PREMIUM_AVATARS.length > 0 || SHOP_BASIC_PETS.length > 0 || SHOP_PREMIUM_PETS.length > 0 || currentRewards.length > 0) {
-      const featured = getDailyFeaturedItems(
-        SHOP_BASIC_AVATARS, 
-        SHOP_PREMIUM_AVATARS, 
-        SHOP_BASIC_PETS, 
-        SHOP_PREMIUM_PETS, 
-        currentRewards
-      );
+    const allShopItems = [
+      ...SHOP_BASIC_AVATARS.map(item => ({ ...item, category: 'basic_avatars', type: 'avatar' })),
+      ...SHOP_PREMIUM_AVATARS.map(item => ({ ...item, category: 'premium_avatars', type: 'avatar' })),
+      ...SHOP_BASIC_PETS.map(item => ({ ...item, category: 'basic_pets', type: 'pet' })),
+      ...SHOP_PREMIUM_PETS.map(item => ({ ...item, category: 'premium_pets', type: 'pet' })),
+      ...currentRewards.map(item => ({ ...item, category: 'rewards', type: 'reward' }))
+    ];
+
+    if (allShopItems.length > 0) {
+      // Use date as seed for consistent daily featured items
+      const today = new Date().getDate() + new Date().getMonth() * 31;
+      const shuffled = allShopItems.sort(() => 0.5 - Math.sin(today * 1000));
+      const featured = shuffled.slice(0, 3).map(item => ({
+        ...item,
+        originalPrice: item.price,
+        price: Math.max(1, Math.floor(item.price * 0.7)), // 30% discount
+        salePercentage: 30
+      }));
       setFeaturedItems(featured);
     }
   }, [SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, SHOP_BASIC_PETS, SHOP_PREMIUM_PETS, currentRewards]);
@@ -325,587 +286,717 @@ const ShopTab = ({
   const confirmMysteryBoxPurchase = async () => {
     if (!selectedStudent) return;
     
-    // Deduct coins first
-    const updatedStudent = { 
-      ...selectedStudent, 
+    // Deduct coins first - FIXED: Pass studentId and updates separately
+    const updates = { 
       coinsSpent: (selectedStudent.coinsSpent || 0) + MYSTERY_BOX_PRICE 
     };
+    onUpdateStudent(selectedStudent.id, updates);
     
-    // Get all possible prizes
-    const allPrizes = getMysteryBoxPrizes(SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, SHOP_BASIC_PETS, SHOP_PREMIUM_PETS, currentRewards);
-    
-    // Select random prize
-    const prize = selectRandomPrize(allPrizes);
-    setMysteryBoxPrize(prize);
-    
-    // Update student with purchase
-    await onUpdateStudent(updatedStudent);
-    
-    // Show opening animation
+    // Start the opening sequence
     setMysteryBoxModal({ visible: true, stage: 'opening' });
     setIsSpinning(true);
     
-    // After animation, award the prize
+    // Get all possible prizes
+    const allPrizes = getMysteryBoxPrizes(
+      SHOP_BASIC_AVATARS, 
+      SHOP_PREMIUM_AVATARS, 
+      SHOP_BASIC_PETS, 
+      SHOP_PREMIUM_PETS, 
+      currentRewards
+    );
+    
+    // Select random prize
+    const selectedPrize = selectRandomPrize(allPrizes);
+    setMysteryBoxPrize(selectedPrize);
+    
+    // Spinning animation (3 seconds)
     setTimeout(() => {
-      awardMysteryBoxPrize(updatedStudent, prize);
+      setIsSpinning(false);
+      setMysteryBoxModal({ visible: true, stage: 'reveal' });
+      
+      // Award the prize - pass the updated student with the coins already deducted
+      const updatedStudent = { ...selectedStudent, coinsSpent: (selectedStudent.coinsSpent || 0) + MYSTERY_BOX_PRICE };
+      awardMysteryBoxPrize(selectedPrize, updatedStudent);
     }, 3000);
   };
   
-  const awardMysteryBoxPrize = async (student, prize) => {
-    let finalStudent = { ...student };
+  const awardMysteryBoxPrize = (prize, student) => {
+    let updates = {};
+    let message = '';
     
     switch (prize.type) {
       case 'avatar':
-        const avatarBase = prize.item.base || prize.item.name;
-        if (!finalStudent.ownedAvatars.includes(avatarBase)) {
-          finalStudent.ownedAvatars = [...finalStudent.ownedAvatars, avatarBase];
+        if (!student.ownedAvatars?.includes(prize.item.name)) {
+          updates.ownedAvatars = [...new Set([...(student.ownedAvatars || []), prize.item.name])];
+          message = `${student.firstName} won the ${prize.item.name} avatar!`;
+        } else {
+          // Already owned, give coins instead
+          updates.currency = (student.currency || 0) + 5;
+          message = `${student.firstName} already had the ${prize.item.name} avatar, so got 5 bonus coins instead!`;
         }
         break;
         
       case 'pet':
-        const newPet = {
-          id: `pet_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          name: prize.item.name,
-          image: prize.item.image,
-          species: prize.item.species || prize.item.name,
-          speed: prize.item.speed || 1.0,
-          wins: 0,
-          level: 1,
-          type: 'mystery_box',
-          dateObtained: new Date().toISOString()
-        };
-        finalStudent.ownedPets = [...(finalStudent.ownedPets || []), newPet];
+        const newPet = { ...prize.item, id: `pet_${Date.now()}` };
+        updates.ownedPets = [...(student.ownedPets || []), newPet];
+        message = `${student.firstName} won a ${prize.item.name}!`;
         break;
         
       case 'reward':
-        finalStudent.rewardsPurchased = [...(finalStudent.rewardsPurchased || []), {
-          ...prize.item,
-          purchasedAt: new Date().toISOString(),
-          source: 'mystery_box'
+        updates.rewardsPurchased = [...(student.rewardsPurchased || []), { 
+          ...prize.item, 
+          purchasedAt: new Date().toISOString() 
         }];
+        message = `${student.firstName} won ${prize.item.name}!`;
         break;
         
       case 'xp':
-        finalStudent.totalPoints = (finalStudent.totalPoints || 0) + prize.amount;
+        updates.totalPoints = (student.totalPoints || 0) + prize.amount;
+        message = `${student.firstName} won ${prize.amount} bonus XP!`;
         break;
         
       case 'coins':
-        finalStudent.currency = (finalStudent.currency || 0) + prize.amount;
+        updates.currency = (student.currency || 0) + prize.amount;
+        message = `${student.firstName} won ${prize.amount} bonus coins!`;
         break;
     }
     
-    // Update student and show reward
-    await onUpdateStudent(finalStudent);
+    // FIXED: Pass studentId and updates separately
+    onUpdateStudent(student.id, updates);
+    showToast(message, 'success');
+  };
+  
+  const closeMysteryBoxModal = () => {
+    setMysteryBoxModal({ visible: false, stage: 'confirm' });
+    setMysteryBoxPrize(null);
     setIsSpinning(false);
-    setMysteryBoxModal({ visible: true, stage: 'reveal' });
   };
 
   // ===============================================
-  // SELLING FUNCTIONS - NEW FEATURE
+  // NEW: SELLING FUNCTIONS
   // ===============================================
   
   const handleSellItem = (item, type) => {
     if (!selectedStudent) return;
     
-    let itemName, sellPrice;
+    let itemName = '';
+    let canSell = true;
+    let reason = '';
     
     if (type === 'avatar') {
       itemName = item;
-      sellPrice = calculateSellPrice(itemName, 'avatar', SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, SHOP_BASIC_PETS, SHOP_PREMIUM_PETS, currentRewards);
+      // Check if this is the currently equipped avatar
+      if (selectedStudent.avatarBase === item) {
+        canSell = false;
+        reason = 'Cannot sell currently equipped avatar';
+      }
+      // Check if this is the only avatar owned
+      if (selectedStudent.ownedAvatars?.length <= 1) {
+        canSell = false;
+        reason = 'Cannot sell your last avatar';
+      }
     } else if (type === 'pet') {
-      itemName = item.name || item.species;
-      sellPrice = calculateSellPrice(itemName, 'pet', SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, SHOP_BASIC_PETS, SHOP_PREMIUM_PETS, currentRewards);
+      itemName = item.name;
+      // Check if this is the active pet (first in list)
+      if (selectedStudent.ownedPets?.[0]?.id === item.id) {
+        // Allow selling active pet, but show warning in modal
+      }
     } else if (type === 'reward') {
       itemName = item.name;
-      sellPrice = calculateSellPrice(item.id || item.name, 'reward', SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, SHOP_BASIC_PETS, SHOP_PREMIUM_PETS, currentRewards);
+      // Rewards can always be sold
     }
     
-    setSellModal({
-      visible: true,
-      item: item,
-      type: type,
-      price: sellPrice
-    });
-  };
-  
-  const confirmSell = async () => {
-    if (!selectedStudent || !sellModal.item) return;
-    
-    let updatedStudent = { ...selectedStudent };
-    
-    if (sellModal.type === 'avatar') {
-      // Remove avatar from owned avatars
-      updatedStudent.ownedAvatars = updatedStudent.ownedAvatars.filter(a => a !== sellModal.item);
-      
-      // If selling equipped avatar, revert to default
-      if (updatedStudent.avatarBase === sellModal.item) {
-        updatedStudent.avatarBase = updatedStudent.ownedAvatars[0] || 'Wizard F';
-      }
-    } else if (sellModal.type === 'pet') {
-      // Remove pet from owned pets
-      updatedStudent.ownedPets = updatedStudent.ownedPets.filter(p => p.id !== sellModal.item.id);
-    } else if (sellModal.type === 'reward') {
-      // Remove reward from purchased rewards
-      updatedStudent.rewardsPurchased = updatedStudent.rewardsPurchased.filter(r => 
-        r.id !== sellModal.item.id || r.purchasedAt !== sellModal.item.purchasedAt
-      );
-    }
-    
-    // Add coins from sale
-    updatedStudent.currency = (updatedStudent.currency || 0) + sellModal.price;
-    
-    await onUpdateStudent(updatedStudent);
-    showToast(`Sold for ${sellModal.price} coins!`, 'success');
-    setSellModal({ visible: false, item: null, type: null, price: 0 });
-  };
-
-  // ===============================================
-  // EQUIPMENT FUNCTIONS
-  // ===============================================
-  
-  const handleEquip = async (type, itemId) => {
-    if (!selectedStudent) return;
-    
-    let updatedStudent = { ...selectedStudent };
-    
-    if (type === 'avatar') {
-      updatedStudent.avatarBase = itemId;
-    } else if (type === 'pet') {
-      // Move selected pet to front of array
-      const petIndex = updatedStudent.ownedPets.findIndex(p => p.id === itemId);
-      if (petIndex > -1) {
-        const [selectedPet] = updatedStudent.ownedPets.splice(petIndex, 1);
-        updatedStudent.ownedPets.unshift(selectedPet);
-      }
-    }
-    
-    await onUpdateStudent(updatedStudent);
-    showToast(`${type === 'avatar' ? 'Avatar' : 'Pet'} equipped!`, 'success');
-  };
-
-  // ===============================================
-  // PURCHASE FUNCTIONS
-  // ===============================================
-  
-  const handlePurchase = async () => {
-    if (!selectedStudent || !purchaseModal.item) return;
-    
-    const studentCoins = calculateCoins(selectedStudent);
-    if (studentCoins < purchaseModal.item.price) {
-      showToast(`${selectedStudent.firstName} needs ${purchaseModal.item.price - studentCoins} more coins!`, 'error');
+    if (!canSell) {
+      showToast(reason, 'error');
       return;
     }
     
-    let updatedStudent = { ...selectedStudent };
-    updatedStudent.coinsSpent = (updatedStudent.coinsSpent || 0) + purchaseModal.item.price;
+    const originalPrice = findOriginalPrice(itemName, type, SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, SHOP_BASIC_PETS, SHOP_PREMIUM_PETS, currentRewards);
+    const sellPrice = calculateSellPrice(originalPrice);
     
-    if (purchaseModal.item.category === 'basic_avatars' || purchaseModal.item.category === 'premium_avatars') {
-      // Handle avatar purchase
-      const avatarBase = purchaseModal.item.base || purchaseModal.item.name;
-      if (!updatedStudent.ownedAvatars.includes(avatarBase)) {
-        updatedStudent.ownedAvatars = [...updatedStudent.ownedAvatars, avatarBase];
+    setSellModal({ 
+      visible: true, 
+      item: item, 
+      type: type, 
+      price: sellPrice,
+      originalPrice: originalPrice 
+    });
+  };
+  
+  const confirmSell = () => {
+    if (!selectedStudent || !sellModal.item) return;
+    
+    let updates = {
+      currency: (selectedStudent.currency || 0) + sellModal.price
+    };
+    
+    // Remove the item from inventory
+    if (sellModal.type === 'avatar') {
+      updates.ownedAvatars = selectedStudent.ownedAvatars.filter(a => a !== sellModal.item);
+    } else if (sellModal.type === 'pet') {
+      updates.ownedPets = selectedStudent.ownedPets.filter(p => p.id !== sellModal.item.id);
+    } else if (sellModal.type === 'reward') {
+      // For rewards, find by name and remove first match
+      const rewardIndex = selectedStudent.rewardsPurchased?.findIndex(r => 
+        r.name === sellModal.item.name && r.purchasedAt === sellModal.item.purchasedAt
+      );
+      if (rewardIndex >= 0) {
+        updates.rewardsPurchased = [
+          ...selectedStudent.rewardsPurchased.slice(0, rewardIndex),
+          ...selectedStudent.rewardsPurchased.slice(rewardIndex + 1)
+        ];
       }
-      showToast(`${purchaseModal.item.name} avatar purchased!`, 'success');
-    } else if (purchaseModal.item.category === 'basic_pets' || purchaseModal.item.category === 'premium_pets') {
-      // Handle pet purchase
-      const newPet = {
-        id: `pet_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        name: purchaseModal.item.name,
-        image: purchaseModal.item.image,
-        species: purchaseModal.item.species || purchaseModal.item.name,
-        speed: purchaseModal.item.speed || 1.0,
-        wins: 0,
-        level: 1,
-        type: 'purchased',
-        dateObtained: new Date().toISOString()
-      };
-      
-      updatedStudent.ownedPets = [...(updatedStudent.ownedPets || []), newPet];
-      showToast(`${purchaseModal.item.name} pet purchased!`, 'success');
-    } else if (purchaseModal.item.category === 'rewards') {
-      // Handle teacher reward purchase
-      updatedStudent.rewardsPurchased = [...(updatedStudent.rewardsPurchased || []), {
-        ...purchaseModal.item,
-        purchasedAt: new Date().toISOString()
-      }];
-      showToast(`${purchaseModal.item.name} reward purchased!`, 'success');
     }
     
-    await onUpdateStudent(updatedStudent);
-    setPurchaseModal({ visible: false, item: null, type: null });
+    // FIXED: Pass studentId and updates separately
+    onUpdateStudent(selectedStudent.id, updates);
+    setSellModal({ visible: false, item: null, type: null, price: 0 });
+    
+    const itemDisplayName = sellModal.type === 'pet' ? sellModal.item.name : 
+                           sellModal.type === 'avatar' ? sellModal.item :
+                           sellModal.item.name;
+    
+    showToast(`${selectedStudent.firstName} sold ${itemDisplayName} for ${sellModal.price} coins!`, 'success');
   };
 
   // ===============================================
   // REWARD MANAGEMENT FUNCTIONS
   // ===============================================
   
-  const handleSaveReward = () => {
-    if (!newReward.name.trim()) return;
-    
+  const handleAddReward = () => {
+    if (!newReward.name.trim()) {
+      showToast('Please enter a reward name', 'error');
+      return;
+    }
+
     const reward = {
-      id: `reward_${Date.now()}`,
-      ...newReward
+      id: `reward_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      name: newReward.name.trim(),
+      price: Math.max(1, newReward.price),
+      category: newReward.category,
+      icon: newReward.icon
     };
-    
+
     const updatedRewards = [...currentRewards, reward];
     onUpdateRewards(updatedRewards);
-    saveRewards();
-    
+    saveRewards(updatedRewards);
+
     setNewReward({ name: '', price: 10, category: 'privileges', icon: '🏆' });
     showToast('Reward added successfully!', 'success');
   };
-  
+
   const handleEditReward = (reward) => {
     setEditingReward(reward);
     setNewReward({ ...reward });
   };
-  
+
   const handleUpdateReward = () => {
-    if (!newReward.name.trim() || !editingReward) return;
-    
-    const updatedRewards = currentRewards.map(r => 
-      r.id === editingReward.id ? { ...newReward } : r
+    if (!newReward.name.trim()) {
+      showToast('Please enter a reward name', 'error');
+      return;
+    }
+
+    const updatedRewards = currentRewards.map(reward =>
+      reward.id === editingReward.id
+        ? { ...reward, name: newReward.name.trim(), price: Math.max(1, newReward.price), category: newReward.category, icon: newReward.icon }
+        : reward
     );
-    
+
     onUpdateRewards(updatedRewards);
-    saveRewards();
-    
+    saveRewards(updatedRewards);
+
     setEditingReward(null);
     setNewReward({ name: '', price: 10, category: 'privileges', icon: '🏆' });
     showToast('Reward updated successfully!', 'success');
   };
-  
+
   const handleDeleteReward = (rewardId) => {
-    const updatedRewards = currentRewards.filter(r => r.id !== rewardId);
-    onUpdateRewards(updatedRewards);
-    saveRewards();
-    showToast('Reward deleted successfully!', 'success');
+    if (confirm('Are you sure you want to delete this reward?')) {
+      const updatedRewards = currentRewards.filter(reward => reward.id !== rewardId);
+      onUpdateRewards(updatedRewards);
+      saveRewards(updatedRewards);
+      showToast('Reward deleted successfully!', 'success');
+    }
+  };
+
+  const resetToDefaults = () => {
+    if (confirm('Are you sure you want to reset to default rewards? This will replace all custom rewards.')) {
+      onUpdateRewards(DEFAULT_TEACHER_REWARDS);
+      saveRewards(DEFAULT_TEACHER_REWARDS);
+      showToast('Rewards reset to defaults!', 'success');
+    }
   };
 
   // ===============================================
-  // RENDER FUNCTIONS
+  // PURCHASE LOGIC - FIXED
   // ===============================================
 
-  const renderShopItems = () => {
-    let items = [];
+  const handlePurchase = () => {
+    if (!selectedStudent || !purchaseModal.item) return;
+
+    const studentCoins = calculateCoins(selectedStudent);
+    if (studentCoins < purchaseModal.item.price) {
+      showToast(`${selectedStudent.firstName} needs ${purchaseModal.item.price - studentCoins} more coins!`, 'error');
+      return;
+    }
+
+    let updates = {
+      coinsSpent: (selectedStudent.coinsSpent || 0) + purchaseModal.item.price
+    };
+
+    switch (purchaseModal.type) {
+      case 'avatar':
+        updates.ownedAvatars = [...new Set([...(selectedStudent.ownedAvatars || []), purchaseModal.item.name])];
+        showToast(`${selectedStudent.firstName} bought the ${purchaseModal.item.name} avatar!`, 'success');
+        break;
+      case 'pet':
+        const newPet = { ...purchaseModal.item, id: `pet_${Date.now()}` };
+        updates.ownedPets = [...(selectedStudent.ownedPets || []), newPet];
+        showToast(`${selectedStudent.firstName} adopted a ${purchaseModal.item.name}!`, 'success');
+        break;
+      case 'reward':
+        updates.rewardsPurchased = [...(selectedStudent.rewardsPurchased || []), { 
+          ...purchaseModal.item, 
+          purchasedAt: new Date().toISOString() 
+        }];
+        showToast(`${selectedStudent.firstName} earned ${purchaseModal.item.name}!`, 'success');
+        break;
+      default: return;
+    }
+
+    // FIXED: Pass studentId and updates separately
+    onUpdateStudent(selectedStudent.id, updates);
+    setPurchaseModal({ visible: false, item: null, type: null });
+  };
+  
+  const handleEquip = (type, value) => {
+    if (!selectedStudent) return;
     
-    switch (activeCategory) {
-      case 'featured':
-        items = featuredItems;
-        break;
-      case 'basic_avatars':
-        items = SHOP_BASIC_AVATARS.map(item => ({ ...item, type: 'Basic Avatar' }));
-        break;
-      case 'premium_avatars':
-        items = SHOP_PREMIUM_AVATARS.map(item => ({ ...item, type: 'Premium Avatar' }));
-        break;
-      case 'basic_pets':
-        items = SHOP_BASIC_PETS.map(item => ({ ...item, type: 'Basic Pet' }));
-        break;
-      case 'premium_pets':
-        items = SHOP_PREMIUM_PETS.map(item => ({ ...item, type: 'Premium Pet' }));
-        break;
-      case 'rewards':
-        items = currentRewards.map(item => ({ ...item, type: 'reward' }));
-        break;
-      case 'mysterybox':
-        return (
-          <div className="flex justify-center">
-            <div className="bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl p-6 sm:p-8 text-center border-4 border-purple-300 shadow-2xl max-w-md">
-              <div className="text-6xl sm:text-8xl mb-4 sm:mb-6 animate-bounce">🎁</div>
-              <h3 className="text-xl sm:text-2xl font-bold text-purple-800 mb-3 sm:mb-4">Mystery Box</h3>
-              <p className="text-sm sm:text-base text-purple-600 mb-4 sm:mb-6">
-                Take a chance! You could win amazing avatars, pets, XP, coins, or special rewards!
-              </p>
-              <div className="text-2xl sm:text-3xl font-bold text-yellow-600 mb-4 sm:mb-6">💰 {MYSTERY_BOX_PRICE} coins</div>
-              <button
-                onClick={handleMysteryBoxPurchase}
-                disabled={!selectedStudent || calculateCoins(selectedStudent) < MYSTERY_BOX_PRICE}
-                className="px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl hover:from-purple-600 hover:to-pink-600 disabled:bg-gray-400 font-bold shadow-lg text-sm sm:text-base transform hover:scale-105 transition-all"
-              >
-                🎲 Try Your Luck!
-              </button>
-            </div>
-          </div>
-        );
-      default:
-        return null;
+    let updates = {};
+
+    if (type === 'avatar') {
+      updates.avatarBase = value;
+      showToast('Avatar equipped!', 'success');
+    } else if (type === 'pet') {
+      const petToEquip = selectedStudent.ownedPets.find(p => p.id === value);
+      const otherPets = selectedStudent.ownedPets.filter(p => p.id !== value);
+      updates.ownedPets = [petToEquip, ...otherPets];
+      showToast('Pet equipped!', 'success');
     }
+    
+    // FIXED: Pass studentId and updates separately
+    onUpdateStudent(selectedStudent.id, updates);
+  };
 
-    if (items.length === 0) {
+  const SHOP_CATEGORIES = [
+      { id: 'featured', name: '⭐ Featured Items', shortName: 'Featured' },
+      { id: 'mysterybox', name: '🎁 Mystery Box', shortName: 'Mystery' },
+      { id: 'basic_avatars', name: 'Basic Avatars', shortName: 'Basic' },
+      { id: 'premium_avatars', name: 'Premium Avatars', shortName: 'Premium' },
+      { id: 'basic_pets', name: 'Basic Pets', shortName: 'Pets' },
+      { id: 'premium_pets', name: 'Premium Pets', shortName: 'Pets+' },
+      { id: 'rewards', name: 'Class Rewards', shortName: 'Rewards' }
+  ];
+
+  const renderFeaturedItems = () => {
+    return featuredItems.map(item => {
+      const isAvatar = item.type === 'avatar';
+      const isPet = item.type === 'pet';
+      const isReward = item.type === 'reward';
+      const owned = isAvatar ? selectedStudent?.ownedAvatars?.includes(item.name) : 
+                    isPet ? selectedStudent?.ownedPets?.some(p => p.name === item.name) : false;
+      
       return (
-        <div className="text-center py-8 sm:py-12">
-          <div className="text-4xl sm:text-6xl mb-3 sm:mb-4">🛍️</div>
-          <p className="text-base sm:text-lg text-gray-600">No items available in this category</p>
-        </div>
-      );
-    }
-
-    return items.map((item, index) => {
-      const canAfford = selectedStudent ? calculateCoins(selectedStudent) >= item.price : false;
-      const isOwned = selectedStudent && (
-        (item.type?.includes('Avatar') && selectedStudent.ownedAvatars?.includes(item.base || item.name)) ||
-        (item.type?.includes('Pet') && selectedStudent.ownedPets?.some(pet => pet.species === (item.species || item.name)))
-      );
-
-      return (
-        <div key={index} className={`
-          border-2 rounded-xl p-3 sm:p-4 text-center shadow-lg transition-all hover:shadow-xl
-          ${canAfford ? 'hover:border-green-400' : 'hover:border-red-400'}
-          ${isOwned ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'}
-          ${item.originalPrice ? 'bg-gradient-to-br from-red-50 to-pink-50 border-red-300' : ''}
-        `}>
+        <div key={item.name || item.id} className={`border-2 rounded-lg p-3 sm:p-4 text-center flex flex-col justify-between relative ${owned ? 'border-green-400 bg-green-50' : 'border-red-300 bg-gradient-to-br from-red-50 to-pink-50'}`}>
           {/* Sale Badge */}
-          {item.originalPrice && (
-            <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg">
-              SALE!
-            </div>
-          )}
-          
-          {/* Item Image/Icon */}
-          <div className="relative mb-2 sm:mb-3">
-            {item.type === 'reward' ? (
-              <div className="text-3xl sm:text-4xl mb-2">{item.icon}</div>
-            ) : (
-              <img 
-                src={item.path} 
-                alt={item.name}
-                className="w-16 h-16 sm:w-20 sm:h-20 object-contain mx-auto rounded-lg shadow-sm"
-                onError={(e) => { e.target.style.display = 'none'; }}
-              />
-            )}
-            {isOwned && (
-              <div className="absolute top-0 right-0 bg-green-500 text-white text-xs font-bold px-1 py-0.5 rounded-full">
-                ✓
-              </div>
-            )}
+          <div className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 bg-red-500 text-white text-xs font-bold px-1 sm:px-2 py-0.5 sm:py-1 rounded-full shadow-lg">
+            -{item.salePercentage}%
           </div>
           
-          {/* Item Name */}
-          <h4 className="text-sm sm:text-base font-bold text-gray-800 mb-1 sm:mb-2 line-clamp-2">{item.name}</h4>
-          
-          {/* Item Type */}
-          <p className="text-xs text-gray-600 mb-2 sm:mb-3 capitalize">{item.type}</p>
+          {isReward ? (
+              <>
+                  <div className="text-3xl sm:text-4xl">{item.icon}</div>
+                  <p className="font-semibold mt-1 sm:mt-2 text-xs sm:text-sm">{item.name}</p>
+              </>
+          ) : (
+              <img src={item.path} className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 object-contain rounded-full mx-auto mb-1 sm:mb-2"/>
+          )}
+
+          {!isReward && <p className="font-semibold text-xs sm:text-sm">{item.name}</p>}
           
           {/* Price Display */}
-          <div className="mb-3 sm:mb-4">
-            {item.originalPrice ? (
-              <div className="space-y-1">
-                <div className="text-sm text-gray-500 line-through">💰{item.originalPrice}</div>
-                <div className="text-lg sm:text-xl font-bold text-green-600">💰{item.price}</div>
-                <div className="text-xs text-red-600 font-bold">Save {item.salePercentage}%!</div>
-              </div>
-            ) : (
-              <div className="text-lg sm:text-xl font-bold text-yellow-600">💰{item.price}</div>
-            )}
+          <div className="mt-1 sm:mt-2">
+            <div className="text-xs sm:text-sm text-gray-500 line-through">💰 {item.originalPrice}</div>
+            <div className="text-sm sm:text-lg font-bold text-red-600">💰 {item.price}</div>
           </div>
-          
-          {/* Purchase Button */}
-          <button
-            onClick={() => setPurchaseModal({ visible: true, item, type: item.type })}
-            disabled={!selectedStudent || !canAfford || isOwned}
-            className={`w-full py-2 sm:py-3 rounded-lg font-semibold text-xs sm:text-sm transition-all ${
-              isOwned 
-                ? 'bg-green-500 text-white cursor-not-allowed' 
-                : canAfford 
-                  ? item.originalPrice 
-                    ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white hover:from-red-600 hover:to-pink-600' 
-                    : 'bg-blue-500 text-white hover:bg-blue-600'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-            }`}
-          >
-            {isOwned ? 'Owned' : canAfford ? (item.originalPrice ? 'Buy Now - SALE!' : 'Purchase') : 'Not Enough Coins'}
-          </button>
+
+          {owned ? (
+              <p className="font-bold text-green-600 mt-1 sm:mt-2 text-xs sm:text-sm">Owned</p>
+          ) : (
+              <button 
+                onClick={() => setPurchaseModal({ visible: true, item: item, type: item.type })} 
+                disabled={calculateCoins(selectedStudent) < item.price} 
+                className="mt-1 sm:mt-2 w-full bg-red-500 text-white text-xs sm:text-sm py-1 sm:py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-red-600 font-semibold"
+              >
+                🔥 Buy Now!
+              </button>
+          )}
         </div>
       );
     });
   };
 
-  const renderMysteryBoxModal = () => {
+  const renderMysteryBox = () => {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md text-center p-6 sm:p-8">
-          {mysteryBoxModal.stage === 'confirm' && (
-            <>
-              <div className="text-6xl mb-4 animate-bounce">🎁</div>
-              <h2 className="text-xl sm:text-2xl font-bold mb-4">Mystery Box Adventure!</h2>
-              <p className="mb-6 text-sm sm:text-base">
-                Open a Mystery Box for 💰{MYSTERY_BOX_PRICE} coins?<br/>
-                You could win avatars, pets, XP, coins, or rewards!
-              </p>
-              <div className="flex gap-4">
-                <button 
-                  onClick={() => setMysteryBoxModal({ visible: false, stage: 'confirm' })} 
-                  className="flex-1 py-3 border rounded-lg text-sm sm:text-base"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={confirmMysteryBoxPurchase} 
-                  className="flex-1 py-3 bg-purple-500 text-white rounded-lg text-sm sm:text-base hover:bg-purple-600"
-                >
-                  Open Box!
-                </button>
-              </div>
-            </>
-          )}
-          
-          {mysteryBoxModal.stage === 'opening' && (
-            <>
-              <div className={`text-8xl mb-6 ${isSpinning ? 'animate-spin' : ''}`}>🎁</div>
-              <h2 className="text-xl sm:text-2xl font-bold mb-4">Opening Mystery Box...</h2>
-              <div className="text-purple-600 font-semibold">
-                {isSpinning ? 'Spinning...' : 'Get ready!'}
-              </div>
-            </>
-          )}
-          
-          {mysteryBoxModal.stage === 'reveal' && mysteryBoxPrize && (
-            <>
-              <div className="text-6xl mb-4">🎉</div>
-              <h2 className="text-xl sm:text-2xl font-bold mb-4">You Won!</h2>
-              <div className={`p-4 rounded-xl mb-4 ${getRarityBg(mysteryBoxPrize.rarity)} border-2 ${getRarityColor(mysteryBoxPrize.rarity)}`}>
-                <div className="text-3xl mb-2">
-                  {mysteryBoxPrize.icon || (mysteryBoxPrize.item?.icon) || '🏆'}
-                </div>
-                <h3 className="font-bold text-lg">{mysteryBoxPrize.displayName}</h3>
-                <p className={`text-sm font-semibold uppercase ${getRarityColor(mysteryBoxPrize.rarity)}`}>
-                  {mysteryBoxPrize.rarity}
-                </p>
-              </div>
-              <button 
-                onClick={() => setMysteryBoxModal({ visible: false, stage: 'confirm' })} 
-                className="w-full py-3 bg-green-500 text-white rounded-lg hover:bg-green-600"
-              >
-                Awesome!
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-    );
-  };
-
-  const renderSellModal = () => {
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm text-center p-6">
-          <h2 className="text-xl font-bold mb-4">Sell Item</h2>
-          <div className="text-4xl mb-4">💰</div>
-          <p className="mb-4 text-sm">
-            Sell {sellModal.type === 'pet' ? sellModal.item.name : sellModal.type === 'avatar' ? sellModal.item : sellModal.item.name} for 💰{sellModal.price} coins?
+      <div className="text-center max-w-xs sm:max-w-md mx-auto">
+        <div className="border-4 border-gradient-to-br from-purple-400 to-pink-400 rounded-xl p-4 sm:p-8 bg-gradient-to-br from-purple-100 to-pink-100 shadow-lg">
+          <div className="text-6xl sm:text-8xl mb-3 sm:mb-4 animate-pulse">🎁</div>
+          <h3 className="text-xl sm:text-2xl font-bold text-purple-800 mb-2">Mystery Box</h3>
+          <p className="text-sm sm:text-base text-purple-600 mb-3 sm:mb-4">
+            A magical box containing random prizes! You might get avatars, pets, rewards, XP, or coins!
           </p>
-          <div className="flex gap-4">
-            <button 
-              onClick={() => setSellModal({ visible: false, item: null, type: null, price: 0 })} 
-              className="flex-1 py-3 border rounded-lg"
-            >
-              Cancel
-            </button>
-            <button 
-              onClick={confirmSell} 
-              className="flex-1 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600"
-            >
-              Sell
-            </button>
+          
+          <div className="bg-white rounded-lg p-3 sm:p-4 mb-3 sm:mb-4 shadow-inner">
+            <h4 className="font-bold text-gray-800 mb-2 text-sm sm:text-base">Possible Rarities:</h4>
+            <div className="space-y-1 text-xs sm:text-sm">
+              <div className="flex items-center justify-center space-x-2">
+                <span className="w-2 h-2 sm:w-3 sm:h-3 bg-gray-400 rounded-full"></span>
+                <span>Common (50%)</span>
+              </div>
+              <div className="flex items-center justify-center space-x-2">
+                <span className="w-2 h-2 sm:w-3 sm:h-3 bg-green-400 rounded-full"></span>
+                <span>Uncommon (30%)</span>
+              </div>
+              <div className="flex items-center justify-center space-x-2">
+                <span className="w-2 h-2 sm:w-3 sm:h-3 bg-blue-400 rounded-full"></span>
+                <span>Rare (15%)</span>
+              </div>
+              <div className="flex items-center justify-center space-x-2">
+                <span className="w-2 h-2 sm:w-3 sm:h-3 bg-purple-400 rounded-full"></span>
+                <span>Epic (4%)</span>
+              </div>
+              <div className="flex items-center justify-center space-x-2">
+                <span className="w-2 h-2 sm:w-3 sm:h-3 bg-yellow-400 rounded-full"></span>
+                <span>Legendary (1%)</span>
+              </div>
+            </div>
           </div>
+          
+          <div className="text-xl sm:text-2xl font-bold text-purple-800 mb-3 sm:mb-4">💰 {MYSTERY_BOX_PRICE} Coins</div>
+          
+          <button
+            onClick={handleMysteryBoxPurchase}
+            disabled={!selectedStudent || calculateCoins(selectedStudent) < MYSTERY_BOX_PRICE}
+            className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-2 sm:py-3 px-4 sm:px-6 rounded-lg font-bold text-sm sm:text-lg hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg transform hover:scale-105 transition-all"
+          >
+            🎲 Open Mystery Box!
+          </button>
         </div>
       </div>
     );
   };
 
-  const renderRewardManager = () => {
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
-          <div className="p-6 border-b flex justify-between items-center">
-            <h2 className="text-2xl font-bold">Manage Class Rewards</h2>
-            <button onClick={() => setShowRewardManager(false)} className="text-2xl font-bold">×</button>
-          </div>
+  const renderShopItems = () => {
+      if (activeCategory === 'featured') {
+        return renderFeaturedItems();
+      }
+      
+      if (activeCategory === 'mysterybox') {
+        return renderMysteryBox();
+      }
+      
+      let items;
+      let type;
+      switch(activeCategory) {
+          case 'basic_avatars': items = SHOP_BASIC_AVATARS; type = 'avatar'; break;
+          case 'premium_avatars': items = SHOP_PREMIUM_AVATARS; type = 'avatar'; break;
+          case 'basic_pets': items = SHOP_BASIC_PETS; type = 'pet'; break;
+          case 'premium_pets': items = SHOP_PREMIUM_PETS; type = 'pet'; break;
+          case 'rewards': items = currentRewards; type = 'reward'; break;
+          default: items = [];
+      }
+      
+      return items.map(item => {
+          const isAvatar = type === 'avatar';
+          const isPet = type === 'pet';
+          const isReward = type === 'reward';
+          const owned = isAvatar ? selectedStudent?.ownedAvatars?.includes(item.name) : 
+                        isPet ? selectedStudent?.ownedPets?.some(p => p.name === item.name) : false;
           
-          <div className="p-6 flex-1 overflow-y-auto">
-            {/* Add/Edit Reward Form */}
-            <div className="bg-gray-50 rounded-xl p-6 mb-6">
-              <h3 className="text-lg font-bold mb-4">{editingReward ? 'Edit Reward' : 'Add New Reward'}</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          return (
+            <div key={item.name || item.id} className={`border-2 rounded-lg p-3 sm:p-4 text-center flex flex-col justify-between ${owned ? 'border-green-400 bg-green-50' : 'border-gray-200'}`}>
+                {isReward ? (
+                    <>
+                        <div className="text-3xl sm:text-4xl">{item.icon}</div>
+                        <p className="font-semibold mt-1 sm:mt-2 text-xs sm:text-sm">{item.name}</p>
+                    </>
+                ) : (
+                    <img src={item.path} className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 object-contain rounded-full mx-auto mb-1 sm:mb-2"/>
+                )}
+
+                {!isReward && <p className="font-semibold text-xs sm:text-sm">{item.name}</p>}
+
+                {owned ? (
+                    <p className="font-bold text-green-600 mt-1 sm:mt-2 text-xs sm:text-sm">Owned</p>
+                ) : (
+                    <button 
+                      onClick={() => setPurchaseModal({ visible: true, item: item, type: type })} 
+                      disabled={calculateCoins(selectedStudent) < item.price} 
+                      className="mt-1 sm:mt-2 w-full bg-blue-500 text-white text-xs sm:text-sm py-1 sm:py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-600"
+                    >
+                      💰 {item.price}
+                    </button>
+                )}
+            </div>
+          );
+      });
+  };
+
+  // ===============================================
+  // MOBILE-OPTIMIZED MYSTERY BOX MODAL
+  // ===============================================
+  const renderMysteryBoxModal = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm sm:max-w-md text-center relative overflow-hidden">
+        {mysteryBoxModal.stage === 'confirm' && (
+          <div className="p-4 sm:p-6">
+            <div className="text-5xl sm:text-6xl mb-3 sm:mb-4 animate-bounce">🎁</div>
+            <h2 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">Open Mystery Box?</h2>
+            <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">
+              Cost: 💰 {MYSTERY_BOX_PRICE} coins<br/>
+              You'll get a random surprise!
+            </p>
+            <div className="flex gap-3 sm:gap-4">
+              <button 
+                onClick={() => setMysteryBoxModal({ visible: false, stage: 'confirm' })}
+                className="flex-1 py-2 sm:py-3 border rounded-lg hover:bg-gray-50 text-sm sm:text-base"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmMysteryBoxPurchase}
+                className="flex-1 py-2 sm:py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 font-bold text-sm sm:text-base"
+              >
+                Open Box! 🎲
+              </button>
+            </div>
+          </div>
+        )}
+        
+        {mysteryBoxModal.stage === 'opening' && (
+          <div className="p-6 sm:p-8 bg-gradient-to-br from-purple-400 to-pink-400 text-white">
+            <div className={`text-6xl sm:text-8xl mb-3 sm:mb-4 ${isSpinning ? 'animate-spin' : ''}`}>🎁</div>
+            <h2 className="text-xl sm:text-2xl font-bold mb-2">Opening Mystery Box...</h2>
+            <div className="text-sm sm:text-lg">
+              {isSpinning ? 'Finding your prize...' : 'Almost ready...'}
+            </div>
+            <div className="mt-3 sm:mt-4 flex justify-center">
+              <div className="animate-pulse flex space-x-1">
+                <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{animationDelay: '0ms'}}></div>
+                <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{animationDelay: '150ms'}}></div>
+                <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{animationDelay: '300ms'}}></div>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {mysteryBoxModal.stage === 'reveal' && mysteryBoxPrize && (
+          <div className={`p-6 sm:p-8 ${getRarityBg(mysteryBoxPrize.rarity)}`}>
+            <div className="text-5xl sm:text-6xl mb-3 sm:mb-4">🎉</div>
+            <h2 className="text-xl sm:text-2xl font-bold mb-2">Congratulations!</h2>
+            <div className={`inline-block px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-bold mb-3 sm:mb-4 border-2 ${getRarityColor(mysteryBoxPrize.rarity)}`}>
+              {mysteryBoxPrize.rarity.toUpperCase()}
+            </div>
+            
+            {mysteryBoxPrize.type === 'avatar' || mysteryBoxPrize.type === 'pet' ? (
+              <img 
+                src={mysteryBoxPrize.item.path} 
+                className="w-20 h-20 sm:w-24 sm:h-24 object-contain rounded-full mx-auto mb-3 sm:mb-4 border-4 border-white shadow-lg" 
+              />
+            ) : (
+              <div className="text-5xl sm:text-6xl mb-3 sm:mb-4">{mysteryBoxPrize.icon}</div>
+            )}
+            
+            <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">
+              {mysteryBoxPrize.displayName}
+            </h3>
+            
+            <button 
+              onClick={closeMysteryBoxModal}
+              className="w-full bg-green-500 text-white py-2 sm:py-3 rounded-lg font-bold hover:bg-green-600 text-sm sm:text-base"
+            >
+              Awesome! 🎊
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  // ===============================================
+  // NEW: SELL CONFIRMATION MODAL
+  // ===============================================
+  const renderSellModal = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm sm:max-w-md text-center p-4 sm:p-6">
+        <div className="text-4xl sm:text-5xl mb-3 sm:mb-4">💰</div>
+        <h2 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">Sell Item?</h2>
+        
+        {sellModal.type === 'pet' && selectedStudent?.ownedPets?.[0]?.id === sellModal.item?.id && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+            <p className="text-sm text-yellow-800">⚠️ This is your active companion pet</p>
+          </div>
+        )}
+        
+        <div className="mb-4">
+          <p className="text-sm sm:text-base mb-2">
+            Sell {sellModal.type === 'pet' ? sellModal.item?.name : 
+                 sellModal.type === 'avatar' ? sellModal.item :
+                 sellModal.item?.name}
+          </p>
+          <div className="text-xs sm:text-sm text-gray-600 mb-1">
+            Original price: 💰{sellModal.originalPrice}
+          </div>
+          <div className="text-lg sm:text-xl font-bold text-green-600">
+            Sell for: 💰{sellModal.price} (25% value)
+          </div>
+        </div>
+        
+        <div className="flex gap-3 sm:gap-4">
+          <button 
+            onClick={() => setSellModal({ visible: false, item: null, type: null, price: 0 })}
+            className="flex-1 py-2 sm:py-3 border rounded-lg hover:bg-gray-50 text-sm sm:text-base"
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={confirmSell}
+            className="flex-1 py-2 sm:py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 font-bold text-sm sm:text-base"
+          >
+            Sell Item
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ===============================================
+  // MOBILE-OPTIMIZED REWARD MANAGER MODAL
+  // ===============================================
+  const renderRewardManager = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+        <div className="p-4 sm:p-6 border-b flex justify-between items-center">
+          <h2 className="text-xl sm:text-2xl font-bold">🏆 Manage Class Rewards</h2>
+          <button onClick={() => setShowRewardManager(false)} className="text-xl sm:text-2xl font-bold hover:text-red-600">×</button>
+        </div>
+        
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto">
+          {/* Add/Edit Reward Form - MOBILE RESPONSIVE */}
+          <div className="bg-blue-50 rounded-lg p-3 sm:p-4">
+            <h3 className="text-base sm:text-lg font-bold mb-3 sm:mb-4">{editingReward ? 'Edit Reward' : 'Add New Reward'}</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              <div>
+                <label className="block text-xs sm:text-sm font-semibold mb-1">Reward Name</label>
                 <input
                   type="text"
-                  placeholder="Reward Name"
                   value={newReward.name}
                   onChange={(e) => setNewReward({ ...newReward, name: e.target.value })}
-                  className="px-4 py-2 border rounded-lg"
+                  placeholder="e.g., Extra Computer Time"
+                  className="w-full px-2 sm:px-3 py-1 sm:py-2 border rounded-lg text-sm sm:text-base"
                 />
+              </div>
+              <div>
+                <label className="block text-xs sm:text-sm font-semibold mb-1">Price (Coins)</label>
                 <input
                   type="number"
-                  placeholder="Price in Coins"
+                  min="1"
                   value={newReward.price}
-                  onChange={(e) => setNewReward({ ...newReward, price: parseInt(e.target.value) || 10 })}
-                  className="px-4 py-2 border rounded-lg"
+                  onChange={(e) => setNewReward({ ...newReward, price: parseInt(e.target.value) || 1 })}
+                  className="w-full px-2 sm:px-3 py-1 sm:py-2 border rounded-lg text-sm sm:text-base"
                 />
+              </div>
+              <div>
+                <label className="block text-xs sm:text-sm font-semibold mb-1">Category</label>
                 <select
                   value={newReward.category}
                   onChange={(e) => setNewReward({ ...newReward, category: e.target.value })}
-                  className="px-4 py-2 border rounded-lg"
+                  className="w-full px-2 sm:px-3 py-1 sm:py-2 border rounded-lg text-sm sm:text-base"
                 >
                   <option value="privileges">Privileges</option>
                   <option value="technology">Technology</option>
                   <option value="fun">Fun</option>
                   <option value="special">Special</option>
                 </select>
-                <select
-                  value={newReward.icon}
-                  onChange={(e) => setNewReward({ ...newReward, icon: e.target.value })}
-                  className="px-4 py-2 border rounded-lg"
-                >
-                  {REWARD_ICONS.map(icon => (
-                    <option key={icon} value={icon}>{icon} {icon}</option>
-                  ))}
-                </select>
               </div>
-              <div className="mt-4 flex gap-4">
-                <button
-                  onClick={editingReward ? handleUpdateReward : handleSaveReward}
-                  className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-                >
-                  {editingReward ? 'Update Reward' : 'Add Reward'}
-                </button>
-                {editingReward && (
-                  <button
-                    onClick={() => {
-                      setEditingReward(null);
-                      setNewReward({ name: '', price: 10, category: 'privileges', icon: '🏆' });
-                    }}
-                    className="px-6 py-2 border rounded-lg"
+              <div>
+                <label className="block text-xs sm:text-sm font-semibold mb-1">Icon</label>
+                <div className="flex items-center gap-2">
+                  <span className="text-xl sm:text-2xl">{newReward.icon}</span>
+                  <select
+                    value={newReward.icon}
+                    onChange={(e) => setNewReward({ ...newReward, icon: e.target.value })}
+                    className="flex-1 px-2 sm:px-3 py-1 sm:py-2 border rounded-lg text-sm sm:text-base"
                   >
-                    Cancel
-                  </button>
-                )}
+                    {REWARD_ICONS.map(icon => (
+                      <option key={icon} value={icon}>{icon}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
+            <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row gap-2 sm:gap-3">
+              {editingReward ? (
+                <>
+                  <button onClick={handleUpdateReward} className="bg-green-500 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-green-600 text-sm sm:text-base">
+                    Update Reward
+                  </button>
+                  <button onClick={() => { setEditingReward(null); setNewReward({ name: '', price: 10, category: 'privileges', icon: '🏆' }); }} className="bg-gray-500 text-white px-3 sm:px-4 py-2 rounded-lg text-sm sm:text-base">
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <button onClick={handleAddReward} className="bg-blue-500 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-blue-600 text-sm sm:text-base">
+                  Add Reward
+                </button>
+              )}
+            </div>
+          </div>
 
-            {/* Existing Rewards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Current Rewards List - MOBILE RESPONSIVE */}
+          <div>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 sm:mb-4 gap-2">
+              <h3 className="text-base sm:text-lg font-bold">Current Rewards ({currentRewards.length})</h3>
+              <button onClick={resetToDefaults} className="bg-orange-500 text-white px-2 sm:px-3 py-1 rounded text-xs sm:text-sm hover:bg-orange-600">
+                Reset to Defaults
+              </button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               {currentRewards.map(reward => (
-                <div key={reward.id} className="border rounded-xl p-4 bg-white shadow-sm">
-                  <div className="text-center mb-3">
-                    <div className="text-3xl mb-2">{reward.icon}</div>
-                    <h4 className="font-bold">{reward.name}</h4>
-                    <p className="text-sm text-gray-600 capitalize">{reward.category}</p>
-                    <p className="text-lg font-bold text-yellow-600 mt-2">💰{reward.price}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleEditReward(reward)}
-                      className="flex-1 py-2 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDeleteReward(reward.id)}
-                      className="flex-1 py-2 bg-red-500 text-white rounded-lg text-sm hover:bg-red-600"
-                    >
-                      Delete
-                    </button>
+                <div key={reward.id} className="border-2 border-gray-200 rounded-lg p-3 sm:p-4 hover:border-blue-300 transition-all">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                      <span className="text-2xl sm:text-3xl">{reward.icon}</span>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="font-semibold text-sm sm:text-base truncate">{reward.name}</h4>
+                        <p className="text-xs sm:text-sm text-gray-600">💰 {reward.price} coins</p>
+                        <p className="text-xs text-gray-500 capitalize">{reward.category}</p>
+                      </div>
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-1">
+                      <button 
+                        onClick={() => handleEditReward(reward)}
+                        className="bg-yellow-500 text-white px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs hover:bg-yellow-600"
+                      >
+                        Edit
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteReward(reward.id)}
+                        className="bg-red-500 text-white px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs hover:bg-red-600"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -913,92 +1004,68 @@ const ShopTab = ({
           </div>
         </div>
       </div>
-    );
-  };
-
-  // ===============================================
-  // MAIN COMPONENT RENDER
-  // ===============================================
+    </div>
+  );
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* MOBILE-OPTIMIZED Header with Student Selector */}
-      <div className="bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-xl p-4 sm:p-6 shadow-lg">
-        <div className="flex flex-col gap-3 sm:gap-4">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
-            <div className="text-center sm:text-left">
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-1">🛍️ Classroom Shop</h1>
-              <p className="text-xs sm:text-sm text-purple-100">Purchase avatars, pets, and classroom rewards!</p>
-            </div>
-            <div className="text-3xl sm:text-4xl opacity-20">💰</div>
-          </div>
-          
-          {/* Student Selector */}
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 items-center">
-            <label className="text-sm sm:text-base font-semibold whitespace-nowrap">Select Student:</label>
-            <select
-              value={selectedStudentId || ''}
-              onChange={(e) => setSelectedStudentId(e.target.value)}
-              className="flex-1 px-3 sm:px-4 py-2 rounded-lg text-gray-800 text-sm sm:text-base min-w-0"
-            >
-              <option value="">Choose a student...</option>
-              {students.map(student => (
-                <option key={student.id} value={student.id}>
-                  {student.firstName} {student.lastName} (💰{calculateCoins(student)})
-                </option>
-              ))}
-            </select>
-            
-            {/* Inventory and Sell Mode Buttons */}
-            {selectedStudent && (
-              <div className="flex gap-2 flex-shrink-0">
-                <button
-                  onClick={() => setInventoryModal({ visible: true })}
-                  className="px-3 sm:px-4 py-2 bg-white text-purple-600 rounded-lg hover:bg-gray-100 font-semibold text-xs sm:text-sm whitespace-nowrap"
-                >
-                  🎒 Inventory
-                </button>
-                <button
-                  onClick={() => setShowSellMode(!showSellMode)}
-                  className={`px-3 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm whitespace-nowrap ${
-                    showSellMode ? 'bg-red-500 text-white' : 'bg-white text-purple-600 hover:bg-gray-100'
-                  }`}
-                >
-                  💸 {showSellMode ? 'Exit Sell' : 'Sell Mode'}
-                </button>
-              </div>
-            )}
-          </div>
+      {/* MOBILE-OPTIMIZED Student Selector */}
+      <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg">
+        <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">🛒 Select a Champion to Shop</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2 sm:gap-3">
+          {students.map(student => (
+            <button key={student.id} onClick={() => setSelectedStudentId(student.id)} className={`p-2 sm:p-3 rounded-lg border-2 transition-all ${selectedStudentId === student.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300'}`}>
+              <img src={getAvatarImage(student.avatarBase, calculateAvatarLevel(student.totalPoints))} alt={student.firstName} className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full mx-auto mb-1 sm:mb-2"/>
+              <p className="text-xs sm:text-sm font-semibold truncate">{student.firstName}</p>
+              <p className="text-xs text-yellow-600">💰 {calculateCoins(student)}</p>
+            </button>
+          ))}
         </div>
+        {selectedStudent && (
+          <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-3 sm:gap-4">
+                <img src={getAvatarImage(selectedStudent.avatarBase, calculateAvatarLevel(selectedStudent.totalPoints))} className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full border-2 border-white shadow-lg"/>
+                <div className="text-center sm:text-left">
+                    <h4 className="text-base sm:text-lg font-bold text-gray-800">{selectedStudent.firstName} is shopping</h4>
+                    <p className="font-semibold text-yellow-700 text-sm sm:text-base">💰 {calculateCoins(selectedStudent)} coins available</p>
+                </div>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => setInventoryModal({ visible: true })} className="bg-purple-600 text-white font-semibold px-4 sm:px-5 py-2 sm:py-3 rounded-lg hover:bg-purple-700 shadow-md text-sm sm:text-base">View Inventory</button>
+              <button 
+                onClick={() => setShowSellMode(!showSellMode)} 
+                className={`font-semibold px-3 sm:px-4 py-2 sm:py-3 rounded-lg shadow-md text-sm sm:text-base transition-all ${showSellMode ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-green-500 text-white hover:bg-green-600'}`}
+              >
+                {showSellMode ? '❌ Cancel Sell' : '💸 Sell Mode'}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Student Selection Notice */}
-      {!selectedStudent && (
-        <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-4 sm:p-6 text-center">
-          <div className="text-3xl sm:text-4xl mb-2 sm:mb-3">👆</div>
-          <h3 className="text-lg sm:text-xl font-bold text-yellow-800 mb-1 sm:mb-2">Select a Student</h3>
-          <p className="text-sm sm:text-base text-yellow-700">Choose a student above to start shopping for their character!</p>
-        </div>
-      )}
-
-      {/* MOBILE-OPTIMIZED Shop Content */}
+      {/* MOBILE-OPTIMIZED Shop Interface */}
       {selectedStudent && (
-        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
-            {/* Category Navigation - MOBILE RESPONSIVE */}
-            <div className="flex flex-wrap gap-2 sm:gap-3 mb-4 sm:mb-6">
-                {[
-                  { id: 'featured', name: 'Daily Specials', shortName: 'Specials' },
-                  { id: 'basic_avatars', name: 'Basic Avatars', shortName: 'Basic' },
-                  { id: 'premium_avatars', name: 'Premium Avatars', shortName: 'Premium' },
-                  { id: 'basic_pets', name: 'Basic Pets', shortName: 'Pets' },
-                  { id: 'premium_pets', name: 'Premium Pets', shortName: 'Premium' },
-                  { id: 'rewards', name: 'Class Rewards', shortName: 'Rewards' },
-                  { id: 'mysterybox', name: 'Mystery Box', shortName: 'Mystery' }
-                ].map(cat => (
-                    <button
-                      key={cat.id}
-                      onClick={() => setActiveCategory(cat.id)}
-                      className={`px-2 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all whitespace-nowrap ${
+        <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg">
+            {/* Sell Mode Banner */}
+            {showSellMode && (
+              <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-gradient-to-r from-green-100 to-yellow-100 rounded-lg border-2 border-green-300">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="text-2xl sm:text-3xl">💸</div>
+                  <div>
+                    <h3 className="text-lg sm:text-xl font-bold text-green-800">Sell Mode Active!</h3>
+                    <p className="text-sm sm:text-base text-green-600">Click "View Inventory" to sell items for 25% of their value</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* MOBILE-FRIENDLY Category Tabs */}
+            <div className="flex space-x-1 sm:space-x-2 border-b pb-3 sm:pb-4 mb-4 overflow-x-auto">
+                {SHOP_CATEGORIES.map(cat => (
+                    <button 
+                      key={cat.id} 
+                      onClick={() => setActiveCategory(cat.id)} 
+                      className={`px-2 sm:px-4 py-2 rounded-lg font-semibold whitespace-nowrap text-xs sm:text-sm ${
                         activeCategory === cat.id 
                           ? cat.id === 'featured' 
                             ? 'bg-red-500 text-white' 
