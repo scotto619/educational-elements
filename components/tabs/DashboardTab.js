@@ -1,6 +1,5 @@
 // components/tabs/DashboardTab.js - MOBILE-OPTIMIZED DASHBOARD
 import React, { useState, useEffect } from 'react';
-import { getDailyFeaturedItems } from './ShopTab';
 
 const DashboardTab = ({ 
   students = [], 
@@ -17,27 +16,6 @@ const DashboardTab = ({
   const [featuredStudent, setFeaturedStudent] = useState(null);
   const [featuredShopItem, setFeaturedShopItem] = useState(null);
   const [classStats, setClassStats] = useState({});
-  const [currentRewards, setCurrentRewards] = useState([]);
-
-  // Load teacher rewards from localStorage
-  useEffect(() => {
-    const savedRewards = localStorage.getItem('teacherRewards');
-    if (savedRewards) {
-      setCurrentRewards(JSON.parse(savedRewards));
-    } else {
-      // Default rewards if none saved
-      setCurrentRewards([
-        { id: 'reward_1', name: 'Extra Computer Time', price: 20, category: 'technology', icon: '💻' },
-        { id: 'reward_2', name: 'Class Game Session', price: 30, category: 'fun', icon: '🎮' },
-        { id: 'reward_3', name: 'No Homework Pass', price: 25, category: 'privileges', icon: '📝' },
-        { id: 'reward_4', name: 'Choose Class Music', price: 15, category: 'privileges', icon: '🎵' },
-        { id: 'reward_5', name: 'Line Leader for a Week', price: 10, category: 'privileges', icon: '🎯' },
-        { id: 'reward_6', name: 'Sit Anywhere Day', price: 12, category: 'privileges', icon: '💺' },
-        { id: 'reward_7', name: 'Extra Recess Time', price: 18, category: 'fun', icon: '⏰' },
-        { id: 'reward_8', name: 'Teach the Class', price: 35, category: 'special', icon: '🎓' },
-      ]);
-    }
-  }, []);
 
   // Calculate class statistics
   useEffect(() => {
@@ -66,30 +44,27 @@ const DashboardTab = ({
       });
 
       // Set featured student (rotate daily based on date)
-      const today = new Date();
-      const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
-      const featuredIndex = seed % students.length;
+      const today = new Date().getDate();
+      const featuredIndex = today % students.length;
       setFeaturedStudent(students[featuredIndex]);
     }
   }, [students, calculateCoins, calculateAvatarLevel]);
 
-  // Set featured shop item - UPDATED TO USE SAME FUNCTION AS SHOP TAB
+  // Set featured shop item (rotate daily)
   useEffect(() => {
-    if (SHOP_BASIC_AVATARS && SHOP_PREMIUM_AVATARS && SHOP_BASIC_PETS && SHOP_PREMIUM_PETS && currentRewards.length > 0) {
-      const featuredItems = getDailyFeaturedItems(
-        SHOP_BASIC_AVATARS, 
-        SHOP_PREMIUM_AVATARS, 
-        SHOP_BASIC_PETS, 
-        SHOP_PREMIUM_PETS, 
-        currentRewards
-      );
-      
-      // Display the first featured item
-      if (featuredItems.length > 0) {
-        setFeaturedShopItem(featuredItems[0]);
-      }
+    const allShopItems = [
+      ...SHOP_BASIC_AVATARS.map(item => ({ ...item, type: 'Basic Avatar', category: 'avatar' })),
+      ...SHOP_PREMIUM_AVATARS.map(item => ({ ...item, type: 'Premium Avatar', category: 'avatar' })),
+      ...SHOP_BASIC_PETS.map(item => ({ ...item, type: 'Basic Pet', category: 'pet' })),
+      ...SHOP_PREMIUM_PETS.map(item => ({ ...item, type: 'Premium Pet', category: 'pet' }))
+    ];
+    
+    if (allShopItems.length > 0) {
+      const today = new Date().getDate();
+      const featuredIndex = today % allShopItems.length;
+      setFeaturedShopItem(allShopItems[featuredIndex]);
     }
-  }, [SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, SHOP_BASIC_PETS, SHOP_PREMIUM_PETS, currentRewards]);
+  }, [SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, SHOP_BASIC_PETS, SHOP_PREMIUM_PETS]);
 
   const getLevelBadgeColor = (level) => {
     switch(level) {
@@ -163,30 +138,30 @@ const DashboardTab = ({
                   <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-blue-600">
                     {featuredStudent.totalPoints || 0}
                   </div>
-                  <div className="text-xs sm:text-sm text-gray-600">XP Points</div>
+                  <div className="text-xs sm:text-sm text-gray-600">⚡ Total XP</div>
                 </div>
                 <div className="bg-white rounded-lg p-3 sm:p-4 shadow-sm">
                   <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-yellow-600">
                     {calculateCoins(featuredStudent)}
                   </div>
-                  <div className="text-xs sm:text-sm text-gray-600">Coins</div>
+                  <div className="text-xs sm:text-sm text-gray-600">💰 Coins</div>
                 </div>
               </div>
 
-              {/* Featured Student's Pet */}
+              {/* Featured Student's Pet - MOBILE RESPONSIVE */}
               {featuredStudent.ownedPets && featuredStudent.ownedPets.length > 0 && (
                 <div className="bg-white rounded-lg p-3 sm:p-4 shadow-sm">
-                  <div className="flex items-center justify-center lg:justify-start gap-2 sm:gap-3">
+                  <div className="flex flex-col sm:flex-row lg:flex-row items-center gap-3 sm:gap-4">
                     <img 
                       src={getPetImage(featuredStudent.ownedPets[0])} 
                       alt={featuredStudent.ownedPets[0].name}
-                      className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-gray-300"
+                      className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 xl:w-32 xl:h-32 rounded-full border-2 sm:border-3 border-purple-300 shadow-md"
                     />
-                    <div className="text-left">
-                      <div className="text-sm sm:text-base font-semibold text-gray-800">
-                        {featuredStudent.ownedPets[0].name}
+                    <div className="text-center sm:text-left lg:text-left">
+                      <div className="text-base sm:text-lg lg:text-xl font-bold text-gray-800">
+                        Companion: {featuredStudent.ownedPets[0].name}
                       </div>
-                      <div className="text-xs text-gray-600">Companion Pet</div>
+                      <div className="text-xs sm:text-sm text-gray-600">🐾 Faithful Friend</div>
                     </div>
                   </div>
                 </div>
@@ -195,21 +170,21 @@ const DashboardTab = ({
           </div>
         </div>
 
-        {/* MOBILE-OPTIMIZED Class Stats */}
+        {/* MOBILE-OPTIMIZED Class Stats Card */}
         <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg">
           <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4 flex items-center gap-2">
-            📊 Class Stats
+            📊 Class Statistics
           </h2>
           
           <div className="space-y-3 sm:space-y-4">
             <div className="flex justify-between items-center p-2 sm:p-3 bg-blue-50 rounded-lg">
-              <span className="text-sm sm:text-base text-gray-700">👥 Total Students</span>
+              <span className="text-sm sm:text-base text-gray-700">👥 Total Champions</span>
               <span className="font-bold text-blue-600 text-lg sm:text-xl">{classStats.totalStudents}</span>
             </div>
             
             <div className="flex justify-between items-center p-2 sm:p-3 bg-green-50 rounded-lg">
-              <span className="text-sm sm:text-base text-gray-700">⭐ Total XP</span>
-              <span className="font-bold text-green-600 text-lg sm:text-xl">{classStats.totalXP}</span>
+              <span className="text-sm sm:text-base text-gray-700">⚡ Average XP</span>
+              <span className="font-bold text-green-600 text-lg sm:text-xl">{classStats.averageXP}</span>
             </div>
             
             <div className="flex justify-between items-center p-2 sm:p-3 bg-yellow-50 rounded-lg">
@@ -256,28 +231,14 @@ const DashboardTab = ({
             </div>
             
             <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
-              {featuredShopItem.type === 'reward' ? (
-                <div className="text-4xl sm:text-5xl">
-                  {featuredShopItem.icon}
-                </div>
-              ) : (
-                <img 
-                  src={featuredShopItem.path} 
-                  alt={featuredShopItem.name}
-                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg border-2 border-purple-300 shadow-sm object-contain"
-                />
-              )}
+              <img 
+                src={featuredShopItem.path} 
+                alt={featuredShopItem.name}
+                className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg border-2 border-purple-300 shadow-sm object-contain"
+              />
               <div className="flex-1 text-center sm:text-left">
                 <h3 className="text-base sm:text-lg font-bold text-gray-800">{featuredShopItem.name}</h3>
-                <p className="text-xs sm:text-sm text-purple-600 font-semibold capitalize">{featuredShopItem.type}</p>
-                {featuredShopItem.originalPrice && (
-                  <div className="mt-1 flex items-center justify-center sm:justify-start gap-2">
-                    <span className="text-sm text-gray-500 line-through">💰 {featuredShopItem.originalPrice}</span>
-                    <span className="bg-red-500 text-white px-2 py-0.5 rounded text-xs font-bold">
-                      -{featuredShopItem.salePercentage}%
-                    </span>
-                  </div>
-                )}
+                <p className="text-xs sm:text-sm text-purple-600 font-semibold">{featuredShopItem.type}</p>
                 <div className="mt-1 sm:mt-2 flex items-center justify-center sm:justify-start gap-2">
                   <span className="text-lg sm:text-2xl font-bold text-yellow-600">💰 {featuredShopItem.price}</span>
                   <span className="text-xs sm:text-sm text-gray-600">coins</span>
