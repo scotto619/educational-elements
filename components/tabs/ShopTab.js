@@ -245,26 +245,14 @@ const ShopTab = ({
 
   // Generate featured items (3 random items on sale)
   useEffect(() => {
-    const allShopItems = [
-      ...SHOP_BASIC_AVATARS.map(item => ({ ...item, category: 'basic_avatars', type: 'avatar' })),
-      ...SHOP_PREMIUM_AVATARS.map(item => ({ ...item, category: 'premium_avatars', type: 'avatar' })),
-      ...SHOP_BASIC_PETS.map(item => ({ ...item, category: 'basic_pets', type: 'pet' })),
-      ...SHOP_PREMIUM_PETS.map(item => ({ ...item, category: 'premium_pets', type: 'pet' })),
-      ...currentRewards.map(item => ({ ...item, category: 'rewards', type: 'reward' }))
-    ];
-
-    if (allShopItems.length > 0) {
-      // Use date as seed for consistent daily featured items
-      const today = new Date().getDate() + new Date().getMonth() * 31;
-      const shuffled = allShopItems.sort(() => 0.5 - Math.sin(today * 1000));
-      const featured = shuffled.slice(0, 3).map(item => ({
-        ...item,
-        originalPrice: item.price,
-        price: Math.max(1, Math.floor(item.price * 0.7)), // 30% discount
-        salePercentage: 30
-      }));
-      setFeaturedItems(featured);
-    }
+    const featured = getDailyFeaturedItems(
+      SHOP_BASIC_AVATARS,
+      SHOP_PREMIUM_AVATARS,
+      SHOP_BASIC_PETS,
+      SHOP_PREMIUM_PETS,
+      currentRewards
+    );
+    setFeaturedItems(featured);
   }, [SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, SHOP_BASIC_PETS, SHOP_PREMIUM_PETS, currentRewards]);
 
   // ===============================================
@@ -1006,6 +994,38 @@ const ShopTab = ({
       </div>
     </div>
   );
+
+  // Add this function at the top of the file after imports
+  const getDailyFeaturedItems = (SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, SHOP_BASIC_PETS, SHOP_PREMIUM_PETS, currentRewards) => {
+    const allShopItems = [
+      ...SHOP_BASIC_AVATARS.map(item => ({ ...item, category: 'basic_avatars', type: 'avatar' })),
+      ...SHOP_PREMIUM_AVATARS.map(item => ({ ...item, category: 'premium_avatars', type: 'avatar' })),
+      ...SHOP_BASIC_PETS.map(item => ({ ...item, category: 'basic_pets', type: 'pet' })),
+      ...SHOP_PREMIUM_PETS.map(item => ({ ...item, category: 'premium_pets', type: 'pet' })),
+      ...currentRewards.map(item => ({ ...item, category: 'rewards', type: 'reward' }))
+    ];
+
+    if (allShopItems.length === 0) return [];
+
+    // Use date as seed for consistent daily featured items
+    const today = new Date();
+    const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
+    
+    // Use seed to shuffle array deterministically
+    const shuffled = allShopItems.sort((a, b) => {
+      const hashA = Math.sin(seed * (allShopItems.indexOf(a) + 1));
+      const hashB = Math.sin(seed * (allShopItems.indexOf(b) + 1));
+      return hashB - hashA;
+    });
+
+    // Get first 3 items and apply sale discount
+    return shuffled.slice(0, 3).map(item => ({
+      ...item,
+      originalPrice: item.price,
+      price: Math.max(1, Math.floor(item.price * 0.7)), // 30% discount
+      salePercentage: 30
+    }));
+  };
 
   return (
     <div className="space-y-4 sm:space-y-6">
