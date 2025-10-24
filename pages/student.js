@@ -28,62 +28,6 @@ import {
   SHOP_PREMIUM_PETS
 } from '../utils/gameHelpers';
 
-// ===============================================
-// HALLOWEEN THEMED ITEMS - MUST MATCH MAIN SITE
-// ===============================================
-const HALLOWEEN_BASIC_AVATARS = [
-  { name: 'Demi', price: 15, path: '/shop/Themed/Halloween/Basic/Demi.png', theme: 'halloween' },
-  { name: 'Jason', price: 18, path: '/shop/Themed/Halloween/Basic/Jason.png', theme: 'halloween' },
-  { name: 'PumpkinKing', price: 20, path: '/shop/Themed/Halloween/Basic/PumpkinKing.png', theme: 'halloween' },
-  { name: 'Skeleton', price: 15, path: '/shop/Themed/Halloween/Basic/Skeleton.png', theme: 'halloween' },
-  { name: 'Witch', price: 18, path: '/shop/Themed/Halloween/Basic/Witch.png', theme: 'halloween' },
-  { name: 'Zombie', price: 16, path: '/shop/Themed/Halloween/Basic/Zombie.png', theme: 'halloween' }
-];
-
-const HALLOWEEN_PREMIUM_AVATARS = [
-  { name: 'Pumpkin', price: 35, path: '/shop/Themed/Halloween/Premium/Pumpkin.png', theme: 'halloween' },
-  { name: 'Skeleton1', price: 40, path: '/shop/Themed/Halloween/Premium/Skeleton1.png', theme: 'halloween' },
-  { name: 'Skeleton2', price: 40, path: '/shop/Themed/Halloween/Premium/Skeleton2.png', theme: 'halloween' },
-  { name: 'Skeleton3', price: 40, path: '/shop/Themed/Halloween/Premium/Skeleton3.png', theme: 'halloween' },
-  { name: 'Witch1', price: 42, path: '/shop/Themed/Halloween/Premium/Witch1.png', theme: 'halloween' },
-  { name: 'Witch2', price: 42, path: '/shop/Themed/Halloween/Premium/Witch2.png', theme: 'halloween' },
-  { name: 'Witch3', price: 42, path: '/shop/Themed/Halloween/Premium/Witch3.png', theme: 'halloween' },
-  { name: 'Witch4', price: 42, path: '/shop/Themed/Halloween/Premium/Witch4.png', theme: 'halloween' },
-  { name: 'Zombie1', price: 38, path: '/shop/Themed/Halloween/Premium/Zombie1.png', theme: 'halloween' }
-];
-
-const HALLOWEEN_PETS = [
-  { name: 'Spooky Cat', price: 25, path: '/shop/Themed/Halloween/Pets/Pet.png', theme: 'halloween' },
-  { name: 'Pumpkin Cat', price: 28, path: '/shop/Themed/Halloween/Pets/Pet2.png', theme: 'halloween' }
-];
-
-// Helper functions - UPDATED to include Halloween items and match main site exactly
-const getAvatarImage = (avatarBase, level) => {
-  // Check all shop avatar arrays including Halloween
-  const shopItem = [...SHOP_BASIC_AVATARS, ...SHOP_PREMIUM_AVATARS, ...HALLOWEEN_BASIC_AVATARS, ...HALLOWEEN_PREMIUM_AVATARS]
-    .find(a => a.name.toLowerCase() === (avatarBase || '').toLowerCase());
-  if (shopItem) return shopItem.path;
-
-  // Default to traditional avatar system
-  const lvl = Math.min(4, Math.max(1, Math.round(level || 1)));
-  const base = encodeURIComponent(avatarBase || 'Wizard F');
-  return `/avatars/${base}/Level ${lvl}.png`;
-};
-
-const getPetImage = (pet) => {
-    if (!pet || !pet.name) return '/Pets/Wizard.png';
-    if (pet.path) return pet.path;
-    
-    // Check all shop pet arrays including Halloween
-    const shopItem = [...SHOP_BASIC_PETS, ...SHOP_PREMIUM_PETS, ...HALLOWEEN_PETS].find(p => p.name.toLowerCase() === pet.name.toLowerCase());
-    if (shopItem) return shopItem.path;
-    
-    // Fallback to old pet mapping system
-    const key = (pet.type || pet.name || '').toLowerCase();
-    const map = { 'alchemist': '/Pets/Alchemist.png', 'barbarian': '/Pets/Barbarian.png', 'bard': '/Pets/Bard.png', 'beastmaster': '/Pets/Beastmaster.png', 'cleric': '/Pets/Cleric.png', 'crystal knight': '/Pets/Crystal Knight.png', 'crystal sage': '/Pets/Crystal Sage.png', 'engineer': '/Pets/Engineer.png', 'frost mage': '/Pets/Frost Mage.png', 'illusionist': '/Pets/Illusionist.png', 'knight': '/Pets/Knight.png', 'lightning': '/Pets/Lightning.png', 'monk': '/Pets/Monk.png', 'necromancer': '/Pets/Necromancer.png', 'rogue': '/Pets/Rogue.png', 'stealth': '/Pets/Stealth.png', 'time knight': '/Pets/Time Knight.png', 'warrior': '/Pets/Warrior.png', 'wizard': '/Pets/Wizard.png' };
-    return map[key] || '/Pets/Wizard.png';
-};
-
 const StudentPortal = () => {
   // Authentication states
   const [isLoggedIn, setIsLoggedIn] = useState(false);
