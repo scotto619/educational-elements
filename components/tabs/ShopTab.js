@@ -1,5 +1,34 @@
-// components/tabs/ShopTab.js - MOBILE-OPTIMIZED SHOP WITH MYSTERY BOX AND SELLING FEATURE - FIXED PURCHASE FUNCTIONS
+// components/tabs/ShopTab.js - MOBILE-OPTIMIZED SHOP WITH HALLOWEEN SECTION, MYSTERY BOX AND SELLING FEATURE
 import React, { useState, useEffect } from 'react';
+
+// ===============================================
+// HALLOWEEN THEMED ITEMS - LIMITED TIME!
+// ===============================================
+const HALLOWEEN_BASIC_AVATARS = [
+  { name: 'Demi', price: 15, path: '/shop/Themed/Halloween/Basic/Demi.png', theme: 'halloween' },
+  { name: 'Jason', price: 18, path: '/shop/Themed/Halloween/Basic/Jason.png', theme: 'halloween' },
+  { name: 'PumpkinKing', price: 20, path: '/shop/Themed/Halloween/Basic/PumpkinKing.png', theme: 'halloween' },
+  { name: 'Skeleton', price: 15, path: '/shop/Themed/Halloween/Basic/Skeleton.png', theme: 'halloween' },
+  { name: 'Witch', price: 18, path: '/shop/Themed/Halloween/Basic/Witch.png', theme: 'halloween' },
+  { name: 'Zombie', price: 16, path: '/shop/Themed/Halloween/Basic/Zombie.png', theme: 'halloween' }
+];
+
+const HALLOWEEN_PREMIUM_AVATARS = [
+  { name: 'Pumpkin', price: 35, path: '/shop/Themed/Halloween/Premium/Pumpkin.png', theme: 'halloween' },
+  { name: 'Skeleton1', price: 40, path: '/shop/Themed/Halloween/Premium/Skeleton1.png', theme: 'halloween' },
+  { name: 'Skeleton2', price: 40, path: '/shop/Themed/Halloween/Premium/Skeleton2.png', theme: 'halloween' },
+  { name: 'Skeleton3', price: 40, path: '/shop/Themed/Halloween/Premium/Skeleton3.png', theme: 'halloween' },
+  { name: 'Witch1', price: 42, path: '/shop/Themed/Halloween/Premium/Witch1.png', theme: 'halloween' },
+  { name: 'Witch2', price: 42, path: '/shop/Themed/Halloween/Premium/Witch2.png', theme: 'halloween' },
+  { name: 'Witch3', price: 42, path: '/shop/Themed/Halloween/Premium/Witch3.png', theme: 'halloween' },
+  { name: 'Witch4', price: 42, path: '/shop/Themed/Halloween/Premium/Witch4.png', theme: 'halloween' },
+  { name: 'Zombie1', price: 38, path: '/shop/Themed/Halloween/Premium/Zombie1.png', theme: 'halloween' }
+];
+
+const HALLOWEEN_PETS = [
+  { name: 'Spooky Cat', price: 25, path: '/shop/Themed/Halloween/Pets/Pet.png', theme: 'halloween' },
+  { name: 'Pumpkin Cat', price: 28, path: '/shop/Themed/Halloween/Pets/Pet2.png', theme: 'halloween' }
+];
 
 // ===============================================
 // DEFAULT TEACHER REWARDS (Starting Template)
@@ -60,12 +89,12 @@ const getItemRarity = (price) => {
   return 'legendary';
 };
 
-// Function to get all possible mystery box prizes
+// Function to get all possible mystery box prizes - UPDATED TO INCLUDE HALLOWEEN
 const getMysteryBoxPrizes = (SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, SHOP_BASIC_PETS, SHOP_PREMIUM_PETS, currentRewards) => {
   const prizes = [];
   
-  // Add shop avatars
-  [...SHOP_BASIC_AVATARS, ...SHOP_PREMIUM_AVATARS].forEach(avatar => {
+  // Add shop avatars INCLUDING HALLOWEEN
+  [...SHOP_BASIC_AVATARS, ...SHOP_PREMIUM_AVATARS, ...HALLOWEEN_BASIC_AVATARS, ...HALLOWEEN_PREMIUM_AVATARS].forEach(avatar => {
     prizes.push({
       type: 'avatar',
       item: avatar,
@@ -75,8 +104,8 @@ const getMysteryBoxPrizes = (SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, SHOP_BASI
     });
   });
   
-  // Add shop pets
-  [...SHOP_BASIC_PETS, ...SHOP_PREMIUM_PETS].forEach(pet => {
+  // Add shop pets INCLUDING HALLOWEEN
+  [...SHOP_BASIC_PETS, ...SHOP_PREMIUM_PETS, ...HALLOWEEN_PETS].forEach(pet => {
     prizes.push({
       type: 'pet',
       item: pet,
@@ -168,7 +197,7 @@ const getRarityBg = (rarity) => {
 };
 
 // ===============================================
-// SELLING SYSTEM - NEW FEATURE
+// SELLING SYSTEM - UPDATED TO INCLUDE HALLOWEEN
 // ===============================================
 
 // Calculate sell price (25% of original cost)
@@ -176,21 +205,24 @@ const calculateSellPrice = (originalPrice) => {
   return Math.max(1, Math.floor(originalPrice * 0.25));
 };
 
-// Find original item price from shop data
+// Find original item price from shop data - UPDATED TO INCLUDE HALLOWEEN
 const findOriginalPrice = (itemName, itemType, SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, SHOP_BASIC_PETS, SHOP_PREMIUM_PETS, currentRewards) => {
   if (itemType === 'avatar') {
     const basicAvatar = SHOP_BASIC_AVATARS.find(a => a.name === itemName);
     const premiumAvatar = SHOP_PREMIUM_AVATARS.find(a => a.name === itemName);
-    return basicAvatar?.price || premiumAvatar?.price || 10; // Default if not found
+    const halloweenBasic = HALLOWEEN_BASIC_AVATARS.find(a => a.name === itemName);
+    const halloweenPremium = HALLOWEEN_PREMIUM_AVATARS.find(a => a.name === itemName);
+    return basicAvatar?.price || premiumAvatar?.price || halloweenBasic?.price || halloweenPremium?.price || 10;
   } else if (itemType === 'pet') {
     const basicPet = SHOP_BASIC_PETS.find(p => p.name === itemName);
     const premiumPet = SHOP_PREMIUM_PETS.find(p => p.name === itemName);
-    return basicPet?.price || premiumPet?.price || 15; // Default if not found
+    const halloweenPet = HALLOWEEN_PETS.find(p => p.name === itemName);
+    return basicPet?.price || premiumPet?.price || halloweenPet?.price || 15;
   } else if (itemType === 'reward') {
     const reward = currentRewards.find(r => r.id === itemName || r.name === itemName);
-    return reward?.price || 10; // Default if not found
+    return reward?.price || 10;
   }
-  return 10; // Fallback default
+  return 10;
 };
 
 // ===============================================
@@ -214,17 +246,17 @@ const ShopTab = ({
     saveRewards = () => {}
 }) => {
   const [selectedStudentId, setSelectedStudentId] = useState(null);
-  const [activeCategory, setActiveCategory] = useState('featured');
+  const [activeCategory, setActiveCategory] = useState('halloween'); // DEFAULT TO HALLOWEEN!
   const [purchaseModal, setPurchaseModal] = useState({ visible: false, item: null, type: null });
   const [inventoryModal, setInventoryModal] = useState({ visible: false });
   const [featuredItems, setFeaturedItems] = useState([]);
   
   // Mystery Box states
-  const [mysteryBoxModal, setMysteryBoxModal] = useState({ visible: false, stage: 'confirm' }); // confirm, opening, reveal
+  const [mysteryBoxModal, setMysteryBoxModal] = useState({ visible: false, stage: 'confirm' });
   const [mysteryBoxPrize, setMysteryBoxPrize] = useState(null);
   const [isSpinning, setIsSpinning] = useState(false);
   
-  // NEW: Selling states
+  // Selling states
   const [sellModal, setSellModal] = useState({ visible: false, item: null, type: null, price: 0 });
   const [showSellMode, setShowSellMode] = useState(false);
   
@@ -243,34 +275,36 @@ const ShopTab = ({
 
   const selectedStudent = students.find(s => s.id === selectedStudentId);
 
-  // Generate featured items (3 random items on sale)
+  // Generate featured items (3 random items on sale) - UPDATED TO INCLUDE HALLOWEEN
   useEffect(() => {
     const allShopItems = [
       ...SHOP_BASIC_AVATARS.map(item => ({ ...item, category: 'basic_avatars', type: 'avatar' })),
       ...SHOP_PREMIUM_AVATARS.map(item => ({ ...item, category: 'premium_avatars', type: 'avatar' })),
       ...SHOP_BASIC_PETS.map(item => ({ ...item, category: 'basic_pets', type: 'pet' })),
       ...SHOP_PREMIUM_PETS.map(item => ({ ...item, category: 'premium_pets', type: 'pet' })),
+      ...HALLOWEEN_BASIC_AVATARS.map(item => ({ ...item, category: 'halloween', type: 'avatar' })),
+      ...HALLOWEEN_PREMIUM_AVATARS.map(item => ({ ...item, category: 'halloween', type: 'avatar' })),
+      ...HALLOWEEN_PETS.map(item => ({ ...item, category: 'halloween', type: 'pet' })),
       ...currentRewards.map(item => ({ ...item, category: 'rewards', type: 'reward' }))
     ];
 
     if (allShopItems.length > 0) {
-      // Use date as seed for consistent daily featured items
-// Create a proper daily seed using year, month, and day
-const now = new Date();
-const seed = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
+      // Create a proper daily seed using year, month, and day
+      const now = new Date();
+      const seed = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
 
-// Seeded random function for consistent daily results
-const seededRandom = (s) => {
-  const x = Math.sin(s) * 10000;
-  return x - Math.floor(x);
-};
+      // Seeded random function for consistent daily results
+      const seededRandom = (s) => {
+        const x = Math.sin(s) * 10000;
+        return x - Math.floor(x);
+      };
 
-// Shuffle array using seeded random
-const shuffled = [...allShopItems];
-for (let i = shuffled.length - 1; i > 0; i--) {
-  const j = Math.floor(seededRandom(seed + i) * (i + 1));
-  [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-}
+      // Shuffle array using seeded random
+      const shuffled = [...allShopItems];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(seededRandom(seed + i) * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
       const featured = shuffled.slice(0, 3).map(item => ({
         ...item,
         originalPrice: item.price,
@@ -300,7 +334,7 @@ for (let i = shuffled.length - 1; i > 0; i--) {
   const confirmMysteryBoxPurchase = async () => {
     if (!selectedStudent) return;
     
-    // Deduct coins first - FIXED: Pass studentId and updates separately
+    // Deduct coins first
     const updates = { 
       coinsSpent: (selectedStudent.coinsSpent || 0) + MYSTERY_BOX_PRICE 
     };
@@ -328,7 +362,7 @@ for (let i = shuffled.length - 1; i > 0; i--) {
       setIsSpinning(false);
       setMysteryBoxModal({ visible: true, stage: 'reveal' });
       
-      // Award the prize - pass the updated student with the coins already deducted
+      // Award the prize
       const updatedStudent = { ...selectedStudent, coinsSpent: (selectedStudent.coinsSpent || 0) + MYSTERY_BOX_PRICE };
       awardMysteryBoxPrize(selectedPrize, updatedStudent);
     }, 3000);
@@ -344,7 +378,6 @@ for (let i = shuffled.length - 1; i > 0; i--) {
           updates.ownedAvatars = [...new Set([...(student.ownedAvatars || []), prize.item.name])];
           message = `${student.firstName} won the ${prize.item.name} avatar!`;
         } else {
-          // Already owned, give coins instead
           updates.currency = (student.currency || 0) + 5;
           message = `${student.firstName} already had the ${prize.item.name} avatar, so got 5 bonus coins instead!`;
         }
@@ -375,7 +408,6 @@ for (let i = shuffled.length - 1; i > 0; i--) {
         break;
     }
     
-    // FIXED: Pass studentId and updates separately
     onUpdateStudent(student.id, updates);
     showToast(message, 'success');
   };
@@ -387,7 +419,7 @@ for (let i = shuffled.length - 1; i > 0; i--) {
   };
 
   // ===============================================
-  // NEW: SELLING FUNCTIONS
+  // SELLING FUNCTIONS
   // ===============================================
   
   const handleSellItem = (item, type) => {
@@ -399,25 +431,18 @@ for (let i = shuffled.length - 1; i > 0; i--) {
     
     if (type === 'avatar') {
       itemName = item;
-      // Check if this is the currently equipped avatar
       if (selectedStudent.avatarBase === item) {
         canSell = false;
         reason = 'Cannot sell currently equipped avatar';
       }
-      // Check if this is the only avatar owned
       if (selectedStudent.ownedAvatars?.length <= 1) {
         canSell = false;
         reason = 'Cannot sell your last avatar';
       }
     } else if (type === 'pet') {
       itemName = item.name;
-      // Check if this is the active pet (first in list)
-      if (selectedStudent.ownedPets?.[0]?.id === item.id) {
-        // Allow selling active pet, but show warning in modal
-      }
     } else if (type === 'reward') {
       itemName = item.name;
-      // Rewards can always be sold
     }
     
     if (!canSell) {
@@ -444,13 +469,11 @@ for (let i = shuffled.length - 1; i > 0; i--) {
       currency: (selectedStudent.currency || 0) + sellModal.price
     };
     
-    // Remove the item from inventory
     if (sellModal.type === 'avatar') {
       updates.ownedAvatars = selectedStudent.ownedAvatars.filter(a => a !== sellModal.item);
     } else if (sellModal.type === 'pet') {
       updates.ownedPets = selectedStudent.ownedPets.filter(p => p.id !== sellModal.item.id);
     } else if (sellModal.type === 'reward') {
-      // For rewards, find by name and remove first match
       const rewardIndex = selectedStudent.rewardsPurchased?.findIndex(r => 
         r.name === sellModal.item.name && r.purchasedAt === sellModal.item.purchasedAt
       );
@@ -462,7 +485,6 @@ for (let i = shuffled.length - 1; i > 0; i--) {
       }
     }
     
-    // FIXED: Pass studentId and updates separately
     onUpdateStudent(selectedStudent.id, updates);
     setSellModal({ visible: false, item: null, type: null, price: 0 });
     
@@ -542,7 +564,7 @@ for (let i = shuffled.length - 1; i > 0; i--) {
   };
 
   // ===============================================
-  // PURCHASE LOGIC - FIXED
+  // PURCHASE LOGIC
   // ===============================================
 
   const handlePurchase = () => {
@@ -578,7 +600,6 @@ for (let i = shuffled.length - 1; i > 0; i--) {
       default: return;
     }
 
-    // FIXED: Pass studentId and updates separately
     onUpdateStudent(selectedStudent.id, updates);
     setPurchaseModal({ visible: false, item: null, type: null });
   };
@@ -598,11 +619,12 @@ for (let i = shuffled.length - 1; i > 0; i--) {
       showToast('Pet equipped!', 'success');
     }
     
-    // FIXED: Pass studentId and updates separately
     onUpdateStudent(selectedStudent.id, updates);
   };
 
+  // UPDATED SHOP CATEGORIES TO INCLUDE HALLOWEEN FIRST
   const SHOP_CATEGORIES = [
+      { id: 'halloween', name: '🎃 Halloween Special', shortName: '🎃 Halloween' },
       { id: 'featured', name: '⭐ Featured Items', shortName: 'Featured' },
       { id: 'mysterybox', name: '🎁 Mystery Box', shortName: 'Mystery' },
       { id: 'basic_avatars', name: 'Basic Avatars', shortName: 'Basic' },
@@ -710,6 +732,7 @@ for (let i = shuffled.length - 1; i > 0; i--) {
     );
   };
 
+  // UPDATED RENDER SHOP ITEMS TO INCLUDE HALLOWEEN SECTION
   const renderShopItems = () => {
       if (activeCategory === 'featured') {
         return renderFeaturedItems();
@@ -722,6 +745,11 @@ for (let i = shuffled.length - 1; i > 0; i--) {
       let items;
       let type;
       switch(activeCategory) {
+          case 'halloween':
+            // Combine all Halloween items
+            items = [...HALLOWEEN_BASIC_AVATARS, ...HALLOWEEN_PREMIUM_AVATARS, ...HALLOWEEN_PETS];
+            type = 'mixed';
+            break;
           case 'basic_avatars': items = SHOP_BASIC_AVATARS; type = 'avatar'; break;
           case 'premium_avatars': items = SHOP_PREMIUM_AVATARS; type = 'avatar'; break;
           case 'basic_pets': items = SHOP_BASIC_PETS; type = 'pet'; break;
@@ -731,14 +759,28 @@ for (let i = shuffled.length - 1; i > 0; i--) {
       }
       
       return items.map(item => {
-          const isAvatar = type === 'avatar';
-          const isPet = type === 'pet';
-          const isReward = type === 'reward';
+          // Determine actual type for mixed Halloween items
+          let actualType = type;
+          if (type === 'mixed') {
+            if (item.name.toLowerCase().includes('cat') || item.name.toLowerCase().includes('pet')) {
+              actualType = 'pet';
+            } else {
+              actualType = 'avatar';
+            }
+          }
+          
+          const isAvatar = actualType === 'avatar';
+          const isPet = actualType === 'pet';
+          const isReward = actualType === 'reward';
           const owned = isAvatar ? selectedStudent?.ownedAvatars?.includes(item.name) : 
                         isPet ? selectedStudent?.ownedPets?.some(p => p.name === item.name) : false;
           
           return (
-            <div key={item.name || item.id} className={`border-2 rounded-lg p-3 sm:p-4 text-center flex flex-col justify-between ${owned ? 'border-green-400 bg-green-50' : 'border-gray-200'}`}>
+            <div key={item.name || item.id} className={`border-2 rounded-lg p-3 sm:p-4 text-center flex flex-col justify-between ${
+              owned ? 'border-green-400 bg-green-50' : 
+              activeCategory === 'halloween' ? 'border-orange-400 bg-gradient-to-br from-orange-50 to-purple-50' :
+              'border-gray-200'
+            }`}>
                 {isReward ? (
                     <>
                         <div className="text-3xl sm:text-4xl">{item.icon}</div>
@@ -754,7 +796,7 @@ for (let i = shuffled.length - 1; i > 0; i--) {
                     <p className="font-bold text-green-600 mt-1 sm:mt-2 text-xs sm:text-sm">Owned</p>
                 ) : (
                     <button 
-                      onClick={() => setPurchaseModal({ visible: true, item: item, type: type })} 
+                      onClick={() => setPurchaseModal({ visible: true, item: item, type: actualType })} 
                       disabled={calculateCoins(selectedStudent) < item.price} 
                       className="mt-1 sm:mt-2 w-full bg-blue-500 text-white text-xs sm:text-sm py-1 sm:py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-600"
                     >
@@ -848,7 +890,7 @@ for (let i = shuffled.length - 1; i > 0; i--) {
   );
 
   // ===============================================
-  // NEW: SELL CONFIRMATION MODAL
+  // SELL CONFIRMATION MODAL
   // ===============================================
   const renderSellModal = () => (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -906,7 +948,7 @@ for (let i = shuffled.length - 1; i > 0; i--) {
         </div>
         
         <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto">
-          {/* Add/Edit Reward Form - MOBILE RESPONSIVE */}
+          {/* Add/Edit Reward Form */}
           <div className="bg-blue-50 rounded-lg p-3 sm:p-4">
             <h3 className="text-base sm:text-lg font-bold mb-3 sm:mb-4">{editingReward ? 'Edit Reward' : 'Add New Reward'}</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -977,7 +1019,7 @@ for (let i = shuffled.length - 1; i > 0; i--) {
             </div>
           </div>
 
-          {/* Current Rewards List - MOBILE RESPONSIVE */}
+          {/* Current Rewards List */}
           <div>
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 sm:mb-4 gap-2">
               <h3 className="text-base sm:text-lg font-bold">Current Rewards ({currentRewards.length})</h3>
@@ -1081,7 +1123,9 @@ for (let i = shuffled.length - 1; i > 0; i--) {
                       onClick={() => setActiveCategory(cat.id)} 
                       className={`px-2 sm:px-4 py-2 rounded-lg font-semibold whitespace-nowrap text-xs sm:text-sm ${
                         activeCategory === cat.id 
-                          ? cat.id === 'featured' 
+                          ? cat.id === 'halloween'
+                            ? 'bg-gradient-to-r from-orange-500 to-purple-600 text-white'
+                            : cat.id === 'featured' 
                             ? 'bg-red-500 text-white' 
                             : cat.id === 'mysterybox'
                             ? 'bg-purple-500 text-white'
@@ -1094,7 +1138,7 @@ for (let i = shuffled.length - 1; i > 0; i--) {
                     </button>
                 ))}
                 
-                {/* Manage Rewards Button - Only show when in rewards category */}
+                {/* Manage Rewards Button */}
                 {activeCategory === 'rewards' && (
                   <button 
                     onClick={() => setShowRewardManager(true)}
@@ -1104,6 +1148,19 @@ for (let i = shuffled.length - 1; i > 0; i--) {
                   </button>
                 )}
             </div>
+            
+            {/* SPECIAL HEADER FOR HALLOWEEN SECTION */}
+            {activeCategory === 'halloween' && (
+              <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-gradient-to-r from-orange-100 via-purple-100 to-orange-100 rounded-lg border-2 border-orange-400">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="text-2xl sm:text-3xl animate-bounce">🎃</div>
+                  <div>
+                    <h3 className="text-lg sm:text-xl font-bold text-orange-800">🎃 Halloween Special Collection! 🎃</h3>
+                    <p className="text-sm sm:text-base text-purple-700 font-semibold">Limited time spooky avatars and pets - Get them before they're gone!</p>
+                  </div>
+                </div>
+              </div>
+            )}
             
             {/* Special Header for Featured Section */}
             {activeCategory === 'featured' && (
@@ -1171,10 +1228,10 @@ for (let i = shuffled.length - 1; i > 0; i--) {
       {/* Mystery Box Modal */}
       {mysteryBoxModal.visible && renderMysteryBoxModal()}
 
-      {/* NEW: Sell Confirmation Modal */}
+      {/* Sell Confirmation Modal */}
       {sellModal.visible && renderSellModal()}
 
-      {/* MOBILE-OPTIMIZED Inventory Modal - UPDATED WITH SELLING FEATURE */}
+      {/* MOBILE-OPTIMIZED Inventory Modal */}
       {inventoryModal.visible && selectedStudent && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">
@@ -1245,7 +1302,6 @@ for (let i = shuffled.length - 1; i > 0; i--) {
                         <h3 className="font-bold text-base sm:text-lg mb-2">Earned Rewards</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3">
                           {selectedStudent.rewardsPurchased.map((reward, index) => {
-                            // Find the reward in current rewards to get the icon
                             const rewardDetails = currentRewards.find(r => r.id === reward.id) || reward;
                             return (
                               <div key={index} className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-2 sm:p-3 flex items-center justify-between">
