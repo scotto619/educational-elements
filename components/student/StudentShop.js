@@ -1,4 +1,4 @@
-// components/student/StudentShop.js - UPDATED WITH MYSTERY BOX AND SELLING FEATURES
+// components/student/StudentShop.js - UPDATED WITH HALLOWEEN SUPPORT
 import React, { useState } from 'react';
 
 // ===============================================
@@ -43,11 +43,11 @@ const getItemRarity = (price) => {
   return 'legendary';
 };
 
-// Function to get all possible mystery box prizes
+// Function to get all possible mystery box prizes (includes Halloween items via props)
 const getMysteryBoxPrizes = (SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, SHOP_BASIC_PETS, SHOP_PREMIUM_PETS, classRewards) => {
   const prizes = [];
   
-  // Add shop avatars
+  // Add shop avatars (includes Halloween avatars passed from parent)
   [...SHOP_BASIC_AVATARS, ...SHOP_PREMIUM_AVATARS].forEach(avatar => {
     prizes.push({
       type: 'avatar',
@@ -58,7 +58,7 @@ const getMysteryBoxPrizes = (SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, SHOP_BASI
     });
   });
   
-  // Add shop pets
+  // Add shop pets (includes Halloween pets passed from parent)
   [...SHOP_BASIC_PETS, ...SHOP_PREMIUM_PETS].forEach(pet => {
     prizes.push({
       type: 'pet',
@@ -151,7 +151,7 @@ const getRarityBg = (rarity) => {
 };
 
 // ===============================================
-// NEW: SELLING SYSTEM
+// SELLING SYSTEM
 // ===============================================
 
 // Calculate sell price (25% of original cost)
@@ -159,7 +159,7 @@ const calculateSellPrice = (originalPrice) => {
   return Math.max(1, Math.floor(originalPrice * 0.25));
 };
 
-// Find original item price from shop data
+// Find original item price from shop data (includes Halloween items)
 const findOriginalPrice = (itemName, itemType, SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, SHOP_BASIC_PETS, SHOP_PREMIUM_PETS, classRewards) => {
   if (itemType === 'avatar') {
     const basicAvatar = SHOP_BASIC_AVATARS.find(a => a.name === itemName);
@@ -179,7 +179,7 @@ const findOriginalPrice = (itemName, itemType, SHOP_BASIC_AVATARS, SHOP_PREMIUM_
 const StudentShop = ({ 
   studentData,
   updateStudentData,
-  showToast,
+  showToast = () => {},
   getAvatarImage,
   getPetImage,
   calculateCoins,
@@ -199,7 +199,7 @@ const StudentShop = ({
   const [mysteryBoxPrize, setMysteryBoxPrize] = useState(null);
   const [isSpinning, setIsSpinning] = useState(false);
 
-  // NEW: Selling states
+  // Selling states
   const [sellModal, setSellModal] = useState({ visible: false, item: null, type: null, price: 0 });
   const [showSellMode, setShowSellMode] = useState(false);
 
@@ -234,7 +234,7 @@ const StudentShop = ({
     setMysteryBoxModal({ visible: true, stage: 'opening' });
     setIsSpinning(true);
     
-    // Get all possible prizes
+    // Get all possible prizes (includes Halloween items)
     const allPrizes = getMysteryBoxPrizes(
       SHOP_BASIC_AVATARS, 
       SHOP_PREMIUM_AVATARS, 
@@ -251,131 +251,83 @@ const StudentShop = ({
     setTimeout(() => {
       setIsSpinning(false);
       setMysteryBoxModal({ visible: true, stage: 'reveal' });
-      
-      // Award the prize
-      awardMysteryBoxPrize(selectedPrize);
     }, 3000);
   };
   
-  const awardMysteryBoxPrize = async (prize) => {
-    let updates = {};
-    let message = '';
+  const collectMysteryBoxPrize = async () => {
+    if (!mysteryBoxPrize) return;
     
-    switch (prize.type) {
+    let updates = {};
+    
+    switch (mysteryBoxPrize.type) {
       case 'avatar':
-        if (!studentData.ownedAvatars?.includes(prize.item.name)) {
-          updates.ownedAvatars = [...new Set([...(studentData.ownedAvatars || []), prize.item.name])];
-          message = `You won the ${prize.item.name} avatar!`;
-        } else {
-          // Already owned, give coins instead
-          updates.currency = (studentData.currency || 0) + 5;
-          message = `You already had the ${prize.item.name} avatar, so got 5 bonus coins instead!`;
-        }
+        updates.ownedAvatars = [...new Set([...(studentData.ownedAvatars || []), mysteryBoxPrize.item.name])];
+        showToast(`You won the ${mysteryBoxPrize.item.name} avatar!`, 'success');
         break;
-        
       case 'pet':
-        const newPet = { ...prize.item, id: `pet_${Date.now()}` };
+        const newPet = { ...mysteryBoxPrize.item, id: `pet_${Date.now()}` };
         updates.ownedPets = [...(studentData.ownedPets || []), newPet];
-        message = `You won a ${prize.item.name}!`;
+        showToast(`You won a ${mysteryBoxPrize.item.name}!`, 'success');
         break;
-        
       case 'reward':
         updates.rewardsPurchased = [...(studentData.rewardsPurchased || []), { 
-          ...prize.item, 
+          ...mysteryBoxPrize.item, 
           purchasedAt: new Date().toISOString() 
         }];
-        message = `You won ${prize.item.name}!`;
+        showToast(`You won ${mysteryBoxPrize.item.name}!`, 'success');
         break;
-        
       case 'xp':
-        updates.totalPoints = (studentData.totalPoints || 0) + prize.amount;
-        message = `You won ${prize.amount} bonus XP!`;
+        updates.totalPoints = (studentData.totalPoints || 0) + mysteryBoxPrize.amount;
+        showToast(`You won ${mysteryBoxPrize.amount} XP!`, 'success');
         break;
-        
       case 'coins':
-        updates.currency = (studentData.currency || 0) + prize.amount;
-        message = `You won ${prize.amount} bonus coins!`;
+        updates.currency = (studentData.currency || 0) + mysteryBoxPrize.amount;
+        showToast(`You won ${mysteryBoxPrize.amount} bonus coins!`, 'success');
         break;
     }
     
     const success = await updateStudentData(updates);
     if (success) {
-      showToast(message, 'success');
+      setMysteryBoxModal({ visible: false, stage: 'confirm' });
+      setMysteryBoxPrize(null);
     } else {
-      showToast('There was an issue awarding your prize. Please contact your teacher.', 'error');
+      showToast('Failed to collect prize. Please try again.', 'error');
     }
-  };
-  
-  const closeMysteryBoxModal = () => {
-    setMysteryBoxModal({ visible: false, stage: 'confirm' });
-    setMysteryBoxPrize(null);
-    setIsSpinning(false);
   };
 
   // ===============================================
-  // NEW: SELLING FUNCTIONS
+  // SELLING FUNCTIONS
   // ===============================================
   
   const handleSellItem = (item, type) => {
-    let itemName = '';
-    let canSell = true;
-    let reason = '';
-    
-    if (type === 'avatar') {
-      itemName = item;
-      // Check if this is the currently equipped avatar
-      if (studentData.avatarBase === item) {
-        canSell = false;
-        reason = 'Cannot sell currently equipped avatar';
-      }
-      // Check if this is the only avatar owned
-      if (studentData.ownedAvatars?.length <= 1) {
-        canSell = false;
-        reason = 'Cannot sell your last avatar';
-      }
-    } else if (type === 'pet') {
-      itemName = item.name;
-      // Check if this is the active pet (first in list) - allow but show warning
-    } else if (type === 'reward') {
-      itemName = item.name;
-      // Rewards can always be sold
-    }
-    
-    if (!canSell) {
-      showToast(reason, 'error');
-      return;
-    }
-    
+    const itemName = type === 'pet' ? item.name : type === 'avatar' ? item : item.name;
     const originalPrice = findOriginalPrice(itemName, type, SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, SHOP_BASIC_PETS, SHOP_PREMIUM_PETS, classRewards);
     const sellPrice = calculateSellPrice(originalPrice);
     
-    setSellModal({ 
-      visible: true, 
-      item: item, 
-      type: type, 
-      price: sellPrice,
-      originalPrice: originalPrice 
+    setSellModal({
+      visible: true,
+      item: item,
+      type: type,
+      price: sellPrice
     });
   };
   
   const confirmSell = async () => {
-    if (!sellModal.item) return;
+    let updates = {};
     
-    let updates = {
-      currency: (studentData.currency || 0) + sellModal.price
-    };
+    // Add coins from sale
+    updates.currency = (studentData.currency || 0) + sellModal.price;
     
-    // Remove the item from inventory
+    // Remove item from inventory
     if (sellModal.type === 'avatar') {
       updates.ownedAvatars = studentData.ownedAvatars.filter(a => a !== sellModal.item);
     } else if (sellModal.type === 'pet') {
       updates.ownedPets = studentData.ownedPets.filter(p => p.id !== sellModal.item.id);
     } else if (sellModal.type === 'reward') {
-      // For rewards, find by name and remove first match
-      const rewardIndex = studentData.rewardsPurchased?.findIndex(r => 
-        r.name === sellModal.item.name && r.purchasedAt === sellModal.item.purchasedAt
+      const rewardIndex = studentData.rewardsPurchased.findIndex(r => 
+        r.id === sellModal.item.id || (r.purchasedAt === sellModal.item.purchasedAt && r.name === sellModal.item.name)
       );
-      if (rewardIndex >= 0) {
+      if (rewardIndex !== -1) {
         updates.rewardsPurchased = [
           ...studentData.rewardsPurchased.slice(0, rewardIndex),
           ...studentData.rewardsPurchased.slice(rewardIndex + 1)
@@ -500,22 +452,154 @@ const StudentShop = ({
               </div>
             </div>
           </div>
-          
-          <div className="text-xl md:text-2xl font-bold text-purple-800 mb-4">💰 {MYSTERY_BOX_PRICE} Coins</div>
-          
+
+          <div className="bg-yellow-50 rounded-lg p-3 md:p-4 mb-4 border-2 border-yellow-300">
+            <div className="flex items-center justify-center space-x-2 mb-2">
+              <span className="text-lg md:text-2xl">💰</span>
+              <span className="font-bold text-yellow-900 text-base md:text-lg">Cost: {MYSTERY_BOX_PRICE} Coins</span>
+            </div>
+            <p className="text-xs md:text-sm text-yellow-800">
+              You have: <span className="font-bold">{currentCoins} coins</span>
+            </p>
+          </div>
+
           <button
             onClick={handleMysteryBoxPurchase}
             disabled={currentCoins < MYSTERY_BOX_PRICE}
-            className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 px-6 rounded-lg font-bold text-base md:text-lg hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg transform hover:scale-105 transition-all active:scale-95"
+            className="w-full py-3 md:py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg font-bold text-base md:text-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            🎲 Open Mystery Box!
+            {currentCoins < MYSTERY_BOX_PRICE ? 'Not Enough Coins' : 'Open Mystery Box!'}
           </button>
-          
-          {currentCoins < MYSTERY_BOX_PRICE && (
-            <p className="text-red-600 text-xs md:text-sm mt-2 font-semibold">
-              You need {MYSTERY_BOX_PRICE - currentCoins} more coins!
+        </div>
+      </div>
+    );
+  };
+
+  const renderMysteryBoxModal = () => {
+    if (mysteryBoxModal.stage === 'confirm') {
+      return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm text-center p-4 md:p-6">
+            <div className="text-5xl md:text-6xl mb-4">🎁</div>
+            <h2 className="text-lg md:text-2xl font-bold mb-3 md:mb-4">Open Mystery Box?</h2>
+            <p className="mb-4 text-sm md:text-base">
+              This will cost you <span className="font-bold text-yellow-600">{MYSTERY_BOX_PRICE} coins</span>
             </p>
-          )}
+            <p className="text-xs md:text-sm text-gray-600 mb-4">
+              You'll receive a random prize based on rarity!
+            </p>
+            <div className="flex gap-3 md:gap-4">
+              <button 
+                onClick={() => setMysteryBoxModal({ visible: false, stage: 'confirm' })} 
+                className="flex-1 py-2 md:py-3 border rounded-lg hover:bg-gray-50 text-sm md:text-base"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmMysteryBoxPurchase} 
+                className="flex-1 py-2 md:py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 text-sm md:text-base"
+              >
+                Open It!
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    
+    if (mysteryBoxModal.stage === 'opening') {
+      return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm text-center p-6 md:p-8">
+            <div className={`text-6xl md:text-8xl mb-4 ${isSpinning ? 'animate-spin' : ''}`}>🎁</div>
+            <h2 className="text-xl md:text-2xl font-bold mb-2">Opening Mystery Box...</h2>
+            <p className="text-purple-600 text-sm md:text-base">✨ Preparing your surprise! ✨</p>
+          </div>
+        </div>
+      );
+    }
+    
+    if (mysteryBoxModal.stage === 'reveal' && mysteryBoxPrize) {
+      const rarityColor = getRarityColor(mysteryBoxPrize.rarity);
+      const rarityBg = getRarityBg(mysteryBoxPrize.rarity);
+      
+      return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md text-center p-4 md:p-6">
+            <div className="text-4xl md:text-5xl mb-4">🎉</div>
+            <h2 className="text-lg md:text-2xl font-bold mb-3 md:mb-4">You Won!</h2>
+            
+            <div className={`${rarityBg} border-2 ${rarityColor} rounded-xl p-4 md:p-6 mb-4`}>
+              {mysteryBoxPrize.type === 'avatar' && (
+                <img 
+                  src={mysteryBoxPrize.item.path} 
+                  alt={mysteryBoxPrize.displayName}
+                  className="w-20 h-20 md:w-24 md:h-24 rounded-full mx-auto mb-3 border-4 border-white"
+                  onError={(e) => {
+                    e.target.src = '/shop/Basic/Banana.png';
+                  }}
+                />
+              )}
+              {mysteryBoxPrize.type === 'pet' && (
+                <img 
+                  src={mysteryBoxPrize.item.path} 
+                  alt={mysteryBoxPrize.displayName}
+                  className="w-20 h-20 md:w-24 md:h-24 rounded-full mx-auto mb-3 border-4 border-white"
+                  onError={(e) => {
+                    e.target.src = '/shop/BasicPets/Wizard.png';
+                  }}
+                />
+              )}
+              {mysteryBoxPrize.type === 'reward' && (
+                <div className="text-4xl md:text-5xl mb-3">{mysteryBoxPrize.item.icon || '🎁'}</div>
+              )}
+              {(mysteryBoxPrize.type === 'xp' || mysteryBoxPrize.type === 'coins') && (
+                <div className="text-4xl md:text-5xl mb-3">{mysteryBoxPrize.icon}</div>
+              )}
+              
+              <h3 className="text-base md:text-xl font-bold mb-1">{mysteryBoxPrize.displayName}</h3>
+              <p className={`text-xs md:text-sm font-semibold ${rarityColor} uppercase`}>
+                {mysteryBoxPrize.rarity} Rarity
+              </p>
+            </div>
+            
+            <button 
+              onClick={collectMysteryBoxPrize} 
+              className="w-full py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 font-bold text-base md:text-lg"
+            >
+              Collect Prize!
+            </button>
+          </div>
+        </div>
+      );
+    }
+    
+    return null;
+  };
+
+  const renderSellModal = () => {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm text-center p-4 md:p-6">
+          <h2 className="text-lg md:text-2xl font-bold mb-3 md:mb-4 text-red-600">Sell Item?</h2>
+          <p className="mb-4 text-sm md:text-base">
+            Sell this item for <span className="font-bold text-green-600">💰{sellModal.price} coins</span>?
+          </p>
+          <p className="text-xs text-gray-500 mb-4">This action cannot be undone!</p>
+          <div className="flex gap-3 md:gap-4">
+            <button 
+              onClick={() => setSellModal({ visible: false, item: null, type: null, price: 0 })} 
+              className="flex-1 py-2 md:py-3 border rounded-lg hover:bg-gray-50 text-sm md:text-base"
+            >
+              Cancel
+            </button>
+            <button 
+              onClick={confirmSell} 
+              className="flex-1 py-2 md:py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 text-sm md:text-base"
+            >
+              Sell Item
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -526,57 +610,111 @@ const StudentShop = ({
       return renderMysteryBox();
     }
 
-    let items, type;
-    switch(activeCategory) {
-      case 'basic_avatars': items = SHOP_BASIC_AVATARS; type = 'avatar'; break;
-      case 'premium_avatars': items = SHOP_PREMIUM_AVATARS; type = 'avatar'; break;
-      case 'basic_pets': items = SHOP_BASIC_PETS; type = 'pet'; break;
-      case 'premium_pets': items = SHOP_PREMIUM_PETS; type = 'pet'; break;
-      case 'rewards': items = classRewards || []; type = 'reward'; break;
-      default: items = [];
+    let items = [];
+    let itemType = '';
+
+    switch (activeCategory) {
+      case 'basic_avatars':
+        items = SHOP_BASIC_AVATARS;
+        itemType = 'avatar';
+        break;
+      case 'premium_avatars':
+        items = SHOP_PREMIUM_AVATARS;
+        itemType = 'avatar';
+        break;
+      case 'basic_pets':
+        items = SHOP_BASIC_PETS;
+        itemType = 'pet';
+        break;
+      case 'premium_pets':
+        items = SHOP_PREMIUM_PETS;
+        itemType = 'pet';
+        break;
+      case 'rewards':
+        items = classRewards || [];
+        itemType = 'reward';
+        break;
+      default:
+        return null;
     }
 
-    if (!items || items.length === 0) {
+    if (items.length === 0) {
       return (
-        <div className="col-span-full text-center py-6 md:py-8">
-          <div className="text-3xl md:text-4xl mb-2">📦</div>
-          <p className="text-gray-500 text-sm md:text-base">No items available in this category yet.</p>
+        <div className="col-span-full text-center py-8 md:py-12">
+          <div className="text-4xl md:text-5xl mb-3 md:mb-4">📦</div>
+          <p className="text-gray-600 text-sm md:text-base">No items available in this category yet!</p>
         </div>
       );
     }
 
-    return items.map(item => {
-      const isAvatar = type === 'avatar';
-      const isPet = type === 'pet';
-      const isReward = type === 'reward';
-      const owned = isAvatar ? studentData?.ownedAvatars?.includes(item.name) : 
-                    isPet ? studentData?.ownedPets?.some(p => p.name === item.name) : false;
-      
+    return items.map((item, index) => {
+      const alreadyOwned = itemType === 'avatar' 
+        ? studentData.ownedAvatars?.includes(item.name)
+        : itemType === 'pet'
+        ? studentData.ownedPets?.some(p => p.name === item.name)
+        : false;
+
+      const canAfford = currentCoins >= item.price;
+      const isHalloween = item.theme === 'halloween';
+
       return (
-        <div key={item.name || item.id} className={`border-2 rounded-lg p-3 md:p-4 text-center ${owned ? 'border-green-400 bg-green-50' : 'border-gray-200'}`}>
-          {isReward ? (
-            <div className="text-3xl md:text-4xl mb-2">{item.icon || '🎁'}</div>
-          ) : (
+        <div
+          key={index}
+          className={`bg-white rounded-xl shadow-lg p-3 md:p-4 text-center transition-all hover:shadow-xl ${
+            alreadyOwned ? 'opacity-50' : ''
+          } ${isHalloween ? 'border-2 border-orange-400' : ''}`}
+        >
+          {isHalloween && (
+            <div className="bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full mb-2 inline-block">
+              🎃 HALLOWEEN
+            </div>
+          )}
+          
+          {itemType === 'avatar' && (
             <img 
               src={item.path} 
-              className="w-16 h-16 md:w-20 md:h-20 object-contain rounded-full mx-auto mb-2"
+              alt={item.name}
+              className="w-16 h-16 md:w-20 md:h-20 rounded-full mx-auto mb-2 border-4 border-purple-300"
               onError={(e) => {
                 e.target.src = '/shop/Basic/Banana.png';
               }}
             />
           )}
+          {itemType === 'pet' && (
+            <img 
+              src={item.path} 
+              alt={item.name}
+              className="w-16 h-16 md:w-20 md:h-20 rounded-full mx-auto mb-2 border-4 border-green-300"
+              onError={(e) => {
+                e.target.src = '/shop/BasicPets/Wizard.png';
+              }}
+            />
+          )}
+          {itemType === 'reward' && (
+            <div className="text-3xl md:text-4xl mb-2">{item.icon || '🎁'}</div>
+          )}
           
-          <p className="font-semibold mt-2 text-sm md:text-base">{item.name}</p>
+          <h4 className="font-bold text-sm md:text-base mb-1 truncate">{item.name}</h4>
+          <p className="text-yellow-600 font-bold mb-2 text-sm md:text-base">💰 {item.price}</p>
           
-          {owned ? (
-            <p className="font-bold text-green-600 mt-2 text-sm">Owned ✓</p>
-          ) : (
-            <button 
-              onClick={() => setPurchaseModal({ visible: true, item: item, type: type })} 
-              disabled={currentCoins < item.price} 
-              className="mt-2 w-full bg-blue-500 text-white text-xs md:text-sm py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-600 active:scale-95 transition-all"
+          {alreadyOwned ? (
+            <button
+              disabled
+              className="w-full py-2 bg-gray-300 text-gray-600 rounded-lg text-xs md:text-sm font-semibold cursor-not-allowed"
             >
-              💰 {item.price} coins
+              Owned ✓
+            </button>
+          ) : (
+            <button
+              onClick={() => setPurchaseModal({ visible: true, item, type: itemType })}
+              disabled={!canAfford}
+              className={`w-full py-2 rounded-lg text-xs md:text-sm font-semibold transition-all ${
+                canAfford
+                  ? 'bg-blue-500 text-white hover:bg-blue-600 active:scale-95'
+                  : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              {canAfford ? 'Buy Now' : 'Not Enough Coins'}
             </button>
           )}
         </div>
@@ -584,200 +722,54 @@ const StudentShop = ({
     });
   };
 
-  // ===============================================
-  // MYSTERY BOX MODAL
-  // ===============================================
-  const renderMysteryBoxModal = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md text-center relative overflow-hidden">
-        {mysteryBoxModal.stage === 'confirm' && (
-          <div className="p-6">
-            <div className="text-6xl mb-4 animate-bounce">🎁</div>
-            <h2 className="text-2xl font-bold mb-4">Open Mystery Box?</h2>
-            <p className="text-gray-600 mb-6">
-              Cost: 💰 {MYSTERY_BOX_PRICE} coins<br/>
-              You'll get a random surprise!
-            </p>
-            <div className="flex gap-4">
-              <button 
-                onClick={() => setMysteryBoxModal({ visible: false, stage: 'confirm' })}
-                className="flex-1 py-3 border rounded-lg hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={confirmMysteryBoxPurchase}
-                className="flex-1 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 font-bold"
-              >
-                Open Box! 🎲
-              </button>
-            </div>
-          </div>
-        )}
-        
-        {mysteryBoxModal.stage === 'opening' && (
-          <div className="p-8 bg-gradient-to-br from-purple-400 to-pink-400 text-white">
-            <div className={`text-8xl mb-4 ${isSpinning ? 'animate-spin' : ''}`}>🎁</div>
-            <h2 className="text-2xl font-bold mb-2">Opening Mystery Box...</h2>
-            <div className="text-lg">
-              {isSpinning ? 'Finding your prize...' : 'Almost ready...'}
-            </div>
-            <div className="mt-4 flex justify-center">
-              <div className="animate-pulse flex space-x-1">
-                <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{animationDelay: '0ms'}}></div>
-                <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{animationDelay: '150ms'}}></div>
-                <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{animationDelay: '300ms'}}></div>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {mysteryBoxModal.stage === 'reveal' && mysteryBoxPrize && (
-          <div className={`p-8 ${getRarityBg(mysteryBoxPrize.rarity)}`}>
-            <div className="text-6xl mb-4">🎉</div>
-            <h2 className="text-2xl font-bold mb-2">Congratulations!</h2>
-            <div className={`inline-block px-3 py-1 rounded-full text-sm font-bold mb-4 border-2 ${getRarityColor(mysteryBoxPrize.rarity)}`}>
-              {mysteryBoxPrize.rarity.toUpperCase()}
-            </div>
-            
-            {mysteryBoxPrize.type === 'avatar' || mysteryBoxPrize.type === 'pet' ? (
-              <img 
-                src={mysteryBoxPrize.item.path} 
-                className="w-24 h-24 object-contain rounded-full mx-auto mb-4 border-4 border-white shadow-lg"
-                onError={(e) => {
-                  e.target.src = mysteryBoxPrize.type === 'avatar' ? '/shop/Basic/Banana.png' : '/shop/BasicPets/Wizard.png';
-                }}
-              />
-            ) : (
-              <div className="text-6xl mb-4">{mysteryBoxPrize.icon}</div>
-            )}
-            
-            <h3 className="text-xl font-bold text-gray-800 mb-4">
-              {mysteryBoxPrize.displayName}
-            </h3>
-            
-            <button 
-              onClick={closeMysteryBoxModal}
-              className="w-full bg-green-500 text-white py-3 rounded-lg font-bold hover:bg-green-600"
-            >
-              Awesome! 🎊
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
-  // ===============================================
-  // NEW: SELL CONFIRMATION MODAL
-  // ===============================================
-  const renderSellModal = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md text-center p-6">
-        <div className="text-5xl mb-4">💰</div>
-        <h2 className="text-2xl font-bold mb-4">Sell Item?</h2>
-        
-        {sellModal.type === 'pet' && studentData?.ownedPets?.[0]?.id === sellModal.item?.id && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
-            <p className="text-sm text-yellow-800">⚠️ This is your active companion pet</p>
-          </div>
-        )}
-        
-        <div className="mb-6">
-          <p className="text-base mb-2">
-            Sell {sellModal.type === 'pet' ? sellModal.item?.name : 
-                 sellModal.type === 'avatar' ? sellModal.item :
-                 sellModal.item?.name}
-          </p>
-          <div className="text-sm text-gray-600 mb-1">
-            Original price: 💰{sellModal.originalPrice}
-          </div>
-          <div className="text-xl font-bold text-green-600">
-            Sell for: 💰{sellModal.price} (25% value)
-          </div>
-        </div>
-        
-        <div className="flex gap-4">
-          <button 
-            onClick={() => setSellModal({ visible: false, item: null, type: null, price: 0 })}
-            className="flex-1 py-3 border rounded-lg hover:bg-gray-50"
-          >
-            Cancel
-          </button>
-          <button 
-            onClick={confirmSell}
-            className="flex-1 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 font-bold"
-          >
-            Sell Item
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-
   return (
     <div className="space-y-4 md:space-y-6">
-      {/* Student Info Header - Mobile Optimized */}
-      <div className="bg-white rounded-xl p-4 md:p-6 shadow-lg">
+      {/* Header - Mobile Optimized */}
+      <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl p-4 md:p-6 shadow-lg">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3 md:gap-4 min-w-0 flex-1">
-            <img 
-              src={getAvatarImage(studentData.avatarBase, calculateAvatarLevel(studentData.totalPoints))} 
-              className="w-12 h-12 md:w-16 md:h-16 rounded-full border-2 border-blue-300 shadow-lg flex-shrink-0"
-              onError={(e) => {
-                e.target.src = '/shop/Basic/Banana.png';
-              }}
-            />
-            <div className="min-w-0 flex-1">
-              <h2 className="text-lg md:text-2xl font-bold text-gray-800 truncate">{studentData.firstName}'s Shop</h2>
-              <p className="text-base md:text-lg font-semibold text-yellow-600">💰 {currentCoins} coins available</p>
-            </div>
+          <div className="flex-1">
+            <h2 className="text-xl md:text-3xl font-bold mb-1">🛍️ Shop</h2>
+            <p className="text-blue-100 text-sm md:text-base">Spend your coins on awesome items!</p>
           </div>
-          <div className="flex gap-2">
-            <button 
-              onClick={() => setInventoryModal({ visible: true })}
-              className="bg-purple-600 text-white px-3 md:px-4 py-2 rounded-lg hover:bg-purple-700 text-sm md:text-base flex-shrink-0"
-            >
-              Inventory
-            </button>
-            <button 
-              onClick={() => setShowSellMode(!showSellMode)} 
-              className={`font-semibold px-3 md:px-4 py-2 rounded-lg text-sm md:text-base flex-shrink-0 transition-all ${
-                showSellMode ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-green-500 text-white hover:bg-green-600'
-              }`}
-            >
-              {showSellMode ? '❌' : '💸'}
-            </button>
+          <div className="bg-white bg-opacity-20 rounded-lg px-3 py-2 md:px-4 md:py-3">
+            <div className="text-xs md:text-sm text-blue-100">Your Coins</div>
+            <div className="text-xl md:text-2xl font-bold">💰 {currentCoins}</div>
           </div>
         </div>
-        
-        {/* NEW: Sell Mode Banner */}
-        {showSellMode && (
-          <div className="mt-4 p-3 md:p-4 bg-gradient-to-r from-green-100 to-yellow-100 rounded-lg border-2 border-green-300">
-            <div className="flex items-center gap-3">
-              <div className="text-2xl md:text-3xl">💸</div>
-              <div>
-                <h3 className="text-lg md:text-xl font-bold text-green-800">Sell Mode Active!</h3>
-                <p className="text-sm md:text-base text-green-600">Open your inventory to sell items for 25% of their value</p>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* Shop Categories - Mobile Optimized */}
-      <div className="bg-white rounded-xl p-4 md:p-6 shadow-lg">
-        <div className="flex space-x-1 md:space-x-2 border-b pb-3 md:pb-4 mb-4 md:mb-6 overflow-x-auto">
+      {/* Quick Actions - Mobile Optimized */}
+      <div className="flex gap-2 md:gap-3 overflow-x-auto pb-2">
+        <button
+          onClick={() => setInventoryModal({ visible: true })}
+          className="flex-shrink-0 bg-purple-500 text-white px-4 py-2 md:px-6 md:py-3 rounded-lg font-semibold hover:bg-purple-600 transition-all text-sm md:text-base"
+        >
+          🎒 My Inventory
+        </button>
+        <button
+          onClick={() => setShowSellMode(!showSellMode)}
+          className={`flex-shrink-0 px-4 py-2 md:px-6 md:py-3 rounded-lg font-semibold transition-all text-sm md:text-base ${
+            showSellMode 
+              ? 'bg-red-500 text-white hover:bg-red-600'
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          }`}
+        >
+          💵 {showSellMode ? 'Stop Selling' : 'Sell Items'}
+        </button>
+      </div>
+
+      {/* Shop Content - Mobile Optimized */}
+      <div className="bg-white rounded-xl shadow-lg p-4 md:p-6">
+        {/* Category Tabs - Mobile Optimized */}
+        <div className="flex overflow-x-auto gap-2 mb-4 md:mb-6 pb-2 scrollbar-hide">
           {categories.map(cat => (
-            <button 
-              key={cat.id} 
-              onClick={() => setActiveCategory(cat.id)} 
-              className={`px-2 md:px-4 py-2 rounded-lg font-semibold whitespace-nowrap text-xs md:text-sm ${
-                activeCategory === cat.id 
-                  ? cat.id === 'mysterybox'
-                    ? 'bg-purple-500 text-white' 
-                    : 'bg-blue-500 text-white'
-                  : 'bg-gray-100 hover:bg-gray-200'
+            <button
+              key={cat.id}
+              onClick={() => setActiveCategory(cat.id)}
+              className={`flex-shrink-0 px-3 py-2 md:px-4 md:py-2 rounded-lg font-semibold transition-all text-xs md:text-sm ${
+                activeCategory === cat.id
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
               <span className="md:hidden">{cat.shortName}</span>
@@ -793,7 +785,7 @@ const StudentShop = ({
               <div className="text-2xl md:text-3xl">🎁</div>
               <div>
                 <h3 className="text-lg md:text-xl font-bold text-purple-800">Mystery Box Adventure!</h3>
-                <p className="text-purple-600 text-sm md:text-base">Take a chance and discover amazing surprises!</p>
+                <p className="text-purple-600 text-sm md:text-base">Take a chance and discover amazing surprises including Halloween items!</p>
               </div>
             </div>
           </div>
@@ -835,10 +827,10 @@ const StudentShop = ({
       {/* Mystery Box Modal */}
       {mysteryBoxModal.visible && renderMysteryBoxModal()}
 
-      {/* NEW: Sell Confirmation Modal */}
+      {/* Sell Confirmation Modal */}
       {sellModal.visible && renderSellModal()}
 
-      {/* Inventory Modal - Mobile Optimized - UPDATED WITH SELLING FEATURE */}
+      {/* Inventory Modal - Mobile Optimized - WITH SELLING FEATURE */}
       {inventoryModal.visible && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
