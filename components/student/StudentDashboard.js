@@ -1,4 +1,4 @@
-// components/student/StudentDashboard.js - MOBILE OPTIMIZED
+// components/student/StudentDashboard.js - UPDATED: Avatar now matches equipped avatar on main site
 import React from 'react';
 
 const StudentDashboard = ({ 
@@ -22,7 +22,7 @@ const StudentDashboard = ({
 
       {/* Stats Grid - Mobile Optimized */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
-        {/* Avatar & Level */}
+        {/* Avatar & Level - UPDATED: Shows equipped avatar */}
         <div className="bg-white rounded-xl p-4 md:p-6 shadow-lg text-center">
           <img 
             src={getAvatarImage(studentData?.avatarBase, level)} 
@@ -67,7 +67,7 @@ const StudentDashboard = ({
           <p className="text-xs text-gray-600">Ready to spend!</p>
         </div>
 
-        {/* Pet */}
+        {/* Pet - UPDATED: Shows equipped pet properly */}
         <div className="bg-white rounded-xl p-4 md:p-6 shadow-lg text-center">
           {studentData?.ownedPets && studentData.ownedPets.length > 0 ? (
             <div>

@@ -1,4 +1,4 @@
-// utils/gameHelpers.js - Game Helper Functions for Educational Elements
+// utils/gameHelpers.js - UPDATED WITH HALLOWEEN CONTENT
 export const GAME_CONFIG = { MAX_LEVEL: 4, COINS_PER_XP: 5, PET_UNLOCK_XP: 50 };
 
 // ===============================================
@@ -22,7 +22,7 @@ export const calculateCoins = (student) => {
 };
 
 // ===============================================
-// SHOP DATA (from your classroom-champions.js)
+// SHOP DATA
 // ===============================================
 export const SHOP_BASIC_AVATARS = [ 
   { name: 'Banana', price: 10, path: '/shop/Basic/Banana.png' }, 
@@ -65,6 +65,38 @@ export const SHOP_PREMIUM_AVATARS = [
   { name: 'VampireGirl2', price: 40, path: '/shop/Premium/VampireGirl2.png' } 
 ];
 
+// ===============================================
+// HALLOWEEN THEMED ITEMS - NEW!
+// ===============================================
+export const HALLOWEEN_BASIC_AVATARS = [
+  { name: 'Demi', price: 15, path: '/shop/Themed/Halloween/Basic/Demi.png', theme: 'halloween' },
+  { name: 'Jason', price: 18, path: '/shop/Themed/Halloween/Basic/Jason.png', theme: 'halloween' },
+  { name: 'PumpkinKing', price: 20, path: '/shop/Themed/Halloween/Basic/PumpkinKing.png', theme: 'halloween' },
+  { name: 'Skeleton', price: 15, path: '/shop/Themed/Halloween/Basic/Skeleton.png', theme: 'halloween' },
+  { name: 'Witch', price: 18, path: '/shop/Themed/Halloween/Basic/Witch.png', theme: 'halloween' },
+  { name: 'Zombie', price: 16, path: '/shop/Themed/Halloween/Basic/Zombie.png', theme: 'halloween' }
+];
+
+export const HALLOWEEN_PREMIUM_AVATARS = [
+  { name: 'Pumpkin', price: 35, path: '/shop/Themed/Halloween/Premium/Pumpkin.png', theme: 'halloween' },
+  { name: 'Skeleton1', price: 40, path: '/shop/Themed/Halloween/Premium/Skeleton1.png', theme: 'halloween' },
+  { name: 'Skeleton2', price: 40, path: '/shop/Themed/Halloween/Premium/Skeleton2.png', theme: 'halloween' },
+  { name: 'Skeleton3', price: 40, path: '/shop/Themed/Halloween/Premium/Skeleton3.png', theme: 'halloween' },
+  { name: 'Witch1', price: 42, path: '/shop/Themed/Halloween/Premium/Witch1.png', theme: 'halloween' },
+  { name: 'Witch2', price: 42, path: '/shop/Themed/Halloween/Premium/Witch2.png', theme: 'halloween' },
+  { name: 'Witch3', price: 42, path: '/shop/Themed/Halloween/Premium/Witch3.png', theme: 'halloween' },
+  { name: 'Witch4', price: 42, path: '/shop/Themed/Halloween/Premium/Witch4.png', theme: 'halloween' },
+  { name: 'Zombie1', price: 38, path: '/shop/Themed/Halloween/Premium/Zombie1.png', theme: 'halloween' }
+];
+
+export const HALLOWEEN_PETS = [
+  { name: 'Spooky Cat', price: 25, path: '/shop/Themed/Halloween/Pets/Pet.png', theme: 'halloween' },
+  { name: 'Pumpkin Cat', price: 28, path: '/shop/Themed/Halloween/Pets/Pet2.png', theme: 'halloween' }
+];
+
+// ===============================================
+// REGULAR PETS
+// ===============================================
 export const SHOP_BASIC_PETS = [
   { name: 'Alchemist Pet', price: 25, path: '/shop/BasicPets/Alchemist.png' },
   { name: 'Barbarian Pet', price: 30, path: '/shop/BasicPets/Barbarian.png' },
@@ -113,13 +145,17 @@ export const SHOP_PREMIUM_PETS = [
 ];
 
 // ===============================================
-// AVATAR IMAGE PATHS - FIXED TO MATCH CLASSROOM-CHAMPIONS.JS
+// AVATAR IMAGE PATHS - UPDATED WITH HALLOWEEN
 // ===============================================
 export const getAvatarImage = (avatarBase, level) => {
-  // First check if it's a shop avatar
-  const shopItem = [...SHOP_BASIC_AVATARS, ...SHOP_PREMIUM_AVATARS].find(a => 
-    a.name.toLowerCase() === avatarBase?.toLowerCase()
-  );
+  // First check if it's a shop avatar (including Halloween)
+  const shopItem = [
+    ...SHOP_BASIC_AVATARS, 
+    ...SHOP_PREMIUM_AVATARS, 
+    ...HALLOWEEN_BASIC_AVATARS, 
+    ...HALLOWEEN_PREMIUM_AVATARS
+  ].find(a => a.name.toLowerCase() === avatarBase?.toLowerCase());
+  
   if (shopItem) return shopItem.path;
   
   // Default to traditional avatar system with the SAME path structure as classroom-champions.js
@@ -127,15 +163,18 @@ export const getAvatarImage = (avatarBase, level) => {
 };
 
 // ===============================================
-// PET IMAGE PATHS
+// PET IMAGE PATHS - UPDATED WITH HALLOWEEN
 // ===============================================
 export const getPetImage = (pet) => {
   if (!pet || !pet.name) return '/shop/BasicPets/Wizard.png'; // Default fallback
   
-  // First check if it's a shop pet
-  const shopItem = [...SHOP_BASIC_PETS, ...SHOP_PREMIUM_PETS].find(p => 
-    p.name.toLowerCase() === pet.name.toLowerCase()
-  );
+  // First check if it's a shop pet (including Halloween)
+  const shopItem = [
+    ...SHOP_BASIC_PETS, 
+    ...SHOP_PREMIUM_PETS, 
+    ...HALLOWEEN_PETS
+  ].find(p => p.name.toLowerCase() === pet.name.toLowerCase());
+  
   if (shopItem) return shopItem.path;
   
   // Fallback to old pet system
@@ -155,11 +194,11 @@ const PET_SPECIES = [
   { name: 'Crystal Sage', type: 'crystal sage', rarity: 'epic' },
   { name: 'Engineer', type: 'engineer', rarity: 'rare' },
   { name: 'Frost Mage', type: 'frost mage', rarity: 'rare' },
-  { name: 'Illusionist', type: 'illusionist', rarity: 'epic' },
+  { name: 'Illusionist', type: 'illusionist', rarity: 'rare' },
   { name: 'Knight', type: 'knight', rarity: 'common' },
-  { name: 'Lightning', type: 'lightning', rarity: 'legendary' },
+  { name: 'Lightning', type: 'lightning', rarity: 'epic' },
   { name: 'Monk', type: 'monk', rarity: 'common' },
-  { name: 'Necromancer', type: 'necromancer', rarity: 'epic' },
+  { name: 'Necromancer', type: 'necromancer', rarity: 'rare' },
   { name: 'Rogue', type: 'rogue', rarity: 'common' },
   { name: 'Stealth', type: 'stealth', rarity: 'rare' },
   { name: 'Time Knight', type: 'time knight', rarity: 'legendary' },
@@ -168,29 +207,29 @@ const PET_SPECIES = [
 ];
 
 export const getRandomPet = () => {
-  const randomSpecies = PET_SPECIES[Math.floor(Math.random() * PET_SPECIES.length)];
+  const randomIndex = Math.floor(Math.random() * PET_SPECIES.length);
+  const species = PET_SPECIES[randomIndex];
+  
   return {
-    id: `pet_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    name: randomSpecies.name,
-    type: randomSpecies.type,
-    rarity: randomSpecies.rarity,
-    level: 1,
-    experience: 0,
-    unlocked: new Date().toISOString()
+    id: `pet_${Date.now()}`,
+    name: species.name,
+    type: species.type,
+    rarity: species.rarity,
+    speed: Math.floor(Math.random() * 5) + 3, // Speed between 3-7
+    image: `/Pets/${species.name}.png`
   };
 };
 
+// ===============================================
+// PET UNLOCKING
+// ===============================================
 export const shouldReceivePet = (student) => {
-  const totalPoints = student.totalPoints || 0;
-  const ownedPets = student.ownedPets || [];
+  if (!student) return false;
+  const totalXP = student.totalPoints || 0;
+  const currentPets = student.ownedPets || [];
   
-  // Give first pet at 50 XP
-  if (totalPoints >= GAME_CONFIG.PET_UNLOCK_XP && ownedPets.length === 0) {
-    return true;
-  }
-  
-  // Give additional pets every 100 XP after first
-  if (totalPoints >= 50 && (totalPoints - 50) % 100 === 0 && ownedPets.length < Math.floor((totalPoints - 50) / 100) + 1) {
+  // First pet at 50 XP
+  if (totalXP >= GAME_CONFIG.PET_UNLOCK_XP && currentPets.length === 0) {
     return true;
   }
   
@@ -198,28 +237,121 @@ export const shouldReceivePet = (student) => {
 };
 
 // ===============================================
-// SOUND SYSTEM
+// UTILITY FUNCTIONS
 // ===============================================
-export const playSound = (soundType, volume = 0.5) => {
+export const getGridClasses = (studentCount) => {
+  if (studentCount <= 3) return 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3';
+  if (studentCount <= 6) return 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4';
+  if (studentCount <= 9) return 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5';
+  if (studentCount <= 12) return 'grid-cols-3 sm:grid-cols-4 lg:grid-cols-6';
+  return 'grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7';
+};
+
+export const playSound = (sound = 'ding') => {
   try {
-    const soundMap = {
-      'ding': '/sounds/ding.mp3',
-      'coins': '/sounds/coins.mp3',
-      'levelup': '/sounds/levelup.mp3',
-      'pet': '/sounds/pet.mp3',
-      'purchase': '/sounds/purchase.mp3',
-      'error': '/sounds/error.mp3'
-    };
-    
-    const soundPath = soundMap[soundType];
-    if (soundPath) {
-      const audio = new Audio(soundPath);
-      audio.volume = volume;
-      audio.play().catch(e => {
-        console.warn('Could not play sound:', soundType, e);
-      });
-    }
-  } catch (error) {
-    console.warn('Sound system error:', error);
+    const audio = new Audio(`/sounds/${sound}.mp3`);
+    audio.volume = 0.3;
+    audio.play().catch(e => {
+      console.log('Sound play failed:', e);
+    });
+  } catch(e) {
+    console.log('Sound initialization failed:', e);
   }
+};
+
+// ===============================================
+// STUDENT DATA VALIDATION
+// ===============================================
+export const validateStudentData = (student) => {
+  if (!student) return null;
+  
+  const validStudent = {
+    ...student,
+    firstName: student.firstName || 'Student',
+    lastName: student.lastName || '',
+    totalPoints: student.totalPoints || 0,
+    currency: student.currency || 0,
+    coinsSpent: student.coinsSpent || 0,
+    avatar: student.avatar || '/avatars/Wizard F/Level 1.png',
+    avatarBase: student.avatarBase || 'Wizard F',
+    avatarLevel: student.avatarLevel || 1,
+    ownedAvatars: student.ownedAvatars || [student.avatarBase || 'Wizard F'],
+    ownedPets: student.ownedPets || [],
+    inventory: student.inventory || [],
+    logs: student.logs || [],
+    categoryTotal: student.categoryTotal || {},
+    categoryWeekly: student.categoryWeekly || {},
+    rewardsPurchased: student.rewardsPurchased || [],
+    createdAt: student.createdAt || new Date().toISOString(),
+    lastUpdated: new Date().toISOString()
+  };
+
+  return validStudent;
+};
+
+// ===============================================
+// XP AWARD UTILITIES
+// ===============================================
+export const awardXPToStudent = (student, amount, category, reason) => {
+  const newTotalXP = (student.totalPoints || 0) + amount;
+  const oldLevel = calculateAvatarLevel(student.totalPoints || 0);
+  const newLevel = calculateAvatarLevel(newTotalXP);
+  
+  const updatedStudent = {
+    ...student,
+    totalPoints: newTotalXP,
+    avatarLevel: newLevel,
+    avatar: getAvatarImage(student.avatarBase || 'Wizard F', newLevel),
+    categoryTotal: {
+      ...student.categoryTotal,
+      [category]: (student.categoryTotal?.[category] || 0) + amount
+    },
+    logs: [
+      ...(student.logs || []),
+      {
+        type: category,
+        points: amount,
+        timestamp: new Date().toISOString(),
+        reason: reason || `Awarded ${category} points`
+      }
+    ],
+    lastUpdated: new Date().toISOString()
+  };
+
+  // Check if student should receive a pet
+  if (shouldReceivePet(updatedStudent)) {
+    const randomPet = getRandomPet();
+    updatedStudent.ownedPets = [...(updatedStudent.ownedPets || []), randomPet];
+  }
+
+  return {
+    student: updatedStudent,
+    leveledUp: newLevel > oldLevel,
+    oldLevel,
+    newLevel,
+    receivedPet: shouldReceivePet(student) && newTotalXP >= GAME_CONFIG.PET_UNLOCK_XP
+  };
+};
+
+// ===============================================
+// EXPORT ALL UTILITIES
+// ===============================================
+export default {
+  getAvatarImage,
+  calculateAvatarLevel,
+  calculateCoins,
+  shouldReceivePet,
+  getGridClasses,
+  playSound,
+  validateStudentData,
+  getRandomPet,
+  awardXPToStudent,
+  SHOP_BASIC_AVATARS,
+  SHOP_PREMIUM_AVATARS,
+  HALLOWEEN_BASIC_AVATARS,
+  HALLOWEEN_PREMIUM_AVATARS,
+  SHOP_BASIC_PETS,
+  SHOP_PREMIUM_PETS,
+  HALLOWEEN_PETS,
+  GAME_CONFIG
 };
