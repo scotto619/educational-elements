@@ -11,6 +11,7 @@ import FluencyPractice from '../curriculum/literacy/FluencyPractice';
 import BeginnerReaders from '../curriculum/literacy/BeginnerReaders';
 import ReadingForFun from '../curriculum/literacy/ReadingForFun';
 import ReadersTheatre from '../curriculum/literacy/ReadersTheatre';
+import Morphology from '../curriculum/literacy/Morphology';
 import AreaPerimeterTool from '../curriculum/mathematics/AreaPerimeterTool';
 import MathWarmup from '../curriculum/mathematics/MathWarmup';
 import WorksheetGenerator from '../curriculum/mathematics/WorksheetGenerator';
@@ -66,6 +67,14 @@ const subjects = [
         icon: '🎭',
         description: 'Drama scripts with character roles for student performances and oral reading practice',
         component: ReadersTheatre,
+        isNew: true
+      },
+      {
+        id: 'morphology',
+        name: 'Morphology Master',
+        icon: '🔤',
+        description: 'Learn how words work! Teach prefixes, suffixes, and base words with engaging multi-level lessons',
+        component: Morphology,
         isNew: true
       },
       {
