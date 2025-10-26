@@ -232,6 +232,324 @@ h1{text-align:center}
 <div class="word-box"><strong>7.</strong><div class="word-display">UNKIND</div></div>
 <div class="word-box"><strong>8.</strong><div class="word-display">TEACHER</div></div>
 </body></html>`;
+  },
+
+  'meaningful-parts-cards': () => {
+    return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Meaningful Parts Cards</title>
+<style>
+body{font-family:Arial,sans-serif;margin:20px}
+.card-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin:30px 0}
+.card{border:4px solid #333;border-radius:15px;padding:30px;text-align:center;min-height:180px;display:flex;flex-direction:column;justify-content:center}
+.word-card{background:linear-gradient(135deg,#a8edea 0%,#fed6e3 100%)}
+.parts-card{background:linear-gradient(135deg,#ffecd2 0%,#fcb69f 100%)}
+.word{font-size:36px;font-weight:bold;margin:15px 0}
+.parts{font-size:18px;color:#333;margin:10px 0}
+.base{color:#e74c3c;font-weight:bold}
+.suffix{color:#3498db;font-weight:bold}
+h2{color:#4a148c;margin-top:40px}
+</style></head><body>
+<h1 style="text-align:center">🧩 Meaningful Parts Cards</h1>
+<h2>Word Cards with Parts Identified</h2>
+<div class="card-grid">
+<div class="card word-card"><div class="word">CATS</div><div class="parts"><span class="base">CAT</span> + <span class="suffix">S</span></div><small>one cat + more than one</small></div>
+<div class="card word-card"><div class="word">DOGS</div><div class="parts"><span class="base">DOG</span> + <span class="suffix">S</span></div><small>one dog + more than one</small></div>
+<div class="card word-card"><div class="word">HATS</div><div class="parts"><span class="base">HAT</span> + <span class="suffix">S</span></div><small>one hat + more than one</small></div>
+<div class="card word-card"><div class="word">CUPS</div><div class="parts"><span class="base">CUP</span> + <span class="suffix">S</span></div><small>one cup + more than one</small></div>
+<div class="card word-card"><div class="word">PIGS</div><div class="parts"><span class="base">PIG</span> + <span class="suffix">S</span></div><small>one pig + more than one</small></div>
+<div class="card word-card"><div class="word">BEDS</div><div class="parts"><span class="base">BED</span> + <span class="suffix">S</span></div><small>one bed + more than one</small></div>
+<div class="card word-card"><div class="word">BUGS</div><div class="parts"><span class="base">BUG</span> + <span class="suffix">S</span></div><small>one bug + more than one</small></div>
+<div class="card word-card"><div class="word">TOYS</div><div class="parts"><span class="base">TOY</span> + <span class="suffix">S</span></div><small>one toy + more than one</small></div>
+<div class="card word-card"><div class="word">PENS</div><div class="parts"><span class="base">PEN</span> + <span class="suffix">S</span></div><small>one pen + more than one</small></div>
+</div>
+<h2>Base Word Cards</h2>
+<div class="card-grid">
+<div class="card parts-card"><div class="word base">CAT</div><small>BASE: one animal</small></div>
+<div class="card parts-card"><div class="word base">DOG</div><small>BASE: one animal</small></div>
+<div class="card parts-card"><div class="word base">HAT</div><small>BASE: one thing</small></div>
+<div class="card parts-card"><div class="word base">CUP</div><small>BASE: one thing</small></div>
+<div class="card parts-card"><div class="word base">PIG</div><small>BASE: one animal</small></div>
+<div class="card parts-card"><div class="word base">BED</div><small>BASE: one thing</small></div>
+</div>
+<h2>Suffix Cards</h2>
+<div class="card-grid">
+<div class="card parts-card"><div class="word suffix">-S</div><small>SUFFIX: more than one</small></div>
+<div class="card parts-card"><div class="word suffix">-S</div><small>SUFFIX: more than one</small></div>
+<div class="card parts-card"><div class="word suffix">-S</div><small>SUFFIX: more than one</small></div>
+<div class="card parts-card"><div class="word suffix">-S</div><small>SUFFIX: more than one</small></div>
+<div class="card parts-card"><div class="word suffix">-S</div><small>SUFFIX: more than one</small></div>
+<div class="card parts-card"><div class="word suffix">-S</div><small>SUFFIX: more than one</small></div>
+</div>
+</body></html>`;
+  },
+
+  'singular-plural-match': () => {
+    return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Singular & Plural Match</title>
+<style>
+body{font-family:Arial,sans-serif;margin:20px}
+.match-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:30px;margin:30px 0}
+.card{border:4px solid #333;border-radius:15px;padding:25px;text-align:center;min-height:150px}
+.singular{background:linear-gradient(135deg,#ffeaa7 0%,#fdcb6e 100%);border-color:#e17055}
+.plural{background:linear-gradient(135deg,#a8edea 0%,#fed6e3 100%);border-color:#6c5ce7}
+.emoji{font-size:60px;margin:15px 0}
+.word{font-size:32px;font-weight:bold;margin:10px 0}
+.label{font-size:14px;font-weight:bold;padding:5px 10px;border-radius:10px;display:inline-block;margin-top:10px}
+.singular-label{background:#e17055;color:white}
+.plural-label{background:#6c5ce7;color:white}
+h2{color:#4a148c;margin-top:40px}
+</style></head><body>
+<h1 style="text-align:center">🎴 Singular & Plural Picture Match</h1>
+<p style="text-align:center"><strong>Match the singular (one) with the plural (many)!</strong></p>
+<h2>Set 1</h2>
+<div class="match-grid">
+<div class="card singular"><div class="emoji">🐕</div><div class="word">DOG</div><div class="label singular-label">ONE</div></div>
+<div class="card plural"><div class="emoji">🐕🐕🐕</div><div class="word">DOGS</div><div class="label plural-label">MANY</div></div>
+</div>
+<h2>Set 2</h2>
+<div class="match-grid">
+<div class="card singular"><div class="emoji">🐱</div><div class="word">CAT</div><div class="label singular-label">ONE</div></div>
+<div class="card plural"><div class="emoji">🐱🐱🐱</div><div class="word">CATS</div><div class="label plural-label">MANY</div></div>
+</div>
+<h2>Set 3</h2>
+<div class="match-grid">
+<div class="card singular"><div class="emoji">🎩</div><div class="word">HAT</div><div class="label singular-label">ONE</div></div>
+<div class="card plural"><div class="emoji">🎩🎩🎩</div><div class="word">HATS</div><div class="label plural-label">MANY</div></div>
+</div>
+<h2>Set 4</h2>
+<div class="match-grid">
+<div class="card singular"><div class="emoji">⚽</div><div class="word">BALL</div><div class="label singular-label">ONE</div></div>
+<div class="card plural"><div class="emoji">⚽⚽⚽</div><div class="word">BALLS</div><div class="label plural-label">MANY</div></div>
+</div>
+<h2>Set 5</h2>
+<div class="match-grid">
+<div class="card singular"><div class="emoji">🐷</div><div class="word">PIG</div><div class="label singular-label">ONE</div></div>
+<div class="card plural"><div class="emoji">🐷🐷🐷</div><div class="word">PIGS</div><div class="label plural-label">MANY</div></div>
+</div>
+<h2>Set 6</h2>
+<div class="match-grid">
+<div class="card singular"><div class="emoji">☕</div><div class="word">CUP</div><div class="label singular-label">ONE</div></div>
+<div class="card plural"><div class="emoji">☕☕☕</div><div class="word">CUPS</div><div class="label plural-label">MANY</div></div>
+</div>
+</body></html>`;
+  },
+
+  'add-s-practice': () => {
+    return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Add -S Practice</title>
+<style>
+body{font-family:Arial,sans-serif;margin:20px;max-width:900px;margin:0 auto;padding:30px}
+.practice-box{border:3px solid #333;border-radius:10px;padding:25px;margin:20px 0;background:#f8f9fa}
+.word-row{display:flex;align-items:center;justify-content:center;gap:20px;margin:20px 0;font-size:32px;font-weight:bold}
+.base{color:#e74c3c;padding:10px 20px;background:white;border:3px solid #e74c3c;border-radius:10px}
+.plus{color:#333;font-size:40px}
+.suffix{color:#3498db;padding:10px 20px;background:white;border:3px solid #3498db;border-radius:10px}
+.equals{color:#333;font-size:40px}
+.result{padding:10px 20px;background:white;border:3px dashed #333;border-radius:10px;min-width:150px;text-align:center}
+h1{text-align:center;color:#4a148c}
+.instructions{background:#d4edda;border:3px solid #28a745;border-radius:10px;padding:15px;margin:20px 0}
+</style></head><body>
+<h1>➕ Add -S Practice</h1>
+<div class="instructions">
+<strong>Instructions:</strong> Practice adding -S to make plurals. The base word stays the same - just add -S!
+</div>
+<div class="practice-box">
+<div class="word-row">
+<div class="base">CAT</div>
+<div class="plus">+</div>
+<div class="suffix">S</div>
+<div class="equals">=</div>
+<div class="result">CATS</div>
+</div>
+</div>
+<div class="practice-box">
+<div class="word-row">
+<div class="base">DOG</div>
+<div class="plus">+</div>
+<div class="suffix">S</div>
+<div class="equals">=</div>
+<div class="result">DOGS</div>
+</div>
+</div>
+<div class="practice-box">
+<div class="word-row">
+<div class="base">HAT</div>
+<div class="plus">+</div>
+<div class="suffix">S</div>
+<div class="equals">=</div>
+<div class="result">HATS</div>
+</div>
+</div>
+<div class="practice-box">
+<div class="word-row">
+<div class="base">BED</div>
+<div class="plus">+</div>
+<div class="suffix">S</div>
+<div class="equals">=</div>
+<div class="result">BEDS</div>
+</div>
+</div>
+<div class="practice-box">
+<div class="word-row">
+<div class="base">CUP</div>
+<div class="plus">+</div>
+<div class="suffix">S</div>
+<div class="equals">=</div>
+<div class="result">CUPS</div>
+</div>
+</div>
+<div class="practice-box">
+<div class="word-row">
+<div class="base">PIG</div>
+<div class="plus">+</div>
+<div class="suffix">S</div>
+<div class="equals">=</div>
+<div class="result">PIGS</div>
+</div>
+</div>
+<div class="practice-box">
+<div class="word-row">
+<div class="base">BUG</div>
+<div class="plus">+</div>
+<div class="suffix">S</div>
+<div class="equals">=</div>
+<div class="result">BUGS</div>
+</div>
+</div>
+<div class="practice-box">
+<div class="word-row">
+<div class="base">PEN</div>
+<div class="plus">+</div>
+<div class="suffix">S</div>
+<div class="equals">=</div>
+<div class="result">PENS</div>
+</div>
+</div>
+<h2 style="text-align:center;color:#28a745;margin-top:50px">Now You Try! (Blank Practice)</h2>
+<div class="practice-box">
+<div class="word-row">
+<div class="base">BAT</div>
+<div class="plus">+</div>
+<div class="suffix">S</div>
+<div class="equals">=</div>
+<div class="result">_______</div>
+</div>
+</div>
+<div class="practice-box">
+<div class="word-row">
+<div class="base">RAT</div>
+<div class="plus">+</div>
+<div class="suffix">S</div>
+<div class="equals">=</div>
+<div class="result">_______</div>
+</div>
+</div>
+<div class="practice-box">
+<div class="word-row">
+<div class="base">NET</div>
+<div class="plus">+</div>
+<div class="suffix">S</div>
+<div class="equals">=</div>
+<div class="result">_______</div>
+</div>
+</div>
+<div class="practice-box">
+<div class="word-row">
+<div class="base">BIN</div>
+<div class="plus">+</div>
+<div class="suffix">S</div>
+<div class="equals">=</div>
+<div class="result">_______</div>
+</div>
+</div>
+</body></html>`;
+  },
+
+  'write-plurals-worksheet': () => {
+    return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Write Plurals Worksheet</title>
+<style>
+body{font-family:Arial,sans-serif;margin:20px;max-width:800px;margin:0 auto;padding:30px}
+.worksheet-box{border:3px solid #333;border-radius:10px;padding:20px;margin:20px 0;background:white}
+.picture-row{display:flex;align-items:center;gap:30px;margin:20px 0}
+.picture{flex:1;text-align:center;font-size:60px;padding:20px;background:#f8f9fa;border-radius:10px}
+.write-box{flex:2}
+.label{font-weight:bold;margin-bottom:10px;color:#4a148c}
+.write-line{border-bottom:3px solid #333;min-height:50px;margin:10px 0;font-size:28px}
+h1{text-align:center;color:#4a148c}
+.instructions{background:#fff3cd;border:3px solid #ffc107;border-radius:10px;padding:15px;margin:20px 0}
+</style></head><body>
+<h1>✏️ Write Plurals Worksheet</h1>
+<div class="instructions">
+<strong>Instructions:</strong> Look at the picture. Write the base word. Then add -S to write the plural!
+</div>
+<div class="worksheet-box">
+<div class="picture-row">
+<div class="picture">🐱</div>
+<div class="write-box">
+<div class="label">ONE:</div>
+<div class="write-line">CAT</div>
+<div class="label">MANY (add -S):</div>
+<div class="write-line">_____________</div>
+</div>
+</div>
+</div>
+<div class="worksheet-box">
+<div class="picture-row">
+<div class="picture">🐕</div>
+<div class="write-box">
+<div class="label">ONE:</div>
+<div class="write-line">DOG</div>
+<div class="label">MANY (add -S):</div>
+<div class="write-line">_____________</div>
+</div>
+</div>
+</div>
+<div class="worksheet-box">
+<div class="picture-row">
+<div class="picture">🎩</div>
+<div class="write-box">
+<div class="label">ONE:</div>
+<div class="write-line">HAT</div>
+<div class="label">MANY (add -S):</div>
+<div class="write-line">_____________</div>
+</div>
+</div>
+</div>
+<div class="worksheet-box">
+<div class="picture-row">
+<div class="picture">🛏️</div>
+<div class="write-box">
+<div class="label">ONE:</div>
+<div class="write-line">BED</div>
+<div class="label">MANY (add -S):</div>
+<div class="write-line">_____________</div>
+</div>
+</div>
+</div>
+<div class="worksheet-box">
+<div class="picture-row">
+<div class="picture">☕</div>
+<div class="write-box">
+<div class="label">ONE:</div>
+<div class="write-line">CUP</div>
+<div class="label">MANY (add -S):</div>
+<div class="write-line">_____________</div>
+</div>
+</div>
+</div>
+<div class="worksheet-box">
+<div class="picture-row">
+<div class="picture">🐷</div>
+<div class="write-box">
+<div class="label">ONE:</div>
+<div class="write-line">_____________</div>
+<div class="label">MANY (add -S):</div>
+<div class="write-line">_____________</div>
+</div>
+</div>
+</div>
+</body></html>`;
   }
 };
 

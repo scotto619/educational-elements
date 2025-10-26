@@ -659,6 +659,482 @@ Give yourself a pat on the back - you learned three big vocabulary words today! 
         ],
         exitTicket: 'Draw a simple train with three cars. Label them PREFIX, BASE, and SUFFIX. Write one example word with all three parts.'
       }
+    },
+
+    {
+      id: 4,
+      title: 'Words Have Meaningful Parts',
+      icon: '🧩',
+      duration: '20-25 minutes',
+      objectives: [
+        'Understand that words can have more than one meaningful part',
+        'Recognize that each part adds meaning to the word',
+        'Identify meaningful parts in simple words'
+      ],
+      materials: [
+        'Whiteboard/chart paper',
+        'Picture cards with plural items',
+        'Word building cards'
+      ],
+      
+      teacherScript: [
+        {
+          section: 'Introduction (3 mins)',
+          content: `Hello word detectives! 👋 We've been learning about word parts - remember prefixes, bases, and suffixes?
+
+Today we're going to discover something REALLY important: every part of a word means something! Each part is like a puzzle piece that adds meaning!
+
+[Draw a simple puzzle with 2-3 pieces on the board]
+
+Let me show you what I mean...`,
+          animation: 'fadeIn'
+        },
+        {
+          section: 'Teaching Meaningful Parts (8 mins)',
+          content: `Let's look at this word: DOGS 🐕🐕
+
+[Write "DOGS" on the board]
+
+How many parts does this word have? Let's find out!
+
+First part: DOG 🐕
+- This is our BASE word
+- It means ONE animal - a dog!
+
+Second part: -S
+- This is our SUFFIX
+- It means MORE THAN ONE!
+
+So DOGS = DOG + S = MORE THAN ONE DOG! 🐕🐕🐕
+
+Both parts are MEANINGFUL! They both tell us something!
+- DOG tells us WHAT animal
+- S tells us HOW MANY (more than one!)
+
+Let's try another one:
+
+CATS 🐱
+[Write on board, separating parts]
+
+Part 1: CAT 🐱 (one cat)
+Part 2: -S (more than one!)
+
+CATS = CAT + S = MORE THAN ONE CAT! 🐱🐱🐱
+
+Each part means something important!
+
+Here are more examples:
+
+BEDS 🛏️
+- BED = one bed (the thing we sleep on)
+- -S = more than one
+- BEDS = more than one bed!
+
+HATS 🎩
+- HAT = one hat (thing we wear)
+- -S = more than one
+- HATS = more than one hat!
+
+PIGS 🐷
+- PIG = one pig (the animal)
+- -S = more than one
+- PIGS = more than one pig!
+
+See the pattern? The BASE tells us WHAT, and the -S tells us there's MORE THAN ONE! 
+
+Every part is meaningful - it tells us something! 🌟`,
+          animation: 'buildUp'
+        },
+        {
+          section: 'Interactive Practice (7 mins)',
+          content: `Now YOU help me break apart words into meaningful parts!
+
+I'll say a word, you help me find the parts!
+
+[Write on board as students help]
+
+BUGS 🐛
+- What's the base? (BUG)
+- What's the suffix? (-S)
+- What does BUG mean? (the insect)
+- What does -S mean? (more than one!)
+
+CUPS ☕
+- What's the base? (CUP)
+- What's the suffix? (-S)
+- What does CUP mean? (thing we drink from)
+- What does -S mean? (more than one!)
+
+TOYS 🎮
+- What's the base? (TOY)
+- What's the suffix? (-S)
+- What does each part mean?
+
+PENS ✏️
+- Let's break this one apart together!
+- PEN = the writing tool
+- -S = more than one
+- PENS = more than one pen!
+
+Great job! You're finding the meaningful parts! 🎯
+
+Remember: Every part of a word tells us something! No part is just there for fun - they all have a JOB!`,
+          animation: 'bounce'
+        },
+        {
+          section: 'Meaning Changes (5 mins)',
+          content: `Let's see how adding that -S changes the meaning!
+
+[Show pictures or draw on board]
+
+ONE DOG 🐕 → DOGS 🐕🐕
+The word changed! Now it means MORE THAN ONE!
+
+ONE BOOK 📕 → BOOKS 📕📚
+Look! The -S made it mean MANY books!
+
+ONE STAR ⭐ → STARS ⭐✨🌟
+The -S is so powerful! It changed the meaning from ONE to MANY!
+
+Let's try a game! I'll say a word with ONE thing. You add -S to make it MANY things!
+
+• CAR → (CARS!) 🚗🚗
+• BALL → (BALLS!) ⚽⚽
+• TREE → (TREES!) 🌳🌲
+• DUCK → (DUCKS!) 🦆🦆
+
+Amazing! You understand that -S is meaningful - it changes the word from one to many! 🎉`,
+          animation: 'transform'
+        },
+        {
+          section: 'Wrap-Up (2 mins)',
+          content: `What did we learn today, word experts?
+
+✅ Words can have MORE THAN ONE meaningful part!
+✅ Each part adds meaning to the word
+✅ The suffix -S means "more than one"!
+✅ Every part has a JOB to do!
+
+Tomorrow we'll practice adding -S to words ourselves! You're all becoming morphology masters! 🏆`,
+          animation: 'celebrate'
+        }
+      ],
+
+      activities: [
+        {
+          title: 'Meaningful Parts Sorting',
+          icon: '🧩',
+          duration: '10 mins',
+          description: 'Sort words and identify which parts are meaningful',
+          instructions: [
+            'Provide word cards with simple plurals (cats, dogs, hats, cups)',
+            'Students identify the base and suffix in each word',
+            'They explain what each part means',
+            'Sort into two piles: base parts and suffix parts'
+          ],
+          materials: ['Word cards', 'Sorting mats'],
+          printable: 'meaningful-parts-cards'
+        },
+        {
+          title: 'Picture Match Game',
+          icon: '🎴',
+          duration: '15 mins',
+          description: 'Match singular and plural pictures',
+          instructions: [
+            'Create pairs: one dog/two dogs, one cat/three cats',
+            'Students match the plural picture to the plural word',
+            'They identify the -S suffix that makes it plural',
+            'Discuss how the -S changes the meaning'
+          ],
+          materials: ['Picture cards', 'Word cards'],
+          printable: 'singular-plural-match'
+        },
+        {
+          title: 'Build the Meaning',
+          icon: '🏗️',
+          duration: '10 mins',
+          description: 'Build words and explain what each part means',
+          instructions: [
+            'Provide base word cards (cat, dog, hat, cup)',
+            'Provide -S suffix cards',
+            'Students build plural words',
+            'They must explain: "CAT means one cat, -S means more than one, so CATS means more than one cat!"',
+            'Practice with multiple words'
+          ],
+          materials: ['Base word cards', '-S cards', 'Paper for recording'],
+          printable: 'meaningful-parts-cards'
+        }
+      ],
+
+      assessment: {
+        formative: [
+          'Can students identify that words have multiple parts?',
+          'Do they understand each part has meaning?',
+          'Can they explain what -S means?',
+          'Can they break simple plurals into base + suffix?'
+        ],
+        questions: [
+          'How many meaningful parts does "dogs" have?',
+          'What does the -S in "cats" mean?',
+          'Why do we say every part is meaningful?',
+          'Can you tell me what each part of "hats" means?'
+        ]
+      }
+    },
+
+    {
+      id: 5,
+      title: 'Adding Plural -S to Base Nouns',
+      icon: '➕',
+      duration: '20-25 minutes',
+      objectives: [
+        'Add the plural suffix -S to simple base nouns',
+        'Understand that the base word doesn\'t change',
+        'Practice reading and writing simple plurals'
+      ],
+      materials: [
+        'Whiteboard/chart paper',
+        'Magnetic letters or letter cards',
+        'Picture cards',
+        'Student whiteboards'
+      ],
+      
+      teacherScript: [
+        {
+          section: 'Introduction (3 mins)',
+          content: `Welcome back, word builders! 👷
+
+Last time we learned that words have meaningful parts, and the suffix -S means "more than one"!
+
+Today we're going to practice ADDING the -S ourselves! We're going to turn words that mean ONE thing into words that mean MANY things!
+
+[Write on board: "ONE → MANY"]
+
+Are you ready to become plural experts? Let's go! 🚀`,
+          animation: 'fadeIn'
+        },
+        {
+          section: 'Teaching How to Add -S (8 mins)',
+          content: `Here's the super easy rule for adding -S:
+
+[Write on board with big arrows]
+
+CAT → CAT + S → CATS
+
+Look what happened! We:
+1. Started with CAT
+2. Added -S to the end
+3. The CAT part stayed THE SAME!
+
+That's the important part: THE BASE WORD DOESN'T CHANGE! We just add -S to the end!
+
+Let's try more together:
+
+DOG → DOG + S → DOGS
+[Point to DOG] See? DOG stayed the same!
+[Point to -S] We just added -S!
+
+HAT → HAT + S → HATS
+[Point to HAT] HAT stayed the same!
+[Point to -S] We just added -S!
+
+PIG → PIG + S → PIGS
+BUG → BUG + S → BUGS
+CUP → CUP + S → CUPS
+
+Notice: The base word NEVER changes! We just add -S!
+
+[Draw a visual: CAT (in a box) + S (in a circle) = CATS]
+
+Think of it like this:
+- The base word is safe in a box - it doesn't change!
+- We just glue the -S on the end!
+- Easy! 🎯
+
+Let me show you with letters:
+
+[Use magnetic letters or write clearly]
+
+C-A-T
+Now watch... I add -S
+C-A-T-S
+
+Did CAT change? NO! We just added -S! 
+
+Your turn to help! I'll write the base word, you tell me how to spell the plural!
+
+BED → BED + S = ? (BEDS!)
+PEN → PEN + S = ? (PENS!)
+TOP → TOP + S = ? (TOPS!)
+
+You're naturals at this! 🌟`,
+          animation: 'slideUp'
+        },
+        {
+          section: 'Guided Practice (7 mins)',
+          content: `Now let's practice adding -S to different words!
+
+[Write base words on the board, students help add -S]
+
+Here's our base: BAT 🦇
+Let's add -S... BATS!
+[Write it out: B-A-T-S]
+
+Base: RAT 🐀
+Add -S... RATS!
+[Write it out: R-A-T-S]
+
+Base: NET 🥅
+Add -S... NETS!
+[Write it out: N-E-T-S]
+
+Base: BIN 🗑️
+Add -S... BINS!
+[Write it out: B-I-N-S]
+
+Let me test you! What base word do you see in these plurals?
+
+CATS → What's the base? (CAT!)
+DOGS → What's the base? (DOG!)
+BEDS → What's the base? (BED!)
+
+Perfect! You can see that the base stays the same!
+
+Now I'm going to give you some base words, and YOU add the -S!
+
+[Have students use whiteboards or call out answers]
+
+• FOX → (FOXES - ooh, we'll learn about this one later!)
+• Actually, let's stick to simple ones today:
+
+• SUN ☀️ → (SUNS!)
+• BUS 🚌 → (BUSES - save for later!)
+• Let's do: BEE 🐝 → (BEES!)
+• COW 🐄 → (COWS!)
+
+Great work! 🎉`,
+          animation: 'construct'
+        },
+        {
+          section: 'Reading Practice (5 mins)',
+          content: `Now let's practice READING words with -S!
+
+I'll show you a word, you read it out loud!
+
+[Show cards or write words]
+
+CATS → Read it! 🐱🐱
+HATS → Read it! 🎩🎩
+DOGS → Read it! 🐕🐕
+PIGS → Read it! 🐷🐷
+BUGS → Read it! 🐛🐛
+CUPS → Read it! ☕☕
+
+Excellent reading! 
+
+Now let's read them in sentences!
+
+"I see two CATS."
+"She has three HATS."
+"The DOGS are playing."
+"Five PIGS are in the mud."
+
+You're all reading plurals like experts! 📖`,
+          animation: 'pulse'
+        },
+        {
+          section: 'Wrap-Up (2 mins)',
+          content: `What did we learn today, plural experts?
+
+✅ We can ADD -S to base words to make plurals!
+✅ The base word STAYS THE SAME - it doesn't change!
+✅ Just add -S to the end!
+✅ CAT + S = CATS (one cat → many cats!)
+
+Keep practicing! Next time we'll learn about some special words that are a bit trickier! 
+
+But for now, you're AMAZING at adding -S! Give yourselves a round of applause! 👏`,
+          animation: 'celebrate'
+        }
+      ],
+
+      activities: [
+        {
+          title: 'Magnetic Letter Building',
+          icon: '🧲',
+          duration: '15 mins',
+          description: 'Use magnetic letters to build plurals',
+          instructions: [
+            'Provide magnetic letters spelling simple words (cat, dog, hat)',
+            'Students add -S magnetic letter to make plural',
+            'They read both versions aloud',
+            'Practice with multiple words',
+            'Emphasize that base word doesn\'t change'
+          ],
+          materials: ['Magnetic letters', 'Magnetic boards', 'Word list'],
+          printable: 'add-s-practice'
+        },
+        {
+          title: 'Write the Plural',
+          icon: '✏️',
+          duration: '10 mins',
+          description: 'Practice writing plurals',
+          instructions: [
+            'Show picture of ONE item (cat, dog, hat)',
+            'Students write the base word',
+            'Show picture of MULTIPLE items',
+            'Students add -S and write the plural',
+            'They can draw their own plural pictures'
+          ],
+          materials: ['Worksheets', 'Pencils', 'Picture cards'],
+          printable: 'write-plurals-worksheet'
+        },
+        {
+          title: 'Plural Builders Game',
+          icon: '🎮',
+          duration: '15 mins',
+          description: 'Build plurals and act them out',
+          instructions: [
+            'Teacher calls out a base word (cat, jump, hat)',
+            'Students hold up cards: base word + S card',
+            'They read the plural aloud',
+            'Optional: act out the word (one cat vs. many cats)',
+            'Keep score for correct plurals'
+          ],
+          materials: ['Base word cards', '-S cards', 'Score board'],
+          printable: 'add-s-practice'
+        },
+        {
+          title: 'One or Many?',
+          icon: '🔢',
+          duration: '10 mins',
+          description: 'Identify if words are singular or plural',
+          instructions: [
+            'Show mixed word cards (cat, dogs, hat, beds, cup, pigs)',
+            'Students sort into "ONE" pile and "MANY" pile',
+            'They identify which words have -S',
+            'Discuss: How do you know it means more than one?'
+          ],
+          materials: ['Mixed word cards', 'Sorting mats labeled "ONE" and "MANY"'],
+          printable: 'singular-plural-match'
+        }
+      ],
+
+      assessment: {
+        formative: [
+          'Can students add -S to simple CVC words?',
+          'Do they understand the base doesn\'t change?',
+          'Can they read simple plurals?',
+          'Can they write plurals independently?'
+        ],
+        questions: [
+          'How do we make "cat" mean more than one cat?',
+          'What happens to the base word when we add -S?',
+          'Can you write "dogs" for me?',
+          'What does -S tell us about the word?'
+        ],
+        exitTicket: 'Write 3 words with -S added. Circle the base in each word.'
+      }
     }
   ]
 };
