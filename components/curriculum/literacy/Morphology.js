@@ -2,11 +2,260 @@
 import React, { useState } from 'react';
 import MorphologyLevel1 from './morphology/MorphologyLevel1';
 
+// Printable templates
+const printableTemplates = {
+  'compound-word-cards': () => {
+    return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Compound Word Cards</title>
+<style>
+body{font-family:Arial,sans-serif;margin:20px}
+.card-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin:30px 0}
+.card{border:4px solid #333;border-radius:15px;padding:30px;text-align:center;min-height:200px}
+.part1{background:linear-gradient(135deg,#a8edea 0%,#fed6e3 100%)}
+.part2{background:linear-gradient(135deg,#ffecd2 0%,#fcb69f 100%)}
+.compound{background:linear-gradient(135deg,#c3cfe2 0%,#c3cfe2 100%);border-width:5px}
+.emoji{font-size:70px}
+.word{font-size:32px;font-weight:bold;margin:10px 0}
+h2{color:#4a148c;margin-top:40px}
+</style></head><body>
+<h1 style="text-align:center">🔤 Compound Word Picture Match Cards</h1>
+<h2>Set 1: Rainbow 🌈</h2>
+<div class="card-grid">
+<div class="card part1"><div class="emoji">☔</div><div class="word">RAIN</div></div>
+<div class="card part2"><div class="emoji">🎀</div><div class="word">BOW</div></div>
+<div class="card compound"><div class="emoji">🌈</div><div class="word">RAINBOW</div></div>
+</div>
+<h2>Set 2: Sunshine ☀️</h2>
+<div class="card-grid">
+<div class="card part1"><div class="emoji">☀️</div><div class="word">SUN</div></div>
+<div class="card part2"><div class="emoji">✨</div><div class="word">SHINE</div></div>
+<div class="card compound"><div class="emoji">🌞</div><div class="word">SUNSHINE</div></div>
+</div>
+<h2>Set 3: Football ⚽</h2>
+<div class="card-grid">
+<div class="card part1"><div class="emoji">👣</div><div class="word">FOOT</div></div>
+<div class="card part2"><div class="emoji">⚽</div><div class="word">BALL</div></div>
+<div class="card compound"><div class="emoji">🏈</div><div class="word">FOOTBALL</div></div>
+</div>
+<h2>Set 4: Butterfly 🦋</h2>
+<div class="card-grid">
+<div class="card part1"><div class="emoji">🧈</div><div class="word">BUTTER</div></div>
+<div class="card part2"><div class="emoji">🪰</div><div class="word">FLY</div></div>
+<div class="card compound"><div class="emoji">🦋</div><div class="word">BUTTERFLY</div></div>
+</div>
+<h2>Set 5: Cupcake 🧁</h2>
+<div class="card-grid">
+<div class="card part1"><div class="emoji">☕</div><div class="word">CUP</div></div>
+<div class="card part2"><div class="emoji">🎂</div><div class="word">CAKE</div></div>
+<div class="card compound"><div class="emoji">🧁</div><div class="word">CUPCAKE</div></div>
+</div>
+<h2>Set 6: Bedroom 🛏️</h2>
+<div class="card-grid">
+<div class="card part1"><div class="emoji">🛏️</div><div class="word">BED</div></div>
+<div class="card part2"><div class="emoji">🚪</div><div class="word">ROOM</div></div>
+<div class="card compound"><div class="emoji">🏠</div><div class="word">BEDROOM</div></div>
+</div>
+</body></html>`;
+  },
+  
+  'build-a-word-cards': () => {
+    return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Build-A-Word Cards</title>
+<style>
+body{font-family:Arial,sans-serif;margin:20px}
+.card-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin:20px 0}
+.card{border:4px dashed #333;border-radius:12px;padding:25px 15px;text-align:center;background:linear-gradient(135deg,#ffeaa7 0%,#fdcb6e 100%);min-height:100px;display:flex;align-items:center;justify-content:center}
+.word{font-size:28px;font-weight:bold}
+h2{color:#0984e3;margin-top:30px}
+</style></head><body>
+<h1 style="text-align:center">🏗️ Build-A-Word Station Cards</h1>
+<h2>Word Cards - Set 1</h2>
+<div class="card-grid">
+<div class="card"><div class="word">SUN</div></div>
+<div class="card"><div class="word">MOON</div></div>
+<div class="card"><div class="word">STAR</div></div>
+<div class="card"><div class="word">RAIN</div></div>
+<div class="card"><div class="word">FISH</div></div>
+<div class="card"><div class="word">BALL</div></div>
+<div class="card"><div class="word">BOW</div></div>
+<div class="card"><div class="word">LIGHT</div></div>
+</div>
+<h2>Word Cards - Set 2</h2>
+<div class="card-grid">
+<div class="card"><div class="word">FOOT</div></div>
+<div class="card"><div class="word">BASKET</div></div>
+<div class="card"><div class="word">CUP</div></div>
+<div class="card"><div class="word">TOOTH</div></div>
+<div class="card"><div class="word">CAKE</div></div>
+<div class="card"><div class="word">BRUSH</div></div>
+<div class="card"><div class="word">POP</div></div>
+<div class="card"><div class="word">CORN</div></div>
+</div>
+<h2>Word Cards - Set 3</h2>
+<div class="card-grid">
+<div class="card"><div class="word">BED</div></div>
+<div class="card"><div class="word">BATH</div></div>
+<div class="card"><div class="word">CLASS</div></div>
+<div class="card"><div class="word">PLAY</div></div>
+<div class="card"><div class="word">ROOM</div></div>
+<div class="card"><div class="word">GROUND</div></div>
+<div class="card"><div class="word">MATE</div></div>
+<div class="card"><div class="word">TIME</div></div>
+</div>
+<h2>Word Cards - Set 4</h2>
+<div class="card-grid">
+<div class="card"><div class="word">FIRE</div></div>
+<div class="card"><div class="word">SNOW</div></div>
+<div class="card"><div class="word">AIR</div></div>
+<div class="card"><div class="word">WATER</div></div>
+<div class="card"><div class="word">FLY</div></div>
+<div class="card"><div class="word">MAN</div></div>
+<div class="card"><div class="word">PLANE</div></div>
+<div class="card"><div class="word">FALL</div></div>
+</div>
+</body></html>`;
+  },
+  
+  'base-affix-cards': () => {
+    return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Base & Affix Cards</title>
+<style>
+body{font-family:Arial,sans-serif;margin:20px}
+.card-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin:20px 0}
+.base-card{border:5px solid #e74c3c;border-radius:12px;padding:30px 20px;text-align:center;background:linear-gradient(135deg,#ffeaa7 0%,#fdcb6e 100%);min-height:120px}
+.affix-card{border:5px solid #3498db;border-radius:12px;padding:30px 20px;text-align:center;background:linear-gradient(135deg,#a8edea 0%,#fed6e3 100%);min-height:120px}
+.word{font-size:32px;font-weight:bold}
+.emoji{font-size:35px}
+h2{color:#e74c3c;margin-top:30px}
+</style></head><body>
+<h1 style="text-align:center">🎯 Base Words & Affixes Cards</h1>
+<h2>❤️ Base Word Cards (RED borders)</h2>
+<div class="card-grid">
+<div class="base-card"><div class="emoji">🎮</div><div class="word">PLAY</div></div>
+<div class="base-card"><div class="emoji">🦘</div><div class="word">JUMP</div></div>
+<div class="base-card"><div class="emoji">🚶</div><div class="word">WALK</div></div>
+<div class="base-card"><div class="emoji">🏃</div><div class="word">RUN</div></div>
+<div class="base-card"><div class="emoji">🤝</div><div class="word">HELP</div></div>
+<div class="base-card"><div class="emoji">👩‍🏫</div><div class="word">TEACH</div></div>
+<div class="base-card"><div class="emoji">🎨</div><div class="word">PAINT</div></div>
+<div class="base-card"><div class="emoji">🎤</div><div class="word">SING</div></div>
+<div class="base-card"><div class="emoji">📖</div><div class="word">READ</div></div>
+<div class="base-card"><div class="emoji">✏️</div><div class="word">WRITE</div></div>
+<div class="base-card"><div class="emoji">😊</div><div class="word">SMILE</div></div>
+<div class="base-card"><div class="emoji">🗣️</div><div class="word">TALK</div></div>
+</div>
+<h2 style="color:#3498db">💙 Affix Cards (BLUE borders)</h2>
+<div class="card-grid">
+<div class="affix-card"><div class="word">-ING</div><small>happening now</small></div>
+<div class="affix-card"><div class="word">-ED</div><small>already happened</small></div>
+<div class="affix-card"><div class="word">-ER</div><small>person who does</small></div>
+<div class="affix-card"><div class="word">-S</div><small>more than one</small></div>
+</div>
+</body></html>`;
+  },
+  
+  'word-train-cards': () => {
+    return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Word Part Train</title>
+<style>
+body{font-family:Arial,sans-serif;margin:20px}
+.card-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:15px;margin:20px 0}
+.prefix-card{background:linear-gradient(135deg,#ff6b6b 0%,#ee5a6f 100%);border:5px solid #c92a2a;border-radius:12px;padding:25px 15px;text-align:center;min-height:100px}
+.base-card{background:linear-gradient(135deg,#ffd93d 0%,#f6c23e 100%);border:5px solid #f59f00;border-radius:12px;padding:25px 15px;text-align:center;min-height:100px}
+.suffix-card{background:linear-gradient(135deg,#6c5ce7 0%,#a29bfe 100%);border:5px solid #5f3dc4;border-radius:12px;padding:25px 15px;text-align:center;min-height:100px}
+.word{font-size:28px;font-weight:bold;color:white}
+h2{margin-top:30px}
+</style></head><body>
+<h1 style="text-align:center">🚂 Word Part Train Cards</h1>
+<h2>🔴 PREFIX Cards (RED)</h2>
+<div class="card-grid">
+<div class="prefix-card"><div class="word">UN-</div></div>
+<div class="prefix-card"><div class="word">RE-</div></div>
+<div class="prefix-card"><div class="word">UN-</div></div>
+<div class="prefix-card"><div class="word">RE-</div></div>
+<div class="prefix-card"><div class="word">UN-</div></div>
+</div>
+<h2>🟡 BASE WORD Cards (YELLOW)</h2>
+<div class="card-grid">
+<div class="base-card"><div class="word">HAPPY</div></div>
+<div class="base-card"><div class="word">LOCK</div></div>
+<div class="base-card"><div class="word">TIE</div></div>
+<div class="base-card"><div class="word">PLAY</div></div>
+<div class="base-card"><div class="word">DO</div></div>
+<div class="base-card"><div class="word">READ</div></div>
+<div class="base-card"><div class="word">KIND</div></div>
+<div class="base-card"><div class="word">CARE</div></div>
+<div class="base-card"><div class="word">HELP</div></div>
+<div class="base-card"><div class="word">COLOR</div></div>
+</div>
+<h2>🟣 SUFFIX Cards (PURPLE)</h2>
+<div class="card-grid">
+<div class="suffix-card"><div class="word">-ING</div></div>
+<div class="suffix-card"><div class="word">-ED</div></div>
+<div class="suffix-card"><div class="word">-ER</div></div>
+<div class="suffix-card"><div class="word">-FUL</div></div>
+<div class="suffix-card"><div class="word">-LESS</div></div>
+<div class="suffix-card"><div class="word">-ING</div></div>
+<div class="suffix-card"><div class="word">-ED</div></div>
+<div class="suffix-card"><div class="word">-FUL</div></div>
+<div class="suffix-card"><div class="word">-LESS</div></div>
+<div class="suffix-card"><div class="word">-S</div></div>
+</div>
+</body></html>`;
+  },
+  
+  'color-the-parts': () => {
+    return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Color the Word Parts</title>
+<style>
+body{font-family:Arial,sans-serif;margin:20px;max-width:800px;margin:0 auto;padding:30px}
+.word-box{border:3px solid #333;border-radius:10px;padding:20px;margin:20px 0;background:white}
+.word-display{font-size:48px;font-weight:bold;text-align:center;letter-spacing:8px;padding:20px;background:#f8f9fa;border-radius:8px;margin:10px 0}
+.instructions{background:#fff3cd;border:3px solid #ffc107;border-radius:10px;padding:15px;margin:20px 0}
+h1{text-align:center}
+</style></head><body>
+<h1>🎨 Color the Word Parts</h1>
+<div class="instructions">
+<strong>Instructions:</strong> Color each part of the word:
+<ul>
+<li>Color the PREFIX <strong style="color:#ff6b6b">RED</strong></li>
+<li>Color the BASE <strong style="color:#ffd93d">YELLOW</strong></li>
+<li>Color the SUFFIX <strong style="color:#a29bfe">PURPLE</strong></li>
+</ul>
+</div>
+<div class="word-box"><strong>1.</strong><div class="word-display">UNHAPPY</div></div>
+<div class="word-box"><strong>2.</strong><div class="word-display">PLAYING</div></div>
+<div class="word-box"><strong>3.</strong><div class="word-display">JUMPED</div></div>
+<div class="word-box"><strong>4.</strong><div class="word-display">REPLAY</div></div>
+<div class="word-box"><strong>5.</strong><div class="word-display">CAREFUL</div></div>
+<div class="word-box"><strong>6.</strong><div class="word-display">HELPLESS</div></div>
+<div class="word-box"><strong>7.</strong><div class="word-display">UNKIND</div></div>
+<div class="word-box"><strong>8.</strong><div class="word-display">TEACHER</div></div>
+</body></html>`;
+  }
+};
+
 const Morphology = () => {
   const [selectedLevel, setSelectedLevel] = useState(null);
   const [selectedLesson, setSelectedLesson] = useState(null);
   const [currentSection, setCurrentSection] = useState(0);
   const [showActivities, setShowActivities] = useState(false);
+
+  // Download printable function
+  const downloadPrintable = (printableId, activityTitle) => {
+    if (!printableTemplates[printableId]) return;
+    
+    const htmlContent = printableTemplates[printableId]();
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${printableId}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   // Available levels
   const levels = [
@@ -403,12 +652,23 @@ const Morphology = () => {
                   </div>
 
                   {/* Materials */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
                     <div className="font-bold text-blue-800 text-sm mb-2">📦 Materials:</div>
                     <div className="text-sm text-blue-700">
                       {activity.materials.join(', ')}
                     </div>
                   </div>
+
+                  {/* Printable Download Button */}
+                  {activity.printable && (
+                    <button
+                      onClick={() => downloadPrintable(activity.printable, activity.title)}
+                      className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 px-4 rounded-lg font-bold hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                    >
+                      <span>📄</span>
+                      Download Printable Materials
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

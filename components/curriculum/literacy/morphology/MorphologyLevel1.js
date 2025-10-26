@@ -133,7 +133,8 @@ Tomorrow we'll learn even more amazing things about words! Great work, everyone!
             'Draw lines to connect or use physical picture cards',
             'Students say the compound word created'
           ],
-          materials: ['Picture cards', 'Worksheet or whiteboard']
+          materials: ['Picture cards', 'Worksheet or whiteboard'],
+          printable: 'compound-word-cards'
         },
         {
           title: 'Syllable Clapping Circle',
@@ -160,7 +161,8 @@ Tomorrow we'll learn even more amazing things about words! Great work, everyone!
             'They check if it makes a real compound word',
             'Draw or write their favorite combinations'
           ],
-          materials: ['Word cards', 'Paper', 'Crayons']
+          materials: ['Word cards', 'Paper', 'Crayons'],
+          printable: 'build-a-word-cards'
         }
       ],
 
@@ -339,7 +341,8 @@ Tomorrow we'll learn the special NAMES for these word parts! You're all becoming
             'They say the new word created',
             'Draw pictures showing the different meanings'
           ],
-          materials: ['Base word cards', 'Affix cards', 'Paper', 'Pencils']
+          materials: ['Base word cards', 'Affix cards', 'Paper', 'Pencils'],
+          printable: 'base-affix-cards'
         },
         {
           title: 'Acting Out Meanings',
@@ -591,7 +594,8 @@ Give yourself a pat on the back - you learned three big vocabulary words today! 
             'Students read their complete word',
             'Example: UN- + HELP + -FUL = UNHELPFUL'
           ],
-          materials: ['Colored word part cards', 'Train template (optional)']
+          materials: ['Colored word part cards', 'Train template (optional)'],
+          printable: 'word-train-cards'
         },
         {
           title: 'Prefix & Suffix Sort',
@@ -604,7 +608,8 @@ Give yourself a pat on the back - you learned three big vocabulary words today! 
             'Students sort cards into correct categories',
             'Discuss: How do you know where each part goes?'
           ],
-          materials: ['Word part cards', 'Three sorting mats or boxes']
+          materials: ['Word part cards', 'Three sorting mats or boxes'],
+          printable: 'word-train-cards'
         },
         {
           title: 'Human Word Building',
@@ -618,7 +623,8 @@ Give yourself a pat on the back - you learned three big vocabulary words today! 
             'Class checks: Is prefix first? Base after?',
             'Try with different words'
           ],
-          materials: ['Large word part cards students can hold']
+          materials: ['Large word part cards students can hold'],
+          printable: 'word-train-cards'
         },
         {
           title: 'Color the Parts',
@@ -633,7 +639,8 @@ Give yourself a pat on the back - you learned three big vocabulary words today! 
             '  - Yellow for SUFFIX',
             'They color each part of the word the correct color'
           ],
-          materials: ['Worksheet', 'Colored pencils or crayons (red, blue, yellow)']
+          materials: ['Worksheet', 'Colored pencils or crayons (red, blue, yellow)'],
+          printable: 'color-the-parts'
         }
       ],
 
