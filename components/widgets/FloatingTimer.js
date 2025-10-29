@@ -1,5 +1,5 @@
 // components/widgets/FloatingTimer.js - Persistent floating timer widget
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 const FloatingTimer = ({ showToast, playSound }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -9,8 +9,20 @@ const FloatingTimer = ({ showToast, playSound }) => {
   const [isPaused, setIsPaused] = useState(false);
   const [timerType, setTimerType] = useState('countdown'); // countdown or stopwatch
   const [customTitle, setCustomTitle] = useState('');
-  
+  const [position, setPosition] = useState({ x: 20, y: 20 });
+  const [isDragging, setIsDragging] = useState(false);
+
   const intervalRef = useRef(null);
+  const containerRef = useRef(null);
+  const dragStateRef = useRef({
+    isPointerDown: false,
+    startX: 0,
+    startY: 0,
+    offsetX: 0,
+    offsetY: 0,
+    dragging: false,
+  });
+  const preventClickRef = useRef(false);
 
   // Timer effect - continues across tab changes
   useEffect(() => {
@@ -49,6 +61,126 @@ const FloatingTimer = ({ showToast, playSound }) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const clampPosition = useCallback((x, y) => {
+    if (typeof window === 'undefined') {
+      return { x, y };
+    }
+
+    const rect = containerRef.current?.getBoundingClientRect();
+    const width = rect?.width ?? 0;
+    const height = rect?.height ?? 0;
+    const maxX = Math.max(16, window.innerWidth - width - 16);
+    const maxY = Math.max(16, window.innerHeight - height - 16);
+    const clampedX = Math.min(Math.max(16, x), maxX);
+    const clampedY = Math.min(Math.max(16, y), maxY);
+
+    return { x: clampedX, y: clampedY };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    setPosition(clampPosition(window.innerWidth - 140, window.innerHeight - 140));
+  }, [clampPosition]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const handleResize = () => {
+      setPosition(prev => clampPosition(prev.x, prev.y));
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [clampPosition]);
+
+  const handlePointerMove = useCallback((event) => {
+    const state = dragStateRef.current;
+    if (!state.isPointerDown) {
+      return;
+    }
+
+    if (!state.dragging) {
+      const deltaX = event.clientX - state.startX;
+      const deltaY = event.clientY - state.startY;
+      if (Math.abs(deltaX) < 3 && Math.abs(deltaY) < 3) {
+        return;
+      }
+
+      state.dragging = true;
+      preventClickRef.current = true;
+      setIsDragging(true);
+    }
+
+    const newX = event.clientX - state.offsetX;
+    const newY = event.clientY - state.offsetY;
+    setPosition(clampPosition(newX, newY));
+  }, [clampPosition]);
+
+  const handlePointerUp = useCallback(() => {
+    const state = dragStateRef.current;
+    if (!state.isPointerDown) {
+      return;
+    }
+
+    state.isPointerDown = false;
+
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+    }
+
+    if (state.dragging) {
+      state.dragging = false;
+      setIsDragging(false);
+      setTimeout(() => {
+        preventClickRef.current = false;
+      }, 120);
+    } else {
+      preventClickRef.current = false;
+    }
+  }, [handlePointerMove]);
+
+  const handlePointerDown = useCallback((event) => {
+    const rect = containerRef.current?.getBoundingClientRect();
+    dragStateRef.current = {
+      isPointerDown: true,
+      startX: event.clientX,
+      startY: event.clientY,
+      offsetX: event.clientX - (rect?.left ?? 0),
+      offsetY: event.clientY - (rect?.top ?? 0),
+      dragging: false,
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('pointermove', handlePointerMove);
+      window.addEventListener('pointerup', handlePointerUp);
+    }
+  }, [handlePointerMove, handlePointerUp]);
+
+  useEffect(() => {
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('pointermove', handlePointerMove);
+        window.removeEventListener('pointerup', handlePointerUp);
+      }
+    };
+  }, [handlePointerMove, handlePointerUp]);
+
+  const handleOpen = () => {
+    if (preventClickRef.current) {
+      return;
+    }
+    setIsExpanded(true);
   };
 
   const startTimer = () => {
@@ -109,40 +241,50 @@ const FloatingTimer = ({ showToast, playSound }) => {
   const isUrgent = timerType === 'countdown' && time <= 10 && time > 0;
 
   return (
-    <>
-      {/* Floating Button */}
-      <div 
-        className={`fixed bottom-6 right-6 z-40 transition-all duration-300 ${
-          isExpanded ? 'opacity-0 pointer-events-none' : 'opacity-100'
-        }`}
-      >
-        <button
-          onClick={() => setIsExpanded(true)}
-          className={`w-14 h-14 rounded-full shadow-lg transition-all duration-200 flex items-center justify-center text-white font-bold ${
-            isUrgent 
-              ? 'bg-red-500 animate-pulse hover:bg-red-600' 
-              : isRunning 
-                ? 'bg-green-500 hover:bg-green-600' 
-                : 'bg-blue-500 hover:bg-blue-600'
+    <div
+      ref={containerRef}
+      className="fixed z-50"
+      style={{ top: position.y, left: position.x }}
+    >
+      {!isExpanded && (
+        <div
+          onPointerDown={handlePointerDown}
+          className={`transition-all duration-300 ${
+            isExpanded ? 'opacity-0 pointer-events-none' : 'opacity-100'
           }`}
-          title="Timer"
+          style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
         >
-          <div className="text-center">
-            <div className="text-lg">⏰</div>
-            {time > 0 && (
-              <div className="text-xs leading-none">
-                {time < 60 ? `${time}s` : `${Math.floor(time/60)}m`}
-              </div>
-            )}
-          </div>
-        </button>
-      </div>
+          <button
+            onClick={handleOpen}
+            className={`w-14 h-14 rounded-full shadow-lg transition-all duration-200 flex items-center justify-center text-white font-bold ${
+              isUrgent
+                ? 'bg-red-500 animate-pulse hover:bg-red-600'
+                : isRunning
+                  ? 'bg-green-500 hover:bg-green-600'
+                  : 'bg-blue-500 hover:bg-blue-600'
+            }`}
+            title="Timer"
+          >
+            <div className="text-center">
+              <div className="text-lg">⏰</div>
+              {time > 0 && (
+                <div className="text-xs leading-none">
+                  {time < 60 ? `${time}s` : `${Math.floor(time/60)}m`}
+                </div>
+              )}
+            </div>
+          </button>
+        </div>
+      )}
 
-      {/* Expanded Timer Panel */}
       {isExpanded && (
-        <div className="fixed bottom-6 right-6 z-50 bg-white rounded-2xl shadow-2xl border-2 border-gray-200 w-80 max-h-[calc(100vh-3rem)] overflow-hidden">
+        <div className="z-50 bg-white rounded-2xl shadow-2xl border-2 border-gray-200 w-80 max-h-[calc(100vh-3rem)] overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4 flex justify-between items-center">
+          <div
+            className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4 flex justify-between items-center"
+            onPointerDown={handlePointerDown}
+            style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+          >
             <div className="flex items-center space-x-2">
               <span className="text-xl">⏰</span>
               <h3 className="font-bold">Quick Timer</h3>
@@ -305,7 +447,7 @@ const FloatingTimer = ({ showToast, playSound }) => {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 };
 

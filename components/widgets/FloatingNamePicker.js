@@ -1,5 +1,5 @@
 // components/widgets/FloatingNamePicker.js - Persistent floating name picker widget
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 const FloatingNamePicker = ({ 
   students = [], 
@@ -16,8 +16,142 @@ const FloatingNamePicker = ({
   const [pickerMode, setPickerMode] = useState('single'); // single, multiple
   const [groupSize, setGroupSize] = useState(2);
   const [generatedGroups, setGeneratedGroups] = useState([]);
+  const [position, setPosition] = useState({ x: 20, y: 20 });
+  const [isDragging, setIsDragging] = useState(false);
 
   const availableStudents = students.filter(s => !excludedStudents.has(s.id));
+
+  const containerRef = useRef(null);
+  const dragStateRef = useRef({
+    isPointerDown: false,
+    startX: 0,
+    startY: 0,
+    offsetX: 0,
+    offsetY: 0,
+    dragging: false,
+  });
+  const preventClickRef = useRef(false);
+
+  const clampPosition = useCallback((x, y) => {
+    if (typeof window === 'undefined') {
+      return { x, y };
+    }
+
+    const rect = containerRef.current?.getBoundingClientRect();
+    const width = rect?.width ?? 0;
+    const height = rect?.height ?? 0;
+    const maxX = Math.max(16, window.innerWidth - width - 16);
+    const maxY = Math.max(16, window.innerHeight - height - 16);
+    const clampedX = Math.min(Math.max(16, x), maxX);
+    const clampedY = Math.min(Math.max(16, y), maxY);
+
+    return { x: clampedX, y: clampedY };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    // Default to sit slightly to the left of the timer widget
+    setPosition(clampPosition(window.innerWidth - 260, window.innerHeight - 140));
+  }, [clampPosition]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const handleResize = () => {
+      setPosition(prev => clampPosition(prev.x, prev.y));
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [clampPosition]);
+
+  const handlePointerMove = useCallback((event) => {
+    const state = dragStateRef.current;
+    if (!state.isPointerDown) {
+      return;
+    }
+
+    if (!state.dragging) {
+      const deltaX = event.clientX - state.startX;
+      const deltaY = event.clientY - state.startY;
+      if (Math.abs(deltaX) < 3 && Math.abs(deltaY) < 3) {
+        return;
+      }
+
+      state.dragging = true;
+      preventClickRef.current = true;
+      setIsDragging(true);
+    }
+
+    const newX = event.clientX - state.offsetX;
+    const newY = event.clientY - state.offsetY;
+    setPosition(clampPosition(newX, newY));
+  }, [clampPosition]);
+
+  const handlePointerUp = useCallback(() => {
+    const state = dragStateRef.current;
+    if (!state.isPointerDown) {
+      return;
+    }
+
+    state.isPointerDown = false;
+
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+    }
+
+    if (state.dragging) {
+      state.dragging = false;
+      setIsDragging(false);
+      setTimeout(() => {
+        preventClickRef.current = false;
+      }, 120);
+    } else {
+      preventClickRef.current = false;
+    }
+  }, [handlePointerMove]);
+
+  const handlePointerDown = useCallback((event) => {
+    const rect = containerRef.current?.getBoundingClientRect();
+    dragStateRef.current = {
+      isPointerDown: true,
+      startX: event.clientX,
+      startY: event.clientY,
+      offsetX: event.clientX - (rect?.left ?? 0),
+      offsetY: event.clientY - (rect?.top ?? 0),
+      dragging: false,
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('pointermove', handlePointerMove);
+      window.addEventListener('pointerup', handlePointerUp);
+    }
+  }, [handlePointerMove, handlePointerUp]);
+
+  useEffect(() => {
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('pointermove', handlePointerMove);
+        window.removeEventListener('pointerup', handlePointerUp);
+      }
+    };
+  }, [handlePointerMove, handlePointerUp]);
+
+  const handleOpen = () => {
+    if (preventClickRef.current) {
+      return;
+    }
+    setIsExpanded(true);
+  };
 
   const pickRandomStudent = () => {
     if (availableStudents.length === 0) {
@@ -86,30 +220,38 @@ const FloatingNamePicker = ({
   };
 
   return (
-    <>
-      {/* Floating Button */}
-      <div 
-        className={`fixed bottom-6 right-24 z-40 transition-all duration-300 ${
-          isExpanded ? 'opacity-0 pointer-events-none' : 'opacity-100'
-        }`}
-      >
-        <button
-          onClick={() => setIsExpanded(true)}
-          className="w-14 h-14 bg-purple-500 hover:bg-purple-600 rounded-full shadow-lg transition-all duration-200 flex items-center justify-center text-white font-bold"
-          title="Name Picker"
+    <div
+      ref={containerRef}
+      className="fixed z-50"
+      style={{ top: position.y, left: position.x }}
+    >
+      {!isExpanded && (
+        <div
+          onPointerDown={handlePointerDown}
+          style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+          className="transition-all duration-300"
         >
-          <div className="text-center">
-            <div className="text-lg">🎯</div>
-            <div className="text-xs leading-none">Pick</div>
-          </div>
-        </button>
-      </div>
+          <button
+            onClick={handleOpen}
+            className="w-14 h-14 bg-purple-500 hover:bg-purple-600 rounded-full shadow-lg transition-all duration-200 flex items-center justify-center text-white font-bold"
+            title="Name Picker"
+          >
+            <div className="text-center">
+              <div className="text-lg">🎯</div>
+              <div className="text-xs leading-none">Pick</div>
+            </div>
+          </button>
+        </div>
+      )}
 
-      {/* Expanded Name Picker Panel */}
       {isExpanded && (
-        <div className="fixed bottom-6 right-24 z-50 bg-white rounded-2xl shadow-2xl border-2 border-gray-200 w-80 max-h-[calc(100vh-3rem)] overflow-y-auto">
+        <div className="z-50 bg-white rounded-2xl shadow-2xl border-2 border-gray-200 w-80 max-h-[calc(100vh-3rem)] overflow-y-auto">
           {/* Header */}
-          <div className="bg-gradient-to-r from-purple-500 to-pink-600 text-white p-4 flex justify-between items-center">
+          <div
+            className="bg-gradient-to-r from-purple-500 to-pink-600 text-white p-4 flex justify-between items-center"
+            onPointerDown={handlePointerDown}
+            style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+          >
             <div className="flex items-center space-x-2">
               <span className="text-xl">🎯</span>
               <h3 className="font-bold">Name Picker</h3>
@@ -297,7 +439,7 @@ const FloatingNamePicker = ({
           )}
         </div>
       )}
-    </>
+    </div>
   );
 };
 
