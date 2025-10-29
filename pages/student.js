@@ -1,5 +1,5 @@
 // pages/student.js - UPDATED: Added Literacy tab with Visual Writing Prompts
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { firestore } from '../utils/firebase';
 import { collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
 
@@ -89,6 +89,7 @@ const StudentPortal = () => {
   const [architectureVersion, setArchitectureVersion] = useState('unknown');
   const [dailyMysteryBoxAvailable, setDailyMysteryBoxAvailable] = useState(false);
   const [showDailyMysteryBox, setShowDailyMysteryBox] = useState(false);
+  const dailyMysteryBoxAutoOpenKeyRef = useRef(null);
 
   // Login flow states
   const [loginStep, setLoginStep] = useState('classCode'); // 'classCode', 'studentSelect', 'password'
@@ -103,34 +104,78 @@ const StudentPortal = () => {
     []
   );
 
-  const evaluateDailyMysteryBoxAvailability = useCallback(
+  const getDailyMysteryBoxStorageKey = useCallback((student) => {
+    if (!student) {
+      return null;
+    }
+
+    const identifier =
+      student.id ||
+      student.studentId ||
+      student.uid ||
+      student.userId ||
+      student.email ||
+      student.username ||
+      (student.firstName ? `${student.firstName}-${student.lastName || ''}`.trim() : null);
+
+    if (!identifier) {
+      return null;
+    }
+
+    return `dailyMysteryBoxSeen:${identifier}`;
+  }, []);
+
+  const refreshDailyMysteryBoxAvailability = useCallback(
     (student, { autoOpen = false } = {}) => {
       if (!student) {
-        setDailyMysteryBoxAvailable(prev => (prev ? false : prev));
-        setShowDailyMysteryBox(prev => (prev ? false : prev));
+        setDailyMysteryBoxAvailable(false);
+        setShowDailyMysteryBox(false);
+        dailyMysteryBoxAutoOpenKeyRef.current = null;
         return false;
       }
 
       const lastClaimDate = parseDateValue(student.lastFreeMysteryBoxAt);
       const today = new Date();
+      const todayKey = today.toISOString().slice(0, 10);
       const available = !lastClaimDate || !isSameCalendarDay(lastClaimDate, today);
 
-      setDailyMysteryBoxAvailable(prev => (prev === available ? prev : available));
-      setShowDailyMysteryBox(prev => {
-        if (!available && prev) {
-          return false;
+      setDailyMysteryBoxAvailable(available);
+
+      if (!available) {
+        setShowDailyMysteryBox(false);
+        dailyMysteryBoxAutoOpenKeyRef.current = null;
+        return false;
+      }
+
+      const seenStorageKey = getDailyMysteryBoxStorageKey(student);
+      let seenToday = false;
+
+      if (seenStorageKey) {
+        try {
+          seenToday = sessionStorage.getItem(seenStorageKey) === todayKey;
+        } catch (error) {
+          console.warn('Unable to read daily mystery box session state:', error);
         }
+      }
 
-        if (available && autoOpen) {
-          return true;
+      const alreadyAutoOpenedToday = dailyMysteryBoxAutoOpenKeyRef.current === todayKey;
+
+      if (autoOpen || (!alreadyAutoOpenedToday && !seenToday)) {
+        setShowDailyMysteryBox(true);
+        dailyMysteryBoxAutoOpenKeyRef.current = todayKey;
+
+        if (seenStorageKey) {
+          try {
+            sessionStorage.setItem(seenStorageKey, todayKey);
+          } catch (error) {
+            console.warn('Unable to persist daily mystery box session state:', error);
+          }
         }
+      }
 
-        return prev;
-      });
-
-      return available;
+      return true;
     },
-    []
+    [getDailyMysteryBoxStorageKey]
   );
 
   // Check for existing session on load
@@ -146,27 +191,72 @@ const StudentPortal = () => {
         setArchitectureVersion(session.architectureVersion || 'unknown');
         setActiveTab('dashboard');
         if (session.studentData) {
-          evaluateDailyMysteryBoxAvailability(session.studentData, { autoOpen: true });
+          refreshDailyMysteryBoxAvailability(session.studentData, { autoOpen: true });
         }
       } catch (error) {
         console.error('Error parsing saved session:', error);
         sessionStorage.removeItem('studentSession');
       }
     }
-  }, [evaluateDailyMysteryBoxAvailability]);
+  }, [refreshDailyMysteryBoxAvailability]);
 
   useEffect(() => {
     if (!isLoggedIn || !studentData) {
       return;
     }
 
-    evaluateDailyMysteryBoxAvailability(studentData);
-  }, [evaluateDailyMysteryBoxAvailability, isLoggedIn, studentData]);
+    refreshDailyMysteryBoxAvailability(studentData);
+  }, [isLoggedIn, refreshDailyMysteryBoxAvailability, studentData]);
+
+  const showToast = useCallback((message, type = 'info') => {
+    const toastElement = document.createElement('div');
+    toastElement.className = `fixed top-4 left-4 right-4 md:top-4 md:right-4 md:left-auto z-50 p-4 rounded-lg shadow-lg text-white font-semibold text-center md:text-left max-w-sm mx-auto md:mx-0 ${
+      type === 'success' ? 'bg-green-500' :
+      type === 'error' ? 'bg-red-500' :
+      type === 'warning' ? 'bg-yellow-500' :
+      'bg-blue-500'
+    }`;
+    toastElement.textContent = message;
+
+    document.body.appendChild(toastElement);
+
+    setTimeout(() => {
+      if (toastElement.parentNode) {
+        toastElement.parentNode.removeChild(toastElement);
+      }
+    }, 4000);
+  }, []);
 
   const handleDailyMysteryBoxClaimed = () => {
     setDailyMysteryBoxAvailable(false);
     setShowDailyMysteryBox(false);
+    dailyMysteryBoxAutoOpenKeyRef.current = null;
   };
+
+  const handleOpenDailyMysteryBox = useCallback(() => {
+    if (!dailyMysteryBoxAvailable) {
+      showToast('You have already opened your free mystery box today. Come back tomorrow for another surprise!', 'info');
+      return;
+    }
+
+    setShowDailyMysteryBox(true);
+
+    const todayKey = new Date().toISOString().slice(0, 10);
+    if (dailyMysteryBoxAutoOpenKeyRef.current !== todayKey) {
+      dailyMysteryBoxAutoOpenKeyRef.current = todayKey;
+    }
+
+    if (studentData) {
+      const storageKey = getDailyMysteryBoxStorageKey(studentData);
+      if (storageKey) {
+        try {
+          sessionStorage.setItem(storageKey, todayKey);
+        } catch (error) {
+          console.warn('Unable to persist daily mystery box session state:', error);
+        }
+      }
+    }
+  }, [dailyMysteryBoxAvailable, getDailyMysteryBoxStorageKey, showToast, studentData]);
 
   // ===============================================
   // STEP 1: CLASS CODE SEARCH
@@ -387,7 +477,7 @@ const StudentPortal = () => {
       }
 
       setStudentData(selectedStudent);
-      evaluateDailyMysteryBoxAvailability(selectedStudent, { autoOpen: true });
+      refreshDailyMysteryBoxAvailability(selectedStudent, { autoOpen: true });
       setIsLoggedIn(true);
       setActiveTab('dashboard');
       
@@ -460,7 +550,7 @@ const StudentPortal = () => {
 
       // Update local state
       setStudentData(nextStudentData);
-      evaluateDailyMysteryBoxAvailability(nextStudentData);
+      refreshDailyMysteryBoxAvailability(nextStudentData);
 
       // Update session storage
       try {
@@ -506,6 +596,7 @@ const StudentPortal = () => {
     setActiveSubTab(null);
     setDailyMysteryBoxAvailable(false);
     setShowDailyMysteryBox(false);
+    dailyMysteryBoxAutoOpenKeyRef.current = null;
   };
 
   const handleBackToClassCode = () => {
@@ -523,25 +614,6 @@ const StudentPortal = () => {
     setStudentPassword('');
     setPasswordError('');
     setLoginStep('studentSelect');
-  };
-
-  const showToast = (message, type = 'info') => {
-    const toastElement = document.createElement('div');
-    toastElement.className = `fixed top-4 left-4 right-4 md:top-4 md:right-4 md:left-auto z-50 p-4 rounded-lg shadow-lg text-white font-semibold text-center md:text-left max-w-sm mx-auto md:mx-0 ${
-      type === 'success' ? 'bg-green-500' : 
-      type === 'error' ? 'bg-red-500' : 
-      type === 'warning' ? 'bg-yellow-500' : 
-      'bg-blue-500'
-    }`;
-    toastElement.textContent = message;
-    
-    document.body.appendChild(toastElement);
-    
-    setTimeout(() => {
-      if (toastElement.parentNode) {
-        toastElement.parentNode.removeChild(toastElement);
-      }
-    }, 4000);
   };
 
   // ===============================================
@@ -802,13 +874,15 @@ const StudentPortal = () => {
     switch (activeTab) {
       case 'dashboard':
         return (
-          <StudentDashboard 
+          <StudentDashboard
             studentData={studentData}
             classData={classData}
             getAvatarImage={getAvatarImage}
             getPetImage={getPetImage}
             calculateCoins={calculateCoins}
             calculateAvatarLevel={calculateAvatarLevel}
+            dailyMysteryBoxAvailable={dailyMysteryBoxAvailable}
+            onOpenDailyMysteryBox={handleOpenDailyMysteryBox}
           />
         );
       
@@ -955,7 +1029,7 @@ const StudentPortal = () => {
           <div className="flex items-center gap-2">
             {dailyMysteryBoxAvailable && (
               <button
-                onClick={() => setShowDailyMysteryBox(true)}
+                onClick={handleOpenDailyMysteryBox}
                 className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 px-3 py-2 text-sm font-semibold text-white shadow-md transition hover:from-purple-600 hover:to-pink-600 focus:outline-none focus:ring-2 focus:ring-purple-300"
               >
                 <span className="text-lg">🎁</span>
