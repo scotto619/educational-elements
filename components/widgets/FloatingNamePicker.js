@@ -1,5 +1,6 @@
 // components/widgets/FloatingNamePicker.js - Persistent floating name picker widget
 import React, { useState, useEffect } from 'react';
+import useDraggableWidget from '../../hooks/useDraggableWidget';
 
 const FloatingNamePicker = ({ 
   students = [], 
@@ -16,6 +17,13 @@ const FloatingNamePicker = ({
   const [pickerMode, setPickerMode] = useState('single'); // single, multiple
   const [groupSize, setGroupSize] = useState(2);
   const [generatedGroups, setGeneratedGroups] = useState([]);
+
+  const {
+    containerRef,
+    position,
+    eventHandlers,
+    handleClickCapture,
+  } = useDraggableWidget([isExpanded]);
 
   const availableStudents = students.filter(s => !excludedStudents.has(s.id));
 
@@ -86,16 +94,24 @@ const FloatingNamePicker = ({
   };
 
   return (
-    <>
+    <div
+      ref={containerRef}
+      className="fixed z-50"
+      style={{ top: position.y, left: position.x }}
+      {...eventHandlers}
+    >
       {/* Floating Button */}
-      <div 
-        className={`fixed bottom-6 right-24 z-40 transition-all duration-300 ${
+      <div
+        data-drag-handle="true"
+        onClickCapture={handleClickCapture}
+        style={{ touchAction: 'none', display: isExpanded ? 'none' : 'inline-block' }}
+        className={`transition-all duration-300 ${
           isExpanded ? 'opacity-0 pointer-events-none' : 'opacity-100'
         }`}
       >
         <button
           onClick={() => setIsExpanded(true)}
-          className="w-14 h-14 bg-purple-500 hover:bg-purple-600 rounded-full shadow-lg transition-all duration-200 flex items-center justify-center text-white font-bold"
+          className="w-14 h-14 bg-purple-500 hover:bg-purple-600 rounded-full shadow-lg transition-all duration-200 flex items-center justify-center text-white font-bold cursor-pointer select-none"
           title="Name Picker"
         >
           <div className="text-center">
@@ -106,21 +122,27 @@ const FloatingNamePicker = ({
       </div>
 
       {/* Expanded Name Picker Panel */}
-      {isExpanded && (
-        <div className="fixed bottom-6 right-24 z-50 bg-white rounded-2xl shadow-2xl border-2 border-gray-200 w-80 max-h-[calc(100vh-3rem)] overflow-y-auto">
-          {/* Header */}
-          <div className="bg-gradient-to-r from-purple-500 to-pink-600 text-white p-4 flex justify-between items-center">
-            <div className="flex items-center space-x-2">
-              <span className="text-xl">🎯</span>
-              <h3 className="font-bold">Name Picker</h3>
-            </div>
-            <button
-              onClick={() => setIsExpanded(false)}
-              className="text-white hover:text-gray-200 text-xl font-bold"
-            >
-              ×
-            </button>
+      <div
+        className={`${isExpanded ? 'block' : 'hidden'} bg-white rounded-2xl shadow-2xl border-2 border-gray-200 w-80 max-h-[calc(100vh-3rem)] overflow-y-auto`}
+      >
+        {/* Header */}
+        <div className="bg-gradient-to-r from-purple-500 to-pink-600 text-white p-4 flex items-center justify-between">
+          <div
+            className="flex items-center space-x-2 cursor-grab active:cursor-grabbing select-none"
+            data-drag-handle="true"
+            onClickCapture={handleClickCapture}
+            style={{ touchAction: 'none' }}
+          >
+            <span className="text-xl">🎯</span>
+            <h3 className="font-bold">Name Picker</h3>
           </div>
+          <button
+            onClick={() => setIsExpanded(false)}
+            className="text-white hover:text-gray-200 text-xl font-bold"
+          >
+            ×
+          </button>
+        </div>
 
           {/* Mode Toggle */}
           <div className="p-4 border-b bg-gray-50">
@@ -296,8 +318,8 @@ const FloatingNamePicker = ({
             </div>
           )}
         </div>
-      )}
-    </>
+      </div>
+    </div>
   );
 };
 
