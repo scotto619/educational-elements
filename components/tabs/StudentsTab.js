@@ -220,15 +220,38 @@ const ContextMenu = ({ student, position, onAward, onView, onAvatar, onClose, ge
 // ===============================================
 const HoverPreview = ({ preview, position }) => {
     if (!preview) return null;
-    
+
+    if (typeof window === 'undefined') return null;
+
     // Don't show hover previews on mobile (touch devices)
-    const isMobile = window.innerWidth < 640;
+    const supportsMatchMedia = typeof window.matchMedia === 'function';
+    const isMobile = (supportsMatchMedia && window.matchMedia('(hover: none)').matches) || window.innerWidth < 640;
     if (isMobile) return null;
-    
+
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const previewWidth = viewportWidth >= 1024 ? 208 : 192;
+    const previewHeight = viewportWidth >= 1024 ? 248 : 216;
+    const edgePadding = 16;
+    const offsetX = 20;
+
+    let left = position.x + offsetX;
+    if (left + previewWidth + edgePadding > viewportWidth) {
+        left = Math.max(edgePadding, position.x - previewWidth - offsetX);
+    }
+    left = Math.max(edgePadding, Math.min(left, viewportWidth - previewWidth - edgePadding));
+
+    let top = position.y - previewHeight / 2;
+    if (top < edgePadding) {
+        top = edgePadding;
+    } else if (top + previewHeight + edgePadding > viewportHeight) {
+        top = Math.max(edgePadding, viewportHeight - previewHeight - edgePadding);
+    }
+
     return (
         <div
             className="fixed pointer-events-none z-[100] bg-white rounded-lg shadow-2xl p-3 border-2 border-blue-300 transition-transform duration-200 ease-out"
-            style={{ left: position.x + 20, top: position.y - 100, transform: 'scale(1)' }}
+            style={{ left, top, transform: 'scale(1)' }}
         >
             <img src={preview.image} alt="Preview" className="w-32 sm:w-48 h-32 sm:h-48 rounded-lg" />
             <p className="text-center font-bold mt-2 text-gray-800 text-sm sm:text-base">{preview.text}</p>
