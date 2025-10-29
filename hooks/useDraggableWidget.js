@@ -33,6 +33,7 @@ export default function useDraggableWidget(...deps) {
   const initialPointerRef = useRef({ x: 0, y: 0 });
   const blockClickRef = useRef(false);
   const hasPlacedRef = useRef(false);
+  const hasPointerCaptureRef = useRef(false);
 
   const [position, setPosition] = useState({ x: MARGIN, y: MARGIN });
 
@@ -134,7 +135,7 @@ export default function useDraggableWidget(...deps) {
 
     blockClickRef.current = false;
 
-    containerRef.current.setPointerCapture?.(event.pointerId);
+    hasPointerCaptureRef.current = false;
   }, []);
 
   const handlePointerMove = useCallback((event) => {
@@ -156,6 +157,11 @@ export default function useDraggableWidget(...deps) {
 
     event.preventDefault();
 
+    if (!hasPointerCaptureRef.current) {
+      containerRef.current.setPointerCapture?.(event.pointerId);
+      hasPointerCaptureRef.current = true;
+    }
+
     const newX = event.clientX - dragOffsetRef.current.x;
     const newY = event.clientY - dragOffsetRef.current.y;
 
@@ -167,13 +173,14 @@ export default function useDraggableWidget(...deps) {
       return;
     }
 
-    if (containerRef.current?.hasPointerCapture?.(event.pointerId)) {
+    if (hasPointerCaptureRef.current && containerRef.current?.hasPointerCapture?.(event.pointerId)) {
       containerRef.current.releasePointerCapture(event.pointerId);
     }
 
     pointerIdRef.current = null;
     initialPointerRef.current = { x: 0, y: 0 };
     dragOffsetRef.current = { x: 0, y: 0 };
+    hasPointerCaptureRef.current = false;
 
     if (blockClickRef.current) {
       event.preventDefault();
