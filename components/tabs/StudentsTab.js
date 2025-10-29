@@ -239,11 +239,11 @@ const HoverPreview = ({ preview, position }) => {
 // ===============================================
 // MAIN STUDENTS TAB COMPONENT - MOBILE OPTIMIZED
 // ===============================================
-const StudentsTab = ({ 
-    students = [], 
-    xpCategories = [], 
-    onUpdateCategories, 
-    onBulkAward, 
+const StudentsTab = ({
+    students = [],
+    xpCategories = [],
+    onUpdateCategories,
+    onBulkAward,
     onUpdateStudent, 
     onReorderStudents, 
     onViewDetails, 
@@ -276,7 +276,49 @@ const StudentsTab = ({
     const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
     const [awardNotification, setAwardNotification] = useState(null);
     const [refreshKey, setRefreshKey] = useState(0);
-    
+    const [isFullscreen, setIsFullscreen] = useState(false);
+    const containerRef = useRef(null);
+
+    useEffect(() => {
+        if (typeof document === 'undefined') return;
+
+        const handleFullscreenChange = () => {
+            setIsFullscreen(Boolean(document.fullscreenElement));
+        };
+
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        handleFullscreenChange();
+
+        return () => {
+            document.removeEventListener('fullscreenchange', handleFullscreenChange);
+        };
+    }, []);
+
+    const toggleFullscreen = () => {
+        if (typeof document === 'undefined') return;
+
+        const exitFullscreen = () => {
+            if (typeof document.exitFullscreen === 'function') {
+                document.exitFullscreen().catch(() => {});
+            } else if (typeof document.webkitExitFullscreen === 'function') {
+                document.webkitExitFullscreen();
+            }
+        };
+
+        if (document.fullscreenElement) {
+            exitFullscreen();
+            return;
+        }
+
+        const element = containerRef.current || document.documentElement;
+        if (!element) return;
+
+        const request = element.requestFullscreen || element.webkitRequestFullscreen || element.mozRequestFullScreen || element.msRequestFullscreen;
+        if (typeof request === 'function') {
+            request.call(element).catch(() => {});
+        }
+    };
+
     // Auto-refresh when tab becomes visible
     useEffect(() => {
         console.log('📊 Students tab refreshed - student data updated');
@@ -395,7 +437,7 @@ const StudentsTab = ({
     };
     
     return (
-        <div className="space-y-4 sm:space-y-6" onMouseMove={handleMouseMove}>
+        <div ref={containerRef} className="space-y-4 sm:space-y-6" onMouseMove={handleMouseMove}>
             {/* MOBILE-OPTIMIZED HEADER */}
             <div className="bg-white rounded-xl p-3 sm:p-4 shadow-md border border-gray-200">
                 {/* Mobile Layout - Stacked */}
@@ -445,10 +487,10 @@ const StudentsTab = ({
                 {/* Desktop Layout - Single Row */}
                 <div className="hidden sm:flex flex-wrap items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
-                        <input 
-                            type="text" 
-                            placeholder="Search..." 
-                            value={searchTerm} 
+                        <input
+                            type="text"
+                            placeholder="Search..."
+                            value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)} 
                             className="w-full md:w-auto pl-4 pr-4 py-2 border rounded-lg" 
                         />
@@ -461,16 +503,25 @@ const StudentsTab = ({
                     </div>
                     
                     <div className="text-gray-600 font-semibold text-sm lg:text-base">
-                        {selectedStudents.length > 0 
-                            ? `${selectedStudents.length} student(s) selected` 
+                        {selectedStudents.length > 0
+                            ? `${selectedStudents.length} student(s) selected`
                             : 'Click avatar for options • Star/coin to quick award • Shift+click to select • Drag to reorder'
                         }
                     </div>
-                    
+
                     <div className="flex items-center gap-2">
+                        <button
+                            onClick={toggleFullscreen}
+                            className="hidden md:inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-100 transition-all"
+                            type="button"
+                            aria-pressed={isFullscreen}
+                        >
+                            <span aria-hidden="true">{isFullscreen ? '🗗' : '⛶'}</span>
+                            {isFullscreen ? 'Exit Full Screen' : 'Full Screen'}
+                        </button>
                         {selectedStudents.length > 0 && (
-                            <button 
-                                onClick={() => setAwardModal({ visible: true, isBulk: true, type: 'xp', studentId: null, student: null })} 
+                            <button
+                                onClick={() => setAwardModal({ visible: true, isBulk: true, type: 'xp', studentId: null, student: null })}
                                 className="bg-purple-600 text-white font-bold px-4 py-2 rounded-lg hover:bg-purple-700 transition-all transform hover:scale-105 text-sm lg:text-base"
                             >
                                 🏆 Award Bulk
