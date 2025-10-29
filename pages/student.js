@@ -1,5 +1,5 @@
 // pages/student.js - UPDATED: Added Literacy tab with Visual Writing Prompts
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { firestore } from '../utils/firebase';
 import { collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
 
@@ -32,6 +32,42 @@ import {
   HALLOWEEN_PETS,
 } from '../utils/gameHelpers';
 
+const isSameCalendarDay = (dateA, dateB) => (
+  dateA.getFullYear() === dateB.getFullYear() &&
+  dateA.getMonth() === dateB.getMonth() &&
+  dateA.getDate() === dateB.getDate()
+);
+
+const parseDateValue = (value) => {
+  if (!value) {
+    return null;
+  }
+
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value;
+  }
+
+  if (typeof value === 'string' || typeof value === 'number') {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  if (typeof value === 'object') {
+    if (typeof value.toDate === 'function') {
+      const parsed = value.toDate();
+      return parsed instanceof Date && !Number.isNaN(parsed.getTime()) ? parsed : null;
+    }
+
+    if (typeof value.seconds === 'number') {
+      const milliseconds = value.seconds * 1000 + Math.floor((value.nanoseconds || 0) / 1e6);
+      const parsed = new Date(milliseconds);
+      return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+  }
+
+  return null;
+};
+
 const StudentPortal = () => {
   // Authentication states
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -53,10 +89,49 @@ const StudentPortal = () => {
   const [architectureVersion, setArchitectureVersion] = useState('unknown');
   const [dailyMysteryBoxAvailable, setDailyMysteryBoxAvailable] = useState(false);
   const [showDailyMysteryBox, setShowDailyMysteryBox] = useState(false);
-  const [checkedDailyMysteryBox, setCheckedDailyMysteryBox] = useState(false);
 
   // Login flow states
   const [loginStep, setLoginStep] = useState('classCode'); // 'classCode', 'studentSelect', 'password'
+
+  const availableAvatarPool = useMemo(
+    () => [...SHOP_BASIC_AVATARS, ...SHOP_PREMIUM_AVATARS, ...(HALLOWEEN_BASIC_AVATARS || []), ...(HALLOWEEN_PREMIUM_AVATARS || [])],
+    []
+  );
+
+  const availablePetPool = useMemo(
+    () => [...SHOP_BASIC_PETS, ...SHOP_PREMIUM_PETS, ...(HALLOWEEN_PETS || [])],
+    []
+  );
+
+  const evaluateDailyMysteryBoxAvailability = useCallback(
+    (student, { autoOpen = false } = {}) => {
+      if (!student) {
+        setDailyMysteryBoxAvailable(prev => (prev ? false : prev));
+        setShowDailyMysteryBox(prev => (prev ? false : prev));
+        return false;
+      }
+
+      const lastClaimDate = parseDateValue(student.lastFreeMysteryBoxAt);
+      const today = new Date();
+      const available = !lastClaimDate || !isSameCalendarDay(lastClaimDate, today);
+
+      setDailyMysteryBoxAvailable(prev => (prev === available ? prev : available));
+      setShowDailyMysteryBox(prev => {
+        if (!available && prev) {
+          return false;
+        }
+
+        if (available && autoOpen) {
+          return true;
+        }
+
+        return prev;
+      });
+
+      return available;
+    },
+    []
+  );
 
   // Check for existing session on load
   useEffect(() => {
@@ -70,47 +145,27 @@ const StudentPortal = () => {
         setTeacherUserId(session.teacherUserId);
         setArchitectureVersion(session.architectureVersion || 'unknown');
         setActiveTab('dashboard');
+        if (session.studentData) {
+          evaluateDailyMysteryBoxAvailability(session.studentData, { autoOpen: true });
+        }
       } catch (error) {
         console.error('Error parsing saved session:', error);
         sessionStorage.removeItem('studentSession');
       }
     }
-  }, []);
-
-  const availableAvatarPool = useMemo(
-    () => [...SHOP_BASIC_AVATARS, ...SHOP_PREMIUM_AVATARS, ...(HALLOWEEN_BASIC_AVATARS || []), ...(HALLOWEEN_PREMIUM_AVATARS || [])],
-    []
-  );
-
-  const availablePetPool = useMemo(
-    () => [...SHOP_BASIC_PETS, ...SHOP_PREMIUM_PETS, ...(HALLOWEEN_PETS || [])],
-    []
-  );
-
-  const isSameCalendarDay = (dateA, dateB) => (
-    dateA.getFullYear() === dateB.getFullYear() &&
-    dateA.getMonth() === dateB.getMonth() &&
-    dateA.getDate() === dateB.getDate()
-  );
+  }, [evaluateDailyMysteryBoxAvailability]);
 
   useEffect(() => {
-    if (!isLoggedIn || !studentData || checkedDailyMysteryBox) {
+    if (!isLoggedIn || !studentData) {
       return;
     }
 
-    const today = new Date();
-    const lastClaim = studentData.lastFreeMysteryBoxAt ? new Date(studentData.lastFreeMysteryBoxAt) : null;
-
-    if (!lastClaim || !isSameCalendarDay(lastClaim, today)) {
-      setDailyMysteryBoxAvailable(true);
-      setShowDailyMysteryBox(true);
-    }
-
-    setCheckedDailyMysteryBox(true);
-  }, [checkedDailyMysteryBox, isLoggedIn, studentData]);
+    evaluateDailyMysteryBoxAvailability(studentData);
+  }, [evaluateDailyMysteryBoxAvailability, isLoggedIn, studentData]);
 
   const handleDailyMysteryBoxClaimed = () => {
     setDailyMysteryBoxAvailable(false);
+    setShowDailyMysteryBox(false);
   };
 
   // ===============================================
@@ -332,9 +387,7 @@ const StudentPortal = () => {
       }
 
       setStudentData(selectedStudent);
-      setCheckedDailyMysteryBox(false);
-      setDailyMysteryBoxAvailable(false);
-      setShowDailyMysteryBox(false);
+      evaluateDailyMysteryBoxAvailability(selectedStudent, { autoOpen: true });
       setIsLoggedIn(true);
       setActiveTab('dashboard');
       
@@ -403,13 +456,16 @@ const StudentPortal = () => {
         }
       }
 
+      const nextStudentData = { ...studentData, ...updatedStudentData };
+
       // Update local state
-      setStudentData(prev => ({ ...prev, ...updatedStudentData }));
-      
+      setStudentData(nextStudentData);
+      evaluateDailyMysteryBoxAvailability(nextStudentData);
+
       // Update session storage
       try {
         const session = JSON.parse(sessionStorage.getItem('studentSession') || '{}');
-        session.studentData = { ...session.studentData, ...updatedStudentData };
+        session.studentData = nextStudentData;
         sessionStorage.setItem('studentSession', JSON.stringify(session));
       } catch (sessionError) {
         console.warn('Could not update session storage:', sessionError);
@@ -450,7 +506,6 @@ const StudentPortal = () => {
     setActiveSubTab(null);
     setDailyMysteryBoxAvailable(false);
     setShowDailyMysteryBox(false);
-    setCheckedDailyMysteryBox(false);
   };
 
   const handleBackToClassCode = () => {
