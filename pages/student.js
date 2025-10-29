@@ -1,5 +1,5 @@
 // pages/student.js - UPDATED: Added Literacy tab with Visual Writing Prompts
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { firestore } from '../utils/firebase';
 import { collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
 
@@ -15,6 +15,7 @@ import StudentReading from '../components/student/StudentReading';
 import StudentMathMentals from '../components/student/StudentMathMentals';
 import StudentMaths from '../components/student/StudentMaths';
 import VisualWritingPrompts from '../components/curriculum/literacy/VisualWritingPrompts';
+import DailyMysteryBoxModal from '../components/student/DailyMysteryBoxModal';
 
 // Import from the correct gameHelpers file
 import { 
@@ -28,7 +29,7 @@ import {
   SHOP_PREMIUM_PETS,
   HALLOWEEN_BASIC_AVATARS,
   HALLOWEEN_PREMIUM_AVATARS,
-  HALLOWEEN_BASIC_PETS,
+  HALLOWEEN_PETS,
 } from '../utils/gameHelpers';
 
 const StudentPortal = () => {
@@ -50,6 +51,9 @@ const StudentPortal = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [activeSubTab, setActiveSubTab] = useState(null); // For subtabs within Maths/Literacy
   const [architectureVersion, setArchitectureVersion] = useState('unknown');
+  const [dailyMysteryBoxAvailable, setDailyMysteryBoxAvailable] = useState(false);
+  const [showDailyMysteryBox, setShowDailyMysteryBox] = useState(false);
+  const [checkedDailyMysteryBox, setCheckedDailyMysteryBox] = useState(false);
 
   // Login flow states
   const [loginStep, setLoginStep] = useState('classCode'); // 'classCode', 'studentSelect', 'password'
@@ -72,6 +76,42 @@ const StudentPortal = () => {
       }
     }
   }, []);
+
+  const availableAvatarPool = useMemo(
+    () => [...SHOP_BASIC_AVATARS, ...SHOP_PREMIUM_AVATARS, ...(HALLOWEEN_BASIC_AVATARS || []), ...(HALLOWEEN_PREMIUM_AVATARS || [])],
+    []
+  );
+
+  const availablePetPool = useMemo(
+    () => [...SHOP_BASIC_PETS, ...SHOP_PREMIUM_PETS, ...(HALLOWEEN_PETS || [])],
+    []
+  );
+
+  const isSameCalendarDay = (dateA, dateB) => (
+    dateA.getFullYear() === dateB.getFullYear() &&
+    dateA.getMonth() === dateB.getMonth() &&
+    dateA.getDate() === dateB.getDate()
+  );
+
+  useEffect(() => {
+    if (!isLoggedIn || !studentData || checkedDailyMysteryBox) {
+      return;
+    }
+
+    const today = new Date();
+    const lastClaim = studentData.lastFreeMysteryBoxAt ? new Date(studentData.lastFreeMysteryBoxAt) : null;
+
+    if (!lastClaim || !isSameCalendarDay(lastClaim, today)) {
+      setDailyMysteryBoxAvailable(true);
+      setShowDailyMysteryBox(true);
+    }
+
+    setCheckedDailyMysteryBox(true);
+  }, [checkedDailyMysteryBox, isLoggedIn, studentData]);
+
+  const handleDailyMysteryBoxClaimed = () => {
+    setDailyMysteryBoxAvailable(false);
+  };
 
   // ===============================================
   // STEP 1: CLASS CODE SEARCH
@@ -290,8 +330,11 @@ const StudentPortal = () => {
       } catch (sessionError) {
         console.warn('⚠️ Could not save session to sessionStorage:', sessionError);
       }
-      
+
       setStudentData(selectedStudent);
+      setCheckedDailyMysteryBox(false);
+      setDailyMysteryBoxAvailable(false);
+      setShowDailyMysteryBox(false);
       setIsLoggedIn(true);
       setActiveTab('dashboard');
       
@@ -405,6 +448,9 @@ const StudentPortal = () => {
     setPasswordError('');
     setLoginStep('classCode');
     setActiveSubTab(null);
+    setDailyMysteryBoxAvailable(false);
+    setShowDailyMysteryBox(false);
+    setCheckedDailyMysteryBox(false);
   };
 
   const handleBackToClassCode = () => {
@@ -851,12 +897,24 @@ const StudentPortal = () => {
             </div>
           </div>
           
-          <button 
-            onClick={handleLogout}
-            className="bg-gray-500 text-white px-3 md:px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors text-sm md:text-base flex-shrink-0"
-          >
-            Logout
-          </button>
+          <div className="flex items-center gap-2">
+            {dailyMysteryBoxAvailable && (
+              <button
+                onClick={() => setShowDailyMysteryBox(true)}
+                className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 px-3 py-2 text-sm font-semibold text-white shadow-md transition hover:from-purple-600 hover:to-pink-600 focus:outline-none focus:ring-2 focus:ring-purple-300"
+              >
+                <span className="text-lg">🎁</span>
+                <span className="hidden sm:inline">Daily Mystery Box</span>
+                <span className="sm:hidden">Daily Box</span>
+              </button>
+            )}
+            <button
+              onClick={handleLogout}
+              className="rounded-lg bg-gray-500 px-3 py-2 text-sm text-white transition-colors hover:bg-gray-600 md:px-4 md:text-base"
+            >
+              Logout
+            </button>
+          </div>
         </div>
       </div>
 
@@ -925,6 +983,18 @@ const StudentPortal = () => {
       <main className="max-w-6xl mx-auto px-3 md:px-4 py-4 md:py-6">
         {renderTabContent()}
       </main>
+
+      <DailyMysteryBoxModal
+        isOpen={showDailyMysteryBox && Boolean(studentData)}
+        onClose={() => setShowDailyMysteryBox(false)}
+        studentData={studentData}
+        updateStudentData={updateStudentData}
+        showToast={showToast}
+        avatars={availableAvatarPool}
+        pets={availablePetPool}
+        rewards={classData?.classRewards || []}
+        onClaimComplete={handleDailyMysteryBoxClaimed}
+      />
     </div>
   );
 };
