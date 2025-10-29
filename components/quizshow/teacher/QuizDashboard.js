@@ -356,6 +356,7 @@ const QuizDashboard = ({
             </div>
           )}
         </div>
+      </div>
 
       {/* Preset Selection Modal */}
       {showPresetModal && (
