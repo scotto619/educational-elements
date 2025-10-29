@@ -24,9 +24,9 @@ const MazeGame = ({ gameMode, showToast }) => {
   });
 
   // UI state
-  const [cols, setCols] = useState(20);
-  const [rows, setRows] = useState(20);
-  const [cellSize, setCellSize] = useState(24);
+  const [cols, setCols] = useState(15);
+  const [rows, setRows] = useState(15);
+  const [cellSize, setCellSize] = useState(28);
   const [showSolution, setShowSolution] = useState(false);
   const [showGhost, setShowGhost] = useState(true);
   const [seed, setSeed] = useState(Date.now());
@@ -515,7 +515,7 @@ const MazeGame = ({ gameMode, showToast }) => {
       <div className="mb-4 bg-gradient-to-r from-blue-900 to-purple-900 rounded-xl p-4 text-white">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
           <div>
-            <h2 className="text-xl md:text-2xl font-bold mb-1">🧩 Random Maze Runner</h2>
+            <h2 className="text-xl md:text-2xl font-bold mb-1">🧩 Maze Unlimited</h2>
             <p className="text-sm text-blue-200">Move the glowing dot from <span className="text-cyan-400 font-semibold">Start</span> to <span className="text-yellow-400 font-semibold">Exit</span></p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -548,13 +548,13 @@ const MazeGame = ({ gameMode, showToast }) => {
       </div>
 
       {/* Main game area */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-4">
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-4">
         {/* Canvas */}
-        <div className="relative bg-gradient-to-br from-gray-900 to-blue-900 rounded-xl p-3 border-2 border-blue-500/30 shadow-2xl">
+        <div className="relative bg-gradient-to-br from-gray-900 to-blue-900 rounded-xl p-3 border-2 border-blue-500/30 shadow-2xl max-w-4xl mx-auto w-full">
           <canvas
             ref={canvasRef}
-            width={1100}
-            height={1100}
+            width={700}
+            height={700}
             className="w-full h-auto rounded-lg"
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
@@ -564,7 +564,7 @@ const MazeGame = ({ gameMode, showToast }) => {
         </div>
 
         {/* Controls panel */}
-        <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl p-4 border-2 border-gray-700 space-y-4">
+        <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl p-4 border-2 border-gray-700 space-y-4 max-w-4xl xl:max-w-none mx-auto w-full">
           {/* Settings */}
           <div className="space-y-3">
             <h3 className="text-white font-bold text-lg mb-3">⚙️ Maze Settings</h3>
@@ -609,8 +609,8 @@ const MazeGame = ({ gameMode, showToast }) => {
               </div>
               <input
                 type="range"
-                min="16"
-                max="40"
+                min="20"
+                max="44"
                 value={cellSize}
                 onChange={(e) => setCellSize(parseInt(e.target.value))}
                 className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
@@ -705,7 +705,7 @@ const MazeGame = ({ gameMode, showToast }) => {
           {/* Tips */}
           <div className="bg-blue-900/30 rounded-lg p-3 border border-blue-700/50">
             <p className="text-xs text-blue-200">
-              💡 <span className="font-semibold">Tip:</span> Hold a direction key to glide smoothly through passages. Generate a new maze to randomize start & exit positions!
+              💡 <span className="font-semibold">Tip:</span> Hold a direction key to glide smoothly through passages. Press 🎲 Generate New Maze to create unlimited maze variations!
             </p>
           </div>
         </div>
