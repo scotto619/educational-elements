@@ -15,15 +15,15 @@ const FloatingTimer = ({ showToast, playSound }) => {
   const {
     containerRef,
     position,
-    eventHandlers,
+    pointerHandlers,
     handleClickCapture,
-  } = useDraggableWidget([isExpanded]);
+  } = useDraggableWidget(isExpanded);
 
   // Timer effect - continues across tab changes
   useEffect(() => {
     if (isRunning && !isPaused) {
       intervalRef.current = setInterval(() => {
-        setTime(prevTime => {
+        setTime((prevTime) => {
           if (timerType === 'countdown') {
             if (prevTime <= 1) {
               setIsRunning(false);
@@ -32,17 +32,15 @@ const FloatingTimer = ({ showToast, playSound }) => {
               return 0;
             }
             return prevTime - 1;
-          } else {
-            // Stopwatch - count up
-            return prevTime + 1;
           }
+
+          // Stopwatch - count up
+          return prevTime + 1;
         });
       }, 1000);
-    } else {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
+    } else if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
     }
 
     return () => {
@@ -94,7 +92,7 @@ const FloatingTimer = ({ showToast, playSound }) => {
   };
 
   const setCustomTime = (minutes, seconds) => {
-    const totalSeconds = (minutes * 60) + seconds;
+    const totalSeconds = minutes * 60 + seconds;
     setTime(totalSeconds);
     setOriginalTime(totalSeconds);
   };
@@ -103,7 +101,7 @@ const FloatingTimer = ({ showToast, playSound }) => {
     { name: '1m', seconds: 60 },
     { name: '5m', seconds: 300 },
     { name: '10m', seconds: 600 },
-    { name: '15m', seconds: 900 }
+    { name: '15m', seconds: 900 },
   ];
 
   const getProgressPercentage = () => {
@@ -120,20 +118,19 @@ const FloatingTimer = ({ showToast, playSound }) => {
       ref={containerRef}
       className="fixed z-50"
       style={{ top: position.y, left: position.x }}
-      {...eventHandlers}
+      {...pointerHandlers}
     >
-      {/* Floating Button */}
       <div
         data-drag-handle="true"
         onClickCapture={handleClickCapture}
-        style={{ touchAction: 'none', display: isExpanded ? 'none' : 'inline-block' }}
+        style={{ touchAction: 'none' }}
         className={`transition-all duration-300 ${
           isExpanded ? 'opacity-0 pointer-events-none' : 'opacity-100'
         }`}
       >
         <button
           onClick={() => setIsExpanded(true)}
-          className={`w-14 h-14 rounded-full shadow-lg transition-all duration-200 flex items-center justify-center text-white font-bold cursor-pointer select-none ${
+          className={`w-14 h-14 rounded-full shadow-lg transition-all duration-200 flex items-center justify-center text-white font-bold ${
             isUrgent
               ? 'bg-red-500 animate-pulse hover:bg-red-600'
               : isRunning
@@ -146,42 +143,41 @@ const FloatingTimer = ({ showToast, playSound }) => {
             <div className="text-lg">⏰</div>
             {time > 0 && (
               <div className="text-xs leading-none">
-                {time < 60 ? `${time}s` : `${Math.floor(time/60)}m`}
+                {time < 60 ? `${time}s` : `${Math.floor(time / 60)}m`}
               </div>
             )}
           </div>
         </button>
       </div>
 
-      {/* Expanded Timer Panel */}
-      <div
-        className={`${isExpanded ? 'block' : 'hidden'} bg-white rounded-2xl shadow-2xl border-2 border-gray-200 w-80 max-h-[calc(100vh-3rem)] overflow-hidden`}
-      >
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4 flex items-center justify-between">
+      {isExpanded && (
+        <div className="bg-white rounded-2xl shadow-2xl border-2 border-gray-200 w-80 max-h-[calc(100vh-3rem)] overflow-hidden">
           <div
-            className="flex items-center space-x-2 cursor-grab active:cursor-grabbing select-none"
+            className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4 flex justify-between items-center cursor-grab active:cursor-grabbing select-none"
             data-drag-handle="true"
             onClickCapture={handleClickCapture}
             style={{ touchAction: 'none' }}
           >
-            <span className="text-xl">⏰</span>
-            <h3 className="font-bold">Quick Timer</h3>
+            <div className="flex items-center space-x-2">
+              <span className="text-xl">⏰</span>
+              <h3 className="font-bold">Quick Timer</h3>
+            </div>
+            <button
+              onClick={() => setIsExpanded(false)}
+              className="text-white hover:text-gray-200 text-xl font-bold"
+            >
+              ×
+            </button>
           </div>
-          <button
-            onClick={() => setIsExpanded(false)}
-            className="text-white hover:text-gray-200 text-xl font-bold"
-          >
-            ×
-          </button>
-        </div>
 
-          {/* Timer Display */}
           <div className="p-4 text-center bg-gray-50">
-            <div className={`text-4xl font-mono font-bold mb-2 ${
-              isUrgent ? 'text-red-600 animate-pulse' : 
-              isRunning ? 'text-green-600' : 'text-gray-700'
-            }`}>
+            <div
+              className={`text-4xl font-mono font-bold mb-2 ${
+                isUrgent ? 'text-red-600 animate-pulse'
+                  : isRunning ? 'text-green-600'
+                    : 'text-gray-700'
+              }`}
+            >
               {formatTime(time)}
             </div>
 
@@ -192,15 +188,13 @@ const FloatingTimer = ({ showToast, playSound }) => {
             )}
 
             <div className="text-xs text-gray-500 mb-3">
-              {isRunning 
-                ? isPaused 
-                  ? '⏸️ Paused' 
+              {isRunning
+                ? isPaused
+                  ? '⏸️ Paused'
                   : '▶️ Running'
-                : '⏹️ Stopped'
-              }
+                : '⏹️ Stopped'}
             </div>
 
-            {/* Progress Bar for Countdown */}
             {timerType === 'countdown' && originalTime > 0 && (
               <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden mb-3">
                 <div
@@ -213,25 +207,33 @@ const FloatingTimer = ({ showToast, playSound }) => {
             )}
           </div>
 
-          {/* Controls */}
           <div className="p-4 space-y-3">
-            {/* Timer Type Toggle */}
             <div className="flex rounded-lg overflow-hidden border">
               <button
-                onClick={() => {setTimerType('countdown'); setTime(0); setOriginalTime(0); resetTimer();}}
+                onClick={() => {
+                  setTimerType('countdown');
+                  setTime(0);
+                  setOriginalTime(0);
+                  resetTimer();
+                }}
                 className={`flex-1 py-2 px-3 text-sm font-semibold transition-colors ${
-                  timerType === 'countdown' 
-                    ? 'bg-blue-500 text-white' 
+                  timerType === 'countdown'
+                    ? 'bg-blue-500 text-white'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
                 ⏱️ Countdown
               </button>
               <button
-                onClick={() => {setTimerType('stopwatch'); setTime(0); setOriginalTime(0); resetTimer();}}
+                onClick={() => {
+                  setTimerType('stopwatch');
+                  setTime(0);
+                  setOriginalTime(0);
+                  resetTimer();
+                }}
                 className={`flex-1 py-2 px-3 text-sm font-semibold transition-colors ${
-                  timerType === 'stopwatch' 
-                    ? 'bg-green-500 text-white' 
+                  timerType === 'stopwatch'
+                    ? 'bg-green-500 text-white'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
@@ -239,10 +241,9 @@ const FloatingTimer = ({ showToast, playSound }) => {
               </button>
             </div>
 
-            {/* Quick Time Buttons for Countdown */}
             {timerType === 'countdown' && (
               <div className="grid grid-cols-4 gap-2">
-                {quickTimes.map(preset => (
+                {quickTimes.map((preset) => (
                   <button
                     key={preset.name}
                     onClick={() => setCustomTime(Math.floor(preset.seconds / 60), preset.seconds % 60)}
@@ -254,7 +255,6 @@ const FloatingTimer = ({ showToast, playSound }) => {
               </div>
             )}
 
-            {/* Custom Time Input for Countdown */}
             {timerType === 'countdown' && (
               <div className="grid grid-cols-2 gap-2">
                 <div>
@@ -264,7 +264,7 @@ const FloatingTimer = ({ showToast, playSound }) => {
                     min="0"
                     max="60"
                     value={Math.floor(originalTime / 60)}
-                    onChange={(e) => setCustomTime(parseInt(e.target.value || 0), originalTime % 60)}
+                    onChange={(e) => setCustomTime(parseInt(e.target.value || 0, 10), originalTime % 60)}
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
@@ -275,14 +275,13 @@ const FloatingTimer = ({ showToast, playSound }) => {
                     min="0"
                     max="59"
                     value={originalTime % 60}
-                    onChange={(e) => setCustomTime(Math.floor(originalTime / 60), parseInt(e.target.value || 0))}
+                    onChange={(e) => setCustomTime(Math.floor(originalTime / 60), parseInt(e.target.value || 0, 10))}
                     className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
               </div>
             )}
 
-            {/* Activity Title */}
             <div>
               <input
                 type="text"
@@ -293,29 +292,28 @@ const FloatingTimer = ({ showToast, playSound }) => {
               />
             </div>
 
-            {/* Control Buttons */}
             <div className="flex space-x-2">
               <button
                 onClick={isRunning ? pauseTimer : startTimer}
                 disabled={timerType === 'countdown' && time === 0}
                 className={`flex-1 py-2 px-3 rounded-lg font-semibold text-sm transition-all ${
-                  (timerType === 'countdown' && time === 0)
+                  timerType === 'countdown' && time === 0
                     ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                    : isRunning 
-                      ? 'bg-amber-500 hover:bg-amber-600 text-white' 
+                    : isRunning
+                      ? 'bg-amber-500 hover:bg-amber-600 text-white'
                       : 'bg-green-500 hover:bg-green-600 text-white'
                 }`}
               >
                 {isRunning ? (isPaused ? '▶️' : '⏸️') : '▶️'}
               </button>
-              
+
               <button
                 onClick={stopTimer}
                 className="px-3 py-2 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 transition-all text-sm"
               >
                 ⏹️
               </button>
-              
+
               <button
                 onClick={resetTimer}
                 className="px-3 py-2 bg-gray-500 text-white rounded-lg font-semibold hover:bg-gray-600 transition-all text-sm"
@@ -325,7 +323,7 @@ const FloatingTimer = ({ showToast, playSound }) => {
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

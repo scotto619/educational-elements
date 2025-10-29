@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 
 const MARGIN = 24;
 const MOVE_THRESHOLD = 4;
@@ -10,14 +10,29 @@ const clamp = (value, min, max) => {
   return Math.min(Math.max(value, min), max);
 };
 
-const useDraggableWidget = (dependencies = []) => {
+const getDefaultPosition = (rect) => {
+  if (typeof window === 'undefined') {
+    return { x: MARGIN, y: MARGIN };
+  }
+
+  const width = rect?.width ?? 0;
+  const height = rect?.height ?? 0;
+
+  return {
+    x: window.innerWidth - width - MARGIN,
+    y: window.innerHeight - height - MARGIN,
+  };
+};
+
+export default function useDraggableWidget(...deps) {
+  const dependencies = deps.length ? deps : [];
+
   const containerRef = useRef(null);
   const pointerIdRef = useRef(null);
   const dragOffsetRef = useRef({ x: 0, y: 0 });
   const initialPointerRef = useRef({ x: 0, y: 0 });
-  const isDraggingRef = useRef(false);
   const blockClickRef = useRef(false);
-  const hasInitializedRef = useRef(false);
+  const hasPlacedRef = useRef(false);
 
   const [position, setPosition] = useState({ x: MARGIN, y: MARGIN });
 
@@ -29,14 +44,15 @@ const useDraggableWidget = (dependencies = []) => {
     const rect = containerRef.current?.getBoundingClientRect();
     const width = rect?.width ?? 0;
     const height = rect?.height ?? 0;
+
     const maxX = window.innerWidth - width - MARGIN;
     const maxY = window.innerHeight - height - MARGIN;
 
     return {
       minX: MARGIN,
       minY: MARGIN,
-      maxX,
-      maxY,
+      maxX: Math.max(MARGIN, maxX),
+      maxY: Math.max(MARGIN, maxY),
     };
   }, []);
 
@@ -48,7 +64,7 @@ const useDraggableWidget = (dependencies = []) => {
     };
   }, [getBounds]);
 
-  const recalculatePosition = useCallback((preferDefaults = false) => {
+  const placeWithinViewport = useCallback((useDefault = false) => {
     if (typeof window === 'undefined') {
       return;
     }
@@ -59,13 +75,12 @@ const useDraggableWidget = (dependencies = []) => {
       }
 
       const rect = containerRef.current.getBoundingClientRect();
-      const defaultX = window.innerWidth - rect.width - MARGIN;
-      const defaultY = window.innerHeight - rect.height - MARGIN;
+      const defaults = getDefaultPosition(rect);
 
       setPosition((previous) => {
-        if (!hasInitializedRef.current || preferDefaults) {
-          hasInitializedRef.current = true;
-          return clampPosition(defaultX, defaultY);
+        if (!hasPlacedRef.current || useDefault) {
+          hasPlacedRef.current = true;
+          return clampPosition(defaults.x, defaults.y);
         }
 
         return clampPosition(previous.x, previous.y);
@@ -74,9 +89,13 @@ const useDraggableWidget = (dependencies = []) => {
   }, [clampPosition]);
 
   useEffect(() => {
-    recalculatePosition(!hasInitializedRef.current);
+    placeWithinViewport(!hasPlacedRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, dependencies);
+
+  useEffect(() => {
+    placeWithinViewport(!hasPlacedRef.current);
+  }, [placeWithinViewport]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -93,29 +112,27 @@ const useDraggableWidget = (dependencies = []) => {
     };
   }, [clampPosition]);
 
-  useEffect(() => {
-    recalculatePosition(!hasInitializedRef.current);
-  }, [recalculatePosition]);
-
   const handlePointerDown = useCallback((event) => {
+    if (!containerRef.current) {
+      return;
+    }
+
     const handle = event.target.closest('[data-drag-handle="true"]');
-    if (!handle || !containerRef.current) {
+    if (!handle || !containerRef.current.contains(handle)) {
       return;
     }
 
     pointerIdRef.current = event.pointerId;
-    isDraggingRef.current = false;
-    blockClickRef.current = false;
+    dragOffsetRef.current = { x: 0, y: 0 };
+    initialPointerRef.current = { x: event.clientX, y: event.clientY };
 
     const rect = containerRef.current.getBoundingClientRect();
     dragOffsetRef.current = {
       x: event.clientX - rect.left,
       y: event.clientY - rect.top,
     };
-    initialPointerRef.current = {
-      x: event.clientX,
-      y: event.clientY,
-    };
+
+    blockClickRef.current = false;
 
     containerRef.current.setPointerCapture?.(event.pointerId);
   }, []);
@@ -127,18 +144,13 @@ const useDraggableWidget = (dependencies = []) => {
 
     const deltaX = event.clientX - initialPointerRef.current.x;
     const deltaY = event.clientY - initialPointerRef.current.y;
-    const hasMovedFarEnough = Math.abs(deltaX) > MOVE_THRESHOLD || Math.abs(deltaY) > MOVE_THRESHOLD;
+    const hasMovedEnough = Math.abs(deltaX) > MOVE_THRESHOLD || Math.abs(deltaY) > MOVE_THRESHOLD;
 
-    if (!isDraggingRef.current && !hasMovedFarEnough) {
-      return;
-    }
-
-    if (!isDraggingRef.current && hasMovedFarEnough) {
-      isDraggingRef.current = true;
+    if (!blockClickRef.current && hasMovedEnough) {
       blockClickRef.current = true;
     }
 
-    if (!isDraggingRef.current) {
+    if (!hasMovedEnough && !blockClickRef.current) {
       return;
     }
 
@@ -160,19 +172,16 @@ const useDraggableWidget = (dependencies = []) => {
     }
 
     pointerIdRef.current = null;
-    dragOffsetRef.current = { x: 0, y: 0 };
     initialPointerRef.current = { x: 0, y: 0 };
+    dragOffsetRef.current = { x: 0, y: 0 };
 
-    if (isDraggingRef.current) {
+    if (blockClickRef.current) {
       event.preventDefault();
       event.stopPropagation();
+      requestAnimationFrame(() => {
+        blockClickRef.current = false;
+      });
     }
-
-    isDraggingRef.current = false;
-
-    requestAnimationFrame(() => {
-      blockClickRef.current = false;
-    });
   }, []);
 
   const handleClickCapture = useCallback((event) => {
@@ -186,7 +195,7 @@ const useDraggableWidget = (dependencies = []) => {
   return {
     containerRef,
     position,
-    eventHandlers: {
+    pointerHandlers: {
       onPointerDown: handlePointerDown,
       onPointerMove: handlePointerMove,
       onPointerUp: endDrag,
@@ -194,6 +203,4 @@ const useDraggableWidget = (dependencies = []) => {
     },
     handleClickCapture,
   };
-};
-
-export default useDraggableWidget;
+}
