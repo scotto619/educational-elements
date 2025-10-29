@@ -1,4 +1,4 @@
-// components/games/MazeGame.js
+// components/games/MazeGame.js - OPTIMIZED VERSION
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 // Seeded random number generator for reproducible mazes
@@ -17,23 +17,25 @@ const MazeGame = ({ gameMode, showToast }) => {
   const canvasRef = useRef(null);
   const animationFrameRef = useRef(null);
   const holdIntervalRef = useRef(null);
+  const gameStateRef = useRef({
+    player: { x: 0, y: 0, px: 0, py: 0 },
+    pressing: { up: false, down: false, left: false, right: false },
+    isWon: false
+  });
 
-  // Game state
-  const [cols, setCols] = useState(25);
-  const [rows, setRows] = useState(25);
-  const [cellSize, setCellSize] = useState(22);
+  // UI state
+  const [cols, setCols] = useState(20);
+  const [rows, setRows] = useState(20);
+  const [cellSize, setCellSize] = useState(24);
   const [showSolution, setShowSolution] = useState(false);
   const [showGhost, setShowGhost] = useState(true);
   const [seed, setSeed] = useState(Date.now());
   const [seedInput, setSeedInput] = useState('');
   const [maze, setMaze] = useState(null);
-  const [player, setPlayer] = useState({ x: 0, y: 0, px: 0, py: 0 });
   const [start, setStart] = useState({ x: 0, y: 0 });
   const [end, setEnd] = useState({ x: 0, y: 0 });
   const [path, setPath] = useState([]);
-  const [pressing, setPressing] = useState({ up: false, down: false, left: false, right: false });
-  const [isWon, setIsWon] = useState(false);
-  const [touchStart, setTouchStart] = useState(null);
+  const [needsRedraw, setNeedsRedraw] = useState(true);
 
   // Shuffle array using seeded random
   const shuffle = (arr, rng) => {
@@ -146,7 +148,7 @@ const MazeGame = ({ gameMode, showToast }) => {
     const newMaze = new Maze(cols, rows, mazeSeed);
     setMaze(newMaze);
 
-    // Generate random start and end corners using seeded random
+    // Generate random start and end corners
     const rng = new SeededRandom(mazeSeed + 1);
     const corners = [
       { x: 0, y: 0 },
@@ -161,17 +163,20 @@ const MazeGame = ({ gameMode, showToast }) => {
     
     setStart(newStart);
     setEnd(newEnd);
-    setPlayer({ x: newStart.x, y: newStart.y, px: newStart.x, py: newStart.y });
-    setIsWon(false);
+    
+    gameStateRef.current.player = { x: newStart.x, y: newStart.y, px: newStart.x, py: newStart.y };
+    gameStateRef.current.isWon = false;
 
     const solutionPath = newMaze.solvePath(newStart.x, newStart.y, newEnd.x, newEnd.y);
     setPath(solutionPath);
+    setNeedsRedraw(true);
   }, [cols, rows]);
 
   // Reset player position
   const resetPlayer = () => {
-    setPlayer({ x: start.x, y: start.y, px: start.x, py: start.y });
-    setIsWon(false);
+    gameStateRef.current.player = { x: start.x, y: start.y, px: start.x, py: start.y };
+    gameStateRef.current.isWon = false;
+    setNeedsRedraw(true);
   };
 
   // Load maze from seed
@@ -200,28 +205,34 @@ const MazeGame = ({ gameMode, showToast }) => {
     generateMaze();
   }, []);
 
+  // Redraw when settings change
+  useEffect(() => {
+    setNeedsRedraw(true);
+  }, [cellSize, showGhost, showSolution]);
+
   // Try to move player
   const tryMove = useCallback((dx, dy) => {
     if (!maze) return;
 
-    setPlayer(prev => {
-      const wi = dx === 0 ? (dy === -1 ? 0 : 2) : (dx === 1 ? 1 : 3);
-      const cur = maze.cell(prev.x, prev.y);
-      
-      if (cur.w[wi] === 0) {
-        const nx = prev.x + dx;
-        const ny = prev.y + dy;
-        if (nx >= 0 && ny >= 0 && nx < cols && ny < rows) {
-          // Check if reached end
-          if (nx === end.x && ny === end.y) {
-            setIsWon(true);
-            if (showToast) showToast('🎉 You completed the maze!', 'success');
-          }
-          return { ...prev, x: nx, y: ny };
+    const player = gameStateRef.current.player;
+    const wi = dx === 0 ? (dy === -1 ? 0 : 2) : (dx === 1 ? 1 : 3);
+    const cur = maze.cell(player.x, player.y);
+    
+    if (cur.w[wi] === 0) {
+      const nx = player.x + dx;
+      const ny = player.y + dy;
+      if (nx >= 0 && ny >= 0 && nx < cols && ny < rows) {
+        gameStateRef.current.player.x = nx;
+        gameStateRef.current.player.y = ny;
+        
+        // Check if reached end
+        if (nx === end.x && ny === end.y && !gameStateRef.current.isWon) {
+          gameStateRef.current.isWon = true;
+          if (showToast) showToast('🎉 You completed the maze!', 'success');
+          setNeedsRedraw(true);
         }
       }
-      return prev;
-    });
+    }
   }, [maze, cols, rows, end, showToast]);
 
   // Keyboard controls
@@ -237,27 +248,31 @@ const MazeGame = ({ gameMode, showToast }) => {
       if (!k) return;
       e.preventDefault();
       
-      setPressing(prev => {
-        const newPressing = { ...prev, [k]: true };
+      const pressing = gameStateRef.current.pressing;
+      if (pressing[k]) return; // Already pressed
+      
+      pressing[k] = true;
+      
+      if (!holdIntervalRef.current) {
+        // Immediate first move
+        if (k === 'up') tryMove(0, -1);
+        else if (k === 'down') tryMove(0, 1);
+        else if (k === 'left') tryMove(-1, 0);
+        else if (k === 'right') tryMove(1, 0);
         
-        if (!holdIntervalRef.current) {
-          holdIntervalRef.current = setInterval(() => {
-            setPressing(current => {
-              if (current.up) tryMove(0, -1);
-              else if (current.down) tryMove(0, 1);
-              else if (current.left) tryMove(-1, 0);
-              else if (current.right) tryMove(1, 0);
-              else {
-                clearInterval(holdIntervalRef.current);
-                holdIntervalRef.current = null;
-              }
-              return current;
-            });
-          }, 65);
-        }
-        
-        return newPressing;
-      });
+        // Then continuous movement
+        holdIntervalRef.current = setInterval(() => {
+          const p = gameStateRef.current.pressing;
+          if (p.up) tryMove(0, -1);
+          else if (p.down) tryMove(0, 1);
+          else if (p.left) tryMove(-1, 0);
+          else if (p.right) tryMove(1, 0);
+          else {
+            clearInterval(holdIntervalRef.current);
+            holdIntervalRef.current = null;
+          }
+        }, 100);
+      }
     };
 
     const onKeyUp = (e) => {
@@ -265,14 +280,15 @@ const MazeGame = ({ gameMode, showToast }) => {
       if (!k) return;
       e.preventDefault();
       
-      setPressing(prev => {
-        const newPressing = { ...prev, [k]: false };
-        if (!Object.values(newPressing).some(v => v)) {
+      gameStateRef.current.pressing[k] = false;
+      
+      const pressing = gameStateRef.current.pressing;
+      if (!pressing.up && !pressing.down && !pressing.left && !pressing.right) {
+        if (holdIntervalRef.current) {
           clearInterval(holdIntervalRef.current);
           holdIntervalRef.current = null;
         }
-        return newPressing;
-      });
+      }
     };
 
     window.addEventListener('keydown', onKeyDown);
@@ -288,29 +304,31 @@ const MazeGame = ({ gameMode, showToast }) => {
   }, [tryMove]);
 
   // Touch controls
+  const touchStartRef = useRef(null);
+  
   const handleTouchStart = (e) => {
     if (e.touches[0]) {
-      setTouchStart({ x: e.touches[0].clientX, y: e.touches[0].clientY });
+      touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
     }
   };
 
   const handleTouchEnd = () => {
-    setTouchStart(null);
+    touchStartRef.current = null;
   };
 
   const handleTouchMove = (e) => {
-    if (!touchStart || !e.touches[0]) return;
+    if (!touchStartRef.current || !e.touches[0]) return;
     
-    const dx = e.touches[0].clientX - touchStart.x;
-    const dy = e.touches[0].clientY - touchStart.y;
+    const dx = e.touches[0].clientX - touchStartRef.current.x;
+    const dy = e.touches[0].clientY - touchStartRef.current.y;
     
-    if (Math.hypot(dx, dy) > 24) {
+    if (Math.hypot(dx, dy) > 30) {
       if (Math.abs(dx) > Math.abs(dy)) {
         tryMove(dx > 0 ? 1 : -1, 0);
       } else {
         tryMove(0, dy > 0 ? 1 : -1);
       }
-      setTouchStart({ x: e.touches[0].clientX, y: e.touches[0].clientY });
+      touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
     }
   };
 
@@ -324,13 +342,25 @@ const MazeGame = ({ gameMode, showToast }) => {
     if (showToast) showToast('Maze image saved!', 'success');
   };
 
-  // Drawing loop
+  // Optimized drawing loop
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !maze) return;
 
-    const ctx = canvas.getContext('2d');
-    const draw = () => {
+    const ctx = canvas.getContext('2d', { alpha: false });
+    let lastDrawTime = 0;
+    const targetFPS = 60;
+    const frameInterval = 1000 / targetFPS;
+
+    const draw = (timestamp) => {
+      // Throttle to target FPS
+      if (timestamp - lastDrawTime < frameInterval && !needsRedraw) {
+        animationFrameRef.current = requestAnimationFrame(draw);
+        return;
+      }
+      lastDrawTime = timestamp;
+
+      const player = gameStateRef.current.player;
       const w = canvas.width;
       const h = canvas.height;
       const margin = 20;
@@ -340,12 +370,28 @@ const MazeGame = ({ gameMode, showToast }) => {
       const ox = (w - gridW * scale) / 2;
       const oy = (h - gridH * scale) / 2;
 
+      // Smooth easing
+      const ease = 0.25;
+      const oldPx = player.px;
+      const oldPy = player.py;
+      player.px += (player.x - player.px) * ease;
+      player.py += (player.y - player.py) * ease;
+      
+      // Only redraw if something changed
+      const hasMovement = Math.abs(player.px - oldPx) > 0.001 || Math.abs(player.py - oldPy) > 0.001;
+      if (!hasMovement && !needsRedraw) {
+        animationFrameRef.current = requestAnimationFrame(draw);
+        return;
+      }
+
+      setNeedsRedraw(false);
+
       ctx.clearRect(0, 0, w, h);
       ctx.save();
       ctx.translate(ox, oy);
       ctx.scale(scale, scale);
 
-      // Backdrop glow
+      // Backdrop
       const g = ctx.createRadialGradient(gridW / 2, gridH / 2, Math.min(gridW, gridH) / 10, gridW / 2, gridH / 2, Math.max(gridW, gridH));
       g.addColorStop(0, 'rgba(20,35,75,0.9)');
       g.addColorStop(1, 'rgba(4,8,20,0.9)');
@@ -416,14 +462,7 @@ const MazeGame = ({ gameMode, showToast }) => {
         ctx.restore();
       }
 
-      // Player with smooth easing
-      const ease = 0.35;
-      setPlayer(prev => ({
-        ...prev,
-        px: prev.px + (prev.x - prev.px) * ease,
-        py: prev.py + (prev.y - prev.py) * ease
-      }));
-
+      // Player
       const px = player.px * cellSize + cellSize / 2;
       const py = player.py * cellSize + cellSize / 2;
 
@@ -446,7 +485,7 @@ const MazeGame = ({ gameMode, showToast }) => {
       ctx.restore();
 
       // Win text
-      if (isWon) {
+      if (gameStateRef.current.isWon) {
         ctx.save();
         ctx.shadowColor = '#ffd166';
         ctx.shadowBlur = 16;
@@ -461,14 +500,14 @@ const MazeGame = ({ gameMode, showToast }) => {
       animationFrameRef.current = requestAnimationFrame(draw);
     };
 
-    draw();
+    animationFrameRef.current = requestAnimationFrame(draw);
 
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [maze, cols, rows, cellSize, showGhost, showSolution, path, player, start, end, isWon]);
+  }, [maze, cols, rows, cellSize, showGhost, showSolution, path, start, end, needsRedraw]);
 
   return (
     <div className="w-full">
@@ -539,7 +578,7 @@ const MazeGame = ({ gameMode, showToast }) => {
               <input
                 type="range"
                 min="8"
-                max="60"
+                max="50"
                 value={cols}
                 onChange={(e) => setCols(parseInt(e.target.value))}
                 className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
@@ -555,7 +594,7 @@ const MazeGame = ({ gameMode, showToast }) => {
               <input
                 type="range"
                 min="8"
-                max="60"
+                max="50"
                 value={rows}
                 onChange={(e) => setRows(parseInt(e.target.value))}
                 className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
@@ -570,7 +609,7 @@ const MazeGame = ({ gameMode, showToast }) => {
               </div>
               <input
                 type="range"
-                min="12"
+                min="16"
                 max="40"
                 value={cellSize}
                 onChange={(e) => setCellSize(parseInt(e.target.value))}
