@@ -1,4 +1,4 @@
-// components/tabs/GamesTab.js - WITH BINGO GAME
+// components/tabs/GamesTab.js - WITH MAZE GAME
 import React, { useState } from 'react';
 
 // Import existing game components
@@ -16,6 +16,7 @@ import MathSpaceInvadersGame from '../games/MathSpaceInvadersGame';
 import MultiplayerAgarGame from '../games/MultiplayerAgarGame';
 import BattleRoyaleGame from '../games/BattleRoyaleGame';
 import BingoGame from '../games/BingoGame';
+import MazeGame from '../games/MazeGame';
 
 const GamesTab = ({ 
   students, 
@@ -34,6 +35,18 @@ const GamesTab = ({
 
   const availableGames = [
     // Featured/New Games
+    {
+      id: 'maze',
+      name: 'Maze Runner',
+      icon: '🧩',
+      description: 'Navigate through randomly generated mazes! Share seeds with students to race on the same maze.',
+      component: MazeGame,
+      color: 'from-indigo-500 to-purple-600',
+      difficulty: 'Easy - Hard',
+      time: '2-10 minutes',
+      featured: true,
+      category: 'featured'
+    },
     {
       id: 'bingo',
       name: 'Educational BINGO',
@@ -186,6 +199,17 @@ const GamesTab = ({
 
     // Brain Games
     {
+      id: 'maze-brain',
+      name: 'Maze Challenge',
+      icon: '🧩',
+      description: 'Challenge students with procedurally generated mazes. Perfect for spatial reasoning and problem-solving!',
+      component: MazeGame,
+      color: 'from-indigo-500 to-purple-600',
+      difficulty: 'Easy - Hard',
+      time: '2-10 minutes',
+      category: 'brain'
+    },
+    {
       id: 'memory-match',
       name: 'Memory Challenge',
       icon: '🧠',
@@ -201,8 +225,8 @@ const GamesTab = ({
     {
       id: 'match3battle',
       name: 'Match-3 Adventure Display',
-      icon: 'âš"ï¸',
-      description: 'Show epic match-3 RPG gameplay on the big screen.',
+      icon: '⚔️',
+      description: 'Project epic RPG match-3 battles for students to watch and strategize together.',
       component: Match3BattleGame,
       color: 'from-red-500 to-purple-600',
       difficulty: 'Medium - Expert',
@@ -213,7 +237,7 @@ const GamesTab = ({
       id: 'clicker',
       name: 'Hero Forge Display',
       icon: '⚡',
-      description: 'Display incremental game progress for class engagement.',
+      description: 'Display an idle clicker game where students can watch progress build over time.',
       component: ClickerGame,
       color: 'from-yellow-500 to-orange-600',
       difficulty: 'Easy',
@@ -223,15 +247,18 @@ const GamesTab = ({
   ];
 
   const categories = [
-    { id: 'featured', name: 'Featured', icon: '⭐', description: 'Popular teacher games' },
-    { id: 'multiplayer', name: 'Multiplayer', icon: '🔥', description: 'Host competitions' },
-    { id: 'educational', name: 'Educational', icon: '📚', description: 'Learning activities' },
-    { id: 'adventure', name: 'Adventure', icon: '🏰', description: 'Epic displays' },
-    { id: 'brain', name: 'Brain Training', icon: '🧠', description: 'Memory and logic' }
+    { id: 'featured', name: '⭐ Featured', icon: '⭐' },
+    { id: 'multiplayer', name: 'Multiplayer', icon: '🎮' },
+    { id: 'educational', name: 'Educational', icon: '📚' },
+    { id: 'brain', name: 'Brain Games', icon: '🧠' },
+    { id: 'adventure', name: 'Adventure', icon: '⚔️' }
   ];
 
   const getGamesInCategory = (categoryId) => {
-    return availableGames.filter(game => game.category === categoryId);
+    if (categoryId === 'featured') {
+      return availableGames.filter(g => g.featured);
+    }
+    return availableGames.filter(g => g.category === categoryId);
   };
 
   if (selectedGame) {
@@ -359,7 +386,7 @@ const GamesTab = ({
             
             {game.featured && !game.teacherMode && (
               <div className="absolute -top-2 -right-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white text-xs font-bold px-2 py-1 rounded-full z-10">
-                â­ HOT
+                ⭐ HOT
               </div>
             )}
             
@@ -388,11 +415,11 @@ const GamesTab = ({
 
             <div className="space-y-1 text-xs text-gray-500 mb-3 md:mb-4">
               <div className="flex justify-between">
-                <span>âš¡ Difficulty:</span>
+                <span>⚡ Difficulty:</span>
                 <span className="font-medium">{game.difficulty}</span>
               </div>
               <div className="flex justify-between">
-                <span>â±ï¸ Time:</span>
+                <span>⏱️ Time:</span>
                 <span className="font-medium">{game.time}</span>
               </div>
             </div>
@@ -414,20 +441,20 @@ const GamesTab = ({
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div className="bg-white rounded-lg p-3">
-            <div className="font-semibold text-pink-700 mb-1">ðŸŽ² Educational BINGO</div>
+            <div className="font-semibold text-indigo-700 mb-1">🧩 Maze Runner</div>
+            <div className="text-gray-600">Generate mazes and share the seed number with students - they can race to solve the same maze!</div>
+          </div>
+          <div className="bg-white rounded-lg p-3">
+            <div className="font-semibold text-pink-700 mb-1">🎲 Educational BINGO</div>
             <div className="text-gray-600">Call out questions in 5 categories - students mark their cards to win!</div>
           </div>
           <div className="bg-white rounded-lg p-3">
-            <div className="font-semibold text-red-700 mb-1">âš"ï¸ Battle Royale</div>
+            <div className="font-semibold text-red-700 mb-1">⚔️ Battle Royale</div>
             <div className="text-gray-600">Create a game code, students join via student portal, and watch the battle unfold!</div>
           </div>
           <div className="bg-white rounded-lg p-3">
-            <div className="font-semibold text-blue-700 mb-1">ðŸ'¨â€ðŸ« Host Mode Games</div>
+            <div className="font-semibold text-blue-700 mb-1">👨‍🏫 Host Mode Games</div>
             <div className="text-gray-600">These games create codes for students to join from their devices.</div>
-          </div>
-          <div className="bg-white rounded-lg p-3">
-            <div className="font-semibold text-purple-700 mb-1">ðŸ"º Display Games</div>
-            <div className="text-gray-600">Perfect for projecting on the big screen for whole-class activities.</div>
           </div>
         </div>
       </div>
