@@ -36,6 +36,164 @@ const ComingSoon = ({ toolName, description }) => (
 );
 
 // ===============================================
+// LITERACY ACTIVITY LIBRARY
+// ===============================================
+const literacyActivities = {
+  beginnerReaders: {
+    id: 'beginner-readers',
+    name: 'Beginner Readers',
+    icon: '🔤',
+    description: 'Early reading lessons with sound recognition, phonics, and decodable passages.',
+    component: BeginnerReaders,
+    gradeBand: 'Foundation – Year 2',
+    focusAreas: ['Phonics', 'Decoding', 'High-Frequency Words']
+  },
+  literacyWarmup: {
+    id: 'literacy-warmup',
+    name: 'Literacy Warmup',
+    icon: '🔥',
+    description: 'Daily warm-up routines targeting phonemic awareness, blending, and advanced sound patterns.',
+    component: LiteracyWarmup,
+    hasYearLevels: true,
+    gradeBand: 'Prep & Year 5 sets',
+    focusAreas: ['Phonemic Awareness', 'Blending', 'Warm Ups'],
+    yearLevels: [
+      {
+        id: 'prep',
+        name: 'Prep/Foundation',
+        description: 'SATPIN progression - single letter sounds (4-6 years)',
+        component: PrepLiteracyWarmup
+      },
+      {
+        id: 'grade5',
+        name: 'Grade 5',
+        description: 'Complex blends and morphology (10-11 years)',
+        component: LiteracyWarmup
+      }
+    ]
+  },
+  fluencyPractice: {
+    id: 'fluency-practice',
+    name: 'Fluency Practice',
+    icon: '📖',
+    description: 'Reading passages aligned with spelling levels to build automaticity and comprehension.',
+    component: FluencyPractice,
+    gradeBand: 'Years 1 – 4',
+    focusAreas: ['Connected Text', 'Oral Reading', 'Quick Checks'],
+    isUpdated: true
+  },
+  spellingProgram: {
+    id: 'spelling-program',
+    name: 'Spelling Program',
+    icon: '🔡',
+    description: 'Structured spelling lists with games, dictations, and weekly assessments.',
+    component: SpellingProgram,
+    gradeBand: 'Years 1 – 6',
+    focusAreas: ['Word Lists', 'Dictation', 'Assessment']
+  },
+  readingComprehension: {
+    id: 'reading-comprehension',
+    name: 'Reading Comprehension',
+    icon: '🧠',
+    description: 'Text analysis lessons with question stems and strategy prompts across genres.',
+    component: ReadingComprehension,
+    gradeBand: 'Years 2 – 6',
+    focusAreas: ['Comprehension Strategies', 'Guided Reading', 'Inference']
+  },
+  readingForFun: {
+    id: 'reading-for-fun',
+    name: 'Reading for Fun',
+    icon: '🎉',
+    description: 'Engaging high-interest texts for confident readers featuring modern topics students love.',
+    component: ReadingForFun,
+    gradeBand: 'Years 3 – 6',
+    focusAreas: ['Extension Reading', 'Student Choice', 'Topic Knowledge'],
+    isNew: true
+  },
+  readersTheatre: {
+    id: 'readers-theatre',
+    name: 'Readers Theatre',
+    icon: '🎭',
+    description: 'Drama scripts with character roles to support fluency, expression, and collaborative reading.',
+    component: ReadersTheatre,
+    gradeBand: 'Years 2 – 6',
+    focusAreas: ['Fluency', 'Performance', 'Team Reading'],
+    isNew: true
+  },
+  visualWritingPrompts: {
+    id: 'visual-writing-prompts',
+    name: 'Visual Writing Prompts',
+    icon: '🖼️',
+    description: 'Rich visual prompts with scaffolds for narrative, persuasive, and informative writing.',
+    component: VisualWritingPrompts,
+    gradeBand: 'Years 2 – 6',
+    focusAreas: ['Writing Ideas', 'Oral Language', 'Creative Thinking']
+  },
+  morphology: {
+    id: 'morphology',
+    name: 'Morphology Master',
+    icon: '🧩',
+    description: 'Explicit lessons on prefixes, suffixes, and bases to deepen word knowledge and spelling.',
+    component: Morphology,
+    gradeBand: 'Years 4 – 6',
+    focusAreas: ['Word Structure', 'Vocabulary', 'Spelling Rules'],
+    isNew: true
+  },
+  vocabularyBuilder: {
+    id: 'vocabulary-builder',
+    name: 'Vocabulary Builder',
+    icon: '📖',
+    description: 'Tier 2 vocabulary lessons with semantic mapping, morphology links, and word play.',
+    component: ComingSoon,
+    gradeBand: 'Years 2 – 6',
+    focusAreas: ['Tier 2 Words', 'Word Study', 'Academic Language']
+  },
+  grammarWorkshop: {
+    id: 'grammar-workshop',
+    name: 'Grammar Workshop',
+    icon: '✏️',
+    description: 'Interactive grammar mini-lessons, mentor sentences, and practice activities.',
+    component: ComingSoon,
+    gradeBand: 'Years 2 – 6',
+    focusAreas: ['Sentence Work', 'Parts of Speech', 'Language Conventions']
+  },
+  poetryCorner: {
+    id: 'poetry-corner',
+    name: 'Poetry Corner',
+    icon: '🎙️',
+    description: 'Explore poetic forms, performance pieces, and writing frames for budding poets.',
+    component: ComingSoon,
+    gradeBand: 'Years 3 – 6',
+    focusAreas: ['Poetry Forms', 'Performance', 'Word Choice']
+  },
+  handwritingPractice: {
+    id: 'handwriting-practice',
+    name: 'Handwriting Practice',
+    icon: '✍️',
+    description: 'Letter formation guides, warm-up patterns, and handwriting challenges.',
+    component: ComingSoon,
+    gradeBand: 'Foundation – Year 4',
+    focusAreas: ['Fine Motor', 'Letter Formation', 'Fluency']
+  }
+};
+
+const literacyActivityList = [
+  literacyActivities.beginnerReaders,
+  literacyActivities.literacyWarmup,
+  literacyActivities.fluencyPractice,
+  literacyActivities.spellingProgram,
+  literacyActivities.readingComprehension,
+  literacyActivities.readingForFun,
+  literacyActivities.readersTheatre,
+  literacyActivities.visualWritingPrompts,
+  literacyActivities.morphology,
+  literacyActivities.vocabularyBuilder,
+  literacyActivities.grammarWorkshop,
+  literacyActivities.poetryCorner,
+  literacyActivities.handwritingPractice
+];
+
+// ===============================================
 // COMPLETE SUBJECT CONFIGURATION
 // ===============================================
 const subjects = [
@@ -44,117 +202,55 @@ const subjects = [
     name: 'Literacy & Language Arts',
     icon: '📚',
     color: 'from-blue-500 to-purple-600',
-    description: 'Complete literacy toolkit: phonics, spelling, reading, writing, drama & vocabulary',
-    activities: [
+    description: 'Organised literacy toolkit: foundations, reading workshops, word study, and writing resources.',
+    activities: literacyActivityList,
+    activitySections: [
       {
-        id: 'beginner-readers',
-        name: 'Beginner Readers',
-        icon: '🔤',
-        description: 'Early reading activities for beginning readers - sound recognition, phonics, and simple passages',
-        component: BeginnerReaders
-      },
-      {
-        id: 'reading-for-fun',
-        name: 'Reading for Fun',
-        icon: '🎉',
-        description: 'Engaging texts for advanced readers - longer passages with modern topics kids love',
-        component: ReadingForFun,
-        isNew: true
-      },
-      {
-        id: 'readers-theatre',
-        name: 'Readers Theatre',
-        icon: '🎭',
-        description: 'Drama scripts with character roles for student performances and oral reading practice',
-        component: ReadersTheatre,
-        isNew: true
-      },
-      {
-        id: 'morphology',
-        name: 'Morphology Master',
-        icon: '🔤',
-        description: 'Learn how words work! Teach prefixes, suffixes, and base words with engaging multi-level lessons',
-        component: Morphology,
-        isNew: true
-      },
-      {
-        id: 'literacy-warmup',
-        name: 'Literacy Warmup',
-        icon: '🔥',
-        description: 'Interactive phonics and sound recognition activities',
-        component: LiteracyWarmup,
-        hasYearLevels: true,
-        yearLevels: [
-          {
-            id: 'prep',
-            name: 'Prep/Foundation',
-            description: 'SATPIN progression - single letter sounds (4-6 years)',
-            component: PrepLiteracyWarmup
-          },
-          {
-            id: 'grade5',
-            name: 'Grade 5',
-            description: 'Complex blends and morphology (10-11 years)',
-            component: LiteracyWarmup
-          }
+        id: 'foundations',
+        title: 'Foundations & Fluency',
+        icon: '🧱',
+        description: 'Build decoding confidence and fluency with daily routines and levelled practice.',
+        quickTip: 'Start here for whole-class warm-ups or small-group intervention blocks.',
+        activities: [
+          literacyActivities.beginnerReaders,
+          literacyActivities.literacyWarmup,
+          literacyActivities.fluencyPractice
         ]
       },
       {
-        id: 'fluency-practice',
-        name: 'Fluency Practice',
-        icon: '📖',
-        description: 'Reading passages aligned with spelling levels for fluency development',
-        component: FluencyPractice,
-        isUpdated: true
+        id: 'reading-workshops',
+        title: 'Reading Workshops',
+        icon: '📚',
+        description: 'Guide, extend, and celebrate reading with comprehension lessons and rich texts.',
+        quickTip: 'Pair the comprehension lessons with Readers Theatre for expressive re-reading.',
+        activities: [
+          literacyActivities.readingComprehension,
+          literacyActivities.readingForFun,
+          literacyActivities.readersTheatre
+        ]
       },
       {
-        id: 'spelling-program',
-        name: 'Spelling Program',
-        icon: '🔡',
-        description: 'Structured spelling lists with activities and assessments',
-        component: SpellingProgram
-      },
-      {
-        id: 'reading-comprehension',
-        name: 'Reading Comprehension',
+        id: 'word-study',
+        title: 'Word Study & Vocabulary',
         icon: '🧠',
-        description: 'Text analysis and understanding activities',
-        component: ReadingComprehension
+        description: 'Teach spelling patterns, morphology, and academic language explicitly.',
+        activities: [
+          literacyActivities.spellingProgram,
+          literacyActivities.morphology,
+          literacyActivities.vocabularyBuilder,
+          literacyActivities.grammarWorkshop
+        ]
       },
       {
-        id: 'visual-writing-prompts',
-        name: 'Visual Writing Prompts',
-        icon: '🖼️',
-        description: 'Inspire creativity through visual storytelling prompts',
-        component: VisualWritingPrompts
-      },
-      {
-        id: 'vocabulary-builder',
-        name: 'Vocabulary Builder',
-        icon: '📖',
-        description: 'Word study and vocabulary development',
-        component: ComingSoon
-      },
-      {
-        id: 'grammar-workshop',
-        name: 'Grammar Workshop',
-        icon: '✏️',
-        description: 'Interactive grammar lessons and practice',
-        component: ComingSoon
-      },
-      {
-        id: 'poetry-corner',
-        name: 'Poetry Corner',
-        icon: '🎭',
-        description: 'Explore different forms of poetry writing',
-        component: ComingSoon
-      },
-      {
-        id: 'handwriting-practice',
-        name: 'Handwriting Practice',
-        icon: '✏️',
-        description: 'Letter formation and handwriting improvement',
-        component: ComingSoon
+        id: 'writing-expression',
+        title: 'Writing & Expression',
+        icon: '✍️',
+        description: 'Inspire ideas, oral language, and presentation through writing and performance tasks.',
+        activities: [
+          literacyActivities.visualWritingPrompts,
+          literacyActivities.poetryCorner,
+          literacyActivities.handwritingPractice
+        ]
       }
     ]
   },
@@ -517,6 +613,86 @@ const CurriculumCornerTab = ({
 
   // Render activities for selected subject
   if (activeSubject) {
+    const renderActivityCard = (activity) => {
+      const isComingSoon = activity.component === ComingSoon;
+
+      return (
+        <button
+          key={activity.id}
+          onClick={() => handleActivitySelect(activity)}
+          className={`relative bg-white rounded-xl shadow-sm p-6 text-left border border-slate-200 transition-all duration-300 ${
+            isComingSoon ? 'hover:border-slate-300 hover:shadow-sm' : 'hover:border-blue-300 hover:shadow-md hover:scale-[1.02]'
+          }`}
+        >
+          {/* New/Updated Badge */}
+          {activity.isNew && (
+            <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full animate-pulse">
+              NEW!
+            </div>
+          )}
+          {activity.isUpdated && (
+            <div className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+              UPDATED
+            </div>
+          )}
+
+          <div className="flex items-start gap-4 mb-4">
+            <div className="text-4xl">{activity.icon}</div>
+            <div className="flex-1">
+              <h3 className="text-xl font-bold text-slate-800">{activity.name}</h3>
+              <p className="text-slate-600 text-sm leading-relaxed">{activity.description}</p>
+              {activity.gradeBand && (
+                <p className="text-xs font-semibold text-slate-500 mt-2">
+                  🎯 {activity.gradeBand}
+                </p>
+              )}
+              {activity.hasYearLevels && (
+                <p className="text-blue-600 text-xs font-semibold mt-1">
+                  📚 Multiple year levels available
+                </p>
+              )}
+            </div>
+          </div>
+
+          {activity.focusAreas?.length > 0 && (
+            <div className="mt-4">
+              <div className="text-[11px] uppercase tracking-wide text-slate-400 font-semibold">
+                Focus Areas
+              </div>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {activity.focusAreas.map((focus) => (
+                  <span
+                    key={focus}
+                    className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-full"
+                  >
+                    {focus}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-between items-center mt-6">
+            <span
+              className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                isComingSoon ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'
+              }`}
+            >
+              {isComingSoon ? 'Coming Soon' : 'Available'}
+            </span>
+            <div className="flex items-center gap-2">
+              {activity.hasYearLevels && (
+                <span className="text-blue-500 text-xs">
+                  {activity.yearLevels?.length || 2} levels
+                </span>
+              )}
+              <span className="text-blue-500 font-semibold">Open →</span>
+            </div>
+          </div>
+        </button>
+      );
+    };
+
     return (
       <div className="space-y-6">
         {/* Subject Header */}
@@ -533,57 +709,35 @@ const CurriculumCornerTab = ({
         </div>
 
         {/* Activities Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {activeSubject.activities.map(activity => (
-            <button
-              key={activity.id}
-              onClick={() => handleActivitySelect(activity)}
-              className="bg-white rounded-xl shadow-sm p-6 text-left hover:shadow-md transition-all duration-300 hover:scale-105 border border-slate-200 hover:border-blue-300 relative"
-            >
-              {/* New/Updated Badge */}
-              {activity.isNew && (
-                <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full animate-pulse">
-                  NEW!
-                </div>
-              )}
-              {activity.isUpdated && (
-                <div className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                  UPDATED
-                </div>
-              )}
-              
-              <div className="flex items-center gap-4 mb-4">
-                <div className="text-4xl">{activity.icon}</div>
-                <div>
-                  <h3 className="text-xl font-bold text-slate-800">{activity.name}</h3>
-                  <p className="text-slate-600 text-sm">{activity.description}</p>
-                  {activity.hasYearLevels && (
-                    <p className="text-blue-600 text-xs font-semibold mt-1">
-                      📚 Multiple year levels available
-                    </p>
+        {activeSubject.activitySections ? (
+          <div className="space-y-8">
+            {activeSubject.activitySections.map((section) => (
+              <div key={section.id} className="bg-white rounded-xl shadow-sm p-6">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6 border-b border-slate-100 pb-4">
+                  <div className="flex items-start gap-3">
+                    <div className="text-3xl">{section.icon}</div>
+                    <div>
+                      <h3 className="text-xl font-bold text-slate-800">{section.title}</h3>
+                      <p className="text-sm text-slate-600 leading-relaxed">{section.description}</p>
+                    </div>
+                  </div>
+                  {section.quickTip && (
+                    <div className="bg-blue-50 border border-blue-100 text-blue-700 text-xs font-semibold px-4 py-2 rounded-lg self-start md:self-auto">
+                      💡 {section.quickTip}
+                    </div>
                   )}
                 </div>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                  activity.component === ComingSoon 
-                    ? 'bg-amber-100 text-amber-700' 
-                    : 'bg-green-100 text-green-700'
-                }`}>
-                  {activity.component === ComingSoon ? 'Coming Soon' : 'Available'}
-                </span>
-                <div className="flex items-center gap-2">
-                  {activity.hasYearLevels && (
-                    <span className="text-blue-500 text-xs">
-                      {activity.yearLevels?.length || 2} levels
-                    </span>
-                  )}
-                  <span className="text-blue-500 font-semibold">Open →</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {section.activities.map((activity) => renderActivityCard(activity))}
                 </div>
               </div>
-            </button>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {activeSubject.activities.map((activity) => renderActivityCard(activity))}
+          </div>
+        )}
       </div>
     );
   }
