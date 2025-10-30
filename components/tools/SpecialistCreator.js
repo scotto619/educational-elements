@@ -409,7 +409,6 @@ const SpecialistCreator = ({
     setIsExporting(true);
 
     try {
-      const classMap = new Map(classes.map(cls => [cls.id, cls]));
       const specialistMap = new Map(specialists.map(spec => [spec.id, spec]));
 
       const dayPeriodsMap = {};
@@ -419,131 +418,18 @@ const SpecialistCreator = ({
           .sort((a, b) => parseTime(a.start) - parseTime(b.start));
       });
 
-      const classRows = [];
-
-      const pushClassRow = (classObj, current) => {
-        if (!current) return;
-        classRows.push({
-          Class: classObj.name,
-          Day: current.day,
-          Start: current.start,
-          End: current.end,
-          Assignment: current.label,
-          Type: current.type
-        });
-      };
-
-      classes.forEach(classObj => {
-        DAYS.forEach(day => {
-          const dayPeriods = dayPeriodsMap[day] || [];
-          let current = null;
-
-          dayPeriods.forEach(period => {
-            const key = getTimetableKey(classObj.id, period.id);
-            const entry = timetable[key];
-
-            if (!entry) {
-              if (current) {
-                pushClassRow(classObj, current);
-                current = null;
-              }
-              return;
-            }
-
-            const isNct = entry.type === 'NCT' || entry.specialistId === 'NCT';
-            const assignmentId = isNct ? 'NCT' : `spec-${entry.specialistId}`;
-            const label = isNct
-              ? 'NCT'
-              : entry.specialistName || specialistMap.get(entry.specialistId)?.name || 'Specialist';
-            const type = isNct ? 'NCT' : 'Specialist';
-
-            if (!current || current.assignmentId !== assignmentId) {
-              if (current) {
-                pushClassRow(classObj, current);
-              }
-
-              current = {
-                assignmentId,
-                start: period.start,
-                end: period.end,
-                label,
-                type,
-                day
-              };
-            } else {
-              current.end = period.end;
-            }
-          });
-
-          if (current) {
-            pushClassRow(classObj, current);
+      const uniqueTimeSlots = [];
+      const seenSlots = new Set();
+      timePeriods
+        .slice()
+        .sort((a, b) => parseTime(a.start) - parseTime(b.start) || parseTime(a.end) - parseTime(b.end))
+        .forEach(period => {
+          const key = `${period.start}-${period.end}`;
+          if (!seenSlots.has(key)) {
+            seenSlots.add(key);
+            uniqueTimeSlots.push({ start: period.start, end: period.end });
           }
         });
-      });
-
-      const specialistRows = [];
-
-      const pushSpecialistRow = (spec, current) => {
-        if (!current) return;
-        specialistRows.push({
-          Specialist: spec.name || 'Specialist',
-          Day: current.day,
-          Start: current.start,
-          End: current.end,
-          Class: current.className
-        });
-      };
-
-      specialists.forEach(spec => {
-        const specId = spec.id;
-        if (specId === 'NCT' || specId === null || typeof specId === 'undefined') {
-          return;
-        }
-
-        DAYS.forEach(day => {
-          const dayPeriods = dayPeriodsMap[day] || [];
-          let current = null;
-
-          dayPeriods.forEach(period => {
-            let matchingClass = null;
-            for (const classObj of classes) {
-              const key = getTimetableKey(classObj.id, period.id);
-              const entry = timetable[key];
-              if (entry && entry.specialistId === specId) {
-                matchingClass = classObj;
-                break;
-              }
-            }
-
-            if (!matchingClass) {
-              if (current) {
-                pushSpecialistRow(spec, current);
-                current = null;
-              }
-              return;
-            }
-
-            if (!current || current.className !== matchingClass.name) {
-              if (current) {
-                pushSpecialistRow(spec, current);
-              }
-
-              current = {
-                className: matchingClass.name,
-                start: period.start,
-                end: period.end,
-                day
-              };
-            } else {
-              current.end = period.end;
-            }
-          });
-
-          if (current) {
-            pushSpecialistRow(spec, current);
-          }
-        });
-      });
 
       const escapeXml = (value) => {
         const stringValue = (value ?? '').toString();
@@ -555,20 +441,130 @@ const SpecialistCreator = ({
           .replace(/'/g, '&apos;');
       };
 
-      const buildWorksheet = (name, columns, rows) => {
-        const header = `<Row>${columns.map(col => `<Cell ss:StyleID="sHeader"><Data ss:Type="String">${escapeXml(col)}</Data></Cell>`).join('')}</Row>`;
-        const dataRows = rows.map(row => {
-          const cells = columns.map(col => `<Cell><Data ss:Type="String">${escapeXml(row[col])}</Data></Cell>`).join('');
-          return `<Row>${cells}</Row>`;
-        }).join('');
-        return `<Worksheet ss:Name="${escapeXml(name)}"><Table>${header}${dataRows}</Table></Worksheet>`;
+      const buildClassWorksheet = () => {
+        const rows = [];
+
+        classes.forEach(classObj => {
+          rows.push(`<Row><Cell ss:StyleID="sClassHeader" ss:MergeAcross="${DAYS.length}"><Data ss:Type="String">${escapeXml(classObj.name)}</Data></Cell></Row>`);
+
+          const headerCells = ['Time', ...DAYS]
+            .map(col => `<Cell ss:StyleID="sTableHeader"><Data ss:Type="String">${escapeXml(col)}</Data></Cell>`)
+            .join('');
+          rows.push(`<Row>${headerCells}</Row>`);
+
+          uniqueTimeSlots.forEach(slot => {
+            const timeLabel = `${slot.start} - ${slot.end}`;
+            const periodExists = DAYS.some(day => (dayPeriodsMap[day] || []).some(period => period.start === slot.start && period.end === slot.end));
+
+            if (!periodExists) {
+              return;
+            }
+
+            const cells = [`<Cell><Data ss:Type="String">${escapeXml(timeLabel)}</Data></Cell>`];
+
+            DAYS.forEach(day => {
+              const dayPeriods = dayPeriodsMap[day] || [];
+              const matchingPeriod = dayPeriods.find(period => period.start === slot.start && period.end === slot.end);
+
+              if (!matchingPeriod) {
+                cells.push('<Cell/>');
+                return;
+              }
+
+              const entry = timetable[getTimetableKey(classObj.id, matchingPeriod.id)];
+
+              if (!entry) {
+                cells.push('<Cell/>');
+                return;
+              }
+
+              const isNct = entry.type === 'NCT' || entry.specialistId === 'NCT';
+              const label = isNct
+                ? 'NCT'
+                : entry.specialistName || specialistMap.get(entry.specialistId)?.name || 'Specialist';
+
+              cells.push(`<Cell ss:StyleID="${isNct ? 'sNctCell' : 'sFilledCell'}"><Data ss:Type="String">${escapeXml(label)}</Data></Cell>`);
+            });
+
+            rows.push(`<Row>${cells.join('')}</Row>`);
+          });
+
+          rows.push('<Row/>');
+        });
+
+        return `<Worksheet ss:Name="Classes"><Table>${rows.join('')}</Table></Worksheet>`;
+      };
+
+      const buildSpecialistWorksheet = () => {
+        const rows = [];
+
+        specialists
+          .filter(spec => spec.id !== 'NCT' && spec.id !== null && typeof spec.id !== 'undefined')
+          .forEach(spec => {
+            rows.push(`<Row><Cell ss:StyleID="sClassHeader" ss:MergeAcross="${DAYS.length}"><Data ss:Type="String">${escapeXml(spec.name)}</Data></Cell></Row>`);
+
+            const headerCells = ['Time', ...DAYS]
+              .map(col => `<Cell ss:StyleID="sTableHeader"><Data ss:Type="String">${escapeXml(col)}</Data></Cell>`)
+              .join('');
+            rows.push(`<Row>${headerCells}</Row>`);
+
+            uniqueTimeSlots.forEach(slot => {
+              const timeLabel = `${slot.start} - ${slot.end}`;
+              const periodExists = DAYS.some(day => (dayPeriodsMap[day] || []).some(period => period.start === slot.start && period.end === slot.end));
+
+              if (!periodExists) {
+                return;
+              }
+
+              const cells = [`<Cell><Data ss:Type="String">${escapeXml(timeLabel)}</Data></Cell>`];
+
+              DAYS.forEach(day => {
+                const dayPeriods = dayPeriodsMap[day] || [];
+                const matchingPeriod = dayPeriods.find(period => period.start === slot.start && period.end === slot.end);
+
+                if (!matchingPeriod) {
+                  cells.push('<Cell/>');
+                  return;
+                }
+
+                let assignedClass = null;
+
+                for (const classObj of classes) {
+                  const entry = timetable[getTimetableKey(classObj.id, matchingPeriod.id)];
+                  if (entry && entry.specialistId === spec.id) {
+                    assignedClass = classObj;
+                    break;
+                  }
+                }
+
+                if (!assignedClass) {
+                  cells.push('<Cell/>');
+                  return;
+                }
+
+                cells.push(`<Cell ss:StyleID="sFilledCell"><Data ss:Type="String">${escapeXml(assignedClass.name)}</Data></Cell>`);
+              });
+
+              rows.push(`<Row>${cells.join('')}</Row>`);
+            });
+
+            rows.push('<Row/>');
+          });
+
+        return `<Worksheet ss:Name="Specialists"><Table>${rows.join('')}</Table></Worksheet>`;
       };
 
       const workbook = `<?xml version="1.0" encoding="UTF-8"?>\n` +
         `<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">` +
-        `<Styles><Style ss:ID="sHeader"><Font ss:Bold="1"/></Style></Styles>` +
-        `${buildWorksheet('Class Timetable', ['Class', 'Day', 'Start', 'End', 'Assignment', 'Type'], classRows)}` +
-        `${buildWorksheet('Specialist Timetable', ['Specialist', 'Day', 'Start', 'End', 'Class'], specialistRows)}` +
+        `<Styles>` +
+        `<Style ss:ID="Default" ss:Name="Normal"><Alignment ss:Vertical="Center"/><Font ss:FontName="Calibri" ss:Size="11"/></Style>` +
+        `<Style ss:ID="sClassHeader"><Font ss:Bold="1" ss:Size="12"/><Interior ss:Color="#e2e8f0" ss:Pattern="Solid"/></Style>` +
+        `<Style ss:ID="sTableHeader"><Font ss:Bold="1"/><Interior ss:Color="#cbd5f5" ss:Pattern="Solid"/></Style>` +
+        `<Style ss:ID="sFilledCell"><Interior ss:Color="#eef2ff" ss:Pattern="Solid"/></Style>` +
+        `<Style ss:ID="sNctCell"><Interior ss:Color="#fde68a" ss:Pattern="Solid"/></Style>` +
+        `</Styles>` +
+        `${buildClassWorksheet()}` +
+        `${buildSpecialistWorksheet()}` +
         `</Workbook>`;
 
       const blob = new Blob([workbook], { type: 'application/vnd.ms-excel' });
@@ -589,6 +585,7 @@ const SpecialistCreator = ({
       setIsExporting(false);
     }
   };
+
   
   // ===============================================
   // SPECIALIST MANAGEMENT
