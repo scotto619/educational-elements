@@ -38,3 +38,44 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/pages/building-your-application/deploying) for more details.
+
+
+## Working with Assistant Branches
+
+When the assistant provides updates, they usually live on a named branch in the remote repository. If you see an error like `not something we can merge` when running `git merge <branch-name>`, it means your local repository hasn't fetched that branch yet. Follow these steps to bring it in and merge it into your main line of development:
+
+1. Make sure you have an up-to-date view of the remote branches:
+
+   ```bash
+   git fetch origin
+   git branch -a
+   ```
+
+2. Fetch the specific branch into your local repository. Replace `<branch>` with the branch name provided by the assistant (for example, `codex/add-full-screen-feature-for-students-tab-swwf87`):
+
+   ```bash
+   git fetch origin <branch>:<branch>
+   ```
+
+3. Check out your main branch (or whichever branch you want to merge into) and ensure it's up to date:
+
+   ```bash
+   git checkout main
+   git pull origin main
+   ```
+
+4. Merge the assistant's branch into your current branch and push the result back to the remote:
+
+   ```bash
+   git merge <branch>
+   git push origin main
+   ```
+
+5. If you prefer not to keep the assistant branch around after merging, you can delete it locally and remotely:
+
+   ```bash
+   git branch -d <branch>
+   git push origin --delete <branch>
+   ```
+
+Following this sequence ensures that the branch containing the assistant's work is available locally, allowing `git merge` to succeed. Once merged, new chats or collaborators working from `main` will inherit the latest updates.
