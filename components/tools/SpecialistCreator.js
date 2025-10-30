@@ -38,7 +38,8 @@ const SpecialistCreator = ({
     { id: 2, yearLevel: 'Year 1', type: 'avoid', startTime: '08:30', endTime: '10:30', day: 'all' },
     { id: 3, yearLevel: 'Year 2', type: 'avoid', startTime: '08:30', endTime: '10:30', day: 'all' },
   ]);
-  
+  const [yearLevelGroups, setYearLevelGroups] = useState([]);
+
   // UI state
   const [currentView, setCurrentView] = useState('timetable'); // timetable, specialists, classes, settings
   const [timetableView, setTimetableView] = useState('by-class'); // by-class, by-specialist
@@ -46,18 +47,19 @@ const SpecialistCreator = ({
   const [selectedSpecialistId, setSelectedSpecialistId] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  
+
   // Modal states
   const [showSpecialistModal, setShowSpecialistModal] = useState(false);
   const [showClassModal, setShowClassModal] = useState(false);
   const [showBreakModal, setShowBreakModal] = useState(false);
   const [showConstraintModal, setShowConstraintModal] = useState(false);
   const [showPeriodModal, setShowPeriodModal] = useState(false);
+  const [showGroupModal, setShowGroupModal] = useState(false);
   const [editingCell, setEditingCell] = useState(null);
-  
+
   // Form states
-  const [newSpecialist, setNewSpecialist] = useState({ 
-    name: '', 
+  const [newSpecialist, setNewSpecialist] = useState({
+    name: '',
     duration: 30, 
     color: '#3b82f6', 
     icon: '📚',
@@ -65,14 +67,20 @@ const SpecialistCreator = ({
   });
   const [newClass, setNewClass] = useState('');
   const [newBreak, setNewBreak] = useState({ name: '', start: '', end: '' });
-  const [newConstraint, setNewConstraint] = useState({ 
-    yearLevel: 'Prep', 
-    type: 'avoid', 
-    startTime: '', 
-    endTime: '', 
-    day: 'all' 
+  const [newConstraint, setNewConstraint] = useState({
+    yearLevel: 'Prep',
+    type: 'avoid',
+    startTime: '',
+    endTime: '',
+    day: 'all'
   });
   const [newPeriod, setNewPeriod] = useState({ start: '', end: '', day: 'Monday' });
+  const [newGroup, setNewGroup] = useState({
+    name: '',
+    yearLevels: [],
+    sessions: 1,
+    enabled: true
+  });
   
   // Constants
   const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
@@ -101,22 +109,33 @@ const SpecialistCreator = ({
   // Load saved data from Firebase
   useEffect(() => {
     if (loadedData.specialistTimetableData) {
-      const { 
-        specialists: savedSpecialists, 
-        classes: savedClasses, 
-        timePeriods: savedPeriods, 
+      const {
+        specialists: savedSpecialists,
+        classes: savedClasses,
+        timePeriods: savedPeriods,
         timetable: savedTimetable,
         breaks: savedBreaks,
-        constraints: savedConstraints 
+        constraints: savedConstraints,
+        yearLevelGroups: savedGroups
       } = loadedData.specialistTimetableData;
-      
+
       if (savedSpecialists) setSpecialists(savedSpecialists);
       if (savedClasses) setClasses(savedClasses);
       if (savedPeriods) setTimePeriods(savedPeriods);
       if (savedTimetable) setTimetable(savedTimetable);
       if (savedBreaks) setBreaks(savedBreaks);
       if (savedConstraints) setConstraints(savedConstraints);
-      
+      if (savedGroups) {
+        const normalisedGroups = savedGroups.map(group => ({
+          id: group.id ?? Number(`${Date.now()}${Math.floor(Math.random() * 1000)}`),
+          name: group.name || '',
+          yearLevels: Array.isArray(group.yearLevels) ? group.yearLevels : [],
+          sessions: Math.max(1, parseInt(group.sessions, 10) || 1),
+          enabled: group.enabled !== false
+        }));
+        setYearLevelGroups(normalisedGroups);
+      }
+
       console.log('📖 Loaded Specialist Timetable data from Firebase');
     }
   }, [loadedData]);
@@ -190,8 +209,8 @@ const SpecialistCreator = ({
   }
   
   function checkConstraints(classObj, period) {
-    const relevantConstraints = constraints.filter(c => 
-      c.yearLevel === classObj.yearLevel && 
+    const relevantConstraints = constraints.filter(c =>
+      c.yearLevel === classObj.yearLevel &&
       (c.day === 'all' || c.day === period.day)
     );
     
@@ -205,8 +224,28 @@ const SpecialistCreator = ({
         return constraint.type; // 'avoid' or 'minimize'
       }
     }
-    
+
     return null;
+  }
+
+  function shuffleArray(array) {
+    const arr = [...array];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function isSpecialistAvailableForClass(specialist, classObj) {
+    if (!specialist) return false;
+    if (!classObj) return false;
+    if (!specialist.yearLevels || specialist.yearLevels.length === 0) return true;
+    return specialist.yearLevels.includes(classObj.yearLevel);
+  }
+
+  function periodsAreSequential(periodA, periodB) {
+    return parseTime(periodA.end) === parseTime(periodB.start);
   }
   
   // ===============================================
@@ -223,6 +262,7 @@ const SpecialistCreator = ({
         timetable,
         breaks,
         constraints,
+        yearLevelGroups,
         lastUpdated: new Date().toISOString()
       };
       
@@ -315,9 +355,9 @@ const SpecialistCreator = ({
     if (!confirm('Are you sure you want to delete this class? This will remove all their timetable entries.')) {
       return;
     }
-    
+
     setClasses(classes.filter(c => c.id !== id));
-    
+
     // Remove all timetable entries for this class
     const newTimetable = { ...timetable };
     Object.keys(newTimetable).forEach(key => {
@@ -386,7 +426,83 @@ const SpecialistCreator = ({
     setHasUnsavedChanges(true);
     showToast('Constraint removed! Click "Save Timetable" to save.', 'info');
   };
-  
+
+  // ===============================================
+  // YEAR LEVEL GROUP MANAGEMENT
+  // ===============================================
+
+  const addYearLevelGroup = () => {
+    if (!newGroup.name.trim()) {
+      showToast('Please give the group a name!', 'error');
+      return;
+    }
+
+    if (newGroup.yearLevels.length === 0) {
+      showToast('Select at least one year level for the group.', 'error');
+      return;
+    }
+
+    const group = {
+      id: Date.now(),
+      name: newGroup.name.trim(),
+      yearLevels: [...newGroup.yearLevels],
+      sessions: Math.max(1, parseInt(newGroup.sessions, 10) || 1),
+      enabled: newGroup.enabled
+    };
+
+    setYearLevelGroups([...yearLevelGroups, group]);
+    setHasUnsavedChanges(true);
+    setNewGroup({ name: '', yearLevels: [], sessions: 1, enabled: true });
+    setShowGroupModal(false);
+    showToast('Year level group added! Click "Save Timetable" to save.', 'info');
+  };
+
+  const deleteYearLevelGroup = (id) => {
+    if (!confirm('Delete this grouping? This will not remove any timetable entries.')) {
+      return;
+    }
+
+    setYearLevelGroups(yearLevelGroups.filter(group => group.id !== id));
+    setHasUnsavedChanges(true);
+    showToast('Year level group removed. Save to keep changes.', 'info');
+  };
+
+  const toggleGroupEnabled = (id) => {
+    setYearLevelGroups(prev =>
+      prev.map(group =>
+        group.id === id
+          ? { ...group, enabled: !group.enabled }
+          : group
+      )
+    );
+    setHasUnsavedChanges(true);
+  };
+
+  const updateGroupSessions = (id, value) => {
+    const sessions = Math.max(1, parseInt(value, 10) || 1);
+    setYearLevelGroups(prev => prev.map(group => group.id === id ? { ...group, sessions } : group));
+    setHasUnsavedChanges(true);
+  };
+
+  const toggleGroupYearLevel = (groupId, yearLevel) => {
+    setYearLevelGroups(prev => prev.map(group => {
+      if (group.id !== groupId) return group;
+
+      const includes = group.yearLevels.includes(yearLevel);
+      const yearLevels = includes
+        ? group.yearLevels.filter(level => level !== yearLevel)
+        : [...group.yearLevels, yearLevel];
+
+      return { ...group, yearLevels };
+    }));
+    setHasUnsavedChanges(true);
+  };
+
+  const updateGroupName = (id, name) => {
+    setYearLevelGroups(prev => prev.map(group => group.id === id ? { ...group, name } : group));
+    setHasUnsavedChanges(true);
+  };
+
   // ===============================================
   // TIMETABLE CELL MANAGEMENT
   // ===============================================
@@ -478,90 +594,253 @@ const SpecialistCreator = ({
     if (!confirm('This will clear the current timetable and create a new schedule. Continue?')) {
       return;
     }
-    
+
     showToast('Generating timetable... This may take a moment.', 'info');
-    
+
     const newTimetable = {};
-    const usedSlots = {}; // Track which specialist is teaching at which time
-    
-    // For each class, try to schedule all specialists
-    classes.forEach(classObj => {
-      specialists.forEach(specialist => {
-        // Check if this specialist is relevant for this year level
-        if (specialist.yearLevels.length > 0 && !specialist.yearLevels.includes(classObj.yearLevel)) {
-          return;
-        }
-        
-        // Try to find a suitable time slot
-        let scheduled = false;
-        
-        for (let dayIndex = 0; dayIndex < DAYS.length && !scheduled; dayIndex++) {
-          const day = DAYS[dayIndex];
-          const dayPeriods = timePeriods.filter(p => p.day === day);
-          
-          for (let i = 0; i < dayPeriods.length && !scheduled; i++) {
-            const period = dayPeriods[i];
-            
-            // Skip breaks
-            if (isBreakTime(period)) continue;
-            
-            // Check constraints
-            const constraint = checkConstraints(classObj, period);
-            if (constraint === 'avoid') continue;
-            
-            // Check if specialist is available
-            const slotKey = `${day}-${period.start}`;
-            if (usedSlots[slotKey] && usedSlots[slotKey] === specialist.id) {
-              continue; // Specialist already teaching at this time
-            }
-            
-            // Check if we have enough consecutive slots
-            const periodDuration = 30;
-            const slotsNeeded = Math.ceil(specialist.duration / periodDuration);
-            const consecutivePeriods = dayPeriods.slice(i, i + slotsNeeded);
-            
-            if (consecutivePeriods.length < slotsNeeded) continue;
-            
-            // Check if all consecutive slots are free
-            let allFree = true;
-            for (const p of consecutivePeriods) {
-              const k = getTimetableKey(classObj.id, p.id);
-              const sk = `${day}-${p.start}`;
-              if (newTimetable[k] || (usedSlots[sk] && usedSlots[sk] === specialist.id)) {
-                allFree = false;
-                break;
-              }
-            }
-            
-            if (!allFree) continue;
-            
-            // Schedule it!
-            consecutivePeriods.forEach((p, index) => {
-              const k = getTimetableKey(classObj.id, p.id);
-              const sk = `${day}-${p.start}`;
-              
-              newTimetable[k] = {
-                specialistId: specialist.id,
-                specialistName: specialist.name,
-                color: specialist.color,
-                icon: specialist.icon,
-                duration: specialist.duration,
-                isFirst: index === 0
-              };
-              
-              usedSlots[sk] = specialist.id;
-            });
-            
-            scheduled = true;
-          }
-        }
-        
-        if (!scheduled) {
-          console.warn(`Could not schedule ${specialist.name} for ${classObj.name}`);
+    const classOccupied = new Map();
+    const specialistOccupied = new Map();
+    const scheduledPairs = new Set();
+
+    const basePeriodDuration = 30; // minutes
+
+    const dayPeriodsMap = {};
+    DAYS.forEach(day => {
+      dayPeriodsMap[day] = timePeriods
+        .filter(p => p.day === day)
+        .sort((a, b) => parseTime(a.start) - parseTime(b.start));
+    });
+
+    const getConsecutivePeriods = (day, startIndex, slotsNeeded) => {
+      const dayPeriods = dayPeriodsMap[day] || [];
+      const slice = dayPeriods.slice(startIndex, startIndex + slotsNeeded);
+      if (slice.length < slotsNeeded) return null;
+
+      for (let i = 0; i < slice.length; i++) {
+        const period = slice[i];
+        if (isBreakTime(period)) return null;
+        if (i > 0 && !periodsAreSequential(slice[i - 1], period)) return null;
+      }
+
+      return slice;
+    };
+
+    const isPeriodFreeForClass = (classId, periodId) => {
+      const occupied = classOccupied.get(classId);
+      return !occupied || !occupied.has(periodId);
+    };
+
+    const isPeriodFreeForSpecialist = (specialistId, periodId) => {
+      const occupied = specialistOccupied.get(specialistId);
+      return !occupied || !occupied.has(periodId);
+    };
+
+    const occupyBlock = (classObj, specialist, periods) => {
+      periods.forEach((period, index) => {
+        const key = getTimetableKey(classObj.id, period.id);
+        newTimetable[key] = {
+          specialistId: specialist.id,
+          specialistName: specialist.name,
+          color: specialist.color,
+          icon: specialist.icon,
+          duration: specialist.duration,
+          isFirst: index === 0
+        };
+
+        const classSet = classOccupied.get(classObj.id) || new Set();
+        classSet.add(period.id);
+        classOccupied.set(classObj.id, classSet);
+
+        const specSet = specialistOccupied.get(specialist.id) || new Set();
+        specSet.add(period.id);
+        specialistOccupied.set(specialist.id, specSet);
+      });
+    };
+
+    const allStartSlots = [];
+    DAYS.forEach(day => {
+      const dayPeriods = dayPeriodsMap[day];
+      dayPeriods.forEach((period, index) => {
+        if (!isBreakTime(period)) {
+          allStartSlots.push({ day, index });
         }
       });
     });
-    
+
+    const shuffledStartSlots = () => shuffleArray(allStartSlots);
+
+    const schedulePair = (classObj, specialist) => {
+      const slotsNeeded = Math.ceil(specialist.duration / basePeriodDuration);
+      let fallback = null;
+
+      for (const slot of shuffledStartSlots()) {
+        const periods = getConsecutivePeriods(slot.day, slot.index, slotsNeeded);
+        if (!periods) continue;
+
+        let conflict = false;
+        let hasMinimize = false;
+
+        for (const period of periods) {
+          if (!isPeriodFreeForClass(classObj.id, period.id) || !isPeriodFreeForSpecialist(specialist.id, period.id)) {
+            conflict = true;
+            break;
+          }
+
+          const constraint = checkConstraints(classObj, period);
+          if (constraint === 'avoid') {
+            conflict = true;
+            break;
+          }
+          if (constraint === 'minimize') {
+            hasMinimize = true;
+          }
+        }
+
+        if (conflict) continue;
+
+        if (!hasMinimize) {
+          occupyBlock(classObj, specialist, periods);
+          scheduledPairs.add(`${classObj.id}-${specialist.id}`);
+          return true;
+        }
+
+        if (!fallback) {
+          fallback = periods;
+        }
+      }
+
+      if (fallback) {
+        occupyBlock(classObj, specialist, fallback);
+        scheduledPairs.add(`${classObj.id}-${specialist.id}`);
+        return true;
+      }
+
+      return false;
+    };
+
+    const activeGroups = yearLevelGroups.filter(group => group.enabled && group.yearLevels.length > 0);
+
+    activeGroups.forEach(group => {
+      let sessionsToCreate = Math.max(1, parseInt(group.sessions, 10) || 1);
+      const groupedClasses = shuffleArray(
+        classes.filter(cls => group.yearLevels.includes(cls.yearLevel))
+      );
+
+      if (groupedClasses.length === 0) {
+        return;
+      }
+
+      while (sessionsToCreate > 0) {
+        const candidates = shuffleArray(
+          groupedClasses.filter(classObj =>
+            specialists.some(spec =>
+              isSpecialistAvailableForClass(spec, classObj) &&
+              !scheduledPairs.has(`${classObj.id}-${spec.id}`)
+            )
+          )
+        );
+
+        if (candidates.length === 0) {
+          break;
+        }
+
+        let scheduledBlock = false;
+
+        for (const slot of shuffledStartSlots()) {
+          const assignments = [];
+          const usedSpecialists = new Set();
+          let valid = true;
+
+          for (const classObj of candidates) {
+            const specialistOptions = shuffleArray(
+              specialists.filter(spec =>
+                isSpecialistAvailableForClass(spec, classObj) &&
+                !scheduledPairs.has(`${classObj.id}-${spec.id}`) &&
+                !usedSpecialists.has(spec.id)
+              )
+            );
+
+            let chosen = null;
+            let chosenMinimizeCount = 0;
+
+            for (const spec of specialistOptions) {
+              const slotsNeeded = Math.ceil(spec.duration / basePeriodDuration);
+              const periods = getConsecutivePeriods(slot.day, slot.index, slotsNeeded);
+              if (!periods) continue;
+
+              let conflict = false;
+              let minimizeCount = 0;
+
+              for (const period of periods) {
+                if (!isPeriodFreeForClass(classObj.id, period.id) || !isPeriodFreeForSpecialist(spec.id, period.id)) {
+                  conflict = true;
+                  break;
+                }
+
+                const constraint = checkConstraints(classObj, period);
+                if (constraint === 'avoid') {
+                  conflict = true;
+                  break;
+                }
+                if (constraint === 'minimize') {
+                  minimizeCount += 1;
+                }
+              }
+
+              if (!conflict) {
+                chosen = { specialist: spec, periods };
+                chosenMinimizeCount = minimizeCount;
+                break;
+              }
+            }
+
+            if (!chosen) {
+              valid = false;
+              break;
+            }
+
+            usedSpecialists.add(chosen.specialist.id);
+            assignments.push({ classObj, specialist: chosen.specialist, periods: chosen.periods, minimizeCount: chosenMinimizeCount });
+          }
+
+          if (valid) {
+            assignments
+              .sort((a, b) => a.minimizeCount - b.minimizeCount)
+              .forEach(({ classObj, specialist, periods }) => {
+                occupyBlock(classObj, specialist, periods);
+                scheduledPairs.add(`${classObj.id}-${specialist.id}`);
+              });
+
+            scheduledBlock = true;
+            break;
+          }
+        }
+
+        if (!scheduledBlock) {
+          break;
+        }
+
+        sessionsToCreate -= 1;
+      }
+    });
+
+    const remainingTasks = [];
+    classes.forEach(classObj => {
+      specialists.forEach(specialist => {
+        if (!isSpecialistAvailableForClass(specialist, classObj)) return;
+        const key = `${classObj.id}-${specialist.id}`;
+        if (scheduledPairs.has(key)) return;
+        remainingTasks.push({ classObj, specialist });
+      });
+    });
+
+    shuffleArray(remainingTasks).forEach(({ classObj, specialist }) => {
+      const success = schedulePair(classObj, specialist);
+      if (!success) {
+        console.warn(`Could not schedule ${specialist.name} for ${classObj.name}`);
+      }
+    });
+
     setTimetable(newTimetable);
     setHasUnsavedChanges(true);
     showToast('Auto-schedule complete! Review and click "Save Timetable" to save.', 'success');
@@ -574,7 +853,7 @@ const SpecialistCreator = ({
   const renderTimetableGrid = () => {
     if (timetableView === 'by-class' && !selectedClassId) return null;
     if (timetableView === 'by-specialist' && !selectedSpecialistId) return null;
-    
+
     // Group periods by day
     const periodsByDay = {};
     DAYS.forEach(day => {
@@ -584,11 +863,22 @@ const SpecialistCreator = ({
           index === self.findIndex(p => p.start === period.start && p.end === period.end)
         );
     });
-    
+
+    const getAssignmentForSpecialist = (periodId, specialistId) => {
+      for (const classObj of classes) {
+        const key = getTimetableKey(classObj.id, periodId);
+        const entry = timetable[key];
+        if (entry && entry.specialistId === specialistId && entry.isFirst) {
+          return { classObj, entry };
+        }
+      }
+      return null;
+    };
+
     if (timetableView === 'by-class') {
       const selectedClass = classes.find(c => c.id === selectedClassId);
       if (!selectedClass) return null;
-      
+
       return (
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
           <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
@@ -711,7 +1001,103 @@ const SpecialistCreator = ({
         </div>
       );
     }
-    
+
+    if (timetableView === 'all-specialists') {
+      return (
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
+            <h2 className="text-2xl font-bold text-white flex items-center">
+              <span className="text-3xl mr-3">🧑‍🏫</span>
+              All Specialists - Weekly Overview
+            </h2>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr>
+                  <th className="p-3 bg-indigo-100 text-indigo-900 font-bold border border-indigo-200">Day</th>
+                  <th className="p-3 bg-indigo-100 text-indigo-900 font-bold border border-indigo-200">Time</th>
+                  {specialists.map(spec => (
+                    <th
+                      key={spec.id}
+                      className="p-3 bg-indigo-100 text-indigo-900 font-bold border border-indigo-200 min-w-[160px]"
+                    >
+                      <div className="flex items-center justify-center gap-2">
+                        <span className="text-lg">{spec.icon}</span>
+                        <span>{spec.name}</span>
+                      </div>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {DAYS.map(day => (
+                  periodsByDay[day].map(period => {
+                    const isBreak = isBreakTime(period);
+
+                    if (isBreak) {
+                      const breakInfo = breaks.find(b => period.start >= b.start && period.start < b.end);
+                      return (
+                        <tr key={`${day}-${period.start}-${period.end}`} className="bg-gray-100">
+                          <td className="p-2 border border-gray-300 font-semibold text-gray-600">{day}</td>
+                          <td className="p-2 border border-gray-300 text-gray-600">
+                            {period.start} - {period.end}
+                          </td>
+                          <td
+                            colSpan={Math.max(1, specialists.length)}
+                            className="p-2 border border-gray-300 text-center text-sm text-gray-600"
+                          >
+                            ☕ {breakInfo?.name || 'Break'}
+                          </td>
+                        </tr>
+                      );
+                    }
+
+                    return (
+                      <tr key={`${day}-${period.id}`}>
+                        <td className="p-2 border border-gray-300 font-semibold text-gray-700 bg-gray-50">{day}</td>
+                        <td className="p-2 border border-gray-300 text-sm bg-gray-50">
+                          {period.start} - {period.end}
+                        </td>
+                        {specialists.map(spec => {
+                          const assignment = getAssignmentForSpecialist(period.id, spec.id);
+
+                          if (!assignment) {
+                            return (
+                              <td key={spec.id} className="p-2 border border-gray-200 text-center text-xs text-gray-400">—</td>
+                            );
+                          }
+
+                          const { classObj, entry } = assignment;
+
+                          return (
+                            <td
+                              key={spec.id}
+                              onClick={() => handleCellClick(classObj.id, period.id)}
+                              className="p-2 border border-gray-200 cursor-pointer hover:bg-indigo-50 transition"
+                            >
+                              <div
+                                className="px-2 py-2 rounded-lg text-white text-sm shadow-md"
+                                style={{ backgroundColor: entry.color }}
+                              >
+                                <div className="font-semibold">{classObj.name}</div>
+                                <div className="text-xs opacity-90">{entry.duration}min</div>
+                              </div>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      );
+    }
+
     if (timetableView === 'by-specialist') {
       const selectedSpecialist = specialists.find(s => s.id === selectedSpecialistId);
       if (!selectedSpecialist) return null;
@@ -884,8 +1270,9 @@ const SpecialistCreator = ({
                   >
                     <option value="by-class">By Class</option>
                     <option value="by-specialist">By Specialist</option>
+                    <option value="all-specialists">All Specialists</option>
                   </select>
-                  
+
                   {timetableView === 'by-class' && (
                     <>
                       <label className="font-semibold text-gray-700">Select Class:</label>
@@ -1114,6 +1501,109 @@ const SpecialistCreator = ({
                 ))}
               </div>
             </div>
+
+            {/* Year Level Groupings */}
+            <div className="bg-white rounded-xl p-6 shadow-md">
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-800">Year Level Groupings</h2>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Group year levels to align their specialist times and create shared planning windows.
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setNewGroup({ name: '', yearLevels: [], sessions: 1, enabled: true });
+                    setShowGroupModal(true);
+                  }}
+                  className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-lg hover:shadow-lg transition-all"
+                >
+                  + Add Group
+                </button>
+              </div>
+
+              {yearLevelGroups.length === 0 ? (
+                <div className="mt-4 p-4 bg-indigo-50 border border-indigo-100 rounded-lg text-indigo-800 text-sm">
+                  No year level groupings yet. Add a group to keep teams free at the same time.
+                </div>
+              ) : (
+                <div className="mt-6 space-y-4">
+                  {yearLevelGroups.map(group => (
+                    <div key={group.id} className="border-2 border-indigo-100 rounded-xl p-4 bg-gradient-to-br from-white to-indigo-50">
+                      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                        <div className="flex-1">
+                          <label className="block text-sm font-semibold text-gray-700 mb-1">Group Name</label>
+                          <input
+                            type="text"
+                            value={group.name}
+                            onChange={(e) => updateGroupName(group.id, e.target.value)}
+                            className="w-full px-3 py-2 border-2 border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                          />
+                        </div>
+
+                        <div className="flex items-center gap-4">
+                          <label className="flex flex-col text-sm font-semibold text-gray-700">
+                            Shared Sessions
+                            <input
+                              type="number"
+                              min={1}
+                              value={group.sessions}
+                              onChange={(e) => updateGroupSessions(group.id, e.target.value)}
+                              className="mt-1 w-24 px-3 py-2 border-2 border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-center"
+                            />
+                          </label>
+
+                          <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                            <input
+                              type="checkbox"
+                              checked={group.enabled}
+                              onChange={() => toggleGroupEnabled(group.id)}
+                              className="w-5 h-5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                            />
+                            Active
+                          </label>
+
+                          <button
+                            onClick={() => deleteYearLevelGroup(group.id)}
+                            className="px-3 py-2 bg-red-100 text-red-600 font-semibold rounded-lg hover:bg-red-200 transition"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="mt-4">
+                        <p className="text-sm font-semibold text-gray-700 mb-2">Year Levels</p>
+                        <div className="flex flex-wrap gap-2">
+                          {YEAR_LEVELS.map(year => {
+                            const isActive = group.yearLevels.includes(year);
+                            return (
+                              <button
+                                key={year}
+                                onClick={() => toggleGroupYearLevel(group.id, year)}
+                                className={`px-3 py-1 rounded-full border-2 text-sm font-medium transition ${
+                                  isActive
+                                    ? 'bg-indigo-600 border-indigo-600 text-white shadow'
+                                    : 'bg-white border-indigo-200 text-indigo-600 hover:bg-indigo-50'
+                                }`}
+                              >
+                                {year}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {!group.yearLevels.length && (
+                          <p className="mt-3 text-xs text-red-500 font-semibold">
+                            Add at least one year level to this group so it can be used when auto scheduling.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -1235,7 +1725,109 @@ const SpecialistCreator = ({
           </div>
         </div>
       )}
-      
+
+      {/* Add Group Modal */}
+      {showGroupModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 max-w-lg w-full shadow-2xl">
+            <h3 className="text-2xl font-bold mb-6 text-gray-800">Create Year Level Group</h3>
+
+            <div className="space-y-5">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Group Name</label>
+                <input
+                  type="text"
+                  value={newGroup.name}
+                  onChange={(e) => setNewGroup({ ...newGroup, name: e.target.value })}
+                  className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  placeholder="e.g., Senior Team Planning"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <label className="flex flex-col text-sm font-semibold text-gray-700">
+                  Shared Sessions
+                  <input
+                    type="number"
+                    min={1}
+                    value={newGroup.sessions}
+                    onChange={(e) => setNewGroup({ ...newGroup, sessions: Math.max(1, parseInt(e.target.value, 10) || 1) })}
+                    className="mt-1 px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  />
+                </label>
+
+                <label className="flex items-center gap-3 text-sm font-semibold text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={newGroup.enabled}
+                    onChange={() => setNewGroup({ ...newGroup, enabled: !newGroup.enabled })}
+                    className="w-5 h-5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                  />
+                  Active for auto scheduling
+                </label>
+              </div>
+
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-2">Year Levels</p>
+                <div className="flex flex-wrap gap-2">
+                  {YEAR_LEVELS.map(year => {
+                    const active = newGroup.yearLevels.includes(year);
+                    return (
+                      <button
+                        key={year}
+                        onClick={() => {
+                          if (active) {
+                            setNewGroup({
+                              ...newGroup,
+                              yearLevels: newGroup.yearLevels.filter(level => level !== year)
+                            });
+                          } else {
+                            setNewGroup({
+                              ...newGroup,
+                              yearLevels: [...newGroup.yearLevels, year]
+                            });
+                          }
+                        }}
+                        className={`px-3 py-1 rounded-full border-2 text-sm font-medium transition ${
+                          active
+                            ? 'bg-indigo-600 border-indigo-600 text-white shadow'
+                            : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        {year}
+                      </button>
+                    );
+                  })}
+                </div>
+                {newGroup.yearLevels.length === 0 && (
+                  <p className="mt-3 text-xs text-red-500 font-semibold">
+                    Select at least one year level for this group.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={addYearLevelGroup}
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-lg hover:shadow-lg transition-all"
+              >
+                Add Group
+              </button>
+              <button
+                onClick={() => {
+                  setShowGroupModal(false);
+                  setNewGroup({ name: '', yearLevels: [], sessions: 1, enabled: true });
+                }}
+                className="px-4 py-3 bg-gray-300 text-gray-800 font-bold rounded-lg hover:bg-gray-400 transition-all"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Add Class Modal */}
       {showClassModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">

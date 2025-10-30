@@ -1,12 +1,13 @@
 // components/widgets/FloatingNamePicker.js - Persistent floating name picker widget
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import useDraggableWidget from '../../hooks/useDraggableWidget';
 
-const FloatingNamePicker = ({ 
-  students = [], 
-  showToast, 
-  playSound, 
-  getAvatarImage, 
-  calculateAvatarLevel 
+const FloatingNamePicker = ({
+  students = [],
+  showToast,
+  playSound,
+  getAvatarImage,
+  calculateAvatarLevel,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -17,7 +18,14 @@ const FloatingNamePicker = ({
   const [groupSize, setGroupSize] = useState(2);
   const [generatedGroups, setGeneratedGroups] = useState([]);
 
-  const availableStudents = students.filter(s => !excludedStudents.has(s.id));
+  const {
+    containerRef,
+    position,
+    pointerHandlers,
+    handleClickCapture,
+  } = useDraggableWidget(isExpanded);
+
+  const availableStudents = students.filter((s) => !excludedStudents.has(s.id));
 
   const pickRandomStudent = () => {
     if (availableStudents.length === 0) {
@@ -26,19 +34,17 @@ const FloatingNamePicker = ({
 
     setIsSpinning(true);
     setSelectedStudent(null);
-    
-    // Spinning animation with random names
+
     let spinCount = 0;
     const maxSpins = 20;
-    
+
     const spinInterval = setInterval(() => {
       const randomStudent = availableStudents[Math.floor(Math.random() * availableStudents.length)];
       setSpinText(randomStudent.firstName);
-      spinCount++;
-      
+      spinCount += 1;
+
       if (spinCount >= maxSpins) {
         clearInterval(spinInterval);
-        // Final selection
         const finalStudent = availableStudents[Math.floor(Math.random() * availableStudents.length)];
         setSelectedStudent(finalStudent);
         setSpinText(finalStudent.firstName);
@@ -53,14 +59,13 @@ const FloatingNamePicker = ({
       return;
     }
 
-    // Shuffle students
     const shuffled = [...availableStudents].sort(() => Math.random() - 0.5);
     const groups = [];
-    
+
     for (let i = 0; i < shuffled.length; i += groupSize) {
       groups.push(shuffled.slice(i, i + groupSize));
     }
-    
+
     setGeneratedGroups(groups);
     playSound('success');
   };
@@ -86,16 +91,23 @@ const FloatingNamePicker = ({
   };
 
   return (
-    <>
-      {/* Floating Button */}
-      <div 
-        className={`fixed bottom-6 right-24 z-40 transition-all duration-300 ${
+    <div
+      ref={containerRef}
+      className="fixed z-50"
+      style={{ top: position.y, left: position.x }}
+      {...pointerHandlers}
+    >
+      <div
+        data-drag-handle="true"
+        onClickCapture={handleClickCapture}
+        style={{ touchAction: 'none' }}
+        className={`transition-all duration-300 ${
           isExpanded ? 'opacity-0 pointer-events-none' : 'opacity-100'
         }`}
       >
         <button
           onClick={() => setIsExpanded(true)}
-          className="w-14 h-14 bg-purple-500 hover:bg-purple-600 rounded-full shadow-lg transition-all duration-200 flex items-center justify-center text-white font-bold"
+          className="w-14 h-14 bg-purple-500 hover:bg-purple-600 rounded-full shadow-lg transition-all duration-200 flex items-center justify-center text-white font-bold cursor-pointer select-none"
           title="Name Picker"
         >
           <div className="text-center">
@@ -105,11 +117,14 @@ const FloatingNamePicker = ({
         </button>
       </div>
 
-      {/* Expanded Name Picker Panel */}
       {isExpanded && (
-        <div className="fixed bottom-6 right-24 z-50 bg-white rounded-2xl shadow-2xl border-2 border-gray-200 w-80 max-h-[calc(100vh-3rem)] overflow-y-auto">
-          {/* Header */}
-          <div className="bg-gradient-to-r from-purple-500 to-pink-600 text-white p-4 flex justify-between items-center">
+        <div className="bg-white rounded-2xl shadow-2xl border-2 border-gray-200 w-80 max-h-[calc(100vh-3rem)] overflow-y-auto">
+          <div
+            className="bg-gradient-to-r from-purple-500 to-pink-600 text-white p-4 flex items-center justify-between cursor-grab active:cursor-grabbing select-none"
+            data-drag-handle="true"
+            onClickCapture={handleClickCapture}
+            style={{ touchAction: 'none' }}
+          >
             <div className="flex items-center space-x-2">
               <span className="text-xl">🎯</span>
               <h3 className="font-bold">Name Picker</h3>
@@ -122,24 +137,29 @@ const FloatingNamePicker = ({
             </button>
           </div>
 
-          {/* Mode Toggle */}
           <div className="p-4 border-b bg-gray-50">
             <div className="flex rounded-lg overflow-hidden border">
               <button
-                onClick={() => {setPickerMode('single'); clearSelection();}}
+                onClick={() => {
+                  setPickerMode('single');
+                  clearSelection();
+                }}
                 className={`flex-1 py-2 px-3 text-sm font-semibold transition-colors ${
-                  pickerMode === 'single' 
-                    ? 'bg-purple-500 text-white' 
+                  pickerMode === 'single'
+                    ? 'bg-purple-500 text-white'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
                 👤 Single
               </button>
               <button
-                onClick={() => {setPickerMode('multiple'); clearSelection();}}
+                onClick={() => {
+                  setPickerMode('multiple');
+                  clearSelection();
+                }}
                 className={`flex-1 py-2 px-3 text-sm font-semibold transition-colors ${
-                  pickerMode === 'multiple' 
-                    ? 'bg-purple-500 text-white' 
+                  pickerMode === 'multiple'
+                    ? 'bg-purple-500 text-white'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
@@ -148,10 +168,8 @@ const FloatingNamePicker = ({
             </div>
           </div>
 
-          {/* Single Student Mode */}
           {pickerMode === 'single' && (
             <div className="p-4">
-              {/* Selection Display */}
               <div className="text-center mb-4 p-4 bg-gray-50 rounded-lg min-h-[80px] flex items-center justify-center">
                 {isSpinning ? (
                   <div className="animate-pulse">
@@ -160,7 +178,7 @@ const FloatingNamePicker = ({
                   </div>
                 ) : selectedStudent ? (
                   <div className="text-center">
-                    <img 
+                    <img
                       src={getAvatarImage(selectedStudent.avatarBase, calculateAvatarLevel(selectedStudent.totalPoints))}
                       className="w-12 h-12 rounded-full border-2 border-purple-400 mx-auto mb-2"
                       alt={selectedStudent.firstName}
@@ -184,7 +202,7 @@ const FloatingNamePicker = ({
                 >
                   {isSpinning ? '🎲 Picking...' : '🎯 Pick Student'}
                 </button>
-                
+
                 {selectedStudent && (
                   <button
                     onClick={clearSelection}
@@ -201,20 +219,18 @@ const FloatingNamePicker = ({
             </div>
           )}
 
-          {/* Group Mode */}
           {pickerMode === 'multiple' && (
             <div className="p-4">
-              {/* Group Size Setting */}
               <div className="mb-4">
                 <label className="block text-sm font-semibold text-gray-600 mb-2">Group Size</label>
                 <div className="flex space-x-2">
-                  {[2, 3, 4, 5].map(size => (
+                  {[2, 3, 4, 5].map((size) => (
                     <button
                       key={size}
                       onClick={() => setGroupSize(size)}
                       className={`px-3 py-1 rounded text-sm font-semibold transition-colors ${
-                        groupSize === size 
-                          ? 'bg-purple-500 text-white' 
+                        groupSize === size
+                          ? 'bg-purple-500 text-white'
                           : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                       }`}
                     >
@@ -224,13 +240,12 @@ const FloatingNamePicker = ({
                 </div>
               </div>
 
-              {/* Generated Groups Display */}
               {generatedGroups.length > 0 && (
                 <div className="mb-4 p-3 bg-purple-50 rounded-lg max-h-32 overflow-y-auto">
                   <div className="text-sm font-semibold text-purple-800 mb-2">Groups:</div>
                   {generatedGroups.map((group, index) => (
                     <div key={index} className="text-sm mb-1">
-                      <span className="font-semibold text-purple-600">Group {index + 1}:</span> {group.map(s => s.firstName).join(', ')}
+                      <span className="font-semibold text-purple-600">Group {index + 1}:</span> {group.map((s) => s.firstName).join(', ')}
                     </div>
                   ))}
                 </div>
@@ -244,7 +259,7 @@ const FloatingNamePicker = ({
                 >
                   👥 Generate Groups
                 </button>
-                
+
                 {generatedGroups.length > 0 && (
                   <button
                     onClick={clearSelection}
@@ -261,7 +276,6 @@ const FloatingNamePicker = ({
             </div>
           )}
 
-          {/* Student Exclusion Toggle */}
           {students.length > 0 && (
             <div className="border-t p-4">
               <div className="flex justify-between items-center mb-2">
@@ -277,9 +291,9 @@ const FloatingNamePicker = ({
                   </button>
                 )}
               </div>
-              
+
               <div className="grid grid-cols-3 gap-1 max-h-24 overflow-y-auto">
-                {students.map(student => (
+                {students.map((student) => (
                   <button
                     key={student.id}
                     onClick={() => toggleStudentExclusion(student.id)}
@@ -297,7 +311,7 @@ const FloatingNamePicker = ({
           )}
         </div>
       )}
-    </>
+    </div>
   );
 };
 

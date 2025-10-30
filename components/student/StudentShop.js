@@ -44,11 +44,25 @@ const getItemRarity = (price) => {
 };
 
 // Function to get all possible mystery box prizes (includes Halloween items via props)
-const getMysteryBoxPrizes = (SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, SHOP_BASIC_PETS, SHOP_PREMIUM_PETS, classRewards) => {
+const getMysteryBoxPrizes = (
+  SHOP_BASIC_AVATARS,
+  SHOP_PREMIUM_AVATARS,
+  SHOP_BASIC_PETS,
+  SHOP_PREMIUM_PETS,
+  classRewards,
+  HALLOWEEN_BASIC_AVATARS = [],
+  HALLOWEEN_PREMIUM_AVATARS = [],
+  HALLOWEEN_PETS = []
+) => {
   const prizes = [];
-  
+
   // Add shop avatars (includes Halloween avatars passed from parent)
-  [...SHOP_BASIC_AVATARS, ...SHOP_PREMIUM_AVATARS].forEach(avatar => {
+  [
+    ...SHOP_BASIC_AVATARS,
+    ...SHOP_PREMIUM_AVATARS,
+    ...HALLOWEEN_BASIC_AVATARS,
+    ...HALLOWEEN_PREMIUM_AVATARS
+  ].forEach(avatar => {
     prizes.push({
       type: 'avatar',
       item: avatar,
@@ -57,9 +71,9 @@ const getMysteryBoxPrizes = (SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, SHOP_BASI
       displayName: avatar.name
     });
   });
-  
+
   // Add shop pets (includes Halloween pets passed from parent)
-  [...SHOP_BASIC_PETS, ...SHOP_PREMIUM_PETS].forEach(pet => {
+  [...SHOP_BASIC_PETS, ...SHOP_PREMIUM_PETS, ...HALLOWEEN_PETS].forEach(pet => {
     prizes.push({
       type: 'pet',
       item: pet,
@@ -160,15 +174,29 @@ const calculateSellPrice = (originalPrice) => {
 };
 
 // Find original item price from shop data (includes Halloween items)
-const findOriginalPrice = (itemName, itemType, SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, SHOP_BASIC_PETS, SHOP_PREMIUM_PETS, classRewards) => {
+const findOriginalPrice = (
+  itemName,
+  itemType,
+  SHOP_BASIC_AVATARS,
+  SHOP_PREMIUM_AVATARS,
+  SHOP_BASIC_PETS,
+  SHOP_PREMIUM_PETS,
+  classRewards,
+  HALLOWEEN_BASIC_AVATARS = [],
+  HALLOWEEN_PREMIUM_AVATARS = [],
+  HALLOWEEN_PETS = []
+) => {
   if (itemType === 'avatar') {
     const basicAvatar = SHOP_BASIC_AVATARS.find(a => a.name === itemName);
     const premiumAvatar = SHOP_PREMIUM_AVATARS.find(a => a.name === itemName);
-    return basicAvatar?.price || premiumAvatar?.price || 10; // Default if not found
+    const halloweenBasic = HALLOWEEN_BASIC_AVATARS.find(a => a.name === itemName);
+    const halloweenPremium = HALLOWEEN_PREMIUM_AVATARS.find(a => a.name === itemName);
+    return basicAvatar?.price || premiumAvatar?.price || halloweenBasic?.price || halloweenPremium?.price || 10; // Default if not found
   } else if (itemType === 'pet') {
     const basicPet = SHOP_BASIC_PETS.find(p => p.name === itemName);
     const premiumPet = SHOP_PREMIUM_PETS.find(p => p.name === itemName);
-    return basicPet?.price || premiumPet?.price || 15; // Default if not found
+    const halloweenPet = HALLOWEEN_PETS.find(p => p.name === itemName);
+    return basicPet?.price || premiumPet?.price || halloweenPet?.price || 15; // Default if not found
   } else if (itemType === 'reward') {
     const reward = (classRewards || []).find(r => r.id === itemName || r.name === itemName);
     return reward?.price || 10; // Default if not found
@@ -176,7 +204,7 @@ const findOriginalPrice = (itemName, itemType, SHOP_BASIC_AVATARS, SHOP_PREMIUM_
   return 10; // Fallback default
 };
 
-const StudentShop = ({ 
+const StudentShop = ({
   studentData,
   updateStudentData,
   showToast = () => {},
@@ -188,9 +216,12 @@ const StudentShop = ({
   SHOP_PREMIUM_AVATARS,
   SHOP_BASIC_PETS,
   SHOP_PREMIUM_PETS,
+  HALLOWEEN_BASIC_AVATARS = [],
+  HALLOWEEN_PREMIUM_AVATARS = [],
+  HALLOWEEN_PETS = [],
   classRewards
 }) => {
-  const [activeCategory, setActiveCategory] = useState('mysterybox'); // Start with Mystery Box
+  const [activeCategory, setActiveCategory] = useState('halloween'); // Spotlight the limited-time collection first
   const [purchaseModal, setPurchaseModal] = useState({ visible: false, item: null, type: null });
   const [inventoryModal, setInventoryModal] = useState({ visible: false });
 
@@ -236,11 +267,14 @@ const StudentShop = ({
     
     // Get all possible prizes (includes Halloween items)
     const allPrizes = getMysteryBoxPrizes(
-      SHOP_BASIC_AVATARS, 
-      SHOP_PREMIUM_AVATARS, 
-      SHOP_BASIC_PETS, 
-      SHOP_PREMIUM_PETS, 
-      classRewards
+      SHOP_BASIC_AVATARS,
+      SHOP_PREMIUM_AVATARS,
+      SHOP_BASIC_PETS,
+      SHOP_PREMIUM_PETS,
+      classRewards,
+      HALLOWEEN_BASIC_AVATARS,
+      HALLOWEEN_PREMIUM_AVATARS,
+      HALLOWEEN_PETS
     );
     
     // Select random prize
@@ -301,7 +335,18 @@ const StudentShop = ({
   
   const handleSellItem = (item, type) => {
     const itemName = type === 'pet' ? item.name : type === 'avatar' ? item : item.name;
-    const originalPrice = findOriginalPrice(itemName, type, SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, SHOP_BASIC_PETS, SHOP_PREMIUM_PETS, classRewards);
+    const originalPrice = findOriginalPrice(
+      itemName,
+      type,
+      SHOP_BASIC_AVATARS,
+      SHOP_PREMIUM_AVATARS,
+      SHOP_BASIC_PETS,
+      SHOP_PREMIUM_PETS,
+      classRewards,
+      HALLOWEEN_BASIC_AVATARS,
+      HALLOWEEN_PREMIUM_AVATARS,
+      HALLOWEEN_PETS
+    );
     const sellPrice = calculateSellPrice(originalPrice);
     
     setSellModal({
@@ -410,6 +455,7 @@ const StudentShop = ({
 
   const categories = [
     { id: 'mysterybox', name: '🎁 Mystery Box', shortName: 'Mystery' },
+    { id: 'halloween', name: '🎃 Halloween Special', shortName: '🎃 Halloween' },
     { id: 'basic_avatars', name: 'Basic Avatars', shortName: 'Basic' },
     { id: 'premium_avatars', name: 'Premium Avatars', shortName: 'Premium' },
     { id: 'basic_pets', name: 'Basic Pets', shortName: 'Pets' },
@@ -614,6 +660,14 @@ const StudentShop = ({
     let itemType = '';
 
     switch (activeCategory) {
+      case 'halloween':
+        items = [
+          ...HALLOWEEN_BASIC_AVATARS.map(item => ({ ...item, __type: 'avatar' })),
+          ...HALLOWEEN_PREMIUM_AVATARS.map(item => ({ ...item, __type: 'avatar' })),
+          ...HALLOWEEN_PETS.map(item => ({ ...item, __type: 'pet' }))
+        ];
+        itemType = 'mixed';
+        break;
       case 'basic_avatars':
         items = SHOP_BASIC_AVATARS;
         itemType = 'avatar';
@@ -648,9 +702,10 @@ const StudentShop = ({
     }
 
     return items.map((item, index) => {
-      const alreadyOwned = itemType === 'avatar' 
+      const resolvedType = item.__type || itemType;
+      const alreadyOwned = resolvedType === 'avatar'
         ? studentData.ownedAvatars?.includes(item.name)
-        : itemType === 'pet'
+        : resolvedType === 'pet'
         ? studentData.ownedPets?.some(p => p.name === item.name)
         : false;
 
@@ -670,9 +725,9 @@ const StudentShop = ({
             </div>
           )}
           
-          {itemType === 'avatar' && (
-            <img 
-              src={item.path} 
+          {resolvedType === 'avatar' && (
+            <img
+              src={item.path}
               alt={item.name}
               className="w-16 h-16 md:w-20 md:h-20 rounded-full mx-auto mb-2 border-4 border-purple-300"
               onError={(e) => {
@@ -680,9 +735,9 @@ const StudentShop = ({
               }}
             />
           )}
-          {itemType === 'pet' && (
-            <img 
-              src={item.path} 
+          {resolvedType === 'pet' && (
+            <img
+              src={item.path}
               alt={item.name}
               className="w-16 h-16 md:w-20 md:h-20 rounded-full mx-auto mb-2 border-4 border-green-300"
               onError={(e) => {
@@ -690,7 +745,7 @@ const StudentShop = ({
               }}
             />
           )}
-          {itemType === 'reward' && (
+          {resolvedType === 'reward' && (
             <div className="text-3xl md:text-4xl mb-2">{item.icon || '🎁'}</div>
           )}
           
@@ -706,7 +761,7 @@ const StudentShop = ({
             </button>
           ) : (
             <button
-              onClick={() => setPurchaseModal({ visible: true, item, type: itemType })}
+              onClick={() => setPurchaseModal({ visible: true, item, type: resolvedType })}
               disabled={!canAfford}
               className={`w-full py-2 rounded-lg text-xs md:text-sm font-semibold transition-all ${
                 canAfford

@@ -27,10 +27,16 @@ const GamePresentation = ({ roomCode, gameData, onEndGame, onAwardXP, onAwardCoi
     if (gameData) {
       setCurrentQuestionIndex(gameData.currentQuestion || 0);
       setQuestionPhase(gameData.questionPhase || 'showing');
-      
+
       // Check if game is finished
       if (gameData.status === 'finished' || gameData.questionPhase === 'finished') {
         setShowFinalResults(true);
+      }
+
+      if (gameData.questionPhase === 'showing') {
+        const upcomingQuestion = gameData.quiz?.questions?.[gameData.currentQuestion || 0];
+        const previewTime = upcomingQuestion?.timeLimit || gameData.settings?.timePerQuestion || 20;
+        setTimeLeft(previewTime);
       }
     }
   }, [gameData]);
@@ -67,9 +73,9 @@ const GamePresentation = ({ roomCode, gameData, onEndGame, onAwardXP, onAwardCoi
   };
 
   const startQuestion = async () => {
-    const questionTimeLimit = currentQuestion?.timeLimit || 20;
+    const questionTimeLimit = currentQuestion?.timeLimit || gameData?.settings?.timePerQuestion || 20;
     setTimeLeft(questionTimeLimit);
-    
+
     const updates = {
       questionPhase: 'answering',
       currentQuestion: currentQuestionIndex

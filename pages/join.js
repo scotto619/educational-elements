@@ -168,7 +168,10 @@ const StudentJoinPage = () => {
             
             // Start timer ONLY when entering answering phase for current question
             if (data.questionPhase === 'answering' && !timerRunningRef.current) {
-              const questionTimeLimit = data.quiz?.questions?.[data.currentQuestion]?.timeLimit || 20;
+              const questionTimeLimit =
+                data.quiz?.questions?.[data.currentQuestion]?.timeLimit ||
+                data.settings?.timePerQuestion ||
+                20;
               console.log(`⏰ STARTING TIMER: ${questionTimeLimit} seconds`);
               setTimeLeft(questionTimeLimit);
               timerRunningRef.current = true;

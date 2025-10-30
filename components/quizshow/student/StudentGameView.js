@@ -97,10 +97,10 @@ const StudentGameView = ({ roomCode, gameData, playerInfo }) => {
       console.log(`📋 PHASE CHANGE: ${currentPhaseRef.current} → ${gameData.questionPhase}`);
       currentPhaseRef.current = gameData.questionPhase;
       setQuestionPhase(gameData.questionPhase);
-      
+
       // Start timer ONLY when entering answering phase
       if (gameData.questionPhase === 'answering' && !timerRunningRef.current) {
-        const timeLimit = currentQuestion?.timeLimit || 20;
+        const timeLimit = currentQuestion?.timeLimit || gameData?.settings?.timePerQuestion || 20;
         console.log(`⏰ STARTING TIMER: ${timeLimit} seconds`);
         setTimeLeft(timeLimit);
         timerRunningRef.current = true;
