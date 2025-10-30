@@ -954,7 +954,7 @@ const StudentPortal = () => {
       
       case 'shop':
         return (
-          <StudentShop 
+          <StudentShop
             studentData={studentData}
             updateStudentData={updateStudentData}
             showToast={showToast}
@@ -966,6 +966,9 @@ const StudentPortal = () => {
             SHOP_PREMIUM_AVATARS={SHOP_PREMIUM_AVATARS}
             SHOP_BASIC_PETS={SHOP_BASIC_PETS}
             SHOP_PREMIUM_PETS={SHOP_PREMIUM_PETS}
+            HALLOWEEN_BASIC_AVATARS={HALLOWEEN_BASIC_AVATARS}
+            HALLOWEEN_PREMIUM_AVATARS={HALLOWEEN_PREMIUM_AVATARS}
+            HALLOWEEN_PETS={HALLOWEEN_PETS}
             classRewards={classData?.classRewards || []}
           />
         );
