@@ -1,5 +1,5 @@
 // components/tools/SpecialistCreator.js - Remade to match site structure
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 
 // ===============================================
 // SPECIALIST TIMETABLE CREATOR COMPONENT
@@ -47,6 +47,7 @@ const SpecialistCreator = ({
   const [selectedSpecialistId, setSelectedSpecialistId] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Modal states
   const [showSpecialistModal, setShowSpecialistModal] = useState(false);
@@ -79,7 +80,12 @@ const SpecialistCreator = ({
     name: '',
     yearLevels: [],
     sessions: 1,
-    enabled: true
+    enabled: true,
+    timeSlot: {
+      day: 'Monday',
+      startTime: '',
+      endTime: ''
+    }
   });
   
   // Constants
@@ -87,7 +93,85 @@ const SpecialistCreator = ({
   const YEAR_LEVELS = ['Prep', 'Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5', 'Year 6'];
   const COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#ef4444', '#06b6d4', '#84cc16'];
   const ICONS = ['⚽', '🎨', '🎵', '🌍', '❤️', '🧪', '📖', '💻', '🏃', '🎭'];
-  
+
+  const periodsByDay = useMemo(() => {
+    const map = {};
+    DAYS.forEach(day => {
+      map[day] = timePeriods
+        .filter(p => p.day === day)
+        .sort((a, b) => parseTime(a.start) - parseTime(b.start));
+    });
+    return map;
+  }, [timePeriods]);
+
+  const createDefaultGroupTimeSlot = useCallback(() => {
+    const firstDay = DAYS.find(day => (periodsByDay[day] || []).length > 0) || DAYS[0];
+    const dayPeriods = periodsByDay[firstDay] || [];
+
+    if (dayPeriods.length === 0) {
+      return { day: firstDay, startTime: '', endTime: '' };
+    }
+
+    const firstPeriod = dayPeriods[0];
+    return {
+      day: firstDay,
+      startTime: firstPeriod.start,
+      endTime: firstPeriod.end
+    };
+  }, [periodsByDay]);
+
+  const normalizeTimeSlot = useCallback((slot, customPeriodsByDay = periodsByDay) => {
+    if (!slot) return null;
+
+    const periodMap = customPeriodsByDay || {};
+
+    const preferredDay = slot.day && DAYS.includes(slot.day)
+      ? slot.day
+      : (DAYS.find(day => (periodMap[day] || []).length > 0) || DAYS[0]);
+
+    const dayPeriods = periodMap[preferredDay] || [];
+    if (dayPeriods.length === 0) {
+      return { day: preferredDay, startTime: '', endTime: '' };
+    }
+
+    let startTime = slot.startTime;
+    let endTime = slot.endTime;
+
+    let startIndex = dayPeriods.findIndex(period => period.start === startTime);
+    if (startIndex === -1) {
+      startIndex = 0;
+      startTime = dayPeriods[0].start;
+    }
+
+    let endIndex = dayPeriods.findIndex(period => period.end === endTime);
+    if (endIndex === -1 || endIndex < startIndex) {
+      endIndex = startIndex;
+      endTime = dayPeriods[endIndex].end;
+    }
+
+    return {
+      day: preferredDay,
+      startTime,
+      endTime
+    };
+  }, [periodsByDay]);
+
+  const newGroupSelectedDay = useMemo(() => {
+    if (newGroup.timeSlot?.day && (periodsByDay[newGroup.timeSlot.day] || []).length > 0) {
+      return newGroup.timeSlot.day;
+    }
+    return DAYS.find(day => (periodsByDay[day] || []).length > 0) || DAYS[0];
+  }, [newGroup.timeSlot, periodsByDay]);
+
+  const newGroupPeriods = useMemo(() => periodsByDay[newGroupSelectedDay] || [], [newGroupSelectedDay, periodsByDay]);
+
+  const newGroupStartIndex = useMemo(() => newGroupPeriods.findIndex(period => period.start === newGroup.timeSlot?.startTime), [newGroupPeriods, newGroup.timeSlot]);
+
+  const newGroupEndOptions = useMemo(() => {
+    if (newGroupStartIndex === -1) return newGroupPeriods;
+    return newGroupPeriods.slice(newGroupStartIndex);
+  }, [newGroupStartIndex, newGroupPeriods]);
+
   // ===============================================
   // DATA INITIALIZATION
   // ===============================================
@@ -126,13 +210,47 @@ const SpecialistCreator = ({
       if (savedBreaks) setBreaks(savedBreaks);
       if (savedConstraints) setConstraints(savedConstraints);
       if (savedGroups) {
-        const normalisedGroups = savedGroups.map(group => ({
-          id: group.id ?? Number(`${Date.now()}${Math.floor(Math.random() * 1000)}`),
-          name: group.name || '',
-          yearLevels: Array.isArray(group.yearLevels) ? group.yearLevels : [],
-          sessions: Math.max(1, parseInt(group.sessions, 10) || 1),
-          enabled: group.enabled !== false
-        }));
+        const referencePeriods = Array.isArray(savedPeriods) && savedPeriods.length
+          ? savedPeriods
+          : timePeriods;
+
+        const referenceMap = {};
+        DAYS.forEach(day => {
+          referenceMap[day] = (referencePeriods || [])
+            .filter(period => period.day === day)
+            .sort((a, b) => parseTime(a.start) - parseTime(b.start));
+        });
+
+        const fallbackSlot = (() => {
+          const fallbackDay = DAYS.find(day => (referenceMap[day] || []).length > 0) || DAYS[0];
+          const dayPeriods = referenceMap[fallbackDay] || [];
+          if (dayPeriods.length === 0) {
+            return { day: fallbackDay, startTime: '', endTime: '' };
+          }
+          const first = dayPeriods[0];
+          return { day: fallbackDay, startTime: first.start, endTime: first.end };
+        })();
+
+        const normalisedGroups = savedGroups.map(group => {
+          const rawSlot = group.timeSlot
+            ? {
+                day: group.timeSlot.day ?? group.timeSlot.preferredDay ?? '',
+                startTime: group.timeSlot.startTime ?? group.timeSlot.start ?? '',
+                endTime: group.timeSlot.endTime ?? group.timeSlot.end ?? ''
+              }
+            : null;
+
+          const timeSlot = normalizeTimeSlot(rawSlot, referenceMap) || { ...fallbackSlot };
+
+          return {
+            id: group.id ?? Number(`${Date.now()}${Math.floor(Math.random() * 1000)}`),
+            name: group.name || '',
+            yearLevels: Array.isArray(group.yearLevels) ? group.yearLevels : [],
+            sessions: Math.max(1, parseInt(group.sessions, 10) || 1),
+            enabled: group.enabled !== false,
+            timeSlot
+          };
+        });
         setYearLevelGroups(normalisedGroups);
       }
 
@@ -274,6 +392,201 @@ const SpecialistCreator = ({
       showToast('Error saving timetable. Please try again.', 'error');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const exportToExcel = () => {
+    if (!timePeriods.length) {
+      showToast('Please configure time periods before exporting.', 'error');
+      return;
+    }
+
+    if (!classes.length) {
+      showToast('Please add at least one class before exporting.', 'error');
+      return;
+    }
+
+    setIsExporting(true);
+
+    try {
+      const classMap = new Map(classes.map(cls => [cls.id, cls]));
+      const specialistMap = new Map(specialists.map(spec => [spec.id, spec]));
+
+      const dayPeriodsMap = {};
+      DAYS.forEach(day => {
+        dayPeriodsMap[day] = timePeriods
+          .filter(p => p.day === day)
+          .sort((a, b) => parseTime(a.start) - parseTime(b.start));
+      });
+
+      const classRows = [];
+
+      const pushClassRow = (classObj, current) => {
+        if (!current) return;
+        classRows.push({
+          Class: classObj.name,
+          Day: current.day,
+          Start: current.start,
+          End: current.end,
+          Assignment: current.label,
+          Type: current.type
+        });
+      };
+
+      classes.forEach(classObj => {
+        DAYS.forEach(day => {
+          const dayPeriods = dayPeriodsMap[day] || [];
+          let current = null;
+
+          dayPeriods.forEach(period => {
+            const key = getTimetableKey(classObj.id, period.id);
+            const entry = timetable[key];
+
+            if (!entry) {
+              if (current) {
+                pushClassRow(classObj, current);
+                current = null;
+              }
+              return;
+            }
+
+            const isNct = entry.type === 'NCT' || entry.specialistId === 'NCT';
+            const assignmentId = isNct ? 'NCT' : `spec-${entry.specialistId}`;
+            const label = isNct
+              ? 'NCT'
+              : entry.specialistName || specialistMap.get(entry.specialistId)?.name || 'Specialist';
+            const type = isNct ? 'NCT' : 'Specialist';
+
+            if (!current || current.assignmentId !== assignmentId) {
+              if (current) {
+                pushClassRow(classObj, current);
+              }
+
+              current = {
+                assignmentId,
+                start: period.start,
+                end: period.end,
+                label,
+                type,
+                day
+              };
+            } else {
+              current.end = period.end;
+            }
+          });
+
+          if (current) {
+            pushClassRow(classObj, current);
+          }
+        });
+      });
+
+      const specialistRows = [];
+
+      const pushSpecialistRow = (spec, current) => {
+        if (!current) return;
+        specialistRows.push({
+          Specialist: spec.name || 'Specialist',
+          Day: current.day,
+          Start: current.start,
+          End: current.end,
+          Class: current.className
+        });
+      };
+
+      specialists.forEach(spec => {
+        const specId = spec.id;
+        if (specId === 'NCT' || specId === null || typeof specId === 'undefined') {
+          return;
+        }
+
+        DAYS.forEach(day => {
+          const dayPeriods = dayPeriodsMap[day] || [];
+          let current = null;
+
+          dayPeriods.forEach(period => {
+            let matchingClass = null;
+            for (const classObj of classes) {
+              const key = getTimetableKey(classObj.id, period.id);
+              const entry = timetable[key];
+              if (entry && entry.specialistId === specId) {
+                matchingClass = classObj;
+                break;
+              }
+            }
+
+            if (!matchingClass) {
+              if (current) {
+                pushSpecialistRow(spec, current);
+                current = null;
+              }
+              return;
+            }
+
+            if (!current || current.className !== matchingClass.name) {
+              if (current) {
+                pushSpecialistRow(spec, current);
+              }
+
+              current = {
+                className: matchingClass.name,
+                start: period.start,
+                end: period.end,
+                day
+              };
+            } else {
+              current.end = period.end;
+            }
+          });
+
+          if (current) {
+            pushSpecialistRow(spec, current);
+          }
+        });
+      });
+
+      const escapeXml = (value) => {
+        const stringValue = (value ?? '').toString();
+        return stringValue
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&apos;');
+      };
+
+      const buildWorksheet = (name, columns, rows) => {
+        const header = `<Row>${columns.map(col => `<Cell ss:StyleID="sHeader"><Data ss:Type="String">${escapeXml(col)}</Data></Cell>`).join('')}</Row>`;
+        const dataRows = rows.map(row => {
+          const cells = columns.map(col => `<Cell><Data ss:Type="String">${escapeXml(row[col])}</Data></Cell>`).join('');
+          return `<Row>${cells}</Row>`;
+        }).join('');
+        return `<Worksheet ss:Name="${escapeXml(name)}"><Table>${header}${dataRows}</Table></Worksheet>`;
+      };
+
+      const workbook = `<?xml version="1.0" encoding="UTF-8"?>\n` +
+        `<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">` +
+        `<Styles><Style ss:ID="sHeader"><Font ss:Bold="1"/></Style></Styles>` +
+        `${buildWorksheet('Class Timetable', ['Class', 'Day', 'Start', 'End', 'Assignment', 'Type'], classRows)}` +
+        `${buildWorksheet('Specialist Timetable', ['Specialist', 'Day', 'Start', 'End', 'Class'], specialistRows)}` +
+        `</Workbook>`;
+
+      const blob = new Blob([workbook], { type: 'application/vnd.ms-excel' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `specialist-timetables-${new Date().toISOString().slice(0, 10)}.xls`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      showToast('Excel export created successfully!', 'success');
+    } catch (error) {
+      console.error('Error exporting timetable to Excel:', error);
+      showToast('Failed to export timetable. Please try again.', 'error');
+    } finally {
+      setIsExporting(false);
     }
   };
   
@@ -442,17 +755,30 @@ const SpecialistCreator = ({
       return;
     }
 
+    const timeSlot = normalizeTimeSlot(newGroup.timeSlot);
+    if (!timeSlot || !timeSlot.startTime || !timeSlot.endTime) {
+      showToast('Select a valid shared time for the group.', 'error');
+      return;
+    }
+
     const group = {
       id: Date.now(),
       name: newGroup.name.trim(),
       yearLevels: [...newGroup.yearLevels],
       sessions: Math.max(1, parseInt(newGroup.sessions, 10) || 1),
-      enabled: newGroup.enabled
+      enabled: newGroup.enabled,
+      timeSlot
     };
 
     setYearLevelGroups([...yearLevelGroups, group]);
     setHasUnsavedChanges(true);
-    setNewGroup({ name: '', yearLevels: [], sessions: 1, enabled: true });
+    setNewGroup({
+      name: '',
+      yearLevels: [],
+      sessions: 1,
+      enabled: true,
+      timeSlot: createDefaultGroupTimeSlot()
+    });
     setShowGroupModal(false);
     showToast('Year level group added! Click "Save Timetable" to save.', 'info');
   };
@@ -503,6 +829,39 @@ const SpecialistCreator = ({
     setHasUnsavedChanges(true);
   };
 
+  const updateGroupTimeSlot = (id, updates) => {
+    setYearLevelGroups(prev => prev.map(group => {
+      if (group.id !== id) return group;
+
+      const currentSlot = group.timeSlot || createDefaultGroupTimeSlot();
+      const mergedSlot = normalizeTimeSlot({
+        ...currentSlot,
+        ...updates
+      });
+
+      return {
+        ...group,
+        timeSlot: mergedSlot || createDefaultGroupTimeSlot()
+      };
+    }));
+    setHasUnsavedChanges(true);
+  };
+
+  const updateNewGroupTimeSlot = (updates) => {
+    setNewGroup(prev => {
+      const currentSlot = prev.timeSlot || createDefaultGroupTimeSlot();
+      const mergedSlot = normalizeTimeSlot({
+        ...currentSlot,
+        ...updates
+      });
+
+      return {
+        ...prev,
+        timeSlot: mergedSlot || createDefaultGroupTimeSlot()
+      };
+    });
+  };
+
   // ===============================================
   // TIMETABLE CELL MANAGEMENT
   // ===============================================
@@ -535,8 +894,9 @@ const SpecialistCreator = ({
         ...timetable,
         [key]: {
           specialistId: 'NCT',
+          specialistName: 'Non Contact Time',
           type: 'NCT',
-          isFirst: true
+          isFirst: false
         }
       });
     } else {
@@ -635,6 +995,12 @@ const SpecialistCreator = ({
       return !occupied || !occupied.has(periodId);
     };
 
+    const markClassPeriod = (classId, periodId) => {
+      const classSet = classOccupied.get(classId) || new Set();
+      classSet.add(periodId);
+      classOccupied.set(classId, classSet);
+    };
+
     const occupyBlock = (classObj, specialist, periods) => {
       periods.forEach((period, index) => {
         const key = getTimetableKey(classObj.id, period.id);
@@ -647,14 +1013,133 @@ const SpecialistCreator = ({
           isFirst: index === 0
         };
 
-        const classSet = classOccupied.get(classObj.id) || new Set();
-        classSet.add(period.id);
-        classOccupied.set(classObj.id, classSet);
+        markClassPeriod(classObj.id, period.id);
 
         const specSet = specialistOccupied.get(specialist.id) || new Set();
         specSet.add(period.id);
         specialistOccupied.set(specialist.id, specSet);
       });
+    };
+
+    const fillBlockWithNCT = (classObj, blockPeriods, assignedPeriods = []) => {
+      const assignedIds = new Set((assignedPeriods || []).map(period => period.id));
+      blockPeriods.forEach(period => {
+        markClassPeriod(classObj.id, period.id);
+
+        if (assignedIds.has(period.id)) {
+          return;
+        }
+
+        const key = getTimetableKey(classObj.id, period.id);
+        if (!newTimetable[key]) {
+          newTimetable[key] = {
+            specialistId: 'NCT',
+            specialistName: 'Non Contact Time',
+            type: 'NCT',
+            isFirst: false
+          };
+        }
+      });
+    };
+
+    const getGroupBlockPeriods = (group) => {
+      if (!group.timeSlot) return null;
+      const { day, startTime, endTime } = group.timeSlot;
+      if (!day || !startTime || !endTime) return null;
+
+      const dayPeriods = dayPeriodsMap[day] || [];
+      const startIndex = dayPeriods.findIndex(period => period.start === startTime);
+      const endIndex = dayPeriods.findIndex(period => period.end === endTime);
+      if (startIndex === -1 || endIndex === -1 || endIndex < startIndex) return null;
+
+      const slice = dayPeriods.slice(startIndex, endIndex + 1);
+      if (slice.length === 0) return null;
+      if (!slice.every((period, index) => index === 0 || periodsAreSequential(slice[index - 1], period))) return null;
+      if (slice.some(period => isBreakTime(period))) return null;
+
+      return slice;
+    };
+
+    const scheduleGroupAtPreferredBlock = (group, groupedClasses) => {
+      const blockPeriods = getGroupBlockPeriods(group);
+      if (!blockPeriods || blockPeriods.length === 0) {
+        return false;
+      }
+
+      const assignments = [];
+      const usedSpecialists = new Set();
+      const orderedClasses = shuffleArray(groupedClasses);
+
+      orderedClasses.forEach(classObj => {
+        const blockAvailable = blockPeriods.every(period => isPeriodFreeForClass(classObj.id, period.id));
+        if (!blockAvailable) {
+          return;
+        }
+
+        const specialistOptions = shuffleArray(
+          specialists.filter(spec =>
+            isSpecialistAvailableForClass(spec, classObj) &&
+            !scheduledPairs.has(`${classObj.id}-${spec.id}`) &&
+            !usedSpecialists.has(spec.id)
+          )
+        );
+
+        let bestChoice = null;
+
+        specialistOptions.forEach(spec => {
+          const slotsNeeded = Math.ceil(spec.duration / basePeriodDuration);
+          const specialistPeriods = blockPeriods.slice(0, slotsNeeded);
+          if (specialistPeriods.length < slotsNeeded) {
+            return;
+          }
+
+          let conflict = false;
+          let minimizeCount = 0;
+
+          for (const period of specialistPeriods) {
+            if (!isPeriodFreeForClass(classObj.id, period.id) || !isPeriodFreeForSpecialist(spec.id, period.id)) {
+              conflict = true;
+              break;
+            }
+
+            const constraint = checkConstraints(classObj, period);
+            if (constraint === 'avoid') {
+              conflict = true;
+              break;
+            }
+            if (constraint === 'minimize') {
+              minimizeCount += 1;
+            }
+          }
+
+          if (!conflict) {
+            if (!bestChoice || minimizeCount < bestChoice.minimizeCount) {
+              bestChoice = { specialist: spec, periods: specialistPeriods, minimizeCount };
+            }
+          }
+        });
+
+        if (bestChoice) {
+          usedSpecialists.add(bestChoice.specialist.id);
+          assignments.push({ classObj, ...bestChoice });
+        } else {
+          assignments.push({ classObj, specialist: null, periods: [] });
+        }
+      });
+
+      assignments
+        .filter(item => item.specialist)
+        .sort((a, b) => a.minimizeCount - b.minimizeCount)
+        .forEach(({ classObj, specialist, periods }) => {
+          occupyBlock(classObj, specialist, periods);
+          scheduledPairs.add(`${classObj.id}-${specialist.id}`);
+        });
+
+      assignments.forEach(({ classObj, periods }) => {
+        fillBlockWithNCT(classObj, blockPeriods, periods);
+      });
+
+      return assignments.length > 0;
     };
 
     const allStartSlots = [];
@@ -717,135 +1202,11 @@ const SpecialistCreator = ({
 
       return false;
     };
-
-    const activeGroups = yearLevelGroups.filter(group => group.enabled && group.yearLevels.length > 0);
-
-    activeGroups.forEach(group => {
-      let sessionsToCreate = Math.max(1, parseInt(group.sessions, 10) || 1);
-      const groupedClasses = shuffleArray(
-        classes.filter(cls => group.yearLevels.includes(cls.yearLevel))
-      );
-
-      if (groupedClasses.length === 0) {
-        return;
-      }
-
-      while (sessionsToCreate > 0) {
-        const candidates = shuffleArray(
-          groupedClasses.filter(classObj =>
-            specialists.some(spec =>
-              isSpecialistAvailableForClass(spec, classObj) &&
-              !scheduledPairs.has(`${classObj.id}-${spec.id}`)
-            )
-          )
-        );
-
-        if (candidates.length === 0) {
-          break;
-        }
-
-        let scheduledBlock = false;
-
-        for (const slot of shuffledStartSlots()) {
-          const assignments = [];
-          const usedSpecialists = new Set();
-          let valid = true;
-
-          for (const classObj of candidates) {
-            const specialistOptions = shuffleArray(
-              specialists.filter(spec =>
-                isSpecialistAvailableForClass(spec, classObj) &&
-                !scheduledPairs.has(`${classObj.id}-${spec.id}`) &&
-                !usedSpecialists.has(spec.id)
-              )
-            );
-
-            let chosen = null;
-            let chosenMinimizeCount = 0;
-
-            for (const spec of specialistOptions) {
-              const slotsNeeded = Math.ceil(spec.duration / basePeriodDuration);
-              const periods = getConsecutivePeriods(slot.day, slot.index, slotsNeeded);
-              if (!periods) continue;
-
-              let conflict = false;
-              let minimizeCount = 0;
-
-              for (const period of periods) {
-                if (!isPeriodFreeForClass(classObj.id, period.id) || !isPeriodFreeForSpecialist(spec.id, period.id)) {
-                  conflict = true;
-                  break;
-                }
-
-                const constraint = checkConstraints(classObj, period);
-                if (constraint === 'avoid') {
-                  conflict = true;
-                  break;
-                }
-                if (constraint === 'minimize') {
-                  minimizeCount += 1;
-                }
-              }
-
-              if (!conflict) {
-                chosen = { specialist: spec, periods };
-                chosenMinimizeCount = minimizeCount;
-                break;
-              }
-            }
-
-            if (!chosen) {
-              valid = false;
-              break;
-            }
-
-            usedSpecialists.add(chosen.specialist.id);
-            assignments.push({ classObj, specialist: chosen.specialist, periods: chosen.periods, minimizeCount: chosenMinimizeCount });
-          }
-
-          if (valid) {
-            assignments
-              .sort((a, b) => a.minimizeCount - b.minimizeCount)
-              .forEach(({ classObj, specialist, periods }) => {
-                occupyBlock(classObj, specialist, periods);
-                scheduledPairs.add(`${classObj.id}-${specialist.id}`);
-              });
-
-            scheduledBlock = true;
-            break;
-          }
-        }
-
-        if (!scheduledBlock) {
-          break;
-        }
-
-        sessionsToCreate -= 1;
-      }
-    });
-
-    const remainingTasks = [];
-    classes.forEach(classObj => {
-      specialists.forEach(specialist => {
-        if (!isSpecialistAvailableForClass(specialist, classObj)) return;
-        const key = `${classObj.id}-${specialist.id}`;
-        if (scheduledPairs.has(key)) return;
-        remainingTasks.push({ classObj, specialist });
-      });
-    });
-
-    shuffleArray(remainingTasks).forEach(({ classObj, specialist }) => {
-      const success = schedulePair(classObj, specialist);
-      if (!success) {
-        console.warn(`Could not schedule ${specialist.name} for ${classObj.name}`);
-      }
-    });
-
     setTimetable(newTimetable);
     setHasUnsavedChanges(true);
     showToast('Auto-schedule complete! Review and click "Save Timetable" to save.', 'success');
   };
-  
+
   // ===============================================
   // RENDER HELPERS
   // ===============================================
@@ -954,7 +1315,7 @@ const SpecialistCreator = ({
                                 <div className="text-xs opacity-90">{entry.duration}min</div>
                               </div>
                             )}
-                            {entry && !entry.isFirst && (
+                            {entry && entry.type !== 'NCT' && !entry.isFirst && (
                               <div
                                 className="h-full flex items-center justify-center text-white text-xs opacity-75 py-2 rounded"
                                 style={{ backgroundColor: entry.color }}
@@ -1196,7 +1557,7 @@ const SpecialistCreator = ({
     <div className="space-y-6 p-6">
       {/* Header */}
       <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-6 shadow-lg">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-3xl font-bold text-white flex items-center mb-2">
               <span className="text-4xl mr-3">📅</span>
@@ -1206,27 +1567,50 @@ const SpecialistCreator = ({
               Create and manage your specialist teacher timetables with ease
             </p>
           </div>
-          <button
-            onClick={handleManualSave}
-            disabled={!hasUnsavedChanges || isSaving}
-            className={`px-6 py-3 rounded-lg font-bold transition-all shadow-lg flex items-center space-x-2 ${
-              hasUnsavedChanges && !isSaving
-                ? 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:shadow-xl transform hover:scale-105'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-            }`}
-          >
-            {isSaving ? (
-              <>
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>Saving...</span>
-              </>
-            ) : (
-              <>
-                <span className="text-xl">💾</span>
-                <span>Save Timetable</span>
-              </>
-            )}
-          </button>
+          <div className="flex items-center gap-3 flex-wrap">
+            <button
+              onClick={exportToExcel}
+              disabled={isExporting}
+              className={`px-6 py-3 rounded-lg font-bold transition-all shadow-lg flex items-center space-x-2 ${
+                isExporting
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:shadow-xl transform hover:scale-105'
+              }`}
+            >
+              {isExporting ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>Preparing...</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-xl">📤</span>
+                  <span>Export to Excel</span>
+                </>
+              )}
+            </button>
+            <button
+              onClick={handleManualSave}
+              disabled={!hasUnsavedChanges || isSaving}
+              className={`px-6 py-3 rounded-lg font-bold transition-all shadow-lg flex items-center space-x-2 ${
+                hasUnsavedChanges && !isSaving
+                  ? 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:shadow-xl transform hover:scale-105'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              {isSaving ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>Saving...</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-xl">💾</span>
+                  <span>Save Timetable</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
       
@@ -1513,7 +1897,13 @@ const SpecialistCreator = ({
                 </div>
                 <button
                   onClick={() => {
-                    setNewGroup({ name: '', yearLevels: [], sessions: 1, enabled: true });
+                    setNewGroup({
+                      name: '',
+                      yearLevels: [],
+                      sessions: 1,
+                      enabled: true,
+                      timeSlot: createDefaultGroupTimeSlot()
+                    });
                     setShowGroupModal(true);
                   }}
                   className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-lg hover:shadow-lg transition-all"
@@ -1528,8 +1918,18 @@ const SpecialistCreator = ({
                 </div>
               ) : (
                 <div className="mt-6 space-y-4">
-                  {yearLevelGroups.map(group => (
-                    <div key={group.id} className="border-2 border-indigo-100 rounded-xl p-4 bg-gradient-to-br from-white to-indigo-50">
+                  {yearLevelGroups.map(group => {
+                    const availableDay = group.timeSlot?.day && (periodsByDay[group.timeSlot.day] || []).length > 0
+                      ? group.timeSlot.day
+                      : (DAYS.find(day => (periodsByDay[day] || []).length > 0) || DAYS[0]);
+
+                    const groupPeriods = periodsByDay[availableDay] || [];
+                    const groupStartIndex = groupPeriods.findIndex(period => period.start === group.timeSlot?.startTime);
+                    const groupEndOptions = groupStartIndex === -1 ? groupPeriods : groupPeriods.slice(groupStartIndex);
+                    const timeSlot = group.timeSlot || { day: availableDay, startTime: '', endTime: '' };
+
+                    return (
+                      <div key={group.id} className="border-2 border-indigo-100 rounded-xl p-4 bg-gradient-to-br from-white to-indigo-50">
                       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                         <div className="flex-1">
                           <label className="block text-sm font-semibold text-gray-700 mb-1">Group Name</label>
@@ -1572,6 +1972,57 @@ const SpecialistCreator = ({
                         </div>
                       </div>
 
+                      <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <label className="flex flex-col text-sm font-semibold text-gray-700">
+                          Preferred Day
+                          <select
+                            value={timeSlot.day || availableDay}
+                            onChange={(e) => updateGroupTimeSlot(group.id, { day: e.target.value })}
+                            className="mt-1 px-3 py-2 border-2 border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                          >
+                            {DAYS.map(day => (
+                              <option key={day} value={day}>{day}</option>
+                            ))}
+                          </select>
+                        </label>
+
+                        <label className="flex flex-col text-sm font-semibold text-gray-700">
+                          Start Time
+                          <select
+                            value={timeSlot.startTime || ''}
+                            onChange={(e) => updateGroupTimeSlot(group.id, { startTime: e.target.value })}
+                            className="mt-1 px-3 py-2 border-2 border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                          >
+                            {groupPeriods.length === 0 && (
+                              <option value="">No periods available</option>
+                            )}
+                            {groupPeriods.map(period => (
+                              <option key={`${period.day}-${period.start}`} value={period.start}>
+                                {period.start}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+
+                        <label className="flex flex-col text-sm font-semibold text-gray-700">
+                          End Time
+                          <select
+                            value={timeSlot.endTime || ''}
+                            onChange={(e) => updateGroupTimeSlot(group.id, { endTime: e.target.value })}
+                            className="mt-1 px-3 py-2 border-2 border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                          >
+                            {groupEndOptions.length === 0 && (
+                              <option value="">No periods available</option>
+                            )}
+                            {groupEndOptions.map(period => (
+                              <option key={`${period.day}-${period.end}`} value={period.end}>
+                                {period.end}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      </div>
+
                       <div className="mt-4">
                         <p className="text-sm font-semibold text-gray-700 mb-2">Year Levels</p>
                         <div className="flex flex-wrap gap-2">
@@ -1600,7 +2051,8 @@ const SpecialistCreator = ({
                         )}
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -1767,6 +2219,57 @@ const SpecialistCreator = ({
                 </label>
               </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <label className="flex flex-col text-sm font-semibold text-gray-700">
+                  Preferred Day
+                  <select
+                    value={newGroupSelectedDay}
+                    onChange={(e) => updateNewGroupTimeSlot({ day: e.target.value })}
+                    className="mt-1 px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  >
+                    {DAYS.map(day => (
+                      <option key={day} value={day}>{day}</option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="flex flex-col text-sm font-semibold text-gray-700">
+                  Start Time
+                  <select
+                    value={newGroup.timeSlot?.startTime || ''}
+                    onChange={(e) => updateNewGroupTimeSlot({ startTime: e.target.value })}
+                    className="mt-1 px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  >
+                    {newGroupPeriods.length === 0 && (
+                      <option value="">No periods available</option>
+                    )}
+                    {newGroupPeriods.map(period => (
+                      <option key={`${period.day}-${period.start}`} value={period.start}>
+                        {period.start}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="flex flex-col text-sm font-semibold text-gray-700">
+                  End Time
+                  <select
+                    value={newGroup.timeSlot?.endTime || ''}
+                    onChange={(e) => updateNewGroupTimeSlot({ endTime: e.target.value })}
+                    className="mt-1 px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  >
+                    {newGroupEndOptions.length === 0 && (
+                      <option value="">No periods available</option>
+                    )}
+                    {newGroupEndOptions.map(period => (
+                      <option key={`${period.day}-${period.end}`} value={period.end}>
+                        {period.end}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
               <div>
                 <p className="text-sm font-medium text-gray-700 mb-2">Year Levels</p>
                 <div className="flex flex-wrap gap-2">
@@ -1817,7 +2320,13 @@ const SpecialistCreator = ({
               <button
                 onClick={() => {
                   setShowGroupModal(false);
-                  setNewGroup({ name: '', yearLevels: [], sessions: 1, enabled: true });
+                  setNewGroup({
+                    name: '',
+                    yearLevels: [],
+                    sessions: 1,
+                    enabled: true,
+                    timeSlot: createDefaultGroupTimeSlot()
+                  });
                 }}
                 className="px-4 py-3 bg-gray-300 text-gray-800 font-bold rounded-lg hover:bg-gray-400 transition-all"
               >
