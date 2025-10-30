@@ -38,6 +38,51 @@ const ComingSoon = ({ toolName, description }) => (
 // ===============================================
 // COMPLETE SUBJECT CONFIGURATION
 // ===============================================
+const literacyFocusAreas = [
+  {
+    id: 'all',
+    title: 'All Literacy Tools',
+    icon: '🌈',
+    gradient: 'from-pink-500 via-purple-500 to-indigo-500',
+    description: 'Browse the entire literacy toolkit for every learner.'
+  },
+  {
+    id: 'reading',
+    title: 'Reading Power',
+    icon: '📖',
+    gradient: 'from-blue-500 via-indigo-500 to-purple-500',
+    description: 'Comprehension, fluency passages, theatre and advanced texts.'
+  },
+  {
+    id: 'writing',
+    title: 'Writing Workshop',
+    icon: '✍️',
+    gradient: 'from-orange-500 via-pink-500 to-rose-500',
+    description: 'Creative prompts, poetry labs, grammar studios and handwriting.'
+  },
+  {
+    id: 'spelling',
+    title: 'Spelling & Word Study',
+    icon: '🔡',
+    gradient: 'from-emerald-500 via-green-500 to-lime-500',
+    description: 'Structured spelling journeys, morphology mastery and word work.'
+  },
+  {
+    id: 'phonics',
+    title: 'Phonics Foundations',
+    icon: '🔤',
+    gradient: 'from-teal-500 via-cyan-500 to-sky-500',
+    description: 'Sound recognition, SATPIN progressions and early literacy warmups.'
+  },
+  {
+    id: 'speaking',
+    title: 'Speaking & Performance',
+    icon: '🎤',
+    gradient: 'from-red-500 via-rose-500 to-fuchsia-500',
+    description: 'Readers theatre adventures and oral language confidence builders.'
+  }
+];
+
 const subjects = [
   {
     id: 'literacy',
@@ -51,7 +96,8 @@ const subjects = [
         name: 'Beginner Readers',
         icon: '🔤',
         description: 'Early reading activities for beginning readers - sound recognition, phonics, and simple passages',
-        component: BeginnerReaders
+        component: BeginnerReaders,
+        literacyCategory: ['reading', 'phonics']
       },
       {
         id: 'reading-for-fun',
@@ -59,7 +105,8 @@ const subjects = [
         icon: '🎉',
         description: 'Engaging texts for advanced readers - longer passages with modern topics kids love',
         component: ReadingForFun,
-        isNew: true
+        isNew: true,
+        literacyCategory: 'reading'
       },
       {
         id: 'readers-theatre',
@@ -67,7 +114,8 @@ const subjects = [
         icon: '🎭',
         description: 'Drama scripts with character roles for student performances and oral reading practice',
         component: ReadersTheatre,
-        isNew: true
+        isNew: true,
+        literacyCategory: ['reading', 'speaking']
       },
       {
         id: 'morphology',
@@ -75,7 +123,8 @@ const subjects = [
         icon: '🔤',
         description: 'Learn how words work! Teach prefixes, suffixes, and base words with engaging multi-level lessons',
         component: Morphology,
-        isNew: true
+        isNew: true,
+        literacyCategory: 'spelling'
       },
       {
         id: 'literacy-warmup',
@@ -89,15 +138,18 @@ const subjects = [
             id: 'prep',
             name: 'Prep/Foundation',
             description: 'SATPIN progression - single letter sounds (4-6 years)',
-            component: PrepLiteracyWarmup
+            component: PrepLiteracyWarmup,
+            literacyCategory: 'phonics'
           },
           {
             id: 'grade5',
             name: 'Grade 5',
             description: 'Complex blends and morphology (10-11 years)',
-            component: LiteracyWarmup
+            component: LiteracyWarmup,
+            literacyCategory: 'phonics'
           }
-        ]
+        ],
+        literacyCategory: 'phonics'
       },
       {
         id: 'fluency-practice',
@@ -105,56 +157,64 @@ const subjects = [
         icon: '📖',
         description: 'Reading passages aligned with spelling levels for fluency development',
         component: FluencyPractice,
-        isUpdated: true
+        isUpdated: true,
+        literacyCategory: 'reading'
       },
       {
         id: 'spelling-program',
         name: 'Spelling Program',
         icon: '🔡',
         description: 'Structured spelling lists with activities and assessments',
-        component: SpellingProgram
+        component: SpellingProgram,
+        literacyCategory: 'spelling'
       },
       {
         id: 'reading-comprehension',
         name: 'Reading Comprehension',
         icon: '🧠',
         description: 'Text analysis and understanding activities',
-        component: ReadingComprehension
+        component: ReadingComprehension,
+        literacyCategory: 'reading'
       },
       {
         id: 'visual-writing-prompts',
         name: 'Visual Writing Prompts',
         icon: '🖼️',
         description: 'Inspire creativity through visual storytelling prompts',
-        component: VisualWritingPrompts
+        component: VisualWritingPrompts,
+        literacyCategory: 'writing'
       },
       {
         id: 'vocabulary-builder',
         name: 'Vocabulary Builder',
         icon: '📖',
         description: 'Word study and vocabulary development',
-        component: ComingSoon
+        component: ComingSoon,
+        literacyCategory: 'spelling'
       },
       {
         id: 'grammar-workshop',
         name: 'Grammar Workshop',
         icon: '✏️',
         description: 'Interactive grammar lessons and practice',
-        component: ComingSoon
+        component: ComingSoon,
+        literacyCategory: 'writing'
       },
       {
         id: 'poetry-corner',
         name: 'Poetry Corner',
         icon: '🎭',
         description: 'Explore different forms of poetry writing',
-        component: ComingSoon
+        component: ComingSoon,
+        literacyCategory: ['writing', 'speaking']
       },
       {
         id: 'handwriting-practice',
         name: 'Handwriting Practice',
         icon: '✏️',
         description: 'Letter formation and handwriting improvement',
-        component: ComingSoon
+        component: ComingSoon,
+        literacyCategory: 'writing'
       }
     ]
   },
@@ -379,11 +439,13 @@ const CurriculumCornerTab = ({
   const [activeSubject, setActiveSubject] = useState(null);
   const [activeActivity, setActiveActivity] = useState(null);
   const [selectedYearLevel, setSelectedYearLevel] = useState(null);
+  const [literacyFocus, setLiteracyFocus] = useState('all');
 
   const handleSubjectSelect = (subject) => {
     setActiveSubject(subject);
     setActiveActivity(null);
     setSelectedYearLevel(null);
+    setLiteracyFocus('all');
   };
 
   const handleActivitySelect = (activity) => {
@@ -405,6 +467,7 @@ const CurriculumCornerTab = ({
     setActiveSubject(null);
     setActiveActivity(null);
     setSelectedYearLevel(null);
+    setLiteracyFocus('all');
   };
 
   const handleBackToActivities = () => {
@@ -517,6 +580,30 @@ const CurriculumCornerTab = ({
 
   // Render activities for selected subject
   if (activeSubject) {
+    const isLiteracySubject = activeSubject.id === 'literacy';
+    const displayedActivities = isLiteracySubject
+      ? activeSubject.activities.filter((activity) => {
+          if (literacyFocus === 'all') {
+            return true;
+          }
+
+          const category = activity.literacyCategory;
+
+          if (!category) {
+            return false;
+          }
+
+          if (Array.isArray(category)) {
+            return category.includes(literacyFocus);
+          }
+
+          return category === literacyFocus;
+        })
+      : activeSubject.activities;
+    const selectedFocus = isLiteracySubject
+      ? literacyFocusAreas.find((area) => area.id === literacyFocus)
+      : null;
+
     return (
       <div className="space-y-6">
         {/* Subject Header */}
@@ -532,9 +619,66 @@ const CurriculumCornerTab = ({
           <button onClick={handleBackToSubjects} className="absolute top-4 right-4 bg-black bg-opacity-20 text-white px-4 py-2 rounded-lg hover:bg-opacity-30 transition-all">← Back</button>
         </div>
 
+        {isLiteracySubject && (
+          <div className="bg-white rounded-3xl shadow-lg p-6 md:p-8 space-y-6">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+              <div>
+                <p className="text-xs font-semibold tracking-[0.3em] uppercase text-purple-500">Literacy Focus</p>
+                <h3 className="text-3xl md:text-4xl font-black text-slate-800 mt-2 leading-tight">
+                  Choose a colourful pathway for your class
+                </h3>
+                <p className="text-slate-500 mt-3 text-base md:text-lg max-w-2xl">
+                  Launch instantly into Reading, Writing, Spelling, Phonics or Speaking adventures with bold buttons designed for big screens.
+                </p>
+              </div>
+              {selectedFocus && (
+                <div className={`bg-gradient-to-r ${selectedFocus.gradient} text-white rounded-2xl px-5 py-4 shadow-xl flex flex-col sm:flex-row sm:items-center gap-2 max-w-sm`}> 
+                  <span className="text-3xl">{selectedFocus.icon}</span>
+                  <div>
+                    <p className="text-xs uppercase tracking-widest text-white/70">Currently viewing</p>
+                    <p className="text-lg font-semibold leading-tight">{selectedFocus.title}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {literacyFocusAreas.map((area) => {
+                const isActive = literacyFocus === area.id;
+
+                return (
+                  <button
+                    key={area.id}
+                    type="button"
+                    onClick={() => setLiteracyFocus(area.id)}
+                    className={`group relative overflow-hidden rounded-2xl p-6 text-left transition-all duration-300 transform hover:scale-[1.02] focus:outline-none focus-visible:ring-4 focus-visible:ring-offset-2 focus-visible:ring-purple-400 focus-visible:ring-offset-white ${
+                      isActive ? 'shadow-2xl ring-4 ring-purple-200' : 'shadow-lg'
+                    }`}
+                    aria-pressed={isActive}
+                  >
+                    <div className={`absolute inset-0 bg-gradient-to-br ${area.gradient} ${isActive ? 'opacity-100' : 'opacity-90'}`}></div>
+                    <div className="absolute inset-0 bg-white/10 mix-blend-overlay"></div>
+                    <div className="relative z-10 text-white space-y-3">
+                      <div className="text-4xl drop-shadow-lg">{area.icon}</div>
+                      <h4 className="text-2xl font-extrabold tracking-tight drop-shadow">{area.title}</h4>
+                      <p className="text-sm leading-snug text-white/90">{area.description}</p>
+                      <span className={`inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wider rounded-full px-3 py-1 transition-all ${
+                        isActive ? 'bg-white/25 text-white shadow-inner' : 'bg-white/20 text-white/80 group-hover:bg-white/30 group-hover:text-white'
+                      }`}>
+                        {isActive ? 'Selected' : 'Tap to explore'}
+                        <span>→</span>
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Activities Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {activeSubject.activities.map(activity => (
+        <div className={`grid grid-cols-1 md:grid-cols-2 ${isLiteracySubject ? 'xl:grid-cols-2 2xl:grid-cols-3' : 'lg:grid-cols-3'} gap-6`}>
+          {displayedActivities.map(activity => (
             <button
               key={activity.id}
               onClick={() => handleActivitySelect(activity)}
@@ -583,6 +727,17 @@ const CurriculumCornerTab = ({
               </div>
             </button>
           ))}
+          {displayedActivities.length === 0 && (
+            <div className="col-span-full">
+              <div className="bg-white border border-purple-200 rounded-2xl p-8 text-center shadow-sm">
+                <div className="text-4xl mb-3">✨</div>
+                <h4 className="text-2xl font-bold text-slate-800 mb-2">Fresh literacy experiences coming soon!</h4>
+                <p className="text-slate-500 max-w-2xl mx-auto">
+                  We are adding even more {selectedFocus?.title?.toLowerCase() || 'literacy'} resources. Choose a different pathway or check back shortly for new tools.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );

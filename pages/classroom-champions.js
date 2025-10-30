@@ -878,12 +878,16 @@ const handleUpdateStudent = useCallback(async (studentId, updatedData, reason = 
                 />;
       
       case 'quizshow':
-        return <QuizShowTab 
-                  {...commonProps}
-                  userData={userData}
-                  onAwardXP={awardXPToStudent}
-                  onAwardCoins={awardCoinsToStudent}
-                />;
+        return (
+          <QuizShowTab
+            {...commonProps}
+            userData={userData}
+            onAwardXP={awardXPToStudent}
+            onAwardCoins={awardCoinsToStudent}
+            architectureVersion={architectureVersion}
+            currentClassData={currentClassData}
+          />
+        );
       
       case 'shop':
         return <ShopTab
@@ -905,13 +909,15 @@ const handleUpdateStudent = useCallback(async (studentId, updatedData, reason = 
                 />;
       
       case 'games':
-  return <GamesTab 
+        return (
+          <GamesTab
             {...commonProps}
-            onAwardXP={awardXPToStudent}        // ADD THIS
-            onAwardCoins={awardCoinsToStudent}  // ADD THIS  
-            currentClassData={currentClassData} // ADD THIS
-            user={user}                         // ADD THIS
-          />;
+            onAwardXP={awardXPToStudent}
+            onAwardCoins={awardCoinsToStudent}
+            currentClassData={currentClassData}
+            user={user}
+          />
+        );
       
       case 'curriculum':
         return <CurriculumCornerTab 
@@ -956,19 +962,21 @@ const handleUpdateStudent = useCallback(async (studentId, updatedData, reason = 
                 />;
       
       case 'settings':
-        return <SettingsTab 
-                  {...commonProps}
-                  setStudents={setStudents}
-                  updateAndSaveClass={() => {}} // Deprecated in new architecture
-                  AVAILABLE_AVATARS={AVAILABLE_AVATARS}
-                  currentClassData={currentClassData}
-                  updateClassCode={updateClassCode}
-                  widgetSettings={widgetSettings}
-                  onUpdateWidgetSettings={saveWidgetSettings}
-                      onUpdateStudent={handleUpdateStudent} // Add this
-    architectureVersion={architectureVersion} // Add this
-    user={user} // Add this
-                />;
+        return (
+          <SettingsTab
+            {...commonProps}
+            setStudents={setStudents}
+            updateAndSaveClass={() => {}}
+            AVAILABLE_AVATARS={AVAILABLE_AVATARS}
+            currentClassData={currentClassData}
+            updateClassCode={updateClassCode}
+            widgetSettings={widgetSettings}
+            onUpdateWidgetSettings={saveWidgetSettings}
+            onUpdateStudent={handleUpdateStudent}
+            architectureVersion={architectureVersion}
+            user={user}
+          />
+        );
       
       default:
         return <div className="p-8 text-center text-gray-500">This tab is under construction.</div>;

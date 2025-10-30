@@ -1,7 +1,16 @@
 // components/games/EducationalMemoryGame.js - INTEGRATED WITH MAIN APP ARCHITECTURE
 import React, { useState, useEffect, useCallback } from 'react';
 
-const EducationalMemoryGame = ({ studentData, showToast, classData, updateStudentData, students = [], onAwardXP, onAwardCoins }) => {
+const EducationalMemoryGame = ({
+  studentData,
+  showToast,
+  classData,
+  updateStudentData,
+  students = [],
+  onAwardXP,
+  onAwardCoins,
+  allowRewards = false
+}) => {
   // Firebase setup for multiplayer coordination only (not student data)
   const [firebaseReady, setFirebaseReady] = useState(false);
   const [firebase, setFirebase] = useState(null);
@@ -236,8 +245,11 @@ const EducationalMemoryGame = ({ studentData, showToast, classData, updateStuden
 
   // Award XP to student using main app's system
   const awardStudentXP = useCallback(async (studentId, amount, reason) => {
+    if (!allowRewards) {
+      return;
+    }
+
     if (gameMode === 'single' && studentId === studentData?.id) {
-      // Single player - use the updateStudentData function
       if (updateStudentData) {
         try {
           await updateStudentData({
@@ -248,18 +260,15 @@ const EducationalMemoryGame = ({ studentData, showToast, classData, updateStuden
           console.error('Error awarding XP:', error);
         }
       }
-    } else if (gameMode === 'multiplayer') {
-      // Multiplayer - use the onAwardXP function if available
-      if (onAwardXP) {
-        try {
-          await onAwardXP(studentId, amount, reason);
-          console.log(`✅ Awarded ${amount} XP to student ${studentId} for ${reason}`);
-        } catch (error) {
-          console.error('Error awarding XP in multiplayer:', error);
-        }
+    } else if (gameMode === 'multiplayer' && onAwardXP) {
+      try {
+        await onAwardXP(studentId, amount, reason);
+        console.log(`✅ Awarded ${amount} XP to student ${studentId} for ${reason}`);
+      } catch (error) {
+        console.error('Error awarding XP in multiplayer:', error);
       }
     }
-  }, [gameMode, studentData, updateStudentData, onAwardXP]);
+  }, [allowRewards, gameMode, studentData, updateStudentData, onAwardXP]);
 
   // Create multiplayer game
   const createMultiplayerGame = async () => {
@@ -523,12 +532,15 @@ const EducationalMemoryGame = ({ studentData, showToast, classData, updateStuden
                   currentTurn: (currentTurn + 1) % gamePlayers.length
                 };
                 
-                // Award XP to the actual student
-                try {
-                  await awardStudentXP(actualStudentId, pointsEarned, 'Memory Match');
-                  showToast(`${currentPlayer.name} found a match! +${pointsEarned} XP`, 'success');
-                } catch (error) {
-                  console.error('Error awarding XP:', error);
+                if (allowRewards) {
+                  try {
+                    await awardStudentXP(actualStudentId, pointsEarned, 'Memory Match');
+                    showToast(`${currentPlayer.name} found a match! +${pointsEarned} XP`, 'success');
+                  } catch (error) {
+                    console.error('Error awarding XP:', error);
+                  }
+                } else {
+                  showToast(`${currentPlayer.name} found a match!`, 'success');
                 }
                 
                 // Check for win condition
@@ -541,8 +553,11 @@ const EducationalMemoryGame = ({ studentData, showToast, classData, updateStuden
                   
                   // Award bonus XP to winner
                   const winnerPlayer = gamePlayers.find(p => p.id === winnerPlayerId);
-                  if (winnerPlayer?.actualStudentId) {
+                  if (allowRewards && winnerPlayer?.actualStudentId) {
                     await awardStudentXP(winnerPlayer.actualStudentId, 5, 'Memory Game Winner');
+                    showToast(`${winnerPlayer.name} wins the match! +5 bonus XP`, 'success');
+                  } else if (winnerPlayer) {
+                    showToast(`${winnerPlayer.name} wins the match!`, 'success');
                   }
                 }
                 
@@ -564,15 +579,23 @@ const EducationalMemoryGame = ({ studentData, showToast, classData, updateStuden
               setTotalMatches(prev => prev + 1);
               
               // Award XP using main app's system
-              await awardStudentXP(studentData?.id, pointsEarned, 'Memory Match');
-              showToast(`Great match! +${pointsEarned} XP`, 'success');
+              if (allowRewards) {
+                await awardStudentXP(studentData?.id, pointsEarned, 'Memory Match');
+                showToast(`Great match! +${pointsEarned} XP`, 'success');
+              } else {
+                showToast('Great match!', 'success');
+              }
               
               // Check win condition
               if (newMatchedCards.length === cards.length) {
                 setWinner(playerInfo.id);
                 // Award bonus XP for completing the game
-                await awardStudentXP(studentData?.id, 5, 'Memory Game Complete');
-                showToast('Congratulations! You found all matches! +5 bonus XP', 'success');
+                if (allowRewards) {
+                  await awardStudentXP(studentData?.id, 5, 'Memory Game Complete');
+                  showToast('Congratulations! You found all matches! +5 bonus XP', 'success');
+                } else {
+                  showToast('Congratulations! You found all matches!', 'success');
+                }
               }
             }
             

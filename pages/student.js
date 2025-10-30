@@ -1,5 +1,5 @@
 // pages/student.js - UPDATED: Added Literacy tab with Visual Writing Prompts
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { firestore } from '../utils/firebase';
 import { collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
 
@@ -15,6 +15,7 @@ import StudentReading from '../components/student/StudentReading';
 import StudentMathMentals from '../components/student/StudentMathMentals';
 import StudentMaths from '../components/student/StudentMaths';
 import VisualWritingPrompts from '../components/curriculum/literacy/VisualWritingPrompts';
+import DailyMysteryBoxModal from '../components/student/DailyMysteryBoxModal';
 
 // Import from the correct gameHelpers file
 import { 
@@ -28,8 +29,44 @@ import {
   SHOP_PREMIUM_PETS,
   HALLOWEEN_BASIC_AVATARS,
   HALLOWEEN_PREMIUM_AVATARS,
-  HALLOWEEN_BASIC_PETS,
+  HALLOWEEN_PETS,
 } from '../utils/gameHelpers';
+
+const isSameCalendarDay = (dateA, dateB) => (
+  dateA.getFullYear() === dateB.getFullYear() &&
+  dateA.getMonth() === dateB.getMonth() &&
+  dateA.getDate() === dateB.getDate()
+);
+
+const parseDateValue = (value) => {
+  if (!value) {
+    return null;
+  }
+
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value;
+  }
+
+  if (typeof value === 'string' || typeof value === 'number') {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  if (typeof value === 'object') {
+    if (typeof value.toDate === 'function') {
+      const parsed = value.toDate();
+      return parsed instanceof Date && !Number.isNaN(parsed.getTime()) ? parsed : null;
+    }
+
+    if (typeof value.seconds === 'number') {
+      const milliseconds = value.seconds * 1000 + Math.floor((value.nanoseconds || 0) / 1e6);
+      const parsed = new Date(milliseconds);
+      return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+  }
+
+  return null;
+};
 
 const StudentPortal = () => {
   // Authentication states
@@ -50,9 +87,96 @@ const StudentPortal = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [activeSubTab, setActiveSubTab] = useState(null); // For subtabs within Maths/Literacy
   const [architectureVersion, setArchitectureVersion] = useState('unknown');
+  const [dailyMysteryBoxAvailable, setDailyMysteryBoxAvailable] = useState(false);
+  const [showDailyMysteryBox, setShowDailyMysteryBox] = useState(false);
+  const dailyMysteryBoxAutoOpenKeyRef = useRef(null);
 
   // Login flow states
   const [loginStep, setLoginStep] = useState('classCode'); // 'classCode', 'studentSelect', 'password'
+
+  const availableAvatarPool = useMemo(
+    () => [...SHOP_BASIC_AVATARS, ...SHOP_PREMIUM_AVATARS, ...(HALLOWEEN_BASIC_AVATARS || []), ...(HALLOWEEN_PREMIUM_AVATARS || [])],
+    []
+  );
+
+  const availablePetPool = useMemo(
+    () => [...SHOP_BASIC_PETS, ...SHOP_PREMIUM_PETS, ...(HALLOWEEN_PETS || [])],
+    []
+  );
+
+  const getDailyMysteryBoxStorageKey = useCallback((student) => {
+    if (!student) {
+      return null;
+    }
+
+    const identifier =
+      student.id ||
+      student.studentId ||
+      student.uid ||
+      student.userId ||
+      student.email ||
+      student.username ||
+      (student.firstName ? `${student.firstName}-${student.lastName || ''}`.trim() : null);
+
+    if (!identifier) {
+      return null;
+    }
+
+    return `dailyMysteryBoxSeen:${identifier}`;
+  }, []);
+
+  const refreshDailyMysteryBoxAvailability = useCallback(
+    (student, { autoOpen = false } = {}) => {
+      if (!student) {
+        setDailyMysteryBoxAvailable(false);
+        setShowDailyMysteryBox(false);
+        dailyMysteryBoxAutoOpenKeyRef.current = null;
+        return false;
+      }
+
+      const lastClaimDate = parseDateValue(student.lastFreeMysteryBoxAt);
+      const today = new Date();
+      const todayKey = today.toISOString().slice(0, 10);
+      const available = !lastClaimDate || !isSameCalendarDay(lastClaimDate, today);
+
+      setDailyMysteryBoxAvailable(available);
+
+      if (!available) {
+        setShowDailyMysteryBox(false);
+        dailyMysteryBoxAutoOpenKeyRef.current = null;
+        return false;
+      }
+
+      const seenStorageKey = getDailyMysteryBoxStorageKey(student);
+      let seenToday = false;
+
+      if (seenStorageKey) {
+        try {
+          seenToday = sessionStorage.getItem(seenStorageKey) === todayKey;
+        } catch (error) {
+          console.warn('Unable to read daily mystery box session state:', error);
+        }
+      }
+
+      const alreadyAutoOpenedToday = dailyMysteryBoxAutoOpenKeyRef.current === todayKey;
+
+      if (autoOpen || (!alreadyAutoOpenedToday && !seenToday)) {
+        setShowDailyMysteryBox(true);
+        dailyMysteryBoxAutoOpenKeyRef.current = todayKey;
+
+        if (seenStorageKey) {
+          try {
+            sessionStorage.setItem(seenStorageKey, todayKey);
+          } catch (error) {
+            console.warn('Unable to persist daily mystery box session state:', error);
+          }
+        }
+      }
+
+      return true;
+    },
+    [getDailyMysteryBoxStorageKey]
+  );
 
   // Check for existing session on load
   useEffect(() => {
@@ -66,12 +190,73 @@ const StudentPortal = () => {
         setTeacherUserId(session.teacherUserId);
         setArchitectureVersion(session.architectureVersion || 'unknown');
         setActiveTab('dashboard');
+        if (session.studentData) {
+          refreshDailyMysteryBoxAvailability(session.studentData, { autoOpen: true });
+        }
       } catch (error) {
         console.error('Error parsing saved session:', error);
         sessionStorage.removeItem('studentSession');
       }
     }
+  }, [refreshDailyMysteryBoxAvailability]);
+
+  useEffect(() => {
+    if (!isLoggedIn || !studentData) {
+      return;
+    }
+
+    refreshDailyMysteryBoxAvailability(studentData);
+  }, [isLoggedIn, refreshDailyMysteryBoxAvailability, studentData]);
+
+  const showToast = useCallback((message, type = 'info') => {
+    const toastElement = document.createElement('div');
+    toastElement.className = `fixed top-4 left-4 right-4 md:top-4 md:right-4 md:left-auto z-50 p-4 rounded-lg shadow-lg text-white font-semibold text-center md:text-left max-w-sm mx-auto md:mx-0 ${
+      type === 'success' ? 'bg-green-500' :
+      type === 'error' ? 'bg-red-500' :
+      type === 'warning' ? 'bg-yellow-500' :
+      'bg-blue-500'
+    }`;
+    toastElement.textContent = message;
+
+    document.body.appendChild(toastElement);
+
+    setTimeout(() => {
+      if (toastElement.parentNode) {
+        toastElement.parentNode.removeChild(toastElement);
+      }
+    }, 4000);
   }, []);
+
+  const handleDailyMysteryBoxClaimed = () => {
+    setDailyMysteryBoxAvailable(false);
+    setShowDailyMysteryBox(false);
+    dailyMysteryBoxAutoOpenKeyRef.current = null;
+  };
+
+  const handleOpenDailyMysteryBox = useCallback(() => {
+    if (!dailyMysteryBoxAvailable) {
+      showToast('You have already opened your free mystery box today. Come back tomorrow for another surprise!', 'info');
+      return;
+    }
+
+    setShowDailyMysteryBox(true);
+
+    const todayKey = new Date().toISOString().slice(0, 10);
+    if (dailyMysteryBoxAutoOpenKeyRef.current !== todayKey) {
+      dailyMysteryBoxAutoOpenKeyRef.current = todayKey;
+    }
+
+    if (studentData) {
+      const storageKey = getDailyMysteryBoxStorageKey(studentData);
+      if (storageKey) {
+        try {
+          sessionStorage.setItem(storageKey, todayKey);
+        } catch (error) {
+          console.warn('Unable to persist daily mystery box session state:', error);
+        }
+      }
+    }
+  }, [dailyMysteryBoxAvailable, getDailyMysteryBoxStorageKey, showToast, studentData]);
 
   // ===============================================
   // STEP 1: CLASS CODE SEARCH
@@ -290,8 +475,9 @@ const StudentPortal = () => {
       } catch (sessionError) {
         console.warn('⚠️ Could not save session to sessionStorage:', sessionError);
       }
-      
+
       setStudentData(selectedStudent);
+      refreshDailyMysteryBoxAvailability(selectedStudent, { autoOpen: true });
       setIsLoggedIn(true);
       setActiveTab('dashboard');
       
@@ -360,13 +546,16 @@ const StudentPortal = () => {
         }
       }
 
+      const nextStudentData = { ...studentData, ...updatedStudentData };
+
       // Update local state
-      setStudentData(prev => ({ ...prev, ...updatedStudentData }));
-      
+      setStudentData(nextStudentData);
+      refreshDailyMysteryBoxAvailability(nextStudentData);
+
       // Update session storage
       try {
         const session = JSON.parse(sessionStorage.getItem('studentSession') || '{}');
-        session.studentData = { ...session.studentData, ...updatedStudentData };
+        session.studentData = nextStudentData;
         sessionStorage.setItem('studentSession', JSON.stringify(session));
       } catch (sessionError) {
         console.warn('Could not update session storage:', sessionError);
@@ -405,6 +594,9 @@ const StudentPortal = () => {
     setPasswordError('');
     setLoginStep('classCode');
     setActiveSubTab(null);
+    setDailyMysteryBoxAvailable(false);
+    setShowDailyMysteryBox(false);
+    dailyMysteryBoxAutoOpenKeyRef.current = null;
   };
 
   const handleBackToClassCode = () => {
@@ -422,25 +614,6 @@ const StudentPortal = () => {
     setStudentPassword('');
     setPasswordError('');
     setLoginStep('studentSelect');
-  };
-
-  const showToast = (message, type = 'info') => {
-    const toastElement = document.createElement('div');
-    toastElement.className = `fixed top-4 left-4 right-4 md:top-4 md:right-4 md:left-auto z-50 p-4 rounded-lg shadow-lg text-white font-semibold text-center md:text-left max-w-sm mx-auto md:mx-0 ${
-      type === 'success' ? 'bg-green-500' : 
-      type === 'error' ? 'bg-red-500' : 
-      type === 'warning' ? 'bg-yellow-500' : 
-      'bg-blue-500'
-    }`;
-    toastElement.textContent = message;
-    
-    document.body.appendChild(toastElement);
-    
-    setTimeout(() => {
-      if (toastElement.parentNode) {
-        toastElement.parentNode.removeChild(toastElement);
-      }
-    }, 4000);
   };
 
   // ===============================================
@@ -701,13 +874,15 @@ const StudentPortal = () => {
     switch (activeTab) {
       case 'dashboard':
         return (
-          <StudentDashboard 
+          <StudentDashboard
             studentData={studentData}
             classData={classData}
             getAvatarImage={getAvatarImage}
             getPetImage={getPetImage}
             calculateCoins={calculateCoins}
             calculateAvatarLevel={calculateAvatarLevel}
+            dailyMysteryBoxAvailable={dailyMysteryBoxAvailable}
+            onOpenDailyMysteryBox={handleOpenDailyMysteryBox}
           />
         );
       
@@ -779,7 +954,7 @@ const StudentPortal = () => {
       
       case 'shop':
         return (
-          <StudentShop 
+          <StudentShop
             studentData={studentData}
             updateStudentData={updateStudentData}
             showToast={showToast}
@@ -791,6 +966,9 @@ const StudentPortal = () => {
             SHOP_PREMIUM_AVATARS={SHOP_PREMIUM_AVATARS}
             SHOP_BASIC_PETS={SHOP_BASIC_PETS}
             SHOP_PREMIUM_PETS={SHOP_PREMIUM_PETS}
+            HALLOWEEN_BASIC_AVATARS={HALLOWEEN_BASIC_AVATARS}
+            HALLOWEEN_PREMIUM_AVATARS={HALLOWEEN_PREMIUM_AVATARS}
+            HALLOWEEN_PETS={HALLOWEEN_PETS}
             classRewards={classData?.classRewards || []}
           />
         );
@@ -851,12 +1029,24 @@ const StudentPortal = () => {
             </div>
           </div>
           
-          <button 
-            onClick={handleLogout}
-            className="bg-gray-500 text-white px-3 md:px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors text-sm md:text-base flex-shrink-0"
-          >
-            Logout
-          </button>
+          <div className="flex items-center gap-2">
+            {dailyMysteryBoxAvailable && (
+              <button
+                onClick={handleOpenDailyMysteryBox}
+                className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 px-3 py-2 text-sm font-semibold text-white shadow-md transition hover:from-purple-600 hover:to-pink-600 focus:outline-none focus:ring-2 focus:ring-purple-300"
+              >
+                <span className="text-lg">🎁</span>
+                <span className="hidden sm:inline">Daily Mystery Box</span>
+                <span className="sm:hidden">Daily Box</span>
+              </button>
+            )}
+            <button
+              onClick={handleLogout}
+              className="rounded-lg bg-gray-500 px-3 py-2 text-sm text-white transition-colors hover:bg-gray-600 md:px-4 md:text-base"
+            >
+              Logout
+            </button>
+          </div>
         </div>
       </div>
 
@@ -925,6 +1115,18 @@ const StudentPortal = () => {
       <main className="max-w-6xl mx-auto px-3 md:px-4 py-4 md:py-6">
         {renderTabContent()}
       </main>
+
+      <DailyMysteryBoxModal
+        isOpen={showDailyMysteryBox && Boolean(studentData)}
+        onClose={() => setShowDailyMysteryBox(false)}
+        studentData={studentData}
+        updateStudentData={updateStudentData}
+        showToast={showToast}
+        avatars={availableAvatarPool}
+        pets={availablePetPool}
+        rewards={classData?.classRewards || []}
+        onClaimComplete={handleDailyMysteryBoxClaimed}
+      />
     </div>
   );
 };
