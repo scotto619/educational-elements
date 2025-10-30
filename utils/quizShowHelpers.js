@@ -360,6 +360,78 @@ export const createQuizFromPreset = (category, questionCount = 10) => {
   };
 };
 
+export const sanitizeQuizForGame = (quiz) => {
+  if (!quiz) return null;
+
+  const safeQuestions = (quiz.questions || [])
+    .filter((question) => question && typeof question === 'object')
+    .map((question, index) => {
+      const rawQuestion = typeof question.question === 'string' ? question.question.trim() : '';
+      const options = Array.isArray(question.options)
+        ? question.options.map((option) => (typeof option === 'string' ? option : '')).filter(Boolean)
+        : [];
+
+      if (!rawQuestion || options.length < 2) {
+        return null;
+      }
+
+      const numericAnswer = Number.parseInt(question.correctAnswer, 10);
+      const safeCorrectAnswer = Number.isInteger(numericAnswer) && numericAnswer >= 0 && numericAnswer < options.length
+        ? numericAnswer
+        : 0;
+
+      const rawTimeLimit = Number.parseInt(question.timeLimit, 10);
+      const fallbackTime = Number.parseInt(quiz.settings?.timePerQuestion ?? quiz.defaultTimeLimit ?? 20, 10) || 20;
+      const timeLimit = Math.min(Math.max(Number.isFinite(rawTimeLimit) ? rawTimeLimit : fallbackTime, 5), 300);
+
+      const rawPoints = Number.parseInt(question.points, 10);
+      const points = Number.isFinite(rawPoints) ? rawPoints : 10;
+
+      return {
+        id: question.id || `q_${index}`,
+        question: rawQuestion,
+        type: question.type || 'multiple_choice',
+        options,
+        correctAnswer: safeCorrectAnswer,
+        timeLimit,
+        points,
+        media: question.media || null,
+      };
+    })
+    .filter(Boolean);
+
+  if (safeQuestions.length === 0) {
+    return null;
+  }
+
+  const baseTimePerQuestion = Number.parseInt(
+    quiz.settings?.timePerQuestion ?? quiz.defaultTimeLimit ?? 20,
+    10
+  ) || 20;
+
+  const clampedTimePerQuestion = Math.min(Math.max(baseTimePerQuestion, 5), 300);
+
+  return {
+    id: quiz.id || `quiz_${Date.now()}`,
+    title: (quiz.title || 'Untitled Quiz').trim(),
+    description: (quiz.description || '').trim(),
+    category: quiz.category || 'general',
+    isPreset: Boolean(quiz.isPreset),
+    questions: safeQuestions,
+    settings: {
+      showLeaderboard: quiz.settings?.showLeaderboard ?? true,
+      allowLateJoin: quiz.settings?.allowLateJoin ?? false,
+      timePerQuestion: clampedTimePerQuestion,
+      showCorrectAnswers: quiz.settings?.showCorrectAnswers ?? true,
+      allowRetakes: quiz.settings?.allowRetakes ?? false,
+      shuffleQuestions: quiz.settings?.shuffleQuestions ?? false,
+      shuffleAnswers: quiz.settings?.shuffleAnswers ?? true,
+    },
+    createdAt: quiz.createdAt || Date.now(),
+    updatedAt: Date.now(),
+  };
+};
+
 export const shuffleArray = (array) => {
   const shuffled = [...array];
   for (let i = shuffled.length - 1; i > 0; i--) {
@@ -533,6 +605,7 @@ export default {
   QUESTION_CATEGORIES,
   PRESET_QUESTIONS,
   createQuizFromPreset,
+  sanitizeQuizForGame,
   shuffleArray,
   formatTime,
   formatScore,

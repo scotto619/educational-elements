@@ -1,10 +1,10 @@
 // components/tabs/QuizShowTab.js - COMPLETE QUIZ CREATOR INTEGRATION
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { database } from '../../utils/firebase';
-import { ref, onValue, set, remove, update, off } from 'firebase/database';
+import { ref, onValue, set, remove, update } from 'firebase/database';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { firestore } from '../../utils/firebase';
-import { generateRoomCode, playQuizSound, createQuizFromPreset, QUESTION_CATEGORIES } from '../../utils/quizShowHelpers';
+import { generateRoomCode, playQuizSound, createQuizFromPreset, QUESTION_CATEGORIES, sanitizeQuizForGame } from '../../utils/quizShowHelpers';
 
 // Import components
 import QuizDashboard from '../quizshow/teacher/QuizDashboard';
@@ -33,10 +33,9 @@ const QuizShowTab = ({
   const [loading, setLoading] = useState(false);
   
   // Game State
-  const [activeGame, setActiveGame] = useState(null);
   const [roomCode, setRoomCode] = useState(null);
-  const [isHost, setIsHost] = useState(false);
   const [gameRoomData, setGameRoomData] = useState(null);
+  const roomSnapshotRef = useRef(null);
   
   // Quiz Management State
   const [savedQuizzes, setSavedQuizzes] = useState([]);
@@ -120,6 +119,18 @@ const QuizShowTab = ({
       setSavedQuizzes(freshQuizzes);
     }
   }, [currentClassData, extractSavedQuizzes, savedQuizzes]);
+
+  useEffect(() => {
+    if (!gameRoomData || !roomCode) return;
+
+    if (currentView === 'lobby' && gameRoomData.status === 'playing') {
+      setCurrentView('presentation');
+    }
+
+    if (currentView === 'presentation' && gameRoomData.status === 'waiting') {
+      setCurrentView('lobby');
+    }
+  }, [gameRoomData, roomCode, currentView]);
 
   const loadSavedQuizzes = async () => {
     setQuizzesLoading(true);
@@ -280,76 +291,93 @@ const QuizShowTab = ({
   // FIREBASE REAL-TIME LISTENERS (GAME)
   // ===============================================
   useEffect(() => {
-    if (roomCode) {
-      const gameRef = ref(database, `gameRooms/${roomCode}`);
-      const unsubscribe = onValue(gameRef, (snapshot) => {
-        const data = snapshot.val();
-        setGameRoomData(data);
-        
-        if (!data && activeGame) {
-          // Game was ended by host
-          setActiveGame(null);
-          setRoomCode(null);
-          setGameRoomData(null);
-          setCurrentView('dashboard');
+    if (!roomCode) return undefined;
+
+    const gameRef = ref(database, `gameRooms/${roomCode}`);
+    const unsubscribe = onValue(gameRef, (snapshot) => {
+      const data = snapshot.val();
+
+      if (!data) {
+        if (roomSnapshotRef.current) {
           showToast('Game ended', 'info');
         }
-      });
-      
-      return () => off(gameRef, 'value', unsubscribe);
-    }
-  }, [roomCode, activeGame]);
+
+        roomSnapshotRef.current = null;
+        setGameRoomData(null);
+        setRoomCode(null);
+        setCurrentView('dashboard');
+        return;
+      }
+
+      roomSnapshotRef.current = data;
+      setGameRoomData(data);
+    });
+
+    return () => unsubscribe();
+  }, [roomCode, showToast]);
 
   // ===============================================
   // GAME MANAGEMENT FUNCTIONS
   // ===============================================
   const createGame = async (quiz) => {
-    if (!quiz || !quiz.questions || quiz.questions.length === 0) {
-      showToast('Cannot start game: Quiz has no questions', 'error');
+    const sanitizedQuiz = sanitizeQuizForGame(quiz);
+
+    if (!sanitizedQuiz || sanitizedQuiz.questions.length === 0) {
+      showToast('Cannot start game: quiz must include valid questions and answers', 'error');
       return;
     }
 
     setLoading(true);
     try {
       const newRoomCode = generateRoomCode();
+      const now = Date.now();
       const gameData = {
         hostId: user.uid,
-        quizId: quiz.id,
-        quiz: quiz,
+        quizId: sanitizedQuiz.id,
+        quiz: sanitizedQuiz,
         status: 'waiting',
         currentQuestion: 0,
         startTime: null,
         questionPhase: 'showing',
         settings: {
-          showLeaderboard: true,
-          allowLateJoin: false,
-          timePerQuestion: quiz.defaultTimeLimit || 20,
-          showCorrectAnswers: quiz.settings?.showCorrectAnswers ?? true
+          showLeaderboard: sanitizedQuiz.settings?.showLeaderboard ?? true,
+          allowLateJoin: sanitizedQuiz.settings?.allowLateJoin ?? false,
+          timePerQuestion: sanitizedQuiz.settings?.timePerQuestion ?? 20,
+          showCorrectAnswers: sanitizedQuiz.settings?.showCorrectAnswers ?? true
         },
         players: {},
         responses: {},
-        createdAt: Date.now()
+        createdAt: now
       };
-      
+
       await set(ref(database, `gameRooms/${newRoomCode}`), gameData);
-      
+
+      roomSnapshotRef.current = gameData;
       setRoomCode(newRoomCode);
-      setActiveGame(gameData);
-      setIsHost(true);
+      setGameRoomData(gameData);
       setCurrentView('lobby');
-      
+
       playQuizSound('gameStart');
       showToast(`Game created! Room code: ${newRoomCode}`, 'success');
     } catch (error) {
       console.error('Error creating game:', error);
       showToast('Failed to create game', 'error');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const startGame = async () => {
-    if (!roomCode || !activeGame) return;
-    
+    if (!roomCode || !gameRoomData) {
+      showToast('Game room not ready yet', 'error');
+      return;
+    }
+
+    if (!gameRoomData.quiz?.questions?.length) {
+      showToast('Cannot start game: this quiz has no questions', 'error');
+      return;
+    }
+
     setLoading(true);
     try {
       const updates = {
@@ -358,16 +386,21 @@ const QuizShowTab = ({
         currentQuestion: 0,
         questionPhase: 'showing'
       };
-      
+
       await update(ref(database, `gameRooms/${roomCode}`), updates);
+      setGameRoomData((prev) => (prev ? { ...prev, ...updates } : prev));
+      roomSnapshotRef.current = roomSnapshotRef.current
+        ? { ...roomSnapshotRef.current, ...updates }
+        : updates;
       setCurrentView('presentation');
       playQuizSound('gameStart');
       showToast('Game started!', 'success');
     } catch (error) {
       console.error('Error starting game:', error);
       showToast('Failed to start game. Please try again.', 'error');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const endGame = async () => {
@@ -382,9 +415,9 @@ const QuizShowTab = ({
       
       // Remove game room
       await remove(ref(database, `gameRooms/${roomCode}`));
-      
+
       // Reset state
-      setActiveGame(null);
+      roomSnapshotRef.current = null;
       setRoomCode(null);
       setGameRoomData(null);
       setCurrentView('dashboard');
