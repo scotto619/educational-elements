@@ -1,40 +1,21 @@
 // components/student/StudentBingo.js - Student BINGO Card Component
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
+import BINGO_CATEGORIES, {
+  getBingoCategoryAnswers,
+  listBingoCategories
+} from '../../constants/bingoCategories';
 
-const BINGO_CATEGORIES = {
-  'times-tables': {
-    name: 'Times Tables',
-    icon: '✖️',  // was âœ–ï¸
-    color: 'from-blue-500 to-cyan-600',
-    answers: ['6', '12', '20', '30', '42', '56', '72', '90', '21', '32', '45', '48', '63', '54', '16', '27', '28', '25', '36', '49', '64', '81', '18', '24', '15', '35', '40', '50', '60', '70', '80']
-  },
-  'vocabulary': {
-    name: 'Vocabulary',
-    icon: '📚',  // was ðŸ"š
-    color: 'from-purple-500 to-pink-600',
-    answers: ['River', 'Joy', 'Enormous', 'Examine', 'Vibrant', 'Improve', 'Brave', 'Voyage', 'Ancient', 'Rush', 'Invisible', 'Ponder', 'Furious', 'Scheme', 'Lively', 'Crawl', 'Gigantic', 'Problem', 'Gleam', 'Spotless', 'Emotion', 'Survive', 'Crucial', 'Cooperate', 'Enchant']
-  },
-  'science': {
-    name: 'Science Facts',
-    icon: '🔬',  // was ðŸ"¬
-    color: 'from-green-500 to-emerald-600',
-    answers: ['Nucleus', 'Photosynthesis', 'Mercury', 'Water', 'Jupiter', 'Gravity', 'Electron', 'Mars', 'Biology', 'Mitochondria', 'Oxygen', 'Atom', 'Atmosphere', 'Solar', 'Exoskeleton', 'Meteorology', 'Vertebrates', 'Chlorophyll', 'Ampere', 'Cheetah', 'Eight']
-  },
-  'history': {
-    name: 'History',
-    icon: '⚔️',  // was ðŸ›ï¸
-    color: 'from-orange-500 to-red-600',
-    answers: ['Washington', 'Pharaoh', 'Titanic', 'Legion', 'Castle', 'Pyramids', 'Leif Erikson', 'Latin', 'Armstrong', 'Great Wall', 'Spartan', '1945', 'Silk Road', 'Black Death', 'Athens', 'Colosseum', 'Columbus', 'Mesopotamia', 'Europe', 'Italy', 'Papyrus', 'Scandinavia', 'Alexandria', 'Sword', 'Olympics']
-  },
-  'geography': {
-    name: 'Geography',
-    icon: '🗺️',  // was ðŸ—ºï¸
-    color: 'from-teal-500 to-blue-600',
-    answers: ['Pacific', 'Nile', 'Everest', 'Asia', 'Paris', 'China', 'Australia', 'Sahara', 'Tokyo', 'Russia', 'South America', 'Rome', 'Sri Lanka', 'Antarctica', 'Himalayas', 'North America', 'London', 'Italy', 'Angel Falls', 'Hawaii', 'Canberra', 'Mediterranean', 'Greenland']
+const shuffleArray = (values) => {
+  const result = [...values];
+  for (let i = result.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
   }
+  return result;
 };
 
 const StudentBingo = ({ studentData, showToast, classData }) => {
+  const categoryCards = useMemo(() => listBingoCategories(), []);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [bingoCard, setBingoCard] = useState([]);
   const [markedSquares, setMarkedSquares] = useState(new Set());
@@ -42,35 +23,52 @@ const StudentBingo = ({ studentData, showToast, classData }) => {
   const [bingoPattern, setBingoPattern] = useState(null);
   const [showCelebration, setShowCelebration] = useState(false);
 
-  const generateBingoCard = (category) => {
-    const answers = [...BINGO_CATEGORIES[category].answers];
-    const card = [];
-    
-    // Shuffle answers
-    for (let i = answers.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [answers[i], answers[j]] = [answers[j], answers[i]];
+  const selectedCategoryConfig = useMemo(
+    () => (selectedCategory ? BINGO_CATEGORIES[selectedCategory] : null),
+    [selectedCategory]
+  );
+
+  const generateBingoCard = (categoryKey) => {
+    const rawAnswers = getBingoCategoryAnswers(categoryKey).map((answer) => `${answer}`.trim());
+    const uniqueAnswers = Array.from(new Set(rawAnswers));
+
+    if (uniqueAnswers.length === 0) {
+      return Array.from({ length: 5 }, (_, row) =>
+        Array.from({ length: 5 }, (_, col) => ({
+          value: row === 2 && col === 2 ? 'FREE' : '',
+          isFree: row === 2 && col === 2,
+          id: `${row}-${col}`
+        }))
+      );
     }
-    
-    // Create 5x5 grid
+
+    const pool = [...uniqueAnswers];
+    while (pool.length < 24) {
+      pool.push(uniqueAnswers[pool.length % uniqueAnswers.length]);
+    }
+
+    const selections = shuffleArray(pool).slice(0, 24);
+    let selectionIndex = 0;
+
+    const card = [];
     for (let row = 0; row < 5; row++) {
-      const cardRow = [];
+      const rowValues = [];
       for (let col = 0; col < 5; col++) {
         if (row === 2 && col === 2) {
-          // Center FREE space
-          cardRow.push({ value: 'FREE', isFree: true, id: `${row}-${col}` });
+          rowValues.push({ value: 'FREE', isFree: true, id: `${row}-${col}` });
         } else {
-          const index = row * 5 + col - (row >= 2 && col >= 2 ? 1 : 0);
-          cardRow.push({ 
-            value: answers[index] || '', 
-            isFree: false, 
-            id: `${row}-${col}` 
+          const value = selections[selectionIndex] ?? '';
+          rowValues.push({
+            value,
+            isFree: false,
+            id: `${row}-${col}`
           });
+          selectionIndex += 1;
         }
       }
-      card.push(cardRow);
+      card.push(rowValues);
     }
-    
+
     return card;
   };
 
@@ -78,10 +76,11 @@ const StudentBingo = ({ studentData, showToast, classData }) => {
     setSelectedCategory(categoryKey);
     const newCard = generateBingoCard(categoryKey);
     setBingoCard(newCard);
-    setMarkedSquares(new Set(['2-2'])); // Mark center FREE space
+    setMarkedSquares(new Set(['2-2']));
     setHasBingo(false);
     setBingoPattern(null);
-    showToast(`${BINGO_CATEGORIES[categoryKey].name} BINGO card generated!`, 'success');
+    const category = BINGO_CATEGORIES[categoryKey];
+    showToast(`${category.name} BINGO card generated!`, 'success');
   };
 
   const handleSquareClick = (rowIndex, colIndex, square) => {
@@ -213,24 +212,27 @@ const StudentBingo = ({ studentData, showToast, classData }) => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {Object.entries(BINGO_CATEGORIES).map(([key, category]) => (
+          {categoryCards.map((category) => (
             <button
-              key={key}
-              onClick={() => handleCategorySelect(key)}
-              className="group relative overflow-hidden rounded-2xl p-8 text-left transition-all duration-300 hover:scale-105 hover:shadow-2xl active:scale-95"
-              style={{
-                background: `linear-gradient(135deg, var(--tw-gradient-stops))`
-              }}
+              key={category.key}
+              onClick={() => handleCategorySelect(category.key)}
+              className="group relative overflow-hidden rounded-2xl p-7 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl active:scale-95"
             >
-              <div className={`absolute inset-0 bg-gradient-to-br ${category.color}`}></div>
-              <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity"></div>
+              <div className={`absolute inset-0 bg-gradient-to-br ${category.color}`} />
+              <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity" />
               <div className="relative z-10">
-                <div className="text-5xl mb-3 transform group-hover:scale-110 transition-transform">
-                  {category.icon}
+                <div className="flex items-center justify-between">
+                  <span className="text-5xl mb-3 transform group-hover:scale-110 transition-transform">
+                    {category.icon}
+                  </span>
+                  <span className="text-xs uppercase tracking-wide bg-white/15 px-3 py-1 rounded-full font-semibold text-white">
+                    {category.type === 'math' ? 'Math Focus' : 'Curriculum'}
+                  </span>
                 </div>
-                <h3 className="text-2xl font-bold text-white mb-2">
-                  {category.name}
-                </h3>
+                <h3 className="text-2xl font-bold text-white mb-1">{category.name}</h3>
+                <p className="text-sm text-white/80 leading-relaxed">
+                  {category.description}
+                </p>
                 <div className="mt-4 inline-flex items-center text-white font-semibold">
                   <span>Get My Card</span>
                   <svg className="w-5 h-5 ml-2 group-hover:translate-x-2 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -240,7 +242,6 @@ const StudentBingo = ({ studentData, showToast, classData }) => {
               </div>
             </button>
           ))}
-
         </div>
 
         <div className="bg-purple-50 border-2 border-purple-200 rounded-xl p-6">
@@ -275,8 +276,6 @@ const StudentBingo = ({ studentData, showToast, classData }) => {
     );
   }
 
-  const category = BINGO_CATEGORIES[selectedCategory];
-
   return (
     <div className="space-y-6">
       {/* Celebration Overlay */}
@@ -305,14 +304,14 @@ const StudentBingo = ({ studentData, showToast, classData }) => {
       )}
 
       {/* Header */}
-      <div className={`bg-gradient-to-r ${category.color} rounded-2xl p-6 text-white shadow-xl`}>
+      <div className={`bg-gradient-to-r ${selectedCategoryConfig.color} rounded-2xl p-6 text-white shadow-xl`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <div className="text-5xl">{category.icon}</div>
+            <div className="text-5xl">{selectedCategoryConfig.icon}</div>
             <div>
-              <h2 className="text-2xl md:text-3xl font-bold">{category.name} BINGO</h2>
+              <h2 className="text-2xl md:text-3xl font-bold">{selectedCategoryConfig.name} BINGO</h2>
               <p className="text-white text-opacity-90 text-sm md:text-base">
-                {studentData.firstName}'s Card • {markedSquares.size - 1} marked
+                {studentData.firstName}'s Card • {Math.max(markedSquares.size - 1, 0)} marked
               </p>
             </div>
           </div>
@@ -351,7 +350,7 @@ const StudentBingo = ({ studentData, showToast, classData }) => {
       {/* BINGO Card */}
       <div className="bg-white rounded-2xl shadow-xl p-4 md:p-8">
         <div className="mb-6 flex items-center justify-center space-x-4">
-          <div className={`text-4xl md:text-6xl font-bold bg-gradient-to-r ${category.color} bg-clip-text text-transparent`}>
+          <div className={`text-4xl md:text-6xl font-bold bg-gradient-to-r ${selectedCategoryConfig.color} bg-clip-text text-transparent`}>
             {'BINGO'.split('').map((letter, i) => (
               <span key={i} className="inline-block mx-1 md:mx-2">{letter}</span>
             ))}
@@ -372,12 +371,12 @@ const StudentBingo = ({ studentData, showToast, classData }) => {
                   className={`
                     aspect-square rounded-xl font-bold text-xs md:text-sm lg:text-base
                     transition-all duration-200 transform hover:scale-105 active:scale-95
-                    ${square.isFree 
-                      ? `bg-gradient-to-br ${category.color} text-white cursor-default shadow-lg` 
-                      : isMarked 
+                    ${square.isFree
+                      ? `bg-gradient-to-br ${selectedCategoryConfig.color} text-white cursor-default shadow-lg`
+                      : isMarked
                         ? isInPattern
                           ? 'bg-gradient-to-br from-yellow-400 to-pink-500 text-white shadow-2xl scale-110'
-                          : `bg-gradient-to-br ${category.color} text-white shadow-lg`
+                          : `bg-gradient-to-br ${selectedCategoryConfig.color} text-white shadow-lg`
                         : 'bg-gray-100 text-gray-800 hover:bg-gray-200 border-2 border-gray-300'
                     }
                     ${isMarked && !square.isFree ? 'ring-4 ring-opacity-50' : ''}
@@ -411,12 +410,12 @@ const StudentBingo = ({ studentData, showToast, classData }) => {
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-blue-50 rounded-xl p-4 text-center">
           <div className="text-3xl mb-2">🎯</div>
-          <div className="text-2xl font-bold text-blue-600">{markedSquares.size - 1}</div>
+          <div className="text-2xl font-bold text-blue-600">{Math.max(markedSquares.size - 1, 0)}</div>
           <div className="text-sm text-gray-600">Marked</div>
         </div>
         <div className="bg-purple-50 rounded-xl p-4 text-center">
           <div className="text-3xl mb-2">⬜</div>
-          <div className="text-2xl font-bold text-purple-600">{25 - markedSquares.size}</div>
+          <div className="text-2xl font-bold text-purple-600">{Math.max(25 - markedSquares.size, 0)}</div>
           <div className="text-sm text-gray-600">Remaining</div>
         </div>
         <div className="bg-green-50 rounded-xl p-4 text-center">
