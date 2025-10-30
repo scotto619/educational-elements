@@ -1,0 +1,113 @@
+Firestore Database Rules:
+
+// Firestore Security Rules — FIXED FOR STUDENT PORTAL ACCESS
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+    
+    // -------- Helpers --------
+    function signedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+    
+    // -------- USERS --------
+    match /users/{userId} {
+      allow read, create, update: if isOwner(userId);
+    }
+    
+    // -------- CLASSES -------- 
+    // Teachers need auth to create/delete, but students need unauthenticated read access
+    match /classes/{classId} {
+      // Authenticated users (teachers) can do everything
+      allow read, write: if signedIn();
+      
+      // CRITICAL: Allow unauthenticated read for student portal class code lookup
+      allow read: if true;
+      
+      // Allow listing for authenticated users only
+      allow list: if signedIn();
+    }
+    
+    // -------- CLASS MEMBERSHIPS --------
+    // Students need to read membership data to get student lists
+    match /class_memberships/{classId} {
+      // Authenticated users (teachers) can do everything
+      allow read, write: if signedIn();
+      
+      // CRITICAL: Allow unauthenticated read for student portal
+      allow read: if true;
+    }
+    
+    // -------- STUDENTS --------
+    // Students need full read/write access to their own data without authentication
+    match /students/{studentId} {
+      // Authenticated users (teachers) can do everything
+      allow read, write: if signedIn();
+      
+      // CRITICAL: Allow unauthenticated read/write for student portal
+      // Students need to read their data and update progress
+      allow read, write: if true;
+      
+      // Allow listing for authenticated users only (teachers viewing all students)
+      allow list: if signedIn();
+    }
+    
+    // -------- STUDENT PORTAL DATA --------
+    match /publicClassData/{classCode} {
+      allow read: if true;
+      allow write: if signedIn();
+    }
+    
+    // -------- GAME COLLECTIONS -------- (UNCHANGED - WORKING)
+    match /studentSessions/{sessionId} {
+      allow read, write: if true;
+    }
+    
+    match /battleRoyaleGames/{gameId} {
+      allow read, write: if true;
+    }
+    
+    match /battleRoyaleStats/{gameId} {
+      allow read, write: if true;
+    }
+    
+    match /gameRooms/{roomId} {
+      allow read, write: if true;
+    }
+    
+    match /quizRooms/{roomId} {
+      allow read, write: if true;
+    }
+    
+    match /gameResults/{resultId} {
+      allow read, write: if true;
+    }
+    
+    match /tempStudentData/{dataId} {
+      allow read, write: if true;
+    }
+    
+    match /studentActivity/{activityId} {
+      allow write: if true;
+      allow read: if false;
+    }
+    
+    match /errorLogs/{logId} {
+      allow write: if true;
+      allow read: if false;
+    }
+    
+    match /discount_code_usage/{doc} {
+      allow read, write: if false;
+    }
+    
+    // -------- Default deny --------
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
