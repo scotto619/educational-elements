@@ -1202,6 +1202,140 @@ const SpecialistCreator = ({
 
       return false;
     };
+
+    const activeGroups = yearLevelGroups.filter(group => group.enabled && group.yearLevels.length > 0);
+
+    activeGroups.forEach(group => {
+      const groupedClasses = shuffleArray(
+        classes.filter(cls => group.yearLevels.includes(cls.yearLevel))
+      );
+
+      if (groupedClasses.length === 0) {
+        return;
+      }
+
+      if (group.timeSlot && scheduleGroupAtPreferredBlock(group, groupedClasses)) {
+        return;
+      }
+
+      let sessionsToCreate = Math.max(1, parseInt(group.sessions, 10) || 1);
+
+      while (sessionsToCreate > 0) {
+        const candidates = shuffleArray(
+          groupedClasses.filter(classObj =>
+            specialists.some(spec =>
+              isSpecialistAvailableForClass(spec, classObj) &&
+              !scheduledPairs.has(`${classObj.id}-${spec.id}`)
+            )
+          )
+        );
+
+        if (candidates.length === 0) {
+          break;
+        }
+
+        let scheduledBlock = false;
+
+        for (const slot of shuffledStartSlots()) {
+          const assignments = [];
+          const usedSpecialists = new Set();
+          let valid = true;
+
+          for (const classObj of candidates) {
+            const specialistOptions = shuffleArray(
+              specialists.filter(spec =>
+                isSpecialistAvailableForClass(spec, classObj) &&
+                !scheduledPairs.has(`${classObj.id}-${spec.id}`) &&
+                !usedSpecialists.has(spec.id)
+              )
+            );
+
+            let chosen = null;
+            let chosenMinimizeCount = 0;
+
+            for (const spec of specialistOptions) {
+              const slotsNeeded = Math.ceil(spec.duration / basePeriodDuration);
+              const periods = getConsecutivePeriods(slot.day, slot.index, slotsNeeded);
+              if (!periods) continue;
+
+              let conflict = false;
+              let minimizeCount = 0;
+
+              for (const period of periods) {
+                if (!isPeriodFreeForClass(classObj.id, period.id) || !isPeriodFreeForSpecialist(spec.id, period.id)) {
+                  conflict = true;
+                  break;
+                }
+
+                const constraint = checkConstraints(classObj, period);
+                if (constraint === 'avoid') {
+                  conflict = true;
+                  break;
+                }
+                if (constraint === 'minimize') {
+                  minimizeCount += 1;
+                }
+              }
+
+              if (!conflict) {
+                chosen = { specialist: spec, periods };
+                chosenMinimizeCount = minimizeCount;
+                break;
+              }
+            }
+
+            if (!chosen) {
+              valid = false;
+              break;
+            }
+
+            usedSpecialists.add(chosen.specialist.id);
+            assignments.push({
+              classObj,
+              specialist: chosen.specialist,
+              periods: chosen.periods,
+              minimizeCount: chosenMinimizeCount
+            });
+          }
+
+          if (valid) {
+            assignments
+              .sort((a, b) => a.minimizeCount - b.minimizeCount)
+              .forEach(({ classObj, specialist, periods }) => {
+                occupyBlock(classObj, specialist, periods);
+                scheduledPairs.add(`${classObj.id}-${specialist.id}`);
+              });
+
+            scheduledBlock = true;
+            break;
+          }
+        }
+
+        if (!scheduledBlock) {
+          break;
+        }
+
+        sessionsToCreate -= 1;
+      }
+    });
+
+    const remainingTasks = [];
+    classes.forEach(classObj => {
+      specialists.forEach(specialist => {
+        if (!isSpecialistAvailableForClass(specialist, classObj)) return;
+        const key = `${classObj.id}-${specialist.id}`;
+        if (scheduledPairs.has(key)) return;
+        remainingTasks.push({ classObj, specialist });
+      });
+    });
+
+    shuffleArray(remainingTasks).forEach(({ classObj, specialist }) => {
+      const success = schedulePair(classObj, specialist);
+      if (!success) {
+        console.warn(`Could not schedule ${specialist.name} for ${classObj.name}`);
+      }
+    });
+
     setTimetable(newTimetable);
     setHasUnsavedChanges(true);
     showToast('Auto-schedule complete! Review and click "Save Timetable" to save.', 'success');
