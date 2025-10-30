@@ -44,11 +44,25 @@ const getItemRarity = (price) => {
 };
 
 // Function to get all possible mystery box prizes (includes Halloween items via props)
-const getMysteryBoxPrizes = (SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, SHOP_BASIC_PETS, SHOP_PREMIUM_PETS, classRewards) => {
+const getMysteryBoxPrizes = (
+  SHOP_BASIC_AVATARS,
+  SHOP_PREMIUM_AVATARS,
+  HALLOWEEN_BASIC_AVATARS,
+  HALLOWEEN_PREMIUM_AVATARS,
+  SHOP_BASIC_PETS,
+  SHOP_PREMIUM_PETS,
+  HALLOWEEN_PETS,
+  classRewards
+) => {
   const prizes = [];
-  
+
   // Add shop avatars (includes Halloween avatars passed from parent)
-  [...SHOP_BASIC_AVATARS, ...SHOP_PREMIUM_AVATARS].forEach(avatar => {
+  [
+    ...SHOP_BASIC_AVATARS,
+    ...SHOP_PREMIUM_AVATARS,
+    ...HALLOWEEN_BASIC_AVATARS,
+    ...HALLOWEEN_PREMIUM_AVATARS
+  ].forEach(avatar => {
     prizes.push({
       type: 'avatar',
       item: avatar,
@@ -57,9 +71,9 @@ const getMysteryBoxPrizes = (SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, SHOP_BASI
       displayName: avatar.name
     });
   });
-  
+
   // Add shop pets (includes Halloween pets passed from parent)
-  [...SHOP_BASIC_PETS, ...SHOP_PREMIUM_PETS].forEach(pet => {
+  [...SHOP_BASIC_PETS, ...SHOP_PREMIUM_PETS, ...HALLOWEEN_PETS].forEach(pet => {
     prizes.push({
       type: 'pet',
       item: pet,
@@ -160,15 +174,29 @@ const calculateSellPrice = (originalPrice) => {
 };
 
 // Find original item price from shop data (includes Halloween items)
-const findOriginalPrice = (itemName, itemType, SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, SHOP_BASIC_PETS, SHOP_PREMIUM_PETS, classRewards) => {
+const findOriginalPrice = (
+  itemName,
+  itemType,
+  SHOP_BASIC_AVATARS,
+  SHOP_PREMIUM_AVATARS,
+  HALLOWEEN_BASIC_AVATARS,
+  HALLOWEEN_PREMIUM_AVATARS,
+  SHOP_BASIC_PETS,
+  SHOP_PREMIUM_PETS,
+  HALLOWEEN_PETS,
+  classRewards
+) => {
   if (itemType === 'avatar') {
     const basicAvatar = SHOP_BASIC_AVATARS.find(a => a.name === itemName);
     const premiumAvatar = SHOP_PREMIUM_AVATARS.find(a => a.name === itemName);
-    return basicAvatar?.price || premiumAvatar?.price || 10; // Default if not found
+    const halloweenBasic = HALLOWEEN_BASIC_AVATARS.find(a => a.name === itemName);
+    const halloweenPremium = HALLOWEEN_PREMIUM_AVATARS.find(a => a.name === itemName);
+    return basicAvatar?.price || premiumAvatar?.price || halloweenBasic?.price || halloweenPremium?.price || 10; // Default if not found
   } else if (itemType === 'pet') {
     const basicPet = SHOP_BASIC_PETS.find(p => p.name === itemName);
     const premiumPet = SHOP_PREMIUM_PETS.find(p => p.name === itemName);
-    return basicPet?.price || premiumPet?.price || 15; // Default if not found
+    const halloweenPet = HALLOWEEN_PETS.find(p => p.name === itemName);
+    return basicPet?.price || premiumPet?.price || halloweenPet?.price || 15; // Default if not found
   } else if (itemType === 'reward') {
     const reward = (classRewards || []).find(r => r.id === itemName || r.name === itemName);
     return reward?.price || 10; // Default if not found
@@ -186,8 +214,11 @@ const StudentShop = ({
   calculateAvatarLevel,
   SHOP_BASIC_AVATARS,
   SHOP_PREMIUM_AVATARS,
+  HALLOWEEN_BASIC_AVATARS,
+  HALLOWEEN_PREMIUM_AVATARS,
   SHOP_BASIC_PETS,
   SHOP_PREMIUM_PETS,
+  HALLOWEEN_PETS,
   classRewards
 }) => {
   const [activeCategory, setActiveCategory] = useState('mysterybox'); // Start with Mystery Box
@@ -236,10 +267,13 @@ const StudentShop = ({
     
     // Get all possible prizes (includes Halloween items)
     const allPrizes = getMysteryBoxPrizes(
-      SHOP_BASIC_AVATARS, 
-      SHOP_PREMIUM_AVATARS, 
-      SHOP_BASIC_PETS, 
-      SHOP_PREMIUM_PETS, 
+      SHOP_BASIC_AVATARS,
+      SHOP_PREMIUM_AVATARS,
+      HALLOWEEN_BASIC_AVATARS,
+      HALLOWEEN_PREMIUM_AVATARS,
+      SHOP_BASIC_PETS,
+      SHOP_PREMIUM_PETS,
+      HALLOWEEN_PETS,
       classRewards
     );
     
@@ -301,7 +335,18 @@ const StudentShop = ({
   
   const handleSellItem = (item, type) => {
     const itemName = type === 'pet' ? item.name : type === 'avatar' ? item : item.name;
-    const originalPrice = findOriginalPrice(itemName, type, SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, SHOP_BASIC_PETS, SHOP_PREMIUM_PETS, classRewards);
+    const originalPrice = findOriginalPrice(
+      itemName,
+      type,
+      SHOP_BASIC_AVATARS,
+      SHOP_PREMIUM_AVATARS,
+      HALLOWEEN_BASIC_AVATARS,
+      HALLOWEEN_PREMIUM_AVATARS,
+      SHOP_BASIC_PETS,
+      SHOP_PREMIUM_PETS,
+      HALLOWEEN_PETS,
+      classRewards
+    );
     const sellPrice = calculateSellPrice(originalPrice);
     
     setSellModal({
@@ -410,6 +455,7 @@ const StudentShop = ({
 
   const categories = [
     { id: 'mysterybox', name: '🎁 Mystery Box', shortName: 'Mystery' },
+    { id: 'halloween', name: '🎃 Halloween Special', shortName: '🎃 Halloween' },
     { id: 'basic_avatars', name: 'Basic Avatars', shortName: 'Basic' },
     { id: 'premium_avatars', name: 'Premium Avatars', shortName: 'Premium' },
     { id: 'basic_pets', name: 'Basic Pets', shortName: 'Pets' },
@@ -611,28 +657,36 @@ const StudentShop = ({
     }
 
     let items = [];
-    let itemType = '';
+    let defaultType = '';
 
     switch (activeCategory) {
+      case 'halloween':
+        items = [
+          ...HALLOWEEN_BASIC_AVATARS.map(item => ({ ...item, type: 'avatar' })),
+          ...HALLOWEEN_PREMIUM_AVATARS.map(item => ({ ...item, type: 'avatar' })),
+          ...HALLOWEEN_PETS.map(item => ({ ...item, type: 'pet' }))
+        ];
+        defaultType = 'avatar';
+        break;
       case 'basic_avatars':
-        items = SHOP_BASIC_AVATARS;
-        itemType = 'avatar';
+        items = SHOP_BASIC_AVATARS.map(item => ({ ...item, type: 'avatar' }));
+        defaultType = 'avatar';
         break;
       case 'premium_avatars':
-        items = SHOP_PREMIUM_AVATARS;
-        itemType = 'avatar';
+        items = SHOP_PREMIUM_AVATARS.map(item => ({ ...item, type: 'avatar' }));
+        defaultType = 'avatar';
         break;
       case 'basic_pets':
-        items = SHOP_BASIC_PETS;
-        itemType = 'pet';
+        items = SHOP_BASIC_PETS.map(item => ({ ...item, type: 'pet' }));
+        defaultType = 'pet';
         break;
       case 'premium_pets':
-        items = SHOP_PREMIUM_PETS;
-        itemType = 'pet';
+        items = SHOP_PREMIUM_PETS.map(item => ({ ...item, type: 'pet' }));
+        defaultType = 'pet';
         break;
       case 'rewards':
-        items = classRewards || [];
-        itemType = 'reward';
+        items = (classRewards || []).map(item => ({ ...item, type: 'reward' }));
+        defaultType = 'reward';
         break;
       default:
         return null;
@@ -648,7 +702,9 @@ const StudentShop = ({
     }
 
     return items.map((item, index) => {
-      const alreadyOwned = itemType === 'avatar' 
+      const itemType = item.type || defaultType;
+
+      const alreadyOwned = itemType === 'avatar'
         ? studentData.ownedAvatars?.includes(item.name)
         : itemType === 'pet'
         ? studentData.ownedPets?.some(p => p.name === item.name)
