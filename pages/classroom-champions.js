@@ -1,5 +1,5 @@
 // pages/classroom-champions.js - UPDATED WITH HALLOWEEN THEMED ITEMS
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase'; // Import firestore instance
 import { onAuthStateChanged } from 'firebase/auth';
@@ -29,6 +29,7 @@ import {
   listenToClassData,
   listenToClassStudents
 } from '../utils/firebase-new';
+import { DEFAULT_TEACHER_REWARDS, buildShopInventory, getDailySpecials } from '../utils/shopSpecials';
 
 // Import components (unchanged)
 import DashboardTab from '../components/tabs/DashboardTab';
@@ -95,6 +96,28 @@ const HALLOWEEN_PETS = [
   { name: 'Spooky Cat', price: 25, path: '/shop/Themed/Halloween/Pets/Pet.png', theme: 'halloween' },
   { name: 'Pumpkin Cat', price: 28, path: '/shop/Themed/Halloween/Pets/Pet2.png', theme: 'halloween' }
 ];
+
+const orderStudentsByPreference = (studentsList = [], order = []) => {
+  if (!Array.isArray(studentsList)) return [];
+  if (!Array.isArray(order) || order.length === 0) {
+    return [...studentsList];
+  }
+
+  const orderMap = new Map(order.map((id, index) => [id, index]));
+
+  return [...studentsList].sort((a, b) => {
+    const orderA = orderMap.has(a.id) ? orderMap.get(a.id) : Number.MAX_SAFE_INTEGER;
+    const orderB = orderMap.has(b.id) ? orderMap.get(b.id) : Number.MAX_SAFE_INTEGER;
+
+    if (orderA !== orderB) {
+      return orderA - orderB;
+    }
+
+    const nameA = `${a.firstName || ''} ${a.lastName || ''}`.trim().toLowerCase();
+    const nameB = `${b.firstName || ''} ${b.lastName || ''}`.trim().toLowerCase();
+    return nameA.localeCompare(nameB);
+  });
+};
 
 // Helper functions - UPDATED to include Halloween items
 const getAvatarImage = (avatarBase, level) => {
@@ -170,6 +193,8 @@ const ClassroomChampions = () => {
   const [currentClassId, setCurrentClassId] = useState(null);
   const [currentClassData, setCurrentClassData] = useState(null);
   const [students, setStudents] = useState([]);
+  const [studentOrder, setStudentOrder] = useState([]);
+  const studentOrderRef = useRef([]);
   const [xpCategories, setXpCategories] = useState(DEFAULT_XP_CATEGORIES);
   
   // UI state
@@ -194,6 +219,40 @@ const ClassroomChampions = () => {
   // Track architecture version
   const [architectureVersion, setArchitectureVersion] = useState('unknown');
 
+  useEffect(() => {
+    studentOrderRef.current = Array.isArray(studentOrder) ? studentOrder : [];
+  }, [studentOrder]);
+
+  useEffect(() => {
+    if (!studentOrderRef.current.length) return;
+    setStudents(prev => orderStudentsByPreference(prev, studentOrderRef.current));
+  }, [studentOrder]);
+
+  const currentRewardsList = useMemo(() => {
+    if (currentClassData?.classRewards && currentClassData.classRewards.length > 0) {
+      return currentClassData.classRewards;
+    }
+    return DEFAULT_TEACHER_REWARDS;
+  }, [currentClassData?.classRewards]);
+
+  const seasonalInventory = useMemo(() => ([
+    ...HALLOWEEN_BASIC_AVATARS.map(item => ({ ...item, category: 'halloween', type: 'avatar' })),
+    ...HALLOWEEN_PREMIUM_AVATARS.map(item => ({ ...item, category: 'halloween', type: 'avatar' })),
+    ...HALLOWEEN_PETS.map(item => ({ ...item, category: 'halloween', type: 'pet' }))
+  ]), []);
+
+  const dailySpecials = useMemo(() => {
+    const baseInventory = buildShopInventory({
+      basicAvatars: SHOP_BASIC_AVATARS,
+      premiumAvatars: SHOP_PREMIUM_AVATARS,
+      basicPets: SHOP_BASIC_PETS,
+      premiumPets: SHOP_PREMIUM_PETS,
+      rewards: currentRewardsList
+    });
+
+    return getDailySpecials([...baseInventory, ...seasonalInventory]);
+  }, [currentRewardsList, seasonalInventory]);
+
 // FIXED: Read from old V1 structure: users/{uid}.classes[]
 async function loadV1ClassAndStudents(userUid) {
   console.log('🔄 Loading V1 class and students for user:', userUid);
@@ -213,6 +272,8 @@ async function loadV1ClassAndStudents(userUid) {
   if (!cls) throw new Error('No valid class found (V1)');
 
   const students = Array.isArray(cls.students) ? cls.students : [];
+  const initialOrder = Array.isArray(cls.studentOrder) ? cls.studentOrder : [];
+  const orderedStudents = orderStudentsByPreference(students, initialOrder);
   
   console.log('✅ V1 class loaded:', cls.name, 'with', students.length, 'students');
 
@@ -230,7 +291,7 @@ async function loadV1ClassAndStudents(userUid) {
     ...cls
   };
 
-  return { classData, students };
+  return { classData, students: orderedStudents };
 }
 
   // AUTH & DATA LOADING - UPDATED FOR NEW ARCHITECTURE
@@ -301,7 +362,11 @@ const loadUserData = async (user) => {
     setCurrentClassId(classData.id);
     setXpCategories(classData.xpCategories || DEFAULT_XP_CATEGORIES);
     setStudents(students);
-    
+    const initialOrderIds = Array.isArray(classData.studentOrder) && classData.studentOrder.length
+      ? classData.studentOrder
+      : students.map(student => student.id);
+    setStudentOrder(initialOrderIds);
+
     console.log('✅ V1 fallback completed successfully');
     
   } catch (error) {
@@ -328,6 +393,7 @@ const loadUserData = async (user) => {
             setCurrentClassData(classData);
             setCurrentClassId(classId);
             setXpCategories(classData.xpCategories || DEFAULT_XP_CATEGORIES);
+            setStudentOrder(Array.isArray(classData.studentOrder) ? classData.studentOrder : []);
           }
         },
         (error) => {
@@ -342,7 +408,7 @@ const loadUserData = async (user) => {
         classId,
         (studentsData) => {
           console.log('Students data updated:', studentsData.length, 'students');
-          setStudents(studentsData || []);
+          setStudents(orderStudentsByPreference(studentsData || [], studentOrderRef.current));
         },
         (error) => {
           console.error('Students listener error:', error);
@@ -440,9 +506,31 @@ const handleUpdateStudent = useCallback(async (studentId, updatedData, reason = 
     await updateDoc(userRef, { classes: updatedClasses });
   };
 
+  const saveStudentOrder = useCallback(async (orderIds) => {
+    if (!currentClassId || !Array.isArray(orderIds)) {
+      return;
+    }
+
+    try {
+      if (architectureVersion === 'v2') {
+        await updateClassData(currentClassId, {
+          studentOrder: orderIds,
+          updatedAt: new Date().toISOString()
+        });
+      } else if (user?.uid) {
+        await updateV1ClassData(user.uid, currentClassId, { studentOrder: orderIds });
+      }
+    } catch (error) {
+      console.error('❌ Error saving student order:', error);
+      showToast('Unable to save student order', 'error');
+    }
+  }, [architectureVersion, currentClassId, showToast, updateClassData, user]);
+
   const handleReorderStudents = (reorderedStudents) => {
-    // For now, just update local state
     setStudents(reorderedStudents);
+    const orderIds = reorderedStudents.map(student => student.id);
+    setStudentOrder(orderIds);
+    saveStudentOrder(orderIds);
   };
 
   // FIXED: handleBulkAward - Direct Firestore Updates with Optimistic UI Updates
@@ -656,10 +744,15 @@ const handleUpdateStudent = useCallback(async (studentId, updatedData, reason = 
       console.log('👨‍🎓 Creating new student:', newStudentFirstName, newStudentLastName);      
       if (architectureVersion === 'v2') {
         // Use new architecture
-        await createStudent(currentClassId, {
+        const result = await createStudent(currentClassId, {
           firstName: newStudentFirstName.trim(),
           lastName: newStudentLastName.trim()
         });
+        if (result?.studentId) {
+          const updatedOrder = [...studentOrderRef.current, result.studentId];
+          setStudentOrder(updatedOrder);
+          saveStudentOrder(updatedOrder);
+        }
       } else {
         // V1 fallback - add to user document
         const newStudent = {
@@ -688,9 +781,12 @@ const handleUpdateStudent = useCallback(async (studentId, updatedData, reason = 
           }
           return cls;
         });
-        
+
         await updateDoc(userRef, { classes: updatedClasses });
         setStudents(prev => [...prev, newStudent]);
+        const updatedOrder = [...studentOrderRef.current, newStudent.id];
+        setStudentOrder(updatedOrder);
+        saveStudentOrder(updatedOrder);
       }
       
       setNewStudentFirstName('');
@@ -755,7 +851,7 @@ const handleUpdateStudent = useCallback(async (studentId, updatedData, reason = 
     });
     
     await updateDoc(userRef, { classes: updatedClasses });
-    
+
     // Update local state
     setCurrentClassData(prev => ({ ...prev, ...updatedData }));
   };
@@ -848,12 +944,13 @@ const handleUpdateStudent = useCallback(async (studentId, updatedData, reason = 
 
     switch (activeTab) {
       case 'dashboard':
-        return <DashboardTab 
+        return <DashboardTab
                   {...commonProps}
                   SHOP_BASIC_AVATARS={SHOP_BASIC_AVATARS}
                   SHOP_PREMIUM_AVATARS={SHOP_PREMIUM_AVATARS}
                   SHOP_BASIC_PETS={SHOP_BASIC_PETS}
                   SHOP_PREMIUM_PETS={SHOP_PREMIUM_PETS}
+                  dailySpecials={dailySpecials}
                 />;
       
       case 'students':
@@ -900,6 +997,7 @@ const handleUpdateStudent = useCallback(async (studentId, updatedData, reason = 
                   classRewards={currentClassData?.classRewards || []}
                   onUpdateRewards={(rewards) => saveClassData({ classRewards: rewards })}
                   saveRewards={(rewards) => saveClassData({ classRewards: rewards })}
+                  dailySpecials={dailySpecials}
                 />;
       
       case 'petrace':

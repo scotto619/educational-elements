@@ -1,5 +1,6 @@
 // components/tabs/ShopTab.js - MOBILE-OPTIMIZED SHOP WITH HALLOWEEN SECTION, MYSTERY BOX AND SELLING FEATURE
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
+import { DEFAULT_TEACHER_REWARDS, buildShopInventory, getDailySpecials } from '../../utils/shopSpecials';
 
 // ===============================================
 // HALLOWEEN THEMED ITEMS - LIMITED TIME!
@@ -28,20 +29,6 @@ const HALLOWEEN_PREMIUM_AVATARS = [
 const HALLOWEEN_PETS = [
   { name: 'Spooky Cat', price: 25, path: '/shop/Themed/Halloween/Pets/Pet.png', theme: 'halloween' },
   { name: 'Pumpkin Cat', price: 28, path: '/shop/Themed/Halloween/Pets/Pet2.png', theme: 'halloween' }
-];
-
-// ===============================================
-// DEFAULT TEACHER REWARDS (Starting Template)
-// ===============================================
-const DEFAULT_TEACHER_REWARDS = [
-  { id: 'reward_1', name: 'Extra Computer Time', price: 20, category: 'technology', icon: '💻' },
-  { id: 'reward_2', name: 'Class Game Session', price: 30, category: 'fun', icon: '🎮' },
-  { id: 'reward_3', name: 'No Homework Pass', price: 25, category: 'privileges', icon: '📝' },
-  { id: 'reward_4', name: 'Choose Class Music', price: 15, category: 'privileges', icon: '🎵' },
-  { id: 'reward_5', name: 'Line Leader for a Week', price: 10, category: 'privileges', icon: '🎯' },
-  { id: 'reward_6', name: 'Sit Anywhere Day', price: 12, category: 'privileges', icon: '💺' },
-  { id: 'reward_7', name: 'Extra Recess Time', price: 18, category: 'fun', icon: '⏰' },
-  { id: 'reward_8', name: 'Teach the Class', price: 35, category: 'special', icon: '🎓' },
 ];
 
 // Available icons for new rewards
@@ -228,9 +215,9 @@ const findOriginalPrice = (itemName, itemType, SHOP_BASIC_AVATARS, SHOP_PREMIUM_
 // ===============================================
 // MOBILE-OPTIMIZED SHOP TAB COMPONENT
 // ===============================================
-const ShopTab = ({ 
-    students = [], 
-    onUpdateStudent, 
+const ShopTab = ({
+    students = [],
+    onUpdateStudent,
     SHOP_BASIC_AVATARS = [],
     SHOP_PREMIUM_AVATARS = [],
     SHOP_BASIC_PETS = [],
@@ -243,13 +230,13 @@ const ShopTab = ({
     // New props for reward management
     classRewards = [],
     onUpdateRewards = () => {},
-    saveRewards = () => {}
+    saveRewards = () => {},
+    dailySpecials = []
 }) => {
   const [selectedStudentId, setSelectedStudentId] = useState(null);
   const [activeCategory, setActiveCategory] = useState('halloween'); // DEFAULT TO HALLOWEEN!
   const [purchaseModal, setPurchaseModal] = useState({ visible: false, item: null, type: null });
   const [inventoryModal, setInventoryModal] = useState({ visible: false });
-  const [featuredItems, setFeaturedItems] = useState([]);
   
   // Mystery Box states
   const [mysteryBoxModal, setMysteryBoxModal] = useState({ visible: false, stage: 'confirm' });
@@ -275,45 +262,36 @@ const ShopTab = ({
 
   const selectedStudent = students.find(s => s.id === selectedStudentId);
 
-  // Generate featured items (3 random items on sale) - UPDATED TO INCLUDE HALLOWEEN
-  useEffect(() => {
-    const allShopItems = [
-      ...SHOP_BASIC_AVATARS.map(item => ({ ...item, category: 'basic_avatars', type: 'avatar' })),
-      ...SHOP_PREMIUM_AVATARS.map(item => ({ ...item, category: 'premium_avatars', type: 'avatar' })),
-      ...SHOP_BASIC_PETS.map(item => ({ ...item, category: 'basic_pets', type: 'pet' })),
-      ...SHOP_PREMIUM_PETS.map(item => ({ ...item, category: 'premium_pets', type: 'pet' })),
-      ...HALLOWEEN_BASIC_AVATARS.map(item => ({ ...item, category: 'halloween', type: 'avatar' })),
-      ...HALLOWEEN_PREMIUM_AVATARS.map(item => ({ ...item, category: 'halloween', type: 'avatar' })),
-      ...HALLOWEEN_PETS.map(item => ({ ...item, category: 'halloween', type: 'pet' })),
-      ...currentRewards.map(item => ({ ...item, category: 'rewards', type: 'reward' }))
-    ];
+  const seasonalItems = useMemo(() => ([
+    ...HALLOWEEN_BASIC_AVATARS.map(item => ({ ...item, category: 'halloween', type: 'avatar' })),
+    ...HALLOWEEN_PREMIUM_AVATARS.map(item => ({ ...item, category: 'halloween', type: 'avatar' })),
+    ...HALLOWEEN_PETS.map(item => ({ ...item, category: 'halloween', type: 'pet' }))
+  ]), []);
 
-    if (allShopItems.length > 0) {
-      // Create a proper daily seed using year, month, and day
-      const now = new Date();
-      const seed = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
-
-      // Seeded random function for consistent daily results
-      const seededRandom = (s) => {
-        const x = Math.sin(s) * 10000;
-        return x - Math.floor(x);
-      };
-
-      // Shuffle array using seeded random
-      const shuffled = [...allShopItems];
-      for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(seededRandom(seed + i) * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-      }
-      const featured = shuffled.slice(0, 3).map(item => ({
-        ...item,
-        originalPrice: item.price,
-        price: Math.max(1, Math.floor(item.price * 0.7)), // 30% discount
-        salePercentage: 30
-      }));
-      setFeaturedItems(featured);
+  const featuredItems = useMemo(() => {
+    if (dailySpecials.length > 0) {
+      return dailySpecials;
     }
-  }, [SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, SHOP_BASIC_PETS, SHOP_PREMIUM_PETS, currentRewards]);
+
+    const inventory = buildShopInventory({
+      basicAvatars: SHOP_BASIC_AVATARS,
+      premiumAvatars: SHOP_PREMIUM_AVATARS,
+      basicPets: SHOP_BASIC_PETS,
+      premiumPets: SHOP_PREMIUM_PETS,
+      rewards: currentRewards,
+      extraItems: seasonalItems
+    });
+
+    return getDailySpecials(inventory);
+  }, [
+    dailySpecials,
+    SHOP_BASIC_AVATARS,
+    SHOP_PREMIUM_AVATARS,
+    SHOP_BASIC_PETS,
+    SHOP_PREMIUM_PETS,
+    currentRewards,
+    seasonalItems
+  ]);
 
   // ===============================================
   // MYSTERY BOX FUNCTIONS
@@ -424,11 +402,16 @@ const ShopTab = ({
   
   const handleSellItem = (item, type) => {
     if (!selectedStudent) return;
-    
+
+    if (type === 'reward') {
+      showToast('Classroom rewards cannot be sold.', 'warning');
+      return;
+    }
+
     let itemName = '';
     let canSell = true;
     let reason = '';
-    
+
     if (type === 'avatar') {
       itemName = item;
       if (selectedStudent.avatarBase === item) {
@@ -893,7 +876,7 @@ const ShopTab = ({
   // SELL CONFIRMATION MODAL
   // ===============================================
   const renderSellModal = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm sm:max-w-md text-center p-4 sm:p-6">
         <div className="text-4xl sm:text-5xl mb-3 sm:mb-4">💰</div>
         <h2 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">Sell Item?</h2>
@@ -1313,12 +1296,9 @@ const ShopTab = ({
                                   </div>
                                 </div>
                                 {showSellMode && (
-                                  <button 
-                                    onClick={() => handleSellItem(reward, 'reward')} 
-                                    className="text-xs bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 flex-shrink-0"
-                                  >
-                                    Sell
-                                  </button>
+                                  <span className="text-xs sm:text-sm text-gray-500 font-semibold">
+                                    Rewards can't be sold
+                                  </span>
                                 )}
                               </div>
                             );
