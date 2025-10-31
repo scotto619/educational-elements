@@ -18,12 +18,27 @@ import StudentBattleRoyale from '../student/StudentBattleRoyale';
 import EducationalMemoryGame from '../games/EducationalMemoryGame';
 import StudentBingo from '../student/StudentBingo';
 import MazeGame from '../games/MazeGame';
+import DailyWordleChallenge from '../games/DailyWordleChallenge';
 
 const StudentGames = ({ studentData, showToast, updateStudentData, classData }) => {
   const [selectedGame, setSelectedGame] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState('featured');
+  const [selectedCategory, setSelectedCategory] = useState('daily');
 
   const availableGames = [
+    {
+      id: 'daily-word-challenge',
+      name: 'Daily Word Challenge',
+      icon: '🗓️',
+      description: 'Take on the daily Wordle-style puzzle! Solve it once a day and compare with friends tomorrow.',
+      component: DailyWordleChallenge,
+      color: 'from-purple-500 to-indigo-600',
+      difficulty: 'All Levels',
+      time: '5 minutes',
+      category: 'daily',
+      featured: true,
+      daily: true,
+      storageKeySuffix: 'student'
+    },
     // Featured/New Games
     {
       id: 'maze',
@@ -253,6 +268,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
   ];
 
   const categories = [
+    { id: 'daily', name: 'Daily Challenges', icon: '📅' },
     { id: 'featured', name: '⭐ Featured', icon: '⭐' },
     { id: 'multiplayer', name: 'Multiplayer', icon: '🎮' },
     { id: 'educational', name: 'Educational', icon: '📚' },
@@ -302,13 +318,14 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
 
         {/* Game Component */}
         <div className="bg-white rounded-xl shadow-lg p-3 md:p-6">
-          <GameComponent 
+          <GameComponent
             gameMode="digital"
             showToast={showToast}
             students={[studentData]}
             studentData={studentData}
             updateStudentData={updateStudentData}
             classData={classData}
+            storageKeySuffix={selectedGame.storageKeySuffix}
           />
         </div>
       </div>

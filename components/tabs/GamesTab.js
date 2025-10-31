@@ -17,6 +17,7 @@ import MultiplayerAgarGame from '../games/MultiplayerAgarGame';
 import BattleRoyaleGame from '../games/BattleRoyaleGame';
 import BingoGame from '../games/BingoGame';
 import MazeGame from '../games/MazeGame';
+import DailyWordleChallenge from '../games/DailyWordleChallenge';
 
 const GamesTab = ({ 
   students, 
@@ -31,9 +32,22 @@ const GamesTab = ({
   user
 }) => {
   const [selectedGame, setSelectedGame] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState('featured');
+  const [selectedCategory, setSelectedCategory] = useState('daily');
 
   const availableGames = [
+    {
+      id: 'daily-word-challenge',
+      name: 'Daily Word Challenge',
+      icon: '🗓️',
+      description: 'A Wordle-style puzzle that unlocks a new word every day. Perfect as a quick warm-up or class challenge!',
+      component: DailyWordleChallenge,
+      color: 'from-purple-500 to-indigo-600',
+      difficulty: 'All Levels',
+      time: '5 minutes',
+      category: 'daily',
+      featured: true,
+      storageKeySuffix: 'teacher'
+    },
     // Featured/New Games
     {
       id: 'maze',
@@ -247,6 +261,7 @@ const GamesTab = ({
   ];
 
   const categories = [
+    { id: 'daily', name: 'Daily Challenges', icon: '📅' },
     { id: 'featured', name: '⭐ Featured', icon: '⭐' },
     { id: 'multiplayer', name: 'Multiplayer', icon: '🎮' },
     { id: 'educational', name: 'Educational', icon: '📚' },
@@ -276,6 +291,10 @@ const GamesTab = ({
       classData: currentClassData,
       user
     };
+
+    if (selectedGame.storageKeySuffix) {
+      gameProps.storageKeySuffix = selectedGame.storageKeySuffix;
+    }
 
     if (selectedGame.teacherMode) {
       gameProps.gameMode = 'teacher';
