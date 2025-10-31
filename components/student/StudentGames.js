@@ -19,6 +19,7 @@ import EducationalMemoryGame from '../games/EducationalMemoryGame';
 import StudentBingo from '../student/StudentBingo';
 import MazeGame from '../games/MazeGame';
 import DailyWordleChallenge from '../games/DailyWordleChallenge';
+import AmazingTypingAdventure from '../games/AmazingTypingAdventure';
 
 const StudentGames = ({ studentData, showToast, updateStudentData, classData }) => {
   const [selectedGame, setSelectedGame] = useState(null);
@@ -38,6 +39,20 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       featured: true,
       daily: true,
       storageKeySuffix: 'student'
+    },
+    {
+      id: 'typing-legends',
+      name: 'Typing Legends Academy',
+      icon: '⌨️',
+      description: 'Blast through immersive stories while levelling up your typing speed, accuracy, and combo streaks.',
+      component: AmazingTypingAdventure,
+      color: 'from-indigo-600 to-fuchsia-500',
+      difficulty: 'All Levels',
+      time: '5-10 minutes',
+      category: 'educational',
+      featured: true,
+      new: true,
+      storageKeySuffix: 'student-typing'
     },
     // Featured/New Games
     {

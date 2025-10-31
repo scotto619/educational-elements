@@ -18,6 +18,7 @@ import BattleRoyaleGame from '../games/BattleRoyaleGame';
 import BingoGame from '../games/BingoGame';
 import MazeGame from '../games/MazeGame';
 import DailyWordleChallenge from '../games/DailyWordleChallenge';
+import AmazingTypingAdventure from '../games/AmazingTypingAdventure';
 
 const GamesTab = ({ 
   students, 
@@ -47,6 +48,19 @@ const GamesTab = ({
       category: 'daily',
       featured: true,
       storageKeySuffix: 'teacher'
+    },
+    {
+      id: 'amazing-typing-adventure',
+      name: 'Typing Legends Academy',
+      icon: '⌨️',
+      description: 'Launch cinematic typing missions with live accuracy, combo streaks, and storytelling power-ups.',
+      component: AmazingTypingAdventure,
+      color: 'from-indigo-600 to-fuchsia-500',
+      difficulty: 'All Levels',
+      time: '5-10 minutes',
+      category: 'educational',
+      featured: true,
+      storageKeySuffix: 'teacher-typing'
     },
     // Featured/New Games
     {
