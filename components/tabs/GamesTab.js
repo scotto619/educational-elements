@@ -47,7 +47,8 @@ const GamesTab = ({
       time: '5 minutes',
       category: 'daily',
       featured: true,
-      storageKeySuffix: 'teacher'
+      storageKeySuffix: 'teacher',
+      logo: '/Logo/daily-word-challenge.png'
     },
     {
       id: 'amazing-typing-adventure',
@@ -60,7 +61,8 @@ const GamesTab = ({
       time: '5-10 minutes',
       category: 'educational',
       featured: true,
-      storageKeySuffix: 'teacher-typing'
+      storageKeySuffix: 'teacher-typing',
+      logo: '/Logo/typing-legends.png'
     },
     // Featured/New Games
     {
@@ -73,7 +75,8 @@ const GamesTab = ({
       difficulty: 'Easy - Hard',
       time: '2-10 minutes',
       featured: true,
-      category: 'featured'
+      category: 'featured',
+      logo: '/Logo/maze-runner.png'
     },
     {
       id: 'bingo',
@@ -87,7 +90,8 @@ const GamesTab = ({
       multiplayer: true,
       featured: true,
       category: 'featured',
-      teacherMode: true
+      teacherMode: true,
+      logo: '/Logo/educational-bingo.png'
     },
     {
       id: 'battle-royale',
@@ -101,7 +105,8 @@ const GamesTab = ({
       multiplayer: true,
       featured: true,
       category: 'featured',
-      teacherMode: true
+      teacherMode: true,
+      logo: '/Logo/battle-royale.png'
     },
     {
       id: 'multiplayer-agar',
@@ -114,7 +119,8 @@ const GamesTab = ({
       time: '5-20 minutes',
       multiplayer: true,
       category: 'featured',
-      teacherMode: true
+      teacherMode: true,
+      logo: '/Logo/cell-battle.png'
     },
     {
       id: 'math-space-invaders',
@@ -126,7 +132,8 @@ const GamesTab = ({
       difficulty: 'Easy - Expert',
       time: '5-30 minutes',
       featured: true,
-      category: 'featured'
+      category: 'featured',
+      logo: '/Logo/math-space-invaders.png'
     },
     
     // Multiplayer Games
@@ -140,7 +147,8 @@ const GamesTab = ({
       difficulty: 'Medium',
       time: '10-20 minutes',
       multiplayer: true,
-      category: 'multiplayer'
+      category: 'multiplayer',
+      logo: '/Logo/battleships.png'
     },
     {
       id: 'tic-tac-toe',
@@ -152,7 +160,8 @@ const GamesTab = ({
       difficulty: 'Easy',
       time: '2-5 minutes',
       multiplayer: true,
-      category: 'multiplayer'
+      category: 'multiplayer',
+      logo: '/Logo/tic-tac-toe.png'
     },
 
     // Educational Games  
@@ -167,7 +176,8 @@ const GamesTab = ({
       time: '15-30 minutes',
       multiplayer: true,
       category: 'educational',
-      teacherMode: true
+      teacherMode: true,
+      logo: '/Logo/classroom-bingo.png'
     },
     {
       id: 'math-race',
@@ -178,7 +188,8 @@ const GamesTab = ({
       color: 'from-green-500 to-green-600',
       difficulty: 'Easy - Hard',
       time: '2-5 minutes',
-      category: 'educational'
+      category: 'educational',
+      logo: '/Logo/math-race.png'
     },
     {
       id: 'crossword',
@@ -189,7 +200,8 @@ const GamesTab = ({
       color: 'from-indigo-500 to-purple-600',
       difficulty: 'Easy - Hard',
       time: '10-30 minutes',
-      category: 'educational'
+      category: 'educational',
+      logo: '/Logo/crossword.png'
     },
     {
       id: 'word-search',
@@ -200,7 +212,8 @@ const GamesTab = ({
       color: 'from-blue-500 to-blue-600',
       difficulty: 'Easy - Medium',
       time: '5-15 minutes',
-      category: 'educational'
+      category: 'educational',
+      logo: '/Logo/word-search.png'
     },
     {
       id: 'boggle',
@@ -211,7 +224,8 @@ const GamesTab = ({
       color: 'from-yellow-500 to-orange-500',
       difficulty: 'Medium - Hard',
       time: '3-5 minutes',
-      category: 'educational'
+      category: 'educational',
+      logo: '/Logo/boggle.png'
     },
     {
       id: 'noggle',
@@ -222,7 +236,8 @@ const GamesTab = ({
       color: 'from-red-500 to-pink-500',
       difficulty: 'Medium - Hard',
       time: '3-5 minutes',
-      category: 'educational'
+      category: 'educational',
+      logo: '/Logo/noggle.png'
     },
 
     // Brain Games
@@ -235,7 +250,8 @@ const GamesTab = ({
       color: 'from-indigo-500 to-purple-600',
       difficulty: 'Easy - Hard',
       time: '2-10 minutes',
-      category: 'brain'
+      category: 'brain',
+      logo: '/Logo/maze-runner.png'
     },
     {
       id: 'memory-match',
@@ -246,7 +262,8 @@ const GamesTab = ({
       color: 'from-purple-500 to-purple-600',
       difficulty: 'Easy - Expert',
       time: '3-8 minutes',
-      category: 'brain'
+      category: 'brain',
+      logo: '/Logo/memory-challenge.png'
     },
 
     // Adventure Games
@@ -259,7 +276,8 @@ const GamesTab = ({
       color: 'from-red-500 to-purple-600',
       difficulty: 'Medium - Expert',
       time: '5-30 minutes',
-      category: 'adventure'
+      category: 'adventure',
+      logo: '/Logo/match3-adventure.png'
     },
     {
       id: 'clicker',
@@ -270,7 +288,8 @@ const GamesTab = ({
       color: 'from-yellow-500 to-orange-600',
       difficulty: 'Easy',
       time: 'Unlimited',
-      category: 'adventure'
+      category: 'adventure',
+      logo: '/Logo/hero-forge.png'
     }
   ];
 
@@ -403,63 +422,83 @@ const GamesTab = ({
         </div>
       </div>
 
-      {/* Games Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+      {/* Games Gallery */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
         {getGamesInCategory(selectedCategory).map((game) => (
           <div
             key={game.id}
+            role="button"
+            tabIndex={0}
             onClick={() => setSelectedGame(game)}
-            className="group cursor-pointer rounded-xl p-4 md:p-6 border-2 border-transparent hover:shadow-lg transition-all duration-200 active:scale-95 relative bg-gradient-to-br from-gray-50 to-white hover:from-blue-50 hover:to-purple-50 hover:border-blue-200"
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                setSelectedGame(game);
+              }
+            }}
+            className="group bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400"
           >
-            {game.teacherMode && (
-              <div className="absolute -top-2 -right-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-xs font-bold px-2 py-1 rounded-full z-10">
-                👨‍🏫 HOST
+            <div className="flex flex-col md:flex-row">
+              <div className="relative md:w-56 lg:w-60 h-44 md:h-auto overflow-hidden">
+                <img
+                  src={game.logo || '/Logo/placeholder-game.svg'}
+                  alt={`${game.name} logo`}
+                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  onError={(e) => {
+                    if (!e.currentTarget.dataset.fallback) {
+                      e.currentTarget.dataset.fallback = 'true';
+                      e.currentTarget.src = '/Logo/placeholder-game.svg';
+                    }
+                  }}
+                />
+                <div className="absolute top-3 left-3 bg-white/80 backdrop-blur-sm rounded-full px-3 py-1 text-sm font-semibold flex items-center gap-2 text-gray-800">
+                  <span className="text-lg">{game.icon}</span>
+                  <span>{game.category === 'daily' ? 'Daily' : 'Play'}</span>
+                </div>
+                {game.featured && (
+                  <div className="absolute top-3 right-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow">
+                    ⭐ Featured
+                  </div>
+                )}
+                {game.teacherMode && (
+                  <div className="absolute bottom-3 right-3 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow">
+                    👨‍🏫 Host Mode
+                  </div>
+                )}
               </div>
-            )}
-            
-            {game.featured && !game.teacherMode && (
-              <div className="absolute -top-2 -right-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white text-xs font-bold px-2 py-1 rounded-full z-10">
-                ⭐ HOT
-              </div>
-            )}
-            
-            <div className="flex items-center space-x-3 mb-3 md:mb-4">
-              <div className={`w-12 h-12 md:w-14 md:h-14 rounded-full bg-gradient-to-r ${game.color} flex items-center justify-center text-xl md:text-2xl group-hover:scale-110 transition-transform flex-shrink-0`}>
-                {game.icon}
-              </div>
-              <div className="min-w-0 flex-1">
-                <h4 className="text-base md:text-lg font-bold text-gray-800 group-hover:text-blue-600 transition-colors truncate">
-                  {game.name}
-                </h4>
-                <div className="flex items-center space-x-2 text-xs">
-                  {game.multiplayer && (
-                    <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full">🔥 Multiplayer</span>
+              <div className="flex-1 p-4 md:p-6 space-y-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-lg md:text-xl font-bold text-gray-900 flex-1 min-w-0">
+                    <span className="truncate block group-hover:text-blue-600 transition-colors">{game.name}</span>
+                  </h3>
+                  {game.new && (
+                    <span className="bg-green-100 text-green-700 text-xs font-semibold px-2 py-1 rounded-full">NEW</span>
                   )}
-                  {game.teacherMode && (
-                    <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">👨‍🏫 Host Mode</span>
+                  {game.daily && (
+                    <span className="bg-amber-100 text-amber-700 text-xs font-semibold px-2 py-1 rounded-full">Daily</span>
                   )}
                 </div>
-              </div>
-            </div>
 
-            <p className="text-gray-600 text-sm leading-relaxed mb-3 md:mb-4">
-              {game.description}
-            </p>
+                <p className="text-gray-600 text-sm md:text-base leading-relaxed">
+                  {game.description}
+                </p>
 
-            <div className="space-y-1 text-xs text-gray-500 mb-3 md:mb-4">
-              <div className="flex justify-between">
-                <span>⚡ Difficulty:</span>
-                <span className="font-medium">{game.difficulty}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>⏱️ Time:</span>
-                <span className="font-medium">{game.time}</span>
-              </div>
-            </div>
+                <div className="flex flex-wrap gap-2 text-xs md:text-sm text-gray-600">
+                  {game.multiplayer && <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full">Multiplayer</span>}
+                  {game.educational && <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full">Curriculum Friendly</span>}
+                  {game.featured && <span className="bg-pink-100 text-pink-700 px-2 py-1 rounded-full">Staff Pick</span>}
+                </div>
 
-            <div className="pt-3 border-t border-gray-200">
-              <div className={`w-full py-2 md:py-3 px-4 rounded-lg bg-gradient-to-r ${game.color} text-white text-center font-semibold group-hover:shadow-md transition-all text-sm md:text-base`}>
-                {game.teacherMode ? '🎯 Host Game' : '📺 Display Game'}
+                <div className="flex justify-between text-xs md:text-sm text-gray-500">
+                  <span>⚡ Difficulty: <strong className="text-gray-700">{game.difficulty}</strong></span>
+                  <span>⏱️ Time: <strong className="text-gray-700">{game.time}</strong></span>
+                </div>
+
+                <div className="pt-2 md:pt-4">
+                  <div className={`inline-flex items-center px-4 py-2 md:px-5 md:py-3 rounded-full bg-gradient-to-r ${game.color} text-white font-semibold text-sm md:text-base shadow-sm group-hover:shadow-lg transition-all`}>
+                    {game.teacherMode ? '🎯 Launch for Class' : '🎮 Start Experience'}
+                  </div>
+                </div>
               </div>
             </div>
           </div>

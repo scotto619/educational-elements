@@ -5,6 +5,21 @@ import {
   getRarityBg,
   getRarityColor
 } from '../../utils/mysterybox';
+import { createPetEgg, getEggTypeById } from '../../utils/gameHelpers';
+
+const getEggAccent = (eggLike) => {
+  const fallback = '#f59e0b';
+  if (!eggLike) return fallback;
+  if (typeof eggLike === 'string') {
+    return getEggTypeById(eggLike)?.accent || fallback;
+  }
+  if (eggLike.accent) return eggLike.accent;
+  if (eggLike.eggType?.accent) return eggLike.eggType.accent;
+  if (eggLike.eggTypeId) {
+    return getEggTypeById(eggLike.eggTypeId)?.accent || fallback;
+  }
+  return fallback;
+};
 
 const DailyMysteryBoxModal = ({
   isOpen,
@@ -99,6 +114,14 @@ const DailyMysteryBoxModal = ({
         const newPet = { ...prize.item, id: `pet_${Date.now()}` };
         updates.ownedPets = [...(studentData.ownedPets || []), newPet];
         message = `You won a ${prize.item.name}!`;
+        break;
+      }
+      case 'egg': {
+        const eggType = prize.eggType || getEggTypeById(prize.eggTypeId);
+        const newEgg = createPetEgg(eggType);
+        updates.petEggs = [...(studentData.petEggs || []), newEgg];
+        const rarityLabel = (newEgg.rarity || '').toUpperCase();
+        message = `You discovered a ${rarityLabel ? `${rarityLabel} ` : ''}${newEgg.name}!`;
         break;
       }
       case 'reward': {
@@ -215,15 +238,56 @@ const DailyMysteryBoxModal = ({
 
         {stage === 'reveal' && prize && (
           <div className={`p-8 text-center ${getRarityBg(prize.rarity)} animate-fadeIn`}>
-            <div className="mb-3 text-5xl">{prize.icon || '🎉'}</div>
-            <p className={`mx-auto mb-2 inline-block rounded-full border px-4 py-1 text-xs font-semibold uppercase tracking-wider ${getRarityColor(prize.rarity)}`}>
+            <div className="mx-auto mb-4 flex items-center justify-center">
+              {(() => {
+                if (prize.type === 'avatar' || prize.type === 'pet') {
+                  return (
+                    <img
+                      src={prize.item.path}
+                      alt={prize.displayName}
+                      className="h-24 w-24 rounded-full border-4 border-white object-contain shadow-lg"
+                      onError={(e) => {
+                        e.target.src =
+                          prize.type === 'avatar' ? '/shop/Basic/Banana.png' : '/shop/BasicPets/Wizard.png';
+                      }}
+                    />
+                  );
+                }
+                if (prize.type === 'egg') {
+                  const accent = getEggAccent(prize.eggType || prize.eggTypeId);
+                  return (
+                    <div
+                      className="flex h-28 w-28 items-center justify-center rounded-full border-4 shadow-inner"
+                      style={{
+                        background: `radial-gradient(circle at 30% 30%, ${accent}33, #ffffff)`,
+                        borderColor: accent
+                      }}
+                    >
+                      <span className="text-5xl">🥚</span>
+                    </div>
+                  );
+                }
+                return (
+                  <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/80 text-4xl shadow">
+                    {prize.icon || '🎉'}
+                  </div>
+                );
+              })()}
+            </div>
+            <p
+              className={`mx-auto mb-2 inline-block rounded-full border px-4 py-1 text-xs font-semibold uppercase tracking-wider ${getRarityColor(
+                prize.rarity
+              )}`}
+            >
               {prize.rarity || 'mystery'}
             </p>
             <h3 className="mb-2 text-2xl font-bold text-gray-800">
               {prize.displayName || prize.name || 'Mystery Reward'}
             </h3>
             <p className="mx-auto mb-6 max-w-sm text-sm text-gray-600">
-              {prize.description || 'Congratulations on your daily reward!'}
+              {prize.type === 'egg'
+                ? prize.eggType?.description || 'Keep this egg safe while it incubates. It will hatch into a surprise pet!'
+                : prize.description || 'Congratulations on your daily reward!'}
             </p>
             <button
               type="button"

@@ -1,5 +1,14 @@
 // components/student/StudentShop.js - UPDATED WITH HALLOWEEN SUPPORT
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+
+import {
+  PET_EGG_TYPES,
+  createPetEgg,
+  advanceEggStage,
+  getEggStageStatus,
+  resolveEggHatch,
+  getEggTypeById
+} from '../../utils/gameHelpers';
 
 // ===============================================
 // MYSTERY BOX SYSTEM (SHARED WITH TEACHER SHOP)
@@ -52,7 +61,8 @@ const getMysteryBoxPrizes = (
   classRewards,
   HALLOWEEN_BASIC_AVATARS = [],
   HALLOWEEN_PREMIUM_AVATARS = [],
-  HALLOWEEN_PETS = []
+  HALLOWEEN_PETS = [],
+  EGG_TYPES = PET_EGG_TYPES
 ) => {
   const prizes = [];
 
@@ -80,6 +90,19 @@ const getMysteryBoxPrizes = (
       rarity: getItemRarity(pet.price),
       name: pet.name,
       displayName: pet.name
+    });
+  });
+
+  // Add eggs
+  (EGG_TYPES || []).forEach(eggType => {
+    prizes.push({
+      type: 'egg',
+      eggTypeId: eggType.id,
+      eggType,
+      rarity: eggType.rarity,
+      name: `${eggType.name} Egg`,
+      displayName: `${eggType.name} Egg`,
+      icon: '🥚'
     });
   });
   
@@ -164,6 +187,39 @@ const getRarityBg = (rarity) => {
   }
 };
 
+const formatDuration = (ms = 0) => {
+  if (ms <= 0) return 'Almost ready!';
+  const totalSeconds = Math.floor(ms / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+  if (minutes > 0) {
+    return `${minutes}m`;
+  }
+  return `${Math.max(1, Math.floor(totalSeconds))}s`;
+};
+
+const getEggAccent = (egg) => {
+  if (!egg) return '#6366f1';
+  if (egg.accent) return egg.accent;
+  switch (egg.rarity) {
+    case 'common':
+      return '#6b7280';
+    case 'uncommon':
+      return '#16a34a';
+    case 'rare':
+      return '#2563eb';
+    case 'epic':
+      return '#7c3aed';
+    case 'legendary':
+      return '#f59e0b';
+    default:
+      return '#6366f1';
+  }
+};
+
 // ===============================================
 // SELLING SYSTEM
 // ===============================================
@@ -234,7 +290,41 @@ const StudentShop = ({
   const [sellModal, setSellModal] = useState({ visible: false, item: null, type: null, price: 0 });
   const [showSellMode, setShowSellMode] = useState(false);
 
+  // Egg celebrations
+  const [hatchingCelebration, setHatchingCelebration] = useState(null);
+
   const currentCoins = calculateCoins(studentData);
+
+  const studentEggs = useMemo(() => studentData?.petEggs || [], [studentData?.petEggs]);
+
+  useEffect(() => {
+    if (!studentEggs.length) return;
+
+    let cancelled = false;
+
+    const syncEggStages = async () => {
+      if (!studentEggs.length) return;
+
+      let changed = false;
+      const updatedEggs = studentEggs.map((egg) => {
+        const { egg: nextEgg, changed: stageChanged } = advanceEggStage(egg);
+        if (stageChanged) changed = true;
+        return nextEgg;
+      });
+
+      if (changed && !cancelled) {
+        await updateStudentData({ petEggs: updatedEggs });
+      }
+    };
+
+    syncEggStages();
+    const interval = setInterval(syncEggStages, 60000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [studentEggs, updateStudentData]);
 
   // ===============================================
   // MYSTERY BOX FUNCTIONS
@@ -274,7 +364,8 @@ const StudentShop = ({
       classRewards,
       HALLOWEEN_BASIC_AVATARS,
       HALLOWEEN_PREMIUM_AVATARS,
-      HALLOWEEN_PETS
+      HALLOWEEN_PETS,
+      PET_EGG_TYPES
     );
     
     // Select random prize
@@ -303,10 +394,19 @@ const StudentShop = ({
         updates.ownedPets = [...(studentData.ownedPets || []), newPet];
         showToast(`You won a ${mysteryBoxPrize.item.name}!`, 'success');
         break;
+      case 'egg': {
+        const eggType = mysteryBoxPrize.eggType || getEggTypeById(mysteryBoxPrize.eggTypeId);
+        const newEgg = createPetEgg(eggType);
+        updates.petEggs = [...(studentData.petEggs || []), newEgg];
+        const rarityLabel = (newEgg.rarity || '').toUpperCase();
+        const flair = rarityLabel ? `${rarityLabel} ` : '';
+        showToast(`You discovered a ${flair}${newEgg.name}!`, newEgg.rarity === 'legendary' ? 'success' : 'info');
+        break;
+      }
       case 'reward':
-        updates.rewardsPurchased = [...(studentData.rewardsPurchased || []), { 
-          ...mysteryBoxPrize.item, 
-          purchasedAt: new Date().toISOString() 
+        updates.rewardsPurchased = [...(studentData.rewardsPurchased || []), {
+          ...mysteryBoxPrize.item,
+          purchasedAt: new Date().toISOString()
         }];
         showToast(`You won ${mysteryBoxPrize.item.name}!`, 'success');
         break;
@@ -359,7 +459,7 @@ const StudentShop = ({
   
   const confirmSell = async () => {
     let updates = {};
-    
+
     // Add coins from sale
     updates.currency = (studentData.currency || 0) + sellModal.price;
     
@@ -391,6 +491,35 @@ const StudentShop = ({
       showToast(`You sold ${itemDisplayName} for ${sellModal.price} coins!`, 'success');
     } else {
       showToast('Failed to sell item. Please try again.', 'error');
+    }
+  };
+
+  const handleHatchEgg = async (egg) => {
+    if (!egg) return;
+
+    if (egg.stage !== 'ready') {
+      showToast('This egg is still incubating!', 'warning');
+      return;
+    }
+
+    const hatchedPet = resolveEggHatch(egg);
+    if (!hatchedPet) {
+      showToast('Something went wrong while hatching. Try again soon!', 'error');
+      return;
+    }
+
+    const remainingEggs = studentEggs.filter((e) => e.id !== egg.id);
+    const updates = {
+      petEggs: remainingEggs,
+      ownedPets: [...(studentData.ownedPets || []), hatchedPet]
+    };
+
+    const success = await updateStudentData(updates);
+    if (success) {
+      showToast(`You hatched ${hatchedPet.name}!`, 'success');
+      setHatchingCelebration({ egg, pet: hatchedPet });
+    } else {
+      showToast('Failed to save your new pet. Please try again.', 'error');
     }
   };
 
@@ -587,8 +716,8 @@ const StudentShop = ({
                 />
               )}
               {mysteryBoxPrize.type === 'pet' && (
-                <img 
-                  src={mysteryBoxPrize.item.path} 
+                <img
+                  src={mysteryBoxPrize.item.path}
                   alt={mysteryBoxPrize.displayName}
                   className="w-20 h-20 md:w-24 md:h-24 rounded-full mx-auto mb-3 border-4 border-white"
                   onError={(e) => {
@@ -596,20 +725,36 @@ const StudentShop = ({
                   }}
                 />
               )}
+              {mysteryBoxPrize.type === 'egg' && (
+                <div
+                  className="w-24 h-24 md:w-28 md:h-28 mx-auto mb-3 rounded-full flex items-center justify-center shadow-inner"
+                  style={{
+                    background: `radial-gradient(circle at 30% 30%, ${getEggAccent(mysteryBoxPrize.eggType)}33, #ffffff)`,
+                    border: `4px solid ${getEggAccent(mysteryBoxPrize.eggType)}`
+                  }}
+                >
+                  <span className="text-4xl md:text-5xl">🥚</span>
+                </div>
+              )}
               {mysteryBoxPrize.type === 'reward' && (
                 <div className="text-4xl md:text-5xl mb-3">{mysteryBoxPrize.item.icon || '🎁'}</div>
               )}
               {(mysteryBoxPrize.type === 'xp' || mysteryBoxPrize.type === 'coins') && (
                 <div className="text-4xl md:text-5xl mb-3">{mysteryBoxPrize.icon}</div>
               )}
-              
+
               <h3 className="text-base md:text-xl font-bold mb-1">{mysteryBoxPrize.displayName}</h3>
               <p className={`text-xs md:text-sm font-semibold ${rarityColor} uppercase`}>
                 {mysteryBoxPrize.rarity} Rarity
               </p>
+              {mysteryBoxPrize.type === 'egg' && (
+                <p className="text-xs md:text-sm text-gray-600 mt-2">
+                  {mysteryBoxPrize.eggType?.description || 'Keep this egg safe while it incubates. It will hatch into a surprise pet!'}
+                </p>
+              )}
             </div>
-            
-            <button 
+
+            <button
               onClick={collectMysteryBoxPrize} 
               className="w-full py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 font-bold text-base md:text-lg"
             >
@@ -646,6 +791,71 @@ const StudentShop = ({
               Sell Item
             </button>
           </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderHatchCelebrationModal = () => {
+    if (!hatchingCelebration) return null;
+
+    const { pet, egg } = hatchingCelebration;
+    const accent = getEggAccent(egg);
+    const rarityColor = getRarityColor(pet.rarity);
+    const rarityBg = getRarityBg(pet.rarity);
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md text-center p-6 md:p-8 relative overflow-hidden">
+          <div className="absolute inset-0 pointer-events-none">
+            {[...Array(24)].map((_, index) => (
+              <div
+                key={index}
+                className="absolute w-2 h-2 bg-yellow-400 rounded-full animate-ping"
+                style={{
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                  animationDelay: `${Math.random() * 1.5}s`
+                }}
+              ></div>
+            ))}
+          </div>
+
+          <div className="text-5xl md:text-6xl mb-4 animate-bounce">🐣</div>
+          <h2 className="text-xl md:text-2xl font-bold mb-2">A New Friend Appeared!</h2>
+          <p className="text-sm md:text-base text-gray-600 mb-4">
+            Your <span className="font-semibold" style={{ color: accent }}>{egg.name}</span> hatched into a
+            {pet.rarity ? ` ${pet.rarity.toUpperCase()}` : ''} baby pet!
+          </p>
+
+          <div className={`${rarityBg} border-2 ${rarityColor} rounded-2xl p-4 md:p-6 mb-4 relative`}
+               style={{ borderColor: `${accent}66` }}>
+            <div className="absolute -top-6 left-1/2 transform -translate-x-1/2">
+              <div
+                className="w-14 h-14 rounded-full flex items-center justify-center shadow-lg"
+                style={{ background: `radial-gradient(circle at 30% 30%, ${accent}33, #ffffff)`, border: `4px solid ${accent}` }}
+              >
+                <span className="text-3xl">✨</span>
+              </div>
+            </div>
+            <img
+              src={pet.path}
+              alt={pet.name}
+              className="w-24 h-24 md:w-28 md:h-28 mx-auto mb-3 object-contain"
+              onError={(e) => {
+                e.target.src = '/shop/BasicPets/Wizard.png';
+              }}
+            />
+            <p className="text-lg md:text-xl font-bold mb-1">{pet.name}</p>
+            <p className={`text-xs md:text-sm uppercase font-semibold ${rarityColor}`}>{pet.rarity || 'special'} hatchling</p>
+          </div>
+
+          <button
+            onClick={() => setHatchingCelebration(null)}
+            className="w-full py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 font-bold text-base md:text-lg"
+          >
+            Awesome!
+          </button>
         </div>
       </div>
     );
@@ -885,6 +1095,9 @@ const StudentShop = ({
       {/* Sell Confirmation Modal */}
       {sellModal.visible && renderSellModal()}
 
+      {/* Hatch Celebration */}
+      {renderHatchCelebrationModal()}
+
       {/* Inventory Modal - Mobile Optimized - WITH SELLING FEATURE */}
       {inventoryModal.visible && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -983,6 +1196,75 @@ const StudentShop = ({
                   </div>
                 ) : (
                   <p className="text-gray-500 text-sm md:text-base">No pets yet! Get 50 XP to unlock your first pet.</p>
+                )}
+              </div>
+
+              {/* Pet Eggs */}
+              <div>
+                <h3 className="font-bold text-base md:text-lg mb-2 md:mb-3">Incubating Eggs</h3>
+                {studentEggs.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 md:gap-4">
+                    {studentEggs.map((egg) => {
+                      const status = getEggStageStatus(egg);
+                      const accent = getEggAccent(egg);
+                      const progress = Math.round((status.progress || 0) * 100);
+
+                      return (
+                        <div
+                          key={egg.id}
+                          className="border-2 border-purple-200 rounded-xl p-3 md:p-4 bg-purple-50 flex flex-col"
+                          style={{
+                            borderColor: `${accent}55`,
+                            background: `linear-gradient(135deg, ${accent}11, #ffffff)`
+                          }}
+                        >
+                          <div className="flex items-center gap-3 mb-2">
+                            <div
+                              className="w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center shadow"
+                              style={{
+                                background: `radial-gradient(circle at 30% 30%, ${accent}33, #ffffff)`,
+                                border: `3px solid ${accent}`
+                              }}
+                            >
+                              <span className="text-2xl">🥚</span>
+                            </div>
+                            <div>
+                              <p className="font-semibold text-sm md:text-base">{egg.name}</p>
+                              <p className="text-xs text-gray-600">{status.stageLabel}</p>
+                            </div>
+                          </div>
+
+                          <div className="w-full h-2 bg-purple-100 rounded-full overflow-hidden mb-2">
+                            <div
+                              className="h-full rounded-full transition-all duration-500"
+                              style={{ width: `${progress}%`, backgroundColor: accent }}
+                            ></div>
+                          </div>
+
+                          <p className="text-xs text-gray-600 mb-2">
+                            {status.stage === 'ready'
+                              ? 'Ready to hatch!'
+                              : `Time left: ${formatDuration(status.timeRemainingMs)}`}
+                          </p>
+
+                          {status.stage === 'ready' ? (
+                            <button
+                              onClick={() => handleHatchEgg(egg)}
+                              className="mt-auto text-xs md:text-sm bg-orange-500 text-white px-3 py-2 rounded-lg hover:bg-orange-600 font-semibold"
+                            >
+                              Hatch Egg
+                            </button>
+                          ) : (
+                            <p className="text-[10px] text-gray-500 italic mt-auto">
+                              Keep earning time—this egg will crack soon!
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-sm md:text-base">No magical eggs yet. Try opening a Mystery Box!</p>
                 )}
               </div>
 
