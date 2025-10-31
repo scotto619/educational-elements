@@ -48,7 +48,7 @@ const GamesTab = ({
       category: 'daily',
       featured: true,
       storageKeySuffix: 'teacher',
-      logo: '/Logo/daily-word-challenge.png'
+      logo: '/logos/game-logos/daily-word-challenge.svg'
     },
     {
       id: 'amazing-typing-adventure',
@@ -62,7 +62,7 @@ const GamesTab = ({
       category: 'educational',
       featured: true,
       storageKeySuffix: 'teacher-typing',
-      logo: '/Logo/typing-legends.png'
+      logo: '/logos/game-logos/typing-legends.svg'
     },
     // Featured/New Games
     {
@@ -76,7 +76,7 @@ const GamesTab = ({
       time: '2-10 minutes',
       featured: true,
       category: 'featured',
-      logo: '/Logo/maze-runner.png'
+      logo: '/logos/game-logos/maze-runner.svg'
     },
     {
       id: 'bingo',
@@ -91,7 +91,7 @@ const GamesTab = ({
       featured: true,
       category: 'featured',
       teacherMode: true,
-      logo: '/Logo/educational-bingo.png'
+      logo: '/logos/game-logos/educational-bingo.svg'
     },
     {
       id: 'battle-royale',
@@ -106,7 +106,7 @@ const GamesTab = ({
       featured: true,
       category: 'featured',
       teacherMode: true,
-      logo: '/Logo/battle-royale.png'
+      logo: '/logos/game-logos/battle-royale.svg'
     },
     {
       id: 'multiplayer-agar',
@@ -120,7 +120,7 @@ const GamesTab = ({
       multiplayer: true,
       category: 'featured',
       teacherMode: true,
-      logo: '/Logo/cell-battle.png'
+      logo: '/logos/game-logos/cell-battle.svg'
     },
     {
       id: 'math-space-invaders',
@@ -133,7 +133,7 @@ const GamesTab = ({
       time: '5-30 minutes',
       featured: true,
       category: 'featured',
-      logo: '/Logo/math-space-invaders.png'
+      logo: '/logos/game-logos/math-space-invaders.svg'
     },
     
     // Multiplayer Games
@@ -148,7 +148,7 @@ const GamesTab = ({
       time: '10-20 minutes',
       multiplayer: true,
       category: 'multiplayer',
-      logo: '/Logo/battleships.png'
+      logo: '/logos/game-logos/battleships.svg'
     },
     {
       id: 'tic-tac-toe',
@@ -161,7 +161,7 @@ const GamesTab = ({
       time: '2-5 minutes',
       multiplayer: true,
       category: 'multiplayer',
-      logo: '/Logo/tic-tac-toe.png'
+      logo: '/logos/game-logos/tic-tac-toe.svg'
     },
 
     // Educational Games  
@@ -177,7 +177,7 @@ const GamesTab = ({
       multiplayer: true,
       category: 'educational',
       teacherMode: true,
-      logo: '/Logo/classroom-bingo.png'
+      logo: '/logos/game-logos/classroom-bingo.svg'
     },
     {
       id: 'math-race',
@@ -189,7 +189,7 @@ const GamesTab = ({
       difficulty: 'Easy - Hard',
       time: '2-5 minutes',
       category: 'educational',
-      logo: '/Logo/math-race.png'
+      logo: '/logos/game-logos/math-race.svg'
     },
     {
       id: 'crossword',
@@ -201,7 +201,7 @@ const GamesTab = ({
       difficulty: 'Easy - Hard',
       time: '10-30 minutes',
       category: 'educational',
-      logo: '/Logo/crossword.png'
+      logo: '/logos/game-logos/crossword.svg'
     },
     {
       id: 'word-search',
@@ -213,7 +213,7 @@ const GamesTab = ({
       difficulty: 'Easy - Medium',
       time: '5-15 minutes',
       category: 'educational',
-      logo: '/Logo/word-search.png'
+      logo: '/logos/game-logos/word-search.svg'
     },
     {
       id: 'boggle',
@@ -225,7 +225,7 @@ const GamesTab = ({
       difficulty: 'Medium - Hard',
       time: '3-5 minutes',
       category: 'educational',
-      logo: '/Logo/boggle.png'
+      logo: '/logos/game-logos/boggle.svg'
     },
     {
       id: 'noggle',
@@ -237,7 +237,7 @@ const GamesTab = ({
       difficulty: 'Medium - Hard',
       time: '3-5 minutes',
       category: 'educational',
-      logo: '/Logo/noggle.png'
+      logo: '/logos/game-logos/noggle.svg'
     },
 
     // Brain Games
@@ -251,7 +251,7 @@ const GamesTab = ({
       difficulty: 'Easy - Hard',
       time: '2-10 minutes',
       category: 'brain',
-      logo: '/Logo/maze-runner.png'
+      logo: '/logos/game-logos/maze-runner.svg'
     },
     {
       id: 'memory-match',
@@ -263,7 +263,7 @@ const GamesTab = ({
       difficulty: 'Easy - Expert',
       time: '3-8 minutes',
       category: 'brain',
-      logo: '/Logo/memory-challenge.png'
+      logo: '/logos/game-logos/memory-challenge.svg'
     },
 
     // Adventure Games
@@ -277,7 +277,7 @@ const GamesTab = ({
       difficulty: 'Medium - Expert',
       time: '5-30 minutes',
       category: 'adventure',
-      logo: '/Logo/match3-adventure.png'
+      logo: '/logos/game-logos/match3-adventure.svg'
     },
     {
       id: 'clicker',
@@ -289,7 +289,7 @@ const GamesTab = ({
       difficulty: 'Easy',
       time: 'Unlimited',
       category: 'adventure',
-      logo: '/Logo/hero-forge.png'
+      logo: '/logos/game-logos/hero-forge.svg'
     }
   ];
 

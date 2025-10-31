@@ -39,7 +39,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       featured: true,
       daily: true,
       storageKeySuffix: 'student',
-      logo: '/Logo/daily-word-challenge.png'
+      logo: '/logos/game-logos/daily-word-challenge.svg'
     },
     {
       id: 'typing-legends',
@@ -54,7 +54,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       featured: true,
       new: true,
       storageKeySuffix: 'student-typing',
-      logo: '/Logo/typing-legends.png'
+      logo: '/logos/game-logos/typing-legends.svg'
     },
     // Featured/New Games
     {
@@ -68,7 +68,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       time: '2-10 minutes',
       featured: true,
       category: 'featured',
-      logo: '/Logo/maze-runner.png'
+      logo: '/logos/game-logos/maze-runner.svg'
     },
     {
       id: 'bingo',
@@ -85,7 +85,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       category: 'featured',
       educational: true,
       requiresTeacher: true,
-      logo: '/Logo/educational-bingo.png'
+      logo: '/logos/game-logos/educational-bingo.svg'
     },
     {
       id: 'educational-memory',
@@ -100,7 +100,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       featured: true,
       category: 'featured',
       educational: true,
-      logo: '/Logo/memory-challenge.png'
+      logo: '/logos/game-logos/memory-challenge.svg'
     },
     {
       id: 'battle-royale',
@@ -115,7 +115,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       featured: true,
       category: 'featured',
       requiresClassCode: true,
-      logo: '/Logo/battle-royale.png'
+      logo: '/logos/game-logos/battle-royale.svg'
     },
     {
       id: 'math-space-invaders',
@@ -128,7 +128,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       time: '5-30 minutes',
       featured: true,
       category: 'featured',
-      logo: '/Logo/math-space-invaders.png'
+      logo: '/logos/game-logos/math-space-invaders.svg'
     },
     
     // Multiplayer Games
@@ -144,7 +144,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       multiplayer: true,
       category: 'multiplayer',
       requiresClassCode: true,
-      logo: '/Logo/cell-battle.png'
+      logo: '/logos/game-logos/cell-battle.svg'
     },
     {
       id: 'battleships',
@@ -157,7 +157,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       time: '10-20 minutes',
       multiplayer: true,
       category: 'multiplayer',
-      logo: '/Logo/battleships.png'
+      logo: '/logos/game-logos/battleships.svg'
     },
     {
       id: 'tic-tac-toe',
@@ -170,7 +170,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       time: '2-5 minutes',
       multiplayer: true,
       category: 'multiplayer',
-      logo: '/Logo/tic-tac-toe.png'
+      logo: '/logos/game-logos/tic-tac-toe.svg'
     },
 
     // Adventure Games  
@@ -184,7 +184,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       difficulty: 'Medium - Expert',
       time: '5-30 minutes',
       category: 'adventure',
-      logo: '/Logo/match3-adventure.png'
+      logo: '/logos/game-logos/match3-adventure.svg'
     },
     {
       id: 'clicker',
@@ -196,7 +196,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       difficulty: 'Easy',
       time: 'Unlimited',
       category: 'adventure',
-      logo: '/Logo/hero-forge.png'
+      logo: '/logos/game-logos/hero-forge.svg'
     },
 
     // Educational Games
@@ -212,7 +212,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       category: 'educational',
       educational: true,
       requiresTeacher: true,
-      logo: '/Logo/classroom-bingo.png'
+      logo: '/logos/game-logos/classroom-bingo.svg'
     },
     {
       id: 'math-race',
@@ -224,7 +224,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       difficulty: 'Easy - Hard',
       time: '2-5 minutes',
       category: 'educational',
-      logo: '/Logo/math-race.png'
+      logo: '/logos/game-logos/math-race.svg'
     },
     {
       id: 'crossword',
@@ -236,7 +236,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       difficulty: 'Easy - Hard',
       time: '10-30 minutes',
       category: 'educational',
-      logo: '/Logo/crossword.png'
+      logo: '/logos/game-logos/crossword.svg'
     },
     {
       id: 'word-search',
@@ -248,7 +248,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       difficulty: 'Easy - Medium',
       time: '5-15 minutes',
       category: 'educational',
-      logo: '/Logo/word-search.png'
+      logo: '/logos/game-logos/word-search.svg'
     },
     {
       id: 'boggle',
@@ -260,7 +260,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       difficulty: 'Medium - Hard',
       time: '3-5 minutes',
       category: 'educational',
-      logo: '/Logo/boggle.png'
+      logo: '/logos/game-logos/boggle.svg'
     },
     {
       id: 'noggle',
@@ -272,7 +272,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       difficulty: 'Medium - Hard',
       time: '3-5 minutes',
       category: 'educational',
-      logo: '/Logo/noggle.png'
+      logo: '/logos/game-logos/noggle.svg'
     },
 
     // Brain Games
@@ -285,7 +285,8 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       color: 'from-indigo-500 to-purple-600',
       difficulty: 'Easy - Hard',
       time: '2-10 minutes',
-      category: 'brain'
+      category: 'brain',
+      logo: '/logos/game-logos/maze-runner.svg'
     },
     {
       id: 'memory-match',
@@ -296,7 +297,8 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       color: 'from-purple-500 to-purple-600',
       difficulty: 'Easy - Expert',
       time: '3-8 minutes',
-      category: 'brain'
+      category: 'brain',
+      logo: '/logos/game-logos/memory-challenge.svg'
     }
   ];
 
