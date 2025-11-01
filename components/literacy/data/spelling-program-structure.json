@@ -1,0 +1,1102 @@
+{
+  "Phonology": {
+    "Level Foundation": [
+      {
+        "id": "know-that-words-are-units-of-meaning",
+        "text": "Know that words are units of meaning."
+      },
+      {
+        "id": "know-the-most-common-phonemes-that-represent-each-letter-for-all-single-letter-g",
+        "text": "Know the most common phonemes that represent each letter for all single-letter graphemes."
+      },
+      {
+        "id": "know-that-one-phoneme-can-be-represented-by-a-double-common-consonant-e-g-ss-ff-",
+        "text": "Know that one phoneme can be represented by a double common consonant (e.g., ss, ff, ll, zz)."
+      },
+      {
+        "id": "know-the-most-common-consonant-digraphs-e-g-ck-sh-ch-th-wh-ng",
+        "text": "Know the most common consonant digraphs (e.g., ck, sh, ch, th, wh, ng)."
+      },
+      {
+        "id": "know-the-two-sounds-of-th-voiced-e-g-this-and-unvoiced-e-g-think",
+        "text": "Know the two sounds of “th” – voiced (e.g., this) and unvoiced (e.g., think)."
+      },
+      {
+        "id": "know-some-of-the-most-common-vowel-digraphs-e-g-ai-ee-ie-oa-oo-ou",
+        "text": "Know some of the most common vowel digraphs (e.g., /ai/, /ee/, /ie/, /oa/, /oo/, /ou/)."
+      }
+    ],
+    "Level 1": [
+      {
+        "id": "understand-the-terms-of-phonology-phonemes-graphemes-syllables-grapheme-phoneme-",
+        "text": "Understand the terms of phonology – phonemes, graphemes, syllables, grapheme-phoneme correspondences (GPCs), vowels, consonants."
+      },
+      {
+        "id": "know-short-vowels-common-long-vowels-consonant-digraphs-simple-vowel-digraphs-sp",
+        "text": "Know short vowels, common long vowels, consonant digraphs, simple vowel digraphs, split digraphs and diphthongs."
+      },
+      {
+        "id": "know-that-a-syllable-must-contain-a-vowel-sound",
+        "text": "Know that a syllable must contain a vowel sound."
+      },
+      {
+        "id": "recognise-sounds-that-can-be-produced-by-different-letters-e-g-s-in-sat-and-cent",
+        "text": "Recognise sounds that can be produced by different letters (e.g., /s/ in sat and cent)."
+      },
+      {
+        "id": "know-that-a-base-ending-in-a-voiced-phoneme-has-a-plural-that-is-voiced-z-e-g-do",
+        "text": "Know that a base ending in a voiced phoneme has a plural that is voiced /z/ (e.g., dogs, beds, gloves, buzzes)."
+      },
+      {
+        "id": "know-that-a-base-ending-in-a-voiceless-phoneme-has-an-unvoiced-plural-s-e-g-cups",
+        "text": "Know that a base ending in a voiceless phoneme has an unvoiced plural /s/ (e.g., cups, cats, books)."
+      },
+      {
+        "id": "know-that-when-a-free-base-ends-in-a-voiced-sound-the-ed-will-be-voiced-when-it-",
+        "text": "Know that when a free base ends in a voiced sound the -ed will be voiced; when it is unvoiced the -ed will be unvoiced (/t/), and when the free base ends in /t/ or /d/ the -ed becomes a syllable ‘ed’ (e.g., played, jumped, waited)."
+      },
+      {
+        "id": "identify-some-r-controlled-vowels-e-g-or-as-in-thorn-ar-as-in-car",
+        "text": "Identify some r-controlled vowels (e.g., /or/ as in thorn, /ar/ as in car)."
+      },
+      {
+        "id": "recognise-that-letters-can-have-more-than-one-sound-e-g-u-in-cut-put-use-and-the",
+        "text": "Recognise that letters can have more than one sound (e.g., ‘u’ in cut, put, use and the ‘a’ in cat, father, any)."
+      },
+      {
+        "id": "recognise-multisyllabic-words-e-g-teacher-doctor-dollar-about",
+        "text": "Recognise multisyllabic words (e.g., teacher, doctor, dollar, about)."
+      }
+    ],
+    "Level 2": [
+      {
+        "id": "know-that-r-influenced-vowels-in-single-syllable-words-e-g-ar-are-air-ear-eer-er",
+        "text": "Know that r-influenced vowels in single-syllable words (e.g., /ar/ /are/ /air/ /ear/ /eer/ /er/ /ir/ /or/ /ur/ /or/ /ure/ /ear/ /ier/)."
+      },
+      {
+        "id": "know-that-a-base-ending-in-a-voiced-phoneme-has-a-plural-that-is-voiced-z-e-g-do",
+        "text": "Know that a base ending in a voiced phoneme has a plural that is voiced /z/ (e.g., dogs, beds, gloves, buzzes)."
+      },
+      {
+        "id": "know-that-a-base-ending-in-a-voiceless-phoneme-has-an-unvoiced-plural-s-e-g-cups",
+        "text": "Know that a base ending in a voiceless phoneme has an unvoiced plural /s/ (e.g., cups, cats, books)."
+      },
+      {
+        "id": "know-that-when-a-free-base-ends-in-a-voiced-sound-the-ed-will-be-voiced-when-it-",
+        "text": "Know that when a free base ends in a voiced sound the -ed will be voiced; when it is unvoiced the -ed will be unvoiced (/t/) and when the free base ends in /t/ or /d/ the -ed becomes a syllable 'ed' (e.g., played, jumped, waited)."
+      },
+      {
+        "id": "know-alternative-spellings-for-consonant-sounds-e-g-n-kn-in-knife-gn-in-gnaw-r-w",
+        "text": "Know alternative spellings for consonant sounds (e.g., /n/ – ‘kn’ in knife, ‘gn’ in gnaw, /r/ – ‘wr’ in wrist; /k/ – ‘ch’ in school; /sh/ – ‘ch’ in chef; ‘ti’ in action, ‘si’ in tension, ‘ci’ in special; /f/ – ‘ph’ in phone)."
+      },
+      {
+        "id": "know-the-schwa-sound-in-multisyllabic-words-e-g-teacher-doctor-dollar-about",
+        "text": "Know the schwa sound in multisyllabic words (e.g., teacher, doctor, dollar, about)"
+      }
+    ],
+    "Level 3": [
+      {
+        "id": "use-phonic-knowledge-to-explore-less-common-letter-patterns-after-short-vowels-e",
+        "text": "Use phonic knowledge to explore less common letter patterns after short vowels (e.g., words that end in -dge badge, edge, fridge) and less common vowel digraphs (e.g., ‘ea’ in bread; ‘ou’ in young, touch; ‘oe’ in shoe; ‘ui’ in fruit, cruise)"
+      },
+      {
+        "id": "know-common-and-less-common-diphthongs-e-g-ou-in-house-oi-in-noise-air-in-chair-",
+        "text": "Know common and less common diphthongs (e.g., /ou/ in house, /oi/ in noise, /air/ in chair, /eer/ in steer, /ure/ in pure, /eigh/ in weight)"
+      },
+      {
+        "id": "know-r-influenced-vowels-in-single-syllable-words-e-g-ar-in-star-are-in-share-ai",
+        "text": "Know ‘r’ influenced vowels in single syllable words (e.g., /ar/ in star, /are/ in share, /air/ in chair, /ear/ in clear, /eer/ in cheer, /er/ in serve, /ir/ in bird, /ur/ in blur, /or/ in storm, /ore/ in score, /ure/ in sure, /air/ in hair)"
+      }
+    ],
+    "Level 4": [
+      {
+        "id": "understand-the-phonological-shift-at-morpheme-boundaries-e-g-ion-decide-ion-deci",
+        "text": "Understand the phonological shift at morpheme boundaries (e.g., -ion decide + ion = decision, -ure press + ure = pressure)"
+      }
+    ]
+  },
+  "Spelling Patterns": {
+    "Level Foundation": [
+      {
+        "id": "understand-that-letters-are-symbols-that-represent-sounds",
+        "text": "Understand that letters are symbols that represent sounds."
+      },
+      {
+        "id": "know-that-letters-can-be-vowels-or-consonants-and-that-every-word-has-at-least-o",
+        "text": "Know that letters can be vowels or consonants and that every word has at least one vowel."
+      },
+      {
+        "id": "understand-that-a-sound-can-be-represented-by-1-2-3-or-4-letters-e-g-digraphs-th",
+        "text": "Understand that a sound can be represented by 1, 2, 3, or 4 letters (e.g., digraphs th, ee in three, trigraphs our in four, quadragraphs eigh in eight)."
+      },
+      {
+        "id": "segment-single-syllable-words-into-phonemes-as-a-strategy-for-spelling-e-g-bed-b",
+        "text": "Segment single-syllable words into phonemes as a strategy for spelling (e.g., bed = /b/ /e/ /d/)."
+      },
+      {
+        "id": "spell-single-letter-vc-and-cvc-words-e-g-it-mud-web",
+        "text": "Spell single-letter VC and CVC words (e.g., it, mud, web)."
+      },
+      {
+        "id": "spell-cvc-words-containing-consonant-digraphs-e-g-fish-ring",
+        "text": "Spell CVC words containing consonant digraphs (e.g., fish, ring)."
+      },
+      {
+        "id": "spell-taught-high-frequency-irregular-words-comprising-up-to-three-phonemes-e-g-",
+        "text": "Spell taught high-frequency irregular words comprising up to three phonemes (e.g., we, go, to, my, of, said)."
+      },
+      {
+        "id": "spell-ccvc-and-cvcc-words-e-g-clap-stop-bend-jump",
+        "text": "Spell CCVC and CVCC words (e.g., clap, stop, bend, jump)."
+      },
+      {
+        "id": "spell-single-syllable-words-with-common-double-consonants-e-g-buzz-miss-fell",
+        "text": "Spell single-syllable words with common double consonants (e.g., buzz, miss, fell)."
+      },
+      {
+        "id": "spell-common-compound-words-taught-graphemes-e-g-hotdog-sunset-goldfish",
+        "text": "Spell common compound words taught graphemes (e.g., hotdog, sunset, goldfish)."
+      }
+    ],
+    "Level 1": [
+      {
+        "id": "segment-single-syllable-words-into-phonemes-as-a-strategy-for-spelling-e-g-ship-",
+        "text": "Segment single-syllable words into phonemes as a strategy for spelling (e.g., ship = /sh/ /i/ /p/)."
+      },
+      {
+        "id": "understand-that-a-sound-can-be-represented-by-1-2-3-or-4-letters-e-g-digraphs-th",
+        "text": "Understand that a sound can be represented by 1, 2, 3 or 4 letters (e.g., digraphs th, ee in three, trigraphs our in four, quadragraphs eigh in eight)."
+      },
+      {
+        "id": "spell-one-syllable-high-frequency-base-words-with-split-digraphs-e-g-made-hide-h",
+        "text": "Spell one-syllable high-frequency base words with split digraphs (e.g., made, hide, hope)."
+      },
+      {
+        "id": "spell-one-syllable-words-with-common-letter-patterns-cvcc-ccvc-cccvc-cccvcc-e-g-",
+        "text": "Spell one-syllable words with common letter patterns CVCC, CCVC, CCCVC, CCCVCC (e.g., clap, bend, splat, splash)."
+      },
+      {
+        "id": "know-that-when-the-meaning-is-more-than-one-it-is-always-spelled-using-s-even-th",
+        "text": "Know that when the meaning is “more than one”, it is always spelled using s even though it is often heard as /z/ (e.g., bees, games, beds)."
+      },
+      {
+        "id": "use-the-spelling-convention-for-adding-a-suffix-to-a-base-word-to-form-a-plural-",
+        "text": "Use the spelling convention for adding a suffix to a base word to form a plural (e.g., to make a word plural when it ends in ‘ss’, ‘sh’, ‘ch’, ‘z’ or ‘x’ add -es: dresses, boxes)."
+      },
+      {
+        "id": "spell-an-increasing-number-of-taught-irregular-high-frequency-words-e-g-were-who",
+        "text": "Spell an increasing number of taught irregular high-frequency words (e.g., were, who, one, two)."
+      },
+      {
+        "id": "know-that-when-spelling-a-one-syllable-word-that-ends-in-f-l-s-or-z-after-a-shor",
+        "text": "Know that when spelling a one-syllable word that ends in ‘f’, ‘l’, ‘s’ or ‘z’ after a short vowel, the final consonant is doubled (e.g., bell, pass, buzz)."
+      },
+      {
+        "id": "know-that-words-do-not-usually-start-with-zz-ss-ll-ff-and-ck",
+        "text": "Know that words do not usually start with zz, ss, ll, ff, and ck."
+      },
+      {
+        "id": "know-that-k-is-usually-spelled-ck-or-k-at-the-end-of-a-word-e-g-deck-milk",
+        "text": "Know that /k/ is usually spelled ck or k at the end of a word (e.g., deck, milk)."
+      },
+      {
+        "id": "know-to-use-c-to-represent-k-at-the-beginning-of-a-word-when-it-is-followed-by-a",
+        "text": "Know to use c to represent /k/ at the beginning of a word when it is followed by ‘a’, ‘o’, or ‘u’ (e.g., cat, cot, cup). Know to use k when it’s followed by ‘e’, ‘i’, or ‘y’ (e.g., key, kit, kite)."
+      },
+      {
+        "id": "know-that-g-and-c-usually-represent-a-soft-sound-j-and-s-when-followed-by-e-i-or",
+        "text": "Know that ‘g’ and ‘c’ usually represent a soft sound (/j/ and /s/) when followed by ‘e’, ‘i’, or ‘y’ (e.g., gem, giant, gym, cent, city, cycle)."
+      },
+      {
+        "id": "know-that-consonant-trigraphs-tch-and-dge-can-end-a-base-word-immediately-follow",
+        "text": "Know that consonant trigraphs tch and dge can end a base word immediately following a short vowel (e.g., catch, badge)."
+      },
+      {
+        "id": "know-that-ai-is-usually-used-for-the-long-a-sound-in-the-middle-of-a-word-and-so",
+        "text": "Know that ‘ai’ is usually used for the long /a/ sound in the middle of a word and sometimes at the beginning, while ‘ay’ is usually used at the end (e.g., train, play)."
+      },
+      {
+        "id": "know-that-ee-is-the-most-common-spelling-for-the-long-e-vowel-sound-and-often-oc",
+        "text": "Know that ‘ee’ is the most common spelling for the long /e/ vowel sound, and often occurs in the middle or end of a word."
+      },
+      {
+        "id": "know-that-oa-is-used-for-the-long-o-sound-in-the-middle-of-a-word-and-that-ow-is",
+        "text": "Know that ‘oa’ is used for the long /o/ sound in the middle of a word and that ‘ow’ is usually used at the end (e.g., boat, snow)."
+      },
+      {
+        "id": "know-that-final-y-is-used-to-represent-the-long-i-sound-at-the-end-of-a-one-syll",
+        "text": "Know that final ‘y’ is used to represent the long /i/ sound at the end of a one-syllable word.‘y’ is used to represent a long /e/ sound at the end of a word with two or more syllables."
+      },
+      {
+        "id": "know-that-oi-is-usually-used-in-the-middle-and-sometimes-at-the-beginning-of-a-w",
+        "text": "Know that ‘oi’ is usually used in the middle and sometimes at the beginning of a word, and ‘oy’ is usually used at the end of a word."
+      },
+      {
+        "id": "know-that-ou-is-usually-used-in-the-middle-and-sometimes-at-the-beginning-of-a-w",
+        "text": "Know that ‘ou’ is usually used in the middle and sometimes at the beginning of a word, and ‘ow’ is usually used at the end of a word or in words where /ou/ is followed by ‘l’, ‘n’, or ‘d’."
+      },
+      {
+        "id": "know-r-controlled-vowels-for-er-e-g-er-as-most-common-ir-less-common-as-in-stir-",
+        "text": "Know r-controlled vowels for /er/ (e.g., er as most common, ir less common as in stir, ur as in fur least common)."
+      },
+      {
+        "id": "know-the-letters-q-and-u-always-appear-together-in-words-in-english-the-blended-",
+        "text": "Know the letters ‘q’ and ‘u’ always appear together in words in English. The blended sound that is produced is /kw/ (e.g., quiz, queen)."
+      },
+      {
+        "id": "use-the-final-consonant-doubling-spelling-convention-when-spelling-words-with-ta",
+        "text": "Use the final consonant ‘doubling’ spelling convention when spelling words with taught vowel suffixes -ed, -ing, -er, -est (e.g., hopped, hopping, bigger, biggest)."
+      },
+      {
+        "id": "spell-words-with-the-vowel-suffixing-convention-drop-the-ending-e-with-taught-vo",
+        "text": "Spell words with the vowel suffixing convention ‘drop the ending -e’ with taught vowel suffixes -ed, -ing, -er, -est (e.g., mumbled, mumbling, baker, paler, wisest, cheesy, sparkly)."
+      }
+    ],
+    "Level 2": [
+      {
+        "id": "know-that-spelling-of-morphemes-remains-consistent-even-though-pronunciation-may",
+        "text": "Know that spelling of morphemes remains consistent even though pronunciation may change."
+      },
+      {
+        "id": "know-that-all-lexical-words-must-be-three-letters-or-longer-and-function-words-m",
+        "text": "Know that all lexical words must be three letters or longer and function words may be a single word with 1 or 2 graphemes."
+      },
+      {
+        "id": "spell-one-and-two-syllable-words-with-common-letter-patterns-cvcc-ccvc-cccvc-ccc",
+        "text": "Spell one- and two-syllable words with common letter patterns CVCC, CCVC, CCCVC, CCCVCC, CCCVCCC, CVC + CV, CVC + CVC (e.g., jump, flag, blend, splash, crunch, backpack, cupcake)."
+      },
+      {
+        "id": "spell-high-frequency-base-words-with-taught-vowel-graphs-digraphs-trigraphs-and-",
+        "text": "Spell high-frequency base words with taught vowel graphs, digraphs, trigraphs, and quadragraphs (e.g., cat, boat, high)."
+      },
+      {
+        "id": "spell-words-with-long-vowel-sounds-using-different-graphemes-e-g-long-a-a-ai-a-e",
+        "text": "Spell words with long vowel sounds using different graphemes (e.g., long 'a': 'a', 'ai', 'a-e', 'ay', 'ey' – baby, rain, name, pay, grey)."
+      },
+      {
+        "id": "spell-irregular-high-frequency-words-e-g-where-there-does-come",
+        "text": "Spell irregular high-frequency words (e.g., where, there, does, come)."
+      },
+      {
+        "id": "spell-common-contractions-with-am-is-has-and-not-e-g-i-am-i-m-he-is-he-s-she-has",
+        "text": "Spell common contractions with am, is, has, and not (e.g., I + am = I’m, he + is = he’s, she + has = she’s, do + not = don’t)."
+      },
+      {
+        "id": "spell-common-homophones-both-function-and-content-words-e-g-to-too-two-by-bye-bu",
+        "text": "Spell common homophones – both function and content words (e.g., to/too/two, by/bye/buy, for/four/fore)."
+      },
+      {
+        "id": "know-that-words-with-a-final-l-sound-in-two-syllable-words-are-usually-spelled-w",
+        "text": "Know that words with a final /l/ sound in two-syllable words are usually spelled with le when another consonant immediately precedes /l/ (e.g., candle, table, bubble)."
+      },
+      {
+        "id": "add-prior-taught-suffixes-and-prefixes-to-base-words-containing-alternative-s-sp",
+        "text": "Add prior taught suffixes and prefixes to base words containing alternative /s/ spellings (e.g., re + cycle = recycle, city + es = cities)."
+      },
+      {
+        "id": "explain-that-consonant-trigraphs-tch-and-dge-only-come-at-the-end-of-a-base-foll",
+        "text": "Explain that consonant trigraphs tch and dge only come at the end of a base following a short vowel and apply when spelling (e.g., catch, badge)."
+      },
+      {
+        "id": "know-all-the-jobs-of-y-consonant-y-long-i-sound-on-the-end-of-one-syllable-words",
+        "text": "Know all the jobs of y – consonant /y/, long ‘i’ sound on the end of one-syllable words, long ‘e’ sound on the end of multisyllabic words, and long ‘i’ sound in a few words (e.g., type)."
+      },
+      {
+        "id": "know-that-final-silent-e-at-the-end-of-a-word-usually-indicates-that-the-precedi",
+        "text": "Know that final silent e at the end of a word usually indicates that the preceding vowel is pronounced as a long vowel. This pattern occurs in regularly spelled words followed by a consonant and then e (VCE) (e.g., bite, hope, note, made)."
+      },
+      {
+        "id": "explain-that-k-is-usually-spelled-ck-or-k-at-the-end-of-a-word-and-apply-this-wh",
+        "text": "Explain that /k/ is usually spelled ‘ck’ or ‘k’ at the end of a word and apply this when spelling (e.g., deck, milk)"
+      },
+      {
+        "id": "know-that-oi-is-usually-used-in-the-middle-and-sometimes-at-the-beginning-of-a-w",
+        "text": "Know that ‘oi’ is usually used in the middle and sometimes at the beginning of a word and ‘oy’ is usually used at the end of a word"
+      },
+      {
+        "id": "know-and-apply-r-controlled-vowels-for-er-when-spelling-familiar-and-unfamiliar-",
+        "text": "Know and apply r-controlled vowels for /er/ when spelling familiar and unfamiliar words (e.g., er as most common and usually at the end of words, ir less common and usually in the middle of words in stir, ur in fur as least common and usually in the middle of words)"
+      },
+      {
+        "id": "know-w-influenced-vowel-patterns-wa-war-wor-e-g-water-warm-work",
+        "text": "Know ‘w’ influenced vowel patterns wa war wor (e.g., water, warm, work)"
+      },
+      {
+        "id": "use-the-spelling-convention-when-adding-tense-marking-suffixes-for-words-ending-",
+        "text": "Use the spelling convention when adding tense-marking suffixes for words ending in a consonant + ‘y’ – change ‘y’ to ‘i’ before adding a suffix (e.g., happy + er = happier, cry + ed = cried, lucky + ly = luckily, spotty + est = spottiest)"
+      },
+      {
+        "id": "use-the-spelling-convention-when-adding-the-plural-marking-suffix-s-to-words-end",
+        "text": "Use the spelling convention when adding the plural-marking suffix -s to words ending in ‘f’ or ‘fe’: change ‘f’ to ‘v’ and add ‘es’ (e.g., knife – knives)"
+      },
+      {
+        "id": "use-the-spelling-convention-for-adding-a-suffix-to-a-base-word-to-form-a-plural-",
+        "text": "Use the spelling convention for adding a suffix to a base word to form a plural (e.g., to make a word plural when it ends in ‘ss’ ‘sh’ ‘ch’ ‘z’ or ‘x’ add ‘es’- dresses, boxes)"
+      },
+      {
+        "id": "use-the-spelling-convention-when-adding-plural-marking-suffix-es-to-words-ending",
+        "text": "Use the spelling convention when adding plural-marking suffix -es to words ending in ‘y’: change ‘y’ to ‘i’ and add -es for nouns ending in a consonant + ‘y’ (e.g., baby + es = babies)"
+      },
+      {
+        "id": "explain-when-to-use-double-consonants-to-spell-two-syllable-base-words-and-apply",
+        "text": "Explain when to use double consonants to spell two-syllable base words and apply this when spelling (e.g., begin = beginning)"
+      }
+    ],
+    "Level 3": [
+      {
+        "id": "use-the-terms-phonemes-graphemes-morphemes-prefixes-suffixes-bases-vowels-and-co",
+        "text": "Use the terms phonemes, graphemes, morphemes, prefixes, suffixes, bases, vowels, and consonants when discussing spelling"
+      },
+      {
+        "id": "know-that-a-lexical-word-will-usually-be-longer-than-its-grammatical-homophone-e",
+        "text": "Know that a lexical word will usually be longer than its grammatical homophone (e.g., in – inn, by – bye, or – oar)"
+      },
+      {
+        "id": "apply-knowledge-of-grapheme-phoneme-correspondences-syllables-and-blending-and-s",
+        "text": "Apply knowledge of grapheme-phoneme correspondences, syllables, and blending and segmenting to spell multisyllabic words with more complex patterns (e.g., shrinking, against, rocket)"
+      },
+      {
+        "id": "know-all-the-jobs-of-y-consonant-y-long-i-sound-on-the-end-of-one-syllable-words",
+        "text": "Know all the jobs of ‘y’ – consonant ‘y’, long ‘i’ sound on the end of one-syllable words, long ‘e’ sound on the end of multisyllabic words and long ‘i’ sound in a few words (e.g., cry, baby, gym)"
+      },
+      {
+        "id": "spell-contractions-with-have-had-would-and-will-e-g-i-have-i-ve-he-had-he-d-she-",
+        "text": "Spell contractions with ‘have, had, would’ and ‘will’ (e.g., I + have = I’ve, he + had = he’d, she + would = she’d, they + will = they’ll)"
+      },
+      {
+        "id": "spell-common-homophones-according-to-context-e-g-here-hear-there-their-they-re-a",
+        "text": "Spell common homophones according to context (e.g., here/hear, there/their/they’re, aloud/allowed, ate/eight, past/passed)"
+      },
+      {
+        "id": "spell-irregular-high-frequency-words-e-g-enough-does-any-of",
+        "text": "Spell irregular high-frequency words (e.g., enough, does, any, of)"
+      },
+      {
+        "id": "spell-words-with-consonant-digraphs-that-represent-different-sounds-e-g-ch-in-ma",
+        "text": "Spell words with consonant digraphs that represent different sounds (e.g., ‘ch’ in machine, change, school; ‘th’ in mother, think)"
+      },
+      {
+        "id": "spell-more-complex-words-with-long-vowel-sounds-using-different-graphemes-e-g-lo",
+        "text": "Spell more complex words with long vowel sounds using different graphemes (e.g., long /a/ – they, great, vein)"
+      },
+      {
+        "id": "spell-words-with-the-diphthong-eer-eer-ear-e-g-cheer-clear",
+        "text": "Spell words with the diphthong /eer/: ‘eer’, ‘ear’ (e.g., cheer, clear)"
+      },
+      {
+        "id": "spell-words-with-the-phoneme-ar-ar-a-e-g-park-father-half",
+        "text": "Spell words with the phoneme /ar/: ‘ar’, ‘a’ (e.g., park, father, half)"
+      },
+      {
+        "id": "spell-words-with-the-diphthong-air-air-are-e-g-chair-share",
+        "text": "Spell words with the diphthong /air/: ‘air’, ‘are’ (e.g., chair, share)"
+      },
+      {
+        "id": "spell-words-with-the-phoneme-or-or-ore-aw-e-g-sport-explore-straw",
+        "text": "Spell words with the phoneme /or/: ‘or’, ‘ore’, ‘aw’ (e.g., sport, explore, straw)"
+      },
+      {
+        "id": "spell-words-with-short-vowel-sounds-including-ea-saying-e-e-g-bread-meant-head-a",
+        "text": "Spell words with short vowel sounds including ‘ea’ saying /e/ (e.g., bread, meant, head) and ‘o’ saying /u/ (e.g., love, above, come)"
+      },
+      {
+        "id": "spell-words-with-the-graphemes-ire-and-ure-e-g-fire-nature",
+        "text": "Spell words with the graphemes ‘ire’ and ‘ure’ (e.g., fire, nature)"
+      },
+      {
+        "id": "spell-words-with-w-influenced-vowel-patterns-wa-war-wor-e-g-water-warm-work",
+        "text": "Spell words with ‘w’ influenced vowel patterns ‘wa’ ‘war’ ‘wor’ (e.g., water, warm, work)"
+      },
+      {
+        "id": "spell-words-with-ph-saying-f-and-ch-saying-k-e-g-phone-school",
+        "text": "Spell words with ‘ph’ saying /f/ and ‘ch’ saying /k/ (e.g., phone, school)"
+      },
+      {
+        "id": "know-that-words-with-a-final-l-sound-in-two-syllable-words-are-usually-spelled-w",
+        "text": "Know that words with a final /l/ sound in two-syllable words are usually spelled with le when another consonant immediately precedes /l/ (e.g., candle, table, bubble) and know when to use -cle, -kle and -ckle (e.g., circle, sparkle, tackle)"
+      },
+      {
+        "id": "know-the-digraphs-kn-and-wr-and-identify-homophones-with-silent-letters-use-cont",
+        "text": "Know the digraphs ‘kn’ and ‘wr’ and identify homophones with silent letters. Use context to help make the correct spelling choice (e.g., knight, night, write, right)"
+      },
+      {
+        "id": "recognise-the-schwa-vowel-sound-in-unstressed-syllables-in-multisyllabic-words-a",
+        "text": "Recognise the schwa vowel sound in unstressed syllables in multisyllabic words and use common spelling patterns for schwa written ‘er’, ‘or’, ‘ar’, ‘a’, ‘our’, ‘ure’ (e.g., builder, animal)"
+      },
+      {
+        "id": "know-that-words-ending-with-r-or-t-sound-will-add-a-silent-final-e-for-a-syllabl",
+        "text": "Know that words ending with ‘r’ or ‘t’ sound will add a silent final ‘e’ for a syllable (e.g., apple, giggle, store, litre)"
+      },
+      {
+        "id": "know-that-silent-final-e-is-added-to-prevent-english-words-ending-in-v-u-and-j-e",
+        "text": "Know that silent final ‘e’ is added to prevent English words ending in ‘v’, ‘u’ and ‘j’ (e.g., have, live, huge)"
+      },
+      {
+        "id": "know-that-silent-final-e-signals-the-preceding-c-or-g-is-soft-e-g-voice-mice-pag",
+        "text": "Know that silent final ‘e’ signals the preceding /c/ or /g/ is soft (e.g., voice, mice, page, charge)"
+      },
+      {
+        "id": "use-the-spelling-convention-when-adding-the-plural-marking-suffix-es-to-words-en",
+        "text": "Use the spelling convention when adding the plural marking suffix -es to words ending in ‘o’ (e.g., potato – potatoes)"
+      }
+    ],
+    "Level 4": [
+      {
+        "id": "know-that-spelling-of-morphemes-remains-consistent-even-though-pronunciation-may",
+        "text": "Know that spelling of morphemes remains consistent even though pronunciation may change"
+      },
+      {
+        "id": "apply-knowledge-of-grapheme-phoneme-correspondences-syllables-and-blending-and-s",
+        "text": "Apply knowledge of grapheme-phoneme correspondences, syllables, and blending and segmenting to spell multisyllabic words with more complex patterns (e.g., shrinking, against, rocket)"
+      },
+      {
+        "id": "spell-words-with-silent-letters-gn-kn-gu-mb-anglo-saxon-and-french-origin-e-g-kn",
+        "text": "Spell words with silent letters ‘gn’, ‘kn’, ‘gu’, ‘mb’ – Anglo Saxon and French origin (e.g., knife, gnaw, guess, climb)"
+      },
+      {
+        "id": "spell-words-with-consonant-digraphs-that-represent-different-sounds-e-g-ch-in-ma",
+        "text": "Spell words with consonant digraphs that represent different sounds (e.g., ‘ch’ in machine, change, school; ‘th’ in mother, think)"
+      },
+      {
+        "id": "spell-words-using-a-ar-al-el-il-letter-combinations-for-the-weak-syllable-l-e-g-",
+        "text": "Spell words using ‘a’, ‘ar’, ‘al’, ‘el’, ‘il’ letter combinations for the weak syllable /əl/ (e.g., apple, animal, label, pencil)"
+      },
+      {
+        "id": "use-common-and-less-common-graphemes-to-spell-short-vowel-sounds-e-g-au-in-laugh",
+        "text": "Use common and less common graphemes to spell short vowel sounds (e.g., ‘au’ in laugh, ‘ea’ in breakfast, ‘y’ in gym)"
+      },
+      {
+        "id": "know-irregular-spellings-including-ie-e-g-field-ough-augh-ui-ou-e-g-build-mn-e-g",
+        "text": "Know irregular spellings including ‘ie’ (e.g., field), ‘ough’, ‘augh’, ‘ui’, ‘ou’ (e.g., build), ‘mn’ (e.g., autumn)"
+      },
+      {
+        "id": "recognise-the-schwa-vowel-sound-in-unstressed-syllables-in-multisyllabic-words-a",
+        "text": "Recognise the schwa vowel sound in unstressed syllables in multisyllabic words and use common spelling patterns for schwa written ‘er’, ‘or’, ‘ar’, ‘a’, ‘our’, ‘ure’ (e.g., builder, animal)"
+      },
+      {
+        "id": "know-that-words-borrowed-from-other-languages-may-have-different-spelling-patter",
+        "text": "Know that words borrowed from other languages may have different spelling patterns to other English words (e.g., koala and kangaroo from Aboriginal languages, kayak from Inuit languages, karate from Japanese do not follow the c/k spelling rule)"
+      },
+      {
+        "id": "know-that-silent-final-e-signals-the-preceding-c-or-g-is-soft-e-g-voice-mice-pag",
+        "text": "Know that silent final ‘e’ signals the preceding /c/ or /g/ is soft (e.g., voice, mice, page, charge)"
+      },
+      {
+        "id": "know-that-in-a-final-position-w-or-x-is-not-doubled-as-these-letters-are-conside",
+        "text": "Know that in a final position ‘w’ or ‘x’ is not doubled as these letters are considered a double consonant (e.g., boxing, sowing)"
+      }
+    ],
+    "Level 5": [
+      {
+        "id": "spell-less-familiar-words-that-share-common-letter-patterns-but-have-different-p",
+        "text": "Spell less familiar words that share common letter patterns but have different pronunciations (e.g., our in journey, your, tour, sour)"
+      },
+      {
+        "id": "understand-that-different-areas-of-the-world-have-different-accepted-spelling-ru",
+        "text": "Understand that different areas of the world have different accepted spelling rules and make choices accordingly when spelling (e.g., colour, color)"
+      },
+      {
+        "id": "spell-words-with-less-common-silent-letters-e-g-subtle-pneumonia",
+        "text": "Spell words with less common silent letters (e.g., subtle, pneumonia)"
+      },
+      {
+        "id": "spell-multisyllabic-words-including-some-with-more-complex-letter-patterns-e-g-e",
+        "text": "Spell multisyllabic words including some with more complex letter patterns (e.g., extraordinary, encyclopedia, photosynthesis)"
+      }
+    ],
+    "Level 6": [
+      {
+        "id": "spell-less-familiar-words-that-share-common-letter-patterns-but-have-different-p",
+        "text": "Spell less familiar words that share common letter patterns but have different pronunciations (e.g., journey, your, tour, sour)"
+      },
+      {
+        "id": "understand-that-different-areas-of-the-world-have-different-accepted-spelling-ru",
+        "text": "Understand that different areas of the world have different accepted spelling rules and makes choices accordingly when spelling (e.g., colour, color)"
+      },
+      {
+        "id": "spell-words-with-less-common-silent-letters-e-g-subtle-pneumonia",
+        "text": "Spell words with less common silent letters (e.g., subtle, pneumonia)"
+      },
+      {
+        "id": "use-common-and-less-common-graphemes-to-spell-short-vowel-sounds-e-g-au-in-laugh",
+        "text": "Use common and less common graphemes to spell short vowel sounds (e.g., ‘au’ in laugh, ‘ea’ in breakfast, ‘y’ in gym)"
+      }
+    ]
+  },
+  "Morphology": {
+    "Level Foundation": [
+      {
+        "id": "build-word-awareness-including-multisyllabic-and-compound-words",
+        "text": "Build word awareness including multisyllabic and compound words."
+      },
+      {
+        "id": "know-that-every-word-has-a-base-and-that-affixes-can-change-the-meaning-of-words",
+        "text": "Know that every word has a base and that affixes can change the meaning of words."
+      },
+      {
+        "id": "understand-the-terms-base-prefix-and-suffix",
+        "text": "Understand the terms base, prefix, and suffix."
+      },
+      {
+        "id": "understand-that-words-can-be-made-of-more-than-one-meaningful-part-e-g-dogs-has-",
+        "text": "Understand that words can be made of more than one meaningful part (e.g., dogs has two parts: dog + s)."
+      },
+      {
+        "id": "add-plural-marking-suffix-s-to-base-nouns-without-changing-the-base-word-e-g-sim",
+        "text": "Add plural-marking suffix s to base nouns without changing the base word (e.g., simple CVC + s: cats)."
+      },
+      {
+        "id": "add-the-suffix-ing-to-represent-continuous-verb-meaning-happening-now-without-ch",
+        "text": "Add the suffix -ing to represent continuous verb meaning “happening now” without changing the base word (e.g., jumping, singing, fishing, acting, helping)."
+      },
+      {
+        "id": "add-the-prefix-un-meaning-not-or-opposite-e-g-undo-unlock-unzip-unpack",
+        "text": "Add the prefix un- meaning “not” or “opposite” (e.g., undo, unlock, unzip, unpack)."
+      },
+      {
+        "id": "understand-that-free-bases-can-be-joined-to-make-a-compound-word-e-g-gold-fish-g",
+        "text": "Understand that free bases can be joined to make a compound word (e.g., gold + fish = goldfish, sun + set = sunset)."
+      }
+    ],
+    "Level 1": [
+      {
+        "id": "understand-the-terms-of-morphology-morpheme-base-suffix-prefix",
+        "text": "Understand the terms of morphology (morpheme, base, suffix, prefix)."
+      },
+      {
+        "id": "know-common-homophones-e-g-to-two-too-meet-meat",
+        "text": "Know common homophones (e.g., to/two/too, meet/meat)."
+      },
+      {
+        "id": "build-word-families-from-common-morphemes-e-g-play-plays-playing-played",
+        "text": "Build word families from common morphemes (e.g., play, plays, playing, played)."
+      },
+      {
+        "id": "add-plural-marking-suffix-s-and-es-to-base-nouns-meaning-more-than-one-e-g-dogs-",
+        "text": "Add plural-marking suffix -s and -es to base nouns meaning “more than one” (e.g., dogs, buses)."
+      },
+      {
+        "id": "add-suffix-s-and-es-for-third-person-singular-present-tense-to-verbs-e-g-hops-pu",
+        "text": "Add suffix -s and -es for third-person singular present tense to verbs (e.g., hops, pushes, plays)."
+      },
+      {
+        "id": "understand-that-inflectional-endings-can-indicate-whether-the-event-occurred-in-",
+        "text": "Understand that inflectional endings can indicate whether the event occurred in the past (The frog jumped) or present (The frog is jumping)."
+      },
+      {
+        "id": "add-the-suffix-ed-without-changing-the-base-word-e-g-played-walked-jumped-called",
+        "text": "Add the suffix -ed without changing the base word (e.g., played, walked, jumped, called, yelled)."
+      },
+      {
+        "id": "add-the-suffix-er-meaning-a-person-who-or-a-thing-that-does-something-e-g-teach-",
+        "text": "Add the suffix -er meaning “a person who or a thing that does something” (e.g., teach + er = teacher, speak + er = speaker)."
+      },
+      {
+        "id": "add-the-comparative-suffix-er-to-compare-two-things-e-g-softer-harder-quicker-co",
+        "text": "Add the comparative suffix -er to compare two things (e.g., softer, harder, quicker, colder, longer)."
+      },
+      {
+        "id": "add-the-prefix-re-meaning-again-to-create-words-that-indicate-repetition-or-retu",
+        "text": "Add the prefix re- meaning “again” to create words that indicate repetition or return (e.g., remake, redo, rename, react, redraw)."
+      },
+      {
+        "id": "add-the-suffix-y-meaning-full-of-or-having-the-qualities-of-to-create-adjectives",
+        "text": "Add the suffix -y meaning “full of” or “having the qualities of” to create adjectives without changing the base word (e.g., sleepy, messy, lucky, rainy, snowy)."
+      },
+      {
+        "id": "add-the-suffix-ly-meaning-in-a-certain-way-to-nouns-to-create-adjectives-e-g-fri",
+        "text": "Add the suffix -ly meaning “in a certain way” to nouns to create adjectives (e.g., friendly, lovely) and to adjectives to create adverbs (e.g., quickly, slowly, sadly) without changing the base word."
+      }
+    ],
+    "Level 2": [
+      {
+        "id": "understand-and-use-the-terms-of-morphology-morpheme-base-suffix-prefix",
+        "text": "Understand and use the terms of morphology (morpheme, base, suffix, prefix)."
+      },
+      {
+        "id": "understand-and-use-the-apostrophe-of-singular-possession-e-g-ben-s-car-and-plura",
+        "text": "Understand and use the apostrophe of singular possession (e.g., Ben’s car) and plural possession (e.g., the bees’ hive)."
+      },
+      {
+        "id": "use-knowledge-of-morphemes-to-spell-compound-words-where-the-base-word-remains-u",
+        "text": "Use knowledge of morphemes to spell compound words where the base word remains unchanged (e.g., afternoon, sunlight, playground)."
+      },
+      {
+        "id": "know-that-a-contraction-is-the-joining-and-shortening-of-two-words-e-g-i-am-i-m",
+        "text": "Know that a contraction is the joining and shortening of two words (e.g., I am = I’m)."
+      },
+      {
+        "id": "understand-and-use-the-apostrophe-of-contraction-e-g-do-not-don-t",
+        "text": "Understand and use the apostrophe of contraction (e.g., do not = don’t)."
+      },
+      {
+        "id": "add-suffix-s-and-es-for-third-person-singular-present-tense-to-verbs-e-g-hops-pl",
+        "text": "Add suffix -s and -es for third person singular present tense to verbs (e.g., hops, plays, pushes)."
+      },
+      {
+        "id": "know-some-common-irregular-plurals-e-g-man-becomes-men-child-becomes-children-to",
+        "text": "Know some common irregular plurals (e.g., man becomes men, child becomes children, tooth becomes teeth, foot becomes feet)."
+      },
+      {
+        "id": "add-the-comparative-and-superlative-suffixes-er-and-est-to-adjectives-to-compare",
+        "text": "Add the comparative and superlative suffixes -er and -est to adjectives to compare qualities between people or things (e.g., smaller, smallest)."
+      },
+      {
+        "id": "add-the-suffix-er-and-or-meaning-a-person-who-or-a-thing-that-does-something-e-g",
+        "text": "Add the suffix -er (and -or) meaning “a person who or a thing that does something” (e.g., teach + er = teacher, speak + er = speaker). Sometimes the Latin suffix -or is used (e.g., create + or = creator, visit + or = visitor, act + or = actor)."
+      },
+      {
+        "id": "add-the-prefix-de-meaning-opposite-of-undo-off-away-to-alter-the-meaning-of-the-",
+        "text": "Add the prefix de- meaning ‘opposite of, undo, off, away’ to alter the meaning of the base word (e.g., depart, defend, defeat, deflate, delay)."
+      },
+      {
+        "id": "add-the-prefix-dis-meaning-not-opposite-of-e-g-dislike-disagree-distract-disgust",
+        "text": "Add the prefix dis- meaning ‘not, opposite of’ (e.g., dislike, disagree, distract, disgust, dismiss)."
+      },
+      {
+        "id": "add-the-prefix-pre-meaning-before-to-create-words-related-to-time-or-priority-e-",
+        "text": "Add the prefix pre- meaning ‘before’ to create words related to time or priority (e.g., unhappy, unfair, unlock)."
+      },
+      {
+        "id": "add-the-prefix-re-meaning-again-to-create-words-related-to-repetition-e-g-reheat",
+        "text": "Add the prefix re- meaning ‘again’ to create words related to repetition (e.g., reheat, reread, repaint, rewrite)."
+      },
+      {
+        "id": "add-the-prefix-un-and-non-meaning-not-to-create-antonyms-of-the-base-word-e-g-un",
+        "text": "Add the prefix un- and non- meaning ‘not’ to create antonyms of the base word (e.g., unhappy, unfair, unable, nonstop, nonfiction)."
+      },
+      {
+        "id": "add-the-suffix-ed-as-past-tense-verb-meaning-already-happened-e-g-regular-jumped",
+        "text": "Add the suffix -ed as past tense verb meaning ‘already happened’ (e.g., regular: jumped; irregular: ran, swam)."
+      },
+      {
+        "id": "add-the-suffix-ful-meaning-full-of-having-to-nouns-to-create-adjectives-e-g-joyf",
+        "text": "Add the suffix -ful meaning ‘full of, having’ to nouns to create adjectives (e.g., joyful, hopeful, painful) or nouns (e.g., cupful, handful, bucketful)"
+      },
+      {
+        "id": "add-the-vowel-suffix-able-meaning-able-to-to-a-base-word-that-does-not-change-e-",
+        "text": "Add the vowel suffix -able meaning ‘able to’ to a base word that does not change (e.g., like + able = likeable)"
+      },
+      {
+        "id": "participate-in-class-discussions-about-word-origins-e-g-zoo-animal-greek-zoology",
+        "text": "Participate in class discussions about word origins (e.g., zoo – animal [Greek] zoology, zoologist; tri – three [Latin] triplet, triangle, trio, triathlon)"
+      }
+    ],
+    "Level 3": [
+      {
+        "id": "understand-how-to-use-knowledge-of-prefixes-to-change-the-meaning-of-a-base-word",
+        "text": "Understand how to use knowledge of prefixes to change the meaning of a base word (e.g., undone, remove, misunderstand)"
+      },
+      {
+        "id": "use-morphological-knowledge-to-explain-words-e-g-help-base-less-suffix-helpless",
+        "text": "Use morphological knowledge to explain words (e.g., help [base] + ‘less’ [suffix] = helpless)"
+      },
+      {
+        "id": "use-knowledge-of-morphemes-to-spell-compound-words-where-the-base-word-remains-u",
+        "text": "Use knowledge of morphemes to spell compound words where the base word remains unchanged (e.g., afternoon, sunlight, playground)"
+      },
+      {
+        "id": "add-inflectional-suffixes-to-multisyllabic-words-e-g-commit-committed-committing",
+        "text": "Add inflectional suffixes to multisyllabic words (e.g., commit, committed, committing, submitted)"
+      },
+      {
+        "id": "apply-morphology-to-change-tense-of-a-verb-ed-ing-and-know-that-some-verbs-are-f",
+        "text": "Apply morphology to change tense of a verb (-ed, -ing) and know that some verbs are formed by changing the word (e.g., catches/caught, sleep/slept, pay/paid)"
+      },
+      {
+        "id": "spell-common-irregular-past-tense-and-plurals-e-g-run-went-bent-left-sold-wolves",
+        "text": "Spell common irregular past tense and plurals (e.g., run, went, bent, left, sold, wolves, shelves, sheep, men, women, teeth, feet)"
+      },
+      {
+        "id": "spell-more-complex-one-and-two-syllable-homophones-e-g-brake-break-flour-flower",
+        "text": "Spell more complex one and two syllable homophones (e.g., brake, break; flour, flower)"
+      },
+      {
+        "id": "spell-more-complex-compound-words-e-g-earthquake-firefighter",
+        "text": "Spell more complex compound words (e.g., earthquake, firefighter)"
+      },
+      {
+        "id": "understand-and-use-the-apostrophe-of-singular-possession-e-g-ben-s-car-and-plura",
+        "text": "Understand and use the apostrophe of singular possession (e.g., Ben’s car) and plural possession (e.g., the bees’ hive)"
+      },
+      {
+        "id": "add-the-prefix-re-meaning-to-make-to-cause-to-be-to-create-verbs-and-adjectives-",
+        "text": "Add the prefix ‘re-’ meaning ‘to make, to cause to be’ to create verbs and adjectives (e.g., belong, become, benefit)"
+      },
+      {
+        "id": "add-the-prefix-de-meaning-opposite-of-undo-down-off-away-to-alter-the-meaning-of",
+        "text": "Add the prefix ‘de-’ meaning ‘opposite of, undo, down, off, away’ to alter the meaning of the base word (e.g., depart, defrost, defend, decline, delay)"
+      },
+      {
+        "id": "add-the-prefix-in-meaning-not-into-to-base-words-to-create-words-with-altered-me",
+        "text": "Add the prefix ‘in-’ meaning ‘not, into’ to base words to create words with altered meanings (e.g., invisible, incorrect, intend, include)"
+      },
+      {
+        "id": "add-the-prefix-mis-meaning-wrong-or-bad-to-create-words-that-indicate-incorrect-",
+        "text": "Add the prefix ‘mis-’ meaning ‘wrong or bad’ to create words that indicate incorrect actions (e.g., misspell, misbehave, misplace)"
+      },
+      {
+        "id": "add-the-prefix-mid-meaning-middle-to-create-words-relating-to-the-middle-or-cent",
+        "text": "Add the prefix ‘mid-’ meaning ‘middle’ to create words relating to the middle or centre (e.g., midnight, midday)"
+      },
+      {
+        "id": "add-the-prefix-over-meaning-over-too-much-to-create-words-to-indicate-excess-cov",
+        "text": "Add the prefix over- meaning ‘over, too much’ to create words to indicate excess, covering or going beyond (e.g., overdue, overlook, overcome, overheat, overcame)"
+      },
+      {
+        "id": "add-the-vowel-suffix-al-meaning-of-like-related-to-e-g-arrival-logical-natural-s",
+        "text": "Add the vowel suffix -al meaning ‘of, like, related to’ (e.g., arrival, logical, natural, signal)"
+      },
+      {
+        "id": "add-the-prefix-under-meaning-under-too-little-to-create-words-that-suggest-insuf",
+        "text": "Add the prefix under- meaning ‘under, too little’ to create words that suggest insufficient action, below, or beneath (e.g., underwater, underground, undersea)"
+      },
+      {
+        "id": "add-the-prefix-out-meaning-more-better-than-out-of-e-g-outgrown-outwitted",
+        "text": "Add the prefix out- meaning ‘more, better than, out of’ (e.g., outgrown, outwitted)"
+      },
+      {
+        "id": "add-the-suffix-er-and-or-meaning-a-person-who-or-a-thing-that-does-something-e-g",
+        "text": "Add the suffix -er (and -or) meaning ‘a person who or a thing that does something’ (e.g., teach + er = teacher, speak + er = speaker) Note: Sometimes the Latin suffix -or is used (e.g., create + or = creator, visit + or = visitor, act + or = actor)"
+      },
+      {
+        "id": "add-the-suffix-less-meaning-without-to-nouns-to-create-adjectives-e-g-hopeless-c",
+        "text": "Add the suffix -less meaning ‘without’ to nouns to create adjectives (e.g., hopeless, careless, fearless)"
+      },
+      {
+        "id": "add-the-suffix-ment-meaning-state-of-being-result-of-an-action-to-verbs-to-creat",
+        "text": "Add the suffix -ment meaning ‘state of being, result of an action’ to verbs to create nouns (e.g., movement, enjoyment)"
+      },
+      {
+        "id": "add-the-suffix-ness-meaning-state-or-condition-of-with-taught-spelling-conventio",
+        "text": "Add the suffix -ness meaning ‘state or condition of’ with taught spelling conventions (e.g., wellness, tastiness)"
+      },
+      {
+        "id": "add-the-vowel-suffixes-able-and-ible-able-to-form-adjectives-from-verbs-e-g-enjo",
+        "text": "Add the vowel suffixes -able and -ible ‘able’ to form adjectives from verbs (e.g., enjoyable, inflatable, flexible, accessible) Note: -able is more common and usually attached to complete root words. -ible is generally attached to incomplete root words (sound in horrible)."
+      },
+      {
+        "id": "add-the-vowel-suffix-ably-ably-meaning-capable-of-to-form-adjectives-from-verbs-",
+        "text": "Add the vowel suffix -ably, -ably meaning ‘capable of’ to form adjectives from verbs (e.g., possibly, responsibly, comfortably, reliably)"
+      },
+      {
+        "id": "add-the-vowel-suffix-en-meaning-to-become-or-cause-to-be-made-of-to-nouns-to-cre",
+        "text": "Add the vowel suffix -en meaning ‘to become or cause to be made of’ to nouns to create adjectives (e.g., ashen, wooden), or adjectives to create verbs (e.g., darken, widen)"
+      },
+      {
+        "id": "add-the-vowel-suffix-ish-meaning-having-the-quality-of-e-g-childish-selfish",
+        "text": "Add the vowel suffix -ish meaning ‘having the quality of’ (e.g., childish, selfish)"
+      },
+      {
+        "id": "add-the-vowel-suffix-ion-meaning-process-state-or-condition-to-verbs-to-create-n",
+        "text": "Add the vowel suffix -ion meaning ‘process, state or condition’ to verbs to create nouns (e.g., confuse + ion = confusion, decorate + ion = decoration, erode + ion = erosion)"
+      },
+      {
+        "id": "add-the-vowel-suffixes-ly-ety-or-ty-meaning-state-or-quality-to-create-a-noun-e-",
+        "text": "Add the vowel suffixes -ly, -ety or -ty meaning ‘state or quality’ to create a noun (e.g., authority, extremity, necessity, cruelty, reality, anxiety)"
+      },
+      {
+        "id": "add-the-vowel-suffix-ic-meaning-of-relating-to-to-form-adjectives-e-g-magnetic-a",
+        "text": "Add the vowel suffix -ic meaning ‘of, relating to’ to form adjectives (e.g., magnetic, athletic)"
+      },
+      {
+        "id": "add-the-suffix-ship-meaning-quality-or-condition-skill-status-to-form-nouns-e-g-",
+        "text": "Add the suffix -ship meaning ‘quality or condition, skill, status’ to form nouns (e.g., friendship, membership, leadership)"
+      },
+      {
+        "id": "add-the-vowel-suffix-ous-meaning-having-qualities-of-full-of-to-nouns-to-create-",
+        "text": "Add the vowel suffix -ous meaning ‘having qualities of; full of’ to nouns to create adjectives (e.g., fame + ous = famous, danger + ous = dangerous)"
+      },
+      {
+        "id": "experiment-with-assimilated-prefixes-prefixes-that-have-the-same-meaning-but-are",
+        "text": "Experiment with assimilated prefixes – prefixes that have the same meaning but are spelt differently to make the pronunciation of the word easier (e.g., in- meaning ‘not’ or ‘into’ changes to im- before words starting with ‘m’ or ‘p’ – impossible, immature)"
+      },
+      {
+        "id": "understand-how-word-origins-can-affect-modern-day-spellings-e-g-said-island-debt",
+        "text": "Understand how word origins can affect modern day spellings (e.g., said, island, debt)"
+      },
+      {
+        "id": "know-that-words-have-greek-and-latin-roots-which-carry-meaning",
+        "text": "Know that words have Greek and Latin roots which carry meaning"
+      },
+      {
+        "id": "participate-in-class-discussions-about-word-origins-e-g-zoo-animal-greek-zoology",
+        "text": "Participate in class discussions about word origins (e.g., zoo – animal [Greek] zoology, zoologist; tri – three [Latin] triplet, triangle, trio, triathlon)"
+      }
+    ],
+    "Level 4": [
+      {
+        "id": "define-use-and-spell-words-with-multiple-suffixes-e-g-happiness-carefully-unbeli",
+        "text": "Define, use and spell words with multiple suffixes (e.g., happiness, carefully, unbelievable)"
+      },
+      {
+        "id": "use-knowledge-of-prefixes-and-suffixes-to-spell-less-common-words-e-g-triangle-d",
+        "text": "Use knowledge of prefixes and suffixes to spell less common words (e.g., triangle, disagree)"
+      },
+      {
+        "id": "add-inflectional-suffixes-to-multisyllabic-words-e-g-commit-committed",
+        "text": "Add inflectional suffixes to multisyllabic words (e.g., commit, committed)"
+      },
+      {
+        "id": "apply-morphology-to-change-tense-of-a-verb-ed-ing-and-know-that-some-verbs-are-f",
+        "text": "Apply morphology to change tense of a verb (-ed, -ing) and know that some verbs are formed by changing the word (e.g., catches/caught, sleep/slept, pay/paid)"
+      },
+      {
+        "id": "add-the-greek-prefix-anti-meaning-against-e-g-anticlimax-antisocial",
+        "text": "Add the Greek prefix anti- meaning ‘against’ (e.g., anticlimax, antisocial)"
+      },
+      {
+        "id": "add-the-prefix-co-meaning-with-e-g-cooperate-co-worker",
+        "text": "Add the prefix co- meaning ‘with’ (e.g., cooperate, co-worker)"
+      },
+      {
+        "id": "add-the-prefix-de-meaning-opposite-of-undo-down-off-away-e-g-depart-decrease",
+        "text": "Add the prefix de- meaning ‘opposite of, undo, down, off, away’ (e.g., depart, decrease)"
+      },
+      {
+        "id": "add-the-prefix-fore-meaning-before-in-front-of-e-g-forecast-forehead",
+        "text": "Add the prefix fore- meaning ‘before, in front of’ (e.g., forecast, forehead)"
+      },
+      {
+        "id": "add-the-suffix-ess-meaning-female-to-nouns-to-form-female-e-g-goddess-princess",
+        "text": "Add the suffix -ess meaning ‘female’ to nouns to form female (e.g., goddess, princess)"
+      },
+      {
+        "id": "add-the-vowel-suffix-ist-meaning-an-expert-in-to-change-verbs-to-a-noun-or-adjec",
+        "text": "Add the vowel suffix -ist meaning ‘an expert in’ to change verbs to a noun or adjective (e.g., dentist, cyclist, finalist)"
+      },
+      {
+        "id": "add-the-vowel-suffix-ive-meaning-having-the-nature-of-to-form-adjectives-e-g-exp",
+        "text": "Add the vowel suffix -ive meaning ‘having the nature of’ to form adjectives (e.g., expensive, creative, massive)"
+      },
+      {
+        "id": "add-the-prefix-semi-meaning-half-partly-not-full-e-g-semi-final-semicircle",
+        "text": "Add the prefix semi- meaning ‘half, partly, not full’ (e.g., semi-final, semicircle)"
+      },
+      {
+        "id": "add-the-suffix-ise-meaning-quality-state-or-function-to-nouns-to-form-nouns-e-g-",
+        "text": "Add the suffix -ise meaning ‘quality, state or function’ to nouns to form nouns (e.g., expertise); make or become to form verbs (e.g., prioritise, finalise)"
+      },
+      {
+        "id": "add-the-prefix-sub-meaning-under-e-g-subheading-submarine-submerge",
+        "text": "Add the prefix sub- meaning ‘under’ (e.g., subheading, submarine, submerge)"
+      },
+      {
+        "id": "add-the-prefix-super-meaning-above-beyond-very-e-g-superhero-superpower-supersta",
+        "text": "Add the prefix super- meaning ‘above, beyond, very’ (e.g., superhero, superpower, superstar)"
+      },
+      {
+        "id": "add-the-prefix-trans-meaning-across-e-g-transform-transport",
+        "text": "Add the prefix trans- meaning ‘across’ (e.g., transform, transport)"
+      },
+      {
+        "id": "add-prefixes-related-to-position-or-time-in-im-ex-e-mid-pos-e-g-inspect-export-m",
+        "text": "Add prefixes related to position or time – in/im-, ex/e-, mid-, pos- (e.g., inspect, export, midterm, postpone)"
+      },
+      {
+        "id": "add-the-vowel-suffix-ary-meaning-place-for-collection-of-to-form-a-noun-e-g-glos",
+        "text": "Add the vowel suffix -ary meaning ‘place for, collection of’ to form a noun (e.g., glossary, library); relation to, condition of to form an adjective (e.g., secondary, necessary)"
+      },
+      {
+        "id": "add-the-vowel-suffix-ure-meaning-act-or-condition-of-to-create-a-noun-e-g-measur",
+        "text": "Add the vowel suffix -ure meaning ‘act or condition of’ to create a noun (e.g., measure, closure, moisture, mixture)"
+      },
+      {
+        "id": "add-the-suffix-hood-meaning-condition-of-being-to-create-nouns-and-adjectives-th",
+        "text": "Add the suffix -hood meaning ‘condition of being’ to create nouns and adjectives that name a condition or group (e.g., childhood, adulthood)"
+      },
+      {
+        "id": "understand-and-learn-about-latin-etymology-and-that-many-words-have-greek-and-la",
+        "text": "Understand and learn about Latin etymology and that many words have Greek and Latin roots which carry meaning"
+      },
+      {
+        "id": "know-that-words-that-are-synonyms-may-have-different-origins-e-g-love-from-old-e",
+        "text": "Know that words that are synonyms may have different origins (e.g., love from Old English and amour from French)"
+      },
+      {
+        "id": "know-that-we-can-form-many-words-from-one-root-e-g-tele-television-telephone-tel",
+        "text": "Know that we can form many words from one root (e.g., tele – television, telephone, telepath; micro – microscope, microphones; vis – visible)"
+      },
+      {
+        "id": "know-that-words-with-ph-saying-f-and-ch-saying-k-come-from-greek-language-e-g-ph",
+        "text": "Know that words with ‘ph’ saying /f/ and ‘ch’ saying /k/ come from Greek language (e.g., phone, school)"
+      },
+      {
+        "id": "know-that-words-with-et-saying-e-and-ch-saying-sh-come-from-the-french-language-",
+        "text": "Know that words with ‘et’ saying /e/ and ‘ch’ saying /sh/ come from the French language (e.g., ballet, chef)"
+      },
+      {
+        "id": "know-the-following-latin-bases-relating-to-number-uni-one-e-g-unicorn-unicycle-b",
+        "text": "Know the following Latin bases relating to number: *uni- ‘one’ (e.g., unicorn, unicycle) *bi- ‘twice or two’ (e.g., bicycle, bifocal) *tri- ‘three’ (e.g., tricycle, triangle) *quad- ‘four’ (e.g., quadrilateral, quadrant) *cent- ‘one hundred’ (e.g., century, percent)"
+      },
+      {
+        "id": "know-that-connecting-vowel-letters-i-represents-ee-sound-before-a-vowel-suffix-e",
+        "text": "Know that connecting vowel letters: *‘i’ represents /ee/ sound before a vowel suffix (e.g., material) *‘i’ represents /ɪ/ sound after ‘r’ or ‘n’ (e.g., brilliant) *‘i’ represents /ɪ/ sound before a consonant suffix (e.g., experiment)"
+      },
+      {
+        "id": "in-words-from-greek-or-latin-o-is-the-most-common-connecting-vowel-e-g-photograp",
+        "text": "In words from Greek or Latin, ‘o’ is the most common connecting vowel (e.g., photography, biology)"
+      },
+      {
+        "id": "know-the-following-latin-bases-port-carry-e-g-transport-import-scribe-script-to-",
+        "text": "Know the following Latin bases: *-port- ‘carry’ (e.g., transport, import) *-scribe-, -script- ‘to write, record, written’ (e.g., describe, scribble, manuscript, prescribe, inscription) *-tract- ‘drag, pull’ (e.g., contract, extract, subtraction)"
+      }
+    ],
+    "Level 5": [
+      {
+        "id": "use-knowledge-of-prefixes-and-suffixes-to-spell-less-common-words-e-g-glamorous-",
+        "text": "Use knowledge of prefixes and suffixes to spell less common words (e.g., glamorous, explanation)"
+      },
+      {
+        "id": "combine-more-complex-bases-with-the-accompanying-prefixes-and-suffixes-e-g-decon",
+        "text": "Combine more complex bases with the accompanying prefixes and suffixes (e.g., deconstruct, reconstruction, constructive)"
+      },
+      {
+        "id": "know-more-complex-irregular-plurals-e-g-cacti-crisis-appendices-dice-larvae-stim",
+        "text": "Know more complex irregular plurals (e.g., cacti, crisis, appendices, dice, larvae, stimuli)"
+      },
+      {
+        "id": "independently-build-morphemic-word-families-using-knowledge-of-prefixes-and-suff",
+        "text": "Independently build morphemic word families using knowledge of prefixes and suffixes (e.g., use destroy to spell destroys, destroyed, destroyer)"
+      },
+      {
+        "id": "make-nouns-using-suffixes-ment-ion-age-e-g-development-education-postage",
+        "text": "Make nouns using suffixes -ment, -ion, -age (e.g., development, education, postage)"
+      },
+      {
+        "id": "understand-and-learn-more-about-greek-and-latin-etymology-and-that-many-words-ha",
+        "text": "Understand and learn more about Greek and Latin etymology and that many words have Greek and Latin roots which carry meaning"
+      },
+      {
+        "id": "understand-that-assimilated-prefixes-have-the-same-meaning-but-are-spelled-diffe",
+        "text": "Understand that assimilated prefixes have the same meaning but are spelled differently to make pronunciation of the words easier: *ad- com- dis- ex- in- ob- sub-"
+      },
+      {
+        "id": "add-the-prefix-ad-and-assimilated-prefixes-ac-af-as-al-at-and-ap-to-toward-e-g-a",
+        "text": "Add the prefix ad- (and assimilated prefixes ac-, af-, as-, al-, at- and ap-) ‘to, toward’ (e.g., adjoin, advantage, adapt) *ac- before bases starting with ‘c’ (e.g., account, accuse) *af- before bases starting with ‘f’ (e.g., affix, affirm) *ag- before bases starting with ‘g’ (e.g., aggression) *al- before bases starting with ‘l’ (e.g., allocate, alliteration) *ap- before bases starting with ‘p’ (e.g., appear) *ar- before bases starting with ‘r’ (e.g., approve, appeal, appoint) *as- before bases starting with ‘s’ (e.g., assign) *at- before bases starting with ‘t’ (e.g., attend, attack, attach)"
+      },
+      {
+        "id": "add-the-prefix-com-and-assimilated-prefixes-col-cor-con-and-co-together-with-joi",
+        "text": "Add the prefix com- (and assimilated prefixes col-, cor-, con- and co-) ‘together, with, jointly’ (e.g., combine, compile, combust, compact, computer) *col- and cor- before bases starting with ‘l’ and ‘r’ (e.g., collateral, collage, collect, correlate) *co- before bases starting with ‘h’ and most vowels (e.g., cohabit, cooperate/cooperate, co-author/coauthor) *con- before bases starting with consonants other than ‘b’, ‘p’, and ‘m’ (e.g., conform, connect, confident, concede)"
+      },
+      {
+        "id": "add-the-prefix-dis-and-assimilated-prefixes-dif-and-di-apart-away-or-not-e-g-dis",
+        "text": "Add the prefix dis- (and assimilated prefixes dif- and di-) ‘apart, away or not’ (e.g., disconnect, disperse, discharge, disloyal) *dif- before bases starting with ‘f’ (e.g., different) *di- before bases starting with ‘g’ or vowel sounds (e.g., divulge)"
+      },
+      {
+        "id": "add-the-prefix-ex-and-assimilated-prefixes-ef-and-e-out-away-from-beyond-e-g-exi",
+        "text": "Add the prefix ex- (and assimilated prefixes ef- and e-) ‘out, away from, beyond’ (e.g., exit, export, excuse, exclude) *ef- before bases starting with ‘f’ (e.g., effort) *e- before bases starting with a vowel or ‘x’ (e.g., eject)"
+      },
+      {
+        "id": "add-the-prefix-in-and-assimilated-prefixes-il-im-ir-and-in-meaning-not-into-or-t",
+        "text": "Add the prefix in- (and assimilated prefixes il-, im-, ir- and in-) meaning ‘not, into or toward’ (e.g., incomplete, inaccurate, invisible, invade, invest, innate) *il- before bases starting with ‘l’ (e.g., illogical, illuminate) *im- before bases starting with ‘p’, ‘b’, ‘m’ (e.g., imperfect, imbalance, immobile, import) *ir- before bases starting with ‘r’ (e.g., irregular, irresistible, irrigate)"
+      },
+      {
+        "id": "add-the-prefix-ob-and-assimilated-prefixes-oc-of-op-toward-against-completely-e-",
+        "text": "Add the prefix ob- (and assimilated prefixes oc-, of-, op-) ‘toward, against, completely’ (e.g., obtain, observe, object) *oc- before bases starting with ‘c’ (e.g., occur, occult) *of- before bases starting with ‘f’ (e.g., offer) *op- before bases starting with ‘p’ (e.g., oppose, opposition)"
+      },
+      {
+        "id": "add-the-prefix-sub-and-assimilated-prefixes-suc-suf-sup-sus-and-su-under-e-g-sub",
+        "text": "Add the prefix sub- (and assimilated prefixes suc-, suf-, sup-, sus- and su-) ‘under’ (e.g., submarine, subheading, submerge, subset) *suc- before bases starting with ‘c’ (e.g., succumb, succeed) *suf- before bases starting with ‘f’ (e.g., suffer, sufficient) *sup- before bases starting with ‘p’ (e.g., support, suppose) *sus- before bases starting with ‘s’ (e.g., suspend, suspect) *su- before bases starting with ‘e’ (e.g., suer, surreptitious)"
+      },
+      {
+        "id": "add-the-prefix-a-not-in-on-without-e-g-atypical-aside",
+        "text": "Add the prefix a- ‘not, in, on, without’ (e.g., atypical, aside)"
+      },
+      {
+        "id": "add-the-prefix-inter-meaning-between-among-e-g-interact-interconnect",
+        "text": "Add the prefix inter- meaning ‘between, among’ (e.g., interact, interconnect)"
+      },
+      {
+        "id": "add-the-latin-prefix-intra-meaning-inside-within-e-g-intranet-intravenous",
+        "text": "Add the Latin prefix intra- meaning ‘inside, within’ (e.g., intranet, intravenous)"
+      },
+      {
+        "id": "add-the-latin-prefix-mal-meaning-bad-wrongly-e-g-malpractice-malfunction",
+        "text": "Add the Latin prefix mal- meaning ‘bad, wrongly’ (e.g., malpractice, malfunction)"
+      },
+      {
+        "id": "add-the-latin-prefix-pro-meaning-in-favour-of-positive-in-front-of-e-g-proactive",
+        "text": "Add the Latin prefix pro- meaning ‘in favour of, positive, in front of’ (e.g., proactive, progress, proactive)"
+      },
+      {
+        "id": "add-the-latin-vowel-suffix-ally-meaning-how-something-is-like-to-adjectives-to-f",
+        "text": "Add the Latin vowel suffix -ally meaning ‘how something is, like’ to adjectives to form adverbs if the base word ends in -ic or -al; add -ally (e.g., terrifically, emotionally)"
+      },
+      {
+        "id": "add-the-latin-suffixes-ary-and-ery-meaning-connected-to-or-relating-to-to-form-a",
+        "text": "Add the Latin suffixes -ary and -ery meaning ‘connected to or relating to’ to form adjectives or to verbs and nouns to form nouns (e.g., dormitory, dictionary, complimentary) and -ery meaning ‘occupation, place of work’ qualifies to verbs and nouns to form nouns (e.g., bakery, trickery)"
+      },
+      {
+        "id": "add-the-vowel-suffixes-ant-meaning-a-condition-or-state-a-thing-or-a-being-and-a",
+        "text": "Add the vowel suffixes -ant meaning ‘a condition or state, a thing or a being’ and -ance meaning ‘act or condition of’ to form adjectives or nouns (e.g., important, assistant, importance, assistance)"
+      },
+      {
+        "id": "add-the-vowel-suffixes-an-ian-ean-meaning-belonging-to-or-relating-to-to-nouns-t",
+        "text": "Add the vowel suffixes -an, -ian, -ean meaning ‘belonging to or relating to’ to nouns to form adjectives and nouns to form nouns (e.g., Christian, European, musician, urban)"
+      },
+      {
+        "id": "add-the-latin-suffix-ee-meaning-a-person-who-is-or-a-recipient-of-an-action-or-i",
+        "text": "Add the Latin suffix -ee meaning ‘a person who is or a recipient of an action or in a controlled state’ to verbs to form nouns (e.g., employee, trainee, absentee)"
+      },
+      {
+        "id": "add-the-vowel-suffixes-ent-meaning-a-person-who-or-a-thing-that-does-a-state-or-",
+        "text": "Add the vowel suffixes -ent meaning ‘a person who or a thing that does, a state or quality’ to verbs to form nouns or adjectives (e.g., different, dependent) and -ence meaning ‘an action to nouns to form nouns’ (e.g., difference)"
+      },
+      {
+        "id": "add-the-vowel-suffixes-eous-nous-meaning-having-qualities-of-to-nouns-to-form-ad",
+        "text": "Add the vowel suffixes -eous, -nous meaning ‘having qualities of’ to nouns to form adjectives. The suffix -ous is more common (e.g., spacious, courteous)"
+      },
+      {
+        "id": "add-the-greek-suffix-ism-meaning-state-of-being-to-verbs-and-nouns-to-form-nouns",
+        "text": "Add the Greek suffix -ism meaning ‘state of being’ to verbs and nouns to form nouns (e.g., criticism, heroism)"
+      },
+      {
+        "id": "add-the-vowel-suffix-ile-meaning-ability-to-belonging-to-e-g-percentile-projecti",
+        "text": "Add the vowel suffix -ile meaning ‘ability to, belonging to’ (e.g., percentile, projectile)"
+      },
+      {
+        "id": "add-the-greek-suffix-logy-meaning-study-of-field-of-knowledge-e-g-biology-geolog",
+        "text": "Add the Greek suffix -logy meaning ‘study of, field of knowledge’ (e.g., biology, geology, archaeology)"
+      },
+      {
+        "id": "add-the-latin-suffix-ory-meaning-place-or-something-having-a-specific-use-to-ver",
+        "text": "Add the Latin suffix -ory meaning ‘place or something having a specific use’ to verbs to form nouns or adjectives (e.g., glossary, library); ‘relation to, condition of’ to form an adjective (e.g., secondary, necessary)"
+      },
+      {
+        "id": "add-the-vowel-suffixes-ion-sion-and-ssion-meaning-act-of-state-of-result-of-to-c",
+        "text": "Add the vowel suffixes -ion, -sion and -ssion meaning ‘act of, state of, result of’ to create nouns from verbs. Apply the following conventions for each: *-ion used after verbs ending in -t or -te (e.g., celebration) *-sion used after verbs ending in -d or -se (e.g., decision) *-ssion used after verbs ending in -ss or -mit (e.g., admission)"
+      },
+      {
+        "id": "know-the-greek-and-latin-roots-relating-to-number-duo-two-e-g-duet-dual-duplicat",
+        "text": "Know the Greek and Latin roots relating to number: *duo- ‘two’ (e.g., duet, dual, duplicate, duplex) *pent- ‘five’ (e.g., pentagon) *hex- ‘six’ (e.g., hexagon) *sept- ‘seven’ (e.g., septagon, September) *dec- ‘ten’ (e.g., decade, decimal, decagon, December) *milli- ‘thousand’ (e.g., millimetre, millilitre, millipede) *kilo- ‘thousand’ (e.g., kilometre, kilogram, kilowatt)"
+      },
+      {
+        "id": "know-the-following-latin-bases-aqua-meaning-water-e-g-aquatic-aquarium-aquamarin",
+        "text": "Know the following Latin bases: *aqua meaning ‘water’ (e.g., aquatic, aquarium, aquamarine) *ann-, enn- meaning ‘year, yearly’ (e.g., anniversary, annual, millennium, biannual) *aud- meaning ‘hear, listen’ (e.g., audience, audio) *cept-, -capt- meaning ‘to take, seize, receive’ (e.g., capture, captivity, intercept, exception) *dict- meaning ‘tell, say’ (e.g., dictate, dictator, predict, dictionary, indicate) *equ- meaning ‘equal, level’ (e.g., equal, equity, equation) *form- meaning ‘shape, appearance’ (e.g., uniform, conform, reform, uniform, formal, information) *fort- meaning ‘strong, strength’ (e.g., comfort, effort, fortress) *fract- meaning ‘break or fracture’ (e.g., fragile, fragment, refraction, refract) *gon- meaning ‘angle or corner’ (e.g., polygon, diagonal, hexagon) *ject- meaning ‘throw’ (e.g., eject, reject, inject, project, subject, projection, rejection) *lume- meaning ‘light, shine’ (e.g., illuminate, luminescent, luminary) *move-, mot-, mobil- meaning ‘move, motion, movement’ (e.g., remove, promote, immobile) *pass- meaning ‘step or pace’ (e.g., passage, compass, passport, surpass) *rupt- meaning ‘to break’ (e.g., interrupt, disrupt, erupt, rupture) *sect- meaning ‘to cut’ (e.g., bisect, dissect, intersect, dissect, sector) *sense-, sent- meaning ‘sense, feel’ (e.g., sensitive, consent, consensus, resent, sensation) *sign- meaning ‘mark, indication’ (e.g., signature, signify, signal, signpost, design, assign) *spect- meaning ‘look’ (e.g., inspect, inspection, prospect, suspect, spectacles) *vide-, vise- meaning ‘see’ (e.g., vision, video, televise, visible, provide, supervisor)"
+      },
+      {
+        "id": "know-the-following-greek-bases-di-meaning-two-or-in-parts-e-g-digraph-divert-dia",
+        "text": "Know the following Greek bases: *di- meaning ‘two, or in parts’ (e.g., digraph, divert, diameter) *geo- meaning ‘earth’ (e.g., Geography, geometry, geologist) *gram- meaning ‘drawn or written’ (e.g., epigram, telegram) *graph- meaning ‘writing’ (e.g., autograph, graphic) *metre, -meter meaning ‘unit of measure’ (e.g., kilometre, centimetre, thermometer, perimeter) *photo- meaning ‘light’ (e.g., photograph, photosynthesis, photosphere) *phon-, -phone meaning ‘sound’ (e.g., phone, phonics, telephone, megaphone) *press- meaning ‘to force, squeeze’ (e.g., impress, compress) *scope- meaning ‘viewing instrument’ (e.g., microscope, telescope) *struct- meaning ‘arrange, structure, instruct, destruction, restructure*) *tele- meaning ‘far or distant’ (e.g., telephone, television, telescope) *therm- meaning ‘heat’ (e.g., thermal, thermometer)"
+      }
+    ],
+    "Level 6": [
+      {
+        "id": "combine-more-complex-bases-with-the-accompanying-prefixes-and-suffixes-e-g-decon",
+        "text": "Combine more complex bases with the accompanying prefixes and suffixes (e.g., deconstruct, reconstruction, constructive)"
+      },
+      {
+        "id": "independently-build-morphemic-word-families-using-knowledge-of-prefixes-and-suff",
+        "text": "Independently build morphemic word families using knowledge of prefixes and suffixes (e.g., use destroy to spell destroys, destroyed, destroyer)"
+      },
+      {
+        "id": "know-the-following-latin-bases-duce-duct-meaning-lead-e-g-product-educate-abduct",
+        "text": "Know the following Latin bases: *-duce-, -duct- meaning ‘lead’ (e.g., product, educate, abduct, introduce, deduct, induct, introduction) *-cept-, -cap-, -capt-, -ceive-, -cip-, -cept- meaning ‘take’ (e.g., accept, captive, captivate, receipt, perceive, incapable, capacity) *-cede-, -ceed- meaning ‘go, move, yield’ (e.g., precede, exceed, recede, concede, intercede) *-circum- meaning ‘around’ (e.g., circumference, circumstance, circumspect) *-dent- meaning ‘tooth’ (e.g., dentist, dental, indentation, trident, dentures) *-fac-, -fect- meaning ‘to do, to make’ (e.g., fact, factory, perfect, fiction, manufacture) *-flex- meaning ‘curve, bend’ (e.g., flexible, reflector, inflection, reflection) *-horr- meaning ‘tremble, shudder, shake’ (e.g., horrific, horrible) *-lect-, -leg-, -lig- meaning ‘to gather, to choose, to read’ (e.g., collect, select, lecture, legible, elect, eligible, intellect) *-lune- meaning ‘moon’ (e.g., lunar, lunate, lunacy) *-loc- meaning ‘place, position’ (e.g., locate, location, allocate) *-macro- meaning ‘large’ (e.g., macrolimiate, macrostructure) *-magn- meaning ‘great or large’ (e.g., magnify, magnitude, magnet, magnificent) *-migr- meaning ‘wander’ (e.g., immigrant, migrate) *-multi- meaning ‘many, much’ (e.g., multicolour, multiple, multimedia) *-mob-, -mot- meaning ‘move, able to move’ (e.g., mobile, automobile, mobility, mobilise, immobile) *-nate- meaning ‘birth, origin or condition’ (e.g., donate, innate, alternate) *-numer- meaning ‘number’ (e.g., numeral, number, numerous) *-mise-, -miss-, -mit- meaning ‘send’ (e.g., mission, dismiss, promise, transmit, remit) *-quest- meaning ‘ask, seek’ (e.g., question, inquiry, exquisite, requirement) *-ride- meaning ‘laugh’ (e.g., ridiculous, ridicule, risible) *-spire- meaning ‘to breathe’ (e.g., respire, respiration, respiratory, inspire) *-vert-, -vers- meaning ‘to turn’ (e.g., reverse, versatile, convert, revert, divert, conversation)"
+      },
+      {
+        "id": "know-the-following-greek-bases-auto-meaning-self-of-or-by-oneself-e-g-automobile",
+        "text": "Know the following Greek bases: *auto- meaning ‘self, of or by oneself’ (e.g., automobile, autopilot, autobiography) *astro- meaning ‘outer space, star’ (e.g., astrology, astronaut, asteroid) *bio- meaning ‘life, living organisms’ (e.g., biography, biology, biodegradable) *chrono- meaning ‘time’ (e.g., chronic, chronological, synchronize) *cosm- meaning ‘world, universe, order’ (e.g., cosmos, cosmopolitan) *cycl- meaning ‘circle, wheel’ (e.g., cycle, bicycle, cyclonic, recycling) *dys- meaning ‘bad, hard, unlucky’ (e.g., dysfunction, dystopia) *epi- meaning ‘on, upon, above, in addition to, after or near’ (e.g., epidermis, epigram, epilogue) *hydro- meaning ‘water’ (e.g., hydration, dehydrate, hydrogen, hydroelectric) *-hyper- meaning ‘over, above, beyond’ (e.g., hyperactive, hyperbole, hyperlink) *-hypo- meaning ‘belong, beneath’ (e.g., hypothesis, hypothermia, hypothetical) *-junct- ‘meaning to join’ (e.g., conjunction, junction, adjunct, juncture) *-mech- meaning ‘machine, tool’ (e.g. mechanic, mechanism, biomechanics) *-meg- meaning ‘large’ (e.g., mega, megabyte, megaphone) *-micr- meaning ‘small’ (e.g., microscope, microwave, microchip, microclimate) *-mono- meaning ‘one, single’ (e.g., monoplane, monopoly, monorail, monotone, monarchy) *-para- meaning ‘beside, position, beyond’ (e.g., paragraph, parallel, parachute, parasite) *-scope- meaning ‘look at, examine’ (e.g., telescope, microscope, stethoscope, periscope) *-techn- meaning ‘skill or craft’ (e.g., technology, technical, technique, architect) *-vale- -vail- meaning ‘be strong, power’ (e.g., value, available, valid, prevail)"
+      }
+    ]
+  }
+}

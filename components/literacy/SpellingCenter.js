@@ -1,439 +1,468 @@
-// SpellingCenter.js - Complete Interactive Spelling Tool
-import React, { useState } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
+import programStructure from './data/spelling-program-structure.json';
+import { buildResourcePack } from '../../utils/spellingResourceGenerator';
 
-const SpellingCenter = ({ showToast, displayMode = 'teacher' }) => {
-  const [activeSpellingTab, setActiveSpellingTab] = useState('patterns');
-  const [selectedPattern, setSelectedPattern] = useState(null);
-  const [selectedWordList, setSelectedWordList] = useState(null);
-  const [practiceMode, setPracticeMode] = useState('study');
+const DOMAIN_ORDER = ['Phonology', 'Spelling Patterns', 'Morphology'];
+const LEVEL_ORDER = ['Level Foundation', 'Level 1', 'Level 2', 'Level 3', 'Level 4', 'Level 5', 'Level 6'];
 
-  // Comprehensive spelling patterns
-  const spellingPatterns = [
-    {
-      id: 'cvc',
-      name: 'CVC Words',
-      pattern: 'Consonant-Vowel-Consonant',
-      examples: ['cat', 'dog', 'run', 'big', 'sun', 'hat', 'pen', 'sit', 'cup', 'leg'],
-      description: 'Simple three-letter words that are great for beginning readers',
-      icon: '🔤',
-      color: 'blue',
-      rule: 'Each word has one vowel in the middle, making a short vowel sound'
-    },
-    {
-      id: 'silent-e',
-      name: 'Silent E (Magic E)',
-      pattern: 'Consonant-Vowel-Consonant-E',
-      examples: ['make', 'bike', 'cute', 'hope', 'snake', 'cake', 'time', 'bone', 'tube', 'game'],
-      description: 'The silent E at the end makes the vowel say its name',
-      icon: '🤫',
-      color: 'green',
-      rule: 'When E comes at the end, it makes the vowel long but stays silent itself'
-    },
-    {
-      id: 'double-consonants',
-      name: 'Double Consonants',
-      pattern: 'Words ending with double letters',
-      examples: ['bell', 'kiss', 'ball', 'buff', 'doll', 'pill', 'mess', 'buzz', 'will', 'boss'],
-      description: 'Two of the same consonant at the end',
-      icon: '👥',
-      color: 'purple',
-      rule: 'Double the final consonant to keep the vowel sound short'
-    },
-    {
-      id: 'r-controlled',
-      name: 'R-Controlled Vowels',
-      pattern: 'Vowel + R combinations',
-      examples: ['car', 'bird', 'hurt', 'corn', 'farm', 'girl', 'turn', 'park', 'work', 'start'],
-      description: 'When R comes after a vowel, it changes the vowel sound',
-      icon: '🚗',
-      color: 'orange',
-      rule: 'R makes the vowel sound different - neither long nor short'
-    },
-    {
-      id: 'vowel-teams',
-      name: 'Vowel Teams',
-      pattern: 'Two vowels working together',
-      examples: ['rain', 'boat', 'team', 'coat', 'read', 'soap', 'meat', 'road', 'bean', 'goal'],
-      description: 'When two vowels go walking, the first one does the talking',
-      icon: '👯',
-      color: 'pink',
-      rule: 'Usually the first vowel says its name and the second is silent'
-    },
-    {
-      id: 'ending-sounds',
-      name: 'Common Endings',
-      pattern: 'Words with -ing, -ed, -er endings',
-      examples: ['running', 'jumped', 'bigger', 'playing', 'helped', 'smaller', 'singing', 'walked', 'faster', 'looking'],
-      description: 'Common word endings that change meaning',
-      icon: '🔚',
-      color: 'indigo',
-      rule: 'Add endings to base words to change when or how something happens'
-    }
-  ];
-
-  // Word lists for different grades/levels
-  const wordLists = [
-    {
-      id: 'grade-1',
-      name: 'Grade 1 Words',
-      level: 'Beginner',
-      words: ['and', 'the', 'you', 'to', 'a', 'I', 'it', 'in', 'said', 'for', 'up', 'look', 'is', 'go', 'we', 'little', 'down', 'can', 'see', 'not'],
-      icon: '1️⃣'
-    },
-    {
-      id: 'grade-2',
-      name: 'Grade 2 Words',
-      level: 'Elementary',
-      words: ['always', 'around', 'because', 'been', 'before', 'best', 'both', 'buy', 'call', 'cold', 'does', 'don\'t', 'fast', 'first', 'five', 'found', 'gave', 'goes', 'green', 'its'],
-      icon: '2️⃣'
-    },
-    {
-      id: 'grade-3',
-      name: 'Grade 3 Words',
-      level: 'Intermediate',
-      words: ['about', 'better', 'bring', 'carry', 'clean', 'cut', 'done', 'draw', 'drink', 'eight', 'fall', 'far', 'full', 'got', 'grow', 'hold', 'hot', 'hurt', 'keep', 'kind'],
-      icon: '3️⃣'
-    }
-  ];
-
-  // Spelling activities
-  const spellingActivities = [
-    {
-      id: 'word-building',
-      name: 'Word Building',
-      description: 'Build words letter by letter',
-      icon: '🏗️',
-      activity: 'drag-letters'
-    },
-    {
-      id: 'pattern-sort',
-      name: 'Pattern Sorting',
-      description: 'Sort words by spelling patterns',
-      icon: '📋',
-      activity: 'sort-words'
-    },
-    {
-      id: 'missing-letters',
-      name: 'Missing Letters',
-      description: 'Fill in the missing letters',
-      icon: '🔍',
-      activity: 'fill-blanks'
-    },
-    {
-      id: 'rhyme-time',
-      name: 'Rhyme Time',
-      description: 'Find words that rhyme',
-      icon: '🎵',
-      activity: 'match-rhymes'
-    }
-  ];
-
-  const spellingTabs = [
-    { id: 'patterns', name: 'Spelling Patterns', icon: '🔍' },
-    { id: 'word-lists', name: 'Word Lists', icon: '📝' },
-    { id: 'activities', name: 'Practice Activities', icon: '🎯' },
-    { id: 'assessment', name: 'Spelling Test', icon: '✅' }
-  ];
-
-  const handlePatternClick = (pattern) => {
-    setSelectedPattern(pattern);
-    if (showToast) {
-      showToast(`Teaching pattern: ${pattern.name}`, 'info');
-    }
-  };
-
-  const handleWordListClick = (wordList) => {
-    setSelectedWordList(wordList);
-    if (showToast) {
-      showToast(`Studying: ${wordList.name}`, 'info');
-    }
-  };
-
-  if (displayMode === 'presentation') {
-    return (
-      <div className="min-h-screen p-8">
-        {activeSpellingTab === 'patterns' && (
-          <div className="space-y-8">
-            {selectedPattern ? (
-              // Individual Pattern Display
-              <div className="text-center">
-                <button
-                  onClick={() => setSelectedPattern(null)}
-                  className="mb-8 px-6 py-3 bg-white/20 backdrop-blur rounded-xl hover:bg-white/30 transition-all"
-                >
-                  ← Back to All Patterns
-                </button>
-                <div className="bg-white/10 backdrop-blur rounded-3xl p-16 max-w-6xl mx-auto">
-                  <div className="text-8xl mb-6">{selectedPattern.icon}</div>
-                  <div className="text-6xl font-bold mb-6 text-yellow-300">{selectedPattern.name}</div>
-                  <div className="text-3xl mb-8 text-blue-300 italic">"{selectedPattern.description}"</div>
-                  
-                  <div className={`bg-${selectedPattern.color}-500/20 rounded-2xl p-8 mb-8`}>
-                    <h3 className="text-3xl font-bold text-white mb-4">Spelling Rule:</h3>
-                    <div className="text-2xl text-gray-200 italic">{selectedPattern.rule}</div>
-                  </div>
-                  
-                  <div className="grid grid-cols-5 gap-4 max-w-4xl mx-auto">
-                    {selectedPattern.examples.map((word, index) => (
-                      <div key={index} className={`p-4 bg-${selectedPattern.color}-500/30 rounded-xl border-2 border-${selectedPattern.color}-400`}>
-                        <div className="text-2xl font-bold text-white">{word}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              // All Patterns Grid
-              <div>
-                <h2 className="text-6xl font-bold text-center mb-12 text-white">Spelling Patterns</h2>
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
-                  {spellingPatterns.map(pattern => (
-                    <button
-                      key={pattern.id}
-                      onClick={() => handlePatternClick(pattern)}
-                      className={`p-8 rounded-2xl border-4 border-${pattern.color}-400 bg-${pattern.color}-500/20 hover:bg-${pattern.color}-500/30 transition-all duration-300 hover:scale-105`}
-                    >
-                      <div className="text-6xl mb-4">{pattern.icon}</div>
-                      <div className="text-2xl font-bold text-white mb-2">{pattern.name}</div>
-                      <div className="text-lg text-gray-200">{pattern.description}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeSpellingTab === 'word-lists' && (
-          <div className="space-y-8">
-            {selectedWordList ? (
-              // Individual Word List Display
-              <div className="text-center">
-                <button
-                  onClick={() => setSelectedWordList(null)}
-                  className="mb-8 px-6 py-3 bg-white/20 backdrop-blur rounded-xl hover:bg-white/30 transition-all"
-                >
-                  ← Back to Word Lists
-                </button>
-                <div className="bg-white/10 backdrop-blur rounded-3xl p-16 max-w-6xl mx-auto">
-                  <div className="text-8xl mb-6">{selectedWordList.icon}</div>
-                  <div className="text-6xl font-bold mb-6 text-yellow-300">{selectedWordList.name}</div>
-                  <div className="text-3xl mb-12 text-blue-300">{selectedWordList.level} Level</div>
-                  
-                  <div className="grid grid-cols-4 md:grid-cols-5 gap-6 max-w-5xl mx-auto">
-                    {selectedWordList.words.map((word, index) => (
-                      <div key={index} className="p-4 bg-blue-500/30 rounded-xl border-2 border-blue-400">
-                        <div className="text-xl font-bold text-white">{word}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              // All Word Lists Grid
-              <div>
-                <h2 className="text-6xl font-bold text-center mb-12 text-white">Spelling Word Lists</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-                  {wordLists.map(list => (
-                    <button
-                      key={list.id}
-                      onClick={() => handleWordListClick(list)}
-                      className="p-8 rounded-2xl border-4 border-green-400 bg-green-500/20 hover:bg-green-500/30 transition-all duration-300 hover:scale-105"
-                    >
-                      <div className="text-6xl mb-4">{list.icon}</div>
-                      <div className="text-2xl font-bold text-white mb-2">{list.name}</div>
-                      <div className="text-lg text-gray-200">{list.level}</div>
-                      <div className="text-sm text-gray-300 mt-2">{list.words.length} words</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    );
+const DOMAIN_META = {
+  Phonology: {
+    color: 'from-amber-500 via-orange-500 to-pink-500',
+    accent: 'bg-amber-500/20 border-amber-400/60',
+    description: 'Build confident decoders by tackling every sound concept from Foundation to Level 6.'
+  },
+  'Spelling Patterns': {
+    color: 'from-sky-500 via-indigo-500 to-purple-600',
+    accent: 'bg-sky-500/20 border-sky-400/60',
+    description: 'Master visual patterns, rules, and orthographic conventions with curated lists and activities.'
+  },
+  Morphology: {
+    color: 'from-emerald-500 via-teal-500 to-blue-600',
+    accent: 'bg-emerald-500/20 border-emerald-400/60',
+    description: 'Explore word building, affixes, and etymology with rich resources for every level.'
   }
+};
 
-  // Teacher Mode
+const domainIcon = {
+  Phonology: '🔊',
+  'Spelling Patterns': '🧩',
+  Morphology: '🧠'
+};
+
+const tagColors = {
+  'Level Foundation': 'bg-amber-500/20 text-amber-200 border-amber-400/60',
+  'Level 1': 'bg-sky-500/20 text-sky-200 border-sky-400/60',
+  'Level 2': 'bg-emerald-500/20 text-emerald-200 border-emerald-400/60',
+  'Level 3': 'bg-indigo-500/20 text-indigo-200 border-indigo-400/60',
+  'Level 4': 'bg-purple-500/20 text-purple-200 border-purple-400/60',
+  'Level 5': 'bg-rose-500/20 text-rose-100 border-rose-400/60',
+  'Level 6': 'bg-slate-500/20 text-slate-100 border-slate-400/60'
+};
+
+const ResourceBadge = ({ label }) => (
+  <span className="px-3 py-1 text-xs font-semibold uppercase tracking-wider rounded-full bg-white/10 border border-white/20">
+    {label}
+  </span>
+);
+
+const SectionTitle = ({ icon, title, subtitle }) => (
+  <div className="flex items-start gap-3">
+    <span className="text-2xl" aria-hidden>{icon}</span>
+    <div>
+      <h3 className="text-lg font-semibold text-white">{title}</h3>
+      {subtitle && <p className="text-sm text-slate-300">{subtitle}</p>}
+    </div>
+  </div>
+);
+
+const SpellingCenter = ({ showToast }) => {
+  const programData = useMemo(() => {
+    const compiled = {};
+    DOMAIN_ORDER.forEach((domain) => {
+      const levels = programStructure[domain] || {};
+      compiled[domain] = {};
+      Object.keys(levels).forEach((level) => {
+        compiled[domain][level] = levels[level].map((item) => ({
+          ...item,
+          resources: buildResourcePack(item, domain, level)
+        }));
+      });
+    });
+    return compiled;
+  }, []);
+
+  const [selectedDomain, setSelectedDomain] = useState(DOMAIN_ORDER[0]);
+  const [selectedLevel, setSelectedLevel] = useState(LEVEL_ORDER[0]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedConcept, setSelectedConcept] = useState(null);
+  const printRef = useRef(null);
+
+  const domainLevels = useMemo(() => {
+    const available = Object.keys(programData[selectedDomain] || {});
+    return LEVEL_ORDER.filter((level) => available.includes(level));
+  }, [programData, selectedDomain]);
+
+  useEffect(() => {
+    if (!domainLevels.includes(selectedLevel)) {
+      setSelectedLevel(domainLevels[0] || LEVEL_ORDER[0]);
+    }
+  }, [domainLevels, selectedLevel]);
+
+  const stats = useMemo(() => {
+    return DOMAIN_ORDER.map((domain) => {
+      const levels = programData[domain] || {};
+      const totalConcepts = Object.values(levels).reduce((sum, arr) => sum + arr.length, 0);
+      return { domain, totalConcepts };
+    });
+  }, [programData]);
+
+  const concepts = useMemo(() => {
+    const levelConcepts = programData[selectedDomain]?.[selectedLevel] || [];
+    if (!searchTerm.trim()) return levelConcepts;
+    const query = searchTerm.toLowerCase();
+    return levelConcepts.filter((item) => item.text.toLowerCase().includes(query));
+  }, [programData, selectedDomain, selectedLevel, searchTerm]);
+
+  const handleOpenConcept = (concept) => {
+    setSelectedConcept({
+      ...concept,
+      level: selectedLevel,
+      domain: selectedDomain
+    });
+  };
+
+  const handlePrint = () => {
+    if (typeof window === 'undefined' || !printRef.current) return;
+    const printWindow = window.open('', '_blank', 'width=900,height=1200');
+    const doc = printWindow.document;
+    doc.write('<html><head><title>Spelling Resource Pack</title>');
+    doc.write('<style>body{font-family:Inter,sans-serif;padding:40px;background:#f7f9fc;color:#0f172a;} h1{font-size:28px;margin-bottom:16px;} h2{font-size:20px;margin-top:24px;} ul{padding-left:20px;} .tag{display:inline-block;margin-right:8px;padding:4px 10px;border-radius:999px;background:#e0e7ff;color:#312e81;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;} table{border-collapse:collapse;width:100%;margin-top:12px;} th,td{border:1px solid #cbd5f5;padding:8px;text-align:left;} .section{margin-bottom:24px;}</style>');
+    doc.write('</head><body>');
+    doc.write(printRef.current.innerHTML);
+    doc.write('</body></html>');
+    doc.close();
+    printWindow.focus();
+    printWindow.print();
+  };
+
+  const activeConceptCount = concepts.length;
+
   return (
-    <div className="p-6">
-      {/* Spelling Navigation */}
-      <div className="flex flex-wrap gap-2 mb-6 border-b border-gray-200 pb-4">
-        {spellingTabs.map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveSpellingTab(tab.id)}
-            className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 ${
-              activeSpellingTab === tab.id
-                ? 'bg-orange-600 text-white shadow-lg'
-                : 'text-gray-600 hover:text-orange-600 hover:bg-orange-50'
-            }`}
-          >
-            <span>{tab.icon}</span>
-            <span>{tab.name}</span>
-          </button>
-        ))}
-      </div>
+    <div className="min-h-screen bg-slate-950 text-white">
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-950 to-black" aria-hidden />
+        <div className="absolute inset-x-0 -top-24 h-72 bg-gradient-to-r from-purple-600/40 via-sky-500/30 to-emerald-400/30 blur-3xl" aria-hidden />
+        <div className="relative z-10 px-4 sm:px-6 lg:px-12 py-16">
+          <div className="max-w-6xl mx-auto">
+            <div className="flex flex-wrap items-center gap-6 mb-10">
+              <div className="flex-1 min-w-[260px]">
+                <p className="uppercase tracking-[0.4em] text-xs font-semibold text-slate-300 mb-3">Ultimate spelling studio</p>
+                <h1 className="text-4xl sm:text-5xl font-bold leading-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-slate-300">
+                  Every phonics, spelling pattern, and morphology focus curated in one place
+                </h1>
+              </div>
+              <div className="flex flex-col gap-3 min-w-[220px] bg-white/5 border border-white/10 rounded-2xl p-5">
+                <h2 className="text-sm uppercase tracking-widest text-slate-300">Program Snapshot</h2>
+                <div className="space-y-2">
+                  {stats.map(({ domain, totalConcepts }) => (
+                    <div key={domain} className="flex justify-between text-sm text-slate-200">
+                      <span>{domain}</span>
+                      <span className="font-semibold text-white">{totalConcepts}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-slate-400">Each item opens a full resource pack with lists, passages, games, worksheets, and displays.</p>
+              </div>
+            </div>
 
-      {/* Spelling Patterns Tab */}
-      {activeSpellingTab === 'patterns' && (
-        <div className="space-y-6">
-          <h3 className="text-2xl font-bold text-gray-800">Spelling Patterns & Rules</h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {spellingPatterns.map(pattern => (
-              <button
-                key={pattern.id}
-                onClick={() => handlePatternClick(pattern)}
-                className={`p-6 rounded-xl border-2 transition-all duration-200 hover:scale-105 text-left border-${pattern.color}-300 bg-${pattern.color}-50 hover:bg-${pattern.color}-100`}
-              >
-                <div className="flex items-start space-x-4">
-                  <div className="text-4xl">{pattern.icon}</div>
+            <div className="grid grid-cols-1 lg:grid-cols-[1.4fr,1fr] gap-6">
+              <div className="bg-white/5 border border-white/10 rounded-3xl p-6 shadow-2xl shadow-black/20">
+                <p className="text-sm text-slate-300 mb-4">Start by selecting an area of focus.</p>
+                <div className="grid sm:grid-cols-3 gap-4">
+                  {DOMAIN_ORDER.map((domain) => {
+                    const meta = DOMAIN_META[domain];
+                    const isActive = selectedDomain === domain;
+                    return (
+                      <button
+                        key={domain}
+                        onClick={() => {
+                          setSelectedDomain(domain);
+                          if (showToast) {
+                            showToast(`Loaded ${domain} pathway`, 'info');
+                          }
+                        }}
+                        className={`relative overflow-hidden rounded-2xl border border-white/10 p-5 text-left transition-all duration-300 hover:-translate-y-1 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-sky-300 focus-visible:outline-none ${isActive ? 'bg-white/10 shadow-lg shadow-slate-900/60' : 'bg-white/5'}`}
+                      >
+                        <div className={`absolute inset-0 rounded-2xl opacity-60 bg-gradient-to-br ${meta.color}`} aria-hidden />
+                        <div className="relative z-10 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-3xl" aria-hidden>{domainIcon[domain]}</span>
+                            <ResourceBadge label={`${programData[domain] ? Object.values(programData[domain]).reduce((sum, arr) => sum + arr.length, 0) : 0} focuses`} />
+                          </div>
+                          <h2 className="text-xl font-semibold">{domain}</h2>
+                          <p className="text-sm text-slate-200/90">{meta.description}</p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="bg-white/5 border border-white/10 rounded-3xl p-6 shadow-2xl shadow-black/20 flex flex-col justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-white mb-3">How it works</h2>
+                  <ul className="space-y-2 text-sm text-slate-200">
+                    <li>1. Choose phonology, spelling patterns, or morphology.</li>
+                    <li>2. Select a level to reveal every explicit teaching focus.</li>
+                    <li>3. Open a focus to access printable lists, passages, scripts, games, displays, and worksheets.</li>
+                  </ul>
+                </div>
+                <p className="mt-4 text-xs text-slate-400">Designed to look stunning on classroom displays and respond beautifully on mobile.</p>
+              </div>
+            </div>
+
+            <div className="mt-12 bg-white/5 border border-white/10 rounded-3xl p-6 shadow-2xl shadow-black/30">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl" aria-hidden>{domainIcon[selectedDomain]}</span>
                   <div>
-                    <h4 className={`font-bold text-lg text-${pattern.color}-800 mb-2`}>{pattern.name}</h4>
-                    <p className={`text-sm text-${pattern.color}-700 mb-2`}>{pattern.description}</p>
-                    <div className="text-xs text-gray-600">{pattern.examples.length} examples</div>
+                    <p className="uppercase text-xs tracking-[0.3em] text-slate-300">Selected Focus</p>
+                    <h2 className="text-2xl font-semibold">{selectedDomain}</h2>
                   </div>
                 </div>
-              </button>
-            ))}
-          </div>
-
-          {selectedPattern && (
-            <div className={`bg-gradient-to-r from-${selectedPattern.color}-50 to-purple-50 rounded-xl p-6 border border-${selectedPattern.color}-200`}>
-              <div className="flex items-start space-x-6">
-                <div className="text-6xl">{selectedPattern.icon}</div>
-                <div className="flex-1">
-                  <h4 className="text-3xl font-bold text-gray-800 mb-2">{selectedPattern.name}</h4>
-                  <p className="text-lg text-gray-600 mb-4 italic">"{selectedPattern.description}"</p>
-                  
-                  <div className="bg-purple-50 p-4 rounded-lg mb-4">
-                    <h5 className="font-bold text-purple-700 mb-2">Spelling Rule:</h5>
-                    <p className="text-purple-800">{selectedPattern.rule}</p>
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex bg-white/10 rounded-full p-1">
+                    {domainLevels.map((level) => {
+                      const isActive = level === selectedLevel;
+                      return (
+                        <button
+                          key={level}
+                          onClick={() => setSelectedLevel(level)}
+                          className={`px-4 py-2 rounded-full text-sm font-medium transition ${isActive ? 'bg-white text-slate-900 shadow' : 'text-slate-200 hover:text-white'}`}
+                        >
+                          {level.replace('Level ', 'L')}
+                        </button>
+                      );
+                    })}
                   </div>
-                  
-                  <div>
-                    <h5 className={`font-bold text-${selectedPattern.color}-700 mb-3`}>Example Words:</h5>
-                    <div className="grid grid-cols-5 gap-2">
-                      {selectedPattern.examples.map((word, index) => (
-                        <span key={index} className={`px-3 py-2 bg-${selectedPattern.color}-100 text-${selectedPattern.color}-800 rounded-lg font-bold text-center`}>
-                          {word}
-                        </span>
-                      ))}
+                  <div className="relative">
+                    <input
+                      type="search"
+                      value={searchTerm}
+                      onChange={(event) => setSearchTerm(event.target.value)}
+                      placeholder="Search focus statements..."
+                      className="bg-white/10 border border-white/10 rounded-full py-2 pl-4 pr-10 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-300"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden>⌕</span>
+                  </div>
+                </div>
+              </div>
+              <p className="mt-4 text-sm text-slate-300">Showing {activeConceptCount} focus{activeConceptCount === 1 ? '' : 'es'} for {selectedLevel}.</p>
+
+              <div className="mt-6 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                {concepts.map((concept) => (
+                  <div
+                    key={concept.id}
+                    className="relative bg-white/5 border border-white/10 rounded-3xl p-5 flex flex-col justify-between shadow-lg shadow-black/30 hover:shadow-purple-500/20 transition group"
+                  >
+                    <div className="absolute inset-0 opacity-0 group-hover:opacity-20 transition bg-gradient-to-br from-white via-transparent to-transparent" aria-hidden />
+                    <div className="relative z-10">
+                      <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-semibold ${tagColors[selectedLevel] || 'bg-white/10 text-slate-100 border-white/20'}`}>
+                        <span className="w-2 h-2 rounded-full bg-current" aria-hidden />
+                        {selectedLevel}
+                      </div>
+                      <p className="mt-3 text-sm text-slate-200 leading-relaxed">{concept.text}</p>
+                    </div>
+                    <div className="relative z-10 mt-6 flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-xs text-slate-300">
+                        <ResourceBadge label="Word Lists" />
+                        <ResourceBadge label="Passages" />
+                        <ResourceBadge label="Games" />
+                      </div>
+                      <button
+                        onClick={() => handleOpenConcept(concept)}
+                        className="px-4 py-2 text-sm font-semibold bg-white text-slate-900 rounded-full shadow hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-slate-200"
+                      >
+                        Open Pack
+                      </button>
                     </div>
                   </div>
-                </div>
-                <button
-                  onClick={() => setSelectedPattern(null)}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
-                >
-                  Close
-                </button>
+                ))}
+
+                {concepts.length === 0 && (
+                  <div className="col-span-full bg-white/5 border border-white/10 rounded-3xl p-10 text-center text-slate-300">
+                    <p>No concepts match that search just yet. Try a different keyword.</p>
+                  </div>
+                )}
               </div>
             </div>
-          )}
-        </div>
-      )}
-
-      {/* Word Lists Tab */}
-      {activeSpellingTab === 'word-lists' && (
-        <div className="space-y-6">
-          <h3 className="text-2xl font-bold text-gray-800">Grade-Level Word Lists</h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {wordLists.map(list => (
-              <button
-                key={list.id}
-                onClick={() => handleWordListClick(list)}
-                className="p-6 rounded-xl border-2 border-green-300 bg-green-50 hover:bg-green-100 transition-all duration-200 hover:scale-105 text-left"
-              >
-                <div className="text-center">
-                  <div className="text-4xl mb-3">{list.icon}</div>
-                  <h4 className="text-xl font-bold text-green-800 mb-2">{list.name}</h4>
-                  <p className="text-green-600 mb-2">{list.level}</p>
-                  <div className="text-sm text-gray-600">{list.words.length} words to master</div>
-                </div>
-              </button>
-            ))}
           </div>
+        </div>
+      </div>
 
-          {selectedWordList && (
-            <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-6 border border-green-200">
-              <div className="flex items-start space-x-6">
-                <div className="text-6xl">{selectedWordList.icon}</div>
-                <div className="flex-1">
-                  <h4 className="text-3xl font-bold text-gray-800 mb-2">{selectedWordList.name}</h4>
-                  <p className="text-lg text-green-600 mb-4">{selectedWordList.level} Level • {selectedWordList.words.length} Words</p>
-                  
-                  <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
-                    {selectedWordList.words.map((word, index) => (
-                      <div key={index} className="px-3 py-2 bg-green-100 text-green-800 rounded-lg font-bold text-center text-sm">
-                        {word}
-                      </div>
-                    ))}
+      {selectedConcept && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 sm:px-6">
+          <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" aria-hidden onClick={() => setSelectedConcept(null)} />
+          <div className="relative max-w-5xl w-full bg-slate-900 border border-white/10 rounded-3xl shadow-2xl shadow-black/40 overflow-hidden">
+            <div className="flex flex-col md:flex-row">
+              <div className="md:w-80 bg-gradient-to-b from-slate-800 to-slate-900 border-r border-white/10 p-6 space-y-4">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Focus Area</p>
+                  <h2 className="text-2xl font-bold text-white mt-2">{selectedConcept.domain}</h2>
+                  <div className={`inline-flex items-center gap-2 px-3 py-1 mt-3 rounded-full border text-xs font-semibold ${tagColors[selectedConcept.level] || 'bg-white/10 text-slate-100 border-white/20'}`}>
+                    <span className="w-2 h-2 rounded-full bg-current" aria-hidden />
+                    {selectedConcept.level}
                   </div>
                 </div>
-                <button
-                  onClick={() => setSelectedWordList(null)}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Activities Tab */}
-      {activeSpellingTab === 'activities' && (
-        <div className="space-y-6">
-          <h3 className="text-2xl font-bold text-gray-800">Spelling Practice Activities</h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {spellingActivities.map(activity => (
-              <div key={activity.id} className="p-6 rounded-xl border-2 border-purple-300 bg-purple-50 hover:bg-purple-100 transition-all">
-                <div className="text-center">
-                  <div className="text-4xl mb-3">{activity.icon}</div>
-                  <h4 className="text-xl font-bold text-purple-800 mb-2">{activity.name}</h4>
-                  <p className="text-purple-600 mb-4">{activity.description}</p>
-                  <button className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-bold">
-                    Start Activity
+                <p className="text-sm text-slate-300 leading-relaxed">{selectedConcept.text}</p>
+                <div className="grid grid-cols-2 gap-3 text-xs text-slate-300">
+                  <div className="bg-white/5 border border-white/10 rounded-xl p-3">
+                    <p className="text-[10px] uppercase tracking-widest text-slate-400">Word Lists</p>
+                    <p className="mt-1 text-lg font-semibold text-white">{selectedConcept.resources.spellingLists.length}</p>
+                  </div>
+                  <div className="bg-white/5 border border-white/10 rounded-xl p-3">
+                    <p className="text-[10px] uppercase tracking-widest text-slate-400">Activities</p>
+                    <p className="mt-1 text-lg font-semibold text-white">{selectedConcept.resources.activities.length}</p>
+                  </div>
+                  <div className="bg-white/5 border border-white/10 rounded-xl p-3">
+                    <p className="text-[10px] uppercase tracking-widest text-slate-400">Games</p>
+                    <p className="mt-1 text-lg font-semibold text-white">{selectedConcept.resources.games.length}</p>
+                  </div>
+                  <div className="bg-white/5 border border-white/10 rounded-xl p-3">
+                    <p className="text-[10px] uppercase tracking-widest text-slate-400">Worksheets</p>
+                    <p className="mt-1 text-lg font-semibold text-white">{selectedConcept.resources.worksheets.length}</p>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={handlePrint}
+                    className="w-full px-4 py-2 text-sm font-semibold bg-white text-slate-900 rounded-full shadow hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-slate-100"
+                  >
+                    Print Resource Pack
+                  </button>
+                  <button
+                    onClick={() => setSelectedConcept(null)}
+                    className="w-full px-4 py-2 text-sm font-semibold bg-white/10 text-white rounded-full border border-white/20 hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-white/40"
+                  >
+                    Close
                   </button>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      )}
 
-      {/* Assessment Tab */}
-      {activeSpellingTab === 'assessment' && (
-        <div className="space-y-6">
-          <h3 className="text-2xl font-bold text-gray-800">Spelling Assessment Tools</h3>
-          
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-8 border border-blue-200">
-            <div className="text-center">
-              <div className="text-6xl mb-4">✅</div>
-              <h4 className="text-2xl font-bold text-blue-800 mb-4">Digital Spelling Test</h4>
-              <p className="text-blue-600 mb-6">Create and administer spelling tests with automatic grading</p>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
-                <div className="bg-white p-4 rounded-lg border border-blue-200">
-                  <div className="text-3xl mb-2">📝</div>
-                  <h5 className="font-bold text-blue-800">Create Test</h5>
-                  <p className="text-blue-600 text-sm">Select words from any list</p>
-                </div>
-                <div className="bg-white p-4 rounded-lg border border-blue-200">
-                  <div className="text-3xl mb-2">🎧</div>
-                  <h5 className="font-bold text-blue-800">Audio Prompts</h5>
-                  <p className="text-blue-600 text-sm">Hear each word pronounced</p>
-                </div>
-                <div className="bg-white p-4 rounded-lg border border-blue-200">
-                  <div className="text-3xl mb-2">📊</div>
-                  <h5 className="font-bold text-blue-800">Results</h5>
-                  <p className="text-blue-600 text-sm">Instant feedback and scores</p>
+              <div className="flex-1 max-h-[80vh] overflow-y-auto" ref={printRef}>
+                <div className="p-6 space-y-6">
+                  <header>
+                    <h1 className="text-2xl font-bold text-white">{selectedConcept.text}</h1>
+                    <p className="text-sm text-slate-300 mt-1">Comprehensive classroom resource pack aligned to {selectedConcept.level}.</p>
+                  </header>
+
+                  <section className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-4">
+                    <SectionTitle icon="📝" title="Printable Spelling Lists" subtitle="Three tiers to differentiate instruction." />
+                    <div className="grid sm:grid-cols-3 gap-4">
+                      {selectedConcept.resources.spellingLists.map((list) => (
+                        <div key={list.id} className={`relative p-4 rounded-xl border border-white/10 bg-gradient-to-br ${list.gradient}`}>
+                          <h3 className="text-lg font-semibold text-white">{list.title}</h3>
+                          <p className="mt-2 text-sm text-slate-100/90">{list.description}</p>
+                          <div className="mt-3 text-xs text-slate-50/90">
+                            <p className="font-semibold uppercase tracking-widest text-[10px] text-white/80">Word Set</p>
+                            <ul className="mt-2 space-y-1 max-h-28 overflow-y-auto pr-1">
+                              {list.words.map((word) => (
+                                <li key={word} className="flex items-center gap-2 text-sm">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-white" aria-hidden />
+                                  {word}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                          <a
+                            href={list.download.url}
+                            download={list.download.filename}
+                            className="mt-4 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-white/90"
+                          >
+                            Download list →
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-4">
+                    <SectionTitle icon="📚" title="Ready-to-Use Passages" subtitle="Short texts for guided and independent practice." />
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      {selectedConcept.resources.passages.map((passage) => (
+                        <div key={passage.id} className="p-4 rounded-xl bg-white/5 border border-white/10">
+                          <div className="flex items-center justify-between">
+                            <h3 className="font-semibold text-white">{passage.title}</h3>
+                            <span className="text-xs text-slate-300">{passage.difficulty}</span>
+                          </div>
+                          <p className="mt-2 text-sm text-slate-200 leading-relaxed">{passage.text}</p>
+                          <div className="mt-3 flex items-center justify-between text-xs text-slate-300">
+                            <span>{passage.wordCount} words</span>
+                            <a href={passage.download.url} download={passage.download.filename} className="font-semibold text-white/80">Download →</a>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-4">
+                    <SectionTitle icon="🎯" title="Teaching & Learning Experiences" subtitle="Mix-and-match activities, scripts, and games." />
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
+                        <h4 className="text-base font-semibold text-white">Launch & Workshop Activities</h4>
+                        <div className="space-y-3">
+                          {selectedConcept.resources.activities.map((activity) => (
+                            <div key={activity.id} className="bg-slate-900/60 border border-white/10 rounded-lg p-3">
+                              <p className="text-sm font-semibold text-white">{activity.title}</p>
+                              <p className="text-xs text-slate-300 mb-2">{activity.duration}</p>
+                              <ul className="list-disc list-inside text-xs text-slate-300 space-y-1">
+                                {activity.steps.map((step, index) => (
+                                  <li key={index}>{step}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
+                        <h4 className="text-base font-semibold text-white">Teacher Scripts & Classroom Games</h4>
+                        <div className="space-y-3">
+                          {selectedConcept.resources.teacherScripts.map((script) => (
+                            <div key={script.id} className="bg-slate-900/60 border border-white/10 rounded-lg p-3">
+                              <p className="text-sm font-semibold text-white">{script.title}</p>
+                              <ul className="list-disc list-inside text-xs text-slate-300 space-y-1 mt-2">
+                                {script.sections.map((section, index) => (
+                                  <li key={index}>{section}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          ))}
+                          <div className="bg-slate-900/60 border border-white/10 rounded-lg p-3">
+                            <p className="text-sm font-semibold text-white">Gamified Practice</p>
+                            <ul className="space-y-2 text-xs text-slate-300">
+                              {selectedConcept.resources.games.map((game) => (
+                                <li key={game.id} className="border border-white/5 rounded-md p-2">
+                                  <p className="font-semibold text-white/90">{game.name}</p>
+                                  <p className="mt-1">{game.description}</p>
+                                  <p className="mt-1 text-[11px] uppercase tracking-widest text-slate-400">Materials: {game.materials.join(', ')}</p>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+
+                  <section className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-4">
+                    <SectionTitle icon="🖼️" title="Displays & Printable Worksheets" subtitle="Make it beautiful for your classroom walls and student folders." />
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-3">
+                        {selectedConcept.resources.displays.map((display) => (
+                          <div key={display.id} className="bg-slate-900/60 border border-white/10 rounded-lg p-3">
+                            <p className="text-sm font-semibold text-white">{display.title}</p>
+                            <p className="mt-2 text-xs text-slate-300">{display.description}</p>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="space-y-3">
+                        {selectedConcept.resources.worksheets.map((worksheet) => (
+                          <div key={worksheet.id} className="bg-slate-900/60 border border-white/10 rounded-lg p-3">
+                            <p className="text-sm font-semibold text-white">{worksheet.title}</p>
+                            <ul className="mt-2 list-disc list-inside text-xs text-slate-300 space-y-1">
+                              {worksheet.sections.map((section, index) => (
+                                <li key={index}>{section}</li>
+                              ))}
+                            </ul>
+                            <a href={worksheet.download.url} download={worksheet.download.filename} className="mt-2 inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-widest text-white/80">
+                              Download worksheet →
+                            </a>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </section>
                 </div>
               </div>
             </div>
