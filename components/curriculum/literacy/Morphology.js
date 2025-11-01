@@ -1,5 +1,5 @@
 // components/curriculum/literacy/Morphology.js
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import MorphologyLevel1 from './morphology/MorphologyLevel1';
 
 // Printable templates
@@ -558,6 +558,17 @@ const Morphology = () => {
   const [selectedLesson, setSelectedLesson] = useState(null);
   const [currentSection, setCurrentSection] = useState(0);
   const [showActivities, setShowActivities] = useState(false);
+  const [viewMode, setViewMode] = useState('teacher');
+  const [displaySlideIndex, setDisplaySlideIndex] = useState(0);
+
+  useEffect(() => {
+    if (selectedLesson) {
+      setCurrentSection(0);
+      setShowActivities(false);
+      setViewMode('teacher');
+      setDisplaySlideIndex(0);
+    }
+  }, [selectedLesson]);
 
   // Download printable function
   const downloadPrintable = (printableId, activityTitle) => {
@@ -603,6 +614,8 @@ const Morphology = () => {
       setSelectedLesson(null);
       setCurrentSection(0);
       setShowActivities(false);
+      setViewMode('teacher');
+      setDisplaySlideIndex(0);
     } else if (selectedLevel) {
       setSelectedLevel(null);
     }
@@ -801,7 +814,12 @@ const Morphology = () => {
   if (selectedLesson) {
     const lesson = selectedLesson;
     const totalSections = lesson.teacherScript.length;
+    const totalDisplaySections = lesson.displaySections ? lesson.displaySections.length : 0;
     const isLastSection = currentSection >= totalSections - 1;
+    const currentSlide = lesson.displaySections ? lesson.displaySections[displaySlideIndex] : null;
+    const slideProgress = totalDisplaySections > 0 ? ((displaySlideIndex + 1) / totalDisplaySections) * 100 : 0;
+    const teacherProgress = ((currentSection + 1) / totalSections) * 100;
+    const progressValue = viewMode === 'teacher' ? teacherProgress : slideProgress;
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 p-6">
@@ -827,8 +845,16 @@ const Morphology = () => {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm opacity-75 mb-1">Progress</div>
-                  <div className="text-2xl font-bold">{currentSection + 1} / {totalSections}</div>
+                  <div className="text-sm opacity-75 mb-1">
+                    {viewMode === 'teacher' ? 'Teacher Section Progress' : 'Class Display Slides'}
+                  </div>
+                  <div className="text-2xl font-bold">
+                    {viewMode === 'teacher'
+                      ? `${currentSection + 1} / ${totalSections}`
+                      : totalDisplaySections > 0
+                      ? `${displaySlideIndex + 1} / ${totalDisplaySections}`
+                      : 'Ready'}
+                  </div>
                 </div>
               </div>
 
@@ -836,7 +862,7 @@ const Morphology = () => {
               <div className="w-full bg-white bg-opacity-20 rounded-full h-3">
                 <div
                   className="bg-white h-3 rounded-full transition-all duration-500"
-                  style={{ width: `${((currentSection + 1) / totalSections) * 100}%` }}
+                  style={{ width: `${progressValue}%` }}
                 ></div>
               </div>
             </div>
@@ -876,58 +902,244 @@ const Morphology = () => {
               </div>
             </div>
 
-            {/* Main Content Area */}
-            <div className="bg-white border-4 border-purple-400 rounded-2xl p-8 mb-6 shadow-xl">
-              {/* Section Header */}
-              <div className="mb-6 pb-4 border-b-2 border-purple-200">
-                <h3 className="text-3xl font-bold text-purple-900 mb-2">
-                  {lesson.teacherScript[currentSection].section}
-                </h3>
-                <div className="text-purple-600 text-sm font-semibold">
-                  Section {currentSection + 1} of {totalSections}
-                </div>
+            {/* View Toggle */}
+            <div className="flex justify-center mb-6">
+              <div className="inline-flex bg-white/70 border-2 border-purple-300 rounded-full p-1 shadow-inner">
+                <button
+                  onClick={() => setViewMode('teacher')}
+                  className={`px-6 py-2 rounded-full text-sm font-semibold transition-all ${
+                    viewMode === 'teacher'
+                      ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg'
+                      : 'text-purple-600 hover:text-purple-800'
+                  }`}
+                >
+                  👩‍🏫 Teacher View
+                </button>
+                <button
+                  onClick={() => setViewMode('display')}
+                  className={`px-6 py-2 rounded-full text-sm font-semibold transition-all ${
+                    viewMode === 'display'
+                      ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-lg'
+                      : 'text-purple-600 hover:text-purple-800'
+                  }`}
+                >
+                  🖥️ Class Display
+                </button>
               </div>
+            </div>
 
-              {/* Teacher Script */}
-              <div className="prose max-w-none">
-                <div className="bg-blue-50 border-l-4 border-blue-500 p-6 rounded-r-xl">
-                  <div className="text-gray-800 text-lg leading-relaxed whitespace-pre-wrap">
-                    {lesson.teacherScript[currentSection].content}
+            {/* Main Content Area */}
+            {viewMode === 'teacher' ? (
+              <div className="bg-white border-4 border-purple-400 rounded-2xl p-8 mb-6 shadow-xl">
+                {/* Section Header */}
+                <div className="mb-6 pb-4 border-b-2 border-purple-200">
+                  <h3 className="text-3xl font-bold text-purple-900 mb-2">
+                    {lesson.teacherScript[currentSection].section}
+                  </h3>
+                  <div className="text-purple-600 text-sm font-semibold">
+                    Section {currentSection + 1} of {totalSections}
+                  </div>
+                </div>
+
+                {/* Teacher Script */}
+                <div className="prose max-w-none">
+                  <div className="bg-blue-50 border-l-4 border-blue-500 p-6 rounded-r-xl">
+                    <div className="text-gray-800 text-lg leading-relaxed whitespace-pre-wrap">
+                      {lesson.teacherScript[currentSection].content}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-
-            {/* Navigation */}
-            <div className="flex justify-between items-center gap-4">
-              <button
-                onClick={() => setCurrentSection(Math.max(0, currentSection - 1))}
-                disabled={currentSection === 0}
-                className={`px-8 py-4 rounded-xl font-bold text-lg transition-all ${
-                  currentSection === 0
-                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                    : 'bg-purple-500 text-white hover:bg-purple-600 shadow-lg'
+            ) : (
+              <div
+                className={`rounded-3xl p-8 mb-6 shadow-2xl text-white transition-all duration-500 bg-gradient-to-br ${
+                  currentSlide?.background || 'from-purple-500 via-pink-500 to-blue-500'
                 }`}
               >
-                ← Previous Section
-              </button>
+                {currentSlide ? (
+                  <>
+                    <div className="flex items-start justify-between mb-6">
+                      <div>
+                        <div className="uppercase tracking-wider text-sm opacity-80 mb-1">
+                          {currentSlide.subtitle}
+                        </div>
+                        <h3 className="text-4xl md:text-5xl font-extrabold drop-shadow-lg">
+                          {currentSlide.title}
+                        </h3>
+                      </div>
+                      {currentSlide.icon && <div className="text-6xl md:text-7xl">{currentSlide.icon}</div>}
+                    </div>
+                    {currentSlide.prompt && (
+                      <p className="text-lg md:text-xl font-semibold bg-white/20 rounded-2xl px-6 py-4 mb-6">
+                        {currentSlide.prompt}
+                      </p>
+                    )}
+                    {currentSlide.focusWords && currentSlide.focusWords.length > 0 && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                        {currentSlide.focusWords.map((word, index) => (
+                          <div
+                            key={index}
+                            className="bg-white/25 rounded-2xl px-5 py-4 text-2xl font-bold text-center shadow-md backdrop-blur"
+                          >
+                            {word}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {currentSlide.actions && currentSlide.actions.length > 0 && (
+                      <div className="bg-black/15 rounded-2xl p-6">
+                        <div className="text-lg font-bold mb-3 flex items-center gap-2">
+                          <span>⭐</span>
+                          Try This Together
+                        </div>
+                        <ul className="space-y-2 text-base md:text-lg">
+                          {currentSlide.actions.map((action, index) => (
+                            <li key={index} className="flex items-start gap-3">
+                              <span className="font-bold text-white/80">{index + 1}.</span>
+                              <span className="leading-snug">{action}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center text-xl font-semibold">
+                    Class display slides coming soon. Switch to Teacher View for notes.
+                  </div>
+                )}
+              </div>
+            )}
 
-              {!isLastSection ? (
+            {/* Practice Word Lists */}
+            {lesson.practiceWordLists && lesson.practiceWordLists.length > 0 && (
+              <div className="mb-6">
+                <div className="bg-gradient-to-r from-yellow-200 via-pink-200 to-purple-200 border-4 border-pink-300 rounded-3xl p-6 shadow-xl">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="text-2xl font-extrabold text-purple-900 flex items-center gap-2">
+                        <span>📝</span>
+                        Word Practice Corner
+                      </h3>
+                      <p className="text-purple-800 font-semibold text-sm md:text-base">
+                        Display or print these word sets for quick whole-class practice.
+                      </p>
+                    </div>
+                    <div className="text-5xl">✨</div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {lesson.practiceWordLists.map((list, index) => (
+                      <div
+                        key={index}
+                        className="bg-white/90 rounded-2xl p-5 border-2 border-purple-200 shadow-inner hover:shadow-lg transition-all"
+                      >
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="text-3xl">{list.icon}</div>
+                          <div>
+                            <h4 className="text-lg font-bold text-purple-900 leading-tight">{list.title}</h4>
+                            {list.description && (
+                              <p className="text-sm text-purple-600 leading-snug">{list.description}</p>
+                            )}
+                          </div>
+                        </div>
+                        <ul className="space-y-2 text-purple-800">
+                          {list.words.map((word, wordIndex) => (
+                            <li
+                              key={wordIndex}
+                              className="bg-purple-50 border border-purple-100 rounded-xl px-4 py-2 text-base font-semibold text-center"
+                            >
+                              {word}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Navigation */}
+            {viewMode === 'teacher' ? (
+              <div className="flex justify-between items-center gap-4">
                 <button
-                  onClick={() => setCurrentSection(currentSection + 1)}
-                  className="px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-bold text-lg hover:shadow-xl transition-all"
+                  onClick={() => setCurrentSection(Math.max(0, currentSection - 1))}
+                  disabled={currentSection === 0}
+                  className={`px-8 py-4 rounded-xl font-bold text-lg transition-all ${
+                    currentSection === 0
+                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                      : 'bg-purple-500 text-white hover:bg-purple-600 shadow-lg'
+                  }`}
                 >
-                  Next Section →
+                  ← Previous Section
                 </button>
-              ) : (
-                <button
-                  onClick={() => setShowActivities(true)}
-                  className="px-8 py-4 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-xl font-bold text-lg hover:shadow-xl transition-all animate-pulse"
-                >
-                  View Activities 🎯
-                </button>
-              )}
-            </div>
+
+                {!isLastSection ? (
+                  <button
+                    onClick={() => setCurrentSection(currentSection + 1)}
+                    className="px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-bold text-lg hover:shadow-xl transition-all"
+                  >
+                    Next Section →
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setShowActivities(true)}
+                    className="px-8 py-4 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-xl font-bold text-lg hover:shadow-xl transition-all animate-pulse"
+                  >
+                    View Activities 🎯
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div className="flex gap-3 justify-between md:justify-start">
+                  <button
+                    onClick={() => setDisplaySlideIndex(Math.max(0, displaySlideIndex - 1))}
+                    disabled={displaySlideIndex === 0}
+                    className={`px-6 py-3 rounded-xl font-bold text-base transition-all ${
+                      displaySlideIndex === 0
+                        ? 'bg-white/40 text-white/70 cursor-not-allowed'
+                        : 'bg-white/80 text-purple-700 hover:bg-white'
+                    }`}
+                  >
+                    ← Previous Slide
+                  </button>
+                  <button
+                    onClick={() =>
+                      setDisplaySlideIndex(
+                        Math.min(
+                          totalDisplaySections > 0 ? totalDisplaySections - 1 : 0,
+                          displaySlideIndex + 1
+                        )
+                      )
+                    }
+                    disabled={totalDisplaySections === 0 || displaySlideIndex >= totalDisplaySections - 1}
+                    className={`px-6 py-3 rounded-xl font-bold text-base transition-all ${
+                      totalDisplaySections === 0 || displaySlideIndex >= totalDisplaySections - 1
+                        ? 'bg-white/40 text-white/70 cursor-not-allowed'
+                        : 'bg-white/80 text-purple-700 hover:bg-white'
+                    }`}
+                  >
+                    Next Slide →
+                  </button>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setViewMode('teacher')}
+                    className="px-6 py-3 bg-purple-600 text-white rounded-xl font-bold text-base hover:bg-purple-700 transition-all"
+                  >
+                    Back to Teacher Notes
+                  </button>
+                  <button
+                    onClick={() => setShowActivities(true)}
+                    className="px-6 py-3 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-xl font-bold text-base hover:shadow-xl transition-all"
+                  >
+                    Go to Activities 🎯
+                  </button>
+                </div>
+              </div>
+            )}
           </>
         ) : (
           <>
