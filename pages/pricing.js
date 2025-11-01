@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import Head from 'next/head';
+import Image from 'next/image';
 import { useState, useEffect } from 'react';
 
 export default function Pricing() {
@@ -20,21 +22,102 @@ export default function Pricing() {
     return () => clearInterval(interval);
   }, []);
 
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
-      {/* Header with Logo */}
-      <div className="flex items-center mb-8">
-        <img 
-          src="/Logo/LOGO_NoBG.png" 
-          alt="Educational Elements Logo" 
-          className="h-16 w-16 mr-4"
-        />
-        <div className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
-          Educational Elements
-        </div>
-      </div>
+  const faqSchema = [
+    {
+      question: 'Why do you need payment details for a free trial?',
+      answer:
+        "Payment details prevent trial abuse and ensure a smooth transition after your trial ends. You won't be charged until January 1st, 2026."
+    },
+    {
+      question: 'How many students can I have?',
+      answer:
+        'Unlimited students across up to 2 classrooms. Perfect for teachers who have multiple classes or want to separate subjects.'
+    },
+    {
+      question: 'Can I cancel anytime?',
+      answer:
+        'Yes! Cancel anytime before January 1st, 2026 with no charges. After your trial, you can cancel anytime and your subscription ends at the current billing period.'
+    },
+    {
+      question: 'What happens to my data if I cancel?',
+      answer:
+        'Your classroom data is safely stored and you can reactivate anytime. We believe in data portability and will never hold your information hostage.'
+    }
+  ];
 
-      <h1 className="text-5xl font-bold mb-4 text-gray-800">Simple, Transparent Pricing</h1>
+  return (
+    <>
+      <Head>
+        <title>Educational Elements Pricing | Free Trial for Teachers</title>
+        <meta
+          name="description"
+          content="Compare Educational Elements pricing, access our extended free trial for teachers, and discover everything included in the classroom gamification platform."
+        />
+        <link rel="canonical" href="https://educational-elements.com/pricing" />
+        <meta name="robots" content="index,follow" />
+        <meta name="keywords" content="teacher software pricing, classroom management free trial, educational elements cost" />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="Simple, Transparent Pricing | Educational Elements" />
+        <meta
+          property="og:description"
+          content="Start your free trial of Educational Elements and unlock classroom gamification, curriculum resources, and teaching tools."
+        />
+        <meta property="og:url" content="https://educational-elements.com/pricing" />
+        <meta property="og:image" content="https://educational-elements.com/Logo/LOGO_NoBG.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Educational Elements Pricing" />
+        <meta
+          name="twitter:description"
+          content="See how affordable it is to bring classroom gamification and curriculum resources to your students."
+        />
+        <meta name="twitter:image" content="https://educational-elements.com/Logo/LOGO_NoBG.png" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'FAQPage',
+              mainEntity: faqSchema.map((faq) => ({
+                '@type': 'Question',
+                name: faq.question,
+                acceptedAnswer: {
+                  '@type': 'Answer',
+                  text: faq.answer
+                }
+              })),
+              mainEntityOfPage: 'https://educational-elements.com/pricing'
+            })
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'Offer',
+              url: 'https://educational-elements.com/pricing',
+              price: '5.99',
+              priceCurrency: 'USD',
+              availability: 'https://schema.org/InStock',
+              seller: {
+                '@type': 'Organization',
+                name: 'Educational Elements'
+              }
+            })
+          }}
+        />
+      </Head>
+
+      <main className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
+        {/* Header with Logo */}
+        <div className="flex items-center mb-8">
+          <Image src="/Logo/LOGO_NoBG.png" alt="Educational Elements logo" width={64} height={64} className="h-16 w-16 mr-4" />
+          <div className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+            Educational Elements
+          </div>
+        </div>
+
+        <h1 className="text-5xl font-bold mb-4 text-gray-800">Simple, Transparent Pricing</h1>
       <p className="text-xl text-gray-600 mb-12 text-center max-w-3xl">
         Start your free trial today. No hidden fees, no complicated tiers.
       </p>
@@ -167,22 +250,12 @@ export default function Pricing() {
       <div className="mt-16 max-w-3xl">
         <h3 className="text-3xl font-bold text-center text-gray-800 mb-8">Frequently Asked Questions</h3>
         <div className="space-y-6">
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h4 className="font-bold text-gray-800 mb-2">Why do you need payment details for a free trial?</h4>
-            <p className="text-gray-600">Payment details prevent trial abuse and ensure a smooth transition after your trial ends. You won't be charged until January 1st, 2026.</p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h4 className="font-bold text-gray-800 mb-2">How many students can I have?</h4>
-            <p className="text-gray-600">Unlimited students across up to 2 classrooms. Perfect for teachers who have multiple classes or want to separate subjects.</p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h4 className="font-bold text-gray-800 mb-2">Can I cancel anytime?</h4>
-            <p className="text-gray-600">Yes! Cancel anytime before January 1st, 2026 with no charges. After your trial, you can cancel anytime and your subscription ends at the current billing period.</p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h4 className="font-bold text-gray-800 mb-2">What happens to my data if I cancel?</h4>
-            <p className="text-gray-600">Your classroom data is safely stored and you can reactivate anytime. We believe in data portability and will never hold your information hostage.</p>
-          </div>
+          {faqSchema.map((faq) => (
+            <div key={faq.question} className="bg-white p-6 rounded-lg shadow-md">
+              <h4 className="font-bold text-gray-800 mb-2">{faq.question}</h4>
+              <p className="text-gray-600">{faq.answer}</p>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -197,9 +270,15 @@ export default function Pricing() {
         </Link>
       </div>
 
-      <div className="mt-12 text-center text-gray-500">
-        <p>Questions? <a href="mailto:support@educationalelements.com" className="text-blue-600 hover:underline">Contact our support team</a></p>
-      </div>
-    </div>
+        <div className="mt-12 text-center text-gray-500">
+          <p>
+            Questions?{' '}
+            <a href="mailto:support@educationalelements.com" className="text-blue-600 hover:underline">
+              Contact our support team
+            </a>
+          </p>
+        </div>
+      </main>
+    </>
   );
 }

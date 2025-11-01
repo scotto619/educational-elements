@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
+import Head from 'next/head';
+import Image from 'next/image';
 import Link from 'next/link';
 
 // Dynamic import for Firebase to prevent SSR issues
@@ -70,19 +72,22 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 via-purple-50 to-indigo-100 p-6">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-8 text-center">
-          <div className="flex items-center justify-center mb-4">
-            <img 
-              src="/Logo/LOGO_NoBG.png" 
-              alt="Educational Elements Logo" 
-              className="h-12 w-12 mr-3"
-            />
-            <div className="text-2xl font-bold">Educational Elements</div>
-          </div>
-          <h1 className="text-2xl font-bold mb-2">Welcome Back!</h1>
+    <>
+      <Head>
+        <title>Teacher Login | Educational Elements</title>
+        <meta name="description" content="Log in to Educational Elements to manage classroom gamification, curriculum resources, and teacher tools." />
+        <link rel="canonical" href="https://educational-elements.com/login" />
+        <meta name="robots" content="noindex,nofollow" />
+      </Head>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 via-purple-50 to-indigo-100 p-6">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-8 text-center">
+            <div className="flex items-center justify-center mb-4">
+              <Image src="/Logo/LOGO_NoBG.png" alt="Educational Elements logo" width={48} height={48} className="h-12 w-12 mr-3" />
+              <div className="text-2xl font-bold">Educational Elements</div>
+            </div>
+            <h1 className="text-2xl font-bold mb-2">Welcome Back!</h1>
           <p className="text-blue-100">Sign in to your teacher dashboard</p>
         </div>
 
@@ -185,6 +190,7 @@ export default function Login() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
