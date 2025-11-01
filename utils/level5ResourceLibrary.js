@@ -1,7 +1,8 @@
 import {
   createListDownloads,
   createWorksheetDownload,
-  createPassageDownload
+  createPassageDownload,
+  createCardKitDownload
 } from './spellingResourceHelpers.js';
 
 const LIST_BLUEPRINTS = [
@@ -58,16 +59,28 @@ const buildPassages = (baseId, concept, entries) =>
   });
 
 const buildWorksheets = (baseId, concept, worksheets) =>
-  withIds(baseId, 'worksheet', worksheets).map((worksheet) => ({
-    ...worksheet,
-    download: createWorksheetDownload({
-      id: worksheet.id,
-      title: worksheet.title,
-      concept,
-      directions: worksheet.directions,
-      tasks: worksheet.tasks
-    })
-  }));
+  withIds(baseId, 'worksheet', worksheets).map((worksheet) => {
+    const download =
+      worksheet.template === 'cards'
+        ? createCardKitDownload({
+            id: worksheet.id,
+            title: worksheet.title,
+            concept,
+            cards: worksheet.cards,
+            columns: worksheet.columns
+          })
+        : createWorksheetDownload({
+            id: worksheet.id,
+            title: worksheet.title,
+            concept,
+            directions: worksheet.directions,
+            tasks: worksheet.tasks
+          });
+    return {
+      ...worksheet,
+      download
+    };
+  });
 
 const buildActivities = (baseId, activities) =>
   withIds(baseId, 'activity', activities).map((activity) => ({
@@ -100,6 +113,21 @@ const listJoin = (words) => {
   if (words.length === 1) return words[0];
   return `${words.slice(0, -1).join(', ')} and ${words[words.length - 1]}`;
 };
+
+const WORD_SET_LABELS = {
+  core: 'Core list',
+  extension: 'Extension list',
+  challenge: 'Challenge list'
+};
+
+const createWordCardSet = (wordSets, footer) =>
+  Object.entries(wordSets).flatMap(([group, words]) =>
+    words.map((word) => ({
+      title: word,
+      subtitle: WORD_SET_LABELS[group] || group,
+      footer
+    }))
+  );
 
 const prefixPassages = (meta) => {
   const focusA = meta.wordSets.core.slice(0, 3).concat(meta.wordSets.extension.slice(0, 2));
@@ -240,6 +268,17 @@ const prefixWorksheets = (meta) => [
       'Highlight the base word within each correction.',
       'Reflect on strategies that ensured accuracy.'
     ]
+  },
+  {
+    slug: 'card-kit',
+    title: `${meta.prefixLabel} Card Kit`,
+    template: 'cards',
+    sections: [
+      'Print, cut, and sort the cards to match prefix variations with base words.',
+      'Use the deck for Build Lab, Dominoes, or any quick-drill station.',
+      'Store cards in labelled bags for easy reuse.'
+    ],
+    cards: createWordCardSet(meta.wordSets, 'Mark the prefix and highlight the stressed syllable.')
   }
 ];
 
@@ -393,6 +432,17 @@ const suffixWorksheets = (meta) => [
       'Correction table for before-and-after forms.',
       'Reflection prompts for writers.'
     ]
+  },
+  {
+    slug: 'card-kit',
+    title: `${meta.suffixLabel} Card Kit`,
+    template: 'cards',
+    sections: [
+      'Print and cut the cards to support Sort & Describe or Build & Bid.',
+      'Include the deck in literacy centres for quick revision.',
+      'Invite students to write definitions or part-of-speech notes on the back.'
+    ],
+    cards: createWordCardSet(meta.wordSets, 'Underline the suffix when you play.')
   }
 ];
 
@@ -546,6 +596,17 @@ const rootWorksheets = (meta) => [
       'Reflection prompts about learning strategies.',
       'Peer question builder.'
     ]
+  },
+  {
+    slug: 'card-kit',
+    title: `${meta.rootLabel} Card Kit`,
+    template: 'cards',
+    sections: [
+      'Cut out the cards to support Root Match-Up, Story Cards, or quick review stations.',
+      'Ask students to add sketches or example sentences on the reverse side.',
+      'Keep sets clipped together for easy differentiation.'
+    ],
+    cards: createWordCardSet(meta.wordSets, 'Highlight the root letters before you play.')
   }
 ];
 
@@ -560,61 +621,180 @@ const buildRootResource = (meta) =>
     worksheets: rootWorksheets(meta)
   });
 
+const stressShiftWordSets = {
+  core: [
+    'photograph',
+    'photographer',
+    'photography',
+    'academy',
+    'academic',
+    'economy',
+    'economic',
+    'economics',
+    'athlete',
+    'athletic'
+  ],
+  extension: [
+    'analysis',
+    'analytical',
+    'history',
+    'historic',
+    'historical',
+    'medicine',
+    'medical',
+    'politics',
+    'political',
+    'politician'
+  ],
+  challenge: [
+    'democracy',
+    'democratic',
+    'democratise',
+    'geography',
+    'geographic',
+    'geographical',
+    'symmetry',
+    'symmetric',
+    'parenthesis',
+    'parenthetical'
+  ]
+};
+
+const schwaWordSets = {
+  core: [
+    'separate',
+    'different',
+    'family',
+    'camera',
+    'memory',
+    'general',
+    'animal',
+    'average',
+    'history',
+    'favourite'
+  ],
+  extension: [
+    'literature',
+    'temperature',
+    'vegetable',
+    'comfortable',
+    'opera',
+    'chocolate',
+    'secretary',
+    'library',
+    'ordinary',
+    'calendar'
+  ],
+  challenge: [
+    'extraordinary',
+    'parliament',
+    'administrator',
+    'territory',
+    'dictionary',
+    'commentary',
+    'necessary',
+    'complimentary',
+    'solitary',
+    'explanatory'
+  ]
+};
+
+const assimilatedPrefixWordSets = {
+  core: [
+    'adapt',
+    'adjoin',
+    'accompany',
+    'accuse',
+    'affect',
+    'affirm',
+    'aggressive',
+    'alliterate',
+    'appear',
+    'attend'
+  ],
+  extension: [
+    'accelerate',
+    'accomplish',
+    'affiliation',
+    'aggregate',
+    'allocate',
+    'apprehend',
+    'assimilate',
+    'attest',
+    'adjacent',
+    'adjustment'
+  ],
+  challenge: [
+    'acclimatisation',
+    'afforestation',
+    'aggrandisement',
+    'appellation',
+    'acquiesce',
+    'approximate',
+    'arrangement',
+    'assortment',
+    'attainment',
+    'adjudicate'
+  ]
+};
+
+const borrowedWordSets = {
+  core: [
+    'ballet',
+    'debris',
+    'regime',
+    'bouquet',
+    'crochet',
+    'cuisine',
+    'genre',
+    'plaque',
+    'champagne',
+    'facade'
+  ],
+  extension: [
+    'chandelier',
+    'lingerie',
+    'camouflage',
+    'croissant',
+    'fiance',
+    'chauffeur',
+    'pirouette',
+    'souvenir',
+    'timbre',
+    'boutique'
+  ],
+  challenge: [
+    'charcuterie',
+    'sommelier',
+    'concierge',
+    'bourgeois',
+    'coiffure',
+    'coterie',
+    'entrepreneur',
+    'ensuite',
+    'repertoire',
+    'ricochet'
+  ]
+};
+
 const phonologyLevel5 = {
   'analyse-stress-shifts-in-related-word-families-e-g-photograph-photography': createResourcePack(
     'analyse-stress-shifts-in-related-word-families-e-g-photograph-photography',
-    'Analyse stress shifts in related word families (e.g., photograph, photography)',
+    'Word Family Stress Shifts',
     {
-      wordSets: {
-        core: [
-          'photograph',
-          'photographer',
-          'photography',
-          'academy',
-          'academic',
-          'economy',
-          'economic',
-          'economics',
-          'athlete',
-          'athletic'
-        ],
-        extension: [
-          'analysis',
-          'analytical',
-          'history',
-          'historic',
-          'historical',
-          'medicine',
-          'medical',
-          'politics',
-          'political',
-          'politician'
-        ],
-        challenge: [
-          'democracy',
-          'democratic',
-          'democratise',
-          'geography',
-          'geographic',
-          'geographical',
-          'symmetry',
-          'symmetric',
-          'parenthesis',
-          'parenthetical'
-        ]
-      },
+      wordSets: stressShiftWordSets,
       passages: [
         {
-          title: 'Festival Stress Lab',
+          title: 'Talent Show Spotlight',
           difficulty: 'On-Level',
           focusWords: ['photograph', 'photographer', 'academic', 'economic'],
-          text: `During the school science festival, the class curated a gallery comparing each photograph to a caption from the photographer. Students listened for the shift in stress between photograph and photographer while annotating academic articles about economic projects. The team highlighted syllables to prove how stress changes the vowel sound but the spelling pattern stays steady.`
+          text: `During the school talent show, the media crew snapped each photograph and chatted with the photographer about the best angles. Backstage, students created academic shout-outs for clubs raising money for economic causes. They clapped out the syllables in every focus word and circled the syllable that suddenly carried the stress.`
         },
         {
-          title: 'Civics Podcast Script',
+          title: 'Student News Studio',
           difficulty: 'Stretch',
           focusWords: ['analysis', 'analytical', 'democracy', 'democratic'],
-          text: `For their civics podcast, learners drafted a segment summarising the analysis of a democratic election. They compared the stress in analysis and analytical before rehearsing a closing statement on democracy and democratic leadership. Partners marked syllable stress and practised reading aloud with clear emphasis.`
+          text: `For the weekly student news video, reporters filmed an analysis of the upcoming student council election and compared it to an analytical sports segment. Presenters rehearsed democracy and democratic in front of the green screen, marking the syllable shift so the audience could hear the difference.`
         }
       ],
       activities: [
@@ -728,65 +908,30 @@ const phonologyLevel5 = {
             'Base Word Bank',
             'Derived Forms',
             'Stress Shift Notes'
-          ]
+          ],
+          template: 'cards',
+          cards: createWordCardSet(stressShiftWordSets, 'Add stress marks before playing the games.')
         }
       ]
     }
   ),
   'recognise-schwa-in-multisyllabic-words-e-g-separate-ordinary': createResourcePack(
     'recognise-schwa-in-multisyllabic-words-e-g-separate-ordinary',
-    'Recognise schwa in multisyllabic words (e.g., separate, ordinary)',
+    'Sneaky Schwa Spotters',
     {
-      wordSets: {
-        core: [
-          'separate',
-          'different',
-          'family',
-          'camera',
-          'memory',
-          'general',
-          'animal',
-          'average',
-          'history',
-          'favourite'
-        ],
-        extension: [
-          'literature',
-          'temperature',
-          'vegetable',
-          'comfortable',
-          'opera',
-          'chocolate',
-          'secretary',
-          'library',
-          'ordinary',
-          'calendar'
-        ],
-        challenge: [
-          'extraordinary',
-          'parliament',
-          'administrator',
-          'territory',
-          'dictionary',
-          'commentary',
-          'necessary',
-          'complimentary',
-          'solitary',
-          'explanatory'
-        ]
-      },
+      wordSets: schwaWordSets,
       passages: [
         {
           title: 'Assembly Announcements',
           difficulty: 'On-Level',
           focusWords: ['separate', 'different', 'library', 'ordinary'],
-          text: `The student announcers prepared separate scripts for the library assembly, checking that every ordinary update sounded polished. They underlined the schwa sounds in different and library to practise pronouncing each syllable clearly even though the vowel sound was relaxed.`
+          text: `During assembly practice, announcers prepared separate scripts for the library makeover and reminded families about ordinary routines. They highlighted the sneaky schwa syllables in different and library, tapping the beat so their voices stayed clear even when the vowel sound softened.`
         },
         {
           title: 'Science Expo Reflection',
           difficulty: 'Stretch',
           focusWords: ['extraordinary', 'administrator', 'territory', 'dictionary'],
-          text: `After an extraordinary science expo, the administrator asked learners to write reflections about biodiversity across each territory. Students used the class dictionary to double-check the spelling patterns that hide a schwa and highlighted how careful articulation improves clarity.`
+          text: `After an extraordinary science expo, the student administrator asked teams to write reflections about discoveries from each territory. Writers flipped through the class dictionary to check spellings that hide a schwa and practised reading aloud so every relaxed vowel still sounded confident.`
         }
       ],
       activities: [
@@ -901,64 +1046,38 @@ const phonologyLevel5 = {
             'Derived Forms Trail',
             'Summary Station'
           ]
+        },
+        {
+          slug: 'card-kit',
+          title: 'Schwa Focus Card Kit',
+          template: 'cards',
+          sections: [
+            'Print and use the cards for Schwa Bingo, Pronunciation Newsroom, or small-group warm-ups.',
+            'Ask students to note the schwa syllable on each card before playing.',
+            'Store sets in labelled envelopes for quick revision.'
+          ],
+          cards: createWordCardSet(schwaWordSets, 'Underline the schwa syllable and rehearse the word aloud.')
         }
       ]
     }
   ),
   'investigate-assimilated-prefixes-and-resulting-sound-changes-e-g-affix-illegal': createResourcePack(
     'investigate-assimilated-prefixes-and-resulting-sound-changes-e-g-affix-illegal',
-    'Investigate assimilated prefixes and resulting sound changes (e.g., affix, illegal)',
+    'Prefix Sound Switches',
     {
-      wordSets: {
-        core: [
-          'adapt',
-          'adjoin',
-          'accompany',
-          'accuse',
-          'affect',
-          'affirm',
-          'aggressive',
-          'alliterate',
-          'appear',
-          'attend'
-        ],
-        extension: [
-          'accelerate',
-          'accomplish',
-          'affiliation',
-          'aggregate',
-          'allocate',
-          'apprehend',
-          'assimilate',
-          'attest',
-          'adjacent',
-          'adjustment'
-        ],
-        challenge: [
-          'acclimatisation',
-          'afforestation',
-          'aggrandisement',
-          'appellation',
-          'acquiesce',
-          'approximate',
-          'arrangement',
-          'assortment',
-          'attainment',
-          'adjudicate'
-        ]
-      },
+      wordSets: assimilatedPrefixWordSets,
       passages: [
         {
-          title: 'Engineering Briefing',
+          title: 'Robotics Design Brief',
           difficulty: 'On-Level',
           focusWords: ['adapt', 'accompany', 'aggregate', 'allocate'],
-          text: `In the engineering club briefing, mentors described how students would adapt existing models and accompany visiting engineers on a tour. They discussed how to aggregate data and allocate materials, noticing how the prefix ad- changes sound to match the following consonant.`
+          text: `During robotics club, teams adapted last week’s robot and accompanied mentors on a design walk-through. They aggregated testing data and allocated extra batteries, pointing out how ad- becomes ac- or al- when the next sound changes.`
         },
         {
-          title: 'Historical Case Study',
+          title: 'Mystery Writers Room',
           difficulty: 'Stretch',
           focusWords: ['acclimatisation', 'aggrandisement', 'appellation', 'adjudicate'],
-          text: `While analysing a historical case study, scholars debated the acclimatisation of explorers and the aggrandisement of royal appellations. They examined courtroom transcripts to understand how judges adjudicate disputes involving assimilated prefixes and shifting sounds.`
+          text: `In the mystery writers room, authors drafted a case about acclimatisation at a wildlife park and the aggrandisement of a villain’s grand appellation. The editor explained how judges adjudicate each clue, spotlighting prefixes that shift to match the consonant that follows.`
         }
       ],
       activities: [
@@ -1073,64 +1192,38 @@ const phonologyLevel5 = {
             'Evidence Log',
             'Verdict Summary'
           ]
+        },
+        {
+          slug: 'card-kit',
+          title: 'Assimilated Prefix Card Kit',
+          template: 'cards',
+          sections: [
+            'Use the cards for Prefix Pursuit, Decode Dash, or quick warm-ups.',
+            'Highlight the original prefix and the assimilated form on each card.',
+            'Sort cards by the consonant that triggered the sound switch.'
+          ],
+          cards: createWordCardSet(assimilatedPrefixWordSets, 'Mark the base word and note how the prefix changed.')
         }
       ]
     }
   ),
   'explore-borrowed-words-with-unique-phoneme-grapheme-patterns-e-g-ballet-debris': createResourcePack(
     'explore-borrowed-words-with-unique-phoneme-grapheme-patterns-e-g-ballet-debris',
-    'Explore borrowed words with unique phoneme-grapheme patterns (e.g., ballet, debris)',
+    'Borrowed Word Spotlight',
     {
-      wordSets: {
-        core: [
-          'ballet',
-          'debris',
-          'regime',
-          'bouquet',
-          'crochet',
-          'cuisine',
-          'genre',
-          'plaque',
-          'champagne',
-          'facade'
-        ],
-        extension: [
-          'chandelier',
-          'lingerie',
-          'camouflage',
-          'croissant',
-          'fiance',
-          'chauffeur',
-          'pirouette',
-          'souvenir',
-          'timbre',
-          'boutique'
-        ],
-        challenge: [
-          'charcuterie',
-          'sommelier',
-          'concierge',
-          'bourgeois',
-          'coiffure',
-          'coterie',
-          'entrepreneur',
-          'ensuite',
-          'repertoire',
-          'ricochet'
-        ]
-      },
+      wordSets: borrowedWordSets,
       passages: [
         {
-          title: 'Arts Festival Preview',
+          title: 'Culture Fair Sneak Peek',
           difficulty: 'On-Level',
           focusWords: ['ballet', 'bouquet', 'cuisine', 'chandelier'],
-          text: `Reporters preparing for the arts festival interviewed the ballet director about a chandelier installation above the lobby buffet. They practised pronouncing bouquet and cuisine with their French-influenced sounds while keeping the spellings accurate for the program.`
+          text: `The culture fair crew rehearsed a ballet routine under a sparkling chandelier and prepared a bouquet bar with favourite cuisine samples. They practised the French-inspired pronunciations while double-checking the unusual spellings for the program.`
         },
         {
-          title: 'Travel Magazine Feature',
+          title: 'Global Food Review',
           difficulty: 'Stretch',
           focusWords: ['charcuterie', 'concierge', 'entrepreneur', 'repertoire'],
-          text: `In a travel magazine feature, students profiled a concierge who curated a charcuterie tasting for young entrepreneurs showcasing their musical repertoire. The writers researched etymology notes to explain why the spellings preserve unique phoneme-grapheme links.`
+          text: `For a global food review vlog, students interviewed a concierge who guided young entrepreneurs through a charcuterie workshop before a music repertoire showcase. The script highlighted how the spellings honour the word’s original language and give clues about pronunciation.`
         }
       ],
       activities: [
@@ -1245,6 +1338,17 @@ const phonologyLevel5 = {
             'Spelling Variations',
             'Reflection Notes'
           ]
+        },
+        {
+          slug: 'card-kit',
+          title: 'Borrowed Word Card Kit',
+          template: 'cards',
+          sections: [
+            'Use the cards during Loanword Gallery, Culinary Word Challenge, or accent games.',
+            'Add pronunciation hints or origin icons to the back of each card.',
+            'Sort cards by language family to notice spelling clues.'
+          ],
+          cards: createWordCardSet(borrowedWordSets, 'Note the origin and rehearse the pronunciation as you play.')
         }
       ]
     }

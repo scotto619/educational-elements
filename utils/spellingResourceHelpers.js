@@ -33,6 +33,21 @@ export function createA4DocumentHtml({ title, subtitle, sections, footer }) {
   }</body></html>`;
 }
 
+export function createCardKitDownload({ id, title, concept, cards, columns = 3 }) {
+  const cardHtml = cards
+    .map(
+      (card) =>
+        `<article class="card"><h2>${card.title}</h2>${
+          card.subtitle ? `<p class="subtitle">${card.subtitle}</p>` : ''
+        }${card.footer ? `<p class="footer">${card.footer}</p>` : ''}</article>`
+    )
+    .join('');
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8" /><title>${title}</title><style>@page { size: A4; margin: 15mm; } body { font-family: 'Inter', Arial, sans-serif; background: #f1f5f9; color: #0f172a; } header { text-align: center; margin-bottom: 12px; } h1 { text-transform: uppercase; letter-spacing: 2px; font-size: 19px; margin: 0 0 4px; } h2 { font-size: 16px; margin: 0; color: #1d4ed8; } .subtitle { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #64748b; margin: 6px 0 0; } .footer { font-size: 11px; margin-top: 8px; color: #334155; } .grid { display: grid; grid-template-columns: repeat(${columns}, 1fr); gap: 12px; } .card { background: #fff; border-radius: 14px; border: 1px solid #cbd5f5; padding: 14px; box-shadow: 0 6px 16px rgba(15, 23, 42, 0.12); display: flex; flex-direction: column; justify-content: space-between; min-height: 120px; } footer { margin-top: 18px; text-align: right; font-size: 11px; color: #64748b; }</style></head><body><header><h1>${title}</h1><p>${concept}</p></header><div class="grid">${cardHtml}</div><footer>Print on A4, cut along the borders, and laminate for durability.</footer></body></html>`;
+
+  return createDownloadLink(`${id}.html`, html, 'text/html');
+}
+
 export function createListDownloads(id, title, concept, words) {
   const printable = [`${title}`, `Focus: ${concept}`, '', ...words].join('\n');
   return {
