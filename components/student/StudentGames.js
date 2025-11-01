@@ -334,13 +334,26 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
                 ← Back
               </button>
               <div className="flex items-center space-x-2 md:space-x-3 min-w-0">
-                <div className={`w-8 h-8 md:w-12 md:h-12 rounded-full bg-gradient-to-r ${selectedGame.color} flex items-center justify-center text-lg md:text-2xl flex-shrink-0 ${
-                  selectedGame.new ? 'ring-4 ring-yellow-400 ring-opacity-60' : ''
-                } ${selectedGame.multiplayer && selectedGame.requiresClassCode ? 'ring-4 ring-red-400 ring-opacity-60' : ''}`}>
-                  {selectedGame.icon}
+                <div
+                  className={`w-10 h-10 md:w-14 md:h-14 rounded-lg overflow-hidden border border-gray-200 bg-white flex-shrink-0 ${
+                    selectedGame.new ? 'ring-4 ring-yellow-400 ring-opacity-60' : ''
+                  } ${selectedGame.multiplayer && selectedGame.requiresClassCode ? 'ring-4 ring-red-400 ring-opacity-60' : ''}`}
+                >
+                  <img
+                    src={selectedGame.logo || '/Logo/placeholder-game.svg'}
+                    alt={`${selectedGame.name} logo`}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      if (!e.currentTarget.dataset.fallback) {
+                        e.currentTarget.dataset.fallback = 'true';
+                        e.currentTarget.src = '/Logo/placeholder-game.svg';
+                      }
+                    }}
+                  />
                 </div>
                 <div className="min-w-0">
                   <h2 className="text-lg md:text-2xl font-bold text-gray-800 truncate flex items-center">
+                    <span className="hidden sm:inline mr-2">{selectedGame.icon}</span>
                     {selectedGame.name}
                     {selectedGame.new && <span className="ml-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full">NEW!</span>}
                   </h2>
