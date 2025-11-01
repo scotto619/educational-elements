@@ -180,19 +180,29 @@ export const getAvatarImage = (avatarBase, level) => {
 // PET IMAGE PATHS - UPDATED WITH HALLOWEEN
 // ===============================================
 export const getPetImage = (pet) => {
-  if (!pet || !pet.name) return '/shop/BasicPets/Wizard.png'; // Default fallback
+  if (!pet) return '/shop/BasicPets/Wizard.png';
 
-  // First check if it's a shop pet (including Halloween)
+  if (pet.path) return pet.path;
+  if (pet.image) return pet.image;
+
+  const normalizedName = (pet.name || '').toLowerCase();
+  const normalizedId = (pet.speciesId || pet.id || '').toLowerCase();
+
   const shopItem = [
     ...SHOP_BASIC_PETS,
     ...SHOP_PREMIUM_PETS,
     ...HALLOWEEN_PETS
-  ].find(p => p.name.toLowerCase() === pet.name.toLowerCase());
-
+  ].find((p) => p.name.toLowerCase() === normalizedName);
   if (shopItem) return shopItem.path;
 
-  // Fallback to old pet system
-  return `/Pets/${pet.name}.png`;
+  const babyPet = BABY_PETS.find((baby) => {
+    const babyId = baby.id?.toLowerCase();
+    const babyName = baby.name?.toLowerCase();
+    return babyId === normalizedId || babyId === normalizedName || babyName === normalizedName;
+  });
+  if (babyPet) return babyPet.path;
+
+  return normalizedName ? `/Pets/${pet.name}.png` : '/shop/BasicPets/Wizard.png';
 };
 
 // ===============================================
@@ -230,49 +240,35 @@ const pickByRarity = (items = [], weights = BABY_RARITY_WEIGHTS) => {
   return bucket[Math.floor(Math.random() * bucket.length)];
 };
 
+const BABY_ASSET_ROOT = '/shop/Egg/Babies';
+
+const buildBabyPath = (segments = []) => {
+  const parts = Array.isArray(segments) ? segments : [segments];
+  return `${BABY_ASSET_ROOT}/${parts.map((segment) => encodeURIComponent(segment)).join('/')}`;
+};
+
+const createBabyPet = (id, name, rarity, segments, speed = 5) => {
+  const path = buildBabyPath(segments);
+  return { id, name, rarity, path, image: path, speed };
+};
+
 export const BABY_PETS = [
-  {
-    id: 'glimmer-kit',
-    name: 'Glimmer Kit',
-    rarity: 'common',
-    path: '/shop/Egg/Babies/common/glimmer-kit.svg',
-    speed: 5
-  },
-  {
-    id: 'sprout-shell',
-    name: 'Sprout Shell',
-    rarity: 'common',
-    path: '/shop/Egg/Babies/common/sprout-shell.svg',
-    speed: 5
-  },
-  {
-    id: 'sparkle-otter',
-    name: 'Sparkle Otter',
-    rarity: 'common',
-    path: '/shop/Egg/Babies/common/sparkle-otter.svg',
-    speed: 5
-  },
-  {
-    id: 'aurora-foal',
-    name: 'Aurora Foal',
-    rarity: 'rare',
-    path: '/shop/Egg/Babies/rare/aurora-foal.svg',
-    speed: 6
-  },
-  {
-    id: 'ember-hatchling',
-    name: 'Ember Hatchling',
-    rarity: 'rare',
-    path: '/shop/Egg/Babies/rare/ember-hatchling.svg',
-    speed: 6
-  },
-  {
-    id: 'tide-pixie',
-    name: 'Tide Pixie',
-    rarity: 'rare',
-    path: '/shop/Egg/Babies/rare/tide-pixie.svg',
-    speed: 6
-  }
+  createBabyPet('glimmer-kit', 'Glimmer Kit', 'common', ['common', 'glimmer-kit.svg']),
+  createBabyPet('sprout-shell', 'Sprout Shell', 'common', ['common', 'sprout-shell.svg']),
+  createBabyPet('sparkle-otter', 'Sparkle Otter', 'common', ['common', 'sparkle-otter.svg']),
+  createBabyPet('alien-hatchling', 'Alien Hatchling', 'common', ['Common', 'Alien Pet.png']),
+  createBabyPet('bull-buddy', 'Bull Buddy', 'common', ['Common', 'Bull Pet.png']),
+  createBabyPet('cat-companion', 'Cat Companion', 'common', ['Common', 'Cat Pet.png']),
+  createBabyPet('dino-buddy', 'Dino Buddy', 'rare', ['Common', 'DinoPet.png'], 6),
+  createBabyPet('phoenix-spark', 'Phoenix Spark', 'rare', ['Common', 'PhoenixPet.png'], 6),
+  createBabyPet('aurora-foal', 'Aurora Foal', 'rare', ['rare', 'aurora-foal.svg'], 6),
+  createBabyPet('ember-hatchling', 'Ember Hatchling', 'rare', ['rare', 'ember-hatchling.svg'], 6),
+  createBabyPet('tide-pixie', 'Tide Pixie', 'rare', ['rare', 'tide-pixie.svg'], 6),
+  createBabyPet('banana-buddy', 'Banana Buddy', 'rare', ['Rare', 'BananaPet.png'], 6),
+  createBabyPet('golden-alien', 'Golden Alienling', 'legendary', ['Rare', 'Golden Alien Pet.png'], 7),
+  createBabyPet('golden-bull', 'Golden Bullette', 'legendary', ['Rare', 'Golden Bull Pet.png'], 7),
+  createBabyPet('golden-dragon', 'Golden Dragon Whelp', 'legendary', ['Rare', 'Golden Dragon Pet.png'], 7),
+  createBabyPet('golden-cat', 'Golden Catling', 'legendary', ['Rare', 'Golden Cat Pet.png'], 7)
 ];
 
 export const PET_EGG_TYPES = [
@@ -282,7 +278,7 @@ export const PET_EGG_TYPES = [
     rarity: 'rare',
     description: 'Glitters with cosmic stardust and soft pastel hues.',
     accent: '#7c3aed',
-    hatchPool: ['aurora-foal', 'tide-pixie'],
+    hatchPool: ['aurora-foal', 'tide-pixie', 'phoenix-spark', 'banana-buddy'],
     minHours: 1,
     maxHours: 12
   },
@@ -292,7 +288,7 @@ export const PET_EGG_TYPES = [
     rarity: 'epic',
     description: 'Waves shimmer across the shell like glowing ripples.',
     accent: '#0ea5e9',
-    hatchPool: ['glimmer-kit', 'sprout-shell', 'tide-pixie'],
+    hatchPool: ['glimmer-kit', 'sprout-shell', 'sparkle-otter', 'alien-hatchling', 'bull-buddy', 'cat-companion'],
     minHours: 1,
     maxHours: 12
   },
@@ -302,7 +298,7 @@ export const PET_EGG_TYPES = [
     rarity: 'legendary',
     description: 'Warm embers pulse beneath a crystalline shell.',
     accent: '#f97316',
-    hatchPool: ['ember-hatchling', 'sparkle-otter'],
+    hatchPool: ['ember-hatchling', 'dino-buddy', 'phoenix-spark', 'golden-alien', 'golden-bull', 'golden-dragon', 'golden-cat'],
     minHours: 1,
     maxHours: 12
   }
@@ -423,12 +419,22 @@ export const getEggStageStatus = (egg, currentTime = Date.now()) => {
 
 export const resolveEggHatch = (egg, currentTime = Date.now()) => {
   if (!egg || egg.stage !== 'ready') return null;
+
   const baby = BABY_PETS.find((pet) => pet.id === egg.assignedBabyId) || pickByRarity(BABY_PETS);
+  if (!baby) return null;
+
+  const imagePath = baby.image || baby.path;
+  const speciesId = baby.id;
+
   return {
     ...baby,
     id: `pet_${currentTime}_${Math.random().toString(36).slice(2)}`,
+    speciesId,
+    path: imagePath,
+    image: imagePath,
     isBaby: true,
-    originEggId: egg.id
+    originEggId: egg.id,
+    hatchedAt: currentTime
   };
 };
 
