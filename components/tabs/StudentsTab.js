@@ -1,5 +1,7 @@
 // components/tabs/StudentsTab.js - UPDATED WITH TRAFFIC LIGHTS, ATTENDANCE & AUTO-REFRESH
 import React, { useState, useEffect, useRef } from 'react';
+import { DEFAULT_PET_IMAGE } from '../../utils/gameHelpers';
+import { normalizeImageSource, serializeFallbacks, createImageErrorHandler } from '../../utils/imageFallback';
 
 // ===============================================
 // HELPER FUNCTIONS (LOCAL FALLBACKS)
@@ -18,6 +20,28 @@ const getGridClasses = (studentCount) => {
 // Get today's date in YYYY-MM-DD format
 const getTodayDate = () => {
     return new Date().toISOString().split('T')[0];
+};
+
+const getBehaviorStatusForToday = (status) => {
+    if (!status) return null;
+
+    const today = getTodayDate();
+
+    if (typeof status === 'string') {
+        return status;
+    }
+
+    if (typeof status === 'object') {
+        if (status.date === today) {
+            return status.value || null;
+        }
+
+        if (status[today]) {
+            return status[today];
+        }
+    }
+
+    return null;
 };
 
 // Play award sound
@@ -425,11 +449,11 @@ const StudentsTab = ({
 
     // NEW: Handle traffic light click
     const handleTrafficLightClick = (student, color) => {
-        const updatedStudent = {
-            ...student,
-            behaviorStatus: student.behaviorStatus === color ? null : color
-        };
-        onUpdateStudent(student.id, { behaviorStatus: updatedStudent.behaviorStatus });
+        const today = getTodayDate();
+        const currentStatus = getBehaviorStatusForToday(student.behaviorStatus);
+        const nextStatus = currentStatus === color ? null : { date: today, value: color };
+
+        onUpdateStudent(student.id, { behaviorStatus: nextStatus });
     };
 
     // NEW: Handle attendance toggle
@@ -658,11 +682,13 @@ const StudentCard = ({
     const xpForNextLevel = (student.totalPoints || 0) % 100;
     const avatarImg = getAvatarImage(student.avatarBase, level);
     const pet = student.ownedPets?.[0];
-    const petImg = pet ? getPetImage(pet) : null;
+    const petImage = pet ? normalizeImageSource(getPetImage(pet), DEFAULT_PET_IMAGE) : null;
+    const petImageErrorHandler = createImageErrorHandler(DEFAULT_PET_IMAGE);
 
     // Get today's attendance
     const today = getTodayDate();
     const todayAttendance = student.attendance?.[today];
+    const behaviorStatus = getBehaviorStatusForToday(student.behaviorStatus);
 
     // Get clicker data from clickerGameData
     const clickerGameData = student.clickerGameData || null;
@@ -760,24 +786,24 @@ const StudentCard = ({
                 <button
                     onClick={(e) => handleTrafficLightClickInternal(e, 'green')}
                     className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full border-2 transition-all ${
-                        student.behaviorStatus === 'green' 
-                            ? 'bg-green-500 border-green-700 shadow-lg scale-110' 
+                        behaviorStatus === 'green'
+                            ? 'bg-green-500 border-green-700 shadow-lg scale-110'
                             : 'bg-green-200 border-green-400 hover:bg-green-300'
                     }`}
                 />
                 <button
                     onClick={(e) => handleTrafficLightClickInternal(e, 'yellow')}
                     className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full border-2 transition-all ${
-                        student.behaviorStatus === 'yellow' 
-                            ? 'bg-yellow-500 border-yellow-700 shadow-lg scale-110' 
+                        behaviorStatus === 'yellow'
+                            ? 'bg-yellow-500 border-yellow-700 shadow-lg scale-110'
                             : 'bg-yellow-200 border-yellow-400 hover:bg-yellow-300'
                     }`}
                 />
                 <button
                     onClick={(e) => handleTrafficLightClickInternal(e, 'red')}
                     className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full border-2 transition-all ${
-                        student.behaviorStatus === 'red' 
-                            ? 'bg-red-500 border-red-700 shadow-lg scale-110' 
+                        behaviorStatus === 'red'
+                            ? 'bg-red-500 border-red-700 shadow-lg scale-110'
                             : 'bg-red-200 border-red-400 hover:bg-red-300'
                     }`}
                 />
@@ -810,11 +836,14 @@ const StudentCard = ({
                     <div className="absolute -bottom-1 -right-1 bg-blue-600 text-white text-[10px] sm:text-xs px-1 sm:px-2 py-0.5 rounded-full font-bold shadow-sm">
                         L{level}
                     </div>
-                    {pet && (
-                        <img 
-                            src={petImg} 
-                            className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 rounded-full absolute -bottom-1 -left-1 border-1 sm:border-2 border-white shadow-sm transition-transform duration-200 hover:scale-125" 
-                            onMouseEnter={() => onPetHover && onPetHover(petImg, pet.name)} 
+                    {petImage && (
+                        <img
+                            src={petImage.src}
+                            className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 rounded-full absolute -bottom-1 -left-1 border-1 sm:border-2 border-white shadow-sm transition-transform duration-200 hover:scale-125"
+                            data-fallbacks={serializeFallbacks(petImage.fallbacks)}
+                            data-fallback-index="0"
+                            onError={petImageErrorHandler}
+                            onMouseEnter={() => onPetHover && onPetHover(petImage.src, pet?.name)}
                             onMouseLeave={onHoverEnd}
                         />
                     )}

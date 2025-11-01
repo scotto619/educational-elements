@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
+import Head from 'next/head';
+import Image from 'next/image';
 import Link from 'next/link';
 
 // Dynamic import for Firebase to prevent SSR issues
@@ -137,16 +139,22 @@ export default function Signup() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-100 via-blue-50 to-indigo-100 p-6">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+    <>
+      <Head>
+        <title>Start Your Free Teacher Trial | Educational Elements Sign Up</title>
+        <meta
+          name="description"
+          content="Create your Educational Elements teacher account to unlock classroom gamification, curriculum resources, and professional tools."
+        />
+        <link rel="canonical" href="https://educational-elements.com/signup" />
+        <meta name="robots" content="noindex,nofollow" />
+      </Head>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-100 via-blue-50 to-indigo-100 p-6">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-8 text-center">
           <div className="flex items-center justify-center mb-4">
-            <img 
-              src="/Logo/LOGO_NoBG.png" 
-              alt="Educational Elements Logo" 
-              className="h-12 w-12 mr-3"
-            />
+            <Image src="/Logo/LOGO_NoBG.png" alt="Educational Elements logo" width={48} height={48} className="h-12 w-12 mr-3" />
             <div className="text-2xl font-bold">Educational Elements</div>
           </div>
           <h1 className="text-2xl font-bold mb-2">Start Your Free Trial</h1>
@@ -312,6 +320,7 @@ export default function Signup() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

@@ -1,5 +1,7 @@
 // utils/gameUtils.js - Game Logic and Utility Functions
 import { validateStudentData } from './errorHandling';
+import { getPetImage as resolvePetImageSource, DEFAULT_PET_IMAGE } from './gameHelpers';
+import { normalizeImageSource } from './imageFallback';
 
 // ===============================================
 // AVATAR MANAGEMENT
@@ -98,12 +100,13 @@ export const shouldReceivePet = (student) => {
 export const createNewPet = () => {
   const petType = getRandomPet();
   const petName = getRandomPetName(petType);
-  
+  const petAsset = normalizeImageSource(resolvePetImageSource({ name: petName, type: petType }), DEFAULT_PET_IMAGE);
+
   return {
     id: `pet_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     name: petName,
     type: petType,
-    image: getPetImage(petType),
+    image: petAsset.src,
     unlockedAt: new Date().toISOString(),
     level: 1,
     experience: 0,

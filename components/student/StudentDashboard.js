@@ -1,5 +1,7 @@
 // components/student/StudentDashboard.js - UPDATED: Avatar now matches equipped avatar on main site
 import React from 'react';
+import { DEFAULT_PET_IMAGE } from '../../utils/gameHelpers';
+import { normalizeImageSource, serializeFallbacks, createImageErrorHandler } from '../../utils/imageFallback';
 
 const StudentDashboard = ({
   studentData,
@@ -13,6 +15,9 @@ const StudentDashboard = ({
 }) => {
   const level = calculateAvatarLevel(studentData?.totalPoints || 0);
   const coins = calculateCoins(studentData);
+  const petImageErrorHandler = createImageErrorHandler(DEFAULT_PET_IMAGE);
+
+  const resolvePetImage = (pet) => normalizeImageSource(getPetImage(pet), DEFAULT_PET_IMAGE);
 
   return (
     <div className="space-y-4 md:space-y-6">
@@ -73,14 +78,19 @@ const StudentDashboard = ({
         <div className="bg-white rounded-xl p-4 md:p-6 shadow-lg text-center">
           {studentData?.ownedPets && studentData.ownedPets.length > 0 ? (
             <div>
-              <img 
-                src={getPetImage(studentData.ownedPets[0])} 
-                alt="Your Pet"
-                className="w-12 h-12 md:w-16 md:h-16 rounded-full mx-auto mb-1 md:mb-2 border-2 border-green-300"
-                onError={(e) => {
-                  e.target.src = '/shop/BasicPets/Wizard.png';
-                }}
-              />
+              {(() => {
+                const petImage = resolvePetImage(studentData.ownedPets[0]);
+                return (
+                  <img
+                    src={petImage.src}
+                    alt="Your Pet"
+                    className="w-12 h-12 md:w-16 md:h-16 rounded-full mx-auto mb-1 md:mb-2 border-2 border-green-300"
+                    data-fallbacks={serializeFallbacks(petImage.fallbacks)}
+                    data-fallback-index="0"
+                    onError={petImageErrorHandler}
+                  />
+                );
+              })()}
               <h4 className="font-semibold text-gray-800 text-sm md:text-base">{studentData.ownedPets[0].name}</h4>
               <p className="text-xs text-green-600">Your Companion</p>
             </div>

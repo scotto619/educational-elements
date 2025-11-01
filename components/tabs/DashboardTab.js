@@ -1,5 +1,8 @@
 // components/tabs/DashboardTab.js - MOBILE-OPTIMIZED DASHBOARD
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { buildShopInventory, getDailySpecials } from '../../utils/shopSpecials';
+import { DEFAULT_PET_IMAGE } from '../../utils/gameHelpers';
+import { normalizeImageSource, serializeFallbacks, createImageErrorHandler } from '../../utils/imageFallback';
 
 const DashboardTab = ({ 
   students = [], 
@@ -11,11 +14,14 @@ const DashboardTab = ({
   SHOP_BASIC_AVATARS,
   SHOP_PREMIUM_AVATARS,
   SHOP_BASIC_PETS,
-  SHOP_PREMIUM_PETS
+  SHOP_PREMIUM_PETS,
+  dailySpecials = []
 }) => {
   const [featuredStudent, setFeaturedStudent] = useState(null);
-  const [featuredShopItem, setFeaturedShopItem] = useState(null);
   const [classStats, setClassStats] = useState({});
+  const petImageErrorHandler = createImageErrorHandler(DEFAULT_PET_IMAGE);
+
+  const resolvePetImage = (pet) => normalizeImageSource(getPetImage(pet), DEFAULT_PET_IMAGE);
 
   // Calculate class statistics
   useEffect(() => {
@@ -50,22 +56,6 @@ const DashboardTab = ({
     }
   }, [students, calculateCoins, calculateAvatarLevel]);
 
-  // Set featured shop item (rotate daily)
-  useEffect(() => {
-    const allShopItems = [
-      ...SHOP_BASIC_AVATARS.map(item => ({ ...item, type: 'Basic Avatar', category: 'avatar' })),
-      ...SHOP_PREMIUM_AVATARS.map(item => ({ ...item, type: 'Premium Avatar', category: 'avatar' })),
-      ...SHOP_BASIC_PETS.map(item => ({ ...item, type: 'Basic Pet', category: 'pet' })),
-      ...SHOP_PREMIUM_PETS.map(item => ({ ...item, type: 'Premium Pet', category: 'pet' }))
-    ];
-    
-    if (allShopItems.length > 0) {
-      const today = new Date().getDate();
-      const featuredIndex = today % allShopItems.length;
-      setFeaturedShopItem(allShopItems[featuredIndex]);
-    }
-  }, [SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, SHOP_BASIC_PETS, SHOP_PREMIUM_PETS]);
-
   const getLevelBadgeColor = (level) => {
     switch(level) {
       case 1: return 'bg-gray-500';
@@ -75,6 +65,27 @@ const DashboardTab = ({
       default: return 'bg-gray-500';
     }
   };
+
+  const todaysSpecials = useMemo(() => {
+    if (Array.isArray(dailySpecials) && dailySpecials.length > 0) {
+      return dailySpecials;
+    }
+
+    const inventory = buildShopInventory({
+      basicAvatars: SHOP_BASIC_AVATARS,
+      premiumAvatars: SHOP_PREMIUM_AVATARS,
+      basicPets: SHOP_BASIC_PETS,
+      premiumPets: SHOP_PREMIUM_PETS
+    });
+
+    return getDailySpecials(inventory);
+  }, [
+    dailySpecials,
+    SHOP_BASIC_AVATARS,
+    SHOP_PREMIUM_AVATARS,
+    SHOP_BASIC_PETS,
+    SHOP_PREMIUM_PETS
+  ]);
 
   if (!featuredStudent) {
     return (
@@ -152,11 +163,19 @@ const DashboardTab = ({
               {featuredStudent.ownedPets && featuredStudent.ownedPets.length > 0 && (
                 <div className="bg-white rounded-lg p-3 sm:p-4 shadow-sm">
                   <div className="flex flex-col sm:flex-row lg:flex-row items-center gap-3 sm:gap-4">
-                    <img 
-                      src={getPetImage(featuredStudent.ownedPets[0])} 
-                      alt={featuredStudent.ownedPets[0].name}
-                      className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 xl:w-32 xl:h-32 rounded-full border-2 sm:border-3 border-purple-300 shadow-md"
-                    />
+                    {(() => {
+                      const petImage = resolvePetImage(featuredStudent.ownedPets[0]);
+                      return (
+                        <img
+                          src={petImage.src}
+                          alt={featuredStudent.ownedPets[0].name}
+                          className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 xl:w-32 xl:h-32 rounded-full border-2 sm:border-3 border-purple-300 shadow-md"
+                          data-fallbacks={serializeFallbacks(petImage.fallbacks)}
+                          data-fallback-index="0"
+                          onError={petImageErrorHandler}
+                        />
+                      );
+                    })()}
                     <div className="text-center sm:text-left lg:text-left">
                       <div className="text-base sm:text-lg lg:text-xl font-bold text-gray-800">
                         Companion: {featuredStudent.ownedPets[0].name}
@@ -219,34 +238,55 @@ const DashboardTab = ({
       {/* MOBILE-OPTIMIZED Featured Shop & Class Highlights */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         
-        {/* Featured Shop Item - MOBILE RESPONSIVE */}
-        {featuredShopItem && (
-          <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-4 sm:p-6 shadow-lg border-2 border-purple-200">
-            <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+        {/* Featured Shop Specials - MOBILE RESPONSIVE */}
+        <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-4 sm:p-6 shadow-lg border-2 border-purple-200">
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <div className="flex items-center gap-2 sm:gap-3">
               <div className="text-2xl sm:text-3xl">🛒</div>
-              <h2 className="text-lg sm:text-xl font-bold text-gray-800 text-center sm:text-left">Featured in Shop</h2>
-              <div className="text-xs bg-purple-200 px-2 py-1 rounded-full text-purple-800 font-semibold">
-                Daily Special
+              <div>
+                <h2 className="text-lg sm:text-xl font-bold text-gray-800">Today's Daily Deals</h2>
+                <p className="text-xs sm:text-sm text-purple-600">Rotates automatically from the shop each day</p>
               </div>
             </div>
-            
-            <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
-              <img 
-                src={featuredShopItem.path} 
-                alt={featuredShopItem.name}
-                className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg border-2 border-purple-300 shadow-sm object-contain"
-              />
-              <div className="flex-1 text-center sm:text-left">
-                <h3 className="text-base sm:text-lg font-bold text-gray-800">{featuredShopItem.name}</h3>
-                <p className="text-xs sm:text-sm text-purple-600 font-semibold">{featuredShopItem.type}</p>
-                <div className="mt-1 sm:mt-2 flex items-center justify-center sm:justify-start gap-2">
-                  <span className="text-lg sm:text-2xl font-bold text-yellow-600">💰 {featuredShopItem.price}</span>
-                  <span className="text-xs sm:text-sm text-gray-600">coins</span>
-                </div>
-              </div>
-            </div>
+            <div className="text-xs bg-purple-200 px-2 py-1 rounded-full text-purple-800 font-semibold">Fresh Picks</div>
           </div>
-        )}
+
+          {todaysSpecials.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+              {todaysSpecials.map((item) => (
+                <div
+                  key={item.id || item.name}
+                  className="relative bg-white rounded-xl p-3 sm:p-4 shadow-md border border-purple-100 flex flex-col items-center text-center gap-2"
+                >
+                  <div className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] sm:text-xs font-bold px-2 py-1 rounded-full shadow-md">
+                    -{item.salePercentage || 30}%
+                  </div>
+                  {item.type === 'reward' ? (
+                    <div className="text-3xl sm:text-4xl">{item.icon || '🎁'}</div>
+                  ) : (
+                    <img
+                      src={item.path}
+                      alt={item.name}
+                      className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg border border-purple-100 object-contain"
+                    />
+                  )}
+                  <div className="space-y-1">
+                    <h3 className="text-sm sm:text-base font-bold text-gray-800 truncate max-w-[150px]">{item.name}</h3>
+                    <p className="text-[11px] sm:text-xs text-purple-600 uppercase tracking-wide font-semibold">
+                      {item.type === 'avatar' ? 'Avatar' : item.type === 'pet' ? 'Pet Companion' : 'Class Reward'}
+                    </p>
+                  </div>
+                  <div className="text-xs sm:text-sm text-gray-500 line-through">💰 {item.originalPrice}</div>
+                  <div className="text-base sm:text-lg font-bold text-yellow-600">💰 {item.price}</div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white bg-opacity-70 rounded-xl p-4 text-center text-sm sm:text-base text-gray-600">
+              No specials available right now. Check back tomorrow for new deals!
+            </div>
+          )}
+        </div>
 
         {/* Class Achievement Highlights - MOBILE RESPONSIVE */}
         <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg">

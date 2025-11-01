@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 200">
+  <defs>
+    <linearGradient id="card" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4f46e5" />
+      <stop offset="50%" stop-color="#7c3aed" />
+      <stop offset="100%" stop-color="#ec4899" />
+    </linearGradient>
+  </defs>
+  <rect width="360" height="200" rx="28" fill="url(#card)" />
+  <g fill="#f9fafb" font-family="'Poppins', 'Segoe UI', sans-serif" text-anchor="middle">
+    <text x="180" y="96" font-size="40" font-weight="700">Logo Coming</text>
+    <text x="180" y="138" font-size="34" font-weight="600" opacity="0.85">Soon</text>
+  </g>
+  <circle cx="60" cy="44" r="22" fill="#a855f7" opacity="0.35" />
+  <circle cx="300" cy="158" r="28" fill="#f472b6" opacity="0.25" />
+</svg>

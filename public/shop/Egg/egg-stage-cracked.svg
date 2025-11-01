@@ -1,0 +1,20 @@
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="eggCrackGlow" cx="45%" cy="30%" r="60%">
+      <stop offset="0%" stop-color="#fdf2f8"/>
+      <stop offset="55%" stop-color="#f472b6"/>
+      <stop offset="100%" stop-color="#be185d"/>
+    </radialGradient>
+    <linearGradient id="eggCrackShadow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fff0f6" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#831843" stop-opacity="0.3"/>
+    </linearGradient>
+  </defs>
+  <rect x="18" y="108" width="92" height="12" rx="6" fill="#831843" opacity="0.25"/>
+  <ellipse cx="64" cy="112" rx="36" ry="8" fill="#831843" opacity="0.35"/>
+  <path d="M64 16c-22 0-40 26-40 50 0 18 11 46 40 46s40-28 40-46c0-24-18-50-40-50z" fill="url(#eggCrackGlow)"/>
+  <path d="M64 16c-22 0-40 26-40 50 0 12 4 26 14 36 8 8 16 10 26 10s18-2 26-10c10-10 14-24 14-36 0-24-18-50-40-50z" fill="url(#eggCrackShadow)"/>
+  <path d="M44 64l12-16 8 12 12-16 8 14" stroke="#fde68a" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M52 80l6-12 6 10 6-10 6 12" stroke="#fee2f2" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="84" cy="52" r="6" fill="#fde2e8" opacity="0.9"/>
+</svg>

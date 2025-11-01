@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="auroraBody" cx="50%" cy="40%" r="70%">
+      <stop offset="0%" stop-color="#fef3c7" />
+      <stop offset="45%" stop-color="#fcd34d" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </radialGradient>
+    <linearGradient id="auroraTail" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f97316" />
+      <stop offset="100%" stop-color="#8b5cf6" />
+    </linearGradient>
+    <linearGradient id="auroraGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#a855f7" stop-opacity="0.35" />
+      <stop offset="50%" stop-color="#ec4899" stop-opacity="0.2" />
+      <stop offset="100%" stop-color="#f59e0b" stop-opacity="0.3" />
+    </linearGradient>
+  </defs>
+  <rect width="200" height="200" rx="36" fill="url(#auroraGlow)" />
+  <g transform="translate(30 40)">
+    <ellipse cx="70" cy="70" rx="65" ry="55" fill="url(#auroraBody)" />
+    <path d="M110 60 C150 40 160 90 120 110" fill="url(#auroraTail)" opacity="0.9" />
+    <ellipse cx="50" cy="42" rx="22" ry="18" fill="#fde68a" />
+    <ellipse cx="90" cy="42" rx="22" ry="18" fill="#fde68a" />
+    <path d="M42 45 Q50 20 60 38" fill="#fef08a" />
+    <path d="M98 45 Q90 20 80 38" fill="#fef08a" />
+    <circle cx="58" cy="58" r="6" fill="#1f2937" />
+    <circle cx="82" cy="58" r="6" fill="#1f2937" />
+    <path d="M64 70 Q70 78 76 70" stroke="#1f2937" stroke-width="4" fill="none" stroke-linecap="round" />
+    <path d="M54 92 Q70 102 86 92" stroke="#1f2937" stroke-width="5" fill="none" stroke-linecap="round" />
+  </g>
+  <circle cx="60" cy="38" r="12" fill="#fcd34d" opacity="0.35" />
+  <circle cx="140" cy="160" r="18" fill="#f87171" opacity="0.25" />
+</svg>

@@ -1,0 +1,28 @@
+<svg width="160" height="160" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="foalBody" cx="50%" cy="40%" r="70%">
+      <stop offset="0%" stop-color="#ede9fe"/>
+      <stop offset="50%" stop-color="#c4b5fd"/>
+      <stop offset="100%" stop-color="#5b21b6"/>
+    </radialGradient>
+    <linearGradient id="foalGlow" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#a855f7"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
+    </linearGradient>
+  </defs>
+  <rect x="28" y="132" width="104" height="16" rx="8" fill="#4c1d95" opacity="0.25"/>
+  <ellipse cx="80" cy="136" rx="40" ry="12" fill="#7c3aed" opacity="0.2"/>
+  <g stroke="#4c1d95" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M40 58c0-20 14-36 26-36 8 0 18 10 18 10s10-10 18-10c12 0 26 16 26 36" fill="#f5f3ff"/>
+    <path d="M80 46c-18 0-36 18-36 40s16 40 36 40 36-18 36-40-18-40-36-40z" fill="url(#foalBody)"/>
+    <path d="M60 88c6-8 12-12 20-12s14 4 20 12" stroke="#ede9fe"/>
+    <path d="M70 100c6 6 14 6 20 0" stroke="#ede9fe"/>
+  </g>
+  <g fill="#4c1d95">
+    <circle cx="66" cy="78" r="6"/>
+    <circle cx="94" cy="78" r="6"/>
+    <path d="M78 88c2 3 4 3 6 0" stroke="#4c1d95" stroke-width="3" fill="none" stroke-linecap="round"/>
+  </g>
+  <path d="M80 54c10 0 18-4 24-12" stroke="#a855f7" stroke-width="6" stroke-linecap="round"/>
+  <text x="80" y="154" font-size="16" text-anchor="middle" fill="#4c1d95" font-family="'Baloo 2', 'Comic Sans MS', cursive">Aurora Foal</text>
+</svg>
