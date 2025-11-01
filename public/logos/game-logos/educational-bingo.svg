@@ -1,21 +1,60 @@
 <svg width="600" height="600" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="grad-educational-bingo" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#ec4899" />
-      <stop offset="100%" stop-color="#a855f7" />
-    </linearGradient>
-    <radialGradient id="highlight-educational-bingo" cx="30%" cy="30%" r="70%">
-      <stop offset="0%" stop-color="rgba(255,255,255,0.8)" />
-      <stop offset="60%" stop-color="rgba(255,255,255,0.0)" />
-      <stop offset="100%" stop-color="rgba(255,255,255,0.0)" />
+    <radialGradient id="bg-bingo" cx="50%" cy="40%" r="80%">
+      <stop offset="0%" stop-color="#ffcc6f" />
+      <stop offset="45%" stop-color="#ff8a3d" />
+      <stop offset="100%" stop-color="#d03055" />
     </radialGradient>
+    <linearGradient id="card" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fff5f0" />
+      <stop offset="100%" stop-color="#ffe0d6" />
+    </linearGradient>
     <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="12" stdDeviation="18" flood-color="rgba(0,0,0,0.35)" />
+      <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="rgba(0,0,0,0.35)" />
     </filter>
   </defs>
-  <rect width="560" height="560" x="20" y="20" rx="64" fill="url(#grad-educational-bingo)" filter="url(#shadow)" />
-  <circle cx="200" cy="180" r="120" fill="url(#highlight-educational-bingo)" />
-  <circle cx="420" cy="420" r="160" fill="rgba(255,255,255,0.08)" />
-  <text x="50%" y="55%" text-anchor="middle" font-family="'Poppins', 'Segoe UI', 'Arial', sans-serif" font-weight="700" font-size="190" fill="#FFFFFF" letter-spacing="8">EB</text>
-  <text x="50%" y="77%" text-anchor="middle" font-family="'Poppins', 'Segoe UI', 'Arial', sans-serif" font-weight="500" font-size="56" fill="rgba(255,255,255,0.9)">Edu Bingo</text>
+  <rect x="30" y="30" width="540" height="540" rx="64" fill="url(#bg-bingo)" filter="url(#shadow)" />
+  <g transform="translate(110 120)">
+    <circle cx="330" cy="110" r="80" fill="#fff" opacity="0.15" />
+    <g transform="translate(20 20)">
+      <rect x="0" y="0" width="280" height="360" rx="28" fill="url(#card)" stroke="#f46c45" stroke-width="10" />
+      <g font-family="'Nunito', 'Segoe UI', sans-serif" font-weight="800" fill="#ff5c5c" font-size="48">
+        <text x="40" y="74">B</text>
+        <text x="94" y="74">I</text>
+        <text x="148" y="74">N</text>
+        <text x="202" y="74">G</text>
+        <text x="256" y="74">O</text>
+      </g>
+      <g fill="#ffb347">
+        <rect x="32" y="110" width="216" height="216" rx="18" fill="#fff7f1" />
+        <path d="M32 182h216" stroke="#ffd0a6" stroke-width="6" />
+        <path d="M32 254h216" stroke="#ffd0a6" stroke-width="6" />
+        <path d="M104 110v326" stroke="#ffd0a6" stroke-width="6" />
+        <path d="M176 110v326" stroke="#ffd0a6" stroke-width="6" />
+        <path d="M32 326h216" stroke="#ffd0a6" stroke-width="6" />
+        <path d="M32 398h216" stroke="#ffd0a6" stroke-width="6" />
+      </g>
+      <g fill="#ff6f61">
+        <circle cx="70" cy="146" r="18" />
+        <circle cx="142" cy="218" r="18" />
+        <circle cx="214" cy="290" r="18" />
+        <circle cx="214" cy="362" r="18" />
+        <circle cx="70" cy="362" r="18" />
+      </g>
+      <g fill="#ffca45">
+        <circle cx="70" cy="218" r="14" />
+        <circle cx="142" cy="290" r="14" />
+        <circle cx="214" cy="146" r="14" />
+      </g>
+      <g fill="#ffffff" opacity="0.75">
+        <text x="60" y="230" font-size="32" font-weight="700">7</text>
+        <text x="132" y="302" font-size="32" font-weight="700">14</text>
+        <text x="204" y="158" font-size="32" font-weight="700">22</text>
+      </g>
+    </g>
+    <g transform="translate(260 40)">
+      <circle cx="140" cy="260" r="76" fill="#ffe9c9" stroke="#ff8c4b" stroke-width="12" />
+      <text x="140" y="280" text-anchor="middle" font-family="'Nunito', 'Segoe UI', sans-serif" font-size="76" font-weight="900" fill="#ff5c5c">75</text>
+    </g>
+  </g>
 </svg>
