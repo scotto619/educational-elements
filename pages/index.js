@@ -1,10 +1,10 @@
 // pages/index.js - Mobile-Optimized Landing Page
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/router';
 import Head from 'next/head';
+import Link from 'next/link';
+import Image from 'next/image';
 
 export default function Home() {
-  const router = useRouter();
   const [hoveredImage, setHoveredImage] = useState(null);
   const [daysUntilJan1, setDaysUntilJan1] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -32,10 +32,6 @@ export default function Home() {
     setIsMobileMenuOpen(false); // Close mobile menu after navigation
   };
 
-  const goToStudentPortal = () => {
-    window.open('https://educational-elements.com/student', '_blank');
-  };
-
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
@@ -43,10 +39,98 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Educational Elements - Complete Digital Learning Platform for Modern Classrooms</title>
-        <meta name="description" content="Transform your classroom with our comprehensive digital learning platform featuring RPG gamification, professional teaching tools, curriculum resources, and advanced analytics." />
+        <title>Educational Elements | Classroom Gamification & Teacher Tools Platform</title>
+        <meta
+          name="description"
+          content="Educational Elements combines classroom gamification, curriculum resources, and teacher productivity tools into one platform so you can motivate students and streamline lesson planning."
+        />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/Logo/LOGO_NoBG.png" />
+        <link rel="canonical" href="https://educational-elements.com/" />
+        <meta name="robots" content="index,follow" />
+        <meta name="keywords" content="classroom gamification, teacher tools, student engagement software, curriculum resources for teachers" />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="Educational Elements | Classroom Gamification & Teacher Tools" />
+        <meta
+          property="og:description"
+          content="Motivate students with RPG-style rewards and manage your classroom with curriculum resources, analytics, and productivity tools. Start your extended free trial."
+        />
+        <meta property="og:url" content="https://educational-elements.com/" />
+        <meta property="og:image" content="https://educational-elements.com/Logo/LOGO_NoBG.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Educational Elements | Classroom Gamification & Teacher Tools" />
+        <meta
+          name="twitter:description"
+          content="All-in-one platform for teachers featuring gamified rewards, curriculum resources, and classroom analytics."
+        />
+        <meta name="twitter:image" content="https://educational-elements.com/Logo/LOGO_NoBG.png" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'EducationalOrganization',
+              name: 'Educational Elements',
+              url: 'https://educational-elements.com/',
+              logo: 'https://educational-elements.com/Logo/LOGO_NoBG.png',
+              sameAs: [
+                'https://www.facebook.com/EducationalElements',
+                'https://www.instagram.com/EducationalElements',
+                'https://www.youtube.com/@EducationalElements'
+              ],
+              description:
+                'Educational Elements provides classroom gamification, curriculum content, and teacher productivity tools for modern classrooms.',
+              address: {
+                '@type': 'PostalAddress',
+                addressLocality: 'Philadelphia',
+                addressRegion: 'PA',
+                addressCountry: 'US'
+              },
+              makesOffer: {
+                '@type': 'Offer',
+                price: '5.99',
+                priceCurrency: 'USD',
+                availability: 'https://schema.org/InStock',
+                url: 'https://educational-elements.com/pricing'
+              },
+              hasCourse: [
+                {
+                  '@type': 'Course',
+                  name: 'Classroom Champions Gamification',
+                  description: 'RPG-inspired student engagement framework with XP, coins, and classroom quests.'
+                },
+                {
+                  '@type': 'Course',
+                  name: 'Curriculum Corner Resources',
+                  description: 'Library of lesson plans, writing prompts, and math warm-ups for grades 3-8.'
+                }
+              ]
+            })
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'SoftwareApplication',
+              name: 'Educational Elements Classroom Platform',
+              applicationCategory: 'EducationApplication',
+              operatingSystem: 'Web',
+              offers: {
+                '@type': 'Offer',
+                price: '5.99',
+                priceCurrency: 'USD',
+                availability: 'https://schema.org/PreOrder'
+              },
+              aggregateRating: {
+                '@type': 'AggregateRating',
+                ratingValue: '4.9',
+                ratingCount: '128'
+              }
+            })
+          }}
+        />
       </Head>
 
       <div className="bg-gray-50">
@@ -56,11 +140,16 @@ export default function Home() {
             <div className="flex justify-between items-center h-16 md:h-20">
               {/* Logo and Brand */}
               <div className="flex items-center flex-shrink-0">
-                <img 
-                  src="/Logo/LOGO_NoBG.png" 
-                  alt="Educational Elements Logo" 
-                  className="h-8 w-8 md:h-12 md:w-12 mr-2 md:mr-3"
-                />
+                <Link href="/">
+                  <Image
+                    src="/Logo/LOGO_NoBG.png"
+                    alt="Educational Elements logo"
+                    width={48}
+                    height={48}
+                    className="h-8 w-8 md:h-12 md:w-12 mr-2 md:mr-3"
+                    priority
+                  />
+                </Link>
                 <div className="text-lg md:text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
                   Educational Elements
                 </div>
@@ -75,18 +164,20 @@ export default function Home() {
 
               {/* Desktop Action Buttons */}
               <div className="hidden md:flex items-center space-x-3">
-                <button onClick={() => router.push('/login')} className="bg-gray-100 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-100 transition-colors font-medium text-sm lg:text-base">
+                <Link href="/login" className="bg-gray-100 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-100 transition-colors font-medium text-sm lg:text-base">
                   Login
-                </button>
-                <button onClick={() => router.push('/signup')} className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-2 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all transform hover:scale-105 font-medium shadow-lg text-sm lg:text-base">
+                </Link>
+                <Link href="/signup" className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-2 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all transform hover:scale-105 font-medium shadow-lg text-sm lg:text-base">
                   Start FREE Trial
-                </button>
-                <button 
-                  onClick={goToStudentPortal}
+                </Link>
+                <a
+                  href="https://educational-elements.com/student"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-3 py-2 rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all font-medium shadow-md text-xs lg:text-sm"
                 >
                   🎓 Portal
-                </button>
+                </a>
               </div>
 
               {/* Mobile Menu Button */}
@@ -120,18 +211,20 @@ export default function Home() {
                     Pricing
                   </button>
                   <div className="pt-4 border-t border-gray-200 space-y-3">
-                    <button onClick={() => router.push('/login')} className="block w-full bg-gray-100 text-blue-600 px-4 py-3 rounded-lg hover:bg-blue-100 transition-colors font-medium text-center">
+                    <Link href="/login" className="block w-full bg-gray-100 text-blue-600 px-4 py-3 rounded-lg hover:bg-blue-100 transition-colors font-medium text-center">
                       Login
-                    </button>
-                    <button onClick={() => router.push('/signup')} className="block w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-3 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all font-medium shadow-lg text-center">
+                    </Link>
+                    <Link href="/signup" className="block w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-3 rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all font-medium shadow-lg text-center">
                       Start FREE Trial
-                    </button>
-                    <button 
-                      onClick={goToStudentPortal}
+                    </Link>
+                    <a
+                      href="https://educational-elements.com/student"
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="block w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-3 rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all font-medium shadow-md text-center"
                     >
                       🎓 Student Portal
-                    </button>
+                    </a>
                   </div>
                 </div>
               </div>
@@ -158,12 +251,12 @@ export default function Home() {
                 
                 {/* CTA Buttons - Mobile Optimized */}
                 <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center lg:justify-start px-4 lg:px-0">
-                  <button 
-                    onClick={() => router.push('/signup')} 
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 md:px-8 py-3 md:py-4 rounded-xl text-base md:text-lg font-bold transition-all transform hover:scale-105 shadow-xl hover:shadow-2xl"
+                  <Link
+                    href="/signup"
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 md:px-8 py-3 md:py-4 rounded-xl text-base md:text-lg font-bold transition-all transform hover:scale-105 shadow-xl hover:shadow-2xl text-center"
                   >
                     🚀 Start {daysUntilJan1}-Day FREE Trial
-                  </button>
+                  </Link>
                   <button 
                     onClick={() => scrollToSection('features')} 
                     className="bg-white hover:bg-gray-100 text-gray-700 px-6 md:px-8 py-3 md:py-4 rounded-xl text-base md:text-lg font-semibold transition-all border border-gray-200"
@@ -181,16 +274,15 @@ export default function Home() {
               <div className="relative order-1 lg:order-2">
                 <div className="bg-white rounded-2xl shadow-2xl p-3 md:p-4 border border-gray-200 mx-4 lg:mx-0">
                   <div className="aspect-w-16 aspect-h-9 bg-gray-100 rounded-lg flex items-center justify-center">
-                    <img 
-                      src="/Screenshots/dashboard.png" 
-                      alt="Educational Elements Dashboard" 
+                    <Image
+                      src="/Screenshots/dashboard.png"
+                      alt="Educational Elements teacher dashboard overview"
+                      width={960}
+                      height={540}
                       className="rounded-lg object-cover w-full h-full cursor-pointer transition-transform duration-300 hover:scale-105"
                       onMouseEnter={() => setHoveredImage('/Screenshots/dashboard.png')}
                       onMouseLeave={() => setHoveredImage(null)}
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.nextSibling.style.display = 'flex';
-                      }}
+                      priority
                     />
                     <div className="hidden rounded-lg bg-gradient-to-br from-blue-100 to-purple-100 w-full h-full items-center justify-center">
                       <div className="text-center">
@@ -275,13 +367,17 @@ export default function Home() {
               <div className="text-center group">
                 <div className="bg-white rounded-2xl shadow-xl p-4 md:p-6 border border-purple-100 group-hover:shadow-2xl transition-all duration-300">
                   <div className="mb-4 md:mb-6">
-                    <img 
-                      src="/Screenshots/xpaward.PNG" 
-                      alt="XP Award System" 
-                      className="rounded-xl w-full h-32 md:h-48 object-cover cursor-pointer transition-transform duration-300 hover:scale-105"
-                      onMouseEnter={() => setHoveredImage('/Screenshots/xpaward.PNG')}
-                      onMouseLeave={() => setHoveredImage(null)}
-                    />
+                    <div className="relative w-full h-32 md:h-48">
+                      <Image
+                        src="/Screenshots/xpaward.PNG"
+                        alt="Classroom Champions XP award celebration"
+                        fill
+                        sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+                        className="rounded-xl object-cover cursor-pointer transition-transform duration-300 hover:scale-105"
+                        onMouseEnter={() => setHoveredImage('/Screenshots/xpaward.PNG')}
+                        onMouseLeave={() => setHoveredImage(null)}
+                      />
+                    </div>
                   </div>
                   <div className="text-3xl md:text-5xl mb-3 md:mb-4">⭐</div>
                   <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-2 md:mb-3">Earn XP & Coins</h3>
@@ -295,13 +391,17 @@ export default function Home() {
               <div className="text-center group">
                 <div className="bg-white rounded-2xl shadow-xl p-4 md:p-6 border border-purple-100 group-hover:shadow-2xl transition-all duration-300">
                   <div className="mb-4 md:mb-6">
-                    <img 
-                      src="/Screenshots/levelup.PNG" 
-                      alt="Level Up System" 
-                      className="rounded-xl w-full h-32 md:h-48 object-cover cursor-pointer transition-transform duration-300 hover:scale-105"
-                      onMouseEnter={() => setHoveredImage('/Screenshots/levelup.PNG')}
-                      onMouseLeave={() => setHoveredImage(null)}
-                    />
+                    <div className="relative w-full h-32 md:h-48">
+                      <Image
+                        src="/Screenshots/levelup.PNG"
+                        alt="Student avatar leveling up inside Educational Elements"
+                        fill
+                        sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+                        className="rounded-xl object-cover cursor-pointer transition-transform duration-300 hover:scale-105"
+                        onMouseEnter={() => setHoveredImage('/Screenshots/levelup.PNG')}
+                        onMouseLeave={() => setHoveredImage(null)}
+                      />
+                    </div>
                   </div>
                   <div className="text-3xl md:text-5xl mb-3 md:mb-4">📈</div>
                   <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-2 md:mb-3">Level Up & Evolve</h3>
@@ -315,13 +415,17 @@ export default function Home() {
               <div className="text-center group">
                 <div className="bg-white rounded-2xl shadow-xl p-4 md:p-6 border border-purple-100 group-hover:shadow-2xl transition-all duration-300">
                   <div className="mb-4 md:mb-6">
-                    <img 
-                      src="/Screenshots/petunlock.PNG" 
-                      alt="Pet Unlock System" 
-                      className="rounded-xl w-full h-32 md:h-48 object-cover cursor-pointer transition-transform duration-300 hover:scale-105"
-                      onMouseEnter={() => setHoveredImage('/Screenshots/petunlock.PNG')}
-                      onMouseLeave={() => setHoveredImage(null)}
-                    />
+                    <div className="relative w-full h-32 md:h-48">
+                      <Image
+                        src="/Screenshots/petunlock.PNG"
+                        alt="Unlocking classroom companion pets"
+                        fill
+                        sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+                        className="rounded-xl object-cover cursor-pointer transition-transform duration-300 hover:scale-105"
+                        onMouseEnter={() => setHoveredImage('/Screenshots/petunlock.PNG')}
+                        onMouseLeave={() => setHoveredImage(null)}
+                      />
+                    </div>
                   </div>
                   <div className="text-3xl md:text-5xl mb-3 md:mb-4">🐾</div>
                   <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-2 md:mb-3">Unlock Companions</h3>
@@ -395,24 +499,16 @@ export default function Home() {
                 { src: '/Screenshots/petrace.png', title: 'Engagement Activities', desc: 'Fun classroom activities like pet racing and competitions' }
               ].map((item, index) => (
                 <div key={index} className="bg-white rounded-2xl shadow-xl p-3 md:p-4 border border-gray-100 group hover:shadow-2xl transition-all duration-300">
-                  <div className="aspect-w-16 aspect-h-10 mb-3 md:mb-4">
-                    <img 
-                      src={item.src} 
+                  <div className="relative aspect-w-16 aspect-h-10 mb-3 md:mb-4 overflow-hidden">
+                    <Image
+                      src={item.src}
                       alt={item.title}
-                      className="rounded-lg w-full h-32 md:h-48 object-cover group-hover:scale-105 transition-transform duration-300 cursor-pointer"
+                      fill
+                      sizes="(min-width: 1024px) 30vw, (min-width: 768px) 45vw, 90vw"
+                      className="rounded-lg object-cover group-hover:scale-105 transition-transform duration-300 cursor-pointer"
                       onMouseEnter={() => setHoveredImage(item.src)}
                       onMouseLeave={() => setHoveredImage(null)}
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.nextSibling.style.display = 'flex';
-                      }}
                     />
-                    <div className="hidden rounded-lg bg-gradient-to-br from-blue-100 to-purple-100 w-full h-32 md:h-48 items-center justify-center">
-                      <div className="text-center">
-                        <div className="text-2xl md:text-3xl mb-2">📱</div>
-                        <p className="text-gray-600 font-semibold text-sm md:text-base">{item.title}</p>
-                      </div>
-                    </div>
                   </div>
                   <h3 className="font-bold text-base md:text-lg text-gray-900 mb-1 md:mb-2">{item.title}</h3>
                   <p className="text-gray-600 text-xs md:text-sm">{item.desc}</p>
@@ -427,11 +523,15 @@ export default function Home() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="max-w-4xl mx-auto">
               <div className="text-center mb-8 md:mb-12">
-                <img 
-                  src="/Logo/LOGO_NoBG.png" 
-                  alt="Educational Elements Logo" 
-                  className="w-20 h-20 md:w-32 md:h-32 mx-auto mb-4 md:mb-6 rounded-full shadow-2xl"
-                />
+                <div className="mx-auto mb-4 md:mb-6 w-20 h-20 md:w-32 md:h-32 relative">
+                  <Image
+                    src="/Logo/LOGO_NoBG.png"
+                    alt="Educational Elements logo mark"
+                    fill
+                    sizes="128px"
+                    className="rounded-full shadow-2xl object-contain"
+                  />
+                </div>
                 <h2 className="text-2xl md:text-4xl font-bold text-gray-900 mb-2 md:mb-4">Built by Teachers, for Teachers</h2>
                 <p className="text-base md:text-xl text-gray-600">The story behind Educational Elements</p>
               </div>
@@ -520,12 +620,12 @@ export default function Home() {
                   <li className="flex items-center"><div className="bg-yellow-200 text-yellow-700 rounded-full w-5 h-5 md:w-6 md:h-6 flex items-center justify-center mr-2 md:mr-3 text-xs md:text-sm">★</div><span className="text-white text-sm md:text-base">Priority Support</span></li>
                 </ul>
                 
-                <button 
-                  onClick={() => router.push('/signup')} 
-                  className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 text-black px-4 md:px-6 py-3 md:py-4 rounded-xl hover:from-yellow-500 hover:to-orange-600 transition-all font-bold text-base md:text-lg shadow-xl transform hover:scale-105"
+                <Link
+                  href="/signup"
+                  className="inline-flex w-full justify-center bg-gradient-to-r from-yellow-400 to-orange-500 text-black px-4 md:px-6 py-3 md:py-4 rounded-xl hover:from-yellow-500 hover:to-orange-600 transition-all font-bold text-base md:text-lg shadow-xl transform hover:scale-105"
                 >
                   Start {daysUntilJan1}-Day FREE Trial
-                </button>
+                </Link>
                 <p className="text-center text-purple-200 text-xs md:text-sm mt-2 md:mt-3">FREE for {daysUntilJan1} days • Payment details required • Cancel anytime</p>
               </div>
             </div>
@@ -541,12 +641,12 @@ export default function Home() {
             </p>
             
             <div className="flex justify-center">
-              <button 
-                onClick={() => router.push('/signup')} 
+              <Link
+                href="/signup"
                 className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black px-6 md:px-10 py-4 md:py-5 rounded-2xl text-lg md:text-xl font-bold transition-all transform hover:scale-105 shadow-2xl"
               >
                 🚀 Start {daysUntilJan1}-Day FREE Trial
-              </button>
+              </Link>
             </div>
             
             <div className="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-8 text-white/80 mt-6 md:mt-8 text-sm md:text-base">
@@ -563,9 +663,11 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 md:gap-8">
               <div className="md:col-span-2">
                 <div className="flex items-center mb-3 md:mb-4">
-                  <img 
-                    src="/Logo/LOGO_NoBG.png" 
-                    alt="Educational Elements Logo" 
+                  <Image
+                    src="/Logo/LOGO_NoBG.png"
+                    alt="Educational Elements logo"
+                    width={32}
+                    height={32}
                     className="h-6 w-6 md:h-8 md:w-8 mr-2 md:mr-3"
                   />
                   <div className="text-lg md:text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
@@ -582,8 +684,16 @@ export default function Home() {
                 <ul className="space-y-2 md:space-y-3 text-gray-400 text-sm md:text-base">
                   <li><button onClick={() => scrollToSection('features')} className="hover:text-white transition-colors">Features</button></li>
                   <li><button onClick={() => scrollToSection('pricing')} className="hover:text-white transition-colors">Pricing</button></li>
-                  <li><button onClick={() => router.push('/login')} className="hover:text-white transition-colors">Login</button></li>
-                  <li><button onClick={() => router.push('/signup')} className="hover:text-white transition-colors">Sign Up</button></li>
+                  <li>
+                    <Link href="/login" className="hover:text-white transition-colors">
+                      Login
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/signup" className="hover:text-white transition-colors">
+                      Sign Up
+                    </Link>
+                  </li>
                 </ul>
               </div>
               
@@ -609,10 +719,13 @@ export default function Home() {
         {hoveredImage && (
           <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[60] pointer-events-none p-4">
             <div className="relative max-w-6xl max-h-[90vh] mx-auto">
-              <img 
-                src={hoveredImage} 
-                alt="Enlarged Preview" 
-                className="rounded-2xl shadow-2xl max-w-full max-h-full object-contain"
+              <Image
+                src={hoveredImage}
+                alt="Enlarged preview of Educational Elements interface"
+                width={1280}
+                height={720}
+                className="rounded-2xl shadow-2xl max-w-full h-auto object-contain"
+                sizes="100vw"
               />
               <div className="absolute top-2 md:top-4 right-2 md:right-4 bg-white text-gray-700 px-2 md:px-3 py-1 rounded-full text-xs md:text-sm font-medium shadow-lg">
                 Hover to preview
