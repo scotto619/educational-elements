@@ -1,5 +1,6 @@
 // components/tabs/ShopTab.js - MOBILE-OPTIMIZED SHOP WITH HALLOWEEN SECTION, MYSTERY BOX AND SELLING FEATURE
 import React, { useEffect, useMemo, useState } from 'react';
+import Image from 'next/image';
 import { DEFAULT_TEACHER_REWARDS, buildShopInventory, getDailySpecials } from '../../utils/shopSpecials';
 import {
   PET_EGG_TYPES,
@@ -7,7 +8,9 @@ import {
   advanceEggStage,
   getEggStageStatus,
   resolveEggHatch,
-  getEggTypeById
+  getEggTypeById,
+  EGG_STAGE_ART,
+  EGG_STAGE_MESSAGES
 } from '../../utils/gameHelpers';
 
 // ===============================================
@@ -209,20 +212,6 @@ const getRarityBg = (rarity) => {
     case 'legendary': return 'bg-yellow-100';
     default: return 'bg-gray-100';
   }
-};
-
-const formatDuration = (ms = 0) => {
-  if (ms <= 0) return 'Almost ready!';
-  const totalSeconds = Math.floor(ms / 1000);
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  if (hours > 0) {
-    return `${hours}h ${minutes}m`;
-  }
-  if (minutes > 0) {
-    return `${minutes}m`;
-  }
-  return `${Math.max(1, Math.floor(totalSeconds))}s`;
 };
 
 const getEggAccent = (egg) => {
@@ -1430,7 +1419,9 @@ const ShopTab = ({
                             {selectedStudentEggs.map((egg) => {
                               const status = getEggStageStatus(egg);
                               const accent = getEggAccent(egg);
-                              const progress = Math.round((status.progress || 0) * 100);
+                              const eggArt = EGG_STAGE_ART[status.stage] || EGG_STAGE_ART.unbroken;
+                              const stageMessage = EGG_STAGE_MESSAGES[status.stage] || 'A surprise is brewing inside.';
+                              const stageMessageClass = `text-xs text-gray-600 mb-3 ${status.stage === 'ready' ? '' : 'mt-auto'}`;
 
                               return (
                                 <div
@@ -1443,13 +1434,19 @@ const ShopTab = ({
                                 >
                                   <div className="flex items-center gap-3 mb-2">
                                     <div
-                                      className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center shadow"
+                                      className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden shadow"
                                       style={{
-                                        background: `radial-gradient(circle at 30% 30%, ${accent}33, #ffffff)`,
+                                        background: `radial-gradient(circle at 30% 30%, ${accent}22, #ffffff)`,
                                         border: `3px solid ${accent}`
                                       }}
                                     >
-                                      <span className="text-2xl">🥚</span>
+                                      <Image
+                                        src={eggArt}
+                                        alt={`${egg.name} stage illustration`}
+                                        fill
+                                        sizes="64px"
+                                        className="object-contain p-1"
+                                      />
                                     </div>
                                     <div>
                                       <p className="font-semibold text-sm sm:text-base">{egg.name}</p>
@@ -1457,18 +1454,7 @@ const ShopTab = ({
                                     </div>
                                   </div>
 
-                                  <div className="w-full h-2 bg-purple-100 rounded-full overflow-hidden mb-2">
-                                    <div
-                                      className="h-full rounded-full transition-all duration-500"
-                                      style={{ width: `${progress}%`, backgroundColor: accent }}
-                                    ></div>
-                                  </div>
-
-                                  <p className="text-xs text-gray-600 mb-2">
-                                    {status.stage === 'ready'
-                                      ? 'Ready to hatch!'
-                                      : `Time left: ${formatDuration(status.timeRemainingMs)}`}
-                                  </p>
+                                  <p className={stageMessageClass}>{stageMessage}</p>
 
                                   {status.stage === 'ready' ? (
                                     <button
@@ -1477,11 +1463,7 @@ const ShopTab = ({
                                     >
                                       Hatch Egg
                                     </button>
-                                  ) : (
-                                    <p className="text-[10px] text-gray-500 italic mt-auto">
-                                      Keep an eye on this egg—it will crack soon!
-                                    </p>
-                                  )}
+                                  ) : null}
                                 </div>
                               );
                             })}

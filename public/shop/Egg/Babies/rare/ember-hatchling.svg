@@ -1,0 +1,29 @@
+<svg width="160" height="160" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="emberBody" cx="50%" cy="42%" r="72%">
+      <stop offset="0%" stop-color="#fff7ed"/>
+      <stop offset="55%" stop-color="#fb923c"/>
+      <stop offset="100%" stop-color="#9a3412"/>
+    </radialGradient>
+    <linearGradient id="emberGlow" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fdba74"/>
+      <stop offset="100%" stop-color="#f97316"/>
+    </linearGradient>
+  </defs>
+  <rect x="28" y="132" width="104" height="16" rx="8" fill="#9a3412" opacity="0.25"/>
+  <ellipse cx="80" cy="136" rx="40" ry="12" fill="#f97316" opacity="0.25"/>
+  <g stroke="#9a3412" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M44 60c0-20 16-38 26-38 10 0 18 12 18 12s8-12 18-12c10 0 26 18 26 38" fill="#ffedd5"/>
+    <path d="M80 46c-18 0-36 18-36 40s16 40 36 40 36-18 36-40-18-40-36-40z" fill="url(#emberBody)"/>
+    <path d="M60 90c6-8 12-12 20-12s14 4 20 12" stroke="#ffedd5"/>
+    <path d="M70 102c6 6 14 6 20 0" stroke="#ffedd5"/>
+  </g>
+  <g fill="#9a3412">
+    <circle cx="66" cy="78" r="6"/>
+    <circle cx="94" cy="78" r="6"/>
+    <path d="M78 88c2 3 4 3 6 0" stroke="#9a3412" stroke-width="3" fill="none" stroke-linecap="round"/>
+  </g>
+  <path d="M80 58c8-2 14-6 20-14" stroke="#fdba74" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="80" cy="54" r="10" fill="url(#emberGlow)" opacity="0.5"/>
+  <text x="80" y="154" font-size="16" text-anchor="middle" fill="#9a3412" font-family="'Baloo 2', 'Comic Sans MS', cursive">Ember Hatchling</text>
+</svg>

@@ -232,24 +232,45 @@ const pickByRarity = (items = [], weights = BABY_RARITY_WEIGHTS) => {
 
 export const BABY_PETS = [
   {
-    id: 'aurora-fox',
-    name: 'Aurora Fox',
+    id: 'glimmer-kit',
+    name: 'Glimmer Kit',
+    rarity: 'common',
+    path: '/shop/Egg/Babies/common/glimmer-kit.svg',
+    speed: 5
+  },
+  {
+    id: 'sprout-shell',
+    name: 'Sprout Shell',
+    rarity: 'common',
+    path: '/shop/Egg/Babies/common/sprout-shell.svg',
+    speed: 5
+  },
+  {
+    id: 'sparkle-otter',
+    name: 'Sparkle Otter',
+    rarity: 'common',
+    path: '/shop/Egg/Babies/common/sparkle-otter.svg',
+    speed: 5
+  },
+  {
+    id: 'aurora-foal',
+    name: 'Aurora Foal',
     rarity: 'rare',
-    path: '/shop/PetBabies/aurora-fox.svg',
-    speed: 5
+    path: '/shop/Egg/Babies/rare/aurora-foal.svg',
+    speed: 6
   },
   {
-    id: 'bubble-octopus',
-    name: 'Bubble Octopus',
-    rarity: 'epic',
-    path: '/shop/PetBabies/bubble-octopus.svg',
-    speed: 5
+    id: 'ember-hatchling',
+    name: 'Ember Hatchling',
+    rarity: 'rare',
+    path: '/shop/Egg/Babies/rare/ember-hatchling.svg',
+    speed: 6
   },
   {
-    id: 'ember-drake',
-    name: 'Ember Drake',
-    rarity: 'legendary',
-    path: '/shop/PetBabies/ember-drake.svg',
+    id: 'tide-pixie',
+    name: 'Tide Pixie',
+    rarity: 'rare',
+    path: '/shop/Egg/Babies/rare/tide-pixie.svg',
     speed: 6
   }
 ];
@@ -261,7 +282,7 @@ export const PET_EGG_TYPES = [
     rarity: 'rare',
     description: 'Glitters with cosmic stardust and soft pastel hues.',
     accent: '#7c3aed',
-    hatchPool: ['aurora-fox', 'ember-drake'],
+    hatchPool: ['aurora-foal', 'tide-pixie'],
     minHours: 1,
     maxHours: 12
   },
@@ -271,7 +292,7 @@ export const PET_EGG_TYPES = [
     rarity: 'epic',
     description: 'Waves shimmer across the shell like glowing ripples.',
     accent: '#0ea5e9',
-    hatchPool: ['bubble-octopus', 'aurora-fox'],
+    hatchPool: ['glimmer-kit', 'sprout-shell', 'tide-pixie'],
     minHours: 1,
     maxHours: 12
   },
@@ -281,11 +302,24 @@ export const PET_EGG_TYPES = [
     rarity: 'legendary',
     description: 'Warm embers pulse beneath a crystalline shell.',
     accent: '#f97316',
-    hatchPool: ['ember-drake'],
+    hatchPool: ['ember-hatchling', 'sparkle-otter'],
     minHours: 1,
     maxHours: 12
   }
 ];
+
+export const EGG_STAGE_ART = {
+  unbroken: '/shop/Egg/egg-stage-unbroken.svg',
+  cracked: '/shop/Egg/egg-stage-cracked.svg',
+  ready: '/shop/Egg/egg-stage-ready.svg',
+  hatched: '/shop/Egg/egg-stage-ready.svg'
+};
+
+export const EGG_STAGE_MESSAGES = {
+  unbroken: 'This egg is quietly humming with magic.',
+  cracked: 'Cracks are spreading—keep watching!',
+  ready: 'Your egg is ready to hatch!'
+};
 
 const EGG_STAGE_SEQUENCE = ['unbroken', 'cracked', 'ready'];
 

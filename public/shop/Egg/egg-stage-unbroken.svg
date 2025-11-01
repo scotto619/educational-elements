@@ -1,0 +1,19 @@
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="eggGlow" cx="50%" cy="35%" r="60%">
+      <stop offset="0%" stop-color="#fef3c7"/>
+      <stop offset="60%" stop-color="#facc15"/>
+      <stop offset="100%" stop-color="#b45309"/>
+    </radialGradient>
+    <linearGradient id="eggShadow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fff7ed" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#92400e" stop-opacity="0.2"/>
+    </linearGradient>
+  </defs>
+  <rect x="18" y="108" width="92" height="12" rx="6" fill="#b45309" opacity="0.25"/>
+  <ellipse cx="64" cy="112" rx="36" ry="8" fill="#b45309" opacity="0.35"/>
+  <path d="M64 16c-22 0-40 26-40 50 0 18 11 46 40 46s40-28 40-46c0-24-18-50-40-50z" fill="url(#eggGlow)"/>
+  <path d="M64 16c-22 0-40 26-40 50 0 12 4 26 14 36 8 8 16 10 26 10s18-2 26-10c10-10 14-24 14-36 0-24-18-50-40-50z" fill="url(#eggShadow)"/>
+  <path d="M84 38c-6-6-12-10-20-10s-14 4-20 10" stroke="#fde68a" stroke-width="6" stroke-linecap="round" opacity="0.6"/>
+  <circle cx="78" cy="46" r="6" fill="#fef9c3" opacity="0.8"/>
+</svg>
