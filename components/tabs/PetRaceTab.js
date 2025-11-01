@@ -3,6 +3,8 @@
 'use client'; // Mark as client-side component
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { getPetImage as resolvePetImageSource, DEFAULT_PET_IMAGE } from '../../utils/gameHelpers';
+import { normalizeImageSource, serializeFallbacks, createImageErrorHandler } from '../../utils/imageFallback';
 
 const PetRaceTab = ({ 
   students, 
@@ -99,45 +101,11 @@ const PetRaceTab = ({
     setRacePhase('prize');
   };
 
-  // Get Pet Image with Fallback
+  const petImageErrorHandler = createImageErrorHandler(DEFAULT_PET_IMAGE);
+
   const getPetImage = (student) => {
     const pet = student.ownedPets?.[0];
-    if (!pet) return '/Pets/Wizard.png';
-    if (pet.image) return pet.image;
-    if (pet.path) return pet.path;
-    const petName = (pet.name || pet.type || 'wizard').toLowerCase();
-    const petMap = {
-      'wizard': '/Pets/Wizard.png',
-      'knight': '/Pets/Knight.png',
-      'rogue': '/Pets/Rogue.png',
-      'barbarian': '/Pets/Barbarian.png',
-      'cleric': '/Pets/Cleric.png',
-      'alchemist': '/Pets/Alchemist.png',
-      'bard': '/Pets/Bard.png',
-      'monk': '/Pets/Monk.png',
-      'engineer': '/Pets/Engineer.png',
-      'necromancer': '/Pets/Necromancer.png',
-      'beastmaster': '/Pets/Beastmaster.png',
-      'crystal knight': '/Pets/Crystal Knight.png',
-      'crystal sage': '/Pets/Crystal Sage.png',
-      'frost mage': '/Pets/Frost Mage.png',
-      'illusionist': '/Pets/Illusionist.png',
-      'lightning': '/Pets/Lightning.png',
-      'stealth': '/Pets/Stealth.png',
-      'time knight': '/Pets/Time Knight.png',
-      'warrior': '/Pets/Warrior.png',
-      'dragon': '/Pets/Lightning.png',
-      'phoenix': '/Pets/Crystal Sage.png',
-      'unicorn': '/Pets/Time Knight.png',
-      'wolf': '/Pets/Warrior.png',
-      'owl': '/Pets/Wizard.png',
-      'cat': '/Pets/Rogue.png',
-      'tiger': '/Pets/Barbarian.png',
-      'bear': '/Pets/Beastmaster.png',
-      'lion': '/Pets/Knight.png',
-      'eagle': '/Pets/Stealth.png'
-    };
-    return petMap[petName] || '/Pets/Wizard.png';
+    return normalizeImageSource(resolvePetImageSource(pet), DEFAULT_PET_IMAGE);
   };
 
   // Start Race with Smooth Animation
@@ -420,14 +388,21 @@ const PetRaceTab = ({
                     }`}
                   >
                     <div className="flex items-center space-x-4">
-                      <img 
-                        src={getPetImage(student)} 
-                        alt={pet.name}
-                        className={`w-16 h-16 rounded-full border-2 object-cover ${
-                          selectedPets.includes(student.id) ? 'border-green-400' : 'border-gray-300'
-                        } animate-pulse`}
-                        onError={(e) => { e.currentTarget.src = '/Pets/Wizard.png'; }}
-                      />
+                      {(() => {
+                        const petImage = getPetImage(student);
+                        return (
+                          <img
+                            src={petImage.src}
+                            alt={pet.name}
+                            className={`w-16 h-16 rounded-full border-2 object-cover ${
+                              selectedPets.includes(student.id) ? 'border-green-400' : 'border-gray-300'
+                            } animate-pulse`}
+                            data-fallbacks={serializeFallbacks(petImage.fallbacks)}
+                            data-fallback-index="0"
+                            onError={petImageErrorHandler}
+                          />
+                        );
+                      })()}
                       <div className="text-left">
                         <h4 className="font-bold text-lg text-gray-800">{student.firstName}</h4>
                         <p className="text-gray-600">{pet.name || 'Unnamed Pet'}</p>
@@ -608,12 +583,19 @@ const PetRaceTab = ({
                     left: '50px'
                   }}
                 >
-                  <img
-                    src={getPetImage(student)}
-                    alt={pet.name}
-                    className="w-20 h-20 rounded-full border-4 border-white shadow-lg object-cover"
-                    onError={(e) => { e.currentTarget.src = '/Pets/Wizard.png'; }}
-                  />
+                  {(() => {
+                    const petImage = getPetImage(student);
+                    return (
+                      <img
+                        src={petImage.src}
+                        alt={pet.name}
+                        className="w-20 h-20 rounded-full border-4 border-white shadow-lg object-cover"
+                        data-fallbacks={serializeFallbacks(petImage.fallbacks)}
+                        data-fallback-index="0"
+                        onError={petImageErrorHandler}
+                      />
+                    );
+                  })()}
                   <div className="bg-white px-4 py-2 rounded-lg shadow text-sm font-bold min-w-0 flex items-center">
                     <span className="truncate mr-2">{student.firstName}</span>
                     <span className="text-xs text-gray-500 truncate">({pet.name})</span>
@@ -718,12 +700,19 @@ const PetRaceTab = ({
                     transform: 'translateY(-50%)'
                   }}
                 >
-                  <img 
-                    src={getPetImage(student)}
-                    alt={pet.name}
-                    className={`w-20 h-20 rounded-full border-4 border-white shadow-lg object-cover`}
-                    onError={(e) => { e.currentTarget.src = '/Pets/Wizard.png'; }}
-                  />
+                  {(() => {
+                    const petImage = getPetImage(student);
+                    return (
+                      <img
+                        src={petImage.src}
+                        alt={pet.name}
+                        className="w-20 h-20 rounded-full border-4 border-white shadow-lg object-cover"
+                        data-fallbacks={serializeFallbacks(petImage.fallbacks)}
+                        data-fallback-index="0"
+                        onError={petImageErrorHandler}
+                      />
+                    );
+                  })()}
                   <div className="bg-white px-4 py-2 rounded-lg shadow-lg text-sm font-bold min-w-0 flex items-center">
                     <span className="truncate mr-2">{student.firstName}</span>
                     <span className="text-xs text-gray-500 truncate">({pet.name})</span>

@@ -10,12 +10,23 @@ import {
   resolveEggHatch,
   getEggTypeById,
   EGG_STAGE_ART,
-  EGG_STAGE_MESSAGES
+  EGG_STAGE_MESSAGES,
+  getEggStageArt,
+  DEFAULT_PET_IMAGE
 } from '../../utils/gameHelpers';
+import { normalizeImageSource, serializeFallbacks, createImageErrorHandler } from '../../utils/imageFallback';
 
 // ===============================================
 // MYSTERY BOX SYSTEM (SHARED WITH TEACHER SHOP)
 // ===============================================
+
+const defaultEggArt = (EGG_STAGE_ART?.unbroken && EGG_STAGE_ART.unbroken.src) || '/shop/Egg/Egg.png';
+const eggImageErrorHandler = createImageErrorHandler(defaultEggArt);
+const petImageErrorHandler = createImageErrorHandler(DEFAULT_PET_IMAGE);
+
+const resolveEggArt = (stage) => normalizeImageSource(getEggStageArt(stage), defaultEggArt);
+
+const resolvePetArt = (source) => normalizeImageSource(source, DEFAULT_PET_IMAGE);
 
 const MYSTERY_BOX_PRICE = 10;
 
@@ -1155,13 +1166,19 @@ const StudentShop = ({
                   <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 md:gap-4">
                     {studentData.ownedPets.map((pet, index) => (
                       <div key={pet.id} className={`border-2 rounded-lg p-2 md:p-3 text-center ${index === 0 ? 'border-purple-500 bg-purple-50' : 'border-gray-200'}`}>
-                        <img 
-                          src={getPetImage(pet)} 
-                          className="w-12 h-12 md:w-16 md:h-16 rounded-full mx-auto mb-1"
-                          onError={(e) => {
-                            e.target.src = '/shop/BasicPets/Wizard.png';
-                          }}
-                        />
+                        {(() => {
+                          const petImage = resolvePetArt(getPetImage(pet));
+                          return (
+                            <img
+                              src={petImage.src}
+                              className="w-12 h-12 md:w-16 md:h-16 rounded-full mx-auto mb-1"
+                              data-fallbacks={serializeFallbacks(petImage.fallbacks)}
+                              data-fallback-index="0"
+                              onError={petImageErrorHandler}
+                              alt={pet.name}
+                            />
+                          );
+                        })()}
                         <p className="text-xs font-semibold truncate">{pet.name}</p>
                         {index === 0 ? (
                           <p className="text-xs text-purple-600 font-bold">Active</p>
@@ -1196,7 +1213,7 @@ const StudentShop = ({
                     {studentEggs.map((egg) => {
                       const status = getEggStageStatus(egg);
                       const accent = getEggAccent(egg);
-                      const eggArt = EGG_STAGE_ART[status.stage] || EGG_STAGE_ART.unbroken;
+                      const eggArt = resolveEggArt(status.stage);
                       const stageMessage = EGG_STAGE_MESSAGES[status.stage] || 'A surprise is brewing inside.';
                       const stageMessageClass = `text-xs text-gray-600 mb-3 ${status.stage === 'ready' ? '' : 'mt-auto'}`;
 
@@ -1218,11 +1235,14 @@ const StudentShop = ({
                               }}
                             >
                               <Image
-                                src={eggArt}
+                                src={eggArt.src}
                                 alt={`${egg.name} stage illustration`}
                                 fill
                                 sizes="64px"
                                 className="object-contain p-1"
+                                data-fallbacks={serializeFallbacks(eggArt.fallbacks)}
+                                data-fallback-index="0"
+                                onError={eggImageErrorHandler}
                               />
                             </div>
                             <div>

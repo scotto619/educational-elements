@@ -1,5 +1,7 @@
 // components/student/StudentGames.js - WITH MAZE GAME
 import React, { useState } from 'react';
+import { getGameLogo, DEFAULT_LOGO as DEFAULT_GAME_LOGO } from '../../utils/gameLogos';
+import { normalizeImageSource, serializeFallbacks, createImageErrorHandler } from '../../utils/imageFallback';
 
 // Import existing game components
 import BoggleGame from '../games/BoggleGame';
@@ -21,6 +23,10 @@ import MazeGame from '../games/MazeGame';
 import DailyWordleChallenge from '../games/DailyWordleChallenge';
 import AmazingTypingAdventure from '../games/AmazingTypingAdventure';
 
+const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
+
+const resolveLogoSource = (logo) => normalizeImageSource(logo, DEFAULT_GAME_LOGO);
+
 const StudentGames = ({ studentData, showToast, updateStudentData, classData }) => {
   const [selectedGame, setSelectedGame] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('daily');
@@ -39,7 +45,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       featured: true,
       daily: true,
       storageKeySuffix: 'student',
-      logo: '/logos/game-logos/daily-word-challenge.svg'
+      logo: getGameLogo('daily-word-challenge')
     },
     {
       id: 'typing-legends',
@@ -54,7 +60,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       featured: true,
       new: true,
       storageKeySuffix: 'student-typing',
-      logo: '/logos/game-logos/typing-legends.svg'
+      logo: getGameLogo('typing-legends')
     },
     // Featured/New Games
     {
@@ -68,7 +74,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       time: '2-10 minutes',
       featured: true,
       category: 'featured',
-      logo: '/logos/game-logos/maze-runner.svg'
+      logo: getGameLogo('maze-runner')
     },
     {
       id: 'bingo',
@@ -85,7 +91,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       category: 'featured',
       educational: true,
       requiresTeacher: true,
-      logo: '/logos/game-logos/educational-bingo.svg'
+      logo: getGameLogo('educational-bingo')
     },
     {
       id: 'educational-memory',
@@ -100,7 +106,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       featured: true,
       category: 'featured',
       educational: true,
-      logo: '/logos/game-logos/memory-challenge.svg'
+      logo: getGameLogo('memory-challenge')
     },
     {
       id: 'battle-royale',
@@ -115,7 +121,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       featured: true,
       category: 'featured',
       requiresClassCode: true,
-      logo: '/logos/game-logos/battle-royale.svg'
+      logo: getGameLogo('battle-royale')
     },
     {
       id: 'math-space-invaders',
@@ -128,7 +134,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       time: '5-30 minutes',
       featured: true,
       category: 'featured',
-      logo: '/logos/game-logos/math-space-invaders.svg'
+      logo: getGameLogo('math-space-invaders')
     },
     
     // Multiplayer Games
@@ -144,7 +150,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       multiplayer: true,
       category: 'multiplayer',
       requiresClassCode: true,
-      logo: '/logos/game-logos/cell-battle.svg'
+      logo: getGameLogo('cell-battle')
     },
     {
       id: 'battleships',
@@ -157,7 +163,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       time: '10-20 minutes',
       multiplayer: true,
       category: 'multiplayer',
-      logo: '/logos/game-logos/battleships.svg'
+      logo: getGameLogo('battleships')
     },
     {
       id: 'tic-tac-toe',
@@ -170,7 +176,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       time: '2-5 minutes',
       multiplayer: true,
       category: 'multiplayer',
-      logo: '/logos/game-logos/tic-tac-toe.svg'
+      logo: getGameLogo('tic-tac-toe')
     },
 
     // Adventure Games  
@@ -184,7 +190,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       difficulty: 'Medium - Expert',
       time: '5-30 minutes',
       category: 'adventure',
-      logo: '/logos/game-logos/match3-adventure.svg'
+      logo: getGameLogo('match3-adventure')
     },
     {
       id: 'clicker',
@@ -196,7 +202,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       difficulty: 'Easy',
       time: 'Unlimited',
       category: 'adventure',
-      logo: '/logos/game-logos/hero-forge.svg'
+      logo: getGameLogo('hero-forge')
     },
 
     // Educational Games
@@ -212,7 +218,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       category: 'educational',
       educational: true,
       requiresTeacher: true,
-      logo: '/logos/game-logos/classroom-bingo.svg'
+      logo: getGameLogo('classroom-bingo')
     },
     {
       id: 'math-race',
@@ -224,7 +230,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       difficulty: 'Easy - Hard',
       time: '2-5 minutes',
       category: 'educational',
-      logo: '/logos/game-logos/math-race.svg'
+      logo: getGameLogo('math-race')
     },
     {
       id: 'crossword',
@@ -236,7 +242,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       difficulty: 'Easy - Hard',
       time: '10-30 minutes',
       category: 'educational',
-      logo: '/logos/game-logos/crossword.svg'
+      logo: getGameLogo('crossword')
     },
     {
       id: 'word-search',
@@ -248,7 +254,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       difficulty: 'Easy - Medium',
       time: '5-15 minutes',
       category: 'educational',
-      logo: '/logos/game-logos/word-search.svg'
+      logo: getGameLogo('word-search')
     },
     {
       id: 'boggle',
@@ -260,7 +266,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       difficulty: 'Medium - Hard',
       time: '3-5 minutes',
       category: 'educational',
-      logo: '/logos/game-logos/boggle.svg'
+      logo: getGameLogo('boggle')
     },
     {
       id: 'noggle',
@@ -272,7 +278,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       difficulty: 'Medium - Hard',
       time: '3-5 minutes',
       category: 'educational',
-      logo: '/logos/game-logos/noggle.svg'
+      logo: getGameLogo('noggle')
     },
 
     // Brain Games
@@ -286,7 +292,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       difficulty: 'Easy - Hard',
       time: '2-10 minutes',
       category: 'brain',
-      logo: '/logos/game-logos/maze-runner.svg'
+      logo: getGameLogo('maze-runner')
     },
     {
       id: 'memory-match',
@@ -298,7 +304,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       difficulty: 'Easy - Expert',
       time: '3-8 minutes',
       category: 'brain',
-      logo: '/logos/game-logos/memory-challenge.svg'
+      logo: getGameLogo('memory-challenge')
     }
   ];
 
@@ -334,13 +340,28 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
                 ← Back
               </button>
               <div className="flex items-center space-x-2 md:space-x-3 min-w-0">
-                <div className={`w-8 h-8 md:w-12 md:h-12 rounded-full bg-gradient-to-r ${selectedGame.color} flex items-center justify-center text-lg md:text-2xl flex-shrink-0 ${
-                  selectedGame.new ? 'ring-4 ring-yellow-400 ring-opacity-60' : ''
-                } ${selectedGame.multiplayer && selectedGame.requiresClassCode ? 'ring-4 ring-red-400 ring-opacity-60' : ''}`}>
-                  {selectedGame.icon}
+                <div
+                  className={`w-10 h-10 md:w-14 md:h-14 rounded-lg overflow-hidden border border-gray-200 bg-white flex-shrink-0 flex items-center justify-center ${
+                    selectedGame.new ? 'ring-4 ring-yellow-400 ring-opacity-60' : ''
+                  } ${selectedGame.multiplayer && selectedGame.requiresClassCode ? 'ring-4 ring-red-400 ring-opacity-60' : ''}`}
+                >
+                  {(() => {
+                    const logoSource = resolveLogoSource(selectedGame.logo);
+                    return (
+                      <img
+                        src={logoSource.src}
+                        alt={`${selectedGame.name} logo`}
+                        className="max-w-full max-h-full object-contain p-1"
+                        data-fallbacks={serializeFallbacks(logoSource.fallbacks)}
+                        data-fallback-index="0"
+                        onError={logoErrorHandler}
+                      />
+                    );
+                  })()}
                 </div>
                 <div className="min-w-0">
                   <h2 className="text-lg md:text-2xl font-bold text-gray-800 truncate flex items-center">
+                    <span className="hidden sm:inline mr-2">{selectedGame.icon}</span>
                     {selectedGame.name}
                     {selectedGame.new && <span className="ml-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full">NEW!</span>}
                   </h2>
@@ -448,18 +469,20 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
                 className="group bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-400"
               >
                 <div className="flex flex-col md:flex-row">
-                  <div className="relative md:w-56 h-44 md:h-auto overflow-hidden">
-                    <img
-                      src={game.logo || '/Logo/placeholder-game.svg'}
-                      alt={`${game.name} logo`}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      onError={(e) => {
-                        if (!e.currentTarget.dataset.fallback) {
-                          e.currentTarget.dataset.fallback = 'true';
-                          e.currentTarget.src = '/Logo/placeholder-game.svg';
-                        }
-                      }}
-                    />
+                  <div className="relative md:w-56 h-44 md:h-auto overflow-hidden bg-white flex items-center justify-center">
+                    {(() => {
+                      const logoSource = resolveLogoSource(game.logo);
+                      return (
+                        <img
+                          src={logoSource.src}
+                          alt={`${game.name} logo`}
+                          className="max-w-full max-h-full object-contain p-6 transition-transform duration-500 group-hover:scale-105"
+                          data-fallbacks={serializeFallbacks(logoSource.fallbacks)}
+                          data-fallback-index="0"
+                          onError={logoErrorHandler}
+                        />
+                      );
+                    })()}
                     <div className="absolute top-3 left-3 bg-white/80 backdrop-blur-sm rounded-full px-3 py-1 text-sm font-semibold flex items-center gap-2 text-gray-800">
                       <span className="text-lg">{game.icon}</span>
                       <span>{game.category === 'daily' ? 'Daily' : 'Play'}</span>
