@@ -24,10 +24,10 @@ export const calculateCoins = (student) => {
 // ===============================================
 // SHOP DATA
 // ===============================================
-export const SHOP_BASIC_AVATARS = [ 
-  { name: 'Banana', price: 10, path: '/shop/Basic/Banana.png' }, 
-  { name: 'Basketball', price: 12, path: '/shop/Basic/Basketball.png' }, 
-  { name: 'BasketballGirl', price: 12, path: '/shop/Basic/BasketballGirl.png' }, 
+export const SHOP_BASIC_AVATARS = [
+  { name: 'Banana', price: 10, path: '/shop/Basic/Banana.png' },
+  { name: 'Basketball', price: 12, path: '/shop/Basic/Basketball.png' },
+  { name: 'BasketballGirl', price: 12, path: '/shop/Basic/BasketballGirl.png' },
   { name: 'FarmerBoy', price: 15, path: '/shop/Basic/FarmerBoy.png' }, 
   { name: 'FarmerGirl', price: 15, path: '/shop/Basic/FarmerGirl.png' }, 
   { name: 'Goblin1', price: 15, path: '/shop/Basic/Goblin1.png' }, 
@@ -39,12 +39,22 @@ export const SHOP_BASIC_AVATARS = [
   { name: 'RoboKnight', price: 25, path: '/shop/Basic/RoboKnight.png' }, 
   { name: 'RobotBoy', price: 22, path: '/shop/Basic/RobotBoy.png' }, 
   { name: 'RobotGirl', price: 22, path: '/shop/Basic/RobotGirl.png' }, 
-  { name: 'SoccerBoy', price: 10, path: '/shop/Basic/SoccerBoy.png' }, 
-  { name: 'SoccerBoy2', price: 10, path: '/shop/Basic/SoccerBoy2.png' }, 
-  { name: 'SoccerGirl', price: 10, path: '/shop/Basic/SoccerGirl.png' }, 
-  { name: 'StreetBoy1', price: 15, path: '/shop/Basic/Streetboy1.png' }, 
-  { name: 'StreetGirl1', price: 15, path: '/shop/Basic/Streetgirl1.png' }, 
-  { name: 'Vampire1', price: 20, path: '/shop/Basic/Vampire1.png' } 
+  { name: 'SoccerBoy', price: 10, path: '/shop/Basic/SoccerBoy.png' },
+  { name: 'SoccerBoy2', price: 10, path: '/shop/Basic/SoccerBoy2.png' },
+  { name: 'SoccerGirl', price: 10, path: '/shop/Basic/SoccerGirl.png' },
+  { name: 'StreetBoy1', price: 15, path: '/shop/Basic/Streetboy1.png' },
+  { name: 'StreetGirl1', price: 15, path: '/shop/Basic/Streetgirl1.png' },
+  { name: 'Vampire1', price: 20, path: '/shop/Basic/Vampire1.png' },
+  { name: 'Astronaut', price: 26, path: '/shop/Basic/Update1/Astronaut.png' },
+  { name: 'Challenger 67', price: 24, path: '/shop/Basic/Update1/67.png' },
+  { name: 'Demon Hunter F', price: 28, path: '/shop/Basic/Update1/DemonHunterF.png' },
+  { name: 'Demon Hunter M', price: 28, path: '/shop/Basic/Update1/DemonHunterM.png' },
+  { name: 'Eleven', price: 18, path: '/shop/Basic/Update1/Eleven.png' },
+  { name: 'K-Pop Star', price: 17, path: '/shop/Basic/Update1/KPop.png' },
+  { name: 'K-Pop Idol', price: 17, path: '/shop/Basic/Update1/KPopGirl.png' },
+  { name: 'Soccer Champ', price: 20, path: '/shop/Basic/Update1/Soccer Champ.png' },
+  { name: 'Spartan', price: 26, path: '/shop/Basic/Update1/Spartan.png' },
+  { name: 'Terminator', price: 30, path: '/shop/Basic/Update1/Terminator.png' }
 ];
 
 export const SHOP_PREMIUM_AVATARS = [ 
@@ -135,7 +145,11 @@ export const SHOP_BASIC_PETS = [
   { name: 'Time Knight Pet', price: 50, path: '/shop/BasicPets/Time Knight.png' },
   { name: 'Unicorn Pet', price: 35, path: '/shop/BasicPets/UnicornPet.png' },
   { name: 'Warrior Pet', price: 30, path: '/shop/BasicPets/Warrior.png' },
-  { name: 'Wizard Pet', price: 25, path: '/shop/BasicPets/Wizard.png' }
+  { name: 'Wizard Pet', price: 25, path: '/shop/BasicPets/Wizard.png' },
+  { name: 'Lizard Hatchling', price: 28, path: '/shop/BasicPets/Update1/LizardPet.png' },
+  { name: 'Octopus Buddy', price: 32, path: '/shop/BasicPets/Update1/OctopusPet.png' },
+  { name: 'Red Panda Pal', price: 34, path: '/shop/BasicPets/Update1/RedpandaPet.png' },
+  { name: 'Shark Buddy', price: 33, path: '/shop/Basic/Update1/SharkPet.png' }
 ];
 
 export const SHOP_PREMIUM_PETS = [
@@ -167,18 +181,255 @@ export const getAvatarImage = (avatarBase, level) => {
 // ===============================================
 export const getPetImage = (pet) => {
   if (!pet || !pet.name) return '/shop/BasicPets/Wizard.png'; // Default fallback
-  
+
   // First check if it's a shop pet (including Halloween)
   const shopItem = [
-    ...SHOP_BASIC_PETS, 
-    ...SHOP_PREMIUM_PETS, 
+    ...SHOP_BASIC_PETS,
+    ...SHOP_PREMIUM_PETS,
     ...HALLOWEEN_PETS
   ].find(p => p.name.toLowerCase() === pet.name.toLowerCase());
-  
+
   if (shopItem) return shopItem.path;
-  
+
   // Fallback to old pet system
   return `/Pets/${pet.name}.png`;
+};
+
+// ===============================================
+// EGG & BABY PET SYSTEM
+// ===============================================
+
+const HOUR_IN_MS = 60 * 60 * 1000;
+
+const randomDurationHours = (minHours, maxHours) => {
+  const min = Math.max(1, minHours);
+  const max = Math.max(min, maxHours);
+  return (min + Math.random() * (max - min)) * HOUR_IN_MS;
+};
+
+const BABY_RARITY_WEIGHTS = {
+  common: 45,
+  uncommon: 30,
+  rare: 18,
+  epic: 6,
+  legendary: 1
+};
+
+const pickByRarity = (items = [], weights = BABY_RARITY_WEIGHTS) => {
+  if (!items.length) return null;
+
+  const bucket = [];
+  items.forEach((item) => {
+    const weight = weights[item.rarity] || 1;
+    for (let i = 0; i < weight; i += 1) {
+      bucket.push(item);
+    }
+  });
+
+  if (!bucket.length) return items[Math.floor(Math.random() * items.length)];
+  return bucket[Math.floor(Math.random() * bucket.length)];
+};
+
+export const BABY_PETS = [
+  {
+    id: 'glimmer-kit',
+    name: 'Glimmer Kit',
+    rarity: 'common',
+    path: '/shop/Egg/Babies/common/glimmer-kit.svg',
+    speed: 5
+  },
+  {
+    id: 'sprout-shell',
+    name: 'Sprout Shell',
+    rarity: 'common',
+    path: '/shop/Egg/Babies/common/sprout-shell.svg',
+    speed: 5
+  },
+  {
+    id: 'sparkle-otter',
+    name: 'Sparkle Otter',
+    rarity: 'common',
+    path: '/shop/Egg/Babies/common/sparkle-otter.svg',
+    speed: 5
+  },
+  {
+    id: 'aurora-foal',
+    name: 'Aurora Foal',
+    rarity: 'rare',
+    path: '/shop/Egg/Babies/rare/aurora-foal.svg',
+    speed: 6
+  },
+  {
+    id: 'ember-hatchling',
+    name: 'Ember Hatchling',
+    rarity: 'rare',
+    path: '/shop/Egg/Babies/rare/ember-hatchling.svg',
+    speed: 6
+  },
+  {
+    id: 'tide-pixie',
+    name: 'Tide Pixie',
+    rarity: 'rare',
+    path: '/shop/Egg/Babies/rare/tide-pixie.svg',
+    speed: 6
+  }
+];
+
+export const PET_EGG_TYPES = [
+  {
+    id: 'starlit-egg',
+    name: 'Starlit Egg',
+    rarity: 'rare',
+    description: 'Glitters with cosmic stardust and soft pastel hues.',
+    accent: '#7c3aed',
+    hatchPool: ['aurora-foal', 'tide-pixie'],
+    minHours: 1,
+    maxHours: 12
+  },
+  {
+    id: 'lagoon-egg',
+    name: 'Lagoon Egg',
+    rarity: 'epic',
+    description: 'Waves shimmer across the shell like glowing ripples.',
+    accent: '#0ea5e9',
+    hatchPool: ['glimmer-kit', 'sprout-shell', 'tide-pixie'],
+    minHours: 1,
+    maxHours: 12
+  },
+  {
+    id: 'ember-egg',
+    name: 'Ember Egg',
+    rarity: 'legendary',
+    description: 'Warm embers pulse beneath a crystalline shell.',
+    accent: '#f97316',
+    hatchPool: ['ember-hatchling', 'sparkle-otter'],
+    minHours: 1,
+    maxHours: 12
+  }
+];
+
+export const EGG_STAGE_ART = {
+  unbroken: '/shop/Egg/egg-stage-unbroken.svg',
+  cracked: '/shop/Egg/egg-stage-cracked.svg',
+  ready: '/shop/Egg/egg-stage-ready.svg',
+  hatched: '/shop/Egg/egg-stage-ready.svg'
+};
+
+export const EGG_STAGE_MESSAGES = {
+  unbroken: 'This egg is quietly humming with magic.',
+  cracked: 'Cracks are spreading—keep watching!',
+  ready: 'Your egg is ready to hatch!'
+};
+
+const EGG_STAGE_SEQUENCE = ['unbroken', 'cracked', 'ready'];
+
+export const getEggTypeById = (eggTypeId) => PET_EGG_TYPES.find((egg) => egg.id === eggTypeId);
+
+export const pickRandomEggType = () => pickByRarity(PET_EGG_TYPES, BABY_RARITY_WEIGHTS);
+
+const chooseBabyForEgg = (eggType) => {
+  if (!eggType) return pickByRarity(BABY_PETS);
+  const pool = BABY_PETS.filter((baby) => eggType.hatchPool.includes(baby.id));
+  return pickByRarity(pool.length ? pool : BABY_PETS);
+};
+
+export const createPetEgg = (eggType = pickRandomEggType(), currentTime = Date.now()) => {
+  const type = eggType || pickRandomEggType();
+  const baby = chooseBabyForEgg(type);
+  const unbrokenDurationMs = randomDurationHours(type.minHours, type.maxHours);
+  const crackedDurationMs = randomDurationHours(type.minHours, type.maxHours);
+
+  return {
+    id: `egg_${currentTime}_${Math.random().toString(36).slice(2)}`,
+    eggTypeId: type.id,
+    name: type.name,
+    rarity: type.rarity,
+    description: type.description,
+    accent: type.accent,
+    stage: 'unbroken',
+    stageStartedAt: currentTime,
+    stageEndsAt: currentTime + unbrokenDurationMs,
+    unbrokenDurationMs,
+    crackedDurationMs,
+    assignedBabyId: baby?.id || null
+  };
+};
+
+export const advanceEggStage = (egg, currentTime = Date.now()) => {
+  if (!egg) return { egg, changed: false };
+
+  const nextEgg = { ...egg };
+  let changed = false;
+
+  if (nextEgg.stage === 'ready' || nextEgg.stage === 'hatched') {
+    return { egg: nextEgg, changed: false };
+  }
+
+  if (nextEgg.stageEndsAt && currentTime >= nextEgg.stageEndsAt) {
+    const currentStageIndex = EGG_STAGE_SEQUENCE.indexOf(nextEgg.stage);
+    const nextStage = EGG_STAGE_SEQUENCE[currentStageIndex + 1] || 'ready';
+
+    if (nextStage === 'cracked') {
+      nextEgg.stage = 'cracked';
+      nextEgg.stageStartedAt = nextEgg.stageEndsAt;
+      nextEgg.stageEndsAt = nextEgg.stageStartedAt + (nextEgg.crackedDurationMs || randomDurationHours(1, 12));
+      changed = true;
+    } else {
+      nextEgg.stage = 'ready';
+      nextEgg.stageStartedAt = nextEgg.stageEndsAt;
+      nextEgg.stageEndsAt = null;
+      changed = true;
+    }
+  }
+
+  return { egg: nextEgg, changed };
+};
+
+export const getEggStageStatus = (egg, currentTime = Date.now()) => {
+  if (!egg) {
+    return {
+      stage: 'unknown',
+      progress: 0,
+      timeRemainingMs: 0,
+      stageLabel: 'Unknown Egg'
+    };
+  }
+
+  const stageLabelMap = {
+    unbroken: 'Incubating',
+    cracked: 'Cracking',
+    ready: 'Ready to Hatch',
+    hatched: 'Hatched'
+  };
+
+  const stageDuration =
+    egg.stage === 'unbroken'
+      ? egg.unbrokenDurationMs
+      : egg.stage === 'cracked'
+        ? egg.crackedDurationMs
+        : 0;
+
+  const elapsed = egg.stageStartedAt ? currentTime - egg.stageStartedAt : 0;
+  const progress = stageDuration > 0 ? Math.min(1, Math.max(0, elapsed / stageDuration)) : egg.stage === 'ready' ? 1 : 0;
+  const timeRemainingMs = egg.stageEndsAt ? Math.max(0, egg.stageEndsAt - currentTime) : 0;
+
+  return {
+    stage: egg.stage,
+    progress,
+    timeRemainingMs,
+    stageLabel: stageLabelMap[egg.stage] || 'Incubating'
+  };
+};
+
+export const resolveEggHatch = (egg, currentTime = Date.now()) => {
+  if (!egg || egg.stage !== 'ready') return null;
+  const baby = BABY_PETS.find((pet) => pet.id === egg.assignedBabyId) || pickByRarity(BABY_PETS);
+  return {
+    ...baby,
+    id: `pet_${currentTime}_${Math.random().toString(36).slice(2)}`,
+    isBaby: true,
+    originEggId: egg.id
+  };
 };
 
 // ===============================================

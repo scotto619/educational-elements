@@ -1,13 +1,28 @@
 // components/common/MysteryBoxModal.js - REUSABLE MYSTERY BOX COMPONENT
 import React, { useState } from 'react';
-import { 
-  getMysteryBoxPrizes, 
-  selectRandomPrize, 
+import {
+  getMysteryBoxPrizes,
+  selectRandomPrize,
   awardMysteryBoxPrize,
   getRarityColor,
-  getRarityBg,
-  MYSTERY_BOX_PRICE 
-} from '../utils/mysteryBox';
+  getRarityGradient,
+  MYSTERY_BOX_PRICE
+} from '../../utils/mysterybox';
+import { getEggTypeById } from '../../utils/gameHelpers';
+
+const getEggAccent = (eggLike) => {
+  const fallback = '#f59e0b';
+  if (!eggLike) return fallback;
+  if (typeof eggLike === 'string') {
+    return getEggTypeById(eggLike)?.accent || fallback;
+  }
+  if (eggLike.accent) return eggLike.accent;
+  if (eggLike.eggType?.accent) return eggLike.eggType.accent;
+  if (eggLike.eggTypeId) {
+    return getEggTypeById(eggLike.eggTypeId)?.accent || fallback;
+  }
+  return fallback;
+};
 
 const MysteryBoxModal = ({
   isVisible,
@@ -187,59 +202,91 @@ const MysteryBoxModal = ({
         
         {/* Reveal Stage */}
         {stage === 'reveal' && prize && (
-          <div className={`p-8 ${getRarityBg(prize.rarity)} animate-fadeIn`}>
+          <div className="relative p-6 md:p-8 animate-fadeIn">
             {/* Confetti effect */}
-            <div className="absolute inset-0 pointer-events-none overflow-hidden">
-              {[...Array(20)].map((_, i) => (
+            <div className="pointer-events-none absolute inset-0 overflow-hidden">
+              {[...Array(24)].map((_, i) => (
                 <div
                   key={i}
-                  className="absolute w-2 h-2 bg-yellow-400 animate-bounce"
+                  className="absolute h-2 w-2 animate-ping rounded-full bg-yellow-400 opacity-80"
                   style={{
                     left: `${Math.random() * 100}%`,
                     top: `${Math.random() * 100}%`,
                     animationDelay: `${Math.random() * 2}s`,
-                    animationDuration: '1s'
+                    animationDuration: '1.2s'
                   }}
                 />
               ))}
             </div>
-            
-            <div className="text-6xl mb-4 animate-bounce">🎉</div>
-            <h2 className="text-2xl font-bold mb-2 text-gray-800">Congratulations!</h2>
-            
-            {/* Rarity badge */}
-            <div className={`inline-block px-4 py-2 rounded-full text-sm font-bold mb-4 border-2 ${getRarityColor(prize.rarity)} uppercase tracking-wider animate-pulse`}>
-              {prize.rarity} Prize!
-            </div>
-            
-            {/* Prize display */}
-            <div className="mb-4">
-              {prize.type === 'avatar' || prize.type === 'pet' ? (
-                <img 
-                  src={prize.item.path} 
-                  className="w-24 h-24 object-contain rounded-full mx-auto border-4 border-white shadow-lg animate-bounce" 
-                  onError={(e) => {
-                    e.target.src = prize.type === 'avatar' ? '/shop/Basic/Banana.png' : '/shop/BasicPets/Wizard.png';
-                  }}
-                />
-              ) : (
-                <div className="text-6xl animate-bounce">{prize.icon}</div>
-              )}
-            </div>
-            
-            <h3 className="text-xl font-bold text-gray-800 mb-2">
-              {prize.displayName}
-            </h3>
-            
-            {prize.description && (
-              <p className="text-gray-600 mb-4 text-sm">
-                {prize.description}
-              </p>
-            )}
-            
-            <button 
+
+            {(() => {
+              const rarityColor = getRarityColor(prize.rarity);
+              const rarityGradient = getRarityGradient(prize.rarity);
+              const renderArtwork = () => {
+                if (prize.type === 'avatar' || prize.type === 'pet') {
+                  return (
+                    <img
+                      src={prize.item.path}
+                      alt={prize.displayName}
+                      className="mx-auto h-28 w-28 rounded-full border-4 border-white object-contain shadow-xl"
+                      onError={(e) => {
+                        e.target.src =
+                          prize.type === 'avatar' ? '/shop/Basic/Banana.png' : '/shop/BasicPets/Wizard.png';
+                      }}
+                    />
+                  );
+                }
+                if (prize.type === 'egg') {
+                  const accent = getEggAccent(prize.eggType || prize.eggTypeId);
+                  return (
+                    <div
+                      className="mx-auto flex h-32 w-32 items-center justify-center rounded-full border-4 shadow-inner"
+                      style={{
+                        background: `radial-gradient(circle at 30% 30%, ${accent}33, #ffffff)`,
+                        borderColor: accent
+                      }}
+                    >
+                      <span className="text-5xl">🥚</span>
+                    </div>
+                  );
+                }
+                return (
+                  <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-white/80 text-5xl shadow-lg">
+                    {prize.icon || '🎁'}
+                  </div>
+                );
+              };
+
+              return (
+                <>
+                  <div className="mb-5 text-center">
+                    <div className="text-5xl md:text-6xl">🎉</div>
+                    <h2 className="mt-2 text-2xl font-extrabold text-gray-800">Congratulations!</h2>
+                  </div>
+                  <div className="relative overflow-hidden rounded-3xl bg-white shadow-2xl">
+                    <div className={`bg-gradient-to-br ${rarityGradient} p-6 text-center`}>{renderArtwork()}</div>
+                    <div className="space-y-3 px-6 pb-6 pt-4 text-center">
+                      <span className={`inline-block rounded-full border-2 px-4 py-1 text-xs font-bold uppercase tracking-wide ${rarityColor}`}>
+                        {prize.rarity} prize
+                      </span>
+                      <h3 className="text-xl font-bold text-gray-800">{prize.displayName}</h3>
+                      {(prize.description || prize.type === 'egg') && (
+                        <p className="text-sm text-gray-600">
+                          {prize.type === 'egg'
+                            ? prize.eggType?.description ||
+                              'Keep this egg safe while it incubates. It will hatch into a surprise pet!'
+                            : prize.description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
+
+            <button
               onClick={handleClose}
-              className="w-full bg-green-500 text-white py-3 px-6 rounded-lg font-bold hover:bg-green-600 transition-all transform hover:scale-105 shadow-lg"
+              className="mt-6 w-full transform rounded-lg bg-green-500 py-3 px-6 font-bold text-white shadow-lg transition-all hover:scale-105 hover:bg-green-600"
             >
               Awesome! 🎊
             </button>

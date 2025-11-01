@@ -1,6 +1,8 @@
 // utils/mysteryBox.js - REUSABLE MYSTERY BOX SYSTEM
 // This can be used throughout your application for mystery boxes, prizes, etc.
 
+import { PET_EGG_TYPES, createPetEgg, getEggTypeById } from './gameHelpers';
+
 export const MYSTERY_BOX_PRICE = 10;
 
 // Define rarity weights (higher = more common)
@@ -95,7 +97,8 @@ export const getMysteryBoxPrizes = ({
   rewards = [],
   includeXP = true,
   includeCurrency = true,
-  customPrizes = []
+  customPrizes = [],
+  eggs = PET_EGG_TYPES
 }) => {
   const prizes = [];
   
@@ -120,6 +123,20 @@ export const getMysteryBoxPrizes = ({
       name: pet.name,
       displayName: pet.name,
       description: `Adopt a ${pet.name}!`
+    });
+  });
+
+  // Add eggs
+  (eggs || []).forEach((eggType) => {
+    prizes.push({
+      type: 'egg',
+      eggTypeId: eggType.id,
+      eggType,
+      rarity: eggType.rarity,
+      name: `${eggType.name} Egg`,
+      displayName: `${eggType.name} Egg`,
+      description: eggType.description || 'This egg will hatch into a surprise pet!',
+      icon: '🥚'
     });
   });
   
@@ -252,6 +269,15 @@ export const awardMysteryBoxPrize = (prize, student, onUpdateStudent, showToast)
       updatedStudent.ownedPets = [...(student.ownedPets || []), newPet];
       message = `${student.firstName} won a ${prize.item.name}!`;
       break;
+
+    case 'egg': {
+      const eggType = prize.eggType || getEggTypeById(prize.eggTypeId);
+      const newEgg = createPetEgg(eggType);
+      updatedStudent.petEggs = [...(student.petEggs || []), newEgg];
+      const rarityLabel = (newEgg.rarity || '').toUpperCase();
+      message = `${student.firstName} discovered a ${rarityLabel ? `${rarityLabel} ` : ''}${newEgg.name}!`;
+      break;
+    }
       
     case 'reward':
       updatedStudent.rewardsPurchased = [...(student.rewardsPurchased || []), { 

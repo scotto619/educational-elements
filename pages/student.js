@@ -30,6 +30,7 @@ import {
   HALLOWEEN_BASIC_AVATARS,
   HALLOWEEN_PREMIUM_AVATARS,
   HALLOWEEN_PETS,
+  createPetEgg
 } from '../utils/gameHelpers';
 
 const isSameCalendarDay = (dateA, dateB) => (
@@ -90,6 +91,7 @@ const StudentPortal = () => {
   const [dailyMysteryBoxAvailable, setDailyMysteryBoxAvailable] = useState(false);
   const [showDailyMysteryBox, setShowDailyMysteryBox] = useState(false);
   const dailyMysteryBoxAutoOpenKeyRef = useRef(null);
+  const loginEggGrantAttemptedRef = useRef(false);
 
   // Login flow states
   const [loginStep, setLoginStep] = useState('classCode'); // 'classCode', 'studentSelect', 'password'
@@ -257,6 +259,149 @@ const StudentPortal = () => {
       }
     }
   }, [dailyMysteryBoxAvailable, getDailyMysteryBoxStorageKey, showToast, studentData]);
+
+  const grantLoginEggIfNeeded = useCallback(
+    async (student) => {
+      if (!student || student.loginEggGrantedAt) {
+        return { student, granted: false, reason: 'already-granted' };
+      }
+
+      if (!teacherUserId || !classData) {
+        console.warn('Missing class context for login egg grant');
+        return { student, granted: false, reason: 'missing-context' };
+      }
+
+      try {
+        const newEgg = createPetEgg();
+        const updatedAt = new Date().toISOString();
+        const nextEggs = [...(student.petEggs || []), newEgg];
+        const updates = {
+          petEggs: nextEggs,
+          loginEggGrantedAt: updatedAt,
+          updatedAt
+        };
+
+        if (architectureVersion === 'v2') {
+          if (!student.id) {
+            throw new Error('Missing student id for v2 login egg grant');
+          }
+
+          const studentRef = doc(firestore, 'students', student.id);
+          await updateDoc(studentRef, updates);
+        } else {
+          const userRef = doc(firestore, 'users', teacherUserId);
+          const userDoc = await getDoc(userRef);
+
+          if (!userDoc.exists()) {
+            throw new Error('Teacher record not found for login egg grant');
+          }
+
+          const userData = userDoc.data();
+          let studentPatched = false;
+          const updatedClasses = (userData.classes || []).map((cls) => {
+            if (cls.classCode?.toUpperCase() === classData.classCode?.toUpperCase()) {
+              const studentsArray = Array.isArray(cls.students) ? cls.students : [];
+              const updatedStudents = studentsArray.map((s) => {
+                const matchesStudent =
+                  s.id === student.id ||
+                  s.studentId === student.id ||
+                  s.id === student.studentId ||
+                  (s.studentId && student.studentId && s.studentId === student.studentId);
+
+                if (matchesStudent) {
+                  studentPatched = true;
+                  return {
+                    ...s,
+                    ...updates
+                  };
+                }
+                return s;
+              });
+
+              if (!studentPatched) {
+                console.warn('Student entry not found for login egg grant in V1 architecture.');
+              }
+
+              return {
+                ...cls,
+                students: updatedStudents
+              };
+            }
+            return cls;
+          });
+
+          await updateDoc(userRef, { classes: updatedClasses });
+        }
+
+        const updatedStudent = { ...student, ...updates };
+        return { student: updatedStudent, granted: true, egg: newEgg };
+      } catch (error) {
+        console.error('Failed to grant login egg:', error);
+        return { student, granted: false, reason: 'error', error };
+      }
+    },
+    [architectureVersion, classData, teacherUserId]
+  );
+
+  useEffect(() => {
+    if (
+      !isLoggedIn ||
+      !studentData ||
+      studentData.loginEggGrantedAt ||
+      !teacherUserId ||
+      !classData ||
+      loginEggGrantAttemptedRef.current
+    ) {
+      return;
+    }
+
+    let isMounted = true;
+    loginEggGrantAttemptedRef.current = true;
+
+    (async () => {
+      const result = await grantLoginEggIfNeeded(studentData);
+      if (!isMounted) {
+        return;
+      }
+
+      if (result.granted) {
+        const nextStudent = result.student;
+        setStudentData(nextStudent);
+        setSelectedStudent((prev) => (prev && prev.id === nextStudent.id ? nextStudent : prev));
+        refreshDailyMysteryBoxAvailability(nextStudent);
+
+        try {
+          const session = JSON.parse(sessionStorage.getItem('studentSession') || '{}');
+          if (session.studentData && session.studentData.id === nextStudent.id) {
+            session.studentData = nextStudent;
+            sessionStorage.setItem('studentSession', JSON.stringify(session));
+          }
+        } catch (sessionError) {
+          console.warn('Unable to persist login egg session update:', sessionError);
+        }
+
+        if (result.egg) {
+          showToast(`You received a ${result.egg.name}!`, 'success');
+        } else {
+          showToast('You received a mysterious egg!', 'success');
+        }
+      } else if (result.reason === 'error') {
+        loginEggGrantAttemptedRef.current = false;
+      }
+    })();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [
+    classData,
+    grantLoginEggIfNeeded,
+    isLoggedIn,
+    refreshDailyMysteryBoxAvailability,
+    showToast,
+    studentData,
+    teacherUserId
+  ]);
 
   // ===============================================
   // STEP 1: CLASS CODE SEARCH
@@ -476,6 +621,7 @@ const StudentPortal = () => {
         console.warn('⚠️ Could not save session to sessionStorage:', sessionError);
       }
 
+      loginEggGrantAttemptedRef.current = false;
       setStudentData(selectedStudent);
       refreshDailyMysteryBoxAvailability(selectedStudent, { autoOpen: true });
       setIsLoggedIn(true);
@@ -597,6 +743,7 @@ const StudentPortal = () => {
     setDailyMysteryBoxAvailable(false);
     setShowDailyMysteryBox(false);
     dailyMysteryBoxAutoOpenKeyRef.current = null;
+    loginEggGrantAttemptedRef.current = false;
   };
 
   const handleBackToClassCode = () => {

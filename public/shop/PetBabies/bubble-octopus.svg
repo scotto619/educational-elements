@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="octoBody" cx="50%" cy="35%" r="60%">
+      <stop offset="0%" stop-color="#bae6fd" />
+      <stop offset="60%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#0ea5e9" />
+    </radialGradient>
+    <linearGradient id="octoArms" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22d3ee" />
+      <stop offset="100%" stop-color="#2563eb" />
+    </linearGradient>
+  </defs>
+  <rect width="200" height="200" rx="36" fill="#e0f2fe" />
+  <g transform="translate(30 40)">
+    <ellipse cx="70" cy="70" rx="60" ry="50" fill="url(#octoBody)" />
+    <g fill="url(#octoArms)">
+      <path d="M32 92 Q22 112 40 122 Q56 128 54 114" opacity="0.85" />
+      <path d="M58 100 Q48 124 68 132 Q84 136 80 116" opacity="0.85" />
+      <path d="M82 100 Q92 130 112 128 Q126 120 108 102" opacity="0.85" />
+      <path d="M106 96 Q122 118 138 110 Q150 100 130 90" opacity="0.85" />
+    </g>
+    <circle cx="55" cy="65" r="8" fill="#1f2937" />
+    <circle cx="85" cy="65" r="8" fill="#1f2937" />
+    <circle cx="53" cy="63" r="3" fill="#f8fafc" />
+    <circle cx="83" cy="63" r="3" fill="#f8fafc" />
+    <path d="M60 78 Q70 86 80 78" stroke="#1f2937" stroke-width="4" fill="none" stroke-linecap="round" />
+  </g>
+  <g fill="#bae6fd" opacity="0.6">
+    <circle cx="150" cy="50" r="12" />
+    <circle cx="160" cy="72" r="8" />
+    <circle cx="40" cy="30" r="10" />
+  </g>
+</svg>

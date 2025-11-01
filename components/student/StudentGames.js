@@ -18,12 +18,44 @@ import StudentBattleRoyale from '../student/StudentBattleRoyale';
 import EducationalMemoryGame from '../games/EducationalMemoryGame';
 import StudentBingo from '../student/StudentBingo';
 import MazeGame from '../games/MazeGame';
+import DailyWordleChallenge from '../games/DailyWordleChallenge';
+import AmazingTypingAdventure from '../games/AmazingTypingAdventure';
 
 const StudentGames = ({ studentData, showToast, updateStudentData, classData }) => {
   const [selectedGame, setSelectedGame] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState('featured');
+  const [selectedCategory, setSelectedCategory] = useState('daily');
 
   const availableGames = [
+    {
+      id: 'daily-word-challenge',
+      name: 'Daily Word Challenge',
+      icon: '🗓️',
+      description: 'Take on the daily Wordle-style puzzle! Solve it once a day and compare with friends tomorrow.',
+      component: DailyWordleChallenge,
+      color: 'from-purple-500 to-indigo-600',
+      difficulty: 'All Levels',
+      time: '5 minutes',
+      category: 'daily',
+      featured: true,
+      daily: true,
+      storageKeySuffix: 'student',
+      logo: '/logos/game-logos/daily-word-challenge.svg'
+    },
+    {
+      id: 'typing-legends',
+      name: 'Typing Legends Academy',
+      icon: '⌨️',
+      description: 'Blast through immersive stories while levelling up your typing speed, accuracy, and combo streaks.',
+      component: AmazingTypingAdventure,
+      color: 'from-indigo-600 to-fuchsia-500',
+      difficulty: 'All Levels',
+      time: '5-10 minutes',
+      category: 'educational',
+      featured: true,
+      new: true,
+      storageKeySuffix: 'student-typing',
+      logo: '/logos/game-logos/typing-legends.svg'
+    },
     // Featured/New Games
     {
       id: 'maze',
@@ -35,7 +67,8 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       difficulty: 'Easy - Hard',
       time: '2-10 minutes',
       featured: true,
-      category: 'featured'
+      category: 'featured',
+      logo: '/logos/game-logos/maze-runner.svg'
     },
     {
       id: 'bingo',
@@ -51,7 +84,8 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       new: true,
       category: 'featured',
       educational: true,
-      requiresTeacher: true
+      requiresTeacher: true,
+      logo: '/logos/game-logos/educational-bingo.svg'
     },
     {
       id: 'educational-memory',
@@ -65,7 +99,8 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       multiplayer: true,
       featured: true,
       category: 'featured',
-      educational: true
+      educational: true,
+      logo: '/logos/game-logos/memory-challenge.svg'
     },
     {
       id: 'battle-royale',
@@ -79,7 +114,8 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       multiplayer: true,
       featured: true,
       category: 'featured',
-      requiresClassCode: true
+      requiresClassCode: true,
+      logo: '/logos/game-logos/battle-royale.svg'
     },
     {
       id: 'math-space-invaders',
@@ -91,7 +127,8 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       difficulty: 'Easy - Expert',
       time: '5-30 minutes',
       featured: true,
-      category: 'featured'
+      category: 'featured',
+      logo: '/logos/game-logos/math-space-invaders.svg'
     },
     
     // Multiplayer Games
@@ -106,7 +143,8 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       time: '5-20 minutes',
       multiplayer: true,
       category: 'multiplayer',
-      requiresClassCode: true
+      requiresClassCode: true,
+      logo: '/logos/game-logos/cell-battle.svg'
     },
     {
       id: 'battleships',
@@ -118,7 +156,8 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       difficulty: 'Medium',
       time: '10-20 minutes',
       multiplayer: true,
-      category: 'multiplayer'
+      category: 'multiplayer',
+      logo: '/logos/game-logos/battleships.svg'
     },
     {
       id: 'tic-tac-toe',
@@ -130,7 +169,8 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       difficulty: 'Easy',
       time: '2-5 minutes',
       multiplayer: true,
-      category: 'multiplayer'
+      category: 'multiplayer',
+      logo: '/logos/game-logos/tic-tac-toe.svg'
     },
 
     // Adventure Games  
@@ -143,7 +183,8 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       color: 'from-red-500 to-purple-600',
       difficulty: 'Medium - Expert',
       time: '5-30 minutes',
-      category: 'adventure'
+      category: 'adventure',
+      logo: '/logos/game-logos/match3-adventure.svg'
     },
     {
       id: 'clicker',
@@ -154,7 +195,8 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       color: 'from-yellow-500 to-orange-600',
       difficulty: 'Easy',
       time: 'Unlimited',
-      category: 'adventure'
+      category: 'adventure',
+      logo: '/logos/game-logos/hero-forge.svg'
     },
 
     // Educational Games
@@ -169,7 +211,8 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       time: '15-30 minutes',
       category: 'educational',
       educational: true,
-      requiresTeacher: true
+      requiresTeacher: true,
+      logo: '/logos/game-logos/classroom-bingo.svg'
     },
     {
       id: 'math-race',
@@ -180,7 +223,8 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       color: 'from-green-500 to-green-600',
       difficulty: 'Easy - Hard',
       time: '2-5 minutes',
-      category: 'educational'
+      category: 'educational',
+      logo: '/logos/game-logos/math-race.svg'
     },
     {
       id: 'crossword',
@@ -191,7 +235,8 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       color: 'from-indigo-500 to-purple-600',
       difficulty: 'Easy - Hard',
       time: '10-30 minutes',
-      category: 'educational'
+      category: 'educational',
+      logo: '/logos/game-logos/crossword.svg'
     },
     {
       id: 'word-search',
@@ -202,7 +247,8 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       color: 'from-blue-500 to-blue-600',
       difficulty: 'Easy - Medium',
       time: '5-15 minutes',
-      category: 'educational'
+      category: 'educational',
+      logo: '/logos/game-logos/word-search.svg'
     },
     {
       id: 'boggle',
@@ -213,7 +259,8 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       color: 'from-yellow-500 to-orange-500',
       difficulty: 'Medium - Hard',
       time: '3-5 minutes',
-      category: 'educational'
+      category: 'educational',
+      logo: '/logos/game-logos/boggle.svg'
     },
     {
       id: 'noggle',
@@ -224,7 +271,8 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       color: 'from-red-500 to-pink-500',
       difficulty: 'Medium - Hard',
       time: '3-5 minutes',
-      category: 'educational'
+      category: 'educational',
+      logo: '/logos/game-logos/noggle.svg'
     },
 
     // Brain Games
@@ -237,7 +285,8 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       color: 'from-indigo-500 to-purple-600',
       difficulty: 'Easy - Hard',
       time: '2-10 minutes',
-      category: 'brain'
+      category: 'brain',
+      logo: '/logos/game-logos/maze-runner.svg'
     },
     {
       id: 'memory-match',
@@ -248,11 +297,13 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       color: 'from-purple-500 to-purple-600',
       difficulty: 'Easy - Expert',
       time: '3-8 minutes',
-      category: 'brain'
+      category: 'brain',
+      logo: '/logos/game-logos/memory-challenge.svg'
     }
   ];
 
   const categories = [
+    { id: 'daily', name: 'Daily Challenges', icon: '📅' },
     { id: 'featured', name: '⭐ Featured', icon: '⭐' },
     { id: 'multiplayer', name: 'Multiplayer', icon: '🎮' },
     { id: 'educational', name: 'Educational', icon: '📚' },
@@ -302,13 +353,14 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
 
         {/* Game Component */}
         <div className="bg-white rounded-xl shadow-lg p-3 md:p-6">
-          <GameComponent 
+          <GameComponent
             gameMode="digital"
             showToast={showToast}
             students={[studentData]}
             studentData={studentData}
             updateStudentData={updateStudentData}
             classData={classData}
+            storageKeySuffix={selectedGame.storageKeySuffix}
           />
         </div>
       </div>
@@ -368,83 +420,99 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
         </div>
       )}
 
-      {/* Games Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+      {/* Games Gallery */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
         {getGamesInCategory(selectedCategory)
           .filter(game => selectedCategory !== 'multiplayer' || classData?.classCode || !game.requiresClassCode)
-          .map((game) => (
-          <div
-            key={game.id}
-            onClick={() => setSelectedGame(game)}
-            className="group cursor-pointer rounded-xl p-4 md:p-6 border-2 border-transparent hover:shadow-lg transition-all duration-200 active:scale-95 relative bg-gradient-to-br from-gray-50 to-white hover:from-blue-50 hover:to-purple-50 hover:border-blue-200"
-          >
-            {/* New Badge */}
-            {game.new && (
-              <div className="absolute -top-2 -right-2 bg-gradient-to-r from-yellow-500 to-orange-600 text-white text-xs font-bold px-2 py-1 rounded-full z-10 animate-bounce">
-                NEW!
-              </div>
-            )}
-            
-            {/* Featured Badge */}
-            {game.featured && !game.new && (
-              <div className="absolute -top-2 -right-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white text-xs font-bold px-2 py-1 rounded-full z-10">
-                ⭐ HOT
-              </div>
-            )}
-            
-            <div className="flex items-center space-x-3 mb-3 md:mb-4">
-              <div className={`w-12 h-12 md:w-14 md:h-14 rounded-full bg-gradient-to-r ${game.color} flex items-center justify-center text-xl md:text-2xl group-hover:scale-110 transition-transform flex-shrink-0`}>
-                {game.icon}
-              </div>
-              <div className="min-w-0 flex-1">
-                <h4 className="text-base md:text-lg font-bold text-gray-800 group-hover:text-blue-600 transition-colors truncate">
-                  {game.name}
-                </h4>
-                <div className="flex items-center space-x-2 text-xs">
-                  {game.multiplayer && (
-                    <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full">
-                      🔥 Multiplayer
-                    </span>
-                  )}
-                  {game.educational && (
-                    <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded-full">
-                      📚 Educational
-                    </span>
-                  )}
-                  {game.requiresTeacher && (
-                    <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
-                      👨‍🏫 Class Game
-                    </span>
-                  )}
+          .map((game) => {
+            const buttonLabel = game.requiresTeacher
+              ? '🎓 Join Class Game'
+              : game.multiplayer && game.requiresClassCode
+                ? '🧬 Enter Code to Play'
+                : game.multiplayer
+                  ? '🎮 Play with Friends'
+                  : '🚀 Start Game';
+
+            return (
+              <div
+                key={game.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => setSelectedGame(game)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    setSelectedGame(game);
+                  }
+                }}
+                className="group bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-400"
+              >
+                <div className="flex flex-col md:flex-row">
+                  <div className="relative md:w-56 h-44 md:h-auto overflow-hidden">
+                    <img
+                      src={game.logo || '/Logo/placeholder-game.svg'}
+                      alt={`${game.name} logo`}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      onError={(e) => {
+                        if (!e.currentTarget.dataset.fallback) {
+                          e.currentTarget.dataset.fallback = 'true';
+                          e.currentTarget.src = '/Logo/placeholder-game.svg';
+                        }
+                      }}
+                    />
+                    <div className="absolute top-3 left-3 bg-white/80 backdrop-blur-sm rounded-full px-3 py-1 text-sm font-semibold flex items-center gap-2 text-gray-800">
+                      <span className="text-lg">{game.icon}</span>
+                      <span>{game.category === 'daily' ? 'Daily' : 'Play'}</span>
+                    </div>
+                    {game.new && (
+                      <div className="absolute top-3 right-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow animate-bounce">
+                        NEW
+                      </div>
+                    )}
+                    {!game.new && game.featured && (
+                      <div className="absolute top-3 right-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow">
+                        ⭐ Featured
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 p-4 md:p-6 space-y-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-lg md:text-xl font-bold text-gray-900 flex-1 min-w-0">
+                        <span className="truncate block group-hover:text-purple-600 transition-colors">{game.name}</span>
+                      </h3>
+                      {game.daily && (
+                        <span className="bg-amber-100 text-amber-700 text-xs font-semibold px-2 py-1 rounded-full">Daily</span>
+                      )}
+                      {game.requiresClassCode && !classData?.classCode && (
+                        <span className="bg-red-100 text-red-700 text-xs font-semibold px-2 py-1 rounded-full">Class Code Needed</span>
+                      )}
+                    </div>
+
+                    <p className="text-gray-600 text-sm md:text-base leading-relaxed">
+                      {game.description}
+                    </p>
+
+                    <div className="flex flex-wrap gap-2 text-xs md:text-sm text-gray-600">
+                      {game.multiplayer && <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full">Multiplayer</span>}
+                      {game.educational && <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full">Educational</span>}
+                      {game.requiresTeacher && <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full">Teacher Needed</span>}
+                    </div>
+
+                    <div className="flex justify-between text-xs md:text-sm text-gray-500">
+                      <span>⚡ Difficulty: <strong className="text-gray-700">{game.difficulty}</strong></span>
+                      <span>⏱️ Time: <strong className="text-gray-700">{game.time}</strong></span>
+                    </div>
+
+                    <div className="pt-2 md:pt-4">
+                      <div className={`inline-flex items-center px-4 py-2 md:px-5 md:py-3 rounded-full bg-gradient-to-r ${game.color} text-white font-semibold text-sm md:text-base shadow-sm group-hover:shadow-lg transition-all`}>
+                        {buttonLabel}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-
-            <p className="text-gray-600 text-sm leading-relaxed mb-3 md:mb-4">
-              {game.description}
-            </p>
-
-            <div className="space-y-1 text-xs text-gray-500 mb-3 md:mb-4">
-              <div className="flex justify-between">
-                <span>⚡ Difficulty:</span>
-                <span className="font-medium">{game.difficulty}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>⏱️ Time:</span>
-                <span className="font-medium">{game.time}</span>
-              </div>
-            </div>
-
-            <div className="pt-3 border-t border-gray-200">
-              <div className={`w-full py-2 md:py-3 px-4 rounded-lg bg-gradient-to-r ${game.color} text-white text-center font-semibold group-hover:shadow-md transition-all text-sm md:text-base`}>
-                {game.requiresTeacher ? '🔥 Join Game' :
-                 game.multiplayer && game.requiresClassCode ? '🧬 Join Battle' :
-                 game.multiplayer ? '🔥 Play vs Friend' : 
-                 '🎮 Play Game'}
-              </div>
-            </div>
-          </div>
-        ))}
+            );
+          })}
       </div>
 
       {/* Quick Tips */}

@@ -2,7 +2,7 @@
 // REBUILT PET RACE SYSTEM WITH CLIENT-SIDE CSS
 'use client'; // Mark as client-side component
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 const PetRaceTab = ({ 
   students, 
@@ -21,6 +21,9 @@ const PetRaceTab = ({
   const [raceWinner, setRaceWinner] = useState(null);
   const [raceProgress, setRaceProgress] = useState(0);
   const [isRacing, setIsRacing] = useState(false);
+  const [activeRacePets, setActiveRacePets] = useState([]);
+  const [countdownValue, setCountdownValue] = useState(3);
+  const [finishResults, setFinishResults] = useState([]);
 
   // Track and Animation Refs
   const trackRef = useRef(null);
@@ -29,12 +32,30 @@ const PetRaceTab = ({
 
   // IMPORTANT: persistent race data ref (speeds, etc.)
   const raceDataRef = useRef({});
+  const finishTimesRef = useRef({});
 
   // Filter students with valid pets
   const studentsWithPets = students.filter(student => {
     const firstPet = student.ownedPets?.[0];
     return firstPet && firstPet.name && firstPet.name.trim().length > 0;
   });
+
+  const currentLeader = useMemo(() => {
+    if (racePhase !== 'racing' || !activeRacePets.length) return null;
+
+    let leaderId = null;
+    let leaderPosition = -Infinity;
+
+    activeRacePets.forEach(petId => {
+      const position = racePositions[petId] ?? 0;
+      if (position > leaderPosition) {
+        leaderPosition = position;
+        leaderId = petId;
+      }
+    });
+
+    return studentsWithPets.find(student => student.id === leaderId) || null;
+  }, [racePhase, activeRacePets, racePositions, studentsWithPets]);
 
   // Track resize handling
   useEffect(() => {
@@ -126,7 +147,7 @@ const PetRaceTab = ({
       return;
     }
 
-    const validSelectedPets = selectedPets.filter(petId => 
+    const validSelectedPets = selectedPets.filter(petId =>
       studentsWithPets.some(s => s.id === petId && s.ownedPets?.[0])
     );
 
@@ -136,77 +157,77 @@ const PetRaceTab = ({
       return;
     }
 
-    // Initialize race data speeds and reset positions
-    raceDataRef.current = {};
+    setSelectedPets(validSelectedPets);
+
+    const duration = 22000 + Math.random() * 5000;
+    const finishLine = trackWidth * 0.9;
+
+    raceDataRef.current = {
+      meta: { duration, finishLine }
+    };
+
     validSelectedPets.forEach(petId => {
       raceDataRef.current[petId] = {
-        speed: 0.75 + Math.random() * 0.5, // tuned so 15–20s race finishes nicely
+        speed: 0.75 + Math.random() * 0.5
       };
     });
 
     const initialPositions = {};
     validSelectedPets.forEach(petId => { initialPositions[petId] = 0; });
 
-    setRacePhase('racing');
-    setIsRacing(true);
+    setActiveRacePets(validSelectedPets);
+    setRacePositions(initialPositions);
     setRaceProgress(0);
     setRaceWinner(null);
-    setRacePositions(initialPositions);
+    setFinishResults([]);
+    finishTimesRef.current = {};
+    setIsRacing(false);
+    setRacePhase('countdown');
+    setCountdownValue(3);
 
-    // Kick off the animation loop
     if (animationRef.current) {
       cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
     }
-    animationRef.current = requestAnimationFrame((t) => runSmoothRace(validSelectedPets, t));
-    showToast('🏁 Race Started! Go pets go!', 'success');
+
+    showToast('🎬 Race starting! Get ready...', 'info');
   };
 
   // Smooth Race Animation with Easing (fixed to use raceDataRef)
   const runSmoothRace = (racingPets, startTime) => {
-    const totalDuration = 15000 + Math.random() * 5000; // 15-20 seconds
-    const finishLine = trackWidth * 0.95; // 95% of track width
-    let localWinner = null;
+    const { duration = 20000, finishLine = trackWidth * 0.9 } = raceDataRef.current.meta || {};
 
     const animate = (now) => {
       const elapsed = now - startTime;
-      const progress = Math.min(elapsed / totalDuration, 1);
+      const progress = Math.min(elapsed / duration, 1);
       const easedProgress = progress < 1 ? (1 - Math.pow(1 - progress, 2)) : 1; // ease-out
 
       setRaceProgress(easedProgress);
 
-      // Calculate new positions
       const newPositions = {};
-      let leadingId = null;
-      let leadingPos = 0;
 
       for (const petId of racingPets) {
         const student = studentsWithPets.find(s => s.id === petId);
         if (!student) continue;
 
         const data = raceDataRef.current[petId] || { speed: 1 };
-        // A little wobble to keep things interesting
-        const wobble = Math.sin((elapsed / 250) + parseInt(petId, 36)) * 6; // +/- 6px
-        const position = Math.min(easedProgress * data.speed * finishLine + wobble, finishLine);
+        const wobble = Math.sin((elapsed / 250) + parseInt(petId, 36)) * 6;
+        const rawPosition = easedProgress * data.speed * finishLine + wobble;
+        const clampedPosition = Math.min(rawPosition, finishLine);
 
-        newPositions[petId] = position;
+        newPositions[petId] = clampedPosition;
 
-        if (position > leadingPos) {
-          leadingPos = position;
-          leadingId = petId;
+        if (!finishTimesRef.current[petId] && clampedPosition >= finishLine) {
+          finishTimesRef.current[petId] = { time: elapsed, position: clampedPosition };
         }
       }
 
       setRacePositions(newPositions);
 
-      // Continue or finish
       if (progress < 1) {
         animationRef.current = requestAnimationFrame(animate);
       } else {
-        // Winner is the leader at the end
-        if (!localWinner && leadingId) {
-          localWinner = studentsWithPets.find(s => s.id === leadingId) || null;
-        }
-        setTimeout(() => finishRace(localWinner || studentsWithPets[Math.floor(Math.random() * studentsWithPets.length)]), 800);
+        setTimeout(() => finishRace(duration), 800);
       }
     };
 
@@ -214,9 +235,8 @@ const PetRaceTab = ({
   };
 
   // Finish Race and Award Prize
-  const finishRace = (winner) => {
+  const finishRace = (totalDuration) => {
     setIsRacing(false);
-    setRaceWinner(winner);
     setRacePhase('finished');
 
     if (animationRef.current) {
@@ -224,30 +244,105 @@ const PetRaceTab = ({
       animationRef.current = null;
     }
 
-    // Award winner
-    const winnerPet = winner?.ownedPets?.[0];
-    if (winner && winnerPet) {
-      const updatedOwnedPets = [...(winner.ownedPets || [])];
-      updatedOwnedPets[0] = {
-        ...winnerPet,
-        wins: (winnerPet.wins || 0) + 1
+    const finishLine = raceDataRef.current?.meta?.finishLine ?? trackWidth * 0.9;
+
+    const results = activeRacePets.map(petId => {
+      const student = studentsWithPets.find(s => s.id === petId);
+      if (!student) return null;
+
+      const finishInfo = finishTimesRef.current[petId];
+      const finalPosition = racePositions[petId] ?? 0;
+      const finishTime = finishInfo?.time ?? (totalDuration + Math.max(0, finishLine - finalPosition));
+
+      return {
+        id: petId,
+        student,
+        pet: student.ownedPets?.[0],
+        finishTime,
+        finalPosition
       };
+    }).filter(Boolean).sort((a, b) => {
+      if (a.finishTime !== b.finishTime) return a.finishTime - b.finishTime;
+      return b.finalPosition - a.finalPosition;
+    });
+
+    setFinishResults(results);
+
+    const winnerEntry = results[0] || null;
+    setRaceWinner(winnerEntry?.student || null);
+
+    if (winnerEntry?.student && winnerEntry.pet) {
+      const winner = winnerEntry.student;
+      const winnerPet = winnerEntry.pet;
+      const updatedOwnedPets = [...(winner.ownedPets || [])];
+      const petIndex = updatedOwnedPets.findIndex(p => p.id === winnerPet.id);
+
+      if (petIndex >= 0) {
+        updatedOwnedPets[petIndex] = {
+          ...updatedOwnedPets[petIndex],
+          wins: (updatedOwnedPets[petIndex].wins || 0) + 1
+        };
+      } else if (updatedOwnedPets.length > 0) {
+        updatedOwnedPets[0] = {
+          ...updatedOwnedPets[0],
+          wins: (updatedOwnedPets[0].wins || 0) + 1
+        };
+      }
 
       const updatedWinnerData = { ownedPets: updatedOwnedPets };
       if (prizeType === 'xp') {
         updatedWinnerData.totalPoints = (winner.totalPoints || 0) + prizeAmount;
       } else if (prizeType === 'coins') {
         updatedWinnerData.currency = (winner.currency || 0) + prizeAmount;
-      } else {
-        // custom prize: record it for history if you want in future
       }
 
-      // IMPORTANT: Parent expects (studentId, updatedFields)
       updateStudent(winner.id, updatedWinnerData);
     }
 
-    showToast(`🎉 ${winner?.firstName || 'Winner'} wins with ${winnerPet?.name || 'their pet'}! Prize awarded!`, 'success');
+    const summary = results.slice(0, 3).map((entry, index) => {
+      const name = entry.student?.firstName || 'Unknown';
+      return `${index + 1}. ${name}`;
+    }).join(' • ');
+
+    const winnerPetName = winnerEntry?.pet?.name || 'their pet';
+    showToast(`🎉 ${winnerEntry?.student?.firstName || 'Winner'} wins with ${winnerPetName}!${summary ? ` Results: ${summary}` : ''}`, 'success');
   };
+
+  useEffect(() => {
+    if (racePhase !== 'countdown') return;
+
+    setIsRacing(false);
+    setCountdownValue(3);
+    let value = 3;
+
+    const interval = setInterval(() => {
+      value -= 1;
+      if (value <= 0) {
+        setCountdownValue('GO!');
+        clearInterval(interval);
+        setTimeout(() => {
+          if (activeRacePets.length < 2) {
+            showToast('Not enough pets to race. Returning to setup.', 'warning');
+            setRacePhase('setup');
+            return;
+          }
+
+          setRacePhase('racing');
+          setIsRacing(true);
+
+          if (animationRef.current) {
+            cancelAnimationFrame(animationRef.current);
+          }
+          animationRef.current = requestAnimationFrame((t) => runSmoothRace(activeRacePets, t));
+          showToast('🏁 Go! The pets are racing!', 'success');
+        }, 700);
+      } else {
+        setCountdownValue(value);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [racePhase, activeRacePets, showToast]);
 
   // Reset Race
   const resetRace = () => {
@@ -261,9 +356,13 @@ const PetRaceTab = ({
     setRaceProgress(0);
     setRaceWinner(null);
     setIsRacing(false);
+    setActiveRacePets([]);
+    setFinishResults([]);
+    setCountdownValue(3);
     setPrizeAmount(10);
     setCustomPrize('');
     raceDataRef.current = {};
+    finishTimesRef.current = {};
   };
 
   // Get Prize Description
@@ -464,6 +563,74 @@ const PetRaceTab = ({
         </div>
       )}
 
+      {/* Countdown Phase */}
+      {racePhase === 'countdown' && (
+        <div className="space-y-6">
+          <div className="bg-gradient-to-r from-indigo-500 via-blue-500 to-purple-500 text-white rounded-xl p-6 text-center shadow-lg">
+            <h3 className="text-3xl font-bold mb-2">Ready... Set...</h3>
+            <p className="text-lg">Race begins in just a moment! Pump up your class and cheer on the pets!</p>
+          </div>
+
+          <div
+            className="relative bg-gradient-to-b from-emerald-300 via-green-200 to-lime-200 border-4 border-gray-400 rounded-xl overflow-hidden shadow-2xl"
+            style={{ height: `${Math.max(activeRacePets.length, 2) * 120 + 120}px`, minHeight: '420px' }}
+          >
+            <div className="absolute inset-0 bg-[url('/images/grass-pattern.png')] bg-repeat opacity-20 animate-pan-left"></div>
+            <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-purple-900/70 via-purple-700/30 to-transparent pointer-events-none"></div>
+            <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-orange-500/70 via-orange-400/30 to-transparent pointer-events-none"></div>
+
+            {activeRacePets.map((_, index) => (
+              <div
+                key={index}
+                className={`absolute w-full border-b-2 border-gray-300 ${index % 2 === 0 ? 'bg-white/20' : 'bg-emerald-200/30'}`}
+                style={{ top: `${index * 120 + 60}px`, height: '120px' }}
+              />
+            ))}
+
+            <div className="absolute top-0 bottom-0 left-6 w-6 bg-green-700 rounded-l-lg shadow-lg z-10"></div>
+            <div
+              className="absolute top-0 bottom-0 w-6 bg-gradient-to-r from-red-500 via-white to-red-500 rounded-r-lg shadow-lg"
+              style={{ left: `${(raceDataRef.current?.meta?.finishLine || trackWidth * 0.9) + 20}px` }}
+            ></div>
+
+            {activeRacePets.map((petId, index) => {
+              const student = studentsWithPets.find(s => s.id === petId);
+              if (!student) return null;
+
+              const pet = student.ownedPets[0];
+
+              return (
+                <div
+                  key={petId}
+                  className="absolute flex items-center space-x-4 z-20 transition-all"
+                  style={{
+                    top: `${index * 120 + 120}px`,
+                    left: '50px'
+                  }}
+                >
+                  <img
+                    src={getPetImage(student)}
+                    alt={pet.name}
+                    className="w-20 h-20 rounded-full border-4 border-white shadow-lg object-cover"
+                    onError={(e) => { e.currentTarget.src = '/Pets/Wizard.png'; }}
+                  />
+                  <div className="bg-white px-4 py-2 rounded-lg shadow text-sm font-bold min-w-0 flex items-center">
+                    <span className="truncate mr-2">{student.firstName}</span>
+                    <span className="text-xs text-gray-500 truncate">({pet.name})</span>
+                  </div>
+                </div>
+              );
+            })}
+
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="bg-white bg-opacity-80 rounded-full px-10 py-6 shadow-2xl border-4 border-purple-400">
+                <span className="text-5xl sm:text-6xl font-extrabold text-purple-600 animate-pulse">{countdownValue}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Racing Phase */}
       {racePhase === 'racing' && (
         <div className="space-y-6">
@@ -472,7 +639,7 @@ const PetRaceTab = ({
             <h3 className="text-3xl font-bold mb-2 animate-pulse">🏃‍♂️ RACE IN PROGRESS! 🏃‍♀️</h3>
             <p className="text-xl">Winner gets: {getPrizeDescription()}</p>
             <div className="mt-4 w-full bg-white bg-opacity-20 rounded-full h-4">
-              <div 
+              <div
                 className="bg-white h-4 rounded-full transition-all duration-300"
                 style={{ width: `${raceProgress * 100}%` }}
               ></div>
@@ -480,37 +647,44 @@ const PetRaceTab = ({
             <p className="text-sm mt-2 opacity-75">Race Progress: {Math.round(raceProgress * 100)}%</p>
           </div>
 
+          {currentLeader && (
+            <div className="bg-white border border-yellow-200 rounded-xl p-4 shadow-md text-center">
+              <p className="text-xs uppercase text-yellow-500 tracking-widest">Current Leader</p>
+              <p className="text-lg font-bold text-gray-800">
+                {currentLeader.firstName} &amp; {currentLeader.ownedPets?.[0]?.name || 'Pet'}
+              </p>
+            </div>
+          )}
+
           {/* Race Track */}
-          <div 
+          <div
             ref={trackRef}
             className="relative bg-gradient-to-b from-green-200 via-green-100 to-emerald-200 border-4 border-gray-400 rounded-xl overflow-hidden shadow-xl"
-            style={{ height: `${selectedPets.length * 120 + 60}px`, minHeight: '400px' }}
+            style={{ height: `${Math.max(activeRacePets.length, selectedPets.length) * 120 + 60}px`, minHeight: '420px' }}
           >
-            {/* Animated Background */}
             <div className="absolute inset-0 bg-[url('/images/grass-pattern.png')] bg-repeat opacity-30 animate-pan-left"></div>
+            <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-purple-900/70 via-purple-700/30 to-transparent pointer-events-none"></div>
+            <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-orange-500/70 via-orange-400/30 to-transparent pointer-events-none"></div>
 
-            {/* Track Lanes */}
-            {selectedPets.map((_, index) => (
+            {(activeRacePets.length ? activeRacePets : selectedPets).map((_, index) => (
               <div
                 key={index}
-                className={`absolute w-full border-b-2 border-gray-300 ${index % 2 === 0 ? 'bg-white bg-opacity-10' : 'bg-emerald-50 bg-opacity-20'}`}
+                className={`absolute w-full border-b-2 border-gray-300 ${index % 2 === 0 ? 'bg-white/15' : 'bg-emerald-200/30'}`}
                 style={{ top: `${index * 120 + 30}px`, height: '120px' }}
               />
             ))}
 
-            {/* Start Line */}
-            <div className="absolute top-0 bottom-0 left-6 w-6 bg-green-600 rounded-l-lg shadow-lg z-10">
+            <div className="absolute top-0 bottom-0 left-6 w-6 bg-green-700 rounded-l-lg shadow-lg z-10">
               <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-white px-4 py-2 rounded shadow text-sm font-bold text-green-800">
                 START
               </div>
             </div>
 
-            {/* Progress Markers */}
             {[0.25, 0.5, 0.75].map((percent, index) => (
               <div
                 key={index}
-                className="absolute top-0 bottom-0 w-1 bg-gray-400 opacity-60"
-                style={{ left: `${20 + (trackWidth * 0.95 * percent)}px` }}
+                className="absolute top-0 bottom-0 w-1 bg-white/60"
+                style={{ left: `${20 + ((raceDataRef.current?.meta?.finishLine || trackWidth * 0.9) * percent)}px` }}
               >
                 <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-white px-2 py-1 rounded text-xs text-gray-700">
                   {Math.round(percent * 100)}%
@@ -518,18 +692,16 @@ const PetRaceTab = ({
               </div>
             ))}
 
-            {/* Finish Line */}
-            <div 
+            <div
               className="absolute top-0 bottom-0 w-6 bg-gradient-to-r from-red-500 via-white to-red-500 rounded-r-lg shadow-lg z-10"
-              style={{ left: `${trackWidth * 0.95 + 20}px` }}
+              style={{ left: `${(raceDataRef.current?.meta?.finishLine || trackWidth * 0.9) + 20}px` }}
             >
               <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-white px-4 py-2 rounded shadow text-sm font-bold text-red-800">
                 FINISH
               </div>
             </div>
 
-            {/* Racing Pets */}
-            {selectedPets.map((petId, index) => {
+            {(activeRacePets.length ? activeRacePets : selectedPets).map((petId, index) => {
               const student = studentsWithPets.find(s => s.id === petId);
               if (!student) return null;
 
@@ -580,6 +752,45 @@ const PetRaceTab = ({
               </div>
             </div>
           </div>
+
+          {finishResults.length > 0 && (
+            <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
+              <h4 className="text-lg sm:text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                🏅 Final Standings
+              </h4>
+              <ol className="space-y-2">
+                {finishResults.map((result, index) => (
+                  <li
+                    key={result.id}
+                    className={`flex items-center justify-between px-3 py-2 rounded-lg border ${
+                      index === 0
+                        ? 'bg-yellow-50 border-yellow-200'
+                        : index === 1
+                        ? 'bg-gray-100 border-gray-200'
+                        : index === 2
+                        ? 'bg-orange-50 border-orange-200'
+                        : 'bg-white border-gray-200'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className={`text-lg font-bold ${
+                        index === 0 ? 'text-yellow-600' : index === 1 ? 'text-gray-600' : index === 2 ? 'text-orange-600' : 'text-gray-500'
+                      }`}>
+                        #{index + 1}
+                      </span>
+                      <div>
+                        <p className="font-semibold text-gray-800">{result.student?.firstName}</p>
+                        <p className="text-xs text-gray-500">
+                          {result.pet?.name || 'Pet'} • {(result.finishTime / 1000).toFixed(1)}s
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-xs text-gray-500">Final distance: {Math.round(result.finalPosition)}px</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
 
           {/* Actions */}
           <div className="flex items-center justify-center gap-4">

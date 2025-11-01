@@ -20,6 +20,28 @@ const getTodayDate = () => {
     return new Date().toISOString().split('T')[0];
 };
 
+const getBehaviorStatusForToday = (status) => {
+    if (!status) return null;
+
+    const today = getTodayDate();
+
+    if (typeof status === 'string') {
+        return status;
+    }
+
+    if (typeof status === 'object') {
+        if (status.date === today) {
+            return status.value || null;
+        }
+
+        if (status[today]) {
+            return status[today];
+        }
+    }
+
+    return null;
+};
+
 // Play award sound
 const playAwardSound = (type = 'xp') => {
     try {
@@ -425,11 +447,11 @@ const StudentsTab = ({
 
     // NEW: Handle traffic light click
     const handleTrafficLightClick = (student, color) => {
-        const updatedStudent = {
-            ...student,
-            behaviorStatus: student.behaviorStatus === color ? null : color
-        };
-        onUpdateStudent(student.id, { behaviorStatus: updatedStudent.behaviorStatus });
+        const today = getTodayDate();
+        const currentStatus = getBehaviorStatusForToday(student.behaviorStatus);
+        const nextStatus = currentStatus === color ? null : { date: today, value: color };
+
+        onUpdateStudent(student.id, { behaviorStatus: nextStatus });
     };
 
     // NEW: Handle attendance toggle
@@ -663,6 +685,7 @@ const StudentCard = ({
     // Get today's attendance
     const today = getTodayDate();
     const todayAttendance = student.attendance?.[today];
+    const behaviorStatus = getBehaviorStatusForToday(student.behaviorStatus);
 
     // Get clicker data from clickerGameData
     const clickerGameData = student.clickerGameData || null;
@@ -760,24 +783,24 @@ const StudentCard = ({
                 <button
                     onClick={(e) => handleTrafficLightClickInternal(e, 'green')}
                     className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full border-2 transition-all ${
-                        student.behaviorStatus === 'green' 
-                            ? 'bg-green-500 border-green-700 shadow-lg scale-110' 
+                        behaviorStatus === 'green'
+                            ? 'bg-green-500 border-green-700 shadow-lg scale-110'
                             : 'bg-green-200 border-green-400 hover:bg-green-300'
                     }`}
                 />
                 <button
                     onClick={(e) => handleTrafficLightClickInternal(e, 'yellow')}
                     className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full border-2 transition-all ${
-                        student.behaviorStatus === 'yellow' 
-                            ? 'bg-yellow-500 border-yellow-700 shadow-lg scale-110' 
+                        behaviorStatus === 'yellow'
+                            ? 'bg-yellow-500 border-yellow-700 shadow-lg scale-110'
                             : 'bg-yellow-200 border-yellow-400 hover:bg-yellow-300'
                     }`}
                 />
                 <button
                     onClick={(e) => handleTrafficLightClickInternal(e, 'red')}
                     className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full border-2 transition-all ${
-                        student.behaviorStatus === 'red' 
-                            ? 'bg-red-500 border-red-700 shadow-lg scale-110' 
+                        behaviorStatus === 'red'
+                            ? 'bg-red-500 border-red-700 shadow-lg scale-110'
                             : 'bg-red-200 border-red-400 hover:bg-red-300'
                     }`}
                 />
