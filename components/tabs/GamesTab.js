@@ -1,6 +1,7 @@
 // components/tabs/GamesTab.js - WITH MAZE GAME
 import React, { useState } from 'react';
-import { getGameLogo } from '../../utils/gameLogos';
+import { getGameLogo, DEFAULT_LOGO as DEFAULT_GAME_LOGO } from '../../utils/gameLogos';
+import { normalizeImageSource, serializeFallbacks, createImageErrorHandler } from '../../utils/imageFallback';
 
 // Import existing game components
 import BoggleGame from '../games/BoggleGame';
@@ -20,6 +21,10 @@ import BingoGame from '../games/BingoGame';
 import MazeGame from '../games/MazeGame';
 import DailyWordleChallenge from '../games/DailyWordleChallenge';
 import AmazingTypingAdventure from '../games/AmazingTypingAdventure';
+
+const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
+
+const resolveLogoSource = (logo) => normalizeImageSource(logo, DEFAULT_GAME_LOGO);
 
 const GamesTab = ({ 
   students, 
@@ -353,17 +358,19 @@ const GamesTab = ({
               </button>
               <div className="flex items-center space-x-2 md:space-x-3 min-w-0">
                 <div className="w-10 h-10 md:w-14 md:h-14 rounded-lg overflow-hidden border border-gray-200 bg-white flex-shrink-0 flex items-center justify-center">
-                  <img
-                    src={selectedGame.logo || '/Logo/placeholder-game.svg'}
-                    alt={`${selectedGame.name} logo`}
-                    className="max-w-full max-h-full object-contain p-1"
-                    onError={(e) => {
-                      if (!e.currentTarget.dataset.fallback) {
-                        e.currentTarget.dataset.fallback = 'true';
-                        e.currentTarget.src = '/Logo/placeholder-game.svg';
-                      }
-                    }}
-                  />
+                  {(() => {
+                    const logoSource = resolveLogoSource(selectedGame.logo);
+                    return (
+                      <img
+                        src={logoSource.src}
+                        alt={`${selectedGame.name} logo`}
+                        className="max-w-full max-h-full object-contain p-1"
+                        data-fallbacks={serializeFallbacks(logoSource.fallbacks)}
+                        data-fallback-index="0"
+                        onError={logoErrorHandler}
+                      />
+                    );
+                  })()}
                 </div>
                 <div className="min-w-0">
                   <h2 className="text-lg md:text-2xl font-bold text-gray-800 truncate">
@@ -452,17 +459,19 @@ const GamesTab = ({
           >
             <div className="flex flex-col md:flex-row">
               <div className="relative md:w-56 lg:w-60 h-44 md:h-auto overflow-hidden bg-white flex items-center justify-center">
-                <img
-                  src={game.logo || '/Logo/placeholder-game.svg'}
-                  alt={`${game.name} logo`}
-                  className="max-w-full max-h-full object-contain p-6 transition-transform duration-500 group-hover:scale-105"
-                  onError={(e) => {
-                    if (!e.currentTarget.dataset.fallback) {
-                      e.currentTarget.dataset.fallback = 'true';
-                      e.currentTarget.src = '/Logo/placeholder-game.svg';
-                    }
-                  }}
-                />
+                {(() => {
+                  const logoSource = resolveLogoSource(game.logo);
+                  return (
+                    <img
+                      src={logoSource.src}
+                      alt={`${game.name} logo`}
+                      className="max-w-full max-h-full object-contain p-6 transition-transform duration-500 group-hover:scale-105"
+                      data-fallbacks={serializeFallbacks(logoSource.fallbacks)}
+                      data-fallback-index="0"
+                      onError={logoErrorHandler}
+                    />
+                  );
+                })()}
                 <div className="absolute top-3 left-3 bg-white/80 backdrop-blur-sm rounded-full px-3 py-1 text-sm font-semibold flex items-center gap-2 text-gray-800">
                   <span className="text-lg">{game.icon}</span>
                   <span>{game.category === 'daily' ? 'Daily' : 'Play'}</span>

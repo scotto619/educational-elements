@@ -10,8 +10,11 @@ import {
   resolveEggHatch,
   getEggTypeById,
   EGG_STAGE_ART,
-  EGG_STAGE_MESSAGES
+  EGG_STAGE_MESSAGES,
+  getEggStageArt,
+  DEFAULT_PET_IMAGE
 } from '../../utils/gameHelpers';
+import { normalizeImageSource, serializeFallbacks, createImageErrorHandler } from '../../utils/imageFallback';
 
 // ===============================================
 // HALLOWEEN THEMED ITEMS - LIMITED TIME!
@@ -41,6 +44,14 @@ const HALLOWEEN_PETS = [
   { name: 'Spooky Cat', price: 25, path: '/shop/Themed/Halloween/Pets/Pet.png', theme: 'halloween' },
   { name: 'Pumpkin Cat', price: 28, path: '/shop/Themed/Halloween/Pets/Pet2.png', theme: 'halloween' }
 ];
+
+const defaultEggArt = (EGG_STAGE_ART?.unbroken && EGG_STAGE_ART.unbroken.src) || '/shop/Egg/Egg.png';
+const eggImageErrorHandler = createImageErrorHandler(defaultEggArt);
+const petImageErrorHandler = createImageErrorHandler(DEFAULT_PET_IMAGE);
+
+const resolveEggArt = (stage) => normalizeImageSource(getEggStageArt(stage), defaultEggArt);
+
+const resolvePetArt = (source) => normalizeImageSource(source, DEFAULT_PET_IMAGE);
 
 // Available icons for new rewards
 const REWARD_ICONS = ['💻', '🎮', '📝', '🎵', '🎯', '💺', '⏰', '🎓', '🏆', '⭐', '🎨', '📚', '🏃‍♂️', '🎁', '🎭', '🎪', '🎯', '🎲', '🎊', '🎉', '👑', '🏅', '🥇', '🎀', '🌟', '✨', '🔮', '🎈', '🎂', '🍕', '🍪', '🧸', '🚀', '🌈', '⚡', '🔥', '💎', '🍭'];
@@ -1392,7 +1403,19 @@ const ShopTab = ({
                             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-4">
                                 {selectedStudent.ownedPets.map((pet, index) => (
                                     <div key={pet.id} className={`border-2 rounded-lg p-2 text-center ${index === 0 ? 'border-blue-500' : ''}`}>
-                                        <img src={getPetImage(pet)} className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full mx-auto mb-1"/>
+                                        {(() => {
+                                          const petImage = resolvePetArt(getPetImage(pet));
+                                          return (
+                                            <img
+                                              src={petImage.src}
+                                              className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full mx-auto mb-1"
+                                              data-fallbacks={serializeFallbacks(petImage.fallbacks)}
+                                              data-fallback-index="0"
+                                              onError={petImageErrorHandler}
+                                              alt={pet.name}
+                                            />
+                                          );
+                                        })()}
                                         <p className="text-xs font-semibold truncate">{pet.name}</p>
                                         {index === 0 ? (
                                             <p className="text-xs text-blue-600 font-bold">Following</p>
@@ -1419,7 +1442,7 @@ const ShopTab = ({
                             {selectedStudentEggs.map((egg) => {
                               const status = getEggStageStatus(egg);
                               const accent = getEggAccent(egg);
-                              const eggArt = EGG_STAGE_ART[status.stage] || EGG_STAGE_ART.unbroken;
+                              const eggArt = resolveEggArt(status.stage);
                               const stageMessage = EGG_STAGE_MESSAGES[status.stage] || 'A surprise is brewing inside.';
                               const stageMessageClass = `text-xs text-gray-600 mb-3 ${status.stage === 'ready' ? '' : 'mt-auto'}`;
 
@@ -1441,11 +1464,14 @@ const ShopTab = ({
                                       }}
                                     >
                                       <Image
-                                        src={eggArt}
+                                        src={eggArt.src}
                                         alt={`${egg.name} stage illustration`}
                                         fill
                                         sizes="64px"
                                         className="object-contain p-1"
+                                        data-fallbacks={serializeFallbacks(eggArt.fallbacks)}
+                                        data-fallback-index="0"
+                                        onError={eggImageErrorHandler}
                                       />
                                     </div>
                                     <div>

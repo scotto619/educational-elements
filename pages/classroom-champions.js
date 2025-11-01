@@ -1,5 +1,7 @@
 // pages/classroom-champions.js - UPDATED WITH HALLOWEEN THEMED ITEMS
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { DEFAULT_PET_IMAGE, getPetImage as resolvePetImageSource } from '../utils/gameHelpers';
+import { normalizeImageSource, serializeFallbacks, createImageErrorHandler } from '../utils/imageFallback';
 import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase'; // Import firestore instance
 import { onAuthStateChanged } from 'firebase/auth';
@@ -206,19 +208,7 @@ const getAvatarImage = (avatarBase, level) => {
   return `/avatars/${base}/Level ${lvl}.png`;
 };
 
-const getPetImage = (pet) => {
-    if (!pet || !pet.name) return '/Pets/Wizard.png';
-    if (pet.path) return pet.path;
-    
-    // Check all shop pet arrays including Halloween
-    const shopItem = [...SHOP_BASIC_PETS, ...SHOP_PREMIUM_PETS, ...HALLOWEEN_PETS].find(p => p.name.toLowerCase() === pet.name.toLowerCase());
-    if (shopItem) return shopItem.path;
-    
-    // Fallback to old pet mapping system
-    const key = (pet.type || pet.name || '').toLowerCase();
-    const map = { 'alchemist': '/Pets/Alchemist.png', 'barbarian': '/Pets/Barbarian.png', 'bard': '/Pets/Bard.png', 'beastmaster': '/Pets/Beastmaster.png', 'cleric': '/Pets/Cleric.png', 'crystal knight': '/Pets/Crystal Knight.png', 'crystal sage': '/Pets/Crystal Sage.png', 'engineer': '/Pets/Engineer.png', 'frost mage': '/Pets/Frost Mage.png', 'illusionist': '/Pets/Illusionist.png', 'knight': '/Pets/Knight.png', 'lightning': '/Pets/Lightning.png', 'monk': '/Pets/Monk.png', 'necromancer': '/Pets/Necromancer.png', 'rogue': '/Pets/Rogue.png', 'stealth': '/Pets/Stealth.png', 'time knight': '/Pets/Time Knight.png', 'warrior': '/Pets/Warrior.png', 'wizard': '/Pets/Wizard.png' };
-    return map[key] || '/Pets/Wizard.png';
-};
+const getPetImage = (pet) => normalizeImageSource(resolvePetImageSource(pet), DEFAULT_PET_IMAGE);
 
 const calculateAvatarLevel = (xp) => (xp >= 300 ? 4 : xp >= 200 ? 3 : xp >= 100 ? 2 : 1);
 const calculateCoins = (student) => Math.max(0, Math.floor((student?.totalPoints || 0) / GAME_CONFIG.COINS_PER_XP) + (student?.currency || 0) - (student?.coinsSpent || 0));
@@ -268,6 +258,7 @@ const ClassroomChampions = () => {
   const [currentClassData, setCurrentClassData] = useState(null);
   const [students, setStudents] = useState([]);
   const [studentOrder, setStudentOrder] = useState([]);
+  const petImageErrorHandler = createImageErrorHandler(DEFAULT_PET_IMAGE);
   const studentOrderRef = useRef([]);
   const [xpCategories, setXpCategories] = useState(DEFAULT_XP_CATEGORIES);
   
@@ -1520,11 +1511,19 @@ const handleUpdateStudent = useCallback(async (studentId, updatedData, reason = 
                     <h3 className="text-lg sm:text-xl font-bold text-gray-800 my-2">
                         {petUnlockData.student.firstName} found a companion!
                     </h3>
-                    <img 
-                        src={getPetImage(petUnlockData.pet)} 
-                        alt={petUnlockData.pet.name} 
-                        className="w-20 h-20 sm:w-24 sm:h-24 mx-auto rounded-full border-4 border-purple-400"
-                    />
+                    {(() => {
+                        const petImage = getPetImage(petUnlockData.pet);
+                        return (
+                            <img
+                                src={petImage.src}
+                                alt={petUnlockData.pet.name}
+                                className="w-20 h-20 sm:w-24 sm:h-24 mx-auto rounded-full border-4 border-purple-400"
+                                data-fallbacks={serializeFallbacks(petImage.fallbacks)}
+                                data-fallback-index="0"
+                                onError={petImageErrorHandler}
+                            />
+                        );
+                    })()}
                     <h4 className="text-base sm:text-lg font-semibold text-purple-600 mt-2">
                         {petUnlockData.pet.name}
                     </h4>
@@ -1571,10 +1570,19 @@ const handleUpdateStudent = useCallback(async (studentId, updatedData, reason = 
                                         <p className="text-sm sm:text-base">
                                             <strong>Companion:</strong> {selectedStudent.ownedPets[0].name}
                                         </p>
-                                        <img 
-                                            src={getPetImage(selectedStudent.ownedPets[0])} 
-                                            className="w-12 h-12 sm:w-16 sm:h-16 rounded-full border-2 border-purple-300"
-                                        />
+                                        {(() => {
+                                            const petImage = getPetImage(selectedStudent.ownedPets[0]);
+                                            return (
+                                                <img
+                                                    src={petImage.src}
+                                                    className="w-12 h-12 sm:w-16 sm:h-16 rounded-full border-2 border-purple-300"
+                                                    data-fallbacks={serializeFallbacks(petImage.fallbacks)}
+                                                    data-fallback-index="0"
+                                                    onError={petImageErrorHandler}
+                                                    alt={selectedStudent.ownedPets[0].name}
+                                                />
+                                            );
+                                        })()}
                                     </div>
                                 )}
                             </div>

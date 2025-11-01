@@ -1,6 +1,8 @@
 // components/tabs/DashboardTab.js - MOBILE-OPTIMIZED DASHBOARD
 import React, { useEffect, useMemo, useState } from 'react';
 import { buildShopInventory, getDailySpecials } from '../../utils/shopSpecials';
+import { DEFAULT_PET_IMAGE } from '../../utils/gameHelpers';
+import { normalizeImageSource, serializeFallbacks, createImageErrorHandler } from '../../utils/imageFallback';
 
 const DashboardTab = ({ 
   students = [], 
@@ -17,6 +19,9 @@ const DashboardTab = ({
 }) => {
   const [featuredStudent, setFeaturedStudent] = useState(null);
   const [classStats, setClassStats] = useState({});
+  const petImageErrorHandler = createImageErrorHandler(DEFAULT_PET_IMAGE);
+
+  const resolvePetImage = (pet) => normalizeImageSource(getPetImage(pet), DEFAULT_PET_IMAGE);
 
   // Calculate class statistics
   useEffect(() => {
@@ -158,11 +163,19 @@ const DashboardTab = ({
               {featuredStudent.ownedPets && featuredStudent.ownedPets.length > 0 && (
                 <div className="bg-white rounded-lg p-3 sm:p-4 shadow-sm">
                   <div className="flex flex-col sm:flex-row lg:flex-row items-center gap-3 sm:gap-4">
-                    <img 
-                      src={getPetImage(featuredStudent.ownedPets[0])} 
-                      alt={featuredStudent.ownedPets[0].name}
-                      className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 xl:w-32 xl:h-32 rounded-full border-2 sm:border-3 border-purple-300 shadow-md"
-                    />
+                    {(() => {
+                      const petImage = resolvePetImage(featuredStudent.ownedPets[0]);
+                      return (
+                        <img
+                          src={petImage.src}
+                          alt={featuredStudent.ownedPets[0].name}
+                          className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 xl:w-32 xl:h-32 rounded-full border-2 sm:border-3 border-purple-300 shadow-md"
+                          data-fallbacks={serializeFallbacks(petImage.fallbacks)}
+                          data-fallback-index="0"
+                          onError={petImageErrorHandler}
+                        />
+                      );
+                    })()}
                     <div className="text-center sm:text-left lg:text-left">
                       <div className="text-base sm:text-lg lg:text-xl font-bold text-gray-800">
                         Companion: {featuredStudent.ownedPets[0].name}

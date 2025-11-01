@@ -1,5 +1,7 @@
 // components/tabs/StudentsTab.js - UPDATED WITH TRAFFIC LIGHTS, ATTENDANCE & AUTO-REFRESH
 import React, { useState, useEffect, useRef } from 'react';
+import { DEFAULT_PET_IMAGE } from '../../utils/gameHelpers';
+import { normalizeImageSource, serializeFallbacks, createImageErrorHandler } from '../../utils/imageFallback';
 
 // ===============================================
 // HELPER FUNCTIONS (LOCAL FALLBACKS)
@@ -680,7 +682,8 @@ const StudentCard = ({
     const xpForNextLevel = (student.totalPoints || 0) % 100;
     const avatarImg = getAvatarImage(student.avatarBase, level);
     const pet = student.ownedPets?.[0];
-    const petImg = pet ? getPetImage(pet) : null;
+    const petImage = pet ? normalizeImageSource(getPetImage(pet), DEFAULT_PET_IMAGE) : null;
+    const petImageErrorHandler = createImageErrorHandler(DEFAULT_PET_IMAGE);
 
     // Get today's attendance
     const today = getTodayDate();
@@ -833,11 +836,14 @@ const StudentCard = ({
                     <div className="absolute -bottom-1 -right-1 bg-blue-600 text-white text-[10px] sm:text-xs px-1 sm:px-2 py-0.5 rounded-full font-bold shadow-sm">
                         L{level}
                     </div>
-                    {pet && (
-                        <img 
-                            src={petImg} 
-                            className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 rounded-full absolute -bottom-1 -left-1 border-1 sm:border-2 border-white shadow-sm transition-transform duration-200 hover:scale-125" 
-                            onMouseEnter={() => onPetHover && onPetHover(petImg, pet.name)} 
+                    {petImage && (
+                        <img
+                            src={petImage.src}
+                            className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 rounded-full absolute -bottom-1 -left-1 border-1 sm:border-2 border-white shadow-sm transition-transform duration-200 hover:scale-125"
+                            data-fallbacks={serializeFallbacks(petImage.fallbacks)}
+                            data-fallback-index="0"
+                            onError={petImageErrorHandler}
+                            onMouseEnter={() => onPetHover && onPetHover(petImage.src, pet?.name)}
                             onMouseLeave={onHoverEnd}
                         />
                     )}

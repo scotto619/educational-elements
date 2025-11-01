@@ -1,4 +1,7 @@
 // utils/gameHelpers.js - UPDATED WITH HALLOWEEN CONTENT
+import { normalizeImageSource } from './imageFallback';
+
+export const DEFAULT_PET_IMAGE = '/shop/BasicPets/Wizard.png';
 export const GAME_CONFIG = { MAX_LEVEL: 4, COINS_PER_XP: 5, PET_UNLOCK_XP: 50 };
 
 // ===============================================
@@ -180,29 +183,59 @@ export const getAvatarImage = (avatarBase, level) => {
 // PET IMAGE PATHS - UPDATED WITH HALLOWEEN
 // ===============================================
 export const getPetImage = (pet) => {
-  if (!pet) return '/shop/BasicPets/Wizard.png';
-
-  if (pet.path) return pet.path;
-  if (pet.image) return pet.image;
+  if (!pet) return normalizeImageSource(DEFAULT_PET_IMAGE, DEFAULT_PET_IMAGE);
 
   const normalizedName = (pet.name || '').toLowerCase();
   const normalizedId = (pet.speciesId || pet.id || '').toLowerCase();
+
+  const candidates = [];
+
+  if (pet.imageUrl) candidates.push(pet.imageUrl);
+  if (pet.path) candidates.push(pet.path);
+  if (pet.image && pet.image !== pet.path) candidates.push(pet.image);
+  if (Array.isArray(pet.imageFallbacks)) candidates.push(...pet.imageFallbacks);
+  if (pet.asset) {
+    if (pet.asset.src) candidates.push(pet.asset.src);
+    if (Array.isArray(pet.asset.fallbacks)) {
+      candidates.push(...pet.asset.fallbacks);
+    }
+  }
 
   const shopItem = [
     ...SHOP_BASIC_PETS,
     ...SHOP_PREMIUM_PETS,
     ...HALLOWEEN_PETS
   ].find((p) => p.name.toLowerCase() === normalizedName);
-  if (shopItem) return shopItem.path;
+  if (shopItem?.path) {
+    candidates.unshift(shopItem.path);
+  }
 
   const babyPet = BABY_PETS.find((baby) => {
     const babyId = baby.id?.toLowerCase();
     const babyName = baby.name?.toLowerCase();
     return babyId === normalizedId || babyId === normalizedName || babyName === normalizedName;
   });
-  if (babyPet) return babyPet.path;
 
-  return normalizedName ? `/Pets/${pet.name}.png` : '/shop/BasicPets/Wizard.png';
+  if (babyPet) {
+    candidates.unshift(babyPet.path);
+    if (Array.isArray(babyPet.imageFallbacks)) {
+      candidates.push(...babyPet.imageFallbacks);
+    }
+  }
+
+  if (!candidates.length && normalizedName) {
+    candidates.push(`/Pets/${pet.name}.png`);
+  }
+
+  const uniqueCandidates = candidates.filter(Boolean).filter((value, index, array) => array.indexOf(value) === index);
+
+  return normalizeImageSource(
+    {
+      src: uniqueCandidates[0],
+      fallbacks: uniqueCandidates.slice(1)
+    },
+    DEFAULT_PET_IMAGE
+  );
 };
 
 // ===============================================
@@ -247,28 +280,117 @@ const buildBabyPath = (segments = []) => {
   return `${BABY_ASSET_ROOT}/${parts.map((segment) => encodeURIComponent(segment)).join('/')}`;
 };
 
+const toSegmentGroups = (segments = []) => {
+  if (Array.isArray(segments) && segments.length && Array.isArray(segments[0])) {
+    return segments.map((group) => (Array.isArray(group) ? group : [group]));
+  }
+  return [Array.isArray(segments) ? segments : [segments]];
+};
+
 const createBabyPet = (id, name, rarity, segments, speed = 5) => {
-  const path = buildBabyPath(segments);
-  return { id, name, rarity, path, image: path, speed };
+  const segmentGroups = toSegmentGroups(segments);
+  const candidatePaths = segmentGroups.map((group) => buildBabyPath(group));
+  const asset = normalizeImageSource(
+    {
+      src: candidatePaths[0],
+      fallbacks: candidatePaths.slice(1)
+    },
+    DEFAULT_PET_IMAGE
+  );
+
+  return {
+    id,
+    name,
+    rarity,
+    path: asset.src,
+    image: asset.src,
+    asset,
+    imageFallbacks: asset.fallbacks,
+    speed
+  };
 };
 
 export const BABY_PETS = [
-  createBabyPet('glimmer-kit', 'Glimmer Kit', 'common', ['common', 'glimmer-kit.svg']),
-  createBabyPet('sprout-shell', 'Sprout Shell', 'common', ['common', 'sprout-shell.svg']),
-  createBabyPet('sparkle-otter', 'Sparkle Otter', 'common', ['common', 'sparkle-otter.svg']),
-  createBabyPet('alien-hatchling', 'Alien Hatchling', 'common', ['Common', 'Alien Pet.png']),
-  createBabyPet('bull-buddy', 'Bull Buddy', 'common', ['Common', 'Bull Pet.png']),
-  createBabyPet('cat-companion', 'Cat Companion', 'common', ['Common', 'Cat Pet.png']),
-  createBabyPet('dino-buddy', 'Dino Buddy', 'rare', ['Common', 'DinoPet.png'], 6),
-  createBabyPet('phoenix-spark', 'Phoenix Spark', 'rare', ['Common', 'PhoenixPet.png'], 6),
-  createBabyPet('aurora-foal', 'Aurora Foal', 'rare', ['rare', 'aurora-foal.svg'], 6),
-  createBabyPet('ember-hatchling', 'Ember Hatchling', 'rare', ['rare', 'ember-hatchling.svg'], 6),
-  createBabyPet('tide-pixie', 'Tide Pixie', 'rare', ['rare', 'tide-pixie.svg'], 6),
-  createBabyPet('banana-buddy', 'Banana Buddy', 'rare', ['Rare', 'BananaPet.png'], 6),
-  createBabyPet('golden-alien', 'Golden Alienling', 'legendary', ['Rare', 'Golden Alien Pet.png'], 7),
-  createBabyPet('golden-bull', 'Golden Bullette', 'legendary', ['Rare', 'Golden Bull Pet.png'], 7),
-  createBabyPet('golden-dragon', 'Golden Dragon Whelp', 'legendary', ['Rare', 'Golden Dragon Pet.png'], 7),
-  createBabyPet('golden-cat', 'Golden Catling', 'legendary', ['Rare', 'Golden Cat Pet.png'], 7)
+  createBabyPet('glimmer-kit', 'Glimmer Kit', 'common', [
+    ['Common', 'Glimmer Kit.png'],
+    ['common', 'glimmer-kit.png'],
+    ['common', 'glimmer-kit.svg']
+  ]),
+  createBabyPet('sprout-shell', 'Sprout Shell', 'common', [
+    ['Common', 'Sprout Shell.png'],
+    ['common', 'sprout-shell.png'],
+    ['common', 'sprout-shell.svg']
+  ]),
+  createBabyPet('sparkle-otter', 'Sparkle Otter', 'common', [
+    ['Common', 'Sparkle Otter.png'],
+    ['common', 'sparkle-otter.png'],
+    ['common', 'sparkle-otter.svg']
+  ]),
+  createBabyPet('alien-hatchling', 'Alien Hatchling', 'common', [
+    ['Common', 'Alien Pet.png'],
+    ['common', 'Alien Pet.png'],
+    ['common', 'alien-hatchling.svg']
+  ]),
+  createBabyPet('bull-buddy', 'Bull Buddy', 'common', [
+    ['Common', 'Bull Pet.png'],
+    ['common', 'Bull Pet.png'],
+    ['common', 'bull-buddy.png']
+  ]),
+  createBabyPet('cat-companion', 'Cat Companion', 'common', [
+    ['Common', 'Cat Pet.png'],
+    ['common', 'Cat Pet.png'],
+    ['common', 'cat-companion.png']
+  ]),
+  createBabyPet('dino-buddy', 'Dino Buddy', 'rare', [
+    ['Common', 'DinoPet.png'],
+    ['common', 'DinoPet.png'],
+    ['rare', 'dino-buddy.png']
+  ], 6),
+  createBabyPet('phoenix-spark', 'Phoenix Spark', 'rare', [
+    ['Common', 'PhoenixPet.png'],
+    ['common', 'PhoenixPet.png'],
+    ['rare', 'phoenix-spark.png']
+  ], 6),
+  createBabyPet('aurora-foal', 'Aurora Foal', 'rare', [
+    ['Rare', 'Aurora Foal.png'],
+    ['rare', 'aurora-foal.png'],
+    ['rare', 'aurora-foal.svg']
+  ], 6),
+  createBabyPet('ember-hatchling', 'Ember Hatchling', 'rare', [
+    ['Rare', 'Ember Hatchling.png'],
+    ['rare', 'ember-hatchling.png'],
+    ['rare', 'ember-hatchling.svg']
+  ], 6),
+  createBabyPet('tide-pixie', 'Tide Pixie', 'rare', [
+    ['Rare', 'Tide Pixie.png'],
+    ['rare', 'tide-pixie.png'],
+    ['rare', 'tide-pixie.svg']
+  ], 6),
+  createBabyPet('banana-buddy', 'Banana Buddy', 'rare', [
+    ['Rare', 'BananaPet.png'],
+    ['rare', 'banana-buddy.png'],
+    ['rare', 'banana-buddy.svg']
+  ], 6),
+  createBabyPet('golden-alien', 'Golden Alienling', 'legendary', [
+    ['Rare', 'Golden Alien Pet.png'],
+    ['rare', 'Golden Alien Pet.png'],
+    ['rare', 'golden-alien.svg']
+  ], 7),
+  createBabyPet('golden-bull', 'Golden Bullette', 'legendary', [
+    ['Rare', 'Golden Bull Pet.png'],
+    ['rare', 'Golden Bull Pet.png'],
+    ['rare', 'golden-bull.svg']
+  ], 7),
+  createBabyPet('golden-dragon', 'Golden Dragon Whelp', 'legendary', [
+    ['Rare', 'Golden Dragon Pet.png'],
+    ['rare', 'Golden Dragon Pet.png'],
+    ['rare', 'golden-dragon.svg']
+  ], 7),
+  createBabyPet('golden-cat', 'Golden Catling', 'legendary', [
+    ['Rare', 'Golden Cat Pet.png'],
+    ['rare', 'Golden Cat Pet.png'],
+    ['rare', 'golden-cat.svg']
+  ], 7)
 ];
 
 export const PET_EGG_TYPES = [
@@ -304,12 +426,27 @@ export const PET_EGG_TYPES = [
   }
 ];
 
-export const EGG_STAGE_ART = {
-  unbroken: '/shop/Egg/egg-stage-unbroken.svg',
-  cracked: '/shop/Egg/egg-stage-cracked.svg',
-  ready: '/shop/Egg/egg-stage-ready.svg',
-  hatched: '/shop/Egg/egg-stage-ready.svg'
+const EGG_STAGE_ASSETS = {
+  unbroken: ['/shop/Egg/Egg.png', '/shop/Egg/egg-stage-unbroken.svg'],
+  cracked: ['/shop/Egg/Egg Cracked.png', '/shop/Egg/egg-stage-cracked.svg'],
+  ready: ['/shop/Egg/Egg Open.png', '/shop/Egg/egg-stage-ready.svg'],
+  hatched: ['/shop/Egg/Egg Open.png', '/shop/Egg/egg-stage-ready.svg']
 };
+
+export const EGG_STAGE_ART = Object.fromEntries(
+  Object.entries(EGG_STAGE_ASSETS).map(([stage, candidates]) => [
+    stage,
+    normalizeImageSource(
+      {
+        src: candidates[0],
+        fallbacks: candidates.slice(1)
+      },
+      candidates[candidates.length - 1]
+    )
+  ])
+);
+
+export const getEggStageArt = (stage = 'unbroken') => EGG_STAGE_ART[stage] || EGG_STAGE_ART.unbroken;
 
 export const EGG_STAGE_MESSAGES = {
   unbroken: 'This egg is quietly humming with magic.',
