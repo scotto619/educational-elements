@@ -1,5 +1,6 @@
 // components/tabs/GamesTab.js - WITH MAZE GAME
 import React, { useState } from 'react';
+import { getGameLogo } from '../../utils/gameLogos';
 
 // Import existing game components
 import BoggleGame from '../games/BoggleGame';
@@ -48,7 +49,7 @@ const GamesTab = ({
       category: 'daily',
       featured: true,
       storageKeySuffix: 'teacher',
-      logo: '/logos/game-logos/daily-word-challenge.svg'
+      logo: getGameLogo('daily-word-challenge')
     },
     {
       id: 'amazing-typing-adventure',
@@ -62,7 +63,7 @@ const GamesTab = ({
       category: 'educational',
       featured: true,
       storageKeySuffix: 'teacher-typing',
-      logo: '/logos/game-logos/typing-legends.svg'
+      logo: getGameLogo('typing-legends')
     },
     // Featured/New Games
     {
@@ -76,7 +77,7 @@ const GamesTab = ({
       time: '2-10 minutes',
       featured: true,
       category: 'featured',
-      logo: '/logos/game-logos/maze-runner.svg'
+      logo: getGameLogo('maze-runner')
     },
     {
       id: 'bingo',
@@ -91,7 +92,7 @@ const GamesTab = ({
       featured: true,
       category: 'featured',
       teacherMode: true,
-      logo: '/logos/game-logos/educational-bingo.svg'
+      logo: getGameLogo('educational-bingo')
     },
     {
       id: 'battle-royale',
@@ -106,7 +107,7 @@ const GamesTab = ({
       featured: true,
       category: 'featured',
       teacherMode: true,
-      logo: '/logos/game-logos/battle-royale.svg'
+      logo: getGameLogo('battle-royale')
     },
     {
       id: 'multiplayer-agar',
@@ -120,7 +121,7 @@ const GamesTab = ({
       multiplayer: true,
       category: 'featured',
       teacherMode: true,
-      logo: '/logos/game-logos/cell-battle.svg'
+      logo: getGameLogo('cell-battle')
     },
     {
       id: 'math-space-invaders',
@@ -133,7 +134,7 @@ const GamesTab = ({
       time: '5-30 minutes',
       featured: true,
       category: 'featured',
-      logo: '/logos/game-logos/math-space-invaders.svg'
+      logo: getGameLogo('math-space-invaders')
     },
     
     // Multiplayer Games
@@ -148,7 +149,7 @@ const GamesTab = ({
       time: '10-20 minutes',
       multiplayer: true,
       category: 'multiplayer',
-      logo: '/logos/game-logos/battleships.svg'
+      logo: getGameLogo('battleships')
     },
     {
       id: 'tic-tac-toe',
@@ -161,7 +162,7 @@ const GamesTab = ({
       time: '2-5 minutes',
       multiplayer: true,
       category: 'multiplayer',
-      logo: '/logos/game-logos/tic-tac-toe.svg'
+      logo: getGameLogo('tic-tac-toe')
     },
 
     // Educational Games  
@@ -177,7 +178,7 @@ const GamesTab = ({
       multiplayer: true,
       category: 'educational',
       teacherMode: true,
-      logo: '/logos/game-logos/classroom-bingo.svg'
+      logo: getGameLogo('classroom-bingo')
     },
     {
       id: 'math-race',
@@ -189,7 +190,7 @@ const GamesTab = ({
       difficulty: 'Easy - Hard',
       time: '2-5 minutes',
       category: 'educational',
-      logo: '/logos/game-logos/math-race.svg'
+      logo: getGameLogo('math-race')
     },
     {
       id: 'crossword',
@@ -201,7 +202,7 @@ const GamesTab = ({
       difficulty: 'Easy - Hard',
       time: '10-30 minutes',
       category: 'educational',
-      logo: '/logos/game-logos/crossword.svg'
+      logo: getGameLogo('crossword')
     },
     {
       id: 'word-search',
@@ -213,7 +214,7 @@ const GamesTab = ({
       difficulty: 'Easy - Medium',
       time: '5-15 minutes',
       category: 'educational',
-      logo: '/logos/game-logos/word-search.svg'
+      logo: getGameLogo('word-search')
     },
     {
       id: 'boggle',
@@ -225,7 +226,7 @@ const GamesTab = ({
       difficulty: 'Medium - Hard',
       time: '3-5 minutes',
       category: 'educational',
-      logo: '/logos/game-logos/boggle.svg'
+      logo: getGameLogo('boggle')
     },
     {
       id: 'noggle',
@@ -237,7 +238,7 @@ const GamesTab = ({
       difficulty: 'Medium - Hard',
       time: '3-5 minutes',
       category: 'educational',
-      logo: '/logos/game-logos/noggle.svg'
+      logo: getGameLogo('noggle')
     },
 
     // Brain Games
@@ -251,7 +252,7 @@ const GamesTab = ({
       difficulty: 'Easy - Hard',
       time: '2-10 minutes',
       category: 'brain',
-      logo: '/logos/game-logos/maze-runner.svg'
+      logo: getGameLogo('maze-runner')
     },
     {
       id: 'memory-match',
@@ -263,7 +264,7 @@ const GamesTab = ({
       difficulty: 'Easy - Expert',
       time: '3-8 minutes',
       category: 'brain',
-      logo: '/logos/game-logos/memory-challenge.svg'
+      logo: getGameLogo('memory-challenge')
     },
 
     // Adventure Games
@@ -277,7 +278,7 @@ const GamesTab = ({
       difficulty: 'Medium - Expert',
       time: '5-30 minutes',
       category: 'adventure',
-      logo: '/logos/game-logos/match3-adventure.svg'
+      logo: getGameLogo('match3-adventure')
     },
     {
       id: 'clicker',
@@ -289,7 +290,7 @@ const GamesTab = ({
       difficulty: 'Easy',
       time: 'Unlimited',
       category: 'adventure',
-      logo: '/logos/game-logos/hero-forge.svg'
+      logo: getGameLogo('hero-forge')
     }
   ];
 
@@ -351,11 +352,11 @@ const GamesTab = ({
                 ← Back
               </button>
               <div className="flex items-center space-x-2 md:space-x-3 min-w-0">
-                <div className="w-10 h-10 md:w-14 md:h-14 rounded-lg overflow-hidden border border-gray-200 bg-white flex-shrink-0">
+                <div className="w-10 h-10 md:w-14 md:h-14 rounded-lg overflow-hidden border border-gray-200 bg-white flex-shrink-0 flex items-center justify-center">
                   <img
                     src={selectedGame.logo || '/Logo/placeholder-game.svg'}
                     alt={`${selectedGame.name} logo`}
-                    className="w-full h-full object-cover"
+                    className="max-w-full max-h-full object-contain p-1"
                     onError={(e) => {
                       if (!e.currentTarget.dataset.fallback) {
                         e.currentTarget.dataset.fallback = 'true';
@@ -450,11 +451,11 @@ const GamesTab = ({
             className="group bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400"
           >
             <div className="flex flex-col md:flex-row">
-              <div className="relative md:w-56 lg:w-60 h-44 md:h-auto overflow-hidden">
+              <div className="relative md:w-56 lg:w-60 h-44 md:h-auto overflow-hidden bg-white flex items-center justify-center">
                 <img
                   src={game.logo || '/Logo/placeholder-game.svg'}
                   alt={`${game.name} logo`}
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  className="max-w-full max-h-full object-contain p-6 transition-transform duration-500 group-hover:scale-105"
                   onError={(e) => {
                     if (!e.currentTarget.dataset.fallback) {
                       e.currentTarget.dataset.fallback = 'true';
