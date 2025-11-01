@@ -116,7 +116,9 @@ const SpellingCenter = ({ showToast }) => {
     const printWindow = window.open('', '_blank', 'width=900,height=1200');
     const doc = printWindow.document;
     doc.write('<html><head><title>Spelling Resource Pack</title>');
-    doc.write('<style>body{font-family:Inter,sans-serif;padding:40px;background:#f7f9fc;color:#0f172a;} h1{font-size:28px;margin-bottom:16px;} h2{font-size:20px;margin-top:24px;} ul{padding-left:20px;} .tag{display:inline-block;margin-right:8px;padding:4px 10px;border-radius:999px;background:#e0e7ff;color:#312e81;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;} table{border-collapse:collapse;width:100%;margin-top:12px;} th,td{border:1px solid #cbd5f5;padding:8px;text-align:left;} .section{margin-bottom:24px;}</style>');
+    doc.write(
+      '<style>@page { size: A4; margin: 18mm; } body{font-family:Inter,sans-serif;padding:32px;background:#f7f9fc;color:#0f172a;} h1{font-size:28px;margin-bottom:16px;} h2{font-size:20px;margin-top:24px;} ul{padding-left:20px;} .tag{display:inline-block;margin-right:8px;padding:4px 10px;border-radius:999px;background:#e0e7ff;color:#312e81;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;} table{border-collapse:collapse;width:100%;margin-top:12px;} th,td{border:1px solid #cbd5f5;padding:8px;text-align:left;} .section{margin-bottom:24px;page-break-inside:avoid;}</style>'
+    );
     doc.write('</head><body>');
     doc.write(printRef.current.innerHTML);
     doc.write('</body></html>');
@@ -354,13 +356,29 @@ const SpellingCenter = ({ showToast }) => {
                               ))}
                             </ul>
                           </div>
-                          <a
-                            href={list.download.url}
-                            download={list.download.filename}
-                            className="mt-4 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-white/90"
-                          >
-                            Download list →
-                          </a>
+                          <div className="mt-4 flex flex-wrap gap-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/90">
+                            <a href={list.download.url} download={list.download.filename} className="inline-flex items-center gap-2 hover:text-white">
+                              Download list →
+                            </a>
+                            {list.multiCopyDownloads && (
+                              <>
+                                <a
+                                  href={list.multiCopyDownloads.textVersion.url}
+                                  download={list.multiCopyDownloads.textVersion.filename}
+                                  className="inline-flex items-center gap-2 hover:text-white"
+                                >
+                                  Multi-copy text →
+                                </a>
+                                <a
+                                  href={list.multiCopyDownloads.printableHtml.url}
+                                  download={list.multiCopyDownloads.printableHtml.filename}
+                                  className="inline-flex items-center gap-2 hover:text-white"
+                                >
+                                  Multi-copy A4 →
+                                </a>
+                              </>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>

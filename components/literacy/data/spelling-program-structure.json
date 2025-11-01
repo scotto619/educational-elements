@@ -113,6 +113,24 @@
         "id": "understand-the-phonological-shift-at-morpheme-boundaries-e-g-ion-decide-ion-deci",
         "text": "Understand the phonological shift at morpheme boundaries (e.g., -ion decide + ion = decision, -ure press + ure = pressure)"
       }
+    ],
+    "Level 5": [
+      {
+        "id": "analyse-stress-shifts-in-related-word-families-e-g-photograph-photography",
+        "text": "Analyse stress shifts in related word families (e.g., photograph, photography)"
+      },
+      {
+        "id": "recognise-schwa-in-multisyllabic-words-e-g-separate-ordinary",
+        "text": "Recognise schwa in multisyllabic words (e.g., separate, ordinary)"
+      },
+      {
+        "id": "investigate-assimilated-prefixes-and-resulting-sound-changes-e-g-affix-illegal",
+        "text": "Investigate assimilated prefixes and resulting sound changes (e.g., affix, illegal)"
+      },
+      {
+        "id": "explore-borrowed-words-with-unique-phoneme-grapheme-patterns-e-g-ballet-debris",
+        "text": "Explore borrowed words with unique phoneme-grapheme patterns (e.g., ballet, debris)"
+      }
     ]
   },
   "Spelling Patterns": {

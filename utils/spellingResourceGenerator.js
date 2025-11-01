@@ -1,3 +1,6 @@
+import { level5ResourceLibrary } from './level5ResourceLibrary.js';
+import { createDownloadLink, createListDownloads } from './spellingResourceHelpers.js';
+
 const defaultWordBanks = {
   'Level Foundation': {
     core: ['cat', 'dog', 'sun', 'map', 'bed', 'pig', 'jam', 'run', 'mix', 'web'],
@@ -256,13 +259,6 @@ function resolveWordBank(concept, level) {
   return defaultWordBanks[level] || defaultWordBanks['Level 3'];
 }
 
-function createDownloadLink(filename, content) {
-  return {
-    filename,
-    url: `data:text/plain;charset=utf-8,${encodeURIComponent(content)}`
-  };
-}
-
 function generateSpellingLists(concept, level, id) {
   const bank = resolveWordBank(concept, level);
   const lists = [
@@ -273,14 +269,15 @@ function generateSpellingLists(concept, level, id) {
 
   return lists.map((list) => {
     const words = bank[list.key] || [];
-    const printable = [`${list.name}`, `Focus: ${concept}`, '', ...words].join('\n');
+    const { download, multiCopyDownloads } = createListDownloads(`${id}-${list.key}-list`, list.name, concept, words);
     return {
       id: `${id}-${list.key}`,
       title: list.name,
       description: list.description,
       words,
       gradient: list.color,
-      download: createDownloadLink(`${id}-${list.key}-list.txt`, printable)
+      download,
+      multiCopyDownloads
     };
   });
 }
@@ -436,6 +433,12 @@ function generateWorksheets(concept, id) {
 
 export function buildResourcePack(item, category, level) {
   const { id, text } = item;
+  if (level === 'Level 5') {
+    const curated = level5ResourceLibrary?.[category]?.[id];
+    if (curated) {
+      return curated;
+    }
+  }
   const spellingLists = generateSpellingLists(text, level, id);
   const passages = generatePassages(text, level, id, spellingLists);
   return {
