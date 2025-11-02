@@ -1,5 +1,5 @@
 // components/curriculum/literacy/Morphology.js
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import MorphologyLevel1 from './morphology/MorphologyLevel1';
 
 // Printable templates
@@ -560,20 +560,77 @@ const Morphology = () => {
   const [showActivities, setShowActivities] = useState(false);
   const [viewMode, setViewMode] = useState('teacher');
   const [displaySlideIndex, setDisplaySlideIndex] = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const displayContainerRef = useRef(null);
+
+  const exitFullscreenIfNeeded = () => {
+    if (typeof document === 'undefined') return;
+
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    }
+  };
+
+  const toggleFullscreen = async () => {
+    if (typeof document === 'undefined') return;
+
+    try {
+      if (!document.fullscreenElement && displayContainerRef.current) {
+        await displayContainerRef.current.requestFullscreen();
+      } else if (document.exitFullscreen) {
+        await document.exitFullscreen();
+      }
+    } catch (error) {
+      if (process.env.NODE_ENV !== 'production') {
+        // eslint-disable-next-line no-console
+        console.error('Unable to toggle fullscreen mode', error);
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+
+    const handleFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (viewMode !== 'display') {
+      exitFullscreenIfNeeded();
+    }
+  }, [viewMode]);
+
+  useEffect(() => {
+    if (showActivities) {
+      exitFullscreenIfNeeded();
+    }
+  }, [showActivities]);
 
   useEffect(() => {
     if (selectedLesson) {
+      exitFullscreenIfNeeded();
       setCurrentSection(0);
       setShowActivities(false);
       setViewMode('teacher');
       setDisplaySlideIndex(0);
+      setIsFullscreen(false);
     }
   }, [selectedLesson]);
 
   // Download printable function
   const downloadPrintable = (printableId, activityTitle) => {
     if (!printableTemplates[printableId]) return;
-    
+
     const htmlContent = printableTemplates[printableId]();
     const blob = new Blob([htmlContent], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
@@ -584,6 +641,227 @@ const Morphology = () => {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  };
+
+  const escapeHtml = (unsafe = '') =>
+    unsafe
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+
+  const createWordListPosterHTML = (lists, lessonTitle) => {
+    if (!lists || lists.length === 0) {
+      return '';
+    }
+
+    const gradients = [
+      'linear-gradient(135deg,#ff9a9e 0%,#fecfef 100%)',
+      'linear-gradient(135deg,#a18cd1 0%,#fbc2eb 100%)',
+      'linear-gradient(135deg,#fbc2eb 0%,#a6c1ee 100%)',
+      'linear-gradient(135deg,#f6d365 0%,#fda085 100%)'
+    ];
+
+    const safeLessonTitle = escapeHtml(lessonTitle || 'Word Practice Corner');
+
+    const pages = lists
+      .map((list, index) => {
+        const gradient = gradients[index % gradients.length];
+        const safeTitle = escapeHtml(list.title || 'Word Set');
+        const safeDescription = list.description ? escapeHtml(list.description) : '';
+        const wordsMarkup = (list.words || [])
+          .map((word) => `<div class="word-card">${escapeHtml(word)}</div>`)
+          .join('');
+
+        return `
+          <section class="page">
+            <div class="poster" style="background:${gradient}">
+              <div class="poster-content">
+                <div class="poster-header">
+                  <div class="lesson-chip">${safeLessonTitle}</div>
+                  <div class="icon-burst">${list.icon || '✨'}</div>
+                </div>
+                <h1>${safeTitle}</h1>
+                ${
+                  safeDescription
+                    ? `<p class="description">${safeDescription}</p>`
+                    : ''
+                }
+                <div class="word-grid">${wordsMarkup}</div>
+                <div class="footer-note">✨ Clap, chant, and celebrate every word together!</div>
+              </div>
+            </div>
+          </section>
+        `;
+      })
+      .join('');
+
+    return `<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>${safeLessonTitle} Posters</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+      :root { color-scheme: light; }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: 'Fredoka', 'Nunito', 'Comic Sans MS', sans-serif;
+        background: #fdf2ff;
+      }
+      .page {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 48px;
+        page-break-after: always;
+      }
+      .page:last-child {
+        page-break-after: auto;
+      }
+      .poster {
+        width: 100%;
+        max-width: 1200px;
+        border-radius: 56px;
+        padding: 72px 64px;
+        color: #ffffff;
+        box-shadow: 0 35px 70px rgba(70, 0, 120, 0.25);
+        position: relative;
+        overflow: hidden;
+      }
+      .poster::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at top right, rgba(255,255,255,0.35), transparent 55%);
+        opacity: 0.85;
+        pointer-events: none;
+      }
+      .poster-content {
+        position: relative;
+        z-index: 2;
+      }
+      .poster-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+      .lesson-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: rgba(255,255,255,0.25);
+        color: rgba(255,255,255,0.95);
+        padding: 14px 28px;
+        border-radius: 999px;
+        font-size: 18px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+      }
+      .lesson-chip::before {
+        content: '📚';
+        font-size: 22px;
+      }
+      .icon-burst {
+        font-size: 84px;
+        filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.25));
+      }
+      h1 {
+        font-size: 68px;
+        line-height: 1.05;
+        margin: 28px 0 16px;
+        text-shadow: 0 6px 22px rgba(0, 0, 0, 0.35);
+      }
+      .description {
+        font-size: 26px;
+        margin-bottom: 40px;
+        color: rgba(255,255,255,0.95);
+        font-weight: 500;
+        max-width: 900px;
+      }
+      .word-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 28px;
+      }
+      .word-card {
+        background: rgba(255,255,255,0.9);
+        color: #3b0764;
+        border-radius: 32px;
+        padding: 32px 20px;
+        font-size: 38px;
+        font-weight: 700;
+        text-align: center;
+        text-transform: uppercase;
+        border: 4px solid rgba(255,255,255,0.5);
+        box-shadow: 0 18px 36px rgba(59,7,100,0.18);
+      }
+      .footer-note {
+        margin-top: 48px;
+        font-size: 22px;
+        background: rgba(255,255,255,0.22);
+        padding: 16px 28px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        color: #ffffff;
+        font-weight: 600;
+      }
+      .footer-note::before {
+        content: '🎶';
+        font-size: 28px;
+      }
+      @page {
+        size: A3 landscape;
+        margin: 12mm;
+      }
+      @media print {
+        body {
+          background: #ffffff;
+          -webkit-print-color-adjust: exact;
+        }
+        .poster {
+          box-shadow: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    ${pages}
+  </body>
+</html>`;
+  };
+
+  const handlePrintWordListPosters = (lists, lessonTitle) => {
+    if (typeof window === 'undefined') return;
+    if (!lists || lists.length === 0) return;
+
+    const html = createWordListPosterHTML(lists, lessonTitle);
+    if (!html) return;
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.focus();
+
+    setTimeout(() => {
+      try {
+        printWindow.print();
+      } catch (error) {
+        if (process.env.NODE_ENV !== 'production') {
+          // eslint-disable-next-line no-console
+          console.error('Unable to open print dialog', error);
+        }
+      }
+    }, 300);
   };
 
   // Available levels
@@ -610,6 +888,9 @@ const Morphology = () => {
   ];
 
   const handleBack = () => {
+    exitFullscreenIfNeeded();
+    setIsFullscreen(false);
+
     if (selectedLesson) {
       setSelectedLesson(null);
       setCurrentSection(0);
@@ -951,60 +1232,90 @@ const Morphology = () => {
                 </div>
               </div>
             ) : (
-              <div
-                className={`rounded-3xl p-8 mb-6 shadow-2xl text-white transition-all duration-500 bg-gradient-to-br ${
-                  currentSlide?.background || 'from-purple-500 via-pink-500 to-blue-500'
-                }`}
-              >
+              <div className="mb-6">
                 {currentSlide ? (
-                  <>
-                    <div className="flex items-start justify-between mb-6">
-                      <div>
-                        <div className="uppercase tracking-wider text-sm opacity-80 mb-1">
-                          {currentSlide.subtitle}
-                        </div>
-                        <h3 className="text-4xl md:text-5xl font-extrabold drop-shadow-lg">
-                          {currentSlide.title}
-                        </h3>
-                      </div>
-                      {currentSlide.icon && <div className="text-6xl md:text-7xl">{currentSlide.icon}</div>}
+                  <div
+                    ref={displayContainerRef}
+                    className={`relative overflow-hidden text-white transition-all duration-500 bg-gradient-to-br ${
+                      currentSlide?.background || 'from-purple-500 via-pink-500 to-blue-500'
+                    } ${isFullscreen ? 'rounded-none border-0 shadow-none' : 'rounded-3xl border-4 border-white shadow-2xl'}`}
+                    style={{ minHeight: isFullscreen ? '100vh' : '520px' }}
+                  >
+                    <div className="absolute inset-0 bg-white/10 blur-3xl opacity-50"></div>
+                    <div className="absolute top-4 right-4 z-20 flex flex-col items-end gap-2">
+                      <button
+                        onClick={toggleFullscreen}
+                        className="inline-flex items-center gap-2 rounded-full border border-white/50 bg-black/35 px-4 py-2 text-sm font-semibold backdrop-blur transition hover:bg-black/55"
+                        title={isFullscreen ? 'Exit full screen (Esc)' : 'Enter full screen'}
+                      >
+                        <span>{isFullscreen ? '🗗' : '⛶'}</span>
+                        {isFullscreen ? 'Exit Full Screen' : 'Full Screen'}
+                      </button>
+                      {isFullscreen && (
+                        <span className="rounded-full border border-white/40 bg-black/35 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white/90">
+                          Press Esc to exit
+                        </span>
+                      )}
                     </div>
-                    {currentSlide.prompt && (
-                      <p className="text-lg md:text-xl font-semibold bg-white/20 rounded-2xl px-6 py-4 mb-6">
-                        {currentSlide.prompt}
-                      </p>
-                    )}
-                    {currentSlide.focusWords && currentSlide.focusWords.length > 0 && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                        {currentSlide.focusWords.map((word, index) => (
-                          <div
-                            key={index}
-                            className="bg-white/25 rounded-2xl px-5 py-4 text-2xl font-bold text-center shadow-md backdrop-blur"
-                          >
-                            {word}
+                    <div
+                      className={`relative ${
+                        isFullscreen
+                          ? 'mx-auto w-full max-w-6xl px-6 py-16 sm:px-16 lg:px-20'
+                          : 'mx-auto max-w-5xl px-6 py-12 sm:px-12'
+                      }`}
+                    >
+                      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+                        <div>
+                          <div className="uppercase tracking-wider text-sm opacity-80">
+                            {currentSlide.subtitle}
                           </div>
-                        ))}
-                      </div>
-                    )}
-                    {currentSlide.actions && currentSlide.actions.length > 0 && (
-                      <div className="bg-black/15 rounded-2xl p-6">
-                        <div className="text-lg font-bold mb-3 flex items-center gap-2">
-                          <span>⭐</span>
-                          Try This Together
+                          <h3 className="mt-2 text-4xl font-extrabold drop-shadow-lg sm:text-5xl">
+                            {currentSlide.title}
+                          </h3>
                         </div>
-                        <ul className="space-y-2 text-base md:text-lg">
-                          {currentSlide.actions.map((action, index) => (
-                            <li key={index} className="flex items-start gap-3">
-                              <span className="font-bold text-white/80">{index + 1}.</span>
-                              <span className="leading-snug">{action}</span>
-                            </li>
-                          ))}
-                        </ul>
+                        {currentSlide.icon && (
+                          <div className="text-6xl drop-shadow-lg sm:text-7xl lg:text-8xl">
+                            {currentSlide.icon}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </>
+                      {currentSlide.prompt && (
+                        <p className="mt-6 rounded-3xl bg-white/15 px-6 py-4 text-lg font-semibold shadow-lg backdrop-blur sm:text-xl">
+                          {currentSlide.prompt}
+                        </p>
+                      )}
+                      {currentSlide.focusWords && currentSlide.focusWords.length > 0 && (
+                        <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                          {currentSlide.focusWords.map((word, index) => (
+                            <div
+                              key={index}
+                              className="rounded-3xl border border-white/30 bg-white/25 px-5 py-4 text-center text-2xl font-bold text-white shadow-lg backdrop-blur"
+                            >
+                              {word}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {currentSlide.actions && currentSlide.actions.length > 0 && (
+                        <div className="mt-8 rounded-3xl border border-white/25 bg-black/20 p-6 backdrop-blur">
+                          <div className="mb-3 flex items-center gap-2 text-lg font-bold">
+                            <span>⭐</span>
+                            Try This Together
+                          </div>
+                          <ul className="space-y-2 text-base sm:text-lg">
+                            {currentSlide.actions.map((action, index) => (
+                              <li key={index} className="flex items-start gap-3">
+                                <span className="font-bold text-white/80">{index + 1}.</span>
+                                <span className="leading-snug">{action}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 ) : (
-                  <div className="text-center text-xl font-semibold">
+                  <div className="rounded-3xl bg-white/80 p-8 text-center text-xl font-semibold text-purple-900 shadow-lg">
                     Class display slides coming soon. Switch to Teacher View for notes.
                   </div>
                 )}
@@ -1015,7 +1326,7 @@ const Morphology = () => {
             {lesson.practiceWordLists && lesson.practiceWordLists.length > 0 && (
               <div className="mb-6">
                 <div className="bg-gradient-to-r from-yellow-200 via-pink-200 to-purple-200 border-4 border-pink-300 rounded-3xl p-6 shadow-xl">
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <h3 className="text-2xl font-extrabold text-purple-900 flex items-center gap-2">
                         <span>📝</span>
@@ -1025,13 +1336,23 @@ const Morphology = () => {
                         Display or print these word sets for quick whole-class practice.
                       </p>
                     </div>
-                    <div className="text-5xl">✨</div>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => handlePrintWordListPosters(lesson.practiceWordLists, lesson.title)}
+                        className="inline-flex items-center gap-2 rounded-full border-2 border-white/70 bg-purple-600/80 px-5 py-2 text-sm font-bold text-white shadow-md transition hover:bg-purple-600"
+                        title="Print every practice word poster"
+                      >
+                        <span>🖨️</span>
+                        Print All Posters
+                      </button>
+                      <div className="text-4xl sm:text-5xl drop-shadow">✨</div>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                     {lesson.practiceWordLists.map((list, index) => (
                       <div
                         key={index}
-                        className="bg-white/90 rounded-2xl p-5 border-2 border-purple-200 shadow-inner hover:shadow-lg transition-all"
+                        className="bg-white/90 rounded-2xl p-5 border-2 border-purple-200 shadow-inner transition-all hover:-translate-y-1 hover:shadow-xl"
                       >
                         <div className="flex items-center gap-3 mb-3">
                           <div className="text-3xl">{list.icon}</div>
@@ -1052,6 +1373,14 @@ const Morphology = () => {
                             </li>
                           ))}
                         </ul>
+                        <button
+                          onClick={() => handlePrintWordListPosters([list], lesson.title)}
+                          className="mt-4 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-pink-500 to-purple-500 px-4 py-2 text-sm font-bold text-white shadow-md transition hover:shadow-lg"
+                          title={`Print the ${list.title} poster`}
+                        >
+                          <span>🖨️</span>
+                          Print This Set
+                        </button>
                       </div>
                     ))}
                   </div>
