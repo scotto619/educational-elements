@@ -1,5 +1,6 @@
 // pages/student.js - UPDATED: Added Literacy tab with Visual Writing Prompts
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import Image from 'next/image';
 import { firestore } from '../utils/firebase';
 import { collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
 
@@ -90,8 +91,11 @@ const StudentPortal = () => {
   const [architectureVersion, setArchitectureVersion] = useState('unknown');
   const [dailyMysteryBoxAvailable, setDailyMysteryBoxAvailable] = useState(false);
   const [showDailyMysteryBox, setShowDailyMysteryBox] = useState(false);
+  const [loginEggCelebration, setLoginEggCelebration] = useState(null);
   const dailyMysteryBoxAutoOpenKeyRef = useRef(null);
   const loginEggGrantAttemptedRef = useRef(false);
+
+  const closeLoginEggCelebration = useCallback(() => setLoginEggCelebration(null), []);
 
   // Login flow states
   const [loginStep, setLoginStep] = useState('classCode'); // 'classCode', 'studentSelect', 'password'
@@ -382,8 +386,20 @@ const StudentPortal = () => {
 
         if (result.egg) {
           showToast(`You received a ${result.egg.name}!`, 'success');
+          setLoginEggCelebration({
+            name: result.egg.name,
+            rarity: result.egg.rarity,
+            accent: result.egg.accent,
+            image: '/shop/Egg/Egg.png'
+          });
         } else {
           showToast('You received a mysterious egg!', 'success');
+          setLoginEggCelebration({
+            name: 'Mystery Egg',
+            rarity: 'mystery',
+            accent: '#a855f7',
+            image: '/shop/Egg/Egg.png'
+          });
         }
       } else if (result.reason === 'error') {
         loginEggGrantAttemptedRef.current = false;
@@ -1262,6 +1278,57 @@ const StudentPortal = () => {
       <main className="max-w-6xl mx-auto px-3 md:px-4 py-4 md:py-6">
         {renderTabContent()}
       </main>
+
+      {loginEggCelebration && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6 bg-black bg-opacity-60"
+          onClick={closeLoginEggCelebration}
+          role="presentation"
+        >
+          <div
+            className="relative w-full max-w-md rounded-3xl shadow-xl overflow-hidden"
+            style={{
+              background: `linear-gradient(135deg, ${loginEggCelebration.accent || '#8b5cf6'}22, #ffffff)`
+            }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-36 h-36 drop-shadow-2xl">
+              <div className="w-full h-full rounded-full bg-white bg-opacity-90 flex items-center justify-center egg-shake">
+                <Image
+                  src={loginEggCelebration.image || '/shop/Egg/Egg.png'}
+                  alt="Magical egg"
+                  width={144}
+                  height={144}
+                  className="object-contain p-4"
+                  priority
+                />
+              </div>
+            </div>
+
+            <div className="pt-20 pb-8 px-6 sm:px-10 text-center space-y-4">
+              <h2 className="text-2xl font-bold text-purple-700">You received an egg!</h2>
+              <p className="text-sm text-gray-600">
+                Welcome back! A special egg has been added to your incubator just for logging in.
+              </p>
+              <div className="bg-white bg-opacity-80 rounded-2xl px-4 py-3 border border-purple-100">
+                <p className="text-base font-semibold text-gray-800">{loginEggCelebration.name}</p>
+                {loginEggCelebration.rarity && (
+                  <p className="text-xs uppercase tracking-wide text-purple-500 font-semibold">
+                    {loginEggCelebration.rarity}
+                  </p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={closeLoginEggCelebration}
+                className="inline-flex items-center justify-center px-6 py-2 rounded-full bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-md transition-transform duration-150 active:scale-95"
+              >
+                Awesome!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <DailyMysteryBoxModal
         isOpen={showDailyMysteryBox && Boolean(studentData)}

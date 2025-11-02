@@ -1457,7 +1457,9 @@ const ShopTab = ({
                                 >
                                   <div className="flex items-center gap-3 mb-2">
                                     <div
-                                      className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden shadow"
+                                      className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden shadow ${
+                                        status.stage === 'unbroken' ? 'egg-shake' : ''
+                                      }`}
                                       style={{
                                         background: `radial-gradient(circle at 30% 30%, ${accent}22, #ffffff)`,
                                         border: `3px solid ${accent}`
