@@ -121,6 +121,171 @@ Tomorrow we'll learn even more amazing things about words! Great work, everyone!
         }
       ],
 
+      displaySections: [
+        {
+          title: 'Word Detectives Assemble!',
+          subtitle: 'Compound words hide two smaller words',
+          icon: '🔍',
+          prompt: 'Say the two little words, then blend them together to make the big word!',
+          focusWords: [
+            'butter + fly = BUTTERFLY',
+            'rain + bow = RAINBOW',
+            'sun + shine = SUNSHINE',
+            'cup + cake = CUPCAKE'
+          ],
+          actions: [
+            'Point to each part as you say it out loud.',
+            'Stretch your arms wide and cheer when the big word appears!'
+          ],
+          background: 'from-pink-500 via-purple-500 to-blue-500'
+        },
+        {
+          title: 'Can You Spot the Compound Word?',
+          subtitle: 'Two words become one new meaning',
+          icon: '🌈',
+          prompt: 'Read the two picture words, then blend them into one.',
+          focusWords: [
+            'rain + coat = RAINCOAT',
+            'dog + house = DOGHOUSE',
+            'pop + corn = POPCORN',
+            'rain + bow = RAINBOW'
+          ],
+          actions: [
+            'Thumbs up if it makes a real word.',
+            'Shake your head if it does not make sense.'
+          ],
+          background: 'from-yellow-400 via-pink-400 to-purple-500'
+        },
+        {
+          title: 'Clap the Syllables!',
+          subtitle: 'Each clap is a word beat',
+          icon: '👏',
+          prompt: 'Clap with the teacher while you say each part of the word.',
+          focusWords: ['sun-shine (2 claps)', 'ap-ple (2 claps)', 'el-e-phant (3 claps)', 'foot-ball (2 claps)'],
+          actions: ['Tap the syllables on your lap.', 'Hold up fingers to show how many claps you hear.'],
+          background: 'from-blue-500 via-purple-500 to-pink-500'
+        },
+        {
+          title: 'Word Detective Challenge',
+          subtitle: 'Let’s play our class game!',
+          icon: '🎉',
+          prompt: 'Hands together if it is a compound word. Shake your head if it is not.',
+          focusWords: ['butterfly', 'table', 'rainbow', 'happy'],
+          actions: ['Freeze in a superhero pose when you hear a real compound word.', 'Call out your own compound word to share.'],
+          background: 'from-purple-600 via-pink-500 to-orange-400'
+        }
+      ],
+
+      practiceWordLists: [
+        {
+          icon: '🌟',
+          title: 'Compound Word Detective',
+          description: 'Read the two little words. Blend them to say the new word.',
+          words: [
+            'sun + shine → sunshine',
+            'rain + bow → rainbow',
+            'cup + cake → cupcake',
+            'foot + ball → football',
+            'dog + house → doghouse'
+          ]
+        },
+        {
+          icon: '👏',
+          title: 'Clap the Beats',
+          description: 'Clap once for each syllable you hear.',
+          words: ['rain-bow (2 claps)', 'but-ter-fly (3 claps)', 'puz-zle (2 claps)', 'pen-cil (2 claps)', 'el-e-phant (3 claps)']
+        },
+        {
+          icon: '🧠',
+          title: 'Make Your Own',
+          description: 'Choose two cards and build a silly compound word.',
+          words: ['star + fish → starfish', 'sun + flower → sunflower', 'mail + box → mailbox', 'play + ground → playground', 'rain + coat → raincoat']
+        }
+      ],
+
+      displaySections: [
+        {
+          title: 'One to Many Switch',
+          subtitle: 'Add -S to show more than one',
+          icon: '🔁',
+          prompt: 'Say the base word, then add -S and cheer the plural word together.',
+          focusWords: ['cat → cats', 'dog → dogs', 'hat → hats', 'cup → cups'],
+          actions: [
+            'Trace the base word in the air, then flick your fingers as you add -S.',
+            'Use a soft cheer like "yay!" when you read the new plural aloud.'
+          ],
+          background: 'from-yellow-400 via-orange-400 to-pink-500'
+        },
+        {
+          title: 'Spot the Base Word',
+          subtitle: 'The base stays the same!',
+          icon: '🕵️‍♀️',
+          prompt: 'Read the plural and point to the base word that did not change.',
+          focusWords: ['beds (base: bed)', 'pigs (base: pig)', 'bugs (base: bug)', 'pens (base: pen)'],
+          actions: [
+            'Underline the base word with your finger, then tap the -S.',
+            'Freeze like a statue when you see the base word hiding in the plural.'
+          ],
+          background: 'from-blue-400 via-purple-400 to-pink-500'
+        },
+        {
+          title: 'Plural Parade Sentences',
+          subtitle: 'Read the whole sentence with the plural',
+          icon: '🎺',
+          prompt: 'March in place as you read the sentence and show the plural with your fingers.',
+          focusWords: [
+            'I see two cats.',
+            'Three dogs run.',
+            'Four pigs play.',
+            'Five bugs crawl.'
+          ],
+          actions: [
+            'Hold up the number of fingers for how many you hear.',
+            'Give the plural a drumroll on your knees before you say it.'
+          ],
+          background: 'from-green-400 via-teal-400 to-blue-500'
+        },
+        {
+          title: 'Base Word Freeze Dance',
+          subtitle: 'Say the base before the plural',
+          icon: '🧊',
+          prompt: 'When the plural appears, say the base word, then add -S with a sparkle motion.',
+          focusWords: ['cat ... cats', 'bag ... bags', 'cup ... cups', 'bed ... beds'],
+          actions: [
+            'Freeze like a statue while you say the base, then wiggle as you add -S.',
+            'Whisper the base word and shout the plural for dramatic fun.'
+          ],
+          background: 'from-purple-500 via-indigo-500 to-blue-500'
+        }
+      ],
+
+      practiceWordLists: [
+        {
+          icon: '🎯',
+          title: 'Add -S Builders',
+          description: 'Read the base word, then add -S to make it mean more than one.',
+          words: ['cat → cats', 'dog → dogs', 'hat → hats', 'cup → cups', 'pig → pigs']
+        },
+        {
+          icon: '📚',
+          title: 'Plural Reading Parade',
+          description: 'Point to the base, tap the -S, and read the plural out loud.',
+          words: ['beds', 'bugs', 'pens', 'toys', 'maps']
+        },
+        {
+          icon: '✍️',
+          title: 'Sentence Starters',
+          description: 'Finish the sentence with a plural word that has -S at the end.',
+          words: [
+            'I have two ____ (cats).',
+            'Three ____ are running (dogs).',
+            'Look at the red ____ (hats).',
+            'Five ____ are on the table (cups).',
+            'Seven ____ buzz past (bugs).'
+          ]
+        }
+      ],
+
       activities: [
         {
           title: 'Compound Word Picture Match',
@@ -315,6 +480,66 @@ Tomorrow we'll learn the special NAMES for these word parts! You're all becoming
         }
       ],
 
+      displaySections: [
+        {
+          title: 'The Base is the Heart',
+          subtitle: 'Every word has a strong base',
+          icon: '💖',
+          prompt: 'Say the base word together. Put your hands on your heart as you say it.',
+          focusWords: ['play', 'jump', 'help', 'sing'],
+          actions: ['Whisper the base word, then say it in a strong voice.', 'Show the thumbs-up when you hear a base word.'],
+          background: 'from-red-400 via-pink-500 to-purple-500'
+        },
+        {
+          title: 'Add Word Endings',
+          subtitle: 'Affixes change the meaning',
+          icon: '🧱',
+          prompt: 'Read the base word, then add the new ending together.',
+          focusWords: ['play + ing = PLAYING', 'play + er = PLAYER', 'jump + ed = JUMPED', 'jump + er = JUMPER'],
+          actions: ['Circle the base word with your finger in the air.', 'Wave your hands like sparkles when the meaning changes.'],
+          background: 'from-yellow-400 via-orange-400 to-pink-500'
+        },
+        {
+          title: 'Build the Word Family',
+          subtitle: 'Same base, many words',
+          icon: '🏗️',
+          prompt: 'All of these words share the same heart.',
+          focusWords: ['walk → walking → walker', 'help → helping → helper', 'paint → painting → painter'],
+          actions: ['Hold up one finger for the base, two for the new word.', 'Act out the word while we say it.'],
+          background: 'from-green-400 via-teal-400 to-blue-500'
+        },
+        {
+          title: 'What Changed?',
+          subtitle: 'Listen for meaning clues',
+          icon: '🧠',
+          prompt: 'Does the new ending tell us WHEN or WHO?',
+          focusWords: ['I paint. → I painted.', 'I jump. → I am jumping.', 'I play. → I am a player.'],
+          actions: ['Show past tense with a thumbs over your shoulder.', 'Point to yourself if the word tells WHO.'],
+          background: 'from-purple-500 via-blue-500 to-teal-400'
+        }
+      ],
+
+      practiceWordLists: [
+        {
+          icon: '🎮',
+          title: 'Play Word Family',
+          description: 'Read how the word changes when we add endings.',
+          words: ['play', 'plays', 'playing', 'played', 'player']
+        },
+        {
+          icon: '🦘',
+          title: 'Jump Word Family',
+          description: 'Say the base word first, then the new word.',
+          words: ['jump', 'jumping', 'jumped', 'jumper', 'jumps']
+        },
+        {
+          icon: '🖌️',
+          title: 'Try These Bases',
+          description: 'Use cards to build the new words together.',
+          words: ['walk → walking / walker', 'help → helping / helper', 'sing → singing / singer', 'paint → painting / painter', 'run → running / runner']
+        }
+      ],
+
       activities: [
         {
           title: 'Base Word Hunt',
@@ -395,7 +620,7 @@ Tomorrow we'll learn the special NAMES for these word parts! You're all becoming
       teacherScript: [
         {
           section: 'Introduction (3 mins)',
-          content: `Welcome back, word experts! 👋 
+          content: `Welcome back, word experts! 👋
 
 We've learned that words have a BASE (the heart) and we can add AFFIXES (extra parts) to change the meaning.
 
@@ -578,6 +803,66 @@ You now know the SECRET CODE of words! Next time we'll use these word parts to m
 
 Give yourself a pat on the back - you learned three big vocabulary words today! 🌟`,
           animation: 'celebrate'
+        }
+      ],
+
+      displaySections: [
+        {
+          title: 'Ride the Word Train',
+          subtitle: 'Every part has its own carriage',
+          icon: '🚂',
+          prompt: 'Prefix first, base in the middle, suffix at the end.',
+          focusWords: ['prefix + base + suffix', 'pre + view + er', 're + play + er'],
+          actions: ['Use your arms to show the three parts in order.', 'Chant "prefix, base, suffix" together.'],
+          background: 'from-blue-500 via-indigo-500 to-purple-500'
+        },
+        {
+          title: 'Prefixes Go First',
+          subtitle: 'Prefixes give starting clues',
+          icon: '⬅️',
+          prompt: 'Say the prefix, then say the new meaning.',
+          focusWords: ['un + happy = UNHAPPY', 're + do = REDO', 'pre + view = PREVIEW'],
+          actions: ['Step forward when you hear the prefix.', 'Make a rewind motion for prefixes like re-.'],
+          background: 'from-green-400 via-teal-400 to-blue-500'
+        },
+        {
+          title: 'Suffixes Go Last',
+          subtitle: 'Suffixes change how or who',
+          icon: '➡️',
+          prompt: 'Read the base, then add the ending at the end.',
+          focusWords: ['jump + ing = JUMPING', 'help + er = HELPER', 'play + ful = PLAYFUL'],
+          actions: ['Give yourself a hug when the word tells WHO (helper).', 'Wave your hands like it is happening now for -ing.'],
+          background: 'from-pink-500 via-orange-400 to-yellow-300'
+        },
+        {
+          title: 'Build a Word Together',
+          subtitle: 'Choose the parts you need',
+          icon: '🧩',
+          prompt: 'Pick a prefix, base, or suffix to create a new word.',
+          focusWords: ['un + pack', 're + tell', 'help + ful'],
+          actions: ['Hold the cards up high as you read the word.', 'Explain what the word now means in one short sentence.'],
+          background: 'from-purple-500 via-pink-500 to-red-400'
+        }
+      ],
+
+      practiceWordLists: [
+        {
+          icon: '🚀',
+          title: 'Prefix Practice',
+          description: 'Remember: prefixes sit at the front.',
+          words: ['un + happy → unhappy', 're + do → redo', 'pre + heat → preheat', 'un + pack → unpack', 're + tell → retell']
+        },
+        {
+          icon: '🎯',
+          title: 'Suffix Practice',
+          description: 'Add the ending to show how or who.',
+          words: ['jump + ing → jumping', 'help + er → helper', 'play + ed → played', 'sing + er → singer', 'smile + ing → smiling']
+        },
+        {
+          icon: '🚂',
+          title: 'Full Word Trains',
+          description: 'Build a three-part word train together.',
+          words: ['pre + view + er → previewer', 're + play + ing → replaying', 'un + help + ful → unhelpful', 're + tell + ing → retelling', 'un + pack + ed → unpacked']
         }
       ],
 
@@ -820,6 +1105,66 @@ Tomorrow we'll practice adding -S to words ourselves! You're all becoming morpho
         }
       ],
 
+      displaySections: [
+        {
+          title: 'Every Part Has a Job',
+          subtitle: 'Listen for what each part tells us',
+          icon: '🧩',
+          prompt: 'Say the base first, then add the ending and explain what changed.',
+          focusWords: ['dog + s = DOGS (more than one)', 'cat + s = CATS (more than one)', 'hat + s = HATS (more than one)'],
+          actions: ['Hold up one finger for the base, then show many fingers for -s.', 'Say “one” and “many” with big voices.'],
+          background: 'from-orange-400 via-pink-400 to-purple-500'
+        },
+        {
+          title: 'Find the Base Word',
+          subtitle: 'The base tells WHAT the word is about',
+          icon: '🔍',
+          prompt: 'Spot the base word hiding at the front.',
+          focusWords: ['bed + s = BEDS', 'pig + s = PIGS', 'cup + s = CUPS'],
+          actions: ['Touch your nose when you hear the base word.', 'Draw the base in the air using finger writing.'],
+          background: 'from-yellow-300 via-orange-300 to-pink-400'
+        },
+        {
+          title: 'What Does -S Tell Us?',
+          subtitle: 'The ending changes how many',
+          icon: '➕',
+          prompt: 'Show with your hands if the word means one or many.',
+          focusWords: ['dog vs. dogs', 'book vs. books', 'star vs. stars'],
+          actions: ['Hold one fist for one item, spread fingers for many items.', 'Say “That means more than one!” together.'],
+          background: 'from-blue-400 via-teal-400 to-green-400'
+        },
+        {
+          title: 'Singular or Plural?',
+          subtitle: 'Listen and respond',
+          icon: '🎲',
+          prompt: 'If you hear ONE, show one finger. If you hear MANY, hold up jazz hands!',
+          focusWords: ['cat', 'cats', 'tree', 'trees'],
+          actions: ['Call out your own plural word to challenge the class.', 'Make a joyful cheer when you hear a plural.'],
+          background: 'from-purple-500 via-blue-500 to-cyan-400'
+        }
+      ],
+
+      practiceWordLists: [
+        {
+          icon: '🐾',
+          title: 'Plural Power',
+          description: 'Read each base word and add -s to show many.',
+          words: ['dog + s → dogs', 'cat + s → cats', 'pig + s → pigs', 'cup + s → cups', 'hat + s → hats']
+        },
+        {
+          icon: '🧃',
+          title: 'Base Word Check',
+          description: 'Circle the base word first, then say the whole word.',
+          words: ['bug + s → bugs', 'pen + s → pens', 'toy + s → toys', 'bag + s → bags', 'bell + s → bells']
+        },
+        {
+          icon: '🎯',
+          title: 'One or Many?',
+          description: 'Point to the correct picture or use mini objects.',
+          words: ['book ↔ books', 'star ↔ stars', 'duck ↔ ducks', 'car ↔ cars', 'tree ↔ trees']
+        }
+      ],
+
       activities: [
         {
           title: 'Meaningful Parts Sorting',
@@ -1058,6 +1403,83 @@ But for now, you're AMAZING at adding -S! Give yourselves a round of applause! �
         }
       ],
 
+      displaySections: [
+        {
+          title: 'Base Word + -S = Many',
+          subtitle: 'Add -S to show more than one',
+          icon: '➕',
+          prompt: 'Say the base word, slide on -S, then shout the new plural word!',
+          focusWords: ['cat + s = cats', 'dog + s = dogs', 'hat + s = hats', 'cup + s = cups'],
+          actions: [
+            'Hold your hands around the base word to show it stays the same.',
+            'Give a sparkle clap when you add -S to make many!'
+          ],
+          background: 'from-blue-500 via-purple-500 to-pink-500'
+        },
+        {
+          title: 'Spot the Base Word',
+          subtitle: 'The base stays safe',
+          icon: '🧱',
+          prompt: 'Read the plural. Point to the base word hiding inside.',
+          focusWords: ['cats → base word: cat', 'pigs → base word: pig', 'beds → base word: bed', 'bugs → base word: bug'],
+          actions: [
+            'Trace the base word in the air, then circle the -S ending.',
+            'Whisper the base word, then say the plural with a cheer.'
+          ],
+          background: 'from-yellow-400 via-orange-400 to-pink-500'
+        },
+        {
+          title: 'Plural Parade',
+          subtitle: 'One marches into many',
+          icon: '🎈',
+          prompt: 'Show one item, then add -S and show many with your hands.',
+          focusWords: ['one cat → many cats', 'one pig → many pigs', 'one cup → many cups', 'one bug → many bugs'],
+          actions: [
+            'Hold up one finger for the base, then wiggle all fingers for the plural.',
+            'March in place while you chant the plural words together.'
+          ],
+          background: 'from-teal-400 via-blue-500 to-indigo-500'
+        },
+        {
+          title: 'Sentence Shout-Out',
+          subtitle: 'Use your plural power',
+          icon: '📣',
+          prompt: 'Read the sentence. Emphasise the plural word with a big voice.',
+          focusWords: [
+            'I see three cats.',
+            'Two dogs are running.',
+            'The hats are on the rack.',
+            'Five pigs are in the mud.'
+          ],
+          actions: [
+            'Tap the plural word on the screen when you read it.',
+            'Add a quick action to match the sentence meaning.'
+          ],
+          background: 'from-pink-500 via-red-400 to-orange-400'
+        }
+      ],
+
+      practiceWordLists: [
+        {
+          icon: '🐾',
+          title: 'Add -S Word Builders',
+          description: 'Start with the base word, add -S, then read the plural aloud.',
+          words: ['cat → cats', 'dog → dogs', 'hat → hats', 'pig → pigs', 'cup → cups']
+        },
+        {
+          icon: '🔍',
+          title: 'Find the Base',
+          description: 'Underline the base word hiding inside each plural.',
+          words: ['beds (base: bed)', 'bugs (base: bug)', 'pans (base: pan)', 'tubs (base: tub)', 'mats (base: mat)']
+        },
+        {
+          icon: '🗣️',
+          title: 'Plural Sentence Starters',
+          description: 'Use the sentence starter to share about many items.',
+          words: ['I see many cats.', 'We have two dogs.', 'The cups are full.', 'Three pigs are playing.', 'Four hats are on the hook.']
+        }
+      ],
+
       activities: [
         {
           title: 'Magnetic Letter Building',
@@ -1134,6 +1556,501 @@ But for now, you're AMAZING at adding -S! Give yourselves a round of applause! �
           'What does -S tell us about the word?'
         ],
         exitTicket: 'Write 3 words with -S added. Circle the base in each word.'
+      }
+    },
+
+    {
+      id: 6,
+      title: 'Adding -ING for Happening Now',
+      icon: '🏃‍♂️',
+      duration: '20-25 minutes',
+      objectives: [
+        'Add the suffix -ING to show an action is happening now',
+        'Keep the base word the same while adding -ING',
+        'Act out and read -ING words with confidence'
+      ],
+      materials: [
+        'Whiteboard/chart paper',
+        'Action picture cards',
+        'Magnetic letters or letter cards',
+        'Student whiteboards or clipboards'
+      ],
+
+      teacherScript: [
+        {
+          section: 'Introduction (3 mins)',
+          content: `Hello, action heroes! 🦸‍♀️ Today we are learning a super fun suffix: -ING! When we add -ING to a base word, it tells us the action is happening RIGHT NOW.`,
+          animation: 'fadeIn'
+        },
+        {
+          section: 'Model the -ING Magic (7 mins)',
+          content: `Watch this! I write the base word JUMP. When I add -ING, it becomes JUMPING. That means someone is jumping right now! Notice how JUMP stayed the same - we just glued -ING to the end.\n\nLet's try more together:\n• SING → SINGING 🎤\n• HELP → HELPING 🤝\n• FISH → FISHING 🎣\n• ACT → ACTING 🎭\nThe base word stays the same. -ING tells us the action is happening now!`,
+          animation: 'spotlight'
+        },
+        {
+          section: 'Action Practice (7 mins)',
+          content: `Time to move! I will show an action picture. First say the base word, then add -ING and do the action.\n\nPicture of a runner → RUN → RUNNING (jog in place)\nPicture of a singer → SING → SINGING (hold a pretend microphone)\nPicture of a helper → HELP → HELPING (pretend to help a friend)\nPicture of kids playing → PLAY → PLAYING (shake and cheer)\n\nKeep saying the base word and then the -ING word. Feel the "happening now" meaning!`,
+          animation: 'bounce'
+        },
+        {
+          section: 'Build & Read (5 mins)',
+          content: `Now you try on your whiteboard. Write the base word WALK. Add -ING to make WALKING. Read it with me!\n\nTry these: JUMP → JUMPING, HELP → HELPING, SING → SINGING, FISH → FISHING.\n\nRemember: the base word stays safe. We only add -ING to show it is happening now.`,
+          animation: 'construct'
+        },
+        {
+          section: 'Wrap-Up (2 mins)',
+          content: `What did we learn today, superheroes?\n\n✅ -ING means the action is happening now\n✅ The base word stays the same\n✅ We can say, read, and act out -ING words!\n\nTake a bow for your amazing -ING skills!`,
+          animation: 'celebrate'
+        }
+      ],
+
+      displaySections: [
+        {
+          title: 'Base + -ING = Happening Now',
+          subtitle: 'Say the base, add -ING, show the action',
+          icon: '✨',
+          prompt: 'Chant “base… -ING!” as you slide the parts together.',
+          focusWords: ['jump + ing = jumping', 'sing + ing = singing', 'help + ing = helping', 'fish + ing = fishing'],
+          actions: ['Clap for the base word, wave your hands when you add -ING.', 'Act out each action as you read the -ING word.'],
+          background: 'from-orange-400 via-pink-400 to-purple-500'
+        },
+        {
+          title: 'Action Spotlight',
+          subtitle: 'What is happening right now?',
+          icon: '🎥',
+          prompt: 'Describe the picture using an -ING word.',
+          focusWords: ['A kid is jumping.', 'The girl is singing.', 'The boy is fishing.', 'The friends are helping.'],
+          actions: ['Pose like the picture while you say the sentence.', 'Make a “now” gesture by pointing to the floor as you read.'],
+          background: 'from-yellow-400 via-lime-400 to-green-500'
+        },
+        {
+          title: 'Build the Word',
+          subtitle: 'Keep the base safe!',
+          icon: '🧱',
+          prompt: 'Spot the base word. Trace it in the air, then stick on -ING.',
+          focusWords: ['play + ing', 'paint + ing', 'draw + ing', 'clap + ping'],
+          actions: ['Hold your hands like a brick wall around the base word.', 'Give a sparkle motion as you add -ING.'],
+          background: 'from-blue-400 via-indigo-500 to-purple-500'
+        },
+        {
+          title: 'Sentence Groove',
+          subtitle: 'Read the sentence with energy',
+          icon: '🎶',
+          prompt: 'Tap the rhythm as you read the -ING sentence.',
+          focusWords: ['We are jumping.', 'I am singing.', 'They are helping.', 'Dad is fishing.'],
+          actions: ['Pat your lap with each word, snap when you say the -ING word.', 'Show the action silently after you read the sentence.'],
+          background: 'from-teal-400 via-cyan-400 to-blue-500'
+        }
+      ],
+
+      practiceWordLists: [
+        {
+          icon: '🏅',
+          title: '-ING Action Stars',
+          description: 'Read the base word, add -ING, then act it out.',
+          words: ['jump → jumping', 'sing → singing', 'fish → fishing', 'act → acting', 'help → helping']
+        },
+        {
+          icon: '🧠',
+          title: 'Keep the Base',
+          description: 'Circle the base word that stayed the same.',
+          words: ['play → playing', 'paint → painting', 'draw → drawing', 'kick → kicking', 'clap → clapping']
+        },
+        {
+          icon: '🗣️',
+          title: 'Happening Now Sentences',
+          description: 'Read the sentence and show the action.',
+          words: ['The frog is jumping.', 'Mum is singing.', 'We are helping.', 'Nan is knitting.', 'The kids are painting.']
+        }
+      ],
+
+      activities: [
+        {
+          title: 'Action Charades',
+          icon: '🎭',
+          duration: '10 mins',
+          description: 'Students act out -ING words for the class to guess',
+          instructions: [
+            'Show an action card with the base word hidden',
+            'Student acts it out without speaking',
+            'Class guesses the -ING word',
+            'Reveal the base word and add -ING together'
+          ],
+          materials: ['Action picture cards'],
+          printable: 'ing-action-posters'
+        },
+        {
+          title: 'Build the -ING Word',
+          icon: '🧲',
+          duration: '12 mins',
+          description: 'Use magnetic letters to build -ING words',
+          instructions: [
+            'Provide base words on cards (jump, sing, help, play)',
+            'Students spell the base word with magnetic letters',
+            'They add the -ING ending',
+            'Read the completed word aloud'
+          ],
+          materials: ['Magnetic letters', 'Base word cards', '-ING letter tiles'],
+          printable: 'ing-word-builders'
+        },
+        {
+          title: '-ING Sentence Strips',
+          icon: '📜',
+          duration: '10 mins',
+          description: 'Match pictures to -ING sentences',
+          instructions: [
+            'Lay out sentences with -ING words',
+            'Students match to the correct picture',
+            'Read the sentence together with expression',
+            'Act out the action to confirm the meaning'
+          ],
+          materials: ['Sentence strips', 'Picture cards'],
+          printable: 'ing-sentence-strips'
+        }
+      ],
+
+      assessment: {
+        formative: [
+          'Can students explain that -ING means happening now?',
+          'Do they keep the base word the same when adding -ING?',
+          'Can they read and act out -ING words?'
+        ],
+        questions: [
+          'What does -ING tell us about an action?',
+          'Show me how to turn "jump" into "jumping".',
+          'Can you find the base word in "singing"?'
+        ],
+        exitTicket: 'Write or build two -ING words. Circle the base word in each.'
+      }
+    },
+
+    {
+      id: 7,
+      title: 'Adding the Prefix UN- (Meaning Not or Opposite)',
+      icon: '🔓',
+      duration: '20-25 minutes',
+      objectives: [
+        'Understand that UN- means not or opposite of the base word',
+        'Attach UN- to simple base words to change meaning',
+        'Explain how the meaning changes with UN-'
+      ],
+      materials: [
+        'Whiteboard/chart paper',
+        'Prefix and base word cards',
+        'Velcro or magnet board',
+        'Picture cards showing opposites'
+      ],
+
+      teacherScript: [
+        {
+          section: 'Introduction (3 mins)',
+          content: `Welcome, meaning makers! Today we have a prefix superhero: UN-! When we put UN- in front of a base word, it means NOT or the OPPOSITE.`,
+          animation: 'fadeIn'
+        },
+        {
+          section: 'Meet Prefix UN- (7 mins)',
+          content: `Watch this! I write the base word LOCK. That means the door is closed tight. Now I slide UN- to the front: UNLOCK. That means NOT locked!\n\nTry these with me:\n• ZIP → UNZIP (take it back apart)\n• PACK → UNPACK (take things out)\n• TIE → UNTIE (make it loose)\n• DO → UNDO (make it like before)\nDo you hear how UN- changes the meaning?`,
+          animation: 'slideIn'
+        },
+        {
+          section: 'Meaning Match (7 mins)',
+          content: `Let\'s match pictures. I show a locked door → LOCK. Now I add UN- → UNLOCK. The door is open!\n\nWe\'ll do more: zipped backpack → ZIP, unzipped backpack → UNZIP; packed suitcase → PACK, empty suitcase → UNPACK.\n\nEach time, UN- makes the opposite meaning.`,
+          animation: 'flip'
+        },
+        {
+          section: 'Build & Explain (5 mins)',
+          content: `On your boards, write the base word DO. Add UN- to make UNDO. Tell your partner what it means.\n\nTry LOCK → UNLOCK, TIE → UNTIE, WRAP → UNWRAP.\n\nRemember, UN- always goes at the FRONT and means NOT or OPPOSITE.`,
+          animation: 'construct'
+        },
+        {
+          section: 'Wrap-Up (2 mins)',
+          content: `Big brain moment!\n\n✅ UN- is a prefix that means not or opposite\n✅ We attach UN- to the front of a base word\n✅ The base word meaning changes to the opposite\n\nGive yourself a superhero pose for using prefixes!`,
+          animation: 'celebrate'
+        }
+      ],
+
+      displaySections: [
+        {
+          title: 'Prefix Power',
+          subtitle: 'UN- + base word = opposite meaning',
+          icon: '⚡',
+          prompt: 'Say “UN- means NOT!” then read the new word.',
+          focusWords: ['lock → unlock', 'zip → unzip', 'pack → unpack', 'tie → untie'],
+          actions: ['Push your hands apart as you add UN-.', 'Show a thumbs down when you say the opposite meaning.'],
+          background: 'from-red-400 via-orange-400 to-yellow-400'
+        },
+        {
+          title: 'Opposite Match',
+          subtitle: 'Which picture shows the UN- word?',
+          icon: '🧩',
+          prompt: 'Point to the picture that matches the UN- word.',
+          focusWords: ['unlock', 'untie', 'unzip', 'unpack'],
+          actions: ['Hold both hands together for the base meaning, spread them apart for UN-.', 'Explain the change in one short sentence.'],
+          background: 'from-green-400 via-teal-400 to-blue-500'
+        },
+        {
+          title: 'Word Detective',
+          subtitle: 'Spot the prefix at the front',
+          icon: '🔍',
+          prompt: 'Underline UN- and tell what it does to the word.',
+          focusWords: ['undo', 'unfold', 'unplug', 'unbutton'],
+          actions: ['Say “UN- means not!” every time you underline it.', 'Show the base word with your fingers once the prefix is covered.'],
+          background: 'from-purple-400 via-indigo-500 to-blue-500'
+        },
+        {
+          title: 'Sentence Switch',
+          subtitle: 'Change the meaning with UN-',
+          icon: '🔄',
+          prompt: 'Read the base sentence. Add UN- to change it.',
+          focusWords: ['I zip my bag. → I unzip my bag.', 'We pack the box. → We unpack the box.', 'I tie the bow. → I untie the bow.', 'Dad locks the gate. → Dad unlocks the gate.'],
+          actions: ['Use a rewind motion when you add UN-.', 'Act out the base and the UN- action.'],
+          background: 'from-yellow-400 via-pink-400 to-purple-500'
+        }
+      ],
+
+      practiceWordLists: [
+        {
+          icon: '🛠️',
+          title: 'Prefix Builders',
+          description: 'Slide UN- to the front and read the new word.',
+          words: ['do → undo', 'zip → unzip', 'pack → unpack', 'lock → unlock', 'tie → untie']
+        },
+        {
+          icon: '🗣️',
+          title: 'Explain the Change',
+          description: 'Tell what the UN- word means.',
+          words: ['unlock = not locked', 'unpack = take things out', 'untie = not tied', 'unzip = open the zip', 'undo = make it like before']
+        },
+        {
+          icon: '🎲',
+          title: 'Spin & Say',
+          description: 'Roll a cube and read the UN- word you land on.',
+          words: ['unplug', 'unfold', 'unroll', 'unmask', 'unmix']
+        }
+      ],
+
+      activities: [
+        {
+          title: 'Prefix Flip Cards',
+          icon: '🎴',
+          duration: '12 mins',
+          description: 'Flip cards to reveal base and UN- words',
+          instructions: [
+            'Lay out base word cards and UN- cards',
+            'Students flip a base card, then find the matching UN- card',
+            'Explain how the meaning changed',
+            'Record the pair on a mini whiteboard'
+          ],
+          materials: ['Prefix cards', 'Base word cards', 'Whiteboards'],
+          printable: 'un-prefix-flipcards'
+        },
+        {
+          title: 'Opposite Sort',
+          icon: '🗂️',
+          duration: '10 mins',
+          description: 'Sort pictures into base and UN- meanings',
+          instructions: [
+            'Provide picture cards showing both meanings',
+            'Students sort into “base word” and “UN- word” mats',
+            'Read the word that matches each picture',
+            'Discuss why UN- makes it the opposite'
+          ],
+          materials: ['Picture cards', 'Sorting mats'],
+          printable: 'un-word-sort'
+        },
+        {
+          title: 'Meaning Match Ups',
+          icon: '🤝',
+          duration: '12 mins',
+          description: 'Match sentences that show base vs. UN- meanings',
+          instructions: [
+            'Read a base sentence card aloud',
+            'Students find the sentence that shows the UN- version',
+            'Stick the pair together on a chart',
+            'Act out each sentence pair'
+          ],
+          materials: ['Sentence cards', 'Chart paper', 'Stickers'],
+          printable: 'un-change-mats'
+        }
+      ],
+
+      assessment: {
+        formative: [
+          'Can students explain that UN- means not or opposite?',
+          'Do they attach UN- to the front of base words correctly?',
+          'Can they describe the new meaning with UN-?'
+        ],
+        questions: [
+          'What happens to “lock” when we add UN-?',
+          'Show me the base word inside “unpack”.',
+          'Tell me what “untie” means.'
+        ],
+        exitTicket: 'Match two base words with their UN- pairs and draw the meaning.'
+      }
+    },
+
+    {
+      id: 8,
+      title: 'Joining Free Bases to Make Compound Words',
+      icon: '🌈',
+      duration: '20-25 minutes',
+      objectives: [
+        'Recognise that two free base words can join to make a new word',
+        'Blend simple base words to form compound words',
+        'Explain the meaning of each part in a compound word'
+      ],
+      materials: [
+        'Large base word cards',
+        'Picture puzzles that join together',
+        'Pocket chart or magnetic board',
+        'Student mini cards for building words'
+      ],
+
+      teacherScript: [
+        {
+          section: 'Introduction (3 mins)',
+          content: `Word builders, assemble! Today we are joining two free base words to make a brand-new word. When two base words join, they create a compound word with a fresh meaning.`,
+          animation: 'fadeIn'
+        },
+        {
+          section: 'Blend the Bases (7 mins)',
+          content: `Watch me build GOLD + FISH. When I push them together, GOLD + FISH = GOLDFISH 🐠. It\'s a new word with a new meaning!\n\nLet\'s build more:\n• SUN + SET = SUNSET 🌅\n• RAIN + COAT = RAINCOAT ☔\n• STAR + FISH = STARFISH ⭐🐟\n• SAND + CASTLE = SANDCASTLE 🏖️\nEach part keeps its meaning, and together they make something new.`,
+          animation: 'combine'
+        },
+        {
+          section: 'Picture Puzzle Time (7 mins)',
+          content: `I have picture halves. One shows GOLD, the other shows FISH. When we clip them together, we see a GOLDFISH!\n\nStudents help match SUN + FLOWER, POP + CORN, MOON + LIGHT. Say the little words, then blend them into the big word.`,
+          animation: 'puzzle'
+        },
+        {
+          section: 'Create & Share (5 mins)',
+          content: `Now you try with mini cards. Choose two base words that make a real word. Place them together, read the compound word, and tell what each part brings to the meaning.\n\nExample: RAIN + BOW = RAINBOW. RAIN means water from the sky. BOW means a curved shape. Together they make the colourful arc we see after rain!`,
+          animation: 'build'
+        },
+        {
+          section: 'Wrap-Up (2 mins)',
+          content: `Super compound creators!\n\n✅ Two base words can join together\n✅ Each part still has meaning\n✅ Together they make a new, bigger meaning\n\nKeep spotting compound words everywhere you read!`,
+          animation: 'celebrate'
+        }
+      ],
+
+      displaySections: [
+        {
+          title: 'Blend the Bases',
+          subtitle: 'Say the little words, then the big word',
+          icon: '🧩',
+          prompt: 'Touch each base as you say it, then slide them together.',
+          focusWords: ['gold + fish = goldfish', 'sun + set = sunset', 'rain + coat = raincoat', 'star + fish = starfish'],
+          actions: ['Move your hands together as the words join.', 'Stretch out the blended word with a rainbow motion.'],
+          background: 'from-pink-400 via-purple-400 to-blue-500'
+        },
+        {
+          title: 'Picture It!',
+          subtitle: 'Match the images to the compound word',
+          icon: '🖼️',
+          prompt: 'Say the two picture words, then name the new word.',
+          focusWords: ['moon + light = moonlight', 'rain + bow = rainbow', 'cup + cake = cupcake', 'tooth + brush = toothbrush'],
+          actions: ['Point to each picture part with the matching word.', 'Draw the compound word in the air after you read it.'],
+          background: 'from-yellow-400 via-orange-400 to-red-400'
+        },
+        {
+          title: 'Meaning Makers',
+          subtitle: 'What does each part tell us?',
+          icon: '💡',
+          prompt: 'Explain what each base word means before blending.',
+          focusWords: ['sunset = sun + set', 'football = foot + ball', 'playground = play + ground', 'ladybug = lady + bug'],
+          actions: ['Hold up one finger for each base meaning.', 'Share a quick sentence that uses the new compound word.'],
+          background: 'from-green-400 via-teal-400 to-blue-500'
+        },
+        {
+          title: 'Create Your Own',
+          subtitle: 'Try silly or real combinations',
+          icon: '🎨',
+          prompt: 'Choose two base words to join. Decide if it makes a real word.',
+          focusWords: ['sand + box = sandbox', 'rain + drop = raindrop', 'star + dust = stardust', 'bed + time = bedtime'],
+          actions: ['Thumbs up if it makes sense, thumbs sideways if it is silly.', 'Act out the new word or draw it quickly.'],
+          background: 'from-indigo-400 via-purple-500 to-pink-500'
+        }
+      ],
+
+      practiceWordLists: [
+        {
+          icon: '🌟',
+          title: 'Compound Match Ups',
+          description: 'Blend the two base words into one compound word.',
+          words: ['gold + fish → goldfish', 'sun + set → sunset', 'rain + coat → raincoat', 'moon + light → moonlight', 'cup + cake → cupcake']
+        },
+        {
+          icon: '🖍️',
+          title: 'Draw the Meaning',
+          description: 'Read the compound word and sketch a quick picture.',
+          words: ['starfish', 'playground', 'toothbrush', 'snowman', 'basketball']
+        },
+        {
+          icon: '🎲',
+          title: 'Spin a Compound',
+          description: 'Spin two wheels to create a compound word. Is it real?',
+          words: ['rain + bow', 'fire + fly', 'sun + flower', 'bed + room', 'book + shelf']
+        }
+      ],
+
+      activities: [
+        {
+          title: 'Compound Puzzle Builders',
+          icon: '🧱',
+          duration: '12 mins',
+          description: 'Match picture puzzle halves to create compound words',
+          instructions: [
+            'Lay out base word picture halves on the floor',
+            'Students find two halves that join to make a real word',
+            'Read the little words and then the big word',
+            'Explain what each part means in the new word'
+          ],
+          materials: ['Picture puzzle cards'],
+          printable: 'compound-explorer-cards'
+        },
+        {
+          title: 'Pocket Chart Builders',
+          icon: '📊',
+          duration: '10 mins',
+          description: 'Use a pocket chart to join base word cards',
+          instructions: [
+            'Place base word cards in two columns',
+            'Students slide one card from each column together',
+            'Read and decide if it is a real compound word',
+            'Place real words in the “Word Winners” row'
+          ],
+          materials: ['Pocket chart', 'Base word cards', 'Real/not real headers'],
+          printable: 'compound-blend-mats'
+        },
+        {
+          title: 'Create & Illustrate',
+          icon: '🎨',
+          duration: '12 mins',
+          description: 'Students create their own compound word posters',
+          instructions: [
+            'Give students two base word cards and blank templates',
+            'They write the base words and the new compound word',
+            'Draw a picture showing the new meaning',
+            'Share with a partner or the class'
+          ],
+          materials: ['Compound word templates', 'Crayons', 'Markers'],
+          printable: 'compound-scene-posters'
+        }
+      ],
+
+      assessment: {
+        formative: [
+          'Can students identify the two base words in a compound word?',
+          'Do they blend base words smoothly to make the new word?',
+          'Can they explain what each part means?'
+        ],
+        questions: [
+          'What two words make “sunset”?',
+          'Explain the parts of “goldfish”.',
+          'Can you think of a compound word you use at school?'
+        ],
+        exitTicket: 'Build one compound word and draw what it means.'
       }
     }
   ]
