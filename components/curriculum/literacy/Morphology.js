@@ -1,6 +1,7 @@
 // components/curriculum/literacy/Morphology.js
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import MorphologyLevel1 from './morphology/MorphologyLevel1';
+import MorphologyLevel2 from './morphology/MorphologyLevel2';
 
 // Printable templates
 const printableTemplates = {
@@ -764,6 +765,601 @@ h1{text-align:center;color:#4a148c}
 </div>
 </div>
 </body></html>`;
+  },
+
+  'morphology-team-mat': () => {
+    return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Morphology Team Sorting Mat</title>
+<style>
+body{font-family:'Poppins',Arial,sans-serif;margin:0;padding:40px;background:#f1f5ff;color:#1e1e2f}
+.mat{max-width:1100px;margin:0 auto;background:white;border-radius:30px;box-shadow:0 25px 60px rgba(79,70,229,0.25);padding:40px 50px}
+h1{text-align:center;font-size:42px;margin-bottom:10px;color:#4338ca}
+.subtitle{text-align:center;font-size:18px;color:#6366f1;margin-bottom:35px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:30px}
+.column{border:5px solid transparent;border-radius:24px;padding:25px 20px;min-height:420px;position:relative;overflow:hidden}
+.column::after{content:'';position:absolute;inset:0;opacity:0.25;z-index:-1}
+.column.prefix{border-color:#f97316}
+.column.prefix::after{background:linear-gradient(135deg,#f97316,#fb923c)}
+.column.base{border-color:#10b981}
+.column.base::after{background:linear-gradient(135deg,#10b981,#34d399)}
+.column.suffix{border-color:#6366f1}
+.column.suffix::after{background:linear-gradient(135deg,#6366f1,#8b5cf6)}
+.column h2{font-size:26px;color:white;text-align:center;margin-bottom:10px;text-transform:uppercase;letter-spacing:2px}
+.chips{display:flex;flex-direction:column;gap:12px;margin-top:20px}
+.chip{background:rgba(255,255,255,0.92);border-radius:18px;padding:12px 16px;font-size:20px;font-weight:600;color:#1e1e2f;box-shadow:0 8px 18px rgba(0,0,0,0.1)}
+.definition{font-size:16px;color:#312e81;margin-top:14px;text-align:center;font-weight:600}
+.footer{margin-top:40px;background:#eef2ff;border-radius:20px;padding:18px 24px;text-align:center;font-size:18px;font-weight:600;color:#4338ca}
+</style></head><body>
+<div class="mat">
+  <h1>🧠 Morphology Team Sorting Mat</h1>
+  <p class="subtitle">Sort each card into the correct job pocket. Then build a super word using one card from each column!</p>
+  <div class="grid">
+    <div class="column prefix">
+      <h2>Prefix</h2>
+      <div class="chips">
+        <div class="chip">un-</div>
+        <div class="chip">re-</div>
+        <div class="chip">pre-</div>
+        <div class="chip">mis-</div>
+        <div class="chip">dis-</div>
+      </div>
+      <div class="definition">Prefixes come at the <strong>front</strong> and change the meaning.</div>
+    </div>
+    <div class="column base">
+      <h2>Base</h2>
+      <div class="chips">
+        <div class="chip">play</div>
+        <div class="chip">kind</div>
+        <div class="chip">lock</div>
+        <div class="chip">pack</div>
+        <div class="chip">read</div>
+      </div>
+      <div class="definition">The base carries the <strong>main idea</strong> of the word.</div>
+    </div>
+    <div class="column suffix">
+      <h2>Suffix</h2>
+      <div class="chips">
+        <div class="chip">-s</div>
+        <div class="chip">-ing</div>
+        <div class="chip">-ed</div>
+        <div class="chip">-er</div>
+        <div class="chip">-ful</div>
+      </div>
+      <div class="definition">Suffixes sit at the <strong>end</strong> and add detail.</div>
+    </div>
+  </div>
+  <div class="footer">Chant it: "Prefix, Base, Suffix – word parts make meaning!"</div>
+</div>
+</body></html>`;
+  },
+
+  'word-machine-board': () => {
+    return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Word Machine Builders</title>
+<style>
+body{font-family:'Nunito',sans-serif;margin:0;padding:40px;background:#fef3c7;color:#1f2937}
+.board{max-width:1080px;margin:0 auto;background:white;border-radius:32px;padding:50px;box-shadow:0 22px 48px rgba(245,158,11,0.3)}
+h1{text-align:center;font-size:44px;margin-bottom:12px;color:#d97706}
+.subtitle{text-align:center;font-size:18px;color:#92400e;margin-bottom:35px}
+.machine{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:40px}
+.slot{border:5px dashed #f97316;border-radius:24px;padding:30px;min-height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:linear-gradient(135deg,rgba(249,115,22,0.12),rgba(251,191,36,0.12))}
+.slot h2{font-size:26px;text-transform:uppercase;color:#b45309;letter-spacing:2px}
+.slot .hint{font-size:16px;color:#92400e;text-align:center}
+.word-boxes{display:grid;grid-template-columns:repeat(3,1fr);gap:25px}
+.word-box{background:#fef08a;border-radius:22px;padding:20px;box-shadow:0 12px 26px rgba(234,179,8,0.35)}
+.word-box h3{font-size:22px;color:#854d0e;margin-bottom:12px;text-transform:uppercase}
+.words{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.chip{background:white;border-radius:16px;padding:12px 14px;text-align:center;font-weight:700;font-size:20px;color:#78350f;border:3px solid rgba(251,191,36,0.8)}
+.footer{margin-top:35px;background:#fde68a;padding:18px 22px;border-radius:18px;text-align:center;font-weight:600;color:#92400e}
+</style></head><body>
+<div class="board">
+  <h1>⚙️ Word Machine Builder Board</h1>
+  <p class="subtitle">Slide in a prefix, base, and suffix. Read the new word and sketch its meaning!</p>
+  <div class="machine">
+    <div class="slot"><h2>Prefix</h2><div class="hint">Goes at the front</div></div>
+    <div class="slot"><h2>Base</h2><div class="hint">Main idea</div></div>
+    <div class="slot"><h2>Suffix</h2><div class="hint">Finishes the word</div></div>
+  </div>
+  <div class="word-boxes">
+    <div class="word-box">
+      <h3>Prefixes</h3>
+      <div class="words">
+        <div class="chip">un-</div>
+        <div class="chip">re-</div>
+        <div class="chip">pre-</div>
+        <div class="chip">mis-</div>
+      </div>
+    </div>
+    <div class="word-box">
+      <h3>Bases</h3>
+      <div class="words">
+        <div class="chip">play</div>
+        <div class="chip">help</div>
+        <div class="chip">read</div>
+        <div class="chip">paint</div>
+        <div class="chip">pack</div>
+        <div class="chip">lock</div>
+      </div>
+    </div>
+    <div class="word-box">
+      <h3>Suffixes</h3>
+      <div class="words">
+        <div class="chip">-s</div>
+        <div class="chip">-ing</div>
+        <div class="chip">-ed</div>
+        <div class="chip">-er</div>
+        <div class="chip">-ful</div>
+      </div>
+    </div>
+  </div>
+  <div class="footer">Idea spark: What happens if you leave a slot empty? Try it!</div>
+</div>
+</body></html>`;
+  },
+
+  'morpheme-chant-cards': () => {
+    return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Morpheme Chant Cards</title>
+<style>
+body{font-family:'Fredoka',sans-serif;margin:0;padding:40px;background:#fff1f2;color:#2d0a31}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:24px;max-width:960px;margin:0 auto}
+.card{background:white;border-radius:28px;padding:30px;box-shadow:0 20px 40px rgba(236,72,153,0.25);position:relative;overflow:hidden}
+.card::after{content:'';position:absolute;width:140px;height:140px;border-radius:50%;background:rgba(236,72,153,0.12);bottom:-30px;right:-30px}
+.title{font-size:46px;font-weight:800;color:#ec4899;margin-bottom:10px}
+.chant{font-size:22px;font-weight:600;color:#6b21a8;margin-bottom:12px}
+.actions{font-size:18px;color:#5b1b6b}
+h1{text-align:center;font-size:42px;color:#be123c;margin-bottom:30px}
+</style></head><body>
+<h1>🎵 Morpheme Chant Cards</h1>
+<div class="grid">
+  <div class="card"><div class="title">PREFIX</div><div class="chant">"Prefixes start, right at the heart!"</div><div class="actions">Action: Step forward and make superhero arms.</div></div>
+  <div class="card"><div class="title">BASE</div><div class="chant">"Bases strong, carry meaning all day long!"</div><div class="actions">Action: Stand tall with hands on hips.</div></div>
+  <div class="card"><div class="title">SUFFIX</div><div class="chant">"Suffixes cheer, ending words with flair!"</div><div class="actions">Action: Sprinkle jazz hands at the end.</div></div>
+  <div class="card"><div class="title">MORPHEME</div><div class="chant">"Morpheme = meaning piece!"</div><div class="actions">Action: Hold thumb and finger close together.</div></div>
+</div>
+</body></html>`;
+  },
+
+  'homophone-hero-capes': () => {
+    return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Homophone Hero Capes</title>
+<style>
+body{font-family:'Baloo 2',cursive;margin:0;padding:40px;background:#ecfeff;color:#0f172a}
+.wrapper{max-width:1080px;margin:0 auto}
+h1{text-align:center;font-size:46px;color:#0369a1;margin-bottom:10px}
+.subtitle{text-align:center;font-size:18px;color:#0c4a6e;margin-bottom:30px}
+.cape-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:30px}
+.cape{position:relative;background:white;border-radius:32px;padding:30px;box-shadow:0 20px 40px rgba(14,116,144,0.25);overflow:hidden}
+.cape::before{content:'';position:absolute;top:-60px;right:-60px;width:180px;height:180px;border-radius:50%;background:rgba(56,189,248,0.18)}
+.cape-title{font-size:34px;font-weight:800;color:#0284c7;margin-bottom:12px}
+.cape-pair{font-size:24px;color:#0369a1;margin-bottom:16px}
+.meaning{display:flex;justify-content:space-between;gap:12px}
+.meaning div{flex:1;background:#e0f2fe;border-radius:16px;padding:16px;font-weight:600;text-align:center}
+.sentence{margin-top:18px;background:#cffafe;border-radius:16px;padding:16px;font-size:18px;color:#0c4a6e;font-weight:600}
+</style></head><body>
+<div class="wrapper">
+  <h1>🦸‍♂️ Homophone Hero Capes</h1>
+  <p class="subtitle">Colour each cape and add your picture clue and sentence.</p>
+  <div class="cape-grid">
+    <div class="cape">
+      <div class="cape-title">Tricky Trio</div>
+      <div class="cape-pair">to • too • two</div>
+      <div class="meaning"><div>to ➜ going</div><div>too ➜ also/very</div><div>two ➜ number 2</div></div>
+      <div class="sentence">Sentence: __________________________________</div>
+    </div>
+    <div class="cape">
+      <div class="cape-title">Snack or Greeting</div>
+      <div class="cape-pair">meet • meat</div>
+      <div class="meaning"><div>meet ➜ see a friend</div><div>meat ➜ food from animals</div></div>
+      <div class="sentence">Sentence: __________________________________</div>
+    </div>
+    <div class="cape">
+      <div class="cape-title">See the Sea</div>
+      <div class="cape-pair">sea • see</div>
+      <div class="meaning"><div>sea ➜ big ocean</div><div>see ➜ use your eyes</div></div>
+      <div class="sentence">Sentence: __________________________________</div>
+    </div>
+    <div class="cape">
+      <div class="cape-title">What to Wear?</div>
+      <div class="cape-pair">wear • where</div>
+      <div class="meaning"><div>wear ➜ clothing</div><div>where ➜ which place</div></div>
+      <div class="sentence">Sentence: __________________________________</div>
+    </div>
+  </div>
+</div>
+</body></html>`;
+  },
+
+  'homophone-spinner-board': () => {
+    return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Homophone Spinner Board</title>
+<style>
+body{font-family:'Nunito',sans-serif;margin:0;padding:40px;background:#f0f9ff;color:#0f172a}
+.board{max-width:900px;margin:0 auto;background:white;border-radius:40px;padding:40px;box-shadow:0 25px 55px rgba(59,130,246,0.28)}
+h1{text-align:center;font-size:44px;color:#1d4ed8;margin-bottom:12px}
+.subtitle{text-align:center;font-size:18px;color:#1e3a8a;margin-bottom:30px}
+.spinner{width:320px;height:320px;margin:0 auto 30px;border-radius:50%;background:conic-gradient(#1d4ed8 0 90deg,#2563eb 90deg 180deg,#38bdf8 180deg 270deg,#60a5fa 270deg 360deg);position:relative;display:flex;align-items:center;justify-content:center;color:white;font-size:26px;font-weight:700;text-align:center;padding:20px}
+.pointer{position:absolute;top:-35px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:25px solid transparent;border-right:25px solid transparent;border-bottom:35px solid #ef4444}
+.sections{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;margin-top:20px}
+.section{background:#eff6ff;border-radius:20px;padding:18px}
+.section h2{font-size:22px;color:#1d4ed8;margin-bottom:10px}
+.section ul{list-style:none;padding:0;margin:0}
+.section li{margin-bottom:8px;font-weight:600;color:#0f172a}
+</style></head><body>
+<div class="board">
+  <h1>🌀 Spin & Choose Homophones</h1>
+  <p class="subtitle">Spin the arrow, read the sentence clue, and choose the matching homophone card.</p>
+  <div class="spinner">
+    <div class="pointer"></div>
+    Spin Me!
+  </div>
+  <div class="sections">
+    <div class="section">
+      <h2>Sentence Starters</h2>
+      <ul>
+        <li>We will ____ at the zoo.</li>
+        <li>Please take ____ apples.</li>
+        <li>I can ____ the blue sea.</li>
+        <li>Will you ____ the red hat?</li>
+      </ul>
+    </div>
+    <div class="section">
+      <h2>Homophone Choices</h2>
+      <ul>
+        <li>meet / meat</li>
+        <li>to / two / too</li>
+        <li>sea / see</li>
+        <li>wear / where</li>
+      </ul>
+    </div>
+  </div>
+</div>
+</body></html>`;
+  },
+
+  'homophone-sentence-strips': () => {
+    return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Homophone Sentence Strips</title>
+<style>
+body{font-family:'Poppins',sans-serif;margin:0;padding:40px;background:#fff7ed;color:#431407}
+.wrapper{max-width:880px;margin:0 auto}
+h1{text-align:center;font-size:42px;color:#c2410c;margin-bottom:12px}
+.subtitle{text-align:center;font-size:18px;color:#7c2d12;margin-bottom:30px}
+.strip{background:white;border-left:12px solid #fb923c;border-radius:18px;padding:18px 24px;margin-bottom:16px;box-shadow:0 16px 32px rgba(251,146,60,0.25);font-size:22px;font-weight:600}
+.strip span{color:#ea580c;font-weight:700}
+</style></head><body>
+<div class="wrapper">
+  <h1>📝 Homophone Sentence Strips</h1>
+  <p class="subtitle">Cut, sort, and match each sentence under the correct homophone heading.</p>
+  <div class="strip">We will <span>meet</span> our new classmate after lunch.</div>
+  <div class="strip">Dad bought fresh <span>meat</span> from the market.</div>
+  <div class="strip">Can you <span>see</span> the rainbow?</div>
+  <div class="strip">The <span>sea</span> was calm and blue.</div>
+  <div class="strip">She asked, “<span>Where</span> is my backpack?”</div>
+  <div class="strip">Please <span>wear</span> your hat in the sun.</div>
+  <div class="strip">I ate <span>two</span> juicy peaches.</div>
+  <div class="strip">We will walk <span>to</span> the library after lunch.</div>
+  <div class="strip">This bag is <span>too</span> heavy for me to carry.</div>
+</div>
+</body></html>`;
+  },
+
+  'word-family-house-template': () => {
+    return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Word Family House</title>
+<style>
+body{font-family:'Baloo 2',cursive;margin:0;padding:40px;background:#f0fdf4;color:#14532d}
+.house{max-width:960px;margin:0 auto;background:white;border-radius:32px;box-shadow:0 25px 60px rgba(34,197,94,0.25);padding:40px}
+h1{text-align:center;font-size:46px;color:#047857;margin-bottom:18px}
+.subtitle{text-align:center;font-size:18px;color:#047857;margin-bottom:30px}
+.diagram{position:relative;width:100%;height:520px;background:linear-gradient(#bbf7d0,#dcfce7);border-radius:30px;padding:30px}
+.roof{position:absolute;top:-120px;left:50%;transform:translateX(-50%);width:420px;height:200px;background:linear-gradient(135deg,#22c55e,#4ade80);clip-path:polygon(50% 0,100% 70%,0 70%);display:flex;align-items:center;justify-content:center;color:white;font-size:44px;font-weight:800;text-transform:uppercase}
+.rooms{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;margin-top:120px}
+.room{background:white;border-radius:24px;padding:20px;text-align:center;border:6px dashed rgba(34,197,94,0.5);min-height:160px;font-size:26px;font-weight:700;color:#15803d}
+.notes{margin-top:30px;background:#dcfce7;border-radius:24px;padding:24px;font-size:20px;color:#14532d;font-weight:600}
+</style></head><body>
+<div class="house">
+  <h1>🏠 Word Family House</h1>
+  <p class="subtitle">Write your base word on the roof. Add family members in each room!</p>
+  <div class="diagram">
+    <div class="roof">BASE WORD</div>
+    <div class="rooms">
+      <div class="room">__________</div>
+      <div class="room">__________</div>
+      <div class="room">__________</div>
+      <div class="room">__________</div>
+    </div>
+  </div>
+  <div class="notes">Add pictures or sentences to show what each family member means.</div>
+</div>
+</body></html>`;
+  },
+
+  'word-family-flow-sheet': () => {
+    return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Word Family Flow Sheet</title>
+<style>
+body{font-family:'Nunito',sans-serif;margin:0;padding:40px;background:#f5f3ff;color:#312e81}
+.sheet{max-width:900px;margin:0 auto;background:white;border-radius:32px;padding:36px;box-shadow:0 25px 55px rgba(99,102,241,0.25)}
+h1{text-align:center;font-size:42px;color:#4c1d95;margin-bottom:12px}
+.subtitle{text-align:center;font-size:18px;color:#5b21b6;margin-bottom:30px}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:24px}
+.panel{border:5px solid rgba(99,102,241,0.4);border-radius:24px;padding:24px;min-height:180px;position:relative;background:linear-gradient(135deg,rgba(129,140,248,0.12),rgba(196,181,253,0.12))}
+.panel h2{font-size:24px;color:#3730a3;margin-bottom:10px;text-transform:uppercase}
+.panel ul{list-style:none;margin:0;padding:0;font-size:20px;font-weight:600;color:#1e1b4b}
+.record{margin-top:28px;background:#ede9fe;border-radius:24px;padding:20px;font-size:18px;font-weight:600;color:#3730a3}
+</style></head><body>
+<div class="sheet">
+  <h1>🎡 Spin a Word Family</h1>
+  <p class="subtitle">Spin for a base word and suffix. Record the real words you create.</p>
+  <div class="grid">
+    <div class="panel">
+      <h2>Base Spinner</h2>
+      <ul>
+        <li>play</li>
+        <li>jump</li>
+        <li>help</li>
+        <li>paint</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h2>Suffix Spinner</h2>
+      <ul>
+        <li>-s</li>
+        <li>-ing</li>
+        <li>-ed</li>
+        <li>-er</li>
+      </ul>
+    </div>
+  </div>
+  <div class="record">
+    Real words I made: ______________________________________________
+  </div>
+</div>
+</body></html>`;
+  },
+
+  'word-family-relay-cards': () => {
+    return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Word Family Relay Cards</title>
+<style>
+body{font-family:'Poppins',sans-serif;margin:0;padding:40px;background:#fdf4ff;color:#701a75}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:960px;margin:0 auto}
+.card{background:white;border-radius:24px;padding:20px;text-align:center;box-shadow:0 20px 40px rgba(168,85,247,0.25);font-size:26px;font-weight:700}
+.base{border:4px solid #a855f7;color:#7c3aed}
+.suffix{border:4px solid #ec4899;color:#db2777}
+.instructions{max-width:960px;margin:30px auto 0;background:#f5d0fe;border-radius:24px;padding:22px;font-size:18px;font-weight:600;text-align:center}
+h1{text-align:center;font-size:44px;color:#7c3aed;margin-bottom:20px}
+</style></head><body>
+<h1>🏃‍♀️ Word Family Relay Cards</h1>
+<div class="grid">
+  <div class="card base">play</div>
+  <div class="card base">jump</div>
+  <div class="card base">help</div>
+  <div class="card suffix">-s</div>
+  <div class="card suffix">-ing</div>
+  <div class="card suffix">-ed</div>
+  <div class="card suffix">-er</div>
+</div>
+<div class="instructions">Run to grab a base card, then race back and add suffix cards to build the whole family!</div>
+</body></html>`;
+  },
+
+  'plural-sorting-trail': () => {
+    return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Plural Sorting Trail</title>
+<style>
+body{font-family:'Fredoka',sans-serif;margin:0;padding:40px;background:#eff6ff;color:#0f172a}
+.trail{max-width:1100px;margin:0 auto;background:white;border-radius:36px;padding:40px;box-shadow:0 30px 60px rgba(59,130,246,0.25)}
+h1{text-align:center;font-size:46px;color:#1d4ed8;margin-bottom:12px}
+.subtitle{text-align:center;font-size:18px;color:#1e3a8a;margin-bottom:28px}
+.path{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:30px}
+.step{background:linear-gradient(135deg,#3b82f6,#38bdf8);color:white;border-radius:20px;padding:18px;text-align:center;font-size:20px;font-weight:700;min-height:90px}
+.baskets{display:grid;grid-template-columns:repeat(2,1fr);gap:24px}
+.basket{border:5px dashed rgba(59,130,246,0.35);border-radius:28px;padding:28px;background:linear-gradient(135deg,rgba(191,219,254,0.6),rgba(219,234,254,0.6))}
+.basket h2{text-align:center;font-size:26px;color:#1d4ed8;margin-bottom:16px}
+.basket ul{list-style:none;padding:0;margin:0;font-size:22px;font-weight:600;color:#0f172a}
+.footer{margin-top:30px;background:#dbeafe;border-radius:24px;padding:20px;font-size:18px;font-weight:600;text-align:center;color:#1e3a8a}
+</style></head><body>
+<div class="trail">
+  <h1>🐾 Plural Sorting Trail</h1>
+  <p class="subtitle">Pick a noun card, say the plural, and hop to the right ending square.</p>
+  <div class="path">
+    <div class="step">Start</div>
+    <div class="step">Add -s</div>
+    <div class="step">Add -es</div>
+    <div class="step">Add -s</div>
+    <div class="step">Cheer!</div>
+  </div>
+  <div class="baskets">
+    <div class="basket">
+      <h2>-S Words</h2>
+      <ul>
+        <li>cats</li>
+        <li>dogs</li>
+        <li>trains</li>
+      </ul>
+    </div>
+    <div class="basket">
+      <h2>-ES Words</h2>
+      <ul>
+        <li>foxes</li>
+        <li>buses</li>
+        <li>dishes</li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer">Chant: "S for smooth, ES for extra syllable!"</div>
+</div>
+</body></html>`;
+  },
+
+  'plural-flip-book': () => {
+    return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Plural Flip Book</title>
+<style>
+body{font-family:'Baloo 2',cursive;margin:0;padding:40px;background:#fff1f2;color:#831843}
+.book{max-width:940px;margin:0 auto;background:white;border-radius:32px;padding:36px;box-shadow:0 28px 60px rgba(236,72,153,0.25)}
+h1{text-align:center;font-size:44px;color:#be123c;margin-bottom:12px}
+.subtitle{text-align:center;font-size:18px;color:#9d174d;margin-bottom:28px}
+.pages{display:grid;grid-template-columns:repeat(2,1fr);gap:24px}
+.page{border:4px dashed rgba(244,114,182,0.7);border-radius:24px;padding:24px;min-height:200px;display:flex;flex-direction:column;gap:16px}
+.word{font-size:28px;font-weight:800;color:#be123c;text-transform:uppercase}
+.draw{flex:1;border:3px solid rgba(244,114,182,0.6);border-radius:18px}
+.label{font-size:18px;font-weight:700;color:#831843}
+</style></head><body>
+<div class="book">
+  <h1>📘 Plural Flip Book</h1>
+  <p class="subtitle">Draw the singular on the front and the plural inside.</p>
+  <div class="pages">
+    <div class="page"><div class="word">bus ➜ buses</div><div class="draw"></div><div class="label">Add -ES</div></div>
+    <div class="page"><div class="word">dish ➜ dishes</div><div class="draw"></div><div class="label">Add -ES</div></div>
+    <div class="page"><div class="word">cat ➜ cats</div><div class="draw"></div><div class="label">Add -S</div></div>
+    <div class="page"><div class="word">tree ➜ trees</div><div class="draw"></div><div class="label">Add -S</div></div>
+  </div>
+</div>
+</body></html>`;
+  },
+
+  'plural-sentence-spinner': () => {
+    return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Plural Sentence Spinner</title>
+<style>
+body{font-family:'Nunito',sans-serif;margin:0;padding:40px;background:#eef2ff;color:#1e1b4b}
+.board{max-width:900px;margin:0 auto;background:white;border-radius:36px;padding:40px;box-shadow:0 25px 55px rgba(129,140,248,0.28)}
+h1{text-align:center;font-size:44px;color:#4c1d95;margin-bottom:12px}
+.subtitle{text-align:center;font-size:18px;color:#312e81;margin-bottom:28px}
+.spinner{width:300px;height:300px;margin:0 auto 24px;border-radius:50%;background:conic-gradient(#a855f7 0 120deg,#6366f1 120deg 240deg,#60a5fa 240deg 360deg);position:relative;display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:26px;text-align:center;padding:30px}
+.pointer{position:absolute;top:-30px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:20px solid transparent;border-right:20px solid transparent;border-bottom:30px solid #ef4444}
+.columns{display:grid;grid-template-columns:repeat(2,1fr);gap:24px}
+.column{background:#ede9fe;border-radius:22px;padding:20px}
+.column h2{font-size:22px;color:#4c1d95;margin-bottom:12px;text-transform:uppercase}
+.column ul{list-style:none;margin:0;padding:0;font-size:20px;font-weight:600;color:#1e1b4b}
+</style></head><body>
+<div class="board">
+  <h1>🎯 Plural Sentence Spinner</h1>
+  <p class="subtitle">Spin for a noun, add -s or -es, then finish the sentence.</p>
+  <div class="spinner">
+    <div class="pointer"></div>
+    Spin Me!
+  </div>
+  <div class="columns">
+    <div class="column">
+      <h2>Nouns</h2>
+      <ul>
+        <li>fox</li>
+        <li>bus</li>
+        <li>cat</li>
+        <li>tree</li>
+      </ul>
+    </div>
+    <div class="column">
+      <h2>Sentence Starters</h2>
+      <ul>
+        <li>The ____ are chasing each other.</li>
+        <li>Two ____ arrived at school.</li>
+        <li>My ____ climb the tall fence.</li>
+        <li>The ____ sway in the wind.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+</body></html>`;
+  },
+
+  'subject-verb-snap-cards': () => {
+    return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Subject-Verb Snap Cards</title>
+<style>
+body{font-family:'Fredoka',sans-serif;margin:0;padding:40px;background:#ecfdf5;color:#064e3b}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;max-width:960px;margin:0 auto}
+.card{background:white;border-radius:22px;padding:18px;text-align:center;box-shadow:0 18px 40px rgba(16,185,129,0.25);font-size:24px;font-weight:700}
+.subject{border:4px solid #14b8a6;color:#0f766e}
+.verb{border:4px solid #f97316;color:#c2410c}
+.instructions{max-width:960px;margin:28px auto 0;background:#d1fae5;border-radius:22px;padding:20px;text-align:center;font-size:18px;font-weight:600;color:#065f46}
+h1{text-align:center;font-size:44px;color:#0f766e;margin-bottom:18px}
+</style></head><body>
+<h1>🎴 Subject-Verb Snap</h1>
+<div class="grid">
+  <div class="card subject">He</div>
+  <div class="card subject">She</div>
+  <div class="card subject">It</div>
+  <div class="card subject">The cat</div>
+  <div class="card verb">hop</div>
+  <div class="card verb">wash</div>
+  <div class="card verb">push</div>
+  <div class="card verb">sing</div>
+</div>
+<div class="instructions">Flip one subject and one verb. Say the sentence with the correct ending: -s or -es!</div>
+</body></html>`;
+  },
+
+  'third-person-builder-board': () => {
+    return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Third-Person Builder Board</title>
+<style>
+body{font-family:'Poppins',sans-serif;margin:0;padding:40px;background:#f0f9ff;color:#0f172a}
+.board{max-width:980px;margin:0 auto;background:white;border-radius:32px;padding:40px;box-shadow:0 28px 60px rgba(37,99,235,0.28)}
+h1{text-align:center;font-size:44px;color:#1d4ed8;margin-bottom:12px}
+.subtitle{text-align:center;font-size:18px;color:#1e3a8a;margin-bottom:30px}
+.zones{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.zone{border:5px dashed rgba(37,99,235,0.35);border-radius:24px;padding:24px;min-height:180px;text-align:center;font-size:22px;font-weight:700;color:#1d4ed8;background:linear-gradient(135deg,rgba(191,219,254,0.6),rgba(219,234,254,0.6))}
+.tiles{margin-top:28px;display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.tile{background:#e0f2fe;border-radius:18px;padding:16px;text-align:center;font-weight:700;font-size:20px;color:#1e3a8a;box-shadow:0 12px 24px rgba(37,99,235,0.18)}
+.footer{margin-top:30px;background:#dbeafe;border-radius:22px;padding:20px;font-size:18px;font-weight:600;text-align:center;color:#1d4ed8}
+</style></head><body>
+<div class="board">
+  <h1>🧱 Third-Person Sentence Builder</h1>
+  <p class="subtitle">Place a subject, verb, and the correct ending tile. Write and illustrate your sentence.</p>
+  <div class="zones">
+    <div class="zone">Subject</div>
+    <div class="zone">Verb</div>
+    <div class="zone">Ending (-s / -es)</div>
+  </div>
+  <div class="tiles">
+    <div class="tile">He</div>
+    <div class="tile">She</div>
+    <div class="tile">It</div>
+    <div class="tile">The dog</div>
+    <div class="tile">hop</div>
+    <div class="tile">mix</div>
+    <div class="tile">wash</div>
+    <div class="tile">play</div>
+    <div class="tile">-s</div>
+    <div class="tile">-es</div>
+  </div>
+  <div class="footer">Remember: Verbs ending with sh, ch, x, s, or z need -es!</div>
+</div>
+</body></html>`;
+  },
+
+  'verb-superstar-certificates': () => {
+    return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Verb Superstar Certificate</title>
+<style>
+body{font-family:'Fredoka',sans-serif;margin:0;padding:40px;background:#fdf4ff;color:#581c87}
+.certificate{max-width:900px;margin:0 auto;background:white;border-radius:40px;padding:40px;border:12px solid #a855f7;box-shadow:0 30px 60px rgba(168,85,247,0.25);text-align:center}
+h1{font-size:48px;margin-bottom:10px;color:#7c3aed}
+.badge{font-size:60px;margin-bottom:12px}
+.line{margin:20px auto;width:80%;border-bottom:4px dotted #a855f7;height:40px}
+.instructions{font-size:20px;color:#6b21a8;margin-bottom:24px;font-weight:600}
+.sentences{display:grid;grid-template-columns:1fr;gap:18px;margin:0 auto;width:80%}
+.sentences div{border:3px dashed rgba(168,85,247,0.6);border-radius:20px;padding:18px;font-size:22px;font-weight:600;color:#6b21a8}
+.signature{margin-top:28px;font-size:20px;color:#6b21a8}
+</style></head><body>
+<div class="certificate">
+  <div class="badge">🏆</div>
+  <h1>Verb Superstar</h1>
+  <p class="instructions">Write two shining sentences using he/she/it verbs with -s or -es endings.</p>
+  <div class="sentences">
+    <div>Sentence 1: ______________________________________</div>
+    <div>Sentence 2: ______________________________________</div>
+  </div>
+  <div class="signature">Awarded to: ____________________________</div>
+  <div class="line"></div>
+  <p class="instructions">Teacher Signature: _____________________</p>
+</div>
+</body></html>`;
   }
 };
 
@@ -1125,10 +1721,8 @@ const Morphology = () => {
     },
     {
       level: 2,
-      title: 'Expanding Skills',
-      description: 'Common prefixes and suffixes',
-      ageRange: '6-7 years',
-      locked: true
+      data: MorphologyLevel2,
+      locked: false
     },
     {
       level: 3,
