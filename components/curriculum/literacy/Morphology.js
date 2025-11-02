@@ -465,6 +465,220 @@ h1{text-align:center;color:#4a148c}
 </body></html>`;
   },
 
+  'ing-action-posters': () => {
+    return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>-ING Action Posters</title>
+<style>
+body{font-family:'Poppins',Arial,sans-serif;margin:0;padding:40px;background:linear-gradient(135deg,#fdfbfb 0%,#ebedee 100%)}
+.poster-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:30px}
+.poster{border-radius:25px;padding:35px;color:white;min-height:260px;box-shadow:0 20px 40px rgba(0,0,0,0.12);display:flex;flex-direction:column;justify-content:space-between}
+.title{font-size:26px;font-weight:700;letter-spacing:2px;text-transform:uppercase}
+.word{font-size:58px;font-weight:800;margin:10px 0}
+.base{font-size:22px;opacity:0.85}
+.emoji{font-size:64px}
+h1{text-align:center;font-size:46px;color:#5f27cd;margin-bottom:40px;text-shadow:0 6px 12px rgba(95,39,205,0.25)}
+</style></head><body>
+<h1>⚡ Happening Now! -ING Action Posters ⚡</h1>
+<div class="poster-grid">
+<div class="poster" style="background:linear-gradient(135deg,#ff9a9e,#fad0c4)"><div class="title">Base + -ING</div><div class="emoji">🏃‍♂️</div><div class="word">JUMPING</div><div class="base">jump + ing → happening now</div></div>
+<div class="poster" style="background:linear-gradient(135deg,#a1c4fd,#c2e9fb)"><div class="title">Base + -ING</div><div class="emoji">🎤</div><div class="word">SINGING</div><div class="base">sing + ing → happening now</div></div>
+<div class="poster" style="background:linear-gradient(135deg,#fbc2eb,#a6c1ee)"><div class="title">Base + -ING</div><div class="emoji">🎣</div><div class="word">FISHING</div><div class="base">fish + ing → happening now</div></div>
+<div class="poster" style="background:linear-gradient(135deg,#84fab0,#8fd3f4)"><div class="title">Base + -ING</div><div class="emoji">🎭</div><div class="word">ACTING</div><div class="base">act + ing → happening now</div></div>
+<div class="poster" style="background:linear-gradient(135deg,#ffe259,#ffa751)"><div class="title">Base + -ING</div><div class="emoji">🤝</div><div class="word">HELPING</div><div class="base">help + ing → happening now</div></div>
+<div class="poster" style="background:linear-gradient(135deg,#f6d365,#fda085)"><div class="title">Base + -ING</div><div class="emoji">🎨</div><div class="word">PAINTING</div><div class="base">paint + ing → happening now</div></div>
+</div>
+</body></html>`;
+  },
+
+  'ing-word-builders': () => {
+    return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>-ING Word Builders</title>
+<style>
+body{font-family:Arial,sans-serif;margin:0;padding:40px;background:#f0f4ff}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.card{background:white;border-radius:18px;padding:25px;box-shadow:0 10px 25px rgba(79,114,255,0.2);text-align:center}
+.header{font-size:18px;font-weight:bold;color:#4f72ff;margin-bottom:12px;letter-spacing:1px}
+.row{display:flex;justify-content:center;align-items:center;gap:12px;font-size:32px;font-weight:700;color:#2c3e50}
+.base{padding:10px 18px;border:3px solid #ff6b6b;border-radius:12px}
+.suffix{padding:10px 18px;border:3px solid #6c5ce7;border-radius:12px;color:#6c5ce7}
+.equals{font-size:28px;color:#95a5a6}
+.result{padding:10px 18px;border-radius:12px;background:linear-gradient(135deg,#a1c4fd,#c2e9fb);color:#1b1f3b}
+h1{text-align:center;color:#2c3e50;margin-bottom:30px}
+</style></head><body>
+<h1>🧲 Build the -ING Word 🧲</h1>
+<div class="grid">
+<div class="card"><div class="header">Keep the Base</div><div class="row"><div class="base">JUMP</div><div class="suffix">+ ING</div><div class="equals">=</div><div class="result">JUMPING</div></div></div>
+<div class="card"><div class="header">Keep the Base</div><div class="row"><div class="base">SING</div><div class="suffix">+ ING</div><div class="equals">=</div><div class="result">SINGING</div></div></div>
+<div class="card"><div class="header">Keep the Base</div><div class="row"><div class="base">HELP</div><div class="suffix">+ ING</div><div class="equals">=</div><div class="result">HELPING</div></div></div>
+<div class="card"><div class="header">Keep the Base</div><div class="row"><div class="base">PLAY</div><div class="suffix">+ ING</div><div class="equals">=</div><div class="result">PLAYING</div></div></div>
+<div class="card"><div class="header">Keep the Base</div><div class="row"><div class="base">FISH</div><div class="suffix">+ ING</div><div class="equals">=</div><div class="result">FISHING</div></div></div>
+<div class="card"><div class="header">Keep the Base</div><div class="row"><div class="base">ACT</div><div class="suffix">+ ING</div><div class="equals">=</div><div class="result">ACTING</div></div></div>
+</div>
+</body></html>`;
+  },
+
+  'ing-sentence-strips': () => {
+    return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>-ING Sentence Strips</title>
+<style>
+body{font-family:'Quicksand',Arial,sans-serif;margin:0;padding:40px;background:#fff7e6}
+.strip{display:flex;align-items:center;justify-content:space-between;padding:20px 25px;margin:15px 0;background:white;border-radius:16px;box-shadow:0 12px 24px rgba(255,159,67,0.25)}
+.sentence{font-size:26px;font-weight:600;color:#d35400}
+.picture{font-size:52px}
+h1{text-align:center;color:#e67e22;margin-bottom:30px}
+.note{background:#fdebd0;padding:15px;border-radius:12px;text-align:center;font-weight:600;color:#a04000;margin-bottom:20px}
+</style></head><body>
+<h1>🎬 Happening Now Sentences</h1>
+<div class="note">Read the sentence, highlight the -ING word, then act it out!</div>
+<div class="strip"><div class="sentence">The frog is jumping.</div><div class="picture">🐸</div></div>
+<div class="strip"><div class="sentence">Mia is singing.</div><div class="picture">🎤</div></div>
+<div class="strip"><div class="sentence">We are helping.</div><div class="picture">🤝</div></div>
+<div class="strip"><div class="sentence">Grandpa is fishing.</div><div class="picture">🎣</div></div>
+<div class="strip"><div class="sentence">The artists are painting.</div><div class="picture">🎨</div></div>
+</body></html>`;
+  },
+
+  'un-prefix-flipcards': () => {
+    return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>UN- Prefix Flip Cards</title>
+<style>
+body{font-family:'Poppins',Arial,sans-serif;margin:0;padding:40px;background:#f5f6fa}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.card{background:linear-gradient(135deg,#74ebd5,#acb6e5);border-radius:20px;color:#2d3436;padding:25px;box-shadow:0 16px 30px rgba(116,235,213,0.35);text-align:center}
+.word{font-size:42px;font-weight:800;margin:10px 0}
+.meaning{font-size:18px;font-weight:600}
+.base{font-size:16px;text-transform:uppercase;letter-spacing:2px;color:#636e72}
+h1{text-align:center;color:#0984e3;margin-bottom:30px}
+</style></head><body>
+<h1>🦸 Prefix Power: UN- Flip Cards</h1>
+<div class="grid">
+<div class="card"><div class="base">LOCK</div><div class="word">UNLOCK</div><div class="meaning">not locked • open it up</div></div>
+<div class="card"><div class="base">ZIP</div><div class="word">UNZIP</div><div class="meaning">not zipped • open the zip</div></div>
+<div class="card"><div class="base">PACK</div><div class="word">UNPACK</div><div class="meaning">not packed • take things out</div></div>
+<div class="card"><div class="base">TIE</div><div class="word">UNTIE</div><div class="meaning">not tied • make it loose</div></div>
+<div class="card"><div class="base">DO</div><div class="word">UNDO</div><div class="meaning">not done • go back</div></div>
+<div class="card"><div class="base">WRAP</div><div class="word">UNWRAP</div><div class="meaning">not wrapped • open the gift</div></div>
+</div>
+</body></html>`;
+  },
+
+  'un-word-sort': () => {
+    return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>UN- Sorting Mats</title>
+<style>
+body{font-family:Arial,sans-serif;margin:0;padding:40px;background:#fdf2ff}
+.mats{display:grid;grid-template-columns:repeat(2,1fr);gap:30px}
+.mat{background:white;border-radius:20px;padding:25px;min-height:400px;box-shadow:0 18px 35px rgba(186,104,200,0.25)}
+.title{font-size:30px;font-weight:800;margin-bottom:10px}
+.title span{display:block;font-size:16px;color:#6c5ce7;text-transform:uppercase;letter-spacing:2px}
+.list{margin-top:20px;font-size:24px;line-height:1.6;color:#2c3e50}
+.card{background:#ffeaa7;padding:10px 15px;border-radius:12px;margin:8px 0;display:inline-block;font-weight:600}
+h1{text-align:center;color:#8e44ad;margin-bottom:25px}
+.instructions{background:#fce4ec;padding:15px;border-radius:12px;text-align:center;font-weight:600;color:#ad1457;margin-bottom:20px}
+</style></head><body>
+<h1>🔄 Base vs. UN- Sort</h1>
+<div class="instructions">Place each picture or word card in the correct mat. Does it show the base meaning or the UN- opposite?</div>
+<div class="mats">
+<div class="mat"><div class="title">Base Word<span>original meaning</span></div><div class="list"><div class="card">lock</div><div class="card">zip</div><div class="card">pack</div><div class="card">tie</div><div class="card">wrap</div></div></div>
+<div class="mat"><div class="title">UN- Word<span>opposite meaning</span></div><div class="list"><div class="card">unlock</div><div class="card">unzip</div><div class="card">unpack</div><div class="card">untie</div><div class="card">unwrap</div></div></div>
+</div>
+</body></html>`;
+  },
+
+  'un-change-mats': () => {
+    return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>UN- Meaning Match</title>
+<style>
+body{font-family:'Nunito',Arial,sans-serif;margin:0;padding:40px;background:#ecf9ff}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
+.card{background:white;border-radius:18px;padding:22px;box-shadow:0 14px 28px rgba(52,152,219,0.25);display:flex;flex-direction:column;gap:10px}
+.label{font-size:16px;font-weight:700;color:#2980b9;text-transform:uppercase;letter-spacing:2px}
+.sentence{font-size:24px;font-weight:700;color:#2c3e50}
+.meaning{font-size:18px;color:#34495e}
+h1{text-align:center;color:#1f78d1;margin-bottom:30px}
+</style></head><body>
+<h1>🧠 UN- Sentence Switch Cards</h1>
+<div class="grid">
+<div class="card"><div class="label">Base</div><div class="sentence">I pack my bag.</div><div class="meaning">everything goes in</div></div>
+<div class="card"><div class="label">UN-</div><div class="sentence">I unpack my bag.</div><div class="meaning">take everything out</div></div>
+<div class="card"><div class="label">Base</div><div class="sentence">She ties the bow.</div><div class="meaning">the ribbon is snug</div></div>
+<div class="card"><div class="label">UN-</div><div class="sentence">She unties the bow.</div><div class="meaning">the ribbon comes loose</div></div>
+<div class="card"><div class="label">Base</div><div class="sentence">He locks the gate.</div><div class="meaning">the gate is closed</div></div>
+<div class="card"><div class="label">UN-</div><div class="sentence">He unlocks the gate.</div><div class="meaning">the gate is open</div></div>
+</div>
+</body></html>`;
+  },
+
+  'compound-explorer-cards': () => {
+    return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Compound Explorer Cards</title>
+<style>
+body{font-family:'Baloo 2',cursive;margin:0;padding:40px;background:#f3ffe3}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:25px}
+.card{background:white;border-radius:24px;padding:25px;box-shadow:0 18px 32px rgba(76,175,80,0.25);display:flex;flex-direction:column;gap:12px;align-items:center}
+.emoji{font-size:60px}
+.parts{display:flex;gap:12px;font-size:26px;font-weight:700;color:#2e7d32}
+.join{font-size:48px;color:#66bb6a;font-weight:800}
+.word{font-size:34px;font-weight:800;color:#1b5e20}
+h1{text-align:center;color:#388e3c;margin-bottom:30px}
+</style></head><body>
+<h1>🌿 Explore Compound Words</h1>
+<div class="grid">
+<div class="card"><div class="emoji">🐠</div><div class="parts">GOLD + FISH</div><div class="join">=</div><div class="word">GOLDFISH</div></div>
+<div class="card"><div class="emoji">🌅</div><div class="parts">SUN + SET</div><div class="join">=</div><div class="word">SUNSET</div></div>
+<div class="card"><div class="emoji">☔</div><div class="parts">RAIN + COAT</div><div class="join">=</div><div class="word">RAINCOAT</div></div>
+<div class="card"><div class="emoji">🌙</div><div class="parts">MOON + LIGHT</div><div class="join">=</div><div class="word">MOONLIGHT</div></div>
+<div class="card"><div class="emoji">🦋</div><div class="parts">BUTTER + FLY</div><div class="join">=</div><div class="word">BUTTERFLY</div></div>
+<div class="card"><div class="emoji">🎒</div><div class="parts">BACK + PACK</div><div class="join">=</div><div class="word">BACKPACK</div></div>
+</div>
+</body></html>`;
+  },
+
+  'compound-blend-mats': () => {
+    return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Compound Pocket Mats</title>
+<style>
+body{font-family:'Poppins',Arial,sans-serif;margin:0;padding:40px;background:#eef9ff}
+.container{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.column{background:white;border-radius:20px;padding:20px;min-height:420px;box-shadow:0 16px 30px rgba(33,150,243,0.25)}
+.title{font-size:26px;font-weight:800;color:#1976d2;margin-bottom:10px}
+.card{background:#bbdefb;color:#0d47a1;font-size:24px;font-weight:700;border-radius:12px;padding:12px 18px;margin:8px 0;text-align:center}
+.real{background:#c8e6c9;color:#1b5e20}
+.not-real{background:#ffcdd2;color:#c62828}
+h1{text-align:center;color:#1565c0;margin-bottom:30px}
+.instructions{background:#e3f2fd;padding:15px;border-radius:12px;margin-bottom:25px;font-weight:600;color:#0d47a1}
+</style></head><body>
+<h1>📊 Pocket Chart Compound Mats</h1>
+<div class="instructions">Slide one card from column A and one card from column B. Read it aloud. Place it in the Real Word or Silly Word column.</div>
+<div class="container">
+<div class="column"><div class="title">Column A</div><div class="card">SUN</div><div class="card">RAIN</div><div class="card">GOLD</div><div class="card">STAR</div><div class="card">MOON</div><div class="card">FOOT</div></div>
+<div class="column"><div class="title">Column B</div><div class="card">SET</div><div class="card">COAT</div><div class="card">FISH</div><div class="card">LIGHT</div><div class="card">BALL</div><div class="card">ROOM</div></div>
+<div class="column"><div class="title">Word Winners</div><div class="card real">SUNSET</div><div class="card real">RAINCOAT</div><div class="card real">GOLDFISH</div><div class="card real">STARFISH</div><div class="card real">MOONLIGHT</div><div class="card real">FOOTBALL</div><div class="card not-real">SUNROOM</div><div class="card not-real">MOONCOAT</div></div>
+</div>
+</body></html>`;
+  },
+
+  'compound-scene-posters': () => {
+    return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Compound Scene Posters</title>
+<style>
+body{font-family:'Baloo 2',cursive;margin:0;padding:40px;background:#fffbea}
+.poster{background:white;border-radius:28px;padding:30px;margin-bottom:25px;box-shadow:0 18px 36px rgba(255,193,7,0.3)}
+.heading{font-size:32px;font-weight:800;color:#ff6f00;margin-bottom:10px}
+.parts{font-size:22px;color:#5d4037}
+.drawing{height:220px;border:4px dashed #ffb300;border-radius:18px;margin-top:20px}
+.prompt{font-size:18px;color:#6d4c41;margin-top:10px}
+h1{text-align:center;color:#ff8f00;margin-bottom:30px}
+</style></head><body>
+<h1>🎨 Create a Compound Word Scene</h1>
+<div class="poster"><div class="heading">goldfish</div><div class="parts">gold + fish</div><div class="drawing"></div><div class="prompt">Draw your goldfish. Label the two base words and the new word.</div></div>
+<div class="poster"><div class="heading">sunset</div><div class="parts">sun + set</div><div class="drawing"></div><div class="prompt">Show how the sun is setting. What do both parts mean?</div></div>
+<div class="poster"><div class="heading">raincoat</div><div class="parts">rain + coat</div><div class="drawing"></div><div class="prompt">Draw someone wearing a raincoat. Colour the rain!</div></div>
+<div class="poster"><div class="heading">moonlight</div><div class="parts">moon + light</div><div class="drawing"></div><div class="prompt">Show how the moon makes light at night.</div></div>
+<div class="poster"><div class="heading">starfish</div><div class="parts">star + fish</div><div class="drawing"></div><div class="prompt">Draw the sea creature. Label the two base words.</div></div>
+</body></html>`;
+  },
+
   'write-plurals-worksheet': () => {
     return `<!DOCTYPE html>
 <html><head><meta charset="UTF-8"><title>Write Plurals Worksheet</title>
