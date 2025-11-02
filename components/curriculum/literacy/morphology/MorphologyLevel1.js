@@ -1403,6 +1403,83 @@ But for now, you're AMAZING at adding -S! Give yourselves a round of applause! �
         }
       ],
 
+      displaySections: [
+        {
+          title: 'Base Word + -S = Many',
+          subtitle: 'Add -S to show more than one',
+          icon: '➕',
+          prompt: 'Say the base word, slide on -S, then shout the new plural word!',
+          focusWords: ['cat + s = cats', 'dog + s = dogs', 'hat + s = hats', 'cup + s = cups'],
+          actions: [
+            'Hold your hands around the base word to show it stays the same.',
+            'Give a sparkle clap when you add -S to make many!'
+          ],
+          background: 'from-blue-500 via-purple-500 to-pink-500'
+        },
+        {
+          title: 'Spot the Base Word',
+          subtitle: 'The base stays safe',
+          icon: '🧱',
+          prompt: 'Read the plural. Point to the base word hiding inside.',
+          focusWords: ['cats → base word: cat', 'pigs → base word: pig', 'beds → base word: bed', 'bugs → base word: bug'],
+          actions: [
+            'Trace the base word in the air, then circle the -S ending.',
+            'Whisper the base word, then say the plural with a cheer.'
+          ],
+          background: 'from-yellow-400 via-orange-400 to-pink-500'
+        },
+        {
+          title: 'Plural Parade',
+          subtitle: 'One marches into many',
+          icon: '🎈',
+          prompt: 'Show one item, then add -S and show many with your hands.',
+          focusWords: ['one cat → many cats', 'one pig → many pigs', 'one cup → many cups', 'one bug → many bugs'],
+          actions: [
+            'Hold up one finger for the base, then wiggle all fingers for the plural.',
+            'March in place while you chant the plural words together.'
+          ],
+          background: 'from-teal-400 via-blue-500 to-indigo-500'
+        },
+        {
+          title: 'Sentence Shout-Out',
+          subtitle: 'Use your plural power',
+          icon: '📣',
+          prompt: 'Read the sentence. Emphasise the plural word with a big voice.',
+          focusWords: [
+            'I see three cats.',
+            'Two dogs are running.',
+            'The hats are on the rack.',
+            'Five pigs are in the mud.'
+          ],
+          actions: [
+            'Tap the plural word on the screen when you read it.',
+            'Add a quick action to match the sentence meaning.'
+          ],
+          background: 'from-pink-500 via-red-400 to-orange-400'
+        }
+      ],
+
+      practiceWordLists: [
+        {
+          icon: '🐾',
+          title: 'Add -S Word Builders',
+          description: 'Start with the base word, add -S, then read the plural aloud.',
+          words: ['cat → cats', 'dog → dogs', 'hat → hats', 'pig → pigs', 'cup → cups']
+        },
+        {
+          icon: '🔍',
+          title: 'Find the Base',
+          description: 'Underline the base word hiding inside each plural.',
+          words: ['beds (base: bed)', 'bugs (base: bug)', 'pans (base: pan)', 'tubs (base: tub)', 'mats (base: mat)']
+        },
+        {
+          icon: '🗣️',
+          title: 'Plural Sentence Starters',
+          description: 'Use the sentence starter to share about many items.',
+          words: ['I see many cats.', 'We have two dogs.', 'The cups are full.', 'Three pigs are playing.', 'Four hats are on the hook.']
+        }
+      ],
+
       activities: [
         {
           title: 'Magnetic Letter Building',

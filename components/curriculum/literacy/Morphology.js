@@ -1,5 +1,5 @@
 // components/curriculum/literacy/Morphology.js
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import MorphologyLevel1 from './morphology/MorphologyLevel1';
 
 // Printable templates
@@ -776,6 +776,20 @@ const Morphology = () => {
   const [displaySlideIndex, setDisplaySlideIndex] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const displayContainerRef = useRef(null);
+  const goToNextSlide = useCallback(() => {
+    setDisplaySlideIndex((prev) => {
+      if (!selectedLesson?.displaySections?.length) {
+        return 0;
+      }
+
+      const maxIndex = selectedLesson.displaySections.length - 1;
+      return Math.min(prev + 1, maxIndex);
+    });
+  }, [selectedLesson]);
+
+  const goToPreviousSlide = useCallback(() => {
+    setDisplaySlideIndex((prev) => Math.max(prev - 1, 0));
+  }, []);
 
   const exitFullscreenIfNeeded = () => {
     if (typeof document === 'undefined') return;
@@ -840,6 +854,30 @@ const Morphology = () => {
       setIsFullscreen(false);
     }
   }, [selectedLesson]);
+
+  useEffect(() => {
+    if (viewMode !== 'display') {
+      return undefined;
+    }
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'ArrowRight' || event.key === 'PageDown' || event.key === ' ') {
+        event.preventDefault();
+        goToNextSlide();
+      }
+
+      if (event.key === 'ArrowLeft' || event.key === 'PageUp') {
+        event.preventDefault();
+        goToPreviousSlide();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [viewMode, goToNextSlide, goToPreviousSlide]);
 
   // Download printable function
   const downloadPrintable = (printableId, activityTitle) => {
@@ -1315,6 +1353,24 @@ const Morphology = () => {
     const slideProgress = totalDisplaySections > 0 ? ((displaySlideIndex + 1) / totalDisplaySections) * 100 : 0;
     const teacherProgress = ((currentSection + 1) / totalSections) * 100;
     const progressValue = viewMode === 'teacher' ? teacherProgress : slideProgress;
+    const slideSubtitleClass = isFullscreen
+      ? 'uppercase tracking-[0.35em] text-base sm:text-xl font-semibold text-white/85'
+      : 'uppercase tracking-[0.3em] text-xs sm:text-sm font-semibold text-white/80';
+    const slideTitleClass = isFullscreen
+      ? 'mt-2 text-5xl sm:text-6xl lg:text-7xl font-extrabold drop-shadow-[0_15px_45px_rgba(0,0,0,0.35)]'
+      : 'mt-2 text-4xl sm:text-5xl font-extrabold drop-shadow-lg';
+    const slidePromptClass = isFullscreen
+      ? 'text-2xl sm:text-3xl leading-tight text-white/95'
+      : 'text-lg sm:text-xl leading-snug text-white';
+    const focusWordClass = isFullscreen
+      ? 'rounded-3xl border border-white/30 bg-white/25 px-6 py-5 text-center text-3xl sm:text-4xl font-bold text-white shadow-xl backdrop-blur'
+      : 'rounded-3xl border border-white/30 bg-white/25 px-5 py-4 text-center text-2xl font-bold text-white shadow-lg backdrop-blur';
+    const actionsListClass = isFullscreen
+      ? 'space-y-3 text-xl sm:text-2xl leading-snug text-white/95'
+      : 'space-y-2 text-base sm:text-lg text-white';
+    const slideIconWrapperClass = isFullscreen
+      ? 'flex h-32 w-32 items-center justify-center rounded-full border-4 border-white/50 bg-black/35 text-6xl drop-shadow-2xl'
+      : 'flex h-24 w-24 items-center justify-center rounded-full border-2 border-white/40 bg-black/25 text-4xl drop-shadow-lg';
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 p-6">
@@ -1450,13 +1506,20 @@ const Morphology = () => {
                 {currentSlide ? (
                   <div
                     ref={displayContainerRef}
-                    className={`relative overflow-hidden text-white transition-all duration-500 bg-gradient-to-br ${
+                    className={`relative flex overflow-hidden text-white transition-all duration-500 bg-gradient-to-br ${
                       currentSlide?.background || 'from-purple-500 via-pink-500 to-blue-500'
-                    } ${isFullscreen ? 'rounded-none border-0 shadow-none' : 'rounded-3xl border-4 border-white shadow-2xl'}`}
-                    style={{ minHeight: isFullscreen ? '100vh' : '520px' }}
+                    } ${
+                      isFullscreen
+                        ? 'h-screen w-screen flex-col items-center justify-center rounded-none border-0 shadow-none'
+                        : 'min-h-[520px] flex-col justify-center rounded-3xl border-4 border-white shadow-2xl'
+                    }`}
+                    style={{
+                      minHeight: isFullscreen ? '100vh' : undefined,
+                      width: isFullscreen ? '100vw' : '100%'
+                    }}
                   >
-                    <div className="absolute inset-0 bg-white/10 blur-3xl opacity-50"></div>
-                    <div className="absolute top-4 right-4 z-20 flex flex-col items-end gap-2">
+                    <div className="pointer-events-none absolute inset-0 bg-white/10 blur-3xl opacity-50"></div>
+                    <div className="absolute top-4 right-4 z-30 flex flex-col items-end gap-2">
                       <button
                         onClick={toggleFullscreen}
                         className="inline-flex items-center gap-2 rounded-full border border-white/50 bg-black/35 px-4 py-2 text-sm font-semibold backdrop-blur transition hover:bg-black/55"
@@ -1471,55 +1534,78 @@ const Morphology = () => {
                         </span>
                       )}
                     </div>
+
+                    {totalDisplaySections > 1 && (
+                      <>
+                        <button
+                          onClick={goToPreviousSlide}
+                          className={`group absolute left-4 top-1/2 z-30 -translate-y-1/2 rounded-full border-2 border-white/50 bg-black/30 p-4 text-3xl font-bold text-white transition hover:bg-black/50 focus:outline-none focus:ring-4 focus:ring-white/50 ${
+                            displaySlideIndex === 0 ? 'cursor-not-allowed opacity-40 hover:bg-black/30' : ''
+                          }`}
+                          disabled={displaySlideIndex === 0}
+                          aria-label="Previous slide"
+                        >
+                          ←
+                        </button>
+                        <button
+                          onClick={goToNextSlide}
+                          className={`group absolute right-4 top-1/2 z-30 -translate-y-1/2 rounded-full border-2 border-white/50 bg-black/30 p-4 text-3xl font-bold text-white transition hover:bg-black/50 focus:outline-none focus:ring-4 focus:ring-white/50 ${
+                            displaySlideIndex >= totalDisplaySections - 1
+                              ? 'cursor-not-allowed opacity-40 hover:bg-black/30'
+                              : ''
+                          }`}
+                          disabled={totalDisplaySections === 0 || displaySlideIndex >= totalDisplaySections - 1}
+                          aria-label="Next slide"
+                        >
+                          →
+                        </button>
+                      </>
+                    )}
+
                     <div
-                      className={`relative ${
+                      className={`relative z-20 ${
                         isFullscreen
-                          ? 'mx-auto w-full max-w-6xl px-6 py-16 sm:px-16 lg:px-20'
+                          ? 'mx-auto w-full max-w-6xl px-6 py-16 sm:px-16 lg:px-24'
                           : 'mx-auto max-w-5xl px-6 py-12 sm:px-12'
                       }`}
                     >
                       <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
                         <div>
-                          <div className="uppercase tracking-wider text-sm opacity-80">
-                            {currentSlide.subtitle}
-                          </div>
-                          <h3 className="mt-2 text-4xl font-extrabold drop-shadow-lg sm:text-5xl">
-                            {currentSlide.title}
-                          </h3>
+                          <div className={slideSubtitleClass}>{currentSlide.subtitle}</div>
+                          <h3 className={slideTitleClass}>{currentSlide.title}</h3>
                         </div>
-                        {currentSlide.icon && (
-                          <div className="text-6xl drop-shadow-lg sm:text-7xl lg:text-8xl">
-                            {currentSlide.icon}
-                          </div>
-                        )}
+                        {currentSlide.icon && <div className={slideIconWrapperClass}>{currentSlide.icon}</div>}
                       </div>
+
                       {currentSlide.prompt && (
-                        <p className="mt-6 rounded-3xl bg-white/15 px-6 py-4 text-lg font-semibold shadow-lg backdrop-blur sm:text-xl">
+                        <div className={`mt-6 rounded-3xl border border-white/35 bg-white/20 px-6 py-4 shadow-xl backdrop-blur ${slidePromptClass}`}>
                           {currentSlide.prompt}
-                        </p>
+                        </div>
                       )}
+
                       {currentSlide.focusWords && currentSlide.focusWords.length > 0 && (
-                        <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div
+                          className={`mt-8 grid gap-5 ${
+                            isFullscreen ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'
+                          }`}
+                        >
                           {currentSlide.focusWords.map((word, index) => (
-                            <div
-                              key={index}
-                              className="rounded-3xl border border-white/30 bg-white/25 px-5 py-4 text-center text-2xl font-bold text-white shadow-lg backdrop-blur"
-                            >
+                            <div key={index} className={focusWordClass}>
                               {word}
                             </div>
                           ))}
                         </div>
                       )}
                       {currentSlide.actions && currentSlide.actions.length > 0 && (
-                        <div className="mt-8 rounded-3xl border border-white/25 bg-black/20 p-6 backdrop-blur">
-                          <div className="mb-3 flex items-center gap-2 text-lg font-bold">
+                        <div className="mt-8 rounded-3xl border border-white/25 bg-black/25 p-6 backdrop-blur">
+                          <div className={`mb-3 flex items-center gap-2 font-bold ${isFullscreen ? 'text-2xl' : 'text-lg'}`}>
                             <span>⭐</span>
                             Try This Together
                           </div>
-                          <ul className="space-y-2 text-base sm:text-lg">
+                          <ul className={actionsListClass}>
                             {currentSlide.actions.map((action, index) => (
                               <li key={index} className="flex items-start gap-3">
-                                <span className="font-bold text-white/80">{index + 1}.</span>
+                                <span className="font-bold text-white/85">{index + 1}.</span>
                                 <span className="leading-snug">{action}</span>
                               </li>
                             ))}
@@ -1527,6 +1613,17 @@ const Morphology = () => {
                         </div>
                       )}
                     </div>
+
+                    {totalDisplaySections > 0 && (
+                      <div className="absolute bottom-6 left-1/2 z-30 flex -translate-x-1/2 items-center gap-3 rounded-full border border-white/40 bg-black/35 px-5 py-2 text-sm font-semibold uppercase tracking-wide text-white/90 backdrop-blur">
+                        <span>
+                          Slide {displaySlideIndex + 1} of {totalDisplaySections}
+                        </span>
+                        <div className="h-1 w-24 rounded-full bg-white/30">
+                          <div className="h-1 rounded-full bg-white" style={{ width: `${slideProgress}%` }}></div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="rounded-3xl bg-white/80 p-8 text-center text-xl font-semibold text-purple-900 shadow-lg">
@@ -1637,7 +1734,7 @@ const Morphology = () => {
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div className="flex gap-3 justify-between md:justify-start">
                   <button
-                    onClick={() => setDisplaySlideIndex(Math.max(0, displaySlideIndex - 1))}
+                    onClick={goToPreviousSlide}
                     disabled={displaySlideIndex === 0}
                     className={`px-6 py-3 rounded-xl font-bold text-base transition-all ${
                       displaySlideIndex === 0
@@ -1648,14 +1745,7 @@ const Morphology = () => {
                     ← Previous Slide
                   </button>
                   <button
-                    onClick={() =>
-                      setDisplaySlideIndex(
-                        Math.min(
-                          totalDisplaySections > 0 ? totalDisplaySections - 1 : 0,
-                          displaySlideIndex + 1
-                        )
-                      )
-                    }
+                    onClick={goToNextSlide}
                     disabled={totalDisplaySections === 0 || displaySlideIndex >= totalDisplaySections - 1}
                     className={`px-6 py-3 rounded-xl font-bold text-base transition-all ${
                       totalDisplaySections === 0 || displaySlideIndex >= totalDisplaySections - 1
