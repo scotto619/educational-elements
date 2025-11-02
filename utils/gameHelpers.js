@@ -311,86 +311,16 @@ const createBabyPet = (id, name, rarity, segments, speed = 5) => {
 };
 
 export const BABY_PETS = [
-  createBabyPet('glimmer-kit', 'Glimmer Kit', 'common', [
-    ['Common', 'Glimmer Kit.png'],
-    ['common', 'glimmer-kit.png'],
-    ['common', 'glimmer-kit.svg']
-  ]),
-  createBabyPet('sprout-shell', 'Sprout Shell', 'common', [
-    ['Common', 'Sprout Shell.png'],
-    ['common', 'sprout-shell.png'],
-    ['common', 'sprout-shell.svg']
-  ]),
-  createBabyPet('sparkle-otter', 'Sparkle Otter', 'common', [
-    ['Common', 'Sparkle Otter.png'],
-    ['common', 'sparkle-otter.png'],
-    ['common', 'sparkle-otter.svg']
-  ]),
-  createBabyPet('alien-hatchling', 'Alien Hatchling', 'common', [
-    ['Common', 'Alien Pet.png'],
-    ['common', 'Alien Pet.png'],
-    ['common', 'alien-hatchling.svg']
-  ]),
-  createBabyPet('bull-buddy', 'Bull Buddy', 'common', [
-    ['Common', 'Bull Pet.png'],
-    ['common', 'Bull Pet.png'],
-    ['common', 'bull-buddy.png']
-  ]),
-  createBabyPet('cat-companion', 'Cat Companion', 'common', [
-    ['Common', 'Cat Pet.png'],
-    ['common', 'Cat Pet.png'],
-    ['common', 'cat-companion.png']
-  ]),
-  createBabyPet('dino-buddy', 'Dino Buddy', 'rare', [
-    ['Common', 'DinoPet.png'],
-    ['common', 'DinoPet.png'],
-    ['rare', 'dino-buddy.png']
-  ], 6),
-  createBabyPet('phoenix-spark', 'Phoenix Spark', 'rare', [
-    ['Common', 'PhoenixPet.png'],
-    ['common', 'PhoenixPet.png'],
-    ['rare', 'phoenix-spark.png']
-  ], 6),
-  createBabyPet('aurora-foal', 'Aurora Foal', 'rare', [
-    ['Rare', 'Aurora Foal.png'],
-    ['rare', 'aurora-foal.png'],
-    ['rare', 'aurora-foal.svg']
-  ], 6),
-  createBabyPet('ember-hatchling', 'Ember Hatchling', 'rare', [
-    ['Rare', 'Ember Hatchling.png'],
-    ['rare', 'ember-hatchling.png'],
-    ['rare', 'ember-hatchling.svg']
-  ], 6),
-  createBabyPet('tide-pixie', 'Tide Pixie', 'rare', [
-    ['Rare', 'Tide Pixie.png'],
-    ['rare', 'tide-pixie.png'],
-    ['rare', 'tide-pixie.svg']
-  ], 6),
-  createBabyPet('banana-buddy', 'Banana Buddy', 'rare', [
-    ['Rare', 'BananaPet.png'],
-    ['rare', 'banana-buddy.png'],
-    ['rare', 'banana-buddy.svg']
-  ], 6),
-  createBabyPet('golden-alien', 'Golden Alienling', 'legendary', [
-    ['Rare', 'Golden Alien Pet.png'],
-    ['rare', 'Golden Alien Pet.png'],
-    ['rare', 'golden-alien.svg']
-  ], 7),
-  createBabyPet('golden-bull', 'Golden Bullette', 'legendary', [
-    ['Rare', 'Golden Bull Pet.png'],
-    ['rare', 'Golden Bull Pet.png'],
-    ['rare', 'golden-bull.svg']
-  ], 7),
-  createBabyPet('golden-dragon', 'Golden Dragon Whelp', 'legendary', [
-    ['Rare', 'Golden Dragon Pet.png'],
-    ['rare', 'Golden Dragon Pet.png'],
-    ['rare', 'golden-dragon.svg']
-  ], 7),
-  createBabyPet('golden-cat', 'Golden Catling', 'legendary', [
-    ['Rare', 'Golden Cat Pet.png'],
-    ['rare', 'Golden Cat Pet.png'],
-    ['rare', 'golden-cat.svg']
-  ], 7)
+  createBabyPet('alien-hatchling', 'Alien Hatchling', 'common', [['Common', 'Alien Pet.png']]),
+  createBabyPet('bull-buddy', 'Bull Buddy', 'common', [['Common', 'Bull Pet.png']]),
+  createBabyPet('cat-companion', 'Cat Companion', 'common', [['Common', 'Cat Pet.png']]),
+  createBabyPet('dino-buddy', 'Dino Buddy', 'rare', [['Common', 'DinoPet.png']], 6),
+  createBabyPet('phoenix-spark', 'Phoenix Spark', 'rare', [['Common', 'PhoenixPet.png']], 6),
+  createBabyPet('banana-buddy', 'Banana Buddy', 'rare', [['Rare', 'BananaPet.png']], 6),
+  createBabyPet('golden-alien', 'Golden Alienling', 'legendary', [['Rare', 'Golden Alien Pet.png']], 7),
+  createBabyPet('golden-bull', 'Golden Bullette', 'legendary', [['Rare', 'Golden Bull Pet.png']], 7),
+  createBabyPet('golden-cat', 'Golden Catling', 'legendary', [['Rare', 'Golden Cat Pet.png']], 7),
+  createBabyPet('golden-dragon', 'Golden Dragon Whelp', 'legendary', [['Rare', 'Golden Dragon Pet.png']], 7)
 ];
 
 export const PET_EGG_TYPES = [
@@ -400,7 +330,7 @@ export const PET_EGG_TYPES = [
     rarity: 'rare',
     description: 'Glitters with cosmic stardust and soft pastel hues.',
     accent: '#7c3aed',
-    hatchPool: ['aurora-foal', 'tide-pixie', 'phoenix-spark', 'banana-buddy'],
+    hatchPool: ['phoenix-spark', 'banana-buddy', 'dino-buddy'],
     minHours: 1,
     maxHours: 12
   },
@@ -410,7 +340,7 @@ export const PET_EGG_TYPES = [
     rarity: 'epic',
     description: 'Waves shimmer across the shell like glowing ripples.',
     accent: '#0ea5e9',
-    hatchPool: ['glimmer-kit', 'sprout-shell', 'sparkle-otter', 'alien-hatchling', 'bull-buddy', 'cat-companion'],
+    hatchPool: ['alien-hatchling', 'bull-buddy', 'cat-companion'],
     minHours: 1,
     maxHours: 12
   },
@@ -420,7 +350,7 @@ export const PET_EGG_TYPES = [
     rarity: 'legendary',
     description: 'Warm embers pulse beneath a crystalline shell.',
     accent: '#f97316',
-    hatchPool: ['ember-hatchling', 'dino-buddy', 'phoenix-spark', 'golden-alien', 'golden-bull', 'golden-dragon', 'golden-cat'],
+    hatchPool: ['phoenix-spark', 'golden-alien', 'golden-bull', 'golden-dragon', 'golden-cat'],
     minHours: 1,
     maxHours: 12
   }
@@ -449,7 +379,7 @@ export const EGG_STAGE_ART = Object.fromEntries(
 export const getEggStageArt = (stage = 'unbroken') => EGG_STAGE_ART[stage] || EGG_STAGE_ART.unbroken;
 
 export const EGG_STAGE_MESSAGES = {
-  unbroken: 'This egg is quietly humming with magic.',
+  unbroken: "I think something is inside!",
   cracked: 'Cracks are spreading—keep watching!',
   ready: 'Your egg is ready to hatch!'
 };
