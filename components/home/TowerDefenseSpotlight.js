@@ -26,24 +26,24 @@ const TowerDefenseSpotlight = () => (
               🏰 Tower Defense Legends
             </h2>
             <p className="mt-3 text-base md:text-lg text-indigo-100">
-              Build a Bloons-style defense using real avatars, pets, and Hero Forge weapons from your classroom. Drag heroes onto the track, pop enchanted relics, and push to higher waves for endless replayability.
+              Command a Bloons-style gauntlet where classroom avatars fight alongside standalone pets. Draft tactical hero squads, unleash companion auras, and route enchanted relics across a sprawling arena built for endless replayability.
             </p>
           </div>
           <div className="space-y-4 bg-white/10 rounded-2xl p-5 border border-white/10">
             <FeatureBullet
               icon="🧙"
-              title="Classroom Champions"
-              description="Every defender is a classroom avatar paired with their favorite pet. Mix and match heroes to create clutch lane coverage."
+              title="Hero & Companion Roster"
+              description="Deploy classroom avatars as elite heroes or field pets as independent companions. Mix their unique tags—burn, chain, aura slow—for bespoke lane coverage."
             />
             <FeatureBullet
               icon="⚔️"
-              title="Hero Forge Projectiles"
-              description="Projectiles use the exact Hero Forge weapon art your students unlock—bows pierce, gauntlets slow, and tridents ignite splash damage."
+              title="Hero Forge Arsenal"
+              description="Projectiles use the exact Hero Forge weapon art your students unlock—celestial lances pierce, storm orbs chain, and abyssal torpedoes shred elites."
             />
             <FeatureBullet
               icon="🌀"
-              title="Animated Bloon Lanes"
-              description="Relics stream down twisting paths with health bars and effects, delivering a true Bloons-style feel that keeps students glued to the action."
+              title="Massive Arcane Circuit"
+              description="Relics stream through a multi-stage citadel with lush lighting, hazard halos, and boss surges every five waves—delivering a premium Bloons-style spectacle."
             />
           </div>
           <div className="flex flex-wrap gap-3">

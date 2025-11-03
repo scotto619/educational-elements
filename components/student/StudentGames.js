@@ -37,7 +37,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       id: 'tower-defense-legends',
       name: 'Tower Defense Legends',
       icon: '🛡️',
-      description: 'Bloons-style action that uses your classroom avatars, pets, and Hero Forge weapons for vibrant lane defense.',
+      description: 'Bloons-style arenas where classroom heroes and standalone pets unleash Hero Forge weapons, chain lightning, and aura slows.',
       component: TowerDefenseGame,
       color: 'from-emerald-500 via-sky-500 to-indigo-600',
       difficulty: 'Medium - Expert',
