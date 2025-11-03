@@ -1,1595 +1,1039 @@
-// components/games/TowerDefenseGame.js - Tower Defense Legends
-import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  SHOP_BASIC_AVATARS,
-  SHOP_PREMIUM_AVATARS,
-  HALLOWEEN_BASIC_AVATARS,
-  HALLOWEEN_PREMIUM_AVATARS,
   SHOP_BASIC_PETS,
   SHOP_PREMIUM_PETS,
   HALLOWEEN_PETS,
-  getAvatarImage,
-  getPetImage
+  getAvatarImage
 } from '../../utils/gameHelpers';
-import {
-  WEAPONS,
-  listWeaponOptions,
-  getWeaponById,
-  describeWeaponRequirement
-} from '../../utils/weaponData';
+import { getWeaponById } from '../../utils/weaponData';
 
-const LANE_COUNT = 5;
-const LANE_LENGTH = 12;
-const INITIAL_LIVES = 24;
-const INITIAL_ENERGY = 120;
-const MAX_LOG_ENTRIES = 14;
-const DEMO_WAVE_CAP = 8;
-const TICK_INTERVAL = 500;
+const GAME_WIDTH = 900;
+const GAME_HEIGHT = 540;
+const PATH_WIDTH = 88;
+const INITIAL_COINS = 650;
+const INITIAL_LIVES = 40;
+const PROJECTILE_LIFETIME = 3.25;
 
-const DIFFICULTY_SETTINGS = {
-  relaxed: {
-    id: 'relaxed',
-    name: 'Adventurer',
-    healthMultiplier: 0.85,
-    speedMultiplier: 0.92,
-    rewardMultiplier: 0.9,
-    description: 'Perfect for onboarding new strategists with forgiving waves.'
-  },
-  heroic: {
-    id: 'heroic',
-    name: 'Heroic',
-    healthMultiplier: 1,
-    speedMultiplier: 1,
-    rewardMultiplier: 1,
-    description: 'Balanced for replayability and long-form classroom competitions.'
-  },
-  mythic: {
-    id: 'mythic',
-    name: 'Mythic',
-    healthMultiplier: 1.35,
-    speedMultiplier: 1.12,
-    rewardMultiplier: 1.25,
-    description: 'Relentless sieges that demand mastery of pets, weapons, and synergies.'
-  }
-};
-
-const difficultyOrder = ['relaxed', 'heroic', 'mythic'];
-
-const TERRAIN_TYPES = [
-  {
-    id: 'arcane',
-    name: 'Arcane Ridge',
-    emoji: '🔮',
-    gradient: 'from-indigo-500/20 via-purple-500/20 to-fuchsia-500/20',
-    boosts: { arcane: 0.25, shadow: 0.1 },
-    rangeBonus: 0.4,
-    speedBonus: 0.05,
-    description: 'Mystic ley lines supercharge casters and shadowy defenders.'
-  },
-  {
-    id: 'tech',
-    name: 'Skyforge Causeway',
-    emoji: '⚙️',
-    gradient: 'from-slate-500/20 via-sky-500/20 to-cyan-500/20',
-    boosts: { tech: 0.22, heroic: 0.08 },
-    rangeBonus: 0.2,
-    speedBonus: 0.12,
-    description: 'Ancient machinery accelerates reloading and precision shots.'
-  },
-  {
-    id: 'nature',
-    name: 'Emerald Wilds',
-    emoji: '🌿',
-    gradient: 'from-emerald-500/20 via-lime-400/20 to-amber-400/20',
-    boosts: { nature: 0.24, beast: 0.12 },
-    rangeBonus: 0.6,
-    description: 'Spirit-touched groves empower beast friends and long range guardians.'
-  },
-  {
-    id: 'shadow',
-    name: 'Midnight Bastion',
-    emoji: '🌙',
-    gradient: 'from-gray-900/20 via-purple-900/20 to-indigo-900/20',
-    boosts: { shadow: 0.28, arcane: 0.1 },
-    description: 'Dancing moonlight amplifies draining strikes and spectral bonds.'
-  },
-  {
-    id: 'tactical',
-    name: 'Valor Parade',
-    emoji: '🛡️',
-    gradient: 'from-amber-500/20 via-orange-500/20 to-red-500/20',
-    boosts: { tactical: 0.2, heroic: 0.12 },
-    speedBonus: 0.08,
-    description: 'Command banners rally tactical leaders with rapid responses.'
-  }
+const PATH_POINTS = [
+  { x: 60, y: 100 },
+  { x: 820, y: 100 },
+  { x: 820, y: 260 },
+  { x: 120, y: 260 },
+  { x: 120, y: 420 },
+  { x: 860, y: 420 }
 ];
 
-const HAZARDS = [
+const ENEMY_TYPES = [
   {
-    id: 'clear',
-    name: 'Calm Winds',
-    description: 'No additional effects this run. Plan freely!',
-    summary: 'Stable lane with no modifiers.'
-  },
-  {
-    id: 'manafont',
-    name: 'Mana Font',
-    description: 'First tower gains +0.5 range and 10% faster casting.',
-    rangeBonus: 0.5,
-    attackSpeedBonus: 0.1,
-    summary: 'Mana Font grants bonus range and casting speed.'
-  },
-  {
-    id: 'spire',
-    name: 'Crystal Spire',
-    description: 'Earn +3 energy for every foe defeated in this lane.',
-    energyBonus: 3,
-    summary: 'Crystal Spire awards bonus energy per defeat.'
-  },
-  {
-    id: 'ballista',
-    name: 'Ancient Ballista',
-    description: 'The first placement on this lane arrives pre-built at level 2.',
-    startingLevel: 2,
-    summary: 'Ancient Ballista upgrades your first tower instantly.'
-  }
-];
-
-const ENEMY_ARCHETYPES = [
-  {
-    id: 'scout',
-    name: 'Scout Runner',
-    emoji: '⚡',
-    baseHealth: 32,
-    baseSpeed: 1.15,
-    reward: 4,
-    score: 12,
-    rarity: 0.35,
-    focus: 'tactical',
-    description: 'Fast and evasive. Perfect target for slows.'
-  },
-  {
-    id: 'brute',
-    name: 'Shielded Brute',
-    emoji: '🛡️',
-    baseHealth: 68,
-    baseSpeed: 0.75,
-    reward: 6,
-    score: 22,
-    rarity: 0.22,
-    focus: 'shadow',
-    description: 'Heavy armor, reduced speed. Vulnerable to piercing damage.'
-  },
-  {
-    id: 'phantom',
-    name: 'Void Phantom',
-    emoji: '👻',
-    baseHealth: 54,
-    baseSpeed: 0.95,
-    reward: 7,
-    score: 28,
-    rarity: 0.18,
-    focus: 'arcane',
-    description: 'Phase-shifting foes with spectral shields.'
-  },
-  {
-    id: 'ranger',
-    name: 'Skirmisher Pack',
-    emoji: '🗡️',
+    id: 'spark-orb',
+    name: 'Spark Orb',
+    sprite: '/Loot/Artifacts/2.png',
     baseHealth: 40,
-    baseSpeed: 1.05,
-    reward: 5,
-    score: 18,
-    rarity: 0.2,
-    focus: 'tactical',
-    description: 'Coordinated fighters that pressure the front line.'
+    healthGrowth: 6,
+    baseSpeed: 84,
+    speedGrowth: 2.4,
+    reward: 14,
+    lifeCost: 1,
+    radius: 22
   },
   {
-    id: 'wyrmling',
-    name: 'Ember Wyrmling',
-    emoji: '🐉',
-    baseHealth: 58,
-    baseSpeed: 0.9,
-    reward: 8,
-    score: 30,
-    rarity: 0.12,
-    focus: 'nature',
-    description: 'Breathes flame barriers that resist basic attacks.'
-  }
-];
-
-const BOSS_ARCHETYPES = [
-  {
-    id: 'relic-titan',
-    name: 'Relic Titan',
-    emoji: '🗿',
-    baseHealth: 480,
-    baseSpeed: 0.6,
-    reward: 30,
-    score: 200,
-    focus: 'shadow',
-    description: 'Monolithic guardian infused with ancient shields.'
+    id: 'jade-idol',
+    name: 'Jade Idol',
+    sprite: '/Loot/Artifacts/8.png',
+    baseHealth: 90,
+    healthGrowth: 12,
+    baseSpeed: 76,
+    speedGrowth: 2.2,
+    reward: 20,
+    lifeCost: 2,
+    radius: 24
   },
   {
-    id: 'storm-queen',
-    name: 'Storm Queen',
-    emoji: '🌩️',
-    baseHealth: 420,
-    baseSpeed: 0.75,
+    id: 'obsidian-ward',
+    name: 'Obsidian Ward',
+    sprite: '/Loot/Artifacts/15.png',
+    baseHealth: 180,
+    healthGrowth: 22,
+    baseSpeed: 68,
+    speedGrowth: 2.1,
     reward: 32,
-    score: 220,
-    focus: 'arcane',
-    description: 'Calls down tempests that quicken nearby foes.'
+    lifeCost: 3,
+    radius: 26
   },
   {
-    id: 'chrono-hydra',
-    name: 'Chrono Hydra',
-    emoji: '⏳',
-    baseHealth: 520,
-    baseSpeed: 0.7,
-    reward: 36,
-    score: 250,
-    focus: 'tech',
-    description: 'Warps time, resisting slow effects until weakened.'
+    id: 'celestial-core',
+    name: 'Celestial Core',
+    sprite: '/Loot/Artifacts/20.png',
+    baseHealth: 320,
+    healthGrowth: 40,
+    baseSpeed: 58,
+    speedGrowth: 1.8,
+    reward: 48,
+    lifeCost: 5,
+    radius: 28
   }
 ];
 
-const MUTATOR_LIBRARY = [
+const petCollections = [...SHOP_BASIC_PETS, ...SHOP_PREMIUM_PETS, ...HALLOWEEN_PETS];
+const findPetAsset = (name) => petCollections.find((pet) => pet.name === name)?.path;
+const fallbackWeapon = getWeaponById('1');
+
+const createTowerLibrary = () => [
   {
-    id: 'shadow-veil',
-    name: 'Shadow Veil',
-    description: 'Enemies spawn with spectral shields. Arcane towers deal +12% damage.',
-    applyEnemy: (enemy, wave) => ({
-      ...enemy,
-      shield: (enemy.shield || 0) + Math.round(10 + wave * 1.5)
-    }),
-    applyTower: (tower) =>
-      tower.focus === 'arcane'
-        ? { ...tower, damage: Math.round(tower.damage * 1.12) }
-        : tower
+    id: 'arcane-wizard',
+    name: 'Arcane Wizard',
+    description: 'Wields celestial orbs that burst into arcane splash damage.',
+    cost: 180,
+    range: 170,
+    fireRate: 1.1,
+    damage: 26,
+    projectileSpeed: 360,
+    projectileSize: 34,
+    splashRadius: 44,
+    pierce: 1,
+    baseRadius: 34,
+    avatar: getAvatarImage('Wizard F', 4),
+    pet: findPetAsset('Wizard Pet'),
+    weapon: getWeaponById('9') || fallbackWeapon,
+    color: '#6366f1'
   },
   {
-    id: 'beast-bond',
-    name: 'Beast Bond',
-    description: 'Companion beasts roar with power. Pets with beastly themes grant +18% damage.',
-    applyTower: (tower) =>
-      tower.petFocus === 'beast'
-        ? { ...tower, damage: Math.round(tower.damage * 1.18) }
-        : tower
+    id: 'sky-ranger',
+    name: 'Sky Ranger',
+    description: 'Rapid volleys with piercing arrows and wide range.',
+    cost: 200,
+    range: 210,
+    fireRate: 1.8,
+    damage: 18,
+    projectileSpeed: 420,
+    projectileSize: 28,
+    splashRadius: 0,
+    pierce: 2,
+    baseRadius: 32,
+    avatar: getAvatarImage('Archer F', 4),
+    pet: findPetAsset('Beastmaster Pet'),
+    weapon: getWeaponById('5') || fallbackWeapon,
+    color: '#f97316'
   },
   {
-    id: 'time-distortion',
-    name: 'Time Distortion',
-    description: 'Foes rush quicker but towers reload faster after leveling.',
-    applyEnemy: (enemy) => ({
-      ...enemy,
-      speed: parseFloat((enemy.speed * 1.08).toFixed(2))
-    }),
-    onTowerLevel: (tower) => ({
-      ...tower,
-      attackSpeed: Math.max(420, Math.round(tower.attackSpeed * 0.9))
-    })
+    id: 'mech-engineer',
+    name: 'Mech Engineer',
+    description: 'Launches guided gauntlets that slow targets on impact.',
+    cost: 240,
+    range: 165,
+    fireRate: 1.4,
+    damage: 32,
+    projectileSpeed: 330,
+    projectileSize: 36,
+    splashRadius: 0,
+    pierce: 1,
+    slowAmount: 0.78,
+    slowDuration: 1.25,
+    baseRadius: 36,
+    avatar: getAvatarImage('Engineer M', 4),
+    pet: findPetAsset('Engineer Pet'),
+    weapon: getWeaponById('11') || fallbackWeapon,
+    color: '#22d3ee'
   },
   {
-    id: 'radiant-surplus',
-    name: 'Radiant Surplus',
-    description: 'Gain +6 bonus energy whenever a boss falls. Enemies resist slows slightly.',
-    applyEnemy: (enemy) => ({
-      ...enemy,
-      slowResist: (enemy.slowResist || 0) + 0.1
-    }),
-    onBossDefeat: (awardEnergy) => awardEnergy(6)
+    id: 'dragon-rider',
+    name: 'Dragon Rider',
+    description: 'Unleashes blazing tridents that cleave through relics.',
+    cost: 310,
+    range: 190,
+    fireRate: 1.05,
+    damage: 60,
+    projectileSpeed: 400,
+    projectileSize: 38,
+    splashRadius: 32,
+    pierce: 2,
+    baseRadius: 38,
+    avatar: getAvatarImage('Knight F', 4),
+    pet: findPetAsset('Dragon Pet'),
+    weapon: getWeaponById('15') || fallbackWeapon,
+    color: '#ef4444'
   }
 ];
 
-const createSeededRandom = (seed) => {
-  let value = Math.abs(Math.floor(seed || 1)) % 2147483647;
-  if (value <= 0) value = 1;
-  return () => {
-    value = (value * 16807) % 2147483647;
-    return (value - 1) / 2147483646;
-  };
-};
-
-const dedupeByName = (items = []) => {
-  const seen = new Set();
-  const result = [];
-  items.forEach((item) => {
-    if (!item?.name) return;
-    const key = item.name.toLowerCase();
-    if (seen.has(key)) return;
-    seen.add(key);
-    result.push(item);
-  });
-  return result;
-};
-
-const generateRealmName = (seed) => {
-  const rng = createSeededRandom(seed);
-  const prefixes = ['Crystal', 'Arcadian', 'Elder', 'Solar', 'Nebula', 'Aurora', 'Mythic', 'Prime'];
-  const suffixes = ['Stronghold', 'Sanctum', 'Frontier', 'Rampart', 'Citadel', 'Cascade', 'Outpost', 'Spire'];
-  const mid = ['of Echoes', 'of Legends', 'of Guardians', 'of Wonders', 'of the Ancients', 'of Radiance'];
-  const prefix = prefixes[Math.floor(rng() * prefixes.length)];
-  const suffix = suffixes[Math.floor(rng() * suffixes.length)];
-  const middle = mid[Math.floor(rng() * mid.length)];
-  return `${prefix} ${suffix} ${middle}`;
-};
-
-const classifyFocus = (name = '') => {
-  const value = name.toLowerCase();
-  if (/wizard|mage|witch|sorcer|arcane|spell/.test(value)) return 'arcane';
-  if (/robot|mech|tech|engineer|cyber|chrono|gauntlet|mechanic/.test(value)) return 'tech';
-  if (/pirate|rogue|guard|knight|champ|soldier|valor|tact/.test(value)) return 'tactical';
-  if (/vampire|ghost|shadow|phantom|demon|void|skeleton/.test(value)) return 'shadow';
-  if (/druid|beast|beastmaster|dragon|forest|farm|nature|unicorn|animal|wolf|bear/.test(value)) return 'nature';
-  if (/beast|dragon|wolf|lion|panda|orc/.test(value)) return 'beast';
-  return 'heroic';
-};
-
-const evaluateAvatarBonuses = (avatarName = '') => {
-  const focus = classifyFocus(avatarName);
-  switch (focus) {
-    case 'arcane':
-      return {
-        focus,
-        damageBonus: 0.12,
-        rangeBonus: 0.4,
-        summary: 'Arcane avatar: +12% damage and +0.4 range. Excels on Arcane Ridge.'
-      };
-    case 'tech':
-      return {
-        focus,
-        speedBonus: 0.14,
-        summary: 'Tech avatar: +14% attack speed, +4 bonus energy on upgrade.'
-      };
-    case 'shadow':
-      return {
-        focus,
-        damageBonus: 0.1,
-        summary: 'Shadow avatar: +10% damage and applies weakening strikes.',
-        effects: ['weaken']
-      };
-    case 'nature':
-      return {
-        focus,
-        rangeBonus: 0.5,
-        damageBonus: 0.06,
-        summary: 'Nature avatar: Huge +0.5 range, excels with beast companions.'
-      };
-    case 'tactical':
-      return {
-        focus,
-        speedBonus: 0.08,
-        damageBonus: 0.05,
-        summary: 'Tactical avatar: Balanced bonuses with cheaper deployments.',
-        costModifier: 4
-      };
-    case 'beast':
-      return {
-        focus: 'nature',
-        damageBonus: 0.09,
-        summary: 'Beast avatar: Converts to nature focus with feral damage.'
-      };
-    default:
-      return {
-        focus: 'heroic',
-        damageBonus: 0.04,
-        summary: 'Heroic avatar: Solid +4% damage and morale boosts.'
-      };
+const buildSegments = (points) => {
+  const segments = [];
+  for (let i = 0; i < points.length - 1; i += 1) {
+    const start = points[i];
+    const end = points[i + 1];
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const length = Math.hypot(dx, dy);
+    const unitX = length === 0 ? 0 : dx / length;
+    const unitY = length === 0 ? 0 : dy / length;
+    segments.push({ start, end, dx, dy, length, unitX, unitY });
   }
+  return segments;
 };
 
-const evaluatePetBonuses = (petName = '') => {
-  const focus = classifyFocus(petName);
-  const lower = petName.toLowerCase();
-  const base = {
-    focus,
-    damageBonus: 0,
-    speedBonus: 0,
-    rangeBonus: 0,
-    energyBonus: 0,
-    summary: ''
-  };
+const PATH_SEGMENTS = buildSegments(PATH_POINTS);
 
-  if (/dragon|phoenix|wyrm|hydra/.test(lower)) {
-    return {
-      ...base,
-      damageBonus: 0.16,
-      summary: 'Dragon companion: +16% damage and applies burning strikes.',
-      effects: ['burn']
-    };
+const distancePointToSegment = (point, segment) => {
+  const vx = segment.dx;
+  const vy = segment.dy;
+  const lenSq = segment.length * segment.length;
+  if (lenSq === 0) {
+    return Math.hypot(point.x - segment.start.x, point.y - segment.start.y);
   }
-  if (/wizard|mage|sage|crystal|orb/.test(lower)) {
-    return {
-      ...base,
-      focus: 'arcane',
-      speedBonus: 0.12,
-      summary: 'Mystic familiar: +12% speed and arcane alignment.'
-    };
-  }
-  if (/robot|mech|gauntlet|engineer/.test(lower)) {
-    return {
-      ...base,
-      focus: 'tech',
-      speedBonus: 0.18,
-      summary: 'Robotic ally: +18% reload speed and precise targeting.'
-    };
-  }
-  if (/unicorn|panda|pet|buddy|companion|pal/.test(lower)) {
-    return {
-      ...base,
-      rangeBonus: 0.35,
-      summary: 'Faithful companion: +0.35 range and morale energy +3.',
-      energyBonus: 3
-    };
-  }
-  if (/orc|barbarian|warrior|berserker/.test(lower)) {
-    return {
-      ...base,
-      damageBonus: 0.14,
-      summary: 'Warrior pet: +14% damage and bravery aura (+2 energy).',
-      energyBonus: 2
-    };
-  }
-
-  return {
-    ...base,
-    damageBonus: 0.08,
-    summary: 'Loyal pet: +8% damage and supportive presence.'
-  };
+  const t = ((point.x - segment.start.x) * vx + (point.y - segment.start.y) * vy) / lenSq;
+  const clamped = Math.max(0, Math.min(1, t));
+  const projX = segment.start.x + clamped * vx;
+  const projY = segment.start.y + clamped * vy;
+  return Math.hypot(point.x - projX, point.y - projY);
 };
 
-const addLogEntry = (entries, message) => {
-  const next = [...entries, message];
-  if (next.length > MAX_LOG_ENTRIES) {
-    return next.slice(next.length - MAX_LOG_ENTRIES);
+const shallowEqual = (a, b) => {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  const keysA = Object.keys(a);
+  const keysB = Object.keys(b);
+  if (keysA.length !== keysB.length) return false;
+  for (const key of keysA) {
+    if (a[key] !== b[key]) return false;
   }
-  return next;
+  return true;
 };
 
-const getXpForLevel = (level) => 60 + level * 45;
+const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 
-const buildEnemyFromArchetype = (archetype, wave, laneIndex, rng, difficulty) => {
-  const variance = 0.85 + rng() * 0.3;
-  const health = Math.round(
-    archetype.baseHealth * variance * (1 + wave * 0.18) * difficulty.healthMultiplier
-  );
-  const speed = parseFloat(
-    (archetype.baseSpeed * (0.9 + rng() * 0.2) * difficulty.speedMultiplier).toFixed(2)
-  );
-  return {
-    id: `${archetype.id}-${wave}-${Math.floor(rng() * 100000)}`,
-    name: archetype.name,
-    emoji: archetype.emoji,
-    type: 'minion',
-    archetype: archetype.id,
-    focus: archetype.focus,
-    lane: laneIndex,
-    position: 0,
-    progress: 0,
-    speed,
-    baseSpeed: speed,
-    reward: Math.round(archetype.reward * difficulty.rewardMultiplier),
-    scoreReward: Math.round(archetype.score * difficulty.rewardMultiplier),
-    health,
-    maxHealth: health,
-    shield: archetype.id === 'phantom' ? Math.round(health * 0.15) : 0,
-    slowResist: archetype.id === 'wyrmling' ? 0.15 : 0,
-    effects: []
-  };
-};
-
-const buildBossFromArchetype = (archetype, wave, laneIndex, difficulty) => {
-  const multiplier = 1 + wave * 0.25;
-  const health = Math.round(archetype.baseHealth * multiplier * difficulty.healthMultiplier);
-  const speed = parseFloat((archetype.baseSpeed * difficulty.speedMultiplier).toFixed(2));
-  return {
-    id: `${archetype.id}-boss-${wave}-${laneIndex}`,
-    name: archetype.name,
-    emoji: archetype.emoji,
-    type: 'boss',
-    focus: archetype.focus,
-    lane: laneIndex,
-    position: 0,
-    progress: 0,
-    speed,
-    baseSpeed: speed,
-    reward: Math.round(archetype.reward * difficulty.rewardMultiplier),
-    scoreReward: Math.round(archetype.score * difficulty.rewardMultiplier),
-    health,
-    maxHealth: health,
-    shield: Math.round(health * 0.2),
-    slowResist: 0.25,
-    effects: []
-  };
-};
-
-const generateMapFromSeed = (seed) => {
-  const rng = createSeededRandom(seed);
-  return Array.from({ length: LANE_COUNT }).map((_, laneIndex) => {
-    const terrain = TERRAIN_TYPES[Math.floor(rng() * TERRAIN_TYPES.length) % TERRAIN_TYPES.length];
-    const hazard = HAZARDS[Math.floor(rng() * HAZARDS.length) % HAZARDS.length];
-    return {
-      laneIndex,
-      terrain,
-      hazard
-    };
-  });
-};
-
-const selectMutators = (seed) => {
-  const rng = createSeededRandom(seed * 13);
-  const pool = [...MUTATOR_LIBRARY];
-  const selected = [];
-  while (selected.length < 2 && pool.length) {
-    const index = Math.floor(rng() * pool.length);
-    selected.push(pool.splice(index, 1)[0]);
-  }
-  return selected;
-};
-
-const applyMutatorsToTower = (tower, mutators) =>
-  mutators.reduce((current, mutator) => {
-    if (typeof mutator.applyTower === 'function') {
-      const mutated = mutator.applyTower(current);
-      return mutated || current;
+const createWaveSchedule = (wave) => {
+  const schedule = [];
+  const enemyTiers = Math.min(ENEMY_TYPES.length, Math.max(1, Math.floor((wave + 2) / 3)));
+  const availableTypes = ENEMY_TYPES.slice(0, enemyTiers);
+  const baseCount = Math.max(10, 8 + wave * 3);
+  const spacing = Math.max(0.35, 1.15 - wave * 0.05);
+  const groupSize = Math.max(2, Math.floor(baseCount / availableTypes.length));
+  for (let i = 0; i < baseCount; i += 1) {
+    let tierIndex = Math.min(availableTypes.length - 1, Math.floor(i / groupSize));
+    if (i === baseCount - 1 && availableTypes.length > 1) {
+      tierIndex = availableTypes.length - 1;
     }
-    return current;
-  }, tower);
+    schedule.push({
+      spawnAt: i * spacing,
+      typeId: availableTypes[tierIndex].id
+    });
+  }
+  return schedule;
+};
 
-const applyMutatorsToEnemy = (enemy, mutators, wave) =>
-  mutators.reduce((current, mutator) => {
-    if (typeof mutator.applyEnemy === 'function') {
-      const mutated = mutator.applyEnemy(current, wave);
-      return mutated || current;
-    }
-    return current;
-  }, enemy);
+const placeableWithinBounds = (point) => {
+  const padding = 50;
+  return (
+    point.x >= padding &&
+    point.x <= GAME_WIDTH - padding &&
+    point.y >= padding &&
+    point.y <= GAME_HEIGHT - padding
+  );
+};
 
-const TowerDefenseGame = ({
-  studentData,
-  updateStudentData,
-  showToast,
-  demoMode = false,
-  gameMode: _gameMode = 'digital',
-  storageKeySuffix
-}) => {
-  const storageKey = storageKeySuffix ? `tower-defense-legends:${storageKeySuffix}` : 'tower-defense-legends';
-  const [difficulty, setDifficulty] = useState('heroic');
-  const [mapSeed, setMapSeed] = useState(() => Math.floor(Math.random() * 90000) + 10000);
-  const [realmName, setRealmName] = useState(() => generateRealmName(mapSeed));
-  const [lanes, setLanes] = useState(() => generateMapFromSeed(mapSeed));
-  const [mutators, setMutators] = useState(() => selectMutators(mapSeed));
+const TowerDefenseGame = ({ demoMode = false, storageKeySuffix }) => {
+  const canvasRef = useRef(null);
+  const assetsRef = useRef({});
+  const towerLibrary = useMemo(() => createTowerLibrary(), []);
+  const towerMap = useMemo(() => {
+    const map = new Map();
+    towerLibrary.forEach((tower) => map.set(tower.id, tower));
+    return map;
+  }, [towerLibrary]);
+  const enemyMap = useMemo(() => {
+    const map = new Map();
+    ENEMY_TYPES.forEach((enemy) => map.set(enemy.id, enemy));
+    return map;
+  }, []);
 
-  const [currentWave, setCurrentWave] = useState(1);
-  const [lives, setLives] = useState(INITIAL_LIVES);
-  const [energy, setEnergy] = useState(INITIAL_ENERGY);
-  const [score, setScore] = useState(0);
-  const [relics, setRelics] = useState(0);
+  const stateRef = useRef({
+    money: INITIAL_COINS,
+    lives: INITIAL_LIVES,
+    currentWave: 0,
+    phase: 'build',
+    bestWave: 0,
+    towers: [],
+    enemies: [],
+    projectiles: [],
+    spawnQueue: [],
+    waveTime: 0,
+    nextTowerId: 1,
+    nextEnemyId: 1,
+    nextProjectileId: 1,
+    autoStartDelay: 0,
+    demoSetup: false
+  });
+  const viewCacheRef = useRef(null);
 
-  const [towers, setTowers] = useState([]);
+  const [viewState, setViewState] = useState({
+    money: INITIAL_COINS,
+    lives: INITIAL_LIVES,
+    phase: 'build',
+    wave: 0,
+    bestWave: 0
+  });
   const [selectedTowerId, setSelectedTowerId] = useState(null);
-  const [enemies, setEnemies] = useState([]);
-  const [isRunning, setIsRunning] = useState(false);
-  const [autoStart, setAutoStart] = useState(false);
-  const [statusMessage, setStatusMessage] = useState('Strategize your defense and unleash the classroom heroes!');
-  const [activityLog, setActivityLog] = useState(() => addLogEntry([], 'Welcome Commander! Assemble your squad.'));
-  const savedProgress = studentData?.gameProgress?.towerDefenseLegends || {};
+  const [hoverPosition, setHoverPosition] = useState(null);
+  const [statusMessage, setStatusMessage] = useState('Select a defender and click the arena to place them.');
+  const [assetsReady, setAssetsReady] = useState(false);
 
-  const energyRef = useRef(energy);
-  const mutatorsRef = useRef(mutators);
-  const difficultyRef = useRef(difficulty);
-  const autoStartRef = useRef(autoStart);
-  const towersRef = useRef(towers);
+  const storageKey = storageKeySuffix ? `tower-defense-legends:${storageKeySuffix}` : 'tower-defense-legends';
 
-  useEffect(() => {
+  const syncView = useCallback(() => {
+    const state = stateRef.current;
+    const summary = {
+      money: Math.round(state.money),
+      lives: state.lives,
+      phase: state.phase,
+      wave: state.currentWave,
+      bestWave: state.bestWave
+    };
+    if (!shallowEqual(viewCacheRef.current, summary)) {
+      viewCacheRef.current = summary;
+      setViewState(summary);
+    }
+  }, []);
+
+  const persistBestWave = useCallback((value) => {
+    if (typeof window === 'undefined') return;
     try {
-      const savedDifficulty = window.localStorage.getItem(`${storageKey}:difficulty`);
-      const savedAuto = window.localStorage.getItem(`${storageKey}:autoStart`);
-      if (savedDifficulty && DIFFICULTY_SETTINGS[savedDifficulty]) {
-        setDifficulty(savedDifficulty);
-      }
-      if (savedAuto != null) {
-        setAutoStart(savedAuto === 'true');
-      }
+      window.localStorage.setItem(storageKey, String(value));
     } catch (error) {
-      // Ignore storage access errors
+      // ignore storage errors in restricted environments
     }
   }, [storageKey]);
 
   useEffect(() => {
-    energyRef.current = energy;
-  }, [energy]);
-
-  useEffect(() => {
-    mutatorsRef.current = mutators;
-  }, [mutators]);
-
-  useEffect(() => {
-    difficultyRef.current = difficulty;
-  }, [difficulty]);
-
-  useEffect(() => {
-    autoStartRef.current = autoStart;
-  }, [autoStart]);
-
-  useEffect(() => {
-    towersRef.current = towers;
-  }, [towers]);
-
-  useEffect(() => {
+    if (typeof window === 'undefined') return;
     try {
-      window.localStorage.setItem(`${storageKey}:difficulty`, difficulty);
-      window.localStorage.setItem(`${storageKey}:autoStart`, String(autoStart));
+      const stored = window.localStorage.getItem(storageKey);
+      const bestWave = stored ? Number(stored) : 0;
+      if (!Number.isNaN(bestWave) && bestWave > 0) {
+        stateRef.current.bestWave = bestWave;
+        syncView();
+      }
     } catch (error) {
-      // Ignore storage access errors
+      // ignore
     }
-  }, [autoStart, difficulty, storageKey]);
+  }, [storageKey, syncView]);
 
-  const avatarOptions = useMemo(() => {
-    const combined = dedupeByName([
-      ...SHOP_BASIC_AVATARS,
-      ...SHOP_PREMIUM_AVATARS,
-      ...(HALLOWEEN_BASIC_AVATARS || []),
-      ...(HALLOWEEN_PREMIUM_AVATARS || [])
-    ]);
-    return combined.map((avatar) => ({
-      ...avatar,
-      image: getAvatarImage(avatar.name, 4),
-      focus: classifyFocus(avatar.name)
-    }));
-  }, []);
-
-  const petOptions = useMemo(() => {
-    const combined = dedupeByName([
-      ...SHOP_BASIC_PETS,
-      ...SHOP_PREMIUM_PETS,
-      ...(HALLOWEEN_PETS || [])
-    ]);
-    return combined.map((pet) => {
-      const imageSource = getPetImage(pet);
-      const image = typeof imageSource === 'string' ? imageSource : imageSource?.src;
-      return {
-        ...pet,
-        image,
-        focus: classifyFocus(pet.name)
-      };
+  useEffect(() => {
+    let cancelled = false;
+    const sources = new Set();
+    towerLibrary.forEach((tower) => {
+      if (tower.avatar) sources.add(tower.avatar);
+      if (tower.pet) sources.add(tower.pet);
+      if (tower.weapon?.path) sources.add(tower.weapon.path);
     });
-  }, []);
+    ENEMY_TYPES.forEach((enemy) => sources.add(enemy.sprite));
 
-  const weaponOptions = useMemo(
-    () =>
-      listWeaponOptions().map((weapon) => ({
-        ...weapon,
-        focus: classifyFocus(weapon.name)
-      })),
-    []
-  );
+    const loadImage = (src) => new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve({ src, img });
+      img.onerror = () => resolve({ src, img: null });
+      img.src = src;
+    });
 
-  const [selectedAvatar, setSelectedAvatar] = useState(null);
-  const [selectedPet, setSelectedPet] = useState(null);
-  const [selectedWeaponId, setSelectedWeaponId] = useState('1');
-  const [selectedLane, setSelectedLane] = useState(0);
-  const [selectedTile, setSelectedTile] = useState(2);
-
-  useEffect(() => {
-    if (!selectedAvatar && avatarOptions.length) {
-      setSelectedAvatar(avatarOptions[0]);
-    }
-  }, [avatarOptions, selectedAvatar]);
-
-  useEffect(() => {
-    if (!selectedPet && petOptions.length) {
-      setSelectedPet(petOptions[0]);
-    }
-  }, [petOptions, selectedPet]);
-
-  useEffect(() => {
-    if (!WEAPONS[selectedWeaponId]) {
-      setSelectedWeaponId(weaponOptions[0]?.id || '1');
-    }
-  }, [selectedWeaponId, weaponOptions]);
-
-  const recordLog = useCallback((message) => {
-    setActivityLog((prev) => addLogEntry(prev, message));
-  }, []);
-
-  const resetRun = useCallback(
-    (seed = Math.floor(Math.random() * 90000) + 10000) => {
-      const nextLanes = generateMapFromSeed(seed);
-      const nextMutators = selectMutators(seed);
-      setMapSeed(seed);
-      setRealmName(generateRealmName(seed));
-      setLanes(nextLanes);
-      setMutators(nextMutators);
-      setCurrentWave(1);
-      setLives(INITIAL_LIVES);
-      setEnergy(INITIAL_ENERGY);
-      setScore(0);
-      setRelics(0);
-      setTowers([]);
-      setEnemies([]);
-      setIsRunning(false);
-      setStatusMessage('New realm discovered! Prepare your defenses.');
-      setActivityLog(addLogEntry([], 'Realm reset – new map layout and mutators in play.'));
-      showToast?.('New tower defense realm ready!');
-    },
-    [showToast]
-  );
-
-  const currentDifficulty = useMemo(
-    () => DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS.heroic,
-    [difficulty]
-  );
-
-  const computeTowerStats = useCallback(
-    (avatar, pet, weapon, laneInfo) => {
-      if (!avatar || !pet || !weapon || !laneInfo) return null;
-      const avatarBonuses = evaluateAvatarBonuses(avatar.name);
-      const petBonuses = evaluatePetBonuses(pet.name);
-      const weaponData = getWeaponById(weapon.id || weapon);
-      const focus = avatarBonuses.focus || petBonuses.focus || classifyFocus(weapon.name);
-      const laneBoost = laneInfo.terrain.boosts?.[focus] || 0;
-      const hazard = laneInfo.hazard;
-
-      const baseDamage = 6 + (weaponData?.powerScore || 1) * 1.65;
-      const damageMultiplier =
-        1 + (avatarBonuses.damageBonus || 0) + (petBonuses.damageBonus || 0) + laneBoost;
-      let damage = Math.round(baseDamage * damageMultiplier);
-
-      let attackSpeed = 1750 - (weaponData?.powerScore || 1) * 35;
-      attackSpeed *= 1 - (avatarBonuses.speedBonus || 0) - (petBonuses.speedBonus || 0);
-      if (laneInfo.terrain.speedBonus) attackSpeed *= 1 - laneInfo.terrain.speedBonus;
-      if (hazard?.attackSpeedBonus) attackSpeed *= 1 - hazard.attackSpeedBonus;
-      attackSpeed = Math.max(520, Math.round(attackSpeed));
-
-      let range = 2.6 + (weaponData?.powerScore || 1) / 12;
-      range += (avatarBonuses.rangeBonus || 0) + (petBonuses.rangeBonus || 0);
-      if (laneInfo.terrain.rangeBonus) range += laneInfo.terrain.rangeBonus;
-      if (hazard?.rangeBonus) range += hazard.rangeBonus;
-      range = parseFloat(Math.min(8, range).toFixed(2));
-
-      let cost = 36 + (weaponData?.tier || 1) * 6 + (weaponData?.powerScore || 1) * 0.45;
-      cost -= avatarBonuses.costModifier || 0;
-      if (hazard?.costModifier) cost += hazard.costModifier;
-      cost = Math.max(20, Math.round(cost));
-
-      const energyBonus = (petBonuses.energyBonus || 0) + (hazard?.energyBonus || 0);
-      const effects = new Set([...(avatarBonuses.effects || []), ...(petBonuses.effects || [])]);
-
-      return {
-        focus,
-        damage,
-        attackSpeed,
-        range,
-        cost,
-        energyBonus,
-        effects: Array.from(effects),
-        avatarSummary: avatarBonuses.summary,
-        petSummary: petBonuses.summary,
-        petFocus: petBonuses.focus || classifyFocus(pet.name)
-      };
-    },
-    []
-  );
-
-  const createTower = useCallback(
-    (laneIndex, tileIndex) => {
-      const laneInfo = lanes[laneIndex];
-      const weapon = weaponOptions.find((w) => w.id === selectedWeaponId) || weaponOptions[0];
-      const stats = computeTowerStats(selectedAvatar, selectedPet, weapon, laneInfo);
-      if (!stats) return null;
-
-      const baseTower = {
-        id: `tower-${Date.now()}-${Math.floor(Math.random() * 100000)}`,
-        name: `${selectedAvatar?.name || 'Hero'} + ${weapon?.name || 'Weapon'}`,
-        avatar: selectedAvatar,
-        pet: selectedPet,
-        weapon,
-        lane: laneIndex,
-        position: tileIndex,
-        focus: stats.focus,
-        petFocus: stats.petFocus,
-        damage: stats.damage,
-        attackSpeed: stats.attackSpeed,
-        range: stats.range,
-        cost: stats.cost,
-        energyBonus: stats.energyBonus,
-        effects: stats.effects,
-        avatarSummary: stats.avatarSummary,
-        petSummary: stats.petSummary,
-        lastAttack: 0,
-        level: lanes[laneIndex]?.hazard?.startingLevel || 1,
-        xp: 0,
-        kills: 0,
-        shotsFired: 0,
-        laneTerrain: laneInfo.terrain,
-        hazard: laneInfo.hazard
-      };
-
-      let mutatedTower = applyMutatorsToTower(baseTower, mutatorsRef.current);
-      if (mutatedTower.level > 1) {
-        for (let level = 1; level < mutatedTower.level; level += 1) {
-          mutatedTower = {
-            ...mutatedTower,
-            damage: Math.round(mutatedTower.damage * 1.12 + 2),
-            range: parseFloat(Math.min(8, mutatedTower.range + 0.25).toFixed(2)),
-            attackSpeed: Math.max(480, Math.round(mutatedTower.attackSpeed * 0.94))
-          };
-        }
-      }
-      return mutatedTower;
-    },
-    [computeTowerStats, lanes, mutatorsRef, selectedAvatar, selectedPet, selectedWeaponId, weaponOptions]
-  );
-
-  const [hoveredTile, setHoveredTile] = useState(null);
-
-  const placeTower = useCallback(() => {
-    if (demoMode && towers.length >= 12) {
-      setStatusMessage('Demo mode limit reached. Reset to try different builds!');
-      return;
-    }
-
-    const laneInfo = lanes[selectedLane];
-    if (!laneInfo) return;
-    if (towers.some((tower) => tower.lane === selectedLane && tower.position === selectedTile)) {
-      setStatusMessage('A tower already occupies that tile. Choose another spot.');
-      return;
-    }
-
-    const newTower = createTower(selectedLane, selectedTile);
-    if (!newTower) return;
-
-    if (energyRef.current < newTower.cost) {
-      setStatusMessage('Not enough energy to deploy that tower.');
-      return;
-    }
-
-    setEnergy((prev) => prev - newTower.cost);
-    if (newTower.energyBonus) {
-      setEnergy((prev) => prev + newTower.energyBonus);
-    }
-    setTowers((prev) => [...prev, newTower]);
-    setSelectedTowerId(newTower.id);
-    recordLog(`Deployed ${selectedAvatar?.name || 'Hero'} with ${selectedPet?.name || 'Pet'} wielding ${newTower.weapon?.name}.`);
-    setStatusMessage('Tower placed! Prepare for the next wave.');
-  }, [createTower, demoMode, lanes, recordLog, selectedAvatar, selectedLane, selectedPet, selectedTile, towers.length]);
-
-  const removeTower = useCallback(
-    (towerId) => {
-      setTowers((prev) => {
-        const target = prev.find((tower) => tower.id === towerId);
-        if (!target) return prev;
-        const refund = Math.round((target.cost || 40) * 0.6 + target.level * 8);
-        setEnergy((current) => current + refund);
-        recordLog(`Recalled ${target.avatar?.name || 'tower'} for ${refund} energy.`);
-        return prev.filter((tower) => tower.id !== towerId);
+    Promise.all(Array.from(sources).map((src) => loadImage(src))).then((results) => {
+      if (cancelled) return;
+      const assetMap = {};
+      results.forEach(({ src, img }) => {
+        if (img) assetMap[src] = img;
       });
-    },
-    [recordLog]
-  );
+      assetsRef.current = assetMap;
+      setAssetsReady(true);
+    });
 
-  const upgradeTower = useCallback(
-    (towerId) => {
-      setTowers((prev) => {
-        const next = prev.map((tower) => {
-          if (tower.id !== towerId) return tower;
-          const upgradeCost = Math.round((tower.cost || 40) * 0.6 + tower.level * 15);
-          if (energyRef.current < upgradeCost) {
-            setStatusMessage('Not enough energy for that upgrade.');
-            return tower;
-          }
-          setEnergy((prevEnergy) => prevEnergy - upgradeCost);
-          const leveled = {
-            ...tower,
-            level: tower.level + 1,
-            damage: Math.round(tower.damage * 1.18 + 3),
-            range: parseFloat(Math.min(8, tower.range + 0.35).toFixed(2)),
-            attackSpeed: Math.max(440, Math.round(tower.attackSpeed * 0.9)),
-            xp: 0
-          };
-          const mutated = mutatorsRef.current.reduce((current, mutator) => {
-            if (typeof mutator.onTowerLevel === 'function') {
-              return mutator.onTowerLevel(current) || current;
-            }
-            return current;
-          }, leveled);
-          recordLog(`Upgraded ${tower.avatar?.name || 'tower'} to level ${mutated.level}!`);
-          return mutated;
-        });
-        return next;
-      });
-    },
-    [recordLog]
-  );
+    return () => {
+      cancelled = true;
+    };
+  }, [towerLibrary]);
 
-  const awardEnergy = useCallback((amount) => {
-    if (!amount) return;
-    setEnergy((prev) => prev + amount);
-  }, []);
+  const resetGame = useCallback(() => {
+    const bestWave = stateRef.current.bestWave;
+    stateRef.current = {
+      money: INITIAL_COINS,
+      lives: INITIAL_LIVES,
+      currentWave: 0,
+      phase: 'build',
+      bestWave,
+      towers: [],
+      enemies: [],
+      projectiles: [],
+      spawnQueue: [],
+      waveTime: 0,
+      nextTowerId: 1,
+      nextEnemyId: 1,
+      nextProjectileId: 1,
+      autoStartDelay: 0,
+      demoSetup: false
+    };
+    viewCacheRef.current = null;
+    setSelectedTowerId(null);
+    setHoverPosition(null);
+    setStatusMessage('Select a defender and click the arena to place them.');
+    syncView();
+  }, [demoMode, syncView]);
 
-  const persistProgress = useCallback(
-    async (progress) => {
-      if (demoMode || !updateStudentData || !studentData) return;
-      const existing = savedProgress;
-      const payload = {
-        ...existing,
-        ...progress,
-        lastPlayed: new Date().toISOString()
-      };
-      try {
-        await updateStudentData({
-          gameProgress: {
-            ...studentData.gameProgress,
-            towerDefenseLegends: payload
-          }
-        });
-      } catch (error) {
-        console.error('Failed to save Tower Defense progress', error);
-      }
-    },
-    [demoMode, savedProgress, studentData, updateStudentData]
-  );
+  useEffect(() => resetGame(), [resetGame]);
 
-  const generateWaveEnemies = useCallback(
-    (waveNumber) => {
-      const rng = createSeededRandom(mapSeed + waveNumber * 97 + lanes.length * 11);
-      const difficultySettings = DIFFICULTY_SETTINGS[difficultyRef.current] || currentDifficulty;
-      const enemyCount = Math.min(6 + waveNumber * 2, 45);
-      const totalWeight = ENEMY_ARCHETYPES.reduce((sum, archetype) => sum + archetype.rarity, 0);
+  const canPlaceTower = useCallback((towerOption, point) => {
+    if (!towerOption || !placeableWithinBounds(point)) return false;
 
-      const pickArchetype = () => {
-        const roll = rng() * totalWeight;
-        let cumulative = 0;
-        for (const archetype of ENEMY_ARCHETYPES) {
-          cumulative += archetype.rarity;
-          if (roll <= cumulative) return archetype;
-        }
-        return ENEMY_ARCHETYPES[0];
-      };
+    const distanceToPath = PATH_SEGMENTS.reduce((min, segment) => {
+      const distance = distancePointToSegment(point, segment);
+      return Math.min(min, distance);
+    }, Infinity);
 
-      const laneCount = lanes.length || LANE_COUNT;
-      const generated = [];
-      for (let index = 0; index < enemyCount; index += 1) {
-        const laneIndex = Math.floor(rng() * laneCount) % laneCount;
-        const archetype = pickArchetype();
-        let enemy = buildEnemyFromArchetype(archetype, waveNumber, laneIndex, rng, difficultySettings);
-        enemy = applyMutatorsToEnemy(enemy, mutatorsRef.current, waveNumber);
-        enemy.debuffs = enemy.debuffs || {};
-        generated.push(enemy);
-      }
+    if (distanceToPath < PATH_WIDTH / 2 + 18) return false;
 
-      if (waveNumber % 5 === 0) {
-        const bossArchetype = BOSS_ARCHETYPES[Math.floor(rng() * BOSS_ARCHETYPES.length) % BOSS_ARCHETYPES.length];
-        const laneIndex = Math.floor(rng() * laneCount) % laneCount;
-        let boss = buildBossFromArchetype(bossArchetype, waveNumber, laneIndex, difficultySettings);
-        boss = applyMutatorsToEnemy(boss, mutatorsRef.current, waveNumber);
-        boss.debuffs = boss.debuffs || {};
-        generated.push(boss);
-      }
+    const towers = stateRef.current.towers;
+    for (let i = 0; i < towers.length; i += 1) {
+      const placed = towers[i];
+      if (!placed) continue;
+      const existing = towerMap.get(placed.typeId);
+      const separation = Math.hypot(point.x - placed.x, point.y - placed.y);
+      const buffer = (existing?.baseRadius || 30) + towerOption.baseRadius + 16;
+      if (separation < buffer) return false;
+    }
 
-      return generated;
-    },
-    [currentDifficulty, lanes.length, mapSeed]
-  );
+    return true;
+  }, [towerMap]);
 
-  const startWave = useCallback(
-    (targetWave = currentWave) => {
-      const waveNumber = Math.max(1, targetWave);
-      if (demoMode && waveNumber > DEMO_WAVE_CAP) {
-        setStatusMessage('Demo mode capped at Wave 8. Reset to explore more realms!');
-        setIsRunning(false);
+  const placeTower = useCallback((towerOption, point) => {
+    if (!towerOption) return;
+    const state = stateRef.current;
+    if (state.money < towerOption.cost) {
+      setStatusMessage('Not enough coins for that defender. Clear waves to earn more.');
+      return;
+    }
+    if (!canPlaceTower(towerOption, point)) {
+      setStatusMessage('Choose a spot away from the track and other defenders.');
+      return;
+    }
+
+    state.money -= towerOption.cost;
+    state.towers.push({
+      id: `tower-${state.nextTowerId}`,
+      typeId: towerOption.id,
+      x: point.x,
+      y: point.y,
+      cooldown: 0
+    });
+    state.nextTowerId += 1;
+    syncView();
+    setStatusMessage(`${towerOption.name} deployed!`);
+  }, [canPlaceTower, syncView]);
+
+  const startWaveInternal = useCallback(() => {
+    const state = stateRef.current;
+    if (state.phase === 'running' || state.phase === 'gameOver') return false;
+    if (state.towers.length === 0) {
+      setStatusMessage('Place at least one defender before starting the wave.');
+      return false;
+    }
+
+    state.phase = 'running';
+    state.currentWave += 1;
+    state.waveTime = 0;
+    state.spawnQueue = createWaveSchedule(state.currentWave);
+    state.autoStartDelay = 0;
+    setStatusMessage(`Wave ${state.currentWave} has begun!`);
+    syncView();
+    return true;
+  }, [syncView]);
+
+  const handleStartWave = useCallback(() => {
+    startWaveInternal();
+  }, [startWaveInternal]);
+
+  const handleCanvasClick = useCallback((event) => {
+    if (!selectedTowerId) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = (event.clientX - rect.left) * scaleX;
+    const y = (event.clientY - rect.top) * scaleY;
+    const towerOption = towerMap.get(selectedTowerId);
+    placeTower(towerOption, { x, y });
+  }, [placeTower, selectedTowerId, towerMap]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return undefined;
+
+    const handleMove = (event) => {
+      if (!selectedTowerId) {
+        setHoverPosition(null);
         return;
       }
-      const generatedEnemies = generateWaveEnemies(waveNumber);
-      setCurrentWave(waveNumber);
-      setEnemies(generatedEnemies);
-      setIsRunning(true);
-      setStatusMessage(`Wave ${waveNumber} begins!`);
-      recordLog(`Wave ${waveNumber} charging with ${generatedEnemies.length} foes.`);
-    },
-    [currentWave, demoMode, generateWaveEnemies, recordLog]
-  );
-
-  const tickRef = useRef(null);
-  const lastTickRef = useRef(Date.now());
-
-  const processTick = useCallback(() => {
-    const now = Date.now();
-    const delta = Math.min(1.5, (now - lastTickRef.current) / TICK_INTERVAL);
-    lastTickRef.current = now;
-
-    const towerArray = towersRef.current;
-    const towerXp = new Array(towerArray.length).fill(0);
-    const towerKills = new Array(towerArray.length).fill(0);
-    const towersFired = new Set();
-    const defeatedEnemies = [];
-    const escapedEnemies = [];
-
-    setEnemies((prevEnemies) => {
-      if (!prevEnemies.length) {
-        return prevEnemies;
-      }
-
-      const updated = prevEnemies.map((enemy) => ({
-        ...enemy,
-        debuffs: { ...(enemy.debuffs || {}) }
-      }));
-
-      updated.forEach((enemy) => {
-        if (enemy.debuffs?.slow) {
-          enemy.debuffs.slow = Math.max(0, enemy.debuffs.slow - 0.02 * delta);
-        }
-        const slowFactor = 1 - Math.min(enemy.debuffs?.slow || 0, 0.5);
-        const effectiveSpeed = enemy.speed * slowFactor;
-        enemy.progress += effectiveSpeed * delta;
-        while (enemy.progress >= 1) {
-          enemy.progress -= 1;
-          enemy.position += 1;
-        }
-      });
-
-      towerArray.forEach((tower, towerIndex) => {
-        if (!tower) return;
-        if (now - tower.lastAttack < tower.attackSpeed) return;
-        const candidates = updated
-          .map((enemy, index) => ({ enemy, index }))
-          .filter(({ enemy }) => enemy.lane === tower.lane && enemy.position >= tower.position)
-          .filter(({ enemy }) => enemy.position - tower.position <= tower.range);
-
-        if (!candidates.length) return;
-        candidates.sort(
-          (a, b) =>
-            b.enemy.position + b.enemy.progress - (a.enemy.position + a.enemy.progress)
-        );
-        const { enemy, index } = candidates[0];
-        let damage = tower.damage;
-        if (enemy.type === 'boss') {
-          damage = Math.round(damage * (1.05 + tower.level * 0.03));
-        }
-        if (tower.effects?.includes('burn')) {
-          damage += Math.round(damage * 0.25);
-        }
-        if (enemy.debuffs?.weakened) {
-          damage += Math.round(damage * enemy.debuffs.weakened);
-        }
-        if (tower.effects?.includes('weaken') && !enemy.debuffs?.weakened) {
-          enemy.debuffs = { ...(enemy.debuffs || {}), weakened: 0.1 };
-        }
-        if (tower.effects?.includes('slow')) {
-          const resist = enemy.slowResist || 0;
-          const applied = Math.max(0.05, 0.2 - resist);
-          enemy.debuffs = {
-            ...(enemy.debuffs || {}),
-            slow: Math.min(0.5, (enemy.debuffs?.slow || 0) + applied)
-          };
-        }
-
-        let remainingDamage = damage;
-        if (enemy.shield) {
-          const absorbed = Math.min(enemy.shield, remainingDamage * 0.6);
-          enemy.shield = Math.max(0, enemy.shield - absorbed);
-          remainingDamage -= absorbed;
-        }
-        enemy.health -= remainingDamage;
-        towerXp[towerIndex] += Math.max(1, Math.round(remainingDamage));
-        towersFired.add(towerIndex);
-        if (enemy.health <= 0) {
-          towerKills[towerIndex] += 1;
-        }
-      });
-
-      const survivors = [];
-      updated.forEach((enemy) => {
-        if (enemy.health <= 0) {
-          defeatedEnemies.push(enemy);
-        } else if (enemy.position >= LANE_LENGTH) {
-          escapedEnemies.push(enemy);
-        } else {
-          survivors.push(enemy);
-        }
-      });
-
-      return survivors;
-    });
-
-    if (defeatedEnemies.length) {
-      const energyGain = defeatedEnemies.reduce(
-        (sum, enemy) => sum + (enemy.type === 'boss' ? enemy.reward + 6 : enemy.reward),
-        0
-      );
-      const scoreGain = defeatedEnemies.reduce(
-        (sum, enemy) => sum + enemy.scoreReward,
-        0
-      );
-      setEnergy((prev) => prev + energyGain);
-      setScore((prev) => prev + scoreGain);
-      defeatedEnemies.forEach((enemy) => {
-        if (enemy.type === 'boss') {
-          mutatorsRef.current.forEach((mutator) => {
-            if (typeof mutator.onBossDefeat === 'function') {
-              mutator.onBossDefeat(awardEnergy);
-            }
-          });
-        }
-      });
-      if (defeatedEnemies.length >= 3) {
-        recordLog(`Defeated ${defeatedEnemies.length} foes! +${energyGain} energy earned.`);
-      }
-    }
-
-    if (escapedEnemies.length) {
-      const lifeLoss = escapedEnemies.reduce(
-        (sum, enemy) => sum + (enemy.type === 'boss' ? 5 : enemy.type === 'minion' ? 1 : 2),
-        0
-      );
-      setLives((prev) => Math.max(0, prev - lifeLoss));
-      recordLog(`${escapedEnemies.length} enemies slipped through! Lost ${lifeLoss} hearts.`);
-      if (lives - lifeLoss <= 0) {
-        setStatusMessage('The classroom fell! Reset and try a new strategy.');
-        setIsRunning(false);
-      }
-    }
-
-    if (towerXp.some((xp) => xp > 0) || towerKills.some((kills) => kills > 0)) {
-      setTowers((prevTowers) =>
-        prevTowers.map((tower, index) => {
-          if (!tower) return tower;
-          const xpGain = towerXp[index] || 0;
-          const killGain = towerKills[index] || 0;
-          const fired = towersFired.has(index);
-          if (!xpGain && !killGain && !fired) return tower;
-
-          let updatedTower = { ...tower };
-          if (fired) {
-            updatedTower.lastAttack = now;
-            updatedTower.shotsFired = (updatedTower.shotsFired || 0) + 1;
-          }
-          if (killGain) {
-            updatedTower.kills = (updatedTower.kills || 0) + killGain;
-          }
-          if (xpGain) {
-            let xp = updatedTower.xp + xpGain;
-            let level = updatedTower.level;
-            let leveled = false;
-            let threshold = getXpForLevel(level);
-            while (xp >= threshold) {
-              xp -= threshold;
-              level += 1;
-              leveled = true;
-              updatedTower.damage = Math.round(updatedTower.damage * 1.14 + 3);
-              updatedTower.range = parseFloat(Math.min(8, updatedTower.range + 0.3).toFixed(2));
-              updatedTower.attackSpeed = Math.max(420, Math.round(updatedTower.attackSpeed * 0.92));
-              threshold = getXpForLevel(level);
-            }
-            updatedTower.level = level;
-            updatedTower.xp = xp;
-            if (leveled) {
-              mutatorsRef.current.forEach((mutator) => {
-                if (typeof mutator.onTowerLevel === 'function') {
-                  updatedTower = mutator.onTowerLevel(updatedTower) || updatedTower;
-                }
-              });
-            }
-          }
-          return updatedTower;
-        })
-      );
-    }
-  }, [awardEnergy, lives, recordLog]);
-
-  useEffect(() => {
-    if (!isRunning) {
-      if (tickRef.current) {
-        clearInterval(tickRef.current);
-        tickRef.current = null;
-      }
-      return undefined;
-    }
-    lastTickRef.current = Date.now();
-    tickRef.current = setInterval(processTick, TICK_INTERVAL);
-    return () => {
-      if (tickRef.current) {
-        clearInterval(tickRef.current);
-        tickRef.current = null;
-      }
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const x = (event.clientX - rect.left) * scaleX;
+      const y = (event.clientY - rect.top) * scaleY;
+      setHoverPosition({ x, y });
     };
-  }, [isRunning, processTick]);
 
-  const handleWaveComplete = useCallback(() => {
-    if (enemies.length) return;
-    if (!isRunning) return;
+    const handleLeave = () => {
+      setHoverPosition(null);
+    };
 
-    const clearedWave = currentWave;
-    setIsRunning(false);
-    const bonusEnergy = Math.round((28 + clearedWave * 4) * currentDifficulty.rewardMultiplier);
-    const bonusRelics = clearedWave % 3 === 0 ? 1 : 0;
-    setEnergy((prev) => prev + bonusEnergy);
-    if (bonusRelics) {
-      setRelics((prev) => prev + bonusRelics);
-    }
-    recordLog(`Wave ${clearedWave} cleared! +${bonusEnergy} energy`);
-    setStatusMessage(`Wave ${clearedWave} complete! Ready for Wave ${clearedWave + 1}.`);
+    canvas.addEventListener('mousemove', handleMove);
+    canvas.addEventListener('mouseleave', handleLeave);
+    canvas.addEventListener('click', handleCanvasClick);
 
-    persistProgress({
-      bestWave: Math.max(savedProgress.bestWave || 0, clearedWave),
-      bestScore: Math.max(savedProgress.bestScore || 0, score)
-    });
-
-    if (autoStartRef.current && (!demoMode || clearedWave + 1 <= DEMO_WAVE_CAP)) {
-      setTimeout(() => startWave(clearedWave + 1), 900);
-    }
-  }, [autoStartRef, currentDifficulty.rewardMultiplier, currentWave, demoMode, enemies.length, isRunning, persistProgress, recordLog, savedProgress.bestScore, savedProgress.bestWave, score, startWave]);
+    return () => {
+      canvas.removeEventListener('mousemove', handleMove);
+      canvas.removeEventListener('mouseleave', handleLeave);
+      canvas.removeEventListener('click', handleCanvasClick);
+    };
+  }, [handleCanvasClick, selectedTowerId]);
 
   useEffect(() => {
-    if (isRunning && enemies.length === 0) {
-      handleWaveComplete();
+    let messageTimer;
+    if (statusMessage) {
+      messageTimer = setTimeout(() => {
+        setStatusMessage(null);
+      }, 3200);
     }
-  }, [enemies.length, handleWaveComplete, isRunning]);
+    return () => {
+      if (messageTimer) clearTimeout(messageTimer);
+    };
+  }, [statusMessage]);
 
-  const selectedTower = useMemo(
-    () => towers.find((tower) => tower.id === selectedTowerId) || null,
-    [towers, selectedTowerId]
-  );
+  const updateProjectiles = useCallback((dt) => {
+    const state = stateRef.current;
+    const projectiles = state.projectiles;
+    const enemies = state.enemies;
 
-  const previewStats = useMemo(() => {
-    const laneInfo = lanes[selectedLane];
-    const weapon = weaponOptions.find((w) => w.id === selectedWeaponId) || weaponOptions[0];
-    return computeTowerStats(selectedAvatar, selectedPet, weapon, laneInfo);
-  }, [computeTowerStats, lanes, selectedAvatar, selectedPet, selectedLane, selectedWeaponId, weaponOptions]);
+    for (let i = projectiles.length - 1; i >= 0; i -= 1) {
+      const projectile = projectiles[i];
+      projectile.lifetime -= dt;
+      if (projectile.lifetime <= 0) {
+        projectiles.splice(i, 1);
+        continue;
+      }
 
-  const difficultyOptions = difficultyOrder.map((id) => DIFFICULTY_SETTINGS[id]);
+      const target = enemies.find((enemy) => enemy.id === projectile.targetId);
+      if (!target || target.reachedEnd || target.health <= 0) {
+        projectiles.splice(i, 1);
+        continue;
+      }
 
-  const canPlaceTower = Boolean(previewStats && energy >= previewStats.cost);
+      const dx = target.x - projectile.x;
+      const dy = target.y - projectile.y;
+      const distance = Math.hypot(dx, dy);
+      const travel = projectile.speed * dt;
 
-  const handleDifficultyChange = (newDifficulty) => {
-    setDifficulty(newDifficulty);
-    setStatusMessage(`Difficulty set to ${DIFFICULTY_SETTINGS[newDifficulty].name}.`);
-  };
+      if (distance <= travel + target.radius) {
+        target.health -= projectile.damage;
+        if (projectile.slowAmount && projectile.slowDuration) {
+          target.slowTimer = Math.max(target.slowTimer || 0, projectile.slowDuration);
+          target.slowFactor = projectile.slowAmount;
+        }
+        if (projectile.splashRadius > 0) {
+          for (let j = 0; j < enemies.length; j += 1) {
+            const splashTarget = enemies[j];
+            if (splashTarget === target || splashTarget.reachedEnd || splashTarget.health <= 0) continue;
+            const splashDistance = Math.hypot(projectile.x - splashTarget.x, projectile.y - splashTarget.y);
+            if (splashDistance <= projectile.splashRadius + splashTarget.radius) {
+              splashTarget.health -= projectile.damage * 0.6;
+            }
+          }
+        }
+        projectile.pierce -= 1;
+        if (projectile.pierce <= 0) {
+          projectiles.splice(i, 1);
+        }
+        continue;
+      }
 
-  const tileIndices = useMemo(() => Array.from({ length: LANE_LENGTH }, (_, index) => index), []);
+      if (distance > 0) {
+        projectile.x += (dx / distance) * travel;
+        projectile.y += (dy / distance) * travel;
+      }
+    }
+  }, []);
 
-  const formatNumber = (value) => value.toLocaleString();
+  const updateEnemies = useCallback((dt) => {
+    const state = stateRef.current;
+    const enemies = state.enemies;
 
-  return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
-        <div className="xl:col-span-3 space-y-4">
-          <div className="bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900 rounded-2xl p-5 text-white shadow-xl border border-indigo-700/40">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <div className="text-xs uppercase tracking-widest text-indigo-300">Realm</div>
-                <h2 className="text-2xl font-bold">{realmName}</h2>
-                <p className="text-indigo-200 text-sm">Mutators active: {mutators.map((m) => m.name).join(', ') || 'None'}</p>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
-                <div className="bg-white/10 rounded-xl p-3">
-                  <div className="text-xs uppercase tracking-wide text-indigo-200">Wave</div>
-                  <div className="text-xl font-semibold">{currentWave}</div>
-                </div>
-                <div className="bg-white/10 rounded-xl p-3">
-                  <div className="text-xs uppercase tracking-wide text-indigo-200">Lives</div>
-                  <div className="text-xl font-semibold">{lives}</div>
-                </div>
-                <div className="bg-white/10 rounded-xl p-3">
-                  <div className="text-xs uppercase tracking-wide text-indigo-200">Energy</div>
-                  <div className="text-xl font-semibold">{formatNumber(energy)}</div>
-                </div>
-                <div className="bg-white/10 rounded-xl p-3">
-                  <div className="text-xs uppercase tracking-wide text-indigo-200">Score</div>
-                  <div className="text-xl font-semibold">{formatNumber(score)}</div>
-                </div>
-              </div>
-            </div>
-            <div className="mt-4 flex flex-wrap gap-3 items-center">
-              <button
-                onClick={() => startWave(currentWave)}
-                disabled={isRunning || enemies.length > 0}
-                className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-                  isRunning || enemies.length > 0
-                    ? 'bg-white/10 text-white/50 cursor-not-allowed'
-                    : 'bg-emerald-500 hover:bg-emerald-400 text-white'
-                }`}
-              >
-                {isRunning ? 'Wave In Progress' : `Launch Wave ${currentWave}`}
-              </button>
-              <button
-                onClick={() => setAutoStart((prev) => !prev)}
-                className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-                  autoStart ? 'bg-yellow-500 text-white' : 'bg-white/10 text-white'
-                }`}
-              >
-                {autoStart ? 'Auto Waves Enabled' : 'Enable Auto Waves'}
-              </button>
-              <button
-                onClick={() => resetRun(mapSeed + Math.floor(Math.random() * 999))}
-                className="px-4 py-2 rounded-lg font-semibold bg-white/10 hover:bg-white/20 text-white"
-              >
-                Generate New Realm
-              </button>
-              <div className="flex items-center space-x-2 bg-white/10 rounded-lg px-3 py-2">
-                <span className="text-xs uppercase tracking-wide text-indigo-200">Difficulty</span>
-                <select
-                  value={difficulty}
-                  onChange={(event) => handleDifficultyChange(event.target.value)}
-                  className="bg-transparent text-white border border-white/30 rounded px-2 py-1 text-sm focus:outline-none"
-                >
-                  {difficultyOptions.map((option) => (
-                    <option key={option.id} value={option.id} className="text-black">
-                      {option.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <p className="mt-4 text-sm text-indigo-200">{statusMessage}</p>
+    for (let i = 0; i < enemies.length; i += 1) {
+      const enemy = enemies[i];
+      if (enemy.reachedEnd || enemy.health <= 0) continue;
+
+      let speed = enemy.speed;
+      if (enemy.slowTimer && enemy.slowTimer > 0) {
+        enemy.slowTimer -= dt;
+        speed *= enemy.slowFactor || 1;
+        if (enemy.slowTimer <= 0) {
+          enemy.slowTimer = 0;
+          enemy.slowFactor = 1;
+        }
+      }
+
+      let remaining = speed * dt;
+      while (remaining > 0 && !enemy.reachedEnd) {
+        const segment = PATH_SEGMENTS[enemy.segmentIndex];
+        if (!segment) {
+          enemy.reachedEnd = true;
+          break;
+        }
+        const distanceToEnd = segment.length - enemy.distanceOnSegment;
+        const travel = Math.min(distanceToEnd, remaining);
+        enemy.distanceOnSegment += travel;
+        enemy.x = segment.start.x + segment.unitX * enemy.distanceOnSegment;
+        enemy.y = segment.start.y + segment.unitY * enemy.distanceOnSegment;
+        remaining -= travel;
+
+        if (enemy.distanceOnSegment >= segment.length) {
+          enemy.segmentIndex += 1;
+          enemy.distanceOnSegment = 0;
+          if (enemy.segmentIndex >= PATH_SEGMENTS.length) {
+            enemy.reachedEnd = true;
+          }
+        }
+      }
+    }
+  }, []);
+
+  const fireTowers = useCallback((dt) => {
+    const state = stateRef.current;
+    const towers = state.towers;
+    const enemies = state.enemies;
+
+    for (let i = 0; i < towers.length; i += 1) {
+      const tower = towers[i];
+      const option = towerMap.get(tower.typeId);
+      if (!option) continue;
+
+      if (tower.cooldown > 0) {
+        tower.cooldown -= dt;
+        continue;
+      }
+
+      let chosenEnemy = null;
+      let chosenDistance = Infinity;
+      for (let j = 0; j < enemies.length; j += 1) {
+        const enemy = enemies[j];
+        if (enemy.reachedEnd || enemy.health <= 0) continue;
+        const distance = Math.hypot(enemy.x - tower.x, enemy.y - tower.y);
+        if (distance <= option.range && distance < chosenDistance) {
+          chosenEnemy = enemy;
+          chosenDistance = distance;
+        }
+      }
+
+      if (!chosenEnemy) continue;
+
+      tower.cooldown = Math.max(0.1, 1 / option.fireRate);
+
+      state.projectiles.push({
+        id: `projectile-${state.nextProjectileId}`,
+        targetId: chosenEnemy.id,
+        x: tower.x,
+        y: tower.y,
+        speed: option.projectileSpeed,
+        damage: option.damage,
+        splashRadius: option.splashRadius || 0,
+        pierce: option.pierce || 1,
+        color: option.color,
+        weaponPath: option.weapon?.path,
+        size: option.projectileSize || 30,
+        lifetime: PROJECTILE_LIFETIME,
+        slowAmount: option.slowAmount,
+        slowDuration: option.slowDuration
+      });
+      state.nextProjectileId += 1;
+    }
+  }, [towerMap]);
+
+  const resolveCombat = useCallback(() => {
+    const state = stateRef.current;
+    const enemies = state.enemies;
+    let livesLost = 0;
+    let coinsEarned = 0;
+
+    for (let i = enemies.length - 1; i >= 0; i -= 1) {
+      const enemy = enemies[i];
+      if (enemy.reachedEnd) {
+        livesLost += enemy.lifeCost;
+        enemies.splice(i, 1);
+      } else if (enemy.health <= 0) {
+        coinsEarned += enemy.reward;
+        enemies.splice(i, 1);
+      }
+    }
+
+    if (livesLost > 0) {
+      state.lives = Math.max(0, state.lives - livesLost);
+      if (state.lives <= 0) {
+        state.phase = 'gameOver';
+        state.spawnQueue = [];
+        state.projectiles = [];
+        setStatusMessage('The realm has fallen! Reset to try again.');
+      }
+    }
+
+    if (coinsEarned > 0) {
+      state.money += coinsEarned;
+    }
+  }, []);
+
+  const updateLoop = useCallback((dt) => {
+    const state = stateRef.current;
+    if (state.phase === 'running') {
+      state.waveTime += dt;
+      while (state.spawnQueue.length > 0 && state.spawnQueue[0].spawnAt <= state.waveTime) {
+        const spawn = state.spawnQueue.shift();
+        const blueprint = enemyMap.get(spawn.typeId) || ENEMY_TYPES[0];
+        const waveScaling = state.currentWave - 1;
+        const health = blueprint.baseHealth + blueprint.healthGrowth * waveScaling;
+        const speed = blueprint.baseSpeed + blueprint.speedGrowth * waveScaling * 0.12;
+        state.enemies.push({
+          id: `enemy-${state.nextEnemyId}`,
+          typeId: blueprint.id,
+          x: PATH_POINTS[0].x,
+          y: PATH_POINTS[0].y,
+          health,
+          maxHealth: health,
+          speed,
+          reward: Math.round(blueprint.reward * (1 + waveScaling * 0.12)),
+          lifeCost: blueprint.lifeCost,
+          radius: blueprint.radius,
+          sprite: blueprint.sprite,
+          segmentIndex: 0,
+          distanceOnSegment: 0,
+          reachedEnd: false,
+          slowTimer: 0,
+          slowFactor: 1
+        });
+        state.nextEnemyId += 1;
+      }
+    }
+
+    updateEnemies(dt);
+    updateProjectiles(dt);
+    fireTowers(dt);
+    resolveCombat();
+
+    if (state.phase === 'running' && state.spawnQueue.length === 0 && state.enemies.length === 0) {
+      state.phase = 'build';
+      const bonus = Math.round(140 + state.currentWave * 25);
+      state.money += bonus;
+      state.bestWave = Math.max(state.bestWave, state.currentWave);
+      persistBestWave(state.bestWave);
+      setStatusMessage(`Wave ${state.currentWave} cleared! Bonus ${bonus} coins.`);
+      syncView();
+      if (demoMode) {
+        state.autoStartDelay = 1.6;
+      }
+    }
+
+    if (demoMode && state.phase === 'build' && state.currentWave > 0 && state.autoStartDelay > 0) {
+      state.autoStartDelay -= dt;
+      if (state.autoStartDelay <= 0) {
+        startWaveInternal();
+      }
+    }
+
+    syncView();
+  }, [demoMode, enemyMap, fireTowers, persistBestWave, resolveCombat, startWaveInternal, syncView, updateEnemies, updateProjectiles]);
+
+  useEffect(() => {
+    if (!assetsReady) return undefined;
+    const canvas = canvasRef.current;
+    if (!canvas) return undefined;
+    const ctx = canvas.getContext('2d');
+    let animationFrame;
+    let lastTime = performance.now();
+
+    const render = (timestamp) => {
+      const dt = Math.min(0.1, (timestamp - lastTime) / 1000);
+      lastTime = timestamp;
+      updateLoop(dt);
+      drawScene(ctx);
+      animationFrame = window.requestAnimationFrame(render);
+    };
+
+    animationFrame = window.requestAnimationFrame(render);
+    return () => {
+      window.cancelAnimationFrame(animationFrame);
+    };
+  }, [assetsReady, drawScene, updateLoop]);
+
+  const drawScene = useCallback((ctx) => {
+    ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    ctx.strokeStyle = '#2f2a23';
+    ctx.lineWidth = PATH_WIDTH + 26;
+    ctx.beginPath();
+    ctx.moveTo(PATH_POINTS[0].x, PATH_POINTS[0].y);
+    for (let i = 1; i < PATH_POINTS.length; i += 1) {
+      ctx.lineTo(PATH_POINTS[i].x, PATH_POINTS[i].y);
+    }
+    ctx.stroke();
+
+    ctx.strokeStyle = '#b45309';
+    ctx.lineWidth = PATH_WIDTH;
+    ctx.beginPath();
+    ctx.moveTo(PATH_POINTS[0].x, PATH_POINTS[0].y);
+    for (let i = 1; i < PATH_POINTS.length; i += 1) {
+      ctx.lineTo(PATH_POINTS[i].x, PATH_POINTS[i].y);
+    }
+    ctx.stroke();
+
+    const state = stateRef.current;
+
+    state.towers.forEach((tower) => {
+      const option = towerMap.get(tower.typeId);
+      if (!option) return;
+      ctx.beginPath();
+      ctx.fillStyle = `${option.color}22`;
+      ctx.arc(tower.x, tower.y, option.baseRadius + 6, 0, Math.PI * 2);
+      ctx.fill();
+
+      const avatar = option.avatar ? assetsRef.current[option.avatar] : null;
+      if (avatar) {
+        ctx.drawImage(avatar, tower.x - 36, tower.y - 42, 72, 72);
+      } else {
+        ctx.fillStyle = option.color;
+        ctx.beginPath();
+        ctx.arc(tower.x, tower.y, option.baseRadius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      const pet = option.pet ? assetsRef.current[option.pet] : null;
+      if (pet) {
+        ctx.drawImage(pet, tower.x + option.baseRadius - 12, tower.y + option.baseRadius - 22, 44, 44);
+      }
+    });
+
+    state.enemies.forEach((enemy) => {
+      const sprite = assetsRef.current[enemy.sprite];
+      const size = enemy.radius * 2.1;
+      if (sprite) {
+        ctx.drawImage(sprite, enemy.x - size / 2, enemy.y - size / 2, size, size);
+      } else {
+        ctx.fillStyle = '#14b8a6';
+        ctx.beginPath();
+        ctx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.fillStyle = '#000000aa';
+      ctx.fillRect(enemy.x - enemy.radius, enemy.y - enemy.radius - 10, enemy.radius * 2, 6);
+      ctx.fillStyle = '#22c55e';
+      const healthRatio = clamp(enemy.health / enemy.maxHealth, 0, 1);
+      ctx.fillRect(enemy.x - enemy.radius, enemy.y - enemy.radius - 10, enemy.radius * 2 * healthRatio, 6);
+    });
+
+    state.projectiles.forEach((projectile) => {
+      const weapon = projectile.weaponPath ? assetsRef.current[projectile.weaponPath] : null;
+      if (weapon) {
+        ctx.drawImage(weapon, projectile.x - projectile.size / 2, projectile.y - projectile.size / 2, projectile.size, projectile.size);
+      } else {
+        ctx.fillStyle = projectile.color || '#facc15';
+        ctx.beginPath();
+        ctx.arc(projectile.x, projectile.y, projectile.size / 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    });
+
+    if (selectedTowerId && hoverPosition) {
+      const option = towerMap.get(selectedTowerId);
+      if (option) {
+        ctx.strokeStyle = `${option.color}55`;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(hoverPosition.x, hoverPosition.y, option.range, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
+
+    if (state.phase === 'gameOver') {
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
+      ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+      ctx.fillStyle = '#f87171';
+      ctx.font = 'bold 42px "Poppins", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Defeat! Reset to rally again.', GAME_WIDTH / 2, GAME_HEIGHT / 2);
+      ctx.textAlign = 'left';
+    }
+  }, [hoverPosition, selectedTowerId, towerMap]);
+
+  useEffect(() => {
+    if (!demoMode || !assetsReady) return;
+    const state = stateRef.current;
+    if (state.demoSetup) return;
+
+    const presets = [
+      { id: 'arcane-wizard', x: 210, y: 190 },
+      { id: 'sky-ranger', x: 520, y: 140 },
+      { id: 'mech-engineer', x: 360, y: 360 },
+      { id: 'dragon-rider', x: 660, y: 360 }
+    ];
+
+    state.money += 1500;
+    presets.forEach((preset) => {
+      const tower = towerMap.get(preset.id);
+      if (tower) {
+        placeTower(tower, { x: preset.x, y: preset.y });
+      }
+    });
+    state.demoSetup = true;
+    state.money += 800;
+    startWaveInternal();
+  }, [assetsReady, demoMode, placeTower, startWaveInternal, towerMap]);
+
+  const renderTowerCard = (tower) => {
+    const isSelected = selectedTowerId === tower.id;
+    const avatar = tower.avatar ? assetsRef.current[tower.avatar] : null;
+    const pet = tower.pet ? assetsRef.current[tower.pet] : null;
+    const weapon = tower.weapon?.path ? assetsRef.current[tower.weapon.path] : null;
+
+    return (
+      <button
+        key={tower.id}
+        type="button"
+        onClick={() => setSelectedTowerId((prev) => (prev === tower.id ? null : tower.id))}
+        className={`w-full text-left rounded-xl border transition shadow-sm bg-slate-800/70 p-4 ${
+          isSelected
+            ? 'border-emerald-400/80 hover:border-emerald-300/80 ring-2 ring-emerald-400/80 shadow-emerald-500/30'
+            : 'border-slate-700/60 hover:border-cyan-400/80'
+        }`}
+      >
+        <div className="flex items-start gap-3">
+          <div className="relative w-20 h-20 rounded-lg overflow-hidden bg-slate-900/80 border border-slate-700/60">
+            {avatar ? (
+              <img src={tower.avatar} alt={tower.name} className="w-full h-full object-contain" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-3xl">🛡️</div>
+            )}
+            {pet ? (
+              <img
+                src={tower.pet}
+                alt="pet"
+                className="absolute -bottom-2 -right-2 w-14 h-14 object-contain drop-shadow-lg"
+              />
+            ) : null}
           </div>
-
-          <div className="bg-white rounded-2xl shadow-xl p-4 space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex-1 space-y-2">
+            <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-bold text-gray-900">Battlefield Layout</h3>
-                <p className="text-sm text-gray-500">Hover over tiles to inspect lanes. Place towers before launching waves.</p>
+                <div className="text-base font-semibold text-white">{tower.name}</div>
+                <div className="text-xs text-slate-300">Cost: {tower.cost} coins</div>
               </div>
-              <div className="flex flex-wrap gap-2 text-xs">
-                {mutators.map((mutator) => (
-                  <div key={mutator.id} className="px-3 py-1 rounded-full bg-purple-100 text-purple-700 font-semibold">
-                    {mutator.name}
-                  </div>
-                ))}
-              </div>
+              {weapon ? (
+                <img src={tower.weapon.path} alt="weapon" className="w-10 h-10 object-contain" />
+              ) : null}
             </div>
-
-            <div className="space-y-4">
-              {lanes.map((lane) => (
-                <div key={lane.laneIndex} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="text-2xl">{lane.terrain.emoji}</div>
-                      <div>
-                        <div className="font-semibold text-gray-900">Lane {lane.laneIndex + 1}: {lane.terrain.name}</div>
-                        <div className="text-xs text-gray-500">{lane.terrain.description}</div>
-                        {lane.hazard && (
-                          <div className="text-xs text-blue-500">Hazard: {lane.hazard.name} – {lane.hazard.summary}</div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="text-xs text-gray-500">Boosts: {Object.keys(lane.terrain.boosts || {}).join(', ') || 'Balanced'}</div>
-                  </div>
-                  <div className={`grid grid-cols-${LANE_LENGTH} gap-1`}
-                    style={{ gridTemplateColumns: `repeat(${LANE_LENGTH}, minmax(32px, 1fr))` }}
-                  >
-                    {tileIndices.map((tileIndex) => {
-                      const tower = towers.find((candidate) => candidate.lane === lane.laneIndex && candidate.position === tileIndex);
-                      const tileEnemies = enemies.filter((enemy) => enemy.lane === lane.laneIndex && enemy.position === tileIndex);
-                      const isHovered = hoveredTile?.lane === lane.laneIndex && hoveredTile?.tile === tileIndex;
-                      const isSelected = selectedTowerId && tower?.id === selectedTowerId;
-                      return (
-                        <button
-                          key={tileIndex}
-                          type="button"
-                          onMouseEnter={() => setHoveredTile({ lane: lane.laneIndex, tile: tileIndex })}
-                          onMouseLeave={() => setHoveredTile(null)}
-                          onClick={() => {
-                            if (tower) {
-                              setSelectedTowerId(tower.id);
-                            } else {
-                              setSelectedLane(lane.laneIndex);
-                              setSelectedTile(tileIndex);
-                            }
-                          }}
-                          className={`relative h-20 border rounded-lg transition-all duration-200 ${
-                            tower
-                              ? 'bg-gradient-to-br from-indigo-100 via-purple-100 to-blue-100 border-indigo-300'
-                              : 'bg-gray-50 border-gray-200'
-                          } ${isHovered ? 'ring-2 ring-indigo-400' : ''} ${isSelected ? 'ring-2 ring-purple-500' : ''}`}
-                        >
-                          {tower ? (
-                            <div className="flex flex-col h-full justify-between p-2 text-left">
-                              <div className="text-xs font-semibold text-gray-700 truncate">
-                                {tower.avatar?.name || 'Hero'}
-                              </div>
-                              <div className="text-[10px] text-gray-500 truncate">
-                                Lv {tower.level} • {tower.weapon?.name}
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="flex flex-col h-full items-center justify-center text-xs text-gray-400">
-                              <div>Empty</div>
-                              {selectedLane === lane.laneIndex && selectedTile === tileIndex && <div className="text-indigo-500">Target</div>}
-                            </div>
-                          )}
-                          {tileEnemies.length > 0 && (
-                            <div className="absolute top-1 right-1 bg-red-500 text-white text-[10px] px-1 rounded-full">
-                              {tileEnemies.length}
-                            </div>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
+            <p className="text-xs text-slate-200 leading-snug">{tower.description}</p>
+            <div className="grid grid-cols-3 gap-2 text-[11px] text-slate-300">
+              <div>
+                <div className="font-semibold text-white">{tower.range}</div>
+                <div className="uppercase tracking-wide text-[10px] text-slate-400">Range</div>
+              </div>
+              <div>
+                <div className="font-semibold text-white">{tower.damage}</div>
+                <div className="uppercase tracking-wide text-[10px] text-slate-400">Damage</div>
+              </div>
+              <div>
+                <div className="font-semibold text-white">{tower.fireRate.toFixed(2)}</div>
+                <div className="uppercase tracking-wide text-[10px] text-slate-400">Shots/sec</div>
+              </div>
             </div>
           </div>
         </div>
+      </button>
+    );
+  };
 
-        <div className="xl:col-span-2 space-y-4">
-          <div className="bg-white rounded-2xl shadow-xl p-4 space-y-4">
-            <h3 className="text-lg font-bold text-gray-900">Summon a Tower</h3>
-            <div className="space-y-3">
+  return (
+    <div className="w-full text-slate-100">
+      <div className="flex flex-col lg:flex-row gap-6">
+        <div className="lg:w-2/3">
+          <div className="relative bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 rounded-2xl border border-slate-800 shadow-xl overflow-hidden">
+            <canvas
+              ref={canvasRef}
+              width={GAME_WIDTH}
+              height={GAME_HEIGHT}
+              className="w-full h-full max-h-[540px] rounded-2xl"
+            />
+            {!assetsReady ? (
+              <div className="absolute inset-0 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm">
+                <div className="text-slate-200 text-sm">Loading defenders and relics…</div>
+              </div>
+            ) : null}
+            <div className="absolute top-4 left-4 flex items-center gap-3 bg-slate-900/70 px-4 py-2 rounded-full border border-slate-700/70">
+              <div className="flex items-center gap-2 text-emerald-300 text-sm">
+                <span className="text-lg">💰</span>
+                <span>{viewState.money} coins</span>
+              </div>
+              <div className="flex items-center gap-2 text-rose-300 text-sm">
+                <span className="text-lg">❤️</span>
+                <span>{viewState.lives} lives</span>
+              </div>
+              <div className="flex items-center gap-2 text-sky-300 text-sm">
+                <span className="text-lg">🌊</span>
+                <span>{viewState.phase === 'build' ? 'Build Phase' : viewState.phase === 'running' ? 'Wave Active' : 'Game Over'}</span>
+              </div>
+            </div>
+            {statusMessage ? (
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-slate-900/80 border border-slate-700/60 px-4 py-2 rounded-full text-xs text-slate-200 shadow-lg">
+                {statusMessage}
+              </div>
+            ) : null}
+          </div>
+        </div>
+        <div className="lg:w-1/3 space-y-4">
+          <div className="rounded-2xl bg-slate-900/80 border border-slate-800 shadow-xl p-5 space-y-3">
+            <div className="flex items-center justify-between">
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Avatar</label>
-                <select
-                  value={selectedAvatar?.name || ''}
-                  onChange={(event) => {
-                    const avatar = avatarOptions.find((option) => option.name === event.target.value);
-                    setSelectedAvatar(avatar || avatarOptions[0]);
-                  }}
-                  className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                >
-                  {avatarOptions.map((option) => (
-                    <option key={option.name} value={option.name}>
-                      {option.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="text-sm uppercase tracking-wide text-slate-400">Wave</div>
+                <div className="text-2xl font-semibold text-white">{viewState.wave}</div>
               </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Companion Pet</label>
-                <select
-                  value={selectedPet?.name || ''}
-                  onChange={(event) => {
-                    const pet = petOptions.find((option) => option.name === event.target.value);
-                    setSelectedPet(pet || petOptions[0]);
-                  }}
-                  className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                >
-                  {petOptions.map((option) => (
-                    <option key={option.name} value={option.name}>
-                      {option.name}
-                    </option>
-                  ))}
-                </select>
+              <div className="text-right">
+                <div className="text-sm uppercase tracking-wide text-slate-400">Best</div>
+                <div className="text-2xl font-semibold text-emerald-300">{viewState.bestWave}</div>
               </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Weapon from Hero Forge</label>
-                <select
-                  value={selectedWeaponId}
-                  onChange={(event) => setSelectedWeaponId(event.target.value)}
-                  className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                >
-                  {weaponOptions.map((weapon) => (
-                    <option key={weapon.id} value={weapon.id}>
-                      {weapon.name} — {describeWeaponRequirement(weapon)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Lane</label>
-                  <select
-                    value={selectedLane}
-                    onChange={(event) => setSelectedLane(Number(event.target.value))}
-                    className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                  >
-                    {lanes.map((lane) => (
-                      <option key={lane.laneIndex} value={lane.laneIndex}>
-                        Lane {lane.laneIndex + 1} — {lane.terrain.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Tile</label>
-                  <select
-                    value={selectedTile}
-                    onChange={(event) => setSelectedTile(Number(event.target.value))}
-                    className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                  >
-                    {tileIndices.map((tile) => (
-                      <option key={tile} value={tile}>
-                        Tile {tile + 1}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              {previewStats && (
-                <div className="grid grid-cols-2 gap-2 text-xs bg-indigo-50 border border-indigo-100 rounded-xl p-3">
-                  <div>
-                    <div className="font-semibold text-indigo-700">Damage</div>
-                    <div className="text-indigo-900 text-sm">{previewStats.damage}</div>
-                  </div>
-                  <div>
-                    <div className="font-semibold text-indigo-700">Range</div>
-                    <div className="text-indigo-900 text-sm">{previewStats.range} tiles</div>
-                  </div>
-                  <div>
-                    <div className="font-semibold text-indigo-700">Attack Speed</div>
-                    <div className="text-indigo-900 text-sm">{(previewStats.attackSpeed / 1000).toFixed(2)}s</div>
-                  </div>
-                  <div>
-                    <div className="font-semibold text-indigo-700">Energy Cost</div>
-                    <div className="text-indigo-900 text-sm">{previewStats.cost}</div>
-                  </div>
-                  <div className="col-span-2 text-indigo-600">{previewStats.avatarSummary}</div>
-                  <div className="col-span-2 text-indigo-600">{previewStats.petSummary}</div>
-                </div>
-              )}
+            </div>
+            <div className="flex items-center gap-3">
               <button
-                onClick={placeTower}
-                disabled={!canPlaceTower}
-                className={`w-full py-2 rounded-lg font-semibold transition-colors ${
-                  canPlaceTower ? 'bg-indigo-600 hover:bg-indigo-500 text-white' : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                type="button"
+                onClick={handleStartWave}
+                disabled={viewState.phase !== 'build' || !assetsReady}
+                className={`flex-1 px-4 py-2 rounded-lg font-semibold transition ${
+                  viewState.phase === 'build' && assetsReady
+                    ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-900'
+                    : 'bg-slate-800 text-slate-500 cursor-not-allowed'
                 }`}
               >
-                Deploy Tower ({previewStats ? `${previewStats.cost} energy` : 'Select loadout'})
+                Start Next Wave
+              </button>
+              <button
+                type="button"
+                onClick={resetGame}
+                className="px-4 py-2 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 transition"
+              >
+                Reset Run
               </button>
             </div>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Drag your classroom heroes into position away from the relic track. Heroes combine avatars, pets, and Hero Forge weapons to counter enchanted artifacts streaming toward the portal.
+            </p>
           </div>
-
-          <div className="bg-white rounded-2xl shadow-xl p-4 space-y-4">
-            <h3 className="text-lg font-bold text-gray-900">Tower Details</h3>
-            {selectedTower ? (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-semibold text-gray-900">{selectedTower.avatar?.name}</div>
-                    <div className="text-xs text-gray-500">Weapon: {selectedTower.weapon?.name}</div>
-                  </div>
-                  <div className="text-sm text-indigo-600">Level {selectedTower.level}</div>
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-2">
-                    <div className="font-semibold text-gray-700">Damage</div>
-                    <div className="text-gray-900 text-sm">{selectedTower.damage}</div>
-                  </div>
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-2">
-                    <div className="font-semibold text-gray-700">Attack Speed</div>
-                    <div className="text-gray-900 text-sm">{(selectedTower.attackSpeed / 1000).toFixed(2)}s</div>
-                  </div>
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-2">
-                    <div className="font-semibold text-gray-700">Range</div>
-                    <div className="text-gray-900 text-sm">{selectedTower.range}</div>
-                  </div>
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-2">
-                    <div className="font-semibold text-gray-700">Kills</div>
-                    <div className="text-gray-900 text-sm">{selectedTower.kills || 0}</div>
-                  </div>
-                </div>
-                <div className="text-xs text-gray-500">{selectedTower.avatarSummary}</div>
-                <div className="text-xs text-gray-500">{selectedTower.petSummary}</div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => upgradeTower(selectedTower.id)}
-                    className="flex-1 px-3 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-white text-sm font-semibold"
-                  >
-                    Upgrade
-                  </button>
-                  <button
-                    onClick={() => removeTower(selectedTower.id)}
-                    className="flex-1 px-3 py-2 rounded-lg bg-red-500 hover:bg-red-400 text-white text-sm font-semibold"
-                  >
-                    Recall
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <p className="text-sm text-gray-500">Select a tower on the map to view upgrade options.</p>
-            )}
-          </div>
-
-          <div className="bg-white rounded-2xl shadow-xl p-4">
-            <h3 className="text-lg font-bold text-gray-900">Battle Log</h3>
-            <div className="mt-3 space-y-1 max-h-48 overflow-y-auto text-sm text-gray-600">
-              {activityLog.map((entry, index) => (
-                <div key={index} className="px-3 py-1 bg-gray-50 rounded-lg border border-gray-100">
-                  {entry}
-                </div>
-              ))}
+          <div className="space-y-3">
+            <div className="text-sm uppercase tracking-wide text-slate-400">Defender Roster</div>
+            <div className="space-y-3">
+              {towerLibrary.map((tower) => renderTowerCard(tower))}
             </div>
           </div>
         </div>
