@@ -743,28 +743,6 @@ const TowerDefenseGame = ({ demoMode = false, storageKeySuffix }) => {
     syncView();
   }, [demoMode, enemyMap, fireTowers, persistBestWave, resolveCombat, startWaveInternal, syncView, updateEnemies, updateProjectiles]);
 
-  useEffect(() => {
-    if (!assetsReady) return undefined;
-    const canvas = canvasRef.current;
-    if (!canvas) return undefined;
-    const ctx = canvas.getContext('2d');
-    let animationFrame;
-    let lastTime = performance.now();
-
-    const render = (timestamp) => {
-      const dt = Math.min(0.1, (timestamp - lastTime) / 1000);
-      lastTime = timestamp;
-      updateLoop(dt);
-      drawScene(ctx);
-      animationFrame = window.requestAnimationFrame(render);
-    };
-
-    animationFrame = window.requestAnimationFrame(render);
-    return () => {
-      window.cancelAnimationFrame(animationFrame);
-    };
-  }, [assetsReady, drawScene, updateLoop]);
-
   const drawScene = useCallback((ctx) => {
     ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
     ctx.fillStyle = '#0f172a';
@@ -868,6 +846,28 @@ const TowerDefenseGame = ({ demoMode = false, storageKeySuffix }) => {
       ctx.textAlign = 'left';
     }
   }, [hoverPosition, selectedTowerId, towerMap]);
+
+  useEffect(() => {
+    if (!assetsReady) return undefined;
+    const canvas = canvasRef.current;
+    if (!canvas) return undefined;
+    const ctx = canvas.getContext('2d');
+    let animationFrame;
+    let lastTime = performance.now();
+
+    const render = (timestamp) => {
+      const dt = Math.min(0.1, (timestamp - lastTime) / 1000);
+      lastTime = timestamp;
+      updateLoop(dt);
+      drawScene(ctx);
+      animationFrame = window.requestAnimationFrame(render);
+    };
+
+    animationFrame = window.requestAnimationFrame(render);
+    return () => {
+      window.cancelAnimationFrame(animationFrame);
+    };
+  }, [assetsReady, drawScene, updateLoop]);
 
   useEffect(() => {
     if (!demoMode || !assetsReady) return;
