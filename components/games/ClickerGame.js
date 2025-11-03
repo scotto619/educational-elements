@@ -1,5 +1,6 @@
 // components/games/ClickerGame.js - ENHANCED WITH MUSIC, NEW EVENTS & HIGH-LEVEL REWARDS
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { WEAPONS } from '../../utils/weaponData';
 
 const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
   // Game state
@@ -85,33 +86,6 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
   const eventAccumRef = useRef(0);
   const lastSaveRef = useRef(0);
   const musicRef = useRef(null); // Background music reference
-
-  // EXPANDED: Weapon definitions with ULTRA-RARE weapons for high levels
-  const WEAPONS = {
-    '1': { name: 'Novice Blade', icon: '⚔️', path: '/Loot/Weapons/1.png', requirement: null, dpcMultiplier: 1 },
-    '2': { name: 'Mystic Staff', icon: '🔮', path: '/Loot/Weapons/2.png', requirement: { type: 'totalGold', value: 1000 }, dpcMultiplier: 1.5 },
-    '3': { name: 'Frost Axe', icon: '🪓', path: '/Loot/Weapons/3.png', requirement: { type: 'totalGold', value: 5000 }, dpcMultiplier: 2 },
-    '4': { name: 'Shadow Daggers', icon: '🗡️', path: '/Loot/Weapons/4.png', requirement: { type: 'totalGold', value: 25000 }, dpcMultiplier: 3 },
-    '5': { name: 'Elven Bow', icon: '🏹', path: '/Loot/Weapons/5.png', requirement: { type: 'attacks', value: 1000 }, dpcMultiplier: 4 },
-    '6': { name: 'Orcish Cleaver', icon: '⚔️', path: '/Loot/Weapons/6.png', requirement: { type: 'artifacts', value: 50 }, dpcMultiplier: 6 },
-    '7': { name: 'Divine Hammer', icon: '🔨', path: '/Loot/Weapons/7.png', requirement: { type: 'totalGold', value: 100000 }, dpcMultiplier: 8 },
-    '8': { name: 'Nature\'s Whip', icon: '🌿', path: '/Loot/Weapons/8.png', requirement: { type: 'upgrades', value: 3 }, dpcMultiplier: 12 },
-    '9': { name: 'Celestial Orb', icon: '✨', path: '/Loot/Weapons/9.png', requirement: { type: 'totalGold', value: 1000000 }, dpcMultiplier: 20 },
-    '10': { name: 'Heart Mace', icon: '❤️', path: '/Loot/Weapons/10.png', requirement: { type: 'dps', value: 100000 }, dpcMultiplier: 30 },
-    '11': { name: 'Mechanical Gauntlet', icon: '🤖', path: '/Loot/Weapons/11.png', requirement: { type: 'totalGold', value: 10000000 }, dpcMultiplier: 50 },
-    '12': { name: 'Golden Hammer', icon: '🌹', path: '/Loot/Weapons/12.png', requirement: { type: 'prestige', value: 1 }, dpcMultiplier: 100 },
-    '13': { name: 'Electro Staff', icon: '⚡', path: '/Loot/Weapons/13.png', requirement: { type: 'totalGold', value: 100000000 }, dpcMultiplier: 200 },
-    '14': { name: 'Void Staff', icon: '🌌', path: '/Loot/Weapons/14.png', requirement: { type: 'prestige', value: 2 }, dpcMultiplier: 1500 },
-    '15': { name: 'Elemental Trident', icon: '🔱', path: '/Loot/Weapons/15.png', requirement: { type: 'totalGold', value: 1000000000 }, dpcMultiplier: 1000 },
-    '16': { name: 'Soul Reaper', icon: '💀', path: '/Loot/Weapons/16.png', requirement: { type: 'prestige', value: 5 }, dpcMultiplier: 2500 },
-    '17': { name: 'Cosmic Blades', icon: '🌟', path: '/Loot/Weapons/17.png', requirement: { type: 'prestige', value: 10 }, dpcMultiplier: 10000 },
-    
-    // NEW: Ultra-rare weapons for extreme high levels
-    '18': { name: 'Genesis Sword', icon: '💫', path: '/Loot/Weapons/18.png', requirement: { type: 'prestige', value: 15 }, dpcMultiplier: 25000 },
-    '19': { name: 'Reality Breaker', icon: '⚫', path: '/Loot/Weapons/19.png', requirement: { type: 'prestige', value: 20 }, dpcMultiplier: 50000 },
-    '20': { name: 'Infinity Edge', icon: '♾️', path: '/Loot/Weapons/20.png', requirement: { type: 'prestige', value: 25 }, dpcMultiplier: 100000 },
-    '21': { name: 'Omnislayer', icon: '🌠', path: '/Loot/Weapons/21.png', requirement: { type: 'masterLevel', value: 10 }, dpcMultiplier: 500000 }
-  };
 
   // EXPANDED Theme definitions with PRESTIGE themes
   const THEMES = {

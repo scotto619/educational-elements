@@ -22,6 +22,7 @@ import StudentBingo from '../student/StudentBingo';
 import MazeGame from '../games/MazeGame';
 import DailyWordleChallenge from '../games/DailyWordleChallenge';
 import AmazingTypingAdventure from '../games/AmazingTypingAdventure';
+import TowerDefenseGame from '../games/TowerDefenseGame';
 
 const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 
@@ -32,6 +33,21 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
   const [selectedCategory, setSelectedCategory] = useState('daily');
 
   const availableGames = [
+    {
+      id: 'tower-defense-legends',
+      name: 'Tower Defense Legends',
+      icon: '🛡️',
+      description: 'Assemble avatars, pets, and Hero Forge weapons to defend your classroom realm through endless waves.',
+      component: TowerDefenseGame,
+      color: 'from-emerald-500 via-sky-500 to-indigo-600',
+      difficulty: 'Medium - Expert',
+      time: '10-30 minutes',
+      category: 'adventure',
+      featured: true,
+      new: true,
+      storageKeySuffix: 'tower-defense-legends',
+      logo: getGameLogo('tower-defense-legends')
+    },
     {
       id: 'daily-word-challenge',
       name: 'Daily Word Challenge',

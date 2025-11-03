@@ -89,6 +89,7 @@ const GAME_LOGO_MAP = {
   'memory-challenge': createLogoCandidates('memory-challenge', ['Memory Challenge', 'Memory Masters', 'Memory']),
   'battle-royale': createLogoCandidates('battle-royale', ['Battle Royale Learning', 'Battle Royale']),
   'math-space-invaders': createLogoCandidates('math-space-invaders', ['Math Space Invaders', 'Space Maths']),
+  'tower-defense-legends': createLogoCandidates('tower-defense-legends', ['Tower Defense Legends', 'Tower Defense']),
   'cell-battle': createLogoCandidates('cell-battle', ['Cell Battle Arena', 'Cell Battle']),
   battleships: createLogoCandidates('battleships', ['Battleships Tournament', 'Battleships']),
   'tic-tac-toe': createLogoCandidates('tic-tac-toe', ['Tic Tac Toe Tournament', 'TicTacToe', 'tictactoe']),
@@ -111,7 +112,8 @@ const GAME_LOGO_ALIASES = {
   'memory-masters': 'memory-challenge',
   'math-race-challenge': 'math-race',
   match3battle: 'match3-adventure',
-  clicker: 'hero-forge'
+  clicker: 'hero-forge',
+  'tower-defense': 'tower-defense-legends'
 };
 
 const buildLogoSource = (candidates = []) => {

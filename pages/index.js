@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import Image from 'next/image';
+import TowerDefenseSpotlight from '../components/home/TowerDefenseSpotlight';
 
 export default function Home() {
   const [hoveredImage, setHoveredImage] = useState(null);
@@ -517,6 +518,8 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        <TowerDefenseSpotlight />
 
         {/* Story Section - Mobile Optimized */}
         <section id="story" className="py-12 md:py-20 bg-gradient-to-r from-indigo-50 to-purple-50">
