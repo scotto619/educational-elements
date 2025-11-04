@@ -92,6 +92,7 @@ const GAME_LOGO_MAP = {
   'cell-battle': createLogoCandidates('cell-battle', ['Cell Battle Arena', 'Cell Battle']),
   battleships: createLogoCandidates('battleships', ['Battleships Tournament', 'Battleships']),
   'tic-tac-toe': createLogoCandidates('tic-tac-toe', ['Tic Tac Toe Tournament', 'TicTacToe', 'tictactoe']),
+  'precision-timer': createLogoCandidates('precision-timer', ['Precision Timer Challenge', 'Timer Challenge', 'Precision Timer']),
   'match3-adventure': createLogoCandidates('match3-adventure', ['Match3 Battle', 'Match 3 Battle', 'Match3 Adventure']),
   'hero-forge': createLogoCandidates('hero-forge', ['Hero Forge', 'Clicker']),
   'classroom-bingo': createLogoCandidates('classroom-bingo', ['Classroom Bingo', 'Classroom BINGO']),
@@ -111,7 +112,9 @@ const GAME_LOGO_ALIASES = {
   'memory-masters': 'memory-challenge',
   'math-race-challenge': 'math-race',
   match3battle: 'match3-adventure',
-  clicker: 'hero-forge'
+  clicker: 'hero-forge',
+  'precision-timer-challenge': 'precision-timer',
+  'timer-challenge': 'precision-timer'
 };
 
 const buildLogoSource = (candidates = []) => {
