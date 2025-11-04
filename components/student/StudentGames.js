@@ -28,7 +28,7 @@ const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 
 const resolveLogoSource = (logo) => normalizeImageSource(logo, DEFAULT_GAME_LOGO);
 
-const StudentGames = ({ studentData, showToast, updateStudentData, classData }) => {
+const StudentGames = ({ studentData, showToast, updateStudentData, classData, classmates = [] }) => {
   const [selectedGame, setSelectedGame] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('daily');
 
@@ -397,6 +397,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
             updateStudentData={updateStudentData}
             classData={classData}
             storageKeySuffix={selectedGame.storageKeySuffix}
+            classmates={classmates}
           />
         </div>
       </div>

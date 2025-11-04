@@ -1,8 +1,68 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 const MIN_TARGET_SECONDS = 3;
 const MAX_TARGET_SECONDS = 10;
 const SCOREBOARD_SIZE = 5;
+const CLASS_LEADERBOARD_SIZE = 7;
+
+const getStudentIdentifier = (student) =>
+  student?.id ||
+  student?.studentId ||
+  student?.uid ||
+  student?.userId ||
+  student?.email ||
+  null;
+
+const parseNumber = (value) => {
+  if (value == null) return null;
+  const parsed = typeof value === 'string' ? Number.parseFloat(value) : value;
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const normalizeStoredAttempt = (attempt, index) => {
+  if (!attempt) return null;
+
+  const elapsedMillis =
+    parseNumber(attempt.elapsedMillis) ??
+    (parseNumber(attempt.elapsedSeconds) != null
+      ? parseNumber(attempt.elapsedSeconds) * 1000
+      : null);
+
+  const differenceSeconds =
+    parseNumber(attempt.differenceSeconds) ??
+    (parseNumber(attempt.differenceMillis) != null
+      ? parseNumber(attempt.differenceMillis) / 1000
+      : null);
+
+  const targetSeconds =
+    parseNumber(attempt.targetSeconds) ??
+    (parseNumber(attempt.targetMillis) != null
+      ? parseNumber(attempt.targetMillis) / 1000
+      : null);
+
+  if (
+    !Number.isFinite(elapsedMillis) ||
+    !Number.isFinite(differenceSeconds) ||
+    !Number.isFinite(targetSeconds)
+  ) {
+    return null;
+  }
+
+  return {
+    id: attempt.id || attempt.key || `stored-attempt-${index}`,
+    elapsedMillis,
+    differenceSeconds,
+    targetSeconds,
+    createdAt: attempt.createdAt || attempt.timestamp || null
+  };
+};
+
+const formatTimestamp = (value) => {
+  if (!value) return null;
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleString();
+};
 
 const generateTargetSeconds = () => {
   const random = Math.random() * (MAX_TARGET_SECONDS - MIN_TARGET_SECONDS) + MIN_TARGET_SECONDS;
@@ -23,17 +83,59 @@ const formatSeconds = (seconds) => {
   return `${wholeSeconds.toString().padStart(2, '0')}.${milliPart.toString().padStart(3, '0')}s`;
 };
 
-const PrecisionTimerGame = () => {
+const PrecisionTimerGame = ({
+  studentData,
+  updateStudentData,
+  showToast = () => {},
+  classmates = []
+}) => {
   const [isRunning, setIsRunning] = useState(false);
   const [elapsedMillis, setElapsedMillis] = useState(0);
   const [targetSeconds, setTargetSeconds] = useState(() => generateTargetSeconds());
   const [scoreboard, setScoreboard] = useState([]);
   const [lastResult, setLastResult] = useState(null);
+  const [attemptCount, setAttemptCount] = useState(0);
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState(null);
 
   const startTimeRef = useRef(null);
   const rafRef = useRef(null);
 
   const bestAttempt = useMemo(() => (scoreboard.length ? scoreboard[0] : null), [scoreboard]);
+
+  useEffect(() => {
+    const saved = studentData?.gameProgress?.precisionTimer;
+
+    if (!saved) {
+      setScoreboard([]);
+      setAttemptCount(0);
+      setLastSavedAt(null);
+      return;
+    }
+
+    const normalizedAttempts = Array.isArray(saved.scoreboard)
+      ? saved.scoreboard
+          .map((entry, index) => normalizeStoredAttempt(entry, index))
+          .filter(Boolean)
+          .sort((a, b) => a.differenceSeconds - b.differenceSeconds)
+          .slice(0, SCOREBOARD_SIZE)
+      : [];
+
+    setScoreboard(normalizedAttempts);
+    setAttemptCount(saved.attemptCount || normalizedAttempts.length || 0);
+
+    if (saved.lastPlayed) {
+      const timestamp = new Date(saved.lastPlayed);
+      if (!Number.isNaN(timestamp.getTime())) {
+        setLastSavedAt(timestamp);
+      }
+    } else if (normalizedAttempts[0]?.createdAt) {
+      const fallbackTimestamp = new Date(normalizedAttempts[0].createdAt);
+      if (!Number.isNaN(fallbackTimestamp.getTime())) {
+        setLastSavedAt(fallbackTimestamp);
+      }
+    }
+  }, [studentData?.gameProgress?.precisionTimer]);
 
   useEffect(() => {
     if (!isRunning) {
@@ -61,6 +163,50 @@ const PrecisionTimerGame = () => {
       }
     };
   }, [isRunning]);
+
+  const persistProgress = useCallback(
+    async (nextScoreboard, totalAttempts) => {
+      if (!updateStudentData || !studentData) {
+        return;
+      }
+
+      const sanitizedScoreboard = nextScoreboard.map((entry, index) => ({
+        id: entry.id || `attempt-${index}`,
+        elapsedMillis: Math.round(entry.elapsedMillis),
+        differenceSeconds: Number(entry.differenceSeconds.toFixed(6)),
+        targetSeconds: Number(entry.targetSeconds.toFixed(3)),
+        createdAt: entry.createdAt || new Date().toISOString()
+      }));
+
+      const bestEntry = sanitizedScoreboard[0] || null;
+
+      const payload = {
+        scoreboard: sanitizedScoreboard,
+        bestDifference: bestEntry ? bestEntry.differenceSeconds : null,
+        bestElapsedMillis: bestEntry ? bestEntry.elapsedMillis : null,
+        bestTargetSeconds: bestEntry ? bestEntry.targetSeconds : null,
+        attemptCount: totalAttempts,
+        lastPlayed: new Date().toISOString()
+      };
+
+      try {
+        setIsSaving(true);
+        await updateStudentData({
+          gameProgress: {
+            ...(studentData.gameProgress || {}),
+            precisionTimer: payload
+          }
+        });
+        setLastSavedAt(new Date(payload.lastPlayed));
+      } catch (error) {
+        console.error('Failed to save Precision Timer progress:', error);
+        showToast('Could not save your Precision Timer progress. Please try again.', 'error');
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [studentData, updateStudentData, showToast]
+  );
 
   const startTimer = () => {
     setElapsedMillis(0);
@@ -91,13 +237,26 @@ const PrecisionTimerGame = () => {
       id: `${Date.now()}-${Math.random()}`,
       elapsedMillis: elapsed,
       differenceSeconds: difference,
-      targetSeconds
+      targetSeconds,
+      createdAt: new Date().toISOString()
     };
 
-    setScoreboard((previous) => {
-      const combined = [...previous, attempt].sort((a, b) => a.differenceSeconds - b.differenceSeconds);
-      return combined.slice(0, SCOREBOARD_SIZE);
-    });
+    const previousBestDifference = scoreboard.length ? scoreboard[0].differenceSeconds : null;
+    const newScoreboard = [...scoreboard, attempt]
+      .sort((a, b) => a.differenceSeconds - b.differenceSeconds)
+      .slice(0, SCOREBOARD_SIZE);
+
+    const nextAttemptCount = attemptCount + 1;
+
+    setScoreboard(newScoreboard);
+    setAttemptCount(nextAttemptCount);
+
+    if (
+      previousBestDifference == null ||
+      difference < previousBestDifference - 0.0000005
+    ) {
+      showToast('New personal best! 🔥', 'success');
+    }
 
     setLastResult({
       elapsedSeconds,
@@ -107,6 +266,8 @@ const PrecisionTimerGame = () => {
 
     setTargetSeconds(generateTargetSeconds());
     startTimeRef.current = null;
+
+    persistProgress(newScoreboard, nextAttemptCount);
   };
 
   const resetGame = () => {
@@ -120,6 +281,86 @@ const PrecisionTimerGame = () => {
     setLastResult(null);
     startTimeRef.current = null;
   };
+
+  const classLeaderboard = useMemo(() => {
+    const roster = Array.isArray(classmates) ? classmates : [];
+    const entriesMap = new Map();
+
+    roster.forEach((student) => {
+      const identifier = getStudentIdentifier(student);
+      if (!identifier) {
+        return;
+      }
+      entriesMap.set(identifier, student);
+    });
+
+    if (studentData) {
+      const identifier = getStudentIdentifier(studentData);
+      if (identifier) {
+        entriesMap.set(identifier, { ...entriesMap.get(identifier), ...studentData });
+      }
+    }
+
+    const entries = Array.from(entriesMap.entries())
+      .map(([identifier, student]) => {
+        if (!student) {
+          return null;
+        }
+
+        const progress =
+          studentData && identifier === getStudentIdentifier(studentData)
+            ? {
+                scoreboard,
+                bestDifference:
+                  scoreboard[0]?.differenceSeconds ??
+                  studentData?.gameProgress?.precisionTimer?.bestDifference ??
+                  null,
+                attemptCount
+              }
+            : student.gameProgress?.precisionTimer;
+
+        if (!progress) {
+          return null;
+        }
+
+        const attempts = Array.isArray(progress.scoreboard)
+          ? progress.scoreboard
+              .map((entry, index) => normalizeStoredAttempt(entry, index))
+              .filter(Boolean)
+              .sort((a, b) => a.differenceSeconds - b.differenceSeconds)
+          : [];
+
+        const bestEntry = attempts[0] || null;
+        const bestDifference =
+          (typeof progress.bestDifference === 'number' && Number.isFinite(progress.bestDifference)
+            ? progress.bestDifference
+            : bestEntry?.differenceSeconds) ?? null;
+
+        if (bestDifference == null) {
+          return null;
+        }
+
+        const name = [student.firstName, student.lastName ? `${student.lastName[0]}.` : null]
+          .filter(Boolean)
+          .join(' ')
+          .trim() || 'Student';
+
+        return {
+          id: identifier,
+          name,
+          bestDifference,
+          bestEntry,
+          attemptCount: progress.attemptCount || attempts.length || 0,
+          lastPlayed: progress.lastPlayed || bestEntry?.createdAt || null,
+          isCurrent: studentData && identifier === getStudentIdentifier(studentData)
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => a.bestDifference - b.bestDifference)
+      .slice(0, CLASS_LEADERBOARD_SIZE);
+
+    return entries;
+  }, [classmates, studentData, scoreboard, attemptCount]);
 
   return (
     <div className="flex flex-col lg:flex-row gap-6">
@@ -180,7 +421,7 @@ const PrecisionTimerGame = () => {
         </div>
       </div>
 
-      <div className="w-full lg:w-80">
+      <div className="w-full lg:w-80 space-y-6">
         <div className="bg-gray-900 text-white rounded-3xl shadow-xl p-6 border border-gray-800">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold flex items-center gap-2">
@@ -192,6 +433,19 @@ const PrecisionTimerGame = () => {
               </span>
             )}
           </div>
+
+          <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.25em] text-gray-500 mb-3">
+            <span>Saved {scoreboard.length}</span>
+            <span>Total {attemptCount}</span>
+          </div>
+
+          {isSaving ? (
+            <div className="text-xs text-amber-300 mb-3">Saving progress...</div>
+          ) : (
+            lastSavedAt && (
+              <div className="text-xs text-gray-500 mb-3">Updated {formatTimestamp(lastSavedAt)}</div>
+            )
+          )}
 
           {scoreboard.length === 0 ? (
             <p className="text-gray-400 text-sm">
@@ -218,6 +472,65 @@ const PrecisionTimerGame = () => {
                     </div>
                     <div className="text-sm text-red-300 font-semibold">
                       Δ {formatMillis(entry.differenceSeconds * 1000)}
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          )}
+        </div>
+
+        <div className="bg-gray-900 text-white rounded-3xl shadow-xl p-6 border border-gray-800">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold flex items-center gap-2">
+              🧮 Class Leaderboard
+            </h2>
+            {classLeaderboard.length > 0 && (
+              <span className="text-xs uppercase tracking-widest text-gray-400">Top {classLeaderboard.length}</span>
+            )}
+          </div>
+
+          {classLeaderboard.length === 0 ? (
+            <p className="text-gray-400 text-sm">
+              Your class has no saved Precision Timer scores yet. Be the first to set a record and invite classmates to try!
+            </p>
+          ) : (
+            <ol className="space-y-3">
+              {classLeaderboard.map((entry, index) => (
+                <li
+                  key={entry.id}
+                  className={`rounded-2xl p-4 border transition-all ${
+                    entry.isCurrent
+                      ? 'bg-emerald-500/10 border-emerald-400/40 shadow-lg shadow-emerald-500/10'
+                      : 'bg-gray-900 border-gray-700 hover:border-gray-500'
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-3">
+                      <div className="text-lg font-bold text-emerald-300">#{index + 1}</div>
+                      <div>
+                        <div className="font-semibold text-white">{entry.name}</div>
+                        {entry.bestEntry ? (
+                          <div className="text-xs text-gray-400 mt-1">
+                            Hit {formatMillis(entry.bestEntry.elapsedMillis)} on target {formatSeconds(entry.bestEntry.targetSeconds)}
+                          </div>
+                        ) : (
+                          <div className="text-xs text-gray-400 mt-1">Precision master!</div>
+                        )}
+                        {entry.lastPlayed && (
+                          <div className="text-[10px] uppercase tracking-[0.25em] text-gray-500 mt-2">
+                            {formatTimestamp(entry.lastPlayed)}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-semibold text-emerald-300">
+                        Δ {formatMillis(entry.bestDifference * 1000)}
+                      </div>
+                      {entry.isCurrent && (
+                        <div className="text-[10px] uppercase text-emerald-400 tracking-[0.4em] mt-1">You</div>
+                      )}
                     </div>
                   </div>
                 </li>

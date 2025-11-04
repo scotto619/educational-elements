@@ -1148,11 +1148,12 @@ const StudentPortal = () => {
       
       case 'games':
         return (
-          <StudentGames 
+          <StudentGames
             studentData={studentData}
             showToast={showToast}
             updateStudentData={updateStudentData}
             classData={classData}
+            classmates={availableStudents}
           />
         );
       
