@@ -176,6 +176,59 @@ Tomorrow we'll learn even more amazing things about words! Great work, everyone!
         }
       ],
 
+      studentPortalContent: {
+        hero: {
+          emoji: '🔍',
+          title: 'Compound Word Detectives',
+          subtitle: 'Find the mini words hiding inside big words and clap the syllable beats!',
+          gradient: 'from-pink-400 via-purple-400 to-indigo-400'
+        },
+        ruleFocus: {
+          title: 'Today’s Discovery',
+          description: 'Some words are made from two smaller words. Each word has beats called syllables that we can clap.',
+          keyPoints: [
+            'Say the two little words before you blend them.',
+            'Clap the syllable beats as you say the big word.',
+            'Check that the new word makes sense.'
+          ],
+          examples: [
+            { word: 'SUNSHINE', breakdown: 'SUN + SHINE', meaning: 'sunlight and brightness' },
+            { word: 'FOOTBALL', breakdown: 'FOOT + BALL', meaning: 'a game with a ball you kick' },
+            { word: 'CUPCAKE', breakdown: 'CUP + CAKE', meaning: 'a cake in a cup' }
+          ]
+        },
+        quickCheck: {
+          question: 'Is “starfish” made from two words? What are they?',
+          answers: ['star + fish'],
+          celebration: '⭐ Great job, word detective!'
+        },
+        practice: [
+          {
+            title: 'Word Builder Tap',
+            icon: '🧱',
+            background: 'from-yellow-300 via-orange-300 to-pink-300',
+            description: 'Tap each little word and then blend them together.',
+            steps: [
+              'Say the first word and tap your left hand.',
+              'Say the second word and tap your right hand.',
+              'Slide your hands together and say the big word with a cheer!'
+            ]
+          },
+          {
+            title: 'Syllable Stomp',
+            icon: '🦶',
+            background: 'from-blue-300 via-indigo-300 to-purple-300',
+            description: 'Stomp the beats in each word.',
+            steps: [
+              'Say the word slowly.',
+              'Stomp once for each syllable you hear.',
+              'Show the number of stomps on your fingers.'
+            ]
+          }
+        ],
+        exitTicket: 'Draw a compound word and label the two mini words that make it.'
+      },
+
       practiceWordLists: [
         {
           icon: '🌟',
@@ -519,6 +572,59 @@ Tomorrow we'll learn the special NAMES for these word parts! You're all becoming
         }
       ],
 
+      studentPortalContent: {
+        hero: {
+          emoji: '🎯',
+          title: 'Base Word Builders',
+          subtitle: 'Keep the base strong and add endings to change meaning!',
+          gradient: 'from-amber-400 via-rose-400 to-purple-500'
+        },
+        ruleFocus: {
+          title: 'Build With Affixes',
+          description: 'A base word is the heart of the word. Adding endings like -ing, -ed, or -er changes the meaning or the time.',
+          keyPoints: [
+            'The base carries the main idea.',
+            'Suffixes like -ing, -ed, -er change when or who.',
+            'The base stays the same in every family word.'
+          ],
+          examples: [
+            { word: 'PLAYING', breakdown: 'PLAY + ING', meaning: 'happening now' },
+            { word: 'PLAYED', breakdown: 'PLAY + ED', meaning: 'already happened' },
+            { word: 'PLAYER', breakdown: 'PLAY + ER', meaning: 'a person who plays' }
+          ]
+        },
+        quickCheck: {
+          question: 'What is the base word in “HELPER”?',
+          answers: ['HELP'],
+          celebration: '🙌 Great spotting!'
+        },
+        practice: [
+          {
+            title: 'Base Word Bounce',
+            icon: '🏀',
+            background: 'from-orange-300 via-pink-300 to-purple-300',
+            description: 'Bounce the base word and catch an ending.',
+            steps: [
+              'Say the base word out loud.',
+              'Bounce a ball or tap the desk while saying the new word with -ing or -ed.',
+              'Explain what changed.'
+            ]
+          },
+          {
+            title: 'Affix Action Cards',
+            icon: '🧩',
+            background: 'from-blue-300 via-indigo-300 to-violet-300',
+            description: 'Choose a base card and an ending card to make a new word.',
+            steps: [
+              'Pick a base word card (jump, help, walk).',
+              'Pick an ending card (-ing, -ed, -er).',
+              'Say the new word and act it out.'
+            ]
+          }
+        ],
+        exitTicket: 'Write one base word and add two different endings. Tell what each new word means.'
+      },
+
       practiceWordLists: [
         {
           icon: '🎮',
@@ -845,6 +951,60 @@ Give yourself a pat on the back - you learned three big vocabulary words today! 
         }
       ],
 
+      studentPortalContent: {
+        hero: {
+          emoji: '🚂',
+          title: 'Prefix-Base-Suffix Express',
+          subtitle: 'Hop on the train where every word part has a job!',
+          gradient: 'from-sky-400 via-indigo-400 to-purple-500'
+        },
+        ruleFocus: {
+          title: 'Where Do the Parts Go?',
+          description: 'Prefixes stand at the front, bases ride in the middle, and suffixes bring meaning to the end.',
+          keyPoints: [
+            'Prefixes attach to the front of a base word.',
+            'Bases carry the main meaning of the word.',
+            'Suffixes hook onto the end to add extra information.'
+          ],
+          examples: [
+            { word: 'UNPACK', breakdown: 'UN + PACK', meaning: 'not packed anymore' },
+            { word: 'PLAYER', breakdown: 'PLAY + ER', meaning: 'a person who plays' },
+            { word: 'REPLAY', breakdown: 'RE + PLAY', meaning: 'play again' }
+          ]
+        },
+        quickCheck: {
+          question: 'Where does the suffix go in HELPER?',
+          answers: ['At the front', 'In the middle', 'At the end'],
+          correctAnswer: 'At the end',
+          celebration: '🎉 Nailed it! Suffixes always finish the word.'
+        },
+        practice: [
+          {
+            title: 'Word Train Builder',
+            icon: '🚆',
+            background: 'from-blue-500 via-purple-500 to-pink-500',
+            description: 'Slide prefix, base, and suffix cards into the right order.',
+            steps: [
+              'Pick a base card (PLAY, HELP, PACK).',
+              'Choose a prefix or suffix that makes sense.',
+              'Read the new word and tell what changed.'
+            ]
+          },
+          {
+            title: 'Prefix or Suffix?',
+            icon: '❓',
+            background: 'from-emerald-400 via-teal-400 to-cyan-400',
+            description: 'Sort word parts into “front” or “end” buckets.',
+            steps: [
+              'Hold up a card like UN-, -ER, or RE-.',
+              'Decide if it goes before or after the base.',
+              'Say a word that uses it in the right spot.'
+            ]
+          }
+        ],
+        exitTicket: 'Circle the base word in REPLAYING and underline the prefix and suffix.'
+      },
+
       practiceWordLists: [
         {
           icon: '🚀',
@@ -1143,6 +1303,60 @@ Tomorrow we'll practice adding -S to words ourselves! You're all becoming morpho
           background: 'from-purple-500 via-blue-500 to-cyan-400'
         }
       ],
+
+      studentPortalContent: {
+        hero: {
+          emoji: '🧩',
+          title: 'Meaningful Word Pieces',
+          subtitle: 'See how every piece of a word shares the story!',
+          gradient: 'from-orange-400 via-pink-400 to-purple-500'
+        },
+        ruleFocus: {
+          title: 'Two Parts, Two Clues',
+          description: 'The base tells what the word is about. The suffix -s tells us there is more than one.',
+          keyPoints: [
+            'Read the base first to know the thing.',
+            '-S at the end means more than one.',
+            'Both parts work together to make meaning.'
+          ],
+          examples: [
+            { word: 'DOGS', breakdown: 'DOG + S', meaning: 'more than one dog' },
+            { word: 'PIGS', breakdown: 'PIG + S', meaning: 'more than one pig' },
+            { word: 'BEDS', breakdown: 'BED + S', meaning: 'more than one bed' }
+          ]
+        },
+        quickCheck: {
+          question: 'What does the -S in CATS tell you?',
+          answers: ['One cat', 'More than one cat', 'Nothing at all'],
+          correctAnswer: 'More than one cat',
+          celebration: '🎉 Yes! That little -S makes the group grow.'
+        },
+        practice: [
+          {
+            title: 'Plural Picture Sort',
+            icon: '🖼️',
+            background: 'from-yellow-400 via-amber-400 to-red-400',
+            description: 'Match singular and plural pictures to the right words.',
+            steps: [
+              'Flip a base word like CAT or DOG.',
+              'Add the -S card if the picture shows many.',
+              'Explain what each part means.'
+            ]
+          },
+          {
+            title: 'Meaning Match Cards',
+            icon: '🎯',
+            background: 'from-teal-400 via-sky-400 to-blue-500',
+            description: 'Pair the base card with the suffix card that completes the meaning.',
+            steps: [
+              'Lay out base cards in one row.',
+              'Lay out suffix cards like -S or -ES in another.',
+              'Connect the cards and act out “one” vs “many.”'
+            ]
+          }
+        ],
+        exitTicket: 'Draw a base word and add -S. Label what each part means.'
+      },
 
       practiceWordLists: [
         {
@@ -1459,6 +1673,60 @@ But for now, you're AMAZING at adding -S! Give yourselves a round of applause! �
         }
       ],
 
+      studentPortalContent: {
+        hero: {
+          emoji: '🎈',
+          title: 'Plural Builders',
+          subtitle: 'Add -S to grow a word from one to many!',
+          gradient: 'from-teal-400 via-blue-500 to-indigo-500'
+        },
+        ruleFocus: {
+          title: 'Keep the Base, Add the Ending',
+          description: 'To make a simple plural, keep the base word the same and slide -s onto the end.',
+          keyPoints: [
+            'Say the base word first to lock it in.',
+            'Add -S to show more than one.',
+            'Read the new word smoothly without changing the base.'
+          ],
+          examples: [
+            { word: 'CATS', breakdown: 'CAT + S', meaning: 'more than one cat' },
+            { word: 'PANS', breakdown: 'PAN + S', meaning: 'more than one pan' },
+            { word: 'BUGS', breakdown: 'BUG + S', meaning: 'more than one bug' }
+          ]
+        },
+        quickCheck: {
+          question: 'What stays the same when you change DOG to DOGS?',
+          answers: ['The base word DOG', 'Only the ending', 'Everything changes'],
+          correctAnswer: 'The base word DOG',
+          celebration: '🎉 Exactly! The base stays safe while -S joins the party.'
+        },
+        practice: [
+          {
+            title: 'Base Saver Challenge',
+            icon: '🛡️',
+            background: 'from-purple-500 via-pink-500 to-red-400',
+            description: 'Protect the base word as you build plurals.',
+            steps: [
+              'Cover the base word with your hand.',
+              'Slide an -S card to the end.',
+              'Reveal the whole word and read it aloud.'
+            ]
+          },
+          {
+            title: 'Plural Parade Cards',
+            icon: '🥁',
+            background: 'from-amber-400 via-orange-400 to-pink-500',
+            description: 'March your cards from one to many.',
+            steps: [
+              'Hold a base picture like one hat.',
+              'Add the matching -S picture showing many hats.',
+              'Chant the plural word as you march in place.'
+            ]
+          }
+        ],
+        exitTicket: 'Write one base word and its plural. Highlight the part that stayed the same.'
+      },
+
       practiceWordLists: [
         {
           icon: '🐾',
@@ -1643,6 +1911,60 @@ But for now, you're AMAZING at adding -S! Give yourselves a round of applause! �
         }
       ],
 
+      studentPortalContent: {
+        hero: {
+          emoji: '🏃‍♀️',
+          title: 'Action Words in Motion',
+          subtitle: 'Stick -ING onto a base word to show it is happening right now!',
+          gradient: 'from-orange-400 via-pink-500 to-purple-600'
+        },
+        ruleFocus: {
+          title: 'Add -ING for Now',
+          description: '-ING tells us the action is happening at this moment while the base word keeps its shape.',
+          keyPoints: [
+            'Say the base word first (jump, sing, help).',
+            'Glue -ING to the end without changing the base.',
+            'Act out the word to feel the “right now” meaning.'
+          ],
+          examples: [
+            { word: 'JUMPING', breakdown: 'JUMP + ING', meaning: 'jumping right now' },
+            { word: 'HELPING', breakdown: 'HELP + ING', meaning: 'helping right now' },
+            { word: 'SINGING', breakdown: 'SING + ING', meaning: 'singing right now' }
+          ]
+        },
+        quickCheck: {
+          question: 'What does -ING tell us in RUNNING?',
+          answers: ['It already happened', 'It is happening now', 'It will happen later'],
+          correctAnswer: 'It is happening now',
+          celebration: '🎉 Yes! -ING shows the action is happening in the moment.'
+        },
+        practice: [
+          {
+            title: 'Act & Add',
+            icon: '🎭',
+            background: 'from-yellow-400 via-lime-400 to-green-500',
+            description: 'Act out the -ING word as you read it.',
+            steps: [
+              'Read the base word card.',
+              'Add an -ING card to build the new word.',
+              'Perform the action together while saying the word.'
+            ]
+          },
+          {
+            title: 'ING Word Lab',
+            icon: '🧪',
+            background: 'from-cyan-400 via-sky-400 to-blue-500',
+            description: 'Experiment with bases and -ING endings.',
+            steps: [
+              'Mix and match base cards like CLAP, PAINT, or SKIP.',
+              'Add -ING and read the new word.',
+              'Draw or mime what the action looks like right now.'
+            ]
+          }
+        ],
+        exitTicket: 'Write one -ING word and underline the base that stayed the same.'
+      },
+
       practiceWordLists: [
         {
           icon: '🏅',
@@ -1808,6 +2130,60 @@ But for now, you're AMAZING at adding -S! Give yourselves a round of applause! �
         }
       ],
 
+      studentPortalContent: {
+        hero: {
+          emoji: '🦸‍♂️',
+          title: 'UN- Prefix Power',
+          subtitle: 'Flip a word to its opposite by adding UN- at the front!',
+          gradient: 'from-red-400 via-orange-400 to-yellow-400'
+        },
+        ruleFocus: {
+          title: 'UN- Means Not',
+          description: 'UN- is a prefix that stands at the front of a base word to show the opposite meaning.',
+          keyPoints: [
+            'Attach UN- to the beginning of the base word.',
+            'UN- means not or the opposite of the base.',
+            'Say both meanings to hear the change.'
+          ],
+          examples: [
+            { word: 'UNLOCK', breakdown: 'UN + LOCK', meaning: 'not locked' },
+            { word: 'UNZIP', breakdown: 'UN + ZIP', meaning: 'not zipped' },
+            { word: 'UNTIE', breakdown: 'UN + TIE', meaning: 'not tied' }
+          ]
+        },
+        quickCheck: {
+          question: 'What does UN- tell us in UNZIP?',
+          answers: ['Zip it tighter', 'Not zipped anymore', 'Zip it later'],
+          correctAnswer: 'Not zipped anymore',
+          celebration: '🎉 Super! You flipped the meaning with UN-.'
+        },
+        practice: [
+          {
+            title: 'Opposite Switch Cards',
+            icon: '🔄',
+            background: 'from-green-400 via-teal-400 to-blue-500',
+            description: 'Turn a base word card into its UN- partner.',
+            steps: [
+              'Read the base word and show its meaning.',
+              'Slide an UN- card to the front.',
+              'Act out or explain the new opposite meaning.'
+            ]
+          },
+          {
+            title: 'Prefix Superhero Mission',
+            icon: '🦸‍♀️',
+            background: 'from-purple-500 via-pink-500 to-red-400',
+            description: 'Save the day by finding where UN- belongs.',
+            steps: [
+              'Look at a scene card like a tied shoe or a locked door.',
+              'Decide if the hero needs UN- to fix it.',
+              'Say the new UN- word and celebrate the rescue.'
+            ]
+          }
+        ],
+        exitTicket: 'Match one base word with its UN- word and draw the opposite meanings.'
+      },
+
       practiceWordLists: [
         {
           icon: '🛠️',
@@ -1972,6 +2348,60 @@ But for now, you're AMAZING at adding -S! Give yourselves a round of applause! �
           background: 'from-indigo-400 via-purple-500 to-pink-500'
         }
       ],
+
+      studentPortalContent: {
+        hero: {
+          emoji: '🌈',
+          title: 'Compound Word Creators',
+          subtitle: 'Blend two base words to build a brand-new idea!',
+          gradient: 'from-pink-400 via-purple-500 to-blue-500'
+        },
+        ruleFocus: {
+          title: 'Two Bases, One Word',
+          description: 'A compound word is made when two base words join their meanings together.',
+          keyPoints: [
+            'Read each base word separately first.',
+            'Slide the words together without any spaces.',
+            'Explain what each part brings to the new meaning.'
+          ],
+          examples: [
+            { word: 'SUNSET', breakdown: 'SUN + SET', meaning: 'the sun going down' },
+            { word: 'RAINBOW', breakdown: 'RAIN + BOW', meaning: 'colourful bow after rain' },
+            { word: 'PLAYGROUND', breakdown: 'PLAY + GROUND', meaning: 'ground where you play' }
+          ]
+        },
+        quickCheck: {
+          question: 'Which two words make RAINBOW?',
+          answers: ['RAIN + BOW', 'RAIN + GO', 'SUN + BOW'],
+          correctAnswer: 'RAIN + BOW',
+          celebration: '🎉 Nailed it! Each part keeps its meaning inside the new word.'
+        },
+        practice: [
+          {
+            title: 'Puzzle Pair Builder',
+            icon: '🧩',
+            background: 'from-yellow-400 via-orange-400 to-red-400',
+            description: 'Match picture halves to reveal the compound word.',
+            steps: [
+              'Find two picture cards that belong together.',
+              'Say each base word aloud.',
+              'Blend them to name the compound word and explain the meaning.'
+            ]
+          },
+          {
+            title: 'Real or Silly Mix-Up',
+            icon: '😂',
+            background: 'from-teal-400 via-cyan-400 to-blue-500',
+            description: 'Create funny combinations and test if they are real words.',
+            steps: [
+              'Spin or pick two base word cards.',
+              'Put them together and read the result.',
+              'Give a thumbs up for real words and invent a meaning for silly ones.'
+            ]
+          }
+        ],
+        exitTicket: 'Choose a compound word, draw both base parts, and label the new meaning.'
+      },
 
       practiceWordLists: [
         {

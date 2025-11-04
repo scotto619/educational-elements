@@ -1363,7 +1363,7 @@ h1{font-size:48px;margin-bottom:10px;color:#7c3aed}
   }
 };
 
-const Morphology = () => {
+const Morphology = ({ saveData, loadedData = {}, showToast }) => {
   const [selectedLevel, setSelectedLevel] = useState(null);
   const [selectedLesson, setSelectedLesson] = useState(null);
   const [currentSection, setCurrentSection] = useState(0);
@@ -1371,7 +1371,17 @@ const Morphology = () => {
   const [viewMode, setViewMode] = useState('teacher');
   const [displaySlideIndex, setDisplaySlideIndex] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [sharedLesson, setSharedLesson] = useState(() => loadedData?.morphology?.currentLesson || null);
+  const [isSavingLesson, setIsSavingLesson] = useState(false);
   const displayContainerRef = useRef(null);
+
+  useEffect(() => {
+    if (loadedData?.morphology?.currentLesson) {
+      setSharedLesson(loadedData.morphology.currentLesson);
+    } else {
+      setSharedLesson(null);
+    }
+  }, [loadedData]);
   const goToNextSlide = useCallback(() => {
     setDisplaySlideIndex((prev) => {
       if (!selectedLesson?.displaySections?.length) {
@@ -1411,6 +1421,97 @@ const Morphology = () => {
       }
     }
   };
+
+  const handleShareLesson = async (lessonOverride = null, levelOverride = null) => {
+    if (typeof saveData !== 'function') {
+      if (showToast) {
+        showToast('Saving is not available right now.', 'error');
+      }
+      return;
+    }
+
+    const targetLevel = levelOverride || selectedLevel;
+    const targetLesson = lessonOverride || selectedLesson;
+
+    if (!targetLesson || !targetLevel?.data) {
+      return;
+    }
+
+    const newCurrentLesson = {
+      level: targetLevel.level,
+      levelTitle: targetLevel.data.levelInfo.title,
+      levelColor: targetLevel.data.levelInfo.color,
+      lessonId: targetLesson.id,
+      lessonTitle: targetLesson.title,
+      lessonIcon: targetLesson.icon,
+      sharedAt: new Date().toISOString()
+    };
+
+    const existingToolkitData = loadedData || {};
+    const updatedToolkitData = {
+      ...existingToolkitData,
+      morphology: {
+        ...(existingToolkitData.morphology || {}),
+        currentLesson: newCurrentLesson
+      }
+    };
+
+    try {
+      setIsSavingLesson(true);
+      await saveData({ toolkitData: updatedToolkitData });
+      setSharedLesson(newCurrentLesson);
+      if (showToast) {
+        showToast('Morphology lesson shared to the student portal!', 'success');
+      }
+    } catch (error) {
+      console.error('Unable to share morphology lesson', error);
+      if (showToast) {
+        showToast('Error sharing lesson. Please try again.', 'error');
+      }
+    } finally {
+      setIsSavingLesson(false);
+    }
+  };
+
+  const handleClearSharedLesson = async () => {
+    if (typeof saveData !== 'function') {
+      if (showToast) {
+        showToast('Saving is not available right now.', 'error');
+      }
+      return;
+    }
+
+    const existingToolkitData = loadedData || {};
+    const morphologyData = { ...(existingToolkitData.morphology || {}) };
+    delete morphologyData.currentLesson;
+
+    const updatedToolkitData = { ...existingToolkitData };
+
+    if (Object.keys(morphologyData).length > 0) {
+      updatedToolkitData.morphology = morphologyData;
+    } else {
+      delete updatedToolkitData.morphology;
+    }
+
+    try {
+      setIsSavingLesson(true);
+      await saveData({ toolkitData: updatedToolkitData });
+      setSharedLesson(null);
+      if (showToast) {
+        showToast('Morphology lesson removed from the student portal.', 'info');
+      }
+    } catch (error) {
+      console.error('Unable to clear shared morphology lesson', error);
+      if (showToast) {
+        showToast('Error clearing shared lesson. Please try again.', 'error');
+      }
+    } finally {
+      setIsSavingLesson(false);
+    }
+  };
+
+  const lessonIsShared = (lesson, levelNumber) =>
+    Boolean(sharedLesson && sharedLesson.level === levelNumber && sharedLesson.lessonId === lesson?.id);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -1750,6 +1851,19 @@ const Morphology = () => {
 
   // Render level selection
   if (!selectedLevel) {
+    const sharedLessonGradient = sharedLesson?.levelColor
+      ? `bg-gradient-to-r ${sharedLesson.levelColor}`
+      : 'bg-gradient-to-r from-purple-500 via-pink-500 to-indigo-500';
+    const sharedLessonTimestamp = sharedLesson?.sharedAt
+      ? new Date(sharedLesson.sharedAt).toLocaleString()
+      : null;
+    const sharedLessonLevelData = sharedLesson
+      ? levels.find((lvl) => lvl.level === sharedLesson.level && !lvl.locked && lvl.data)
+      : null;
+    const sharedLessonLessonData = sharedLessonLevelData
+      ? sharedLessonLevelData.data.lessons.find((lesson) => lesson.id === sharedLesson.lessonId)
+      : null;
+
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 p-6">
         {/* Header */}
@@ -1768,18 +1882,96 @@ const Morphology = () => {
           </div>
         </div>
 
+        {sharedLesson && (
+          <div className="max-w-4xl mx-auto mb-6">
+            <div className={`relative overflow-hidden rounded-3xl shadow-2xl text-white ${sharedLessonGradient}`}>
+              <div className="absolute inset-0 bg-black/15"></div>
+              <div className="relative z-10 p-6 sm:p-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <div className="uppercase tracking-widest text-xs sm:text-sm font-semibold text-white/80 mb-2">
+                    Currently Shared with Students
+                  </div>
+                  <h3 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
+                    <span>{sharedLesson.lessonIcon || '📣'}</span>
+                    Lesson {sharedLesson.lessonId}: {sharedLesson.lessonTitle || 'Morphology Focus'}
+                  </h3>
+                  <p className="text-sm sm:text-base text-white/85 mt-1">
+                    Level {sharedLesson.level}: {sharedLesson.levelTitle || 'Morphology Masters'}
+                  </p>
+                  {sharedLessonTimestamp && (
+                    <p className="text-xs sm:text-sm text-white/75 mt-2">Shared {sharedLessonTimestamp}</p>
+                  )}
+                </div>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <button
+                    onClick={() => {
+                      if (!sharedLessonLessonData || !sharedLessonLevelData) return;
+                      handleShareLesson(sharedLessonLessonData, sharedLessonLevelData);
+                    }}
+                    disabled={
+                      isSavingLesson ||
+                      typeof saveData !== 'function' ||
+                      !sharedLessonLessonData ||
+                      !sharedLessonLevelData
+                    }
+                    className={`px-5 py-3 rounded-xl font-semibold text-sm sm:text-base shadow-lg transition ${
+                      isSavingLesson ||
+                      typeof saveData !== 'function' ||
+                      !sharedLessonLessonData ||
+                      !sharedLessonLevelData
+                        ? 'bg-white/30 text-white/70 cursor-not-allowed'
+                        : 'bg-white text-purple-700 hover:bg-white/90'
+                    }`}
+                  >
+                    {isSavingLesson ? 'Updating…' : 'Refresh Share'}
+                  </button>
+                  <button
+                    onClick={handleClearSharedLesson}
+                    disabled={isSavingLesson || typeof saveData !== 'function'}
+                    className={`px-5 py-3 rounded-xl font-semibold text-sm sm:text-base transition ${
+                      isSavingLesson || typeof saveData !== 'function'
+                        ? 'bg-black/20 text-white/60 cursor-not-allowed'
+                        : 'bg-black/30 hover:bg-black/40'
+                    }`}
+                  >
+                    Stop Sharing
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (!sharedLessonLevelData || !sharedLessonLessonData) return;
+                      setSelectedLevel(sharedLessonLevelData);
+                      setSelectedLesson(sharedLessonLessonData);
+                      setCurrentSection(0);
+                      setShowActivities(false);
+                      setViewMode('teacher');
+                      setDisplaySlideIndex(0);
+                    }}
+                    className="px-5 py-3 rounded-xl font-semibold text-sm sm:text-base bg-white/20 hover:bg-white/30 transition"
+                  >
+                    View Lesson
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Level Cards */}
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl font-bold text-center text-purple-900 mb-6">Choose Your Level</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {levels.map((level) => (
-              <button
-                key={level.level}
-                onClick={() => !level.locked && setSelectedLevel(level)}
+            {levels.map((level) => {
+              const isSharedLevel = Boolean(sharedLesson && sharedLesson.level === level.level);
+              return (
+                <button
+                  key={level.level}
+                  onClick={() => !level.locked && setSelectedLevel(level)}
                 disabled={level.locked}
                 className={`relative p-8 rounded-2xl border-4 transition-all duration-300 transform hover:scale-105 ${
                   level.locked
                     ? 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-60'
+                    : isSharedLevel
+                    ? 'bg-white border-emerald-400 hover:border-emerald-500 hover:shadow-2xl cursor-pointer'
                     : 'bg-white border-purple-400 hover:border-purple-600 hover:shadow-2xl cursor-pointer'
                 }`}
               >
@@ -1789,6 +1981,12 @@ const Morphology = () => {
                 }`}>
                   Level {level.level}
                 </div>
+
+                {isSharedLevel && !level.locked && (
+                  <div className="absolute top-4 right-4 bg-emerald-100 text-emerald-700 font-semibold text-xs px-3 py-1 rounded-full shadow-sm">
+                    📣 Shared with class
+                  </div>
+                )}
 
                 <div className="mt-6 text-center">
                   {/* Icon/Emoji */}
@@ -1830,7 +2028,8 @@ const Morphology = () => {
                   )}
                 </div>
               </button>
-            ))}
+            );
+            })}
           </div>
         </div>
 
@@ -1881,29 +2080,39 @@ const Morphology = () => {
         <div className="max-w-5xl mx-auto">
           <h3 className="text-2xl font-bold text-purple-900 mb-4">Select a Lesson</h3>
           <div className="grid grid-cols-1 gap-6">
-            {levelData.lessons.map((lesson, index) => (
-              <button
-                key={lesson.id}
-                onClick={() => setSelectedLesson(lesson)}
-                className="bg-white border-4 border-purple-300 rounded-2xl p-6 hover:border-purple-500 hover:shadow-xl transition-all text-left group"
-              >
-                <div className="flex items-start gap-6">
-                  {/* Lesson Number Circle */}
-                  <div className="flex-shrink-0 w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-white flex items-center justify-center text-2xl font-bold">
-                    {index + 1}
-                  </div>
-
-                  <div className="flex-1">
-                    {/* Title */}
-                    <h4 className="text-2xl font-bold text-purple-900 mb-2 flex items-center gap-2">
-                      <span>{lesson.icon}</span>
-                      {lesson.title}
-                    </h4>
-
-                    {/* Duration */}
-                    <div className="text-purple-600 text-sm font-semibold mb-3">
-                      ⏱️ {lesson.duration}
+            {levelData.lessons.map((lesson, index) => {
+              const isShared = lessonIsShared(lesson, selectedLevel.level);
+              return (
+                <button
+                  key={lesson.id}
+                  onClick={() => setSelectedLesson(lesson)}
+                  className={`relative bg-white border-4 rounded-2xl p-6 hover:shadow-xl transition-all text-left group ${
+                    isShared ? 'border-emerald-400 hover:border-emerald-500' : 'border-purple-300 hover:border-purple-500'
+                  }`}
+                >
+                  <div className="flex items-start gap-6">
+                    {/* Lesson Number Circle */}
+                    <div className="flex-shrink-0 w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-white flex items-center justify-center text-2xl font-bold">
+                      {index + 1}
                     </div>
+
+                    <div className="flex-1">
+                      {/* Title */}
+                      <h4 className="text-2xl font-bold text-purple-900 mb-2 flex items-center gap-2">
+                        <span>{lesson.icon}</span>
+                        {lesson.title}
+                      </h4>
+
+                      {isShared && (
+                        <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-emerald-100 text-emerald-700 px-3 py-1 text-xs font-semibold">
+                          <span>📣 Shared with students</span>
+                        </div>
+                      )}
+
+                      {/* Duration */}
+                      <div className="text-purple-600 text-sm font-semibold mb-3">
+                        ⏱️ {lesson.duration}
+                      </div>
 
                     {/* Objectives */}
                     <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-3">
@@ -1918,19 +2127,20 @@ const Morphology = () => {
                       </ul>
                     </div>
 
-                    {/* Activities Count */}
-                    <div className="flex items-center gap-4 text-sm">
-                      <span className="bg-pink-100 text-pink-700 px-3 py-1 rounded-full font-semibold">
-                        🎯 {lesson.activities.length} Activities
-                      </span>
-                      <span className="text-purple-600 font-bold group-hover:text-purple-800">
-                        Start Lesson →
-                      </span>
+                      {/* Activities Count */}
+                      <div className="flex items-center gap-4 text-sm">
+                        <span className="bg-pink-100 text-pink-700 px-3 py-1 rounded-full font-semibold">
+                          🎯 {lesson.activities.length} Activities
+                        </span>
+                        <span className="text-purple-600 font-bold group-hover:text-purple-800">
+                          Start Lesson →
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </button>
-            ))}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -1965,6 +2175,11 @@ const Morphology = () => {
     const slideIconWrapperClass = isFullscreen
       ? 'flex h-32 w-32 items-center justify-center rounded-full border-4 border-white/50 bg-black/35 text-6xl drop-shadow-2xl'
       : 'flex h-24 w-24 items-center justify-center rounded-full border-2 border-white/40 bg-black/25 text-4xl drop-shadow-lg';
+    const currentLessonShared = lessonIsShared(lesson, selectedLevel.level);
+    const canSaveLesson = typeof saveData === 'function';
+    const currentLessonSharedTimestamp = currentLessonShared && sharedLesson?.sharedAt
+      ? new Date(sharedLesson.sharedAt).toLocaleString()
+      : null;
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 p-6">
@@ -2043,6 +2258,81 @@ const Morphology = () => {
                       </li>
                     ))}
                   </ul>
+                </div>
+              </div>
+            </div>
+
+            {/* Share to Student Portal */}
+            <div
+              className={`rounded-2xl border-2 p-6 mb-6 ${
+                currentLessonShared ? 'bg-emerald-50 border-emerald-300' : 'bg-blue-50 border-blue-300'
+              }`}
+            >
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                  <h3
+                    className={`text-xl font-bold ${
+                      currentLessonShared ? 'text-emerald-900' : 'text-blue-900'
+                    }`}
+                  >
+                    {currentLessonShared ? 'Shared with your class' : 'Share this lesson with your class'}
+                  </h3>
+                  <p
+                    className={`${
+                      currentLessonShared ? 'text-emerald-700' : 'text-blue-700'
+                    } text-sm md:text-base mt-1`}
+                  >
+                    {currentLessonShared
+                      ? 'Students can see the colourful summary and interactive practice in their portal right now.'
+                      : 'Send a colourful overview and mini practice games straight to the student portal for your learners.'}
+                  </p>
+                  {currentLessonSharedTimestamp && (
+                    <p className="text-xs md:text-sm text-gray-600 mt-2">Last shared {currentLessonSharedTimestamp}</p>
+                  )}
+                  {!canSaveLesson && (
+                    <p className="text-xs text-gray-500 mt-2">Saving is unavailable in this view.</p>
+                  )}
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3">
+                  {currentLessonShared ? (
+                    <>
+                      <button
+                        onClick={() => handleShareLesson(lesson, selectedLevel)}
+                        disabled={!canSaveLesson || isSavingLesson}
+                        className={`px-5 py-3 rounded-xl font-semibold text-sm sm:text-base transition shadow-md ${
+                          !canSaveLesson || isSavingLesson
+                            ? 'bg-emerald-200 text-emerald-700/60 cursor-not-allowed'
+                            : 'bg-emerald-500 text-white hover:bg-emerald-600'
+                        }`}
+                      >
+                        {isSavingLesson ? 'Updating…' : 'Refresh Student View'}
+                      </button>
+                      <button
+                        onClick={handleClearSharedLesson}
+                        disabled={!canSaveLesson || isSavingLesson}
+                        className={`px-5 py-3 rounded-xl font-semibold text-sm sm:text-base transition ${
+                          !canSaveLesson || isSavingLesson
+                            ? 'bg-white/60 text-gray-500 cursor-not-allowed'
+                            : 'bg-white text-emerald-700 border border-emerald-200 hover:bg-emerald-50'
+                        }`}
+                      >
+                        Stop Sharing
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => handleShareLesson(lesson, selectedLevel)}
+                      disabled={!canSaveLesson || isSavingLesson}
+                      className={`px-5 py-3 rounded-xl font-semibold text-sm sm:text-base transition shadow-md ${
+                        !canSaveLesson || isSavingLesson
+                          ? 'bg-blue-200 text-blue-700/60 cursor-not-allowed'
+                          : 'bg-blue-500 text-white hover:bg-blue-600'
+                      }`}
+                    >
+                      {isSavingLesson ? 'Sharing…' : 'Share to Student Portal'}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
