@@ -1,4 +1,4 @@
-// components/tabs/GamesTab.js - WITH MAZE GAME
+// components/tabs/GamesTab.js - UPDATED: Added Multiplication Grid and Precision Timer
 import React, { useState } from 'react';
 import { getGameLogo, DEFAULT_LOGO as DEFAULT_GAME_LOGO } from '../../utils/gameLogos';
 import { normalizeImageSource, serializeFallbacks, createImageErrorHandler } from '../../utils/imageFallback';
@@ -21,6 +21,8 @@ import BingoGame from '../games/BingoGame';
 import MazeGame from '../games/MazeGame';
 import DailyWordleChallenge from '../games/DailyWordleChallenge';
 import AmazingTypingAdventure from '../games/AmazingTypingAdventure';
+import MultiplicationGridGame from '../games/MultiplicationGridGame';
+import PrecisionTimerGame from '../games/PrecisionTimerGame';
 
 const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 
@@ -40,6 +42,14 @@ const GamesTab = ({
 }) => {
   const [selectedGame, setSelectedGame] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('daily');
+
+  // Mock student data for teacher preview (no saving)
+  const mockTeacherData = {
+    firstName: 'Teacher',
+    lastName: 'Preview',
+    totalPoints: 0,
+    gameProgress: {}
+  };
 
   const availableGames = [
     {
@@ -71,6 +81,35 @@ const GamesTab = ({
       logo: getGameLogo('typing-legends')
     },
     // Featured/New Games
+    {
+      id: 'multiplication-grid',
+      name: 'Math Facts Grid',
+      icon: '🔢',
+      description: 'Complete multiplication, addition, or subtraction grids as fast as possible! Students can compete for best times.',
+      component: MultiplicationGridGame,
+      color: 'from-blue-500 to-cyan-600',
+      difficulty: 'Easy - Hard',
+      time: '2-10 minutes',
+      featured: true,
+      new: true,
+      category: 'featured',
+      educational: true,
+      logo: getGameLogo('math-grid')
+    },
+    {
+      id: 'precision-timer',
+      name: 'Precision Timer Challenge',
+      icon: '⏱️',
+      description: 'Test timing skills! Stop the timer as close to the target time as possible. Great for focus and concentration.',
+      component: PrecisionTimerGame,
+      color: 'from-red-500 to-orange-600',
+      difficulty: 'All Levels',
+      time: '2-5 minutes',
+      featured: true,
+      new: true,
+      category: 'featured',
+      logo: getGameLogo('precision-timer')
+    },
     {
       id: 'maze',
       name: 'Maze Runner',
@@ -248,172 +287,113 @@ const GamesTab = ({
 
     // Brain Games
     {
-      id: 'maze-brain',
-      name: 'Maze Challenge',
-      icon: '🧩',
-      description: 'Challenge students with procedurally generated mazes. Perfect for spatial reasoning and problem-solving!',
-      component: MazeGame,
-      color: 'from-indigo-500 to-purple-600',
-      difficulty: 'Easy - Hard',
-      time: '2-10 minutes',
-      category: 'brain',
-      logo: getGameLogo('maze-runner')
-    },
-    {
       id: 'memory-match',
-      name: 'Memory Challenge',
-      icon: '🧠',
-      description: 'Display memory games for class brain training sessions.',
+      name: 'Memory Match Challenge',
+      icon: '🎴',
+      description: 'Classic memory game to display for the class.',
       component: MemoryMatchGame,
-      color: 'from-purple-500 to-purple-600',
-      difficulty: 'Easy - Expert',
-      time: '3-8 minutes',
+      color: 'from-pink-500 to-rose-500',
+      difficulty: 'Easy - Medium',
+      time: '5-10 minutes',
       category: 'brain',
-      logo: getGameLogo('memory-challenge')
+      logo: getGameLogo('memory-match')
     },
-
-    // Adventure Games
     {
       id: 'match3battle',
       name: 'Match-3 Adventure Display',
-      icon: '⚔️',
-      description: 'Project epic RPG match-3 battles for students to watch and strategize together.',
+      icon: '💎',
+      description: 'Display match-3 gameplay for entertainment between lessons.',
       component: Match3BattleGame,
-      color: 'from-red-500 to-purple-600',
-      difficulty: 'Medium - Expert',
-      time: '5-30 minutes',
-      category: 'adventure',
-      logo: getGameLogo('match3-adventure')
+      color: 'from-purple-500 to-pink-500',
+      difficulty: 'Easy - Hard',
+      time: '5-15 minutes',
+      category: 'brain',
+      logo: getGameLogo('match3')
     },
     {
       id: 'clicker',
       name: 'Hero Forge Display',
       icon: '⚡',
-      description: 'Display an idle clicker game where students can watch progress build over time.',
+      description: 'Display incremental game progress as a relaxing visual.',
       component: ClickerGame,
-      color: 'from-yellow-500 to-orange-600',
+      color: 'from-yellow-500 to-orange-500',
       difficulty: 'Easy',
-      time: 'Unlimited',
-      category: 'adventure',
-      logo: getGameLogo('hero-forge')
+      time: '10+ minutes',
+      category: 'brain',
+      logo: getGameLogo('clicker')
     }
   ];
 
   const categories = [
-    { id: 'daily', name: 'Daily Challenges', icon: '📅' },
-    { id: 'featured', name: '⭐ Featured', icon: '⭐' },
-    { id: 'multiplayer', name: 'Multiplayer', icon: '🎮' },
+    { id: 'daily', name: 'Daily', icon: '🗓️' },
+    { id: 'featured', name: 'Featured', icon: '⭐' },
     { id: 'educational', name: 'Educational', icon: '📚' },
-    { id: 'brain', name: 'Brain Games', icon: '🧠' },
-    { id: 'adventure', name: 'Adventure', icon: '⚔️' }
+    { id: 'multiplayer', name: 'Multiplayer', icon: '👥' },
+    { id: 'brain', name: 'Brain Games', icon: '🧠' }
   ];
 
   const getGamesInCategory = (categoryId) => {
-    if (categoryId === 'featured') {
-      return availableGames.filter(g => g.featured);
-    }
-    return availableGames.filter(g => g.category === categoryId);
+    return availableGames.filter(game => game.category === categoryId);
   };
 
   if (selectedGame) {
     const GameComponent = selectedGame.component;
-    
-    const gameProps = {
-      showToast,
-      getAvatarImage,
-      getPetImage,
-      calculateCoins,
-      calculateAvatarLevel,
-      onAwardXP,
-      onAwardCoins,
-      currentClassData,
-      classData: currentClassData,
-      user
-    };
-
-    if (selectedGame.storageKeySuffix) {
-      gameProps.storageKeySuffix = selectedGame.storageKeySuffix;
-    }
-
-    if (selectedGame.teacherMode) {
-      gameProps.gameMode = 'teacher';
-      gameProps.students = students;
-      gameProps.isTeacher = true;
-    } else {
-      gameProps.gameMode = 'presentation';
-      gameProps.students = students;
-    }
-
     return (
-      <div className="space-y-4 md:space-y-6">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 p-4 md:p-6">
         {/* Game Header */}
-        <div className="bg-white rounded-xl shadow-lg p-4 md:p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3 md:space-x-4 min-w-0 flex-1">
+        <div className="max-w-7xl mx-auto mb-6">
+          <div className="bg-white rounded-2xl shadow-lg p-4 md:p-6 flex items-center justify-between">
+            <div className="flex items-center gap-4">
               <button
                 onClick={() => setSelectedGame(null)}
-                className="bg-gray-500 text-white px-3 md:px-4 py-2 rounded-lg hover:bg-gray-600 text-sm md:text-base flex-shrink-0"
+                className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-3 rounded-xl hover:shadow-lg transition-all"
               >
-                ← Back
+                ← Back to Games
               </button>
-              <div className="flex items-center space-x-2 md:space-x-3 min-w-0">
-                <div className="w-10 h-10 md:w-14 md:h-14 rounded-lg overflow-hidden border border-gray-200 bg-white flex-shrink-0 flex items-center justify-center">
-                  {(() => {
-                    const logoSource = resolveLogoSource(selectedGame.logo);
-                    return (
-                      <img
-                        src={logoSource.src}
-                        alt={`${selectedGame.name} logo`}
-                        className="max-w-full max-h-full object-contain p-1"
-                        data-fallbacks={serializeFallbacks(logoSource.fallbacks)}
-                        data-fallback-index="0"
-                        onError={logoErrorHandler}
-                      />
-                    );
-                  })()}
-                </div>
-                <div className="min-w-0">
-                  <h2 className="text-lg md:text-2xl font-bold text-gray-800 truncate">
-                    <span className="hidden sm:inline mr-2">{selectedGame.icon}</span>
-                    {selectedGame.name}
-                    {selectedGame.teacherMode && <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">TEACHER MODE</span>}
-                  </h2>
-                  <p className="text-gray-600 text-sm md:text-base hidden md:block">{selectedGame.description}</p>
-                </div>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-800 flex items-center gap-2">
+                  <span className="text-3xl">{selectedGame.icon}</span>
+                  {selectedGame.name}
+                </h1>
+                <p className="text-gray-600 text-sm md:text-base">{selectedGame.description}</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Game Component */}
-        <div className="bg-white rounded-xl shadow-lg p-3 md:p-6">
-          <GameComponent {...gameProps} />
+        {/* Game Content */}
+        <div className="max-w-7xl mx-auto">
+          <GameComponent 
+            students={students}
+            showToast={showToast}
+            getAvatarImage={getAvatarImage}
+            getPetImage={getPetImage}
+            calculateCoins={calculateCoins}
+            calculateAvatarLevel={calculateAvatarLevel}
+            onAwardXP={onAwardXP}
+            onAwardCoins={onAwardCoins}
+            currentClassData={currentClassData}
+            user={user}
+            studentData={mockTeacherData}
+            updateStudentData={() => {}} // No saving for teacher preview
+            classmates={[]} // No leaderboard for teacher preview
+            classData={currentClassData}
+            storageKeySuffix={selectedGame.storageKeySuffix}
+          />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white rounded-xl shadow-lg p-4 md:p-6">
+      <div className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-2xl p-6 md:p-8 text-white shadow-xl">
         <div className="text-center">
-          <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
-            🎮 Teacher Game Center
-          </h2>
-          <p className="text-gray-600 text-sm md:text-base">Host interactive games and activities for your class!</p>
-          {currentClassData?.classCode && (
-            <div className="mt-2 inline-flex items-center px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
-              <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-              Class Ready: {currentClassData.classCode}
-            </div>
-          )}
-          {!currentClassData?.classCode && (
-            <div className="mt-2 inline-flex items-center px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm font-medium">
-              <span className="w-2 h-2 bg-orange-500 rounded-full mr-2"></span>
-              Generate a class code in Settings for multiplayer games
-            </div>
-          )}
+          <h2 className="text-3xl font-bold mb-2">🎮 Teacher Game Library</h2>
+          <p className="text-white/90 text-sm md:text-base">
+            Preview and display games for your classroom. Your students can access these in their student portal!
+          </p>
         </div>
       </div>
 
@@ -443,111 +423,118 @@ const GamesTab = ({
 
       {/* Games Gallery */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-        {getGamesInCategory(selectedCategory).map((game) => (
-          <div
-            key={game.id}
-            role="button"
-            tabIndex={0}
-            onClick={() => setSelectedGame(game)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                setSelectedGame(game);
-              }
-            }}
-            className="group bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400"
-          >
-            <div className="flex flex-col md:flex-row">
-              <div className="relative md:w-56 lg:w-60 h-44 md:h-auto overflow-hidden bg-white flex items-center justify-center">
-                {(() => {
-                  const logoSource = resolveLogoSource(game.logo);
-                  return (
-                    <img
-                      src={logoSource.src}
-                      alt={`${game.name} logo`}
-                      className="max-w-full max-h-full object-contain p-6 transition-transform duration-500 group-hover:scale-105"
-                      data-fallbacks={serializeFallbacks(logoSource.fallbacks)}
-                      data-fallback-index="0"
-                      onError={logoErrorHandler}
-                    />
-                  );
-                })()}
-                <div className="absolute top-3 left-3 bg-white/80 backdrop-blur-sm rounded-full px-3 py-1 text-sm font-semibold flex items-center gap-2 text-gray-800">
-                  <span className="text-lg">{game.icon}</span>
-                  <span>{game.category === 'daily' ? 'Daily' : 'Play'}</span>
-                </div>
-                {game.featured && (
-                  <div className="absolute top-3 right-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow">
-                    ⭐ Featured
+        {getGamesInCategory(selectedCategory).map((game) => {
+          const buttonLabel = game.teacherMode
+            ? '🎓 Launch for Class'
+            : game.multiplayer
+              ? '🎮 Host Game'
+              : '👁️ Preview Game';
+
+          return (
+            <div
+              key={game.id}
+              role="button"
+              tabIndex={0}
+              onClick={() => setSelectedGame(game)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  setSelectedGame(game);
+                }
+              }}
+              className="group bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-400"
+            >
+              <div className="flex flex-col md:flex-row">
+                <div className="relative md:w-56 h-44 md:h-auto overflow-hidden bg-white flex items-center justify-center">
+                  {(() => {
+                    const logoSource = resolveLogoSource(game.logo);
+                    return (
+                      <img
+                        src={logoSource.src}
+                        alt={`${game.name} logo`}
+                        className="max-w-full max-h-full object-contain p-6 transition-transform duration-500 group-hover:scale-105"
+                        data-fallbacks={serializeFallbacks(logoSource.fallbacks)}
+                        data-fallback-index="0"
+                        onError={logoErrorHandler}
+                      />
+                    );
+                  })()}
+                  <div className="absolute top-3 left-3 bg-white/80 backdrop-blur-sm rounded-full px-3 py-1 text-sm font-semibold flex items-center gap-2 text-gray-800">
+                    <span className="text-lg">{game.icon}</span>
+                    <span>{game.category === 'daily' ? 'Daily' : 'Game'}</span>
                   </div>
-                )}
-                {game.teacherMode && (
-                  <div className="absolute bottom-3 right-3 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow">
-                    👨‍🏫 Host Mode
-                  </div>
-                )}
-              </div>
-              <div className="flex-1 p-4 md:p-6 space-y-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="text-lg md:text-xl font-bold text-gray-900 flex-1 min-w-0">
-                    <span className="truncate block group-hover:text-blue-600 transition-colors">{game.name}</span>
-                  </h3>
                   {game.new && (
-                    <span className="bg-green-100 text-green-700 text-xs font-semibold px-2 py-1 rounded-full">NEW</span>
+                    <div className="absolute top-3 right-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow animate-bounce">
+                      NEW
+                    </div>
                   )}
-                  {game.daily && (
-                    <span className="bg-amber-100 text-amber-700 text-xs font-semibold px-2 py-1 rounded-full">Daily</span>
+                  {!game.new && game.featured && (
+                    <div className="absolute top-3 right-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow">
+                      ⭐ Featured
+                    </div>
                   )}
                 </div>
+                <div className="flex-1 p-4 md:p-6 space-y-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="text-lg md:text-xl font-bold text-gray-900 flex-1 min-w-0">
+                      <span className="truncate block group-hover:text-purple-600 transition-colors">{game.name}</span>
+                    </h3>
+                    {game.daily && (
+                      <span className="bg-amber-100 text-amber-700 text-xs font-semibold px-2 py-1 rounded-full">Daily</span>
+                    )}
+                    {game.teacherMode && (
+                      <span className="bg-blue-100 text-blue-700 text-xs font-semibold px-2 py-1 rounded-full">Teacher Mode</span>
+                    )}
+                  </div>
 
-                <p className="text-gray-600 text-sm md:text-base leading-relaxed">
-                  {game.description}
-                </p>
+                  <p className="text-gray-600 text-sm md:text-base leading-relaxed">
+                    {game.description}
+                  </p>
 
-                <div className="flex flex-wrap gap-2 text-xs md:text-sm text-gray-600">
-                  {game.multiplayer && <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full">Multiplayer</span>}
-                  {game.educational && <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full">Curriculum Friendly</span>}
-                  {game.featured && <span className="bg-pink-100 text-pink-700 px-2 py-1 rounded-full">Staff Pick</span>}
-                </div>
+                  <div className="flex flex-wrap gap-2 text-xs md:text-sm text-gray-600">
+                    {game.multiplayer && <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full">Multiplayer</span>}
+                    {game.educational && <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full">Educational</span>}
+                  </div>
 
-                <div className="flex justify-between text-xs md:text-sm text-gray-500">
-                  <span>⚡ Difficulty: <strong className="text-gray-700">{game.difficulty}</strong></span>
-                  <span>⏱️ Time: <strong className="text-gray-700">{game.time}</strong></span>
-                </div>
+                  <div className="flex justify-between text-xs md:text-sm text-gray-500">
+                    <span>⚡ Difficulty: <strong className="text-gray-700">{game.difficulty}</strong></span>
+                    <span>⏱️ Time: <strong className="text-gray-700">{game.time}</strong></span>
+                  </div>
 
-                <div className="pt-2 md:pt-4">
-                  <div className={`inline-flex items-center px-4 py-2 md:px-5 md:py-3 rounded-full bg-gradient-to-r ${game.color} text-white font-semibold text-sm md:text-base shadow-sm group-hover:shadow-lg transition-all`}>
-                    {game.teacherMode ? '🎯 Launch for Class' : '🎮 Start Experience'}
+                  <div className="pt-2 md:pt-4">
+                    <div className={`inline-flex items-center px-4 py-2 md:px-5 md:py-3 rounded-full bg-gradient-to-r ${game.color} text-white font-semibold text-sm md:text-base shadow-sm group-hover:shadow-lg transition-all`}>
+                      {buttonLabel}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Quick Tips */}
       <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 md:p-6 border border-blue-200">
         <h3 className="text-lg font-bold text-blue-800 mb-3 flex items-center">
           <span className="mr-2">💡</span>
-          Teacher Game Tips
+          Teacher Tips
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div className="bg-white rounded-lg p-3">
-            <div className="font-semibold text-indigo-700 mb-1">🧩 Maze Runner</div>
-            <div className="text-gray-600">Generate mazes and share the seed number with students - they can race to solve the same maze!</div>
+            <div className="font-semibold text-blue-700 mb-1">🔢 Math Facts Grid</div>
+            <div className="text-gray-600">Students race to complete grids and compete for the fastest times. Great for daily math practice!</div>
           </div>
           <div className="bg-white rounded-lg p-3">
-            <div className="font-semibold text-pink-700 mb-1">🎲 Educational BINGO</div>
-            <div className="text-gray-600">Call out questions in 5 categories - students mark their cards to win!</div>
+            <div className="font-semibold text-red-700 mb-1">⏱️ Precision Timer</div>
+            <div className="text-gray-600">Test focus and timing skills. Perfect for brain breaks and concentration training.</div>
           </div>
           <div className="bg-white rounded-lg p-3">
-            <div className="font-semibold text-red-700 mb-1">⚔️ Battle Royale</div>
-            <div className="text-gray-600">Create a game code, students join via student portal, and watch the battle unfold!</div>
+            <div className="font-semibold text-purple-700 mb-1">🎲 Educational BINGO</div>
+            <div className="text-gray-600">Create custom BINGO games for any subject! Perfect for review sessions.</div>
           </div>
           <div className="bg-white rounded-lg p-3">
-            <div className="font-semibold text-blue-700 mb-1">👨‍🏫 Host Mode Games</div>
-            <div className="text-gray-600">These games create codes for students to join from their devices.</div>
+            <div className="font-semibold text-orange-700 mb-1">⚔️ Battle Royale</div>
+            <div className="text-gray-600">Host epic multiplayer math battles! Students love the competitive element.</div>
           </div>
         </div>
       </div>

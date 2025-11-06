@@ -1,0 +1,533 @@
+// Firestore Security Rules — FIXED FOR STUDENT PORTAL ACCESS
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+    
+    // -------- Helpers --------
+    function signedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+    
+    // -------- USERS --------
+    match /users/{userId} {
+      allow read, create, update: if isOwner(userId);
+    }
+    
+    // -------- CLASSES -------- 
+    // Teachers need auth to create/delete, but students need unauthenticated read access
+    match /classes/{classId} {
+      // Authenticated users (teachers) can do everything
+      allow read, write: if signedIn();
+      
+      // CRITICAL: Allow unauthenticated read for student portal class code lookup
+      allow read: if true;
+      
+      // Allow listing for authenticated users only
+      allow list: if signedIn();
+    }
+    
+    // -------- CLASS MEMBERSHIPS --------
+    // Students need to read membership data to get student lists
+    match /class_memberships/{classId} {
+      // Authenticated users (teachers) can do everything
+      allow read, write: if signedIn();
+      
+      // CRITICAL: Allow unauthenticated read for student portal
+      allow read: if true;
+    }
+    
+    // -------- STUDENTS --------
+    // Students need full read/write access to their own data without authentication
+    match /students/{studentId} {
+      // Authenticated users (teachers) can do everything
+      allow read, write: if signedIn();
+      
+      // CRITICAL: Allow unauthenticated read/write for student portal
+      // Students need to read their data and update progress
+      allow read, write: if true;
+      
+      // Allow listing for authenticated users only (teachers viewing all students)
+      allow list: if signedIn();
+    }
+    
+    // -------- STUDENT PORTAL DATA --------
+    match /publicClassData/{classCode} {
+      allow read: if true;
+      allow write: if signedIn();
+    }
+    
+    // -------- GAME COLLECTIONS -------- (UNCHANGED - WORKING)
+    match /studentSessions/{sessionId} {
+      allow read, write: if true;
+    }
+    
+    match /battleRoyaleGames/{gameId} {
+      allow read, write: if true;
+    }
+    
+    match /battleRoyaleStats/{gameId} {
+      allow read, write: if true;
+    }
+    
+    match /gameRooms/{roomId} {
+      allow read, write: if true;
+    }
+    
+    match /quizRooms/{roomId} {
+      allow read, write: if true;
+    }
+    
+    match /gameResults/{resultId} {
+      allow read, write: if true;
+    }
+    
+    match /tempStudentData/{dataId} {
+      allow read, write: if true;
+    }
+    
+    match /studentActivity/{activityId} {
+      allow write: if true;
+      allow read: if false;
+    }
+    
+    match /errorLogs/{logId} {
+      allow write: if true;
+      allow read: if false;
+    }
+    
+    match /discount_code_usage/{doc} {
+      allow read, write: if false;
+    }
+    
+    // -------- Default deny --------
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
+
+//Realtime Database Rules
+
+{
+  "rules": {
+    // FIXED: Battle Royale with underscore path (matches the game code)
+    "battle_royale": {
+      "$gameCode": {
+        ".read": true,
+        ".write": true,
+        ".validate": "newData.hasChildren(['gameCode']) || !newData.exists()",
+        
+        // Basic game info
+        "gameCode": { ".read": true, ".write": true },
+        "classCode": { ".read": true, ".write": true },
+        "host": { ".read": true, ".write": true },
+        "phase": { ".read": true, ".write": true },
+        "createdAt": { ".read": true, ".write": true },
+        "startedAt": { ".read": true, ".write": true },
+        "endedAt": { ".read": true, ".write": true },
+        
+        // Game settings
+        "settings": {
+          ".read": true,
+          ".write": true,
+          "category": { ".read": true, ".write": true },
+          "difficulty": { ".read": true, ".write": true }
+        },
+        
+        // Current question
+        "currentQuestion": {
+          ".read": true,
+          ".write": true,
+          "id": { ".read": true, ".write": true },
+          "question": { ".read": true, ".write": true },
+          "correctAnswer": { ".read": true, ".write": true },
+          "answers": { ".read": true, ".write": true },
+          "category": { ".read": true, ".write": true },
+          "difficulty": { ".read": true, ".write": true }
+        },
+        
+        // Question tracking
+        "questionNumber": { ".read": true, ".write": true },
+        "questionSentAt": { ".read": true, ".write": true },
+        
+        // Player data
+        "players": {
+          "$playerId": {
+            ".read": true,
+            ".write": true,
+            ".validate": "newData.hasChildren(['id', 'name']) || !newData.exists()",
+            ".indexOn": ["lives", "active", "joinTime"]
+          }
+        },
+        
+        // Player responses
+        "responses": {
+          "$playerId": {
+            ".read": true,
+            ".write": true,
+            ".validate": "newData.hasChildren(['answer', 'timestamp']) || !newData.exists()",
+            ".indexOn": ["timestamp"]
+          }
+        },
+        
+        // Game results
+        "winner": { ".read": true, ".write": true },
+        "finalResults": { ".read": true, ".write": true }
+      }
+    },
+
+    // Keep existing battleRoyale (camelCase) for backwards compatibility
+    "battleRoyale": {
+      "$gameCode": {
+        ".read": true,
+        ".write": true,
+        ".validate": "newData.hasChildren(['gameCode']) || !newData.exists()",
+        
+        // Game state and settings
+        "gameCode": { ".read": true, ".write": true },
+        "state": { ".read": true, ".write": true },
+        "category": { ".read": true, ".write": true },
+        "difficulty": { ".read": true, ".write": true },
+        "settings": { ".read": true, ".write": true },
+        "host": { ".read": true, ".write": "auth != null" },
+        "createdAt": { ".read": true, ".write": true },
+        "startTime": { ".read": true, ".write": true },
+        "endTime": { ".read": true, ".write": true },
+        
+        // Current question data
+        "currentQuestion": {
+          ".read": true,
+          ".write": true,
+          "id": { ".read": true, ".write": true },
+          "question": { ".read": true, ".write": true },
+          "correctAnswer": { ".read": true, ".write": true },
+          "answers": { ".read": true, ".write": true },
+          "timestamp": { ".read": true, ".write": true }
+        },
+        
+        // Player responses to current question
+        "responses": {
+          "$playerId": {
+            ".read": true,
+            ".write": true,
+            ".validate": "newData.hasChildren(['answer', 'timestamp', 'playerId']) || !newData.exists()",
+            ".indexOn": ["timestamp"]
+          }
+        },
+        
+        // Player data and status
+        "players": {
+          "$playerId": {
+            ".read": true,
+            ".write": true,
+            ".validate": "newData.hasChildren(['id', 'name', 'lives']) || !newData.exists()",
+            ".indexOn": ["lives", "streak", "correctAnswers", "active", "joinTime"]
+          }
+        },
+        
+        // Winner data
+        "winner": { ".read": true, ".write": true },
+        
+        // Game statistics
+        "stats": {
+          ".read": true,
+          ".write": true,
+          "totalQuestions": { ".read": true, ".write": true },
+          "totalPlayers": { ".read": true, ".write": true },
+          "gameStartTime": { ".read": true, ".write": true },
+          "gameEndTime": { ".read": true, ".write": true }
+        }
+      }
+    },
+    
+    // Memory Game support - Essential for multiplayer memory matching
+    "memory_game": {
+      "$gameCode": {
+        ".read": true,
+        ".write": true,
+        ".validate": "newData.hasChildren(['roomCode']) || !newData.exists()",
+        
+        // Game state and settings
+        "roomCode": { ".read": true, ".write": true },
+        "gameType": { ".read": true, ".write": true },
+        "host": { ".read": true, ".write": true },
+        "phase": { ".read": true, ".write": true },
+        "createdAt": { ".read": true, ".write": true },
+        
+        // Game settings
+        "settings": {
+          ".read": true,
+          ".write": true,
+          "theme": { ".read": true, ".write": true },
+          "boardSize": { ".read": true, ".write": true },
+          "customPairs": { ".read": true, ".write": true }
+        },
+        
+        // Players data
+        "players": {
+          "$playerId": {
+            ".read": true,
+            ".write": true,
+            ".validate": "newData.hasChildren(['id', 'name']) || !newData.exists()",
+            ".indexOn": ["ready", "score"]
+          }
+        },
+        
+        // Game data
+        "cards": { ".read": true, ".write": true },
+        "flippedCards": { ".read": true, ".write": true },
+        "matchedCards": { ".read": true, ".write": true },
+        "currentTurn": { ".read": true, ".write": true },
+        "scores": { ".read": true, ".write": true },
+        "winner": { ".read": true, ".write": true }
+      }
+    },
+    
+    // Enhanced gameRooms - Supports Quiz Show AND Multiplayer Agar Game
+    "gameRooms": {
+      "$roomCode": {
+        ".read": true,
+        ".write": "auth != null || (!data.exists() || data.child('players').hasChildren())",
+        ".validate": "newData.hasChildren(['roomCode']) || !newData.exists()",
+        
+        // Quiz Show specific data
+        "host": { ".read": true, ".write": "auth != null" },
+        "currentQuestion": { ".read": true, ".write": "auth != null" },
+        "gameState": { ".read": true, ".write": "auth != null" },
+        "responses": { ".read": true, ".write": true },
+        
+        // Multiplayer Agar Game data
+        "players": {
+          "$playerId": {
+            ".read": true,
+            ".write": true,
+            ".validate": "newData.hasChildren(['id', 'name']) || !newData.exists()",
+            ".indexOn": ["active", "score", "lastUpdate"]
+          }
+        },
+        "food": {
+          "$foodId": {
+            ".read": true,
+            ".write": true,
+            ".validate": "newData.hasChildren(['id', 'x', 'y', 'size', 'color']) || !newData.exists()"
+          }
+        },
+        "gameType": { ".read": true, ".write": true },
+        "createdAt": { ".read": true, ".write": true },
+        "lastActivity": { ".read": true, ".write": true }
+      }
+    },
+    
+    // Quiz data - Keep authenticated access
+    "quizzes": {
+      "$quizId": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+    
+    // TicTacToe and Battleships - Keep open access (working)
+    "ticTacToe": {
+      "$gameId": {
+        ".read": true,
+        ".write": true
+      }
+    },
+    
+    "battleships": {
+      "$gameId": {
+        ".read": true,
+        ".write": true
+      }
+    },
+    
+    // General games path for future multiplayer games
+    "games": {
+      "$gameType": {
+        "$gameId": {
+          ".read": true,
+          ".write": true,
+          
+          // Support for various game structures
+          "players": {
+            "$playerId": {
+              ".read": true,
+              ".write": true,
+              ".indexOn": ["active", "score"]
+            }
+          },
+          "gameData": { ".read": true, ".write": true }
+        }
+      }
+    },
+    
+    // Game statistics and leaderboards
+    "gameStats": {
+      "$roomId": {
+        ".read": true,
+        ".write": true,
+        "dailyStats": { ".read": true, ".write": true },
+        "playerCounts": { ".read": true, ".write": true },
+        "battleRoyaleStats": {
+          ".read": true,
+          ".write": true,
+          "gamesPlayed": { ".read": true, ".write": true },
+          "averageGameTime": { ".read": true, ".write": true },
+          "questionsAnswered": { ".read": true, ".write": true }
+        },
+        "memoryGameStats": {
+          ".read": true,
+          ".write": true,
+          "gamesPlayed": { ".read": true, ".write": true },
+          "averageMatches": { ".read": true, ".write": true },
+          "themesUsed": { ".read": true, ".write": true }
+        }
+      }
+    },
+    
+    // Student portal and class access
+    "classAccess": { ".read": true, ".write": true },
+    "classLookup": { ".read": true, ".write": "auth != null" },
+    
+    // User data - Keep secure (teacher accounts)
+    "users": {
+      "$userId": {
+        ".read": "auth != null && auth.uid == $userId",
+        ".write": "auth != null && auth.uid == $userId"
+      }
+    },
+    
+    // Temporary game sessions with cleanup rules
+    "tempSessions": {
+      "$sessionId": {
+        ".read": true,
+        ".write": true,
+        ".validate": "newData.child('timestamp').val() > (now - 24 * 60 * 60 * 1000) || !newData.exists()",
+        ".indexOn": ["timestamp", "active"]
+      }
+    },
+    
+    // Student responses and data
+    "studentData": { ".read": true, ".write": true },
+    
+    // Leaderboards with game type support
+    "leaderboards": {
+      ".read": true,
+      ".write": true,
+      "$gameType": {
+        ".read": true,
+        ".write": true,
+        ".indexOn": ["score", "timestamp"]
+      },
+      "battleRoyale": {
+        ".read": true,
+        ".write": true,
+        "allTime": {
+          ".read": true,
+          ".write": true,
+          ".indexOn": ["wins", "questionsCorrect", "gamesPlayed"]
+        },
+        "daily": {
+          ".read": true,
+          ".write": true,
+          ".indexOn": ["wins", "questionsCorrect"]
+        },
+        "weekly": {
+          ".read": true,
+          ".write": true,
+          ".indexOn": ["wins", "questionsCorrect"]
+        }
+      },
+      "memoryGame": {
+        ".read": true,
+        ".write": true,
+        "allTime": {
+          ".read": true,
+          ".write": true,
+          ".indexOn": ["matches", "gamesWon", "gamesPlayed"]
+        },
+        "daily": {
+          ".read": true,
+          ".write": true,
+          ".indexOn": ["matches", "gamesWon"]
+        },
+        "weekly": {
+          ".read": true,
+          ".write": true,
+          ".indexOn": ["matches", "gamesWon"]
+        }
+      }
+    },
+    
+    // Fallback access for other game paths
+    "gameData": { ".read": true, ".write": true },
+    
+    // Connection tracking for multiplayer games
+    "connections": {
+      "$userId": {
+        ".read": true,
+        ".write": true,
+        ".validate": "newData.hasChildren(['timestamp']) || !newData.exists()"
+      }
+    },
+    
+    // Game room metadata
+    "roomMetadata": {
+      "$roomCode": {
+        ".read": true,
+        ".write": true,
+        "playerCount": { ".read": true, ".write": true },
+        "gameType": { ".read": true, ".write": true },
+        "classCode": { ".read": true, ".write": true }
+      }
+    },
+    
+    // Battle Royale performance monitoring
+    "battleRoyaleMonitoring": {
+      "$gameCode": {
+        ".read": true,
+        ".write": true,
+        "responseTime": {
+          ".read": true,
+          ".write": true,
+          ".indexOn": ["timestamp"]
+        },
+        "playerLatency": {
+          "$playerId": {
+            ".read": true,
+            ".write": true,
+            ".indexOn": ["timestamp", "latency"]
+          }
+        },
+        "serverHealth": { ".read": true, ".write": true }
+      }
+    },
+    
+    // Memory Game monitoring
+    "memoryGameMonitoring": {
+      "$gameCode": {
+        ".read": true,
+        ".write": true,
+        "turnTime": {
+          ".read": true,
+          ".write": true,
+          ".indexOn": ["timestamp"]
+        },
+        "playerPerformance": {
+          "$playerId": {
+            ".read": true,
+            ".write": true,
+            ".indexOn": ["timestamp", "responseTime"]
+          }
+        },
+        "gameHealth": { ".read": true, ".write": true }
+      }
+    }
+  }
+}
+

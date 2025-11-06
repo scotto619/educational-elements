@@ -1,4 +1,4 @@
-// components/student/StudentGames.js - WITH MAZE GAME
+// components/student/StudentGames.js - UPDATED: Added Multiplication Grid and Precision Timer
 import React, { useState } from 'react';
 import { getGameLogo, DEFAULT_LOGO as DEFAULT_GAME_LOGO } from '../../utils/gameLogos';
 import { normalizeImageSource, serializeFallbacks, createImageErrorHandler } from '../../utils/imageFallback';
@@ -22,15 +22,19 @@ import StudentBingo from '../student/StudentBingo';
 import MazeGame from '../games/MazeGame';
 import DailyWordleChallenge from '../games/DailyWordleChallenge';
 import AmazingTypingAdventure from '../games/AmazingTypingAdventure';
+import MultiplicationGridGame from '../games/MultiplicationGridGame';
 import PrecisionTimerGame from '../games/PrecisionTimerGame';
 
 const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 
 const resolveLogoSource = (logo) => normalizeImageSource(logo, DEFAULT_GAME_LOGO);
 
-const StudentGames = ({ studentData, showToast, updateStudentData, classData, classmates = [] }) => {
+const StudentGames = ({ studentData, showToast, updateStudentData, classData }) => {
   const [selectedGame, setSelectedGame] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('daily');
+
+  // Get classmates for leaderboards
+  const classmates = classData?.students || [];
 
   const availableGames = [
     {
@@ -65,6 +69,35 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData, cl
     },
     // Featured/New Games
     {
+      id: 'multiplication-grid',
+      name: 'Math Facts Grid',
+      icon: '🔢',
+      description: 'Complete multiplication, addition, or subtraction grids as fast as you can! Compete with your classmates for the best times.',
+      component: MultiplicationGridGame,
+      color: 'from-blue-500 to-cyan-600',
+      difficulty: 'Easy - Hard',
+      time: '2-10 minutes',
+      featured: true,
+      new: true,
+      category: 'featured',
+      educational: true,
+      logo: getGameLogo('math-grid')
+    },
+    {
+      id: 'precision-timer',
+      name: 'Precision Timer Challenge',
+      icon: '⏱️',
+      description: 'Test your timing skills! Stop the timer as close to the target time as possible. Compete for the most accurate times.',
+      component: PrecisionTimerGame,
+      color: 'from-red-500 to-orange-600',
+      difficulty: 'All Levels',
+      time: '2-5 minutes',
+      featured: true,
+      new: true,
+      category: 'featured',
+      logo: getGameLogo('precision-timer')
+    },
+    {
       id: 'maze',
       name: 'Maze Runner',
       icon: '🧩',
@@ -78,20 +111,6 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData, cl
       logo: getGameLogo('maze-runner')
     },
     {
-      id: 'precision-timer',
-      name: 'Precision Timer',
-      icon: '⏱️',
-      description: 'Stop the glowing timer exactly on the secret target! Track your closest hits on the leaderboard.',
-      component: PrecisionTimerGame,
-      color: 'from-red-600 to-black',
-      difficulty: 'All Levels',
-      time: '1-3 minutes',
-      featured: true,
-      new: true,
-      category: 'brain',
-      logo: getGameLogo('precision-timer')
-    },
-    {
       id: 'bingo',
       name: 'Educational BINGO',
       icon: '🎲',
@@ -102,7 +121,6 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData, cl
       time: '15-30 minutes',
       multiplayer: true,
       featured: true,
-      new: true,
       category: 'featured',
       educational: true,
       requiresTeacher: true,
@@ -215,189 +233,137 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData, cl
       component: ClickerGame,
       color: 'from-yellow-500 to-orange-600',
       difficulty: 'Easy',
-      time: 'Unlimited',
+      time: '10+ minutes',
       category: 'adventure',
       logo: getGameLogo('hero-forge')
     },
 
     // Educational Games
     {
-      id: 'bingo-edu',
-      name: 'Classroom BINGO',
-      icon: '🎲',
-      description: 'Join your class BINGO game! Listen for questions and mark your card.',
-      component: StudentBingo,
-      color: 'from-pink-500 to-purple-600',
-      difficulty: 'Easy',
-      time: '15-30 minutes',
-      category: 'educational',
-      educational: true,
-      requiresTeacher: true,
-      logo: getGameLogo('classroom-bingo')
-    },
-    {
       id: 'math-race',
       name: 'Math Race',
-      icon: '🧮',
-      description: 'Solve math problems as fast as you can!',
+      icon: '🏎️',
+      description: 'Race through math problems to reach the finish line first!',
       component: MathRaceGame,
-      color: 'from-green-500 to-green-600',
+      color: 'from-green-500 to-blue-600',
       difficulty: 'Easy - Hard',
-      time: '2-5 minutes',
+      time: '5-15 minutes',
       category: 'educational',
+      educational: true,
       logo: getGameLogo('math-race')
     },
     {
-      id: 'crossword',
-      name: 'Crossword Puzzle',
-      icon: '🧩',
-      description: 'Solve crossword puzzles and expand your vocabulary.',
-      component: CrosswordGame,
-      color: 'from-indigo-500 to-purple-600',
-      difficulty: 'Easy - Hard',
-      time: '10-30 minutes',
-      category: 'educational',
-      logo: getGameLogo('crossword')
-    },
-    {
-      id: 'word-search',
-      name: 'Word Search',
-      icon: '📝',
-      description: 'Find hidden words in the letter grid.',
-      component: WordSearchGame,
-      color: 'from-blue-500 to-blue-600',
-      difficulty: 'Easy - Medium',
-      time: '5-15 minutes',
-      category: 'educational',
-      logo: getGameLogo('word-search')
-    },
-    {
       id: 'boggle',
-      name: 'Boggle Challenge',
-      icon: '📤',
-      description: 'Find as many words as you can in the letter grid.',
+      name: 'Word Scramble',
+      icon: '🔤',
+      description: 'Find as many words as you can in this fast-paced word game!',
       component: BoggleGame,
-      color: 'from-yellow-500 to-orange-500',
-      difficulty: 'Medium - Hard',
-      time: '3-5 minutes',
+      color: 'from-blue-500 to-purple-600',
+      difficulty: 'Medium',
+      time: '3-10 minutes',
       category: 'educational',
-      logo: getGameLogo('boggle')
+      educational: true,
+      logo: getGameLogo('word-scramble')
     },
     {
       id: 'noggle',
       name: 'Number Noggle',
-      icon: '📢',
-      description: 'Solve mathematical puzzles and equations!',
+      icon: '🔢',
+      description: 'Make target numbers using math operations! A numerical twist on word games.',
       component: NoggleGame,
-      color: 'from-red-500 to-pink-500',
+      color: 'from-orange-500 to-red-600',
       difficulty: 'Medium - Hard',
-      time: '3-5 minutes',
+      time: '5-10 minutes',
       category: 'educational',
-      logo: getGameLogo('noggle')
+      educational: true,
+      logo: getGameLogo('number-noggle')
     },
-
-    // Brain Games
     {
-      id: 'maze-brain',
-      name: 'Maze Challenge',
-      icon: '🧩',
-      description: 'Navigate through randomly generated mazes! Share seeds to race with friends on the same maze.',
-      component: MazeGame,
-      color: 'from-indigo-500 to-purple-600',
+      id: 'word-search',
+      name: 'Word Hunt',
+      icon: '🔍',
+      description: 'Find hidden words in the puzzle grid! Multiple themes and difficulties.',
+      component: WordSearchGame,
+      color: 'from-green-500 to-teal-600',
       difficulty: 'Easy - Hard',
-      time: '2-10 minutes',
-      category: 'brain',
-      logo: getGameLogo('maze-runner')
+      time: '5-15 minutes',
+      category: 'educational',
+      educational: true,
+      logo: getGameLogo('word-hunt')
+    },
+    {
+      id: 'crossword',
+      name: 'Crossword Challenge',
+      icon: '📝',
+      description: 'Solve crossword puzzles to test your vocabulary and knowledge!',
+      component: CrosswordGame,
+      color: 'from-indigo-500 to-purple-600',
+      difficulty: 'Medium - Hard',
+      time: '10-20 minutes',
+      category: 'educational',
+      educational: true,
+      logo: getGameLogo('crossword')
     },
     {
       id: 'memory-match',
-      name: 'Memory Game',
-      icon: '🧠',
-      description: 'Test your memory by matching pairs of cards.',
+      name: 'Memory Match',
+      icon: '🎴',
+      description: 'Classic memory card matching game with beautiful themes!',
       component: MemoryMatchGame,
-      color: 'from-purple-500 to-purple-600',
-      difficulty: 'Easy - Expert',
-      time: '3-8 minutes',
-      category: 'brain',
-      logo: getGameLogo('memory-challenge')
+      color: 'from-pink-500 to-rose-600',
+      difficulty: 'Easy - Medium',
+      time: '3-10 minutes',
+      category: 'educational',
+      logo: getGameLogo('memory-match')
     }
   ];
 
   const categories = [
-    { id: 'daily', name: 'Daily Challenges', icon: '📅' },
-    { id: 'featured', name: '⭐ Featured', icon: '⭐' },
-    { id: 'multiplayer', name: 'Multiplayer', icon: '🎮' },
-    { id: 'educational', name: 'Educational', icon: '📚' },
-    { id: 'brain', name: 'Brain Games', icon: '🧠' },
-    { id: 'adventure', name: 'Adventure', icon: '⚔️' }
+    { id: 'daily', name: 'Daily', icon: '🗓️' },
+    { id: 'featured', name: 'Featured', icon: '⭐' },
+    { id: 'educational', name: 'Learn', icon: '📚' },
+    { id: 'adventure', name: 'Adventure', icon: '🗡️' },
+    { id: 'multiplayer', name: 'Multiplayer', icon: '👥' }
   ];
 
   const getGamesInCategory = (categoryId) => {
-    if (categoryId === 'featured') {
-      return availableGames.filter(g => g.featured);
-    }
-    return availableGames.filter(g => g.category === categoryId);
+    return availableGames.filter(game => game.category === categoryId);
   };
 
   if (selectedGame) {
     const GameComponent = selectedGame.component;
-
     return (
-      <div className="space-y-4 md:space-y-6">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 p-4 md:p-6">
         {/* Game Header */}
-        <div className="bg-white rounded-xl shadow-lg p-4 md:p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3 md:space-x-4 min-w-0 flex-1">
+        <div className="max-w-7xl mx-auto mb-6">
+          <div className="bg-white rounded-2xl shadow-lg p-4 md:p-6 flex items-center justify-between">
+            <div className="flex items-center gap-4">
               <button
                 onClick={() => setSelectedGame(null)}
-                className="bg-gray-500 text-white px-3 md:px-4 py-2 rounded-lg hover:bg-gray-600 text-sm md:text-base flex-shrink-0"
+                className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-3 rounded-xl hover:shadow-lg transition-all"
               >
                 ← Back
               </button>
-              <div className="flex items-center space-x-2 md:space-x-3 min-w-0">
-                <div
-                  className={`w-10 h-10 md:w-14 md:h-14 rounded-lg overflow-hidden border border-gray-200 bg-white flex-shrink-0 flex items-center justify-center ${
-                    selectedGame.new ? 'ring-4 ring-yellow-400 ring-opacity-60' : ''
-                  } ${selectedGame.multiplayer && selectedGame.requiresClassCode ? 'ring-4 ring-red-400 ring-opacity-60' : ''}`}
-                >
-                  {(() => {
-                    const logoSource = resolveLogoSource(selectedGame.logo);
-                    return (
-                      <img
-                        src={logoSource.src}
-                        alt={`${selectedGame.name} logo`}
-                        className="max-w-full max-h-full object-contain p-1"
-                        data-fallbacks={serializeFallbacks(logoSource.fallbacks)}
-                        data-fallback-index="0"
-                        onError={logoErrorHandler}
-                      />
-                    );
-                  })()}
-                </div>
-                <div className="min-w-0">
-                  <h2 className="text-lg md:text-2xl font-bold text-gray-800 truncate flex items-center">
-                    <span className="hidden sm:inline mr-2">{selectedGame.icon}</span>
-                    {selectedGame.name}
-                    {selectedGame.new && <span className="ml-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full">NEW!</span>}
-                  </h2>
-                  <p className="text-gray-600 text-sm md:text-base hidden md:block">{selectedGame.description}</p>
-                </div>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-800 flex items-center gap-2">
+                  <span className="text-3xl">{selectedGame.icon}</span>
+                  {selectedGame.name}
+                </h1>
+                <p className="text-gray-600 text-sm md:text-base">{selectedGame.description}</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Game Component */}
-        <div className="bg-white rounded-xl shadow-lg p-3 md:p-6">
-          <GameComponent
-            gameMode="digital"
-            showToast={showToast}
-            students={[studentData]}
+        {/* Game Content */}
+        <div className="max-w-7xl mx-auto">
+          <GameComponent 
             studentData={studentData}
             updateStudentData={updateStudentData}
+            showToast={showToast}
             classData={classData}
-            storageKeySuffix={selectedGame.storageKeySuffix}
             classmates={classmates}
+            storageKeySuffix={selectedGame.storageKeySuffix}
           />
         </div>
       </div>
@@ -405,9 +371,9 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData, cl
   }
 
   return (
-    <div className="space-y-4 md:space-y-6">
-      {/* Clean Header */}
-      <div className="bg-white rounded-xl shadow-lg p-4 md:p-6">
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-2xl p-6 md:p-8 text-white shadow-xl">
         <div className="text-center">
           <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
             🎮 Game Center
@@ -562,20 +528,20 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData, cl
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div className="bg-white rounded-lg p-3">
+            <div className="font-semibold text-blue-700 mb-1">🔢 Math Facts Grid</div>
+            <div className="text-gray-600">Race against the clock to complete multiplication, addition, or subtraction grids! Compete with classmates for the fastest times.</div>
+          </div>
+          <div className="bg-white rounded-lg p-3">
+            <div className="font-semibold text-red-700 mb-1">⏱️ Precision Timer</div>
+            <div className="text-gray-600">Test your timing! Stop the timer as close to the target as possible. Who has the steadiest hand?</div>
+          </div>
+          <div className="bg-white rounded-lg p-3">
             <div className="font-semibold text-indigo-700 mb-1">🧩 Maze Runner</div>
             <div className="text-gray-600">Enter a seed from your teacher to race them on the same maze! Or generate your own and challenge friends.</div>
           </div>
           <div className="bg-white rounded-lg p-3">
             <div className="font-semibold text-pink-700 mb-1">🎲 Educational BINGO</div>
             <div className="text-gray-600">Select the same category as your teacher to get your BINGO card! Listen carefully and mark your squares to win.</div>
-          </div>
-          <div className="bg-white rounded-lg p-3">
-            <div className="font-semibold text-purple-700 mb-1">🧩 Memory Masters</div>
-            <div className="text-gray-600">Educational memory matching! Choose themes like math, reading, or create custom pairs. Play solo or with friends!</div>
-          </div>
-          <div className="bg-white rounded-lg p-3">
-            <div className="font-semibold text-blue-700 mb-1">🚀 Adventure Games</div>
-            <div className="text-gray-600">Your progress saves automatically - come back anytime to continue!</div>
           </div>
         </div>
       </div>
