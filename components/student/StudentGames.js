@@ -22,12 +22,13 @@ import StudentBingo from '../student/StudentBingo';
 import MazeGame from '../games/MazeGame';
 import DailyWordleChallenge from '../games/DailyWordleChallenge';
 import AmazingTypingAdventure from '../games/AmazingTypingAdventure';
+import PrecisionTimerGame from '../games/PrecisionTimerGame';
 
 const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 
 const resolveLogoSource = (logo) => normalizeImageSource(logo, DEFAULT_GAME_LOGO);
 
-const StudentGames = ({ studentData, showToast, updateStudentData, classData }) => {
+const StudentGames = ({ studentData, showToast, updateStudentData, classData, classmates = [] }) => {
   const [selectedGame, setSelectedGame] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('daily');
 
@@ -75,6 +76,20 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       featured: true,
       category: 'featured',
       logo: getGameLogo('maze-runner')
+    },
+    {
+      id: 'precision-timer',
+      name: 'Precision Timer',
+      icon: '⏱️',
+      description: 'Stop the glowing timer exactly on the secret target! Track your closest hits on the leaderboard.',
+      component: PrecisionTimerGame,
+      color: 'from-red-600 to-black',
+      difficulty: 'All Levels',
+      time: '1-3 minutes',
+      featured: true,
+      new: true,
+      category: 'brain',
+      logo: getGameLogo('precision-timer')
     },
     {
       id: 'bingo',
@@ -382,6 +397,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
             updateStudentData={updateStudentData}
             classData={classData}
             storageKeySuffix={selectedGame.storageKeySuffix}
+            classmates={classmates}
           />
         </div>
       </div>

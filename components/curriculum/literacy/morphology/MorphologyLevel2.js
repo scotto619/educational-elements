@@ -85,8 +85,96 @@ const MorphologyLevel2 = {
             'Clap once for each morpheme you can name.'
           ],
           background: 'from-blue-500 via-purple-500 to-pink-500'
+        },
+        {
+          title: 'Word Machine Challenge',
+          subtitle: 'Slide the morphemes into place',
+          icon: '🚂',
+          prompt: 'Read each combination and shout the finished word together.',
+          focusWords: [
+            'RE + READ + ER ➜ REREADER (person who reads again)',
+            'UN + KIND ➜ UNKIND (not kind)',
+            'PLAY + FUL ➜ PLAYFUL (full of play)',
+            'RE + TURN ➜ RETURN (turn again)'
+          ],
+          actions: [
+            'Trace the train as it moves from prefix to suffix.',
+            'Freeze like a statue when a morpheme cannot stand alone.'
+          ],
+          background: 'from-violet-500 via-blue-500 to-cyan-400'
+        },
+        {
+          title: 'Morphology Motions',
+          subtitle: 'Use your body to show each part',
+          icon: '🤸',
+          prompt: 'Move when you hear your role called out.',
+          focusWords: [
+            'PREFIX POP ➜ Jump forward like a rocket',
+            'BASE BOOST ➜ Stand tall and steady',
+            'SUFFIX SPARK ➜ Twirl and sparkle at the end',
+            'ONE-PART WORD ➜ Hold a superhero pose'
+          ],
+          actions: [
+            'Switch roles and act it again with new volunteers.',
+            'Add sound effects for extra flair!'
+          ],
+          background: 'from-fuchsia-500 via-rose-500 to-amber-400'
         }
       ],
+
+      studentPortalContent: {
+        hero: {
+          emoji: '🧠',
+          title: 'Meet the Morpheme Team',
+          subtitle: 'Prefixes, bases, and suffixes join forces to build words!',
+          gradient: 'from-indigo-500 via-sky-500 to-emerald-400'
+        },
+        ruleFocus: {
+          title: 'Word-Building Mission',
+          description: 'Every word has a base. Prefixes go at the front and suffixes go at the end to tweak the meaning.',
+          keyPoints: [
+            'A base carries the main idea.',
+            'Prefixes change meaning at the start.',
+            'Suffixes add detail at the end.'
+          ],
+          examples: [
+            { word: 'UNHAPPY', breakdown: 'UN + HAPPY', meaning: 'not happy' },
+            { word: 'PLAYFUL', breakdown: 'PLAY + FUL', meaning: 'full of play' },
+            { word: 'REWIND', breakdown: 'RE + WIND', meaning: 'wind again' }
+          ]
+        },
+        quickCheck: {
+          question: 'Which part is the base in REPLAYING?',
+          answers: ['RE', 'PLAY', 'ING'],
+          correctAnswer: 'PLAY',
+          celebration: '🎉 Base words stay strong in the middle!'
+        },
+        practice: [
+          {
+            title: 'Build-a-Word Workshop',
+            icon: '🛠️',
+            background: 'from-blue-500 via-purple-500 to-pink-500',
+            description: 'Drag or point to the prefix, base, and suffix that build the word shown.',
+            steps: [
+              'Pick a base card (PLAY, HELP, PACK).',
+              'Add a prefix or suffix card to change the meaning.',
+              'Read the new word and act it out!'
+            ]
+          },
+          {
+            title: 'Prefix Dash',
+            icon: '⚡',
+            background: 'from-emerald-400 via-teal-400 to-cyan-400',
+            description: 'Race to find the prefix before the timer ends.',
+            steps: [
+              'Teacher flashes a word.',
+              'Students point to the front part and shout its meaning.',
+              'Bonus: Say another word that uses the same prefix.'
+            ]
+          }
+        ],
+        exitTicket: 'Underline the base in UNLOCKED and circle the suffix.'
+      },
 
       practiceWordLists: [
         {
@@ -239,8 +327,96 @@ const MorphologyLevel2 = {
             'Whisper the spelling to a partner.'
           ],
           background: 'from-sky-500 via-cyan-400 to-lime-400'
+        },
+        {
+          title: 'Meaning Match-Up',
+          subtitle: 'Spot the picture clue',
+          icon: '🕵️',
+          prompt: 'Hold up one finger for word A and two fingers for word B.',
+          focusWords: [
+            'BE ➜ to exist vs BEE ➜ buzzing insect',
+            'FLOWER ➜ blooming plant vs FLOUR ➜ baking powder',
+            'PANE ➜ window glass vs PAIN ➜ ouch feeling',
+            'MADE ➜ created vs MAID ➜ helper'
+          ],
+          actions: [
+            'Explain your choice with a complete sentence.',
+            'Switch partners and quiz each other.'
+          ],
+          background: 'from-amber-400 via-orange-500 to-rose-500'
+        },
+        {
+          title: 'Trickster Twin Sentences',
+          subtitle: 'Choose the right hero word',
+          icon: '🦸‍♂️',
+          prompt: 'Read the sentence and step to the side that matches.',
+          focusWords: [
+            'I can HEAR the drums vs Come over HERE',
+            'Will you WRITE the card vs Turn RIGHT at the sign',
+            'We ATE pizza vs There are EIGHT slices',
+            'Please WEAR your hat vs WHERE is your hat?'
+          ],
+          actions: [
+            'Add a quick action to show the meaning (pretend to write, point, etc.).',
+            'Swap volunteers to read the next clue.'
+          ],
+          background: 'from-purple-500 via-indigo-500 to-blue-500'
         }
       ],
+
+      studentPortalContent: {
+        hero: {
+          emoji: '🦸',
+          title: 'Happy Homophone Heroes',
+          subtitle: 'Sound twins with different spellings and meanings!',
+          gradient: 'from-orange-400 via-rose-500 to-purple-500'
+        },
+        ruleFocus: {
+          title: 'Today’s Rule',
+          description: 'Homophones sound the same but mean different things. Picture clues help you choose the right spelling.',
+          keyPoints: [
+            'Listen for the sentence meaning.',
+            'Look for picture clues or context words.',
+            'Check the spelling to be sure.'
+          ],
+          examples: [
+            { word: 'TOO', breakdown: 'Means “also” or “very”', meaning: 'I want cake too.' },
+            { word: 'TWO', breakdown: 'Number 2', meaning: 'We have two puppies.' },
+            { word: 'TO', breakdown: 'Direction word', meaning: 'We walk to school.' }
+          ]
+        },
+        quickCheck: {
+          question: 'Which spelling fits: “Let’s ____ the new friends”?',
+          answers: ['MEET', 'MEAT'],
+          correctAnswer: 'MEET',
+          celebration: '🎉 Context clues save the day!'
+        },
+        practice: [
+          {
+            title: 'Hero Cape Sort',
+            icon: '🦹‍♀️',
+            background: 'from-red-400 via-orange-400 to-yellow-400',
+            description: 'Match the homophone to its picture clue.',
+            steps: [
+              'Lay out picture cards (sea, see, sun, son).',
+              'Match each card with the correct spelling.',
+              'Say the sentence out loud to double-check.'
+            ]
+          },
+          {
+            title: 'Sentence Switch Challenge',
+            icon: '🔄',
+            background: 'from-cyan-400 via-sky-400 to-indigo-400',
+            description: 'Swap the wrong homophone to fix the sentence.',
+            steps: [
+              'Read a silly sentence: “I can sea the ship.”',
+              'Rewrite it using the correct spelling.',
+              'Draw a quick doodle to match your sentence.'
+            ]
+          }
+        ],
+        exitTicket: 'Write a mini-comic using TO, TOO, and TWO correctly.'
+      },
 
       practiceWordLists: [
         {
@@ -381,8 +557,95 @@ const MorphologyLevel2 = {
             'Share your favourite family word with a partner.'
           ],
           background: 'from-lime-400 via-teal-400 to-blue-500'
+        },
+        {
+          title: 'Suffix Power Rooms',
+          subtitle: 'What does each ending tell us?',
+          icon: '🔌',
+          prompt: 'Point to the room that shows “happening now” or “person who”.',
+          focusWords: [
+            'PLAY ➜ PLAYING (happening now)',
+            'HELP ➜ HELPER (person who helps)',
+            'CLAP ➜ CLAPPED (already happened)',
+            'JUMP ➜ JUMPS (more than one action)'
+          ],
+          actions: [
+            'Hold up fingers to show tense (1 = now, 2 = past, 3 = person).',
+            'Create a quick motion to match each new word.'
+          ],
+          background: 'from-amber-300 via-yellow-400 to-lime-400'
+        },
+        {
+          title: 'Word Family Chef',
+          subtitle: 'Cook up tasty combos',
+          icon: '👩‍🍳',
+          prompt: 'Choose a base and add toppings (suffixes) to serve a new word.',
+          focusWords: [
+            'BAKE ➜ bakes, baking, baked, baker',
+            'PAINT ➜ paints, painting, painted, painter',
+            'READ ➜ reads, reading, reader, reread'
+          ],
+          actions: [
+            'Pretend to stir the pot when the word works.',
+            'Make a buzzer sound if the combination is nonsense.'
+          ],
+          background: 'from-rose-400 via-pink-400 to-purple-500'
         }
       ],
+
+      studentPortalContent: {
+        hero: {
+          emoji: '🏠',
+          title: 'Word Family Builders',
+          subtitle: 'One base, many related words!',
+          gradient: 'from-yellow-400 via-orange-400 to-pink-500'
+        },
+        ruleFocus: {
+          title: 'Family Rule',
+          description: 'Words belong to the same family when they share a base and add different endings.',
+          keyPoints: [
+            'Suffixes can show time (past, now).',
+            'Some suffixes tell who is doing the action.',
+            'The base keeps the main meaning.'
+          ],
+          examples: [
+            { word: 'PLAYED', breakdown: 'PLAY + ED', meaning: 'play that already happened' },
+            { word: 'PLAYER', breakdown: 'PLAY + ER', meaning: 'person who plays' },
+            { word: 'PLAYING', breakdown: 'PLAY + ING', meaning: 'happening now' }
+          ]
+        },
+        quickCheck: {
+          question: 'Which suffix makes “person who helps”?',
+          answers: ['-ING', '-ER', '-ED'],
+          correctAnswer: '-ER',
+          celebration: '🎉 Helpers wear the -ER badge!'
+        },
+        practice: [
+          {
+            title: 'Family Sorting Station',
+            icon: '🗂️',
+            background: 'from-blue-400 via-teal-400 to-emerald-400',
+            description: 'Sort word cards under the matching base word house.',
+            steps: [
+              'Place base word roofs in a row.',
+              'Deal out suffix cards and build as many real family members as you can.',
+              'Read each word aloud with expression.'
+            ]
+          },
+          {
+            title: 'Suffix Switch-Up',
+            icon: '🔁',
+            background: 'from-purple-400 via-indigo-400 to-sky-400',
+            description: 'Swap suffixes to change the meaning.',
+            steps: [
+              'Start with a base (HELP).',
+              'Try each suffix (-ING, -ED, -ER).',
+              'Explain what the new word means in your own words.'
+            ]
+          }
+        ],
+        exitTicket: 'Write two members of the JUMP family and tell what each ending means.'
+      },
 
       practiceWordLists: [
         {
@@ -515,8 +778,94 @@ const MorphologyLevel2 = {
             'Stretch arms wide while saying the full plural.'
           ],
           background: 'from-blue-500 via-indigo-500 to-purple-500'
+        },
+        {
+          title: 'Sound Detective',
+          subtitle: 'Listen for the secret ending sound',
+          icon: '🕵️‍♀️',
+          prompt: 'Cover your ears, then show thumbs up for -s or jazz hands for -es.',
+          focusWords: [
+            'bus ➜ buses (ends in /s/)',
+            'wish ➜ wishes (ends in /sh/)',
+            'box ➜ boxes (ends in /ks/)',
+            'crash ➜ crashes (ends in /sh/)'
+          ],
+          actions: [
+            'Whisper the base, shout the plural.',
+            'Bounce to the rhythm of the extra syllable.'
+          ],
+          background: 'from-cyan-400 via-sky-400 to-lime-400'
+        },
+        {
+          title: 'Plural Parade',
+          subtitle: 'March the words into the correct lane',
+          icon: '🎺',
+          prompt: 'Hold a mini parade march for -s words and a shimmy for -es words.',
+          focusWords: [
+            'cars, stars, balloons, games',
+            'bushes, lunches, dresses, foxes'
+          ],
+          actions: [
+            'Call out the rule as you march: “Smooth gets -s, hiss adds -es!”.',
+            'Trade places with a friend and try again with new cards.'
+          ],
+          background: 'from-amber-400 via-rose-400 to-magenta-500'
         }
       ],
+
+      studentPortalContent: {
+        hero: {
+          emoji: '🐾',
+          title: 'Plural Power',
+          subtitle: 'Choose -s or -es to show more than one!',
+          gradient: 'from-green-400 via-teal-400 to-blue-500'
+        },
+        ruleFocus: {
+          title: 'Plural Rule',
+          description: 'Most nouns take -s. If the word ends with a hissing sound (s, x, z, ch, sh), add -es to make an extra syllable.',
+          keyPoints: [
+            'Listen to the ending sound.',
+            'Words ending in s, x, z, ch, sh need -es.',
+            'Everything else usually just takes -s.'
+          ],
+          examples: [
+            { word: 'cats', breakdown: 'cat + s', meaning: 'more than one cat' },
+            { word: 'dishes', breakdown: 'dish + es', meaning: 'more than one dish' },
+            { word: 'boxes', breakdown: 'box + es', meaning: 'more than one box' }
+          ]
+        },
+        quickCheck: {
+          question: 'What ending does “brush” need?',
+          answers: ['-s', '-es'],
+          correctAnswer: '-es',
+          celebration: '🎉 Brushes need the extra syllable!'
+        },
+        practice: [
+          {
+            title: 'Ending Echo',
+            icon: '🎤',
+            background: 'from-blue-400 via-indigo-400 to-purple-500',
+            description: 'Echo the base and plural together.',
+            steps: [
+              'Say the base word quietly.',
+              'Add the ending loudly (-s or -es).',
+              'Clap the number of syllables you hear.'
+            ]
+          },
+          {
+            title: 'Plural Picture Hunt',
+            icon: '🖼️',
+            background: 'from-emerald-400 via-lime-400 to-yellow-400',
+            description: 'Find classroom objects and turn them into plurals.',
+            steps: [
+              'Pick an object card or draw your own.',
+              'Decide if it needs -s or -es.',
+              'Write the plural in a speech bubble for the picture.'
+            ]
+          }
+        ],
+        exitTicket: 'Circle the correct plural: foxs or foxes? Then explain why.'
+      },
 
       practiceWordLists: [
         {
@@ -649,8 +998,96 @@ const MorphologyLevel2 = {
             'Air-write the letters -es when you hear them.'
           ],
           background: 'from-indigo-500 via-blue-500 to-teal-400'
+        },
+        {
+          title: 'Sentence Remix',
+          subtitle: 'Switch the subject, switch the ending',
+          icon: '🎛️',
+          prompt: 'Change “I hop” to “He ___” and fill in the new ending.',
+          focusWords: [
+            'I play ➜ She plays',
+            'We wish ➜ It wishes',
+            'They buzz ➜ He buzzes',
+            'You wash ➜ She washes'
+          ],
+          actions: [
+            'Tap shoulders when the subject changes.',
+            'Snap fingers when you add the new ending.'
+          ],
+          background: 'from-pink-500 via-rose-500 to-orange-400'
+        },
+        {
+          title: 'Verb Ending Detective',
+          subtitle: 'Spot the tricky verbs',
+          icon: '🕵️‍♂️',
+          prompt: 'Use magnifying glasses (hands) to zoom in on the ending you need.',
+          focusWords: [
+            'mix ➜ mixes',
+            'watch ➜ watches',
+            'push ➜ pushes',
+            'fix ➜ fixes'
+          ],
+          actions: [
+            'Whisper “extra syllable” when you hear -es.',
+            'Draw the ending in the air and pass the detective badge to a friend.'
+          ],
+          background: 'from-teal-400 via-cyan-400 to-blue-500'
         }
       ],
+
+      studentPortalContent: {
+        hero: {
+          emoji: '⭐',
+          title: 'Third-Person Verb Superstars',
+          subtitle: 'He/She/It verbs need special endings!',
+          gradient: 'from-purple-500 via-pink-500 to-orange-400'
+        },
+        ruleFocus: {
+          title: 'Verb Rule',
+          description: 'When the subject is he, she, it, or a name, verbs take -s. If the base ends in s, x, z, ch, sh, or o sounds, add -es.',
+          keyPoints: [
+            'Match the subject to the verb ending.',
+            'Listen for hissing sounds that trigger -es.',
+            'Say the sentence aloud to check how it sounds.'
+          ],
+          examples: [
+            { word: 'She sings', breakdown: 'sing + s', meaning: 'She is doing it now.' },
+            { word: 'It buzzes', breakdown: 'buzz + es', meaning: 'The insect makes noise.' },
+            { word: 'Dad fixes', breakdown: 'fix + es', meaning: 'Dad repairs it.' }
+          ]
+        },
+        quickCheck: {
+          question: 'Fill the blank: “The cat ____ (wash) its paws.”',
+          answers: ['wash', 'washes'],
+          correctAnswer: 'washes',
+          celebration: '🎉 Purrfect verb ending!'
+        },
+        practice: [
+          {
+            title: 'Subject Swap Cards',
+            icon: '🔄',
+            background: 'from-indigo-400 via-violet-400 to-magenta-400',
+            description: 'Swap subjects to hear how the verb ending changes.',
+            steps: [
+              'Draw a base sentence card (I jump).',
+              'Swap in a new subject (He/She/It).',
+              'Read the updated sentence with the correct ending.'
+            ]
+          },
+          {
+            title: 'Action Freeze Frames',
+            icon: '🕺',
+            background: 'from-amber-400 via-yellow-400 to-lime-400',
+            description: 'Act out verbs while classmates guess the correct sentence.',
+            steps: [
+              'One student draws a verb card and acts it silently.',
+              'Classmates say “He/She/It ___” with the correct ending.',
+              'Freeze in a superstar pose when the sentence is correct.'
+            ]
+          }
+        ],
+        exitTicket: 'Write one sentence with -s and one with -es endings for he/she/it subjects.'
+      },
 
       practiceWordLists: [
         {

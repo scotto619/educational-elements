@@ -15,6 +15,7 @@ import StudentSpelling from '../components/student/StudentSpelling';
 import StudentReading from '../components/student/StudentReading';
 import StudentMathMentals from '../components/student/StudentMathMentals';
 import StudentMaths from '../components/student/StudentMaths';
+import StudentMorphology from '../components/student/StudentMorphology';
 import VisualWritingPrompts from '../components/curriculum/literacy/VisualWritingPrompts';
 import DailyMysteryBoxModal from '../components/student/DailyMysteryBoxModal';
 
@@ -1016,8 +1017,11 @@ const StudentPortal = () => {
   const literacySubTabs = [
     { id: 'reading', name: 'Reading', icon: '📖', shortName: 'Reading' },
     { id: 'writing', name: 'Writing', icon: '✍️', shortName: 'Writing' },
-    { id: 'spelling', name: 'Spelling', icon: '🔤', shortName: 'Spelling' }
+    { id: 'spelling', name: 'Spelling', icon: '🔤', shortName: 'Spelling' },
+    { id: 'morphology', name: 'Morphology', icon: '🧠', shortName: 'Morph' }
   ];
+
+  const hasMorphologyLesson = Boolean(classData?.toolkitData?.morphology?.currentLesson);
 
   // Handle tab changes
   const handleTabChange = (tabId) => {
@@ -1027,7 +1031,7 @@ const StudentPortal = () => {
     if (tabId === 'maths') {
       setActiveSubTab('mentals');
     } else if (tabId === 'literacy') {
-      setActiveSubTab('reading');
+      setActiveSubTab(hasMorphologyLesson ? 'morphology' : 'reading');
     } else {
       setActiveSubTab(null);
     }
@@ -1099,15 +1103,21 @@ const StudentPortal = () => {
             );
           case 'spelling':
             return (
-              <StudentSpelling 
+              <StudentSpelling
                 studentData={studentData}
                 classData={classData}
                 showToast={showToast}
               />
             );
+          case 'morphology':
+            return (
+              <StudentMorphology
+                classData={classData}
+              />
+            );
           default:
             return (
-              <StudentReading 
+              <StudentReading
                 studentData={studentData}
                 classData={classData}
                 showToast={showToast}
@@ -1138,11 +1148,12 @@ const StudentPortal = () => {
       
       case 'games':
         return (
-          <StudentGames 
+          <StudentGames
             studentData={studentData}
             showToast={showToast}
             updateStudentData={updateStudentData}
             classData={classData}
+            classmates={availableStudents}
           />
         );
       
@@ -1260,13 +1271,18 @@ const StudentPortal = () => {
                   key={subTab.id}
                   onClick={() => setActiveSubTab(subTab.id)}
                   className={`flex-shrink-0 flex items-center justify-center space-x-2 px-3 md:px-6 py-2 md:py-3 transition-all duration-200 min-w-[100px] md:min-w-0 ${
-                    activeSubTab === subTab.id 
-                      ? 'text-purple-600 border-b-2 border-purple-600 bg-white font-semibold' 
+                    activeSubTab === subTab.id
+                      ? 'text-purple-600 border-b-2 border-purple-600 bg-white font-semibold'
                       : 'text-gray-600 hover:text-gray-800 hover:bg-white hover:bg-opacity-50'
                   }`}
                 >
                   <span className="text-base md:text-lg">{subTab.icon}</span>
                   <span className="text-xs md:text-sm">{subTab.shortName}</span>
+                  {subTab.id === 'morphology' && hasMorphologyLesson && (
+                    <span className="ml-1 inline-flex items-center justify-center rounded-full bg-emerald-100 text-emerald-700 text-[10px] md:text-xs font-semibold px-2 py-0.5">
+                      NEW
+                    </span>
+                  )}
                 </button>
               ))}
             </div>

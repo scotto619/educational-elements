@@ -486,8 +486,8 @@ const CurriculumCornerTab = ({
     };
     
     // Add Firebase save/load props for specific activities that need them
-    if (activeActivity.id === 'literacy-warmup' || 
-        activeActivity.id === 'math-warmup' || 
+    if (activeActivity.id === 'literacy-warmup' ||
+        activeActivity.id === 'math-warmup' ||
         activeActivity.id === 'spelling-program' ||
         activeActivity.id === 'fluency-practice' ||
         activeActivity.id === 'math-mentals' ||
@@ -495,7 +495,8 @@ const CurriculumCornerTab = ({
         activeActivity.id === 'interactive-angles' ||
         activeActivity.id === 'beginner-readers' ||
         activeActivity.id === 'reading-for-fun' ||
-        activeActivity.id === 'readers-theatre') {
+        activeActivity.id === 'readers-theatre' ||
+        activeActivity.id === 'morphology') {
       activityProps.saveData = saveData;
       activityProps.loadedData = loadedData;
     }
