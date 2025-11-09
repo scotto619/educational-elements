@@ -435,7 +435,7 @@ const TeachersToolkitTab = ({
             />
           )}
           {activeToolkitTab === 'brain-breaks' && (
-            <BrainBreaks 
+            <BrainBreaks
               showToast={showNotification}
             />
           )}

@@ -3,6 +3,8 @@ import { useRouter } from 'next/router';
 import { auth, firestore } from '../utils/firebase';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { DEFAULT_UPDATES, fetchDashboardUpdates } from '../services/globalContent';
+import { isOwnerEmail } from '../utils/ownerEmails';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -12,6 +14,7 @@ export default function Dashboard() {
   const [savedClasses, setSavedClasses] = useState([]);
   const [trialDaysLeft, setTrialDaysLeft] = useState(0);
   const [architectureVersion, setArchitectureVersion] = useState('unknown');
+  const [dashboardUpdates, setDashboardUpdates] = useState(DEFAULT_UPDATES);
   
   // Class creation states
   const [showCreateClassModal, setShowCreateClassModal] = useState(false);
@@ -33,6 +36,32 @@ export default function Dashboard() {
     'Time Mage F', 'Time Mage M', 'Wizard F', 'Wizard M'
   ];
 
+  const getUpdateBadgeStyles = (status) => {
+    switch ((status || '').toUpperCase()) {
+      case 'NEW':
+        return 'bg-green-100 text-green-700 border-green-200';
+      case 'IMPROVED':
+        return 'bg-blue-100 text-blue-700 border-blue-200';
+      case 'ENHANCED':
+        return 'bg-purple-100 text-purple-700 border-purple-200';
+      default:
+        return 'bg-gray-100 text-gray-700 border-gray-200';
+    }
+  };
+
+  const getUpdateBorderClass = (status) => {
+    switch ((status || '').toUpperCase()) {
+      case 'NEW':
+        return 'border-green-200';
+      case 'IMPROVED':
+        return 'border-blue-200';
+      case 'ENHANCED':
+        return 'border-purple-200';
+      default:
+        return 'border-gray-200';
+    }
+  };
+
   // Calculate days until January 1, 2026
   useEffect(() => {
     const calculateTrialDays = () => {
@@ -45,8 +74,29 @@ export default function Dashboard() {
 
     calculateTrialDays();
     const interval = setInterval(calculateTrialDays, 1000 * 60 * 60);
-    
+
     return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadUpdates = async () => {
+      try {
+        const updates = await fetchDashboardUpdates();
+        if (!cancelled) {
+          setDashboardUpdates(updates.length > 0 ? updates : DEFAULT_UPDATES);
+        }
+      } catch (error) {
+        console.error('❌ Error loading dashboard updates:', error);
+      }
+    };
+
+    loadUpdates();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Check for successful checkout
@@ -662,6 +712,14 @@ export default function Dashboard() {
             
             {/* Action Buttons - Mobile Stack */}
             <div className="flex flex-col sm:flex-row w-full lg:w-auto space-y-2 sm:space-y-0 sm:space-x-3">
+              {isOwnerEmail(user?.email) && (
+                <button
+                  onClick={() => router.push('/admin')}
+                  className="w-full sm:w-auto bg-indigo-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-indigo-700 font-semibold text-sm sm:text-base"
+                >
+                  Open Admin Console
+                </button>
+              )}
               {userData?.stripeCustomerId && (
                 <button
                   onClick={handleManageSubscription}
@@ -734,40 +792,23 @@ export default function Dashboard() {
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                <div className="bg-white rounded-lg p-3 sm:p-4 border-2 border-green-200 shadow-sm">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full"></div>
-                    <span className="font-bold text-green-700 text-xs sm:text-sm">NEW</span>
-                    <span className="text-gray-600 text-xs sm:text-sm">V2 Architecture Migration</span>
-                  </div>
-                  <p className="text-xs sm:text-sm text-gray-700 leading-relaxed">
-                    Improved performance and reliability! XP awarding is now faster and more reliable with the new database architecture.
-                  </p>
-                </div>
-
-                <div className="bg-white rounded-lg p-3 sm:p-4 border-2 border-blue-200 shadow-sm">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-2 h-2 sm:w-3 sm:h-3 bg-blue-500 rounded-full"></div>
-                    <span className="font-bold text-blue-700 text-xs sm:text-sm">IMPROVED</span>
-                    <span className="text-gray-600 text-xs sm:text-sm">Featured Daily Deals</span>
-                  </div>
-                  <p className="text-xs sm:text-sm text-gray-700 leading-relaxed">
-                    The Shop now features rotating daily special offers with up to 30% discounts on 
-                    avatars, pets, and rewards to keep students engaged!
-                  </p>
-                </div>
-
-                <div className="bg-white rounded-lg p-3 sm:p-4 border-2 border-purple-200 shadow-sm">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-2 h-2 sm:w-3 sm:h-3 bg-purple-500 rounded-full"></div>
-                    <span className="font-bold text-purple-700 text-xs sm:text-sm">ENHANCED</span>
-                    <span className="text-gray-600 text-xs sm:text-sm">Teachers Toolkit</span>
-                  </div>
-                  <p className="text-xs sm:text-sm text-gray-700 leading-relaxed">
-                    Expanded classroom management tools including job assignments with XP/coin rewards, 
-                    timetable creation, birthday tracking, and more organizational features.
-                  </p>
-                </div>
+                {dashboardUpdates.map((update) => (
+                  <article
+                    key={update.id}
+                    className={`bg-white rounded-lg p-3 sm:p-4 border-2 shadow-sm flex flex-col gap-2 ${getUpdateBorderClass(update.status)}`}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`text-xs sm:text-sm font-semibold px-2 py-1 rounded-full border ${getUpdateBadgeStyles(update.status)}`}>
+                        {(update.status || 'UPDATE').toUpperCase()}
+                      </span>
+                      {update.highlight && (
+                        <span className="text-[11px] sm:text-xs text-gray-500 font-medium truncate">{update.highlight}</span>
+                      )}
+                    </div>
+                    <h4 className="text-sm sm:text-base font-semibold text-gray-800">{update.title}</h4>
+                    <p className="text-xs sm:text-sm text-gray-700 leading-relaxed">{update.summary}</p>
+                  </article>
+                ))}
               </div>
             </div>
           </div>
