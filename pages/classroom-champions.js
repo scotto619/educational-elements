@@ -32,6 +32,12 @@ import {
   listenToClassStudents
 } from '../utils/firebase-new';
 import { DEFAULT_TEACHER_REWARDS, buildShopInventory, getDailySpecials } from '../utils/shopSpecials';
+import {
+  DEFAULT_UPDATES,
+  fetchDashboardUpdates,
+  fetchGlobalShopItems,
+  mergeShopInventories
+} from '../services/globalContent';
 
 // Import components (unchanged)
 import DashboardTab from '../components/tabs/DashboardTab';
@@ -62,7 +68,7 @@ const DEFAULT_XP_CATEGORIES = [
 // Shop constants (unchanged)
 const AVAILABLE_AVATARS = [ 'Alchemist F', 'Alchemist M', 'Archer F', 'Archer M', 'Barbarian F', 'Barbarian M', 'Bard F', 'Bard M', 'Beastmaster F', 'Beastmaster M', 'Cleric F', 'Cleric M', 'Crystal Sage F', 'Crystal Sage M', 'Druid F', 'Druid M', 'Engineer F', 'Engineer M', 'Ice Mage F', 'Ice Mage M', 'Illusionist F', 'Illusionist M', 'Knight F', 'Knight M', 'Monk F', 'Monk M', 'Necromancer F', 'Necromancer M', 'Orc F', 'Orc M', 'Paladin F', 'Paladin M', 'Rogue F', 'Rogue M', 'Sky Knight F', 'Sky Knight M', 'Time Mage F', 'Time Mage M', 'Wizard F', 'Wizard M' ];
 
-const SHOP_BASIC_AVATARS = [
+const BASE_SHOP_BASIC_AVATARS = [
   { name: 'Banana', price: 10, path: '/shop/Basic/Banana.png' },
   { name: 'Basketball', price: 12, path: '/shop/Basic/Basketball.png' },
   { name: 'BasketballGirl', price: 12, path: '/shop/Basic/BasketballGirl.png' },
@@ -95,9 +101,9 @@ const SHOP_BASIC_AVATARS = [
   { name: 'Terminator', price: 30, path: '/shop/Basic/Update1/Terminator.png' }
 ];
 
-const SHOP_PREMIUM_AVATARS = [ { name: 'Dwarf', price: 45, path: '/shop/Premium/Dwarf.png' }, { name: 'Dwarf2', price: 45, path: '/shop/Premium/Dwarf2.png' }, { name: 'FarmerBoy Premium', price: 35, path: '/shop/Premium/FarmerBoy.png' }, { name: 'FarmerGirl Premium', price: 35, path: '/shop/Premium/FarmerGirl.png' }, { name: 'Goblin2', price: 30, path: '/shop/Premium/Goblin2.png' }, { name: 'GoblinGirl2', price: 30, path: '/shop/Premium/GoblinGirl2.png' }, { name: 'King', price: 60, path: '/shop/Premium/King.png' }, { name: 'MechanicGirl', price: 40, path: '/shop/Premium/MechanicGirl.png' }, { name: 'PirateBoy Premium', price: 42, path: '/shop/Premium/PirateBoy.png' }, { name: 'PirateGirl Premium', price: 42, path: '/shop/Premium/PirateGirl.png' }, { name: 'Queen', price: 60, path: '/shop/Premium/Queen.png' }, { name: 'RobotBoy Premium', price: 38, path: '/shop/Premium/RobotBoy.png' }, { name: 'RobotGirl Premium', price: 38, path: '/shop/Premium/RobotGirl.png' }, { name: 'Vampire2', price: 40, path: '/shop/Premium/Vampire2.png' }, { name: 'VampireGirl2', price: 40, path: '/shop/Premium/VampireGirl2.png' } ];
+const BASE_SHOP_PREMIUM_AVATARS = [ { name: 'Dwarf', price: 45, path: '/shop/Premium/Dwarf.png' }, { name: 'Dwarf2', price: 45, path: '/shop/Premium/Dwarf2.png' }, { name: 'FarmerBoy Premium', price: 35, path: '/shop/Premium/FarmerBoy.png' }, { name: 'FarmerGirl Premium', price: 35, path: '/shop/Premium/FarmerGirl.png' }, { name: 'Goblin2', price: 30, path: '/shop/Premium/Goblin2.png' }, { name: 'GoblinGirl2', price: 30, path: '/shop/Premium/GoblinGirl2.png' }, { name: 'King', price: 60, path: '/shop/Premium/King.png' }, { name: 'MechanicGirl', price: 40, path: '/shop/Premium/MechanicGirl.png' }, { name: 'PirateBoy Premium', price: 42, path: '/shop/Premium/PirateBoy.png' }, { name: 'PirateGirl Premium', price: 42, path: '/shop/Premium/PirateGirl.png' }, { name: 'Queen', price: 60, path: '/shop/Premium/Queen.png' }, { name: 'RobotBoy Premium', price: 38, path: '/shop/Premium/RobotBoy.png' }, { name: 'RobotGirl Premium', price: 38, path: '/shop/Premium/RobotGirl.png' }, { name: 'Vampire2', price: 40, path: '/shop/Premium/Vampire2.png' }, { name: 'VampireGirl2', price: 40, path: '/shop/Premium/VampireGirl2.png' } ];
 
-const SHOP_BASIC_PETS = [
+const BASE_SHOP_BASIC_PETS = [
   { name: 'Alchemist Pet', price: 25, path: '/shop/BasicPets/Alchemist.png' },
   { name: 'Barbarian Pet', price: 30, path: '/shop/BasicPets/Barbarian.png' },
   { name: 'Bard Pet', price: 25, path: '/shop/BasicPets/Bard.png' },
@@ -142,7 +148,7 @@ const SHOP_BASIC_PETS = [
   { name: 'Shark Buddy', price: 33, path: '/shop/Basic/Update1/SharkPet.png' }
 ];
 
-const SHOP_PREMIUM_PETS = [ { name: 'Lion Pet', price: 60, path: '/shop/PremiumPets/LionPet.png' }, { name: 'Snake Pet', price: 50, path: '/shop/PremiumPets/SnakePet.png' }, { name: 'Vampire Pet', price: 50, path: '/shop/PremiumPets/VampirePet.png' } ];
+const BASE_SHOP_PREMIUM_PETS = [ { name: 'Lion Pet', price: 60, path: '/shop/PremiumPets/LionPet.png' }, { name: 'Snake Pet', price: 50, path: '/shop/PremiumPets/SnakePet.png' }, { name: 'Vampire Pet', price: 50, path: '/shop/PremiumPets/VampirePet.png' } ];
 
 // ===============================================
 // NEW: HALLOWEEN THEMED ITEMS - LIMITED TIME!
@@ -195,21 +201,6 @@ const orderStudentsByPreference = (studentsList = [], order = []) => {
   });
 };
 
-// Helper functions - UPDATED to include Halloween items
-const getAvatarImage = (avatarBase, level) => {
-  // Check all shop avatar arrays including Halloween
-  const shopItem = [...SHOP_BASIC_AVATARS, ...SHOP_PREMIUM_AVATARS, ...HALLOWEEN_BASIC_AVATARS, ...HALLOWEEN_PREMIUM_AVATARS]
-    .find(a => a.name.toLowerCase() === (avatarBase || '').toLowerCase());
-  if (shopItem) return shopItem.path;
-
-  // Default to traditional avatar system
-  const lvl = Math.min(4, Math.max(1, Math.round(level || 1)));
-  const base = encodeURIComponent(avatarBase || 'Wizard F');
-  return `/avatars/${base}/Level ${lvl}.png`;
-};
-
-const getPetImage = (pet) => normalizeImageSource(resolvePetImageSource(pet), DEFAULT_PET_IMAGE);
-
 const calculateAvatarLevel = (xp) => (xp >= 300 ? 4 : xp >= 200 ? 3 : xp >= 100 ? 2 : 1);
 const calculateCoins = (student) => Math.max(0, Math.floor((student?.totalPoints || 0) / GAME_CONFIG.COINS_PER_XP) + (student?.currency || 0) - (student?.coinsSpent || 0));
 const playSound = (sound = 'ding') => { try { const audio = new Audio(`/sounds/${sound}.mp3`); audio.volume = 0.3; audio.play().catch(e => {}); } catch(e) {} };
@@ -261,6 +252,15 @@ const ClassroomChampions = () => {
   const petImageErrorHandler = createImageErrorHandler(DEFAULT_PET_IMAGE);
   const studentOrderRef = useRef([]);
   const [xpCategories, setXpCategories] = useState(DEFAULT_XP_CATEGORIES);
+
+  const baseShopInventory = useMemo(() => ({
+    basicAvatars: [...BASE_SHOP_BASIC_AVATARS],
+    premiumAvatars: [...BASE_SHOP_PREMIUM_AVATARS],
+    basicPets: [...BASE_SHOP_BASIC_PETS],
+    premiumPets: [...BASE_SHOP_PREMIUM_PETS]
+  }), []);
+  const [shopInventory, setShopInventory] = useState(baseShopInventory);
+  const [dashboardUpdates, setDashboardUpdates] = useState(DEFAULT_UPDATES);
   
   // UI state
   const [showAddStudentModal, setShowAddStudentModal] = useState(false);
@@ -306,17 +306,69 @@ const ClassroomChampions = () => {
     ...HALLOWEEN_PETS.map(item => ({ ...item, category: 'halloween', type: 'pet' }))
   ]), []);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadGlobalContent = async () => {
+      try {
+        const [globalInventory, globalUpdates] = await Promise.all([
+          fetchGlobalShopItems(),
+          fetchDashboardUpdates()
+        ]);
+
+        if (cancelled) return;
+
+        setShopInventory(mergeShopInventories(baseShopInventory, globalInventory));
+        setDashboardUpdates(globalUpdates.length > 0 ? globalUpdates : DEFAULT_UPDATES);
+      } catch (err) {
+        console.error('❌ Error loading global marketplace content:', err);
+      }
+    };
+
+    loadGlobalContent();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [baseShopInventory]);
+
+  const allAvatarSkins = useMemo(() => ([
+    ...shopInventory.basicAvatars,
+    ...shopInventory.premiumAvatars,
+    ...HALLOWEEN_BASIC_AVATARS,
+    ...HALLOWEEN_PREMIUM_AVATARS
+  ]), [shopInventory]);
+
+  const getAvatarImage = useCallback((avatarBase, level) => {
+    const match = allAvatarSkins.find(
+      avatar => avatar.name?.toLowerCase() === (avatarBase || '').toLowerCase()
+    );
+
+    if (match?.path) {
+      return match.path;
+    }
+
+    const lvl = Math.min(4, Math.max(1, Math.round(level || 1)));
+    const base = encodeURIComponent(avatarBase || 'Wizard F');
+    return `/avatars/${base}/Level ${lvl}.png`;
+  }, [allAvatarSkins]);
+
+  const getPetImage = useCallback(
+    (pet) => normalizeImageSource(resolvePetImageSource(pet), DEFAULT_PET_IMAGE),
+    []
+  );
+
   const dailySpecials = useMemo(() => {
     const baseInventory = buildShopInventory({
-      basicAvatars: SHOP_BASIC_AVATARS,
-      premiumAvatars: SHOP_PREMIUM_AVATARS,
-      basicPets: SHOP_BASIC_PETS,
-      premiumPets: SHOP_PREMIUM_PETS,
+      basicAvatars: shopInventory.basicAvatars,
+      premiumAvatars: shopInventory.premiumAvatars,
+      basicPets: shopInventory.basicPets,
+      premiumPets: shopInventory.premiumPets,
       rewards: currentRewardsList
     });
 
     return getDailySpecials([...baseInventory, ...seasonalInventory]);
-  }, [currentRewardsList, seasonalInventory]);
+  }, [currentRewardsList, seasonalInventory, shopInventory]);
 
 // FIXED: Read from old V1 structure: users/{uid}.classes[]
 async function loadV1ClassAndStudents(userUid) {
@@ -1011,10 +1063,11 @@ const handleUpdateStudent = useCallback(async (studentId, updatedData, reason = 
       case 'dashboard':
         return <DashboardTab
                   {...commonProps}
-                  SHOP_BASIC_AVATARS={SHOP_BASIC_AVATARS}
-                  SHOP_PREMIUM_AVATARS={SHOP_PREMIUM_AVATARS}
-                  SHOP_BASIC_PETS={SHOP_BASIC_PETS}
-                  SHOP_PREMIUM_PETS={SHOP_PREMIUM_PETS}
+                  SHOP_BASIC_AVATARS={shopInventory.basicAvatars}
+                  SHOP_PREMIUM_AVATARS={shopInventory.premiumAvatars}
+                  SHOP_BASIC_PETS={shopInventory.basicPets}
+                  SHOP_PREMIUM_PETS={shopInventory.premiumPets}
+                  updates={dashboardUpdates}
                   dailySpecials={dailySpecials}
                 />;
       
@@ -1055,10 +1108,10 @@ const handleUpdateStudent = useCallback(async (studentId, updatedData, reason = 
         return <ShopTab
                   {...commonProps}
                   onUpdateStudent={handleUpdateStudent}
-                  SHOP_BASIC_AVATARS={SHOP_BASIC_AVATARS}
-                  SHOP_PREMIUM_AVATARS={SHOP_PREMIUM_AVATARS}
-                  SHOP_BASIC_PETS={SHOP_BASIC_PETS}
-                  SHOP_PREMIUM_PETS={SHOP_PREMIUM_PETS}
+                  SHOP_BASIC_AVATARS={shopInventory.basicAvatars}
+                  SHOP_PREMIUM_AVATARS={shopInventory.premiumAvatars}
+                  SHOP_BASIC_PETS={shopInventory.basicPets}
+                  SHOP_PREMIUM_PETS={shopInventory.premiumPets}
                   classRewards={currentClassData?.classRewards || []}
                   onUpdateRewards={(rewards) => saveClassData({ classRewards: rewards })}
                   saveRewards={(rewards) => saveClassData({ classRewards: rewards })}
