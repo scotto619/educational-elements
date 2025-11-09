@@ -1,21 +1,39 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  createDocxBlob,
+  createPdfBlob,
+  extractParagraphsFromDocx,
+  extractParagraphsFromPdf,
+  normaliseParagraphs
+} from '../../utils/pdfWordConversion';
 
 /**
- * Simple PDF ↔ Word converter powered by the ConvertAPI service.
- * Teachers can bring their own API secret key from https://www.convertapi.com/.
- * We avoid storing any credentials — keys are only used in the current session.
+ * Offline PDF ↔ Word converter that runs entirely in the browser.
+ * The converter focuses on text content so complex layouts may require touch-ups.
  */
 const PdfWordConverter = ({ showToast }) => {
   const [conversionType, setConversionType] = useState('pdf-to-word');
-  const [apiSecret, setApiSecret] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
   const [statusMessage, setStatusMessage] = useState('');
   const [downloadUrl, setDownloadUrl] = useState('');
+  const [downloadName, setDownloadName] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const downloadUrlRef = useRef('');
+
+  useEffect(() => () => {
+    if (downloadUrlRef.current) {
+      window.URL.revokeObjectURL(downloadUrlRef.current);
+    }
+  }, []);
 
   const resetState = () => {
+    if (downloadUrlRef.current) {
+      window.URL.revokeObjectURL(downloadUrlRef.current);
+      downloadUrlRef.current = '';
+    }
     setStatusMessage('');
     setDownloadUrl('');
+    setDownloadName('');
   };
 
   const handleFileChange = (event) => {
@@ -27,21 +45,7 @@ const PdfWordConverter = ({ showToast }) => {
     }
   };
 
-  const getEndpoint = () => {
-    const safeKey = encodeURIComponent(apiSecret.trim());
-    if (!safeKey) return '';
-
-    return conversionType === 'pdf-to-word'
-      ? `https://v2.convertapi.com/pdf/to/docx?Secret=${safeKey}`
-      : `https://v2.convertapi.com/docx/to/pdf?Secret=${safeKey}`;
-  };
-
   const handleConvert = async () => {
-    if (!apiSecret.trim()) {
-      showToast('Please provide your ConvertAPI secret key.', 'error');
-      return;
-    }
-
     if (!selectedFile) {
       showToast('Choose a file to convert first.', 'error');
       return;
@@ -49,35 +53,49 @@ const PdfWordConverter = ({ showToast }) => {
 
     try {
       setIsProcessing(true);
-      setStatusMessage('Uploading file to ConvertAPI…');
+      setStatusMessage('Processing file…');
       setDownloadUrl('');
+      setDownloadName('');
 
-      const endpoint = getEndpoint();
-      const formData = new FormData();
-      formData.append('File', selectedFile);
+      const baseName = selectedFile.name
+        ? selectedFile.name.replace(/\.[^/.]+$/, '')
+        : 'converted-document';
+      const arrayBuffer = await selectedFile.arrayBuffer();
 
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        body: formData
-      });
+      if (conversionType === 'pdf-to-word') {
+        setStatusMessage('Extracting text from the PDF…');
+        const paragraphs = normaliseParagraphs(extractParagraphsFromPdf(arrayBuffer));
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Conversion failed (${response.status}). ${errorText.slice(0, 140)}`);
+        if (!paragraphs.length) {
+          throw new Error('No readable text was found in this PDF.');
+        }
+
+        setStatusMessage('Building Word document…');
+        const blob = createDocxBlob(paragraphs);
+        const url = window.URL.createObjectURL(blob);
+        downloadUrlRef.current = url;
+        setDownloadUrl(url);
+        setDownloadName(`${baseName || 'converted-document'}.docx`);
+      } else {
+        setStatusMessage('Reading Word document…');
+        const paragraphs = normaliseParagraphs(await extractParagraphsFromDocx(arrayBuffer));
+
+        if (!paragraphs.length) {
+          throw new Error('No readable text was found in this Word document.');
+        }
+
+        setStatusMessage('Generating PDF file…');
+        const blob = createPdfBlob(paragraphs);
+        const url = window.URL.createObjectURL(blob);
+        downloadUrlRef.current = url;
+        setDownloadUrl(url);
+        setDownloadName(`${baseName || 'converted-document'}.pdf`);
       }
 
-      const result = await response.json();
-      const convertedFile = result?.Files?.[0]?.Url;
-
-      if (!convertedFile) {
-        throw new Error('Conversion succeeded but no download link was returned.');
-      }
-
-      setDownloadUrl(convertedFile);
       setStatusMessage('Conversion complete! Use the download button below.');
       showToast('Conversion complete! Download your file below.', 'success');
     } catch (error) {
-      console.error('ConvertAPI error', error);
+      console.error('Offline conversion error', error);
       const message = error.message || 'Conversion failed. Please try again.';
       setStatusMessage(message);
       showToast(message, 'error');
@@ -91,27 +109,14 @@ const PdfWordConverter = ({ showToast }) => {
 
     try {
       setIsProcessing(true);
-      setStatusMessage('Fetching converted file…');
+      setStatusMessage('Preparing download…');
 
-      const response = await fetch(downloadUrl);
-      if (!response.ok) {
-        throw new Error('Unable to download the converted document.');
-      }
-
-      const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
-      const extension = conversionType === 'pdf-to-word' ? 'docx' : 'pdf';
-      const baseName = selectedFile
-        ? selectedFile.name.replace(/\.[^/.]+$/, '')
-        : 'converted-document';
-
-      link.href = blobUrl;
-      link.download = `${baseName}.${extension}`;
+      link.href = downloadUrl;
+      link.download = downloadName || 'converted-file';
       document.body.appendChild(link);
       link.click();
       link.remove();
-      window.URL.revokeObjectURL(blobUrl);
 
       setStatusMessage('Downloaded! Check your device for the converted file.');
       showToast('Converted file downloaded successfully.', 'success');
@@ -127,7 +132,7 @@ const PdfWordConverter = ({ showToast }) => {
 
   const acceptedFormats = conversionType === 'pdf-to-word'
     ? '.pdf'
-    : '.doc,.docx,.rtf';
+    : '.docx';
 
   return (
     <div className="bg-white rounded-2xl shadow-xl p-6 space-y-6">
@@ -137,16 +142,9 @@ const PdfWordConverter = ({ showToast }) => {
           PDF ↔ Word Converter
         </h1>
         <p className="text-gray-600 leading-relaxed">
-          Convert classroom documents between PDF and Word formats. We use the
-          <a
-            href="https://www.convertapi.com/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-indigo-600 font-semibold ml-1"
-          >
-            ConvertAPI
-          </a>
-          service — bring your own API secret to keep full control of your data.
+          Convert classroom documents between PDF and Word formats without sending
+          files to any external services. The converter focuses on text content, so
+          heavily formatted layouts may need a quick manual tidy-up afterwards.
         </p>
       </header>
 
@@ -160,12 +158,12 @@ const PdfWordConverter = ({ showToast }) => {
                 name="conversion-type"
                 value="pdf-to-word"
                 checked={conversionType === 'pdf-to-word'}
-                onChange={() => {
-                  setConversionType('pdf-to-word');
+                onChange={(event) => {
+                  setConversionType(event.target.value);
                   resetState();
                 }}
               />
-              PDF ➜ Word (.docx)
+              <span>PDF to Word (.docx)</span>
             </label>
             <label className="flex items-center gap-2 text-indigo-800">
               <input
@@ -173,52 +171,47 @@ const PdfWordConverter = ({ showToast }) => {
                 name="conversion-type"
                 value="word-to-pdf"
                 checked={conversionType === 'word-to-pdf'}
-                onChange={() => {
-                  setConversionType('word-to-pdf');
+                onChange={(event) => {
+                  setConversionType(event.target.value);
                   resetState();
                 }}
               />
-              Word (.doc, .docx, .rtf) ➜ PDF
+              <span>Word (.docx) to PDF</span>
             </label>
           </div>
         </div>
 
-        <div className="bg-blue-50 rounded-xl p-4 space-y-3">
-          <h2 className="text-lg font-semibold text-blue-900">2. Enter API secret</h2>
-          <p className="text-sm text-blue-800">
-            Create a free ConvertAPI account, copy your secret key, and paste it here.
-            Your key is stored locally and never shared with our servers.
+        <div className="bg-indigo-50 rounded-xl p-4 space-y-3">
+          <h2 className="text-lg font-semibold text-indigo-900">2. Upload document</h2>
+          <p className="text-indigo-700 text-sm leading-relaxed">
+            {conversionType === 'pdf-to-word'
+              ? 'Select a PDF to pull text into a Word document.'
+              : 'Select a Word (.docx) document to convert it to a PDF.'}
           </p>
-          <input
-            type="password"
-            placeholder="sk_..."
-            value={apiSecret}
-            onChange={(event) => setApiSecret(event.target.value)}
-            className="w-full border border-blue-200 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-          />
-          <p className="text-xs text-blue-700">Tip: Use a dedicated key so you can revoke it anytime.</p>
+          <label className="flex flex-col items-center justify-center border-2 border-dashed border-indigo-300 rounded-xl px-4 py-10 cursor-pointer bg-white hover:border-indigo-500 transition">
+            <span className="text-indigo-600 font-semibold">Click to choose a file</span>
+            <span className="text-indigo-400 text-xs mt-1">{conversionType === 'pdf-to-word' ? 'PDF files only' : 'Word (.docx) files only'}</span>
+            <input
+              type="file"
+              accept={acceptedFormats}
+              onChange={handleFileChange}
+              className="hidden"
+            />
+          </label>
+          {selectedFile && (
+            <p className="text-xs text-indigo-700 break-all">
+              Selected: <span className="font-semibold">{selectedFile.name}</span>
+            </p>
+          )}
         </div>
-      </section>
-
-      <section className="bg-gray-50 rounded-xl p-4 space-y-3">
-        <h2 className="text-lg font-semibold text-gray-900">3. Upload your file</h2>
-        <input
-          type="file"
-          accept={acceptedFormats}
-          onChange={handleFileChange}
-          className="block w-full text-sm text-gray-700"
-        />
-        <p className="text-xs text-gray-500">
-          Accepted formats: {conversionType === 'pdf-to-word' ? 'PDF' : 'DOC, DOCX, RTF'}
-        </p>
       </section>
 
       <div className="flex flex-wrap gap-3">
         <button
           onClick={handleConvert}
-          disabled={isProcessing}
+          disabled={isProcessing || !selectedFile}
           className={`px-6 py-3 rounded-lg font-semibold text-white transition-colors ${
-            isProcessing
+            isProcessing || !selectedFile
               ? 'bg-gray-400 cursor-not-allowed'
               : 'bg-indigo-600 hover:bg-indigo-700'
           }`}
@@ -255,17 +248,26 @@ const PdfWordConverter = ({ showToast }) => {
       </div>
 
       {statusMessage && (
-        <div className="bg-gray-900 text-white rounded-xl px-4 py-3 text-sm">
-          {statusMessage}
-        </div>
+        <section className="bg-white border border-indigo-100 rounded-xl p-4">
+          <h2 className="text-lg font-semibold text-indigo-900 flex items-center gap-2">
+            <span className="text-xl">ℹ️</span>
+            Status
+          </h2>
+          <p className="text-indigo-800 text-sm leading-relaxed">{statusMessage}</p>
+          {downloadUrl && (
+            <footer className="mt-3 text-xs text-indigo-600">
+              <p className="font-semibold">Saved as: {downloadName}</p>
+            </footer>
+          )}
+        </section>
       )}
 
-      <section className="bg-slate-900 text-slate-100 rounded-xl p-4 space-y-2">
-        <h3 className="font-semibold">Safety & privacy tips</h3>
-        <ul className="list-disc list-inside space-y-1 text-sm text-slate-200">
-          <li>Files are sent directly from your browser to ConvertAPI — nothing touches our servers.</li>
-          <li>For sensitive documents, delete finished files from the ConvertAPI dashboard.</li>
-          <li>Keep an eye on your ConvertAPI usage limits to avoid unexpected charges.</li>
+      <section className="bg-indigo-900 text-indigo-50 rounded-xl p-4 space-y-3">
+        <h2 className="text-lg font-semibold">Privacy &amp; tips</h2>
+        <ul className="text-sm space-y-2 list-disc list-inside opacity-90">
+          <li>All conversions run locally in your browser — nothing is uploaded to third-party services.</li>
+          <li>The converter keeps text and line breaks but may simplify complex formatting, tables, or images.</li>
+          <li>For the cleanest results, start with text-heavy documents. You can always edit the output file afterwards.</li>
         </ul>
       </section>
     </div>
