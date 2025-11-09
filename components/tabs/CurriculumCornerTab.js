@@ -7,7 +7,6 @@ import PrepLiteracyWarmup from '../curriculum/literacy/PrepLiteracyWarmUp';
 import ReadingComprehension from '../curriculum/literacy/ReadingComprehension';
 import VisualWritingPrompts from '../curriculum/literacy/VisualWritingPrompts';
 import SpellingProgram from '../curriculum/literacy/SpellingProgram';
-import FluencyPractice from '../curriculum/literacy/FluencyPractice';
 import BeginnerReaders from '../curriculum/literacy/BeginnerReaders';
 import ReadingForFun from '../curriculum/literacy/ReadingForFun';
 import ReadersTheatre from '../curriculum/literacy/ReadersTheatre';
@@ -152,21 +151,13 @@ const subjects = [
         literacyCategory: 'phonics'
       },
       {
-        id: 'fluency-practice',
-        name: 'Fluency Practice',
-        icon: '📖',
-        description: 'Reading passages aligned with spelling levels for fluency development',
-        component: FluencyPractice,
-        isUpdated: true,
-        literacyCategory: 'reading'
-      },
-      {
         id: 'spelling-program',
-        name: 'Spelling Program',
-        icon: '🔡',
-        description: 'Structured spelling lists with activities and assessments',
+        name: 'Spelling & Fluency Studio',
+        icon: '🌀',
+        description: 'Assign spelling lists with perfectly matched reading passages, fluency games, and assessments',
         component: SpellingProgram,
-        literacyCategory: 'spelling'
+        literacyCategory: ['spelling', 'reading'],
+        isUpdated: true
       },
       {
         id: 'reading-comprehension',

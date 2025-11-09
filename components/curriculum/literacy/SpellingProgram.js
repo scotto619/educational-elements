@@ -1,6 +1,45 @@
 // components/curriculum/literacy/SpellingProgram.js
 // ENHANCED SPELLING PROGRAM WITH ALL LEVELS AND FEATURES
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+
+// Reading passage collections
+import { LEVEL_1_PASSAGES } from './passages/Level1Passages';
+import { LEVEL_2_PASSAGES_1 } from './passages/Level2Passages1';
+import { LEVEL_2_PASSAGES_2 } from './passages/Level2Passages2';
+import { LEVEL_2_PASSAGES_3 } from './passages/Level2Passages3';
+import { LEVEL_2_PASSAGES_4 } from './passages/Level2Passages4';
+import { LEVEL_2_PASSAGES_5 } from './passages/Level2Passages5';
+import { LEVEL_2_PASSAGES_6 } from './passages/Level2Passages6';
+import { LEVEL_2_PASSAGES_7 } from './passages/Level2Passages7';
+import { LEVEL_2_PASSAGES_8 } from './passages/Level2Passages8';
+import { LEVEL_2_PASSAGES_9 } from './passages/Level2Passages9';
+import { LEVEL_2_PASSAGES_10 } from './passages/Level2Passages10';
+import { LEVEL_3_PASSAGES_1 } from './passages/Level3Passages1';
+import { LEVEL_3_PASSAGES_2 } from './passages/Level3Passages2';
+import { LEVEL_3_PASSAGES_3 } from './passages/Level3Passages3';
+import { LEVEL_3_PASSAGES_4 } from './passages/Level3Passages4';
+import { LEVEL_3_PASSAGES_5 } from './passages/Level3Passages5';
+import { LEVEL_3_PASSAGES_6 } from './passages/Level3Passages6';
+import { LEVEL_3_PASSAGES_7 } from './passages/Level3Passages7';
+import { LEVEL_3_PASSAGES_8 } from './passages/Level3Passages8';
+import { LEVEL_3_PASSAGES_9 } from './passages/Level3Passages9';
+import { LEVEL_3_PASSAGES_10 } from './passages/Level3Passages10';
+import { LEVEL_3_PASSAGES_11 } from './passages/Level3Passages11';
+import { LEVEL_3_PASSAGES_12 } from './passages/Level3Passages12';
+import { LEVEL_3_PASSAGES_13 } from './passages/Level3Passages13';
+import { LEVEL_4_PASSAGES_1 } from './passages/Level4Passages1';
+import { LEVEL_4_PASSAGES_2 } from './passages/Level4Passages2';
+import { LEVEL_4_PASSAGES_3 } from './passages/Level4Passages3';
+import { LEVEL_4_PASSAGES_4 } from './passages/Level4Passages4';
+import { LEVEL_4_PASSAGES_5 } from './passages/Level4Passages5';
+import { LEVEL_4_PASSAGES_6 } from './passages/Level4Passages6';
+import { LEVEL_4_PASSAGES_7 } from './passages/Level4Passages7';
+import { LEVEL_4_PASSAGES_8 } from './passages/Level4Passages8';
+import { LEVEL_4_PASSAGES_9 } from './passages/Level4Passages9';
+import { LEVEL_4_PASSAGES_10 } from './passages/Level4Passages10';
+import { LEVEL_4_PASSAGES_11 } from './passages/Level4Passages11';
+import { LEVEL_4_PASSAGES_12 } from './passages/Level4Passages12';
+import { LEVEL_4_PASSAGES_13 } from './passages/Level4Passages13';
 
 // ===============================================
 // ALL SPELLING LISTS WITH FEATURES
@@ -363,22 +402,235 @@ const ACTIVITIES = [
 ];
 
 // ===============================================
+// READING + FLUENCY DATA
+// ===============================================
+export const READING_PASSAGES = [
+  ...LEVEL_1_PASSAGES,
+  ...LEVEL_2_PASSAGES_1,
+  ...LEVEL_2_PASSAGES_2,
+  ...LEVEL_2_PASSAGES_3,
+  ...LEVEL_2_PASSAGES_4,
+  ...LEVEL_2_PASSAGES_5,
+  ...LEVEL_2_PASSAGES_6,
+  ...LEVEL_2_PASSAGES_7,
+  ...LEVEL_2_PASSAGES_8,
+  ...LEVEL_2_PASSAGES_9,
+  ...LEVEL_2_PASSAGES_10,
+  ...LEVEL_3_PASSAGES_1,
+  ...LEVEL_3_PASSAGES_2,
+  ...LEVEL_3_PASSAGES_3,
+  ...LEVEL_3_PASSAGES_4,
+  ...LEVEL_3_PASSAGES_5,
+  ...LEVEL_3_PASSAGES_6,
+  ...LEVEL_3_PASSAGES_7,
+  ...LEVEL_3_PASSAGES_8,
+  ...LEVEL_3_PASSAGES_9,
+  ...LEVEL_3_PASSAGES_10,
+  ...LEVEL_3_PASSAGES_11,
+  ...LEVEL_3_PASSAGES_12,
+  ...LEVEL_3_PASSAGES_13,
+  ...LEVEL_4_PASSAGES_1,
+  ...LEVEL_4_PASSAGES_2,
+  ...LEVEL_4_PASSAGES_3,
+  ...LEVEL_4_PASSAGES_4,
+  ...LEVEL_4_PASSAGES_5,
+  ...LEVEL_4_PASSAGES_6,
+  ...LEVEL_4_PASSAGES_7,
+  ...LEVEL_4_PASSAGES_8,
+  ...LEVEL_4_PASSAGES_9,
+  ...LEVEL_4_PASSAGES_10,
+  ...LEVEL_4_PASSAGES_11,
+  ...LEVEL_4_PASSAGES_12,
+  ...LEVEL_4_PASSAGES_13
+];
+
+const TEXT_TYPES = [
+  { id: 'narrative', name: 'Narrative', icon: '📖', color: 'from-blue-500 to-indigo-500' },
+  { id: 'informational', name: 'Information', icon: '📊', color: 'from-emerald-500 to-teal-500' },
+  { id: 'persuasive', name: 'Persuasive', icon: '💡', color: 'from-orange-500 to-amber-500' },
+  { id: 'poetry', name: 'Poetry', icon: '🎭', color: 'from-purple-500 to-pink-500' }
+];
+
+const QUESTION_TYPES = {
+  'right-there': {
+    name: 'Right There',
+    description: 'Answer can be pointed to in one sentence',
+    icon: '👆',
+    chip: 'bg-green-100 text-green-700 border-green-300'
+  },
+  'think-and-search': {
+    name: 'Think & Search',
+    description: 'Combine details from different parts of the text',
+    icon: '🧠',
+    chip: 'bg-sky-100 text-sky-700 border-sky-300'
+  },
+  'author-and-me': {
+    name: 'Author & Me',
+    description: 'Use clues + your thinking to infer',
+    icon: '🤝',
+    chip: 'bg-purple-100 text-purple-700 border-purple-300'
+  },
+  'on-my-own': {
+    name: 'On My Own',
+    description: 'Connect the topic to your own life',
+    icon: '💬',
+    chip: 'bg-amber-100 text-amber-700 border-amber-300'
+  }
+};
+
+const FLUENCY_MOMENTS = [
+  {
+    title: 'Pencil Tap Pace',
+    icon: '🎵',
+    color: 'from-blue-500 via-indigo-500 to-purple-500',
+    description: 'Tap a steady beat while students track the words to feel smooth pacing.'
+  },
+  {
+    title: 'Echo Encore',
+    icon: '🪞',
+    color: 'from-emerald-500 via-teal-500 to-cyan-500',
+    description: 'Teacher reads with expression, students echo with matching phrasing.'
+  },
+  {
+    title: 'Spotlight Words',
+    icon: '🔦',
+    color: 'from-amber-500 via-orange-500 to-rose-500',
+    description: 'Highlight focus words, then whisper-read and perform them with big expression.'
+  },
+  {
+    title: 'Beat the Bumpy Bits',
+    icon: '🚦',
+    color: 'from-violet-500 via-fuchsia-500 to-pink-500',
+    description: 'Students rehearse tricky sections three ways: whisper, robot, and then storyteller voice.'
+  }
+];
+
+const FLUENCY_GAMES = [
+  {
+    title: '60-Second Spotlight',
+    subtitle: 'Timed partner reads',
+    icon: '⏱️',
+    color: 'bg-blue-100 text-blue-800 border-blue-300',
+    steps: [
+      'Partner A reads for 60 seconds while Partner B tracks words with a pointer',
+      'Switch roles and try to read a few more words smoothly',
+      'Celebrate improvements with a quick fist bump or positive note'
+    ]
+  },
+  {
+    title: 'Expression Switch-Up',
+    subtitle: 'Mood-based reading',
+    icon: '🎭',
+    color: 'bg-purple-100 text-purple-800 border-purple-300',
+    steps: [
+      'Roll the expression cube (happy, serious, sneaky, shocked, calm, news reporter)',
+      'Read the next paragraph using the expression you rolled',
+      'Talk about which expression matched the text best'
+    ]
+  },
+  {
+    title: 'Phrase Trail Race',
+    subtitle: 'Chunked phrasing practice',
+    icon: '🛤️',
+    color: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+    steps: [
+      'Mark natural phrase breaks in the passage with slashes',
+      'Read each phrase in one breath, then connect the phrases smoothly',
+      'Race a partner to see who can read the paragraph with the fewest pauses'
+    ]
+  }
+];
+
+const ASSESSMENT_TIPS = [
+  {
+    title: 'Accuracy First',
+    detail: 'Listen for automatic recognition of focus words and track miscues with quick tally marks.'
+  },
+  {
+    title: 'Phrasing & Expression',
+    detail: 'Record a short clip to replay with students. Highlight where the voice matched punctuation cues.'
+  },
+  {
+    title: 'Rate Goals',
+    detail: 'Use one-minute reads to graph words correct per minute alongside the spelling list focus.'
+  },
+  {
+    title: 'Comprehension Connection',
+    detail: 'Ask one question from each QAR type. Link responses back to the weekly spelling pattern.'
+  }
+];
+
+// ===============================================
 // MAIN SPELLING PROGRAM COMPONENT
 // ===============================================
-const SpellingProgram = ({ 
-  showToast = () => {}, 
-  students = [], 
-  saveData = () => {}, 
-  loadedData = {} 
+const SpellingProgram = ({
+  showToast = () => {},
+  students = [],
+  saveData = () => {},
+  loadedData = {}
 }) => {
   const [groups, setGroups] = useState(loadedData?.spellingGroups || []);
-  const [selectedLists, setSelectedLists] = useState([]);
   const [isPresentationMode, setIsPresentationMode] = useState(false);
   const [showListSelector, setShowListSelector] = useState(false);
   const [viewingList, setViewingList] = useState(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showActivityInstructions, setShowActivityInstructions] = useState(null);
   const [showStudentAssignment, setShowStudentAssignment] = useState(false);
+  const [selectedLevel, setSelectedLevel] = useState('1');
+  const [selectedListId, setSelectedListId] = useState('1.1');
+  const [selectedTextType, setSelectedTextType] = useState('narrative');
+
+  const passageMap = useMemo(() => {
+    const map = {};
+    READING_PASSAGES.forEach(passage => {
+      map[passage.id] = passage;
+    });
+    return map;
+  }, []);
+
+  const listsWithPassages = useMemo(() => {
+    return SPELLING_LISTS.map(list => {
+      const passage = passageMap[list.id];
+      return {
+        ...list,
+        passage,
+        texts: passage?.texts || []
+      };
+    });
+  }, [passageMap]);
+
+  const levelLists = useMemo(() => {
+    return listsWithPassages.filter(list => list.id.startsWith(`${selectedLevel}.`));
+  }, [listsWithPassages, selectedLevel]);
+
+  useEffect(() => {
+    if (levelLists.length === 0) return;
+    const hasSelected = levelLists.some(list => list.id === selectedListId);
+    if (!hasSelected) {
+      setSelectedListId(levelLists[0].id);
+    }
+  }, [levelLists, selectedListId]);
+
+  const selectedList = useMemo(() => {
+    return listsWithPassages.find(list => list.id === selectedListId) || levelLists[0] || listsWithPassages[0];
+  }, [listsWithPassages, levelLists, selectedListId]);
+
+  useEffect(() => {
+    if (!selectedList) return;
+    const availableTypes = selectedList.texts.map(text => text.type);
+    if (availableTypes.length === 0) {
+      setSelectedTextType('narrative');
+      return;
+    }
+    if (!availableTypes.includes(selectedTextType)) {
+      setSelectedTextType(availableTypes[0]);
+    }
+  }, [selectedList, selectedTextType]);
+
+  const selectedText = useMemo(() => {
+    if (!selectedList) return null;
+    return selectedList.texts.find(text => text.type === selectedTextType) || selectedList.texts[0] || null;
+  }, [selectedList, selectedTextType]);
 
   // Initialize groups if empty
   useEffect(() => {
@@ -387,6 +639,18 @@ const SpellingProgram = ({
       setGroups(loadedData.spellingGroups);
       setHasUnsavedChanges(false);
       console.log('📚 Loaded spelling groups from Firebase:', loadedData.spellingGroups);
+    } else if (loadedData?.fluencyGroups && loadedData.fluencyGroups.length > 0) {
+      const converted = loadedData.fluencyGroups.map(group => ({
+        id: group.id,
+        name: group.name,
+        color: group.color || 'bg-blue-500',
+        students: group.students || [],
+        assignedLists: Array.from(new Set((group.assignedTexts || []).map(textId => textId.split('-')[0]))),
+        assignedActivity: null
+      }));
+      setGroups(converted);
+      setHasUnsavedChanges(false);
+      console.log('🔄 Converted legacy fluency groups to new spelling groups format');
     } else if (loadedData !== undefined && groups.length === 0) {
       // Only create defaults if no groups exist in Firebase and local state is empty
       const defaultGroups = [
@@ -402,15 +666,30 @@ const SpellingProgram = ({
 
   // Update groups when loadedData changes (Firebase data loaded) - but avoid infinite loops
   useEffect(() => {
-    if (loadedData?.spellingGroups && 
-        Array.isArray(loadedData.spellingGroups) && 
+    if (loadedData?.spellingGroups &&
+        Array.isArray(loadedData.spellingGroups) &&
         loadedData.spellingGroups.length > 0 &&
         JSON.stringify(loadedData.spellingGroups) !== JSON.stringify(groups)) {
       setGroups(loadedData.spellingGroups);
       setHasUnsavedChanges(false);
       console.log('🔄 Updated spelling groups from Firebase data change');
+    } else if (loadedData?.fluencyGroups &&
+               Array.isArray(loadedData.fluencyGroups) &&
+               loadedData.fluencyGroups.length > 0 &&
+               (!loadedData?.spellingGroups || loadedData.spellingGroups.length === 0)) {
+      const converted = loadedData.fluencyGroups.map(group => ({
+        id: group.id,
+        name: group.name,
+        color: group.color || 'bg-blue-500',
+        students: group.students || [],
+        assignedLists: Array.from(new Set((group.assignedTexts || []).map(textId => textId.split('-')[0]))),
+        assignedActivity: null
+      }));
+      setGroups(converted);
+      setHasUnsavedChanges(false);
+      console.log('🔄 Updated groups from legacy fluency data change');
     }
-  }, [loadedData?.spellingGroups]);
+  }, [loadedData?.spellingGroups, loadedData?.fluencyGroups]);
 
   // Clean up groups when students change (remove deleted students from groups)
   useEffect(() => {
@@ -530,15 +809,16 @@ const SpellingProgram = ({
   };
 
   const printLists = (listIds) => {
-    // Get the actual lists to print
-    const lists = SPELLING_LISTS.filter(list => listIds.includes(list.id));
-    
+    const lists = listsWithPassages.filter(list => listIds.includes(list.id));
+
     if (lists.length === 0) return;
-    
+
     const printWindow = window.open('', 'Print', 'height=800,width=600');
-    
+
     // Generate HTML for 8 copies of each list (2 rows of 4)
     const generateListCopies = (list) => {
+      const passage = list.passage;
+      const featuredText = passage?.texts?.[0];
       let copiesHtml = '';
       for (let i = 0; i < 8; i++) {
         copiesHtml += `
@@ -548,6 +828,13 @@ const SpellingProgram = ({
             <div class="words">
               ${list.words.map(word => `<div class="word">${word}</div>`).join('')}
             </div>
+            ${passage ? `
+              <div class="reading-link">
+                <strong>Connected Reading:</strong>
+                <div>${passage.level}</div>
+                ${featuredText ? `<div>${featuredText.title} (${featuredText.wordCount} words)</div>` : ''}
+              </div>
+            ` : ''}
           </div>
         `;
       }
@@ -608,17 +895,25 @@ const SpellingProgram = ({
               gap: 2px;
               flex-grow: 1;
             }
-            .word { 
-              padding: 2px 4px; 
-              border: 1px solid #ddd; 
-              text-align: center; 
+            .word {
+              padding: 2px 4px;
+              border: 1px solid #ddd;
+              text-align: center;
               font-size: 10px;
               background: #f9f9f9;
             }
+            .reading-link {
+              margin-top: 6px;
+              font-size: 9px;
+              color: #555;
+              text-align: center;
+              border-top: 1px solid #ddd;
+              padding-top: 4px;
+            }
             @media print {
               body { margin: 0; }
-              .copies-container { 
-                gap: 8px; 
+              .copies-container {
+                gap: 8px;
                 height: 95vh;
               }
               .list-copy { 
@@ -639,6 +934,105 @@ const SpellingProgram = ({
       </html>
     `);
     
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
+  };
+
+  const printPassages = (listIds) => {
+    const passagesToPrint = [];
+    listIds.forEach(listId => {
+      const list = listsWithPassages.find(l => l.id === listId);
+      if (list?.passage?.texts) {
+        list.passage.texts.forEach(text => {
+          passagesToPrint.push({ list, text, passage: list.passage });
+        });
+      }
+    });
+
+    if (passagesToPrint.length === 0) return;
+
+    const printWindow = window.open('', 'Print', 'height=900,width=700');
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Fluency Passages</title>
+          <style>
+            body {
+              font-family: 'Georgia', serif;
+              margin: 20px;
+              padding: 0;
+              background: #f8fafc;
+            }
+            .text-page {
+              page-break-after: always;
+              background: white;
+              border: 1px solid #cbd5f5;
+              border-radius: 12px;
+              padding: 24px;
+              box-shadow: 0 10px 30px rgba(79,70,229,0.1);
+              margin-bottom: 24px;
+            }
+            .text-page:last-child {
+              page-break-after: auto;
+            }
+            .header {
+              text-align: center;
+              border-bottom: 2px solid #6366f1;
+              padding-bottom: 12px;
+              margin-bottom: 16px;
+            }
+            .header h2 {
+              margin: 0;
+              font-size: 22px;
+              color: #312e81;
+            }
+            .meta {
+              font-size: 12px;
+              color: #4338ca;
+              margin-top: 4px;
+            }
+            .feature {
+              background: #eef2ff;
+              border-radius: 8px;
+              padding: 8px 12px;
+              font-size: 12px;
+              margin-bottom: 16px;
+              text-align: center;
+            }
+            .content {
+              font-size: 15px;
+              line-height: 1.8;
+              color: #1f2937;
+              white-space: pre-wrap;
+            }
+            .focus-words {
+              margin-top: 16px;
+              font-size: 12px;
+              color: #4c1d95;
+              border-top: 1px dashed #818cf8;
+              padding-top: 8px;
+            }
+          </style>
+        </head>
+        <body>
+          ${passagesToPrint.map(({ list, text, passage }) => `
+            <div class="text-page">
+              <div class="header">
+                <h2>${text.title}</h2>
+                <div class="meta">${passage.level} • ${text.type.toUpperCase()} • ${text.wordCount} words</div>
+              </div>
+              <div class="feature">Spelling Focus: ${list.feature}</div>
+              <div class="content">${text.content.replace(/\n/g, '<br/>')}</div>
+              <div class="focus-words"><strong>Target Words:</strong> ${list.words.join(', ')}</div>
+            </div>
+          `).join('')}
+        </body>
+      </html>
+    `);
+
     printWindow.document.close();
     printWindow.focus();
     printWindow.print();
@@ -691,11 +1085,13 @@ const SpellingProgram = ({
                     </div>
 
                     {group.assignedLists.map(listId => {
-                      const list = SPELLING_LISTS.find(l => l.id === listId);
+                      const list = listsWithPassages.find(l => l.id === listId);
+                      if (!list) return null;
+                      const passage = list.passage;
                       return (
-                        <div key={listId} className="mb-4">
-                          <h3 className="text-lg font-bold text-center mb-2 text-gray-800">{list.name}</h3>
-                          <p className="text-xs text-center mb-2 text-blue-600 italic">{list.feature}</p>
+                        <div key={listId} className="mb-4 space-y-2">
+                          <h3 className="text-lg font-bold text-center text-gray-800">{list.name}</h3>
+                          <p className="text-xs text-center text-blue-600 italic">{list.feature}</p>
                           <div className="grid grid-cols-2 gap-1">
                             {list.words.map((word, index) => (
                               <div key={index} className="bg-gray-100 border border-gray-300 rounded p-1 text-center">
@@ -703,6 +1099,16 @@ const SpellingProgram = ({
                               </div>
                             ))}
                           </div>
+                          {passage && (
+                            <div className="bg-gradient-to-r from-sky-100 to-indigo-100 border border-indigo-200 rounded-lg p-2 text-center">
+                              <p className="text-xs font-semibold text-indigo-700">📖 Connected Reading: {passage.level}</p>
+                              {passage.texts?.[0] && (
+                                <p className="text-[11px] text-indigo-600">
+                                  {passage.texts[0].title} • {passage.texts[0].wordCount} words
+                                </p>
+                              )}
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -733,11 +1139,15 @@ const SpellingProgram = ({
                   </div>
 
                   {group.assignedLists.map(listId => {
-                    const list = SPELLING_LISTS.find(l => l.id === listId);
+                    const list = listsWithPassages.find(l => l.id === listId);
+                    if (!list) return null;
+                    const passage = list.passage;
                     return (
-                      <div key={listId} className="mb-6">
-                        <h3 className="text-3xl font-bold text-center mb-2 text-gray-800">{list.name}</h3>
-                        <p className="text-lg text-center mb-4 text-blue-600 italic">{list.feature}</p>
+                      <div key={listId} className="mb-8 space-y-4">
+                        <div>
+                          <h3 className="text-3xl font-bold text-center text-gray-800">{list.name}</h3>
+                          <p className="text-lg text-center text-blue-600 italic">{list.feature}</p>
+                        </div>
                         <div className="grid grid-cols-2 gap-4">
                           {list.words.map((word, index) => (
                             <div key={index} className="bg-gray-100 border-2 border-gray-300 rounded-lg p-4 text-center">
@@ -745,6 +1155,19 @@ const SpellingProgram = ({
                             </div>
                           ))}
                         </div>
+                        {passage && (
+                          <div className="bg-gradient-to-r from-sky-200 via-indigo-200 to-purple-200 border border-indigo-300 rounded-xl p-4 text-center">
+                            <p className="text-base font-semibold text-indigo-800 flex items-center justify-center gap-2">
+                              <span>📖</span>
+                              Connected Reading: {passage.level}
+                            </p>
+                            {passage.texts?.[0] && (
+                              <p className="text-sm text-indigo-700">
+                                {passage.texts[0].title} • {passage.texts[0].wordCount} words
+                              </p>
+                            )}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -767,50 +1190,236 @@ const SpellingProgram = ({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
-      <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold flex items-center">
-              <span className="mr-3">📤</span>
-              Spelling Program
-            </h1>
-            <p className="text-lg opacity-90">Complete spelling curriculum with {SPELLING_LISTS.length} word lists and features</p>
+      <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-fuchsia-600 text-white rounded-3xl p-8 shadow-xl">
+        <div className="flex flex-col lg:flex-row justify-between gap-8">
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <span className="text-4xl">🌀</span>
+              <div>
+                <h1 className="text-3xl lg:text-4xl font-extrabold">Spelling & Fluency Studio</h1>
+                <p className="text-lg opacity-90">Plan, teach, and assign word study with perfectly paired reading passages.</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="bg-white/15 rounded-xl p-3 text-center">
+                <p className="text-sm uppercase tracking-wide opacity-80">Spelling Lists</p>
+                <p className="text-2xl font-bold">{SPELLING_LISTS.length}</p>
+              </div>
+              <div className="bg-white/15 rounded-xl p-3 text-center">
+                <p className="text-sm uppercase tracking-wide opacity-80">Reading Passages</p>
+                <p className="text-2xl font-bold">{READING_PASSAGES.length}</p>
+              </div>
+              <div className="bg-white/15 rounded-xl p-3 text-center">
+                <p className="text-sm uppercase tracking-wide opacity-80">Levels</p>
+                <p className="text-2xl font-bold">4</p>
+              </div>
+              <div className="bg-white/15 rounded-xl p-3 text-center">
+                <p className="text-sm uppercase tracking-wide opacity-80">Activities</p>
+                <p className="text-2xl font-bold">{ACTIVITIES.length}</p>
+              </div>
+            </div>
             {loadedData?.spellingGroups && loadedData.spellingGroups.length > 0 && !hasUnsavedChanges && (
-              <p className="text-sm opacity-75 mt-1">✅ Groups loaded from your saved data</p>
+              <p className="text-sm opacity-75">✅ Groups loaded from your saved data</p>
             )}
             {hasUnsavedChanges && (
-              <p className="text-sm opacity-75 mt-1">⚠️ You have unsaved changes</p>
+              <p className="text-sm opacity-80">⚠️ You have unsaved changes</p>
             )}
           </div>
-          <div className="flex gap-3">
-            {hasUnsavedChanges && (
-              <button
-                onClick={saveGroups}
-                className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 font-semibold flex items-center gap-2 animate-pulse"
-              >
-                💾 Save Changes
-              </button>
-            )}
-            <button
-              onClick={() => setShowStudentAssignment(true)}
-              className="bg-white bg-opacity-20 text-white px-4 py-2 rounded-lg hover:bg-opacity-30"
-            >
-              👥 Assign Students
-            </button>
+          <div className="flex flex-wrap gap-3 items-start lg:items-center justify-end">
             <button
               onClick={() => setShowListSelector(!showListSelector)}
-              className="bg-white bg-opacity-20 text-white px-4 py-2 rounded-lg hover:bg-opacity-30"
+              className="bg-white/15 hover:bg-white/25 px-4 py-2 rounded-xl font-semibold flex items-center gap-2 transition"
             >
               📋 Browse Lists
             </button>
             <button
-              onClick={togglePresentationMode}
-              className="bg-white bg-opacity-20 text-white px-4 py-2 rounded-lg hover:bg-opacity-30"
+              onClick={() => setShowStudentAssignment(true)}
+              className="bg-white/15 hover:bg-white/25 px-4 py-2 rounded-xl font-semibold flex items-center gap-2 transition"
             >
-              🎭 Presentation Mode
+              👥 Assign Students
             </button>
+            <button
+              onClick={togglePresentationMode}
+              className="bg-white/15 hover:bg-white/25 px-4 py-2 rounded-xl font-semibold flex items-center gap-2 transition"
+            >
+              🎭 Presentation
+            </button>
+            {hasUnsavedChanges && (
+              <button
+                onClick={saveGroups}
+                className="bg-emerald-400 hover:bg-emerald-300 text-emerald-950 px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg"
+              >
+                💾 Save Groups
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Dynamic pairing preview */}
+        {selectedList && (
+          <div className="mt-8 bg-white/10 backdrop-blur rounded-2xl p-6 border border-white/20">
+            <div className="grid gap-6 lg:grid-cols-3">
+              <div className="lg:col-span-1 space-y-3">
+                <p className="text-sm uppercase tracking-[0.2em] opacity-80">Current Focus</p>
+                <h2 className="text-2xl font-bold">{selectedList.name}</h2>
+                <p className="text-white/80 italic">{selectedList.feature}</p>
+                <div className="flex flex-wrap gap-2 mt-4">
+                  {['1','2','3','4'].map(level => (
+                    <button
+                      key={level}
+                      onClick={() => setSelectedLevel(level)}
+                      className={`px-3 py-1 rounded-full text-sm font-semibold transition ${selectedLevel === level ? 'bg-white text-indigo-700' : 'bg-white/20 text-white hover:bg-white/30'}`}
+                    >
+                      Level {level}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="lg:col-span-1 bg-white/90 text-gray-900 rounded-xl p-4 shadow-inner">
+                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                  <span>🔡</span> Spelling Words
+                </h3>
+                <div className="grid grid-cols-2 gap-2">
+                  {selectedList.words.map((word, index) => (
+                    <span key={index} className="bg-indigo-50 text-indigo-700 font-semibold rounded-lg px-2 py-1 text-center">
+                      {word}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div className="lg:col-span-1 bg-white/90 text-gray-900 rounded-xl p-4 shadow-inner space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <span>📖</span> Connected Reading
+                  </h3>
+                  <div className="flex gap-2">
+                    {TEXT_TYPES.map(type => (
+                      <button
+                        key={type.id}
+                        onClick={() => setSelectedTextType(type.id)}
+                        className={`px-2 py-1 rounded-full text-xs font-semibold transition ${selectedTextType === type.id ? 'bg-indigo-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                      >
+                        {type.icon}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {selectedText ? (
+                  <div className="space-y-2">
+                    <p className="text-sm font-bold text-indigo-700">{selectedList.passage?.level}</p>
+                    <h4 className="text-xl font-semibold">{selectedText.title}</h4>
+                    <p className="text-sm text-gray-600 flex items-center gap-2">
+                      <span>📝 {selectedText.wordCount} words</span>
+                    </p>
+                    <p className="text-sm text-gray-700 bg-gray-100 rounded-lg p-3 max-h-36 overflow-y-auto">
+                      {selectedText.content.split('\n').join(' ')}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-600">No passage found for this list yet.</p>
+                )}
+              </div>
+            </div>
+
+            {/* Level list quick picker */}
+            <div className="mt-6 overflow-x-auto">
+              <div className="flex gap-3 min-w-max">
+                {levelLists.map(list => (
+                  <button
+                    key={list.id}
+                    onClick={() => setSelectedListId(list.id)}
+                    className={`px-4 py-2 rounded-full text-sm font-semibold transition ${selectedListId === list.id ? 'bg-white text-indigo-700 shadow-lg' : 'bg-white/20 text-white hover:bg-white/30'}`}
+                  >
+                    {list.name.replace('Level ', 'L').split(' - ')[0]}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Coaching cards */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="bg-white rounded-2xl shadow-lg border border-indigo-100 p-6 space-y-4">
+          <h2 className="text-xl font-bold text-indigo-700 flex items-center gap-2">
+            <span>🎙️</span> Fluency Mini-Lessons
+          </h2>
+          <p className="text-sm text-gray-600">Sprinkle one of these quick routines before students tackle their connected passage.</p>
+          <div className="space-y-3">
+            {FLUENCY_MOMENTS.map(moment => (
+              <div key={moment.title} className={`bg-gradient-to-r ${moment.color} text-white rounded-xl p-4 shadow`}> 
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">{moment.icon}</span>
+                  <div>
+                    <h3 className="font-semibold">{moment.title}</h3>
+                    <p className="text-sm opacity-90">{moment.description}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-lg border border-purple-100 p-6 space-y-4">
+          <h2 className="text-xl font-bold text-purple-700 flex items-center gap-2">
+            <span>🎮</span> Engagement Games
+          </h2>
+          <p className="text-sm text-gray-600">Keep practice joyful while reinforcing expression, pacing, and phrasing.</p>
+          <div className="space-y-3">
+            {FLUENCY_GAMES.map(game => (
+              <div key={game.title} className={`border-2 ${game.color} rounded-xl p-4`}> 
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl">{game.icon}</span>
+                  <div className="space-y-2">
+                    <div>
+                      <p className="text-sm uppercase tracking-wide font-semibold">{game.subtitle}</p>
+                      <h3 className="text-lg font-bold">{game.title}</h3>
+                    </div>
+                    <ul className="list-disc list-inside text-sm space-y-1">
+                      {game.steps.map((step, index) => (
+                        <li key={index}>{step}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-lg border border-emerald-100 p-6 space-y-5">
+          <div>
+            <h2 className="text-xl font-bold text-emerald-700 flex items-center gap-2">
+              <span>📊</span> Assess & Reflect
+            </h2>
+            <p className="text-sm text-gray-600">Capture a quick snapshot of student growth after each reading.</p>
+          </div>
+          <div className="space-y-3">
+            {ASSESSMENT_TIPS.map(tip => (
+              <div key={tip.title} className="bg-emerald-50 border border-emerald-200 rounded-xl p-3">
+                <h3 className="text-sm font-semibold text-emerald-800">{tip.title}</h3>
+                <p className="text-sm text-emerald-700">{tip.detail}</p>
+              </div>
+            ))}
+          </div>
+          <div className="bg-emerald-100 border border-emerald-200 rounded-xl p-4 space-y-2">
+            <h4 className="text-sm font-bold text-emerald-900 flex items-center gap-2">
+              <span>❓</span> Comprehension Prompts
+            </h4>
+            <div className="grid grid-cols-2 gap-2">
+              {Object.entries(QUESTION_TYPES).map(([key, info]) => (
+                <div key={key} className={`border ${info.chip} rounded-lg px-2 py-2`}> 
+                  <div className="flex items-center gap-2 text-sm font-semibold">
+                    <span>{info.icon}</span>
+                    <span>{info.name}</span>
+                  </div>
+                  <p className="text-xs mt-1">{info.description}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -849,19 +1458,47 @@ const SpellingProgram = ({
                       ← Back to Lists
                     </button>
                   </div>
-                  <div className="bg-gray-50 rounded-xl p-6">
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                      {viewingList.words.map((word, index) => (
-                        <div key={index} className="bg-white border border-gray-200 rounded-lg p-3 text-center">
-                          <span className="text-lg font-bold text-gray-800">{word}</span>
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <div className="bg-gray-50 rounded-xl p-6">
+                      <h4 className="text-lg font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                        <span>🔡</span> Word List
+                      </h4>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {viewingList.words.map((word, index) => (
+                          <div key={index} className="bg-white border border-gray-200 rounded-lg p-3 text-center">
+                            <span className="text-base font-bold text-gray-800">{word}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="bg-indigo-50 rounded-xl p-6 border border-indigo-200">
+                      <h4 className="text-lg font-semibold text-indigo-700 mb-3 flex items-center gap-2">
+                        <span>📖</span> Connected Passages
+                      </h4>
+                      {viewingList.passage ? (
+                        <div className="space-y-3">
+                          <p className="text-sm font-semibold text-indigo-700">{viewingList.passage.level}</p>
+                          <ul className="space-y-2">
+                            {viewingList.passage.texts.map(text => (
+                              <li key={`${text.type}-${text.title}`} className="bg-white rounded-lg p-3 border border-indigo-100">
+                                <div className="flex items-center justify-between">
+                                  <div className="font-semibold text-gray-800">{text.title}</div>
+                                  <span className="text-xs uppercase tracking-wide text-indigo-600">{text.type}</span>
+                                </div>
+                                <p className="text-xs text-gray-600 mt-1">{text.wordCount} words</p>
+                              </li>
+                            ))}
+                          </ul>
                         </div>
-                      ))}
+                      ) : (
+                        <p className="text-sm text-indigo-700">No aligned passage saved for this list yet.</p>
+                      )}
                     </div>
                   </div>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {SPELLING_LISTS.map(list => (
+                  {listsWithPassages.map(list => (
                     <button
                       key={list.id}
                       onClick={() => setViewingList(list)}
@@ -873,6 +1510,11 @@ const SpellingProgram = ({
                       <div className="text-xs mt-1">
                         {list.words.slice(0, 3).join(', ')}...
                       </div>
+                      {list.passage && (
+                        <div className="text-[11px] text-indigo-600 mt-1">
+                          📖 {list.passage.level}
+                        </div>
+                      )}
                     </button>
                   ))}
                 </div>
@@ -969,22 +1611,35 @@ const SpellingProgram = ({
                   <h4 className={`font-bold text-gray-700 ${groups.length >= 4 ? 'text-sm' : 'text-base'}`}>
                     Lists:
                   </h4>
-                  <button
-                    onClick={() => printLists(group.assignedLists)}
-                    disabled={group.assignedLists.length === 0}
-                    className={`bg-blue-500 text-white rounded disabled:opacity-50 hover:bg-blue-600 ${
-                      groups.length >= 4 ? 'text-xs px-1 py-1' : 'text-xs px-2 py-1'
-                    }`}
-                  >
-                    🖨️
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => printLists(group.assignedLists)}
+                      disabled={group.assignedLists.length === 0}
+                      className={`bg-blue-500 text-white rounded disabled:opacity-50 hover:bg-blue-600 ${
+                        groups.length >= 4 ? 'text-xs px-1 py-1' : 'text-xs px-2 py-1'
+                      }`}
+                    >
+                      🖨️
+                    </button>
+                    <button
+                      onClick={() => printPassages(group.assignedLists)}
+                      disabled={group.assignedLists.length === 0}
+                      className={`bg-purple-500 text-white rounded disabled:opacity-50 hover:bg-purple-600 ${
+                        groups.length >= 4 ? 'text-xs px-1 py-1' : 'text-xs px-2 py-1'
+                      }`}
+                    >
+                      📚
+                    </button>
+                  </div>
                 </div>
                 
                 <div className="space-y-1 mb-2 max-h-32 overflow-y-auto">
                   {group.assignedLists.map(listId => {
-                    const list = SPELLING_LISTS.find(l => l.id === listId);
+                    const list = listsWithPassages.find(l => l.id === listId);
+                    if (!list) return null;
+                    const passage = list.passage;
                     return (
-                      <div key={listId} className="bg-blue-50 border border-blue-200 rounded p-2">
+                      <div key={listId} className="bg-gradient-to-r from-blue-50 via-sky-50 to-indigo-50 border border-blue-200 rounded p-2 space-y-1">
                         <div className="flex items-center justify-between">
                           <span className={`font-medium text-blue-800 ${groups.length >= 4 ? 'text-xs' : 'text-sm'}`}>
                             {list.name}
@@ -996,15 +1651,17 @@ const SpellingProgram = ({
                             ×
                           </button>
                         </div>
-                        <div className={`text-blue-600 italic mt-1 ${groups.length >= 5 ? 'text-xs' : 'text-xs'}`}>
+                        <div className={`text-blue-600 italic ${groups.length >= 5 ? 'text-xs' : 'text-xs'}`}>
                           {list.feature}
                         </div>
-                        <div className={`text-blue-600 mt-1 ${groups.length >= 5 ? 'text-xs' : 'text-xs'}`}>
-                          {groups.length >= 5 ? 
-                            `${list.words.slice(0, 3).join(', ')}...` : 
-                            list.words.join(', ')
-                          }
+                        <div className={`text-blue-700 ${groups.length >= 5 ? 'text-[11px]' : 'text-xs'}`}>
+                          {groups.length >= 5 ? `${list.words.slice(0, 3).join(', ')}...` : list.words.join(', ')}
                         </div>
+                        {passage && (
+                          <div className={`text-indigo-700 ${groups.length >= 5 ? 'text-[11px]' : 'text-xs'}`}>
+                            📖 {passage.level}{passage.texts?.[0] ? ` – ${passage.texts[0].title}` : ''}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -1025,7 +1682,7 @@ const SpellingProgram = ({
                   defaultValue=""
                 >
                   <option value="">Add list...</option>
-                  {SPELLING_LISTS.filter(list => !group.assignedLists.includes(list.id)).map(list => (
+                  {listsWithPassages.filter(list => !group.assignedLists.includes(list.id)).map(list => (
                     <option key={list.id} value={list.id}>{list.name}</option>
                   ))}
                 </select>
