@@ -5,6 +5,8 @@ import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { DEFAULT_UPDATES, fetchDashboardUpdates } from '../services/globalContent';
 
+const OWNER_EMAIL = 'scotto6190@gmail.com';
+
 export default function Dashboard() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -711,6 +713,14 @@ export default function Dashboard() {
             
             {/* Action Buttons - Mobile Stack */}
             <div className="flex flex-col sm:flex-row w-full lg:w-auto space-y-2 sm:space-y-0 sm:space-x-3">
+              {user?.email?.toLowerCase() === OWNER_EMAIL && (
+                <button
+                  onClick={() => router.push('/admin')}
+                  className="w-full sm:w-auto bg-indigo-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-indigo-700 font-semibold text-sm sm:text-base"
+                >
+                  Open Admin Console
+                </button>
+              )}
               {userData?.stripeCustomerId && (
                 <button
                   onClick={handleManageSubscription}
