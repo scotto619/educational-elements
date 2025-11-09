@@ -12,52 +12,16 @@ import {
   where
 } from 'firebase/firestore';
 import { firestore } from '../utils/firebase';
-
-const SHOP_COLLECTION = 'global_shop_items';
-const DASHBOARD_UPDATES_COLLECTION = 'dashboard_updates';
-
-const emptyInventory = () => ({
-  basicAvatars: [],
-  premiumAvatars: [],
-  basicPets: [],
-  premiumPets: []
-});
-
-const toSlug = (text = '') =>
-  text
-    .toString()
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)+/g, '')
-    || `item-${Date.now()}`;
-
-const normalizeTimestamp = (value) => {
-  if (!value) return null;
-  if (typeof value.toDate === 'function') {
-    const date = value.toDate();
-    return date instanceof Date ? date.toISOString() : null;
-  }
-  if (value instanceof Date) {
-    return value.toISOString();
-  }
-  return null;
-};
-
-const mergeByName = (primary = [], additions = []) => {
-  const map = new Map();
-  primary.forEach(item => {
-    if (item?.name) {
-      map.set(item.name.toLowerCase(), item);
-    }
-  });
-  additions.forEach(item => {
-    if (item?.name) {
-      map.set(item.name.toLowerCase(), { ...item });
-    }
-  });
-  return Array.from(map.values());
-};
+import {
+  DASHBOARD_UPDATES_COLLECTION,
+  SHOP_COLLECTION,
+  emptyInventory,
+  groupShopItems,
+  mapShopDocToItem,
+  mapUpdateDoc,
+  mergeByName,
+  toSlug
+} from '../utils/globalContentHelpers';
 
 export const mergeShopInventories = (base = emptyInventory(), extra = emptyInventory()) => ({
   basicAvatars: mergeByName(base.basicAvatars, extra.basicAvatars),
@@ -65,50 +29,6 @@ export const mergeShopInventories = (base = emptyInventory(), extra = emptyInven
   basicPets: mergeByName(base.basicPets, extra.basicPets),
   premiumPets: mergeByName(base.premiumPets, extra.premiumPets)
 });
-
-const mapShopDocToItem = (docSnap) => {
-  const data = docSnap.data() || {};
-  const item = {
-    id: docSnap.id,
-    name: data.name || 'Unnamed Item',
-    price: Number(data.price ?? 0),
-    path: data.image || data.path || data.storagePath || '',
-    description: data.description || '',
-    rarity: data.rarity || data.tier || 'custom',
-    type: data.type || 'avatar',
-    category: data.category || 'basic',
-    active: data.active !== false,
-    createdAt: normalizeTimestamp(data.createdAt),
-    updatedAt: normalizeTimestamp(data.updatedAt)
-  };
-
-  if (!item.path && data.fileName) {
-    item.path = `/shop/custom/${data.fileName}`;
-  }
-
-  return item;
-};
-
-const groupShopItems = (items = []) => {
-  const inventory = emptyInventory();
-  items.forEach(item => {
-    if (!item.active) return;
-    if (item.type === 'pet') {
-      if (item.category === 'premium') {
-        inventory.premiumPets.push(item);
-      } else {
-        inventory.basicPets.push(item);
-      }
-    } else {
-      if (item.category === 'premium') {
-        inventory.premiumAvatars.push(item);
-      } else {
-        inventory.basicAvatars.push(item);
-      }
-    }
-  });
-  return inventory;
-};
 
 export const fetchGlobalShopItems = async ({ includeInactive = false } = {}) => {
   const baseQuery = collection(firestore, SHOP_COLLECTION);
@@ -165,20 +85,6 @@ export const setShopItemActive = async (id, active) => {
 
 export const removeShopItem = async (id) => {
   await deleteDoc(doc(firestore, SHOP_COLLECTION, id));
-};
-
-const mapUpdateDoc = (docSnap) => {
-  const data = docSnap.data() || {};
-  return {
-    id: docSnap.id,
-    title: data.title || 'Untitled Update',
-    status: data.status || 'UPDATE',
-    summary: data.summary || '',
-    highlight: data.highlight || '',
-    active: data.active !== false,
-    createdAt: normalizeTimestamp(data.createdAt),
-    updatedAt: normalizeTimestamp(data.updatedAt)
-  };
 };
 
 export const fetchDashboardUpdates = async ({ includeInactive = false } = {}) => {

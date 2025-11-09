@@ -1,5 +1,5 @@
 // components/tabs/TeachersToolkitTab.js - UPDATED WITH SPECIALIST TIMETABLE CREATOR
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 
 // Import tool components from the tools folder
 import StudentHelpQueue from '../tools/StudentHelpQueue';
@@ -45,14 +45,19 @@ const AutoNotification = ({ message, type = 'success', duration = 3000 }) => {
 // ===============================================
 // BIRTHDAY WALL COMPONENT
 // ===============================================
-const BirthdayWall = ({ students, showNotification, saveClassroomDataToFirebase, currentClassId, getAvatarImage, calculateAvatarLevel }) => {
+const BirthdayWall = ({
+  students,
+  showNotification,
+  onUpdateStudent,
+  saveClassroomDataToFirebase,
+  currentClassId,
+  getAvatarImage,
+  calculateAvatarLevel
+}) => {
   const [editingStudentId, setEditingStudentId] = useState(null);
   const [birthdayInput, setBirthdayInput] = useState('');
   const [assignBirthdayAvatar, setAssignBirthdayAvatar] = useState(false);
-  const today = new Date().toISOString().split('T')[0];
-  const oneWeekFromNow = new Date();
-  oneWeekFromNow.setDate(oneWeekFromNow.getDate() + 7);
-  const oneWeekFromNowStr = oneWeekFromNow.toISOString().split('T')[0];
+  const [pendingStudentId, setPendingStudentId] = useState(null);
 
   const BIRTHDAY_AVATARS = [
     { name: 'Birthday Cake', path: '/shop/Themed/Birthday/BirthdayCake.png' },
@@ -60,44 +65,127 @@ const BirthdayWall = ({ students, showNotification, saveClassroomDataToFirebase,
     { name: 'Balloon Hero', path: '/shop/Themed/Birthday/BalloonHero.png' },
   ];
 
-  const getUpcomingBirthdays = () => {
-    return students
-      .filter(student => student.birthday)
-      .map(student => {
-        const birthDate = new Date(student.birthday);
-        const todayDate = new Date(today);
-        birthDate.setFullYear(todayDate.getFullYear());
-        const isToday = birthDate.toISOString().split('T')[0] === today;
-        const isUpcoming = birthDate >= todayDate && birthDate <= new Date(oneWeekFromNowStr);
-        return { ...student, isToday, isUpcoming };
-      })
-      .sort((a, b) => new Date(a.birthday) - new Date(b.birthday));
+  const normaliseDateForInput = (value) => {
+    if (!value) return '';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) {
+      return value;
+    }
+    return parsed.toISOString().split('T')[0];
   };
 
-  const handleSetBirthday = (studentId) => {
+  const upcomingBirthdays = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const weekAhead = new Date(today);
+    weekAhead.setDate(weekAhead.getDate() + 7);
+
+    return students
+      .filter((student) => student?.birthday)
+      .map((student) => {
+        const birthDate = new Date(student.birthday);
+        if (Number.isNaN(birthDate.getTime())) {
+          return null;
+        }
+
+        const nextOccurrence = new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate());
+        if (nextOccurrence < today) {
+          nextOccurrence.setFullYear(today.getFullYear() + 1);
+        }
+
+        const isToday = nextOccurrence.getTime() === today.getTime();
+        const isUpcoming = nextOccurrence >= today && nextOccurrence <= weekAhead;
+
+        return {
+          id: student.id,
+          student,
+          displayDate: birthDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' }),
+          nextOccurrence: nextOccurrence.toISOString(),
+          isToday,
+          isUpcoming,
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => new Date(a.nextOccurrence) - new Date(b.nextOccurrence));
+  }, [students]);
+
+  const upcomingLookup = useMemo(() => {
+    const map = new Map();
+    upcomingBirthdays.forEach((entry) => {
+      map.set(entry.id, entry);
+    });
+    return map;
+  }, [upcomingBirthdays]);
+
+  const resetEditor = () => {
+    setEditingStudentId(null);
+    setBirthdayInput('');
+    setAssignBirthdayAvatar(false);
+    setPendingStudentId(null);
+  };
+
+  const persistBirthdayUpdate = async (studentId, update) => {
+    if (onUpdateStudent) {
+      await onUpdateStudent(studentId, update, 'Birthday Update');
+      return;
+    }
+
+    if (typeof saveClassroomDataToFirebase === 'function') {
+      const updatedStudents = students.map((student) =>
+        student.id === studentId ? { ...student, ...update } : student
+      );
+      await saveClassroomDataToFirebase(updatedStudents, currentClassId);
+    }
+  };
+
+  const handleSetBirthday = async (studentId) => {
     if (!birthdayInput) {
       showNotification('Please select a valid date', 'error');
       return;
     }
-    const updatedStudents = students.map(student =>
-      student.id === studentId
-        ? {
-            ...student,
-            birthday: birthdayInput,
-            birthdayAvatar: assignBirthdayAvatar
-              ? BIRTHDAY_AVATARS[Math.floor(Math.random() * BIRTHDAY_AVATARS.length)].name
-              : student.birthdayAvatar || null,
-          }
-        : student
-    );
-    saveClassroomDataToFirebase(updatedStudents, currentClassId);
-    showNotification('Birthday updated successfully!', 'success');
-    setEditingStudentId(null);
-    setBirthdayInput('');
-    setAssignBirthdayAvatar(false);
+
+    const updatePayload = {
+      birthday: birthdayInput,
+    };
+
+    if (assignBirthdayAvatar) {
+      const randomAvatar = BIRTHDAY_AVATARS[Math.floor(Math.random() * BIRTHDAY_AVATARS.length)];
+      updatePayload.birthdayAvatar = randomAvatar.path || randomAvatar.name;
+      updatePayload.birthdayAvatarName = randomAvatar.name;
+    } else {
+      updatePayload.birthdayAvatar = null;
+      updatePayload.birthdayAvatarName = null;
+    }
+
+    setPendingStudentId(studentId);
+
+    try {
+      await persistBirthdayUpdate(studentId, updatePayload);
+      showNotification('Birthday updated successfully!', 'success');
+      resetEditor();
+    } catch (error) {
+      console.error('Failed to update birthday', error);
+      showNotification('Unable to save birthday. Please try again.', 'error');
+      setPendingStudentId(null);
+    }
   };
-  
-  const upcomingBirthdays = getUpcomingBirthdays();
+
+  const handleClearBirthday = async (studentId) => {
+    setPendingStudentId(studentId);
+    try {
+      await persistBirthdayUpdate(studentId, {
+        birthday: null,
+        birthdayAvatar: null,
+        birthdayAvatarName: null,
+      });
+      showNotification('Birthday removed.', 'success');
+    } catch (error) {
+      console.error('Failed to clear birthday', error);
+      showNotification('Unable to clear birthday. Please try again.', 'error');
+    } finally {
+      resetEditor();
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -109,22 +197,61 @@ const BirthdayWall = ({ students, showNotification, saveClassroomDataToFirebase,
         <p className="text-white opacity-90 mt-2">Track and celebrate student birthdays</p>
       </div>
 
+      <div className="bg-white rounded-xl p-6 shadow-md border border-pink-100">
+        <h3 className="text-lg font-semibold text-pink-600 flex items-center gap-2">
+          <span className="text-2xl">🎈</span>
+          Upcoming celebrations
+        </h3>
+        {upcomingBirthdays.length === 0 ? (
+          <p className="text-sm text-gray-500 mt-2">No birthdays recorded yet. Add a birthday to get started!</p>
+        ) : (
+          <ul className="mt-3 flex flex-wrap gap-3">
+            {upcomingBirthdays.slice(0, 6).map((entry) => (
+              <li
+                key={entry.id}
+                className={`px-3 py-2 rounded-lg text-sm font-medium ${
+                  entry.isToday
+                    ? 'bg-pink-100 text-pink-700'
+                    : entry.isUpcoming
+                      ? 'bg-yellow-100 text-yellow-700'
+                      : 'bg-slate-100 text-slate-600'
+                }`}
+              >
+                <span>{entry.student.firstName} {entry.student.lastName}</span>
+                <span className="ml-2 text-xs font-normal opacity-80">{entry.displayDate}</span>
+                {entry.isToday && <span className="ml-2 text-xs">🎉 Today!</span>}
+              </li>
+            ))}
+            {upcomingBirthdays.length > 6 && (
+              <li className="px-3 py-2 rounded-lg text-sm bg-slate-100 text-slate-500">
+                +{upcomingBirthdays.length - 6} more
+              </li>
+            )}
+          </ul>
+        )}
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {students.map(student => {
-          const birthData = upcomingBirthdays.find(s => s.id === student.id);
+        {students.map((student) => {
+          const birthData = upcomingLookup.get(student.id);
+          const isSaving = pendingStudentId === student.id;
+
           return (
             <div
               key={student.id}
               className={`bg-white rounded-xl p-6 shadow-md hover:shadow-lg transition-all ${
-                birthData?.isToday ? 'border-4 border-pink-500 bg-gradient-to-br from-pink-50 to-red-50' :
-                birthData?.isUpcoming ? 'border-2 border-yellow-400 bg-yellow-50' : ''
+                birthData?.isToday
+                  ? 'border-4 border-pink-500 bg-gradient-to-br from-pink-50 to-red-50'
+                  : birthData?.isUpcoming
+                    ? 'border-2 border-yellow-400 bg-yellow-50'
+                    : 'border border-slate-100'
               }`}
             >
               <div className="flex items-center space-x-4">
                 <img
                   src={getAvatarImage(student.avatarBase, calculateAvatarLevel(student.totalPoints)) || '/avatars/Wizard F/Level 1.png'}
                   alt={`${student.firstName}'s avatar`}
-                  className="w-16 h-16 rounded-full border-2 border-gray-300"
+                  className="w-16 h-16 rounded-full border-2 border-gray-200 object-cover"
                 />
                 <div className="flex-1">
                   <h3 className="font-bold text-lg text-gray-800">
@@ -149,7 +276,7 @@ const BirthdayWall = ({ students, showNotification, saveClassroomDataToFirebase,
                     type="date"
                     value={birthdayInput}
                     onChange={(e) => setBirthdayInput(e.target.value)}
-                    className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg"
+                    className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-pink-400 focus:outline-none"
                   />
                   <label className="flex items-center space-x-2">
                     <input
@@ -157,22 +284,41 @@ const BirthdayWall = ({ students, showNotification, saveClassroomDataToFirebase,
                       checked={assignBirthdayAvatar}
                       onChange={(e) => setAssignBirthdayAvatar(e.target.checked)}
                     />
-                    <span className="text-sm text-gray-700">Assign birthday avatar</span>
+                    <span className="text-sm text-gray-700">Assign celebratory avatar</span>
                   </label>
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleSetBirthday(student.id)}
-                      className="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-all"
+                      disabled={isSaving}
+                      className={`flex-1 px-4 py-2 rounded-lg text-white transition-all ${
+                        isSaving
+                          ? 'bg-green-300 cursor-not-allowed'
+                          : 'bg-green-500 hover:bg-green-600'
+                      }`}
                     >
-                      Save
+                      {isSaving ? 'Saving…' : 'Save'}
                     </button>
+                    {student.birthday && (
+                      <button
+                        onClick={() => handleClearBirthday(student.id)}
+                        disabled={isSaving}
+                        className={`px-4 py-2 rounded-lg transition-all ${
+                          isSaving
+                            ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        }`}
+                      >
+                        Clear
+                      </button>
+                    )}
                     <button
-                      onClick={() => {
-                        setEditingStudentId(null);
-                        setBirthdayInput('');
-                        setAssignBirthdayAvatar(false);
-                      }}
-                      className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-all"
+                      onClick={resetEditor}
+                      disabled={isSaving}
+                      className={`px-4 py-2 rounded-lg transition-all ${
+                        isSaving
+                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                          : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-100'
+                      }`}
                     >
                       Cancel
                     </button>
@@ -182,7 +328,8 @@ const BirthdayWall = ({ students, showNotification, saveClassroomDataToFirebase,
                 <button
                   onClick={() => {
                     setEditingStudentId(student.id);
-                    setBirthdayInput(student.birthday || '');
+                    setBirthdayInput(normaliseDateForInput(student.birthday));
+                    setAssignBirthdayAvatar(Boolean(student.birthdayAvatar));
                   }}
                   className="mt-4 w-full bg-gradient-to-r from-pink-500 to-red-500 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all"
                 >
@@ -354,8 +501,9 @@ const AnalyticsComponent = ({ students }) => {
 // ===============================================
 // MAIN TEACHERS TOOLKIT COMPONENT
 // ===============================================
-const TeachersToolkitTab = ({ 
-  students, 
+const TeachersToolkitTab = ({
+  students,
+  onUpdateStudent,
   saveClassroomDataToFirebase,
   saveToolkitData, // NEW: For saving toolkit data to Firebase
   loadedData = {}, // NEW: For loading toolkit data from Firebase
@@ -423,6 +571,7 @@ const TeachersToolkitTab = ({
             <BirthdayWall
               students={students}
               showNotification={showNotification}
+              onUpdateStudent={onUpdateStudent}
               saveClassroomDataToFirebase={saveClassroomDataToFirebase}
               currentClassId={currentClassId}
               getAvatarImage={getAvatarImage}

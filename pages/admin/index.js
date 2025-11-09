@@ -1,28 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/router';
 import { onAuthStateChanged } from 'firebase/auth';
 import {
-  fetchDashboardUpdates,
-  fetchGlobalShopItems,
-  listAllShopItems,
-  mergeShopInventories,
-  removeDashboardUpdate,
-  removeShopItem,
-  saveDashboardUpdate,
-  saveShopItem,
-  setDashboardUpdateActive,
-  setShopItemActive
+  mergeShopInventories
 } from '../../services/globalContent';
 import { auth } from '../../utils/firebase';
+import { OWNER_EMAILS as CONFIGURED_OWNER_EMAILS } from '../../utils/ownerEmails';
 
-const DEFAULT_OWNER_EMAILS = ['scotto6190@gmail.com'];
-
-const ENV_OWNER_EMAILS = (process.env.NEXT_PUBLIC_OWNER_EMAILS || process.env.NEXT_PUBLIC_OWNER_EMAIL || '')
-  .split(',')
-  .map(email => email.trim().toLowerCase())
-  .filter(Boolean);
-
-const OWNER_EMAILS = Array.from(new Set([...ENV_OWNER_EMAILS, ...DEFAULT_OWNER_EMAILS]));
+const OWNER_EMAILS = CONFIGURED_OWNER_EMAILS;
 
 const SHOP_DEFAULT = {
   name: '',
@@ -107,42 +92,90 @@ const AdminPortal = () => {
   const resetShopForm = () => setShopForm(SHOP_DEFAULT);
   const resetUpdateForm = () => setUpdateForm(UPDATE_DEFAULT);
 
-  const loadContent = async () => {
+  const getCurrentToken = useCallback(async () => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      throw new Error('You must be signed in to use the owner tools.');
+    }
+    return currentUser.getIdToken();
+  }, []);
+
+  const callAdminApi = useCallback(async (path, { method = 'GET', body } = {}) => {
+    const token = await getCurrentToken();
+    const headers = {
+      Authorization: `Bearer ${token}`,
+    };
+
+    let payload;
+    if (body !== undefined) {
+      headers['Content-Type'] = 'application/json';
+      payload = JSON.stringify(body);
+    }
+
+    const response = await fetch(path, {
+      method,
+      headers,
+      body: payload,
+    });
+
+    let data = null;
+    if (response.status !== 204) {
+      try {
+        data = await response.json();
+      } catch (error) {
+        data = null;
+      }
+    }
+
+    if (!response.ok) {
+      const error = new Error(data?.error || 'Request failed');
+      error.status = response.status;
+      error.details = data?.details;
+      throw error;
+    }
+
+    return data;
+  }, [getCurrentToken]);
+
+  const loadContent = useCallback(async () => {
     setBusy(true);
     try {
-      const [allShopItems, activeInventory, dashboardUpdates] = await Promise.all([
-        listAllShopItems(),
-        fetchGlobalShopItems(),
-        fetchDashboardUpdates({ includeInactive: true })
+      const [shopResponse, updatesResponse] = await Promise.all([
+        callAdminApi('/api/admin/shop-items'),
+        callAdminApi('/api/admin/dashboard-updates?includeInactive=1')
       ]);
 
-      setShopItems(allShopItems);
-      setShopInventory(activeInventory);
-      setUpdates(dashboardUpdates);
+      setShopItems(shopResponse?.items || []);
+      setShopInventory(shopResponse?.inventory || { basicAvatars: [], premiumAvatars: [], basicPets: [], premiumPets: [] });
+      setUpdates(updatesResponse?.updates || []);
+      setMessage(null);
     } catch (error) {
       console.error('Failed to load admin content', error);
-      setMessage({ type: 'error', text: 'Could not load data. Check console for details.' });
+      setMessage({ type: 'error', text: error.message || 'Could not load data. Check console for details.' });
     } finally {
       setBusy(false);
     }
-  };
+  }, [callAdminApi]);
 
   useEffect(() => {
     loadContent();
-  }, []);
+  }, [loadContent]);
 
   const handleShopSubmit = async (event) => {
     event.preventDefault();
     setBusy(true);
 
     try {
-      await saveShopItem(shopForm);
+      await callAdminApi('/api/admin/shop-items', {
+        method: shopForm.id ? 'PUT' : 'POST',
+        body: shopForm
+      });
       resetShopForm();
       setMessage({ type: 'success', text: 'Shop item saved and live for all classrooms.' });
       await loadContent();
     } catch (error) {
       console.error('Failed to save shop item', error);
-      setMessage({ type: 'error', text: 'Unable to save shop item. Please try again.' });
+      setMessage({ type: 'error', text: error.message || 'Unable to save shop item. Please try again.' });
     } finally {
       setBusy(false);
     }
@@ -153,13 +186,16 @@ const AdminPortal = () => {
     setBusy(true);
 
     try {
-      await saveDashboardUpdate(updateForm);
+      await callAdminApi('/api/admin/dashboard-updates', {
+        method: updateForm.id ? 'PUT' : 'POST',
+        body: updateForm
+      });
       resetUpdateForm();
       setMessage({ type: 'success', text: 'Dashboard update published successfully.' });
       await loadContent();
     } catch (error) {
       console.error('Failed to save dashboard update', error);
-      setMessage({ type: 'error', text: 'Unable to save dashboard update. Please try again.' });
+      setMessage({ type: 'error', text: error.message || 'Unable to save dashboard update. Please try again.' });
     } finally {
       setBusy(false);
     }
@@ -168,11 +204,14 @@ const AdminPortal = () => {
   const toggleShopItem = async (item) => {
     setBusy(true);
     try {
-      await setShopItemActive(item.id, !item.active);
+      await callAdminApi('/api/admin/shop-items', {
+        method: 'PATCH',
+        body: { id: item.id, active: !item.active }
+      });
       await loadContent();
     } catch (error) {
       console.error('Failed to toggle shop item', error);
-      setMessage({ type: 'error', text: 'Unable to change item visibility.' });
+      setMessage({ type: 'error', text: error.message || 'Unable to change item visibility.' });
     } finally {
       setBusy(false);
     }
@@ -183,11 +222,13 @@ const AdminPortal = () => {
 
     setBusy(true);
     try {
-      await removeShopItem(item.id);
+      await callAdminApi(`/api/admin/shop-items?id=${encodeURIComponent(item.id)}`, {
+        method: 'DELETE'
+      });
       await loadContent();
     } catch (error) {
       console.error('Failed to delete shop item', error);
-      setMessage({ type: 'error', text: 'Unable to delete item.' });
+      setMessage({ type: 'error', text: error.message || 'Unable to delete item.' });
     } finally {
       setBusy(false);
     }
@@ -196,11 +237,14 @@ const AdminPortal = () => {
   const toggleUpdate = async (update) => {
     setBusy(true);
     try {
-      await setDashboardUpdateActive(update.id, !update.active);
+      await callAdminApi('/api/admin/dashboard-updates', {
+        method: 'PATCH',
+        body: { id: update.id, active: !update.active }
+      });
       await loadContent();
     } catch (error) {
       console.error('Failed to toggle dashboard update', error);
-      setMessage({ type: 'error', text: 'Unable to change update visibility.' });
+      setMessage({ type: 'error', text: error.message || 'Unable to change update visibility.' });
     } finally {
       setBusy(false);
     }
@@ -211,11 +255,13 @@ const AdminPortal = () => {
 
     setBusy(true);
     try {
-      await removeDashboardUpdate(update.id);
+      await callAdminApi(`/api/admin/dashboard-updates?id=${encodeURIComponent(update.id)}`, {
+        method: 'DELETE'
+      });
       await loadContent();
     } catch (error) {
       console.error('Failed to delete dashboard update', error);
-      setMessage({ type: 'error', text: 'Unable to delete update.' });
+      setMessage({ type: 'error', text: error.message || 'Unable to delete update.' });
     } finally {
       setBusy(false);
     }
