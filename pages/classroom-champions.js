@@ -1143,8 +1143,9 @@ const handleUpdateStudent = useCallback(async (studentId, updatedData, reason = 
                 />;
       
       case 'toolkit':
-        return <TeachersToolkitTab 
+        return <TeachersToolkitTab
                   {...commonProps}
+                  onUpdateStudent={handleUpdateStudent}
                   userData={userData}
                   saveGroupDataToFirebase={(data) => saveClassData({ groupData: data })}
                   saveClassroomDataToFirebase={(data) => {
