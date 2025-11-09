@@ -1,5 +1,5 @@
 // components/student/StudentShop.js - UPDATED WITH HALLOWEEN SUPPORT
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 
 import {
@@ -201,6 +201,46 @@ const getRarityBg = (rarity) => {
   }
 };
 
+const isSameCalendarDay = (dateA, dateB) => {
+  if (!(dateA instanceof Date) || !(dateB instanceof Date)) {
+    return false;
+  }
+
+  return (
+    dateA.getFullYear() === dateB.getFullYear() &&
+    dateA.getMonth() === dateB.getMonth() &&
+    dateA.getDate() === dateB.getDate()
+  );
+};
+
+const parseDateValue = (value) => {
+  if (!value) return null;
+
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value;
+  }
+
+  if (typeof value === 'string' || typeof value === 'number') {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  if (typeof value === 'object') {
+    if (typeof value.toDate === 'function') {
+      const parsed = value.toDate();
+      return parsed instanceof Date && !Number.isNaN(parsed.getTime()) ? parsed : null;
+    }
+
+    if (typeof value.seconds === 'number') {
+      const milliseconds = value.seconds * 1000 + Math.floor((value.nanoseconds || 0) / 1e6);
+      const parsed = new Date(milliseconds);
+      return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+  }
+
+  return null;
+};
+
 const getEggAccent = (egg) => {
   if (!egg) return '#6366f1';
   if (egg.accent) return egg.accent;
@@ -290,12 +330,315 @@ const StudentShop = ({
   const [sellModal, setSellModal] = useState({ visible: false, item: null, type: null, price: 0 });
   const [showSellMode, setShowSellMode] = useState(false);
 
+  // Trading states
+  const [tradeModal, setTradeModal] = useState({ visible: false, type: null, item: null, stage: 'confirm', result: null });
+  const [isProcessingTrade, setIsProcessingTrade] = useState(false);
+
   // Egg celebrations
   const [hatchingCelebration, setHatchingCelebration] = useState(null);
 
   const currentCoins = calculateCoins(studentData);
 
   const studentEggs = useMemo(() => studentData?.petEggs || [], [studentData?.petEggs]);
+
+  const allAvatarOptions = useMemo(
+    () =>
+      [
+        ...(SHOP_BASIC_AVATARS || []),
+        ...(SHOP_PREMIUM_AVATARS || []),
+        ...(HALLOWEEN_BASIC_AVATARS || []),
+        ...(HALLOWEEN_PREMIUM_AVATARS || [])
+      ].filter(item => item && item.name),
+    [SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, HALLOWEEN_BASIC_AVATARS, HALLOWEEN_PREMIUM_AVATARS]
+  );
+
+  const allPetOptions = useMemo(
+    () =>
+      [
+        ...(SHOP_BASIC_PETS || []),
+        ...(SHOP_PREMIUM_PETS || []),
+        ...(HALLOWEEN_PETS || [])
+      ].filter(item => item && item.name),
+    [SHOP_BASIC_PETS, SHOP_PREMIUM_PETS, HALLOWEEN_PETS]
+  );
+
+  const lastTradeDate = useMemo(() => parseDateValue(studentData?.lastTradeAt), [studentData?.lastTradeAt]);
+
+  const canTradeToday = useMemo(() => {
+    if (!lastTradeDate) {
+      return true;
+    }
+
+    return !isSameCalendarDay(lastTradeDate, new Date());
+  }, [lastTradeDate]);
+
+  const nextTradeDate = useMemo(() => {
+    if (!lastTradeDate) {
+      return null;
+    }
+
+    const next = new Date(lastTradeDate.getTime());
+    next.setDate(next.getDate() + 1);
+    return next;
+  }, [lastTradeDate]);
+
+  const tradeAvailabilityText = useMemo(() => {
+    if (canTradeToday) {
+      return 'You can make one trade today.';
+    }
+
+    if (!nextTradeDate) {
+      return '';
+    }
+
+    const dateText = nextTradeDate.toLocaleDateString();
+    const timeText = nextTradeDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return `Next trade available on ${dateText} at ${timeText}.`;
+  }, [canTradeToday, nextTradeDate]);
+
+  const selectTradeReplacement = useCallback(
+    (type, itemToTrade) => {
+      if (type === 'avatar') {
+        const ownedAvatars = new Set(studentData?.ownedAvatars || []);
+        const options = allAvatarOptions.filter(
+          avatar => avatar.name !== itemToTrade && !ownedAvatars.has(avatar.name)
+        );
+        const fallback = allAvatarOptions.filter(avatar => avatar.name !== itemToTrade);
+        const pool = options.length > 0 ? options : fallback;
+        if (pool.length === 0) {
+          return null;
+        }
+        const selectedIndex = Math.floor(Math.random() * pool.length);
+        return pool[selectedIndex];
+      }
+
+      if (type === 'pet') {
+        const ownedPetNames = new Set((studentData?.ownedPets || []).map(pet => pet.name));
+        const nameToExclude = typeof itemToTrade === 'string' ? itemToTrade : itemToTrade?.name;
+        const options = allPetOptions.filter(
+          pet => pet.name !== nameToExclude && !ownedPetNames.has(pet.name)
+        );
+        const fallback = allPetOptions.filter(pet => pet.name !== nameToExclude);
+        const pool = options.length > 0 ? options : fallback;
+        if (pool.length === 0) {
+          return null;
+        }
+        const selectedIndex = Math.floor(Math.random() * pool.length);
+        return pool[selectedIndex];
+      }
+
+      return null;
+    },
+    [allAvatarOptions, allPetOptions, studentData?.ownedAvatars, studentData?.ownedPets]
+  );
+
+  const handleTradeRequest = (type, item) => {
+    if (!canTradeToday) {
+      showToast('You can only make one trade each day. Check back tomorrow!', 'info');
+      return;
+    }
+
+    setTradeModal({ visible: true, type, item, stage: 'confirm', result: null });
+  };
+
+  const closeTradeModal = () => {
+    setTradeModal({ visible: false, type: null, item: null, stage: 'confirm', result: null });
+    setIsProcessingTrade(false);
+  };
+
+  const confirmTrade = async () => {
+    if (!tradeModal.type || !tradeModal.item) {
+      return;
+    }
+
+    if (!canTradeToday) {
+      showToast('You have already traded today. Please try again tomorrow!', 'info');
+      closeTradeModal();
+      return;
+    }
+
+    setIsProcessingTrade(true);
+
+    try {
+      const replacementTemplate = selectTradeReplacement(tradeModal.type, tradeModal.item);
+
+      if (!replacementTemplate) {
+        showToast('No trade options are available right now. Try again later!', 'error');
+        closeTradeModal();
+        return;
+      }
+
+      const updates = { lastTradeAt: new Date().toISOString() };
+      let receivedItem = null;
+
+      if (tradeModal.type === 'avatar') {
+        const filteredAvatars = (studentData.ownedAvatars || []).filter(name => name !== tradeModal.item);
+        const updatedAvatars = [...new Set([...filteredAvatars, replacementTemplate.name])];
+        updates.ownedAvatars = updatedAvatars;
+
+        if (studentData.avatarBase === tradeModal.item) {
+          updates.avatarBase = replacementTemplate.name;
+        }
+
+        receivedItem = { ...replacementTemplate, __type: 'avatar' };
+      } else if (tradeModal.type === 'pet') {
+        const petToTrade = tradeModal.item;
+        const ownedPets = studentData.ownedPets || [];
+        const isActivePet = ownedPets[0]?.id === petToTrade.id;
+        const remainingPets = ownedPets.filter(pet => pet.id !== petToTrade.id);
+        const newPet = { ...replacementTemplate, id: `pet_${Date.now()}` };
+        const updatedPets = isActivePet ? [newPet, ...remainingPets] : [...remainingPets, newPet];
+        updates.ownedPets = updatedPets;
+        receivedItem = { ...newPet, __type: 'pet' };
+      } else {
+        closeTradeModal();
+        return;
+      }
+
+      const success = await updateStudentData(updates);
+
+      if (success) {
+        showToast(`Trade complete! You received ${replacementTemplate.name}.`, 'success');
+        setTradeModal(prev => ({ ...prev, stage: 'result', result: { received: receivedItem, traded: prev.item } }));
+      } else {
+        showToast('Trade failed. Please try again.', 'error');
+        closeTradeModal();
+      }
+    } finally {
+      setIsProcessingTrade(false);
+    }
+  };
+
+  const renderTradeModal = () => {
+    if (!tradeModal.visible) {
+      return null;
+    }
+
+    const isAvatarTrade = tradeModal.type === 'avatar';
+
+    if (tradeModal.stage === 'result' && tradeModal.result) {
+      const { received, traded } = tradeModal.result;
+      const receivedName = received?.name || 'your new friend';
+      const tradedName = isAvatarTrade ? traded : traded?.name;
+
+      const resultImage = (() => {
+        if (!received) return null;
+
+        if (isAvatarTrade) {
+          const avatarSrc = received.path || getAvatarImage(received.name, calculateAvatarLevel(studentData.totalPoints));
+          return (
+            <img
+              src={avatarSrc}
+              alt={receivedName}
+              className="w-24 h-24 md:w-28 md:h-28 rounded-full mx-auto mb-4 border-4 border-amber-200"
+              onError={(e) => {
+                e.target.src = '/shop/Basic/Banana.png';
+              }}
+            />
+          );
+        }
+
+        const petArt = resolvePetArt(getPetImage(received));
+        return (
+          <img
+            src={petArt.src}
+            alt={receivedName}
+            className="w-24 h-24 md:w-28 md:h-28 rounded-full mx-auto mb-4 border-4 border-amber-200"
+            data-fallbacks={serializeFallbacks(petArt.fallbacks)}
+            data-fallback-index="0"
+            onError={petImageErrorHandler}
+          />
+        );
+      })();
+
+      return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md text-center p-6 md:p-8">
+            <div className="text-5xl md:text-6xl mb-3">✨</div>
+            <h2 className="text-xl md:text-2xl font-bold mb-2">Trade Successful!</h2>
+            <p className="text-sm md:text-base text-gray-700 mb-4">
+              You traded <span className="font-semibold">{tradedName}</span> for{' '}
+              <span className="font-semibold text-amber-600">{receivedName}</span>.
+            </p>
+            {resultImage}
+            <button
+              onClick={closeTradeModal}
+              className="mt-2 w-full py-3 bg-amber-500 text-white rounded-lg font-semibold hover:bg-amber-600"
+            >
+              Awesome!
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    const itemName = isAvatarTrade ? tradeModal.item : tradeModal.item?.name;
+    const previewImage = (() => {
+      if (!itemName) return null;
+
+      if (isAvatarTrade) {
+        return (
+          <img
+            src={getAvatarImage(itemName, calculateAvatarLevel(studentData.totalPoints))}
+            alt={itemName}
+            className="w-20 h-20 md:w-24 md:h-24 rounded-full mx-auto mb-4 border-4 border-blue-200"
+            onError={(e) => {
+              e.target.src = '/shop/Basic/Banana.png';
+            }}
+          />
+        );
+      }
+
+      const petArt = resolvePetArt(getPetImage(tradeModal.item));
+      return (
+        <img
+          src={petArt.src}
+          alt={itemName}
+          className="w-20 h-20 md:w-24 md:h-24 rounded-full mx-auto mb-4 border-4 border-green-200"
+          data-fallbacks={serializeFallbacks(petArt.fallbacks)}
+          data-fallback-index="0"
+          onError={petImageErrorHandler}
+        />
+      );
+    })();
+
+    const confirmDisabled = isProcessingTrade || !canTradeToday;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md text-center p-6 md:p-8">
+          <div className="text-4xl md:text-5xl mb-3">🔄</div>
+          <h2 className="text-xl md:text-2xl font-bold mb-2">
+            {isAvatarTrade ? 'Trade Avatar' : 'Trade Pet'}
+          </h2>
+          <p className="text-sm md:text-base text-gray-700 mb-3">
+            Swap this {isAvatarTrade ? 'avatar' : 'pet'} for a random new one of the same type. You can trade once per day.
+          </p>
+          {previewImage}
+          <p className="text-xs md:text-sm text-gray-500 mb-4">Today's trade will be used if you continue.</p>
+          <div className="flex gap-3">
+            <button
+              onClick={closeTradeModal}
+              className="flex-1 py-2 md:py-3 border rounded-lg hover:bg-gray-50 text-sm md:text-base"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={confirmTrade}
+              disabled={confirmDisabled}
+              className={`flex-1 py-2 md:py-3 rounded-lg text-sm md:text-base font-semibold transition-all ${
+                confirmDisabled
+                  ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                  : 'bg-amber-500 text-white hover:bg-amber-600'
+              }`}
+            >
+              {isProcessingTrade ? 'Trading...' : 'Confirm Trade'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   useEffect(() => {
     if (!studentEggs.length) return;
@@ -1095,6 +1438,9 @@ const StudentShop = ({
       {/* Sell Confirmation Modal */}
       {sellModal.visible && renderSellModal()}
 
+      {/* Trade Modal */}
+      {tradeModal.visible && renderTradeModal()}
+
       {/* Hatch Celebration */}
       {renderHatchCelebrationModal()}
 
@@ -1119,6 +1465,15 @@ const StudentShop = ({
               </div>
             </div>
             <div className="p-4 md:p-6 space-y-4 md:space-y-6 overflow-y-auto">
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 md:p-4">
+                <p className="text-sm md:text-base font-semibold text-amber-900 mb-1">Daily Trade Limit</p>
+                <p
+                  className={`text-xs md:text-sm ${canTradeToday ? 'text-emerald-700' : 'text-amber-700'}`}
+                >
+                  {tradeAvailabilityText}
+                </p>
+              </div>
+
               {/* Owned Avatars */}
               <div>
                 <h3 className="font-bold text-base md:text-lg mb-2 md:mb-3">My Avatars</h3>
@@ -1126,31 +1481,44 @@ const StudentShop = ({
                   <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 md:gap-4">
                     {studentData.ownedAvatars.map(avatarName => (
                       <div key={avatarName} className={`border-2 rounded-lg p-2 md:p-3 text-center ${studentData.avatarBase === avatarName ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}>
-                        <img 
-                          src={getAvatarImage(avatarName, calculateAvatarLevel(studentData.totalPoints))} 
+                        <img
+                          src={getAvatarImage(avatarName, calculateAvatarLevel(studentData.totalPoints))}
                           className="w-12 h-12 md:w-16 md:h-16 rounded-full mx-auto mb-1"
                           onError={(e) => {
                             e.target.src = '/shop/Basic/Banana.png';
                           }}
                         />
                         <p className="text-xs font-semibold truncate">{avatarName}</p>
-                        {studentData.avatarBase === avatarName ? (
-                          <p className="text-xs text-blue-600 font-bold">Equipped</p>
-                        ) : showSellMode ? (
-                          <button 
-                            onClick={() => handleSellItem(avatarName, 'avatar')} 
-                            className="text-xs bg-red-500 text-white px-2 py-1 rounded mt-1 hover:bg-red-600 active:scale-95"
+                        <div className="mt-1 flex flex-col gap-1 items-center">
+                          {studentData.avatarBase === avatarName ? (
+                            <p className="text-xs text-blue-600 font-bold">Equipped</p>
+                          ) : showSellMode ? (
+                            <button
+                              onClick={() => handleSellItem(avatarName, 'avatar')}
+                              className="text-xs bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 active:scale-95"
+                            >
+                              Sell
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleEquip('avatar', avatarName)}
+                              className="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600 active:scale-95"
+                            >
+                              Equip
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleTradeRequest('avatar', avatarName)}
+                            disabled={!canTradeToday}
+                            className={`text-xs px-2 py-1 rounded font-semibold transition-all ${
+                              canTradeToday
+                                ? 'bg-amber-500 text-white hover:bg-amber-600 active:scale-95'
+                                : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                            }`}
                           >
-                            Sell
+                            Trade
                           </button>
-                        ) : (
-                          <button 
-                            onClick={() => handleEquip('avatar', avatarName)} 
-                            className="text-xs bg-blue-500 text-white px-2 py-1 rounded mt-1 hover:bg-blue-600 active:scale-95"
-                          >
-                            Equip
-                          </button>
-                        )}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1180,23 +1548,36 @@ const StudentShop = ({
                           );
                         })()}
                         <p className="text-xs font-semibold truncate">{pet.name}</p>
-                        {index === 0 ? (
-                          <p className="text-xs text-purple-600 font-bold">Active</p>
-                        ) : showSellMode ? (
-                          <button 
-                            onClick={() => handleSellItem(pet, 'pet')} 
-                            className="text-xs bg-red-500 text-white px-2 py-1 rounded mt-1 hover:bg-red-600 active:scale-95"
+                        <div className="mt-1 flex flex-col gap-1 items-center">
+                          {index === 0 ? (
+                            <p className="text-xs text-purple-600 font-bold">Active</p>
+                          ) : showSellMode ? (
+                            <button
+                              onClick={() => handleSellItem(pet, 'pet')}
+                              className="text-xs bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 active:scale-95"
+                            >
+                              Sell
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleEquip('pet', pet.id)}
+                              className="text-xs bg-purple-500 text-white px-2 py-1 rounded hover:bg-purple-600 active:scale-95"
+                            >
+                              Equip
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleTradeRequest('pet', pet)}
+                            disabled={!canTradeToday}
+                            className={`text-xs px-2 py-1 rounded font-semibold transition-all ${
+                              canTradeToday
+                                ? 'bg-amber-500 text-white hover:bg-amber-600 active:scale-95'
+                                : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                            }`}
                           >
-                            Sell
+                            Trade
                           </button>
-                        ) : (
-                          <button 
-                            onClick={() => handleEquip('pet', pet.id)} 
-                            className="text-xs bg-purple-500 text-white px-2 py-1 rounded mt-1 hover:bg-purple-600 active:scale-95"
-                          >
-                            Equip
-                          </button>
-                        )}
+                        </div>
                       </div>
                     ))}
                   </div>
