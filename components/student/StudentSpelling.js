@@ -1,5 +1,6 @@
 // components/student/StudentSpelling.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { READING_PASSAGES } from '../curriculum/literacy/SpellingProgram';
 
 // Import spelling lists from the main program
 const SPELLING_LISTS = [
@@ -357,14 +358,22 @@ const ACTIVITIES = [
   }
 ];
 
-const StudentSpelling = ({ 
-  studentData, 
-  classData, 
-  showToast 
+const StudentSpelling = ({
+  studentData,
+  classData,
+  showToast
 }) => {
   const [studentAssignments, setStudentAssignments] = useState(null);
   const [completedActivities, setCompletedActivities] = useState([]);
   const [showActivityInstructions, setShowActivityInstructions] = useState(null);
+
+  const passageMap = useMemo(() => {
+    const map = {};
+    READING_PASSAGES.forEach(passage => {
+      map[passage.id] = passage;
+    });
+    return map;
+  }, []);
 
   useEffect(() => {
     if (studentData && classData) {
@@ -384,9 +393,16 @@ const StudentSpelling = ({
 
     if (studentGroup) {
       // Get assigned spelling lists
-      const assignedLists = studentGroup.assignedLists.map(listId => 
-        SPELLING_LISTS.find(list => list.id === listId)
-      ).filter(Boolean);
+      const assignedLists = studentGroup.assignedLists.map(listId => {
+        const baseList = SPELLING_LISTS.find(list => list.id === listId);
+        if (!baseList) return null;
+        const passage = passageMap[listId];
+        return {
+          ...baseList,
+          passage,
+          texts: passage?.texts || []
+        };
+      }).filter(Boolean);
 
       setStudentAssignments({
         groupName: studentGroup.name,
@@ -601,8 +617,8 @@ const StudentSpelling = ({
             <div className="p-4 md:p-6">
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
                 {list.words.map((word, index) => (
-                  <div 
-                    key={index} 
+                  <div
+                    key={index}
                     className="bg-gradient-to-br from-blue-50 to-indigo-100 border-2 border-blue-200 rounded-lg p-3 md:p-4 text-center hover:shadow-md transition-all duration-200 hover:scale-105"
                   >
                     <span className="text-lg md:text-xl font-bold text-gray-800 select-text">
@@ -611,6 +627,27 @@ const StudentSpelling = ({
                   </div>
                 ))}
               </div>
+              {list.passage && (
+                <div className="mt-6 bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-200 rounded-xl p-4">
+                  <h3 className="text-base md:text-lg font-semibold text-indigo-700 mb-3 flex items-center gap-2">
+                    <span>📖</span> Connected Reading: {list.passage.level}
+                  </h3>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    {list.texts.map(text => (
+                      <div key={`${text.type}-${text.title}`} className="bg-white rounded-lg border border-indigo-100 p-3 shadow-sm">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="text-sm font-bold text-gray-800">{text.title}</h4>
+                          <span className="text-xs uppercase tracking-wide text-indigo-600">{text.type}</span>
+                        </div>
+                        <p className="text-xs text-gray-600">{text.wordCount} words</p>
+                        <p className="text-xs text-gray-500 mt-2 h-16 overflow-hidden">
+                          {text.content.split('\n').join(' ')}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         ))}
