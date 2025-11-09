@@ -15,10 +15,14 @@ import {
 } from '../../services/globalContent';
 import { auth } from '../../utils/firebase';
 
-const OWNER_EMAILS = (process.env.NEXT_PUBLIC_OWNER_EMAILS || process.env.NEXT_PUBLIC_OWNER_EMAIL || '')
+const DEFAULT_OWNER_EMAILS = ['scotto6190@gmail.com'];
+
+const ENV_OWNER_EMAILS = (process.env.NEXT_PUBLIC_OWNER_EMAILS || process.env.NEXT_PUBLIC_OWNER_EMAIL || '')
   .split(',')
   .map(email => email.trim().toLowerCase())
   .filter(Boolean);
+
+const OWNER_EMAILS = Array.from(new Set([...ENV_OWNER_EMAILS, ...DEFAULT_OWNER_EMAILS]));
 
 const SHOP_DEFAULT = {
   name: '',
