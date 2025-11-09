@@ -1,5 +1,5 @@
 // components/student/StudentShop.js - UPDATED WITH HALLOWEEN SUPPORT
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 
 import {
@@ -300,6 +300,16 @@ const findOriginalPrice = (
   return 10; // Fallback default
 };
 
+const INITIAL_TRADE_MODAL_STATE = {
+  visible: false,
+  type: null,
+  item: null,
+  stage: 'select',
+  selectedPartnerId: null,
+  selectedPartnerItem: null,
+  result: null
+};
+
 const StudentShop = ({
   studentData,
   updateStudentData,
@@ -315,7 +325,9 @@ const StudentShop = ({
   HALLOWEEN_BASIC_AVATARS = [],
   HALLOWEEN_PREMIUM_AVATARS = [],
   HALLOWEEN_PETS = [],
-  classRewards
+  classRewards,
+  classmates = [],
+  performClassmateTrade = null
 }) => {
   const [activeCategory, setActiveCategory] = useState('halloween'); // Spotlight the limited-time collection first
   const [purchaseModal, setPurchaseModal] = useState({ visible: false, item: null, type: null });
@@ -331,7 +343,7 @@ const StudentShop = ({
   const [showSellMode, setShowSellMode] = useState(false);
 
   // Trading states
-  const [tradeModal, setTradeModal] = useState({ visible: false, type: null, item: null, stage: 'confirm', result: null });
+  const [tradeModal, setTradeModal] = useState(INITIAL_TRADE_MODAL_STATE);
   const [isProcessingTrade, setIsProcessingTrade] = useState(false);
 
   // Egg celebrations
@@ -340,27 +352,6 @@ const StudentShop = ({
   const currentCoins = calculateCoins(studentData);
 
   const studentEggs = useMemo(() => studentData?.petEggs || [], [studentData?.petEggs]);
-
-  const allAvatarOptions = useMemo(
-    () =>
-      [
-        ...(SHOP_BASIC_AVATARS || []),
-        ...(SHOP_PREMIUM_AVATARS || []),
-        ...(HALLOWEEN_BASIC_AVATARS || []),
-        ...(HALLOWEEN_PREMIUM_AVATARS || [])
-      ].filter(item => item && item.name),
-    [SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, HALLOWEEN_BASIC_AVATARS, HALLOWEEN_PREMIUM_AVATARS]
-  );
-
-  const allPetOptions = useMemo(
-    () =>
-      [
-        ...(SHOP_BASIC_PETS || []),
-        ...(SHOP_PREMIUM_PETS || []),
-        ...(HALLOWEEN_PETS || [])
-      ].filter(item => item && item.name),
-    [SHOP_BASIC_PETS, SHOP_PREMIUM_PETS, HALLOWEEN_PETS]
-  );
 
   const lastTradeDate = useMemo(() => parseDateValue(studentData?.lastTradeAt), [studentData?.lastTradeAt]);
 
@@ -396,53 +387,22 @@ const StudentShop = ({
     return `Next trade available on ${dateText} at ${timeText}.`;
   }, [canTradeToday, nextTradeDate]);
 
-  const selectTradeReplacement = useCallback(
-    (type, itemToTrade) => {
-      if (type === 'avatar') {
-        const ownedAvatars = new Set(studentData?.ownedAvatars || []);
-        const options = allAvatarOptions.filter(
-          avatar => avatar.name !== itemToTrade && !ownedAvatars.has(avatar.name)
-        );
-        const fallback = allAvatarOptions.filter(avatar => avatar.name !== itemToTrade);
-        const pool = options.length > 0 ? options : fallback;
-        if (pool.length === 0) {
-          return null;
-        }
-        const selectedIndex = Math.floor(Math.random() * pool.length);
-        return pool[selectedIndex];
-      }
-
-      if (type === 'pet') {
-        const ownedPetNames = new Set((studentData?.ownedPets || []).map(pet => pet.name));
-        const nameToExclude = typeof itemToTrade === 'string' ? itemToTrade : itemToTrade?.name;
-        const options = allPetOptions.filter(
-          pet => pet.name !== nameToExclude && !ownedPetNames.has(pet.name)
-        );
-        const fallback = allPetOptions.filter(pet => pet.name !== nameToExclude);
-        const pool = options.length > 0 ? options : fallback;
-        if (pool.length === 0) {
-          return null;
-        }
-        const selectedIndex = Math.floor(Math.random() * pool.length);
-        return pool[selectedIndex];
-      }
-
-      return null;
-    },
-    [allAvatarOptions, allPetOptions, studentData?.ownedAvatars, studentData?.ownedPets]
-  );
-
   const handleTradeRequest = (type, item) => {
     if (!canTradeToday) {
       showToast('You can only make one trade each day. Check back tomorrow!', 'info');
       return;
     }
 
-    setTradeModal({ visible: true, type, item, stage: 'confirm', result: null });
+    setTradeModal({
+      ...INITIAL_TRADE_MODAL_STATE,
+      visible: true,
+      type,
+      item
+    });
   };
 
   const closeTradeModal = () => {
-    setTradeModal({ visible: false, type: null, item: null, stage: 'confirm', result: null });
+    setTradeModal(INITIAL_TRADE_MODAL_STATE);
     setIsProcessingTrade(false);
   };
 
@@ -457,53 +417,70 @@ const StudentShop = ({
       return;
     }
 
+    if (!tradeModal.selectedPartnerId || !tradeModal.selectedPartnerItem) {
+      showToast('Select a classmate and one of their items to trade for.', 'info');
+      return;
+    }
+
+    const selectedPartner = (classmates || []).find(partner => partner.id === tradeModal.selectedPartnerId);
+
+    if (!selectedPartner) {
+      showToast('Could not find the selected classmate. Please try again.', 'error');
+      return;
+    }
+
+    const partnerLastTrade = parseDateValue(selectedPartner.lastTradeAt);
+    if (partnerLastTrade && isSameCalendarDay(partnerLastTrade, new Date())) {
+      showToast('That classmate has already traded today. Pick someone else.', 'info');
+      return;
+    }
+
+    const partnerHasItem = tradeModal.type === 'avatar'
+      ? (selectedPartner.ownedAvatars || []).includes(tradeModal.selectedPartnerItem)
+      : (selectedPartner.ownedPets || []).some(pet => pet.id === tradeModal.selectedPartnerItem.id);
+
+    if (!partnerHasItem) {
+      showToast('It looks like that item is no longer available. Please choose another.', 'error');
+      return;
+    }
+
+    if (typeof performClassmateTrade !== 'function') {
+      showToast('Trading is unavailable right now. Please try again later.', 'error');
+      return;
+    }
+
     setIsProcessingTrade(true);
 
     try {
-      const replacementTemplate = selectTradeReplacement(tradeModal.type, tradeModal.item);
+      const partnerDisplayName = selectedPartner.firstName
+        ? `${selectedPartner.firstName}${selectedPartner.lastName ? ` ${selectedPartner.lastName}` : ''}`
+        : selectedPartner.displayName || 'Classmate';
 
-      if (!replacementTemplate) {
-        showToast('No trade options are available right now. Try again later!', 'error');
-        closeTradeModal();
-        return;
-      }
+      const tradeResult = await performClassmateTrade({
+        type: tradeModal.type,
+        offeredItem: tradeModal.item,
+        partnerId: selectedPartner.id,
+        partnerItem: tradeModal.selectedPartnerItem
+      });
 
-      const updates = { lastTradeAt: new Date().toISOString() };
-      let receivedItem = null;
-
-      if (tradeModal.type === 'avatar') {
-        const filteredAvatars = (studentData.ownedAvatars || []).filter(name => name !== tradeModal.item);
-        const updatedAvatars = [...new Set([...filteredAvatars, replacementTemplate.name])];
-        updates.ownedAvatars = updatedAvatars;
-
-        if (studentData.avatarBase === tradeModal.item) {
-          updates.avatarBase = replacementTemplate.name;
+      if (!tradeResult?.success) {
+        showToast(tradeResult?.error || 'Trade failed. Please try again.', 'error');
+        if (tradeResult?.shouldCloseModal) {
+          closeTradeModal();
         }
-
-        receivedItem = { ...replacementTemplate, __type: 'avatar' };
-      } else if (tradeModal.type === 'pet') {
-        const petToTrade = tradeModal.item;
-        const ownedPets = studentData.ownedPets || [];
-        const isActivePet = ownedPets[0]?.id === petToTrade.id;
-        const remainingPets = ownedPets.filter(pet => pet.id !== petToTrade.id);
-        const newPet = { ...replacementTemplate, id: `pet_${Date.now()}` };
-        const updatedPets = isActivePet ? [newPet, ...remainingPets] : [...remainingPets, newPet];
-        updates.ownedPets = updatedPets;
-        receivedItem = { ...newPet, __type: 'pet' };
-      } else {
-        closeTradeModal();
         return;
       }
 
-      const success = await updateStudentData(updates);
-
-      if (success) {
-        showToast(`Trade complete! You received ${replacementTemplate.name}.`, 'success');
-        setTradeModal(prev => ({ ...prev, stage: 'result', result: { received: receivedItem, traded: prev.item } }));
-      } else {
-        showToast('Trade failed. Please try again.', 'error');
-        closeTradeModal();
-      }
+      showToast(`Trade complete! You traded with ${partnerDisplayName}.`, 'success');
+      setTradeModal(prev => ({
+        ...prev,
+        stage: 'result',
+        result: {
+          received: tradeModal.selectedPartnerItem,
+          traded: prev.item,
+          partner: { id: selectedPartner.id, name: partnerDisplayName }
+        }
+      }));
     } finally {
       setIsProcessingTrade(false);
     }
@@ -517,15 +494,19 @@ const StudentShop = ({
     const isAvatarTrade = tradeModal.type === 'avatar';
 
     if (tradeModal.stage === 'result' && tradeModal.result) {
-      const { received, traded } = tradeModal.result;
-      const receivedName = received?.name || 'your new friend';
+      const { received, traded, partner } = tradeModal.result;
+      const receivedName = isAvatarTrade ? received : received?.name;
       const tradedName = isAvatarTrade ? traded : traded?.name;
+      const partnerName = partner?.name || 'your classmate';
 
       const resultImage = (() => {
         if (!received) return null;
 
         if (isAvatarTrade) {
-          const avatarSrc = received.path || getAvatarImage(received.name, calculateAvatarLevel(studentData.totalPoints));
+          const avatarSrc = getAvatarImage(
+            received,
+            calculateAvatarLevel(studentData.totalPoints)
+          );
           return (
             <img
               src={avatarSrc}
@@ -557,10 +538,14 @@ const StudentShop = ({
             <div className="text-5xl md:text-6xl mb-3">✨</div>
             <h2 className="text-xl md:text-2xl font-bold mb-2">Trade Successful!</h2>
             <p className="text-sm md:text-base text-gray-700 mb-4">
-              You traded <span className="font-semibold">{tradedName}</span> for{' '}
+              You traded <span className="font-semibold">{tradedName}</span> with{' '}
+              <span className="font-semibold">{partnerName}</span> and received{' '}
               <span className="font-semibold text-amber-600">{receivedName}</span>.
             </p>
             {resultImage}
+            <p className="text-xs md:text-sm text-gray-500 mb-4">
+              You and {partnerName} can trade again tomorrow.
+            </p>
             <button
               onClick={closeTradeModal}
               className="mt-2 w-full py-3 bg-amber-500 text-white rounded-lg font-semibold hover:bg-amber-600"
@@ -602,21 +587,191 @@ const StudentShop = ({
       );
     })();
 
-    const confirmDisabled = isProcessingTrade || !canTradeToday;
+    const partnerChoices = (classmates || [])
+      .filter(partner => partner && partner.id && partner.id !== studentData?.id)
+      .map(partner => {
+        const displayName = partner.firstName
+          ? `${partner.firstName}${partner.lastName ? ` ${partner.lastName}` : ''}`
+          : partner.displayName || 'Classmate';
+        const lastTrade = parseDateValue(partner.lastTradeAt);
+        const canTradeToday = !lastTrade || !isSameCalendarDay(lastTrade, new Date());
+        const partnerItems = isAvatarTrade
+          ? (partner.ownedAvatars || [])
+          : (partner.ownedPets || []);
+
+        return {
+          id: partner.id,
+          name: displayName,
+          canTrade: canTradeToday && partnerItems.length > 0,
+          reason: !canTradeToday
+            ? 'Already traded today'
+            : partnerItems.length === 0
+              ? `No ${isAvatarTrade ? 'avatars' : 'pets'} available`
+              : null,
+          items: partnerItems,
+          raw: partner
+        };
+      });
+
+    const eligiblePartners = partnerChoices.filter(option => option.canTrade);
+    const selectedPartnerChoice = tradeModal.selectedPartnerId
+      ? partnerChoices.find(option => option.id === tradeModal.selectedPartnerId)
+      : null;
+    const unavailablePartners = partnerChoices.filter(option => !option.canTrade);
+    const partnerItems = selectedPartnerChoice?.items || [];
+
+    const confirmDisabled =
+      isProcessingTrade ||
+      !canTradeToday ||
+      !selectedPartnerChoice ||
+      !tradeModal.selectedPartnerItem;
+
+    const tradeNote = selectedPartnerChoice
+      ? `This trade will count for both you and ${selectedPartnerChoice.name} today.`
+      : 'Trading will use your one trade for today.';
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md text-center p-6 md:p-8">
-          <div className="text-4xl md:text-5xl mb-3">🔄</div>
-          <h2 className="text-xl md:text-2xl font-bold mb-2">
-            {isAvatarTrade ? 'Trade Avatar' : 'Trade Pet'}
-          </h2>
-          <p className="text-sm md:text-base text-gray-700 mb-3">
-            Swap this {isAvatarTrade ? 'avatar' : 'pet'} for a random new one of the same type. You can trade once per day.
-          </p>
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl text-center p-6 md:p-8 space-y-4">
+          <div>
+            <div className="text-4xl md:text-5xl mb-2">🤝</div>
+            <h2 className="text-xl md:text-2xl font-bold mb-2">
+              {isAvatarTrade ? 'Trade Avatar with a Classmate' : 'Trade Pet with a Classmate'}
+            </h2>
+            <p className="text-sm md:text-base text-gray-700">
+              Choose a classmate to swap this {isAvatarTrade ? 'avatar' : 'pet'}. Each student can trade once per day.
+            </p>
+          </div>
+
           {previewImage}
-          <p className="text-xs md:text-sm text-gray-500 mb-4">Today's trade will be used if you continue.</p>
-          <div className="flex gap-3">
+
+          {eligiblePartners.length === 0 ? (
+            <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-4 text-sm">
+              No classmates are available to trade this {isAvatarTrade ? 'avatar' : 'pet'} today. Check back tomorrow!
+            </div>
+          ) : (
+            <div className="text-left space-y-4">
+              <div>
+                <label className="block text-xs md:text-sm font-semibold text-gray-700 mb-1">
+                  Choose a classmate
+                </label>
+                <select
+                  value={tradeModal.selectedPartnerId || ''}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setTradeModal(prev => ({
+                      ...prev,
+                      selectedPartnerId: value || null,
+                      selectedPartnerItem: null
+                    }));
+                  }}
+                  className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-500"
+                >
+                  <option value="">Select a classmate</option>
+                  {eligiblePartners.map(option => (
+                    <option key={option.id} value={option.id}>
+                      {option.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {selectedPartnerChoice && (
+                <div className="space-y-2">
+                  <p className="text-xs md:text-sm font-semibold text-gray-700">
+                    {selectedPartnerChoice.name}'s {isAvatarTrade ? 'available avatars' : 'available pets'}
+                  </p>
+                  {partnerItems.length > 0 ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {partnerItems.map(item => {
+                        if (isAvatarTrade) {
+                          const isSelected = tradeModal.selectedPartnerItem === item;
+                          const avatarSrc = getAvatarImage(
+                            item,
+                            calculateAvatarLevel(selectedPartnerChoice.raw.totalPoints || 0)
+                          );
+
+                          return (
+                            <button
+                              key={item}
+                              type="button"
+                              onClick={() =>
+                                setTradeModal(prev => ({
+                                  ...prev,
+                                  selectedPartnerItem: item
+                                }))
+                              }
+                              className={`border-2 rounded-lg p-2 text-center transition-all ${
+                                isSelected ? 'border-amber-500 bg-amber-50' : 'border-gray-200 hover:border-amber-300'
+                              }`}
+                            >
+                              <img
+                                src={avatarSrc}
+                                alt={item}
+                                className="w-16 h-16 md:w-20 md:h-20 rounded-full mx-auto mb-1 border"
+                                onError={(e) => {
+                                  e.target.src = '/shop/Basic/Banana.png';
+                                }}
+                              />
+                              <span className="text-xs font-semibold text-gray-700 truncate block">{item}</span>
+                            </button>
+                          );
+                        }
+
+                        const isSelected = tradeModal.selectedPartnerItem?.id === item.id;
+                        const petArt = resolvePetArt(getPetImage(item));
+
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() =>
+                              setTradeModal(prev => ({
+                                ...prev,
+                                selectedPartnerItem: { ...item }
+                              }))
+                            }
+                            className={`border-2 rounded-lg p-2 text-center transition-all ${
+                              isSelected ? 'border-amber-500 bg-amber-50' : 'border-gray-200 hover:border-amber-300'
+                            }`}
+                          >
+                            <img
+                              src={petArt.src}
+                              alt={item.name}
+                              className="w-16 h-16 md:w-20 md:h-20 rounded-full mx-auto mb-1 border"
+                              data-fallbacks={serializeFallbacks(petArt.fallbacks)}
+                              data-fallback-index="0"
+                              onError={petImageErrorHandler}
+                            />
+                            <span className="text-xs font-semibold text-gray-700 truncate block">{item.name}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-gray-500">This classmate does not have any available items.</p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {unavailablePartners.length > 0 && (
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-left">
+              <p className="text-xs md:text-sm font-semibold text-gray-600 mb-1">Unavailable classmates today</p>
+              <ul className="text-xs text-gray-500 space-y-1 list-disc pl-4">
+                {unavailablePartners.map(option => (
+                  <li key={option.id}>
+                    {option.name}{option.reason ? ` — ${option.reason}` : ''}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <p className="text-xs md:text-sm text-gray-500">{tradeNote}</p>
+
+          <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <button
               onClick={closeTradeModal}
               className="flex-1 py-2 md:py-3 border rounded-lg hover:bg-gray-50 text-sm md:text-base"
