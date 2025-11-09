@@ -20,20 +20,21 @@ import VisualWritingPrompts from '../components/curriculum/literacy/VisualWritin
 import DailyMysteryBoxModal from '../components/student/DailyMysteryBoxModal';
 
 // Import from the correct gameHelpers file
-import { 
-  calculateAvatarLevel, 
-  calculateCoins, 
-  getAvatarImage, 
+import {
+  calculateAvatarLevel,
+  calculateCoins,
+  getAvatarImage,
   getPetImage,
-  SHOP_BASIC_AVATARS,
-  SHOP_PREMIUM_AVATARS,
-  SHOP_BASIC_PETS,
-  SHOP_PREMIUM_PETS,
+  SHOP_BASIC_AVATARS as BASE_SHOP_BASIC_AVATARS,
+  SHOP_PREMIUM_AVATARS as BASE_SHOP_PREMIUM_AVATARS,
+  SHOP_BASIC_PETS as BASE_SHOP_BASIC_PETS,
+  SHOP_PREMIUM_PETS as BASE_SHOP_PREMIUM_PETS,
   HALLOWEEN_BASIC_AVATARS,
   HALLOWEEN_PREMIUM_AVATARS,
   HALLOWEEN_PETS,
   createPetEgg
 } from '../utils/gameHelpers';
+import { fetchGlobalShopItems, mergeShopInventories } from '../services/globalContent';
 
 const isSameCalendarDay = (dateA, dateB) => (
   dateA.getFullYear() === dateB.getFullYear() &&
@@ -96,19 +97,57 @@ const StudentPortal = () => {
   const dailyMysteryBoxAutoOpenKeyRef = useRef(null);
   const loginEggGrantAttemptedRef = useRef(false);
 
+  const baseShopInventory = useMemo(() => ({
+    basicAvatars: [...BASE_SHOP_BASIC_AVATARS],
+    premiumAvatars: [...BASE_SHOP_PREMIUM_AVATARS],
+    basicPets: [...BASE_SHOP_BASIC_PETS],
+    premiumPets: [...BASE_SHOP_PREMIUM_PETS]
+  }), []);
+  const [shopInventory, setShopInventory] = useState(baseShopInventory);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadShopInventory = async () => {
+      try {
+        const globalItems = await fetchGlobalShopItems();
+        if (!cancelled) {
+          setShopInventory(mergeShopInventories(baseShopInventory, globalItems));
+        }
+      } catch (error) {
+        console.error('❌ Error loading shop inventory for students:', error);
+      }
+    };
+
+    loadShopInventory();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [baseShopInventory]);
+
   const closeLoginEggCelebration = useCallback(() => setLoginEggCelebration(null), []);
 
   // Login flow states
   const [loginStep, setLoginStep] = useState('classCode'); // 'classCode', 'studentSelect', 'password'
 
   const availableAvatarPool = useMemo(
-    () => [...SHOP_BASIC_AVATARS, ...SHOP_PREMIUM_AVATARS, ...(HALLOWEEN_BASIC_AVATARS || []), ...(HALLOWEEN_PREMIUM_AVATARS || [])],
-    []
+    () => [
+      ...shopInventory.basicAvatars,
+      ...shopInventory.premiumAvatars,
+      ...(HALLOWEEN_BASIC_AVATARS || []),
+      ...(HALLOWEEN_PREMIUM_AVATARS || [])
+    ],
+    [shopInventory]
   );
 
   const availablePetPool = useMemo(
-    () => [...SHOP_BASIC_PETS, ...SHOP_PREMIUM_PETS, ...(HALLOWEEN_PETS || [])],
-    []
+    () => [
+      ...shopInventory.basicPets,
+      ...shopInventory.premiumPets,
+      ...(HALLOWEEN_PETS || [])
+    ],
+    [shopInventory]
   );
 
   const getDailyMysteryBoxStorageKey = useCallback((student) => {
@@ -1135,10 +1174,10 @@ const StudentPortal = () => {
             getPetImage={getPetImage}
             calculateCoins={calculateCoins}
             calculateAvatarLevel={calculateAvatarLevel}
-            SHOP_BASIC_AVATARS={SHOP_BASIC_AVATARS}
-            SHOP_PREMIUM_AVATARS={SHOP_PREMIUM_AVATARS}
-            SHOP_BASIC_PETS={SHOP_BASIC_PETS}
-            SHOP_PREMIUM_PETS={SHOP_PREMIUM_PETS}
+            SHOP_BASIC_AVATARS={shopInventory.basicAvatars}
+            SHOP_PREMIUM_AVATARS={shopInventory.premiumAvatars}
+            SHOP_BASIC_PETS={shopInventory.basicPets}
+            SHOP_PREMIUM_PETS={shopInventory.premiumPets}
             HALLOWEEN_BASIC_AVATARS={HALLOWEEN_BASIC_AVATARS}
             HALLOWEEN_PREMIUM_AVATARS={HALLOWEEN_PREMIUM_AVATARS}
             HALLOWEEN_PETS={HALLOWEEN_PETS}

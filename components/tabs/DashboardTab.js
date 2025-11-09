@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { buildShopInventory, getDailySpecials } from '../../utils/shopSpecials';
 import { DEFAULT_PET_IMAGE } from '../../utils/gameHelpers';
 import { normalizeImageSource, serializeFallbacks, createImageErrorHandler } from '../../utils/imageFallback';
+import { DEFAULT_UPDATES } from '../../services/globalContent';
 
 const DashboardTab = ({ 
   students = [], 
@@ -15,7 +16,8 @@ const DashboardTab = ({
   SHOP_PREMIUM_AVATARS,
   SHOP_BASIC_PETS,
   SHOP_PREMIUM_PETS,
-  dailySpecials = []
+  dailySpecials = [],
+  updates = []
 }) => {
   const [featuredStudent, setFeaturedStudent] = useState(null);
   const [classStats, setClassStats] = useState({});
@@ -86,6 +88,23 @@ const DashboardTab = ({
     SHOP_BASIC_PETS,
     SHOP_PREMIUM_PETS
   ]);
+
+  const updatesToDisplay = useMemo(() => (
+    Array.isArray(updates) && updates.length > 0 ? updates : DEFAULT_UPDATES
+  ), [updates]);
+
+  const getUpdateBadgeStyles = (status) => {
+    switch ((status || '').toUpperCase()) {
+      case 'NEW':
+        return 'bg-green-100 text-green-700 border-green-200';
+      case 'IMPROVED':
+        return 'bg-blue-100 text-blue-700 border-blue-200';
+      case 'ENHANCED':
+        return 'bg-purple-100 text-purple-700 border-purple-200';
+      default:
+        return 'bg-gray-100 text-gray-700 border-gray-200';
+    }
+  };
 
   if (!featuredStudent) {
     return (
@@ -314,6 +333,37 @@ const DashboardTab = ({
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Latest product updates */}
+      <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl p-4 sm:p-6 shadow-lg border-2 border-yellow-200">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="text-2xl sm:text-3xl">🎉</div>
+          <div>
+            <h2 className="text-lg sm:text-xl font-bold text-gray-800">Latest Updates</h2>
+            <p className="text-xs sm:text-sm text-yellow-700">Fresh news direct from Educational Elements HQ</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+          {updatesToDisplay.map((update) => (
+            <article
+              key={update.id}
+              className="bg-white rounded-lg border border-yellow-200 p-3 sm:p-4 shadow-sm flex flex-col gap-2"
+            >
+              <div className="flex items-center gap-2">
+                <span className={`text-[10px] sm:text-xs font-semibold px-2 py-1 rounded-full border ${getUpdateBadgeStyles(update.status)}`}>
+                  {(update.status || 'UPDATE').toUpperCase()}
+                </span>
+                {update.highlight && (
+                  <span className="text-[10px] sm:text-xs text-yellow-700 font-medium truncate">{update.highlight}</span>
+                )}
+              </div>
+              <h3 className="text-sm sm:text-base font-semibold text-gray-800">{update.title}</h3>
+              <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">{update.summary}</p>
+            </article>
+          ))}
         </div>
       </div>
 
