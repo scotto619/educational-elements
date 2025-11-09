@@ -13,6 +13,7 @@ import TimetableCreator from '../tools/TimetableCreator';
 import BrainBreaks from '../tools/BrainBreaks';
 import VisualChecklist from '../tools/VisualChecklist';
 import SpecialistCreator from '../tools/SpecialistCreator'; // UPDATED IMPORT
+import PdfWordConverter from '../tools/PdfWordConverter';
 
 // ===============================================
 // AUTO-DISMISSING NOTIFICATION COMPONENT
@@ -435,7 +436,12 @@ const TeachersToolkitTab = ({
             />
           )}
           {activeToolkitTab === 'brain-breaks' && (
-            <BrainBreaks 
+            <BrainBreaks
+              showToast={showNotification}
+            />
+          )}
+          {activeToolkitTab === 'pdf-word-converter' && (
+            <PdfWordConverter
               showToast={showNotification}
             />
           )}
@@ -575,6 +581,15 @@ const TeachersToolkitTab = ({
           <div className="text-4xl mb-3">🧠</div>
           <div className="text-lg font-bold mb-1">Brain Breaks</div>
           <div className="text-sm opacity-90">Random activities</div>
+        </button>
+
+        <button
+          onClick={() => setActiveToolkitTab('pdf-word-converter')}
+          className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 rounded-xl hover:shadow-lg transition-all text-center"
+        >
+          <div className="text-4xl mb-3">📝</div>
+          <div className="text-lg font-bold mb-1">PDF ↔ Word</div>
+          <div className="text-sm opacity-90">Convert classroom documents</div>
         </button>
 
         <button
