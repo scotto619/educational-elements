@@ -57,7 +57,15 @@ export const SHOP_BASIC_AVATARS = [
   { name: 'K-Pop Idol', price: 17, path: '/shop/Basic/Update1/KPopGirl.png' },
   { name: 'Soccer Champ', price: 20, path: '/shop/Basic/Update1/Soccer Champ.png' },
   { name: 'Spartan', price: 26, path: '/shop/Basic/Update1/Spartan.png' },
-  { name: 'Terminator', price: 30, path: '/shop/Basic/Update1/Terminator.png' }
+  { name: 'Terminator', price: 30, path: '/shop/Basic/Update1/Terminator.png' },
+  { name: '67', price: 24, path: '/shop/Basic/Update2/67.png' },
+  { name: 'Bombardiro', price: 26, path: '/shop/Basic/Update2/Bombardiro.png' },
+  { name: 'Lucho', price: 22, path: '/shop/Basic/Update2/Lucho.png' },
+  { name: 'Phoenix', price: 28, path: '/shop/Basic/Update2/Phoenix.png' },
+  { name: 'Rugby', price: 20, path: '/shop/Basic/Update2/Rugby.png' },
+  { name: 'T800', price: 30, path: '/shop/Basic/Update2/T800.png' },
+  { name: 'Tralalero', price: 25, path: '/shop/Basic/Update2/Tralalero.png' },
+  { name: 'Cappuccino', price: 18, path: '/shop/Basic/Update2/Cappuccino.png' }
 ];
 
 export const SHOP_PREMIUM_AVATARS = [ 

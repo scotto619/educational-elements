@@ -98,7 +98,15 @@ const BASE_SHOP_BASIC_AVATARS = [
   { name: 'K-Pop Idol', price: 17, path: '/shop/Basic/Update1/KPopGirl.png' },
   { name: 'Soccer Champ', price: 20, path: '/shop/Basic/Update1/Soccer Champ.png' },
   { name: 'Spartan', price: 26, path: '/shop/Basic/Update1/Spartan.png' },
-  { name: 'Terminator', price: 30, path: '/shop/Basic/Update1/Terminator.png' }
+  { name: 'Terminator', price: 30, path: '/shop/Basic/Update1/Terminator.png' },
+  { name: '67', price: 24, path: '/shop/Basic/Update2/67.png' },
+  { name: 'Bombardiro', price: 26, path: '/shop/Basic/Update2/Bombardiro.png' },
+  { name: 'Lucho', price: 22, path: '/shop/Basic/Update2/Lucho.png' },
+  { name: 'Phoenix', price: 28, path: '/shop/Basic/Update2/Phoenix.png' },
+  { name: 'Rugby', price: 20, path: '/shop/Basic/Update2/Rugby.png' },
+  { name: 'T800', price: 30, path: '/shop/Basic/Update2/T800.png' },
+  { name: 'Tralalero', price: 25, path: '/shop/Basic/Update2/Tralalero.png' },
+  { name: 'Cappuccino', price: 18, path: '/shop/Basic/Update2/Cappuccino.png' }
 ];
 
 const BASE_SHOP_PREMIUM_AVATARS = [ { name: 'Dwarf', price: 45, path: '/shop/Premium/Dwarf.png' }, { name: 'Dwarf2', price: 45, path: '/shop/Premium/Dwarf2.png' }, { name: 'FarmerBoy Premium', price: 35, path: '/shop/Premium/FarmerBoy.png' }, { name: 'FarmerGirl Premium', price: 35, path: '/shop/Premium/FarmerGirl.png' }, { name: 'Goblin2', price: 30, path: '/shop/Premium/Goblin2.png' }, { name: 'GoblinGirl2', price: 30, path: '/shop/Premium/GoblinGirl2.png' }, { name: 'King', price: 60, path: '/shop/Premium/King.png' }, { name: 'MechanicGirl', price: 40, path: '/shop/Premium/MechanicGirl.png' }, { name: 'PirateBoy Premium', price: 42, path: '/shop/Premium/PirateBoy.png' }, { name: 'PirateGirl Premium', price: 42, path: '/shop/Premium/PirateGirl.png' }, { name: 'Queen', price: 60, path: '/shop/Premium/Queen.png' }, { name: 'RobotBoy Premium', price: 38, path: '/shop/Premium/RobotBoy.png' }, { name: 'RobotGirl Premium', price: 38, path: '/shop/Premium/RobotGirl.png' }, { name: 'Vampire2', price: 40, path: '/shop/Premium/Vampire2.png' }, { name: 'VampireGirl2', price: 40, path: '/shop/Premium/VampireGirl2.png' } ];
