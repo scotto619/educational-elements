@@ -772,6 +772,752 @@ const StudentPortal = () => {
     }
   };
 
+  const tradeWithClassmate = useCallback(
+    async ({ action = 'request', type, offeredItem, partnerId, partnerItem, request }) => {
+      if (!studentData || !studentData.id) {
+        return { success: false, error: 'Missing student information.' };
+      }
+
+      const now = new Date();
+      const nowIso = now.toISOString();
+
+      const makeDisplayName = (student) => {
+        if (!student) {
+          return 'Classmate';
+        }
+
+        if (student.firstName) {
+          return `${student.firstName}${student.lastName ? ` ${student.lastName}` : ''}`;
+        }
+
+        return student.displayName || 'Classmate';
+      };
+
+      const findStudentById = (id) => {
+        if (!id) {
+          return null;
+        }
+
+        const fromAvailable = (availableStudents || []).find(s => s.id === id);
+        if (fromAvailable) {
+          return fromAvailable;
+        }
+
+        return (classData?.students || []).find(s => s.id === id) || null;
+      };
+
+      const cloneTradeItem = (tradeType, item) => {
+        if (!item) {
+          return null;
+        }
+
+        if (tradeType === 'pet' || tradeType === 'card') {
+          try {
+            return JSON.parse(JSON.stringify(item));
+          } catch (error) {
+            return { ...item };
+          }
+        }
+
+        return item;
+      };
+
+      const limitNotifications = (notifications = []) => {
+        if (!Array.isArray(notifications)) {
+          return [];
+        }
+
+        return notifications.slice(-5);
+      };
+
+      const syncLocalState = (updatedStudent, updatedPartner, { refreshDaily = false } = {}) => {
+        setStudentData(updatedStudent);
+
+        setAvailableStudents(prev => {
+          let partnerFound = false;
+          const next = (prev || []).map(s => {
+            if (s.id === updatedStudent.id) {
+              return updatedStudent;
+            }
+
+            if (updatedPartner && s.id === updatedPartner.id) {
+              partnerFound = true;
+              return updatedPartner;
+            }
+
+            return s;
+          });
+
+          if (updatedPartner && !partnerFound) {
+            return [...next, updatedPartner];
+          }
+
+          return next;
+        });
+
+        setClassData(prev => {
+          if (!prev || !Array.isArray(prev.students)) {
+            return prev;
+          }
+
+          let partnerFound = false;
+          const updatedStudents = prev.students.map(s => {
+            if (s.id === updatedStudent.id) {
+              return updatedStudent;
+            }
+
+            if (updatedPartner && s.id === updatedPartner.id) {
+              partnerFound = true;
+              return updatedPartner;
+            }
+
+            return s;
+          });
+
+          if (updatedPartner && !partnerFound) {
+            updatedStudents.push(updatedPartner);
+          }
+
+          return { ...prev, students: updatedStudents };
+        });
+
+        if (refreshDaily) {
+          refreshDailyMysteryBoxAvailability(updatedStudent);
+        }
+
+        try {
+          const session = JSON.parse(sessionStorage.getItem('studentSession') || '{}');
+          session.studentData = updatedStudent;
+          sessionStorage.setItem('studentSession', JSON.stringify(session));
+        } catch (sessionError) {
+          console.warn('Could not update session storage:', sessionError);
+        }
+      };
+
+      if (action === 'request') {
+        if (!type || !partnerId || !partnerItem) {
+          return { success: false, error: 'Incomplete trade details.' };
+        }
+
+        if (partnerId === studentData.id) {
+          return { success: false, error: 'You cannot trade with yourself.' };
+        }
+
+        if (studentData.outgoingTradeRequest) {
+          return { success: false, error: 'You already have a trade request waiting for confirmation.' };
+        }
+
+        const studentLastTrade = parseDateValue(studentData.lastTradeAt);
+        if (studentLastTrade && isSameCalendarDay(studentLastTrade, now)) {
+          return { success: false, error: 'You have already traded today.' };
+        }
+
+        const partner = findStudentById(partnerId);
+
+        if (!partner) {
+          return { success: false, error: 'Classmate not found.' };
+        }
+
+        if (partner.outgoingTradeRequest) {
+          return { success: false, error: 'That classmate already has a pending trade request.' };
+        }
+
+        const partnerLastTrade = parseDateValue(partner.lastTradeAt);
+        if (partnerLastTrade && isSameCalendarDay(partnerLastTrade, now)) {
+          return { success: false, error: 'That classmate has already traded today.' };
+        }
+
+        if (type === 'avatar') {
+          if (typeof offeredItem !== 'string' || typeof partnerItem !== 'string') {
+            return { success: false, error: 'Select avatars to trade.' };
+          }
+
+          if (!studentData.ownedAvatars?.includes(offeredItem)) {
+            return { success: false, error: 'You no longer own that avatar.' };
+          }
+
+          if (!partner.ownedAvatars?.includes(partnerItem)) {
+            return { success: false, error: 'This classmate no longer owns that avatar.' };
+          }
+        } else if (type === 'pet') {
+          if (!offeredItem?.id || !partnerItem?.id) {
+            return { success: false, error: 'Select pets to trade.' };
+          }
+
+          if (!(studentData.ownedPets || []).some(pet => pet.id === offeredItem.id)) {
+            return { success: false, error: 'You no longer have that pet.' };
+          }
+
+          if (!(partner.ownedPets || []).some(pet => pet.id === partnerItem.id)) {
+            return { success: false, error: 'This classmate no longer has that pet.' };
+          }
+        } else if (type === 'card') {
+          if (!offeredItem?.id || !partnerItem?.id) {
+            return { success: false, error: 'Select cards to trade.' };
+          }
+
+          const studentCardCount = studentData.cardCollection?.cards?.[offeredItem.id]?.count || 0;
+          if (studentCardCount <= 0) {
+            return { success: false, error: 'You no longer have that card.' };
+          }
+
+          const partnerCardCount = partner.cardCollection?.cards?.[partnerItem.id]?.count || 0;
+          if (partnerCardCount <= 0) {
+            return { success: false, error: 'This classmate no longer has that card.' };
+          }
+        } else {
+          return { success: false, error: 'Unsupported trade type.' };
+        }
+
+        const requestId = `${studentData.id}-${Date.now()}`;
+
+        const outgoingRequest = {
+          id: requestId,
+          type,
+          offeredItem: cloneTradeItem(type, offeredItem),
+          requestedItem: cloneTradeItem(type, partnerItem),
+          partnerId: partner.id,
+          partnerName: makeDisplayName(partner),
+          createdAt: nowIso
+        };
+
+        const partnerPendingRequests = [
+          ...(partner.pendingTradeRequests || []),
+          {
+            id: requestId,
+            type,
+            offeredItem: cloneTradeItem(type, offeredItem),
+            requestedItem: cloneTradeItem(type, partnerItem),
+            fromStudentId: studentData.id,
+            fromStudentName: makeDisplayName(studentData),
+            createdAt: nowIso
+          }
+        ];
+
+        const updatedStudentData = {
+          ...studentData,
+          outgoingTradeRequest: outgoingRequest
+        };
+
+        const updatedPartnerData = {
+          ...partner,
+          pendingTradeRequests: partnerPendingRequests
+        };
+
+        try {
+          if (architectureVersion === 'v2') {
+            const studentRef = doc(firestore, 'students', studentData.id);
+            const partnerRef = doc(firestore, 'students', partner.id);
+
+            await Promise.all([
+              updateDoc(studentRef, { outgoingTradeRequest: outgoingRequest, updatedAt: nowIso, lastActivity: nowIso }),
+              updateDoc(partnerRef, { pendingTradeRequests: partnerPendingRequests, updatedAt: nowIso, lastActivity: nowIso })
+            ]);
+          } else {
+            if (!teacherUserId || !classData) {
+              return { success: false, error: 'Trading is not available right now.' };
+            }
+
+            const userRef = doc(firestore, 'users', teacherUserId);
+            const userDoc = await getDoc(userRef);
+
+            if (userDoc.exists()) {
+              const userData = userDoc.data();
+              const updatedClasses = (userData.classes || []).map(cls => {
+                if (cls.classCode?.toUpperCase() === classData.classCode?.toUpperCase()) {
+                  const updatedStudents = (cls.students || []).map(s => {
+                    if (s.id === studentData.id) {
+                      return { ...s, outgoingTradeRequest: outgoingRequest, updatedAt: nowIso };
+                    }
+
+                    if (s.id === partner.id) {
+                      return { ...s, pendingTradeRequests: partnerPendingRequests, updatedAt: nowIso };
+                    }
+
+                    return s;
+                  });
+
+                  return { ...cls, students: updatedStudents };
+                }
+
+                return cls;
+              });
+
+              await updateDoc(userRef, { classes: updatedClasses });
+            }
+          }
+        } catch (error) {
+          console.error('Trade with classmate failed:', error);
+          return { success: false, error: 'Failed to send trade request. Please try again.' };
+        }
+
+        syncLocalState(updatedStudentData, updatedPartnerData);
+
+        return { success: true, status: 'pending', requestId, partnerName: outgoingRequest.partnerName };
+      }
+
+      if (action === 'accept') {
+        const tradeRequest = request || (studentData.pendingTradeRequests || []).find(req => req.id === request?.id);
+
+        if (!tradeRequest) {
+          return { success: false, error: 'Trade request not found.' };
+        }
+
+        const partner = findStudentById(tradeRequest.fromStudentId);
+
+        if (!partner) {
+          return { success: false, error: 'Classmate not found.' };
+        }
+
+        const studentLastTrade = parseDateValue(studentData.lastTradeAt);
+        if (studentLastTrade && isSameCalendarDay(studentLastTrade, now)) {
+          return { success: false, error: 'You have already traded today.' };
+        }
+
+        const partnerLastTrade = parseDateValue(partner.lastTradeAt);
+        if (partnerLastTrade && isSameCalendarDay(partnerLastTrade, now)) {
+          return { success: false, error: 'That classmate has already traded today.' };
+        }
+
+        const updatedStudentData = { ...studentData };
+        const updatedPartnerData = { ...partner };
+
+        const remainingRequests = (studentData.pendingTradeRequests || []).filter(req => req.id !== tradeRequest.id);
+        updatedStudentData.pendingTradeRequests = remainingRequests;
+
+        const partnerPendingRequests = (partner.pendingTradeRequests || []).filter(req => req.id !== tradeRequest.id);
+        updatedPartnerData.pendingTradeRequests = partnerPendingRequests;
+        updatedPartnerData.outgoingTradeRequest = null;
+
+        let studentUpdates = { pendingTradeRequests: remainingRequests, lastTradeAt: nowIso };
+        let partnerUpdates = {
+          outgoingTradeRequest: null,
+          pendingTradeRequests: partnerPendingRequests,
+          lastTradeAt: nowIso
+        };
+
+        if (tradeRequest.type === 'avatar') {
+          const offeredAvatar = tradeRequest.offeredItem;
+          const requestedAvatar = tradeRequest.requestedItem;
+
+          if (typeof offeredAvatar !== 'string' || typeof requestedAvatar !== 'string') {
+            return { success: false, error: 'This trade is missing avatar details.' };
+          }
+
+          if (!(studentData.ownedAvatars || []).includes(requestedAvatar)) {
+            return { success: false, error: 'You no longer own that avatar.' };
+          }
+
+          if (!(partner.ownedAvatars || []).includes(offeredAvatar)) {
+            return { success: false, error: 'This classmate no longer owns that avatar.' };
+          }
+
+          const studentAvatars = (studentData.ownedAvatars || []).filter(name => name !== requestedAvatar);
+          if (!studentAvatars.includes(offeredAvatar)) {
+            studentAvatars.push(offeredAvatar);
+          }
+
+          const partnerAvatars = (partner.ownedAvatars || []).filter(name => name !== offeredAvatar);
+          if (!partnerAvatars.includes(requestedAvatar)) {
+            partnerAvatars.push(requestedAvatar);
+          }
+
+          updatedStudentData.ownedAvatars = studentAvatars;
+          updatedPartnerData.ownedAvatars = partnerAvatars;
+
+          studentUpdates = { ...studentUpdates, ownedAvatars: studentAvatars };
+          partnerUpdates = { ...partnerUpdates, ownedAvatars: partnerAvatars };
+
+          if (studentData.avatarBase === requestedAvatar) {
+            updatedStudentData.avatarBase = offeredAvatar;
+            studentUpdates.avatarBase = offeredAvatar;
+          }
+
+          if (partner.avatarBase === offeredAvatar) {
+            updatedPartnerData.avatarBase = requestedAvatar;
+            partnerUpdates.avatarBase = requestedAvatar;
+          }
+        } else if (tradeRequest.type === 'pet') {
+          const offeredPet = tradeRequest.offeredItem;
+          const requestedPet = tradeRequest.requestedItem;
+
+          if (!offeredPet?.id || !requestedPet?.id) {
+            return { success: false, error: 'This trade is missing pet details.' };
+          }
+
+          const studentPets = (studentData.ownedPets || []).map(pet => ({ ...pet }));
+          const partnerPets = (partner.ownedPets || []).map(pet => ({ ...pet }));
+
+          if (!studentPets.some(pet => pet.id === requestedPet.id)) {
+            return { success: false, error: 'You no longer have that pet.' };
+          }
+
+          if (!partnerPets.some(pet => pet.id === offeredPet.id)) {
+            return { success: false, error: 'This classmate no longer has that pet.' };
+          }
+
+          const studentRemainingPets = studentPets.filter(pet => pet.id !== requestedPet.id);
+          const partnerRemainingPets = partnerPets.filter(pet => pet.id !== offeredPet.id);
+
+          const studentNewPet = { ...offeredPet };
+          const partnerNewPet = { ...requestedPet };
+
+          const studentHadActivePet = studentPets[0]?.id === requestedPet.id;
+          const partnerHadActivePet = partnerPets[0]?.id === offeredPet.id;
+
+          const nextStudentPets = studentHadActivePet
+            ? [studentNewPet, ...studentRemainingPets]
+            : [...studentRemainingPets, studentNewPet];
+
+          const nextPartnerPets = partnerHadActivePet
+            ? [partnerNewPet, ...partnerRemainingPets]
+            : [...partnerRemainingPets, partnerNewPet];
+
+          updatedStudentData.ownedPets = nextStudentPets;
+          updatedPartnerData.ownedPets = nextPartnerPets;
+
+          studentUpdates = { ...studentUpdates, ownedPets: nextStudentPets };
+          partnerUpdates = { ...partnerUpdates, ownedPets: nextPartnerPets };
+        } else if (tradeRequest.type === 'card') {
+          const offeredCard = tradeRequest.offeredItem;
+          const requestedCard = tradeRequest.requestedItem;
+
+          if (!offeredCard?.id || !requestedCard?.id) {
+            return { success: false, error: 'This trade is missing card details.' };
+          }
+
+          const baseStudentCollection = studentData.cardCollection || {};
+          const basePartnerCollection = partner.cardCollection || {};
+          const studentCards = { ...(baseStudentCollection.cards || {}) };
+          const partnerCards = { ...(basePartnerCollection.cards || {}) };
+
+          const studentCardEntry = studentCards[requestedCard.id];
+          if (!studentCardEntry?.count) {
+            return { success: false, error: 'You no longer have that card.' };
+          }
+
+          const partnerCardEntry = partnerCards[offeredCard.id];
+          if (!partnerCardEntry?.count) {
+            return { success: false, error: 'This classmate no longer has that card.' };
+          }
+
+          if (studentCardEntry.count <= 1) {
+            delete studentCards[requestedCard.id];
+          } else {
+            studentCards[requestedCard.id] = {
+              ...studentCardEntry,
+              count: studentCardEntry.count - 1,
+              lastObtainedAt: nowIso
+            };
+          }
+
+          const studentOfferedEntry = studentCards[offeredCard.id] || {};
+          studentCards[offeredCard.id] = {
+            count: (studentOfferedEntry.count || 0) + 1,
+            firstObtainedAt: studentOfferedEntry.firstObtainedAt || nowIso,
+            lastObtainedAt: nowIso
+          };
+
+          if (partnerCardEntry.count <= 1) {
+            delete partnerCards[offeredCard.id];
+          } else {
+            partnerCards[offeredCard.id] = {
+              ...partnerCardEntry,
+              count: partnerCardEntry.count - 1,
+              lastObtainedAt: nowIso
+            };
+          }
+
+          const partnerRequestedEntry = partnerCards[requestedCard.id] || {};
+          partnerCards[requestedCard.id] = {
+            count: (partnerRequestedEntry.count || 0) + 1,
+            firstObtainedAt: partnerRequestedEntry.firstObtainedAt || nowIso,
+            lastObtainedAt: nowIso
+          };
+
+          const computeTotal = (cardsMap) =>
+            Object.values(cardsMap).reduce((total, entry) => total + (entry.count || 0), 0);
+
+          const nextStudentCollection = {
+            ...baseStudentCollection,
+            cards: studentCards,
+            totalOwned: computeTotal(studentCards)
+          };
+
+          const nextPartnerCollection = {
+            ...basePartnerCollection,
+            cards: partnerCards,
+            totalOwned: computeTotal(partnerCards)
+          };
+
+          updatedStudentData.cardCollection = nextStudentCollection;
+          updatedPartnerData.cardCollection = nextPartnerCollection;
+
+          studentUpdates = { ...studentUpdates, cardCollection: nextStudentCollection };
+          partnerUpdates = { ...partnerUpdates, cardCollection: nextPartnerCollection };
+        } else {
+          return { success: false, error: 'Unsupported trade type.' };
+        }
+
+        updatedStudentData.lastTradeAt = nowIso;
+        updatedPartnerData.lastTradeAt = nowIso;
+
+        const acceptanceNotification = {
+          id: `${tradeRequest.id}-accepted`,
+          type: 'trade-accepted',
+          partnerId: studentData.id,
+          partnerName: makeDisplayName(studentData),
+          createdAt: nowIso,
+          tradeType: tradeRequest.type
+        };
+
+        const partnerNotifications = limitNotifications([
+          ...(partner.tradeNotifications || []).filter(note => note?.id !== acceptanceNotification.id),
+          acceptanceNotification
+        ]);
+
+        updatedPartnerData.tradeNotifications = partnerNotifications;
+        partnerUpdates.tradeNotifications = partnerNotifications;
+
+        try {
+          if (architectureVersion === 'v2') {
+            const studentRef = doc(firestore, 'students', studentData.id);
+            const partnerRef = doc(firestore, 'students', partner.id);
+
+            await Promise.all([
+              updateDoc(studentRef, { ...studentUpdates, updatedAt: nowIso, lastActivity: nowIso }),
+              updateDoc(partnerRef, { ...partnerUpdates, updatedAt: nowIso, lastActivity: nowIso })
+            ]);
+          } else {
+            if (!teacherUserId || !classData) {
+              return { success: false, error: 'Trading is not available right now.' };
+            }
+
+            const userRef = doc(firestore, 'users', teacherUserId);
+            const userDoc = await getDoc(userRef);
+
+            if (userDoc.exists()) {
+              const userData = userDoc.data();
+              const updatedClasses = (userData.classes || []).map(cls => {
+                if (cls.classCode?.toUpperCase() === classData.classCode?.toUpperCase()) {
+                  const updatedStudents = (cls.students || []).map(s => {
+                    if (s.id === studentData.id) {
+                      return { ...s, ...studentUpdates, updatedAt: nowIso };
+                    }
+
+                    if (s.id === partner.id) {
+                      return { ...s, ...partnerUpdates, updatedAt: nowIso };
+                    }
+
+                    return s;
+                  });
+
+                  return { ...cls, students: updatedStudents };
+                }
+
+                return cls;
+              });
+
+              await updateDoc(userRef, { classes: updatedClasses });
+            }
+          }
+        } catch (error) {
+          console.error('Trade with classmate failed:', error);
+          return { success: false, error: 'Failed to complete trade. Please try again.' };
+        }
+
+        syncLocalState(updatedStudentData, updatedPartnerData, { refreshDaily: true });
+
+        return { success: true, status: 'completed', updatedStudent: updatedStudentData, updatedClassmate: updatedPartnerData };
+      }
+
+      if (action === 'reject') {
+        const tradeRequest = request || (studentData.pendingTradeRequests || []).find(req => req.id === request?.id);
+
+        if (!tradeRequest) {
+          return { success: false, error: 'Trade request not found.' };
+        }
+
+        const partner = findStudentById(tradeRequest.fromStudentId);
+
+        if (!partner) {
+          return { success: false, error: 'Classmate not found.' };
+        }
+
+        const updatedStudentData = {
+          ...studentData,
+          pendingTradeRequests: (studentData.pendingTradeRequests || []).filter(req => req.id !== tradeRequest.id)
+        };
+
+        const partnerPendingRequests = (partner.pendingTradeRequests || []).filter(req => req.id !== tradeRequest.id);
+
+        const rejectionNotification = {
+          id: `${tradeRequest.id}-rejected`,
+          type: 'trade-rejected',
+          partnerId: studentData.id,
+          partnerName: makeDisplayName(studentData),
+          createdAt: nowIso,
+          tradeType: tradeRequest.type
+        };
+
+        const partnerNotifications = limitNotifications([
+          ...(partner.tradeNotifications || []).filter(note => note?.id !== rejectionNotification.id),
+          rejectionNotification
+        ]);
+
+        const updatedPartnerData = {
+          ...partner,
+          outgoingTradeRequest: null,
+          pendingTradeRequests: partnerPendingRequests,
+          tradeNotifications: partnerNotifications
+        };
+
+        try {
+          if (architectureVersion === 'v2') {
+            const studentRef = doc(firestore, 'students', studentData.id);
+            const partnerRef = doc(firestore, 'students', partner.id);
+
+            await Promise.all([
+              updateDoc(studentRef, { pendingTradeRequests: updatedStudentData.pendingTradeRequests, updatedAt: nowIso, lastActivity: nowIso }),
+              updateDoc(partnerRef, {
+                outgoingTradeRequest: null,
+                pendingTradeRequests: partnerPendingRequests,
+                tradeNotifications: partnerNotifications,
+                updatedAt: nowIso,
+                lastActivity: nowIso
+              })
+            ]);
+          } else {
+            if (!teacherUserId || !classData) {
+              return { success: false, error: 'Trading is not available right now.' };
+            }
+
+            const userRef = doc(firestore, 'users', teacherUserId);
+            const userDoc = await getDoc(userRef);
+
+            if (userDoc.exists()) {
+              const userData = userDoc.data();
+              const updatedClasses = (userData.classes || []).map(cls => {
+                if (cls.classCode?.toUpperCase() === classData.classCode?.toUpperCase()) {
+                  const updatedStudents = (cls.students || []).map(s => {
+                    if (s.id === studentData.id) {
+                      return { ...s, pendingTradeRequests: updatedStudentData.pendingTradeRequests, updatedAt: nowIso };
+                    }
+
+                    if (s.id === partner.id) {
+                      return {
+                        ...s,
+                        outgoingTradeRequest: null,
+                        pendingTradeRequests: partnerPendingRequests,
+                        tradeNotifications: partnerNotifications,
+                        updatedAt: nowIso
+                      };
+                    }
+
+                    return s;
+                  });
+
+                  return { ...cls, students: updatedStudents };
+                }
+
+                return cls;
+              });
+
+              await updateDoc(userRef, { classes: updatedClasses });
+            }
+          }
+        } catch (error) {
+          console.error('Trade with classmate failed:', error);
+          return { success: false, error: 'Failed to update trade. Please try again.' };
+        }
+
+        syncLocalState(updatedStudentData, updatedPartnerData);
+
+        return { success: true, status: 'rejected' };
+      }
+
+      if (action === 'cancel') {
+        const tradeRequest = request || studentData.outgoingTradeRequest;
+
+        if (!tradeRequest) {
+          return { success: false, error: 'No pending trade request to cancel.' };
+        }
+
+        const partner = findStudentById(tradeRequest.partnerId);
+
+        if (!partner) {
+          return { success: false, error: 'Classmate not found.' };
+        }
+
+        const partnerPendingRequests = (partner.pendingTradeRequests || []).filter(req => req.id !== tradeRequest.id);
+
+        const updatedStudentData = {
+          ...studentData,
+          outgoingTradeRequest: null
+        };
+
+        const updatedPartnerData = {
+          ...partner,
+          pendingTradeRequests: partnerPendingRequests
+        };
+
+        try {
+          if (architectureVersion === 'v2') {
+            const studentRef = doc(firestore, 'students', studentData.id);
+            const partnerRef = doc(firestore, 'students', partner.id);
+
+            await Promise.all([
+              updateDoc(studentRef, { outgoingTradeRequest: null, updatedAt: nowIso, lastActivity: nowIso }),
+              updateDoc(partnerRef, { pendingTradeRequests: partnerPendingRequests, updatedAt: nowIso, lastActivity: nowIso })
+            ]);
+          } else {
+            if (!teacherUserId || !classData) {
+              return { success: false, error: 'Trading is not available right now.' };
+            }
+
+            const userRef = doc(firestore, 'users', teacherUserId);
+            const userDoc = await getDoc(userRef);
+
+            if (userDoc.exists()) {
+              const userData = userDoc.data();
+              const updatedClasses = (userData.classes || []).map(cls => {
+                if (cls.classCode?.toUpperCase() === classData.classCode?.toUpperCase()) {
+                  const updatedStudents = (cls.students || []).map(s => {
+                    if (s.id === studentData.id) {
+                      return { ...s, outgoingTradeRequest: null, updatedAt: nowIso };
+                    }
+
+                    if (s.id === partner.id) {
+                      return { ...s, pendingTradeRequests: partnerPendingRequests, updatedAt: nowIso };
+                    }
+
+                    return s;
+                  });
+
+                  return { ...cls, students: updatedStudents };
+                }
+
+                return cls;
+              });
+
+              await updateDoc(userRef, { classes: updatedClasses });
+            }
+          }
+        } catch (error) {
+          console.error('Trade with classmate failed:', error);
+          return { success: false, error: 'Failed to cancel trade request. Please try again.' };
+        }
+
+        syncLocalState(updatedStudentData, updatedPartnerData);
+
+        return { success: true, status: 'cancelled' };
+      }
+
+      return { success: false, error: 'Unsupported trade action.' };
+    },
+    [architectureVersion, availableStudents, classData, refreshDailyMysteryBoxAvailability, studentData, teacherUserId]
+  );
+
   // ===============================================
   // LOGOUT AND NAVIGATION
   // ===============================================
@@ -1182,6 +1928,9 @@ const StudentPortal = () => {
             HALLOWEEN_PREMIUM_AVATARS={HALLOWEEN_PREMIUM_AVATARS}
             HALLOWEEN_PETS={HALLOWEEN_PETS}
             classRewards={classData?.classRewards || []}
+            classmates={availableStudents}
+            classData={classData}
+            performClassmateTrade={tradeWithClassmate}
           />
         );
       
