@@ -367,6 +367,7 @@ const StudentShop = ({
   HALLOWEEN_PETS = [],
   classRewards,
   classmates = [],
+  classData = null,
   performClassmateTrade = null
 }) => {
   const [activeCategory, setActiveCategory] = useState('card_packs');
@@ -503,6 +504,26 @@ const StudentShop = ({
 
     return entries;
   }, [cardCollection.cards, cardLibraryMap]);
+
+  const resolvedClassmates = useMemo(() => {
+    const map = new Map();
+
+    const addStudents = (list = []) => {
+      list.forEach(student => {
+        if (!student || !student.id) {
+          return;
+        }
+
+        const existing = map.get(student.id) || {};
+        map.set(student.id, { ...existing, ...student });
+      });
+    };
+
+    addStudents(Array.isArray(classmates) ? classmates : []);
+    addStudents(Array.isArray(classData?.students) ? classData.students : []);
+
+    return Array.from(map.values());
+  }, [classData?.students, classmates]);
 
   const getStudentCardsForTrade = useCallback(
     (student) => {
@@ -700,7 +721,7 @@ const StudentShop = ({
       return;
     }
 
-    const selectedPartner = (classmates || []).find(partner => partner.id === tradeModal.selectedPartnerId);
+    const selectedPartner = resolvedClassmates.find(partner => partner.id === tradeModal.selectedPartnerId);
 
     if (!selectedPartner) {
       showToast('Could not find the selected classmate. Please try again.', 'error');
@@ -1088,7 +1109,7 @@ const StudentShop = ({
       return null;
     })();
 
-    const partnerChoices = (classmates || [])
+    const partnerChoices = resolvedClassmates
       .filter(partner => partner && partner.id && partner.id !== studentData?.id)
       .map(partner => {
         const displayName = partner.firstName
@@ -2304,6 +2325,17 @@ const StudentShop = ({
       const isHalloween = item.theme === 'halloween';
       const packCount = resolvedType === 'card_pack' ? item.count || 0 : 0;
       const packStyle = resolvedType === 'card_pack' ? (CARD_RARITY_STYLES[item.rarity] || CARD_RARITY_STYLES.common) : null;
+      const packLabelColor = resolvedType === 'card_pack'
+        ? item.visual?.label || '#f8fafc'
+        : null;
+      const packSubtitleColor = resolvedType === 'card_pack'
+        ? item.visual?.label
+          ? `${item.visual.label}cc`
+          : 'rgba(248,250,252,0.75)'
+        : null;
+      const packIconShadow = resolvedType === 'card_pack'
+        ? item.visual?.glow || 'rgba(15, 23, 42, 0.55)'
+        : null;
 
       return (
         <div
@@ -2327,10 +2359,23 @@ const StudentShop = ({
               }}
             >
               <div className="absolute inset-0 bg-white/10 mix-blend-overlay" aria-hidden></div>
-              <div className="relative z-10 flex flex-col items-center gap-2 text-white">
-                <span className="text-4xl drop-shadow-xl">{item.icon || '🃏'}</span>
-                <p className="font-bold text-lg">{item.name}</p>
-                <p className="text-xs uppercase tracking-widest text-white/70">
+              <div
+                className="relative z-10 flex flex-col items-center gap-2"
+                style={{ color: packLabelColor || '#f8fafc' }}
+              >
+                <span
+                  className="text-4xl drop-shadow-xl"
+                  style={{ textShadow: `0 6px 18px ${packIconShadow}` }}
+                >
+                  {item.icon || '🃏'}
+                </span>
+                <p className="font-bold text-lg" style={{ color: packLabelColor || '#f8fafc' }}>
+                  {item.name}
+                </p>
+                <p
+                  className="text-xs uppercase tracking-widest"
+                  style={{ color: packSubtitleColor || 'rgba(248,250,252,0.75)' }}
+                >
                   {item.minCards}-{item.maxCards} Cards
                 </p>
               </div>

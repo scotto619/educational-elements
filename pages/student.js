@@ -1929,6 +1929,7 @@ const StudentPortal = () => {
             HALLOWEEN_PETS={HALLOWEEN_PETS}
             classRewards={classData?.classRewards || []}
             classmates={availableStudents}
+            classData={classData}
             performClassmateTrade={tradeWithClassmate}
           />
         );
