@@ -1147,25 +1147,29 @@ const StudentShop = ({
       const requestedName = getTradeItemName(tradeType, requested);
 
       return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md text-center p-6 md:p-8 space-y-4">
-            <div className="text-5xl md:text-6xl">📨</div>
-            <h2 className="text-xl md:text-2xl font-bold">Trade request sent!</h2>
-            <p className="text-sm md:text-base text-gray-700">
-              Waiting for {partnerName} to confirm the trade.
-            </p>
-            {(offeredName || requestedName) && (
-              <p className="text-xs md:text-sm text-gray-600">
-                They'll decide if they want your <span className="font-semibold">{offeredName}</span>{' '}
-                in exchange for their <span className="font-semibold">{requestedName}</span>.
-              </p>
-            )}
-            <button
-              onClick={closeTradeModal}
-              className="w-full py-3 bg-amber-500 text-white rounded-lg font-semibold hover:bg-amber-600"
-            >
-              Got it!
-            </button>
+        <div className="fixed inset-0 z-[75] bg-black/70 backdrop-blur-sm overflow-y-auto">
+          <div className="min-h-full flex items-start md:items-center justify-center p-4 md:py-10">
+            <div className="w-full max-w-md">
+              <div className="bg-white rounded-2xl shadow-2xl text-center p-6 md:p-8 space-y-4 max-h-[90vh] overflow-y-auto">
+                <div className="text-5xl md:text-6xl">📨</div>
+                <h2 className="text-xl md:text-2xl font-bold">Trade request sent!</h2>
+                <p className="text-sm md:text-base text-gray-700">
+                  Waiting for {partnerName} to confirm the trade.
+                </p>
+                {(offeredName || requestedName) && (
+                  <p className="text-xs md:text-sm text-gray-600">
+                    They'll decide if they want your <span className="font-semibold">{offeredName}</span>{' '}
+                    in exchange for their <span className="font-semibold">{requestedName}</span>.
+                  </p>
+                )}
+                <button
+                  onClick={closeTradeModal}
+                  className="w-full py-3 bg-amber-500 text-white rounded-lg font-semibold hover:bg-amber-600"
+                >
+                  Got it!
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       );
@@ -1243,25 +1247,29 @@ const StudentShop = ({
       })();
 
       return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md text-center p-6 md:p-8">
-            <div className="text-5xl md:text-6xl mb-3">✨</div>
-            <h2 className="text-xl md:text-2xl font-bold mb-2">Trade Successful!</h2>
-            <p className="text-sm md:text-base text-gray-700 mb-4">
-              You traded <span className="font-semibold">{tradedName}</span> with{' '}
-              <span className="font-semibold">{partnerName}</span> and received{' '}
-              <span className="font-semibold text-amber-600">{receivedName}</span>.
-            </p>
-            {resultImage}
-            <p className="text-xs md:text-sm text-gray-500 mb-4">
-              You and {partnerName} can trade again tomorrow.
-            </p>
-            <button
-              onClick={closeTradeModal}
-              className="mt-2 w-full py-3 bg-amber-500 text-white rounded-lg font-semibold hover:bg-amber-600"
-            >
-              Awesome!
-            </button>
+        <div className="fixed inset-0 z-[75] bg-black/70 backdrop-blur-sm overflow-y-auto">
+          <div className="min-h-full flex items-start md:items-center justify-center p-4 md:py-10">
+            <div className="w-full max-w-md">
+              <div className="bg-white rounded-2xl shadow-2xl text-center p-6 md:p-8 max-h-[90vh] overflow-y-auto">
+                <div className="text-5xl md:text-6xl mb-3">✨</div>
+                <h2 className="text-xl md:text-2xl font-bold mb-2">Trade Successful!</h2>
+                <p className="text-sm md:text-base text-gray-700 mb-4">
+                  You traded <span className="font-semibold">{tradedName}</span> with{' '}
+                  <span className="font-semibold">{partnerName}</span> and received{' '}
+                  <span className="font-semibold text-amber-600">{receivedName}</span>.
+                </p>
+                {resultImage}
+                <p className="text-xs md:text-sm text-gray-500 mb-4">
+                  You and {partnerName} can trade again tomorrow.
+                </p>
+                <button
+                  onClick={closeTradeModal}
+                  className="mt-2 w-full py-3 bg-amber-500 text-white rounded-lg font-semibold hover:bg-amber-600"
+                >
+                  Awesome!
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       );
@@ -1389,59 +1397,61 @@ const StudentShop = ({
       : 'Trading will use your one trade for today once it is accepted.';
 
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl text-center p-6 md:p-8 space-y-4">
-          <div>
-            <div className="text-4xl md:text-5xl mb-2">🤝</div>
-            <h2 className="text-xl md:text-2xl font-bold mb-2">
-              Trade {tradeTypeLabel} with a Classmate
-            </h2>
-            <p className="text-sm md:text-base text-gray-700">
-              Choose a classmate to swap this {tradeTypeLabel.toLowerCase()}. Each student can trade once per day.
-            </p>
-          </div>
-
-          {previewImage}
-
-          {eligiblePartners.length === 0 ? (
-            <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-4 text-sm">
-              No classmates are available to trade this {tradeTypeLabel.toLowerCase()} today. Check back tomorrow!
-            </div>
-          ) : (
-            <div className="text-left space-y-4">
+      <div className="fixed inset-0 z-[75] bg-black/70 backdrop-blur-sm overflow-y-auto">
+        <div className="min-h-full flex items-start md:items-center justify-center p-4 md:py-10">
+          <div className="w-full max-w-2xl">
+            <div className="bg-white rounded-2xl shadow-2xl text-center p-6 md:p-8 space-y-4 max-h-[90vh] overflow-y-auto">
               <div>
-                <label className="block text-xs md:text-sm font-semibold text-gray-700 mb-1">
-                  Choose a classmate
-                </label>
-                <select
-                  value={tradeModal.selectedPartnerId || ''}
-                  onChange={(event) => {
-                    const value = event.target.value;
-                    setTradeModal(prev => ({
-                      ...prev,
-                      selectedPartnerId: value || null,
-                      selectedPartnerItem: null
-                    }));
-                  }}
-                  className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-500"
-                >
-                  <option value="">Select a classmate</option>
-                  {eligiblePartners.map(option => (
-                    <option key={option.id} value={option.id}>
-                      {option.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="text-4xl md:text-5xl mb-2">🤝</div>
+                <h2 className="text-xl md:text-2xl font-bold mb-2">
+                  Trade {tradeTypeLabel} with a Classmate
+                </h2>
+                <p className="text-sm md:text-base text-gray-700">
+                  Choose a classmate to swap this {tradeTypeLabel.toLowerCase()}. Each student can trade once per day.
+                </p>
               </div>
 
-              {selectedPartnerChoice && (
-                <div className="space-y-2">
-                  <p className="text-xs md:text-sm font-semibold text-gray-700">
-                    {selectedPartnerChoice.name}'s available {tradePluralLabel}
-                  </p>
-                  {partnerItems.length > 0 ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                      {partnerItems.map(item => {
+              {previewImage}
+
+              {eligiblePartners.length === 0 ? (
+                <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-4 text-sm">
+                  No classmates are available to trade this {tradeTypeLabel.toLowerCase()} today. Check back tomorrow!
+                </div>
+              ) : (
+                <div className="text-left space-y-4">
+                  <div>
+                    <label className="block text-xs md:text-sm font-semibold text-gray-700 mb-1">
+                      Choose a classmate
+                    </label>
+                    <select
+                      value={tradeModal.selectedPartnerId || ''}
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        setTradeModal(prev => ({
+                          ...prev,
+                          selectedPartnerId: value || null,
+                          selectedPartnerItem: null
+                        }));
+                      }}
+                      className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-500"
+                    >
+                      <option value="">Select a classmate</option>
+                      {eligiblePartners.map(option => (
+                        <option key={option.id} value={option.id}>
+                          {option.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {selectedPartnerChoice && (
+                    <div className="space-y-2">
+                      <p className="text-xs md:text-sm font-semibold text-gray-700">
+                        {selectedPartnerChoice.name}'s available {tradePluralLabel}
+                      </p>
+                      {partnerItems.length > 0 ? (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          {partnerItems.map(item => {
                         if (isAvatarTrade) {
                           const isSelected = tradeModal.selectedPartnerItem === item;
                           const avatarSrc = getAvatarImage(
@@ -1606,6 +1616,8 @@ const StudentShop = ({
           </div>
         </div>
       </div>
+    </div>
+  </div>
     );
   };
 

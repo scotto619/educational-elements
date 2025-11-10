@@ -54,7 +54,7 @@ const CardBookModal = ({ visible, onClose, cardCollection, cardLibrary }) => {
 
   return (
     <div className="fixed inset-0 z-[70] bg-slate-950/85 backdrop-blur-lg overflow-y-auto">
-      <div className="min-h-full flex items-center justify-center p-4">
+      <div className="min-h-full flex items-start md:items-center justify-center p-4 md:py-10">
         <div className="relative w-full max-w-6xl rounded-[32px] border border-white/10 bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 shadow-[0_25px_80px_rgba(45,10,95,0.4)]">
           <div className="absolute inset-0 opacity-40 pointer-events-none">
             {sparkles.map(sparkle => (
@@ -72,7 +72,7 @@ const CardBookModal = ({ visible, onClose, cardCollection, cardLibrary }) => {
             ))}
           </div>
 
-          <div className="relative z-10 p-6 md:p-10 text-white max-h-[85vh] overflow-y-auto">
+          <div className="relative z-10 p-6 md:p-10 text-white max-h-[88vh] md:max-h-[82vh] overflow-y-auto">
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
               <div>
                 <p className="text-xs uppercase tracking-[0.35em] text-white/60">Collector's Archive</p>

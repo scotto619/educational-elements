@@ -73,9 +73,9 @@ const CardPackOpeningModal = ({ visible, stage, pack, cards = [], results = [], 
 
   return (
     <div className="fixed inset-0 z-[65] bg-black/70 backdrop-blur-sm overflow-y-auto">
-      <div className="min-h-full flex items-center justify-center p-4">
+      <div className="min-h-full flex items-start md:items-center justify-center p-4 md:py-10">
         <div className="relative w-full max-w-4xl">
-          <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-slate-950/85 shadow-[0_25px_80px_rgba(15,23,42,0.6)]">
+          <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-slate-950/85 shadow-[0_25px_80px_rgba(15,23,42,0.6)] max-h-[92vh] md:max-h-[88vh]">
             <div className="absolute inset-0 pointer-events-none opacity-50">
               {sparkles.map(sparkle => (
                 <span
@@ -92,7 +92,7 @@ const CardPackOpeningModal = ({ visible, stage, pack, cards = [], results = [], 
               ))}
             </div>
 
-            <div className="relative z-10 p-6 md:p-10 text-white">
+            <div className="relative z-10 p-6 md:p-10 text-white max-h-[88vh] md:max-h-[80vh] overflow-y-auto">
               <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
                 <div className="flex-1">
                   <p className="text-xs uppercase tracking-[0.35em] text-white/60">Card Pack Opening</p>
