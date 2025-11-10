@@ -53,8 +53,9 @@ const CardPackOpeningModal = ({ visible, stage, pack, cards = [], results = [], 
   const canClose = stage === 'reveal';
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-      <div className="relative w-full max-w-4xl">
+    <div className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm z-[60] overflow-y-auto">
+      <div className="min-h-full flex items-center justify-center p-4">
+        <div className="relative w-full max-w-4xl">
         <div className="relative overflow-hidden rounded-3xl shadow-2xl bg-slate-950/80 border border-white/10">
           <div className="absolute inset-0" aria-hidden>
             {[...Array(24)].map((_, index) => (
@@ -199,7 +200,7 @@ const CardPackOpeningModal = ({ visible, stage, pack, cards = [], results = [], 
                     : 'bg-white/10 text-white/60 cursor-not-allowed'
                 }`}
               >
-                {canClose ? 'Awesome!' : 'Opening...'}
+                {canClose ? 'Close' : 'Opening...'}
               </button>
             </div>
           </div>

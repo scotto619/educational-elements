@@ -159,7 +159,7 @@ export const DEFAULT_CARD_PACKS = [
     price: 60,
     minCards: 3,
     maxCards: 3,
-    rarityWeights: { common: 0.35, rare: 0.45, legendary: 0.2 },
+    rarityWeights: { common: 0.55, rare: 0.4, legendary: 0.05 },
     description: 'Shimmering legends and radiant artifacts await true collectors.',
     icon: '🌌',
     visual: {

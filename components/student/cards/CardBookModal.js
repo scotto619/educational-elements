@@ -38,13 +38,14 @@ const CardBookModal = ({ visible, onClose, cardCollection, cardLibrary }) => {
   }
 
   return (
-    <div className="fixed inset-0 z-[70] bg-slate-950/80 backdrop-blur-lg flex items-center justify-center p-4">
-      <div className="relative w-full max-w-6xl max-h-[90vh] overflow-hidden rounded-3xl shadow-2xl border border-white/10 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900">
-        <div className="absolute inset-0 opacity-40 pointer-events-none">
-          {[...Array(48)].map((_, index) => (
-            <div
-              key={index}
-              className="absolute bg-white/10 rounded-full animate-ping"
+    <div className="fixed inset-0 z-[70] bg-slate-950/80 backdrop-blur-lg overflow-y-auto">
+      <div className="min-h-full flex items-center justify-center p-4">
+        <div className="relative w-full max-w-6xl rounded-3xl shadow-2xl border border-white/10 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900">
+          <div className="absolute inset-0 opacity-40 pointer-events-none">
+            {[...Array(48)].map((_, index) => (
+              <div
+                key={index}
+                className="absolute bg-white/10 rounded-full animate-ping"
               style={{
                 width: `${Math.random() * 5 + 3}px`,
                 height: `${Math.random() * 5 + 3}px`,
@@ -56,7 +57,7 @@ const CardBookModal = ({ visible, onClose, cardCollection, cardLibrary }) => {
           ))}
         </div>
 
-        <div className="relative z-10 p-6 md:p-10 text-white overflow-y-auto h-full">
+          <div className="relative z-10 p-6 md:p-10 text-white max-h-[85vh] overflow-y-auto">
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
             <div>
               <p className="text-sm uppercase tracking-[0.35em] text-white/60 mb-2">Collector's Archive</p>
@@ -146,6 +147,7 @@ const CardBookModal = ({ visible, onClose, cardCollection, cardLibrary }) => {
                     const owned = ownedEntry?.count || 0;
                     const rarity = CARD_RARITY_STYLES[card.rarity] || CARD_RARITY_STYLES.common;
                     const isOwned = owned > 0;
+                    const isMystery = card.rarity === 'legendary' && !isOwned;
 
                     return (
                       <div
@@ -157,42 +159,53 @@ const CardBookModal = ({ visible, onClose, cardCollection, cardLibrary }) => {
                       >
                         <div className="relative aspect-[3/4] overflow-hidden">
                           <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent" />
-                          <Image
-                            src={card.image || '/Logo/icon.png'}
-                            alt={card.name}
-                            fill
-                            sizes="200px"
-                            className={`object-cover transition-all duration-300 ${isOwned ? '' : 'grayscale opacity-40'}`}
-                          />
-                          {card.rarity === 'legendary' && (
-                            <div className="absolute inset-0 pointer-events-none">
-                              {[...Array(14)].map((_, index) => (
-                                <div
-                                  key={index}
-                                  className="absolute rounded-full animate-[spin_5s_linear_infinite]"
-                                  style={{
-                                    top: `${Math.random() * 100}%`,
-                                    left: `${Math.random() * 100}%`,
-                                    width: '5px',
-                                    height: '5px',
-                                    background: rarity.particle,
-                                    animationDelay: `${Math.random() * 2.5}s`
-                                  }}
-                                />
-                              ))}
+                          {isMystery ? (
+                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/65 backdrop-blur">
+                              <span className="text-4xl font-bold text-white/60">???</span>
+                              <span className="mt-2 text-xs uppercase tracking-widest text-white/50">
+                                Legendary Mystery
+                              </span>
                             </div>
+                          ) : (
+                            <>
+                              <Image
+                                src={card.image || '/Logo/icon.png'}
+                                alt={card.name}
+                                fill
+                                sizes="200px"
+                                className={`object-cover transition-all duration-300 ${isOwned ? '' : 'grayscale opacity-40'}`}
+                              />
+                              {card.rarity === 'legendary' && (
+                                <div className="absolute inset-0 pointer-events-none">
+                                  {[...Array(14)].map((_, index) => (
+                                    <div
+                                      key={index}
+                                      className="absolute rounded-full animate-[spin_5s_linear_infinite]"
+                                      style={{
+                                        top: `${Math.random() * 100}%`,
+                                        left: `${Math.random() * 100}%`,
+                                        width: '5px',
+                                        height: '5px',
+                                        background: rarity.particle,
+                                        animationDelay: `${Math.random() * 2.5}s`
+                                      }}
+                                    />
+                                  ))}
+                                </div>
+                              )}
+                            </>
                           )}
                         </div>
                         <div className="p-4">
-                          <p className="font-semibold text-white truncate" title={card.name}>
-                            {card.name}
+                          <p className="font-semibold text-white truncate" title={isMystery ? 'Legendary Mystery' : card.name}>
+                            {isMystery ? 'Legendary Mystery' : card.name}
                           </p>
                           <p className="text-xs uppercase tracking-widest" style={{ color: rarity.color }}>
-                            {rarity.label} • {CARD_TYPE_LABELS[card.type] || 'Card'}
+                            {isMystery ? '???' : `${rarity.label} • ${CARD_TYPE_LABELS[card.type] || 'Card'}`}
                           </p>
                           <div className="mt-3 flex items-center justify-between text-xs text-white/70">
-                            <span>{isOwned ? `Owned x${owned}` : 'Missing'}</span>
-                            {ownedEntry?.firstObtainedAt && (
+                            <span>{isOwned ? `Owned x${owned}` : isMystery ? 'Hidden' : 'Missing'}</span>
+                            {ownedEntry?.firstObtainedAt && !isMystery && (
                               <span className="text-white/50">
                                 {new Date(ownedEntry.firstObtainedAt).toLocaleDateString()}
                               </span>

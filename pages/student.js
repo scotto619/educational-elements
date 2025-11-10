@@ -807,11 +807,19 @@ const StudentPortal = () => {
       };
 
       const cloneTradeItem = (tradeType, item) => {
-        if (tradeType === 'pet' && item) {
-          return JSON.parse(JSON.stringify(item));
+        if (!item) {
+          return null;
         }
 
-        return item ?? null;
+        if (tradeType === 'pet' || tradeType === 'card') {
+          try {
+            return JSON.parse(JSON.stringify(item));
+          } catch (error) {
+            return { ...item };
+          }
+        }
+
+        return item;
       };
 
       const limitNotifications = (notifications = []) => {
@@ -942,6 +950,20 @@ const StudentPortal = () => {
 
           if (!(partner.ownedPets || []).some(pet => pet.id === partnerItem.id)) {
             return { success: false, error: 'This classmate no longer has that pet.' };
+          }
+        } else if (type === 'card') {
+          if (!offeredItem?.id || !partnerItem?.id) {
+            return { success: false, error: 'Select cards to trade.' };
+          }
+
+          const studentCardCount = studentData.cardCollection?.cards?.[offeredItem.id]?.count || 0;
+          if (studentCardCount <= 0) {
+            return { success: false, error: 'You no longer have that card.' };
+          }
+
+          const partnerCardCount = partner.cardCollection?.cards?.[partnerItem.id]?.count || 0;
+          if (partnerCardCount <= 0) {
+            return { success: false, error: 'This classmate no longer has that card.' };
           }
         } else {
           return { success: false, error: 'Unsupported trade type.' };
@@ -1156,6 +1178,83 @@ const StudentPortal = () => {
 
           studentUpdates = { ...studentUpdates, ownedPets: nextStudentPets };
           partnerUpdates = { ...partnerUpdates, ownedPets: nextPartnerPets };
+        } else if (tradeRequest.type === 'card') {
+          const offeredCard = tradeRequest.offeredItem;
+          const requestedCard = tradeRequest.requestedItem;
+
+          if (!offeredCard?.id || !requestedCard?.id) {
+            return { success: false, error: 'This trade is missing card details.' };
+          }
+
+          const baseStudentCollection = studentData.cardCollection || {};
+          const basePartnerCollection = partner.cardCollection || {};
+          const studentCards = { ...(baseStudentCollection.cards || {}) };
+          const partnerCards = { ...(basePartnerCollection.cards || {}) };
+
+          const studentCardEntry = studentCards[requestedCard.id];
+          if (!studentCardEntry?.count) {
+            return { success: false, error: 'You no longer have that card.' };
+          }
+
+          const partnerCardEntry = partnerCards[offeredCard.id];
+          if (!partnerCardEntry?.count) {
+            return { success: false, error: 'This classmate no longer has that card.' };
+          }
+
+          if (studentCardEntry.count <= 1) {
+            delete studentCards[requestedCard.id];
+          } else {
+            studentCards[requestedCard.id] = {
+              ...studentCardEntry,
+              count: studentCardEntry.count - 1,
+              lastObtainedAt: nowIso
+            };
+          }
+
+          const studentOfferedEntry = studentCards[offeredCard.id] || {};
+          studentCards[offeredCard.id] = {
+            count: (studentOfferedEntry.count || 0) + 1,
+            firstObtainedAt: studentOfferedEntry.firstObtainedAt || nowIso,
+            lastObtainedAt: nowIso
+          };
+
+          if (partnerCardEntry.count <= 1) {
+            delete partnerCards[offeredCard.id];
+          } else {
+            partnerCards[offeredCard.id] = {
+              ...partnerCardEntry,
+              count: partnerCardEntry.count - 1,
+              lastObtainedAt: nowIso
+            };
+          }
+
+          const partnerRequestedEntry = partnerCards[requestedCard.id] || {};
+          partnerCards[requestedCard.id] = {
+            count: (partnerRequestedEntry.count || 0) + 1,
+            firstObtainedAt: partnerRequestedEntry.firstObtainedAt || nowIso,
+            lastObtainedAt: nowIso
+          };
+
+          const computeTotal = (cardsMap) =>
+            Object.values(cardsMap).reduce((total, entry) => total + (entry.count || 0), 0);
+
+          const nextStudentCollection = {
+            ...baseStudentCollection,
+            cards: studentCards,
+            totalOwned: computeTotal(studentCards)
+          };
+
+          const nextPartnerCollection = {
+            ...basePartnerCollection,
+            cards: partnerCards,
+            totalOwned: computeTotal(partnerCards)
+          };
+
+          updatedStudentData.cardCollection = nextStudentCollection;
+          updatedPartnerData.cardCollection = nextPartnerCollection;
+
+          studentUpdates = { ...studentUpdates, cardCollection: nextStudentCollection };
+          partnerUpdates = { ...partnerUpdates, cardCollection: nextPartnerCollection };
         } else {
           return { success: false, error: 'Unsupported trade type.' };
         }

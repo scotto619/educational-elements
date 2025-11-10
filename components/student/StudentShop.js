@@ -24,8 +24,10 @@ import {
   summarizeCardPull,
   CARD_RARITY_STYLES,
   CARD_RARITY_ORDER,
+  CARD_TYPE_LABELS,
   getCollectionProgress,
-  getRarityBreakdown
+  getRarityBreakdown,
+  getCardLibraryMap
 } from '../../utils/tradingCards';
 
 // ===============================================
@@ -334,6 +336,12 @@ const INITIAL_TRADE_MODAL_STATE = {
   result: null
 };
 
+const TRADE_TYPE_LABELS = {
+  avatar: 'Avatar',
+  pet: 'Pet',
+  card: 'Card'
+};
+
 const DEFAULT_CARD_PACK_OPENING_STATE = {
   visible: false,
   pack: null,
@@ -447,6 +455,11 @@ const StudentShop = ({
     ]
   );
 
+  const cardLibraryMap = useMemo(
+    () => getCardLibraryMap(tradingCardLibrary),
+    [tradingCardLibrary]
+  );
+
   const cardProgress = useMemo(
     () => getCollectionProgress(cardCollection, tradingCardLibrary),
     [cardCollection, tradingCardLibrary]
@@ -456,6 +469,90 @@ const StudentShop = ({
     () => getRarityBreakdown(cardCollection, tradingCardLibrary),
     [cardCollection, tradingCardLibrary]
   );
+
+  const ownedCardEntries = useMemo(() => {
+    const entries = [];
+    const cards = cardCollection.cards || {};
+
+    Object.entries(cards).forEach(([cardId, details]) => {
+      if (!details?.count) {
+        return;
+      }
+
+      const cardInfo = cardLibraryMap.get(cardId);
+      if (!cardInfo) {
+        return;
+      }
+
+      entries.push({
+        ...cardInfo,
+        count: details.count,
+        firstObtainedAt: details.firstObtainedAt,
+        lastObtainedAt: details.lastObtainedAt
+      });
+    });
+
+    entries.sort((a, b) => {
+      const rarityOrder = CARD_RARITY_ORDER.indexOf(a.rarity) - CARD_RARITY_ORDER.indexOf(b.rarity);
+      if (rarityOrder !== 0) {
+        return rarityOrder;
+      }
+
+      return a.name.localeCompare(b.name);
+    });
+
+    return entries;
+  }, [cardCollection.cards, cardLibraryMap]);
+
+  const getStudentCardsForTrade = useCallback(
+    (student) => {
+      if (!student) {
+        return [];
+      }
+
+      const cards = student.cardCollection?.cards || {};
+      const entries = Object.entries(cards)
+        .filter(([, entry]) => entry?.count)
+        .map(([cardId, entry]) => {
+          const cardInfo = cardLibraryMap.get(cardId);
+          if (!cardInfo) {
+            return null;
+          }
+
+          return {
+            ...cardInfo,
+            count: entry.count,
+            firstObtainedAt: entry.firstObtainedAt,
+            lastObtainedAt: entry.lastObtainedAt
+          };
+        })
+        .filter(Boolean);
+
+      entries.sort((a, b) => {
+        const rarityOrder = CARD_RARITY_ORDER.indexOf(a.rarity) - CARD_RARITY_ORDER.indexOf(b.rarity);
+        if (rarityOrder !== 0) {
+          return rarityOrder;
+        }
+
+        return a.name.localeCompare(b.name);
+      });
+
+      return entries;
+    },
+    [cardLibraryMap]
+  );
+
+  const getTradeItemName = useCallback((type, item) => {
+    if (!item) {
+      return '';
+    }
+
+    if (type === 'avatar') {
+      return item;
+    }
+
+    return item.name || '';
+  }, []);
 
   const cardPackInventory = useMemo(
     () =>
@@ -561,6 +658,19 @@ const StudentShop = ({
       return;
     }
 
+    if (type === 'card') {
+      if (!item?.id) {
+        showToast('This card is not available to trade right now.', 'info');
+        return;
+      }
+
+      const ownedCount = studentData?.cardCollection?.cards?.[item.id]?.count || 0;
+      if (ownedCount <= 0) {
+        showToast('You no longer own that card.', 'error');
+        return;
+      }
+    }
+
     setTradeModal({
       ...INITIAL_TRADE_MODAL_STATE,
       visible: true,
@@ -608,9 +718,23 @@ const StudentShop = ({
       return;
     }
 
+    const studentHasItem = tradeModal.type === 'avatar'
+      ? (studentData.ownedAvatars || []).includes(tradeModal.item)
+      : tradeModal.type === 'pet'
+        ? (studentData.ownedPets || []).some(pet => pet.id === tradeModal.item.id)
+        : (studentData.cardCollection?.cards?.[tradeModal.item.id]?.count || 0) > 0;
+
+    if (!studentHasItem) {
+      showToast('You no longer have that item available to trade.', 'error');
+      closeTradeModal();
+      return;
+    }
+
     const partnerHasItem = tradeModal.type === 'avatar'
       ? (selectedPartner.ownedAvatars || []).includes(tradeModal.selectedPartnerItem)
-      : (selectedPartner.ownedPets || []).some(pet => pet.id === tradeModal.selectedPartnerItem.id);
+      : tradeModal.type === 'pet'
+        ? (selectedPartner.ownedPets || []).some(pet => pet.id === tradeModal.selectedPartnerItem.id)
+        : (selectedPartner.cardCollection?.cards?.[tradeModal.selectedPartnerItem.id]?.count || 0) > 0;
 
     if (!partnerHasItem) {
       showToast('It looks like that item is no longer available. Please choose another.', 'error');
@@ -649,10 +773,14 @@ const StudentShop = ({
 
       const offeredSnapshot = tradeModal.type === 'pet'
         ? { ...tradeModal.item }
-        : tradeModal.item;
+        : tradeModal.type === 'card'
+          ? { ...tradeModal.item }
+          : tradeModal.item;
       const requestedSnapshot = tradeModal.type === 'pet'
         ? { ...tradeModal.selectedPartnerItem }
-        : tradeModal.selectedPartnerItem;
+        : tradeModal.type === 'card'
+          ? { ...tradeModal.selectedPartnerItem }
+          : tradeModal.selectedPartnerItem;
 
       setTradeModal(prev => ({
         ...prev,
@@ -735,13 +863,41 @@ const StudentShop = ({
       return null;
     }
 
-    const isAvatarTrade = tradeModal.type === 'avatar';
+    const tradeType = tradeModal.type;
+    const isAvatarTrade = tradeType === 'avatar';
+    const isPetTrade = tradeType === 'pet';
+    const isCardTrade = tradeType === 'card';
+    const tradeTypeLabel = TRADE_TYPE_LABELS[tradeType] || 'Item';
+    const tradePluralLabel = tradeType === 'card'
+      ? 'cards'
+      : isAvatarTrade
+        ? 'avatars'
+        : isPetTrade
+          ? 'pets'
+          : 'items';
+
+    const resolveCardDetails = (card) => {
+      if (!card?.id) {
+        return null;
+      }
+
+      const fromMap = cardLibraryMap.get(card.id);
+      if (fromMap) {
+        return { ...fromMap, ...card };
+      }
+
+      if (card.name) {
+        return { ...card };
+      }
+
+      return null;
+    };
 
     if (tradeModal.stage === 'pending' && tradeModal.result) {
       const { partner, offered, requested } = tradeModal.result;
       const partnerName = partner?.name || 'your classmate';
-      const offeredName = isAvatarTrade ? offered : offered?.name;
-      const requestedName = isAvatarTrade ? requested : requested?.name;
+      const offeredName = getTradeItemName(tradeType, offered);
+      const requestedName = getTradeItemName(tradeType, requested);
 
       return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -770,8 +926,8 @@ const StudentShop = ({
 
     if (tradeModal.stage === 'result' && tradeModal.result) {
       const { received, traded, partner } = tradeModal.result;
-      const receivedName = isAvatarTrade ? received : received?.name;
-      const tradedName = isAvatarTrade ? traded : traded?.name;
+      const receivedName = getTradeItemName(tradeType, received);
+      const tradedName = getTradeItemName(tradeType, traded);
       const partnerName = partner?.name || 'your classmate';
 
       const resultImage = (() => {
@@ -794,17 +950,49 @@ const StudentShop = ({
           );
         }
 
-        const petArt = resolvePetArt(getPetImage(received));
-        return (
-          <img
-            src={petArt.src}
-            alt={receivedName}
-            className="w-24 h-24 md:w-28 md:h-28 rounded-full mx-auto mb-4 border-4 border-amber-200"
-            data-fallbacks={serializeFallbacks(petArt.fallbacks)}
-            data-fallback-index="0"
-            onError={petImageErrorHandler}
-          />
-        );
+        if (isPetTrade) {
+          const petArt = resolvePetArt(getPetImage(received));
+          return (
+            <img
+              src={petArt.src}
+              alt={receivedName}
+              className="w-24 h-24 md:w-28 md:h-28 rounded-full mx-auto mb-4 border-4 border-amber-200"
+              data-fallbacks={serializeFallbacks(petArt.fallbacks)}
+              data-fallback-index="0"
+              onError={petImageErrorHandler}
+            />
+          );
+        }
+
+        if (isCardTrade) {
+          const cardDetails = resolveCardDetails(received);
+          if (!cardDetails) {
+            return null;
+          }
+          const rarityConfig = CARD_RARITY_STYLES[cardDetails.rarity] || CARD_RARITY_STYLES.common;
+
+          return (
+            <div
+              className="relative w-24 h-36 md:w-28 md:h-40 rounded-xl overflow-hidden mx-auto mb-4 shadow-xl"
+              style={{
+                background: rarityConfig.gradient,
+                boxShadow: `0 0 30px ${rarityConfig.glow}`
+              }}
+            >
+              <div className="absolute inset-0 bg-white/10 mix-blend-overlay" />
+              <img
+                src={cardDetails.image || '/Logo/icon.png'}
+                alt={cardDetails.name}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-x-0 bottom-0 bg-slate-950/70 px-2 py-1 text-xs font-semibold text-white truncate">
+                {cardDetails.name}
+              </div>
+            </div>
+          );
+        }
+
+        return null;
       })();
 
       return (
@@ -832,9 +1020,9 @@ const StudentShop = ({
       );
     }
 
-    const itemName = isAvatarTrade ? tradeModal.item : tradeModal.item?.name;
+    const itemName = getTradeItemName(tradeType, tradeModal.item);
     const previewImage = (() => {
-      if (!itemName) return null;
+      if (!tradeModal.item) return null;
 
       if (isAvatarTrade) {
         return (
@@ -849,17 +1037,55 @@ const StudentShop = ({
         );
       }
 
-      const petArt = resolvePetArt(getPetImage(tradeModal.item));
-      return (
-        <img
-          src={petArt.src}
-          alt={itemName}
-          className="w-20 h-20 md:w-24 md:h-24 rounded-full mx-auto mb-4 border-4 border-green-200"
-          data-fallbacks={serializeFallbacks(petArt.fallbacks)}
-          data-fallback-index="0"
-          onError={petImageErrorHandler}
-        />
-      );
+      if (isPetTrade) {
+        const petArt = resolvePetArt(getPetImage(tradeModal.item));
+        return (
+          <img
+            src={petArt.src}
+            alt={itemName}
+            className="w-20 h-20 md:w-24 md:h-24 rounded-full mx-auto mb-4 border-4 border-green-200"
+            data-fallbacks={serializeFallbacks(petArt.fallbacks)}
+            data-fallback-index="0"
+            onError={petImageErrorHandler}
+          />
+        );
+      }
+
+      if (isCardTrade) {
+        const cardDetails = resolveCardDetails(tradeModal.item);
+        if (!cardDetails) {
+          return null;
+        }
+        const rarityConfig = CARD_RARITY_STYLES[cardDetails.rarity] || CARD_RARITY_STYLES.common;
+
+        return (
+          <div
+            className="relative w-24 h-36 md:w-28 md:h-40 rounded-xl overflow-hidden mx-auto mb-4 shadow-xl"
+            style={{
+              background: rarityConfig.gradient,
+              boxShadow: `0 0 30px ${rarityConfig.glow}`
+            }}
+          >
+            <div className="absolute inset-0 bg-white/10 mix-blend-overlay" />
+            <img
+              src={cardDetails.image || '/Logo/icon.png'}
+              alt={cardDetails.name}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-x-0 bottom-0 bg-slate-950/70 px-2 py-1 text-xs font-semibold text-white truncate">
+              {cardDetails.name}
+            </div>
+            <div
+              className="absolute top-2 left-2 text-[10px] uppercase tracking-widest px-2 py-1 rounded-full bg-slate-950/70 text-white"
+              style={{ color: rarityConfig.color }}
+            >
+              {rarityConfig.label}
+            </div>
+          </div>
+        );
+      }
+
+      return null;
     })();
 
     const partnerChoices = (classmates || [])
@@ -873,18 +1099,21 @@ const StudentShop = ({
         const hasPendingOutgoing = Boolean(partner.outgoingTradeRequest);
         const partnerItems = isAvatarTrade
           ? (partner.ownedAvatars || [])
-          : (partner.ownedPets || []);
+          : isPetTrade
+            ? (partner.ownedPets || [])
+            : getStudentCardsForTrade(partner);
+        const hasItems = partnerItems.length > 0;
 
         return {
           id: partner.id,
           name: displayName,
-          canTrade: canTradeToday && partnerItems.length > 0 && !hasPendingOutgoing,
+          canTrade: canTradeToday && hasItems && !hasPendingOutgoing,
           reason: !canTradeToday
             ? 'Already traded today'
             : hasPendingOutgoing
               ? 'Has a pending trade request'
-              : partnerItems.length === 0
-                ? `No ${isAvatarTrade ? 'avatars' : 'pets'} available`
+              : !hasItems
+                ? `No ${tradePluralLabel} available`
                 : null,
           items: partnerItems,
           raw: partner
@@ -898,11 +1127,15 @@ const StudentShop = ({
     const unavailablePartners = partnerChoices.filter(option => !option.canTrade);
     const partnerItems = selectedPartnerChoice?.items || [];
 
+    const hasSelectedPartnerItem = isCardTrade
+      ? Boolean(tradeModal.selectedPartnerItem?.id)
+      : Boolean(tradeModal.selectedPartnerItem);
+
     const confirmDisabled =
       isProcessingTrade ||
       !canTradeToday ||
       !selectedPartnerChoice ||
-      !tradeModal.selectedPartnerItem;
+      !hasSelectedPartnerItem;
 
     const tradeNote = selectedPartnerChoice
       ? `If ${selectedPartnerChoice.name} accepts, this trade will count for both of you today.`
@@ -914,10 +1147,10 @@ const StudentShop = ({
           <div>
             <div className="text-4xl md:text-5xl mb-2">🤝</div>
             <h2 className="text-xl md:text-2xl font-bold mb-2">
-              {isAvatarTrade ? 'Trade Avatar with a Classmate' : 'Trade Pet with a Classmate'}
+              Trade {tradeTypeLabel} with a Classmate
             </h2>
             <p className="text-sm md:text-base text-gray-700">
-              Choose a classmate to swap this {isAvatarTrade ? 'avatar' : 'pet'}. Each student can trade once per day.
+              Choose a classmate to swap this {tradeTypeLabel.toLowerCase()}. Each student can trade once per day.
             </p>
           </div>
 
@@ -925,7 +1158,7 @@ const StudentShop = ({
 
           {eligiblePartners.length === 0 ? (
             <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-4 text-sm">
-              No classmates are available to trade this {isAvatarTrade ? 'avatar' : 'pet'} today. Check back tomorrow!
+              No classmates are available to trade this {tradeTypeLabel.toLowerCase()} today. Check back tomorrow!
             </div>
           ) : (
             <div className="text-left space-y-4">
@@ -957,7 +1190,7 @@ const StudentShop = ({
               {selectedPartnerChoice && (
                 <div className="space-y-2">
                   <p className="text-xs md:text-sm font-semibold text-gray-700">
-                    {selectedPartnerChoice.name}'s {isAvatarTrade ? 'available avatars' : 'available pets'}
+                    {selectedPartnerChoice.name}'s available {tradePluralLabel}
                   </p>
                   {partnerItems.length > 0 ? (
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -996,34 +1229,90 @@ const StudentShop = ({
                           );
                         }
 
-                        const isSelected = tradeModal.selectedPartnerItem?.id === item.id;
-                        const petArt = resolvePetArt(getPetImage(item));
+                        if (isPetTrade) {
+                          const isSelected = tradeModal.selectedPartnerItem?.id === item.id;
+                          const petArt = resolvePetArt(getPetImage(item));
 
-                        return (
-                          <button
-                            key={item.id}
-                            type="button"
-                            onClick={() =>
-                              setTradeModal(prev => ({
-                                ...prev,
-                                selectedPartnerItem: { ...item }
-                              }))
-                            }
-                            className={`border-2 rounded-lg p-2 text-center transition-all ${
-                              isSelected ? 'border-amber-500 bg-amber-50' : 'border-gray-200 hover:border-amber-300'
-                            }`}
-                          >
-                            <img
-                              src={petArt.src}
-                              alt={item.name}
-                              className="w-16 h-16 md:w-20 md:h-20 rounded-full mx-auto mb-1 border"
-                              data-fallbacks={serializeFallbacks(petArt.fallbacks)}
-                              data-fallback-index="0"
-                              onError={petImageErrorHandler}
-                            />
-                            <span className="text-xs font-semibold text-gray-700 truncate block">{item.name}</span>
-                          </button>
-                        );
+                          return (
+                            <button
+                              key={item.id}
+                              type="button"
+                              onClick={() =>
+                                setTradeModal(prev => ({
+                                  ...prev,
+                                  selectedPartnerItem: { ...item }
+                                }))
+                              }
+                              className={`border-2 rounded-lg p-2 text-center transition-all ${
+                                isSelected ? 'border-amber-500 bg-amber-50' : 'border-gray-200 hover:border-amber-300'
+                              }`}
+                            >
+                              <img
+                                src={petArt.src}
+                                alt={item.name}
+                                className="w-16 h-16 md:w-20 md:h-20 rounded-full mx-auto mb-1 border"
+                                data-fallbacks={serializeFallbacks(petArt.fallbacks)}
+                                data-fallback-index="0"
+                                onError={petImageErrorHandler}
+                              />
+                              <span className="text-xs font-semibold text-gray-700 truncate block">{item.name}</span>
+                            </button>
+                          );
+                        }
+
+                        if (isCardTrade) {
+                          const isSelected = tradeModal.selectedPartnerItem?.id === item.id;
+                          const cardDetails = resolveCardDetails(item);
+                          if (!cardDetails) {
+                            return null;
+                          }
+                          const rarityConfig = CARD_RARITY_STYLES[cardDetails.rarity] || CARD_RARITY_STYLES.common;
+
+                          return (
+                            <button
+                              key={item.id}
+                              type="button"
+                              onClick={() =>
+                                setTradeModal(prev => ({
+                                  ...prev,
+                                  selectedPartnerItem: { ...item }
+                                }))
+                              }
+                              className={`rounded-lg overflow-hidden border-2 transition-all bg-slate-900 text-white ${
+                                isSelected ? 'border-amber-500 shadow-lg shadow-amber-300/40' : 'border-white/10 hover:border-amber-300'
+                              }`}
+                            >
+                              <div className="relative aspect-[3/4]">
+                                <div
+                                  className="absolute inset-0"
+                                  style={{ background: rarityConfig.gradient }}
+                                />
+                                <div className="absolute inset-0 bg-white/10 mix-blend-overlay" />
+                                <img
+                                  src={cardDetails.image || '/Logo/icon.png'}
+                                  alt={cardDetails.name}
+                                  className="absolute inset-0 w-full h-full object-cover"
+                                />
+                                <div
+                                  className="absolute top-2 left-2 text-[10px] uppercase tracking-widest px-2 py-1 rounded-full bg-slate-950/70"
+                                  style={{ color: rarityConfig.color }}
+                                >
+                                  {rarityConfig.label}
+                                </div>
+                                {item.count > 1 && (
+                                  <div className="absolute top-2 right-2 bg-slate-950/80 text-white text-[11px] font-semibold px-2 py-0.5 rounded-full">
+                                    x{item.count}
+                                  </div>
+                                )}
+                                <div className="absolute inset-x-0 bottom-0 bg-slate-950/70 px-2 py-1 text-[11px] font-semibold truncate">
+                                  {cardDetails.name}
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        }
+
+                        return null;
                       })}
                     </div>
                   ) : (
@@ -2104,7 +2393,7 @@ const StudentShop = ({
                   disabled={!canAfford}
                   className={`w-full py-2 rounded-lg text-xs md:text-sm font-semibold transition-all ${
                     canAfford
-                      ? 'bg-white/20 border border-white/30 hover:bg-white/30'
+                      ? 'bg-white text-slate-900 border border-white/70 hover:bg-amber-100'
                       : 'bg-white/10 text-white/50 cursor-not-allowed'
                   }`}
                 >
@@ -2163,12 +2452,8 @@ const StudentShop = ({
       {(hasPendingOutgoingTrade || pendingIncomingTrades.length > 0) && (
         <div className="space-y-3 md:space-y-4 mb-4 md:mb-6">
           {hasPendingOutgoingTrade && outgoingTradeRequest && (() => {
-            const offeredName = outgoingTradeRequest.type === 'avatar'
-              ? outgoingTradeRequest.offeredItem
-              : outgoingTradeRequest.offeredItem?.name;
-            const requestedName = outgoingTradeRequest.type === 'avatar'
-              ? outgoingTradeRequest.requestedItem
-              : outgoingTradeRequest.requestedItem?.name;
+            const offeredName = getTradeItemName(outgoingTradeRequest.type, outgoingTradeRequest.offeredItem);
+            const requestedName = getTradeItemName(outgoingTradeRequest.type, outgoingTradeRequest.requestedItem);
             const partnerName = outgoingTradeRequest.partnerName || 'your classmate';
 
             return (
@@ -2205,12 +2490,8 @@ const StudentShop = ({
           })()}
 
           {pendingIncomingTrades.map(request => {
-            const offeredName = request.type === 'avatar'
-              ? request.offeredItem
-              : request.offeredItem?.name;
-            const requestedName = request.type === 'avatar'
-              ? request.requestedItem
-              : request.requestedItem?.name;
+            const offeredName = getTradeItemName(request.type, request.offeredItem);
+            const requestedName = getTradeItemName(request.type, request.requestedItem);
             const fromName = request.fromStudentName || 'A classmate';
 
             return (
@@ -2460,7 +2741,7 @@ const StudentShop = ({
                       <div className="flex flex-col gap-2">
                         <button
                           onClick={() => setPurchaseModal({ visible: true, item: packInfo, type: 'card_pack' })}
-                          className="w-full px-3 py-2 rounded-lg bg-white/20 border border-white/30 hover:bg-white/30 text-xs font-semibold"
+                          className="w-full px-3 py-2 rounded-lg bg-white text-slate-900 border border-white/70 hover:bg-amber-100 text-xs font-semibold"
                         >
                           Buy Pack • 💰{packInfo.price}
                         </button>
@@ -2503,6 +2784,66 @@ const StudentShop = ({
                       ))}
                     </ul>
                   </div>
+                )}
+              </div>
+
+              {/* Owned Cards */}
+              <div>
+                <h3 className="font-bold text-base md:text-lg mb-2 md:mb-3">My Cards</h3>
+                {ownedCardEntries.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-3">
+                    {ownedCardEntries.map(card => {
+                      const rarityConfig = CARD_RARITY_STYLES[card.rarity] || CARD_RARITY_STYLES.common;
+
+                      return (
+                        <div
+                          key={card.id}
+                          className="relative rounded-xl overflow-hidden border shadow-sm"
+                          style={{
+                            borderColor: `${rarityConfig.border || '#fff'}88`,
+                            background: rarityConfig.gradient
+                          }}
+                        >
+                          <div className="absolute inset-0 bg-white/10 mix-blend-overlay" />
+                          <div className="relative p-3 flex gap-3">
+                            <div className="w-20 h-28 rounded-lg overflow-hidden flex-shrink-0 shadow-lg">
+                              <img
+                                src={card.image || '/Logo/icon.png'}
+                                alt={card.name}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <div className="flex-1 flex flex-col">
+                              <p className="font-semibold text-sm md:text-base text-slate-900 truncate" title={card.name}>
+                                {card.name}
+                              </p>
+                              <p className="text-xs uppercase tracking-widest" style={{ color: rarityConfig.color }}>
+                                {rarityConfig.label} • {CARD_TYPE_LABELS[card.type] || 'Card'}
+                              </p>
+                              <p className="text-xs text-slate-700 mt-2">Owned x{card.count}</p>
+                              <div className="mt-auto pt-2 flex gap-2">
+                                <button
+                                  onClick={() => handleTradeRequest('card', card)}
+                                  disabled={!canTradeToday}
+                                  className={`flex-1 text-xs px-2 py-1 rounded font-semibold transition-all ${
+                                    canTradeToday
+                                      ? 'bg-amber-500 text-white hover:bg-amber-600 active:scale-95'
+                                      : 'bg-white/60 text-slate-400 cursor-not-allowed'
+                                  }`}
+                                >
+                                  Trade
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-sm md:text-base">
+                    No cards yet. Open packs or grab mystery boxes to start your collection!
+                  </p>
                 )}
               </div>
 
