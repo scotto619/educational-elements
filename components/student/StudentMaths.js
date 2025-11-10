@@ -1,7 +1,9 @@
 // components/student/StudentMaths.js - COMPREHENSIVE MATHS TAB FOR STUDENT PORTAL
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import StudentMathMentals from './StudentMathMentals';
 import InteractiveAngles from '../curriculum/mathematics/InteractiveAngles';
+import StudentMathChallenge from './StudentMathChallenge';
+import { DAILY_MATH_CHALLENGES } from '../curriculum/mathematics/data/dailyChallenges';
 
 // Simple Calculator Component
 const SimpleCalculator = ({ showToast }) => {
@@ -280,15 +282,52 @@ const NumberFactsPractice = ({ showToast }) => {
 };
 
 // Main StudentMaths Component
-const StudentMaths = ({ 
-  studentData, 
-  classData, 
+const StudentMaths = ({
+  studentData,
+  classData,
   showToast,
-  updateStudentData 
+  updateStudentData
 }) => {
   const [activeActivity, setActiveActivity] = useState('overview');
 
-  const mathActivities = [
+  const challengeAssignment = classData?.toolkitData?.mathDailyChallenges;
+
+  const assignedChallenge = useMemo(() => {
+    if (!challengeAssignment?.assignedChallengeId) {
+      return null;
+    }
+
+    return (
+      DAILY_MATH_CHALLENGES.find(
+        (challenge) => challenge.id === challengeAssignment.assignedChallengeId
+      ) || null
+    );
+  }, [challengeAssignment?.assignedChallengeId]);
+
+  const assignedDueDate = useMemo(() => {
+    if (!challengeAssignment?.dueDate) {
+      return null;
+    }
+
+    const parsed = new Date(challengeAssignment.dueDate);
+    if (Number.isNaN(parsed.getTime())) {
+      return null;
+    }
+
+    return parsed.toLocaleDateString();
+  }, [challengeAssignment?.dueDate]);
+
+  const mathActivities = useMemo(() => [
+    {
+      id: 'daily-challenge',
+      name: 'Daily Challenge',
+      icon: '🎯',
+      description: assignedChallenge
+        ? `Work on “${assignedChallenge.title}”`
+        : 'See if your teacher has posted a challenge for today',
+      color: 'from-rose-500 to-red-500',
+      component: StudentMathChallenge
+    },
     {
       id: 'math-mentals',
       name: 'Math Mentals',
@@ -329,7 +368,7 @@ const StudentMaths = ({
       color: 'from-gray-500 to-gray-600',
       component: SimpleCalculator
     }
-  ];
+  ], [assignedChallenge]);
 
   const renderActivity = () => {
     if (activeActivity === 'overview') {
@@ -344,6 +383,33 @@ const StudentMaths = ({
             </h1>
             <p className="text-xl opacity-90">Your personal math practice zone!</p>
           </div>
+
+          {assignedChallenge && (
+            <div className="bg-white border border-rose-200 rounded-2xl p-6 shadow-sm flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-sm uppercase tracking-widest text-rose-500 font-semibold">Teacher Challenge</p>
+                <h2 className="text-2xl font-bold text-rose-600 mt-1">{assignedChallenge.title}</h2>
+                <p className="text-slate-600 mt-2">{assignedChallenge.headline}</p>
+                <div className="flex flex-wrap gap-2 mt-3 text-xs text-slate-500">
+                  <span className="bg-rose-50 text-rose-500 px-3 py-1 rounded-full">{assignedChallenge.strand}</span>
+                  <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-full">{assignedChallenge.estimatedMinutes} min</span>
+                  {assignedDueDate && (
+                    <span className="bg-amber-100 text-amber-700 px-3 py-1 rounded-full">Due {assignedDueDate}</span>
+                  )}
+                </div>
+                {challengeAssignment?.customMessage && (
+                  <p className="text-sm text-rose-500 italic mt-3">“{challengeAssignment.customMessage}”</p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveActivity('daily-challenge')}
+                className="bg-rose-500 text-white font-semibold px-5 py-3 rounded-xl shadow hover:bg-rose-600 transition-colors"
+              >
+                Open Challenge →
+              </button>
+            </div>
+          )}
 
           {/* Activity Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
