@@ -1,5 +1,5 @@
 // components/student/StudentShop.js - UPDATED WITH HALLOWEEN SUPPORT
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 
 import {
@@ -15,6 +15,18 @@ import {
   DEFAULT_PET_IMAGE
 } from '../../utils/gameHelpers';
 import { normalizeImageSource, serializeFallbacks, createImageErrorHandler } from '../../utils/imageFallback';
+import CardPackOpeningModal from './cards/CardPackOpeningModal';
+import CardBookModal from './cards/CardBookModal';
+import {
+  DEFAULT_CARD_PACKS,
+  buildTradingCardLibrary,
+  drawCardsFromPack,
+  summarizeCardPull,
+  CARD_RARITY_STYLES,
+  CARD_RARITY_ORDER,
+  getCollectionProgress,
+  getRarityBreakdown
+} from '../../utils/tradingCards';
 
 // ===============================================
 // MYSTERY BOX SYSTEM (SHARED WITH TEACHER SHOP)
@@ -76,7 +88,8 @@ const getMysteryBoxPrizes = (
   HALLOWEEN_BASIC_AVATARS = [],
   HALLOWEEN_PREMIUM_AVATARS = [],
   HALLOWEEN_PETS = [],
-  EGG_TYPES = PET_EGG_TYPES
+  EGG_TYPES = PET_EGG_TYPES,
+  CARD_PACKS = []
 ) => {
   const prizes = [];
 
@@ -158,7 +171,18 @@ const getMysteryBoxPrizes = (
       });
     });
   });
-  
+
+  (CARD_PACKS || []).forEach(pack => {
+    prizes.push({
+      type: 'card_pack',
+      pack,
+      rarity: pack.rarity || 'rare',
+      name: pack.name,
+      displayName: pack.name,
+      icon: pack.icon || '🃏'
+    });
+  });
+
   return prizes;
 };
 
@@ -310,6 +334,14 @@ const INITIAL_TRADE_MODAL_STATE = {
   result: null
 };
 
+const DEFAULT_CARD_PACK_OPENING_STATE = {
+  visible: false,
+  pack: null,
+  stage: 'charging',
+  cards: [],
+  results: []
+};
+
 const StudentShop = ({
   studentData,
   updateStudentData,
@@ -329,7 +361,7 @@ const StudentShop = ({
   classmates = [],
   performClassmateTrade = null
 }) => {
-  const [activeCategory, setActiveCategory] = useState('halloween'); // Spotlight the limited-time collection first
+  const [activeCategory, setActiveCategory] = useState('card_packs');
   const [purchaseModal, setPurchaseModal] = useState({ visible: false, item: null, type: null });
   const [inventoryModal, setInventoryModal] = useState({ visible: false });
   const [respondingTradeId, setRespondingTradeId] = useState(null);
@@ -347,12 +379,108 @@ const StudentShop = ({
   const [tradeModal, setTradeModal] = useState(INITIAL_TRADE_MODAL_STATE);
   const [isProcessingTrade, setIsProcessingTrade] = useState(false);
 
+  // Trading card states
+  const [cardBookVisible, setCardBookVisible] = useState(false);
+  const [cardPackOpening, setCardPackOpening] = useState({ ...DEFAULT_CARD_PACK_OPENING_STATE });
+  const [isOpeningPack, setIsOpeningPack] = useState(false);
+  const packAnimationTimeoutsRef = useRef([]);
+
+  const clearPackAnimationTimeouts = useCallback(() => {
+    packAnimationTimeoutsRef.current.forEach(timeoutId => clearTimeout(timeoutId));
+    packAnimationTimeoutsRef.current = [];
+  }, []);
+
+  const schedulePackTimeout = useCallback((callback, delay) => {
+    const timeoutId = setTimeout(() => {
+      callback();
+      packAnimationTimeoutsRef.current = packAnimationTimeoutsRef.current.filter(id => id !== timeoutId);
+    }, delay);
+
+    packAnimationTimeoutsRef.current.push(timeoutId);
+  }, []);
+
+  useEffect(() => () => {
+    clearPackAnimationTimeouts();
+  }, [clearPackAnimationTimeouts]);
+
   // Egg celebrations
   const [hatchingCelebration, setHatchingCelebration] = useState(null);
 
   const currentCoins = calculateCoins(studentData);
 
   const studentEggs = useMemo(() => studentData?.petEggs || [], [studentData?.petEggs]);
+
+  const cardCollection = useMemo(() => {
+    const stored = studentData?.cardCollection || {};
+    return {
+      packs: { ...(stored.packs || {}) },
+      cards: { ...(stored.cards || {}) },
+      history: Array.isArray(stored.history) ? [...stored.history] : [],
+      totalOpened: stored.totalOpened || 0,
+      lastOpenedAt: stored.lastOpenedAt || null
+    };
+  }, [studentData?.cardCollection]);
+
+  const tradingCardLibrary = useMemo(
+    () =>
+      buildTradingCardLibrary({
+        avatars: [
+          ...(SHOP_BASIC_AVATARS || []),
+          ...(SHOP_PREMIUM_AVATARS || []),
+          ...(HALLOWEEN_BASIC_AVATARS || []),
+          ...(HALLOWEEN_PREMIUM_AVATARS || [])
+        ],
+        pets: [
+          ...(SHOP_BASIC_PETS || []),
+          ...(SHOP_PREMIUM_PETS || []),
+          ...(HALLOWEEN_PETS || [])
+        ]
+      }),
+    [
+      SHOP_BASIC_AVATARS,
+      SHOP_PREMIUM_AVATARS,
+      HALLOWEEN_BASIC_AVATARS,
+      HALLOWEEN_PREMIUM_AVATARS,
+      SHOP_BASIC_PETS,
+      SHOP_PREMIUM_PETS,
+      HALLOWEEN_PETS
+    ]
+  );
+
+  const cardProgress = useMemo(
+    () => getCollectionProgress(cardCollection, tradingCardLibrary),
+    [cardCollection, tradingCardLibrary]
+  );
+
+  const cardRarityBreakdown = useMemo(
+    () => getRarityBreakdown(cardCollection, tradingCardLibrary),
+    [cardCollection, tradingCardLibrary]
+  );
+
+  const cardPackInventory = useMemo(
+    () =>
+      DEFAULT_CARD_PACKS.map(pack => ({
+        ...pack,
+        count: cardCollection.packs?.[pack.id]?.count || 0
+      })),
+    [cardCollection]
+  );
+
+  const cardHistoryPreview = useMemo(
+    () => (Array.isArray(cardCollection.history) ? cardCollection.history.slice(0, 3) : []),
+    [cardCollection.history]
+  );
+
+  const createCardCollectionSnapshot = useCallback(
+    () => ({
+      packs: { ...(cardCollection.packs || {}) },
+      cards: { ...(cardCollection.cards || {}) },
+      history: Array.isArray(cardCollection.history) ? [...cardCollection.history] : [],
+      totalOpened: cardCollection.totalOpened || 0,
+      lastOpenedAt: cardCollection.lastOpenedAt || null
+    }),
+    [cardCollection]
+  );
 
   const pendingIncomingTrades = studentData?.pendingTradeRequests || [];
   const outgoingTradeRequest = studentData?.outgoingTradeRequest || null;
@@ -975,6 +1103,247 @@ const StudentShop = ({
   }, [studentEggs, updateStudentData]);
 
   // ===============================================
+  // TRADING CARD FUNCTIONS
+  // ===============================================
+
+  const closeCardPackOpening = useCallback(() => {
+    clearPackAnimationTimeouts();
+    setCardPackOpening({ ...DEFAULT_CARD_PACK_OPENING_STATE });
+    setIsOpeningPack(false);
+  }, [clearPackAnimationTimeouts]);
+
+  const handleOpenPack = useCallback(
+    async (pack) => {
+      if (!pack || isOpeningPack) {
+        return;
+      }
+
+      const availableCount = cardCollection.packs?.[pack.id]?.count || 0;
+      if (availableCount <= 0) {
+        showToast('You do not have this pack yet. Purchase one to open it!', 'info');
+        return;
+      }
+
+      setIsOpeningPack(true);
+      clearPackAnimationTimeouts();
+
+      const results = drawCardsFromPack(pack, { cardLibrary: tradingCardLibrary });
+      const snapshot = createCardCollectionSnapshot();
+      const nowIso = new Date().toISOString();
+
+      const packs = { ...snapshot.packs };
+      const packEntry = packs[pack.id] || { count: 0 };
+      const nextCount = Math.max(0, (packEntry.count || 0) - 1);
+
+      if (nextCount <= 0) {
+        delete packs[pack.id];
+      } else {
+        packs[pack.id] = {
+          ...packEntry,
+          count: nextCount,
+          lastOpenedAt: nowIso
+        };
+      }
+
+      const cards = { ...snapshot.cards };
+      results.forEach(card => {
+        const existing = cards[card.id] || {};
+        cards[card.id] = {
+          count: (existing.count || 0) + 1,
+          firstObtainedAt: existing.firstObtainedAt || nowIso,
+          lastObtainedAt: nowIso
+        };
+      });
+
+      const history = [
+        {
+          id: `pack-open-${Date.now()}`,
+          packId: pack.id,
+          packName: pack.name,
+          openedAt: nowIso,
+          cards: results.map(card => ({
+            id: card.id,
+            name: card.name,
+            rarity: card.rarity,
+            type: card.type
+          }))
+        },
+        ...snapshot.history
+      ].slice(0, 20);
+
+      setCardPackOpening({
+        visible: true,
+        pack,
+        stage: 'charging',
+        cards: [],
+        results
+      });
+
+      const saved = await updateStudentData({
+        cardCollection: {
+          ...snapshot,
+          packs,
+          cards,
+          history,
+          totalOpened: (snapshot.totalOpened || 0) + 1,
+          lastOpenedAt: nowIso
+        }
+      });
+
+      if (!saved) {
+        setCardPackOpening({ ...DEFAULT_CARD_PACK_OPENING_STATE });
+        setIsOpeningPack(false);
+        showToast('We could not save your pack opening. Please try again.', 'error');
+        return;
+      }
+
+      schedulePackTimeout(() => {
+        setCardPackOpening(prev => ({ ...prev, stage: 'burst' }));
+      }, 250);
+
+      schedulePackTimeout(() => {
+        setCardPackOpening(prev => ({ ...prev, stage: 'reveal', cards: prev.results }));
+        setIsOpeningPack(false);
+      }, 1100);
+
+      showToast(`You pulled ${summarizeCardPull(results)}!`, 'success');
+    },
+    [
+      cardCollection,
+      clearPackAnimationTimeouts,
+      createCardCollectionSnapshot,
+      isOpeningPack,
+      schedulePackTimeout,
+      showToast,
+      tradingCardLibrary,
+      updateStudentData
+    ]
+  );
+
+  const renderTradingCardShowcase = () => (
+    <div className="relative overflow-hidden rounded-2xl p-6 md:p-8 bg-gradient-to-br from-slate-900 via-indigo-900 to-purple-900 text-white shadow-xl">
+      <div className="absolute inset-0 opacity-30" aria-hidden>
+        {[...Array(40)].map((_, index) => (
+          <div
+            key={index}
+            className="absolute bg-white/20 rounded-full animate-pulse"
+            style={{
+              width: `${Math.random() * 5 + 3}px`,
+              height: `${Math.random() * 5 + 3}px`,
+              top: `${Math.random() * 100}%`,
+              left: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 2}s`
+            }}
+          />
+        ))}
+      </div>
+
+      <div className="relative z-10 flex flex-col gap-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h3 className="text-2xl md:text-3xl font-bold drop-shadow-lg">✨ Trading Card Universe</h3>
+            <p className="text-white/70 text-sm md:text-base max-w-2xl mt-1">
+              Collect dazzling avatars, pets, weapons, and artifacts. Complete the Card Book to unlock legendary bragging rights!
+            </p>
+            <div className="mt-4 h-2 rounded-full bg-white/15 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-orange-400 via-fuchsia-400 to-sky-300"
+                style={{ width: `${cardProgress.completion}%` }}
+              />
+            </div>
+            <p className="text-xs uppercase tracking-widest text-white/60 mt-2">
+              {cardProgress.uniqueOwned} / {cardProgress.totalUnique} unique cards • {cardProgress.totalOwned} total collected
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2 justify-end">
+            <button
+              type="button"
+              onClick={() => setCardBookVisible(true)}
+              className="px-4 py-2 rounded-xl bg-white/15 border border-white/30 hover:bg-white/25 transition font-semibold"
+            >
+              📖 Card Book
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveCategory('card_packs')}
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-500 hover:shadow-lg font-semibold"
+            >
+              🃏 Shop Packs
+            </button>
+          </div>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          {cardPackInventory.map(packInfo => {
+            const packStyle = CARD_RARITY_STYLES[packInfo.rarity] || CARD_RARITY_STYLES.common;
+            return (
+              <div
+                key={packInfo.id}
+                className="relative overflow-hidden rounded-2xl border border-white/15 p-4 md:p-5 backdrop-blur-sm"
+                style={{ background: packInfo.visual?.gradient || 'rgba(255,255,255,0.08)' }}
+              >
+                <div className="absolute inset-0 opacity-30 bg-black/20" aria-hidden></div>
+                <div className="relative z-10 flex flex-col gap-3 text-white">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs uppercase tracking-widest text-white/70">
+                        {packStyle.label} Pack
+                      </p>
+                      <p className="text-lg font-bold">{packInfo.name}</p>
+                      <p className="text-xs text-white/70">
+                        {packInfo.minCards}-{packInfo.maxCards} cards • Owned x{packInfo.count}
+                      </p>
+                    </div>
+                    <span className="text-3xl drop-shadow-lg">{packInfo.icon || '🃏'}</span>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPurchaseModal({ visible: true, item: packInfo, type: 'card_pack' })}
+                      className="flex-1 px-4 py-2 rounded-lg font-semibold bg-white/20 border border-white/30 hover:bg-white/30"
+                    >
+                      Buy • 💰{packInfo.price}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenPack(packInfo)}
+                      disabled={packInfo.count === 0 || isOpeningPack}
+                      className={`flex-1 px-4 py-2 rounded-lg font-semibold transition ${
+                        packInfo.count === 0 || isOpeningPack
+                          ? 'bg-white/10 text-white/50 cursor-not-allowed'
+                          : 'bg-gradient-to-r from-amber-400 to-pink-500 hover:shadow-lg'
+                      }`}
+                    >
+                      {isOpeningPack ? 'Opening...' : `Open Pack${packInfo.count > 0 ? ` (${packInfo.count})` : ''}`}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="flex flex-wrap gap-3 text-xs text-white/70">
+          {CARD_RARITY_ORDER.map(rarity => {
+            const stats = cardRarityBreakdown[rarity] || { total: 0, owned: 0 };
+            const style = CARD_RARITY_STYLES[rarity];
+            return (
+              <span
+                key={rarity}
+                className="px-3 py-1 rounded-full border border-white/20 bg-white/10 backdrop-blur-sm"
+              >
+                <span style={{ color: style.color }}>{style.label}</span>: {stats.owned}/{stats.total}
+              </span>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+
+  // ===============================================
   // MYSTERY BOX FUNCTIONS
   // ===============================================
   
@@ -1013,7 +1382,8 @@ const StudentShop = ({
       HALLOWEEN_BASIC_AVATARS,
       HALLOWEEN_PREMIUM_AVATARS,
       HALLOWEEN_PETS,
-      PET_EGG_TYPES
+      PET_EGG_TYPES,
+      DEFAULT_CARD_PACKS
     );
     
     // Select random prize
@@ -1066,6 +1436,28 @@ const StudentShop = ({
         updates.currency = (studentData.currency || 0) + mysteryBoxPrize.amount;
         showToast(`You won ${mysteryBoxPrize.amount} bonus coins!`, 'success');
         break;
+      case 'card_pack': {
+        const pack = mysteryBoxPrize.pack;
+        const snapshot = createCardCollectionSnapshot();
+        const nowIso = new Date().toISOString();
+        const packs = { ...snapshot.packs };
+        const packEntry = packs[pack.id] || { count: 0 };
+        packs[pack.id] = {
+          ...packEntry,
+          count: (packEntry.count || 0) + 1,
+          lastObtainedAt: nowIso
+        };
+
+        updates.cardCollection = {
+          ...snapshot,
+          packs,
+          cards: { ...snapshot.cards },
+          history: snapshot.history
+        };
+
+        showToast(`You discovered a ${pack.name}!`, pack.rarity === 'legendary' ? 'success' : 'info');
+        break;
+      }
     }
     
     const success = await updateStudentData(updates);
@@ -1198,12 +1590,34 @@ const StudentShop = ({
         showToast(`You adopted a ${purchaseModal.item.name}!`, 'success');
         break;
       case 'reward':
-        updates.rewardsPurchased = [...(studentData.rewardsPurchased || []), { 
-          ...purchaseModal.item, 
-          purchasedAt: new Date().toISOString() 
+        updates.rewardsPurchased = [...(studentData.rewardsPurchased || []), {
+          ...purchaseModal.item,
+          purchasedAt: new Date().toISOString()
         }];
         showToast(`You earned ${purchaseModal.item.name}!`, 'success');
         break;
+      case 'card_pack': {
+        const pack = purchaseModal.item;
+        const snapshot = createCardCollectionSnapshot();
+        const nowIso = new Date().toISOString();
+        const packs = { ...snapshot.packs };
+        const packEntry = packs[pack.id] || { count: 0 };
+        packs[pack.id] = {
+          ...packEntry,
+          count: (packEntry.count || 0) + 1,
+          lastObtainedAt: nowIso
+        };
+
+        updates.cardCollection = {
+          ...snapshot,
+          packs,
+          cards: { ...snapshot.cards },
+          history: snapshot.history
+        };
+
+        showToast(`You bought a ${pack.name}!`, 'success');
+        break;
+      }
     }
 
     const success = await updateStudentData(updates);
@@ -1231,6 +1645,7 @@ const StudentShop = ({
   };
 
   const categories = [
+    { id: 'card_packs', name: '✨ Card Packs', shortName: 'Cards' },
     { id: 'mysterybox', name: '🎁 Mystery Box', shortName: 'Mystery' },
     { id: 'halloween', name: '🎃 Halloween Special', shortName: '🎃 Halloween' },
     { id: 'basic_avatars', name: 'Basic Avatars', shortName: 'Basic' },
@@ -1354,8 +1769,8 @@ const StudentShop = ({
             
             <div className={`${rarityBg} border-2 ${rarityColor} rounded-xl p-4 md:p-6 mb-4`}>
               {mysteryBoxPrize.type === 'avatar' && (
-                <img 
-                  src={mysteryBoxPrize.item.path} 
+                <img
+                  src={mysteryBoxPrize.item.path}
                   alt={mysteryBoxPrize.displayName}
                   className="w-20 h-20 md:w-24 md:h-24 rounded-full mx-auto mb-3 border-4 border-white"
                   onError={(e) => {
@@ -1390,6 +1805,31 @@ const StudentShop = ({
               {(mysteryBoxPrize.type === 'xp' || mysteryBoxPrize.type === 'coins') && (
                 <div className="text-4xl md:text-5xl mb-3">{mysteryBoxPrize.icon}</div>
               )}
+              {mysteryBoxPrize.type === 'card_pack' && (() => {
+                const pack = mysteryBoxPrize.pack;
+                return (
+                  <div
+                    className="rounded-2xl px-4 py-5 text-white"
+                    style={{
+                      background: pack.visual?.gradient || 'linear-gradient(135deg,#3730a3,#7c3aed)',
+                      boxShadow: `0 0 30px ${pack.visual?.glow || 'rgba(124,58,237,0.45)'}`
+                    }}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm uppercase tracking-widest text-white/70">
+                          {CARD_RARITY_STYLES[pack.rarity]?.label || pack.rarity} Pack
+                        </p>
+                        <p className="text-lg font-bold">{pack.name}</p>
+                      </div>
+                      <span className="text-4xl drop-shadow-xl">{pack.icon || '🃏'}</span>
+                    </div>
+                    <p className="text-sm text-white/80 mt-2">
+                      Contains {pack.minCards}-{pack.maxCards} trading cards.
+                    </p>
+                  </div>
+                );
+              })()}
 
               <h3 className="text-base md:text-xl font-bold mb-1">{mysteryBoxPrize.displayName}</h3>
               <p className={`text-xs md:text-sm font-semibold ${rarityColor} uppercase`}>
@@ -1518,6 +1958,10 @@ const StudentShop = ({
     let itemType = '';
 
     switch (activeCategory) {
+      case 'card_packs':
+        items = cardPackInventory;
+        itemType = 'card_pack';
+        break;
       case 'halloween':
         items = [
           ...HALLOWEEN_BASIC_AVATARS.map(item => ({ ...item, __type: 'avatar' })),
@@ -1561,28 +2005,49 @@ const StudentShop = ({
 
     return items.map((item, index) => {
       const resolvedType = item.__type || itemType;
-      const alreadyOwned = resolvedType === 'avatar'
+      const isOwnedItem = resolvedType === 'avatar'
         ? studentData.ownedAvatars?.includes(item.name)
         : resolvedType === 'pet'
         ? studentData.ownedPets?.some(p => p.name === item.name)
         : false;
 
-      const canAfford = currentCoins >= item.price;
+      const canAfford = currentCoins >= (item.price || 0);
       const isHalloween = item.theme === 'halloween';
+      const packCount = resolvedType === 'card_pack' ? item.count || 0 : 0;
+      const packStyle = resolvedType === 'card_pack' ? (CARD_RARITY_STYLES[item.rarity] || CARD_RARITY_STYLES.common) : null;
 
       return (
         <div
           key={index}
           className={`bg-white rounded-xl shadow-lg p-3 md:p-4 text-center transition-all hover:shadow-xl ${
-            alreadyOwned ? 'opacity-50' : ''
-          } ${isHalloween ? 'border-2 border-orange-400' : ''}`}
+            resolvedType === 'card_pack' ? 'bg-slate-900 text-white border border-white/15' : ''
+          } ${isOwnedItem && resolvedType !== 'card_pack' ? 'opacity-50' : ''} ${isHalloween ? 'border-2 border-orange-400' : ''}`}
         >
           {isHalloween && (
             <div className="bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full mb-2 inline-block">
               🎃 HALLOWEEN
             </div>
           )}
-          
+
+          {resolvedType === 'card_pack' && (
+            <div
+              className="relative rounded-2xl overflow-hidden py-6 mb-3"
+              style={{
+                background: item.visual?.gradient || 'linear-gradient(135deg,#4338ca,#f472b6)',
+                boxShadow: `0 0 25px ${item.visual?.glow || 'rgba(79,70,229,0.4)'}`
+              }}
+            >
+              <div className="absolute inset-0 bg-white/10 mix-blend-overlay" aria-hidden></div>
+              <div className="relative z-10 flex flex-col items-center gap-2 text-white">
+                <span className="text-4xl drop-shadow-xl">{item.icon || '🃏'}</span>
+                <p className="font-bold text-lg">{item.name}</p>
+                <p className="text-xs uppercase tracking-widest text-white/70">
+                  {item.minCards}-{item.maxCards} Cards
+                </p>
+              </div>
+            </div>
+          )}
+
           {resolvedType === 'avatar' && (
             <img
               src={item.path}
@@ -1606,11 +2071,25 @@ const StudentShop = ({
           {resolvedType === 'reward' && (
             <div className="text-3xl md:text-4xl mb-2">{item.icon || '🎁'}</div>
           )}
-          
-          <h4 className="font-bold text-sm md:text-base mb-1 truncate">{item.name}</h4>
-          <p className="text-yellow-600 font-bold mb-2 text-sm md:text-base">💰 {item.price}</p>
-          
-          {alreadyOwned ? (
+
+          {resolvedType !== 'card_pack' && (
+            <>
+              <h4 className="font-bold text-sm md:text-base mb-1 truncate">{item.name}</h4>
+              <p className="text-yellow-600 font-bold mb-2 text-sm md:text-base">💰 {item.price}</p>
+            </>
+          )}
+
+          {resolvedType === 'card_pack' && (
+            <div className="space-y-2">
+              <h4 className="font-bold text-base md:text-lg mb-1">{item.name}</h4>
+              <p className="text-sm text-white/80">
+                {packStyle?.label || item.rarity} Pack • Owned x{packCount}
+              </p>
+              <p className="text-xs text-white/60">{item.description}</p>
+            </div>
+          )}
+
+          {isOwnedItem && resolvedType !== 'card_pack' ? (
             <button
               disabled
               className="w-full py-2 bg-gray-300 text-gray-600 rounded-lg text-xs md:text-sm font-semibold cursor-not-allowed"
@@ -1618,17 +2097,44 @@ const StudentShop = ({
               Owned ✓
             </button>
           ) : (
-            <button
-              onClick={() => setPurchaseModal({ visible: true, item, type: resolvedType })}
-              disabled={!canAfford}
-              className={`w-full py-2 rounded-lg text-xs md:text-sm font-semibold transition-all ${
-                canAfford
-                  ? 'bg-blue-500 text-white hover:bg-blue-600 active:scale-95'
-                  : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-              }`}
-            >
-              {canAfford ? 'Buy Now' : 'Not Enough Coins'}
-            </button>
+            resolvedType === 'card_pack' ? (
+              <div className="mt-4 space-y-2">
+                <button
+                  onClick={() => setPurchaseModal({ visible: true, item, type: 'card_pack' })}
+                  disabled={!canAfford}
+                  className={`w-full py-2 rounded-lg text-xs md:text-sm font-semibold transition-all ${
+                    canAfford
+                      ? 'bg-white/20 border border-white/30 hover:bg-white/30'
+                      : 'bg-white/10 text-white/50 cursor-not-allowed'
+                  }`}
+                >
+                  {canAfford ? `Buy Pack • 💰${item.price}` : 'Not Enough Coins'}
+                </button>
+                <button
+                  onClick={() => handleOpenPack(item)}
+                  disabled={packCount === 0 || isOpeningPack}
+                  className={`w-full py-2 rounded-lg text-xs md:text-sm font-semibold transition-all ${
+                    packCount === 0 || isOpeningPack
+                      ? 'bg-white/10 text-white/50 cursor-not-allowed'
+                      : 'bg-gradient-to-r from-amber-400 to-pink-500 hover:shadow-lg'
+                  }`}
+                >
+                  {packCount > 0 ? `Open Pack (${packCount})` : 'No Packs Yet'}
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setPurchaseModal({ visible: true, item, type: resolvedType })}
+                disabled={!canAfford}
+                className={`w-full py-2 rounded-lg text-xs md:text-sm font-semibold transition-all ${
+                  canAfford
+                    ? 'bg-blue-500 text-white hover:bg-blue-600 active:scale-95'
+                    : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                }`}
+              >
+                {canAfford ? 'Buy Now' : 'Not Enough Coins'}
+              </button>
+            )
           )}
         </div>
       );
@@ -1650,6 +2156,8 @@ const StudentShop = ({
           </div>
         </div>
       </div>
+
+      {renderTradingCardShowcase()}
 
       {/* Trade Alerts */}
       {(hasPendingOutgoingTrade || pendingIncomingTrades.length > 0) && (
@@ -1761,9 +2269,21 @@ const StudentShop = ({
           🎒 My Inventory
         </button>
         <button
+          onClick={() => setCardBookVisible(true)}
+          className="flex-shrink-0 bg-slate-900 text-white px-4 py-2 md:px-6 md:py-3 rounded-lg font-semibold hover:bg-slate-800 transition-all text-sm md:text-base"
+        >
+          📖 Card Book
+        </button>
+        <button
+          onClick={() => setActiveCategory('card_packs')}
+          className="flex-shrink-0 bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-4 py-2 md:px-6 md:py-3 rounded-lg font-semibold hover:shadow-lg transition-all text-sm md:text-base"
+        >
+          🃏 Card Packs
+        </button>
+        <button
           onClick={() => setShowSellMode(!showSellMode)}
           className={`flex-shrink-0 px-4 py-2 md:px-6 md:py-3 rounded-lg font-semibold transition-all text-sm md:text-base ${
-            showSellMode 
+            showSellMode
               ? 'bg-red-500 text-white hover:bg-red-600'
               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
           }`}
@@ -1850,6 +2370,22 @@ const StudentShop = ({
       {/* Hatch Celebration */}
       {renderHatchCelebrationModal()}
 
+      <CardPackOpeningModal
+        visible={cardPackOpening.visible}
+        stage={cardPackOpening.stage}
+        pack={cardPackOpening.pack}
+        cards={cardPackOpening.cards}
+        results={cardPackOpening.results}
+        onClose={closeCardPackOpening}
+      />
+
+      <CardBookModal
+        visible={cardBookVisible}
+        onClose={() => setCardBookVisible(false)}
+        cardCollection={cardCollection}
+        cardLibrary={tradingCardLibrary}
+      />
+
       {/* Inventory Modal - Mobile Optimized - WITH SELLING FEATURE */}
       {inventoryModal.visible && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -1878,6 +2414,96 @@ const StudentShop = ({
                 >
                   {tradeAvailabilityText}
                 </p>
+              </div>
+
+              <div className="bg-slate-900 text-white rounded-2xl p-4 md:p-6 space-y-4">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                  <div>
+                    <h3 className="text-lg md:text-xl font-bold">Trading Card Collection</h3>
+                    <p className="text-sm text-white/70">
+                      {cardProgress.uniqueOwned} / {cardProgress.totalUnique} unique cards • {cardProgress.totalOwned} cards owned
+                    </p>
+                    <div className="mt-2 h-2 bg-white/20 rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-orange-400 via-fuchsia-400 to-sky-300"
+                        style={{ width: `${cardProgress.completion}%` }}
+                      />
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setCardBookVisible(true)}
+                    className="flex-shrink-0 px-4 py-2 rounded-lg bg-white/20 border border-white/30 hover:bg-white/30 transition text-sm font-semibold"
+                  >
+                    📖 View Card Book
+                  </button>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-3">
+                  {cardPackInventory.map(packInfo => (
+                    <div
+                      key={`inventory-pack-${packInfo.id}`}
+                      className="rounded-xl border border-white/15 p-3 space-y-2"
+                      style={{ background: packInfo.visual?.gradient || 'rgba(255,255,255,0.08)' }}
+                    >
+                      <div className="flex items-center justify-between text-white">
+                        <div>
+                          <p className="text-xs uppercase tracking-widest text-white/70">
+                            {CARD_RARITY_STYLES[packInfo.rarity]?.label || packInfo.rarity}
+                          </p>
+                          <p className="text-base font-semibold">{packInfo.name}</p>
+                        </div>
+                        <span className="text-3xl drop-shadow">{packInfo.icon || '🃏'}</span>
+                      </div>
+                      <p className="text-xs text-white/70">
+                        {packInfo.minCards}-{packInfo.maxCards} cards • Owned x{packInfo.count}
+                      </p>
+                      <div className="flex flex-col gap-2">
+                        <button
+                          onClick={() => setPurchaseModal({ visible: true, item: packInfo, type: 'card_pack' })}
+                          className="w-full px-3 py-2 rounded-lg bg-white/20 border border-white/30 hover:bg-white/30 text-xs font-semibold"
+                        >
+                          Buy Pack • 💰{packInfo.price}
+                        </button>
+                        <button
+                          onClick={() => handleOpenPack(packInfo)}
+                          disabled={packInfo.count === 0 || isOpeningPack}
+                          className={`w-full px-3 py-2 rounded-lg text-xs font-semibold transition ${
+                            packInfo.count === 0 || isOpeningPack
+                              ? 'bg-white/10 text-white/50 cursor-not-allowed'
+                              : 'bg-gradient-to-r from-amber-400 to-pink-500 hover:shadow-lg'
+                          }`}
+                        >
+                          {packInfo.count > 0 ? `Open (${packInfo.count})` : 'No Packs Ready'}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {cardHistoryPreview.length > 0 && (
+                  <div className="bg-white/5 border border-white/10 rounded-xl p-3">
+                    <p className="text-xs uppercase tracking-widest text-white/60 mb-2">Recent Pack Openings</p>
+                    <ul className="space-y-2 text-sm text-white/80">
+                      {cardHistoryPreview.map(entry => (
+                        <li key={entry.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                          <div>
+                            <span className="font-semibold">{entry.packName}</span>
+                            <span className="text-white/60 text-xs ml-2">
+                              {new Date(entry.openedAt).toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap gap-2 text-xs text-white/70">
+                            {entry.cards.map(card => (
+                              <span key={`${entry.id}-${card.id}`} className="px-2 py-1 rounded-full bg-white/10 border border-white/20">
+                                {CARD_RARITY_STYLES[card.rarity]?.label || card.rarity}: {card.name}
+                              </span>
+                            ))}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
 
               {/* Owned Avatars */}
