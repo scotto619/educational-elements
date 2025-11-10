@@ -8,11 +8,13 @@ export const MYSTERY_BOX_PRICE = 10;
 // Define rarity weights (higher = more common)
 export const RARITY_WEIGHTS = {
   common: 50,     // 50% base chance
-  uncommon: 30,   // 30% base chance  
+  uncommon: 30,   // 30% base chance
   rare: 15,       // 15% base chance
   epic: 4,        // 4% base chance
   legendary: 1    // 1% base chance
 };
+
+export const EGG_RARITY_WEIGHT_BOOST = 3;
 
 // Define XP and Coin rewards by rarity
 export const MYSTERY_REWARDS = {
@@ -206,7 +208,9 @@ export const selectRandomPrize = (prizes, customWeights = null) => {
   // Create weighted array
   const weightedPrizes = [];
   prizes.forEach(prize => {
-    const weight = weights[prize.rarity] || 1;
+    const baseWeight = weights[prize.rarity] || 1;
+    const weightBoost = prize.type === 'egg' ? EGG_RARITY_WEIGHT_BOOST : 1;
+    const weight = Math.max(1, Math.round(baseWeight * weightBoost));
     for (let i = 0; i < weight; i++) {
       weightedPrizes.push(prize);
     }

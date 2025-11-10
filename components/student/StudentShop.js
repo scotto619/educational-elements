@@ -47,11 +47,14 @@ const MYSTERY_BOX_PRICE = 10;
 // Define rarity weights (higher = more common)
 const RARITY_WEIGHTS = {
   common: 50,     // 50% base chance
-  uncommon: 30,   // 30% base chance  
+  uncommon: 30,   // 30% base chance
   rare: 15,       // 15% base chance
   epic: 4,        // 4% base chance
   legendary: 1    // 1% base chance
 };
+
+// Eggs should be a bit easier to find than other items that share their rarity tier
+const EGG_RARITY_WEIGHT_BOOST = 3;
 
 // Define XP and Coin rewards by rarity
 const MYSTERY_REWARDS = {
@@ -193,7 +196,9 @@ const selectRandomPrize = (prizes) => {
   // Create weighted array
   const weightedPrizes = [];
   prizes.forEach(prize => {
-    const weight = RARITY_WEIGHTS[prize.rarity] || 1;
+    const baseWeight = RARITY_WEIGHTS[prize.rarity] || 1;
+    const weightBoost = prize.type === 'egg' ? EGG_RARITY_WEIGHT_BOOST : 1;
+    const weight = Math.max(1, Math.round(baseWeight * weightBoost));
     for (let i = 0; i < weight; i++) {
       weightedPrizes.push(prize);
     }
@@ -1612,7 +1617,7 @@ const StudentShop = ({
                     <button
                       type="button"
                       onClick={() => setPurchaseModal({ visible: true, item: packInfo, type: 'card_pack' })}
-                      className="flex-1 px-4 py-2 rounded-lg font-semibold bg-white/20 border border-white/30 hover:bg-white/30"
+                      className="flex-1 px-4 py-2 rounded-lg font-semibold bg-white text-slate-900 border border-white/80 shadow-sm hover:bg-amber-100 hover:shadow-md transition"
                     >
                       Buy • 💰{packInfo.price}
                     </button>
