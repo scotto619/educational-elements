@@ -332,6 +332,7 @@ const StudentShop = ({
   const [activeCategory, setActiveCategory] = useState('halloween'); // Spotlight the limited-time collection first
   const [purchaseModal, setPurchaseModal] = useState({ visible: false, item: null, type: null });
   const [inventoryModal, setInventoryModal] = useState({ visible: false });
+  const [respondingTradeId, setRespondingTradeId] = useState(null);
 
   // Mystery Box states
   const [mysteryBoxModal, setMysteryBoxModal] = useState({ visible: false, stage: 'confirm' }); // confirm, opening, reveal
@@ -353,15 +354,44 @@ const StudentShop = ({
 
   const studentEggs = useMemo(() => studentData?.petEggs || [], [studentData?.petEggs]);
 
+  const pendingIncomingTrades = studentData?.pendingTradeRequests || [];
+  const outgoingTradeRequest = studentData?.outgoingTradeRequest || null;
+  const tradeNotifications = studentData?.tradeNotifications || [];
+  const hasPendingOutgoingTrade = Boolean(outgoingTradeRequest);
+
+  useEffect(() => {
+    if (!Array.isArray(tradeNotifications) || tradeNotifications.length === 0) {
+      return;
+    }
+
+    tradeNotifications.forEach(notification => {
+      if (notification?.type === 'trade-rejected') {
+        const partnerName = notification.partnerName || 'Your classmate';
+        showToast(`${partnerName} declined your trade. You can try again today.`, 'info');
+      } else if (notification?.type === 'trade-accepted') {
+        const partnerName = notification.partnerName || 'Your classmate';
+        showToast(`${partnerName} accepted your trade request!`, 'success');
+      }
+    });
+
+    if (typeof updateStudentData === 'function') {
+      updateStudentData({ tradeNotifications: [] });
+    }
+  }, [tradeNotifications, showToast, updateStudentData]);
+
   const lastTradeDate = useMemo(() => parseDateValue(studentData?.lastTradeAt), [studentData?.lastTradeAt]);
 
   const canTradeToday = useMemo(() => {
+    if (hasPendingOutgoingTrade) {
+      return false;
+    }
+
     if (!lastTradeDate) {
       return true;
     }
 
     return !isSameCalendarDay(lastTradeDate, new Date());
-  }, [lastTradeDate]);
+  }, [hasPendingOutgoingTrade, lastTradeDate]);
 
   const nextTradeDate = useMemo(() => {
     if (!lastTradeDate) {
@@ -374,6 +404,11 @@ const StudentShop = ({
   }, [lastTradeDate]);
 
   const tradeAvailabilityText = useMemo(() => {
+    if (hasPendingOutgoingTrade && outgoingTradeRequest) {
+      const partnerName = outgoingTradeRequest.partnerName || 'your classmate';
+      return `Waiting for ${partnerName} to respond to your trade request.`;
+    }
+
     if (canTradeToday) {
       return 'You can make one trade today.';
     }
@@ -385,9 +420,14 @@ const StudentShop = ({
     const dateText = nextTradeDate.toLocaleDateString();
     const timeText = nextTradeDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     return `Next trade available on ${dateText} at ${timeText}.`;
-  }, [canTradeToday, nextTradeDate]);
+  }, [canTradeToday, hasPendingOutgoingTrade, nextTradeDate, outgoingTradeRequest]);
 
   const handleTradeRequest = (type, item) => {
+    if (hasPendingOutgoingTrade) {
+      showToast('You already have a trade request waiting for confirmation.', 'info');
+      return;
+    }
+
     if (!canTradeToday) {
       showToast('You can only make one trade each day. Check back tomorrow!', 'info');
       return;
@@ -435,6 +475,11 @@ const StudentShop = ({
       return;
     }
 
+    if (selectedPartner.outgoingTradeRequest) {
+      showToast('That classmate already has a pending trade request. Try someone else.', 'info');
+      return;
+    }
+
     const partnerHasItem = tradeModal.type === 'avatar'
       ? (selectedPartner.ownedAvatars || []).includes(tradeModal.selectedPartnerItem)
       : (selectedPartner.ownedPets || []).some(pet => pet.id === tradeModal.selectedPartnerItem.id);
@@ -457,6 +502,7 @@ const StudentShop = ({
         : selectedPartner.displayName || 'Classmate';
 
       const tradeResult = await performClassmateTrade({
+        action: 'request',
         type: tradeModal.type,
         offeredItem: tradeModal.item,
         partnerId: selectedPartner.id,
@@ -471,18 +517,88 @@ const StudentShop = ({
         return;
       }
 
-      showToast(`Trade complete! You traded with ${partnerDisplayName}.`, 'success');
+      showToast(`Trade request sent to ${partnerDisplayName}.`, 'success');
+
+      const offeredSnapshot = tradeModal.type === 'pet'
+        ? { ...tradeModal.item }
+        : tradeModal.item;
+      const requestedSnapshot = tradeModal.type === 'pet'
+        ? { ...tradeModal.selectedPartnerItem }
+        : tradeModal.selectedPartnerItem;
+
       setTradeModal(prev => ({
         ...prev,
-        stage: 'result',
+        stage: 'pending',
         result: {
-          received: tradeModal.selectedPartnerItem,
-          traded: prev.item,
+          offered: offeredSnapshot,
+          requested: requestedSnapshot,
           partner: { id: selectedPartner.id, name: partnerDisplayName }
         }
       }));
     } finally {
       setIsProcessingTrade(false);
+    }
+  };
+
+  const handleCancelTradeRequest = async () => {
+    if (!outgoingTradeRequest) {
+      return;
+    }
+
+    if (typeof performClassmateTrade !== 'function') {
+      showToast('Trading is unavailable right now. Please try again later.', 'error');
+      return;
+    }
+
+    setRespondingTradeId(outgoingTradeRequest.id);
+
+    try {
+      const result = await performClassmateTrade({
+        action: 'cancel',
+        request: outgoingTradeRequest
+      });
+
+      if (!result?.success) {
+        showToast(result?.error || 'Could not cancel the trade request.', 'error');
+        return;
+      }
+
+      showToast('Trade request cancelled.', 'info');
+    } finally {
+      setRespondingTradeId(null);
+    }
+  };
+
+  const handleIncomingTradeDecision = async (request, decision) => {
+    if (!request) {
+      return;
+    }
+
+    if (typeof performClassmateTrade !== 'function') {
+      showToast('Trading is unavailable right now. Please try again later.', 'error');
+      return;
+    }
+
+    setRespondingTradeId(request.id);
+
+    try {
+      const result = await performClassmateTrade({
+        action: decision === 'accept' ? 'accept' : 'reject',
+        request
+      });
+
+      if (!result?.success) {
+        showToast(result?.error || 'Could not update the trade.', 'error');
+        return;
+      }
+
+      if (decision === 'accept') {
+        showToast(`Trade complete! You traded with ${request.fromStudentName || 'your classmate'}.`, 'success');
+      } else {
+        showToast(`You declined the trade from ${request.fromStudentName || 'your classmate'}.`, 'info');
+      }
+    } finally {
+      setRespondingTradeId(null);
     }
   };
 
@@ -492,6 +608,37 @@ const StudentShop = ({
     }
 
     const isAvatarTrade = tradeModal.type === 'avatar';
+
+    if (tradeModal.stage === 'pending' && tradeModal.result) {
+      const { partner, offered, requested } = tradeModal.result;
+      const partnerName = partner?.name || 'your classmate';
+      const offeredName = isAvatarTrade ? offered : offered?.name;
+      const requestedName = isAvatarTrade ? requested : requested?.name;
+
+      return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md text-center p-6 md:p-8 space-y-4">
+            <div className="text-5xl md:text-6xl">📨</div>
+            <h2 className="text-xl md:text-2xl font-bold">Trade request sent!</h2>
+            <p className="text-sm md:text-base text-gray-700">
+              Waiting for {partnerName} to confirm the trade.
+            </p>
+            {(offeredName || requestedName) && (
+              <p className="text-xs md:text-sm text-gray-600">
+                They'll decide if they want your <span className="font-semibold">{offeredName}</span>{' '}
+                in exchange for their <span className="font-semibold">{requestedName}</span>.
+              </p>
+            )}
+            <button
+              onClick={closeTradeModal}
+              className="w-full py-3 bg-amber-500 text-white rounded-lg font-semibold hover:bg-amber-600"
+            >
+              Got it!
+            </button>
+          </div>
+        </div>
+      );
+    }
 
     if (tradeModal.stage === 'result' && tradeModal.result) {
       const { received, traded, partner } = tradeModal.result;
@@ -595,6 +742,7 @@ const StudentShop = ({
           : partner.displayName || 'Classmate';
         const lastTrade = parseDateValue(partner.lastTradeAt);
         const canTradeToday = !lastTrade || !isSameCalendarDay(lastTrade, new Date());
+        const hasPendingOutgoing = Boolean(partner.outgoingTradeRequest);
         const partnerItems = isAvatarTrade
           ? (partner.ownedAvatars || [])
           : (partner.ownedPets || []);
@@ -602,12 +750,14 @@ const StudentShop = ({
         return {
           id: partner.id,
           name: displayName,
-          canTrade: canTradeToday && partnerItems.length > 0,
+          canTrade: canTradeToday && partnerItems.length > 0 && !hasPendingOutgoing,
           reason: !canTradeToday
             ? 'Already traded today'
-            : partnerItems.length === 0
-              ? `No ${isAvatarTrade ? 'avatars' : 'pets'} available`
-              : null,
+            : hasPendingOutgoing
+              ? 'Has a pending trade request'
+              : partnerItems.length === 0
+                ? `No ${isAvatarTrade ? 'avatars' : 'pets'} available`
+                : null,
           items: partnerItems,
           raw: partner
         };
@@ -627,8 +777,8 @@ const StudentShop = ({
       !tradeModal.selectedPartnerItem;
 
     const tradeNote = selectedPartnerChoice
-      ? `This trade will count for both you and ${selectedPartnerChoice.name} today.`
-      : 'Trading will use your one trade for today.';
+      ? `If ${selectedPartnerChoice.name} accepts, this trade will count for both of you today.`
+      : 'Trading will use your one trade for today once it is accepted.';
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -787,7 +937,7 @@ const StudentShop = ({
                   : 'bg-amber-500 text-white hover:bg-amber-600'
               }`}
             >
-              {isProcessingTrade ? 'Trading...' : 'Confirm Trade'}
+              {isProcessingTrade ? 'Sending...' : 'Send Trade Request'}
             </button>
           </div>
         </div>
@@ -1500,6 +1650,107 @@ const StudentShop = ({
           </div>
         </div>
       </div>
+
+      {/* Trade Alerts */}
+      {(hasPendingOutgoingTrade || pendingIncomingTrades.length > 0) && (
+        <div className="space-y-3 md:space-y-4 mb-4 md:mb-6">
+          {hasPendingOutgoingTrade && outgoingTradeRequest && (() => {
+            const offeredName = outgoingTradeRequest.type === 'avatar'
+              ? outgoingTradeRequest.offeredItem
+              : outgoingTradeRequest.offeredItem?.name;
+            const requestedName = outgoingTradeRequest.type === 'avatar'
+              ? outgoingTradeRequest.requestedItem
+              : outgoingTradeRequest.requestedItem?.name;
+            const partnerName = outgoingTradeRequest.partnerName || 'your classmate';
+
+            return (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 md:p-4">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                  <div>
+                    <p className="text-sm md:text-base font-semibold text-amber-900">Awaiting confirmation</p>
+                    <p className="text-xs md:text-sm text-amber-700">
+                      Waiting for {partnerName} to respond to your trade request.
+                    </p>
+                    {(offeredName || requestedName) && (
+                      <p className="text-xs md:text-sm text-amber-700 mt-1">
+                        You offered <span className="font-semibold">{offeredName}</span>{' '}
+                        for <span className="font-semibold">{requestedName}</span>.
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleCancelTradeRequest}
+                      disabled={respondingTradeId === outgoingTradeRequest.id}
+                      className={`px-3 py-2 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-semibold transition ${
+                        respondingTradeId === outgoingTradeRequest.id
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          : 'bg-amber-500 text-white hover:bg-amber-600'
+                      }`}
+                    >
+                      Cancel Request
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
+          {pendingIncomingTrades.map(request => {
+            const offeredName = request.type === 'avatar'
+              ? request.offeredItem
+              : request.offeredItem?.name;
+            const requestedName = request.type === 'avatar'
+              ? request.requestedItem
+              : request.requestedItem?.name;
+            const fromName = request.fromStudentName || 'A classmate';
+
+            return (
+              <div
+                key={request.id}
+                className="bg-blue-50 border border-blue-200 rounded-xl p-3 md:p-4"
+              >
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                  <div>
+                    <p className="text-sm md:text-base font-semibold text-blue-900">
+                      Trade request from {fromName}
+                    </p>
+                    <p className="text-xs md:text-sm text-blue-700">
+                      {fromName} wants to trade their{' '}
+                      <span className="font-semibold">{offeredName}</span>{' '}
+                      for your <span className="font-semibold">{requestedName}</span>.
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleIncomingTradeDecision(request, 'reject')}
+                      disabled={respondingTradeId === request.id}
+                      className={`px-3 py-2 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-semibold transition ${
+                        respondingTradeId === request.id
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          : 'bg-white text-blue-700 border border-blue-300 hover:bg-blue-100'
+                      }`}
+                    >
+                      Reject
+                    </button>
+                    <button
+                      onClick={() => handleIncomingTradeDecision(request, 'accept')}
+                      disabled={respondingTradeId === request.id}
+                      className={`px-3 py-2 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-semibold transition ${
+                        respondingTradeId === request.id
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          : 'bg-blue-600 text-white hover:bg-blue-700'
+                      }`}
+                    >
+                      Accept
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Quick Actions - Mobile Optimized */}
       <div className="flex gap-2 md:gap-3 overflow-x-auto pb-2">
