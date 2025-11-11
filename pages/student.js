@@ -1826,16 +1826,31 @@ const StudentPortal = () => {
     switch (activeTab) {
       case 'dashboard':
         return (
-          <StudentDashboard
-            studentData={studentData}
-            classData={classData}
-            getAvatarImage={getAvatarImage}
-            getPetImage={getPetImage}
-            calculateCoins={calculateCoins}
-            calculateAvatarLevel={calculateAvatarLevel}
-            dailyMysteryBoxAvailable={dailyMysteryBoxAvailable}
-            onOpenDailyMysteryBox={handleOpenDailyMysteryBox}
-          />
+          <div className="space-y-6">
+            <StudentDashboard
+              studentData={studentData}
+              classData={classData}
+              getAvatarImage={getAvatarImage}
+              getPetImage={getPetImage}
+              calculateCoins={calculateCoins}
+              calculateAvatarLevel={calculateAvatarLevel}
+              dailyMysteryBoxAvailable={dailyMysteryBoxAvailable}
+              onOpenDailyMysteryBox={handleOpenDailyMysteryBox}
+            />
+            <StudentLootWellSection
+              studentData={studentData}
+              updateStudentData={updateStudentData}
+              showToast={showToast}
+              SHOP_BASIC_AVATARS={shopInventory.basicAvatars}
+              SHOP_PREMIUM_AVATARS={shopInventory.premiumAvatars}
+              SHOP_BASIC_PETS={shopInventory.basicPets}
+              SHOP_PREMIUM_PETS={shopInventory.premiumPets}
+              HALLOWEEN_BASIC_AVATARS={HALLOWEEN_BASIC_AVATARS}
+              HALLOWEEN_PREMIUM_AVATARS={HALLOWEEN_PREMIUM_AVATARS}
+              HALLOWEEN_PETS={HALLOWEEN_PETS}
+              classRewards={classData?.classRewards || []}
+            />
+          </div>
         );
       
       case 'maths':
@@ -1912,41 +1927,26 @@ const StudentPortal = () => {
       
       case 'shop':
         return (
-          <div className="space-y-6">
-            <StudentLootWellSection
-              studentData={studentData}
-              updateStudentData={updateStudentData}
-              showToast={showToast}
-              SHOP_BASIC_AVATARS={shopInventory.basicAvatars}
-              SHOP_PREMIUM_AVATARS={shopInventory.premiumAvatars}
-              SHOP_BASIC_PETS={shopInventory.basicPets}
-              SHOP_PREMIUM_PETS={shopInventory.premiumPets}
-              HALLOWEEN_BASIC_AVATARS={HALLOWEEN_BASIC_AVATARS}
-              HALLOWEEN_PREMIUM_AVATARS={HALLOWEEN_PREMIUM_AVATARS}
-              HALLOWEEN_PETS={HALLOWEEN_PETS}
-              classRewards={classData?.classRewards || []}
-            />
-            <StudentShop
-              studentData={studentData}
-              updateStudentData={updateStudentData}
-              showToast={showToast}
-              getAvatarImage={getAvatarImage}
-              getPetImage={getPetImage}
-              calculateCoins={calculateCoins}
-              calculateAvatarLevel={calculateAvatarLevel}
-              SHOP_BASIC_AVATARS={shopInventory.basicAvatars}
-              SHOP_PREMIUM_AVATARS={shopInventory.premiumAvatars}
-              SHOP_BASIC_PETS={shopInventory.basicPets}
-              SHOP_PREMIUM_PETS={shopInventory.premiumPets}
-              HALLOWEEN_BASIC_AVATARS={HALLOWEEN_BASIC_AVATARS}
-              HALLOWEEN_PREMIUM_AVATARS={HALLOWEEN_PREMIUM_AVATARS}
-              HALLOWEEN_PETS={HALLOWEEN_PETS}
-              classRewards={classData?.classRewards || []}
-              classmates={availableStudents}
-              classData={classData}
-              performClassmateTrade={tradeWithClassmate}
-            />
-          </div>
+          <StudentShop
+            studentData={studentData}
+            updateStudentData={updateStudentData}
+            showToast={showToast}
+            getAvatarImage={getAvatarImage}
+            getPetImage={getPetImage}
+            calculateCoins={calculateCoins}
+            calculateAvatarLevel={calculateAvatarLevel}
+            SHOP_BASIC_AVATARS={shopInventory.basicAvatars}
+            SHOP_PREMIUM_AVATARS={shopInventory.premiumAvatars}
+            SHOP_BASIC_PETS={shopInventory.basicPets}
+            SHOP_PREMIUM_PETS={shopInventory.premiumPets}
+            HALLOWEEN_BASIC_AVATARS={HALLOWEEN_BASIC_AVATARS}
+            HALLOWEEN_PREMIUM_AVATARS={HALLOWEEN_PREMIUM_AVATARS}
+            HALLOWEEN_PETS={HALLOWEEN_PETS}
+            classRewards={classData?.classRewards || []}
+            classmates={availableStudents}
+            classData={classData}
+            performClassmateTrade={tradeWithClassmate}
+          />
         );
       
       case 'games':

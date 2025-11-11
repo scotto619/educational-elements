@@ -1198,73 +1198,84 @@ const ShopTab = ({
   return (
     <div className="space-y-6">
       <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <div className="space-y-6 p-4 sm:p-6 md:p-8">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h3 className="text-xl font-semibold text-slate-900 md:text-2xl">Select a champion to manage</h3>
-              <p className="text-sm text-slate-500 md:text-base">Choose a student to review their balance, inventory, and purchasing options.</p>
+        <div className="flex flex-col gap-6 p-6 md:flex-row md:items-center md:justify-between md:p-8">
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-100 text-2xl">🎓</span>
+              <div>
+                <h2 className="text-2xl font-semibold text-slate-900 md:text-3xl">Classroom Shop Manager</h2>
+                <p className="text-sm text-slate-500 md:text-base">
+                  Pick a student to review balances, preview their shop, and gift or reclaim rewards in a few taps.
+                </p>
+              </div>
             </div>
             <div className="flex flex-wrap gap-2 text-xs text-slate-500 md:text-sm">
-              <span className="rounded-full bg-slate-100 px-3 py-1">Track coins, pets, and rewards without leaving this page.</span>
-              <span className="rounded-full bg-slate-100 px-3 py-1">Tap a name to preview their shop experience.</span>
+              <span className="rounded-full bg-slate-100 px-3 py-1">Instantly inspect coins, pets, and avatars.</span>
+              <span className="rounded-full bg-slate-100 px-3 py-1">Inventory actions stay synced with the student view.</span>
             </div>
           </div>
+          {selectedStudent && (
+            <div className="w-full max-w-sm rounded-2xl bg-slate-900 p-5 text-white shadow-lg md:w-auto">
+              <div className="flex items-center gap-4">
+                <img
+                  src={getAvatarImage(selectedStudent.avatarBase, calculateAvatarLevel(selectedStudent.totalPoints))}
+                  className="h-16 w-16 rounded-full border-4 border-white/30 object-cover"
+                  alt={`${selectedStudent.firstName}'s avatar`}
+                />
+                <div className="space-y-1">
+                  <p className="text-sm uppercase tracking-widest text-white/60">Currently managing</p>
+                  <h4 className="text-lg font-semibold">{selectedStudent.firstName} {selectedStudent.lastName}</h4>
+                  <p className="text-sm text-white/80">💰 {calculateCoins(selectedStudent)} coins</p>
+                </div>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button
+                  onClick={() => setInventoryModal({ visible: true })}
+                  className="flex-1 rounded-xl bg-white/10 px-4 py-2 text-sm font-semibold transition hover:bg-white/20"
+                >
+                  🎒 View inventory
+                </button>
+                <button
+                  onClick={() => setShowSellMode(!showSellMode)}
+                  className={`flex-1 rounded-xl px-4 py-2 text-sm font-semibold transition ${showSellMode ? 'bg-rose-500 hover:bg-rose-600' : 'bg-emerald-500 hover:bg-emerald-600'}`}
+                >
+                  {showSellMode ? 'Selling on' : 'Enable selling'}
+                </button>
+                {activeCategory === 'rewards' && (
+                  <button
+                    onClick={() => setShowRewardManager(true)}
+                    className="flex-1 rounded-xl bg-white/10 px-4 py-2 text-sm font-semibold transition hover:bg-white/20"
+                  >
+                    🛠️ Rewards
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
 
+        <div className="border-t border-slate-200 bg-slate-50/60 p-4 sm:p-6 md:p-8">
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
             {students.map(student => (
               <button
                 key={student.id}
                 onClick={() => setSelectedStudentId(student.id)}
-                className={`group rounded-2xl border px-3 py-3 text-center transition ${selectedStudentId === student.id ? 'border-blue-500 bg-blue-50 shadow-sm' : 'border-slate-200 bg-white hover:border-blue-300 hover:bg-blue-50'}`}
+                className={`group rounded-2xl border px-3 py-3 text-center transition ${
+                  selectedStudentId === student.id
+                    ? 'border-indigo-500 bg-indigo-50 shadow-sm'
+                    : 'border-slate-200 bg-white hover:border-indigo-300 hover:bg-indigo-50'
+                }`}
               >
                 <img
                   src={getAvatarImage(student.avatarBase, calculateAvatarLevel(student.totalPoints))}
                   alt={student.firstName}
-                  className="mx-auto mb-2 h-14 w-14 rounded-full border border-slate-200 object-cover transition group-hover:border-blue-400 sm:h-16 sm:w-16"
+                  className="mx-auto mb-2 h-14 w-14 rounded-full border border-slate-200 object-cover transition group-hover:border-indigo-400 sm:h-16 sm:w-16"
                 />
                 <p className="text-xs font-semibold text-slate-700 sm:text-sm">{student.firstName}</p>
                 <p className="text-xs text-amber-600">💰 {calculateCoins(student)}</p>
               </button>
             ))}
           </div>
-
-          {selectedStudent && (
-            <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 md:flex-row md:items-center md:justify-between">
-              <div className="flex items-center gap-4">
-                <img
-                  src={getAvatarImage(selectedStudent.avatarBase, calculateAvatarLevel(selectedStudent.totalPoints))}
-                  className="h-16 w-16 rounded-full border-4 border-white shadow-lg"
-                  alt={`${selectedStudent.firstName}'s avatar`}
-                />
-                <div>
-                  <h4 className="text-lg font-semibold text-slate-900">{selectedStudent.firstName} {selectedStudent.lastName}</h4>
-                  <p className="text-sm text-slate-500">Balance: <span className="font-semibold text-amber-600">💰 {calculateCoins(selectedStudent)} coins</span></p>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => setInventoryModal({ visible: true })}
-                  className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-100"
-                >
-                  🎒 View inventory
-                </button>
-                <button
-                  onClick={() => setShowSellMode(!showSellMode)}
-                  className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${showSellMode ? 'bg-rose-500 text-white hover:bg-rose-600' : 'bg-emerald-500 text-white hover:bg-emerald-600'}`}
-                >
-                  {showSellMode ? 'Disable sell mode' : 'Enable sell mode'}
-                </button>
-                {activeCategory === 'rewards' && (
-                  <button
-                    onClick={() => setShowRewardManager(true)}
-                    className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-100"
-                  >
-                    🛠️ Manage rewards
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
         </div>
       </section>
 

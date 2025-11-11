@@ -2478,8 +2478,7 @@ const StudentShop = ({
     );
   };
 
-
-
+  const renderShopItems = () => {
     let items = [];
     let itemType = '';
 
@@ -2534,8 +2533,8 @@ const StudentShop = ({
       const isOwnedItem = resolvedType === 'avatar'
         ? studentData.ownedAvatars?.includes(item.name)
         : resolvedType === 'pet'
-        ? studentData.ownedPets?.some(p => p.name === item.name)
-        : false;
+          ? studentData.ownedPets?.some(p => p.name === item.name)
+          : false;
 
       const canAfford = currentCoins >= (item.price || 0);
       const isHalloween = item.theme === 'halloween';
