@@ -18,6 +18,7 @@ import NumbersBoard from '../curriculum/mathematics/NumbersBoard';
 import MathMentals from '../curriculum/mathematics/MathMentals';
 import InteractiveClock from '../curriculum/mathematics/InteractiveClock';
 import InteractiveAngles from '../curriculum/mathematics/InteractiveAngles'; // NEW IMPORT
+import DailyMathChallenges from '../curriculum/mathematics/DailyMathChallenges';
 
 // ===============================================
 // COMING SOON COMPONENT
@@ -216,6 +217,14 @@ const subjects = [
     color: 'from-green-500 to-green-600',
     description: 'Math tools and number activities',
     activities: [
+      {
+        id: 'daily-math-challenges',
+        name: 'Daily Math Challenge Studio',
+        icon: '🎯',
+        description: 'Display rich daily challenges, present in fullscreen, and assign tasks to students',
+        component: DailyMathChallenges,
+        isNew: true
+      },
       {
         id: 'interactive-angles',
         name: 'Interactive Angles',
@@ -484,6 +493,7 @@ const CurriculumCornerTab = ({
         activeActivity.id === 'math-mentals' ||
         activeActivity.id === 'interactive-clock' ||
         activeActivity.id === 'interactive-angles' ||
+        activeActivity.id === 'daily-math-challenges' ||
         activeActivity.id === 'beginner-readers' ||
         activeActivity.id === 'reading-for-fun' ||
         activeActivity.id === 'readers-theatre' ||
@@ -811,7 +821,7 @@ const CurriculumCornerTab = ({
                 )}
                 {subject.id === 'mathematics' && (
                   <div className="text-xs text-green-600 font-semibold mt-1">
-                    📐 New Angles Tool!
+                    🎯 Daily Math Challenge Studio is ready!
                   </div>
                 )}
               </div>
@@ -841,6 +851,20 @@ const CurriculumCornerTab = ({
             </ul>
             <p className="text-xs text-green-500 italic mt-2">
               Perfect visual tool for teaching geometry concepts!
+            </p>
+          </div>
+          <div className="bg-white border border-rose-200 rounded-lg p-4">
+            <h4 className="font-bold text-rose-700 mb-2">🎯 NEW: Daily Math Challenge Studio</h4>
+            <p className="text-sm text-rose-600 mb-2">
+              Present twenty multi-step challenges in fullscreen and push them straight to the student portal.
+            </p>
+            <ul className="text-xs text-rose-600 space-y-1 ml-4">
+              <li>• Launch presentation mode with keyboard-friendly navigation</li>
+              <li>• Filter tasks by strand, focus tags, or search keywords</li>
+              <li>• Assign a challenge with optional due dates and messages</li>
+            </ul>
+            <p className="text-xs text-rose-500 italic mt-2">
+              Ideal for daily warm-ups, maths meetings, or weekly problem solving investigations.
             </p>
           </div>
           <div className="bg-white border border-purple-200 rounded-lg p-4">
