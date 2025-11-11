@@ -300,6 +300,137 @@ const parseDateValue = (value) => {
   return null;
 };
 
+const cloneCardCollection = (collection = {}) => ({
+  packs: { ...(collection.packs || {}) },
+  cards: { ...(collection.cards || {}) },
+  history: Array.isArray(collection.history) ? [...collection.history] : [],
+  totalOpened: collection.totalOpened || 0,
+  lastOpenedAt: collection.lastOpenedAt || null
+});
+
+const applyPrizeToStudentBase = ({
+  prize,
+  studentData,
+  showToast = () => {},
+  createSnapshot,
+  baseUpdates = {},
+  timestamp,
+  nowIso
+}) => {
+  if (!prize) {
+    return { ...baseUpdates };
+  }
+
+  const updates = { ...baseUpdates };
+  const resolvedTimestamp = typeof timestamp === 'number' ? timestamp : Date.now();
+  const resolvedIso = nowIso || new Date(resolvedTimestamp).toISOString();
+
+  switch (prize.type) {
+    case 'avatar': {
+      const avatarName = prize.item?.name;
+      if (avatarName) {
+        const existing = new Set([...(studentData?.ownedAvatars || [])]);
+        if (Array.isArray(updates.ownedAvatars)) {
+          updates.ownedAvatars.forEach(name => existing.add(name));
+        }
+        existing.add(avatarName);
+        updates.ownedAvatars = [...existing];
+        showToast(`You won the ${avatarName} avatar!`, 'success');
+      }
+      break;
+    }
+    case 'pet': {
+      const petName = prize.item?.name;
+      if (petName) {
+        const newPet = { ...prize.item, id: prize.item?.id || `pet_${resolvedTimestamp}` };
+        const existingPets = Array.isArray(updates.ownedPets)
+          ? updates.ownedPets
+          : [...(studentData?.ownedPets || [])];
+        updates.ownedPets = [...existingPets, newPet];
+        showToast(`You won a ${petName}!`, 'success');
+      }
+      break;
+    }
+    case 'egg': {
+      const eggType = prize.eggType || getEggTypeById(prize.eggTypeId) || prize.item;
+      if (eggType) {
+        const newEgg = createPetEgg(eggType);
+        const eggs = Array.isArray(updates.petEggs)
+          ? updates.petEggs
+          : [...(studentData?.petEggs || [])];
+        updates.petEggs = [...eggs, newEgg];
+        const rarityLabel = (newEgg.rarity || '').toUpperCase();
+        const flair = rarityLabel ? `${rarityLabel} ` : '';
+        showToast(`You discovered a ${flair}${newEgg.name}!`, newEgg.rarity === 'legendary' ? 'success' : 'info');
+      }
+      break;
+    }
+    case 'reward': {
+      const rewardItem = prize.item;
+      if (rewardItem) {
+        const rewards = Array.isArray(updates.rewardsPurchased)
+          ? updates.rewardsPurchased
+          : [...(studentData?.rewardsPurchased || [])];
+        updates.rewardsPurchased = [
+          ...rewards,
+          {
+            ...rewardItem,
+            purchasedAt: resolvedIso
+          }
+        ];
+        showToast(`You won ${rewardItem.name}!`, 'success');
+      }
+      break;
+    }
+    case 'xp': {
+      const totalPoints = (updates.totalPoints ?? studentData?.totalPoints ?? 0) + (prize.amount || 0);
+      updates.totalPoints = totalPoints;
+      showToast(`You won ${prize.amount || 0} XP!`, 'success');
+      break;
+    }
+    case 'coins': {
+      const currency = (updates.currency ?? studentData?.currency ?? 0) + (prize.amount || 0);
+      updates.currency = currency;
+      showToast(`You won ${prize.amount || 0} bonus coins!`, 'success');
+      break;
+    }
+    case 'card_pack': {
+      const pack = prize.pack;
+      if (pack) {
+        const snapshot = typeof createSnapshot === 'function'
+          ? createSnapshot()
+          : cloneCardCollection(studentData?.cardCollection || {});
+        const packs = { ...(snapshot.packs || {}) };
+        const entry = packs[pack.id] || { count: 0 };
+        packs[pack.id] = {
+          ...entry,
+          count: (entry.count || 0) + 1,
+          lastObtainedAt: resolvedIso
+        };
+
+        updates.cardCollection = {
+          ...snapshot,
+          packs,
+          cards: { ...(snapshot.cards || {}) },
+          history: Array.isArray(snapshot.history) ? [...snapshot.history] : [],
+          totalOpened: snapshot.totalOpened || 0,
+          lastOpenedAt: snapshot.lastOpenedAt || null
+        };
+
+        showToast(`You discovered a ${pack.name}!`, pack.rarity === 'legendary' ? 'success' : 'info');
+      }
+      break;
+    }
+    default: {
+      if (prize.name) {
+        showToast(`You received ${prize.name}!`, 'success');
+      }
+    }
+  }
+
+  return updates;
+};
+
 const getEggAccent = (egg) => {
   if (!egg) return '#6366f1';
   if (egg.accent) return egg.accent;
@@ -410,6 +541,312 @@ const DEFAULT_CARD_PACK_OPENING_STATE = {
   results: []
 };
 
+export const StudentLootWellSection = ({
+  studentData,
+  updateStudentData,
+  showToast = () => {},
+  SHOP_BASIC_AVATARS = [],
+  SHOP_PREMIUM_AVATARS = [],
+  SHOP_BASIC_PETS = [],
+  SHOP_PREMIUM_PETS = [],
+  HALLOWEEN_BASIC_AVATARS = [],
+  HALLOWEEN_PREMIUM_AVATARS = [],
+  HALLOWEEN_PETS = [],
+  classRewards = []
+}) => {
+  const [lootWellResult, setLootWellResult] = useState(null);
+  const [lootWellCountdown, setLootWellCountdown] = useState('');
+  const [lootWellAnimating, setLootWellAnimating] = useState(false);
+
+  const lootWellStats = studentData?.lootWell || {};
+
+  const lastLootWellAttempt = useMemo(
+    () => parseDateValue(lootWellStats.lastDrawAt),
+    [lootWellStats.lastDrawAt]
+  );
+
+  const nextLootWellAvailability = useMemo(() => {
+    if (!lastLootWellAttempt) {
+      return null;
+    }
+
+    return new Date(lastLootWellAttempt.getTime() + LOOT_WELL_COOLDOWN_MS);
+  }, [lastLootWellAttempt]);
+
+  const lootWellReady = !nextLootWellAvailability || nextLootWellAvailability.getTime() <= Date.now();
+
+  useEffect(() => {
+    if (!nextLootWellAvailability || lootWellReady) {
+      setLootWellCountdown('');
+      return undefined;
+    }
+
+    const updateCountdown = () => {
+      const remaining = nextLootWellAvailability.getTime() - Date.now();
+      setLootWellCountdown(formatDuration(remaining));
+    };
+
+    updateCountdown();
+    const intervalId = setInterval(updateCountdown, 1000);
+    return () => clearInterval(intervalId);
+  }, [lootWellReady, nextLootWellAvailability]);
+
+  useEffect(() => {
+    if (!lootWellResult) {
+      return undefined;
+    }
+
+    const timeoutId = setTimeout(() => setLootWellResult(null), 6000);
+    return () => clearTimeout(timeoutId);
+  }, [lootWellResult]);
+
+  const availablePrizes = useMemo(
+    () =>
+      getMysteryBoxPrizes(
+        SHOP_BASIC_AVATARS,
+        SHOP_PREMIUM_AVATARS,
+        SHOP_BASIC_PETS,
+        SHOP_PREMIUM_PETS,
+        classRewards,
+        HALLOWEEN_BASIC_AVATARS,
+        HALLOWEEN_PREMIUM_AVATARS,
+        HALLOWEEN_PETS,
+        PET_EGG_TYPES,
+        DEFAULT_CARD_PACKS
+      ),
+    [
+      SHOP_BASIC_AVATARS,
+      SHOP_PREMIUM_AVATARS,
+      SHOP_BASIC_PETS,
+      SHOP_PREMIUM_PETS,
+      classRewards,
+      HALLOWEEN_BASIC_AVATARS,
+      HALLOWEEN_PREMIUM_AVATARS,
+      HALLOWEEN_PETS
+    ]
+  );
+
+  const applyPrize = useCallback(
+    (prize, baseUpdates = {}, options = {}) =>
+      applyPrizeToStudentBase({
+        prize,
+        studentData,
+        showToast,
+        baseUpdates,
+        timestamp: options.timestamp,
+        nowIso: options.nowIso,
+        createSnapshot: () => cloneCardCollection(studentData?.cardCollection || {})
+      }),
+    [studentData, showToast]
+  );
+
+  const lootWellHistory = useMemo(() => {
+    const history = lootWellStats.history;
+    if (!Array.isArray(history) || history.length === 0) {
+      return [];
+    }
+
+    return history.slice(-6).reverse();
+  }, [lootWellStats.history]);
+
+  const handleLootWellDraw = useCallback(async () => {
+    if (lootWellAnimating) {
+      return;
+    }
+
+    if (!lootWellReady) {
+      if (nextLootWellAvailability) {
+        const remaining = nextLootWellAvailability.getTime() - Date.now();
+        showToast(`The Loot Well is recharging. Try again in ${formatDuration(remaining)}.`, 'info');
+      } else {
+        showToast('The Loot Well is recharging. Come back soon!', 'info');
+      }
+      return;
+    }
+
+    setLootWellAnimating(true);
+    setLootWellResult(null);
+
+    const timestamp = Date.now();
+    const nowIso = new Date(timestamp).toISOString();
+
+    let selectedPrize = null;
+    let outcome = 'miss';
+
+    if (availablePrizes.length > 0 && Math.random() < LOOT_WELL_PRIZE_CHANCE) {
+      selectedPrize = selectRandomPrize(availablePrizes);
+      outcome = 'prize';
+    }
+
+    let updates = {};
+    if (selectedPrize) {
+      updates = applyPrize(selectedPrize, updates, { timestamp, nowIso });
+    }
+
+    const historySource = Array.isArray(lootWellStats.history) ? lootWellStats.history : [];
+    const trimmedHistory = historySource.slice(
+      Math.max(0, historySource.length - (MAX_LOOT_WELL_HISTORY - 1))
+    );
+
+    const historyEntry = {
+      id: `lootwell_${timestamp}`,
+      outcome,
+      rarity: selectedPrize?.rarity || null,
+      prizeName: selectedPrize ? getPrizeDisplayName(selectedPrize) : null,
+      timestamp: nowIso
+    };
+
+    updates.lootWell = {
+      lastDrawAt: nowIso,
+      lastOutcome: outcome,
+      lastPrize: selectedPrize
+        ? {
+            type: selectedPrize.type,
+            name: getPrizeDisplayName(selectedPrize),
+            rarity: selectedPrize.rarity || null,
+            amount: selectedPrize.amount || 1
+          }
+        : null,
+      history: [...trimmedHistory, historyEntry],
+      totalAttempts: (lootWellStats.totalAttempts || 0) + 1,
+      totalWins: (lootWellStats.totalWins || 0) + (outcome === 'prize' ? 1 : 0)
+    };
+
+    const success = await updateStudentData(updates);
+
+    if (success) {
+      if (!selectedPrize) {
+        showToast('The well shimmered, but no treasure surfaced this time. Come back in an hour!', 'info');
+      }
+
+      setLootWellResult({ outcome, prize: selectedPrize, entry: historyEntry });
+    } else {
+      showToast('The well magic fizzled. Please try again.', 'error');
+    }
+
+    setLootWellAnimating(false);
+  }, [
+    applyPrize,
+    availablePrizes,
+    lootWellAnimating,
+    lootWellReady,
+    lootWellStats.history,
+    lootWellStats.totalAttempts,
+    lootWellStats.totalWins,
+    nextLootWellAvailability,
+    showToast,
+    updateStudentData
+  ]);
+
+  const lastPrize = lootWellStats.lastPrize;
+
+  const renderHistoryItem = (entry) => {
+    const date = entry.timestamp ? new Date(entry.timestamp) : null;
+    const timeLabel = date && !Number.isNaN(date.getTime())
+      ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      : '';
+
+    return (
+      <li
+        key={entry.id}
+        className="flex items-center justify-between rounded-xl bg-white/5 px-3 py-2 text-sm text-slate-200"
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-base">
+            {entry.outcome === 'prize' ? '✨' : '💧'}
+          </span>
+          <div>
+            <p className="font-semibold text-slate-100">
+              {entry.outcome === 'prize' ? entry.prizeName || 'Mystery Prize' : 'No prize this time'}
+            </p>
+            {entry.rarity && (
+              <p className="text-xs uppercase tracking-wide text-slate-300">{entry.rarity}</p>
+            )}
+          </div>
+        </div>
+        {timeLabel && <span className="text-xs text-slate-300">{timeLabel}</span>}
+      </li>
+    );
+  };
+
+  return (
+    <section className="overflow-hidden rounded-3xl bg-slate-900 text-white shadow-xl">
+      <div className="grid gap-6 p-6 md:grid-cols-[minmax(0,1fr)_300px] md:p-8">
+        <div className="space-y-5">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-4xl">💠</span>
+              <div>
+                <h2 className="text-2xl font-bold md:text-3xl">The Loot Well</h2>
+                <p className="text-sm text-slate-300 md:text-base">
+                  Whisper a wish once an hour for a chance at avatars, pets, eggs, coins, XP, or card packs.
+                </p>
+              </div>
+            </div>
+            <div className="rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-slate-200">
+              {lootWellReady ? 'Ready now' : `Recharging • ${lootWellCountdown || 'Soon'}`}
+            </div>
+          </div>
+
+          {lastPrize && (
+            <div className="flex items-center gap-3 rounded-2xl bg-white/10 px-4 py-3 text-sm text-slate-200">
+              <span className="text-xl">{lastPrize.rarity ? '🌟' : '🎁'}</span>
+              <div>
+                <p className="font-semibold text-slate-100">Last prize: {lastPrize.name}</p>
+                {lastPrize.rarity && (
+                  <p className="text-xs uppercase tracking-wide text-slate-300">{lastPrize.rarity}</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          <button
+            onClick={handleLootWellDraw}
+            disabled={!lootWellReady || lootWellAnimating}
+            className={`w-full rounded-2xl bg-gradient-to-r from-cyan-400 to-indigo-500 px-6 py-4 text-lg font-semibold tracking-wide transition-all ${
+              lootWellReady && !lootWellAnimating
+                ? 'hover:from-cyan-300 hover:to-indigo-400 focus:outline-none focus:ring-2 focus:ring-cyan-200'
+                : 'cursor-not-allowed opacity-60'
+            }`}
+          >
+            {lootWellReady ? (lootWellAnimating ? 'Drawing your wish…' : 'Make a wish') : 'Come back soon'}
+          </button>
+
+          {lootWellResult && (
+            <div className="rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-sm text-slate-100">
+              {lootWellResult.outcome === 'prize'
+                ? `✨ The waters erupt with ${getPrizeDisplayName(lootWellResult.prize)}!`
+                : 'The waters were calm. Try again later!'}
+            </div>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-4 rounded-2xl bg-white/10 p-4">
+          <div>
+            <h3 className="text-xs font-semibold uppercase tracking-widest text-slate-200">Recent wishes</h3>
+            {lootWellHistory.length > 0 ? (
+              <ul className="mt-3 space-y-2">
+                {lootWellHistory.map(renderHistoryItem)}
+              </ul>
+            ) : (
+              <p className="mt-3 text-sm text-slate-300">No wishes yet—be the first to try the well!</p>
+            )}
+          </div>
+
+          <div className="rounded-xl bg-white/5 p-3 text-xs text-slate-300">
+            <p className="font-semibold text-slate-100">How it works</p>
+            <p className="mt-2 leading-relaxed">
+              You can make one wish every hour. Lucky wishes surface rare prizes, including premium items and card packs.
+            </p>
+            <p className="mt-2">Wishes made: {lootWellStats.totalAttempts || 0}</p>
+            <p>Prizes found: {lootWellStats.totalWins || 0}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
 const StudentShop = ({
   studentData,
   updateStudentData,
@@ -452,9 +889,6 @@ const StudentShop = ({
   const [cardBookVisible, setCardBookVisible] = useState(false);
   const [cardPackOpening, setCardPackOpening] = useState({ ...DEFAULT_CARD_PACK_OPENING_STATE });
   const [isOpeningPack, setIsOpeningPack] = useState(false);
-  const [lootWellResult, setLootWellResult] = useState(null);
-  const [lootWellCountdown, setLootWellCountdown] = useState('');
-  const [lootWellAnimating, setLootWellAnimating] = useState(false);
   const packAnimationTimeoutsRef = useRef([]);
 
   const clearPackAnimationTimeouts = useCallback(() => {
@@ -482,16 +916,10 @@ const StudentShop = ({
 
   const studentEggs = useMemo(() => studentData?.petEggs || [], [studentData?.petEggs]);
 
-  const cardCollection = useMemo(() => {
-    const stored = studentData?.cardCollection || {};
-    return {
-      packs: { ...(stored.packs || {}) },
-      cards: { ...(stored.cards || {}) },
-      history: Array.isArray(stored.history) ? [...stored.history] : [],
-      totalOpened: stored.totalOpened || 0,
-      lastOpenedAt: stored.lastOpenedAt || null
-    };
-  }, [studentData?.cardCollection]);
+  const cardCollection = useMemo(
+    () => cloneCardCollection(studentData?.cardCollection || {}),
+    [studentData?.cardCollection]
+  );
 
   const tradingCardLibrary = useMemo(
     () =>
@@ -652,179 +1080,24 @@ const StudentShop = ({
     [cardCollection.history]
   );
 
-  const lootWellStats = studentData?.lootWell || {};
-  const lastLootWellAttempt = useMemo(
-    () => parseDateValue(lootWellStats.lastDrawAt),
-    [lootWellStats.lastDrawAt]
-  );
-  const nextLootWellAvailability = useMemo(() => {
-    if (!lastLootWellAttempt) {
-      return null;
-    }
-
-    return new Date(lastLootWellAttempt.getTime() + LOOT_WELL_COOLDOWN_MS);
-  }, [lastLootWellAttempt]);
-  const lootWellReady = !nextLootWellAvailability || nextLootWellAvailability.getTime() <= Date.now();
-  const lootWellHistory = useMemo(() => {
-    const history = lootWellStats.history;
-    if (!Array.isArray(history) || history.length === 0) {
-      return [];
-    }
-
-    return history.slice(-5).reverse();
-  }, [lootWellStats.history]);
-
   const createCardCollectionSnapshot = useCallback(
-    () => ({
-      packs: { ...(cardCollection.packs || {}) },
-      cards: { ...(cardCollection.cards || {}) },
-      history: Array.isArray(cardCollection.history) ? [...cardCollection.history] : [],
-      totalOpened: cardCollection.totalOpened || 0,
-      lastOpenedAt: cardCollection.lastOpenedAt || null
-    }),
+    () => cloneCardCollection(cardCollection),
     [cardCollection]
   );
 
   const applyPrizeToStudent = useCallback(
-    (prize, baseUpdates = {}, options = {}) => {
-      if (!prize) {
-        return { ...baseUpdates };
-      }
-
-      const updates = { ...baseUpdates };
-      const timestamp = typeof options.timestamp === 'number' ? options.timestamp : Date.now();
-      const nowIso = options.nowIso || new Date(timestamp).toISOString();
-
-      switch (prize.type) {
-        case 'avatar': {
-          const avatarName = prize.item?.name;
-          if (avatarName) {
-            const existing = new Set([...(studentData.ownedAvatars || [])]);
-            if (Array.isArray(updates.ownedAvatars)) {
-              updates.ownedAvatars.forEach(name => existing.add(name));
-            }
-            existing.add(avatarName);
-            updates.ownedAvatars = [...existing];
-            showToast(`You won the ${avatarName} avatar!`, 'success');
-          }
-          break;
-        }
-        case 'pet': {
-          const petName = prize.item?.name;
-          if (petName) {
-            const newPet = { ...prize.item, id: prize.item?.id || `pet_${timestamp}` };
-            const existingPets = Array.isArray(updates.ownedPets)
-              ? updates.ownedPets
-              : [...(studentData.ownedPets || [])];
-            updates.ownedPets = [...existingPets, newPet];
-            showToast(`You won a ${petName}!`, 'success');
-          }
-          break;
-        }
-        case 'egg': {
-          const eggType = prize.eggType || getEggTypeById(prize.eggTypeId) || prize.item;
-          if (eggType) {
-            const newEgg = createPetEgg(eggType);
-            const eggs = Array.isArray(updates.petEggs)
-              ? updates.petEggs
-              : [...(studentData.petEggs || [])];
-            updates.petEggs = [...eggs, newEgg];
-            const rarityLabel = (newEgg.rarity || '').toUpperCase();
-            const flair = rarityLabel ? `${rarityLabel} ` : '';
-            showToast(`You discovered a ${flair}${newEgg.name}!`, newEgg.rarity === 'legendary' ? 'success' : 'info');
-          }
-          break;
-        }
-        case 'reward': {
-          const rewardItem = prize.item;
-          if (rewardItem) {
-            const rewards = Array.isArray(updates.rewardsPurchased)
-              ? updates.rewardsPurchased
-              : [...(studentData.rewardsPurchased || [])];
-            updates.rewardsPurchased = [
-              ...rewards,
-              {
-                ...rewardItem,
-                purchasedAt: nowIso
-              }
-            ];
-            showToast(`You won ${rewardItem.name}!`, 'success');
-          }
-          break;
-        }
-        case 'xp': {
-          const totalPoints = (updates.totalPoints ?? studentData.totalPoints ?? 0) + (prize.amount || 0);
-          updates.totalPoints = totalPoints;
-          showToast(`You won ${prize.amount || 0} XP!`, 'success');
-          break;
-        }
-        case 'coins': {
-          const currency = (updates.currency ?? studentData.currency ?? 0) + (prize.amount || 0);
-          updates.currency = currency;
-          showToast(`You won ${prize.amount || 0} bonus coins!`, 'success');
-          break;
-        }
-        case 'card_pack': {
-          const pack = prize.pack;
-          if (pack) {
-            const snapshot = updates.cardCollection || createCardCollectionSnapshot();
-            const packs = { ...(snapshot.packs || {}) };
-            const entry = packs[pack.id] || { count: 0 };
-            packs[pack.id] = {
-              ...entry,
-              count: (entry.count || 0) + 1,
-              lastObtainedAt: nowIso
-            };
-
-            updates.cardCollection = {
-              ...snapshot,
-              packs,
-              cards: { ...(snapshot.cards || {}) },
-              history: Array.isArray(snapshot.history) ? [...snapshot.history] : [],
-              totalOpened: snapshot.totalOpened || 0,
-              lastOpenedAt: snapshot.lastOpenedAt || null
-            };
-
-            showToast(`You discovered a ${pack.name}!`, pack.rarity === 'legendary' ? 'success' : 'info');
-          }
-          break;
-        }
-        default: {
-          if (prize.name) {
-            showToast(`You received ${prize.name}!`, 'success');
-          }
-        }
-      }
-
-      return updates;
-    },
-    [createCardCollectionSnapshot, showToast, studentData.ownedAvatars, studentData.ownedPets, studentData.petEggs, studentData.rewardsPurchased, studentData.totalPoints, studentData.currency]
+    (prize, baseUpdates = {}, options = {}) =>
+      applyPrizeToStudentBase({
+        prize,
+        studentData,
+        showToast,
+        createSnapshot: createCardCollectionSnapshot,
+        baseUpdates,
+        timestamp: options.timestamp,
+        nowIso: options.nowIso
+      }),
+    [studentData, showToast, createCardCollectionSnapshot]
   );
-
-  useEffect(() => {
-    if (!nextLootWellAvailability || lootWellReady) {
-      setLootWellCountdown('');
-      return undefined;
-    }
-
-    const updateCountdown = () => {
-      const remaining = nextLootWellAvailability.getTime() - Date.now();
-      setLootWellCountdown(formatDuration(remaining));
-    };
-
-    updateCountdown();
-    const intervalId = setInterval(updateCountdown, 1000);
-    return () => clearInterval(intervalId);
-  }, [lootWellReady, nextLootWellAvailability]);
-
-  useEffect(() => {
-    if (!lootWellResult) {
-      return undefined;
-    }
-
-    const timeoutId = setTimeout(() => setLootWellResult(null), 6000);
-    return () => clearTimeout(timeoutId);
-  }, [lootWellResult]);
 
   const pendingIncomingTrades = studentData?.pendingTradeRequests || [];
   const outgoingTradeRequest = studentData?.outgoingTradeRequest || null;
@@ -1959,96 +2232,7 @@ const StudentShop = ({
     }
   };
 
-  const handleLootWellDraw = async () => {
-    if (lootWellAnimating) {
-      return;
-    }
 
-    if (!lootWellReady) {
-      if (nextLootWellAvailability) {
-        const remaining = nextLootWellAvailability.getTime() - Date.now();
-        showToast(`The Loot Well is recharging. Try again in ${formatDuration(remaining)}.`, 'info');
-      } else {
-        showToast('The Loot Well is recharging. Come back soon!', 'info');
-      }
-      return;
-    }
-
-    setLootWellAnimating(true);
-    setLootWellResult(null);
-
-    const timestamp = Date.now();
-    const nowIso = new Date(timestamp).toISOString();
-
-    const allPrizes = getMysteryBoxPrizes(
-      SHOP_BASIC_AVATARS,
-      SHOP_PREMIUM_AVATARS,
-      SHOP_BASIC_PETS,
-      SHOP_PREMIUM_PETS,
-      classRewards,
-      HALLOWEEN_BASIC_AVATARS,
-      HALLOWEEN_PREMIUM_AVATARS,
-      HALLOWEEN_PETS,
-      PET_EGG_TYPES,
-      DEFAULT_CARD_PACKS
-    );
-
-    let selectedPrize = null;
-    let outcome = 'miss';
-
-    if (Math.random() < LOOT_WELL_PRIZE_CHANCE && allPrizes.length > 0) {
-      selectedPrize = selectRandomPrize(allPrizes);
-      outcome = 'prize';
-    }
-
-    let updates = {};
-    if (selectedPrize) {
-      updates = applyPrizeToStudent(selectedPrize, updates, { timestamp, nowIso });
-    }
-
-    const historySource = Array.isArray(lootWellStats.history) ? lootWellStats.history : [];
-    const trimmedHistory = historySource.slice(
-      Math.max(0, historySource.length - (MAX_LOOT_WELL_HISTORY - 1))
-    );
-
-    const historyEntry = {
-      id: `lootwell_${timestamp}`,
-      outcome,
-      rarity: selectedPrize?.rarity || null,
-      prizeName: selectedPrize ? getPrizeDisplayName(selectedPrize) : null,
-      timestamp: nowIso
-    };
-
-    updates.lootWell = {
-      lastDrawAt: nowIso,
-      lastOutcome: outcome,
-      lastPrize: selectedPrize
-        ? {
-            type: selectedPrize.type,
-            name: getPrizeDisplayName(selectedPrize),
-            rarity: selectedPrize.rarity || null,
-            amount: selectedPrize.amount || 1
-          }
-        : null,
-      history: [...trimmedHistory, historyEntry],
-      totalAttempts: (lootWellStats.totalAttempts || 0) + 1,
-      totalWins: (lootWellStats.totalWins || 0) + (outcome === 'prize' ? 1 : 0)
-    };
-
-    const success = await updateStudentData(updates);
-
-    if (success) {
-      if (!selectedPrize) {
-        showToast('The well shimmered, but no treasure surfaced this time. Come back in an hour!', 'info');
-      }
-
-      setLootWellResult({ outcome, prize: selectedPrize, entry: historyEntry });
-    } else {
-      showToast('The well magic fizzled. Please try again.', 'error');
-    }
-
-    setLootWellAnimating(false);
-  };
 
   // ===============================================
   // SELLING FUNCTIONS
@@ -2226,7 +2410,6 @@ const StudentShop = ({
   };
 
   const categories = [
-    { id: 'loot_well', name: '💠 The Loot Well', shortName: 'Loot Well' },
     { id: 'card_packs', name: '✨ Card Packs', shortName: 'Cards' },
     { id: 'mysterybox', name: '🎁 Mystery Box', shortName: 'Mystery' },
     { id: 'halloween', name: '🎃 Halloween Special', shortName: '🎃 Halloween' },
@@ -2295,388 +2478,7 @@ const StudentShop = ({
     );
   };
 
-  const renderLootWell = () => {
-    const lastPrize = lootWellStats.lastPrize;
 
-    return (
-      <div className="col-span-full">
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-sky-500 via-indigo-600 to-purple-700 text-white shadow-2xl p-6 md:p-10">
-          <div className="absolute inset-0">
-            <div className="absolute -top-32 -left-32 w-72 h-72 bg-cyan-300/40 blur-3xl rounded-full animate-pulse"></div>
-            <div className="absolute -bottom-28 -right-24 w-80 h-80 bg-fuchsia-400/40 blur-3xl rounded-full animate-ping"></div>
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.22),_rgba(255,255,255,0))]" aria-hidden></div>
-          </div>
-
-          <div className="relative z-10 flex flex-col items-center gap-6 text-center">
-            <div className="flex flex-col items-center gap-2">
-              <span className="text-4xl md:text-5xl drop-shadow-xl">⛲</span>
-              <h3 className="text-3xl md:text-4xl font-black tracking-tight drop-shadow-lg">The Loot Well</h3>
-              <p className="max-w-2xl text-sm md:text-base text-white/80">
-                Whisper a wish into the radiant waters once every hour for a chance at treasures pulled from every rarity tier.
-                Legendary rewards shimmer with dazzling effects when fortune smiles upon you!
-              </p>
-            </div>
-
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-44 h-44 md:w-56 md:h-56 rounded-full bg-white/10 blur-2xl"></div>
-              </div>
-              <div className="relative w-44 h-44 md:w-56 md:h-56 rounded-full border border-white/30 bg-gradient-to-br from-white/20 via-white/10 to-transparent shadow-[0_20px_45px_rgba(56,189,248,0.45)] flex items-center justify-center overflow-hidden">
-                <div
-                  className={`absolute inset-5 rounded-full border border-white/25 bg-gradient-to-br from-indigo-900/70 via-purple-900/80 to-black/70 backdrop-blur-sm transition-all ${
-                    lootWellAnimating ? 'shadow-[0_0_40px_rgba(244,114,182,0.45)]' : 'shadow-[0_0_25px_rgba(147,197,253,0.35)]'
-                  }`}
-                ></div>
-                <div
-                  className="absolute inset-1 rounded-full border border-white/30 animate-spin"
-                  style={{ animationDuration: lootWellAnimating ? '5s' : '14s' }}
-                ></div>
-                <div
-                  className="absolute inset-3 rounded-full border border-dashed border-white/40 animate-spin"
-                  style={{ animationDuration: lootWellAnimating ? '8s' : '20s' }}
-                ></div>
-                <div className="relative z-10 flex flex-col items-center gap-1">
-                  <span className={`text-4xl md:text-5xl drop-shadow-2xl ${lootWellAnimating ? 'animate-pulse' : ''}`}>💠</span>
-                  <span className="text-[0.6rem] md:text-xs uppercase tracking-[0.5em] text-white/70">Arcane Waters</span>
-                </div>
-                <div className="absolute inset-x-6 bottom-6 h-12 bg-gradient-to-t from-cyan-400/50 via-sky-300/40 to-transparent blur-lg"></div>
-              </div>
-            </div>
-
-            <div className="flex flex-col items-center gap-3 w-full max-w-md">
-              <button
-                onClick={handleLootWellDraw}
-                disabled={lootWellAnimating || !lootWellReady}
-                className={`w-full px-6 py-3 md:px-8 md:py-4 rounded-full font-bold text-lg transition-transform shadow-[0_0_35px_rgba(255,255,255,0.35)] ${
-                  lootWellReady && !lootWellAnimating
-                    ? 'bg-white text-indigo-700 hover:-translate-y-1 hover:shadow-[0_25px_55px_rgba(56,189,248,0.45)]'
-                    : 'bg-white/20 text-white/70 cursor-not-allowed'
-                } ${lootWellAnimating ? 'bg-white/40 text-indigo-700/90' : ''}`}
-              >
-                {lootWellReady
-                  ? lootWellAnimating
-                    ? 'Summoning Treasure...'
-                    : 'Cast Your Wish'
-                  : `Recharging • ${lootWellCountdown || 'Soon'}`}
-              </button>
-              <p className="text-xs md:text-sm text-white/70">
-                {lootWellReady ? 'You may draw from the well now.' : 'Return when the waters glow again for another chance.'}
-              </p>
-            </div>
-
-            {lootWellResult && (
-              <div
-                className={`w-full max-w-xl px-5 py-4 rounded-2xl border backdrop-blur-sm transition-all ${
-                  lootWellResult.outcome === 'prize'
-                    ? 'border-emerald-200/70 bg-emerald-400/20 text-emerald-100 shadow-[0_0_25px_rgba(16,185,129,0.35)]'
-                    : 'border-white/25 bg-white/10 text-white'
-                }`}
-              >
-                {lootWellResult.outcome === 'prize'
-                  ? `✨ The waters erupt with ${getPrizeDisplayName(lootWellResult.prize)}!`
-                  : 'The waters whisper softly... no treasure surfaced this time.'}
-              </div>
-            )}
-
-            <div className="grid gap-3 md:grid-cols-2 w-full max-w-3xl">
-              <div className="bg-white/10 border border-white/20 rounded-2xl p-4 backdrop-blur-sm text-left">
-                <h4 className="text-sm md:text-base font-semibold text-white/90 mb-2">Latest Blessing</h4>
-                {lastPrize ? (
-                  <div className="text-sm text-white/80">
-                    <div className="font-bold text-white">{lastPrize.name}</div>
-                    <div className="text-xs uppercase tracking-wide text-white/60 mt-1">
-                      {lastPrize.rarity ? `${lastPrize.rarity.toUpperCase()} • ` : ''}
-                      {lootWellReady ? 'The well is ready for another wish!' : `Next wish in ${lootWellCountdown || 'an hour'}`}
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-sm text-white/70">No treasures yet—be the first to awaken the well today!</p>
-                )}
-              </div>
-              <div className="bg-white/10 border border-white/20 rounded-2xl p-4 backdrop-blur-sm text-left">
-                <h4 className="text-sm md:text-base font-semibold text-white/90 mb-2">Recent Ripples</h4>
-                {lootWellHistory.length > 0 ? (
-                  <ul className="space-y-2 text-sm text-white/75">
-                    {lootWellHistory.map(entry => {
-                      const entryDate = entry?.timestamp ? new Date(entry.timestamp) : null;
-                      const timeLabel = entryDate && !Number.isNaN(entryDate.getTime())
-                        ? entryDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                        : '—';
-
-                      return (
-                        <li key={entry.id} className="flex items-center justify-between gap-3">
-                          <span className="flex items-center gap-2">
-                            <span className="text-lg">
-                              {entry.outcome === 'prize' ? '✨' : '🌊'}
-                            </span>
-                            <span>
-                              {entry.outcome === 'prize' ? entry.prizeName || 'Mystery Treasure' : 'No prize'}
-                            </span>
-                          </span>
-                          <span className="text-xs text-white/60">{timeLabel}</span>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                ) : (
-                  <p className="text-sm text-white/70">The waters are calm—start the wave of rewards!</p>
-                )}
-              </div>
-            </div>
-
-            <div className="text-xs md:text-sm text-white/60 max-w-xl">
-              Tip: Treasure chances are rare—every prize follows the same rarity magic as mystery boxes. Legendary pulls are truly legendary!
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const renderMysteryBoxModal = () => {
-    if (mysteryBoxModal.stage === 'confirm') {
-      return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm text-center p-4 md:p-6">
-            <div className="text-5xl md:text-6xl mb-4">🎁</div>
-            <h2 className="text-lg md:text-2xl font-bold mb-3 md:mb-4">Open Mystery Box?</h2>
-            <p className="mb-4 text-sm md:text-base">
-              This will cost you <span className="font-bold text-yellow-600">{MYSTERY_BOX_PRICE} coins</span>
-            </p>
-            <p className="text-xs md:text-sm text-gray-600 mb-4">
-              You'll receive a random prize based on rarity!
-            </p>
-            <div className="flex gap-3 md:gap-4">
-              <button 
-                onClick={() => setMysteryBoxModal({ visible: false, stage: 'confirm' })} 
-                className="flex-1 py-2 md:py-3 border rounded-lg hover:bg-gray-50 text-sm md:text-base"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={confirmMysteryBoxPurchase} 
-                className="flex-1 py-2 md:py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 text-sm md:text-base"
-              >
-                Open It!
-              </button>
-            </div>
-          </div>
-        </div>
-      );
-    }
-    
-    if (mysteryBoxModal.stage === 'opening') {
-      return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm text-center p-6 md:p-8">
-            <div className={`text-6xl md:text-8xl mb-4 ${isSpinning ? 'animate-spin' : ''}`}>🎁</div>
-            <h2 className="text-xl md:text-2xl font-bold mb-2">Opening Mystery Box...</h2>
-            <p className="text-purple-600 text-sm md:text-base">✨ Preparing your surprise! ✨</p>
-          </div>
-        </div>
-      );
-    }
-    
-    if (mysteryBoxModal.stage === 'reveal' && mysteryBoxPrize) {
-      const rarityColor = getRarityColor(mysteryBoxPrize.rarity);
-      const rarityBg = getRarityBg(mysteryBoxPrize.rarity);
-      
-      return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md text-center p-4 md:p-6">
-            <div className="text-4xl md:text-5xl mb-4">🎉</div>
-            <h2 className="text-lg md:text-2xl font-bold mb-3 md:mb-4">You Won!</h2>
-            
-            <div className={`${rarityBg} border-2 ${rarityColor} rounded-xl p-4 md:p-6 mb-4`}>
-              {mysteryBoxPrize.type === 'avatar' && (
-                <img
-                  src={mysteryBoxPrize.item.path}
-                  alt={mysteryBoxPrize.displayName}
-                  className="w-20 h-20 md:w-24 md:h-24 rounded-full mx-auto mb-3 border-4 border-white"
-                  onError={(e) => {
-                    e.target.src = '/shop/Basic/Banana.png';
-                  }}
-                />
-              )}
-              {mysteryBoxPrize.type === 'pet' && (
-                <img
-                  src={mysteryBoxPrize.item.path}
-                  alt={mysteryBoxPrize.displayName}
-                  className="w-20 h-20 md:w-24 md:h-24 rounded-full mx-auto mb-3 border-4 border-white"
-                  onError={(e) => {
-                    e.target.src = '/shop/BasicPets/Wizard.png';
-                  }}
-                />
-              )}
-              {mysteryBoxPrize.type === 'egg' && (
-                <div
-                  className="w-24 h-24 md:w-28 md:h-28 mx-auto mb-3 rounded-full flex items-center justify-center shadow-inner"
-                  style={{
-                    background: `radial-gradient(circle at 30% 30%, ${getEggAccent(mysteryBoxPrize.eggType)}33, #ffffff)`,
-                    border: `4px solid ${getEggAccent(mysteryBoxPrize.eggType)}`
-                  }}
-                >
-                  <span className="text-4xl md:text-5xl">🥚</span>
-                </div>
-              )}
-              {mysteryBoxPrize.type === 'reward' && (
-                <div className="text-4xl md:text-5xl mb-3">{mysteryBoxPrize.item.icon || '🎁'}</div>
-              )}
-              {(mysteryBoxPrize.type === 'xp' || mysteryBoxPrize.type === 'coins') && (
-                <div className="text-4xl md:text-5xl mb-3">{mysteryBoxPrize.icon}</div>
-              )}
-              {mysteryBoxPrize.type === 'card_pack' && (() => {
-                const pack = mysteryBoxPrize.pack;
-                return (
-                  <div
-                    className="rounded-2xl px-4 py-5 text-white"
-                    style={{
-                      background: pack.visual?.gradient || 'linear-gradient(135deg,#3730a3,#7c3aed)',
-                      boxShadow: `0 0 30px ${pack.visual?.glow || 'rgba(124,58,237,0.45)'}`
-                    }}
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-sm uppercase tracking-widest text-white/70">
-                          {CARD_RARITY_STYLES[pack.rarity]?.label || pack.rarity} Pack
-                        </p>
-                        <p className="text-lg font-bold">{pack.name}</p>
-                      </div>
-                      <span className="text-4xl drop-shadow-xl">{pack.icon || '🃏'}</span>
-                    </div>
-                    <p className="text-sm text-white/80 mt-2">
-                      Contains {pack.minCards}-{pack.maxCards} trading cards.
-                    </p>
-                  </div>
-                );
-              })()}
-
-              <h3 className="text-base md:text-xl font-bold mb-1">{mysteryBoxPrize.displayName}</h3>
-              <p className={`text-xs md:text-sm font-semibold ${rarityColor} uppercase`}>
-                {mysteryBoxPrize.rarity} Rarity
-              </p>
-              {mysteryBoxPrize.type === 'egg' && (
-                <p className="text-xs md:text-sm text-gray-600 mt-2">
-                  {mysteryBoxPrize.eggType?.description || 'Keep this egg safe while it incubates. It will hatch into a surprise pet!'}
-                </p>
-              )}
-            </div>
-
-            <button
-              onClick={collectMysteryBoxPrize} 
-              className="w-full py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 font-bold text-base md:text-lg"
-            >
-              Collect Prize!
-            </button>
-          </div>
-        </div>
-      );
-    }
-    
-    return null;
-  };
-
-  const renderSellModal = () => {
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm text-center p-4 md:p-6">
-          <h2 className="text-lg md:text-2xl font-bold mb-3 md:mb-4 text-red-600">Sell Item?</h2>
-          <p className="mb-4 text-sm md:text-base">
-            Sell this item for <span className="font-bold text-green-600">💰{sellModal.price} coins</span>?
-          </p>
-          <p className="text-xs text-gray-500 mb-4">This action cannot be undone!</p>
-          <div className="flex gap-3 md:gap-4">
-            <button 
-              onClick={() => setSellModal({ visible: false, item: null, type: null, price: 0 })} 
-              className="flex-1 py-2 md:py-3 border rounded-lg hover:bg-gray-50 text-sm md:text-base"
-            >
-              Cancel
-            </button>
-            <button 
-              onClick={confirmSell} 
-              className="flex-1 py-2 md:py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 text-sm md:text-base"
-            >
-              Sell Item
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const renderHatchCelebrationModal = () => {
-    if (!hatchingCelebration) return null;
-
-    const { pet, egg } = hatchingCelebration;
-    const accent = getEggAccent(egg);
-    const rarityColor = getRarityColor(pet.rarity);
-    const rarityBg = getRarityBg(pet.rarity);
-
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md text-center p-6 md:p-8 relative overflow-hidden">
-          <div className="absolute inset-0 pointer-events-none">
-            {[...Array(24)].map((_, index) => (
-              <div
-                key={index}
-                className="absolute w-2 h-2 bg-yellow-400 rounded-full animate-ping"
-                style={{
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`,
-                  animationDelay: `${Math.random() * 1.5}s`
-                }}
-              ></div>
-            ))}
-          </div>
-
-          <div className="text-5xl md:text-6xl mb-4 animate-bounce">🐣</div>
-          <h2 className="text-xl md:text-2xl font-bold mb-2">A New Friend Appeared!</h2>
-          <p className="text-sm md:text-base text-gray-600 mb-4">
-            Your <span className="font-semibold" style={{ color: accent }}>{egg.name}</span> hatched into a
-            {pet.rarity ? ` ${pet.rarity.toUpperCase()}` : ''} baby pet!
-          </p>
-
-          <div className={`${rarityBg} border-2 ${rarityColor} rounded-2xl p-4 md:p-6 mb-4 relative`}
-               style={{ borderColor: `${accent}66` }}>
-            <div className="absolute -top-6 left-1/2 transform -translate-x-1/2">
-              <div
-                className="w-14 h-14 rounded-full flex items-center justify-center shadow-lg"
-                style={{ background: `radial-gradient(circle at 30% 30%, ${accent}33, #ffffff)`, border: `4px solid ${accent}` }}
-              >
-                <span className="text-3xl">✨</span>
-              </div>
-            </div>
-            <img
-              src={pet.path}
-              alt={pet.name}
-              className="w-24 h-24 md:w-28 md:h-28 mx-auto mb-3 object-contain"
-              onError={(e) => {
-                e.target.src = '/shop/BasicPets/Wizard.png';
-              }}
-            />
-            <p className="text-lg md:text-xl font-bold mb-1">{pet.name}</p>
-            <p className={`text-xs md:text-sm uppercase font-semibold ${rarityColor}`}>{pet.rarity || 'special'} hatchling</p>
-          </div>
-
-          <button
-            onClick={() => setHatchingCelebration(null)}
-            className="w-full py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 font-bold text-base md:text-lg"
-          >
-            Awesome!
-          </button>
-        </div>
-      </div>
-    );
-  };
-
-  const renderShopItems = () => {
-    if (activeCategory === 'mysterybox') {
-      return renderMysteryBox();
-    }
-
-    if (activeCategory === 'loot_well') {
-      return renderLootWell();
-    }
 
     let items = [];
     let itemType = '';
@@ -2889,21 +2691,81 @@ const StudentShop = ({
     });
   };
 
+
   return (
-    <div className="space-y-4 md:space-y-6">
-      {/* Header - Mobile Optimized */}
-      <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl p-4 md:p-6 shadow-lg">
-        <div className="flex items-center justify-between">
-          <div className="flex-1">
-            <h2 className="text-xl md:text-3xl font-bold mb-1">🛍️ Shop</h2>
-            <p className="text-blue-100 text-sm md:text-base">Spend your coins on awesome items!</p>
+    <div className="space-y-6">
+      <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+        <div className="flex flex-col gap-6 p-6 md:flex-row md:items-center md:justify-between md:p-8">
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-100 text-2xl">🛒</span>
+              <div>
+                <h2 className="text-2xl font-semibold text-slate-900 md:text-3xl">Student Shop</h2>
+                <p className="text-sm text-slate-500 md:text-base">
+                  Discover avatars, pets, card packs, and class rewards in a clean, mobile-friendly layout.
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2 text-xs text-slate-500 md:text-sm">
+              <span className="flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1">
+                <span className="text-slate-600">⭐</span>Premium releases from your teacher appear here instantly.
+              </span>
+              <span className="flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1">
+                <span className="text-slate-600">🪙</span>Spend coins earned across lessons and games.
+              </span>
+            </div>
           </div>
-          <div className="bg-white bg-opacity-20 rounded-lg px-3 py-2 md:px-4 md:py-3">
-            <div className="text-xs md:text-sm text-blue-100">Your Coins</div>
-            <div className="text-xl md:text-2xl font-bold">💰 {currentCoins}</div>
+          <div className="flex w-full flex-col gap-3 rounded-3xl bg-slate-900 p-5 text-white md:w-auto">
+            <div className="text-xs uppercase tracking-widest text-white/60">Coins available</div>
+            <div className="text-3xl font-bold md:text-4xl">💰 {currentCoins}</div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setInventoryModal({ visible: true })}
+                className="flex-1 rounded-xl bg-white/10 px-4 py-2 text-sm font-semibold transition hover:bg-white/20 md:flex-none"
+              >
+                🎒 Inventory
+              </button>
+              <button
+                onClick={() => setCardBookVisible(true)}
+                className="flex-1 rounded-xl bg-white/10 px-4 py-2 text-sm font-semibold transition hover:bg-white/20 md:flex-none"
+              >
+                📖 Card Book
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+        <div className="space-y-4 border-t border-slate-200 bg-slate-50/60 p-4 md:px-8 md:py-6">
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setActiveCategory('card_packs')}
+              className="flex items-center gap-2 rounded-full border border-indigo-200 bg-white px-4 py-2 text-sm font-semibold text-indigo-600 transition hover:border-indigo-300 hover:bg-indigo-50"
+            >
+              🃏 Featured Card Packs
+            </button>
+            <button
+              onClick={() => setShowSellMode(!showSellMode)}
+              className={"flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition " + (showSellMode
+                ? 'border border-rose-200 bg-rose-50 text-rose-600'
+                : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-100')}
+            >
+              💵 {showSellMode ? 'Selling enabled' : 'Enable sell mode'}
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {categories.map(cat => (
+              <button
+                key={cat.id}
+                onClick={() => setActiveCategory(cat.id)}
+                className={"rounded-full px-4 py-2 text-sm font-semibold transition " + (activeCategory === cat.id
+                  ? 'bg-slate-900 text-white shadow-sm'
+                  : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-100')}
+              >
+                {cat.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {renderTradingCardShowcase()}
 
@@ -2925,8 +2787,7 @@ const StudentShop = ({
                     </p>
                     {(offeredName || requestedName) && (
                       <p className="text-xs md:text-sm text-amber-700 mt-1">
-                        You offered <span className="font-semibold">{offeredName}</span>{' '}
-                        for <span className="font-semibold">{requestedName}</span>.
+                        You offered <span className="font-semibold">{offeredName}</span> for <span className="font-semibold">{requestedName}</span>.
                       </p>
                     )}
                   </div>
@@ -2934,11 +2795,7 @@ const StudentShop = ({
                     <button
                       onClick={handleCancelTradeRequest}
                       disabled={respondingTradeId === outgoingTradeRequest.id}
-                      className={`px-3 py-2 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-semibold transition ${
-                        respondingTradeId === outgoingTradeRequest.id
-                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                          : 'bg-amber-500 text-white hover:bg-amber-600'
-                      }`}
+                      className={`px-3 py-2 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-semibold transition ${respondingTradeId === outgoingTradeRequest.id ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-amber-500 text-white hover:bg-amber-600'}`}
                     >
                       Cancel Request
                     </button>
@@ -2964,31 +2821,21 @@ const StudentShop = ({
                       Trade request from {fromName}
                     </p>
                     <p className="text-xs md:text-sm text-blue-700">
-                      {fromName} wants to trade their{' '}
-                      <span className="font-semibold">{offeredName}</span>{' '}
-                      for your <span className="font-semibold">{requestedName}</span>.
+                      {fromName} wants to trade their <span className="font-semibold">{offeredName}</span> for your <span className="font-semibold">{requestedName}</span>.
                     </p>
                   </div>
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleIncomingTradeDecision(request, 'reject')}
                       disabled={respondingTradeId === request.id}
-                      className={`px-3 py-2 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-semibold transition ${
-                        respondingTradeId === request.id
-                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                          : 'bg-white text-blue-700 border border-blue-300 hover:bg-blue-100'
-                      }`}
+                      className={`px-3 py-2 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-semibold transition ${respondingTradeId === request.id ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-white text-blue-700 border border-blue-300 hover:bg-blue-100'}`}
                     >
                       Reject
                     </button>
                     <button
                       onClick={() => handleIncomingTradeDecision(request, 'accept')}
                       disabled={respondingTradeId === request.id}
-                      className={`px-3 py-2 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-semibold transition ${
-                        respondingTradeId === request.id
-                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                          : 'bg-blue-600 text-white hover:bg-blue-700'
-                      }`}
+                      className={`px-3 py-2 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-semibold transition ${respondingTradeId === request.id ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
                     >
                       Accept
                     </button>
@@ -3000,92 +2847,25 @@ const StudentShop = ({
         </div>
       )}
 
-      {/* Quick Actions - Mobile Optimized */}
-      <div className="flex gap-2 md:gap-3 overflow-x-auto pb-2">
-        <button
-          onClick={() => setInventoryModal({ visible: true })}
-          className="flex-shrink-0 bg-purple-500 text-white px-4 py-2 md:px-6 md:py-3 rounded-lg font-semibold hover:bg-purple-600 transition-all text-sm md:text-base"
-        >
-          🎒 My Inventory
-        </button>
-        <button
-          onClick={() => setCardBookVisible(true)}
-          className="flex-shrink-0 bg-slate-900 text-white px-4 py-2 md:px-6 md:py-3 rounded-lg font-semibold hover:bg-slate-800 transition-all text-sm md:text-base"
-        >
-          📖 Card Book
-        </button>
-        <button
-          onClick={() => setActiveCategory('card_packs')}
-          className="flex-shrink-0 bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-4 py-2 md:px-6 md:py-3 rounded-lg font-semibold hover:shadow-lg transition-all text-sm md:text-base"
-        >
-          🃏 Card Packs
-        </button>
-        <button
-          onClick={() => setShowSellMode(!showSellMode)}
-          className={`flex-shrink-0 px-4 py-2 md:px-6 md:py-3 rounded-lg font-semibold transition-all text-sm md:text-base ${
-            showSellMode
-              ? 'bg-red-500 text-white hover:bg-red-600'
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-          }`}
-        >
-          💵 {showSellMode ? 'Stop Selling' : 'Sell Items'}
-        </button>
-      </div>
-
-      {/* Shop Content - Mobile Optimized */}
-      <div className="bg-white rounded-xl shadow-lg p-4 md:p-6">
-        {/* Category Tabs - Mobile Optimized */}
-        <div className="flex overflow-x-auto gap-2 mb-4 md:mb-6 pb-2 scrollbar-hide">
-          {categories.map(cat => (
-            <button
-              key={cat.id}
-              onClick={() => setActiveCategory(cat.id)}
-              className={`flex-shrink-0 px-3 py-2 md:px-4 md:py-2 rounded-lg font-semibold transition-all text-xs md:text-sm ${
-                activeCategory === cat.id
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              <span className="md:hidden">{cat.shortName}</span>
-              <span className="hidden md:inline">{cat.name}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Special Header for Mystery Box Section */}
+      <section className="rounded-3xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm">
         {activeCategory === 'mysterybox' && (
-          <div className="mb-4 md:mb-6 p-3 md:p-4 bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg border-2 border-purple-200">
+          <div className="mb-4 md:mb-6 rounded-2xl border border-purple-200 bg-gradient-to-r from-purple-50 to-pink-50 p-4">
             <div className="flex items-center gap-3">
               <div className="text-2xl md:text-3xl">🎁</div>
               <div>
-                <h3 className="text-lg md:text-xl font-bold text-purple-800">Mystery Box Adventure!</h3>
-                <p className="text-purple-600 text-sm md:text-base">Take a chance and discover amazing surprises including Halloween items!</p>
+                <h3 className="text-lg md:text-xl font-semibold text-purple-800">Mystery Box Adventure</h3>
+                <p className="text-sm text-purple-600 md:text-base">Unlock random avatars, pets, eggs, coins, and XP with every box.</p>
               </div>
             </div>
           </div>
         )}
 
-        {activeCategory === 'loot_well' && (
-          <div className="mb-4 md:mb-6 p-3 md:p-4 bg-gradient-to-r from-sky-100 via-indigo-100 to-purple-100 rounded-lg border-2 border-sky-200">
-            <div className="flex items-center gap-3">
-              <div className="text-2xl md:text-3xl">💠</div>
-              <div>
-                <h3 className="text-lg md:text-xl font-bold text-indigo-800">The Loot Well is overflowing!</h3>
-                <p className="text-indigo-600 text-sm md:text-base">Dip into the well once every hour for a rare chance at dazzling rewards.</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className={`grid gap-3 md:gap-4 ${
-          activeCategory === 'mysterybox' || activeCategory === 'loot_well'
-            ? 'grid-cols-1'
-            : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
-        }`}>
+        <div className={`grid gap-4 ${activeCategory === 'mysterybox' ? 'grid-cols-1' : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'}`}>
           {renderShopItems()}
         </div>
-      </div>
+      </section>
 
+      {/* Purchase Modal */}
       {/* Purchase Modal - Mobile Optimized */}
       {purchaseModal.visible && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">

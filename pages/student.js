@@ -8,7 +8,7 @@ import { collection, query, where, getDocs, doc, getDoc, updateDoc } from 'fireb
 import { verifyStudentPasswordDirect, getDefaultPassword } from '../utils/passwordHelpers';
 
 // Import reusable components
-import StudentShop from '../components/student/StudentShop';
+import StudentShop, { StudentLootWellSection } from '../components/student/StudentShop';
 import StudentGames from '../components/student/StudentGames';
 import StudentDashboard from '../components/student/StudentDashboard';
 import StudentSpelling from '../components/student/StudentSpelling';
@@ -1912,26 +1912,41 @@ const StudentPortal = () => {
       
       case 'shop':
         return (
-          <StudentShop
-            studentData={studentData}
-            updateStudentData={updateStudentData}
-            showToast={showToast}
-            getAvatarImage={getAvatarImage}
-            getPetImage={getPetImage}
-            calculateCoins={calculateCoins}
-            calculateAvatarLevel={calculateAvatarLevel}
-            SHOP_BASIC_AVATARS={shopInventory.basicAvatars}
-            SHOP_PREMIUM_AVATARS={shopInventory.premiumAvatars}
-            SHOP_BASIC_PETS={shopInventory.basicPets}
-            SHOP_PREMIUM_PETS={shopInventory.premiumPets}
-            HALLOWEEN_BASIC_AVATARS={HALLOWEEN_BASIC_AVATARS}
-            HALLOWEEN_PREMIUM_AVATARS={HALLOWEEN_PREMIUM_AVATARS}
-            HALLOWEEN_PETS={HALLOWEEN_PETS}
-            classRewards={classData?.classRewards || []}
-            classmates={availableStudents}
-            classData={classData}
-            performClassmateTrade={tradeWithClassmate}
-          />
+          <div className="space-y-6">
+            <StudentLootWellSection
+              studentData={studentData}
+              updateStudentData={updateStudentData}
+              showToast={showToast}
+              SHOP_BASIC_AVATARS={shopInventory.basicAvatars}
+              SHOP_PREMIUM_AVATARS={shopInventory.premiumAvatars}
+              SHOP_BASIC_PETS={shopInventory.basicPets}
+              SHOP_PREMIUM_PETS={shopInventory.premiumPets}
+              HALLOWEEN_BASIC_AVATARS={HALLOWEEN_BASIC_AVATARS}
+              HALLOWEEN_PREMIUM_AVATARS={HALLOWEEN_PREMIUM_AVATARS}
+              HALLOWEEN_PETS={HALLOWEEN_PETS}
+              classRewards={classData?.classRewards || []}
+            />
+            <StudentShop
+              studentData={studentData}
+              updateStudentData={updateStudentData}
+              showToast={showToast}
+              getAvatarImage={getAvatarImage}
+              getPetImage={getPetImage}
+              calculateCoins={calculateCoins}
+              calculateAvatarLevel={calculateAvatarLevel}
+              SHOP_BASIC_AVATARS={shopInventory.basicAvatars}
+              SHOP_PREMIUM_AVATARS={shopInventory.premiumAvatars}
+              SHOP_BASIC_PETS={shopInventory.basicPets}
+              SHOP_PREMIUM_PETS={shopInventory.premiumPets}
+              HALLOWEEN_BASIC_AVATARS={HALLOWEEN_BASIC_AVATARS}
+              HALLOWEEN_PREMIUM_AVATARS={HALLOWEEN_PREMIUM_AVATARS}
+              HALLOWEEN_PETS={HALLOWEEN_PETS}
+              classRewards={classData?.classRewards || []}
+              classmates={availableStudents}
+              classData={classData}
+              performClassmateTrade={tradeWithClassmate}
+            />
+          </div>
         );
       
       case 'games':

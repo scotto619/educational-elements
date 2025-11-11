@@ -1196,44 +1196,82 @@ const ShopTab = ({
   );
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      {/* MOBILE-OPTIMIZED Student Selector */}
-      <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg">
-        <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">🛒 Select a Champion to Shop</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2 sm:gap-3">
-          {students.map(student => (
-            <button key={student.id} onClick={() => setSelectedStudentId(student.id)} className={`p-2 sm:p-3 rounded-lg border-2 transition-all ${selectedStudentId === student.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300'}`}>
-              <img src={getAvatarImage(student.avatarBase, calculateAvatarLevel(student.totalPoints))} alt={student.firstName} className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full mx-auto mb-1 sm:mb-2"/>
-              <p className="text-xs sm:text-sm font-semibold truncate">{student.firstName}</p>
-              <p className="text-xs text-yellow-600">💰 {calculateCoins(student)}</p>
-            </button>
-          ))}
-        </div>
-        {selectedStudent && (
-          <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="flex items-center gap-3 sm:gap-4">
-                <img src={getAvatarImage(selectedStudent.avatarBase, calculateAvatarLevel(selectedStudent.totalPoints))} className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full border-2 border-white shadow-lg"/>
-                <div className="text-center sm:text-left">
-                    <h4 className="text-base sm:text-lg font-bold text-gray-800">{selectedStudent.firstName} is shopping</h4>
-                    <p className="font-semibold text-yellow-700 text-sm sm:text-base">💰 {calculateCoins(selectedStudent)} coins available</p>
-                </div>
+    <div className="space-y-6">
+      <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+        <div className="space-y-6 p-4 sm:p-6 md:p-8">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h3 className="text-xl font-semibold text-slate-900 md:text-2xl">Select a champion to manage</h3>
+              <p className="text-sm text-slate-500 md:text-base">Choose a student to review their balance, inventory, and purchasing options.</p>
             </div>
-            <div className="flex gap-2">
-              <button onClick={() => setInventoryModal({ visible: true })} className="bg-purple-600 text-white font-semibold px-4 sm:px-5 py-2 sm:py-3 rounded-lg hover:bg-purple-700 shadow-md text-sm sm:text-base">View Inventory</button>
-              <button 
-                onClick={() => setShowSellMode(!showSellMode)} 
-                className={`font-semibold px-3 sm:px-4 py-2 sm:py-3 rounded-lg shadow-md text-sm sm:text-base transition-all ${showSellMode ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-green-500 text-white hover:bg-green-600'}`}
-              >
-                {showSellMode ? '❌ Cancel Sell' : '💸 Sell Mode'}
-              </button>
+            <div className="flex flex-wrap gap-2 text-xs text-slate-500 md:text-sm">
+              <span className="rounded-full bg-slate-100 px-3 py-1">Track coins, pets, and rewards without leaving this page.</span>
+              <span className="rounded-full bg-slate-100 px-3 py-1">Tap a name to preview their shop experience.</span>
             </div>
           </div>
-        )}
-      </div>
+
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
+            {students.map(student => (
+              <button
+                key={student.id}
+                onClick={() => setSelectedStudentId(student.id)}
+                className={`group rounded-2xl border px-3 py-3 text-center transition ${selectedStudentId === student.id ? 'border-blue-500 bg-blue-50 shadow-sm' : 'border-slate-200 bg-white hover:border-blue-300 hover:bg-blue-50'}`}
+              >
+                <img
+                  src={getAvatarImage(student.avatarBase, calculateAvatarLevel(student.totalPoints))}
+                  alt={student.firstName}
+                  className="mx-auto mb-2 h-14 w-14 rounded-full border border-slate-200 object-cover transition group-hover:border-blue-400 sm:h-16 sm:w-16"
+                />
+                <p className="text-xs font-semibold text-slate-700 sm:text-sm">{student.firstName}</p>
+                <p className="text-xs text-amber-600">💰 {calculateCoins(student)}</p>
+              </button>
+            ))}
+          </div>
+
+          {selectedStudent && (
+            <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 md:flex-row md:items-center md:justify-between">
+              <div className="flex items-center gap-4">
+                <img
+                  src={getAvatarImage(selectedStudent.avatarBase, calculateAvatarLevel(selectedStudent.totalPoints))}
+                  className="h-16 w-16 rounded-full border-4 border-white shadow-lg"
+                  alt={`${selectedStudent.firstName}'s avatar`}
+                />
+                <div>
+                  <h4 className="text-lg font-semibold text-slate-900">{selectedStudent.firstName} {selectedStudent.lastName}</h4>
+                  <p className="text-sm text-slate-500">Balance: <span className="font-semibold text-amber-600">💰 {calculateCoins(selectedStudent)} coins</span></p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setInventoryModal({ visible: true })}
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-100"
+                >
+                  🎒 View inventory
+                </button>
+                <button
+                  onClick={() => setShowSellMode(!showSellMode)}
+                  className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${showSellMode ? 'bg-rose-500 text-white hover:bg-rose-600' : 'bg-emerald-500 text-white hover:bg-emerald-600'}`}
+                >
+                  {showSellMode ? 'Disable sell mode' : 'Enable sell mode'}
+                </button>
+                {activeCategory === 'rewards' && (
+                  <button
+                    onClick={() => setShowRewardManager(true)}
+                    className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-100"
+                  >
+                    🛠️ Manage rewards
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
 
       {/* MOBILE-OPTIMIZED Shop Interface */}
       {selectedStudent && (
-        <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg">
+        <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm p-4 sm:p-6 md:p-8">
+          <div className="space-y-6">
             {/* Sell Mode Banner */}
             {showSellMode && (
               <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-gradient-to-r from-green-100 to-yellow-100 rounded-lg border-2 border-green-300">
@@ -1248,37 +1286,16 @@ const ShopTab = ({
             )}
 
             {/* MOBILE-FRIENDLY Category Tabs */}
-            <div className="flex space-x-1 sm:space-x-2 border-b pb-3 sm:pb-4 mb-4 overflow-x-auto">
-                {SHOP_CATEGORIES.map(cat => (
-                    <button 
-                      key={cat.id} 
-                      onClick={() => setActiveCategory(cat.id)} 
-                      className={`px-2 sm:px-4 py-2 rounded-lg font-semibold whitespace-nowrap text-xs sm:text-sm ${
-                        activeCategory === cat.id 
-                          ? cat.id === 'halloween'
-                            ? 'bg-gradient-to-r from-orange-500 to-purple-600 text-white'
-                            : cat.id === 'featured' 
-                            ? 'bg-red-500 text-white' 
-                            : cat.id === 'mysterybox'
-                            ? 'bg-purple-500 text-white'
-                            : 'bg-blue-500 text-white'
-                          : 'bg-gray-100'
-                      }`}
-                    >
-                      <span className="sm:hidden">{cat.shortName}</span>
-                      <span className="hidden sm:inline">{cat.name}</span>
-                    </button>
-                ))}
-                
-                {/* Manage Rewards Button */}
-                {activeCategory === 'rewards' && (
-                  <button 
-                    onClick={() => setShowRewardManager(true)}
-                    className="px-2 sm:px-4 py-2 rounded-lg font-semibold bg-green-500 text-white hover:bg-green-600 ml-2 sm:ml-4 text-xs sm:text-sm whitespace-nowrap"
-                  >
-                    🛠️ <span className="hidden sm:inline">Manage</span>
-                  </button>
-                )}
+            <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-4">
+              {SHOP_CATEGORIES.map(cat => (
+                <button
+                  key={cat.id}
+                  onClick={() => setActiveCategory(cat.id)}
+                  className={`rounded-full px-4 py-2 text-sm font-semibold transition ${activeCategory === cat.id ? 'bg-slate-900 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-100'}`}
+                >
+                  {cat.name}
+                </button>
+              ))}
             </div>
             
             {/* SPECIAL HEADER FOR HALLOWEEN SECTION */}
@@ -1332,7 +1349,8 @@ const ShopTab = ({
             }`}>
               {renderShopItems()}
             </div>
-        </div>
+          </div>
+        </section>
       )}
 
       {/* MOBILE-OPTIMIZED Purchase Modal */}
