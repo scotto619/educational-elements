@@ -303,6 +303,7 @@ const ShopTab = ({
   const [activeCategory, setActiveCategory] = useState('halloween'); // DEFAULT TO HALLOWEEN!
   const [purchaseModal, setPurchaseModal] = useState({ visible: false, item: null, type: null });
   const [inventoryModal, setInventoryModal] = useState({ visible: false });
+  const [inventoryView, setInventoryView] = useState('overview');
   
   // Mystery Box states
   const [mysteryBoxModal, setMysteryBoxModal] = useState({ visible: false, stage: 'confirm' });
@@ -328,10 +329,22 @@ const ShopTab = ({
 
   const selectedStudent = students.find(s => s.id === selectedStudentId);
 
+  const studentCoins = selectedStudent ? calculateCoins(selectedStudent) : 0;
+  const ownedAvatarsCount = selectedStudent?.ownedAvatars?.length || 0;
+  const ownedPetsCount = selectedStudent?.ownedPets?.length || 0;
+  const rewardCount = selectedStudent?.rewardsPurchased?.length || 0;
+
   const selectedStudentEggs = useMemo(
     () => selectedStudent?.petEggs || [],
     [selectedStudent?.petEggs]
   );
+  const eggCount = selectedStudentEggs.length;
+
+  useEffect(() => {
+    if (inventoryModal.visible) {
+      setInventoryView('overview');
+    }
+  }, [inventoryModal.visible]);
 
   useEffect(() => {
     if (!selectedStudentId || !selectedStudentEggs.length) return;
@@ -390,6 +403,32 @@ const ShopTab = ({
     currentRewards,
     seasonalItems
   ]);
+
+  const classCoinStats = useMemo(() => {
+    if (!students?.length) {
+      return { total: 0, average: 0, topStudent: null, topCoins: 0 };
+    }
+
+    const summary = students.reduce(
+      (acc, student) => {
+        const coins = calculateCoins(student);
+        acc.total += coins;
+        if (coins > acc.topCoins) {
+          acc.topCoins = coins;
+          acc.topStudent = student;
+        }
+        return acc;
+      },
+      { total: 0, topCoins: 0, topStudent: null }
+    );
+
+    return {
+      total: summary.total,
+      average: Math.round(summary.total / students.length),
+      topStudent: summary.topStudent,
+      topCoins: summary.topCoins
+    };
+  }, [students, calculateCoins]);
 
   // ===============================================
   // MYSTERY BOX FUNCTIONS
@@ -736,17 +775,443 @@ const ShopTab = ({
     onUpdateStudent(selectedStudent.id, updates);
   };
 
-  // UPDATED SHOP CATEGORIES TO INCLUDE HALLOWEEN FIRST
-  const SHOP_CATEGORIES = [
-      { id: 'halloween', name: '🎃 Halloween Special', shortName: '🎃 Halloween' },
-      { id: 'featured', name: '⭐ Featured Items', shortName: 'Featured' },
-      { id: 'mysterybox', name: '🎁 Mystery Box', shortName: 'Mystery' },
-      { id: 'basic_avatars', name: 'Basic Avatars', shortName: 'Basic' },
-      { id: 'premium_avatars', name: 'Premium Avatars', shortName: 'Premium' },
-      { id: 'basic_pets', name: 'Basic Pets', shortName: 'Pets' },
-      { id: 'premium_pets', name: 'Premium Pets', shortName: 'Pets+' },
-      { id: 'rewards', name: 'Class Rewards', shortName: 'Rewards' }
-  ];
+  const shopCategories = useMemo(() => {
+    const halloweenCount = seasonalItems.length;
+
+    return [
+      {
+        id: 'halloween',
+        name: 'Halloween Vault',
+        icon: '🎃',
+        accent: 'from-orange-500 via-purple-500 to-amber-500',
+        description: 'Limited-time spooky avatars and pets ready for your classroom.',
+        badge: halloweenCount ? `${halloweenCount} items` : 'Seasonal',
+        cta: 'Browse treats'
+      },
+      {
+        id: 'featured',
+        name: 'Daily Spotlight',
+        icon: '⭐',
+        accent: 'from-red-500 via-orange-500 to-yellow-500',
+        description: 'Flash deals curated to excite your students.',
+        badge: featuredItems.length ? `${featuredItems.length} deals` : 'Auto picks',
+        cta: 'View offers'
+      },
+      {
+        id: 'mysterybox',
+        name: 'Mystery Box',
+        icon: '🎁',
+        accent: 'from-pink-500 via-purple-500 to-indigo-500',
+        description: 'Surprise students with a spin of the magical reward wheel.',
+        badge: `Cost ${MYSTERY_BOX_PRICE} coins`,
+        cta: 'Spin the box'
+      },
+      {
+        id: 'basic_avatars',
+        name: 'Classroom Avatars',
+        icon: '🧑‍🏫',
+        accent: 'from-blue-500 via-sky-500 to-teal-500',
+        description: 'Reliable heroes for every learner to express themselves.',
+        badge: ownedAvatarsCount ? `${ownedAvatarsCount} owned` : `${SHOP_BASIC_AVATARS.length} styles`,
+        cta: 'Equip favourites'
+      },
+      {
+        id: 'premium_avatars',
+        name: 'Premium Avatars',
+        icon: '👑',
+        accent: 'from-fuchsia-500 via-purple-500 to-rose-500',
+        description: 'Shimmering legends with premium animations and flair.',
+        badge: `${SHOP_PREMIUM_AVATARS.length} elite`,
+        cta: 'Unlock prestige'
+      },
+      {
+        id: 'basic_pets',
+        name: 'Pet Playground',
+        icon: '🐾',
+        accent: 'from-emerald-500 via-teal-500 to-cyan-500',
+        description: 'Friendly classroom companions to motivate learners.',
+        badge: ownedPetsCount ? `${ownedPetsCount} pals` : `${SHOP_BASIC_PETS.length} pals`,
+        cta: 'Adopt a buddy'
+      },
+      {
+        id: 'premium_pets',
+        name: 'Mythic Pets',
+        icon: '🐉',
+        accent: 'from-violet-500 via-indigo-500 to-slate-600',
+        description: 'Mythical companions with rare sparkle effects.',
+        badge: `${SHOP_PREMIUM_PETS.length} rare`,
+        cta: 'Summon magic'
+      },
+      {
+        id: 'rewards',
+        name: 'Class Rewards',
+        icon: '🏆',
+        accent: 'from-yellow-500 via-orange-500 to-red-500',
+        description: 'Create unforgettable experiences as students invest coins.',
+        badge: rewardCount ? `${rewardCount} claimed` : `${currentRewards.length} available`,
+        cta: 'Manage perks'
+      }
+    ];
+  }, [
+    SHOP_BASIC_AVATARS,
+    SHOP_PREMIUM_AVATARS,
+    SHOP_BASIC_PETS,
+    SHOP_PREMIUM_PETS,
+    currentRewards,
+    featuredItems,
+    ownedAvatarsCount,
+    ownedPetsCount,
+    rewardCount,
+    seasonalItems
+  ]);
+
+  const activeCategoryMeta = useMemo(
+    () => shopCategories.find(cat => cat.id === activeCategory) || shopCategories[0],
+    [shopCategories, activeCategory]
+  );
+
+  const inventorySections = useMemo(
+    () => [
+      {
+        id: 'overview',
+        name: 'Overview',
+        icon: '🧭',
+        accent: 'from-slate-900 via-slate-800 to-slate-900',
+        badge: 'Summary'
+      },
+      {
+        id: 'avatars',
+        name: 'Avatar Closet',
+        icon: '🧑‍🎨',
+        accent: 'from-blue-500 via-sky-500 to-teal-500',
+        badge: ownedAvatarsCount ? `${ownedAvatarsCount} owned` : 'No avatars yet'
+      },
+      {
+        id: 'pets',
+        name: 'Pet Sanctuary',
+        icon: '🐾',
+        accent: 'from-emerald-500 via-teal-500 to-cyan-500',
+        badge: ownedPetsCount ? `${ownedPetsCount} companions` : 'Adopt a pet'
+      },
+      {
+        id: 'eggs',
+        name: 'Egg Incubator',
+        icon: '🥚',
+        accent: 'from-amber-500 via-orange-500 to-pink-500',
+        badge: eggCount ? `${eggCount} incubating` : 'No eggs yet'
+      },
+      {
+        id: 'rewards',
+        name: 'Rewards Vault',
+        icon: '🏆',
+        accent: 'from-yellow-500 via-orange-500 to-red-500',
+        badge: rewardCount ? `${rewardCount} claimed` : `${currentRewards.length} available`
+      }
+    ], [currentRewards, eggCount, ownedAvatarsCount, ownedPetsCount, rewardCount]
+  );
+
+  const renderAvatarInventory = () => (
+    <div className="space-y-3">
+      <h3 className="font-bold text-base sm:text-lg">Avatar Closet</h3>
+      {selectedStudent?.ownedAvatars?.length ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+          {selectedStudent.ownedAvatars.map(avatarName => (
+            <div
+              key={avatarName}
+              className={`rounded-2xl p-4 text-center shadow-lg border-2 transition ${
+                selectedStudent.avatarBase === avatarName
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-200 bg-white hover:-translate-y-1'
+              }`}
+            >
+              <img
+                src={getAvatarImage(avatarName, calculateAvatarLevel(selectedStudent.totalPoints))}
+                className="w-16 h-16 sm:w-20 sm:h-20 rounded-full mx-auto mb-2 border-4 border-white shadow"
+                alt={avatarName}
+              />
+              <p className="text-sm font-semibold truncate">{avatarName}</p>
+              <div className="mt-2 flex flex-col gap-1 items-center">
+                {selectedStudent.avatarBase === avatarName ? (
+                  <p className="text-xs text-blue-600 font-bold">Equipped</p>
+                ) : showSellMode ? (
+                  <button
+                    onClick={() => handleSellItem(avatarName, 'avatar')}
+                    className="text-xs bg-red-500 text-white px-3 py-1 rounded-full hover:bg-red-600 active:scale-95"
+                  >
+                    Sell
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleEquip('avatar', avatarName)}
+                    className="text-xs bg-blue-500 text-white px-3 py-1 rounded-full hover:bg-blue-600 active:scale-95"
+                  >
+                    Equip
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-gray-500 text-sm sm:text-base">No avatars owned yet. Add some from the shop!</p>
+      )}
+    </div>
+  );
+
+  const renderPetInventory = () => (
+    <div className="space-y-3">
+      <h3 className="font-bold text-base sm:text-lg">Pet Sanctuary</h3>
+      {selectedStudent?.ownedPets?.length ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+          {selectedStudent.ownedPets.map((pet, index) => (
+            <div
+              key={pet.id}
+              className={`rounded-2xl p-4 text-center shadow-lg border-2 ${
+                index === 0 ? 'border-purple-500 bg-purple-50' : 'border-gray-200 bg-white'
+              }`}
+            >
+              {(() => {
+                const petImage = resolvePetArt(getPetImage(pet));
+                return (
+                  <img
+                    src={petImage.src}
+                    className="w-16 h-16 sm:w-20 sm:h-20 rounded-full mx-auto mb-2 border-4 border-white shadow"
+                    data-fallbacks={serializeFallbacks(petImage.fallbacks)}
+                    data-fallback-index="0"
+                    onError={petImageErrorHandler}
+                    alt={pet.name}
+                  />
+                );
+              })()}
+              <p className="text-sm font-semibold truncate">{pet.name}</p>
+              <div className="mt-2 flex flex-col gap-1 items-center">
+                {index === 0 ? (
+                  <p className="text-xs text-purple-600 font-bold">Following</p>
+                ) : showSellMode ? (
+                  <button
+                    onClick={() => handleSellItem(pet, 'pet')}
+                    className="text-xs bg-red-500 text-white px-3 py-1 rounded-full hover:bg-red-600 active:scale-95"
+                  >
+                    Sell
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleEquip('pet', pet.id)}
+                    className="text-xs bg-purple-500 text-white px-3 py-1 rounded-full hover:bg-purple-600 active:scale-95"
+                  >
+                    Equip
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-gray-500 text-sm sm:text-base">No pets yet. Encourage {selectedStudent?.firstName} to unlock their first companion!</p>
+      )}
+    </div>
+  );
+
+  const renderEggInventory = () => (
+    <div className="space-y-3">
+      <h3 className="font-bold text-base sm:text-lg">Incubating Eggs</h3>
+      {selectedStudentEggs.length ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+          {selectedStudentEggs.map(egg => {
+            const status = getEggStageStatus(egg);
+            const accent = getEggAccent(egg);
+            const eggArt = resolveEggArt(status.stage);
+            const stageMessage = EGG_STAGE_MESSAGES[status.stage] || 'A surprise is brewing inside.';
+            const stageMessageClass = `text-xs text-gray-600 mb-3 ${status.stage === 'ready' ? '' : 'mt-auto'}`;
+
+            return (
+              <div
+                key={egg.id}
+                className="border-2 border-purple-200 rounded-2xl p-4 bg-purple-50 flex flex-col shadow-lg"
+                style={{
+                  borderColor: `${accent}55`,
+                  background: `linear-gradient(135deg, ${accent}11, #ffffff)`
+                }}
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <div
+                    className={`relative w-16 h-16 sm:w-18 sm:h-18 rounded-xl overflow-hidden shadow ${
+                      status.stage === 'unbroken' ? 'egg-shake' : ''
+                    }`}
+                    style={{
+                      background: `radial-gradient(circle at 30% 30%, ${accent}22, #ffffff)`,
+                      border: `3px solid ${accent}`
+                    }}
+                  >
+                    <Image
+                      src={eggArt.src}
+                      alt={`${egg.name} stage illustration`}
+                      fill
+                      sizes="64px"
+                      className="object-contain p-1"
+                      data-fallbacks={serializeFallbacks(eggArt.fallbacks)}
+                      data-fallback-index="0"
+                      onError={eggImageErrorHandler}
+                    />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm sm:text-base">{egg.name}</p>
+                    <p className="text-xs text-gray-600">{status.stageLabel}</p>
+                  </div>
+                </div>
+
+                <p className={stageMessageClass}>{stageMessage}</p>
+
+                {status.stage === 'ready' && (
+                  <button
+                    onClick={() => handleHatchEgg(egg)}
+                    className="mt-auto text-xs sm:text-sm bg-orange-500 text-white px-3 py-2 rounded-lg hover:bg-orange-600 font-semibold"
+                  >
+                    Hatch Egg
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="text-gray-500 text-sm sm:text-base">No eggs incubating yet. Mystery Boxes might reveal some!</p>
+      )}
+    </div>
+  );
+
+  const renderRewardInventory = () => (
+    <div className="space-y-3">
+      <h3 className="font-bold text-base sm:text-lg">Rewards Vault</h3>
+      {selectedStudent?.rewardsPurchased?.length ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+          {selectedStudent.rewardsPurchased.map((reward, index) => {
+            const rewardDetails = currentRewards.find(r => r.id === reward.id) || reward;
+
+            return (
+              <div
+                key={index}
+                className="bg-gradient-to-r from-yellow-50 via-amber-50 to-orange-50 border-2 border-yellow-200 rounded-2xl p-4 flex items-center justify-between shadow"
+              >
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="text-3xl">{rewardDetails.icon || '🎁'}</div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-sm sm:text-base">{rewardDetails.name}</p>
+                    <p className="text-xs text-gray-600">Earned: {new Date(reward.purchasedAt).toLocaleDateString()}</p>
+                  </div>
+                </div>
+                {showSellMode && (
+                  <button
+                    onClick={() => handleSellItem(reward, 'reward')}
+                    className="text-xs bg-red-500 text-white px-3 py-1 rounded-full hover:bg-red-600 flex-shrink-0 active:scale-95"
+                  >
+                    Sell
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="text-gray-500 text-sm sm:text-base">No rewards redeemed yet. Encourage spending to unlock classroom perks!</p>
+      )}
+    </div>
+  );
+
+  const renderInventoryOverview = () => {
+    if (!selectedStudent) {
+      return null;
+    }
+
+    const overviewTiles = [
+      {
+        icon: '💰',
+        title: 'Coins',
+        value: studentCoins,
+        accent: 'from-slate-900 via-gray-800 to-slate-900',
+        detail: 'Available to spend'
+      },
+      {
+        icon: '🧑‍🎨',
+        title: 'Avatars',
+        value: ownedAvatarsCount,
+        accent: 'from-blue-500 via-sky-500 to-teal-500',
+        detail: ownedAvatarsCount ? 'Equipped look ready' : 'Needs some style'
+      },
+      {
+        icon: '🐾',
+        title: 'Pets',
+        value: ownedPetsCount,
+        accent: 'from-emerald-500 via-teal-500 to-cyan-500',
+        detail: ownedPetsCount ? 'Companions unlocked' : 'Adopt a buddy'
+      },
+      {
+        icon: '🥚',
+        title: 'Eggs',
+        value: eggCount,
+        accent: 'from-amber-500 via-orange-500 to-pink-500',
+        detail: eggCount ? 'Keep them warm!' : 'Mystery boxes may help'
+      },
+      {
+        icon: '🏆',
+        title: 'Rewards',
+        value: rewardCount,
+        accent: 'from-yellow-500 via-orange-500 to-red-500',
+        detail: rewardCount ? 'Perks earned' : 'Plenty of rewards waiting'
+      }
+    ];
+
+    return (
+      <div className="space-y-5">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {overviewTiles.map(tile => (
+            <div key={tile.title} className="relative overflow-hidden rounded-3xl shadow-xl">
+              <div className={`absolute inset-0 bg-gradient-to-br ${tile.accent}`} />
+              <div className="relative p-5 text-white space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-3xl drop-shadow">{tile.icon}</span>
+                  <span className="text-2xl font-bold">{tile.value}</span>
+                </div>
+                <div>
+                  <p className="text-lg font-semibold">{tile.title}</p>
+                  <p className="text-xs text-white/80">{tile.detail}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 shadow-sm">
+          <p className="text-sm sm:text-base font-semibold text-amber-900">Trading Guidance</p>
+          <p className="text-xs sm:text-sm text-amber-700 mt-1">Visit the shop tabs to orchestrate trades or open surprise rewards.</p>
+        </div>
+      </div>
+    );
+  };
+
+  const renderInventoryContent = () => {
+    if (!selectedStudent) {
+      return null;
+    }
+
+    if (inventoryView === 'avatars') {
+      return renderAvatarInventory();
+    }
+
+    if (inventoryView === 'pets') {
+      return renderPetInventory();
+    }
+
+    if (inventoryView === 'eggs') {
+      return renderEggInventory();
+    }
+
+    if (inventoryView === 'rewards') {
+      return renderRewardInventory();
+    }
+
+    return renderInventoryOverview();
+  };
 
   const renderFeaturedItems = () => {
     return featuredItems.map(item => {
@@ -1195,11 +1660,36 @@ const ShopTab = ({
     </div>
   );
 
+  const {
+    total: classTotalCoins,
+    average: classAverageCoins,
+    topStudent: topSaver,
+    topCoins: topSaverCoins
+  } = classCoinStats;
+
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* MOBILE-OPTIMIZED Student Selector */}
       <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg">
         <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">🛒 Select a Champion to Shop</h3>
+        {students.length > 0 && (
+          <div className="grid gap-2 sm:gap-3 sm:grid-cols-3 mb-4">
+            <div className="rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-3 sm:p-4 shadow-lg">
+              <p className="text-xs font-semibold uppercase tracking-wide text-white/70">Class Coins</p>
+              <p className="text-lg sm:text-xl font-bold mt-1">💰 {classTotalCoins}</p>
+            </div>
+            <div className="rounded-2xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500 text-white p-3 sm:p-4 shadow-lg">
+              <p className="text-xs font-semibold uppercase tracking-wide text-white/70">Average Wallet</p>
+              <p className="text-lg sm:text-xl font-bold mt-1">≈ {classAverageCoins} coins</p>
+            </div>
+            <div className="rounded-2xl bg-gradient-to-br from-amber-500 via-orange-500 to-yellow-500 text-white p-3 sm:p-4 shadow-lg">
+              <p className="text-xs font-semibold uppercase tracking-wide text-white/70">Top Saver</p>
+              <p className="text-sm sm:text-base font-semibold mt-1">
+                {topSaver ? `${topSaver.firstName} • ${topSaverCoins} coins` : 'No students yet'}
+              </p>
+            </div>
+          </div>
+        )}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2 sm:gap-3">
           {students.map(student => (
             <button key={student.id} onClick={() => setSelectedStudentId(student.id)} className={`p-2 sm:p-3 rounded-lg border-2 transition-all ${selectedStudentId === student.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300'}`}>
@@ -1210,21 +1700,109 @@ const ShopTab = ({
           ))}
         </div>
         {selectedStudent && (
-          <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="flex items-center gap-3 sm:gap-4">
-                <img src={getAvatarImage(selectedStudent.avatarBase, calculateAvatarLevel(selectedStudent.totalPoints))} className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full border-2 border-white shadow-lg"/>
-                <div className="text-center sm:text-left">
-                    <h4 className="text-base sm:text-lg font-bold text-gray-800">{selectedStudent.firstName} is shopping</h4>
-                    <p className="font-semibold text-yellow-700 text-sm sm:text-base">💰 {calculateCoins(selectedStudent)} coins available</p>
+          <div className="mt-4 sm:mt-6 space-y-4">
+            <div className="bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500 text-white rounded-3xl p-4 sm:p-5 shadow-xl flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div className="flex items-center gap-3 sm:gap-4">
+                <img
+                  src={getAvatarImage(selectedStudent.avatarBase, calculateAvatarLevel(selectedStudent.totalPoints))}
+                  className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border-4 border-white/40 shadow-lg"
+                  alt={`${selectedStudent.firstName} avatar`}
+                />
+                <div className="text-left space-y-1">
+                  <h4 className="text-lg sm:text-xl font-bold">{selectedStudent.firstName} is shopping</h4>
+                  <p className="text-sm sm:text-base text-white/80">💰 {studentCoins} coins available right now</p>
                 </div>
+              </div>
+              <div className="flex flex-wrap gap-2 text-xs sm:text-sm">
+                <span className="px-3 py-1 rounded-full bg-white/15 border border-white/20">🧑‍🎨 {ownedAvatarsCount} avatars</span>
+                <span className="px-3 py-1 rounded-full bg-white/15 border border-white/20">🐾 {ownedPetsCount} pets</span>
+                <span className="px-3 py-1 rounded-full bg-white/15 border border-white/20">🥚 {eggCount} eggs</span>
+                <span className="px-3 py-1 rounded-full bg-white/15 border border-white/20">🏆 {rewardCount} rewards</span>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <button onClick={() => setInventoryModal({ visible: true })} className="bg-purple-600 text-white font-semibold px-4 sm:px-5 py-2 sm:py-3 rounded-lg hover:bg-purple-700 shadow-md text-sm sm:text-base">View Inventory</button>
-              <button 
-                onClick={() => setShowSellMode(!showSellMode)} 
-                className={`font-semibold px-3 sm:px-4 py-2 sm:py-3 rounded-lg shadow-md text-sm sm:text-base transition-all ${showSellMode ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-green-500 text-white hover:bg-green-600'}`}
+
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <button
+                onClick={() => setInventoryModal({ visible: true })}
+                className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-500 via-indigo-500 to-blue-500 text-left text-white p-4 sm:p-5 shadow-xl transition-transform hover:-translate-y-1"
               >
-                {showSellMode ? '❌ Cancel Sell' : '💸 Sell Mode'}
+                <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="relative flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-3xl">🎒</span>
+                    <span className="px-3 py-1 rounded-full bg-white/20 text-xs font-semibold backdrop-blur">Open</span>
+                  </div>
+                  <div>
+                    <p className="text-lg sm:text-xl font-bold">Student Inventory</p>
+                    <p className="text-xs sm:text-sm text-white/80">Review everything {selectedStudent.firstName} already owns.</p>
+                  </div>
+                  <span className="text-sm font-semibold text-white/90">Launch vault →</span>
+                </div>
+              </button>
+              <button
+                onClick={() => {
+                  setShowSellMode(!showSellMode);
+                  if (!showSellMode) {
+                    setInventoryModal({ visible: true });
+                  }
+                }}
+                className={`group relative overflow-hidden rounded-3xl text-left p-4 sm:p-5 shadow-xl transition-transform hover:-translate-y-1 ${
+                  showSellMode
+                    ? 'bg-gradient-to-br from-rose-500 via-red-500 to-orange-500 text-white'
+                    : 'bg-gradient-to-br from-emerald-500 via-teal-500 to-lime-500 text-white'
+                }`}
+              >
+                <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="relative flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-3xl">{showSellMode ? '💸' : '💰'}</span>
+                    <span className="px-3 py-1 rounded-full bg-white/20 text-xs font-semibold backdrop-blur">
+                      {showSellMode ? 'Active' : 'Boost coins'}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-lg sm:text-xl font-bold">{showSellMode ? 'Selling Mode' : 'Sell Items'}</p>
+                    <p className="text-xs sm:text-sm text-white/80">{showSellMode ? 'Tap items in the vault to reclaim coins.' : 'Convert duplicates into extra classroom currency.'}</p>
+                  </div>
+                  <span className="text-sm font-semibold text-white/90">{showSellMode ? 'Finish selling →' : 'Start selling →'}</span>
+                </div>
+              </button>
+              <button
+                onClick={() => setActiveCategory('mysterybox')}
+                className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-pink-500 via-purple-500 to-indigo-500 text-left text-white p-4 sm:p-5 shadow-xl transition-transform hover:-translate-y-1"
+              >
+                <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="relative flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-3xl">🎁</span>
+                    <span className="px-3 py-1 rounded-full bg-white/20 text-xs font-semibold backdrop-blur">Special</span>
+                  </div>
+                  <div>
+                    <p className="text-lg sm:text-xl font-bold">Mystery Box</p>
+                    <p className="text-xs sm:text-sm text-white/80">Jump straight into the surprise reward experience.</p>
+                  </div>
+                  <span className="text-sm font-semibold text-white/90">Explore wonders →</span>
+                </div>
+              </button>
+              <button
+                onClick={() => {
+                  setActiveCategory('rewards');
+                  setShowRewardManager(true);
+                }}
+                className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-500 via-orange-500 to-yellow-500 text-left text-white p-4 sm:p-5 shadow-xl transition-transform hover:-translate-y-1"
+              >
+                <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="relative flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-3xl">🛠️</span>
+                    <span className="px-3 py-1 rounded-full bg-white/20 text-xs font-semibold backdrop-blur">Control</span>
+                  </div>
+                  <div>
+                    <p className="text-lg sm:text-xl font-bold">Manage Rewards</p>
+                    <p className="text-xs sm:text-sm text-white/80">Curate {currentRewards.length} classroom perks in one hub.</p>
+                  </div>
+                  <span className="text-sm font-semibold text-white/90">Open manager →</span>
+                </div>
               </button>
             </div>
           </div>
@@ -1233,97 +1811,113 @@ const ShopTab = ({
 
       {/* MOBILE-OPTIMIZED Shop Interface */}
       {selectedStudent && (
-        <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg">
-            {/* Sell Mode Banner */}
-            {showSellMode && (
-              <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-gradient-to-r from-green-100 to-yellow-100 rounded-lg border-2 border-green-300">
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="text-2xl sm:text-3xl">💸</div>
-                  <div>
-                    <h3 className="text-lg sm:text-xl font-bold text-green-800">Sell Mode Active!</h3>
-                    <p className="text-sm sm:text-base text-green-600">Click "View Inventory" to sell items for 25% of their value</p>
-                  </div>
+        <div className="bg-white rounded-3xl p-4 sm:p-6 shadow-xl space-y-5">
+          {showSellMode && (
+            <div className="p-4 sm:p-5 bg-gradient-to-r from-green-100 via-emerald-100 to-yellow-100 rounded-2xl border-2 border-emerald-300 shadow-inner">
+              <div className="flex items-center gap-3">
+                <div className="text-2xl sm:text-3xl">💸</div>
+                <div>
+                  <h3 className="text-lg sm:text-xl font-bold text-emerald-800">Sell Mode Active!</h3>
+                  <p className="text-sm sm:text-base text-emerald-700">Open the inventory vault to cash in duplicate items for 25% of their value.</p>
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* MOBILE-FRIENDLY Category Tabs */}
-            <div className="flex space-x-1 sm:space-x-2 border-b pb-3 sm:pb-4 mb-4 overflow-x-auto">
-                {SHOP_CATEGORIES.map(cat => (
-                    <button 
-                      key={cat.id} 
-                      onClick={() => setActiveCategory(cat.id)} 
-                      className={`px-2 sm:px-4 py-2 rounded-lg font-semibold whitespace-nowrap text-xs sm:text-sm ${
-                        activeCategory === cat.id 
-                          ? cat.id === 'halloween'
-                            ? 'bg-gradient-to-r from-orange-500 to-purple-600 text-white'
-                            : cat.id === 'featured' 
-                            ? 'bg-red-500 text-white' 
-                            : cat.id === 'mysterybox'
-                            ? 'bg-purple-500 text-white'
-                            : 'bg-blue-500 text-white'
-                          : 'bg-gray-100'
-                      }`}
-                    >
-                      <span className="sm:hidden">{cat.shortName}</span>
-                      <span className="hidden sm:inline">{cat.name}</span>
-                    </button>
-                ))}
-                
-                {/* Manage Rewards Button */}
+          <div className="grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {shopCategories.map(cat => (
+              <button
+                key={cat.id}
+                onClick={() => setActiveCategory(cat.id)}
+                className={`group relative overflow-hidden rounded-3xl text-left transition transform ${
+                  activeCategory === cat.id
+                    ? 'ring-4 ring-offset-2 ring-blue-300 shadow-2xl scale-[1.02]'
+                    : 'hover:-translate-y-1 hover:shadow-xl'
+                }`}
+              >
+                <div className={`absolute inset-0 bg-gradient-to-r ${cat.accent} ${
+                  activeCategory === cat.id ? 'opacity-100' : 'opacity-90 group-hover:opacity-100'
+                } transition-opacity`} />
+                <div className="relative p-4 sm:p-5 flex flex-col gap-3 text-white">
+                  <div className="flex items-center justify-between">
+                    <span className="text-3xl">{cat.icon}</span>
+                    <span className="px-3 py-1 rounded-full bg-white/20 text-xs font-semibold backdrop-blur">{cat.badge}</span>
+                  </div>
+                  <div>
+                    <h3 className="text-lg sm:text-xl font-bold">{cat.name}</h3>
+                    <p className="text-xs sm:text-sm text-white/80">{cat.description}</p>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm font-semibold text-white/90">
+                    <span>{cat.cta || 'Browse'}</span>
+                    <span className="transition-transform group-hover:translate-x-1">→</span>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-lg p-4 sm:p-6 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">{activeCategoryMeta?.icon}</span>
+                  <h3 className="text-xl sm:text-2xl font-bold text-gray-800">{activeCategoryMeta?.name || 'Shop'}</h3>
+                </div>
+                <p className="text-sm sm:text-base text-gray-500 mt-1">
+                  {activeCategoryMeta?.description || 'Explore fresh rewards and motivation for your classroom.'}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
                 {activeCategory === 'rewards' && (
-                  <button 
+                  <button
                     onClick={() => setShowRewardManager(true)}
-                    className="px-2 sm:px-4 py-2 rounded-lg font-semibold bg-green-500 text-white hover:bg-green-600 ml-2 sm:ml-4 text-xs sm:text-sm whitespace-nowrap"
+                    className="px-3 sm:px-4 py-2 rounded-full bg-emerald-500 text-white text-xs sm:text-sm font-semibold hover:bg-emerald-600"
                   >
-                    🛠️ <span className="hidden sm:inline">Manage</span>
+                    🛠️ Manage Rewards
                   </button>
                 )}
+              </div>
             </div>
-            
-            {/* SPECIAL HEADER FOR HALLOWEEN SECTION */}
+
             {activeCategory === 'halloween' && (
-              <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-gradient-to-r from-orange-100 via-purple-100 to-orange-100 rounded-lg border-2 border-orange-400">
-                <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-4 sm:p-5 bg-gradient-to-r from-orange-100 via-purple-100 to-orange-100 rounded-2xl border-2 border-orange-300 shadow-inner">
+                <div className="flex items-center gap-3">
                   <div className="text-2xl sm:text-3xl animate-bounce">🎃</div>
                   <div>
-                    <h3 className="text-lg sm:text-xl font-bold text-orange-800">🎃 Halloween Special Collection! 🎃</h3>
-                    <p className="text-sm sm:text-base text-purple-700 font-semibold">Limited time spooky avatars and pets - Get them before they're gone!</p>
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            {/* Special Header for Featured Section */}
-            {activeCategory === 'featured' && (
-              <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-gradient-to-r from-red-100 to-pink-100 rounded-lg border-2 border-red-200">
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="text-2xl sm:text-3xl">🔥</div>
-                  <div>
-                    <h3 className="text-lg sm:text-xl font-bold text-red-800">Daily Special Offers!</h3>
-                    <p className="text-sm sm:text-base text-red-600">Limited time discounts - Save up to 30%!</p>
+                    <h3 className="text-lg sm:text-xl font-bold text-orange-800">Halloween Special Collection</h3>
+                    <p className="text-sm sm:text-base text-purple-700 font-semibold">Limited-time spooky avatars and pets—stock up before the magic fades!</p>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Special Header for Mystery Box Section */}
-            {activeCategory === 'mysterybox' && (
-              <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg border-2 border-purple-200">
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="text-2xl sm:text-3xl">🎁</div>
+            {activeCategory === 'featured' && (
+              <div className="p-4 sm:p-5 bg-gradient-to-r from-red-100 via-rose-100 to-amber-100 rounded-2xl border-2 border-red-200 shadow-inner">
+                <div className="flex items-center gap-3">
+                  <div className="text-2xl sm:text-3xl">🔥</div>
                   <div>
-                    <h3 className="text-lg sm:text-xl font-bold text-purple-800">Mystery Box Adventure!</h3>
-                    <p className="text-sm sm:text-base text-purple-600">Take a chance and discover amazing surprises!</p>
+                    <h3 className="text-lg sm:text-xl font-bold text-red-800">Daily Special Offers</h3>
+                    <p className="text-sm sm:text-base text-red-600">Exclusive discounts hand-picked to surprise your students.</p>
                   </div>
                 </div>
               </div>
             )}
-            
-            {/* MOBILE-RESPONSIVE Shop Grid */}
+
+            {activeCategory === 'mysterybox' && (
+              <div className="p-4 sm:p-5 bg-gradient-to-r from-purple-100 via-pink-100 to-indigo-100 rounded-2xl border-2 border-purple-200 shadow-inner">
+                <div className="flex items-center gap-3">
+                  <div className="text-2xl sm:text-3xl">🎁</div>
+                  <div>
+                    <h3 className="text-lg sm:text-xl font-bold text-purple-800">Mystery Box Adventure</h3>
+                    <p className="text-sm sm:text-base text-purple-600">Give students a thrilling chance at avatars, pets, coins, and XP boosts.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className={`grid gap-3 sm:gap-4 ${
-              activeCategory === 'rewards' 
-                ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' 
+              activeCategory === 'rewards'
+                ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
                 : activeCategory === 'featured'
                   ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3'
                   : activeCategory === 'mysterybox'
@@ -1332,6 +1926,7 @@ const ShopTab = ({
             }`}>
               {renderShopItems()}
             </div>
+          </div>
         </div>
       )}
 
@@ -1365,179 +1960,65 @@ const ShopTab = ({
 
       {/* MOBILE-OPTIMIZED Inventory Modal */}
       {inventoryModal.visible && selectedStudent && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">
-                <div className="p-4 sm:p-6 border-b flex justify-between items-center">
-                    <h2 className="text-lg sm:text-2xl font-bold">{selectedStudent.firstName}'s Inventory</h2>
-                    <div className="flex items-center gap-2">
-                      {showSellMode && (
-                        <span className="text-xs sm:text-sm bg-green-500 text-white px-2 py-1 rounded-full font-semibold">
-                          Sell Mode
-                        </span>
-                      )}
-                      <button onClick={() => setInventoryModal({ visible: false })} className="text-xl sm:text-2xl font-bold">×</button>
-                    </div>
-                </div>
-                <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto">
-                    <div>
-                        <h3 className="font-bold text-base sm:text-lg mb-2">Owned Avatars</h3>
-                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 sm:gap-4">
-                            {selectedStudent.ownedAvatars?.map(avatarName => (
-                                <div key={avatarName} className={`border-2 rounded-lg p-2 text-center ${selectedStudent.avatarBase === avatarName ? 'border-blue-500' : ''}`}>
-                                    <img src={getAvatarImage(avatarName, calculateAvatarLevel(selectedStudent.totalPoints))} className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full mx-auto mb-1"/>
-                                    <p className="text-xs font-semibold truncate">{avatarName}</p>
-                                    {selectedStudent.avatarBase === avatarName ? (
-                                        <p className="text-xs text-blue-600 font-bold">Equipped</p>
-                                    ) : showSellMode ? (
-                                        <button 
-                                          onClick={() => handleSellItem(avatarName, 'avatar')} 
-                                          className="text-xs bg-red-500 text-white px-1 sm:px-2 py-0.5 rounded mt-1 hover:bg-red-600"
-                                        >
-                                          Sell
-                                        </button>
-                                    ) : (
-                                        <button onClick={() => handleEquip('avatar', avatarName)} className="text-xs bg-gray-200 px-1 sm:px-2 py-0.5 rounded mt-1">Equip</button>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                    <div>
-                        <h3 className="font-bold text-base sm:text-lg mb-2">Owned Pets</h3>
-                        {selectedStudent.ownedPets?.length > 0 ? (
-                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-4">
-                                {selectedStudent.ownedPets.map((pet, index) => (
-                                    <div key={pet.id} className={`border-2 rounded-lg p-2 text-center ${index === 0 ? 'border-blue-500' : ''}`}>
-                                        {(() => {
-                                          const petImage = resolvePetArt(getPetImage(pet));
-                                          return (
-                                            <img
-                                              src={petImage.src}
-                                              className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full mx-auto mb-1"
-                                              data-fallbacks={serializeFallbacks(petImage.fallbacks)}
-                                              data-fallback-index="0"
-                                              onError={petImageErrorHandler}
-                                              alt={pet.name}
-                                            />
-                                          );
-                                        })()}
-                                        <p className="text-xs font-semibold truncate">{pet.name}</p>
-                                        {index === 0 ? (
-                                            <p className="text-xs text-blue-600 font-bold">Following</p>
-                                        ) : showSellMode ? (
-                                            <button 
-                                              onClick={() => handleSellItem(pet, 'pet')} 
-                                              className="text-xs bg-red-500 text-white px-1 sm:px-2 py-0.5 rounded mt-1 hover:bg-red-600"
-                                            >
-                                              Sell
-                                            </button>
-                                        ) : (
-                                            <button onClick={() => handleEquip('pet', pet.id)} className="text-xs bg-gray-200 px-1 sm:px-2 py-0.5 rounded mt-1">Equip</button>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (<p className="text-gray-500 text-sm sm:text-base">No pets yet!</p>)}
-                    </div>
-
-                    <div>
-                        <h3 className="font-bold text-base sm:text-lg mb-2">Incubating Eggs</h3>
-                        {selectedStudentEggs.length > 0 ? (
-                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4">
-                            {selectedStudentEggs.map((egg) => {
-                              const status = getEggStageStatus(egg);
-                              const accent = getEggAccent(egg);
-                              const eggArt = resolveEggArt(status.stage);
-                              const stageMessage = EGG_STAGE_MESSAGES[status.stage] || 'A surprise is brewing inside.';
-                              const stageMessageClass = `text-xs text-gray-600 mb-3 ${status.stage === 'ready' ? '' : 'mt-auto'}`;
-
-                              return (
-                                <div
-                                  key={egg.id}
-                                  className="border-2 rounded-xl p-3 sm:p-4 bg-purple-50 flex flex-col"
-                                  style={{
-                                    borderColor: `${accent}55`,
-                                    background: `linear-gradient(135deg, ${accent}11, #ffffff)`
-                                  }}
-                                >
-                                  <div className="flex items-center gap-3 mb-2">
-                                    <div
-                                      className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden shadow ${
-                                        status.stage === 'unbroken' ? 'egg-shake' : ''
-                                      }`}
-                                      style={{
-                                        background: `radial-gradient(circle at 30% 30%, ${accent}22, #ffffff)`,
-                                        border: `3px solid ${accent}`
-                                      }}
-                                    >
-                                      <Image
-                                        src={eggArt.src}
-                                        alt={`${egg.name} stage illustration`}
-                                        fill
-                                        sizes="64px"
-                                        className="object-contain p-1"
-                                        data-fallbacks={serializeFallbacks(eggArt.fallbacks)}
-                                        data-fallback-index="0"
-                                        onError={eggImageErrorHandler}
-                                      />
-                                    </div>
-                                    <div>
-                                      <p className="font-semibold text-sm sm:text-base">{egg.name}</p>
-                                      <p className="text-xs text-gray-600">{status.stageLabel}</p>
-                                    </div>
-                                  </div>
-
-                                  <p className={stageMessageClass}>{stageMessage}</p>
-
-                                  {status.stage === 'ready' ? (
-                                    <button
-                                      onClick={() => handleHatchEgg(egg)}
-                                      className="mt-auto text-xs sm:text-sm bg-orange-500 text-white px-3 py-2 rounded-lg hover:bg-orange-600 font-semibold"
-                                    >
-                                      Hatch Egg
-                                    </button>
-                                  ) : null}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        ) : (
-                          <p className="text-gray-500 text-sm sm:text-base">No eggs incubating yet.</p>
-                        )}
-                    </div>
-
-                    {/* Purchased Rewards */}
-                    {selectedStudent.rewardsPurchased?.length > 0 && (
-                      <div>
-                        <h3 className="font-bold text-base sm:text-lg mb-2">Earned Rewards</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3">
-                          {selectedStudent.rewardsPurchased.map((reward, index) => {
-                            const rewardDetails = currentRewards.find(r => r.id === reward.id) || reward;
-                            return (
-                              <div key={index} className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-2 sm:p-3 flex items-center justify-between">
-                                <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                                  <div className="text-xl sm:text-2xl">{rewardDetails.icon || '🎁'}</div>
-                                  <div className="min-w-0 flex-1">
-                                    <p className="font-semibold text-sm sm:text-base truncate">{reward.name}</p>
-                                    <p className="text-xs text-gray-600">Earned: {new Date(reward.purchasedAt).toLocaleDateString()}</p>
-                                  </div>
-                                </div>
-                                {showSellMode && (
-                                  <span className="text-xs sm:text-sm text-gray-500 font-semibold">
-                                    Rewards can't be sold
-                                  </span>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                </div>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden">
+            <div className="p-4 sm:p-6 border-b flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <h2 className="text-lg sm:text-2xl font-bold">{selectedStudent.firstName}'s Inventory Vault</h2>
+                <p className="text-sm text-gray-500">Manage everything this student owns from a single, organised space.</p>
+              </div>
+              <div className="flex items-center gap-2">
+                {showSellMode && (
+                  <span className="text-xs sm:text-sm bg-emerald-500 text-white px-3 py-1 rounded-full font-semibold">
+                    Sell Mode Active
+                  </span>
+                )}
+                <button onClick={() => setInventoryModal({ visible: false })} className="text-2xl font-bold hover:text-red-500">×</button>
+              </div>
             </div>
+            <div className="flex-1 overflow-hidden flex flex-col">
+              <div className="p-4 sm:p-6">
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  {inventorySections.map(section => (
+                    <button
+                      key={section.id}
+                      onClick={() => setInventoryView(section.id)}
+                      className={`group relative overflow-hidden rounded-2xl text-left transition transform ${
+                        inventoryView === section.id
+                          ? 'ring-4 ring-offset-2 ring-purple-300 shadow-2xl scale-[1.01]'
+                          : 'hover:-translate-y-1 hover:shadow-lg'
+                      }`}
+                    >
+                      <div className={`absolute inset-0 bg-gradient-to-br ${section.accent} ${
+                        inventoryView === section.id ? 'opacity-100' : 'opacity-90 group-hover:opacity-100'
+                      } transition-opacity`} />
+                      <div className="relative p-4 sm:p-5 space-y-3 text-white">
+                        <div className="flex items-center justify-between">
+                          <span className="text-2xl sm:text-3xl">{section.icon}</span>
+                          <span className="px-3 py-1 rounded-full bg-white/20 text-xs font-semibold backdrop-blur">{section.badge}</span>
+                        </div>
+                        <div>
+                          <p className="text-base sm:text-lg font-bold">{section.name}</p>
+                          <p className="text-xs text-white/80">Tap to view details</p>
+                        </div>
+                        <span className="inline-flex items-center gap-1 text-xs sm:text-sm font-semibold text-white/90">
+                          {inventoryView === section.id ? 'Currently viewing' : 'Open section'}
+                          <span className="transition-transform group-hover:translate-x-1">→</span>
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto px-4 pb-6 sm:px-6 sm:pb-8">
+                <div className="bg-white rounded-3xl border border-gray-100 shadow-xl p-4 sm:p-6">
+                  {renderInventoryContent()}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
-
       {/* Reward Manager Modal */}
       {showRewardManager && renderRewardManager()}
     </div>

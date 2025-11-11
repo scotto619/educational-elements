@@ -433,6 +433,7 @@ const StudentShop = ({
   const [activeCategory, setActiveCategory] = useState('card_packs');
   const [purchaseModal, setPurchaseModal] = useState({ visible: false, item: null, type: null });
   const [inventoryModal, setInventoryModal] = useState({ visible: false });
+  const [inventoryView, setInventoryView] = useState('overview');
   const [respondingTradeId, setRespondingTradeId] = useState(null);
 
   // Mystery Box states
@@ -474,6 +475,12 @@ const StudentShop = ({
   useEffect(() => () => {
     clearPackAnimationTimeouts();
   }, [clearPackAnimationTimeouts]);
+
+  useEffect(() => {
+    if (inventoryModal.visible) {
+      setInventoryView('overview');
+    }
+  }, [inventoryModal.visible]);
 
   // Egg celebrations
   const [hatchingCelebration, setHatchingCelebration] = useState(null);
@@ -645,6 +652,11 @@ const StudentShop = ({
         count: cardCollection.packs?.[pack.id]?.count || 0
       })),
     [cardCollection]
+  );
+
+  const unopenedPackCount = useMemo(
+    () => cardPackInventory.reduce((total, pack) => total + (pack.count || 0), 0),
+    [cardPackInventory]
   );
 
   const cardHistoryPreview = useMemo(
@@ -2225,17 +2237,182 @@ const StudentShop = ({
     await updateStudentData(updates);
   };
 
-  const categories = [
-    { id: 'loot_well', name: '💠 The Loot Well', shortName: 'Loot Well' },
-    { id: 'card_packs', name: '✨ Card Packs', shortName: 'Cards' },
-    { id: 'mysterybox', name: '🎁 Mystery Box', shortName: 'Mystery' },
-    { id: 'halloween', name: '🎃 Halloween Special', shortName: '🎃 Halloween' },
-    { id: 'basic_avatars', name: 'Basic Avatars', shortName: 'Basic' },
-    { id: 'premium_avatars', name: 'Premium Avatars', shortName: 'Premium' },
-    { id: 'basic_pets', name: 'Basic Pets', shortName: 'Pets' },
-    { id: 'premium_pets', name: 'Premium Pets', shortName: 'Rare Pets' },
-    { id: 'rewards', name: 'Class Rewards', shortName: 'Rewards' }
-  ];
+  const ownedAvatarsCount = studentData?.ownedAvatars?.length || 0;
+  const ownedPetsCount = studentData?.ownedPets?.length || 0;
+  const rewardCount = studentData?.rewardsPurchased?.length || 0;
+  const eggCount = studentEggs.length;
+
+  const categories = useMemo(() => {
+    const halloweenTotal =
+      (HALLOWEEN_BASIC_AVATARS?.length || 0) +
+      (HALLOWEEN_PREMIUM_AVATARS?.length || 0) +
+      (HALLOWEEN_PETS?.length || 0);
+
+    return [
+      {
+        id: 'loot_well',
+        name: 'The Loot Well',
+        shortName: 'Loot Well',
+        icon: '💠',
+        accent: 'from-sky-500 via-indigo-500 to-purple-600',
+        description: 'Try your luck with a free hourly dip for glittering rewards.',
+        badge: lootWellReady ? 'Ready now!' : lootWellCountdown ? `Next in ${lootWellCountdown}` : 'Available',
+        cta: 'Claim a prize'
+      },
+      {
+        id: 'card_packs',
+        name: 'Card Lab',
+        shortName: 'Cards',
+        icon: '🃏',
+        accent: 'from-purple-500 via-indigo-500 to-sky-500',
+        description: 'Crack open spectacular packs and grow your collection.',
+        badge: unopenedPackCount > 0 ? `${unopenedPackCount} unopened` : `${cardPackInventory.length} packs`,
+        cta: 'Browse packs'
+      },
+      {
+        id: 'mysterybox',
+        name: 'Mystery Box',
+        shortName: 'Mystery',
+        icon: '🎁',
+        accent: 'from-pink-500 via-purple-500 to-indigo-500',
+        description: 'Spin the wheel of wonder for avatars, pets, XP and coins.',
+        badge: 'Chance rewards',
+        cta: 'Spin & win'
+      },
+      {
+        id: 'halloween',
+        name: 'Halloween Vault',
+        shortName: '🎃 Halloween',
+        icon: '🎃',
+        accent: 'from-orange-500 via-purple-500 to-amber-500',
+        description: 'Limited-time spooky avatars and pets ready for fright-night.',
+        badge: halloweenTotal ? `${halloweenTotal} items` : 'Seasonal',
+        cta: 'View spooky set'
+      },
+      {
+        id: 'basic_avatars',
+        name: 'Basic Avatars',
+        shortName: 'Basic',
+        icon: '🧑‍🎓',
+        accent: 'from-blue-500 via-sky-500 to-cyan-400',
+        description: 'Classic champions for every style and story.',
+        badge: ownedAvatarsCount ? `${ownedAvatarsCount} owned` : 'Start collection',
+        cta: 'Equip a hero'
+      },
+      {
+        id: 'premium_avatars',
+        name: 'Premium Avatars',
+        shortName: 'Premium',
+        icon: '👑',
+        accent: 'from-fuchsia-500 via-purple-500 to-rose-500',
+        description: 'Shimmering legends with animated flair.',
+        badge: 'Showstoppers',
+        cta: 'Unlock prestige'
+      },
+      {
+        id: 'basic_pets',
+        name: 'Pet Playground',
+        shortName: 'Pets',
+        icon: '🐾',
+        accent: 'from-emerald-500 via-teal-500 to-sky-500',
+        description: 'Adorable buddies ready to follow you everywhere.',
+        badge: ownedPetsCount ? `${ownedPetsCount} pals` : 'Adopt one',
+        cta: 'Meet companions'
+      },
+      {
+        id: 'premium_pets',
+        name: 'Mythic Pets',
+        shortName: 'Rare Pets',
+        icon: '🐉',
+        accent: 'from-violet-500 via-indigo-500 to-slate-600',
+        description: 'Mythical sidekicks with legendary sparkle.',
+        badge: eggCount ? `${eggCount} eggs incubating` : 'Legendary den',
+        cta: 'Summon a pet'
+      },
+      {
+        id: 'rewards',
+        name: 'Class Rewards',
+        shortName: 'Rewards',
+        icon: '🏆',
+        accent: 'from-amber-500 via-orange-500 to-pink-500',
+        description: 'Unlock classroom experiences crafted by your teacher.',
+        badge: rewardCount ? `${rewardCount} owned` : `${(classRewards || []).length || 0} available`,
+        cta: 'Redeem perks'
+      }
+    ];
+  }, [
+    HALLOWEEN_BASIC_AVATARS,
+    HALLOWEEN_PREMIUM_AVATARS,
+    HALLOWEEN_PETS,
+    classRewards,
+    lootWellCountdown,
+    lootWellReady,
+    unopenedPackCount,
+    cardPackInventory,
+    ownedAvatarsCount,
+    ownedPetsCount,
+    rewardCount,
+    eggCount
+  ]);
+
+  const activeCategoryMeta = useMemo(
+    () => categories.find(cat => cat.id === activeCategory) || categories[0],
+    [categories, activeCategory]
+  );
+
+  const inventorySections = useMemo(
+    () => [
+      {
+        id: 'overview',
+        name: 'Overview',
+        icon: '🧭',
+        accent: 'from-slate-900 via-slate-800 to-slate-900',
+        badge: 'Summary'
+      },
+      {
+        id: 'cards',
+        name: 'Trading Cards',
+        icon: '🃏',
+        accent: 'from-purple-500 via-indigo-500 to-sky-500',
+        badge: ownedCardEntries.length ? `${ownedCardEntries.length} owned` : 'Start collecting'
+      },
+      {
+        id: 'avatars',
+        name: 'Avatar Closet',
+        icon: '🧑‍🎨',
+        accent: 'from-blue-500 via-sky-500 to-teal-500',
+        badge: ownedAvatarsCount ? `${ownedAvatarsCount} equipped` : 'Pick a look'
+      },
+      {
+        id: 'pets',
+        name: 'Pet Sanctuary',
+        icon: '🐾',
+        accent: 'from-emerald-500 via-teal-500 to-cyan-500',
+        badge: ownedPetsCount ? `${ownedPetsCount} companions` : 'Adopt a buddy'
+      },
+      {
+        id: 'eggs',
+        name: 'Egg Incubator',
+        icon: '🥚',
+        accent: 'from-amber-500 via-orange-500 to-pink-500',
+        badge: eggCount ? `${eggCount} incubating` : 'Awaiting discovery'
+      },
+      {
+        id: 'rewards',
+        name: 'Rewards Vault',
+        icon: '🏆',
+        accent: 'from-yellow-500 via-orange-500 to-red-500',
+        badge: rewardCount ? `${rewardCount} claimed` : `${(classRewards || []).length || 0} available`
+      }
+    ], [
+      classRewards,
+      eggCount,
+      ownedAvatarsCount,
+      ownedCardEntries,
+      ownedPetsCount,
+      rewardCount
+    ]
+  );
 
   const renderMysteryBox = () => {
     return (
@@ -2889,6 +3066,514 @@ const StudentShop = ({
     });
   };
 
+  const renderCardInventoryContent = () => (
+    <div className="space-y-5">
+      <div className="bg-slate-900 text-white rounded-3xl p-5 md:p-6 space-y-5 shadow-2xl">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h3 className="text-lg md:text-xl font-bold">Trading Card Collection</h3>
+            <p className="text-sm text-white/70">
+              {cardProgress.uniqueOwned} / {cardProgress.totalUnique} unique cards • {cardProgress.totalOwned} total cards owned
+            </p>
+            <div className="mt-3 h-2.5 bg-white/20 rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-orange-400 via-fuchsia-400 to-sky-300"
+                style={{ width: `${cardProgress.completion}%` }}
+              />
+            </div>
+          </div>
+          <button
+            onClick={() => setCardBookVisible(true)}
+            className="flex-shrink-0 px-4 py-2 rounded-full bg-white/20 border border-white/30 hover:bg-white/30 transition text-sm font-semibold"
+          >
+            📖 View Card Book
+          </button>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-3">
+          {cardPackInventory.map(packInfo => (
+            <div
+              key={`inventory-pack-${packInfo.id}`}
+              className="rounded-2xl border border-white/15 p-4 space-y-3 shadow-lg"
+              style={{ background: packInfo.visual?.gradient || 'rgba(255,255,255,0.08)' }}
+            >
+              <div className="flex items-center justify-between text-white">
+                <div>
+                  <p className="text-xs uppercase tracking-widest text-white/70">
+                    {CARD_RARITY_STYLES[packInfo.rarity]?.label || packInfo.rarity}
+                  </p>
+                  <p className="text-base font-semibold">{packInfo.name}</p>
+                </div>
+                <span className="text-3xl drop-shadow">{packInfo.icon || '🃏'}</span>
+              </div>
+              <p className="text-xs text-white/70">
+                {packInfo.minCards}-{packInfo.maxCards} cards • Owned x{packInfo.count}
+              </p>
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={() => setPurchaseModal({ visible: true, item: packInfo, type: 'card_pack' })}
+                  className="w-full px-3 py-2 rounded-lg bg-white text-slate-900 border border-white/70 hover:bg-amber-100 text-xs font-semibold"
+                >
+                  Buy Pack • 💰{packInfo.price}
+                </button>
+                <button
+                  onClick={() => handleOpenPack(packInfo)}
+                  disabled={packInfo.count === 0 || isOpeningPack}
+                  className={`w-full px-3 py-2 rounded-lg text-xs font-semibold transition ${
+                    packInfo.count === 0 || isOpeningPack
+                      ? 'bg-white/10 text-white/50 cursor-not-allowed'
+                      : 'bg-gradient-to-r from-amber-400 to-pink-500 hover:shadow-lg'
+                  }`}
+                >
+                  {packInfo.count > 0 ? `Open (${packInfo.count})` : 'No Packs Ready'}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {cardHistoryPreview.length > 0 && (
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+            <p className="text-xs uppercase tracking-widest text-white/60 mb-3">Recent Pack Openings</p>
+            <ul className="space-y-2 text-sm text-white/80">
+              {cardHistoryPreview.map(entry => (
+                <li key={entry.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                  <div>
+                    <span className="font-semibold">{entry.packName}</span>
+                    <span className="text-white/60 text-xs ml-2">
+                      {new Date(entry.openedAt).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-2 text-xs text-white/70">
+                    {entry.cards.map(card => (
+                      <span key={`${entry.id}-${card.id}`} className="px-2 py-1 rounded-full bg-white/10 border border-white/20">
+                        {CARD_RARITY_STYLES[card.rarity]?.label || card.rarity}: {card.name}
+                      </span>
+                    ))}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-bold text-base md:text-lg">Owned Cards</h3>
+          {canTradeToday ? (
+            <span className="text-xs md:text-sm text-emerald-600 font-semibold">Trading available today</span>
+          ) : (
+            <span className="text-xs md:text-sm text-amber-600 font-semibold">Reached today’s trade limit</span>
+          )}
+        </div>
+        {ownedCardEntries.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+            {ownedCardEntries.map(card => {
+              const rarityConfig = CARD_RARITY_STYLES[card.rarity] || CARD_RARITY_STYLES.common;
+
+              return (
+                <div
+                  key={card.id}
+                  className="relative rounded-2xl overflow-hidden border shadow-lg"
+                  style={{
+                    borderColor: `${rarityConfig.border || '#fff'}88`,
+                    background: rarityConfig.gradient
+                  }}
+                >
+                  <div className="absolute inset-0 bg-white/10 mix-blend-overlay" />
+                  <div className="relative p-4 flex gap-3">
+                    <div className="w-20 h-28 rounded-lg overflow-hidden flex-shrink-0 shadow-lg">
+                      <img
+                        src={card.image || '/Logo/icon.png'}
+                        alt={card.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="flex-1 flex flex-col">
+                      <p className="font-semibold text-sm md:text-base text-slate-900 truncate" title={card.name}>
+                        {card.name}
+                      </p>
+                      <p className="text-xs uppercase tracking-widest" style={{ color: rarityConfig.color }}>
+                        {rarityConfig.label} • {CARD_TYPE_LABELS[card.type] || 'Card'}
+                      </p>
+                      <p className="text-xs text-slate-700 mt-2">Owned x{card.count}</p>
+                      <div className="mt-auto pt-2 flex gap-2">
+                        <button
+                          onClick={() => handleTradeRequest('card', card)}
+                          disabled={!canTradeToday}
+                          className={`flex-1 text-xs px-2 py-1 rounded font-semibold transition-all ${
+                            canTradeToday
+                              ? 'bg-amber-500 text-white hover:bg-amber-600 active:scale-95'
+                              : 'bg-white/60 text-slate-400 cursor-not-allowed'
+                          }`}
+                        >
+                          Trade
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="text-gray-500 text-sm md:text-base">
+            No cards yet. Open packs or grab mystery boxes to start your collection!
+          </p>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderAvatarInventoryContent = () => (
+    <div className="space-y-3">
+      <h3 className="font-bold text-base md:text-lg">Avatar Closet</h3>
+      {studentData.ownedAvatars && studentData.ownedAvatars.length > 0 ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
+          {studentData.ownedAvatars.map(avatarName => (
+            <div
+              key={avatarName}
+              className={`rounded-2xl p-4 text-center shadow-lg border-2 transition ${
+                studentData.avatarBase === avatarName
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-200 bg-white hover:-translate-y-1'
+              }`}
+            >
+              <img
+                src={getAvatarImage(avatarName, calculateAvatarLevel(studentData.totalPoints))}
+                className="w-16 h-16 md:w-20 md:h-20 rounded-full mx-auto mb-2 border-4 border-white shadow"
+                onError={(e) => {
+                  e.target.src = '/shop/Basic/Banana.png';
+                }}
+              />
+              <p className="text-sm font-semibold truncate">{avatarName}</p>
+              <div className="mt-2 flex flex-col gap-1 items-center">
+                {studentData.avatarBase === avatarName ? (
+                  <p className="text-xs text-blue-600 font-bold">Equipped</p>
+                ) : showSellMode ? (
+                  <button
+                    onClick={() => handleSellItem(avatarName, 'avatar')}
+                    className="text-xs bg-red-500 text-white px-3 py-1 rounded-full hover:bg-red-600 active:scale-95"
+                  >
+                    Sell
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleEquip('avatar', avatarName)}
+                    className="text-xs bg-blue-500 text-white px-3 py-1 rounded-full hover:bg-blue-600 active:scale-95"
+                  >
+                    Equip
+                  </button>
+                )}
+                <button
+                  onClick={() => handleTradeRequest('avatar', avatarName)}
+                  disabled={!canTradeToday}
+                  className={`text-xs px-3 py-1 rounded-full font-semibold transition-all ${
+                    canTradeToday
+                      ? 'bg-amber-500 text-white hover:bg-amber-600 active:scale-95'
+                      : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                  }`}
+                >
+                  Trade
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-gray-500 text-sm md:text-base">
+          No avatars owned yet. Visit the shop to buy some!
+        </p>
+      )}
+    </div>
+  );
+
+  const renderPetInventoryContent = () => (
+    <div className="space-y-3">
+      <h3 className="font-bold text-base md:text-lg">Pet Sanctuary</h3>
+      {studentData.ownedPets?.length > 0 ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
+          {studentData.ownedPets.map((pet, index) => (
+            <div
+              key={pet.id}
+              className={`rounded-2xl p-4 text-center shadow-lg border-2 ${
+                index === 0 ? 'border-purple-500 bg-purple-50' : 'border-gray-200 bg-white'
+              }`}
+            >
+              {(() => {
+                const petImage = resolvePetArt(getPetImage(pet));
+                return (
+                  <img
+                    src={petImage.src}
+                    className="w-16 h-16 md:w-20 md:h-20 rounded-full mx-auto mb-2 border-4 border-white shadow"
+                    data-fallbacks={serializeFallbacks(petImage.fallbacks)}
+                    data-fallback-index="0"
+                    onError={petImageErrorHandler}
+                    alt={pet.name}
+                  />
+                );
+              })()}
+              <p className="text-sm font-semibold truncate">{pet.name}</p>
+              <div className="mt-2 flex flex-col gap-1 items-center">
+                {index === 0 ? (
+                  <p className="text-xs text-purple-600 font-bold">Active</p>
+                ) : showSellMode ? (
+                  <button
+                    onClick={() => handleSellItem(pet, 'pet')}
+                    className="text-xs bg-red-500 text-white px-3 py-1 rounded-full hover:bg-red-600 active:scale-95"
+                  >
+                    Sell
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleEquip('pet', pet.id)}
+                    className="text-xs bg-purple-500 text-white px-3 py-1 rounded-full hover:bg-purple-600 active:scale-95"
+                  >
+                    Equip
+                  </button>
+                )}
+                <button
+                  onClick={() => handleTradeRequest('pet', pet)}
+                  disabled={!canTradeToday}
+                  className={`text-xs px-3 py-1 rounded-full font-semibold transition-all ${
+                    canTradeToday
+                      ? 'bg-amber-500 text-white hover:bg-amber-600 active:scale-95'
+                      : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                  }`}
+                >
+                  Trade
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-gray-500 text-sm md:text-base">No pets yet! Get 50 XP to unlock your first pet.</p>
+      )}
+    </div>
+  );
+
+  const renderEggInventoryContent = () => (
+    <div className="space-y-3">
+      <h3 className="font-bold text-base md:text-lg">Incubating Eggs</h3>
+      {studentEggs.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+          {studentEggs.map((egg) => {
+            const status = getEggStageStatus(egg);
+            const accent = getEggAccent(egg);
+            const eggArt = resolveEggArt(status.stage);
+            const stageMessage = EGG_STAGE_MESSAGES[status.stage] || 'A surprise is brewing inside.';
+            const stageMessageClass = `text-xs text-gray-600 mb-3 ${status.stage === 'ready' ? '' : 'mt-auto'}`;
+
+            return (
+              <div
+                key={egg.id}
+                className="border-2 border-purple-200 rounded-2xl p-4 bg-purple-50 flex flex-col shadow-lg"
+                style={{
+                  borderColor: `${accent}55`,
+                  background: `linear-gradient(135deg, ${accent}11, #ffffff)`
+                }}
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <div
+                    className={`relative w-16 h-16 md:w-18 md:h-18 rounded-xl overflow-hidden shadow ${
+                      status.stage === 'unbroken' ? 'egg-shake' : ''
+                    }`}
+                    style={{
+                      background: `radial-gradient(circle at 30% 30%, ${accent}22, #ffffff)`,
+                      border: `3px solid ${accent}`
+                    }}
+                  >
+                    <Image
+                      src={eggArt.src}
+                      alt={`${egg.name} stage illustration`}
+                      fill
+                      sizes="64px"
+                      className="object-contain p-1"
+                      data-fallbacks={serializeFallbacks(eggArt.fallbacks)}
+                      data-fallback-index="0"
+                      onError={eggImageErrorHandler}
+                    />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm md:text-base">{egg.name}</p>
+                    <p className="text-xs text-gray-600">{status.stageLabel}</p>
+                  </div>
+                </div>
+
+                <p className={stageMessageClass}>{stageMessage}</p>
+
+                {status.stage === 'ready' ? (
+                  <button
+                    onClick={() => handleHatchEgg(egg)}
+                    className="mt-auto text-xs md:text-sm bg-orange-500 text-white px-3 py-2 rounded-lg hover:bg-orange-600 font-semibold"
+                  >
+                    Hatch Egg
+                  </button>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="text-gray-500 text-sm md:text-base">No magical eggs yet. Try opening a Mystery Box!</p>
+      )}
+    </div>
+  );
+
+  const renderRewardInventoryContent = () => (
+    <div className="space-y-3">
+      <h3 className="font-bold text-base md:text-lg">Rewards Vault</h3>
+      {studentData.rewardsPurchased?.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+          {studentData.rewardsPurchased.map((reward, index) => (
+            <div
+              key={index}
+              className="bg-gradient-to-r from-yellow-50 via-amber-50 to-orange-50 border-2 border-yellow-200 rounded-2xl p-4 flex items-center justify-between shadow"
+            >
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="text-3xl md:text-4xl">{reward.icon || '🎁'}</div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold text-sm md:text-base">{reward.name}</p>
+                  <p className="text-xs text-gray-600">Earned: {new Date(reward.purchasedAt).toLocaleDateString()}</p>
+                </div>
+              </div>
+              {showSellMode && (
+                <button
+                  onClick={() => handleSellItem(reward, 'reward')}
+                  className="text-xs bg-red-500 text-white px-3 py-1 rounded-full hover:bg-red-600 flex-shrink-0 active:scale-95"
+                >
+                  Sell
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-gray-500 text-sm md:text-base">No rewards yet. Spend coins on class perks to fill this space!</p>
+      )}
+    </div>
+  );
+
+  const renderInventoryContent = () => {
+    if (inventoryView === 'cards') {
+      return renderCardInventoryContent();
+    }
+
+    if (inventoryView === 'avatars') {
+      return renderAvatarInventoryContent();
+    }
+
+    if (inventoryView === 'pets') {
+      return renderPetInventoryContent();
+    }
+
+    if (inventoryView === 'eggs') {
+      return renderEggInventoryContent();
+    }
+
+    if (inventoryView === 'rewards') {
+      return renderRewardInventoryContent();
+    }
+
+    const overviewTiles = [
+      {
+        icon: '🃏',
+        title: 'Trading Cards',
+        value: ownedCardEntries.length,
+        accent: 'from-purple-500 via-indigo-500 to-sky-500',
+        detail: unopenedPackCount > 0 ? `${unopenedPackCount} unopened packs` : 'All packs opened'
+      },
+      {
+        icon: '🧑‍🎨',
+        title: 'Avatars',
+        value: ownedAvatarsCount,
+        accent: 'from-blue-500 via-sky-500 to-teal-500',
+        detail: studentData.avatarBase ? `Equipped: ${studentData.avatarBase}` : 'No avatar equipped'
+      },
+      {
+        icon: '🐾',
+        title: 'Pets',
+        value: ownedPetsCount,
+        accent: 'from-emerald-500 via-teal-500 to-cyan-500',
+        detail: ownedPetsCount > 0 ? 'Best friends unlocked' : 'Adopt a new buddy'
+      },
+      {
+        icon: '🥚',
+        title: 'Eggs',
+        value: eggCount,
+        accent: 'from-amber-500 via-orange-500 to-pink-500',
+        detail: eggCount > 0 ? 'Keep them warm!' : 'Find mystery eggs'
+      },
+      {
+        icon: '🏆',
+        title: 'Rewards',
+        value: rewardCount,
+        accent: 'from-yellow-500 via-orange-500 to-red-500',
+        detail: rewardCount > 0 ? 'Enjoy your perks' : 'Unlock class experiences'
+      },
+      {
+        icon: '💰',
+        title: 'Coins',
+        value: currentCoins,
+        accent: 'from-slate-900 via-gray-800 to-slate-900',
+        detail: 'Spend wisely in the shop'
+      }
+    ];
+
+    return (
+      <div className="space-y-5">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {overviewTiles.map(tile => (
+            <div key={tile.title} className="relative overflow-hidden rounded-3xl shadow-xl">
+              <div className={`absolute inset-0 bg-gradient-to-br ${tile.accent}`} />
+              <div className="relative p-5 text-white space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-3xl drop-shadow-lg">{tile.icon}</span>
+                  <span className="text-2xl font-bold">{tile.value}</span>
+                </div>
+                <div>
+                  <p className="text-lg font-semibold">{tile.title}</p>
+                  <p className="text-xs text-white/80">{tile.detail}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 shadow-sm">
+          <p className="text-sm md:text-base font-semibold text-amber-900 mb-1">Daily Trade Limit</p>
+          <p className={`text-xs md:text-sm ${canTradeToday ? 'text-emerald-700' : 'text-amber-700'}`}>
+            {tradeAvailabilityText}
+          </p>
+        </div>
+
+        <div className="bg-slate-900 text-white rounded-3xl p-5 md:p-6 shadow-2xl space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="text-3xl">🃏</span>
+            <div>
+              <p className="text-lg font-semibold">Collection Progress</p>
+              <p className="text-sm text-white/70">{cardProgress.uniqueOwned} unique cards unlocked</p>
+            </div>
+          </div>
+          <div className="h-2.5 bg-white/20 rounded-full overflow-hidden">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-orange-400 via-fuchsia-400 to-sky-300"
+              style={{ width: `${cardProgress.completion}%` }}
+            />
+          </div>
+          <button
+            onClick={() => setInventoryView('cards')}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/15 text-sm font-semibold hover:bg-white/25 transition"
+          >
+            Explore cards <span>→</span>
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-4 md:space-y-6">
       {/* Header - Mobile Optimized */}
@@ -3000,57 +3685,148 @@ const StudentShop = ({
         </div>
       )}
 
-      {/* Quick Actions - Mobile Optimized */}
-      <div className="flex gap-2 md:gap-3 overflow-x-auto pb-2">
+      {/* Quick Actions */}
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <button
           onClick={() => setInventoryModal({ visible: true })}
-          className="flex-shrink-0 bg-purple-500 text-white px-4 py-2 md:px-6 md:py-3 rounded-lg font-semibold hover:bg-purple-600 transition-all text-sm md:text-base"
+          className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-500 via-indigo-500 to-blue-500 text-left text-white p-4 md:p-5 shadow-xl transition-transform hover:-translate-y-1"
         >
-          🎒 My Inventory
+          <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+          <div className="relative flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <span className="text-3xl">🎒</span>
+              <span className="px-3 py-1 rounded-full bg-white/20 text-xs font-semibold backdrop-blur">Open</span>
+            </div>
+            <div>
+              <p className="text-lg md:text-xl font-bold">My Inventory</p>
+              <p className="text-xs md:text-sm text-white/80">Browse everything you own, organised by category.</p>
+            </div>
+            <span className="text-sm font-semibold text-white/90">Dive inside →</span>
+          </div>
+        </button>
+        <button
+          onClick={() => setActiveCategory('loot_well')}
+          className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-sky-500 via-indigo-500 to-purple-600 text-left text-white p-4 md:p-5 shadow-xl transition-transform hover:-translate-y-1"
+        >
+          <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+          <div className="relative flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <span className="text-3xl">💠</span>
+              <span className="px-3 py-1 rounded-full bg-white/20 text-xs font-semibold backdrop-blur">
+                {lootWellReady ? 'Ready' : 'Cooldown'}
+              </span>
+            </div>
+            <div>
+              <p className="text-lg md:text-xl font-bold">The Loot Well</p>
+              <p className="text-xs md:text-sm text-white/80">
+                {lootWellReady
+                  ? 'Dip in now for a sparkling surprise.'
+                  : `Next wish in ${lootWellCountdown || 'a bit'}.`}
+              </p>
+            </div>
+            <span className="text-sm font-semibold text-white/90">Visit the well →</span>
+          </div>
         </button>
         <button
           onClick={() => setCardBookVisible(true)}
-          className="flex-shrink-0 bg-slate-900 text-white px-4 py-2 md:px-6 md:py-3 rounded-lg font-semibold hover:bg-slate-800 transition-all text-sm md:text-base"
+          className="group relative overflow-hidden rounded-3xl bg-slate-900 text-left text-white p-4 md:p-5 shadow-xl transition-transform hover:-translate-y-1"
         >
-          📖 Card Book
+          <div className="absolute inset-0 bg-slate-700/40 opacity-0 group-hover:opacity-100 transition-opacity" />
+          <div className="relative flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <span className="text-3xl">📖</span>
+              <span className="px-3 py-1 rounded-full bg-white/10 text-xs font-semibold backdrop-blur">Collection</span>
+            </div>
+            <div>
+              <p className="text-lg md:text-xl font-bold">Card Library</p>
+              <p className="text-xs md:text-sm text-white/80">Flip through every card you’ve discovered so far.</p>
+            </div>
+            <span className="text-sm font-semibold text-white/90">View album →</span>
+          </div>
         </button>
         <button
-          onClick={() => setActiveCategory('card_packs')}
-          className="flex-shrink-0 bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-4 py-2 md:px-6 md:py-3 rounded-lg font-semibold hover:shadow-lg transition-all text-sm md:text-base"
-        >
-          🃏 Card Packs
-        </button>
-        <button
-          onClick={() => setShowSellMode(!showSellMode)}
-          className={`flex-shrink-0 px-4 py-2 md:px-6 md:py-3 rounded-lg font-semibold transition-all text-sm md:text-base ${
+          onClick={() => {
+            setShowSellMode(!showSellMode);
+            if (!showSellMode) {
+              setInventoryModal({ visible: true });
+            }
+          }}
+          className={`group relative overflow-hidden rounded-3xl text-left p-4 md:p-5 shadow-xl transition-transform hover:-translate-y-1 ${
             showSellMode
-              ? 'bg-red-500 text-white hover:bg-red-600'
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              ? 'bg-gradient-to-br from-rose-500 via-red-500 to-orange-500 text-white'
+              : 'bg-gradient-to-br from-emerald-500 via-teal-500 to-lime-500 text-white'
           }`}
         >
-          💵 {showSellMode ? 'Stop Selling' : 'Sell Items'}
+          <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+          <div className="relative flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <span className="text-3xl">{showSellMode ? '💸' : '💰'}</span>
+              <span className="px-3 py-1 rounded-full bg-white/20 text-xs font-semibold backdrop-blur">
+                {showSellMode ? 'Active' : 'Boost coins'}
+              </span>
+            </div>
+            <div>
+              <p className="text-lg md:text-xl font-bold">{showSellMode ? 'Selling Mode' : 'Sell Items'}</p>
+              <p className="text-xs md:text-sm text-white/80">{showSellMode ? 'Tap an item in your inventory to cash it in.' : 'Convert duplicates into shiny coins instantly.'}</p>
+            </div>
+            <span className="text-sm font-semibold text-white/90">{showSellMode ? 'Finish selling →' : 'Start selling →'}</span>
+          </div>
         </button>
       </div>
 
-      {/* Shop Content - Mobile Optimized */}
-      <div className="bg-white rounded-xl shadow-lg p-4 md:p-6">
-        {/* Category Tabs - Mobile Optimized */}
-        <div className="flex overflow-x-auto gap-2 mb-4 md:mb-6 pb-2 scrollbar-hide">
+      {/* Shop Content */}
+      <div className="space-y-5 md:space-y-6">
+        <div className="grid gap-3 md:gap-4 md:grid-cols-2 xl:grid-cols-3">
           {categories.map(cat => (
             <button
               key={cat.id}
               onClick={() => setActiveCategory(cat.id)}
-              className={`flex-shrink-0 px-3 py-2 md:px-4 md:py-2 rounded-lg font-semibold transition-all text-xs md:text-sm ${
+              className={`group relative overflow-hidden rounded-3xl text-left transition transform ${
                 activeCategory === cat.id
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'ring-4 ring-offset-2 ring-blue-300 shadow-2xl scale-[1.02]'
+                  : 'hover:-translate-y-1 hover:shadow-xl'
               }`}
             >
-              <span className="md:hidden">{cat.shortName}</span>
-              <span className="hidden md:inline">{cat.name}</span>
+              <div className={`absolute inset-0 bg-gradient-to-r ${cat.accent} ${activeCategory === cat.id ? 'opacity-100' : 'opacity-90 group-hover:opacity-100'} transition-opacity`} />
+              <div className="relative p-4 md:p-5 flex flex-col gap-3 text-white">
+                <div className="flex items-center justify-between">
+                  <span className="text-3xl">{cat.icon}</span>
+                  {cat.badge ? (
+                    <span className="px-3 py-1 rounded-full bg-white/20 text-xs font-semibold backdrop-blur">
+                      {cat.badge}
+                    </span>
+                  ) : null}
+                </div>
+                <div>
+                  <h3 className="text-lg md:text-xl font-bold">{cat.name}</h3>
+                  <p className="text-xs md:text-sm text-white/80">{cat.description}</p>
+                </div>
+                <div className="flex items-center gap-2 text-sm font-semibold text-white/90">
+                  <span>{cat.cta || 'Shop now'}</span>
+                  <span className="transition-transform group-hover:translate-x-1">→</span>
+                </div>
+              </div>
             </button>
           ))}
         </div>
+
+        <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-4 md:p-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-4 mb-4 md:mb-6">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">{activeCategoryMeta?.icon}</span>
+                <h3 className="text-xl md:text-2xl font-bold text-gray-800">{activeCategoryMeta?.name || 'Shop'}</h3>
+              </div>
+              <p className="text-sm md:text-base text-gray-500 mt-1">
+                {activeCategoryMeta?.description || 'Choose a collection to explore fresh rewards.'}
+              </p>
+            </div>
+            {activeCategoryMeta?.badge && (
+              <span className="inline-flex items-center justify-center px-4 py-2 rounded-full bg-gray-100 text-gray-700 text-sm font-semibold">
+                {activeCategoryMeta.badge}
+              </span>
+            )}
+          </div>
 
         {/* Special Header for Mystery Box Section */}
         {activeCategory === 'mysterybox' && (
@@ -3083,6 +3859,7 @@ const StudentShop = ({
             : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
         }`}>
           {renderShopItems()}
+        </div>
         </div>
       </div>
 
@@ -3138,392 +3915,70 @@ const StudentShop = ({
         cardLibrary={tradingCardLibrary}
       />
 
-      {/* Inventory Modal - Mobile Optimized - WITH SELLING FEATURE */}
+      {/* Inventory Modal - Immersive Layout */}
       {inventoryModal.visible && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
-            <div className="p-4 md:p-6 border-b flex justify-between items-center">
-              <h2 className="text-lg md:text-2xl font-bold">My Inventory</h2>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden">
+            <div className="p-4 md:p-6 border-b flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+              <div>
+                <h2 className="text-lg md:text-2xl font-bold">My Inventory Vault</h2>
+                <p className="text-sm text-gray-500">Everything you own, beautifully organised into themed showcases.</p>
+              </div>
               <div className="flex items-center gap-2">
                 {showSellMode && (
-                  <span className="text-xs md:text-sm bg-green-500 text-white px-2 py-1 rounded-full font-semibold">
-                    Sell Mode
+                  <span className="text-xs md:text-sm bg-emerald-500 text-white px-3 py-1 rounded-full font-semibold">
+                    Sell Mode Active
                   </span>
                 )}
-                <button 
-                  onClick={() => setInventoryModal({ visible: false })} 
-                  className="text-2xl font-bold hover:text-red-600"
+                <button
+                  onClick={() => setInventoryModal({ visible: false })}
+                  className="text-2xl font-bold hover:text-red-500"
                 >
                   ×
                 </button>
               </div>
             </div>
-            <div className="p-4 md:p-6 space-y-4 md:space-y-6 overflow-y-auto">
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 md:p-4">
-                <p className="text-sm md:text-base font-semibold text-amber-900 mb-1">Daily Trade Limit</p>
-                <p
-                  className={`text-xs md:text-sm ${canTradeToday ? 'text-emerald-700' : 'text-amber-700'}`}
-                >
-                  {tradeAvailabilityText}
-                </p>
-              </div>
-
-              <div className="bg-slate-900 text-white rounded-2xl p-4 md:p-6 space-y-4">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                  <div>
-                    <h3 className="text-lg md:text-xl font-bold">Trading Card Collection</h3>
-                    <p className="text-sm text-white/70">
-                      {cardProgress.uniqueOwned} / {cardProgress.totalUnique} unique cards • {cardProgress.totalOwned} cards owned
-                    </p>
-                    <div className="mt-2 h-2 bg-white/20 rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-gradient-to-r from-orange-400 via-fuchsia-400 to-sky-300"
-                        style={{ width: `${cardProgress.completion}%` }}
-                      />
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setCardBookVisible(true)}
-                    className="flex-shrink-0 px-4 py-2 rounded-lg bg-white/20 border border-white/30 hover:bg-white/30 transition text-sm font-semibold"
-                  >
-                    📖 View Card Book
-                  </button>
-                </div>
-
-                <div className="grid gap-3 md:grid-cols-3">
-                  {cardPackInventory.map(packInfo => (
-                    <div
-                      key={`inventory-pack-${packInfo.id}`}
-                      className="rounded-xl border border-white/15 p-3 space-y-2"
-                      style={{ background: packInfo.visual?.gradient || 'rgba(255,255,255,0.08)' }}
+            <div className="flex-1 overflow-hidden flex flex-col">
+              <div className="p-4 md:p-6">
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  {inventorySections.map(section => (
+                    <button
+                      key={section.id}
+                      onClick={() => setInventoryView(section.id)}
+                      className={`group relative overflow-hidden rounded-2xl text-left transition transform ${
+                        inventoryView === section.id
+                          ? 'ring-4 ring-offset-2 ring-purple-300 shadow-2xl scale-[1.01]'
+                          : 'hover:-translate-y-1 hover:shadow-lg'
+                      }`}
                     >
-                      <div className="flex items-center justify-between text-white">
-                        <div>
-                          <p className="text-xs uppercase tracking-widest text-white/70">
-                            {CARD_RARITY_STYLES[packInfo.rarity]?.label || packInfo.rarity}
-                          </p>
-                          <p className="text-base font-semibold">{packInfo.name}</p>
+                      <div className={`absolute inset-0 bg-gradient-to-br ${section.accent} ${
+                        inventoryView === section.id ? 'opacity-100' : 'opacity-90 group-hover:opacity-100'
+                      } transition-opacity`} />
+                      <div className="relative p-4 md:p-5 space-y-3 text-white">
+                        <div className="flex items-center justify-between">
+                          <span className="text-2xl md:text-3xl">{section.icon}</span>
+                          <span className="px-3 py-1 rounded-full bg-white/20 text-xs font-semibold backdrop-blur">
+                            {section.badge}
+                          </span>
                         </div>
-                        <span className="text-3xl drop-shadow">{packInfo.icon || '🃏'}</span>
+                        <div>
+                          <p className="text-base md:text-lg font-bold">{section.name}</p>
+                          <p className="text-xs text-white/80">Tap to view details</p>
+                        </div>
+                        <span className="inline-flex items-center gap-1 text-xs md:text-sm font-semibold text-white/90">
+                          {inventoryView === section.id ? 'Currently viewing' : 'Open section'}
+                          <span className="transition-transform group-hover:translate-x-1">→</span>
+                        </span>
                       </div>
-                      <p className="text-xs text-white/70">
-                        {packInfo.minCards}-{packInfo.maxCards} cards • Owned x{packInfo.count}
-                      </p>
-                      <div className="flex flex-col gap-2">
-                        <button
-                          onClick={() => setPurchaseModal({ visible: true, item: packInfo, type: 'card_pack' })}
-                          className="w-full px-3 py-2 rounded-lg bg-white text-slate-900 border border-white/70 hover:bg-amber-100 text-xs font-semibold"
-                        >
-                          Buy Pack • 💰{packInfo.price}
-                        </button>
-                        <button
-                          onClick={() => handleOpenPack(packInfo)}
-                          disabled={packInfo.count === 0 || isOpeningPack}
-                          className={`w-full px-3 py-2 rounded-lg text-xs font-semibold transition ${
-                            packInfo.count === 0 || isOpeningPack
-                              ? 'bg-white/10 text-white/50 cursor-not-allowed'
-                              : 'bg-gradient-to-r from-amber-400 to-pink-500 hover:shadow-lg'
-                          }`}
-                        >
-                          {packInfo.count > 0 ? `Open (${packInfo.count})` : 'No Packs Ready'}
-                        </button>
-                      </div>
-                    </div>
+                    </button>
                   ))}
                 </div>
-
-                {cardHistoryPreview.length > 0 && (
-                  <div className="bg-white/5 border border-white/10 rounded-xl p-3">
-                    <p className="text-xs uppercase tracking-widest text-white/60 mb-2">Recent Pack Openings</p>
-                    <ul className="space-y-2 text-sm text-white/80">
-                      {cardHistoryPreview.map(entry => (
-                        <li key={entry.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
-                          <div>
-                            <span className="font-semibold">{entry.packName}</span>
-                            <span className="text-white/60 text-xs ml-2">
-                              {new Date(entry.openedAt).toLocaleString()}
-                            </span>
-                          </div>
-                          <div className="flex flex-wrap gap-2 text-xs text-white/70">
-                            {entry.cards.map(card => (
-                              <span key={`${entry.id}-${card.id}`} className="px-2 py-1 rounded-full bg-white/10 border border-white/20">
-                                {CARD_RARITY_STYLES[card.rarity]?.label || card.rarity}: {card.name}
-                              </span>
-                            ))}
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
               </div>
-
-              {/* Owned Cards */}
-              <div>
-                <h3 className="font-bold text-base md:text-lg mb-2 md:mb-3">My Cards</h3>
-                {ownedCardEntries.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-3">
-                    {ownedCardEntries.map(card => {
-                      const rarityConfig = CARD_RARITY_STYLES[card.rarity] || CARD_RARITY_STYLES.common;
-
-                      return (
-                        <div
-                          key={card.id}
-                          className="relative rounded-xl overflow-hidden border shadow-sm"
-                          style={{
-                            borderColor: `${rarityConfig.border || '#fff'}88`,
-                            background: rarityConfig.gradient
-                          }}
-                        >
-                          <div className="absolute inset-0 bg-white/10 mix-blend-overlay" />
-                          <div className="relative p-3 flex gap-3">
-                            <div className="w-20 h-28 rounded-lg overflow-hidden flex-shrink-0 shadow-lg">
-                              <img
-                                src={card.image || '/Logo/icon.png'}
-                                alt={card.name}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                            <div className="flex-1 flex flex-col">
-                              <p className="font-semibold text-sm md:text-base text-slate-900 truncate" title={card.name}>
-                                {card.name}
-                              </p>
-                              <p className="text-xs uppercase tracking-widest" style={{ color: rarityConfig.color }}>
-                                {rarityConfig.label} • {CARD_TYPE_LABELS[card.type] || 'Card'}
-                              </p>
-                              <p className="text-xs text-slate-700 mt-2">Owned x{card.count}</p>
-                              <div className="mt-auto pt-2 flex gap-2">
-                                <button
-                                  onClick={() => handleTradeRequest('card', card)}
-                                  disabled={!canTradeToday}
-                                  className={`flex-1 text-xs px-2 py-1 rounded font-semibold transition-all ${
-                                    canTradeToday
-                                      ? 'bg-amber-500 text-white hover:bg-amber-600 active:scale-95'
-                                      : 'bg-white/60 text-slate-400 cursor-not-allowed'
-                                  }`}
-                                >
-                                  Trade
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <p className="text-gray-500 text-sm md:text-base">
-                    No cards yet. Open packs or grab mystery boxes to start your collection!
-                  </p>
-                )}
-              </div>
-
-              {/* Owned Avatars */}
-              <div>
-                <h3 className="font-bold text-base md:text-lg mb-2 md:mb-3">My Avatars</h3>
-                {studentData.ownedAvatars && studentData.ownedAvatars.length > 0 ? (
-                  <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 md:gap-4">
-                    {studentData.ownedAvatars.map(avatarName => (
-                      <div key={avatarName} className={`border-2 rounded-lg p-2 md:p-3 text-center ${studentData.avatarBase === avatarName ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}>
-                        <img
-                          src={getAvatarImage(avatarName, calculateAvatarLevel(studentData.totalPoints))}
-                          className="w-12 h-12 md:w-16 md:h-16 rounded-full mx-auto mb-1"
-                          onError={(e) => {
-                            e.target.src = '/shop/Basic/Banana.png';
-                          }}
-                        />
-                        <p className="text-xs font-semibold truncate">{avatarName}</p>
-                        <div className="mt-1 flex flex-col gap-1 items-center">
-                          {studentData.avatarBase === avatarName ? (
-                            <p className="text-xs text-blue-600 font-bold">Equipped</p>
-                          ) : showSellMode ? (
-                            <button
-                              onClick={() => handleSellItem(avatarName, 'avatar')}
-                              className="text-xs bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 active:scale-95"
-                            >
-                              Sell
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => handleEquip('avatar', avatarName)}
-                              className="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600 active:scale-95"
-                            >
-                              Equip
-                            </button>
-                          )}
-                          <button
-                            onClick={() => handleTradeRequest('avatar', avatarName)}
-                            disabled={!canTradeToday}
-                            className={`text-xs px-2 py-1 rounded font-semibold transition-all ${
-                              canTradeToday
-                                ? 'bg-amber-500 text-white hover:bg-amber-600 active:scale-95'
-                                : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                            }`}
-                          >
-                            Trade
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-500 text-sm md:text-base">No avatars owned yet. Visit the shop to buy some!</p>
-                )}
-              </div>
-
-              {/* Owned Pets */}
-              <div>
-                <h3 className="font-bold text-base md:text-lg mb-2 md:mb-3">My Pets</h3>
-                {studentData.ownedPets?.length > 0 ? (
-                  <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 md:gap-4">
-                    {studentData.ownedPets.map((pet, index) => (
-                      <div key={pet.id} className={`border-2 rounded-lg p-2 md:p-3 text-center ${index === 0 ? 'border-purple-500 bg-purple-50' : 'border-gray-200'}`}>
-                        {(() => {
-                          const petImage = resolvePetArt(getPetImage(pet));
-                          return (
-                            <img
-                              src={petImage.src}
-                              className="w-12 h-12 md:w-16 md:h-16 rounded-full mx-auto mb-1"
-                              data-fallbacks={serializeFallbacks(petImage.fallbacks)}
-                              data-fallback-index="0"
-                              onError={petImageErrorHandler}
-                              alt={pet.name}
-                            />
-                          );
-                        })()}
-                        <p className="text-xs font-semibold truncate">{pet.name}</p>
-                        <div className="mt-1 flex flex-col gap-1 items-center">
-                          {index === 0 ? (
-                            <p className="text-xs text-purple-600 font-bold">Active</p>
-                          ) : showSellMode ? (
-                            <button
-                              onClick={() => handleSellItem(pet, 'pet')}
-                              className="text-xs bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 active:scale-95"
-                            >
-                              Sell
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => handleEquip('pet', pet.id)}
-                              className="text-xs bg-purple-500 text-white px-2 py-1 rounded hover:bg-purple-600 active:scale-95"
-                            >
-                              Equip
-                            </button>
-                          )}
-                          <button
-                            onClick={() => handleTradeRequest('pet', pet)}
-                            disabled={!canTradeToday}
-                            className={`text-xs px-2 py-1 rounded font-semibold transition-all ${
-                              canTradeToday
-                                ? 'bg-amber-500 text-white hover:bg-amber-600 active:scale-95'
-                                : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                            }`}
-                          >
-                            Trade
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-500 text-sm md:text-base">No pets yet! Get 50 XP to unlock your first pet.</p>
-                )}
-              </div>
-
-              {/* Pet Eggs */}
-              <div>
-                <h3 className="font-bold text-base md:text-lg mb-2 md:mb-3">Incubating Eggs</h3>
-                {studentEggs.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 md:gap-4">
-                    {studentEggs.map((egg) => {
-                      const status = getEggStageStatus(egg);
-                      const accent = getEggAccent(egg);
-                      const eggArt = resolveEggArt(status.stage);
-                      const stageMessage = EGG_STAGE_MESSAGES[status.stage] || 'A surprise is brewing inside.';
-                      const stageMessageClass = `text-xs text-gray-600 mb-3 ${status.stage === 'ready' ? '' : 'mt-auto'}`;
-
-                      return (
-                        <div
-                          key={egg.id}
-                          className="border-2 border-purple-200 rounded-xl p-3 md:p-4 bg-purple-50 flex flex-col"
-                          style={{
-                            borderColor: `${accent}55`,
-                            background: `linear-gradient(135deg, ${accent}11, #ffffff)`
-                          }}
-                        >
-                          <div className="flex items-center gap-3 mb-2">
-                            <div
-                              className={`relative w-14 h-14 md:w-16 md:h-16 rounded-xl overflow-hidden shadow ${
-                                status.stage === 'unbroken' ? 'egg-shake' : ''
-                              }`}
-                              style={{
-                                background: `radial-gradient(circle at 30% 30%, ${accent}22, #ffffff)`,
-                                border: `3px solid ${accent}`
-                              }}
-                            >
-                              <Image
-                                src={eggArt.src}
-                                alt={`${egg.name} stage illustration`}
-                                fill
-                                sizes="64px"
-                                className="object-contain p-1"
-                                data-fallbacks={serializeFallbacks(eggArt.fallbacks)}
-                                data-fallback-index="0"
-                                onError={eggImageErrorHandler}
-                              />
-                            </div>
-                            <div>
-                              <p className="font-semibold text-sm md:text-base">{egg.name}</p>
-                              <p className="text-xs text-gray-600">{status.stageLabel}</p>
-                            </div>
-                          </div>
-
-                          <p className={stageMessageClass}>{stageMessage}</p>
-
-                          {status.stage === 'ready' ? (
-                            <button
-                              onClick={() => handleHatchEgg(egg)}
-                              className="mt-auto text-xs md:text-sm bg-orange-500 text-white px-3 py-2 rounded-lg hover:bg-orange-600 font-semibold"
-                            >
-                              Hatch Egg
-                            </button>
-                          ) : null}
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <p className="text-gray-500 text-sm md:text-base">No magical eggs yet. Try opening a Mystery Box!</p>
-                )}
-              </div>
-
-              {/* Purchased Rewards */}
-              {studentData.rewardsPurchased?.length > 0 && (
-                <div>
-                  <h3 className="font-bold text-base md:text-lg mb-2 md:mb-3">My Rewards</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3">
-                    {studentData.rewardsPurchased.map((reward, index) => (
-                      <div key={index} className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-3 flex items-center justify-between">
-                        <div className="flex items-center gap-3 flex-1 min-w-0">
-                          <div className="text-xl md:text-2xl">{reward.icon || '🎁'}</div>
-                          <div className="min-w-0 flex-1">
-                            <p className="font-semibold text-sm md:text-base">{reward.name}</p>
-                            <p className="text-xs text-gray-600">Earned: {new Date(reward.purchasedAt).toLocaleDateString()}</p>
-                          </div>
-                        </div>
-                        {showSellMode && (
-                          <button 
-                            onClick={() => handleSellItem(reward, 'reward')} 
-                            className="text-xs bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 flex-shrink-0 active:scale-95"
-                          >
-                            Sell
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+              <div className="flex-1 overflow-y-auto px-4 pb-6 md:px-6 md:pb-8">
+                <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-4 md:p-6">
+                  {renderInventoryContent()}
                 </div>
-              )}
+              </div>
             </div>
           </div>
         </div>
