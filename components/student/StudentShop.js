@@ -911,6 +911,15 @@ const StudentShop = ({
 
   // Egg celebrations
   const [hatchingCelebration, setHatchingCelebration] = useState(null);
+  const hatchConfettiLayout = useMemo(
+    () =>
+      Array.from({ length: 24 }, (_, index) => ({
+        left: `${(index * 37) % 100}%`,
+        top: `${(index * 61) % 100}%`,
+        delay: `${(index % 6) * 0.15}s`
+      })),
+    []
+  );
 
   const currentCoins = calculateCoins(studentData);
 
@@ -2297,6 +2306,115 @@ const StudentShop = ({
     } else {
       showToast('Failed to sell item. Please try again.', 'error');
     }
+  };
+
+  const renderSellModal = () => {
+    if (!sellModal.visible) return null;
+
+    const itemName =
+      sellModal.type === 'pet'
+        ? sellModal.item?.name
+        : sellModal.type === 'avatar'
+          ? sellModal.item
+          : sellModal.item?.name;
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+        <div className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-2xl md:p-8">
+          <h2 className="text-lg font-bold text-red-500 md:text-2xl">Sell {itemName}?</h2>
+          <p className="mt-3 text-sm text-gray-600 md:text-base">
+            You'll receive{' '}
+            <span className="font-semibold text-emerald-600">💰 {sellModal.price} coins</span> for this item.
+          </p>
+          <p className="mt-2 text-xs text-gray-400">This action can't be undone.</p>
+
+          <div className="mt-5 flex gap-3 md:gap-4">
+            <button
+              onClick={() => setSellModal({ visible: false, item: null, type: null, price: 0 })}
+              className="flex-1 rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 md:text-base"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={confirmSell}
+              className="flex-1 rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-600 md:text-base"
+            >
+              Sell Item
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderHatchCelebrationModal = () => {
+    if (!hatchingCelebration) return null;
+
+    const { pet, egg } = hatchingCelebration;
+    const accent = getEggAccent(egg);
+    const rarityColor = getRarityColor(pet?.rarity);
+    const rarityBg = getRarityBg(pet?.rarity);
+    const petArt = resolvePetArt(pet?.path || pet?.image || pet?.src || pet);
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+        <div className="relative w-full max-w-md overflow-hidden rounded-3xl bg-white p-6 text-center shadow-2xl md:p-8">
+          <div className="pointer-events-none absolute inset-0">
+            {hatchConfettiLayout.map((particle, index) => (
+              <div
+                key={index}
+                className="absolute h-2 w-2 animate-ping rounded-full bg-yellow-400"
+                style={{
+                  left: particle.left,
+                  top: particle.top,
+                  animationDelay: particle.delay
+                }}
+              />
+            ))}
+          </div>
+
+          <div className="mb-4 text-5xl md:text-6xl">🐣</div>
+          <h2 className="mb-2 text-xl font-bold md:text-2xl">A New Friend Appeared!</h2>
+          <p className="mb-4 text-sm text-gray-600 md:text-base">
+            Your{' '}
+            <span className="font-semibold" style={{ color: accent }}>
+              {egg?.name || 'mystery egg'}
+            </span>{' '}
+            hatched into a
+            {pet?.rarity ? ` ${pet.rarity.toUpperCase()}` : ''} baby pet!
+          </p>
+
+          <div
+            className={`${rarityBg} relative rounded-2xl border-2 p-4 md:p-6`}
+            style={{ borderColor: `${accent || '#6366f1'}66` }}
+          >
+            <div className="absolute -top-6 left-1/2 h-14 w-14 -translate-x-1/2 transform rounded-full border-4 border-white/70 bg-white/80 backdrop-blur">
+              <div className="flex h-full w-full items-center justify-center text-2xl">✨</div>
+            </div>
+
+            <img
+              src={petArt.src}
+              alt={pet?.name || 'Newly hatched pet'}
+              className="mx-auto mb-3 h-24 w-24 object-contain md:h-28 md:w-28"
+              data-fallbacks={serializeFallbacks(petArt.fallbacks)}
+              data-fallback-index="0"
+              onError={petImageErrorHandler}
+            />
+            <p className="text-lg font-bold md:text-xl">{pet?.name || 'Mystery Companion'}</p>
+            <p className={`text-xs font-semibold uppercase md:text-sm ${rarityColor}`}>
+              {pet?.rarity || 'special'} hatchling
+            </p>
+          </div>
+
+          <button
+            onClick={() => setHatchingCelebration(null)}
+            className="mt-6 w-full rounded-lg bg-purple-500 py-3 text-base font-bold text-white transition hover:bg-purple-600 md:text-lg"
+          >
+            Awesome!
+          </button>
+        </div>
+      </div>
+    );
   };
 
   const handleHatchEgg = async (egg) => {
