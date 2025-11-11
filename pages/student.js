@@ -18,6 +18,7 @@ import StudentMaths from '../components/student/StudentMaths';
 import StudentMorphology from '../components/student/StudentMorphology';
 import VisualWritingPrompts from '../components/curriculum/literacy/VisualWritingPrompts';
 import DailyMysteryBoxModal from '../components/student/DailyMysteryBoxModal';
+import StudentFishingEvent from '../components/student/StudentFishingEvent';
 
 // Import from the correct gameHelpers file
 import {
@@ -1790,6 +1791,7 @@ const StudentPortal = () => {
     { id: 'maths', name: 'Maths', icon: '🔢', shortName: 'Maths', hasSubTabs: true },
     { id: 'literacy', name: 'Literacy', icon: '📚', shortName: 'Literacy', hasSubTabs: true },
     { id: 'shop', name: 'Shop', icon: '🛒', shortName: 'Shop' },
+    { id: 'fishing', name: 'Fishing Event', icon: '🎣', shortName: 'Fish' },
     { id: 'games', name: 'Games', icon: '🎮', shortName: 'Games' },
     { id: 'quizshow', name: 'Quiz Show', icon: '🎪', shortName: 'Quiz' }
   ];
@@ -1933,7 +1935,18 @@ const StudentPortal = () => {
             performClassmateTrade={tradeWithClassmate}
           />
         );
-      
+
+      case 'fishing':
+        return (
+          <StudentFishingEvent
+            studentData={studentData}
+            calculateCoins={calculateCoins}
+            updateStudentData={updateStudentData}
+            showToast={showToast}
+            getAvatarImage={getAvatarImage}
+          />
+        );
+
       case 'games':
         return (
           <StudentGames

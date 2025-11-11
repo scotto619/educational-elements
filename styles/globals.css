@@ -230,6 +230,31 @@ img {
   50% { background-position: 100% 50%; }
 }
 
+.swim-left,
+.swim-right {
+  transform: translate(-50%, -50%);
+}
+
+.swim-left {
+  animation: swim-left-right 8s linear infinite;
+}
+
+.swim-right {
+  animation: swim-right-left 8s linear infinite;
+}
+
+@keyframes swim-left-right {
+  0% { transform: translate(-50%, -50%) translateX(-30px); }
+  50% { transform: translate(-50%, -50%) translateX(30px); }
+  100% { transform: translate(-50%, -50%) translateX(-30px); }
+}
+
+@keyframes swim-right-left {
+  0% { transform: translate(-50%, -50%) translateX(30px); }
+  50% { transform: translate(-50%, -50%) translateX(-30px); }
+  100% { transform: translate(-50%, -50%) translateX(30px); }
+}
+
 @keyframes egg-shake {
   0%, 100% {
     transform: rotate(0deg);
