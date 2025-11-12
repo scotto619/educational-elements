@@ -27,7 +27,8 @@ export const mergeShopInventories = (base = emptyInventory(), extra = emptyInven
   basicAvatars: mergeByName(base.basicAvatars, extra.basicAvatars),
   premiumAvatars: mergeByName(base.premiumAvatars, extra.premiumAvatars),
   basicPets: mergeByName(base.basicPets, extra.basicPets),
-  premiumPets: mergeByName(base.premiumPets, extra.premiumPets)
+  premiumPets: mergeByName(base.premiumPets, extra.premiumPets),
+  cardPacks: mergeByName(base.cardPacks, extra.cardPacks)
 });
 
 export const fetchGlobalShopItems = async ({ includeInactive = false } = {}) => {

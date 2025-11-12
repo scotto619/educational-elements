@@ -24,6 +24,7 @@ export const buildShopInventory = ({
   basicPets = [],
   premiumPets = [],
   rewards = [],
+  cardPacks = [],
   extraItems = []
 } = {}) => {
   const inventory = [
@@ -32,6 +33,7 @@ export const buildShopInventory = ({
     ...mapItemsWithMeta(basicPets, { category: 'basic_pets', type: 'pet' }),
     ...mapItemsWithMeta(premiumPets, { category: 'premium_pets', type: 'pet' }),
     ...mapItemsWithMeta(rewards, { category: 'rewards', type: 'reward' }),
+    ...mapItemsWithMeta(cardPacks, { category: 'card_packs', type: 'card_pack' }),
     ...mapItemsWithMeta(extraItems, {})
   ];
 

@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { buildShopInventory, getDailySpecials } from '../../utils/shopSpecials';
 import { DEFAULT_PET_IMAGE } from '../../utils/gameHelpers';
+import { DEFAULT_CARD_PACKS } from '../../utils/tradingCards';
 import { normalizeImageSource, serializeFallbacks, createImageErrorHandler } from '../../utils/imageFallback';
 import { DEFAULT_UPDATES } from '../../services/globalContent';
 
@@ -77,7 +78,8 @@ const DashboardTab = ({
       basicAvatars: SHOP_BASIC_AVATARS,
       premiumAvatars: SHOP_PREMIUM_AVATARS,
       basicPets: SHOP_BASIC_PETS,
-      premiumPets: SHOP_PREMIUM_PETS
+      premiumPets: SHOP_PREMIUM_PETS,
+      cardPacks: DEFAULT_CARD_PACKS
     });
 
     return getDailySpecials(inventory);

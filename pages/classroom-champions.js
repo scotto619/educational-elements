@@ -32,6 +32,7 @@ import {
   listenToClassStudents
 } from '../utils/firebase-new';
 import { DEFAULT_TEACHER_REWARDS, buildShopInventory, getDailySpecials } from '../utils/shopSpecials';
+import { DEFAULT_CARD_PACKS } from '../utils/tradingCards';
 import {
   DEFAULT_UPDATES,
   fetchDashboardUpdates,
@@ -265,7 +266,8 @@ const ClassroomChampions = () => {
     basicAvatars: [...BASE_SHOP_BASIC_AVATARS],
     premiumAvatars: [...BASE_SHOP_PREMIUM_AVATARS],
     basicPets: [...BASE_SHOP_BASIC_PETS],
-    premiumPets: [...BASE_SHOP_PREMIUM_PETS]
+    premiumPets: [...BASE_SHOP_PREMIUM_PETS],
+    cardPacks: [...DEFAULT_CARD_PACKS]
   }), []);
   const [shopInventory, setShopInventory] = useState(baseShopInventory);
   const [dashboardUpdates, setDashboardUpdates] = useState(DEFAULT_UPDATES);
@@ -372,7 +374,8 @@ const ClassroomChampions = () => {
       premiumAvatars: shopInventory.premiumAvatars,
       basicPets: shopInventory.basicPets,
       premiumPets: shopInventory.premiumPets,
-      rewards: currentRewardsList
+      rewards: currentRewardsList,
+      cardPacks: shopInventory.cardPacks || DEFAULT_CARD_PACKS
     });
 
     return getDailySpecials([...baseInventory, ...seasonalInventory]);
