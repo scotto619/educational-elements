@@ -1,5 +1,5 @@
 // components/student/StudentSpelling.js
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { READING_PASSAGES } from '../curriculum/literacy/SpellingProgram';
 
 // Import spelling lists from the main program
@@ -355,8 +355,910 @@ const ACTIVITIES = [
     icon: "🎨",
     color: "bg-lime-500",
     instructions: "1. Turn each spelling word into art\n2. Make the letters look like what the word means\n3. Use bubble letters, fancy fonts, or decorations\n4. Add pictures that show the word's meaning\n5. Create a word art gallery!\n\nExample: Make 'FIRE' look like flames, 'ICE' look frozen!"
+  },
+  {
+    id: "mirror_tracing",
+    name: "Mirror Tracing",
+    icon: "🪞",
+    color: "bg-sky-500",
+    instructions: "1. Fold a piece of paper in half\n2. Write each spelling word on the left side\n3. Use tracing paper or hold it to a window to trace the mirror version on the right\n4. Can you still read the mirrored word?\n5. Try writing a secret message in mirror writing!"
+  },
+  {
+    id: "story_spotlight",
+    name: "Story Spotlight",
+    icon: "🎭",
+    color: "bg-orange-500",
+    instructions: "1. Choose 4-6 spelling words\n2. Write a short scene or skit that uses every word\n3. Highlight or underline the words in your script\n4. Perform the scene for a partner or record it\n5. Bonus: add sound effects or props to make it dramatic!"
+  },
+  {
+    id: "pattern_party",
+    name: "Pattern Party Sorting",
+    icon: "🧩",
+    color: "bg-yellow-500",
+    instructions: "1. Look for patterns in your spelling words (prefixes, suffixes, double letters)\n2. Sort words into groups that share a pattern\n3. Give each group a fun name and explain the pattern\n4. Create a mini poster or slide for each group\n5. Teach someone else why the words belong together!"
+  },
+  {
+    id: "emoji_clues",
+    name: "Emoji Clue Maker",
+    icon: "😊",
+    color: "bg-rose-400",
+    instructions: "1. Create an emoji code for each spelling word\n2. Use emojis that hint at the meaning or sounds\n3. Challenge a friend to guess the word from your emoji clue\n4. Swap and decode each other's emoji clues\n5. Write the real word underneath once it's guessed!"
+  },
+  {
+    id: "movement_spelling",
+    name: "Movement Mastery",
+    icon: "🤸",
+    color: "bg-emerald-500",
+    instructions: "1. Assign a body movement to each letter (A = clap, B = jump, etc.)\n2. Spell each word while doing the movements\n3. Mix it up: spell on one foot, backwards, or with dance moves\n4. Teach your movement code to a friend\n5. Finish with a slow-motion spelling challenge!"
+  },
+  {
+    id: "speed_spell_timer",
+    name: "Speed Spell Timer",
+    icon: "⏱️",
+    color: "bg-indigo-500",
+    instructions: "1. Use a timer for 60 seconds\n2. Spell as many words aloud or in writing as you can\n3. Check accuracy before counting the score\n4. Try to beat your personal best with another round\n5. Celebrate with a victory dance when you set a new record!"
+  },
+  {
+    id: "comic_caption",
+    name: "Comic Caption Creator",
+    icon: "🗯️",
+    color: "bg-fuchsia-500",
+    instructions: "1. Draw a 3-panel comic strip\n2. Work at least three spelling words into the speech bubbles\n3. Highlight the spelling words in a bold color\n4. Share your comic with a classmate or display it\n5. Bonus: turn it into a digital comic using slides or a tablet app!"
+  },
+  {
+    id: "buddy_quiz_show",
+    name: "Buddy Quiz Show",
+    icon: "🎤",
+    color: "bg-cyan-500",
+    instructions: "1. Pair up with a friend or family member\n2. Take turns being the game-show host and contestant\n3. The host gives clues or sentences for the spelling words\n4. The contestant spells the word aloud or on a whiteboard\n5. Keep score and celebrate both spellers with a fun cheer!"
+  },
+  {
+    id: "digital_word_search",
+    name: "Digital Word Search",
+    icon: "🧠",
+    color: "bg-teal-500",
+    instructions: "1. Open the Word Search in the Interactive Spelling Lab below\n2. Drag across the hidden spelling words in the grid\n3. Watch the word list fade as you find each one\n4. Click “Shuffle Puzzle” for a fresh challenge\n5. Complete the whole puzzle to mark this activity finished!"
+  },
+  {
+    id: "digital_crossword",
+    name: "Digital Crossword",
+    icon: "🧩",
+    color: "bg-blue-600",
+    instructions: "1. Launch the Crossword in the Interactive Spelling Lab\n2. Use the clues to type each spelling word into the grid\n3. The puzzle checks your spelling as you go\n4. Stuck? Switch to another clue or regenerate the crossword\n5. Fill every square correctly to complete the challenge!"
   }
 ];
+
+const normalizeSpellingWord = (word = '') => word.toUpperCase().replace(/[^A-Z]/g, '');
+
+const shuffleArray = (array) => {
+  const copy = [...array];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+};
+
+const WORD_SEARCH_DIRECTIONS = [
+  { dx: 0, dy: 1 },
+  { dx: 1, dy: 0 },
+  { dx: 0, dy: -1 },
+  { dx: -1, dy: 0 },
+  { dx: 1, dy: 1 },
+  { dx: 1, dy: -1 },
+  { dx: -1, dy: 1 },
+  { dx: -1, dy: -1 }
+];
+
+const randomLetter = () => String.fromCharCode(65 + Math.floor(Math.random() * 26));
+
+const canPlaceWordSearch = (grid, word, startRow, startCol, direction) => {
+  const size = grid.length;
+  for (let i = 0; i < word.length; i++) {
+    const row = startRow + direction.dx * i;
+    const col = startCol + direction.dy * i;
+
+    if (row < 0 || row >= size || col < 0 || col >= size) {
+      return false;
+    }
+
+    const existing = grid[row][col];
+    if (existing && existing !== word[i]) {
+      return false;
+    }
+  }
+  return true;
+};
+
+const placeWordSearch = (grid, word, startRow, startCol, direction) => {
+  const positions = [];
+  for (let i = 0; i < word.length; i++) {
+    const row = startRow + direction.dx * i;
+    const col = startCol + direction.dy * i;
+    grid[row][col] = word[i];
+    positions.push({ row, col });
+  }
+  return positions;
+};
+
+const createWordSearchPuzzle = (words, size = 12) => {
+  const normalized = words
+    .map(normalizeSpellingWord)
+    .filter(word => word.length >= 3 && word.length <= size);
+
+  const seen = new Set();
+  const uniqueWords = [];
+  normalized.forEach(word => {
+    if (!seen.has(word)) {
+      seen.add(word);
+      uniqueWords.push(word);
+    }
+  });
+
+  const sortedWords = uniqueWords.sort((a, b) => b.length - a.length);
+  const chosenWords = sortedWords.slice(0, Math.min(sortedWords.length, 10));
+
+  const grid = Array.from({ length: size }, () => Array(size).fill(null));
+  const placements = [];
+
+  chosenWords.forEach(word => {
+    let placed = false;
+    const directions = shuffleArray(WORD_SEARCH_DIRECTIONS);
+
+    for (const direction of directions) {
+      const startPositions = [];
+
+      for (let row = 0; row < size; row++) {
+        for (let col = 0; col < size; col++) {
+          const endRow = row + direction.dx * (word.length - 1);
+          const endCol = col + direction.dy * (word.length - 1);
+
+          if (endRow < 0 || endRow >= size || endCol < 0 || endCol >= size) {
+            continue;
+          }
+
+          if (canPlaceWordSearch(grid, word, row, col, direction)) {
+            startPositions.push({ row, col });
+          }
+        }
+      }
+
+      const shuffledStarts = shuffleArray(startPositions);
+
+      for (const start of shuffledStarts) {
+        const positions = placeWordSearch(grid, word, start.row, start.col, direction);
+        placements.push({
+          id: `${word}-${placements.length}`,
+          word,
+          positions
+        });
+        placed = true;
+        break;
+      }
+
+      if (placed) break;
+    }
+
+    if (!placed) {
+      for (let row = 0; row < size && !placed; row++) {
+        for (let col = 0; col <= size - word.length && !placed; col++) {
+          if (canPlaceWordSearch(grid, word, row, col, { dx: 0, dy: 1 })) {
+            const positions = placeWordSearch(grid, word, row, col, { dx: 0, dy: 1 });
+            placements.push({
+              id: `${word}-${placements.length}`,
+              word,
+              positions
+            });
+            placed = true;
+          }
+        }
+      }
+    }
+  });
+
+  for (let row = 0; row < size; row++) {
+    for (let col = 0; col < size; col++) {
+      if (!grid[row][col]) {
+        grid[row][col] = randomLetter();
+      }
+    }
+  }
+
+  return {
+    grid,
+    placements,
+    wordBank: placements.map(placement => placement.word)
+  };
+};
+
+const buildWordSignature = (words) => words
+  .map(normalizeSpellingWord)
+  .filter(Boolean)
+  .sort()
+  .join('|');
+
+const SpellingWordSearch = ({ words, onSolved }) => {
+  const [puzzle, setPuzzle] = useState(() => createWordSearchPuzzle(words));
+  const [foundWords, setFoundWords] = useState([]);
+  const [selection, setSelection] = useState([]);
+  const [selectionDirection, setSelectionDirection] = useState(null);
+  const [isSelecting, setIsSelecting] = useState(false);
+  const [isComplete, setIsComplete] = useState(false);
+
+  const signature = useMemo(() => buildWordSignature(words), [words]);
+
+  useEffect(() => {
+    const newPuzzle = createWordSearchPuzzle(words);
+    setPuzzle(newPuzzle);
+    setFoundWords([]);
+    setSelection([]);
+    setSelectionDirection(null);
+    setIsSelecting(false);
+    setIsComplete(false);
+  }, [signature, words]);
+
+  const finalizeSelection = useCallback(() => {
+    if (!selection.length) {
+      setIsSelecting(false);
+      setSelection([]);
+      setSelectionDirection(null);
+      return;
+    }
+
+    if (puzzle && puzzle.placements) {
+      const selectionKey = selection.map(cell => `${cell.row}-${cell.col}`).join('|');
+      const matchedPlacement = puzzle.placements.find(placement => {
+        const forwardKey = placement.positions.map(pos => `${pos.row}-${pos.col}`).join('|');
+        if (selectionKey === forwardKey) return true;
+        const backwardKey = [...placement.positions].reverse().map(pos => `${pos.row}-${pos.col}`).join('|');
+        return selectionKey === backwardKey;
+      });
+
+      if (matchedPlacement) {
+        setFoundWords(prev => {
+          if (prev.includes(matchedPlacement.word)) {
+            return prev;
+          }
+          const updated = [...prev, matchedPlacement.word];
+          if (puzzle.placements.length && updated.length === puzzle.placements.length && !isComplete) {
+            setIsComplete(true);
+            if (onSolved) {
+              onSolved();
+            }
+          }
+          return updated;
+        });
+      }
+    }
+
+    setIsSelecting(false);
+    setSelection([]);
+    setSelectionDirection(null);
+  }, [selection, puzzle, isComplete, onSolved]);
+
+  useEffect(() => {
+    if (!isSelecting) return;
+
+    const handlePointerUp = () => finalizeSelection();
+
+    window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('touchend', handlePointerUp);
+
+    return () => {
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('touchend', handlePointerUp);
+    };
+  }, [isSelecting, finalizeSelection]);
+
+  const handlePointerDown = (row, col) => {
+    setIsSelecting(true);
+    setSelection([{ row, col }]);
+    setSelectionDirection(null);
+  };
+
+  const handlePointerEnter = (row, col) => {
+    if (!isSelecting || !selection.length) return;
+
+    const last = selection[selection.length - 1];
+    if (last.row === row && last.col === col) return;
+
+    if (selection.some(cell => cell.row === row && cell.col === col)) return;
+
+    const deltaRow = row - last.row;
+    const deltaCol = col - last.col;
+
+    if (Math.abs(deltaRow) > 1 || Math.abs(deltaCol) > 1) return;
+
+    const normalized = {
+      dx: deltaRow === 0 ? 0 : deltaRow / Math.abs(deltaRow),
+      dy: deltaCol === 0 ? 0 : deltaCol / Math.abs(deltaCol)
+    };
+
+    const direction = selectionDirection || normalized;
+
+    if (direction.dx !== normalized.dx || direction.dy !== normalized.dy) return;
+
+    const expectedRow = last.row + direction.dx;
+    const expectedCol = last.col + direction.dy;
+
+    if (row !== expectedRow || col !== expectedCol) return;
+
+    if (!selectionDirection) {
+      setSelectionDirection(direction);
+    }
+
+    setSelection(prev => [...prev, { row, col }]);
+  };
+
+  const handlePointerUp = () => {
+    if (isSelecting) {
+      finalizeSelection();
+    }
+  };
+
+  const foundCells = useMemo(() => {
+    if (!puzzle || !puzzle.placements) return new Set();
+    const set = new Set();
+    puzzle.placements.forEach(placement => {
+      if (foundWords.includes(placement.word)) {
+        placement.positions.forEach(pos => set.add(`${pos.row}-${pos.col}`));
+      }
+    });
+    return set;
+  }, [puzzle, foundWords]);
+
+  const activeCells = useMemo(() => {
+    const set = new Set();
+    selection.forEach(cell => set.add(`${cell.row}-${cell.col}`));
+    return set;
+  }, [selection]);
+
+  if (!puzzle || !puzzle.grid.length) {
+    return (
+      <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl border border-slate-200 p-6 text-center">
+        <p className="text-slate-600">Not enough words to build a word search yet.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-xl border border-indigo-200 p-4 md:p-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+        <div>
+          <h3 className="text-lg md:text-xl font-bold text-indigo-700">Interactive Word Search</h3>
+          <p className="text-sm text-indigo-600">Tap and drag to highlight each hidden spelling word.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => {
+              const newPuzzle = createWordSearchPuzzle(words);
+              setPuzzle(newPuzzle);
+              setFoundWords([]);
+              setSelection([]);
+              setSelectionDirection(null);
+              setIsSelecting(false);
+              setIsComplete(false);
+            }}
+            className="px-3 py-2 text-sm font-semibold rounded-lg bg-white text-indigo-600 border border-indigo-200 hover:bg-indigo-50"
+          >
+            🔁 Shuffle Puzzle
+          </button>
+          <button
+            onClick={() => {
+              setFoundWords([]);
+              setSelection([]);
+              setSelectionDirection(null);
+              setIsSelecting(false);
+              setIsComplete(false);
+            }}
+            className="px-3 py-2 text-sm font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700"
+          >
+            ♻️ Reset Progress
+          </button>
+        </div>
+      </div>
+
+      <div
+        className="grid gap-1 md:gap-1.5"
+        style={{ gridTemplateColumns: `repeat(${puzzle.grid.length}, minmax(0, 1fr))`, touchAction: 'none' }}
+      >
+        {puzzle.grid.map((row, rowIndex) =>
+          row.map((letter, colIndex) => {
+            const key = `${rowIndex}-${colIndex}`;
+            const isFound = foundCells.has(key);
+            const isActive = activeCells.has(key);
+
+            return (
+              <div
+                key={key}
+                className={`relative select-none aspect-square rounded-md flex items-center justify-center font-bold text-base md:text-lg uppercase transition-all duration-150 border ${
+                  isFound
+                    ? 'bg-green-500 text-white border-green-500'
+                    : isActive
+                      ? 'bg-yellow-300 text-slate-900 border-yellow-400'
+                      : 'bg-white text-indigo-700 border-indigo-200 hover:bg-indigo-50'
+                }`}
+                onPointerDown={() => handlePointerDown(rowIndex, colIndex)}
+                onPointerEnter={() => handlePointerEnter(rowIndex, colIndex)}
+                onPointerUp={handlePointerUp}
+              >
+                {letter}
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      <div className="mt-6">
+        <h4 className="text-sm font-semibold text-indigo-700 uppercase tracking-wide mb-2">Words to find</h4>
+        <div className="flex flex-wrap gap-2">
+          {puzzle.wordBank.map(word => {
+            const isFound = foundWords.includes(word);
+            return (
+              <span
+                key={word}
+                className={`px-3 py-1 rounded-full text-sm font-semibold border ${
+                  isFound
+                    ? 'bg-green-100 border-green-300 text-green-700 line-through'
+                    : 'bg-white border-indigo-200 text-indigo-700'
+                }`}
+              >
+                {word}
+              </span>
+            );
+          })}
+        </div>
+        {isComplete && (
+          <div className="mt-4 bg-green-50 border border-green-200 rounded-lg p-4 text-green-700 flex items-center gap-2">
+            <span className="text-xl">🎉</span>
+            <div>
+              <p className="font-semibold">Puzzle complete!</p>
+              <p className="text-sm">Amazing work finding every spelling word.</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const generateCrosswordPuzzle = (words, size = 13) => {
+  const normalizedWords = words
+    .map((word, index) => ({
+      raw: word,
+      normalized: normalizeSpellingWord(word),
+      index
+    }))
+    .filter(item => item.normalized.length >= 3 && item.normalized.length <= size - 1);
+
+  const seen = new Set();
+  const uniqueWords = [];
+  normalizedWords.forEach(item => {
+    if (!seen.has(item.normalized)) {
+      seen.add(item.normalized);
+      uniqueWords.push({
+        ...item,
+        id: `${item.normalized}_${item.index}`
+      });
+    }
+  });
+
+  if (!uniqueWords.length) {
+    return {
+      grid: [],
+      placements: [],
+      numberMap: new Map(),
+      clues: []
+    };
+  }
+
+  const sorted = uniqueWords.sort((a, b) => b.normalized.length - a.normalized.length);
+  const selected = sorted.slice(0, Math.min(sorted.length, 9));
+
+  const grid = Array.from({ length: size }, () => Array(size).fill(null));
+  const usage = new Map();
+  const placements = [];
+
+  const markUsage = (row, col, direction) => {
+    const key = `${row}-${col}`;
+    if (!usage.has(key)) {
+      usage.set(key, new Set());
+    }
+    usage.get(key).add(direction);
+  };
+
+  const canPlaceWord = (wordObj, row, col, direction) => {
+    const word = wordObj.normalized;
+
+    if (direction === 'across') {
+      if (col < 0 || col + word.length > size || row < 0 || row >= size) return false;
+    } else {
+      if (row < 0 || row + word.length > size || col < 0 || col >= size) return false;
+    }
+
+    for (let i = 0; i < word.length; i++) {
+      const r = direction === 'across' ? row : row + i;
+      const c = direction === 'across' ? col + i : col;
+
+      if (r < 0 || r >= size || c < 0 || c >= size) {
+        return false;
+      }
+
+      const existing = grid[r][c];
+
+      if (existing && existing !== word[i]) {
+        return false;
+      }
+
+      const key = `${r}-${c}`;
+      if (existing) {
+        const existingUsage = usage.get(key);
+        if (existingUsage && existingUsage.has(direction)) {
+          return false;
+        }
+      } else {
+        if (direction === 'across') {
+          if ((r > 0 && grid[r - 1][c]) || (r < size - 1 && grid[r + 1][c])) return false;
+        } else {
+          if ((c > 0 && grid[r][c - 1]) || (c < size - 1 && grid[r][c + 1])) return false;
+        }
+      }
+    }
+
+    if (direction === 'across') {
+      if (col > 0 && grid[row][col - 1]) return false;
+      if (col + word.length < size && grid[row][col + word.length]) return false;
+    } else {
+      if (row > 0 && grid[row - 1][col]) return false;
+      if (row + word.length < size && grid[row + word.length][col]) return false;
+    }
+
+    return true;
+  };
+
+  const placeWord = (wordObj, row, col, direction) => {
+    const word = wordObj.normalized;
+    const positions = [];
+
+    for (let i = 0; i < word.length; i++) {
+      const r = direction === 'across' ? row : row + i;
+      const c = direction === 'across' ? col + i : col;
+      grid[r][c] = word[i];
+      positions.push({ row: r, col: c });
+      markUsage(r, c, direction);
+    }
+
+    placements.push({
+      id: wordObj.id,
+      word,
+      display: wordObj.raw,
+      row,
+      col,
+      direction,
+      length: word.length,
+      listIndex: wordObj.index,
+      positions,
+      number: 0
+    });
+  };
+
+  const tryToPlaceWord = (wordObj) => {
+    let placed = false;
+
+    const shuffledPlaced = shuffleArray(placements);
+
+    for (const placedWord of shuffledPlaced) {
+      for (let i = 0; i < wordObj.normalized.length && !placed; i++) {
+        const letter = wordObj.normalized[i];
+        for (let j = 0; j < placedWord.word.length && !placed; j++) {
+          if (placedWord.word[j] !== letter) continue;
+
+          const direction = placedWord.direction === 'across' ? 'down' : 'across';
+          const startRow = placedWord.direction === 'across'
+            ? placedWord.row - i
+            : placedWord.row + j;
+          const startCol = placedWord.direction === 'across'
+            ? placedWord.col + j
+            : placedWord.col - i;
+
+          if (canPlaceWord(wordObj, startRow, startCol, direction)) {
+            placeWord(wordObj, startRow, startCol, direction);
+            placed = true;
+          }
+        }
+      }
+    }
+
+    if (!placed) {
+      const directions = shuffleArray(['across', 'down']);
+      for (const direction of directions) {
+        for (let row = 1; row < size - 1 && !placed; row++) {
+          for (let col = 1; col < size - 1 && !placed; col++) {
+            if (canPlaceWord(wordObj, row, col, direction)) {
+              placeWord(wordObj, row, col, direction);
+              placed = true;
+            }
+          }
+        }
+      }
+    }
+  };
+
+  const centerRow = Math.floor(size / 2);
+  const firstWord = selected[0];
+  const startCol = Math.max(1, Math.floor((size - firstWord.normalized.length) / 2));
+  placeWord(firstWord, centerRow, startCol, 'across');
+
+  for (let i = 1; i < selected.length; i++) {
+    tryToPlaceWord(selected[i]);
+  }
+
+  const numberMap = new Map();
+  const sortedPlacements = [...placements].sort((a, b) => {
+    if (a.row !== b.row) return a.row - b.row;
+    return a.col - b.col;
+  });
+
+  let counter = 1;
+  sortedPlacements.forEach(word => {
+    const key = `${word.row}-${word.col}`;
+    if (!numberMap.has(key)) {
+      numberMap.set(key, counter++);
+    }
+    word.number = numberMap.get(key);
+  });
+
+  const clues = placements
+    .map(word => ({
+      id: word.id,
+      number: word.number,
+      direction: word.direction,
+      answer: word.word,
+      display: word.display,
+      listIndex: word.listIndex,
+      positions: word.positions,
+      clue: `List word ${word.listIndex + 1} (starts with "${word.display?.charAt(0)?.toUpperCase()}" · ${word.length} letters)`
+    }))
+    .sort((a, b) => {
+      if (a.number !== b.number) return a.number - b.number;
+      return a.direction.localeCompare(b.direction);
+    });
+
+  return {
+    grid,
+    placements,
+    numberMap,
+    clues
+  };
+};
+
+const createEmptyUserGrid = (grid) => grid.map(row => row.map(cell => (cell ? '' : null)));
+
+const SpellingCrossword = ({ words, onSolved }) => {
+  const [puzzle, setPuzzle] = useState(() => generateCrosswordPuzzle(words));
+  const [userGrid, setUserGrid] = useState(() => createEmptyUserGrid(puzzle.grid || []));
+  const [activeClueId, setActiveClueId] = useState(null);
+  const [isSolved, setIsSolved] = useState(false);
+
+  const signature = useMemo(() => buildWordSignature(words), [words]);
+
+  useEffect(() => {
+    const nextPuzzle = generateCrosswordPuzzle(words);
+    setPuzzle(nextPuzzle);
+    setUserGrid(createEmptyUserGrid(nextPuzzle.grid || []));
+    setActiveClueId(null);
+    setIsSolved(false);
+  }, [signature, words]);
+
+  const handleInputChange = (row, col, value) => {
+    const letter = value.slice(-1).toUpperCase().replace(/[^A-Z]/g, '');
+    setUserGrid(prev => {
+      const next = prev.map(r => [...r]);
+      if (next[row]) {
+        next[row][col] = letter;
+      }
+      return next;
+    });
+  };
+
+  const checkSolved = useCallback((currentGrid, currentPuzzle) => {
+    if (!currentPuzzle.grid.length) return false;
+
+    for (let row = 0; row < currentPuzzle.grid.length; row++) {
+      for (let col = 0; col < currentPuzzle.grid[row].length; col++) {
+        const solution = currentPuzzle.grid[row][col];
+        if (!solution) continue;
+        if (currentGrid[row]?.[col] !== solution) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }, []);
+
+  useEffect(() => {
+    if (!puzzle.grid.length) return;
+    if (isSolved) return;
+
+    if (checkSolved(userGrid, puzzle)) {
+      setIsSolved(true);
+      if (onSolved) {
+        onSolved();
+      }
+    }
+  }, [userGrid, puzzle, checkSolved, isSolved, onSolved]);
+
+  const handleCellFocus = (row, col) => {
+    if (!puzzle.placements.length) return;
+    const wordsAtCell = puzzle.placements.filter(word =>
+      word.positions.some(pos => pos.row === row && pos.col === col)
+    );
+    if (!wordsAtCell.length) return;
+    const preferred = wordsAtCell.find(word => word.direction === 'across') || wordsAtCell[0];
+    setActiveClueId(preferred.id);
+  };
+
+  const handleClueClick = (clueId) => {
+    setActiveClueId(clueId);
+  };
+
+  const resetAnswers = () => {
+    setUserGrid(createEmptyUserGrid(puzzle.grid || []));
+    setIsSolved(false);
+  };
+
+  const regeneratePuzzle = () => {
+    const nextPuzzle = generateCrosswordPuzzle(words);
+    setPuzzle(nextPuzzle);
+    setUserGrid(createEmptyUserGrid(nextPuzzle.grid || []));
+    setActiveClueId(null);
+    setIsSolved(false);
+  };
+
+  const activeCells = useMemo(() => {
+    if (!activeClueId) return new Set();
+    const clue = puzzle.placements.find(word => word.id === activeClueId);
+    if (!clue) return new Set();
+    const set = new Set();
+    clue.positions.forEach(pos => set.add(`${pos.row}-${pos.col}`));
+    return set;
+  }, [activeClueId, puzzle]);
+
+  if (!puzzle.grid.length) {
+    return (
+      <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl border border-slate-200 p-6 text-center">
+        <p className="text-slate-600">Add a few more words to unlock the crossword challenge.</p>
+      </div>
+    );
+  }
+
+  const acrossClues = puzzle.clues.filter(clue => clue.direction === 'across');
+  const downClues = puzzle.clues.filter(clue => clue.direction === 'down');
+
+  return (
+    <div className="bg-gradient-to-br from-amber-50 to-orange-100 rounded-xl border border-orange-200 p-4 md:p-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+        <div>
+          <h3 className="text-lg md:text-xl font-bold text-orange-700">Classroom Crossword</h3>
+          <p className="text-sm text-orange-600">Type your spelling words into the grid using the clues.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={regeneratePuzzle}
+            className="px-3 py-2 text-sm font-semibold rounded-lg bg-white text-orange-600 border border-orange-200 hover:bg-orange-50"
+          >
+            🔁 New Crossword
+          </button>
+          <button
+            onClick={resetAnswers}
+            className="px-3 py-2 text-sm font-semibold rounded-lg bg-orange-600 text-white hover:bg-orange-700"
+          >
+            ♻️ Clear Answers
+          </button>
+        </div>
+      </div>
+
+      <div className="flex flex-col lg:flex-row gap-6">
+        <div className="lg:w-1/2">
+          <div
+            className="grid gap-1"
+            style={{ gridTemplateColumns: `repeat(${puzzle.grid.length}, minmax(0, 1fr))` }}
+          >
+            {puzzle.grid.map((row, rowIndex) =>
+              row.map((cell, colIndex) => {
+                const key = `${rowIndex}-${colIndex}`;
+                if (!cell) {
+                  return <div key={key} className="aspect-square rounded-md bg-orange-200 opacity-40" />;
+                }
+
+                const number = puzzle.numberMap.get(key);
+                const isActive = activeCells.has(key);
+                const value = userGrid[rowIndex]?.[colIndex] || '';
+                const isCorrect = value && value === cell;
+
+                return (
+                  <div
+                    key={key}
+                    className={`relative aspect-square border-2 rounded-md overflow-hidden ${
+                      isActive
+                        ? 'border-orange-500 bg-white'
+                        : 'border-orange-200 bg-white'
+                    } ${isCorrect ? 'shadow-inner shadow-orange-200' : ''}`}
+                  >
+                    {number && (
+                      <span className="absolute top-0.5 left-1 text-[0.65rem] font-semibold text-orange-500">
+                        {number}
+                      </span>
+                    )}
+                    <input
+                      value={value}
+                      onChange={(e) => handleInputChange(rowIndex, colIndex, e.target.value)}
+                      onFocus={() => handleCellFocus(rowIndex, colIndex)}
+                      className="w-full h-full text-center text-lg md:text-xl font-bold uppercase text-orange-700 bg-transparent focus:outline-none"
+                      maxLength={1}
+                      autoComplete="off"
+                    />
+                  </div>
+                );
+              })
+            )}
+          </div>
+          {isSolved && (
+            <div className="mt-4 bg-green-50 border border-green-200 rounded-lg p-4 text-green-700 flex items-center gap-2">
+              <span className="text-xl">🏆</span>
+              <div>
+                <p className="font-semibold">Crossword complete!</p>
+                <p className="text-sm">Every answer matches your spelling list perfectly.</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="lg:w-1/2 space-y-4">
+          <div className="bg-white rounded-xl border border-orange-100 p-4">
+            <h4 className="text-sm font-semibold text-orange-600 uppercase tracking-wide mb-2">Across</h4>
+            <ul className="space-y-2">
+              {acrossClues.map(clue => (
+                <li
+                  key={clue.id}
+                  onClick={() => handleClueClick(clue.id)}
+                  className={`p-3 rounded-lg cursor-pointer transition-colors border ${
+                    clue.id === activeClueId
+                      ? 'bg-orange-100 border-orange-300 text-orange-800'
+                      : 'bg-orange-50 border-orange-100 text-orange-700 hover:bg-orange-100'
+                  }`}
+                >
+                  <p className="text-sm font-semibold">{clue.number}. {clue.clue}</p>
+                  <p className="text-xs text-orange-500 mt-1">{clue.answer.length} letters</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="bg-white rounded-xl border border-orange-100 p-4">
+            <h4 className="text-sm font-semibold text-orange-600 uppercase tracking-wide mb-2">Down</h4>
+            <ul className="space-y-2">
+              {downClues.map(clue => (
+                <li
+                  key={clue.id}
+                  onClick={() => handleClueClick(clue.id)}
+                  className={`p-3 rounded-lg cursor-pointer transition-colors border ${
+                    clue.id === activeClueId
+                      ? 'bg-orange-100 border-orange-300 text-orange-800'
+                      : 'bg-orange-50 border-orange-100 text-orange-700 hover:bg-orange-100'
+                  }`}
+                >
+                  <p className="text-sm font-semibold">{clue.number}. {clue.clue}</p>
+                  <p className="text-xs text-orange-500 mt-1">{clue.answer.length} letters</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const StudentSpelling = ({
   studentData,
@@ -366,6 +1268,8 @@ const StudentSpelling = ({
   const [studentAssignments, setStudentAssignments] = useState(null);
   const [completedActivities, setCompletedActivities] = useState([]);
   const [showActivityInstructions, setShowActivityInstructions] = useState(null);
+  const [selectedListId, setSelectedListId] = useState(null);
+  const [selectedInteractive, setSelectedInteractive] = useState('word_search');
 
   const passageMap = useMemo(() => {
     const map = {};
@@ -381,6 +1285,26 @@ const StudentSpelling = ({
       loadCompletedActivities();
     }
   }, [studentData, classData]);
+
+  useEffect(() => {
+    if (studentAssignments?.lists?.length) {
+      setSelectedListId(prev => {
+        if (prev && studentAssignments.lists.some(list => list.id === prev)) {
+          return prev;
+        }
+        return studentAssignments.lists[0].id;
+      });
+    } else {
+      setSelectedListId(null);
+    }
+  }, [studentAssignments]);
+
+  const selectedList = useMemo(() => {
+    if (!studentAssignments?.lists?.length) return null;
+    return studentAssignments.lists.find(list => list.id === selectedListId) || studentAssignments.lists[0];
+  }, [studentAssignments, selectedListId]);
+
+  const selectedWords = selectedList?.words || [];
 
   const findStudentAssignments = () => {
     // Get spelling groups from class toolkit data
@@ -447,6 +1371,17 @@ const StudentSpelling = ({
       setCompletedActivities(activities);
     } catch (error) {
       console.error('Error saving completed activities:', error);
+    }
+  };
+
+  const markActivityComplete = (activityId) => {
+    if (completedActivities.includes(activityId)) {
+      return;
+    }
+    const updated = [...completedActivities, activityId];
+    saveCompletedActivities(updated);
+    if (showToast) {
+      showToast(`Activity completed! ${updated.length}/5 activities done this week.`, 'success');
     }
   };
 
@@ -598,6 +1533,86 @@ const StudentSpelling = ({
             })}
           </div>
         </div>
+      </div>
+
+      {/* Interactive Activities */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+          <div className="flex-1">
+            <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-2 flex items-center gap-2">
+              <span>🧠</span> Interactive Spelling Lab
+            </h2>
+            <p className="text-sm md:text-base text-gray-600 leading-relaxed">
+              Jump into on-screen challenges that use your current spelling words. Complete the word search or crossword to earn credit for the digital activities!
+            </p>
+          </div>
+          {studentAssignments.lists.length > 0 && (
+            <div className="flex-1 lg:max-w-sm space-y-3">
+              <div>
+                <label htmlFor="spelling-interactive-list" className="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">
+                  Choose your spelling list
+                </label>
+                <select
+                  id="spelling-interactive-list"
+                  value={selectedListId || ''}
+                  onChange={(e) => setSelectedListId(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                >
+                  {studentAssignments.lists.map(list => (
+                    <option key={list.id} value={list.id}>
+                      {list.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { id: 'word_search', label: 'Word Search', icon: '🔎' },
+                  { id: 'crossword', label: 'Crossword', icon: '🧩' }
+                ].map(option => {
+                  const isActive = selectedInteractive === option.id;
+                  return (
+                    <button
+                      key={option.id}
+                      onClick={() => setSelectedInteractive(option.id)}
+                      className={`flex-1 min-w-[140px] px-3 py-2 rounded-lg text-sm font-semibold border transition-colors ${
+                        isActive
+                          ? 'bg-indigo-600 text-white border-indigo-600 shadow-md'
+                          : 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100'
+                      }`}
+                    >
+                      <span className="mr-2">{option.icon}</span>
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {(!selectedList || !selectedWords.length) ? (
+          <div className="mt-6 bg-gray-50 border border-dashed border-gray-300 rounded-xl p-6 text-center text-gray-600">
+            Add spelling words to your group to unlock the digital puzzles.
+          </div>
+        ) : (
+          <div className="mt-6 space-y-6">
+            {selectedInteractive === 'word_search' && (
+              <SpellingWordSearch
+                key={`word-search-${selectedList.id}`}
+                words={selectedWords}
+                onSolved={() => markActivityComplete('digital_word_search')}
+              />
+            )}
+            {selectedInteractive === 'crossword' && (
+              <SpellingCrossword
+                key={`crossword-${selectedList.id}`}
+                words={selectedWords}
+                onSolved={() => markActivityComplete('digital_crossword')}
+              />
+            )}
+          </div>
+        )}
       </div>
 
       {/* Spelling Lists */}
