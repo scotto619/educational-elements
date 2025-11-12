@@ -11,6 +11,8 @@ import BeginnerReaders from '../curriculum/literacy/BeginnerReaders';
 import ReadingForFun from '../curriculum/literacy/ReadingForFun';
 import ReadersTheatre from '../curriculum/literacy/ReadersTheatre';
 import Morphology from '../curriculum/literacy/Morphology';
+import VocabularyCorner from '../curriculum/literacy/VocabularyCorner';
+import FlipCardsStudio from '../curriculum/general/FlipCardsStudio';
 import AreaPerimeterTool from '../curriculum/mathematics/AreaPerimeterTool';
 import MathWarmup from '../curriculum/mathematics/MathWarmup';
 import WorksheetGenerator from '../curriculum/mathematics/WorksheetGenerator';
@@ -180,9 +182,10 @@ const subjects = [
         id: 'vocabulary-builder',
         name: 'Vocabulary Builder',
         icon: '📖',
-        description: 'Word study and vocabulary development',
-        component: ComingSoon,
-        literacyCategory: 'spelling'
+        description: 'Discover definitions, synonyms, and build vibrant class word lists',
+        component: VocabularyCorner,
+        literacyCategory: ['spelling', 'reading'],
+        isNew: true
       },
       {
         id: 'grammar-workshop',
@@ -207,6 +210,23 @@ const subjects = [
         description: 'Letter formation and handwriting improvement',
         component: ComingSoon,
         literacyCategory: 'writing'
+      }
+    ]
+  },
+  {
+    id: 'study-studio',
+    name: 'Study & Revision Studio',
+    icon: '🧠',
+    color: 'from-indigo-500 to-purple-600',
+    description: 'Quick review games and flip decks for any subject area',
+    activities: [
+      {
+        id: 'flip-cards',
+        name: 'Flip Cards Studio',
+        icon: '🎴',
+        description: 'Fullscreen flip cards with default decks and a simple deck builder',
+        component: FlipCardsStudio,
+        isNew: true
       }
     ]
   },
@@ -824,6 +844,11 @@ const CurriculumCornerTab = ({
                     🎯 Daily Math Challenge Studio is ready!
                   </div>
                 )}
+                {subject.id === 'study-studio' && (
+                  <div className="text-xs text-indigo-600 font-semibold mt-1">
+                    🎴 Flip Cards Studio ready to launch!
+                  </div>
+                )}
               </div>
             );
           })}
@@ -837,6 +862,28 @@ const CurriculumCornerTab = ({
           What's New in Curriculum Corner
         </h3>
         <div className="space-y-3">
+          <div className="bg-white border border-indigo-200 rounded-lg p-4">
+            <h4 className="font-bold text-indigo-700 mb-2">🎴 NEW: Flip Cards Studio</h4>
+            <p className="text-sm text-indigo-600 mb-2">
+              Launch colourful question-and-answer cards in seconds, complete with fullscreen presentation and a streamlined deck builder.
+            </p>
+            <ul className="text-xs text-indigo-600 space-y-1 ml-4">
+              <li>• Default packs for times tables, history, science, and wellbeing prompts</li>
+              <li>• Save custom decks locally or paste in bulk question | answer lists</li>
+              <li>• Present cards fullscreen with keyboard controls for smooth review sessions</li>
+            </ul>
+          </div>
+          <div className="bg-white border border-amber-200 rounded-lg p-4">
+            <h4 className="font-bold text-amber-700 mb-2">🔤 NEW: Vocabulary Corner</h4>
+            <p className="text-sm text-amber-600 mb-2">
+              Look up words with the Dictionary.com API, explore synonyms, and curate vibrant vocabulary lists for your class and student portal.
+            </p>
+            <ul className="text-xs text-amber-600 space-y-1 ml-4">
+              <li>• Default literacy lists plus save-your-own collections per device</li>
+              <li>• Instant definitions, example sentences, and synonym hopping</li>
+              <li>• Students can access their own Vocabulary Corner inside the portal</li>
+            </ul>
+          </div>
           <div className="bg-white border border-green-200 rounded-lg p-4">
             <h4 className="font-bold text-green-700 mb-2">📐 NEW: Interactive Angles Tool</h4>
             <p className="text-sm text-green-600 mb-2">
