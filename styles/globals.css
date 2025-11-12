@@ -258,3 +258,12 @@ img {
   animation: egg-shake 1.4s ease-in-out infinite;
   transform-origin: 50% 85%;
 }
+/* Flip card helpers */
+.perspective {
+  perspective: 2000px;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}

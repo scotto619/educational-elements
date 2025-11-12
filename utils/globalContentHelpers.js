@@ -6,6 +6,7 @@ const emptyInventory = () => ({
   premiumAvatars: [],
   basicPets: [],
   premiumPets: [],
+  cardPacks: [],
 });
 
 const toSlug = (text = '') =>
@@ -86,6 +87,10 @@ const groupShopItems = (items = []) => {
   const inventory = emptyInventory();
   items.forEach((item) => {
     if (!item?.active) return;
+    if (item.type === 'card_pack') {
+      inventory.cardPacks.push(item);
+      return;
+    }
     if (item.type === 'pet') {
       if (item.category === 'premium') {
         inventory.premiumPets.push(item);

@@ -1,5 +1,5 @@
 // components/tabs/ShopTab.js - MOBILE-OPTIMIZED SHOP WITH HALLOWEEN SECTION, MYSTERY BOX AND SELLING FEATURE
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { DEFAULT_TEACHER_REWARDS, buildShopInventory, getDailySpecials } from '../../utils/shopSpecials';
 import {
@@ -15,6 +15,15 @@ import {
   DEFAULT_PET_IMAGE
 } from '../../utils/gameHelpers';
 import { normalizeImageSource, serializeFallbacks, createImageErrorHandler } from '../../utils/imageFallback';
+import {
+  CARD_RARITY_ORDER,
+  CARD_RARITY_STYLES,
+  CARD_TYPE_LABELS,
+  DEFAULT_CARD_PACKS,
+  buildTradingCardLibrary,
+  getCollectionProgress,
+  getRarityBreakdown
+} from '../../utils/tradingCards';
 
 // ===============================================
 // HALLOWEEN THEMED ITEMS - LIMITED TIME!
@@ -55,6 +64,14 @@ const resolvePetArt = (source) => normalizeImageSource(source, DEFAULT_PET_IMAGE
 
 // Available icons for new rewards
 const REWARD_ICONS = ['💻', '🎮', '📝', '🎵', '🎯', '💺', '⏰', '🎓', '🏆', '⭐', '🎨', '📚', '🏃‍♂️', '🎁', '🎭', '🎪', '🎯', '🎲', '🎊', '🎉', '👑', '🏅', '🥇', '🎀', '🌟', '✨', '🔮', '🎈', '🎂', '🍕', '🍪', '🧸', '🚀', '🌈', '⚡', '🔥', '💎', '🍭'];
+
+const EMPTY_CARD_COLLECTION = Object.freeze({
+  packs: {},
+  cards: {},
+  history: [],
+  totalOpened: 0,
+  lastOpenedAt: null
+});
 
 // ===============================================
 // MYSTERY BOX SYSTEM
@@ -108,7 +125,11 @@ const getMysteryBoxPrizes = (
   SHOP_BASIC_PETS,
   SHOP_PREMIUM_PETS,
   currentRewards,
-  EGG_TYPES = PET_EGG_TYPES
+  HALLOWEEN_BASIC_AVATARS = [],
+  HALLOWEEN_PREMIUM_AVATARS = [],
+  HALLOWEEN_PETS = [],
+  EGG_TYPES = PET_EGG_TYPES,
+  CARD_PACKS = []
 ) => {
   const prizes = [];
 
@@ -148,7 +169,7 @@ const getMysteryBoxPrizes = (
   });
 
   // Add class rewards
-  currentRewards.forEach(reward => {
+  (currentRewards || []).forEach(reward => {
     prizes.push({
       type: 'reward',
       item: reward,
@@ -185,7 +206,18 @@ const getMysteryBoxPrizes = (
       });
     });
   });
-  
+
+  (CARD_PACKS || []).forEach(pack => {
+    prizes.push({
+      type: 'card_pack',
+      pack,
+      rarity: pack.rarity || 'rare',
+      name: pack.name,
+      displayName: pack.name,
+      icon: pack.icon || '🃏'
+    });
+  });
+
   return prizes;
 };
 
@@ -333,6 +365,65 @@ const ShopTab = ({
     [selectedStudent?.petEggs]
   );
 
+  const rawCardCollection = selectedStudent?.cardCollection;
+  const selectedStudentCardCollection = rawCardCollection || EMPTY_CARD_COLLECTION;
+
+  const tradingCardLibrary = useMemo(
+    () =>
+      buildTradingCardLibrary({
+        avatars: [
+          ...SHOP_BASIC_AVATARS,
+          ...SHOP_PREMIUM_AVATARS,
+          ...HALLOWEEN_BASIC_AVATARS,
+          ...HALLOWEEN_PREMIUM_AVATARS
+        ],
+        pets: [...SHOP_BASIC_PETS, ...SHOP_PREMIUM_PETS, ...HALLOWEEN_PETS]
+      }),
+    [
+      SHOP_BASIC_AVATARS,
+      SHOP_PREMIUM_AVATARS,
+      SHOP_BASIC_PETS,
+      SHOP_PREMIUM_PETS,
+      HALLOWEEN_BASIC_AVATARS,
+      HALLOWEEN_PREMIUM_AVATARS,
+      HALLOWEEN_PETS
+    ]
+  );
+
+  const createCardCollectionSnapshot = useCallback(
+    () => ({
+      packs: { ...(selectedStudentCardCollection.packs || {}) },
+      cards: { ...(selectedStudentCardCollection.cards || {}) },
+      history: Array.isArray(selectedStudentCardCollection.history)
+        ? [...selectedStudentCardCollection.history]
+        : [],
+      totalOpened: selectedStudentCardCollection.totalOpened || 0,
+      lastOpenedAt: selectedStudentCardCollection.lastOpenedAt || null
+    }),
+    [selectedStudentCardCollection]
+  );
+
+  const cardPackInventory = useMemo(
+    () =>
+      DEFAULT_CARD_PACKS.map(pack => ({
+        ...pack,
+        count: selectedStudentCardCollection.packs?.[pack.id]?.count || 0
+      })),
+    [selectedStudentCardCollection]
+  );
+
+  const cardProgress = useMemo(
+    () => getCollectionProgress(selectedStudentCardCollection, tradingCardLibrary),
+    [selectedStudentCardCollection, tradingCardLibrary]
+  );
+
+  const cardRarityBreakdown = useMemo(
+    () => getRarityBreakdown(selectedStudentCardCollection, tradingCardLibrary),
+    [selectedStudentCardCollection, tradingCardLibrary]
+  );
+
+  const cardTypeSummary = useMemo(() => Object.values(CARD_TYPE_LABELS).join(', '), []);
+
   useEffect(() => {
     if (!selectedStudentId || !selectedStudentEggs.length) return;
 
@@ -377,6 +468,7 @@ const ShopTab = ({
       basicPets: SHOP_BASIC_PETS,
       premiumPets: SHOP_PREMIUM_PETS,
       rewards: currentRewards,
+      cardPacks: DEFAULT_CARD_PACKS,
       extraItems: seasonalItems
     });
 
@@ -427,7 +519,11 @@ const ShopTab = ({
       SHOP_BASIC_PETS,
       SHOP_PREMIUM_PETS,
       currentRewards,
-      PET_EGG_TYPES
+      HALLOWEEN_BASIC_AVATARS,
+      HALLOWEEN_PREMIUM_AVATARS,
+      HALLOWEEN_PETS,
+      PET_EGG_TYPES,
+      DEFAULT_CARD_PACKS
     );
     
     // Select random prize
@@ -491,10 +587,37 @@ const ShopTab = ({
         updates.currency = (student.currency || 0) + prize.amount;
         message = `${student.firstName} won ${prize.amount} bonus coins!`;
         break;
+      case 'card_pack': {
+        const pack = prize.pack || prize.item;
+        if (pack) {
+          const snapshot = createCardCollectionSnapshot();
+          const packs = { ...snapshot.packs };
+          const nowIso = new Date().toISOString();
+          const entry = packs[pack.id] || { count: 0 };
+          packs[pack.id] = {
+            ...entry,
+            count: (entry.count || 0) + 1,
+            lastObtainedAt: nowIso
+          };
+
+          updates.cardCollection = {
+            ...snapshot,
+            packs,
+            cards: { ...snapshot.cards },
+            history: Array.isArray(snapshot.history) ? [...snapshot.history] : [],
+            totalOpened: snapshot.totalOpened || 0,
+            lastOpenedAt: snapshot.lastOpenedAt || null
+          };
+
+          message = `${student.firstName} discovered a ${pack.name}!`;
+        }
+        break;
+      }
     }
-    
+
     onUpdateStudent(student.id, updates);
-    showToast(message, 'success');
+    const fallbackMessage = `${student.firstName} received a mystery reward!`;
+    showToast(message || fallbackMessage, 'success');
   };
   
   const closeMysteryBoxModal = () => {
@@ -705,12 +828,36 @@ const ShopTab = ({
         showToast(`${selectedStudent.firstName} adopted a ${purchaseModal.item.name}!`, 'success');
         break;
       case 'reward':
-        updates.rewardsPurchased = [...(selectedStudent.rewardsPurchased || []), { 
-          ...purchaseModal.item, 
-          purchasedAt: new Date().toISOString() 
+        updates.rewardsPurchased = [...(selectedStudent.rewardsPurchased || []), {
+          ...purchaseModal.item,
+          purchasedAt: new Date().toISOString()
         }];
         showToast(`${selectedStudent.firstName} earned ${purchaseModal.item.name}!`, 'success');
         break;
+      case 'card_pack': {
+        const pack = purchaseModal.item;
+        const snapshot = createCardCollectionSnapshot();
+        const nowIso = new Date().toISOString();
+        const packs = { ...snapshot.packs };
+        const packEntry = packs[pack.id] || { count: 0 };
+        packs[pack.id] = {
+          ...packEntry,
+          count: (packEntry.count || 0) + 1,
+          lastObtainedAt: nowIso
+        };
+
+        updates.cardCollection = {
+          ...snapshot,
+          packs,
+          cards: { ...snapshot.cards },
+          history: Array.isArray(snapshot.history) ? [...snapshot.history] : [],
+          totalOpened: snapshot.totalOpened || 0,
+          lastOpenedAt: snapshot.lastOpenedAt || null
+        };
+
+        showToast(`${selectedStudent.firstName} bought a ${pack.name}!`, 'success');
+        break;
+      }
       default: return;
     }
 
@@ -740,6 +887,7 @@ const ShopTab = ({
   const SHOP_CATEGORIES = [
       { id: 'halloween', name: '🎃 Halloween Special', shortName: '🎃 Halloween' },
       { id: 'featured', name: '⭐ Featured Items', shortName: 'Featured' },
+      { id: 'card_packs', name: '✨ Card Packs', shortName: 'Cards' },
       { id: 'mysterybox', name: '🎁 Mystery Box', shortName: 'Mystery' },
       { id: 'basic_avatars', name: 'Basic Avatars', shortName: 'Basic' },
       { id: 'premium_avatars', name: 'Premium Avatars', shortName: 'Premium' },
@@ -753,44 +901,163 @@ const ShopTab = ({
       const isAvatar = item.type === 'avatar';
       const isPet = item.type === 'pet';
       const isReward = item.type === 'reward';
-      const owned = isAvatar ? selectedStudent?.ownedAvatars?.includes(item.name) : 
-                    isPet ? selectedStudent?.ownedPets?.some(p => p.name === item.name) : false;
-      
+      const isCardPack = item.type === 'card_pack';
+      const owned = isAvatar
+        ? selectedStudent?.ownedAvatars?.includes(item.name)
+        : isPet
+          ? selectedStudent?.ownedPets?.some(p => p.name === item.name)
+          : false;
+
+      if (isCardPack) {
+        const packStyle = CARD_RARITY_STYLES[item.rarity] || CARD_RARITY_STYLES.common;
+        const ownedCount = selectedStudentCardCollection.packs?.[item.id]?.count || 0;
+        const canAfford = selectedStudent ? calculateCoins(selectedStudent) >= item.price : false;
+
+        return (
+          <div
+            key={item.id}
+            className="relative rounded-2xl overflow-hidden shadow-lg border border-white/20"
+            style={{
+              background: packStyle.gradient,
+              borderColor: `${packStyle.border}`
+            }}
+          >
+            {item.salePercentage ? (
+              <div className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 bg-rose-500 text-white text-xs font-bold px-1 sm:px-2 py-0.5 sm:py-1 rounded-full shadow-lg">
+                -{item.salePercentage}%
+              </div>
+            ) : null}
+
+            <div className="p-3 sm:p-4 text-white flex flex-col h-full">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <p className="text-xs sm:text-sm uppercase tracking-widest text-white/70">
+                    {packStyle.label}
+                  </p>
+                  <h4 className="text-base sm:text-lg font-semibold drop-shadow">{item.name}</h4>
+                </div>
+                <span className="text-3xl sm:text-4xl drop-shadow-lg">{item.icon || '🃏'}</span>
+              </div>
+
+              <p className="text-xs text-white/70 mb-3">
+                {item.minCards}-{item.maxCards} cards per pack
+              </p>
+
+              <div className="mb-3">
+                {item.salePercentage ? (
+                  <>
+                    <div className="text-xs text-white/70 line-through">💰 {item.originalPrice}</div>
+                    <div className="text-lg font-bold">💰 {item.price}</div>
+                  </>
+                ) : (
+                  <div className="text-lg font-bold">💰 {item.price}</div>
+                )}
+              </div>
+
+              <div className="mt-auto flex flex-col gap-2">
+                <button
+                  onClick={() => setPurchaseModal({ visible: true, item, type: 'card_pack' })}
+                  disabled={!selectedStudent || !canAfford}
+                  className="w-full rounded-lg bg-black/20 backdrop-blur px-3 py-2 text-xs sm:text-sm font-semibold text-white hover:bg-black/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Buy Pack
+                </button>
+                <p className="text-xs text-center text-white/80">Owned: x{ownedCount}</p>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
       return (
-        <div key={item.name || item.id} className={`border-2 rounded-lg p-3 sm:p-4 text-center flex flex-col justify-between relative ${owned ? 'border-green-400 bg-green-50' : 'border-red-300 bg-gradient-to-br from-red-50 to-pink-50'}`}>
-          {/* Sale Badge */}
+        <div
+          key={item.name || item.id}
+          className={`border-2 rounded-lg p-3 sm:p-4 text-center flex flex-col justify-between relative ${owned ? 'border-green-400 bg-green-50' : 'border-red-300 bg-gradient-to-br from-red-50 to-pink-50'}`}
+        >
           <div className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 bg-red-500 text-white text-xs font-bold px-1 sm:px-2 py-0.5 sm:py-1 rounded-full shadow-lg">
             -{item.salePercentage}%
           </div>
-          
+
           {isReward ? (
-              <>
-                  <div className="text-3xl sm:text-4xl">{item.icon}</div>
-                  <p className="font-semibold mt-1 sm:mt-2 text-xs sm:text-sm">{item.name}</p>
-              </>
+            <>
+              <div className="text-3xl sm:text-4xl">{item.icon}</div>
+              <p className="font-semibold mt-1 sm:mt-2 text-xs sm:text-sm">{item.name}</p>
+            </>
           ) : (
-              <img src={item.path} className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 object-contain rounded-full mx-auto mb-1 sm:mb-2"/>
+            <img src={item.path} className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 object-contain rounded-full mx-auto mb-1 sm:mb-2"/>
           )}
 
           {!isReward && <p className="font-semibold text-xs sm:text-sm">{item.name}</p>}
-          
-          {/* Price Display */}
+
           <div className="mt-1 sm:mt-2">
             <div className="text-xs sm:text-sm text-gray-500 line-through">💰 {item.originalPrice}</div>
             <div className="text-sm sm:text-lg font-bold text-red-600">💰 {item.price}</div>
           </div>
 
           {owned ? (
-              <p className="font-bold text-green-600 mt-1 sm:mt-2 text-xs sm:text-sm">Owned</p>
+            <p className="font-bold text-green-600 mt-1 sm:mt-2 text-xs sm:text-sm">Owned</p>
           ) : (
-              <button 
-                onClick={() => setPurchaseModal({ visible: true, item: item, type: item.type })} 
-                disabled={calculateCoins(selectedStudent) < item.price} 
-                className="mt-1 sm:mt-2 w-full bg-red-500 text-white text-xs sm:text-sm py-1 sm:py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-red-600 font-semibold"
-              >
-                🔥 Buy Now!
-              </button>
+            <button
+              onClick={() => setPurchaseModal({ visible: true, item: item, type: item.type })}
+              disabled={!selectedStudent || calculateCoins(selectedStudent) < item.price}
+              className="mt-1 sm:mt-2 w-full bg-red-500 text-white text-xs sm:text-sm py-1 sm:py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-red-600 font-semibold"
+            >
+              🔥 Buy Now!
+            </button>
           )}
+        </div>
+      );
+    });
+  };
+
+  const renderCardPackItems = () => {
+    return cardPackInventory.map(pack => {
+      const packStyle = CARD_RARITY_STYLES[pack.rarity] || CARD_RARITY_STYLES.common;
+      const canAfford = selectedStudent ? calculateCoins(selectedStudent) >= pack.price : false;
+
+      return (
+        <div
+          key={pack.id}
+          className="relative rounded-2xl overflow-hidden shadow-lg border border-white/20"
+          style={{
+            background: pack.visual?.gradient || packStyle.gradient,
+            borderColor: packStyle.border
+          }}
+        >
+          <div className="absolute inset-0 opacity-20" style={{ background: packStyle.glow }}></div>
+          <div className="relative p-3 sm:p-4 text-white flex flex-col h-full">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-xs sm:text-sm uppercase tracking-widest text-white/70">
+                  {packStyle.label}
+                </p>
+                <h4 className="text-base sm:text-lg font-semibold drop-shadow">{pack.name}</h4>
+              </div>
+              <span className="text-3xl sm:text-4xl drop-shadow-lg">{pack.icon || '🃏'}</span>
+            </div>
+
+            <p className="text-xs text-white/70 mb-2">
+              {pack.minCards}-{pack.maxCards} cards • Owned x{pack.count}
+            </p>
+
+            <div className="flex items-baseline gap-2 mb-3">
+              <span className="text-lg font-bold">💰 {pack.price}</span>
+              <span className="text-xs text-white/70">per pack</span>
+            </div>
+
+            <div className="mt-auto flex flex-col gap-2">
+              <button
+                onClick={() => setPurchaseModal({ visible: true, item: pack, type: 'card_pack' })}
+                disabled={!selectedStudent || !canAfford}
+                className="w-full rounded-lg bg-black/20 backdrop-blur px-3 py-2 text-xs sm:text-sm font-semibold text-white hover:bg-black/30 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Buy Pack
+              </button>
+              <p className="text-[11px] sm:text-xs text-white/70 text-center">
+                Includes cards across {cardTypeSummary}.
+              </p>
+            </div>
+          </div>
         </div>
       );
     });
@@ -855,7 +1122,11 @@ const ShopTab = ({
       if (activeCategory === 'mysterybox') {
         return renderMysteryBox();
       }
-      
+
+      if (activeCategory === 'card_packs') {
+        return renderCardPackItems();
+      }
+
       let items;
       let type;
       switch(activeCategory) {
@@ -996,6 +1267,33 @@ const ShopTab = ({
               >
                 <span className="text-4xl sm:text-5xl">🥚</span>
               </div>
+            ) : mysteryBoxPrize.type === 'card_pack' ? (
+              (() => {
+                const pack = mysteryBoxPrize.pack || mysteryBoxPrize.item;
+                const packStyle = CARD_RARITY_STYLES[pack?.rarity] || CARD_RARITY_STYLES.common;
+                return (
+                  <div
+                    className="mx-auto mb-3 sm:mb-4 rounded-2xl p-4 sm:p-5 shadow-lg"
+                    style={{
+                      background: pack?.visual?.gradient || packStyle.gradient,
+                      border: `1px solid ${packStyle.border}`
+                    }}
+                  >
+                    <div className="flex items-center justify-between text-white mb-2">
+                      <div>
+                        <p className="text-xs sm:text-sm uppercase tracking-widest text-white/70">
+                          {packStyle.label}
+                        </p>
+                        <p className="text-base sm:text-lg font-semibold drop-shadow">{pack?.name}</p>
+                      </div>
+                      <span className="text-3xl sm:text-4xl drop-shadow-lg">{pack?.icon || '🃏'}</span>
+                    </div>
+                    <p className="text-xs text-white/80">
+                      {pack?.minCards}-{pack?.maxCards} cards • Price: 💰{pack?.price}
+                    </p>
+                  </div>
+                );
+              })()
             ) : (
               <div className="text-5xl sm:text-6xl mb-3 sm:mb-4">{mysteryBoxPrize.icon}</div>
             )}
@@ -1006,6 +1304,11 @@ const ShopTab = ({
             {mysteryBoxPrize.type === 'egg' && (
               <p className="text-xs sm:text-sm text-gray-600 mb-3">
                 {mysteryBoxPrize.eggType?.description || 'This mysterious egg will hatch into a rare baby pet after some time!'}
+              </p>
+            )}
+            {mysteryBoxPrize.type === 'card_pack' && (
+              <p className="text-xs sm:text-sm text-gray-600 mb-3">
+                Each pack unlocks new collectible {cardTypeSummary.toLowerCase()} for your students.
               </p>
             )}
 
@@ -1322,9 +1625,9 @@ const ShopTab = ({
             
             {/* MOBILE-RESPONSIVE Shop Grid */}
             <div className={`grid gap-3 sm:gap-4 ${
-              activeCategory === 'rewards' 
-                ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' 
-                : activeCategory === 'featured'
+              activeCategory === 'rewards'
+                ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+                : activeCategory === 'featured' || activeCategory === 'card_packs'
                   ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3'
                   : activeCategory === 'mysterybox'
                     ? 'grid-cols-1'
@@ -1504,6 +1807,74 @@ const ShopTab = ({
                         ) : (
                           <p className="text-gray-500 text-sm sm:text-base">No eggs incubating yet.</p>
                         )}
+                    </div>
+
+                    <div className="bg-slate-900 text-white rounded-2xl p-4 sm:p-5 space-y-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div>
+                          <h3 className="text-base sm:text-lg font-bold">Trading Card Collection</h3>
+                          <p className="text-xs sm:text-sm text-white/70">
+                            {cardProgress.uniqueOwned} / {cardProgress.totalUnique} unique cards • {cardProgress.totalOwned} total collected
+                          </p>
+                          <div className="mt-2 h-2 bg-white/15 rounded-full overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-gradient-to-r from-orange-400 via-fuchsia-400 to-sky-300"
+                              style={{ width: `${cardProgress.completion}%` }}
+                            />
+                          </div>
+                        </div>
+                        <div className="text-xs sm:text-sm text-white/60 text-left sm:text-right">
+                          <span className="block">Legendary chances await!</span>
+                          <span className="block text-[11px] sm:text-xs text-white/50">Collect {cardTypeSummary.toLowerCase()}.</span>
+                        </div>
+                      </div>
+
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        {cardPackInventory.map(packInfo => {
+                          const canAffordPack = selectedStudent ? calculateCoins(selectedStudent) >= packInfo.price : false;
+
+                          return (
+                          <div
+                            key={`inventory-pack-${packInfo.id}`}
+                            className="rounded-xl border border-white/15 p-3 space-y-2"
+                            style={{ background: packInfo.visual?.gradient || 'rgba(255,255,255,0.08)' }}
+                          >
+                            <div className="flex items-center justify-between text-white">
+                              <div>
+                                <p className="text-[11px] uppercase tracking-widest text-white/70">
+                                  {CARD_RARITY_STYLES[packInfo.rarity]?.label || packInfo.rarity}
+                                </p>
+                                <p className="text-sm font-semibold">{packInfo.name}</p>
+                              </div>
+                              <span className="text-3xl drop-shadow">{packInfo.icon || '🃏'}</span>
+                            </div>
+                            <p className="text-xs text-white/70">
+                              {packInfo.minCards}-{packInfo.maxCards} cards • Owned x{packInfo.count}
+                            </p>
+                            <button
+                              onClick={() => setPurchaseModal({ visible: true, item: packInfo, type: 'card_pack' })}
+                              disabled={!selectedStudent || !canAffordPack}
+                              className="w-full px-3 py-2 rounded-lg bg-white text-slate-900 border border-white/70 hover:bg-amber-100 text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              Buy Pack • 💰{packInfo.price}
+                            </button>
+                          </div>
+                        );
+                        })}
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2 text-xs sm:text-sm text-white/80">
+                        {CARD_RARITY_ORDER.map(rarity => {
+                          const stats = cardRarityBreakdown[rarity] || { total: 0, owned: 0 };
+                          const label = CARD_RARITY_STYLES[rarity]?.label || rarity;
+                          return (
+                            <div key={`rarity-${rarity}`} className="bg-white/10 border border-white/15 rounded-lg p-2">
+                              <p className="font-semibold">{label}</p>
+                              <p className="text-[11px] sm:text-xs text-white/70">{stats.owned} / {stats.total} owned</p>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
 
                     {/* Purchased Rewards */}

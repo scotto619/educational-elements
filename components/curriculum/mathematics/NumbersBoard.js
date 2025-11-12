@@ -1,5 +1,17 @@
 // components/curriculum/mathematics/NumbersBoard.js
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+
+const getRowLabel = (row) => {
+  const start = (row - 1) * 10 + 1;
+  return `${start}-${start + 9}`;
+};
+
+const ROW_OPTIONS = Array.from({ length: 10 }, (_, index) => ({
+  row: index + 1,
+  label: getRowLabel(index + 1)
+}));
+
+const COLUMN_OPTIONS = Array.from({ length: 10 }, (_, index) => index + 1);
 
 const NumbersBoard = ({ showToast = () => {}, students = [] }) => {
   const [selectedNumbers, setSelectedNumbers] = useState([]);
@@ -10,7 +22,11 @@ const NumbersBoard = ({ showToast = () => {}, students = [] }) => {
   const [gameMode, setGameMode] = useState('');
   const [challenge, setChallenge] = useState(null);
   const [score, setScore] = useState(0);
-  const [isAnimating, setIsAnimating] = useState(false);
+  const [activeRow, setActiveRow] = useState(null);
+  const [activeColumn, setActiveColumn] = useState(null);
+  const [boardSize, setBoardSize] = useState('cozy');
+  const [searchValue, setSearchValue] = useState('');
+  const [foundNumber, setFoundNumber] = useState(null);
 
   // Generate numbers 1-100
   const numbers = Array.from({ length: 100 }, (_, i) => i + 1);
@@ -44,7 +60,6 @@ const NumbersBoard = ({ showToast = () => {}, students = [] }) => {
 
   // Pattern highlighting functions
   const setPatternHighlight = (patternType, value = null) => {
-    setIsAnimating(true);
     let pattern = [];
     let patternName = '';
 
@@ -97,9 +112,8 @@ const NumbersBoard = ({ showToast = () => {}, students = [] }) => {
     setHighlightPattern(pattern);
     setCurrentPattern(patternName);
     
-    setTimeout(() => {
-      setIsAnimating(false);
-    }, 500);
+    setActiveRow(null);
+    setActiveColumn(null);
   };
 
   // Skip counting exercise
@@ -112,6 +126,8 @@ const NumbersBoard = ({ showToast = () => {}, students = [] }) => {
     
     setHighlightPattern(sequence);
     setCurrentPattern(`Skip counting by ${step}`);
+    setActiveRow(null);
+    setActiveColumn(null);
 
     setTimeout(() => {
       setShowingSequence(false);
@@ -194,32 +210,105 @@ const NumbersBoard = ({ showToast = () => {}, students = [] }) => {
     setChallenge(null);
     setScore(0);
     setShowingSequence(false);
-    setIsAnimating(false);
+    setActiveRow(null);
+    setActiveColumn(null);
+    setSearchValue('');
+    setFoundNumber(null);
   };
+
+  const highlightSet = useMemo(() => new Set(highlightPattern), [highlightPattern]);
+  const sizeClass = boardSize === 'focus'
+    ? 'text-xl sm:text-2xl'
+    : boardSize === 'comfy'
+      ? 'text-lg sm:text-xl'
+      : 'text-base sm:text-lg';
 
   const getNumberStyle = (number) => {
     const isSelected = selectedNumbers.includes(number);
-    const isHighlighted = highlightPattern.includes(number);
+    const isHighlighted = highlightSet.has(number);
     const isChallengeFound = challenge?.found.includes(number);
+    const isSpotlight = foundNumber === number;
+
+    const baseClass = `${sizeClass} font-bold rounded-lg flex items-center justify-center transition-all duration-200 border-2`;
 
     if (isChallengeFound) {
-      return 'bg-green-500 text-white shadow-lg scale-110';
+      return `${baseClass} bg-green-500 text-white shadow-lg scale-110 border-green-600`;
+    }
+    if (isSpotlight) {
+      return `${baseClass} bg-amber-300 text-slate-900 shadow-lg border-amber-500 animate-pulse`;
     }
     if (isSelected) {
-      return 'bg-blue-600 text-white shadow-lg scale-110';
+      return `${baseClass} bg-blue-600 text-white shadow-lg scale-105 border-blue-700`;
     }
     if (isHighlighted && !gameMode) {
-      return currentPattern.includes('Prime') ? 'bg-purple-400 text-white' :
-             currentPattern.includes('Even') ? 'bg-blue-400 text-white' :
-             currentPattern.includes('Odd') ? 'bg-red-400 text-white' :
-             currentPattern.includes('Square') ? 'bg-yellow-400 text-black' :
-             currentPattern.includes('Cube') ? 'bg-orange-400 text-white' :
-             currentPattern.includes('Fibonacci') ? 'bg-green-400 text-white' :
-             'bg-indigo-400 text-white';
+      const palette = currentPattern.includes('Prime')
+        ? 'bg-purple-500 text-white border-purple-600'
+        : currentPattern.includes('Even')
+          ? 'bg-blue-400 text-white border-blue-500'
+          : currentPattern.includes('Odd')
+            ? 'bg-red-400 text-white border-red-500'
+            : currentPattern.includes('Square')
+              ? 'bg-yellow-300 text-slate-900 border-yellow-400'
+              : currentPattern.includes('Cube')
+                ? 'bg-orange-400 text-white border-orange-500'
+                : currentPattern.includes('Fibonacci')
+                  ? 'bg-green-400 text-white border-green-500'
+                  : 'bg-indigo-400 text-white border-indigo-500';
+      return `${baseClass} ${palette}`;
     }
 
-    return 'bg-gray-100 text-gray-800 hover:bg-gray-200 hover:shadow-md';
+    return `${baseClass} bg-white text-gray-800 hover:bg-gray-50 border-gray-200 hover:border-blue-200`;
   };
+
+  const applyRowFocus = (row) => {
+    const start = (row - 1) * 10 + 1;
+    const values = Array.from({ length: 10 }, (_, index) => start + index);
+    setHighlightPattern(values);
+    setCurrentPattern(`Row ${start}-${start + 9}`);
+    setActiveRow(row);
+    setActiveColumn(null);
+    setGameMode('');
+    setChallenge(null);
+  };
+
+  const applyColumnFocus = (column) => {
+    const values = Array.from({ length: 10 }, (_, index) => column + index * 10);
+    setHighlightPattern(values);
+    setCurrentPattern(`Column ${column}`);
+    setActiveColumn(column);
+    setActiveRow(null);
+    setGameMode('');
+    setChallenge(null);
+  };
+
+  const handleNumberSearch = () => {
+    const parsed = parseInt(searchValue, 10);
+    if (Number.isNaN(parsed) || parsed < 1 || parsed > 100) {
+      showToast('Enter a number between 1 and 100');
+      setFoundNumber(null);
+      return;
+    }
+    setFoundNumber(parsed);
+    setCurrentPattern(`Number ${parsed}`);
+    setHighlightPattern(prev => (prev.includes(parsed) ? prev : [...prev, parsed]));
+    setGameMode('');
+    setChallenge(null);
+    setSelectedNumbers([parsed]);
+  };
+
+  useEffect(() => {
+    if (!searchValue) {
+      setFoundNumber(null);
+    }
+  }, [searchValue]);
+
+  const boardSizeOptions = [
+    { id: 'cozy', label: 'Fit board' },
+    { id: 'comfy', label: 'Comfy' },
+    { id: 'focus', label: 'Zoom' }
+  ];
+
+  const boardWrapperClass = boardSize === 'focus' ? 'max-w-5xl' : 'max-w-4xl';
 
   return (
     <div className="space-y-6">
@@ -243,7 +332,7 @@ const NumbersBoard = ({ showToast = () => {}, students = [] }) => {
       </div>
 
       {/* Control Panel */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
         {/* Pattern Tools */}
         <div className="bg-white rounded-xl shadow-lg p-6">
           <h4 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
@@ -308,6 +397,101 @@ const NumbersBoard = ({ showToast = () => {}, students = [] }) => {
           )}
         </div>
 
+        {/* Focus Tools */}
+        <div className="bg-white rounded-xl shadow-lg p-6">
+          <h4 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
+            <span className="mr-2">🎯</span>Focus Tools
+          </h4>
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm font-semibold text-gray-600 mb-2">Row highlights</p>
+              <div className="flex flex-wrap gap-2">
+                {ROW_OPTIONS.map(({ row, label }) => {
+                  const isActive = activeRow === row;
+                  return (
+                    <button
+                      key={row}
+                      onClick={() => applyRowFocus(row)}
+                      className={`px-3 py-1 rounded-full text-sm font-semibold border transition-colors ${
+                        isActive
+                          ? 'bg-emerald-500 text-white border-emerald-600'
+                          : 'bg-gray-50 text-gray-700 border-gray-200 hover:border-emerald-300'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div>
+              <p className="text-sm font-semibold text-gray-600 mb-2">Column focus</p>
+              <div className="flex flex-wrap gap-2">
+                {COLUMN_OPTIONS.map(column => {
+                  const isActive = activeColumn === column;
+                  return (
+                    <button
+                      key={column}
+                      onClick={() => applyColumnFocus(column)}
+                      className={`px-3 py-1 rounded-full text-sm font-semibold border transition-colors ${
+                        isActive
+                          ? 'bg-sky-500 text-white border-sky-600'
+                          : 'bg-gray-50 text-gray-700 border-gray-200 hover:border-sky-300'
+                      }`}
+                    >
+                      Col {column}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-gray-600">Find a number</p>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  type="number"
+                  min="1"
+                  max="100"
+                  value={searchValue}
+                  onChange={(event) => setSearchValue(event.target.value)}
+                  placeholder="Enter 1-100"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                />
+                <button
+                  onClick={handleNumberSearch}
+                  className="px-4 py-2 bg-emerald-500 text-white rounded-lg font-semibold hover:bg-emerald-600"
+                >
+                  Spotlight
+                </button>
+              </div>
+              {foundNumber && (
+                <p className="text-sm text-emerald-600 font-semibold">Spotlighting {foundNumber}</p>
+              )}
+            </div>
+
+            <div>
+              <p className="text-sm font-semibold text-gray-600 mb-2">Board zoom</p>
+              <div className="flex flex-wrap gap-2">
+                {boardSizeOptions.map(option => (
+                  <button
+                    key={option.id}
+                    onClick={() => setBoardSize(option.id)}
+                    className={`px-3 py-1.5 rounded-full text-sm font-semibold border transition-colors ${
+                      boardSize === option.id
+                        ? 'bg-indigo-500 text-white border-indigo-600'
+                        : 'bg-gray-50 text-gray-700 border-gray-200 hover:border-indigo-300'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Games & Challenges */}
         <div className="bg-white rounded-xl shadow-lg p-6">
           <h4 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
@@ -337,6 +521,15 @@ const NumbersBoard = ({ showToast = () => {}, students = [] }) => {
                   <p>Click the correct numbers to find them all!</p>
                 </div>
               )}
+              {(activeRow || activeColumn) && !gameMode && (
+                <p className="text-sm text-blue-600 mt-2">
+                  {activeRow && `Row focus: ${getRowLabel(activeRow)} `}
+                  {activeColumn && `Column focus: ${activeColumn}`}
+                </p>
+              )}
+              {foundNumber && !gameMode && (
+                <p className="text-sm text-emerald-600 mt-1">Spotlight locked on {foundNumber}</p>
+              )}
             </div>
             <div className="text-4xl animate-bounce">
               {gameMode ? '🎮' : '✨'}
@@ -347,12 +540,12 @@ const NumbersBoard = ({ showToast = () => {}, students = [] }) => {
 
       {/* Numbers Grid */}
       <div className="bg-white rounded-xl shadow-lg p-6">
-        <div className="grid grid-cols-10 gap-1 max-w-4xl mx-auto">
+        <div className={`grid grid-cols-10 gap-1 ${boardWrapperClass} mx-auto`}>
           {numbers.map(number => (
             <button
               key={number}
               onClick={() => handleNumberClick(number)}
-              className={`aspect-square flex items-center justify-center text-sm font-bold rounded-lg transition-all duration-200 hover:scale-105 active:scale-95 ${getNumberStyle(number)}`}
+              className={`aspect-square hover:scale-105 active:scale-95 ${getNumberStyle(number)}`}
             >
               {number}
             </button>

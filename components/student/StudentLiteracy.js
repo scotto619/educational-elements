@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import StudentReading from './StudentReading';
 import StudentSpelling from './StudentSpelling';
 import StudentWriting from './StudentWriting';
+import StudentVocabulary from './StudentVocabulary';
 
 const StudentLiteracy = ({ 
   studentData, 
@@ -15,7 +16,8 @@ const StudentLiteracy = ({
   const subTabs = [
     { id: 'reading', name: 'Reading', icon: '📖', color: 'from-blue-500 to-blue-600' },
     { id: 'spelling', name: 'Spelling', icon: '📝', color: 'from-green-500 to-green-600' },
-    { id: 'writing', name: 'Writing', icon: '✍️', color: 'from-purple-500 to-pink-600' }
+    { id: 'writing', name: 'Writing', icon: '✍️', color: 'from-purple-500 to-pink-600' },
+    { id: 'vocabulary', name: 'Vocabulary', icon: '🔤', color: 'from-orange-500 to-amber-500' }
   ];
 
   const renderSubTabContent = () => {
@@ -38,10 +40,19 @@ const StudentLiteracy = ({
         );
       case 'writing':
         return (
-          <StudentWriting 
+          <StudentWriting
             studentData={studentData}
             classData={classData}
             showToast={showToast}
+          />
+        );
+      case 'vocabulary':
+        return (
+          <StudentVocabulary
+            studentData={studentData}
+            classData={classData}
+            showToast={showToast}
+            updateStudentData={updateStudentData}
           />
         );
       default:
@@ -53,7 +64,7 @@ const StudentLiteracy = ({
     <div className="space-y-4">
       {/* Sub-Tab Navigation */}
       <div className="bg-white rounded-xl shadow-lg p-2 md:p-4">
-        <div className="grid grid-cols-3 gap-2 md:gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
           {subTabs.map(tab => (
             <button
               key={tab.id}
