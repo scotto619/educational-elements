@@ -291,24 +291,24 @@ const FlipCardsStudio = () => {
     : 'text-slate-500 text-sm max-w-xl';
 
   const cardStageClass = isFullscreen
-    ? 'relative flex-1 flex items-center justify-center min-h-[60vh]'
-    : 'relative h-[360px] md:h-[420px] flex items-center justify-center';
+    ? 'relative flex-1 flex items-center justify-center min-h-[75vh]'
+    : 'relative h-[380px] md:h-[460px] flex items-center justify-center';
 
   const cardShellClass = isFullscreen
-    ? 'relative w-full max-w-5xl h-full transition-transform duration-500 transform perspective group'
-    : 'relative w-full max-w-xl h-full transition-transform duration-500 transform perspective group';
+    ? 'relative w-full max-w-6xl h-[75vh] transition-transform duration-500 transform perspective group'
+    : 'relative w-full max-w-2xl h-full transition-transform duration-500 transform perspective group';
 
   const promptLabelClass = isFullscreen
-    ? 'text-lg uppercase tracking-[0.35em] font-semibold'
-    : 'text-sm uppercase tracking-widest font-semibold';
+    ? 'text-xl uppercase tracking-[0.35em] font-semibold'
+    : 'text-base uppercase tracking-widest font-semibold';
 
   const promptTextClass = isFullscreen
-    ? 'text-5xl sm:text-6xl md:text-7xl font-extrabold leading-tight'
-    : 'text-3xl font-bold leading-snug';
+    ? 'text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black leading-tight tracking-tight drop-shadow text-center'
+    : 'text-4xl font-extrabold leading-snug text-center';
 
   const responseTextClass = isFullscreen
-    ? 'text-4xl sm:text-5xl md:text-6xl font-semibold leading-tight'
-    : 'text-3xl font-bold leading-snug';
+    ? 'text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-semibold leading-tight drop-shadow text-center'
+    : 'text-3xl md:text-4xl font-bold leading-snug text-center';
 
   const counterTextClass = isFullscreen
     ? 'text-lg font-semibold'

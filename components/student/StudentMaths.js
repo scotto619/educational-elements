@@ -3,6 +3,7 @@ import React, { useMemo, useState } from 'react';
 import StudentMathMentals from './StudentMathMentals';
 import InteractiveAngles from '../curriculum/mathematics/InteractiveAngles';
 import StudentMathChallenge from './StudentMathChallenge';
+import NumbersBoard from '../curriculum/mathematics/NumbersBoard';
 import { DAILY_MATH_CHALLENGES } from '../curriculum/mathematics/data/dailyChallenges';
 
 // Simple Calculator Component
@@ -345,6 +346,14 @@ const StudentMaths = ({
       component: InteractiveAngles
     },
     {
+      id: 'hundreds-board',
+      name: 'Hundreds Board Lab',
+      icon: '💯',
+      description: 'Highlight rows, columns, skip counting and number patterns',
+      color: 'from-amber-500 to-orange-500',
+      component: NumbersBoard
+    },
+    {
       id: 'times-tables',
       name: 'Times Tables',
       icon: '✖️',
@@ -492,9 +501,10 @@ const StudentMaths = ({
         </div>
 
         {/* Activity Content */}
-        <ActivityComponent 
+        <ActivityComponent
           studentData={studentData}
           classData={classData}
+          students={classData?.students ?? []}
           showToast={showToast}
           updateStudentData={updateStudentData}
         />
