@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 const STORAGE_KEY = 'curriculumCorner.vocabularyLists.v1';
 
@@ -32,6 +32,10 @@ const VocabularyCorner = () => {
   const [activeListId, setActiveListId] = useState('');
   const [newListName, setNewListName] = useState('');
   const [selectedWord, setSelectedWord] = useState('');
+  const [isListFullscreen, setIsListFullscreen] = useState(false);
+  const fullscreenListRef = useRef(null);
+
+  const isDefaultList = (listId) => defaultWordLists.some(list => list.id === listId);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -60,11 +64,24 @@ const VocabularyCorner = () => {
     return allLists.find(list => list.id === activeListId) ?? null;
   }, [activeListId, allLists]);
 
+  const canDeleteActiveList = activeList ? !isDefaultList(activeList.id) : false;
+
   useEffect(() => {
     if (!activeListId && allLists.length > 0) {
       setActiveListId(allLists[0].id);
     }
   }, [activeListId, allLists]);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const activeElement = document.fullscreenElement;
+      const isActive = activeElement === fullscreenListRef.current;
+      setIsListFullscreen(isActive);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
 
   const fetchDictionaryData = async (word) => {
     if (!word) return;
@@ -149,6 +166,18 @@ const VocabularyCorner = () => {
     setNewListName('');
   };
 
+  const deleteList = (listId) => {
+    if (isDefaultList(listId)) return;
+    setCustomLists(prev => {
+      const updated = prev.filter(list => list.id !== listId);
+      const combined = [...defaultWordLists, ...updated];
+      if (activeListId === listId) {
+        setActiveListId(combined[0]?.id ?? '');
+      }
+      return updated;
+    });
+  };
+
   const removeWord = (listId, word) => {
     setCustomLists(prev =>
       prev.map(list =>
@@ -157,6 +186,24 @@ const VocabularyCorner = () => {
           : list
       )
     );
+  };
+
+  const enterListFullscreen = () => {
+    if (!activeList || activeList.words.length === 0) return;
+    setIsListFullscreen(true);
+    setTimeout(() => {
+      const element = fullscreenListRef.current;
+      if (element && element.requestFullscreen) {
+        element.requestFullscreen().catch(() => setIsListFullscreen(false));
+      }
+    }, 50);
+  };
+
+  const exitListFullscreen = () => {
+    if (document.fullscreenElement === fullscreenListRef.current) {
+      document.exitFullscreen().catch(() => setIsListFullscreen(false));
+    }
+    setIsListFullscreen(false);
   };
 
   const handleListSelection = (listId) => {
@@ -183,6 +230,7 @@ const VocabularyCorner = () => {
             {allLists.map(list => {
               const isActive = activeListId === list.id;
               const gradient = isActive ? `bg-gradient-to-r ${list.color || 'from-amber-50 to-orange-50'}` : '';
+              const canDelete = !isDefaultList(list.id);
               return (
                 <button
                   key={list.id}
@@ -198,7 +246,21 @@ const VocabularyCorner = () => {
                       <p className="font-semibold text-slate-800">{list.name}</p>
                       <p className="text-xs text-slate-500 mt-1">{list.words.length} word{list.words.length === 1 ? '' : 's'}</p>
                     </div>
-                    <span className="text-xl">🔤</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl">🔤</span>
+                      {canDelete && (
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            deleteList(list.id);
+                          }}
+                          className="text-xs font-semibold text-rose-500 hover:text-rose-700"
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </button>
               );
@@ -365,9 +427,25 @@ const VocabularyCorner = () => {
                   <span>📝</span>
                   {activeList.name}
                 </h4>
-                <p className="text-sm text-slate-500">Share this list with students or use it to differentiate vocabulary work.</p>
+                <p className="text-sm text-slate-500">Click a word to instantly fetch fresh definitions and synonyms for the class.</p>
               </div>
               <div className="flex gap-2 flex-wrap">
+                {canDeleteActiveList && (
+                  <button
+                    onClick={() => deleteList(activeList.id)}
+                    className="px-4 py-2 rounded-xl bg-white border border-rose-200 text-rose-500 hover:bg-rose-50 text-sm font-semibold"
+                  >
+                    Delete list
+                  </button>
+                )}
+                {activeList.words.length > 0 && (
+                  <button
+                    onClick={enterListFullscreen}
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-500 text-white text-sm font-semibold shadow"
+                  >
+                    Present fullscreen
+                  </button>
+                )}
                 <button
                   onClick={() => copyWordsToClipboard(activeList.words.join(', '))}
                   className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 text-sm font-semibold"
@@ -385,14 +463,31 @@ const VocabularyCorner = () => {
             {activeList.words.length === 0 ? (
               <p className="text-slate-500">This list is empty. Search and add words to start building it.</p>
             ) : (
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-3">
                 {activeList.words.map(word => (
-                  <div key={word} className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 text-slate-700">
-                    <span>{word}</span>
-                    {!defaultWordLists.some(list => list.id === activeList.id) && (
+                  <div
+                    key={word}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => fetchDictionaryData(word)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        fetchDictionaryData(word);
+                      }
+                    }}
+                    className="group flex items-center gap-3 px-4 py-2 rounded-full bg-slate-100 text-slate-700 cursor-pointer hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-300"
+                    title="Click to look up definitions and synonyms"
+                  >
+                    <span className="text-base font-semibold capitalize">{word}</span>
+                    {canDeleteActiveList && (
                       <button
-                        onClick={() => removeWord(activeList.id, word)}
-                        className="text-xs text-rose-500 hover:text-rose-700"
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          removeWord(activeList.id, word);
+                        }}
+                        className="text-xs text-rose-500 hover:text-rose-700 font-semibold"
                       >
                         ✕
                       </button>
@@ -403,6 +498,42 @@ const VocabularyCorner = () => {
             )}
           </div>
         )}
+      </div>
+      <div
+        ref={fullscreenListRef}
+        className={`fixed inset-0 z-[60] ${isListFullscreen ? 'flex' : 'hidden'} flex-col items-center justify-center bg-gradient-to-br from-sky-600 via-indigo-700 to-purple-800 text-white px-6 py-10`}
+      >
+        <div className="w-full max-w-6xl space-y-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h3 className="text-4xl md:text-5xl font-extrabold">{activeList?.name || 'Vocabulary List'}</h3>
+              <p className="text-base md:text-lg text-white/80">Use the main view to flip between definitions, examples, and synonyms.</p>
+            </div>
+            <button
+              onClick={exitListFullscreen}
+              className="self-start sm:self-auto px-4 py-2 rounded-xl bg-white/10 border border-white/30 text-white font-semibold hover:bg-white/20"
+            >
+              Exit fullscreen
+            </button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {(activeList?.words || []).length > 0 ? (
+              (activeList?.words || []).map(word => (
+                <div
+                  key={word}
+                  className="rounded-3xl bg-white/10 border border-white/20 px-6 py-8 text-center text-4xl md:text-5xl font-extrabold uppercase tracking-wide shadow-xl backdrop-blur"
+                >
+                  {word}
+                </div>
+              ))
+            ) : (
+              <div className="rounded-3xl bg-white/10 border border-white/20 px-6 py-8 text-center text-xl font-semibold text-white/80">
+                Add words to this list to present them here.
+              </div>
+            )}
+          </div>
+          <p className="text-sm text-white/70 text-center">Press Esc to exit fullscreen.</p>
+        </div>
       </div>
     </div>
   );

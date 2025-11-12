@@ -90,7 +90,6 @@ const FlipCardsStudio = () => {
   const [editorDeck, setEditorDeck] = useState(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const fullscreenContainerRef = useRef(null);
-  const overlayRef = useRef(null);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -144,7 +143,9 @@ const FlipCardsStudio = () => {
 
   useEffect(() => {
     const handleKeyDown = (event) => {
-      if (!selectedDeck || (!isFullscreen && document.fullscreenElement == null)) return;
+      const fullscreenElement = document.fullscreenElement;
+      const isActive = fullscreenElement === fullscreenContainerRef.current;
+      if (!selectedDeck || (!isFullscreen && !isActive)) return;
       if (event.key === 'ArrowRight') {
         event.preventDefault();
         handleNextCard();
@@ -166,11 +167,9 @@ const FlipCardsStudio = () => {
 
   useEffect(() => {
     const handleFullscreenChange = () => {
-      const active = Boolean(document.fullscreenElement);
-      setIsFullscreen(active);
-      if (!active) {
-        setIsFullscreen(false);
-      }
+      const activeElement = document.fullscreenElement;
+      const isActive = activeElement === fullscreenContainerRef.current;
+      setIsFullscreen(isActive);
     };
 
     document.addEventListener('fullscreenchange', handleFullscreenChange);
@@ -244,16 +243,16 @@ const FlipCardsStudio = () => {
     }));
   };
 
-  const enterFullscreen = async () => {
-    setIsFullscreen(true);
-    setTimeout(() => {
-      const element = fullscreenContainerRef.current;
-      if (element && element.requestFullscreen) {
-        element.requestFullscreen().catch(() => {
-          setIsFullscreen(true);
-        });
-      }
-    }, 50);
+  const enterFullscreen = () => {
+    const element = fullscreenContainerRef.current;
+    if (element && element.requestFullscreen) {
+      element
+        .requestFullscreen()
+        .then(() => setIsFullscreen(true))
+        .catch(() => setIsFullscreen(false));
+    } else {
+      setIsFullscreen(true);
+    }
   };
 
   const exitFullscreen = () => {
@@ -282,6 +281,54 @@ const FlipCardsStudio = () => {
 
   const totalCards = selectedDeck.cards?.length ?? 0;
   const currentCard = selectedDeck.cards?.[activeIndex] ?? null;
+
+  const deckTitleClass = isFullscreen
+    ? 'text-4xl md:text-5xl font-extrabold text-white flex items-center gap-4'
+    : 'text-2xl font-bold text-slate-900 flex items-center gap-3';
+
+  const deckDescriptionClass = isFullscreen
+    ? 'text-lg text-white/80 max-w-3xl'
+    : 'text-slate-500 text-sm max-w-xl';
+
+  const cardStageClass = isFullscreen
+    ? 'relative flex-1 flex items-center justify-center min-h-[60vh]'
+    : 'relative h-[360px] md:h-[420px] flex items-center justify-center';
+
+  const cardShellClass = isFullscreen
+    ? 'relative w-full max-w-5xl h-full transition-transform duration-500 transform perspective group'
+    : 'relative w-full max-w-xl h-full transition-transform duration-500 transform perspective group';
+
+  const promptLabelClass = isFullscreen
+    ? 'text-lg uppercase tracking-[0.35em] font-semibold'
+    : 'text-sm uppercase tracking-widest font-semibold';
+
+  const promptTextClass = isFullscreen
+    ? 'text-5xl sm:text-6xl md:text-7xl font-extrabold leading-tight'
+    : 'text-3xl font-bold leading-snug';
+
+  const responseTextClass = isFullscreen
+    ? 'text-4xl sm:text-5xl md:text-6xl font-semibold leading-tight'
+    : 'text-3xl font-bold leading-snug';
+
+  const counterTextClass = isFullscreen
+    ? 'text-lg font-semibold'
+    : 'text-sm opacity-90';
+
+  const navButtonClass = isFullscreen
+    ? 'px-6 py-3 rounded-2xl bg-white/15 text-white border border-white/30 hover:bg-white/25 font-semibold backdrop-blur transition'
+    : 'px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 font-semibold text-slate-600';
+
+  const flipButtonClass = isFullscreen
+    ? 'px-6 py-3 rounded-2xl bg-white text-slate-900 font-bold shadow-lg hover:shadow-xl'
+    : 'px-4 py-2 text-sm font-semibold rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200';
+
+  const fullscreenButtonClass = isFullscreen
+    ? 'px-6 py-3 rounded-2xl bg-white/10 border border-white/30 text-white font-semibold hover:bg-white/20'
+    : 'px-4 py-2 text-sm font-semibold rounded-lg bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow hover:shadow-lg';
+
+  const fullscreenWrapperClass = isFullscreen
+    ? 'relative z-10 flex h-full w-full flex-col items-center justify-center gap-8 bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900 px-6 py-10 text-white'
+    : 'relative z-10';
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -364,19 +411,29 @@ const FlipCardsStudio = () => {
       </div>
 
       <div className="lg:col-span-8">
-        <div className="bg-white rounded-3xl shadow-lg p-8 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-slate-50 via-white to-slate-50 opacity-70"></div>
-          <div className="relative z-10" ref={fullscreenContainerRef}>
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+        <div
+          className={`bg-white rounded-3xl shadow-lg relative overflow-hidden ${
+            isFullscreen ? 'fixed inset-0 z-50 flex items-center justify-center rounded-none bg-transparent shadow-2xl' : 'p-8'
+          }`}
+        >
+          {!isFullscreen && (
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-50 via-white to-slate-50 opacity-70"></div>
+          )}
+          <div className={fullscreenWrapperClass} ref={fullscreenContainerRef}>
+            <div
+              className={`flex flex-wrap items-center justify-between gap-4 ${
+                isFullscreen ? 'w-full max-w-5xl' : 'mb-6'
+              }`}
+            >
               <div>
-                <h3 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
-                  <span className="text-3xl">🎴</span>
+                <h3 className={deckTitleClass}>
+                  <span className={isFullscreen ? 'text-5xl' : 'text-3xl'}>🎴</span>
                   {selectedDeck.name}
                 </h3>
-                <p className="text-slate-500 text-sm max-w-xl">{selectedDeck.description}</p>
+                <p className={deckDescriptionClass}>{selectedDeck.description}</p>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {selectedDeck.id.startsWith('custom-') && (
+              <div className={`flex flex-wrap gap-3 ${isFullscreen ? 'justify-end' : ''}`}>
+                {selectedDeck.id.startsWith('custom-') && !isFullscreen && (
                   <button
                     onClick={() => openEditor(selectedDeck)}
                     className="px-4 py-2 text-sm font-semibold rounded-lg border border-purple-200 text-purple-600 hover:bg-purple-50"
@@ -386,62 +443,57 @@ const FlipCardsStudio = () => {
                 )}
                 <button
                   onClick={() => setIsFlipped(prev => !prev)}
-                  className="px-4 py-2 text-sm font-semibold rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200"
+                  className={flipButtonClass}
                 >
                   Flip card
                 </button>
-                <button
-                  onClick={enterFullscreen}
-                  className="px-4 py-2 text-sm font-semibold rounded-lg bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow hover:shadow-lg"
-                >
-                  Fullscreen
-                </button>
+                {isFullscreen ? (
+                  <button onClick={exitFullscreen} className={fullscreenButtonClass}>
+                    Exit fullscreen
+                  </button>
+                ) : (
+                  <button onClick={enterFullscreen} className={fullscreenButtonClass}>
+                    Fullscreen
+                  </button>
+                )}
               </div>
             </div>
 
-            <div className="relative h-[320px] md:h-[360px] flex items-center justify-center">
-              <div
-                className={`relative w-full max-w-xl h-full transition-transform duration-500 transform perspective group`}
-              >
+            <div className={`${cardStageClass} ${isFullscreen ? 'w-full max-w-5xl' : ''}`}>
+              <div className={cardShellClass}>
                 <div
-                  className={`absolute inset-0 rounded-3xl shadow-xl bg-gradient-to-br ${selectedDeck.color} text-white flex flex-col justify-between p-8 backface-hidden transition-transform duration-500`}
+                  className={`absolute inset-0 rounded-3xl shadow-xl bg-gradient-to-br ${selectedDeck.color} text-white flex flex-col justify-between ${isFullscreen ? 'p-12' : 'p-8'} backface-hidden transition-transform duration-500`}
                   style={{
                     transform: `rotateY(${isFlipped ? 180 : 0}deg)`,
                     opacity: isFlipped ? 0 : 1
                   }}
                 >
-                  <div className="text-sm uppercase tracking-widest font-semibold">Prompt</div>
-                  <div className="text-3xl font-bold leading-snug">{currentCard?.prompt}</div>
-                  <div className="text-sm opacity-90">Card {activeIndex + 1} of {totalCards}</div>
+                  <div className={promptLabelClass}>Prompt</div>
+                  <div className={promptTextClass}>{currentCard?.prompt}</div>
+                  <div className={counterTextClass}>Card {activeIndex + 1} of {totalCards}</div>
                 </div>
                 <div
-                  className="absolute inset-0 rounded-3xl shadow-xl bg-white text-slate-800 flex flex-col justify-between p-8 backface-hidden transition-transform duration-500"
+                  className={`absolute inset-0 rounded-3xl shadow-xl bg-white text-slate-800 flex flex-col justify-between ${isFullscreen ? 'p-12' : 'p-8'} backface-hidden transition-transform duration-500`}
                   style={{
                     transform: `rotateY(${isFlipped ? 0 : 180}deg)`,
                     opacity: isFlipped ? 1 : 0
                   }}
                 >
-                  <div className="text-sm uppercase tracking-widest font-semibold text-slate-400">Answer</div>
-                  <div className="text-3xl font-bold leading-snug">{currentCard?.response}</div>
-                  <div className="text-sm text-slate-500">Tap or press space to flip back.</div>
+                  <div className={`${promptLabelClass} text-slate-400`}>Answer</div>
+                  <div className={`${responseTextClass} text-slate-900`}>{currentCard?.response}</div>
+                  <div className={isFullscreen ? 'text-base text-slate-500' : 'text-sm text-slate-500'}>Tap or press space to flip back.</div>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center justify-between mt-6">
-              <button
-                onClick={handlePreviousCard}
-                className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 font-semibold text-slate-600"
-              >
+            <div className={`flex items-center justify-between ${isFullscreen ? 'w-full max-w-4xl mt-4' : 'mt-6'}`}>
+              <button onClick={handlePreviousCard} className={navButtonClass}>
                 ← Previous
               </button>
-              <div className="text-sm text-slate-500">
-                Showing <span className="font-semibold text-slate-700">{activeIndex + 1}</span> of {totalCards}
+              <div className={isFullscreen ? 'text-white/80 text-lg font-semibold' : 'text-sm text-slate-500'}>
+                {activeIndex + 1} / {totalCards}
               </div>
-              <button
-                onClick={handleNextCard}
-                className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 font-semibold text-slate-600"
-              >
+              <button onClick={handleNextCard} className={navButtonClass}>
                 Next →
               </button>
             </div>
@@ -449,55 +501,6 @@ const FlipCardsStudio = () => {
         </div>
       </div>
 
-      {isFullscreen && (
-        <div
-          ref={overlayRef}
-          className="fixed inset-0 bg-slate-900 bg-opacity-90 z-50 flex flex-col"
-        >
-          <div className="flex justify-between items-center px-6 py-4 text-white">
-            <div>
-              <h3 className="text-xl font-semibold">{selectedDeck.name}</h3>
-              <p className="text-sm text-slate-200">Use ← → to navigate • Space to flip • Esc to exit</p>
-            </div>
-            <button
-              onClick={exitFullscreen}
-              className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-sm font-semibold"
-            >
-              Close
-            </button>
-          </div>
-          <div className="flex-1 flex items-center justify-center px-4 pb-10">
-            <div className="w-full max-w-4xl h-[70vh]">
-              <div
-                className={`relative w-full h-full transition-transform duration-500 transform perspective`}
-              >
-                <div
-                  className={`absolute inset-0 rounded-[40px] shadow-2xl bg-gradient-to-br ${selectedDeck.color} text-white flex flex-col justify-between p-16 backface-hidden transition-transform duration-500`}
-                  style={{
-                    transform: `rotateY(${isFlipped ? 180 : 0}deg)`,
-                    opacity: isFlipped ? 0 : 1
-                  }}
-                >
-                  <div className="text-xl uppercase tracking-[0.4em] font-semibold">Prompt</div>
-                  <div className="text-5xl font-extrabold leading-snug">{currentCard?.prompt}</div>
-                  <div className="text-lg opacity-90">Card {activeIndex + 1} of {totalCards}</div>
-                </div>
-                <div
-                  className="absolute inset-0 rounded-[40px] shadow-2xl bg-white text-slate-900 flex flex-col justify-between p-16 backface-hidden transition-transform duration-500"
-                  style={{
-                    transform: `rotateY(${isFlipped ? 0 : 180}deg)`,
-                    opacity: isFlipped ? 1 : 0
-                  }}
-                >
-                  <div className="text-xl uppercase tracking-[0.4em] font-semibold text-slate-400">Answer</div>
-                  <div className="text-5xl font-extrabold leading-snug">{currentCard?.response}</div>
-                  <div className="text-lg text-slate-500">Press space to flip back.</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {isEditorOpen && editorDeck && (
         <div className="fixed inset-0 bg-slate-900/70 z-50 flex items-center justify-center px-4 py-8">
