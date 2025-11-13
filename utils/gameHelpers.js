@@ -4,6 +4,17 @@ import { normalizeImageSource } from './imageFallback';
 export const DEFAULT_PET_IMAGE = '/shop/BasicPets/Wizard.png';
 export const GAME_CONFIG = { MAX_LEVEL: 4, COINS_PER_XP: 5, PET_UNLOCK_XP: 50 };
 
+const normalizeItemKey = (value) => {
+  if (value === null || value === undefined) {
+    return '';
+  }
+
+  return value
+    .toString()
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
+};
+
 // ===============================================
 // LEVEL CALCULATION
 // ===============================================
@@ -192,20 +203,28 @@ export const SHOP_PREMIUM_PETS = [
 // AVATAR IMAGE PATHS - UPDATED WITH SEASONAL COLLECTIONS
 // ===============================================
 export const getAvatarImage = (avatarBase, level) => {
-  // First check if it's a shop avatar (including seasonal collections)
-  const shopItem = [
-    ...SHOP_BASIC_AVATARS,
-    ...SHOP_PREMIUM_AVATARS,
-    ...HALLOWEEN_BASIC_AVATARS,
-    ...HALLOWEEN_PREMIUM_AVATARS,
-    ...CHRISTMAS_BASIC_AVATARS,
-    ...CHRISTMAS_PREMIUM_AVATARS
-  ].find(a => a.name.toLowerCase() === avatarBase?.toLowerCase());
-  
-  if (shopItem) return shopItem.path;
-  
+  const targetKey = normalizeItemKey(avatarBase);
+
+  if (targetKey) {
+    const shopItem = [
+      ...SHOP_BASIC_AVATARS,
+      ...SHOP_PREMIUM_AVATARS,
+      ...HALLOWEEN_BASIC_AVATARS,
+      ...HALLOWEEN_PREMIUM_AVATARS,
+      ...CHRISTMAS_BASIC_AVATARS,
+      ...CHRISTMAS_PREMIUM_AVATARS
+    ].find((avatar) => normalizeItemKey(avatar.name) === targetKey);
+
+    if (shopItem) {
+      return shopItem.path;
+    }
+  }
+
   // Default to traditional avatar system with the SAME path structure as classroom-champions.js
-  return `/avatars/${avatarBase || 'Wizard F'}/Level ${Math.max(1, Math.min(level || 1, 4))}.png`;
+  const safeBase = avatarBase || 'Wizard F';
+  const safeLevel = Math.max(1, Math.min(level || 1, 4));
+
+  return `/avatars/${safeBase}/Level ${safeLevel}.png`;
 };
 
 // ===============================================
@@ -214,8 +233,8 @@ export const getAvatarImage = (avatarBase, level) => {
 export const getPetImage = (pet) => {
   if (!pet) return normalizeImageSource(DEFAULT_PET_IMAGE, DEFAULT_PET_IMAGE);
 
-  const normalizedName = (pet.name || '').toLowerCase();
-  const normalizedId = (pet.speciesId || pet.id || '').toLowerCase();
+  const normalizedNameKey = normalizeItemKey(pet.name);
+  const normalizedIdKey = normalizeItemKey(pet.speciesId || pet.id);
 
   const candidates = [];
 
@@ -230,20 +249,30 @@ export const getPetImage = (pet) => {
     }
   }
 
-  const shopItem = [
+  const shopCollections = [
     ...SHOP_BASIC_PETS,
     ...SHOP_PREMIUM_PETS,
     ...HALLOWEEN_PETS,
     ...CHRISTMAS_PETS
-  ].find((p) => p.name.toLowerCase() === normalizedName);
+  ];
+
+  const shopItem = shopCollections.find((p) => {
+    const itemKey = normalizeItemKey(p.name);
+    return itemKey === normalizedNameKey || (normalizedIdKey && itemKey === normalizedIdKey);
+  });
+
   if (shopItem?.path) {
     candidates.unshift(shopItem.path);
   }
 
   const babyPet = BABY_PETS.find((baby) => {
-    const babyId = baby.id?.toLowerCase();
-    const babyName = baby.name?.toLowerCase();
-    return babyId === normalizedId || babyId === normalizedName || babyName === normalizedName;
+    const babyIdKey = normalizeItemKey(baby.id);
+    const babyNameKey = normalizeItemKey(baby.name);
+
+    return (
+      (!!normalizedIdKey && babyIdKey === normalizedIdKey) ||
+      (!!normalizedNameKey && (babyIdKey === normalizedNameKey || babyNameKey === normalizedNameKey))
+    );
   });
 
   if (babyPet) {
@@ -253,8 +282,9 @@ export const getPetImage = (pet) => {
     }
   }
 
-  if (!candidates.length && normalizedName) {
-    candidates.push(`/Pets/${pet.name}.png`);
+  if (!candidates.length && normalizedNameKey) {
+    const encodedName = encodeURIComponent(pet.name);
+    candidates.push(`/Pets/${encodedName}.png`);
   }
 
   const uniqueCandidates = candidates.filter(Boolean).filter((value, index, array) => array.indexOf(value) === index);
