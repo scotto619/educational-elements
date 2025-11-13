@@ -26,6 +26,35 @@ import {
 } from '../../utils/tradingCards';
 
 // ===============================================
+// HALLOWEEN THEMED ITEMS (LEGACY - KEPT FOR OWNED CONTENT)
+// ===============================================
+const HALLOWEEN_BASIC_AVATARS = [
+  { name: 'Demi', price: 15, path: '/shop/Themed/Halloween/Basic/Demi.png', theme: 'halloween' },
+  { name: 'Jason', price: 18, path: '/shop/Themed/Halloween/Basic/Jason.png', theme: 'halloween' },
+  { name: 'PumpkinKing', price: 20, path: '/shop/Themed/Halloween/Basic/PumpkinKing.png', theme: 'halloween' },
+  { name: 'Skeleton', price: 15, path: '/shop/Themed/Halloween/Basic/Skeleton.png', theme: 'halloween' },
+  { name: 'Witch', price: 18, path: '/shop/Themed/Halloween/Basic/Witch.png', theme: 'halloween' },
+  { name: 'Zombie', price: 16, path: '/shop/Themed/Halloween/Basic/Zombie.png', theme: 'halloween' }
+];
+
+const HALLOWEEN_PREMIUM_AVATARS = [
+  { name: 'Pumpkin', price: 35, path: '/shop/Themed/Halloween/Premium/Pumpkin.png', theme: 'halloween' },
+  { name: 'Skeleton1', price: 40, path: '/shop/Themed/Halloween/Premium/Skeleton1.png', theme: 'halloween' },
+  { name: 'Skeleton2', price: 40, path: '/shop/Themed/Halloween/Premium/Skeleton2.png', theme: 'halloween' },
+  { name: 'Skeleton3', price: 40, path: '/shop/Themed/Halloween/Premium/Skeleton3.png', theme: 'halloween' },
+  { name: 'Witch1', price: 42, path: '/shop/Themed/Halloween/Premium/Witch1.png', theme: 'halloween' },
+  { name: 'Witch2', price: 42, path: '/shop/Themed/Halloween/Premium/Witch2.png', theme: 'halloween' },
+  { name: 'Witch3', price: 42, path: '/shop/Themed/Halloween/Premium/Witch3.png', theme: 'halloween' },
+  { name: 'Witch4', price: 42, path: '/shop/Themed/Halloween/Premium/Witch4.png', theme: 'halloween' },
+  { name: 'Zombie1', price: 38, path: '/shop/Themed/Halloween/Premium/Zombie1.png', theme: 'halloween' }
+];
+
+const HALLOWEEN_PETS = [
+  { name: 'Spooky Cat', price: 25, path: '/shop/Themed/Halloween/Pets/Pet.png', theme: 'halloween' },
+  { name: 'Pumpkin Cat', price: 28, path: '/shop/Themed/Halloween/Pets/Pet2.png', theme: 'halloween' }
+];
+
+// ===============================================
 // CHRISTMAS THEMED ITEMS - LIMITED TIME!
 // ===============================================
 const CHRISTMAS_BASIC_AVATARS = [
@@ -280,19 +309,30 @@ const calculateSellPrice = (originalPrice) => {
   return Math.max(1, Math.floor(originalPrice * 0.25));
 };
 
-// Find original item price from shop data - UPDATED TO INCLUDE CHRISTMAS
+// Find original item price from shop data - UPDATED TO INCLUDE SEASONAL COLLECTIONS
 const findOriginalPrice = (itemName, itemType, SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, SHOP_BASIC_PETS, SHOP_PREMIUM_PETS, currentRewards) => {
   if (itemType === 'avatar') {
     const basicAvatar = SHOP_BASIC_AVATARS.find(a => a.name === itemName);
     const premiumAvatar = SHOP_PREMIUM_AVATARS.find(a => a.name === itemName);
+    const halloweenBasic = HALLOWEEN_BASIC_AVATARS.find(a => a.name === itemName);
+    const halloweenPremium = HALLOWEEN_PREMIUM_AVATARS.find(a => a.name === itemName);
     const christmasBasic = CHRISTMAS_BASIC_AVATARS.find(a => a.name === itemName);
     const christmasPremium = CHRISTMAS_PREMIUM_AVATARS.find(a => a.name === itemName);
-    return basicAvatar?.price || premiumAvatar?.price || christmasBasic?.price || christmasPremium?.price || 10;
+    return (
+      basicAvatar?.price ||
+      premiumAvatar?.price ||
+      halloweenBasic?.price ||
+      halloweenPremium?.price ||
+      christmasBasic?.price ||
+      christmasPremium?.price ||
+      10
+    );
   } else if (itemType === 'pet') {
     const basicPet = SHOP_BASIC_PETS.find(p => p.name === itemName);
     const premiumPet = SHOP_PREMIUM_PETS.find(p => p.name === itemName);
+    const halloweenPet = HALLOWEEN_PETS.find(p => p.name === itemName);
     const christmasPet = CHRISTMAS_PETS.find(p => p.name === itemName);
-    return basicPet?.price || premiumPet?.price || christmasPet?.price || 15;
+    return basicPet?.price || premiumPet?.price || halloweenPet?.price || christmasPet?.price || 15;
   } else if (itemType === 'reward') {
     const reward = currentRewards.find(r => r.id === itemName || r.name === itemName);
     return reward?.price || 10;
@@ -364,16 +404,26 @@ const ShopTab = ({
         avatars: [
           ...SHOP_BASIC_AVATARS,
           ...SHOP_PREMIUM_AVATARS,
+          ...HALLOWEEN_BASIC_AVATARS,
+          ...HALLOWEEN_PREMIUM_AVATARS,
           ...CHRISTMAS_BASIC_AVATARS,
           ...CHRISTMAS_PREMIUM_AVATARS
         ],
-        pets: [...SHOP_BASIC_PETS, ...SHOP_PREMIUM_PETS, ...CHRISTMAS_PETS]
+        pets: [
+          ...SHOP_BASIC_PETS,
+          ...SHOP_PREMIUM_PETS,
+          ...HALLOWEEN_PETS,
+          ...CHRISTMAS_PETS
+        ]
       }),
     [
       SHOP_BASIC_AVATARS,
       SHOP_PREMIUM_AVATARS,
       SHOP_BASIC_PETS,
       SHOP_PREMIUM_PETS,
+      HALLOWEEN_BASIC_AVATARS,
+      HALLOWEEN_PREMIUM_AVATARS,
+      HALLOWEEN_PETS,
       CHRISTMAS_BASIC_AVATARS,
       CHRISTMAS_PREMIUM_AVATARS,
       CHRISTMAS_PETS

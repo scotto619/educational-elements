@@ -364,6 +364,9 @@ const findOriginalPrice = (
   SHOP_BASIC_PETS,
   SHOP_PREMIUM_PETS,
   classRewards,
+  HALLOWEEN_BASIC_AVATARS = [],
+  HALLOWEEN_PREMIUM_AVATARS = [],
+  HALLOWEEN_PETS = [],
   CHRISTMAS_BASIC_AVATARS = [],
   CHRISTMAS_PREMIUM_AVATARS = [],
   CHRISTMAS_PETS = []
@@ -371,14 +374,25 @@ const findOriginalPrice = (
   if (itemType === 'avatar') {
     const basicAvatar = SHOP_BASIC_AVATARS.find(a => a.name === itemName);
     const premiumAvatar = SHOP_PREMIUM_AVATARS.find(a => a.name === itemName);
+    const halloweenBasic = HALLOWEEN_BASIC_AVATARS.find(a => a.name === itemName);
+    const halloweenPremium = HALLOWEEN_PREMIUM_AVATARS.find(a => a.name === itemName);
     const christmasBasic = CHRISTMAS_BASIC_AVATARS.find(a => a.name === itemName);
     const christmasPremium = CHRISTMAS_PREMIUM_AVATARS.find(a => a.name === itemName);
-    return basicAvatar?.price || premiumAvatar?.price || christmasBasic?.price || christmasPremium?.price || 10; // Default if not found
+    return (
+      basicAvatar?.price ||
+      premiumAvatar?.price ||
+      halloweenBasic?.price ||
+      halloweenPremium?.price ||
+      christmasBasic?.price ||
+      christmasPremium?.price ||
+      10
+    ); // Default if not found
   } else if (itemType === 'pet') {
     const basicPet = SHOP_BASIC_PETS.find(p => p.name === itemName);
     const premiumPet = SHOP_PREMIUM_PETS.find(p => p.name === itemName);
+    const halloweenPet = HALLOWEEN_PETS.find(p => p.name === itemName);
     const christmasPet = CHRISTMAS_PETS.find(p => p.name === itemName);
-    return basicPet?.price || premiumPet?.price || christmasPet?.price || 15; // Default if not found
+    return basicPet?.price || premiumPet?.price || halloweenPet?.price || christmasPet?.price || 15; // Default if not found
   } else if (itemType === 'reward') {
     const reward = (classRewards || []).find(r => r.id === itemName || r.name === itemName);
     return reward?.price || 10; // Default if not found
@@ -422,6 +436,9 @@ const StudentShop = ({
   SHOP_PREMIUM_AVATARS,
   SHOP_BASIC_PETS,
   SHOP_PREMIUM_PETS,
+  HALLOWEEN_BASIC_AVATARS = [],
+  HALLOWEEN_PREMIUM_AVATARS = [],
+  HALLOWEEN_PETS = [],
   CHRISTMAS_BASIC_AVATARS = [],
   CHRISTMAS_PREMIUM_AVATARS = [],
   CHRISTMAS_PETS = [],
@@ -499,22 +516,28 @@ const StudentShop = ({
         avatars: [
           ...(SHOP_BASIC_AVATARS || []),
           ...(SHOP_PREMIUM_AVATARS || []),
+          ...(HALLOWEEN_BASIC_AVATARS || []),
+          ...(HALLOWEEN_PREMIUM_AVATARS || []),
           ...(CHRISTMAS_BASIC_AVATARS || []),
           ...(CHRISTMAS_PREMIUM_AVATARS || [])
         ],
         pets: [
           ...(SHOP_BASIC_PETS || []),
           ...(SHOP_PREMIUM_PETS || []),
+          ...(HALLOWEEN_PETS || []),
           ...(CHRISTMAS_PETS || [])
         ]
       }),
     [
       SHOP_BASIC_AVATARS,
       SHOP_PREMIUM_AVATARS,
+      HALLOWEEN_BASIC_AVATARS,
+      HALLOWEEN_PREMIUM_AVATARS,
       CHRISTMAS_BASIC_AVATARS,
       CHRISTMAS_PREMIUM_AVATARS,
       SHOP_BASIC_PETS,
       SHOP_PREMIUM_PETS,
+      HALLOWEEN_PETS,
       CHRISTMAS_PETS
     ]
   );
@@ -2064,6 +2087,9 @@ const StudentShop = ({
       SHOP_BASIC_PETS,
       SHOP_PREMIUM_PETS,
       classRewards,
+      HALLOWEEN_BASIC_AVATARS,
+      HALLOWEEN_PREMIUM_AVATARS,
+      HALLOWEEN_PETS,
       CHRISTMAS_BASIC_AVATARS,
       CHRISTMAS_PREMIUM_AVATARS,
       CHRISTMAS_PETS
