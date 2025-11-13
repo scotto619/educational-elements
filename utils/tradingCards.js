@@ -1,11 +1,11 @@
 import {
   SHOP_BASIC_AVATARS,
   SHOP_PREMIUM_AVATARS,
-  HALLOWEEN_BASIC_AVATARS,
-  HALLOWEEN_PREMIUM_AVATARS,
+  CHRISTMAS_BASIC_AVATARS,
+  CHRISTMAS_PREMIUM_AVATARS,
   SHOP_BASIC_PETS,
   SHOP_PREMIUM_PETS,
-  HALLOWEEN_PETS
+  CHRISTMAS_PETS
 } from './gameHelpers';
 
 const slugify = (value = '') => value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
@@ -245,10 +245,10 @@ export const buildTradingCardLibrary = ({
   avatars = [
     ...SHOP_BASIC_AVATARS,
     ...SHOP_PREMIUM_AVATARS,
-    ...HALLOWEEN_BASIC_AVATARS,
-    ...HALLOWEEN_PREMIUM_AVATARS
+    ...CHRISTMAS_BASIC_AVATARS,
+    ...CHRISTMAS_PREMIUM_AVATARS
   ],
-  pets = [...SHOP_BASIC_PETS, ...SHOP_PREMIUM_PETS, ...HALLOWEEN_PETS],
+  pets = [...SHOP_BASIC_PETS, ...SHOP_PREMIUM_PETS, ...CHRISTMAS_PETS],
   weapons = CLICKER_WEAPON_CARDS,
   artifacts = CLICKER_ARTIFACT_CARDS
 } = {}) => {

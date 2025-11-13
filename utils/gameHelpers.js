@@ -1,4 +1,4 @@
-// utils/gameHelpers.js - UPDATED WITH HALLOWEEN CONTENT
+// utils/gameHelpers.js - UPDATED WITH CHRISTMAS CONTENT
 import { normalizeImageSource } from './imageFallback';
 
 export const DEFAULT_PET_IMAGE = '/shop/BasicPets/Wizard.png';
@@ -87,32 +87,22 @@ export const SHOP_PREMIUM_AVATARS = [
 ];
 
 // ===============================================
-// HALLOWEEN THEMED ITEMS - NEW!
+// CHRISTMAS THEMED ITEMS - NEW!
 // ===============================================
-export const HALLOWEEN_BASIC_AVATARS = [
-  { name: 'Demi', price: 15, path: '/shop/Themed/Halloween/Basic/Demi.png', theme: 'halloween' },
-  { name: 'Jason', price: 18, path: '/shop/Themed/Halloween/Basic/Jason.png', theme: 'halloween' },
-  { name: 'PumpkinKing', price: 20, path: '/shop/Themed/Halloween/Basic/PumpkinKing.png', theme: 'halloween' },
-  { name: 'Skeleton', price: 15, path: '/shop/Themed/Halloween/Basic/Skeleton.png', theme: 'halloween' },
-  { name: 'Witch', price: 18, path: '/shop/Themed/Halloween/Basic/Witch.png', theme: 'halloween' },
-  { name: 'Zombie', price: 16, path: '/shop/Themed/Halloween/Basic/Zombie.png', theme: 'halloween' }
+export const CHRISTMAS_BASIC_AVATARS = [
+  { name: 'Elf', price: 15, path: '/shop/Themed/Christmas/Elf.png', theme: 'christmas' },
+  { name: 'Santa', price: 18, path: '/shop/Themed/Christmas/Santa.png', theme: 'christmas' },
+  { name: 'Festive Tree', price: 20, path: '/shop/Themed/Christmas/Tree.png', theme: 'christmas' }
 ];
 
-export const HALLOWEEN_PREMIUM_AVATARS = [
-  { name: 'Pumpkin', price: 35, path: '/shop/Themed/Halloween/Premium/Pumpkin.png', theme: 'halloween' },
-  { name: 'Skeleton1', price: 40, path: '/shop/Themed/Halloween/Premium/Skeleton1.png', theme: 'halloween' },
-  { name: 'Skeleton2', price: 40, path: '/shop/Themed/Halloween/Premium/Skeleton2.png', theme: 'halloween' },
-  { name: 'Skeleton3', price: 40, path: '/shop/Themed/Halloween/Premium/Skeleton3.png', theme: 'halloween' },
-  { name: 'Witch1', price: 42, path: '/shop/Themed/Halloween/Premium/Witch1.png', theme: 'halloween' },
-  { name: 'Witch2', price: 42, path: '/shop/Themed/Halloween/Premium/Witch2.png', theme: 'halloween' },
-  { name: 'Witch3', price: 42, path: '/shop/Themed/Halloween/Premium/Witch3.png', theme: 'halloween' },
-  { name: 'Witch4', price: 42, path: '/shop/Themed/Halloween/Premium/Witch4.png', theme: 'halloween' },
-  { name: 'Zombie1', price: 38, path: '/shop/Themed/Halloween/Premium/Zombie1.png', theme: 'halloween' }
+export const CHRISTMAS_PREMIUM_AVATARS = [
+  { name: 'Epic Santa', price: 40, path: '/shop/Themed/Christmas/EpicSanta.png', theme: 'christmas' }
 ];
 
-export const HALLOWEEN_PETS = [
-  { name: 'Spooky Cat', price: 25, path: '/shop/Themed/Halloween/Pets/Pet.png', theme: 'halloween' },
-  { name: 'Pumpkin Cat', price: 28, path: '/shop/Themed/Halloween/Pets/Pet2.png', theme: 'halloween' }
+export const CHRISTMAS_PETS = [
+  { name: 'Holiday Hat', price: 25, path: '/shop/Themed/Christmas/Hat.png', theme: 'christmas' },
+  { name: 'Reindeer', price: 28, path: '/shop/Themed/Christmas/Reindeer.png', theme: 'christmas' },
+  { name: 'Gift Buddy', price: 26, path: '/shop/Themed/Christmas/Gift.png', theme: 'christmas' }
 ];
 
 // ===============================================
@@ -170,15 +160,15 @@ export const SHOP_PREMIUM_PETS = [
 ];
 
 // ===============================================
-// AVATAR IMAGE PATHS - UPDATED WITH HALLOWEEN
+// AVATAR IMAGE PATHS - UPDATED WITH CHRISTMAS
 // ===============================================
 export const getAvatarImage = (avatarBase, level) => {
-  // First check if it's a shop avatar (including Halloween)
+  // First check if it's a shop avatar (including Christmas)
   const shopItem = [
-    ...SHOP_BASIC_AVATARS, 
-    ...SHOP_PREMIUM_AVATARS, 
-    ...HALLOWEEN_BASIC_AVATARS, 
-    ...HALLOWEEN_PREMIUM_AVATARS
+    ...SHOP_BASIC_AVATARS,
+    ...SHOP_PREMIUM_AVATARS,
+    ...CHRISTMAS_BASIC_AVATARS,
+    ...CHRISTMAS_PREMIUM_AVATARS
   ].find(a => a.name.toLowerCase() === avatarBase?.toLowerCase());
   
   if (shopItem) return shopItem.path;
@@ -188,7 +178,7 @@ export const getAvatarImage = (avatarBase, level) => {
 };
 
 // ===============================================
-// PET IMAGE PATHS - UPDATED WITH HALLOWEEN
+// PET IMAGE PATHS - UPDATED WITH CHRISTMAS
 // ===============================================
 export const getPetImage = (pet) => {
   if (!pet) return normalizeImageSource(DEFAULT_PET_IMAGE, DEFAULT_PET_IMAGE);
@@ -212,7 +202,7 @@ export const getPetImage = (pet) => {
   const shopItem = [
     ...SHOP_BASIC_PETS,
     ...SHOP_PREMIUM_PETS,
-    ...HALLOWEEN_PETS
+    ...CHRISTMAS_PETS
   ].find((p) => p.name.toLowerCase() === normalizedName);
   if (shopItem?.path) {
     candidates.unshift(shopItem.path);
@@ -680,10 +670,10 @@ export default {
   awardXPToStudent,
   SHOP_BASIC_AVATARS,
   SHOP_PREMIUM_AVATARS,
-  HALLOWEEN_BASIC_AVATARS,
-  HALLOWEEN_PREMIUM_AVATARS,
+  CHRISTMAS_BASIC_AVATARS,
+  CHRISTMAS_PREMIUM_AVATARS,
   SHOP_BASIC_PETS,
   SHOP_PREMIUM_PETS,
-  HALLOWEEN_PETS,
+  CHRISTMAS_PETS,
   GAME_CONFIG
 };

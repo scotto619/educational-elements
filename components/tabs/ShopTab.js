@@ -1,4 +1,4 @@
-// components/tabs/ShopTab.js - MOBILE-OPTIMIZED SHOP WITH HALLOWEEN SECTION, MYSTERY BOX AND SELLING FEATURE
+// components/tabs/ShopTab.js - MOBILE-OPTIMIZED SHOP WITH CHRISTMAS SECTION, MYSTERY BOX AND SELLING FEATURE
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { DEFAULT_TEACHER_REWARDS, buildShopInventory, getDailySpecials } from '../../utils/shopSpecials';
@@ -26,32 +26,22 @@ import {
 } from '../../utils/tradingCards';
 
 // ===============================================
-// HALLOWEEN THEMED ITEMS - LIMITED TIME!
+// CHRISTMAS THEMED ITEMS - LIMITED TIME!
 // ===============================================
-const HALLOWEEN_BASIC_AVATARS = [
-  { name: 'Demi', price: 15, path: '/shop/Themed/Halloween/Basic/Demi.png', theme: 'halloween' },
-  { name: 'Jason', price: 18, path: '/shop/Themed/Halloween/Basic/Jason.png', theme: 'halloween' },
-  { name: 'PumpkinKing', price: 20, path: '/shop/Themed/Halloween/Basic/PumpkinKing.png', theme: 'halloween' },
-  { name: 'Skeleton', price: 15, path: '/shop/Themed/Halloween/Basic/Skeleton.png', theme: 'halloween' },
-  { name: 'Witch', price: 18, path: '/shop/Themed/Halloween/Basic/Witch.png', theme: 'halloween' },
-  { name: 'Zombie', price: 16, path: '/shop/Themed/Halloween/Basic/Zombie.png', theme: 'halloween' }
+const CHRISTMAS_BASIC_AVATARS = [
+  { name: 'Elf', price: 15, path: '/shop/Themed/Christmas/Elf.png', theme: 'christmas' },
+  { name: 'Santa', price: 18, path: '/shop/Themed/Christmas/Santa.png', theme: 'christmas' },
+  { name: 'Festive Tree', price: 20, path: '/shop/Themed/Christmas/Tree.png', theme: 'christmas' }
 ];
 
-const HALLOWEEN_PREMIUM_AVATARS = [
-  { name: 'Pumpkin', price: 35, path: '/shop/Themed/Halloween/Premium/Pumpkin.png', theme: 'halloween' },
-  { name: 'Skeleton1', price: 40, path: '/shop/Themed/Halloween/Premium/Skeleton1.png', theme: 'halloween' },
-  { name: 'Skeleton2', price: 40, path: '/shop/Themed/Halloween/Premium/Skeleton2.png', theme: 'halloween' },
-  { name: 'Skeleton3', price: 40, path: '/shop/Themed/Halloween/Premium/Skeleton3.png', theme: 'halloween' },
-  { name: 'Witch1', price: 42, path: '/shop/Themed/Halloween/Premium/Witch1.png', theme: 'halloween' },
-  { name: 'Witch2', price: 42, path: '/shop/Themed/Halloween/Premium/Witch2.png', theme: 'halloween' },
-  { name: 'Witch3', price: 42, path: '/shop/Themed/Halloween/Premium/Witch3.png', theme: 'halloween' },
-  { name: 'Witch4', price: 42, path: '/shop/Themed/Halloween/Premium/Witch4.png', theme: 'halloween' },
-  { name: 'Zombie1', price: 38, path: '/shop/Themed/Halloween/Premium/Zombie1.png', theme: 'halloween' }
+const CHRISTMAS_PREMIUM_AVATARS = [
+  { name: 'Epic Santa', price: 40, path: '/shop/Themed/Christmas/EpicSanta.png', theme: 'christmas' }
 ];
 
-const HALLOWEEN_PETS = [
-  { name: 'Spooky Cat', price: 25, path: '/shop/Themed/Halloween/Pets/Pet.png', theme: 'halloween' },
-  { name: 'Pumpkin Cat', price: 28, path: '/shop/Themed/Halloween/Pets/Pet2.png', theme: 'halloween' }
+const CHRISTMAS_PETS = [
+  { name: 'Holiday Hat', price: 25, path: '/shop/Themed/Christmas/Hat.png', theme: 'christmas' },
+  { name: 'Reindeer', price: 28, path: '/shop/Themed/Christmas/Reindeer.png', theme: 'christmas' },
+  { name: 'Gift Buddy', price: 26, path: '/shop/Themed/Christmas/Gift.png', theme: 'christmas' }
 ];
 
 const defaultEggArt = (EGG_STAGE_ART?.unbroken && EGG_STAGE_ART.unbroken.src) || '/shop/Egg/Egg.png';
@@ -118,23 +108,23 @@ const getItemRarity = (price) => {
   return 'legendary';
 };
 
-// Function to get all possible mystery box prizes - UPDATED TO INCLUDE HALLOWEEN
+// Function to get all possible mystery box prizes - UPDATED TO INCLUDE CHRISTMAS
 const getMysteryBoxPrizes = (
   SHOP_BASIC_AVATARS,
   SHOP_PREMIUM_AVATARS,
   SHOP_BASIC_PETS,
   SHOP_PREMIUM_PETS,
   currentRewards,
-  HALLOWEEN_BASIC_AVATARS = [],
-  HALLOWEEN_PREMIUM_AVATARS = [],
-  HALLOWEEN_PETS = [],
+  CHRISTMAS_BASIC_AVATARS = [],
+  CHRISTMAS_PREMIUM_AVATARS = [],
+  CHRISTMAS_PETS = [],
   EGG_TYPES = PET_EGG_TYPES,
   CARD_PACKS = []
 ) => {
   const prizes = [];
 
-  // Add shop avatars INCLUDING HALLOWEEN
-  [...SHOP_BASIC_AVATARS, ...SHOP_PREMIUM_AVATARS, ...HALLOWEEN_BASIC_AVATARS, ...HALLOWEEN_PREMIUM_AVATARS].forEach(avatar => {
+  // Add shop avatars INCLUDING CHRISTMAS
+  [...SHOP_BASIC_AVATARS, ...SHOP_PREMIUM_AVATARS, ...CHRISTMAS_BASIC_AVATARS, ...CHRISTMAS_PREMIUM_AVATARS].forEach(avatar => {
     prizes.push({
       type: 'avatar',
       item: avatar,
@@ -144,8 +134,8 @@ const getMysteryBoxPrizes = (
     });
   });
   
-  // Add shop pets INCLUDING HALLOWEEN
-  [...SHOP_BASIC_PETS, ...SHOP_PREMIUM_PETS, ...HALLOWEEN_PETS].forEach(pet => {
+  // Add shop pets INCLUDING CHRISTMAS
+  [...SHOP_BASIC_PETS, ...SHOP_PREMIUM_PETS, ...CHRISTMAS_PETS].forEach(pet => {
     prizes.push({
       type: 'pet',
       item: pet,
@@ -282,7 +272,7 @@ const getEggAccent = (egg) => {
 };
 
 // ===============================================
-// SELLING SYSTEM - UPDATED TO INCLUDE HALLOWEEN
+// SELLING SYSTEM - UPDATED TO INCLUDE CHRISTMAS
 // ===============================================
 
 // Calculate sell price (25% of original cost)
@@ -290,19 +280,19 @@ const calculateSellPrice = (originalPrice) => {
   return Math.max(1, Math.floor(originalPrice * 0.25));
 };
 
-// Find original item price from shop data - UPDATED TO INCLUDE HALLOWEEN
+// Find original item price from shop data - UPDATED TO INCLUDE CHRISTMAS
 const findOriginalPrice = (itemName, itemType, SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, SHOP_BASIC_PETS, SHOP_PREMIUM_PETS, currentRewards) => {
   if (itemType === 'avatar') {
     const basicAvatar = SHOP_BASIC_AVATARS.find(a => a.name === itemName);
     const premiumAvatar = SHOP_PREMIUM_AVATARS.find(a => a.name === itemName);
-    const halloweenBasic = HALLOWEEN_BASIC_AVATARS.find(a => a.name === itemName);
-    const halloweenPremium = HALLOWEEN_PREMIUM_AVATARS.find(a => a.name === itemName);
-    return basicAvatar?.price || premiumAvatar?.price || halloweenBasic?.price || halloweenPremium?.price || 10;
+    const christmasBasic = CHRISTMAS_BASIC_AVATARS.find(a => a.name === itemName);
+    const christmasPremium = CHRISTMAS_PREMIUM_AVATARS.find(a => a.name === itemName);
+    return basicAvatar?.price || premiumAvatar?.price || christmasBasic?.price || christmasPremium?.price || 10;
   } else if (itemType === 'pet') {
     const basicPet = SHOP_BASIC_PETS.find(p => p.name === itemName);
     const premiumPet = SHOP_PREMIUM_PETS.find(p => p.name === itemName);
-    const halloweenPet = HALLOWEEN_PETS.find(p => p.name === itemName);
-    return basicPet?.price || premiumPet?.price || halloweenPet?.price || 15;
+    const christmasPet = CHRISTMAS_PETS.find(p => p.name === itemName);
+    return basicPet?.price || premiumPet?.price || christmasPet?.price || 15;
   } else if (itemType === 'reward') {
     const reward = currentRewards.find(r => r.id === itemName || r.name === itemName);
     return reward?.price || 10;
@@ -332,7 +322,7 @@ const ShopTab = ({
     dailySpecials = []
 }) => {
   const [selectedStudentId, setSelectedStudentId] = useState(null);
-  const [activeCategory, setActiveCategory] = useState('halloween'); // DEFAULT TO HALLOWEEN!
+  const [activeCategory, setActiveCategory] = useState('christmas'); // DEFAULT TO CHRISTMAS!
   const [purchaseModal, setPurchaseModal] = useState({ visible: false, item: null, type: null });
   const [inventoryModal, setInventoryModal] = useState({ visible: false });
   
@@ -374,19 +364,19 @@ const ShopTab = ({
         avatars: [
           ...SHOP_BASIC_AVATARS,
           ...SHOP_PREMIUM_AVATARS,
-          ...HALLOWEEN_BASIC_AVATARS,
-          ...HALLOWEEN_PREMIUM_AVATARS
+          ...CHRISTMAS_BASIC_AVATARS,
+          ...CHRISTMAS_PREMIUM_AVATARS
         ],
-        pets: [...SHOP_BASIC_PETS, ...SHOP_PREMIUM_PETS, ...HALLOWEEN_PETS]
+        pets: [...SHOP_BASIC_PETS, ...SHOP_PREMIUM_PETS, ...CHRISTMAS_PETS]
       }),
     [
       SHOP_BASIC_AVATARS,
       SHOP_PREMIUM_AVATARS,
       SHOP_BASIC_PETS,
       SHOP_PREMIUM_PETS,
-      HALLOWEEN_BASIC_AVATARS,
-      HALLOWEEN_PREMIUM_AVATARS,
-      HALLOWEEN_PETS
+      CHRISTMAS_BASIC_AVATARS,
+      CHRISTMAS_PREMIUM_AVATARS,
+      CHRISTMAS_PETS
     ]
   );
 
@@ -452,9 +442,9 @@ const ShopTab = ({
   }, [selectedStudentId, selectedStudentEggs, onUpdateStudent]);
 
   const seasonalItems = useMemo(() => ([
-    ...HALLOWEEN_BASIC_AVATARS.map(item => ({ ...item, category: 'halloween', type: 'avatar' })),
-    ...HALLOWEEN_PREMIUM_AVATARS.map(item => ({ ...item, category: 'halloween', type: 'avatar' })),
-    ...HALLOWEEN_PETS.map(item => ({ ...item, category: 'halloween', type: 'pet' }))
+    ...CHRISTMAS_BASIC_AVATARS.map(item => ({ ...item, category: 'christmas', type: 'avatar' })),
+    ...CHRISTMAS_PREMIUM_AVATARS.map(item => ({ ...item, category: 'christmas', type: 'avatar' })),
+    ...CHRISTMAS_PETS.map(item => ({ ...item, category: 'christmas', type: 'pet' }))
   ]), []);
 
   const featuredItems = useMemo(() => {
@@ -519,9 +509,9 @@ const ShopTab = ({
       SHOP_BASIC_PETS,
       SHOP_PREMIUM_PETS,
       currentRewards,
-      HALLOWEEN_BASIC_AVATARS,
-      HALLOWEEN_PREMIUM_AVATARS,
-      HALLOWEEN_PETS,
+      CHRISTMAS_BASIC_AVATARS,
+      CHRISTMAS_PREMIUM_AVATARS,
+      CHRISTMAS_PETS,
       PET_EGG_TYPES,
       DEFAULT_CARD_PACKS
     );
@@ -883,9 +873,9 @@ const ShopTab = ({
     onUpdateStudent(selectedStudent.id, updates);
   };
 
-  // UPDATED SHOP CATEGORIES TO INCLUDE HALLOWEEN FIRST
+  // UPDATED SHOP CATEGORIES TO INCLUDE CHRISTMAS FIRST
   const SHOP_CATEGORIES = [
-      { id: 'halloween', name: '🎃 Halloween Special', shortName: '🎃 Halloween' },
+      { id: 'christmas', name: '🎄 Christmas Special', shortName: '🎄 Christmas' },
       { id: 'featured', name: '⭐ Featured Items', shortName: 'Featured' },
       { id: 'card_packs', name: '✨ Card Packs', shortName: 'Cards' },
       { id: 'mysterybox', name: '🎁 Mystery Box', shortName: 'Mystery' },
@@ -1113,7 +1103,7 @@ const ShopTab = ({
     );
   };
 
-  // UPDATED RENDER SHOP ITEMS TO INCLUDE HALLOWEEN SECTION
+  // UPDATED RENDER SHOP ITEMS TO INCLUDE CHRISTMAS SECTION
   const renderShopItems = () => {
       if (activeCategory === 'featured') {
         return renderFeaturedItems();
@@ -1130,9 +1120,9 @@ const ShopTab = ({
       let items;
       let type;
       switch(activeCategory) {
-          case 'halloween':
-            // Combine all Halloween items
-            items = [...HALLOWEEN_BASIC_AVATARS, ...HALLOWEEN_PREMIUM_AVATARS, ...HALLOWEEN_PETS];
+          case 'christmas':
+            // Combine all Christmas items
+            items = [...CHRISTMAS_BASIC_AVATARS, ...CHRISTMAS_PREMIUM_AVATARS, ...CHRISTMAS_PETS];
             type = 'mixed';
             break;
           case 'basic_avatars': items = SHOP_BASIC_AVATARS; type = 'avatar'; break;
@@ -1144,7 +1134,7 @@ const ShopTab = ({
       }
       
       return items.map(item => {
-          // Determine actual type for mixed Halloween items
+          // Determine actual type for mixed Christmas items
           let actualType = type;
           if (type === 'mixed') {
             if (item.name.toLowerCase().includes('cat') || item.name.toLowerCase().includes('pet')) {
@@ -1154,6 +1144,17 @@ const ShopTab = ({
             }
           }
           
+          const isChristmasPet = CHRISTMAS_PETS.some(pet => pet.name === item.name);
+          const isChristmasAvatar = [...CHRISTMAS_BASIC_AVATARS, ...CHRISTMAS_PREMIUM_AVATARS].some(avatar => avatar.name === item.name);
+
+          if (type === 'mixed') {
+            if (isChristmasPet) {
+              actualType = 'pet';
+            } else if (isChristmasAvatar) {
+              actualType = 'avatar';
+            }
+          }
+
           const isAvatar = actualType === 'avatar';
           const isPet = actualType === 'pet';
           const isReward = actualType === 'reward';
@@ -1162,8 +1163,8 @@ const ShopTab = ({
           
           return (
             <div key={item.name || item.id} className={`border-2 rounded-lg p-3 sm:p-4 text-center flex flex-col justify-between ${
-              owned ? 'border-green-400 bg-green-50' : 
-              activeCategory === 'halloween' ? 'border-orange-400 bg-gradient-to-br from-orange-50 to-purple-50' :
+              owned ? 'border-green-400 bg-green-50' :
+              activeCategory === 'christmas' ? 'border-emerald-500 bg-gradient-to-br from-emerald-50 via-sky-50 to-emerald-100' :
               'border-gray-200'
             }`}>
                 {isReward ? (
@@ -1557,9 +1558,9 @@ const ShopTab = ({
                       key={cat.id} 
                       onClick={() => setActiveCategory(cat.id)} 
                       className={`px-2 sm:px-4 py-2 rounded-lg font-semibold whitespace-nowrap text-xs sm:text-sm ${
-                        activeCategory === cat.id 
-                          ? cat.id === 'halloween'
-                            ? 'bg-gradient-to-r from-orange-500 to-purple-600 text-white'
+                        activeCategory === cat.id
+                          ? cat.id === 'christmas'
+                            ? 'bg-gradient-to-r from-emerald-500 via-sky-500 to-emerald-600 text-white'
                             : cat.id === 'featured' 
                             ? 'bg-red-500 text-white' 
                             : cat.id === 'mysterybox'
@@ -1584,14 +1585,14 @@ const ShopTab = ({
                 )}
             </div>
             
-            {/* SPECIAL HEADER FOR HALLOWEEN SECTION */}
-            {activeCategory === 'halloween' && (
-              <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-gradient-to-r from-orange-100 via-purple-100 to-orange-100 rounded-lg border-2 border-orange-400">
+            {/* SPECIAL HEADER FOR CHRISTMAS SECTION */}
+            {activeCategory === 'christmas' && (
+              <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-gradient-to-r from-emerald-50 via-sky-50 to-emerald-100 rounded-lg border-2 border-emerald-400">
                 <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="text-2xl sm:text-3xl animate-bounce">🎃</div>
+                  <div className="text-2xl sm:text-3xl animate-bounce">🎄</div>
                   <div>
-                    <h3 className="text-lg sm:text-xl font-bold text-orange-800">🎃 Halloween Special Collection! 🎃</h3>
-                    <p className="text-sm sm:text-base text-purple-700 font-semibold">Limited time spooky avatars and pets - Get them before they're gone!</p>
+                    <h3 className="text-lg sm:text-xl font-bold text-emerald-800">🎄 Christmas Special Collection! 🎄</h3>
+                    <p className="text-sm sm:text-base text-emerald-700 font-semibold">Limited time festive avatars and pets - get them before they're gone!</p>
                   </div>
                 </div>
               </div>
