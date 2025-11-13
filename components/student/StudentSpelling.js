@@ -1,5 +1,5 @@
 // components/student/StudentSpelling.js
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { READING_PASSAGES } from '../curriculum/literacy/SpellingProgram';
 
 // Import spelling lists from the main program
@@ -586,6 +586,7 @@ const SpellingWordSearch = ({ words, onSolved }) => {
   const [isComplete, setIsComplete] = useState(false);
   const [cellSize, setCellSize] = useState(36);
   const [gridGap, setGridGap] = useState(4);
+  const activePointerIdRef = useRef(null);
 
   const columnCount = puzzle?.grid?.length || 0;
 
@@ -637,11 +638,15 @@ const SpellingWordSearch = ({ words, onSolved }) => {
 
     if (puzzle && puzzle.placements) {
       const selectionKey = selection.map(cell => `${cell.row}-${cell.col}`).join('|');
+      const selectionSet = new Set(selection.map(cell => `${cell.row}-${cell.col}`));
       const matchedPlacement = puzzle.placements.find(placement => {
         const forwardKey = placement.positions.map(pos => `${pos.row}-${pos.col}`).join('|');
         if (selectionKey === forwardKey) return true;
         const backwardKey = [...placement.positions].reverse().map(pos => `${pos.row}-${pos.col}`).join('|');
-        return selectionKey === backwardKey;
+        if (selectionKey === backwardKey) return true;
+
+        if (selection.length !== placement.positions.length) return false;
+        return placement.positions.every(pos => selectionSet.has(`${pos.row}-${pos.col}`));
       });
 
       if (matchedPlacement) {
@@ -664,12 +669,22 @@ const SpellingWordSearch = ({ words, onSolved }) => {
     setIsSelecting(false);
     setSelection([]);
     setSelectionDirection(null);
+    activePointerIdRef.current = null;
   }, [selection, puzzle, isComplete, onSolved]);
 
   useEffect(() => {
     if (!isSelecting) return;
 
-    const handlePointerUp = () => finalizeSelection();
+    const handlePointerUp = event => {
+      if (activePointerIdRef.current !== null && typeof event?.pointerId === 'number') {
+        if (event.pointerId !== activePointerIdRef.current) {
+          return;
+        }
+      }
+
+      activePointerIdRef.current = null;
+      finalizeSelection();
+    };
 
     window.addEventListener('pointerup', handlePointerUp);
     window.addEventListener('touchend', handlePointerUp);
@@ -688,6 +703,18 @@ const SpellingWordSearch = ({ words, onSolved }) => {
     if (event?.preventDefault) {
       event.preventDefault();
     }
+
+    const pointerId = typeof event?.pointerId === 'number' ? event.pointerId : null;
+    activePointerIdRef.current = pointerId;
+
+    if (pointerId !== null && event?.currentTarget?.setPointerCapture) {
+      try {
+        event.currentTarget.setPointerCapture(pointerId);
+      } catch {
+        // Ignore pointer capture issues on unsupported devices/elements
+      }
+    }
+
     setIsSelecting(true);
     setSelection([{ row, col }]);
     setSelectionDirection(null);
@@ -727,13 +754,26 @@ const SpellingWordSearch = ({ words, onSolved }) => {
     setSelection(prev => [...prev, { row, col }]);
   }, [isSelecting, selection, selectionDirection]);
 
-  const handlePointerUp = useCallback(() => {
-    if (isSelecting) {
-      finalizeSelection();
+  const handlePointerUp = useCallback(event => {
+    if (!isSelecting) return;
+
+    if (typeof event?.pointerId === 'number' && activePointerIdRef.current !== null) {
+      if (event.pointerId !== activePointerIdRef.current) {
+        return;
+      }
     }
+
+    activePointerIdRef.current = null;
+    finalizeSelection();
   }, [isSelecting, finalizeSelection]);
 
   const handleGlobalPointerMove = useCallback((event) => {
+    if (activePointerIdRef.current !== null && typeof event?.pointerId === 'number') {
+      if (event.pointerId !== activePointerIdRef.current) {
+        return;
+      }
+    }
+
     const point = event?.touches?.[0] || event;
     if (!point) return;
 
