@@ -1,4 +1,4 @@
-// components/student/StudentShop.js - UPDATED WITH HALLOWEEN SUPPORT
+// components/student/StudentShop.js - UPDATED WITH CHRISTMAS SUPPORT
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 
@@ -87,27 +87,27 @@ const getItemRarity = (price) => {
   return 'legendary';
 };
 
-// Function to get all possible mystery box prizes (includes Halloween items via props)
+// Function to get all possible mystery box prizes (includes Christmas items via props)
 const getMysteryBoxPrizes = (
   SHOP_BASIC_AVATARS,
   SHOP_PREMIUM_AVATARS,
   SHOP_BASIC_PETS,
   SHOP_PREMIUM_PETS,
   classRewards,
-  HALLOWEEN_BASIC_AVATARS = [],
-  HALLOWEEN_PREMIUM_AVATARS = [],
-  HALLOWEEN_PETS = [],
+  CHRISTMAS_BASIC_AVATARS = [],
+  CHRISTMAS_PREMIUM_AVATARS = [],
+  CHRISTMAS_PETS = [],
   EGG_TYPES = PET_EGG_TYPES,
   CARD_PACKS = []
 ) => {
   const prizes = [];
 
-  // Add shop avatars (includes Halloween avatars passed from parent)
+  // Add shop avatars (includes Christmas avatars passed from parent)
   [
     ...SHOP_BASIC_AVATARS,
     ...SHOP_PREMIUM_AVATARS,
-    ...HALLOWEEN_BASIC_AVATARS,
-    ...HALLOWEEN_PREMIUM_AVATARS
+    ...CHRISTMAS_BASIC_AVATARS,
+    ...CHRISTMAS_PREMIUM_AVATARS
   ].forEach(avatar => {
     prizes.push({
       type: 'avatar',
@@ -118,8 +118,8 @@ const getMysteryBoxPrizes = (
     });
   });
 
-  // Add shop pets (includes Halloween pets passed from parent)
-  [...SHOP_BASIC_PETS, ...SHOP_PREMIUM_PETS, ...HALLOWEEN_PETS].forEach(pet => {
+  // Add shop pets (includes Christmas pets passed from parent)
+  [...SHOP_BASIC_PETS, ...SHOP_PREMIUM_PETS, ...CHRISTMAS_PETS].forEach(pet => {
     prizes.push({
       type: 'pet',
       item: pet,
@@ -355,7 +355,7 @@ const calculateSellPrice = (originalPrice) => {
   return Math.max(1, Math.floor(originalPrice * 0.25));
 };
 
-// Find original item price from shop data (includes Halloween items)
+// Find original item price from shop data (includes Christmas items)
 const findOriginalPrice = (
   itemName,
   itemType,
@@ -366,19 +366,33 @@ const findOriginalPrice = (
   classRewards,
   HALLOWEEN_BASIC_AVATARS = [],
   HALLOWEEN_PREMIUM_AVATARS = [],
-  HALLOWEEN_PETS = []
+  HALLOWEEN_PETS = [],
+  CHRISTMAS_BASIC_AVATARS = [],
+  CHRISTMAS_PREMIUM_AVATARS = [],
+  CHRISTMAS_PETS = []
 ) => {
   if (itemType === 'avatar') {
     const basicAvatar = SHOP_BASIC_AVATARS.find(a => a.name === itemName);
     const premiumAvatar = SHOP_PREMIUM_AVATARS.find(a => a.name === itemName);
     const halloweenBasic = HALLOWEEN_BASIC_AVATARS.find(a => a.name === itemName);
     const halloweenPremium = HALLOWEEN_PREMIUM_AVATARS.find(a => a.name === itemName);
-    return basicAvatar?.price || premiumAvatar?.price || halloweenBasic?.price || halloweenPremium?.price || 10; // Default if not found
+    const christmasBasic = CHRISTMAS_BASIC_AVATARS.find(a => a.name === itemName);
+    const christmasPremium = CHRISTMAS_PREMIUM_AVATARS.find(a => a.name === itemName);
+    return (
+      basicAvatar?.price ||
+      premiumAvatar?.price ||
+      halloweenBasic?.price ||
+      halloweenPremium?.price ||
+      christmasBasic?.price ||
+      christmasPremium?.price ||
+      10
+    ); // Default if not found
   } else if (itemType === 'pet') {
     const basicPet = SHOP_BASIC_PETS.find(p => p.name === itemName);
     const premiumPet = SHOP_PREMIUM_PETS.find(p => p.name === itemName);
     const halloweenPet = HALLOWEEN_PETS.find(p => p.name === itemName);
-    return basicPet?.price || premiumPet?.price || halloweenPet?.price || 15; // Default if not found
+    const christmasPet = CHRISTMAS_PETS.find(p => p.name === itemName);
+    return basicPet?.price || premiumPet?.price || halloweenPet?.price || christmasPet?.price || 15; // Default if not found
   } else if (itemType === 'reward') {
     const reward = (classRewards || []).find(r => r.id === itemName || r.name === itemName);
     return reward?.price || 10; // Default if not found
@@ -425,6 +439,9 @@ const StudentShop = ({
   HALLOWEEN_BASIC_AVATARS = [],
   HALLOWEEN_PREMIUM_AVATARS = [],
   HALLOWEEN_PETS = [],
+  CHRISTMAS_BASIC_AVATARS = [],
+  CHRISTMAS_PREMIUM_AVATARS = [],
+  CHRISTMAS_PETS = [],
   classRewards,
   classmates = [],
   classData = null,
@@ -500,12 +517,15 @@ const StudentShop = ({
           ...(SHOP_BASIC_AVATARS || []),
           ...(SHOP_PREMIUM_AVATARS || []),
           ...(HALLOWEEN_BASIC_AVATARS || []),
-          ...(HALLOWEEN_PREMIUM_AVATARS || [])
+          ...(HALLOWEEN_PREMIUM_AVATARS || []),
+          ...(CHRISTMAS_BASIC_AVATARS || []),
+          ...(CHRISTMAS_PREMIUM_AVATARS || [])
         ],
         pets: [
           ...(SHOP_BASIC_PETS || []),
           ...(SHOP_PREMIUM_PETS || []),
-          ...(HALLOWEEN_PETS || [])
+          ...(HALLOWEEN_PETS || []),
+          ...(CHRISTMAS_PETS || [])
         ]
       }),
     [
@@ -513,9 +533,12 @@ const StudentShop = ({
       SHOP_PREMIUM_AVATARS,
       HALLOWEEN_BASIC_AVATARS,
       HALLOWEEN_PREMIUM_AVATARS,
+      CHRISTMAS_BASIC_AVATARS,
+      CHRISTMAS_PREMIUM_AVATARS,
       SHOP_BASIC_PETS,
       SHOP_PREMIUM_PETS,
-      HALLOWEEN_PETS
+      HALLOWEEN_PETS,
+      CHRISTMAS_PETS
     ]
   );
 
@@ -1920,16 +1943,16 @@ const StudentShop = ({
     setMysteryBoxModal({ visible: true, stage: 'opening' });
     setIsSpinning(true);
     
-    // Get all possible prizes (includes Halloween items)
+    // Get all possible prizes (includes Christmas items)
     const allPrizes = getMysteryBoxPrizes(
       SHOP_BASIC_AVATARS,
       SHOP_PREMIUM_AVATARS,
       SHOP_BASIC_PETS,
       SHOP_PREMIUM_PETS,
       classRewards,
-      HALLOWEEN_BASIC_AVATARS,
-      HALLOWEEN_PREMIUM_AVATARS,
-      HALLOWEEN_PETS,
+      CHRISTMAS_BASIC_AVATARS,
+      CHRISTMAS_PREMIUM_AVATARS,
+      CHRISTMAS_PETS,
       PET_EGG_TYPES,
       DEFAULT_CARD_PACKS
     );
@@ -1986,9 +2009,9 @@ const StudentShop = ({
       SHOP_BASIC_PETS,
       SHOP_PREMIUM_PETS,
       classRewards,
-      HALLOWEEN_BASIC_AVATARS,
-      HALLOWEEN_PREMIUM_AVATARS,
-      HALLOWEEN_PETS,
+      CHRISTMAS_BASIC_AVATARS,
+      CHRISTMAS_PREMIUM_AVATARS,
+      CHRISTMAS_PETS,
       PET_EGG_TYPES,
       DEFAULT_CARD_PACKS
     );
@@ -2066,7 +2089,10 @@ const StudentShop = ({
       classRewards,
       HALLOWEEN_BASIC_AVATARS,
       HALLOWEEN_PREMIUM_AVATARS,
-      HALLOWEEN_PETS
+      HALLOWEEN_PETS,
+      CHRISTMAS_BASIC_AVATARS,
+      CHRISTMAS_PREMIUM_AVATARS,
+      CHRISTMAS_PETS
     );
     const sellPrice = calculateSellPrice(originalPrice);
     
@@ -2229,7 +2255,7 @@ const StudentShop = ({
     { id: 'loot_well', name: '💠 The Loot Well', shortName: 'Loot Well' },
     { id: 'card_packs', name: '✨ Card Packs', shortName: 'Cards' },
     { id: 'mysterybox', name: '🎁 Mystery Box', shortName: 'Mystery' },
-    { id: 'halloween', name: '🎃 Halloween Special', shortName: '🎃 Halloween' },
+    { id: 'christmas', name: '🎄 Christmas Special', shortName: '🎄 Christmas' },
     { id: 'basic_avatars', name: 'Basic Avatars', shortName: 'Basic' },
     { id: 'premium_avatars', name: 'Premium Avatars', shortName: 'Premium' },
     { id: 'basic_pets', name: 'Basic Pets', shortName: 'Pets' },
@@ -2686,11 +2712,11 @@ const StudentShop = ({
         items = cardPackInventory;
         itemType = 'card_pack';
         break;
-      case 'halloween':
+      case 'christmas':
         items = [
-          ...HALLOWEEN_BASIC_AVATARS.map(item => ({ ...item, __type: 'avatar' })),
-          ...HALLOWEEN_PREMIUM_AVATARS.map(item => ({ ...item, __type: 'avatar' })),
-          ...HALLOWEEN_PETS.map(item => ({ ...item, __type: 'pet' }))
+          ...CHRISTMAS_BASIC_AVATARS.map(item => ({ ...item, __type: 'avatar' })),
+          ...CHRISTMAS_PREMIUM_AVATARS.map(item => ({ ...item, __type: 'avatar' })),
+          ...CHRISTMAS_PETS.map(item => ({ ...item, __type: 'pet' }))
         ];
         itemType = 'mixed';
         break;
@@ -2736,7 +2762,7 @@ const StudentShop = ({
         : false;
 
       const canAfford = currentCoins >= (item.price || 0);
-      const isHalloween = item.theme === 'halloween';
+      const isChristmas = item.theme === 'christmas';
       const packCount = resolvedType === 'card_pack' ? item.count || 0 : 0;
       const packStyle = resolvedType === 'card_pack' ? (CARD_RARITY_STYLES[item.rarity] || CARD_RARITY_STYLES.common) : null;
       const packLabelColor = resolvedType === 'card_pack'
@@ -2756,11 +2782,11 @@ const StudentShop = ({
           key={index}
           className={`bg-white rounded-xl shadow-lg p-3 md:p-4 text-center transition-all hover:shadow-xl ${
             resolvedType === 'card_pack' ? 'bg-slate-900 text-white border border-white/15' : ''
-          } ${isOwnedItem && resolvedType !== 'card_pack' ? 'opacity-50' : ''} ${isHalloween ? 'border-2 border-orange-400' : ''}`}
+          } ${isOwnedItem && resolvedType !== 'card_pack' ? 'opacity-50' : ''} ${isChristmas ? 'border-2 border-emerald-500' : ''}`}
         >
-          {isHalloween && (
-            <div className="bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full mb-2 inline-block">
-              🎃 HALLOWEEN
+          {isChristmas && (
+            <div className="bg-emerald-600 text-white text-xs font-bold px-2 py-1 rounded-full mb-2 inline-block">
+              🎄 CHRISTMAS
             </div>
           )}
 
@@ -3059,7 +3085,7 @@ const StudentShop = ({
               <div className="text-2xl md:text-3xl">🎁</div>
               <div>
                 <h3 className="text-lg md:text-xl font-bold text-purple-800">Mystery Box Adventure!</h3>
-                <p className="text-purple-600 text-sm md:text-base">Take a chance and discover amazing surprises including Halloween items!</p>
+                <p className="text-purple-600 text-sm md:text-base">Take a chance and discover amazing surprises including Christmas items!</p>
               </div>
             </div>
           </div>

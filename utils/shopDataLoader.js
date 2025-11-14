@@ -122,7 +122,7 @@ export async function getFeaturedItems() {
 }
 
 /**
- * Combine admin shop data with hardcoded special items (Halloween, etc.)
+ * Combine admin shop data with hardcoded special items (Christmas, etc.)
  */
 export async function getCombinedShopData(specialItems = {}) {
   const [avatars, pets] = await Promise.all([
