@@ -15,6 +15,25 @@ const normalizeItemKey = (value) => {
     .replace(/[^a-z0-9]/g, '');
 };
 
+const normalizeSeasonalAssetPath = (rawPath) => {
+  if (!rawPath || typeof rawPath !== 'string') {
+    return null;
+  }
+
+  const trimmed = rawPath.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const ensureLeadingSlash = trimmed.startsWith('/') ? trimmed : `/${trimmed.replace(/^\//, '')}`;
+
+  if (ensureLeadingSlash.includes('/avatars/Halloween/')) {
+    return ensureLeadingSlash.replace('/avatars/Halloween/', '/shop/Themed/Halloween/');
+  }
+
+  return ensureLeadingSlash;
+};
+
 // ===============================================
 // LEVEL CALCULATION
 // ===============================================
@@ -205,6 +224,13 @@ export const SHOP_PREMIUM_PETS = [
 export const getAvatarImage = (avatarBase, level) => {
   const targetKey = normalizeItemKey(avatarBase);
 
+  if (typeof avatarBase === 'string' && avatarBase.includes('/')) {
+    const normalizedPath = normalizeSeasonalAssetPath(avatarBase);
+    if (normalizedPath) {
+      return normalizedPath;
+    }
+  }
+
   if (targetKey) {
     const shopItem = [
       ...SHOP_BASIC_AVATARS,
@@ -238,14 +264,23 @@ export const getPetImage = (pet) => {
 
   const candidates = [];
 
-  if (pet.imageUrl) candidates.push(pet.imageUrl);
-  if (pet.path) candidates.push(pet.path);
-  if (pet.image && pet.image !== pet.path) candidates.push(pet.image);
-  if (Array.isArray(pet.imageFallbacks)) candidates.push(...pet.imageFallbacks);
+  const pushCandidate = (value) => {
+    const normalizedPath = normalizeSeasonalAssetPath(value);
+    if (normalizedPath) {
+      candidates.push(normalizedPath);
+    }
+  };
+
+  pushCandidate(pet.imageUrl);
+  pushCandidate(pet.path);
+  if (pet.image && pet.image !== pet.path) pushCandidate(pet.image);
+  if (Array.isArray(pet.imageFallbacks)) {
+    pet.imageFallbacks.forEach(pushCandidate);
+  }
   if (pet.asset) {
-    if (pet.asset.src) candidates.push(pet.asset.src);
+    if (pet.asset.src) pushCandidate(pet.asset.src);
     if (Array.isArray(pet.asset.fallbacks)) {
-      candidates.push(...pet.asset.fallbacks);
+      pet.asset.fallbacks.forEach(pushCandidate);
     }
   }
 
@@ -262,7 +297,7 @@ export const getPetImage = (pet) => {
   });
 
   if (shopItem?.path) {
-    candidates.unshift(shopItem.path);
+    pushCandidate(shopItem.path);
   }
 
   const babyPet = BABY_PETS.find((baby) => {
@@ -276,15 +311,15 @@ export const getPetImage = (pet) => {
   });
 
   if (babyPet) {
-    candidates.unshift(babyPet.path);
+    pushCandidate(babyPet.path);
     if (Array.isArray(babyPet.imageFallbacks)) {
-      candidates.push(...babyPet.imageFallbacks);
+      babyPet.imageFallbacks.forEach(pushCandidate);
     }
   }
 
   if (!candidates.length && normalizedNameKey) {
     const encodedName = encodeURIComponent(pet.name);
-    candidates.push(`/Pets/${encodedName}.png`);
+    pushCandidate(`/Pets/${encodedName}.png`);
   }
 
   const uniqueCandidates = candidates.filter(Boolean).filter((value, index, array) => array.indexOf(value) === index);
