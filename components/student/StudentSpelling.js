@@ -1,5 +1,5 @@
 // components/student/StudentSpelling.js
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { READING_PASSAGES } from '../curriculum/literacy/SpellingProgram';
 
 // Import spelling lists from the main program
@@ -584,6 +584,11 @@ const SpellingWordSearch = ({ words, onSolved }) => {
   const [selectionDirection, setSelectionDirection] = useState(null);
   const [isSelecting, setIsSelecting] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
+  const [cellSize, setCellSize] = useState(36);
+  const [gridGap, setGridGap] = useState(4);
+  const activePointerIdRef = useRef(null);
+
+  const columnCount = puzzle?.grid?.length || 0;
 
   const signature = useMemo(() => buildWordSignature(words), [words]);
 
@@ -597,6 +602,32 @@ const SpellingWordSearch = ({ words, onSolved }) => {
     setIsComplete(false);
   }, [signature, words]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!columnCount) return;
+
+    const updateCellSize = () => {
+      const viewportWidth = window.innerWidth || 0;
+      const isTabletOrLarger = viewportWidth >= 768;
+      const paddingAllowance = isTabletOrLarger ? 96 : 48;
+      const gap = isTabletOrLarger ? 6 : 4;
+      const availableWidth = Math.max(220, Math.min(viewportWidth - paddingAllowance, 560));
+      const adjustedWidth = Math.max(160, availableWidth - (columnCount - 1) * gap);
+      const rawSize = Math.floor(adjustedWidth / columnCount);
+      const clampedSize = Math.max(20, Math.min(rawSize, 52));
+
+      setGridGap(gap);
+      setCellSize(clampedSize);
+    };
+
+    updateCellSize();
+    window.addEventListener('resize', updateCellSize);
+
+    return () => {
+      window.removeEventListener('resize', updateCellSize);
+    };
+  }, [columnCount]);
+
   const finalizeSelection = useCallback(() => {
     if (!selection.length) {
       setIsSelecting(false);
@@ -607,11 +638,15 @@ const SpellingWordSearch = ({ words, onSolved }) => {
 
     if (puzzle && puzzle.placements) {
       const selectionKey = selection.map(cell => `${cell.row}-${cell.col}`).join('|');
+      const selectionSet = new Set(selection.map(cell => `${cell.row}-${cell.col}`));
       const matchedPlacement = puzzle.placements.find(placement => {
         const forwardKey = placement.positions.map(pos => `${pos.row}-${pos.col}`).join('|');
         if (selectionKey === forwardKey) return true;
         const backwardKey = [...placement.positions].reverse().map(pos => `${pos.row}-${pos.col}`).join('|');
-        return selectionKey === backwardKey;
+        if (selectionKey === backwardKey) return true;
+
+        if (selection.length !== placement.positions.length) return false;
+        return placement.positions.every(pos => selectionSet.has(`${pos.row}-${pos.col}`));
       });
 
       if (matchedPlacement) {
@@ -634,29 +669,60 @@ const SpellingWordSearch = ({ words, onSolved }) => {
     setIsSelecting(false);
     setSelection([]);
     setSelectionDirection(null);
+    activePointerIdRef.current = null;
   }, [selection, puzzle, isComplete, onSolved]);
 
   useEffect(() => {
     if (!isSelecting) return;
 
-    const handlePointerUp = () => finalizeSelection();
+    const handlePointerUp = event => {
+      if (activePointerIdRef.current !== null && typeof event?.pointerId === 'number') {
+        if (event.pointerId !== activePointerIdRef.current) {
+          return;
+        }
+      }
+
+      handleGlobalPointerMove(event);
+
+      activePointerIdRef.current = null;
+      finalizeSelection();
+    };
 
     window.addEventListener('pointerup', handlePointerUp);
     window.addEventListener('touchend', handlePointerUp);
+    window.addEventListener('pointercancel', handlePointerUp);
+    window.addEventListener('touchcancel', handlePointerUp);
 
     return () => {
       window.removeEventListener('pointerup', handlePointerUp);
       window.removeEventListener('touchend', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerUp);
+      window.removeEventListener('touchcancel', handlePointerUp);
     };
-  }, [isSelecting, finalizeSelection]);
+  }, [isSelecting, finalizeSelection, handleGlobalPointerMove]);
 
-  const handlePointerDown = (row, col) => {
+  const handlePointerDown = useCallback((event, row, col) => {
+    if (event?.preventDefault) {
+      event.preventDefault();
+    }
+
+    const pointerId = typeof event?.pointerId === 'number' ? event.pointerId : null;
+    activePointerIdRef.current = pointerId;
+
+    if (pointerId !== null && event?.currentTarget?.setPointerCapture) {
+      try {
+        event.currentTarget.setPointerCapture(pointerId);
+      } catch {
+        // Ignore pointer capture issues on unsupported devices/elements
+      }
+    }
+
     setIsSelecting(true);
     setSelection([{ row, col }]);
     setSelectionDirection(null);
-  };
+  }, []);
 
-  const handlePointerEnter = (row, col) => {
+  const handlePointerEnter = useCallback((row, col) => {
     if (!isSelecting || !selection.length) return;
 
     const last = selection[selection.length - 1];
@@ -688,13 +754,67 @@ const SpellingWordSearch = ({ words, onSolved }) => {
     }
 
     setSelection(prev => [...prev, { row, col }]);
-  };
+  }, [isSelecting, selection, selectionDirection]);
 
-  const handlePointerUp = () => {
-    if (isSelecting) {
-      finalizeSelection();
+  const handleGlobalPointerMove = useCallback((event) => {
+    if (activePointerIdRef.current !== null && typeof event?.pointerId === 'number') {
+      if (event.pointerId !== activePointerIdRef.current) {
+        return;
+      }
     }
-  };
+
+    const point = event?.touches?.[0] || event?.changedTouches?.[0] || event;
+    if (!point) return;
+
+    if (event?.cancelable) {
+      event.preventDefault();
+    }
+
+    if (typeof document === 'undefined') return;
+
+    const target = document.elementFromPoint(point.clientX, point.clientY);
+    if (!target) return;
+
+    const cellKey = target.getAttribute?.('data-cell');
+    if (!cellKey) return;
+
+    const [row, col] = cellKey.split('-').map(Number);
+    if (Number.isNaN(row) || Number.isNaN(col)) return;
+
+    handlePointerEnter(row, col);
+  }, [handlePointerEnter]);
+
+  const handlePointerUp = useCallback(event => {
+    if (!isSelecting) return;
+
+    if (typeof event?.pointerId === 'number' && activePointerIdRef.current !== null) {
+      if (event.pointerId !== activePointerIdRef.current) {
+        return;
+      }
+    }
+
+    handleGlobalPointerMove(event);
+
+    activePointerIdRef.current = null;
+    finalizeSelection();
+  }, [isSelecting, finalizeSelection, handleGlobalPointerMove]);
+
+  useEffect(() => {
+    if (!isSelecting) return;
+    if (typeof window === 'undefined') return;
+
+    const moveListener = (event) => {
+      handleGlobalPointerMove(event);
+    };
+
+    window.addEventListener('pointermove', moveListener, { passive: false });
+    window.addEventListener('touchmove', moveListener, { passive: false });
+
+    return () => {
+      window.removeEventListener('pointermove', moveListener);
+      window.removeEventListener('touchmove', moveListener);
+    };
+  }, [isSelecting, handleGlobalPointerMove]);
 
   const foundCells = useMemo(() => {
     if (!puzzle || !puzzle.placements) return new Set();
@@ -758,35 +878,43 @@ const SpellingWordSearch = ({ words, onSolved }) => {
         </div>
       </div>
 
-      <div
-        className="grid gap-1 md:gap-1.5"
-        style={{ gridTemplateColumns: `repeat(${puzzle.grid.length}, minmax(0, 1fr))`, touchAction: 'none' }}
-      >
-        {puzzle.grid.map((row, rowIndex) =>
-          row.map((letter, colIndex) => {
-            const key = `${rowIndex}-${colIndex}`;
-            const isFound = foundCells.has(key);
-            const isActive = activeCells.has(key);
+      <div className="relative overflow-x-auto">
+        <div
+          className="grid mx-auto"
+          style={{
+            gap: `${gridGap}px`,
+            gridTemplateColumns: `repeat(${puzzle.grid.length}, ${cellSize}px)`,
+            gridAutoRows: `${cellSize}px`,
+            touchAction: 'none'
+          }}
+        >
+          {puzzle.grid.map((row, rowIndex) =>
+            row.map((letter, colIndex) => {
+              const key = `${rowIndex}-${colIndex}`;
+              const isFound = foundCells.has(key);
+              const isActive = activeCells.has(key);
 
-            return (
-              <div
-                key={key}
-                className={`relative select-none aspect-square rounded-md flex items-center justify-center font-bold text-base md:text-lg uppercase transition-all duration-150 border ${
-                  isFound
-                    ? 'bg-green-500 text-white border-green-500'
-                    : isActive
-                      ? 'bg-yellow-300 text-slate-900 border-yellow-400'
-                      : 'bg-white text-indigo-700 border-indigo-200 hover:bg-indigo-50'
-                }`}
-                onPointerDown={() => handlePointerDown(rowIndex, colIndex)}
-                onPointerEnter={() => handlePointerEnter(rowIndex, colIndex)}
-                onPointerUp={handlePointerUp}
-              >
-                {letter}
-              </div>
-            );
-          })
-        )}
+              return (
+                <div
+                  key={key}
+                  data-cell={key}
+                  className={`relative select-none rounded-md flex items-center justify-center font-bold text-sm sm:text-base uppercase transition-all duration-150 border ${
+                    isFound
+                      ? 'bg-green-500 text-white border-green-500'
+                      : isActive
+                        ? 'bg-yellow-300 text-slate-900 border-yellow-400'
+                        : 'bg-white text-indigo-700 border-indigo-200 hover:bg-indigo-50'
+                  }`}
+                  onPointerDown={event => handlePointerDown(event, rowIndex, colIndex)}
+                  onPointerEnter={() => handlePointerEnter(rowIndex, colIndex)}
+                  onPointerUp={handlePointerUp}
+                >
+                  {letter}
+                </div>
+              );
+            })
+          )}
+        </div>
       </div>
 
       <div className="mt-6">

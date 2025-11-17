@@ -32,6 +32,9 @@ import {
   HALLOWEEN_BASIC_AVATARS,
   HALLOWEEN_PREMIUM_AVATARS,
   HALLOWEEN_PETS,
+  CHRISTMAS_BASIC_AVATARS,
+  CHRISTMAS_PREMIUM_AVATARS,
+  CHRISTMAS_PETS,
   createPetEgg
 } from '../utils/gameHelpers';
 import { fetchGlobalShopItems, mergeShopInventories } from '../services/globalContent';
@@ -135,8 +138,8 @@ const StudentPortal = () => {
     () => [
       ...shopInventory.basicAvatars,
       ...shopInventory.premiumAvatars,
-      ...(HALLOWEEN_BASIC_AVATARS || []),
-      ...(HALLOWEEN_PREMIUM_AVATARS || [])
+      ...(CHRISTMAS_BASIC_AVATARS || []),
+      ...(CHRISTMAS_PREMIUM_AVATARS || [])
     ],
     [shopInventory]
   );
@@ -145,7 +148,7 @@ const StudentPortal = () => {
     () => [
       ...shopInventory.basicPets,
       ...shopInventory.premiumPets,
-      ...(HALLOWEEN_PETS || [])
+      ...(CHRISTMAS_PETS || [])
     ],
     [shopInventory]
   );
@@ -1927,6 +1930,9 @@ const StudentPortal = () => {
             HALLOWEEN_BASIC_AVATARS={HALLOWEEN_BASIC_AVATARS}
             HALLOWEEN_PREMIUM_AVATARS={HALLOWEEN_PREMIUM_AVATARS}
             HALLOWEEN_PETS={HALLOWEEN_PETS}
+            CHRISTMAS_BASIC_AVATARS={CHRISTMAS_BASIC_AVATARS}
+            CHRISTMAS_PREMIUM_AVATARS={CHRISTMAS_PREMIUM_AVATARS}
+            CHRISTMAS_PETS={CHRISTMAS_PETS}
             classRewards={classData?.classRewards || []}
             classmates={availableStudents}
             classData={classData}

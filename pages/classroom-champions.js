@@ -1,4 +1,4 @@
-// pages/classroom-champions.js - UPDATED WITH HALLOWEEN THEMED ITEMS
+// pages/classroom-champions.js - UPDATED WITH CHRISTMAS THEMED ITEMS
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { DEFAULT_PET_IMAGE, getPetImage as resolvePetImageSource } from '../utils/gameHelpers';
 import { normalizeImageSource, serializeFallbacks, createImageErrorHandler } from '../utils/imageFallback';
@@ -160,32 +160,22 @@ const BASE_SHOP_BASIC_PETS = [
 const BASE_SHOP_PREMIUM_PETS = [ { name: 'Lion Pet', price: 60, path: '/shop/PremiumPets/LionPet.png' }, { name: 'Snake Pet', price: 50, path: '/shop/PremiumPets/SnakePet.png' }, { name: 'Vampire Pet', price: 50, path: '/shop/PremiumPets/VampirePet.png' } ];
 
 // ===============================================
-// NEW: HALLOWEEN THEMED ITEMS - LIMITED TIME!
+// NEW: CHRISTMAS THEMED ITEMS - LIMITED TIME!
 // ===============================================
-const HALLOWEEN_BASIC_AVATARS = [
-  { name: 'Demi', price: 15, path: '/shop/Themed/Halloween/Basic/Demi.png', theme: 'halloween' },
-  { name: 'Jason', price: 18, path: '/shop/Themed/Halloween/Basic/Jason.png', theme: 'halloween' },
-  { name: 'PumpkinKing', price: 20, path: '/shop/Themed/Halloween/Basic/PumpkinKing.png', theme: 'halloween' },
-  { name: 'Skeleton', price: 15, path: '/shop/Themed/Halloween/Basic/Skeleton.png', theme: 'halloween' },
-  { name: 'Witch', price: 18, path: '/shop/Themed/Halloween/Basic/Witch.png', theme: 'halloween' },
-  { name: 'Zombie', price: 16, path: '/shop/Themed/Halloween/Basic/Zombie.png', theme: 'halloween' }
+const CHRISTMAS_BASIC_AVATARS = [
+  { name: 'Elf', price: 15, path: '/shop/Themed/Christmas/Elf.png', theme: 'christmas' },
+  { name: 'Santa', price: 18, path: '/shop/Themed/Christmas/Santa.png', theme: 'christmas' },
+  { name: 'Festive Tree', price: 20, path: '/shop/Themed/Christmas/Tree.png', theme: 'christmas' }
 ];
 
-const HALLOWEEN_PREMIUM_AVATARS = [
-  { name: 'Pumpkin', price: 35, path: '/shop/Themed/Halloween/Premium/Pumpkin.png', theme: 'halloween' },
-  { name: 'Skeleton1', price: 40, path: '/shop/Themed/Halloween/Premium/Skeleton1.png', theme: 'halloween' },
-  { name: 'Skeleton2', price: 40, path: '/shop/Themed/Halloween/Premium/Skeleton2.png', theme: 'halloween' },
-  { name: 'Skeleton3', price: 40, path: '/shop/Themed/Halloween/Premium/Skeleton3.png', theme: 'halloween' },
-  { name: 'Witch1', price: 42, path: '/shop/Themed/Halloween/Premium/Witch1.png', theme: 'halloween' },
-  { name: 'Witch2', price: 42, path: '/shop/Themed/Halloween/Premium/Witch2.png', theme: 'halloween' },
-  { name: 'Witch3', price: 42, path: '/shop/Themed/Halloween/Premium/Witch3.png', theme: 'halloween' },
-  { name: 'Witch4', price: 42, path: '/shop/Themed/Halloween/Premium/Witch4.png', theme: 'halloween' },
-  { name: 'Zombie1', price: 38, path: '/shop/Themed/Halloween/Premium/Zombie1.png', theme: 'halloween' }
+const CHRISTMAS_PREMIUM_AVATARS = [
+  { name: 'Epic Santa', price: 40, path: '/shop/Themed/Christmas/EpicSanta.png', theme: 'christmas' }
 ];
 
-const HALLOWEEN_PETS = [
-  { name: 'Spooky Cat', price: 25, path: '/shop/Themed/Halloween/Pets/Pet.png', theme: 'halloween' },
-  { name: 'Pumpkin Cat', price: 28, path: '/shop/Themed/Halloween/Pets/Pet2.png', theme: 'halloween' }
+const CHRISTMAS_PETS = [
+  { name: 'Holiday Hat', price: 25, path: '/shop/Themed/Christmas/Hat.png', theme: 'christmas' },
+  { name: 'Reindeer', price: 28, path: '/shop/Themed/Christmas/Reindeer.png', theme: 'christmas' },
+  { name: 'Gift Buddy', price: 26, path: '/shop/Themed/Christmas/Gift.png', theme: 'christmas' }
 ];
 
 const orderStudentsByPreference = (studentsList = [], order = []) => {
@@ -311,9 +301,9 @@ const ClassroomChampions = () => {
   }, [currentClassData?.classRewards]);
 
   const seasonalInventory = useMemo(() => ([
-    ...HALLOWEEN_BASIC_AVATARS.map(item => ({ ...item, category: 'halloween', type: 'avatar' })),
-    ...HALLOWEEN_PREMIUM_AVATARS.map(item => ({ ...item, category: 'halloween', type: 'avatar' })),
-    ...HALLOWEEN_PETS.map(item => ({ ...item, category: 'halloween', type: 'pet' }))
+    ...CHRISTMAS_BASIC_AVATARS.map(item => ({ ...item, category: 'christmas', type: 'avatar' })),
+    ...CHRISTMAS_PREMIUM_AVATARS.map(item => ({ ...item, category: 'christmas', type: 'avatar' })),
+    ...CHRISTMAS_PETS.map(item => ({ ...item, category: 'christmas', type: 'pet' }))
   ]), []);
 
   useEffect(() => {
@@ -345,8 +335,8 @@ const ClassroomChampions = () => {
   const allAvatarSkins = useMemo(() => ([
     ...shopInventory.basicAvatars,
     ...shopInventory.premiumAvatars,
-    ...HALLOWEEN_BASIC_AVATARS,
-    ...HALLOWEEN_PREMIUM_AVATARS
+    ...CHRISTMAS_BASIC_AVATARS,
+    ...CHRISTMAS_PREMIUM_AVATARS
   ]), [shopInventory]);
 
   const getAvatarImage = useCallback((avatarBase, level) => {
