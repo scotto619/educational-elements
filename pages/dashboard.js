@@ -4,6 +4,7 @@ import { auth, firestore } from '../utils/firebase';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { DEFAULT_UPDATES, fetchDashboardUpdates } from '../services/globalContent';
+import { DEFAULT_NOTICE_ITEMS, saveNoticeBoard, subscribeToNoticeBoard } from '../services/noticeBoard';
 
 const OWNER_EMAIL = 'scotto6190@gmail.com';
 
@@ -16,6 +17,10 @@ export default function Dashboard() {
   const [trialDaysLeft, setTrialDaysLeft] = useState(0);
   const [architectureVersion, setArchitectureVersion] = useState('unknown');
   const [dashboardUpdates, setDashboardUpdates] = useState(DEFAULT_UPDATES);
+  const [noticeBoardItems, setNoticeBoardItems] = useState(DEFAULT_NOTICE_ITEMS);
+  const [noticeBoardSaving, setNoticeBoardSaving] = useState(false);
+  const [noticeBoardStatus, setNoticeBoardStatus] = useState('');
+  const [isNoticeBoardDirty, setIsNoticeBoardDirty] = useState(false);
   
   // Class creation states
   const [showCreateClassModal, setShowCreateClassModal] = useState(false);
@@ -99,6 +104,20 @@ export default function Dashboard() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (!user?.uid) {
+      return undefined;
+    }
+
+    const unsubscribe = subscribeToNoticeBoard(user.uid, (board) => {
+      setNoticeBoardItems(board.items || DEFAULT_NOTICE_ITEMS);
+      setNoticeBoardStatus('');
+      setIsNoticeBoardDirty(false);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
 
   // Check for successful checkout
   useEffect(() => {
@@ -300,6 +319,75 @@ export default function Dashboard() {
     } catch (error) {
       console.error('Error opening billing portal:', error);
       alert('Error opening billing portal. Please try again.');
+    }
+  };
+
+  const addNoticeItem = () => {
+    const newItem = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      title: 'New notice',
+      content: '',
+      link: '',
+      createdAt: new Date().toISOString()
+    };
+
+    setNoticeBoardItems((prev) => [...prev, newItem]);
+    setIsNoticeBoardDirty(true);
+  };
+
+  const updateNoticeItem = (id, field, value) => {
+    setNoticeBoardItems((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
+    );
+    setIsNoticeBoardDirty(true);
+  };
+
+  const removeNoticeItem = (id) => {
+    setNoticeBoardItems((prev) => {
+      const filtered = prev.filter((item) => item.id !== id);
+      if (filtered.length === 0) {
+        return [
+          {
+            ...DEFAULT_NOTICE_ITEMS[0],
+            id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+          }
+        ];
+      }
+      return filtered;
+    });
+    setIsNoticeBoardDirty(true);
+  };
+
+  const saveNoticeBoardChanges = async () => {
+    if (!user?.uid) {
+      return;
+    }
+
+    setNoticeBoardSaving(true);
+    setNoticeBoardStatus('Saving...');
+
+    try {
+      const cleanedItems = noticeBoardItems
+        .filter((item) => (item.title || item.content || item.link))
+        .map((item) => ({
+          ...item,
+          id: item.id || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          title: item.title?.trim() || 'Untitled notice',
+          content: item.content?.trim() || '',
+          link: item.link?.trim() || '',
+          createdAt: item.createdAt || new Date().toISOString()
+        }));
+
+      const payload = cleanedItems.length > 0 ? cleanedItems : DEFAULT_NOTICE_ITEMS;
+      await saveNoticeBoard(user.uid, payload);
+
+      setNoticeBoardStatus('Saved and live for students ✨');
+      setIsNoticeBoardDirty(false);
+    } catch (error) {
+      console.error('❌ Error saving notice board:', error);
+      setNoticeBoardStatus('Error saving board. Please try again.');
+    } finally {
+      setNoticeBoardSaving(false);
     }
   };
 
@@ -742,6 +830,96 @@ export default function Dashboard() {
               >
                 Sign Out
               </button>
+            </div>
+          </div>
+
+          {/* What's New Section - Mobile Optimized */}
+          <div className="mb-6 sm:mb-8">
+            <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-xl p-4 sm:p-6">
+              <div className="flex items-start sm:items-center justify-between flex-col sm:flex-row gap-3 mb-4">
+                <div className="flex items-start gap-3">
+                  <div className="text-2xl sm:text-3xl">📌</div>
+                  <div>
+                    <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Notice Board</h2>
+                    <p className="text-gray-600 text-sm sm:text-base">Share reminders, links, and announcements your students will see instantly in their portal.</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
+                  <span className={`px-2 py-1 rounded-full font-semibold ${isNoticeBoardDirty ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
+                    {isNoticeBoardDirty ? 'Unsaved changes' : 'Live for students'}
+                  </span>
+                  {noticeBoardStatus && <span className="text-gray-500">{noticeBoardStatus}</span>}
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {noticeBoardItems.map((item) => (
+                  <div key={item.id} className="bg-white rounded-lg border border-purple-100 p-3 sm:p-4 shadow-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                      <div className="flex-1 space-y-3">
+                        <div>
+                          <label className="text-xs font-semibold text-gray-700">Title</label>
+                          <input
+                            className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            value={item.title}
+                            onChange={(e) => updateNoticeItem(item.id, 'title', e.target.value)}
+                            placeholder="e.g., Excursion reminder"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-gray-700">Details</label>
+                          <textarea
+                            className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            rows="2"
+                            value={item.content}
+                            onChange={(e) => updateNoticeItem(item.id, 'content', e.target.value)}
+                            placeholder="Add notes, reminders, or instructions"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-gray-700">Link (optional)</label>
+                          <input
+                            className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            value={item.link}
+                            onChange={(e) => updateNoticeItem(item.id, 'link', e.target.value)}
+                            placeholder="https://..."
+                          />
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => removeNoticeItem(item.id)}
+                        className="self-start text-red-600 hover:text-red-700 text-sm font-semibold"
+                        type="button"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <div className="flex gap-2 w-full sm:w-auto">
+                    <button
+                      onClick={addNoticeItem}
+                      type="button"
+                      className="flex-1 sm:flex-none bg-white border border-purple-300 text-purple-700 px-4 py-2 rounded-lg font-semibold hover:bg-purple-50"
+                    >
+                      ➕ Add notice
+                    </button>
+                    <button
+                      onClick={saveNoticeBoardChanges}
+                      type="button"
+                      disabled={noticeBoardSaving || !isNoticeBoardDirty}
+                      className="flex-1 sm:flex-none bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-lg font-semibold shadow-md disabled:opacity-50"
+                    >
+                      {noticeBoardSaving ? 'Saving...' : 'Save & publish'}
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500 text-center sm:text-left">
+                    Changes appear automatically for students once saved.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
