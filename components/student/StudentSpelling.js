@@ -682,6 +682,8 @@ const SpellingWordSearch = ({ words, onSolved }) => {
         }
       }
 
+      handleGlobalPointerMove(event);
+
       activePointerIdRef.current = null;
       finalizeSelection();
     };
@@ -697,7 +699,7 @@ const SpellingWordSearch = ({ words, onSolved }) => {
       window.removeEventListener('pointercancel', handlePointerUp);
       window.removeEventListener('touchcancel', handlePointerUp);
     };
-  }, [isSelecting, finalizeSelection]);
+  }, [isSelecting, finalizeSelection, handleGlobalPointerMove]);
 
   const handlePointerDown = useCallback((event, row, col) => {
     if (event?.preventDefault) {
@@ -754,19 +756,6 @@ const SpellingWordSearch = ({ words, onSolved }) => {
     setSelection(prev => [...prev, { row, col }]);
   }, [isSelecting, selection, selectionDirection]);
 
-  const handlePointerUp = useCallback(event => {
-    if (!isSelecting) return;
-
-    if (typeof event?.pointerId === 'number' && activePointerIdRef.current !== null) {
-      if (event.pointerId !== activePointerIdRef.current) {
-        return;
-      }
-    }
-
-    activePointerIdRef.current = null;
-    finalizeSelection();
-  }, [isSelecting, finalizeSelection]);
-
   const handleGlobalPointerMove = useCallback((event) => {
     if (activePointerIdRef.current !== null && typeof event?.pointerId === 'number') {
       if (event.pointerId !== activePointerIdRef.current) {
@@ -774,7 +763,7 @@ const SpellingWordSearch = ({ words, onSolved }) => {
       }
     }
 
-    const point = event?.touches?.[0] || event;
+    const point = event?.touches?.[0] || event?.changedTouches?.[0] || event;
     if (!point) return;
 
     if (event?.cancelable) {
@@ -794,6 +783,21 @@ const SpellingWordSearch = ({ words, onSolved }) => {
 
     handlePointerEnter(row, col);
   }, [handlePointerEnter]);
+
+  const handlePointerUp = useCallback(event => {
+    if (!isSelecting) return;
+
+    if (typeof event?.pointerId === 'number' && activePointerIdRef.current !== null) {
+      if (event.pointerId !== activePointerIdRef.current) {
+        return;
+      }
+    }
+
+    handleGlobalPointerMove(event);
+
+    activePointerIdRef.current = null;
+    finalizeSelection();
+  }, [isSelecting, finalizeSelection, handleGlobalPointerMove]);
 
   useEffect(() => {
     if (!isSelecting) return;
