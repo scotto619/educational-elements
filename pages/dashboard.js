@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
+import Link from 'next/link';
 import { auth, firestore } from '../utils/firebase';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
@@ -742,6 +743,24 @@ export default function Dashboard() {
               >
                 Sign Out
               </button>
+            </div>
+          </div>
+
+          {/* What's New Section - Mobile Optimized */}
+          <div className="mb-6 sm:mb-8">
+            <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-xl p-4 sm:p-6">
+              <div className="flex items-start sm:items-center justify-between flex-col sm:flex-row gap-3">
+                <div className="flex items-start gap-3">
+                  <div className="text-2xl sm:text-3xl">📌</div>
+                  <div>
+                    <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Notice Board</h2>
+                    <p className="text-gray-600 text-sm sm:text-base">Create and manage the notices your students see in their portal.</p>
+                  </div>
+                </div>
+                <Link href="/notice-board" className="mt-3 sm:mt-0 inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-lg font-semibold shadow-md hover:from-purple-700 hover:to-blue-700">
+                  Open Notice Board Manager ↗
+                </Link>
+              </div>
             </div>
           </div>
 

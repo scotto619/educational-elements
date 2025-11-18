@@ -24,6 +24,7 @@ import DailyWordleChallenge from '../games/DailyWordleChallenge';
 import AmazingTypingAdventure from '../games/AmazingTypingAdventure';
 import MultiplicationGridGame from '../games/MultiplicationGridGame';
 import PrecisionTimerGame from '../games/PrecisionTimerGame';
+import DodgeballGame from '../games/DodgeballGame';
 
 const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 
@@ -96,6 +97,21 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       new: true,
       category: 'featured',
       logo: getGameLogo('precision-timer')
+    },
+    {
+      id: 'dodgeball-frenzy',
+      name: 'Dodgeball Frenzy',
+      icon: '🥎',
+      description: 'Pilot your avatar through an arena of bouncing balls, collect power-ups, and see how long you can survive!',
+      component: DodgeballGame,
+      color: 'from-orange-500 to-red-500',
+      difficulty: 'All Levels',
+      time: '2-8 minutes',
+      featured: true,
+      new: true,
+      category: 'featured',
+      logo: getGameLogo('dodgeball-frenzy'),
+      storageKeySuffix: 'student-dodgeball'
     },
     {
       id: 'maze',

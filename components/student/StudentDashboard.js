@@ -11,7 +11,8 @@ const StudentDashboard = ({
   calculateCoins,
   calculateAvatarLevel,
   dailyMysteryBoxAvailable = false,
-  onOpenDailyMysteryBox
+  onOpenDailyMysteryBox,
+  noticeBoardItems = []
 }) => {
   const level = calculateAvatarLevel(studentData?.totalPoints || 0);
   const coins = calculateCoins(studentData);
@@ -25,6 +26,47 @@ const StudentDashboard = ({
       <div className="bg-gradient-to-r from-purple-500 to-blue-600 text-white rounded-xl p-4 md:p-6 shadow-lg">
         <h2 className="text-xl md:text-3xl font-bold mb-1 md:mb-2">Welcome back, {studentData?.firstName}! 🎉</h2>
         <p className="text-purple-100 text-sm md:text-base">Ready to continue your classroom adventure?</p>
+      </div>
+
+      {/* Notice Board */}
+      <div className="bg-white rounded-xl p-4 md:p-6 shadow-lg border border-purple-100">
+        <div className="flex items-center gap-3 mb-3 md:mb-4">
+          <div className="text-xl md:text-2xl">📌</div>
+          <div>
+            <h3 className="text-lg md:text-xl font-bold text-gray-800">Class Notice Board</h3>
+            <p className="text-xs md:text-sm text-gray-500">Updates from your teacher appear here automatically.</p>
+          </div>
+        </div>
+
+        {noticeBoardItems?.length > 0 ? (
+          <div className="space-y-3">
+            {noticeBoardItems.map((item) => (
+              <div key={item.id} className="bg-purple-50 border border-purple-100 rounded-lg p-3 md:p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h4 className="text-sm md:text-base font-semibold text-purple-900">{item.title}</h4>
+                    {item.content && (
+                      <p className="text-xs md:text-sm text-purple-800 mt-1 whitespace-pre-wrap">{item.content}</p>
+                    )}
+                    {item.link && (
+                      <a
+                        href={item.link}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center text-xs md:text-sm text-purple-700 font-semibold mt-2 hover:underline"
+                      >
+                        Open link ↗
+                      </a>
+                    )}
+                  </div>
+                  <div className="text-xs text-purple-700 font-semibold">NEW</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500">No notices yet. Check back soon!</p>
+        )}
       </div>
 
       {/* Stats Grid - Mobile Optimized */}

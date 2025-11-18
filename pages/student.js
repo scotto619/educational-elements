@@ -18,6 +18,7 @@ import StudentMaths from '../components/student/StudentMaths';
 import StudentMorphology from '../components/student/StudentMorphology';
 import VisualWritingPrompts from '../components/curriculum/literacy/VisualWritingPrompts';
 import DailyMysteryBoxModal from '../components/student/DailyMysteryBoxModal';
+import { DEFAULT_NOTICE_ITEMS, subscribeToNoticeBoard } from '../services/noticeBoard';
 
 // Import from the correct gameHelpers file
 import {
@@ -97,6 +98,7 @@ const StudentPortal = () => {
   const [dailyMysteryBoxAvailable, setDailyMysteryBoxAvailable] = useState(false);
   const [showDailyMysteryBox, setShowDailyMysteryBox] = useState(false);
   const [loginEggCelebration, setLoginEggCelebration] = useState(null);
+  const [noticeBoardItems, setNoticeBoardItems] = useState(DEFAULT_NOTICE_ITEMS);
   const dailyMysteryBoxAutoOpenKeyRef = useRef(null);
   const loginEggGrantAttemptedRef = useRef(false);
 
@@ -128,6 +130,18 @@ const StudentPortal = () => {
       cancelled = true;
     };
   }, [baseShopInventory]);
+
+  useEffect(() => {
+    if (!teacherUserId) {
+      return undefined;
+    }
+
+    const unsubscribe = subscribeToNoticeBoard(teacherUserId, (board) => {
+      setNoticeBoardItems(board.items || DEFAULT_NOTICE_ITEMS);
+    });
+
+    return () => unsubscribe();
+  }, [teacherUserId]);
 
   const closeLoginEggCelebration = useCallback(() => setLoginEggCelebration(null), []);
 
@@ -1838,6 +1852,7 @@ const StudentPortal = () => {
             calculateAvatarLevel={calculateAvatarLevel}
             dailyMysteryBoxAvailable={dailyMysteryBoxAvailable}
             onOpenDailyMysteryBox={handleOpenDailyMysteryBox}
+            noticeBoardItems={noticeBoardItems}
           />
         );
       

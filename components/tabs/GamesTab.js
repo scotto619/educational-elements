@@ -23,6 +23,7 @@ import DailyWordleChallenge from '../games/DailyWordleChallenge';
 import AmazingTypingAdventure from '../games/AmazingTypingAdventure';
 import MultiplicationGridGame from '../games/MultiplicationGridGame';
 import PrecisionTimerGame from '../games/PrecisionTimerGame';
+import DodgeballGame from '../games/DodgeballGame';
 
 const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 
@@ -109,6 +110,21 @@ const GamesTab = ({
       new: true,
       category: 'featured',
       logo: getGameLogo('precision-timer')
+    },
+    {
+      id: 'dodgeball-frenzy',
+      name: 'Dodgeball Frenzy',
+      icon: '🥎',
+      description: 'Show students the new arena dodge challenge with power-ups and trophies for long survival streaks.',
+      component: DodgeballGame,
+      color: 'from-orange-500 to-red-500',
+      difficulty: 'All Levels',
+      time: '2-8 minutes',
+      featured: true,
+      new: true,
+      category: 'featured',
+      logo: getGameLogo('dodgeball-frenzy'),
+      storageKeySuffix: 'teacher-dodgeball'
     },
     {
       id: 'maze',

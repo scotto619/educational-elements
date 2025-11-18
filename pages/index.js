@@ -159,6 +159,9 @@ export default function Home() {
               <div className="hidden lg:flex items-center space-x-6">
                 <button onClick={() => scrollToSection('features')} className="text-gray-700 hover:text-purple-600 transition-colors font-medium text-lg">Features</button>
                 <button onClick={() => scrollToSection('story')} className="text-gray-700 hover:text-purple-600 transition-colors font-medium text-lg">About</button>
+                <Link href="/notice-board" className="text-gray-700 hover:text-purple-600 transition-colors font-medium text-lg">
+                  Notice Board
+                </Link>
                 <button onClick={() => scrollToSection('pricing')} className="text-gray-700 hover:text-purple-600 transition-colors font-medium text-lg">Pricing</button>
               </div>
 
@@ -207,6 +210,9 @@ export default function Home() {
                   <button onClick={() => scrollToSection('story')} className="block w-full text-left text-gray-700 hover:text-purple-600 transition-colors font-medium py-2">
                     About
                   </button>
+                  <Link href="/notice-board" className="block w-full text-left text-gray-700 hover:text-purple-600 transition-colors font-medium py-2">
+                    Notice Board
+                  </Link>
                   <button onClick={() => scrollToSection('pricing')} className="block w-full text-left text-gray-700 hover:text-purple-600 transition-colors font-medium py-2">
                     Pricing
                   </button>
