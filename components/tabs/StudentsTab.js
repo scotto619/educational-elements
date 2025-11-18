@@ -1,6 +1,6 @@
 // components/tabs/StudentsTab.js - UPDATED WITH TRAFFIC LIGHTS, ATTENDANCE & AUTO-REFRESH
 import React, { useState, useEffect, useRef } from 'react';
-import { DEFAULT_PET_IMAGE } from '../../utils/gameHelpers';
+import { DEFAULT_PET_IMAGE, getAvatarImage as resolveAvatarImage } from '../../utils/gameHelpers';
 import { normalizeImageSource, serializeFallbacks, createImageErrorHandler } from '../../utils/imageFallback';
 
 // ===============================================
@@ -301,7 +301,7 @@ const StudentsTab = ({
     calculateAvatarLevel: propCalculateAvatarLevel
 }) => {
     // Use passed functions or fallback to local ones
-    const getAvatarImageFunc = propGetAvatarImage || ((avatarBase, level) => `/avatars/${avatarBase || 'Wizard F'}/Level ${Math.max(1, Math.min(level || 1, 4))}.png`);
+    const getAvatarImageFunc = propGetAvatarImage || ((avatarBase, level) => resolveAvatarImage(avatarBase, level));
     
     const getPetImageFunc = propGetPetImage || ((pet) => {
         if (!pet) return '/Pets/Wizard.png';
