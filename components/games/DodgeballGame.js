@@ -289,6 +289,50 @@ const DodgeballGame = ({ studentData, showToast, storageKeySuffix = 'student-dod
         return { ...ball, x, y, vx, vy };
       });
 
+      for (let i = 0; i < updated.length; i += 1) {
+        for (let j = i + 1; j < updated.length; j += 1) {
+          const a = updated[i];
+          const b = updated[j];
+          const dx = (b.x || 0) - (a.x || 0);
+          const dy = (b.y || 0) - (a.y || 0);
+          const dist = Math.sqrt(dx * dx + dy * dy) || 0.0001;
+          const minDist = BALL_RADIUS * 2;
+
+          if (dist < minDist) {
+            const overlap = minDist - dist;
+            const nx = dx / dist;
+            const ny = dy / dist;
+
+            a.x -= nx * (overlap / 2);
+            a.y -= ny * (overlap / 2);
+            b.x += nx * (overlap / 2);
+            b.y += ny * (overlap / 2);
+
+            const tx = -ny;
+            const ty = nx;
+            const v1n = a.vx * nx + a.vy * ny;
+            const v1t = a.vx * tx + a.vy * ty;
+            const v2n = b.vx * nx + b.vy * ny;
+            const v2t = b.vx * tx + b.vy * ty;
+
+            if (v1n - v2n < 0) continue;
+
+            const v1nAfter = v2n;
+            const v2nAfter = v1n;
+
+            a.vx = v1nAfter * nx + v1t * tx;
+            a.vy = v1nAfter * ny + v1t * ty;
+            b.vx = v2nAfter * nx + v2t * tx;
+            b.vy = v2nAfter * ny + v2t * ty;
+
+            a.x = Math.max(BALL_RADIUS, Math.min(ARENA_WIDTH - BALL_RADIUS, a.x));
+            a.y = Math.max(BALL_RADIUS, Math.min(ARENA_HEIGHT - BALL_RADIUS, a.y));
+            b.x = Math.max(BALL_RADIUS, Math.min(ARENA_WIDTH - BALL_RADIUS, b.x));
+            b.y = Math.max(BALL_RADIUS, Math.min(ARENA_HEIGHT - BALL_RADIUS, b.y));
+          }
+        }
+      }
+
       const playerNow = playerRef.current;
       for (const ball of updated) {
         const dx = (ball.x || 0) - (playerNow.x || 0);
