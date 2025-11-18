@@ -30,6 +30,26 @@ const typingTracks = [
     description: 'Step into an arcade skyline where every keystroke fires pixel fireworks.',
     bonus: 'Massive combo bonus for flawless streaks.',
     pool: 'arcade'
+  },
+  {
+    id: 'skyline-surge',
+    name: 'Skyline Surge',
+    difficulty: 'Challenger',
+    timeLimit: 85,
+    gradient: 'from-sky-500 via-indigo-500 to-fuchsia-500',
+    description: 'Drift between hover lanes above a cyber city while neon billboards flash your pace.',
+    bonus: 'Extra points for steady pacing and maintaining high speed.',
+    pool: 'city'
+  },
+  {
+    id: 'crystal-caverns',
+    name: 'Crystal Caverns',
+    difficulty: 'Precisionist',
+    timeLimit: 95,
+    gradient: 'from-emerald-500 via-teal-500 to-lime-400',
+    description: 'Navigate glowing caves where every keystroke echoes against sparkling walls.',
+    bonus: 'Accuracy grants shield multipliers and protects your combo.',
+    pool: 'cavern'
   }
 ];
 
@@ -57,6 +77,22 @@ const snippetBanks = {
     'Joystick champions tap rapid rhythms to blast through shimmering portals.',
     'A shower of fireworks celebrates each flawless level up sequence.',
     'Press start lights blaze while cheering crowds chant for a new high score.'
+  ],
+  city: [
+    'Hover cars weave between sky towers as holograms cheer every crisp keystroke.',
+    'Neon trains glide across glass bridges while keyboards glow in sync.',
+    'Billboards flash leaderboards above the skyline as you chase the next combo.',
+    'Wind turbines hum softly while drones deliver snacks to the rooftop arcade.',
+    'Laser trails sparkle behind bikes racing across sunset clouds.',
+    'Street musicians sample your key taps into a soaring synth chorus.'
+  ],
+  cavern: [
+    'Crystal shards ring like bells each time you land a perfect letter.',
+    'Bioluminescent vines sway as your typing sends ripples through the cavern lake.',
+    'Echoes of ancient explorers cheer you on from deep crystal chambers.',
+    'Gemstone bridges gleam beneath your boots while you sprint through sentences.',
+    'Soft moss quiets your steps as glowing bats trace patterns above.',
+    'Silver waterfalls glitter beside hidden tunnels lined with runes.'
   ]
 };
 
@@ -253,7 +289,7 @@ const AmazingTypingAdventure = ({
 
     setFeedback({ breakdown, matches, mistakes, progress });
 
-    if (value === currentSnippet.text) {
+    if (value.length === currentSnippet.text.length) {
       completeSnippet(mistakes);
     }
   }, [currentSnippet, phase]);
