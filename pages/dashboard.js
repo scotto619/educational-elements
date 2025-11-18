@@ -101,20 +101,6 @@ export default function Dashboard() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!user?.uid) {
-      return undefined;
-    }
-
-    const unsubscribe = subscribeToNoticeBoard(user.uid, (board) => {
-      setNoticeBoardItems(board.items || DEFAULT_NOTICE_ITEMS);
-      setNoticeBoardStatus('');
-      setIsNoticeBoardDirty(false);
-    });
-
-    return () => unsubscribe();
-  }, [user]);
-
   // Check for successful checkout
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
