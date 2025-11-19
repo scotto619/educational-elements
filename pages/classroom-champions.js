@@ -160,6 +160,35 @@ const BASE_SHOP_BASIC_PETS = [
 const BASE_SHOP_PREMIUM_PETS = [ { name: 'Lion Pet', price: 60, path: '/shop/PremiumPets/LionPet.png' }, { name: 'Snake Pet', price: 50, path: '/shop/PremiumPets/SnakePet.png' }, { name: 'Vampire Pet', price: 50, path: '/shop/PremiumPets/VampirePet.png' } ];
 
 // ===============================================
+// HALLOWEEN THEMED ITEMS (LEGACY - KEPT FOR OWNED CONTENT)
+// ===============================================
+const HALLOWEEN_BASIC_AVATARS = [
+  { name: 'Demi', price: 15, path: '/shop/Themed/Halloween/Basic/Demi.png', theme: 'halloween' },
+  { name: 'Jason', price: 18, path: '/shop/Themed/Halloween/Basic/Jason.png', theme: 'halloween' },
+  { name: 'PumpkinKing', price: 20, path: '/shop/Themed/Halloween/Basic/PumpkinKing.png', theme: 'halloween' },
+  { name: 'Skeleton', price: 15, path: '/shop/Themed/Halloween/Basic/Skeleton.png', theme: 'halloween' },
+  { name: 'Witch', price: 18, path: '/shop/Themed/Halloween/Basic/Witch.png', theme: 'halloween' },
+  { name: 'Zombie', price: 16, path: '/shop/Themed/Halloween/Basic/Zombie.png', theme: 'halloween' }
+];
+
+const HALLOWEEN_PREMIUM_AVATARS = [
+  { name: 'Pumpkin', price: 35, path: '/shop/Themed/Halloween/Premium/Pumpkin.png', theme: 'halloween' },
+  { name: 'Skeleton1', price: 40, path: '/shop/Themed/Halloween/Premium/Skeleton1.png', theme: 'halloween' },
+  { name: 'Skeleton2', price: 40, path: '/shop/Themed/Halloween/Premium/Skeleton2.png', theme: 'halloween' },
+  { name: 'Skeleton3', price: 40, path: '/shop/Themed/Halloween/Premium/Skeleton3.png', theme: 'halloween' },
+  { name: 'Witch1', price: 42, path: '/shop/Themed/Halloween/Premium/Witch1.png', theme: 'halloween' },
+  { name: 'Witch2', price: 42, path: '/shop/Themed/Halloween/Premium/Witch2.png', theme: 'halloween' },
+  { name: 'Witch3', price: 42, path: '/shop/Themed/Halloween/Premium/Witch3.png', theme: 'halloween' },
+  { name: 'Witch4', price: 42, path: '/shop/Themed/Halloween/Premium/Witch4.png', theme: 'halloween' },
+  { name: 'Zombie1', price: 38, path: '/shop/Themed/Halloween/Premium/Zombie1.png', theme: 'halloween' }
+];
+
+const HALLOWEEN_PETS = [
+  { name: 'Spooky Cat', price: 25, path: '/shop/Themed/Halloween/Pets/Pet.png', theme: 'halloween' },
+  { name: 'Pumpkin Cat', price: 28, path: '/shop/Themed/Halloween/Pets/Pet2.png', theme: 'halloween' }
+];
+
+// ===============================================
 // NEW: CHRISTMAS THEMED ITEMS - LIMITED TIME!
 // ===============================================
 const CHRISTMAS_BASIC_AVATARS = [
@@ -301,6 +330,9 @@ const ClassroomChampions = () => {
   }, [currentClassData?.classRewards]);
 
   const seasonalInventory = useMemo(() => ([
+    ...HALLOWEEN_BASIC_AVATARS.map(item => ({ ...item, category: 'halloween', type: 'avatar' })),
+    ...HALLOWEEN_PREMIUM_AVATARS.map(item => ({ ...item, category: 'halloween', type: 'avatar' })),
+    ...HALLOWEEN_PETS.map(item => ({ ...item, category: 'halloween', type: 'pet' })),
     ...CHRISTMAS_BASIC_AVATARS.map(item => ({ ...item, category: 'christmas', type: 'avatar' })),
     ...CHRISTMAS_PREMIUM_AVATARS.map(item => ({ ...item, category: 'christmas', type: 'avatar' })),
     ...CHRISTMAS_PETS.map(item => ({ ...item, category: 'christmas', type: 'pet' }))
@@ -335,6 +367,8 @@ const ClassroomChampions = () => {
   const allAvatarSkins = useMemo(() => ([
     ...shopInventory.basicAvatars,
     ...shopInventory.premiumAvatars,
+    ...HALLOWEEN_BASIC_AVATARS,
+    ...HALLOWEEN_PREMIUM_AVATARS,
     ...CHRISTMAS_BASIC_AVATARS,
     ...CHRISTMAS_PREMIUM_AVATARS
   ]), [shopInventory]);
