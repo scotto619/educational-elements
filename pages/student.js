@@ -18,6 +18,7 @@ import StudentMaths from '../components/student/StudentMaths';
 import StudentMorphology from '../components/student/StudentMorphology';
 import VisualWritingPrompts from '../components/curriculum/literacy/VisualWritingPrompts';
 import DailyMysteryBoxModal from '../components/student/DailyMysteryBoxModal';
+import HiddenPresent from '../components/student/HiddenPresent';
 import { DEFAULT_NOTICE_ITEMS, subscribeToNoticeBoard } from '../services/noticeBoard';
 
 // Import from the correct gameHelpers file
@@ -1993,10 +1994,19 @@ const StudentPortal = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-100">
       {/* Header */}
-      <div className="bg-white shadow-lg border-b-4 border-blue-500">
-        <div className="max-w-6xl mx-auto px-3 md:px-4 py-3 md:py-4 flex items-center justify-between">
+      <div className="bg-white shadow-lg border-b-4 border-blue-500 relative">
+        <div className="max-w-6xl mx-auto px-3 md:px-4 py-3 md:py-4 flex items-center justify-between relative">
+          <HiddenPresent
+            giftId="header-flurry"
+            studentData={studentData}
+            updateStudentData={updateStudentData}
+            showToast={showToast}
+            size={16}
+            className="absolute -top-2 right-1 rotate-6"
+            label="Hidden holiday surprise"
+          />
           <div className="flex items-center min-w-0 flex-1">
-            <img 
+            <img
               src="/Logo/LOGO_NoBG.png" 
               alt="Educational Elements Logo" 
               className="h-8 w-8 md:h-10 md:w-10 mr-2 md:mr-3 flex-shrink-0"
@@ -2035,7 +2045,16 @@ const StudentPortal = () => {
 
       {/* Main Navigation Tabs */}
       <div className="bg-white shadow-sm border-b sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-6xl mx-auto relative">
+          <HiddenPresent
+            giftId="tab-ridge"
+            studentData={studentData}
+            updateStudentData={updateStudentData}
+            showToast={showToast}
+            size={15}
+            className="absolute -bottom-1 right-2"
+            label="Sneaky present"
+          />
           <div className="flex overflow-x-auto">
             {tabs.map(tab => (
               <button
@@ -2101,7 +2120,57 @@ const StudentPortal = () => {
 
       {/* Main Content */}
       <main className="max-w-6xl mx-auto px-3 md:px-4 py-4 md:py-6">
-        {renderTabContent()}
+        <div className="relative">
+          {activeTab === 'dashboard' && (
+            <HiddenPresent
+              giftId="dashboard-corner"
+              studentData={studentData}
+              updateStudentData={updateStudentData}
+              showToast={showToast}
+              size={17}
+              className="absolute -top-1 right-3 md:right-6"
+              label="Corner present"
+            />
+          )}
+
+          {activeTab === 'shop' && (
+            <HiddenPresent
+              giftId="shop-stash"
+              studentData={studentData}
+              updateStudentData={updateStudentData}
+              showToast={showToast}
+              size={16}
+              className="absolute top-10 left-1 md:left-4"
+              label="Tucked away present"
+            />
+          )}
+
+          {activeTab === 'games' && (
+            <HiddenPresent
+              giftId="games-arcade"
+              studentData={studentData}
+              updateStudentData={updateStudentData}
+              showToast={showToast}
+              size={15}
+              className="absolute -bottom-1 right-4"
+              label="Arcade prize"
+            />
+          )}
+
+          {activeTab === 'literacy' && (
+            <HiddenPresent
+              giftId="literacy-underline"
+              studentData={studentData}
+              updateStudentData={updateStudentData}
+              showToast={showToast}
+              size={14}
+              className="absolute top-5 right-8 md:right-12"
+              label="Hidden reading present"
+            />
+          )}
+
+          {renderTabContent()}
+        </div>
       </main>
 
       {loginEggCelebration && (
