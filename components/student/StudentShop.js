@@ -2387,12 +2387,7 @@ const StudentShop = ({
             </div>
 
             {lootWellResult && (
-              <div
-                className={`w-full max-w-xl px-5 py-4 rounded-2xl border backdrop-blur-sm transition-all ${
-                  lootWellResult.outcome === 'prize'
-                    ? 'border-emerald-200/70 bg-emerald-400/20 text-emerald-100 shadow-[0_0_25px_rgba(16,185,129,0.35)]'
-                }`}
-              >
+              <div className="w-full max-w-xl px-5 py-4 rounded-2xl border border-emerald-200/70 bg-emerald-400/20 text-emerald-100 shadow-[0_0_25px_rgba(16,185,129,0.35)] backdrop-blur-sm transition-all">
                 {`✨ The waters erupt with ${getPrizeDisplayName(lootWellResult.prize)}!`}
               </div>
             )}
