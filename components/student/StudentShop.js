@@ -45,16 +45,15 @@ const resolvePetArt = (source) => normalizeImageSource(source, DEFAULT_PET_IMAGE
 const MYSTERY_BOX_PRICE = 10;
 
 const LOOT_WELL_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
-const LOOT_WELL_PRIZE_CHANCE = 0.18; // ~18% chance to surface a prize
 const MAX_LOOT_WELL_HISTORY = 12;
 
 // Define rarity weights (higher = more common)
 const RARITY_WEIGHTS = {
-  common: 50,     // 50% base chance
-  uncommon: 30,   // 30% base chance
-  rare: 15,       // 15% base chance
-  epic: 4,        // 4% base chance
-  legendary: 1    // 1% base chance
+  common: 70,     // more common
+  uncommon: 22,   // frequent but modest
+  rare: 6,        // occasional
+  epic: 2,        // very rare
+  legendary: 1    // extremely rare
 };
 
 // Eggs should be a bit easier to find than other items that share their rarity tier
@@ -2016,12 +2015,13 @@ const StudentShop = ({
       DEFAULT_CARD_PACKS
     );
 
-    let selectedPrize = null;
-    let outcome = 'miss';
+    let selectedPrize = allPrizes.length > 0 ? selectRandomPrize(allPrizes) : null;
+    const outcome = 'prize';
 
-    if (Math.random() < LOOT_WELL_PRIZE_CHANCE && allPrizes.length > 0) {
-      selectedPrize = selectRandomPrize(allPrizes);
-      outcome = 'prize';
+    if (!selectedPrize) {
+      showToast('The well needs more treasures to grant. Please try again later.', 'error');
+      setLootWellAnimating(false);
+      return;
     }
 
     let updates = {};
@@ -2055,16 +2055,12 @@ const StudentShop = ({
         : null,
       history: [...trimmedHistory, historyEntry],
       totalAttempts: (lootWellStats.totalAttempts || 0) + 1,
-      totalWins: (lootWellStats.totalWins || 0) + (outcome === 'prize' ? 1 : 0)
+      totalWins: (lootWellStats.totalWins || 0) + 1
     };
 
     const success = await updateStudentData(updates);
 
     if (success) {
-      if (!selectedPrize) {
-        showToast('The well shimmered, but no treasure surfaced this time. Come back in an hour!', 'info');
-      }
-
       setLootWellResult({ outcome, prize: selectedPrize, entry: historyEntry });
     } else {
       showToast('The well magic fizzled. Please try again.', 'error');
@@ -2334,14 +2330,14 @@ const StudentShop = ({
           </div>
 
           <div className="relative z-10 flex flex-col items-center gap-6 text-center">
-            <div className="flex flex-col items-center gap-2">
-              <span className="text-4xl md:text-5xl drop-shadow-xl">⛲</span>
-              <h3 className="text-3xl md:text-4xl font-black tracking-tight drop-shadow-lg">The Loot Well</h3>
-              <p className="max-w-2xl text-sm md:text-base text-white/80">
-                Whisper a wish into the radiant waters once every hour for a chance at treasures pulled from every rarity tier.
-                Legendary rewards shimmer with dazzling effects when fortune smiles upon you!
-              </p>
-            </div>
+              <div className="flex flex-col items-center gap-2">
+                <span className="text-4xl md:text-5xl drop-shadow-xl">⛲</span>
+                <h3 className="text-3xl md:text-4xl font-black tracking-tight drop-shadow-lg">The Loot Well</h3>
+                <p className="max-w-2xl text-sm md:text-base text-white/80">
+                Whisper a wish into the radiant waters once every hour and the well will always answer with a prize—most are
+                humble trinkets, but legendary rewards shimmer with dazzling effects when fortune smiles upon you!
+                </p>
+              </div>
 
             <div className="relative">
               <div className="absolute inset-0 flex items-center justify-center">
@@ -2395,12 +2391,9 @@ const StudentShop = ({
                 className={`w-full max-w-xl px-5 py-4 rounded-2xl border backdrop-blur-sm transition-all ${
                   lootWellResult.outcome === 'prize'
                     ? 'border-emerald-200/70 bg-emerald-400/20 text-emerald-100 shadow-[0_0_25px_rgba(16,185,129,0.35)]'
-                    : 'border-white/25 bg-white/10 text-white'
                 }`}
               >
-                {lootWellResult.outcome === 'prize'
-                  ? `✨ The waters erupt with ${getPrizeDisplayName(lootWellResult.prize)}!`
-                  : 'The waters whisper softly... no treasure surfaced this time.'}
+                {`✨ The waters erupt with ${getPrizeDisplayName(lootWellResult.prize)}!`}
               </div>
             )}
 
