@@ -20,6 +20,7 @@ import VisualWritingPrompts from '../components/curriculum/literacy/VisualWritin
 import DailyMysteryBoxModal from '../components/student/DailyMysteryBoxModal';
 import HiddenPresent from '../components/student/HiddenPresent';
 import { DEFAULT_NOTICE_ITEMS, subscribeToNoticeBoard } from '../services/noticeBoard';
+import { CARD_EFFECTS } from '../constants/cardEffects';
 
 // Import from the correct gameHelpers file
 import {
@@ -2233,6 +2234,7 @@ const StudentPortal = () => {
         avatars={availableAvatarPool}
         pets={availablePetPool}
         rewards={classData?.classRewards || []}
+        effects={CARD_EFFECTS}
         onClaimComplete={handleDailyMysteryBoxClaimed}
       />
     </div>

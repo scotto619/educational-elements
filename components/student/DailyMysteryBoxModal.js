@@ -30,6 +30,7 @@ const DailyMysteryBoxModal = ({
   avatars = [],
   pets = [],
   rewards = [],
+  effects = [],
   onClaimComplete
 }) => {
   const [stage, setStage] = useState('intro');
@@ -146,7 +147,8 @@ const DailyMysteryBoxModal = ({
       pets,
       rewards,
       includeXP: true,
-      includeCurrency: true
+      includeCurrency: true,
+      effects
     });
 
     if (!prizePool.length) {
@@ -218,6 +220,16 @@ const DailyMysteryBoxModal = ({
       case 'coins': {
         updates.currency = (studentData.currency || 0) + prize.amount;
         message = `You won ${prize.amount} bonus coins!`;
+        break;
+      }
+      case 'card_effect': {
+        const owned = new Set(studentData.ownedCardEffects || []);
+        owned.add(prize.effectId);
+        updates.ownedCardEffects = Array.from(owned);
+        if (!studentData.equippedCardEffect) {
+          updates.equippedCardEffect = prize.effectId;
+        }
+        message = `You unlocked the ${prize.name} card effect!`;
         break;
       }
       default: {

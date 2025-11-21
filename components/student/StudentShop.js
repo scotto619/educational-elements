@@ -17,6 +17,7 @@ import {
 import { normalizeImageSource, serializeFallbacks, createImageErrorHandler } from '../../utils/imageFallback';
 import CardPackOpeningModal from './cards/CardPackOpeningModal';
 import CardBookModal from './cards/CardBookModal';
+import { CARD_EFFECTS, CARD_EFFECT_MAP } from '../../constants/cardEffects';
 import {
   DEFAULT_CARD_PACKS,
   buildTradingCardLibrary,
@@ -97,7 +98,8 @@ const getMysteryBoxPrizes = (
   CHRISTMAS_PREMIUM_AVATARS = [],
   CHRISTMAS_PETS = [],
   EGG_TYPES = PET_EGG_TYPES,
-  CARD_PACKS = []
+  CARD_PACKS = [],
+  CARD_EFFECTS_POOL = CARD_EFFECTS
 ) => {
   const prizes = [];
 
@@ -188,6 +190,18 @@ const getMysteryBoxPrizes = (
       name: pack.name,
       displayName: pack.name,
       icon: pack.icon || '🃏'
+    });
+  });
+
+  // Add rare cosmetic card effects (loot well and boxes only)
+  (CARD_EFFECTS_POOL || []).forEach(effect => {
+    prizes.push({
+      type: 'card_effect',
+      effectId: effect.id,
+      rarity: effect.rarity,
+      name: effect.name,
+      displayName: effect.name,
+      icon: '✨'
     });
   });
 
@@ -340,6 +354,8 @@ const getPrizeDisplayName = (prize) => {
       return `${prize.amount || 0} Coins`;
     case 'card_pack':
       return prize.pack?.name || 'Mystery Card Pack';
+    case 'card_effect':
+      return prize.name || 'Cosmetic Card Effect';
     default:
       return prize.name || 'Mystery Prize';
   }
@@ -508,6 +524,12 @@ const StudentShop = ({
       lastOpenedAt: stored.lastOpenedAt || null
     };
   }, [studentData?.cardCollection]);
+
+  const equippedCardEffectId = studentData?.equippedCardEffect || '';
+  const ownedCardEffects = useMemo(() => {
+    const ownedIds = new Set(studentData?.ownedCardEffects || []);
+    return CARD_EFFECTS.filter(effect => ownedIds.has(effect.id));
+  }, [studentData?.ownedCardEffects]);
 
   const tradingCardLibrary = useMemo(
     () =>
@@ -786,11 +808,11 @@ const StudentShop = ({
           showToast(`You won ${prize.amount || 0} bonus coins!`, 'success');
           break;
         }
-        case 'card_pack': {
-          const pack = prize.pack;
-          if (pack) {
-            const snapshot = updates.cardCollection || createCardCollectionSnapshot();
-            const packs = { ...(snapshot.packs || {}) };
+      case 'card_pack': {
+        const pack = prize.pack;
+        if (pack) {
+          const snapshot = updates.cardCollection || createCardCollectionSnapshot();
+          const packs = { ...(snapshot.packs || {}) };
             const entry = packs[pack.id] || { count: 0 };
             packs[pack.id] = {
               ...entry,
@@ -807,20 +829,50 @@ const StudentShop = ({
               lastOpenedAt: snapshot.lastOpenedAt || null
             };
 
-            showToast(`You discovered a ${pack.name}!`, pack.rarity === 'legendary' ? 'success' : 'info');
-          }
-          break;
+          showToast(`You discovered a ${pack.name}!`, pack.rarity === 'legendary' ? 'success' : 'info');
         }
-        default: {
-          if (prize.name) {
-            showToast(`You received ${prize.name}!`, 'success');
+        break;
+      }
+      case 'card_effect': {
+        const effectId = prize.effectId;
+        if (effectId) {
+          const ownedEffects = new Set(studentData.ownedCardEffects || []);
+          if (Array.isArray(updates.ownedCardEffects)) {
+            updates.ownedCardEffects.forEach(id => ownedEffects.add(id));
           }
+          ownedEffects.add(effectId);
+          updates.ownedCardEffects = [...ownedEffects];
+
+          if (!studentData.equippedCardEffect && !updates.equippedCardEffect) {
+            updates.equippedCardEffect = effectId;
+          }
+
+          const effectName = CARD_EFFECT_MAP[effectId]?.name || 'card effect';
+          showToast(`You unlocked the ${effectName}!`, 'success');
         }
+        break;
+      }
+      default: {
+        if (prize.name) {
+          showToast(`You received ${prize.name}!`, 'success');
+        }
+      }
       }
 
       return updates;
     },
-    [createCardCollectionSnapshot, showToast, studentData.ownedAvatars, studentData.ownedPets, studentData.petEggs, studentData.rewardsPurchased, studentData.totalPoints, studentData.currency]
+    [
+      createCardCollectionSnapshot,
+      showToast,
+      studentData.ownedAvatars,
+      studentData.ownedPets,
+      studentData.petEggs,
+      studentData.rewardsPurchased,
+      studentData.totalPoints,
+      studentData.currency,
+      studentData.ownedCardEffects,
+      studentData.equippedCardEffect
+    ]
   );
 
   useEffect(() => {
@@ -2233,7 +2285,7 @@ const StudentShop = ({
 
   const handleEquip = async (type, value) => {
     let updates = {};
-    
+
     if (type === 'avatar') {
       updates.avatarBase = value;
       showToast('Avatar equipped!', 'success');
@@ -2242,8 +2294,11 @@ const StudentShop = ({
       const otherPets = studentData.ownedPets.filter(p => p.id !== value);
       updates.ownedPets = [petToEquip, ...otherPets];
       showToast('Pet equipped!', 'success');
+    } else if (type === 'card_effect') {
+      updates.equippedCardEffect = value;
+      showToast('Card effect equipped!', 'success');
     }
-    
+
     await updateStudentData(updates);
   };
 
@@ -3328,6 +3383,63 @@ const StudentShop = ({
                 ) : (
                   <p className="text-gray-500 text-sm md:text-base">
                     No cards yet. Open packs or grab mystery boxes to start your collection!
+                  </p>
+                )}
+              </div>
+
+              {/* Card Effects */}
+              <div>
+                <h3 className="font-bold text-base md:text-lg mb-2 md:mb-3">Card Effects</h3>
+                {ownedCardEffects.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-3">
+                    {ownedCardEffects.map(effect => (
+                      <div
+                        key={effect.id}
+                        className={`relative border-2 rounded-xl p-3 md:p-4 overflow-hidden ${
+                          equippedCardEffectId === effect.id ? 'border-indigo-400 bg-indigo-50' : 'border-gray-200'
+                        }`}
+                      >
+                        <div className="absolute inset-0 pointer-events-none">
+                          <div className={`absolute inset-0 blur-2xl rounded-xl ${effect.preview?.auraClass || ''}`} />
+                          <div
+                            className={`absolute inset-0 rounded-xl ${effect.preview?.ringClass || ''} ${
+                              effect.preview?.animationClass || ''
+                            }`}
+                          />
+                        </div>
+                        <div className="relative z-10 flex items-center gap-3">
+                          <div
+                            className="w-12 h-12 rounded-full flex items-center justify-center text-2xl bg-white shadow"
+                            aria-hidden
+                          >
+                            ✨
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-sm md:text-base text-slate-900 truncate">{effect.name}</p>
+                            <p className="text-xs text-slate-600 truncate">{effect.description}</p>
+                            <p className="text-[11px] uppercase tracking-wider text-indigo-600 mt-1">{effect.rarity}</p>
+                          </div>
+                        </div>
+                        <div className="relative z-10 mt-3 flex gap-2">
+                          {equippedCardEffectId === effect.id ? (
+                            <span className="text-xs font-semibold text-indigo-700 bg-indigo-100 px-2 py-1 rounded-full">
+                              Equipped
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => handleEquip('card_effect', effect.id)}
+                              className="text-xs bg-indigo-600 text-white px-3 py-1 rounded font-semibold hover:bg-indigo-700 active:scale-95"
+                            >
+                              Equip
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-sm md:text-base">
+                    Find rare card effects in the Mystery Box or Loot Well to decorate your student card.
                   </p>
                 )}
               </div>

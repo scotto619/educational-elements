@@ -1,7 +1,8 @@
 // components/student/StudentDashboard.js - UPDATED: Avatar now matches equipped avatar on main site
-import React from 'react';
+import React, { useMemo } from 'react';
 import { DEFAULT_PET_IMAGE } from '../../utils/gameHelpers';
 import { normalizeImageSource, serializeFallbacks, createImageErrorHandler } from '../../utils/imageFallback';
+import { CARD_EFFECT_MAP } from '../../constants/cardEffects';
 
 const StudentDashboard = ({
   studentData,
@@ -17,6 +18,8 @@ const StudentDashboard = ({
   const level = calculateAvatarLevel(studentData?.totalPoints || 0);
   const coins = calculateCoins(studentData);
   const petImageErrorHandler = createImageErrorHandler(DEFAULT_PET_IMAGE);
+  const equippedEffect = useMemo(() => CARD_EFFECT_MAP[studentData?.equippedCardEffect], [studentData?.equippedCardEffect]);
+  const effectAccent = equippedEffect?.colors?.[0];
 
   const resolvePetImage = (pet) => normalizeImageSource(getPetImage(pet), DEFAULT_PET_IMAGE);
 
@@ -72,17 +75,42 @@ const StudentDashboard = ({
       {/* Stats Grid - Mobile Optimized */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
         {/* Avatar & Level - UPDATED: Shows equipped avatar */}
-        <div className="bg-white rounded-xl p-4 md:p-6 shadow-lg text-center">
-          <img 
-            src={getAvatarImage(studentData?.avatarBase, level)} 
-            alt="Your Avatar"
-            className="w-16 h-16 md:w-20 md:h-20 rounded-full mx-auto mb-2 md:mb-4 border-4 border-purple-300"
-            onError={(e) => {
-              e.target.src = '/shop/Basic/Banana.png';
-            }}
-          />
-          <h3 className="text-base md:text-lg font-bold text-gray-800">Level {level}</h3>
-          <p className="text-purple-600 font-semibold text-sm md:text-base">Champion</p>
+        <div className="bg-white rounded-xl p-4 md:p-6 shadow-lg text-center relative overflow-hidden">
+          {equippedEffect && (
+            <>
+              <div
+                className={`absolute inset-0 blur-2xl pointer-events-none ${
+                  equippedEffect.preview?.auraClass || 'bg-purple-100/60'
+                }`}
+              />
+              <div
+                className={`absolute inset-0 rounded-xl pointer-events-none ${equippedEffect.preview?.ringClass || ''} ${
+                  equippedEffect.preview?.animationClass || ''
+                }`}
+              />
+            </>
+          )}
+          <div className="relative z-10">
+            <img
+              src={getAvatarImage(studentData?.avatarBase, level)}
+              alt="Your Avatar"
+              className="w-16 h-16 md:w-20 md:h-20 rounded-full mx-auto mb-2 md:mb-4 border-4 border-purple-300"
+              style={{
+                borderColor: effectAccent || undefined,
+                boxShadow: effectAccent ? `0 0 24px ${effectAccent}66` : undefined
+              }}
+              onError={(e) => {
+                e.target.src = '/shop/Basic/Banana.png';
+              }}
+            />
+            <h3 className="text-base md:text-lg font-bold text-gray-800">Level {level}</h3>
+            <p className="text-purple-600 font-semibold text-sm md:text-base">Champion</p>
+            {equippedEffect && (
+              <p className="text-[11px] md:text-xs font-semibold text-indigo-700 mt-1">
+                {equippedEffect.name} equipped
+              </p>
+            )}
+          </div>
         </div>
 
         {/* XP Progress */}
