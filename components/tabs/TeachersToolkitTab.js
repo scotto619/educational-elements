@@ -13,6 +13,7 @@ import TimetableCreator from '../tools/TimetableCreator';
 import BrainBreaks from '../tools/BrainBreaks';
 import VisualChecklist from '../tools/VisualChecklist';
 import SpecialistCreator from '../tools/SpecialistCreator'; // UPDATED IMPORT
+import ReportCommentGenerator from '../tools/ReportCommentGenerator';
 
 // ===============================================
 // AUTO-DISMISSING NOTIFICATION COMPONENT
@@ -588,6 +589,9 @@ const TeachersToolkitTab = ({
               showToast={showNotification}
             />
           )}
+          {activeToolkitTab === 'report-comments' && (
+            <ReportCommentGenerator />
+          )}
           {activeToolkitTab === 'attendance' && (
             <AttendanceTracker
               students={students}
@@ -724,6 +728,15 @@ const TeachersToolkitTab = ({
           <div className="text-4xl mb-3">🧠</div>
           <div className="text-lg font-bold mb-1">Brain Breaks</div>
           <div className="text-sm opacity-90">Random activities</div>
+        </button>
+
+        <button
+          onClick={() => setActiveToolkitTab('report-comments')}
+          className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-6 rounded-xl hover:shadow-lg transition-all text-center"
+        >
+          <div className="text-4xl mb-3">📝</div>
+          <div className="text-lg font-bold mb-1">Report Comments</div>
+          <div className="text-sm opacity-90">Instant overall reports</div>
         </button>
 
         <button
