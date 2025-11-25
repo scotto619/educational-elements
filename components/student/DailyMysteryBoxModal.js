@@ -30,6 +30,7 @@ const DailyMysteryBoxModal = ({
   avatars = [],
   pets = [],
   rewards = [],
+  effects = [],
   onClaimComplete
 }) => {
   const [stage, setStage] = useState('intro');
@@ -37,6 +38,69 @@ const DailyMysteryBoxModal = ({
   const [isSpinning, setIsSpinning] = useState(false);
   const [isCollecting, setIsCollecting] = useState(false);
   const spinTimeoutRef = useRef(null);
+
+  const todayKey = new Date().toISOString().slice(0, 10);
+
+  const getPrizeStorageKey = () => {
+    if (!studentData) return null;
+
+    const identifier =
+      studentData.id ||
+      studentData.studentId ||
+      studentData.uid ||
+      studentData.userId ||
+      studentData.email ||
+      studentData.username ||
+      (studentData.firstName ? `${studentData.firstName}-${studentData.lastName || ''}`.trim() : null);
+
+    return identifier ? `dailyMysteryBoxPrize:${identifier}` : null;
+  };
+
+  const loadStoredPrize = () => {
+    const storageKey = getPrizeStorageKey();
+    if (!storageKey) return null;
+
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) return null;
+
+      const parsed = JSON.parse(raw);
+      if (parsed?.dateKey === todayKey && parsed.prize) {
+        setPrize(parsed.prize);
+        setStage('reveal');
+        return parsed.prize;
+      }
+    } catch (error) {
+      console.warn('Unable to read stored daily mystery box prize:', error);
+    }
+
+    return null;
+  };
+
+  const persistPrize = (nextPrize) => {
+    const storageKey = getPrizeStorageKey();
+    if (!storageKey) return;
+
+    try {
+      localStorage.setItem(
+        storageKey,
+        JSON.stringify({ dateKey: todayKey, prize: nextPrize })
+      );
+    } catch (error) {
+      console.warn('Unable to persist daily mystery box prize:', error);
+    }
+  };
+
+  const clearStoredPrize = () => {
+    const storageKey = getPrizeStorageKey();
+    if (!storageKey) return;
+
+    try {
+      localStorage.removeItem(storageKey);
+    } catch (error) {
+      console.warn('Unable to clear stored daily mystery box prize:', error);
+    }
+  };
 
   useEffect(() => {
     if (!isOpen) {
@@ -47,10 +111,14 @@ const DailyMysteryBoxModal = ({
       return;
     }
 
-    setStage('intro');
-    setPrize(null);
     setIsSpinning(false);
     setIsCollecting(false);
+
+    const storedPrize = loadStoredPrize();
+    if (!storedPrize) {
+      setStage('intro');
+      setPrize(null);
+    }
 
     return () => {
       if (spinTimeoutRef.current) {
@@ -65,12 +133,22 @@ const DailyMysteryBoxModal = ({
   }
 
   const handleOpenBox = () => {
+    if (prize && stage === 'reveal') {
+      return;
+    }
+
+    const storedPrize = loadStoredPrize();
+    if (storedPrize) {
+      return;
+    }
+
     const prizePool = getMysteryBoxPrizes({
       avatars,
       pets,
       rewards,
       includeXP: true,
-      includeCurrency: true
+      includeCurrency: true,
+      effects
     });
 
     if (!prizePool.length) {
@@ -80,6 +158,7 @@ const DailyMysteryBoxModal = ({
     }
 
     const selectedPrize = selectRandomPrize(prizePool);
+    persistPrize(selectedPrize);
     setPrize(selectedPrize);
     setStage('opening');
     setIsSpinning(true);
@@ -143,6 +222,16 @@ const DailyMysteryBoxModal = ({
         message = `You won ${prize.amount} bonus coins!`;
         break;
       }
+      case 'card_effect': {
+        const owned = new Set(studentData.ownedCardEffects || []);
+        owned.add(prize.effectId);
+        updates.ownedCardEffects = Array.from(owned);
+        if (!studentData.equippedCardEffect) {
+          updates.equippedCardEffect = prize.effectId;
+        }
+        message = `You unlocked the ${prize.name} card effect!`;
+        break;
+      }
       default: {
         const displayName = prize.displayName || prize.name || 'a surprise prize';
         message = `You won ${displayName}!`;
@@ -155,6 +244,7 @@ const DailyMysteryBoxModal = ({
     if (success) {
       showToast?.(message, 'success');
       onClaimComplete?.(prize);
+      clearStoredPrize();
       handleClose();
     } else {
       showToast?.('Failed to collect your mystery box reward. Please try again.', 'error');

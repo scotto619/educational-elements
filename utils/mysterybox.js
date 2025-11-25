@@ -2,6 +2,7 @@
 // This can be used throughout your application for mystery boxes, prizes, etc.
 
 import { PET_EGG_TYPES, createPetEgg, getEggTypeById } from './gameHelpers';
+import { CARD_EFFECTS } from '../constants/cardEffects';
 
 export const MYSTERY_BOX_PRICE = 10;
 
@@ -100,7 +101,8 @@ export const getMysteryBoxPrizes = ({
   includeXP = true,
   includeCurrency = true,
   customPrizes = [],
-  eggs = PET_EGG_TYPES
+  eggs = PET_EGG_TYPES,
+  effects = CARD_EFFECTS
 }) => {
   const prizes = [];
   
@@ -187,6 +189,19 @@ export const getMysteryBoxPrizes = ({
       });
     });
   }
+
+  // Add rare cosmetic card effects (only from boxes and special events)
+  (effects || []).forEach(effect => {
+    prizes.push({
+      type: 'card_effect',
+      effectId: effect.id,
+      rarity: effect.rarity,
+      name: effect.name,
+      displayName: effect.name,
+      description: effect.description,
+      icon: '✨'
+    });
+  });
   
   // Add custom prizes
   customPrizes.forEach(prize => {
