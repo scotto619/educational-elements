@@ -25,6 +25,7 @@ import AmazingTypingAdventure from '../games/AmazingTypingAdventure';
 import MultiplicationGridGame from '../games/MultiplicationGridGame';
 import PrecisionTimerGame from '../games/PrecisionTimerGame';
 import DodgeballGame from '../games/DodgeballGame';
+import ScoundrelLegendsGame from '../games/ScoundrelLegendsGame';
 
 const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 
@@ -112,6 +113,19 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       category: 'featured',
       logo: getGameLogo('dodgeball-frenzy'),
       storageKeySuffix: 'student-dodgeball'
+    },
+    {
+      id: 'scoundrel-legends',
+      name: 'Arcane Scoundrel',
+      icon: '🃏',
+      description: 'Delve through a deck of custom monsters, weapons, and potions in this stylish solo card crawl.',
+      component: ScoundrelLegendsGame,
+      color: 'from-emerald-500 to-sky-600',
+      difficulty: 'Medium',
+      time: '5-15 minutes',
+      category: 'adventure',
+      featured: true,
+      logo: getGameLogo('scoundrel-legends')
     },
     {
       id: 'maze',
