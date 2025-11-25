@@ -2,29 +2,31 @@ import React, { useMemo, useState } from 'react';
 
 const criteriaOptions = {
   academic: [
-    { value: 'outstanding', label: 'Outstanding progress' },
-    { value: 'meeting', label: 'Meeting expectations' },
-    { value: 'developing', label: 'Developing skills' },
-    { value: 'support', label: 'Needs targeted support' },
+    { value: 'high', label: 'High' },
+    { value: 'medium', label: 'Medium' },
+    { value: 'low', label: 'Low' },
   ],
   behaviour: [
-    { value: 'excellent', label: 'Consistently respectful' },
-    { value: 'positive', label: 'Positive classroom presence' },
-    { value: 'reminders', label: 'Requires occasional reminders' },
-    { value: 'support', label: 'Needs behaviour support' },
+    { value: 'high', label: 'High' },
+    { value: 'medium', label: 'Medium' },
+    { value: 'low', label: 'Low' },
   ],
   effort: [
-    { value: 'consistent', label: 'Consistent effort' },
-    { value: 'generally', label: 'Generally puts in effort' },
-    { value: 'variable', label: 'Effort varies' },
-    { value: 'needs', label: 'Needs to increase effort' },
+    { value: 'high', label: 'High' },
+    { value: 'medium', label: 'Medium' },
+    { value: 'low', label: 'Low' },
   ],
   engagement: [
-    { value: 'enthusiastic', label: 'Highly engaged' },
-    { value: 'curious', label: 'Curious and reflective' },
-    { value: 'quiet', label: 'Quietly engaged' },
-    { value: 'reluctant', label: 'Reluctant at times' },
+    { value: 'high', label: 'High' },
+    { value: 'medium', label: 'Medium' },
+    { value: 'low', label: 'Low' },
   ],
+};
+
+const pronounSets = {
+  neutral: { subjective: 'they', subjectiveCap: 'They', objective: 'them', possessive: 'their', reflexive: 'themselves' },
+  she: { subjective: 'she', subjectiveCap: 'She', objective: 'her', possessive: 'her', reflexive: 'herself' },
+  he: { subjective: 'he', subjectiveCap: 'He', objective: 'him', possessive: 'his', reflexive: 'himself' },
 };
 
 const strengthOptions = [
@@ -45,46 +47,93 @@ const nextStepOptions = [
   'Focus on completing tasks on time',
 ];
 
-const summaryTemplates = {
-  outstanding: 'shows exceptional understanding of concepts',
-  meeting: 'is meeting the expected outcomes',
-  developing: 'is developing core skills with growing confidence',
-  support: 'would benefit from targeted support to master key skills',
-};
-
-const effortTemplates = {
-  consistent: 'always applies themselves fully',
-  generally: 'usually applies steady effort',
-  variable: 'can be inconsistent with effort',
-  needs: 'needs encouragement to sustain effort',
-};
-
-const behaviourTemplates = {
-  excellent: 'is consistently respectful and considerate',
-  positive: 'brings a positive presence to the classroom',
-  reminders: 'responds to gentle reminders about expectations',
-  support: 'requires support to maintain positive behaviour choices',
-};
-
-const engagementTemplates = {
-  enthusiastic: 'engages enthusiastically with learning',
-  curious: 'demonstrates curiosity and thoughtful reflection',
-  quiet: 'is quietly attentive and focused',
-  reluctant: 'can be reluctant to participate at times',
+const sentencePools = {
+  academic: {
+    high: [
+      '{SUBJECT} maintained high achievement this semester and often deepened {POSSESSIVE} understanding beyond the core material.',
+      '{SUBJECT} grasped the semester concepts quickly and extended {POSSESSIVE} thinking with insightful questions.',
+      '{SUBJECT} consistently connected new ideas to prior learning, showing secure mastery of semester content.',
+    ],
+    medium: [
+      '{SUBJECT} met the semester expectations and consolidated {POSSESSIVE} understanding with steady practice.',
+      '{SUBJECT} handled the semester topics with growing confidence and clarified ideas when needed.',
+      '{SUBJECT} showed reliable understanding of key units and built on feedback to strengthen skills.',
+    ],
+    low: [
+      '{SUBJECT} worked through the semester concepts with support and focused on building foundational skills.',
+      '{SUBJECT} revisited core ideas this semester to close gaps and benefit from targeted guidance.',
+      '{SUBJECT} needed additional scaffolds to retain key learning from the semester units.',
+    ],
+  },
+  behaviour: {
+    high: [
+      '{SUBJECT} modelled respectful conduct all semester and contributed to a calm classroom climate.',
+      '{SUBJECT} upheld class expectations throughout the semester and encouraged positive choices in peers.',
+      '{SUBJECT} demonstrated consistent courtesy and made the room feel welcoming.',
+    ],
+    medium: [
+      '{SUBJECT} responded well to reminders and maintained respectful behaviour for most of the semester.',
+      '{SUBJECT} generally followed routines this semester and reset quickly after prompts.',
+      '{SUBJECT} kept behaviour steady overall with occasional check-ins.',
+    ],
+    low: [
+      '{SUBJECT} needed regular coaching on expectations this semester but improved after clear cues.',
+      '{SUBJECT} required support to make positive behaviour choices and benefited from consistent boundaries.',
+      '{SUBJECT} relied on structured reminders to stay aligned with class routines.',
+    ],
+  },
+  effort: {
+    high: [
+      '{SUBJECT} poured sustained effort into learning tasks and refined work after feedback.',
+      '{SUBJECT} maintained a determined approach all semester and completed tasks with care.',
+      '{SUBJECT} routinely double-checked work and persevered through challenges.',
+    ],
+    medium: [
+      '{SUBJECT} showed steady effort this semester and completed most tasks as expected.',
+      '{SUBJECT} applied {POSSESSIVE} energy to class activities and followed through with reminders.',
+      '{SUBJECT} balanced effort with guidance and met deadlines with light prompting.',
+    ],
+    low: [
+      '{SUBJECT} needed encouragement to sustain effort this semester and responded to check-ins.',
+      '{SUBJECT} benefitted from breaking tasks into steps to keep momentum.',
+      '{SUBJECT} increased output when given structured goals and close support.',
+    ],
+  },
+  engagement: {
+    high: [
+      '{SUBJECT} engaged enthusiastically in lessons and shared ideas during the semester.',
+      '{SUBJECT} leaned into discussions this semester and sparked rich conversations.',
+      '{SUBJECT} embraced collaborative tasks and kept curiosity high.',
+    ],
+    medium: [
+      '{SUBJECT} participated reliably this semester and asked clarifying questions when unsure.',
+      '{SUBJECT} stayed attentive in class and contributed when prompted.',
+      '{SUBJECT} showed interest in topics and engaged with support during group work.',
+    ],
+    low: [
+      '{SUBJECT} engaged quietly this semester and benefited from targeted invitations to contribute.',
+      '{SUBJECT} needed encouragement to join discussions and warmed up with smaller group prompts.',
+      '{SUBJECT} responded to structured participation routines to stay involved.',
+    ],
+  },
 };
 
 const ReportCommentGenerator = () => {
   const [studentName, setStudentName] = useState('');
   const [selections, setSelections] = useState({
-    academic: 'meeting',
-    behaviour: 'excellent',
-    effort: 'consistent',
-    engagement: 'enthusiastic',
+    academic: 'medium',
+    behaviour: 'medium',
+    effort: 'medium',
+    engagement: 'medium',
   });
   const [strengths, setStrengths] = useState(['Works collaboratively']);
   const [nextSteps, setNextSteps] = useState(['Practice goal setting']);
   const [tone, setTone] = useState('celebratory');
   const [copied, setCopied] = useState(false);
+  const [pronounKey, setPronounKey] = useState('neutral');
+  const [shuffleCount, setShuffleCount] = useState(0);
+
+  const selectedPronouns = pronounSets[pronounKey] || pronounSets.neutral;
 
   const toggleListSelection = (item, list, setList) => {
     if (list.includes(item)) {
@@ -97,26 +146,26 @@ const ReportCommentGenerator = () => {
   const applyPreset = (preset) => {
     const presets = {
       celebratory: {
-        academic: 'outstanding',
-        behaviour: 'excellent',
-        effort: 'consistent',
-        engagement: 'enthusiastic',
+        academic: 'high',
+        behaviour: 'high',
+        effort: 'high',
+        engagement: 'high',
         strengths: ['Takes initiative', 'Communicates ideas clearly'],
         next: ['Seek feedback and act on it'],
       },
       balanced: {
-        academic: 'meeting',
-        behaviour: 'positive',
-        effort: 'generally',
-        engagement: 'curious',
+        academic: 'medium',
+        behaviour: 'medium',
+        effort: 'medium',
+        engagement: 'medium',
         strengths: ['Works collaboratively', 'Persists through challenges'],
         next: ['Share thinking with the class'],
       },
       supportive: {
-        academic: 'developing',
-        behaviour: 'reminders',
-        effort: 'variable',
-        engagement: 'reluctant',
+        academic: 'low',
+        behaviour: 'low',
+        effort: 'low',
+        engagement: 'low',
         strengths: ['Organises materials well'],
         next: ['Focus on completing tasks on time', 'Ask clarifying questions more often'],
       },
@@ -134,33 +183,73 @@ const ReportCommentGenerator = () => {
     setStrengths(chosen.strengths);
     setNextSteps(chosen.next);
     setTone(preset);
+    setShuffleCount((count) => count + 1);
   };
 
   const comment = useMemo(() => {
-    const name = studentName || 'This student';
+    const displayName = studentName.trim() || 'This student';
 
-    const intro = `${name} ${summaryTemplates[selections.academic] || ''}.`;
-    const behaviourLine = `${name.split(' ')[0] || name} ${behaviourTemplates[selections.behaviour] || ''} and ${effortTemplates[selections.effort] || ''}.`;
-    const engagementLine = `${name.split(' ')[0] || name} ${engagementTemplates[selections.engagement] || ''}.`;
+    const hashString = (value) => {
+      let hash = 0;
+      for (let i = 0; i < value.length; i += 1) {
+        hash = ((hash << 5) - hash) + value.charCodeAt(i);
+        hash |= 0;
+      }
+      return hash;
+    };
+
+    const selectLine = (pool, salt) => {
+      if (!pool?.length) return '';
+      const index = Math.abs(hashString(`${salt}-${shuffleCount}`)) % pool.length;
+      return pool[index];
+    };
+
+    const fillTemplate = (template, subject) => template
+      .replaceAll('{SUBJECT}', subject)
+      .replaceAll('{POSSESSIVE}', selectedPronouns.possessive)
+      .replaceAll('{OBJECT}', selectedPronouns.objective)
+      .replaceAll('{REFLEXIVE}', selectedPronouns.reflexive);
+
+    const subjectForIndex = (index) => (index % 2 === 0 ? displayName : selectedPronouns.subjectiveCap);
+
+    const academicLine = fillTemplate(
+      selectLine(sentencePools.academic[selections.academic], 'academic'),
+      subjectForIndex(0),
+    );
+
+    const behaviourLine = fillTemplate(
+      selectLine(sentencePools.behaviour[selections.behaviour], 'behaviour'),
+      subjectForIndex(1),
+    );
+
+    const effortLine = fillTemplate(
+      selectLine(sentencePools.effort[selections.effort], 'effort'),
+      subjectForIndex(2),
+    );
+
+    const engagementLine = fillTemplate(
+      selectLine(sentencePools.engagement[selections.engagement], 'engagement'),
+      subjectForIndex(3),
+    );
 
     const strengthsLine = strengths.length
-      ? `Strengths: ${strengths.join('; ')}.`
+      ? `${subjectForIndex(4)} showcased strengths such as ${strengths.join(', ')} this semester.`
       : '';
 
     const nextStepsLine = nextSteps.length
-      ? `Next steps: ${nextSteps.join('; ')}.`
-      : 'Next steps: keep up the great work.';
+      ? `${subjectForIndex(5)} identified next steps such as ${nextSteps.join(', ')} to guide future growth.`
+      : `${subjectForIndex(5)} finished the semester ready to carry this momentum forward.`;
 
     const closing = tone === 'supportive'
-      ? 'We will continue to scaffold learning with clear routines and checkpoints.'
+      ? `${subjectForIndex(6)} responded best when routines were predictable, and that structure will continue.`
       : tone === 'balanced'
-        ? 'Thank you for the continued partnership at home.'
-        : 'Excellent progress this term—keep aiming high!';
+        ? `${subjectForIndex(6)} finished the semester ready to build on this solid foundation.`
+        : `${subjectForIndex(6)} ended the semester on a high note and is well positioned for next steps.`;
 
-    return [intro, behaviourLine, engagementLine, strengthsLine, nextStepsLine, closing]
+    return [academicLine, behaviourLine, effortLine, engagementLine, strengthsLine, nextStepsLine, closing]
       .filter(Boolean)
       .join(' ');
-  }, [studentName, selections, strengths, nextSteps, tone]);
+  }, [studentName, selections, strengths, nextSteps, tone, shuffleCount, selectedPronouns]);
 
   const copyComment = async () => {
     try {
@@ -215,6 +304,29 @@ const ReportCommentGenerator = () => {
             className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <p className="text-xs text-slate-500 mt-1">Leave blank for a generic comment.</p>
+
+          <div className="mt-4">
+            <p className="text-sm font-semibold text-slate-700 mb-2">Pronouns</p>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { value: 'neutral', label: 'They/Them' },
+                { value: 'she', label: 'She/Her' },
+                { value: 'he', label: 'He/Him' },
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => setPronounKey(option.value)}
+                  className={`px-3 py-2 rounded-lg text-sm border transition ${
+                    pronounKey === option.value
+                      ? 'bg-indigo-600 text-white border-indigo-600 shadow'
+                      : 'bg-white text-slate-700 border-slate-200 hover:border-indigo-400'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         <div className="bg-white p-4 rounded-xl shadow-md border border-slate-100 space-y-3">
@@ -286,12 +398,20 @@ const ReportCommentGenerator = () => {
             </h3>
             <p className="text-slate-600 mt-1">Updates instantly as you change criteria.</p>
           </div>
-          <button
-            onClick={copyComment}
-            className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold shadow hover:bg-blue-700 transition"
-          >
-            {copied ? 'Copied!' : 'Copy to clipboard'}
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setShuffleCount((count) => count + 1)}
+              className="px-4 py-2 rounded-lg bg-slate-200 text-slate-800 font-semibold shadow hover:bg-slate-300 transition"
+            >
+              Reshuffle sentences
+            </button>
+            <button
+              onClick={copyComment}
+              className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold shadow hover:bg-blue-700 transition"
+            >
+              {copied ? 'Copied!' : 'Copy to clipboard'}
+            </button>
+          </div>
         </div>
 
         <div className="mt-4 bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-800 leading-relaxed">
