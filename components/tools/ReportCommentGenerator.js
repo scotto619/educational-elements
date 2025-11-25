@@ -37,6 +37,33 @@ const pronounSets = {
   he: { subjective: 'he', subjectiveCap: 'He', objective: 'him', possessive: 'his', reflexive: 'himself' },
 };
 
+const qualitiesOptions = [
+  'enthusiastic',
+  'capable',
+  'caring',
+  'thoughtful',
+  'resilient',
+  'curious',
+  'collaborative',
+  'adaptable',
+  'creative',
+  'reflective',
+  'dependable',
+  'resourceful',
+  'confident',
+  'determined',
+  'supportive',
+  'respectful',
+  'empathetic',
+  'motivated',
+  'patient',
+  'responsible',
+  'organised',
+  'open-minded',
+  'inquisitive',
+  'self-directed',
+];
+
 const strengthOptions = [
   'working collaboratively with peers',
   'leading group tasks responsibly',
@@ -319,6 +346,15 @@ const sentencePools = {
   },
 };
 
+const openingPools = [
+  '{NAME} was {ARTICLE} {QUALITIES} student who embraced learning across the semester.',
+  '{NAME} was {ARTICLE} {QUALITIES} student who navigated the semester with care and focus.',
+  '{NAME} was {ARTICLE} {QUALITIES} student who consistently contributed to our classroom community.',
+  '{NAME} was {ARTICLE} {QUALITIES} student who approached each semester challenge with maturity.',
+  '{NAME} was {ARTICLE} {QUALITIES} student who thrived when collaborating and reflecting.',
+  '{NAME} was {ARTICLE} {QUALITIES} student who made the most of every semester opportunity.',
+];
+
 const ReportCommentGenerator = () => {
   const [studentName, setStudentName] = useState('');
   const [selections, setSelections] = useState({
@@ -327,6 +363,7 @@ const ReportCommentGenerator = () => {
     effort: 'medium',
     engagement: 'medium',
   });
+  const [qualities, setQualities] = useState(['enthusiastic']);
   const [strengths, setStrengths] = useState(['working collaboratively with peers']);
   const [nextSteps, setNextSteps] = useState(['practising goal setting each week']);
   const [tone, setTone] = useState('celebratory');
@@ -349,6 +386,18 @@ const ReportCommentGenerator = () => {
     .filter(Boolean)
     .map((entry) => entry.charAt(0).toLowerCase() + entry.slice(1));
 
+  const formatListForSentence = (list) => {
+    if (list.length === 0) return '';
+    if (list.length === 1) return list[0];
+    if (list.length === 2) return `${list[0]} and ${list[1]}`;
+    return `${list.slice(0, -1).join(', ')}, and ${list[list.length - 1]}`;
+  };
+
+  const chooseArticle = (word) => {
+    if (!word) return 'a';
+    return ['a', 'e', 'i', 'o', 'u'].includes(word[0].toLowerCase()) ? 'an' : 'a';
+  };
+
   const applyPreset = (preset) => {
     const presets = {
       celebratory: {
@@ -356,6 +405,7 @@ const ReportCommentGenerator = () => {
         behaviour: 'veryHigh',
         effort: 'veryHigh',
         engagement: 'veryHigh',
+        qualities: ['enthusiastic', 'capable'],
         strengths: ['taking initiative without prompting', 'communicating ideas clearly'],
         next: ['seeking feedback and acting on it'],
       },
@@ -364,6 +414,7 @@ const ReportCommentGenerator = () => {
         behaviour: 'medium',
         effort: 'medium',
         engagement: 'medium',
+        qualities: ['reflective', 'dependable'],
         strengths: ['working collaboratively with peers', 'persisting through challenges'],
         next: ['sharing thinking with the class regularly'],
       },
@@ -372,6 +423,7 @@ const ReportCommentGenerator = () => {
         behaviour: 'veryLow',
         effort: 'veryLow',
         engagement: 'veryLow',
+        qualities: ['caring', 'patient'],
         strengths: ['organising materials and deadlines well'],
         next: ['focusing on completing tasks on time', 'asking clarifying questions more often'],
       },
@@ -386,6 +438,7 @@ const ReportCommentGenerator = () => {
       effort: chosen.effort,
       engagement: chosen.engagement,
     });
+    setQualities(chosen.qualities || ['enthusiastic']);
     setStrengths(chosen.strengths);
     setNextSteps(chosen.next);
     setTone(preset);
@@ -423,33 +476,42 @@ const ReportCommentGenerator = () => {
 
     const subjectForIndex = (index) => (index % 2 === 0 ? displayName : selectedPronouns.subjectiveCap);
 
-    const academicLine = fillTemplate(selectLine(poolForSelection('academic'), 'academic'), subjectForIndex(0));
+    const formattedQualities = normaliseList(qualities);
+    const qualitiesList = formatListForSentence(formattedQualities);
+    const chosenArticle = chooseArticle(formattedQualities[0]);
+    const openingTemplate = selectLine(openingPools, 'opening');
+    const openingLine = openingTemplate
+      .replace('{NAME}', displayName)
+      .replace('{ARTICLE}', chosenArticle)
+      .replace('{QUALITIES}', qualitiesList || 'dedicated');
 
-    const behaviourLine = fillTemplate(selectLine(poolForSelection('behaviour'), 'behaviour'), subjectForIndex(1));
+    const academicLine = fillTemplate(selectLine(poolForSelection('academic'), 'academic'), subjectForIndex(1));
 
-    const effortLine = fillTemplate(selectLine(poolForSelection('effort'), 'effort'), subjectForIndex(2));
+    const behaviourLine = fillTemplate(selectLine(poolForSelection('behaviour'), 'behaviour'), subjectForIndex(2));
 
-    const engagementLine = fillTemplate(selectLine(poolForSelection('engagement'), 'engagement'), subjectForIndex(3));
+    const effortLine = fillTemplate(selectLine(poolForSelection('effort'), 'effort'), subjectForIndex(3));
+
+    const engagementLine = fillTemplate(selectLine(poolForSelection('engagement'), 'engagement'), subjectForIndex(4));
 
     const formattedStrengths = normaliseList(strengths);
     const formattedNextSteps = normaliseList(nextSteps);
 
     const strengthsLine = formattedStrengths.length
-      ? `${subjectForIndex(4)} showcased strengths such as ${formattedStrengths.join(', ')} this semester.`
+      ? `${subjectForIndex(5)} showcased strengths such as ${formatListForSentence(formattedStrengths)} this semester.`
       : '';
 
     const nextStepsLine = formattedNextSteps.length
-      ? `${subjectForIndex(5)} identified next steps such as ${formattedNextSteps.join(', ')} to guide future growth.`
-      : `${subjectForIndex(5)} finished the semester ready to carry this momentum forward.`;
+      ? `${subjectForIndex(6)} identified next steps such as ${formatListForSentence(formattedNextSteps)} to guide future growth.`
+      : `${subjectForIndex(6)} finished the semester ready to carry this momentum forward.`;
 
     const tonePool = closingPools[tone] || closingPools.balanced;
     const closingTemplate = selectLine(tonePool, `closing-${tone}`);
-    const closing = fillTemplate(closingTemplate, subjectForIndex(6));
+    const closing = fillTemplate(closingTemplate, subjectForIndex(7));
 
-    return [academicLine, behaviourLine, effortLine, engagementLine, strengthsLine, nextStepsLine, closing]
+    return [openingLine, academicLine, behaviourLine, effortLine, engagementLine, strengthsLine, nextStepsLine, closing]
       .filter(Boolean)
       .join(' ');
-  }, [studentName, selections, strengths, nextSteps, tone, shuffleCount, selectedPronouns]);
+  }, [studentName, selections, strengths, nextSteps, tone, shuffleCount, selectedPronouns, qualities]);
 
   const copyComment = async () => {
     try {
@@ -554,6 +616,24 @@ const ReportCommentGenerator = () => {
         </div>
 
         <div className="bg-white p-4 rounded-xl shadow-md border border-slate-100 space-y-3">
+          <h3 className="text-lg font-semibold text-slate-800">Opening qualities</h3>
+          <p className="text-sm text-slate-600">These build the first sentence like "Jordan was an enthusiastic student who..."</p>
+          <div className="flex flex-wrap gap-2">
+            {qualitiesOptions.map((item) => (
+              <button
+                key={item}
+                onClick={() => toggleListSelection(item, qualities, setQualities)}
+                className={`px-3 py-2 rounded-lg text-sm border transition ${
+                  qualities.includes(item)
+                    ? 'bg-purple-600 text-white border-purple-600 shadow'
+                    : 'bg-white text-slate-700 border-slate-200 hover:border-purple-400'
+                }`}
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+
           <h3 className="text-lg font-semibold text-slate-800">Strengths</h3>
           <div className="flex flex-wrap gap-2">
             {strengthOptions.map((item) => (
