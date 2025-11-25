@@ -502,7 +502,7 @@ const ReportCommentGenerator = () => {
 
     const nextStepsLine = formattedNextSteps.length
       ? `${subjectForIndex(6)} identified next steps such as ${formatListForSentence(formattedNextSteps)} to guide future growth.`
-      : `${subjectForIndex(6)} finished the semester ready to carry this momentum forward.`;
+      : '';
 
     const tonePool = closingPools[tone] || closingPools.balanced;
     const closingTemplate = selectLine(tonePool, `closing-${tone}`);
