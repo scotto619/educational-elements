@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { auth, firestore } from '../utils/firebase';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
 import { DEFAULT_UPDATES, fetchDashboardUpdates } from '../services/globalContent';
 
 const OWNER_EMAIL = 'scotto6190@gmail.com';
@@ -366,9 +366,18 @@ export default function Dashboard() {
     }));
   };
 
+  const generateClassCode = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = '';
+    for (let i = 0; i < 6; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  };
+
   const createClass = async () => {
     setIsCreatingClass(true);
-    
+
     try {
       const studentsArray = studentList.map(student => ({
         id: student.id,
@@ -400,27 +409,80 @@ export default function Dashboard() {
         ]
       };
 
-      // Always create in V1 format for now (the migration will handle V1->V2 conversion)
-      const docRef = doc(firestore, 'users', user.uid);
-      const currentUserData = await getDoc(docRef);
-      const existingClasses = currentUserData.exists() ? (currentUserData.data().classes || []) : [];
-      const updated = [...existingClasses, newClass];
-      
-      await updateDoc(docRef, { 
-        classes: updated,
-        activeClassId: newClass.id
-      });
-      
-      // Reload classes after creation
       if (architectureVersion === 'v2') {
+        const batch = writeBatch(firestore);
+        const now = new Date().toISOString();
+        const classId = `class_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const classRef = doc(firestore, 'classes', classId);
+        const membershipRef = doc(firestore, 'class_memberships', classId);
+        const userRef = doc(firestore, 'users', user.uid);
+
+        const classData = {
+          id: classId,
+          teacherId: user.uid,
+          name: className,
+          classCode: generateClassCode(),
+          createdAt: now,
+          updatedAt: now,
+          xpCategories: newClass.xpCategories,
+          classRewards: [],
+          activeQuests: [],
+          attendanceData: {},
+          toolkitData: {},
+          studentCount: studentsArray.length,
+          lastActivity: now,
+          archived: false
+        };
+
+        const studentIds = studentsArray.map(student => student.id);
+
+        batch.set(classRef, classData);
+        batch.set(membershipRef, {
+          classId,
+          teacherId: user.uid,
+          students: studentIds,
+          createdAt: now,
+          updatedAt: now
+        });
+
+        studentsArray.forEach(student => {
+          const studentRef = doc(firestore, 'students', student.id);
+          batch.set(studentRef, {
+            ...student,
+            classId,
+            classCode: classData.classCode,
+            lastActivity: now,
+            archived: false
+          });
+        });
+
+        batch.update(userRef, {
+          activeClassId: classId,
+          updatedAt: now,
+          version: '2.0'
+        });
+
+        await batch.commit();
+
         const v2Classes = await loadV2Classes(user.uid);
         setSavedClasses(v2Classes);
       } else {
+        // Always create in V1 format for now (the migration will handle V1->V2 conversion)
+        const docRef = doc(firestore, 'users', user.uid);
+        const currentUserData = await getDoc(docRef);
+        const existingClasses = currentUserData.exists() ? (currentUserData.data().classes || []) : [];
+        const updated = [...existingClasses, newClass];
+
+        await updateDoc(docRef, {
+          classes: updated,
+          activeClassId: newClass.id
+        });
+
         const userData = await getDoc(docRef);
         const v1Classes = loadV1Classes(userData.data());
         setSavedClasses(v1Classes);
       }
-      
+
       setShowCreateClassModal(false);
       setCurrentStep(1);
       
