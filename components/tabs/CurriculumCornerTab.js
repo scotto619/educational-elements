@@ -266,34 +266,6 @@ const subjects = [
         component: InteractiveClock
       },
       {
-        id: 'math-mentals',
-        name: 'Math Mentals',
-        icon: '🧮',
-        description: 'Daily number facts practice for automatic recall - like Wordle for math!',
-        component: MathMentals
-      },
-      {
-        id: 'worksheet-generator',
-        name: 'Worksheet Generator',
-        icon: '📄',
-        description: 'Create professional printable math worksheets for any topic',
-        component: WorksheetGenerator
-      },
-      {
-        id: 'math-warmup',
-        name: 'Math Warmup',
-        icon: '🔥',
-        description: 'Daily number activities and mathematical thinking',
-        component: MathWarmup
-      },
-      {
-        id: 'area-perimeter',
-        name: 'Area & Perimeter',
-        icon: '📏',
-        description: 'Interactive tool for exploring area and perimeter concepts',
-        component: AreaPerimeterTool
-      },
-      {
         id: 'numbers-board',
         name: 'Numbers Board',
         icon: '💯',
@@ -320,6 +292,37 @@ const subjects = [
         icon: '½',
         description: 'Visual fraction learning tools',
         component: ComingSoon
+      },
+      {
+        id: 'math-mentals',
+        name: 'Math Mentals',
+        icon: '🧮',
+        description: 'Daily number facts practice for automatic recall - like Wordle for math!',
+        component: MathMentals
+      },
+      {
+        id: 'worksheet-generator',
+        name: 'Worksheet Generator',
+        icon: '📄',
+        description: 'Create professional printable math worksheets for any topic',
+        component: WorksheetGenerator,
+        underConstruction: true
+      },
+      {
+        id: 'math-warmup',
+        name: 'Math Warmup',
+        icon: '🔥',
+        description: 'Daily number activities and mathematical thinking',
+        component: MathWarmup,
+        underConstruction: true
+      },
+      {
+        id: 'area-perimeter',
+        name: 'Area & Perimeter',
+        icon: '📏',
+        description: 'Interactive tool for exploring area and perimeter concepts',
+        component: AreaPerimeterTool,
+        underConstruction: true
       }
     ]
   },
