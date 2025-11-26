@@ -4,6 +4,14 @@ import { DEFAULT_PET_IMAGE } from '../../utils/gameHelpers';
 import { normalizeImageSource, serializeFallbacks, createImageErrorHandler } from '../../utils/imageFallback';
 import { CARD_EFFECT_MAP } from '../../constants/cardEffects';
 
+const CLASS_REWARD_TIERS = [
+  { xp: 1000, label: 'Class Prize 1' },
+  { xp: 2000, label: 'Class Prize 2' },
+  { xp: 3000, label: 'Class Prize 3' },
+  { xp: 4000, label: 'Class Prize 4' },
+  { xp: 5000, label: 'Major Prize' }
+];
+
 const StudentDashboard = ({
   studentData,
   classData,
@@ -20,6 +28,25 @@ const StudentDashboard = ({
   const petImageErrorHandler = createImageErrorHandler(DEFAULT_PET_IMAGE);
   const equippedEffect = useMemo(() => CARD_EFFECT_MAP[studentData?.equippedCardEffect], [studentData?.equippedCardEffect]);
   const effectAccent = equippedEffect?.colors?.[0];
+
+  const classTotalXP = useMemo(() => {
+    const roster = classData?.students || [];
+    return roster.reduce((sum, student) => sum + (student.totalPoints || 0), 0);
+  }, [classData?.students]);
+
+  const classRewardProgress = useMemo(() => {
+    const maxTierXP = CLASS_REWARD_TIERS[CLASS_REWARD_TIERS.length - 1].xp;
+    const progress = Math.min(100, Math.round((classTotalXP / maxTierXP) * 100));
+    const nextTier = CLASS_REWARD_TIERS.find((tier) => classTotalXP < tier.xp);
+
+    return {
+      progress,
+      nextTier,
+      nextMessage: nextTier
+        ? `${Math.max(0, nextTier.xp - classTotalXP)} XP until ${nextTier.label}`
+        : '🎉 Major prize unlocked!'
+    };
+  }, [classTotalXP]);
 
   const resolvePetImage = (pet) => normalizeImageSource(getPetImage(pet), DEFAULT_PET_IMAGE);
 
@@ -70,6 +97,67 @@ const StudentDashboard = ({
         ) : (
           <p className="text-sm text-gray-500">No notices yet. Check back soon!</p>
         )}
+      </div>
+
+      {/* Class Reward Scale */}
+      <div className="bg-gradient-to-r from-purple-50 via-blue-50 to-pink-50 border border-purple-100 rounded-xl p-4 md:p-6 shadow-inner">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3 md:mb-4">
+          <div className="flex items-center gap-2">
+            <div className="text-2xl">🎁</div>
+            <div>
+              <p className="text-xs md:text-sm text-gray-600">Whole class progress</p>
+              <h3 className="text-lg md:text-xl font-bold text-purple-800">Class Reward Scale</h3>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-xs md:text-sm text-gray-500">Total class XP</p>
+            <p className="text-xl md:text-2xl font-bold text-purple-700">{classTotalXP.toLocaleString()} XP</p>
+          </div>
+        </div>
+
+        <div className="relative h-3 md:h-4 bg-white rounded-full overflow-hidden border border-purple-100">
+          <div
+            className="absolute inset-y-0 left-0 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 shadow-sm"
+            style={{ width: `${classRewardProgress.progress}%` }}
+          ></div>
+          <div className="absolute inset-0 flex justify-between">
+            {CLASS_REWARD_TIERS.map((tier) => {
+              const reached = classTotalXP >= tier.xp;
+              return (
+                <div key={tier.xp} className="relative flex-1">
+                  <div
+                    className={`absolute top-1/2 -translate-y-1/2 w-3 h-3 md:w-4 md:h-4 rounded-full border-2 ${
+                      reached ? 'bg-amber-400 border-amber-500 shadow-sm' : 'bg-white border-purple-200'
+                    }`}
+                    style={{ left: '50%', transform: 'translate(-50%, -50%)' }}
+                  ></div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="mt-3 grid grid-cols-5 gap-2 text-center text-[10px] md:text-xs font-semibold text-purple-700">
+          {CLASS_REWARD_TIERS.map((tier) => {
+            const reached = classTotalXP >= tier.xp;
+            return (
+              <div
+                key={tier.xp}
+                className={`px-2 py-1 rounded-lg border ${
+                  reached ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-white border-purple-100 text-purple-600'
+                }`}
+              >
+                <div className="font-bold">{tier.xp.toLocaleString()} XP</div>
+                <div>{tier.label}</div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="mt-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2 text-xs md:text-sm text-gray-700">
+          <span className="font-semibold text-purple-800">{classRewardProgress.nextMessage}</span>
+          <span className="text-gray-500">{classRewardProgress.progress}% of 5,000 XP</span>
+        </div>
       </div>
 
       {/* Stats Grid - Mobile Optimized */}

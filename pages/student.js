@@ -252,6 +252,7 @@ const StudentPortal = () => {
         setIsLoggedIn(true);
         setStudentData(session.studentData);
         setClassData(session.classData);
+        setAvailableStudents(session.classData?.students || []);
         setTeacherUserId(session.teacherUserId);
         setArchitectureVersion(session.architectureVersion || 'unknown');
         setActiveTab('dashboard');
@@ -517,12 +518,14 @@ const StudentPortal = () => {
         return;
       }
 
+      const classDataWithStudents = { ...classResult.classData, students: classResult.students };
+
       setAvailableStudents(classResult.students);
-      setClassData(classResult.classData);
+      setClassData(classDataWithStudents);
       setTeacherUserId(classResult.teacherUserId);
       setArchitectureVersion(classResult.architectureVersion);
       setLoginStep('studentSelect');
-      
+
     } catch (error) {
       console.error('💥 Error finding class:', error);
       setError('Unable to connect to class. Please check your internet connection and try again.');
@@ -681,15 +684,17 @@ const StudentPortal = () => {
 
       console.log('✅ Password verified successfully via direct method');
 
+      const classDataWithStudents = classData?.students ? classData : { ...classData, students: availableStudents };
+
       // Login successful - create session
       const session = {
         studentData: selectedStudent,
-        classData: classData,
+        classData: classDataWithStudents,
         teacherUserId: teacherUserId,
         architectureVersion: architectureVersion,
         loginTime: new Date().toISOString()
       };
-      
+
       try {
         sessionStorage.setItem('studentSession', JSON.stringify(session));
       } catch (sessionError) {
@@ -698,6 +703,7 @@ const StudentPortal = () => {
 
       loginEggGrantAttemptedRef.current = false;
       setStudentData(selectedStudent);
+      setClassData(classDataWithStudents);
       refreshDailyMysteryBoxAvailability(selectedStudent, { autoOpen: true });
       setIsLoggedIn(true);
       setActiveTab('dashboard');
