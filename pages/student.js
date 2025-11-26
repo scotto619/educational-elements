@@ -15,6 +15,7 @@ import StudentSpelling from '../components/student/StudentSpelling';
 import StudentReading from '../components/student/StudentReading';
 import StudentMaths from '../components/student/StudentMaths';
 import StudentMorphology from '../components/student/StudentMorphology';
+import StudentScience from '../components/student/StudentScience';
 import VisualWritingPrompts from '../components/curriculum/literacy/VisualWritingPrompts';
 import DailyMysteryBoxModal from '../components/student/DailyMysteryBoxModal';
 import HiddenPresent from '../components/student/HiddenPresent';
@@ -1807,6 +1808,7 @@ const StudentPortal = () => {
     { id: 'dashboard', name: 'Home', icon: '🏠', shortName: 'Home' },
     { id: 'maths', name: 'Maths', icon: '🔢', shortName: 'Maths', hasSubTabs: true },
     { id: 'literacy', name: 'Literacy', icon: '📚', shortName: 'Literacy', hasSubTabs: true },
+    { id: 'science', name: 'Science', icon: '🪐', shortName: 'Science' },
     { id: 'shop', name: 'Shop', icon: '🛒', shortName: 'Shop' },
     { id: 'games', name: 'Games', icon: '🎮', shortName: 'Games' },
     { id: 'quizshow', name: 'Quiz Show', icon: '🎪', shortName: 'Quiz' }
@@ -1920,6 +1922,9 @@ const StudentPortal = () => {
               />
             );
         }
+
+      case 'science':
+        return <StudentScience />;
       
       case 'shop':
         return (
