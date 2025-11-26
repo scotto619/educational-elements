@@ -108,7 +108,8 @@ const subjects = [
         description: 'Engaging texts for advanced readers - longer passages with modern topics kids love',
         component: ReadingForFun,
         isNew: true,
-        literacyCategory: 'reading'
+        literacyCategory: 'reading',
+        underConstruction: true
       },
       {
         id: 'readers-theatre',
@@ -117,7 +118,8 @@ const subjects = [
         description: 'Drama scripts with character roles for student performances and oral reading practice',
         component: ReadersTheatre,
         isNew: true,
-        literacyCategory: ['reading', 'speaking']
+        literacyCategory: ['reading', 'speaking'],
+        underConstruction: true
       },
       {
         id: 'morphology',
@@ -151,7 +153,8 @@ const subjects = [
             literacyCategory: 'phonics'
           }
         ],
-        literacyCategory: 'phonics'
+        literacyCategory: 'phonics',
+        underConstruction: true
       },
       {
         id: 'spelling-program',
@@ -168,7 +171,8 @@ const subjects = [
         icon: '🧠',
         description: 'Text analysis and understanding activities',
         component: ReadingComprehension,
-        literacyCategory: 'reading'
+        literacyCategory: 'reading',
+        underConstruction: true
       },
       {
         id: 'visual-writing-prompts',
@@ -185,7 +189,8 @@ const subjects = [
         description: 'Discover definitions, synonyms, and build vibrant class word lists',
         component: VocabularyCorner,
         literacyCategory: ['spelling', 'reading'],
-        isNew: true
+        isNew: true,
+        underConstruction: true
       },
       {
         id: 'grammar-workshop',
@@ -622,6 +627,12 @@ const CurriculumCornerTab = ({
           return category === literacyFocus;
         })
       : activeSubject.activities;
+    const orderedActivities = displayedActivities
+      .slice()
+      .sort((a, b) => {
+        if (a.underConstruction === b.underConstruction) return 0;
+        return a.underConstruction ? 1 : -1;
+      });
     const selectedFocus = isLiteracySubject
       ? literacyFocusAreas.find((area) => area.id === literacyFocus)
       : null;
@@ -700,7 +711,7 @@ const CurriculumCornerTab = ({
 
         {/* Activities Grid */}
         <div className={`grid grid-cols-1 md:grid-cols-2 ${isLiteracySubject ? 'xl:grid-cols-2 2xl:grid-cols-3' : 'lg:grid-cols-3'} gap-6`}>
-          {displayedActivities.map(activity => (
+          {orderedActivities.map(activity => (
             <button
               key={activity.id}
               onClick={() => handleActivitySelect(activity)}
@@ -732,11 +743,17 @@ const CurriculumCornerTab = ({
               </div>
               <div className="flex justify-between items-center">
                 <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                  activity.component === ComingSoon 
-                    ? 'bg-amber-100 text-amber-700' 
-                    : 'bg-green-100 text-green-700'
+                  activity.underConstruction
+                    ? 'bg-amber-100 text-amber-700'
+                    : activity.component === ComingSoon
+                      ? 'bg-amber-100 text-amber-700'
+                      : 'bg-green-100 text-green-700'
                 }`}>
-                  {activity.component === ComingSoon ? 'Coming Soon' : 'Available'}
+                  {activity.underConstruction
+                    ? 'Under Construction'
+                    : activity.component === ComingSoon
+                      ? 'Coming Soon'
+                      : 'Available'}
                 </span>
                 <div className="flex items-center gap-2">
                   {activity.hasYearLevels && (
@@ -747,9 +764,14 @@ const CurriculumCornerTab = ({
                   <span className="text-blue-500 font-semibold">Open →</span>
                 </div>
               </div>
+              {activity.underConstruction && (
+                <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] rounded-xl flex items-center justify-center text-center p-4 pointer-events-none">
+                  <span className="bg-amber-500 text-white px-3 py-1 rounded-full shadow">Under Construction</span>
+                </div>
+              )}
             </button>
           ))}
-          {displayedActivities.length === 0 && (
+          {orderedActivities.length === 0 && (
             <div className="col-span-full">
               <div className="bg-white border border-purple-200 rounded-2xl p-8 text-center shadow-sm">
                 <div className="text-4xl mb-3">✨</div>
