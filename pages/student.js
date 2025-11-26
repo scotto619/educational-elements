@@ -13,7 +13,6 @@ import StudentGames from '../components/student/StudentGames';
 import StudentDashboard from '../components/student/StudentDashboard';
 import StudentSpelling from '../components/student/StudentSpelling';
 import StudentReading from '../components/student/StudentReading';
-import StudentMathMentals from '../components/student/StudentMathMentals';
 import StudentMaths from '../components/student/StudentMaths';
 import StudentMorphology from '../components/student/StudentMorphology';
 import VisualWritingPrompts from '../components/curriculum/literacy/VisualWritingPrompts';
@@ -1814,7 +1813,6 @@ const StudentPortal = () => {
   ];
 
   const mathsSubTabs = [
-    { id: 'mentals', name: 'Mental Maths', icon: '🧮', shortName: 'Mentals' },
     { id: 'general', name: 'General Maths', icon: '➕', shortName: 'General' }
   ];
 
@@ -1833,7 +1831,7 @@ const StudentPortal = () => {
     
     // Set default subtab for tabs with subtabs
     if (tabId === 'maths') {
-      setActiveSubTab('mentals');
+      setActiveSubTab('general');
     } else if (tabId === 'literacy') {
       setActiveSubTab(hasMorphologyLesson ? 'morphology' : 'reading');
     } else {
@@ -1861,17 +1859,9 @@ const StudentPortal = () => {
       case 'maths':
         // Render maths subtabs content
         switch (activeSubTab) {
-          case 'mentals':
-            return (
-              <StudentMathMentals 
-                studentData={studentData}
-                classData={classData}
-                showToast={showToast}
-              />
-            );
           case 'general':
             return (
-              <StudentMaths 
+              <StudentMaths
                 studentData={studentData}
                 classData={classData}
                 showToast={showToast}
@@ -1880,10 +1870,11 @@ const StudentPortal = () => {
             );
           default:
             return (
-              <StudentMathMentals 
+              <StudentMaths
                 studentData={studentData}
                 classData={classData}
                 showToast={showToast}
+                updateStudentData={updateStudentData}
               />
             );
         }

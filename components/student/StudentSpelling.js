@@ -1435,17 +1435,23 @@ const StudentSpelling = ({
   const selectedWords = selectedList?.words || [];
 
   const findStudentAssignments = () => {
+    if (!studentData) {
+      setStudentAssignments(null);
+      return;
+    }
+
     // Get spelling groups from class toolkit data
-    const spellingGroups = classData?.toolkitData?.spellingGroups || [];
-    
+    const spellingGroups = Array.isArray(classData?.toolkitData?.spellingGroups)
+      ? classData.toolkitData.spellingGroups
+      : [];
+
     // Find which group this student belongs to
-    const studentGroup = spellingGroups.find(group => 
-      group.students.some(s => s.id === studentData.id)
+    const studentGroup = spellingGroups.find(group =>
+      Array.isArray(group?.students) && group.students.some(s => s.id === studentData.id)
     );
 
-    if (studentGroup) {
-      // Get assigned spelling lists
-      const assignedLists = studentGroup.assignedLists.map(listId => {
+    const assignedLists = (studentGroup?.assignedLists || [])
+      .map(listId => {
         const baseList = SPELLING_LISTS.find(list => list.id === listId);
         if (!baseList) return null;
         const passage = passageMap[listId];
@@ -1454,8 +1460,10 @@ const StudentSpelling = ({
           passage,
           texts: passage?.texts || []
         };
-      }).filter(Boolean);
+      })
+      .filter(Boolean);
 
+    if (studentGroup && assignedLists.length > 0) {
       setStudentAssignments({
         groupName: studentGroup.name,
         groupColor: studentGroup.color,
