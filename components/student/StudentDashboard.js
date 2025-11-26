@@ -201,50 +201,6 @@ const StudentDashboard = ({
         </div>
       </div>
 
-      {/* Quick Actions - Mobile Optimized */}
-      <div className="bg-white rounded-xl p-4 md:p-6 shadow-lg">
-        <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-3 md:mb-4">🚀 Quick Actions</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
-          <button
-            type="button"
-            onClick={() => onOpenDailyMysteryBox?.()}
-            className={`relative overflow-hidden rounded-lg p-3 md:p-4 text-left transition-all active:scale-95 shadow-lg ${
-              dailyMysteryBoxAvailable
-                ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:shadow-xl'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            } ${onOpenDailyMysteryBox ? '' : 'cursor-not-allowed'}`}
-            disabled={!onOpenDailyMysteryBox}
-          >
-            <div className="text-xl md:text-2xl mb-1">🎁</div>
-            <div className="text-xs md:text-sm font-semibold">
-              {dailyMysteryBoxAvailable ? 'Claim Daily Mystery Box' : 'Daily Mystery Box'}
-            </div>
-            <div className={`text-[10px] md:text-xs mt-1 ${dailyMysteryBoxAvailable ? 'text-purple-100' : 'text-gray-500'}`}>
-              {dailyMysteryBoxAvailable ? 'Free reward waiting!' : 'Come back tomorrow'}
-            </div>
-          </button>
-
-          <button className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-3 md:p-4 rounded-lg text-center hover:shadow-lg transition-all active:scale-95">
-            <div className="text-xl md:text-2xl mb-1">🛍️</div>
-            <div className="text-xs md:text-sm font-semibold">Visit Shop</div>
-          </button>
-
-          <button className="bg-gradient-to-r from-green-500 to-green-600 text-white p-3 md:p-4 rounded-lg text-center hover:shadow-lg transition-all active:scale-95">
-            <div className="text-xl md:text-2xl mb-1">🎮</div>
-            <div className="text-xs md:text-sm font-semibold">Play Games</div>
-          </button>
-          
-          <button className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-3 md:p-4 rounded-lg text-center hover:shadow-lg transition-all active:scale-95">
-            <div className="text-xl md:text-2xl mb-1">🎪</div>
-            <div className="text-xs md:text-sm font-semibold">Quiz Show</div>
-          </button>
-          
-          <button className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-3 md:p-4 rounded-lg text-center hover:shadow-lg transition-all active:scale-95">
-            <div className="text-xl md:text-2xl mb-1">👥</div>
-            <div className="text-xs md:text-sm font-semibold">Class Info</div>
-          </button>
-        </div>
-      </div>
     </div>
   );
 };

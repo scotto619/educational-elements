@@ -1,4 +1,4 @@
-// components/tabs/TeachersToolkitTab.js - UPDATED WITH SPECIALIST TIMETABLE CREATOR
+// components/tabs/TeachersToolkitTab.js - UPDATED TOOLKIT GRID
 import React, { useState, useEffect, useMemo } from 'react';
 
 // Import tool components from the tools folder
@@ -12,7 +12,6 @@ import ClassroomJobs from '../tools/ClassroomJobs';
 import TimetableCreator from '../tools/TimetableCreator';
 import BrainBreaks from '../tools/BrainBreaks';
 import VisualChecklist from '../tools/VisualChecklist';
-import SpecialistCreator from '../tools/SpecialistCreator'; // UPDATED IMPORT
 import ReportCommentGenerator from '../tools/ReportCommentGenerator';
 
 // ===============================================
@@ -514,7 +513,6 @@ const TeachersToolkitTab = ({
 }) => {
   const [activeToolkitTab, setActiveToolkitTab] = useState(null);
   const [notifications, setNotifications] = useState([]);
-  const [attendanceStats, setAttendanceStats] = useState({ averageAttendance: 95 });
   const [analytics, setAnalytics] = useState({ totalStudents: students.length });
   const [timerSettings, setTimerSettings] = useState({
     isRunning: false,
@@ -560,14 +558,6 @@ const TeachersToolkitTab = ({
               loadedData={loadedData}
             />
           )}
-          {activeToolkitTab === 'specialist-timetable' && (
-            <SpecialistCreator
-              students={students}
-              showToast={showNotification}
-              saveData={saveToolkitData}
-              loadedData={loadedData}
-            />
-          )}
           {activeToolkitTab === 'birthday-wall' && (
             <BirthdayWall
               students={students}
@@ -591,14 +581,6 @@ const TeachersToolkitTab = ({
           )}
           {activeToolkitTab === 'report-comments' && (
             <ReportCommentGenerator />
-          )}
-          {activeToolkitTab === 'attendance' && (
-            <AttendanceTracker
-              students={students}
-              showNotification={showNotification}
-              saveClassroomDataToFirebase={saveClassroomDataToFirebase}
-              currentClassId={currentClassId}
-            />
           )}
           {activeToolkitTab === 'analytics' && (
             <AnalyticsComponent
@@ -687,20 +669,12 @@ const TeachersToolkitTab = ({
         
         <button
           onClick={() => setActiveToolkitTab('timetable')}
-          className="bg-gradient-to-r from-indigo-500 to-indigo-600 text-white p-6 rounded-xl hover:shadow-lg transition-all text-center"
+          className="relative bg-gradient-to-r from-indigo-500 to-indigo-600 text-white p-6 rounded-xl hover:shadow-lg transition-all text-center overflow-hidden"
         >
           <div className="text-4xl mb-3">📅</div>
           <div className="text-lg font-bold mb-1">Timetable</div>
           <div className="text-sm opacity-90">Schedule management</div>
-        </button>
-
-        <button
-          onClick={() => setActiveToolkitTab('specialist-timetable')}
-          className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white p-6 rounded-xl hover:shadow-lg transition-all text-center"
-        >
-          <div className="text-4xl mb-3">👨‍🏫</div>
-          <div className="text-lg font-bold mb-1">Specialist Timetable</div>
-          <div className="text-sm opacity-90">Create specialist schedules</div>
+          <span className="absolute top-2 right-2 bg-amber-500 text-white text-xs font-semibold px-3 py-1 rounded-full shadow">Under Construction</span>
         </button>
 
         <button
@@ -746,15 +720,6 @@ const TeachersToolkitTab = ({
           <div className="text-4xl mb-3">🎫</div>
           <div className="text-lg font-bold mb-1">Help Queue</div>
           <div className="text-sm opacity-90">Student help requests</div>
-        </button>
-
-        <button
-          onClick={() => setActiveToolkitTab('attendance')}
-          className="bg-gradient-to-r from-teal-500 to-green-600 text-white p-6 rounded-xl hover:shadow-lg transition-all text-center"
-        >
-          <div className="text-4xl mb-3">✅</div>
-          <div className="text-lg font-bold mb-1">Attendance</div>
-          <div className="text-sm opacity-90">{attendanceStats.averageAttendance}% average</div>
         </button>
 
         <button
@@ -804,11 +769,12 @@ const TeachersToolkitTab = ({
 
         <button
           onClick={() => setActiveToolkitTab('classroom-designer')}
-          className="bg-gradient-to-r from-amber-500 to-yellow-600 text-white p-6 rounded-xl hover:shadow-lg transition-all text-center"
+          className="relative bg-gradient-to-r from-amber-500 to-yellow-600 text-white p-6 rounded-xl hover:shadow-lg transition-all text-center overflow-hidden"
         >
           <div className="text-4xl mb-3">🏫</div>
           <div className="text-lg font-bold mb-1">Room Designer</div>
           <div className="text-sm opacity-90">Design classroom layout</div>
+          <span className="absolute top-2 right-2 bg-amber-500 text-white text-xs font-semibold px-3 py-1 rounded-full shadow">Under Construction</span>
         </button>
       </div>
     </div>

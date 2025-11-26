@@ -13,7 +13,6 @@ import StudentGames from '../components/student/StudentGames';
 import StudentDashboard from '../components/student/StudentDashboard';
 import StudentSpelling from '../components/student/StudentSpelling';
 import StudentReading from '../components/student/StudentReading';
-import StudentMathMentals from '../components/student/StudentMathMentals';
 import StudentMaths from '../components/student/StudentMaths';
 import StudentMorphology from '../components/student/StudentMorphology';
 import VisualWritingPrompts from '../components/curriculum/literacy/VisualWritingPrompts';
@@ -1814,7 +1813,6 @@ const StudentPortal = () => {
   ];
 
   const mathsSubTabs = [
-    { id: 'mentals', name: 'Mental Maths', icon: '🧮', shortName: 'Mentals' },
     { id: 'general', name: 'General Maths', icon: '➕', shortName: 'General' }
   ];
 
@@ -1833,7 +1831,7 @@ const StudentPortal = () => {
     
     // Set default subtab for tabs with subtabs
     if (tabId === 'maths') {
-      setActiveSubTab('mentals');
+      setActiveSubTab('general');
     } else if (tabId === 'literacy') {
       setActiveSubTab(hasMorphologyLesson ? 'morphology' : 'reading');
     } else {
@@ -1861,17 +1859,9 @@ const StudentPortal = () => {
       case 'maths':
         // Render maths subtabs content
         switch (activeSubTab) {
-          case 'mentals':
-            return (
-              <StudentMathMentals 
-                studentData={studentData}
-                classData={classData}
-                showToast={showToast}
-              />
-            );
           case 'general':
             return (
-              <StudentMaths 
+              <StudentMaths
                 studentData={studentData}
                 classData={classData}
                 showToast={showToast}
@@ -1880,10 +1870,11 @@ const StudentPortal = () => {
             );
           default:
             return (
-              <StudentMathMentals 
+              <StudentMaths
                 studentData={studentData}
                 classData={classData}
                 showToast={showToast}
+                updateStudentData={updateStudentData}
               />
             );
         }
@@ -1970,20 +1961,13 @@ const StudentPortal = () => {
       
       case 'quizshow':
         return (
-          <div className="bg-white rounded-xl p-6 md:p-8 text-center">
-            <div className="text-4xl md:text-6xl mb-4">🎪</div>
-            <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-4">Join the Quiz Show!</h2>
-            <p className="text-gray-600 mb-6 text-sm md:text-base leading-relaxed">
-              Click the link below to join the live quiz show with your class.
-            </p>
-            <a 
-              href="https://www.educational-elements.com/join" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="inline-block bg-gradient-to-r from-purple-500 to-pink-600 text-white px-6 md:px-8 py-3 md:py-4 rounded-lg font-semibold text-base md:text-lg hover:shadow-lg transition-all active:scale-95"
-            >
-              🚀 Join Quiz Show
-            </a>
+          <div className="bg-white rounded-xl p-8 text-center shadow-lg border border-dashed border-purple-200">
+            <div className="text-5xl md:text-6xl mb-4">🎪</div>
+            <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">Quiz Show</h2>
+            <p className="text-gray-600 mb-4 text-sm md:text-base">A refreshed experience is on the way.</p>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-50 text-purple-700 font-semibold">
+              Coming Soon
+            </div>
           </div>
         );
       

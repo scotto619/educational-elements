@@ -108,7 +108,8 @@ const subjects = [
         description: 'Engaging texts for advanced readers - longer passages with modern topics kids love',
         component: ReadingForFun,
         isNew: true,
-        literacyCategory: 'reading'
+        literacyCategory: 'reading',
+        underConstruction: true
       },
       {
         id: 'readers-theatre',
@@ -117,7 +118,8 @@ const subjects = [
         description: 'Drama scripts with character roles for student performances and oral reading practice',
         component: ReadersTheatre,
         isNew: true,
-        literacyCategory: ['reading', 'speaking']
+        literacyCategory: ['reading', 'speaking'],
+        underConstruction: true
       },
       {
         id: 'morphology',
@@ -151,7 +153,8 @@ const subjects = [
             literacyCategory: 'phonics'
           }
         ],
-        literacyCategory: 'phonics'
+        literacyCategory: 'phonics',
+        underConstruction: true
       },
       {
         id: 'spelling-program',
@@ -168,7 +171,8 @@ const subjects = [
         icon: '🧠',
         description: 'Text analysis and understanding activities',
         component: ReadingComprehension,
-        literacyCategory: 'reading'
+        literacyCategory: 'reading',
+        underConstruction: true
       },
       {
         id: 'visual-writing-prompts',
@@ -185,7 +189,8 @@ const subjects = [
         description: 'Discover definitions, synonyms, and build vibrant class word lists',
         component: VocabularyCorner,
         literacyCategory: ['spelling', 'reading'],
-        isNew: true
+        isNew: true,
+        underConstruction: true
       },
       {
         id: 'grammar-workshop',
@@ -261,34 +266,6 @@ const subjects = [
         component: InteractiveClock
       },
       {
-        id: 'math-mentals',
-        name: 'Math Mentals',
-        icon: '🧮',
-        description: 'Daily number facts practice for automatic recall - like Wordle for math!',
-        component: MathMentals
-      },
-      {
-        id: 'worksheet-generator',
-        name: 'Worksheet Generator',
-        icon: '📄',
-        description: 'Create professional printable math worksheets for any topic',
-        component: WorksheetGenerator
-      },
-      {
-        id: 'math-warmup',
-        name: 'Math Warmup',
-        icon: '🔥',
-        description: 'Daily number activities and mathematical thinking',
-        component: MathWarmup
-      },
-      {
-        id: 'area-perimeter',
-        name: 'Area & Perimeter',
-        icon: '📏',
-        description: 'Interactive tool for exploring area and perimeter concepts',
-        component: AreaPerimeterTool
-      },
-      {
         id: 'numbers-board',
         name: 'Numbers Board',
         icon: '💯',
@@ -315,6 +292,37 @@ const subjects = [
         icon: '½',
         description: 'Visual fraction learning tools',
         component: ComingSoon
+      },
+      {
+        id: 'math-mentals',
+        name: 'Math Mentals',
+        icon: '🧮',
+        description: 'Daily number facts practice for automatic recall - like Wordle for math!',
+        component: MathMentals
+      },
+      {
+        id: 'worksheet-generator',
+        name: 'Worksheet Generator',
+        icon: '📄',
+        description: 'Create professional printable math worksheets for any topic',
+        component: WorksheetGenerator,
+        underConstruction: true
+      },
+      {
+        id: 'math-warmup',
+        name: 'Math Warmup',
+        icon: '🔥',
+        description: 'Daily number activities and mathematical thinking',
+        component: MathWarmup,
+        underConstruction: true
+      },
+      {
+        id: 'area-perimeter',
+        name: 'Area & Perimeter',
+        icon: '📏',
+        description: 'Interactive tool for exploring area and perimeter concepts',
+        component: AreaPerimeterTool,
+        underConstruction: true
       }
     ]
   },
@@ -622,6 +630,12 @@ const CurriculumCornerTab = ({
           return category === literacyFocus;
         })
       : activeSubject.activities;
+    const orderedActivities = displayedActivities
+      .slice()
+      .sort((a, b) => {
+        if (a.underConstruction === b.underConstruction) return 0;
+        return a.underConstruction ? 1 : -1;
+      });
     const selectedFocus = isLiteracySubject
       ? literacyFocusAreas.find((area) => area.id === literacyFocus)
       : null;
@@ -700,7 +714,7 @@ const CurriculumCornerTab = ({
 
         {/* Activities Grid */}
         <div className={`grid grid-cols-1 md:grid-cols-2 ${isLiteracySubject ? 'xl:grid-cols-2 2xl:grid-cols-3' : 'lg:grid-cols-3'} gap-6`}>
-          {displayedActivities.map(activity => (
+          {orderedActivities.map(activity => (
             <button
               key={activity.id}
               onClick={() => handleActivitySelect(activity)}
@@ -732,11 +746,17 @@ const CurriculumCornerTab = ({
               </div>
               <div className="flex justify-between items-center">
                 <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                  activity.component === ComingSoon 
-                    ? 'bg-amber-100 text-amber-700' 
-                    : 'bg-green-100 text-green-700'
+                  activity.underConstruction
+                    ? 'bg-amber-100 text-amber-700'
+                    : activity.component === ComingSoon
+                      ? 'bg-amber-100 text-amber-700'
+                      : 'bg-green-100 text-green-700'
                 }`}>
-                  {activity.component === ComingSoon ? 'Coming Soon' : 'Available'}
+                  {activity.underConstruction
+                    ? 'Under Construction'
+                    : activity.component === ComingSoon
+                      ? 'Coming Soon'
+                      : 'Available'}
                 </span>
                 <div className="flex items-center gap-2">
                   {activity.hasYearLevels && (
@@ -747,9 +767,14 @@ const CurriculumCornerTab = ({
                   <span className="text-blue-500 font-semibold">Open →</span>
                 </div>
               </div>
+              {activity.underConstruction && (
+                <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] rounded-xl flex items-center justify-center text-center p-4 pointer-events-none">
+                  <span className="bg-amber-500 text-white px-3 py-1 rounded-full shadow">Under Construction</span>
+                </div>
+              )}
             </button>
           ))}
-          {displayedActivities.length === 0 && (
+          {orderedActivities.length === 0 && (
             <div className="col-span-full">
               <div className="bg-white border border-purple-200 rounded-2xl p-8 text-center shadow-sm">
                 <div className="text-4xl mb-3">✨</div>
@@ -805,146 +830,6 @@ const CurriculumCornerTab = ({
         </div>
       </div>
 
-      {/* Quick Stats */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <h3 className="text-xl font-bold text-slate-800 mb-4">📊 Curriculum Overview</h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          {subjects.map(subject => {
-            const availableTools = subject.activities.filter(activity => activity.component !== ComingSoon).length;
-            const totalTools = subject.activities.length;
-            const newTools = subject.activities.filter(activity => activity.isNew).length;
-            
-            return (
-              <div key={subject.id} className="text-center p-4 bg-slate-50 rounded-lg">
-                <div className="text-2xl mb-2">{subject.icon}</div>
-                <div className="text-sm font-semibold text-slate-800">{subject.name}</div>
-                <div className="text-xs text-slate-600 mt-1">
-                  {availableTools}/{totalTools} tools ready
-                </div>
-                <div className="w-full bg-slate-200 rounded-full h-2 mt-2">
-                  <div 
-                    className={`h-2 rounded-full bg-gradient-to-r ${subject.color}`}
-                    style={{ width: `${(availableTools / totalTools) * 100}%` }}
-                  ></div>
-                </div>
-                {/* Highlight New Tools */}
-                {newTools > 0 && (
-                  <div className="text-xs text-red-600 font-semibold mt-1 animate-pulse">
-                    🆕 {newTools} new tool{newTools > 1 ? 's' : ''}!
-                  </div>
-                )}
-                {/* Special highlights */}
-                {subject.id === 'literacy' && (
-                  <div className="text-xs text-purple-600 font-semibold mt-1">
-                    ✨ 2 New Literacy Tools!
-                  </div>
-                )}
-                {subject.id === 'mathematics' && (
-                  <div className="text-xs text-green-600 font-semibold mt-1">
-                    🎯 Daily Math Challenge Studio is ready!
-                  </div>
-                )}
-                {subject.id === 'study-studio' && (
-                  <div className="text-xs text-indigo-600 font-semibold mt-1">
-                    🎴 Flip Cards Studio ready to launch!
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* What's New Section - UPDATED WITH ANGLES TOOL */}
-      <div className="bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-xl p-6">
-        <h3 className="text-xl font-bold text-red-800 mb-4 flex items-center">
-          <span className="mr-2">🆕</span>
-          What's New in Curriculum Corner
-        </h3>
-        <div className="space-y-3">
-          <div className="bg-white border border-indigo-200 rounded-lg p-4">
-            <h4 className="font-bold text-indigo-700 mb-2">🎴 NEW: Flip Cards Studio</h4>
-            <p className="text-sm text-indigo-600 mb-2">
-              Launch colourful question-and-answer cards in seconds, complete with fullscreen presentation and a streamlined deck builder.
-            </p>
-            <ul className="text-xs text-indigo-600 space-y-1 ml-4">
-              <li>• Default packs for times tables, history, science, and wellbeing prompts</li>
-              <li>• Save custom decks locally or paste in bulk question | answer lists</li>
-              <li>• Present cards fullscreen with keyboard controls for smooth review sessions</li>
-            </ul>
-          </div>
-          <div className="bg-white border border-amber-200 rounded-lg p-4">
-            <h4 className="font-bold text-amber-700 mb-2">🔤 NEW: Vocabulary Corner</h4>
-            <p className="text-sm text-amber-600 mb-2">
-              Look up words with the Dictionary.com API, explore synonyms, and curate vibrant vocabulary lists for your class and student portal.
-            </p>
-            <ul className="text-xs text-amber-600 space-y-1 ml-4">
-              <li>• Default literacy lists plus save-your-own collections per device</li>
-              <li>• Instant definitions, example sentences, and synonym hopping</li>
-              <li>• Students can access their own Vocabulary Corner inside the portal</li>
-            </ul>
-          </div>
-          <div className="bg-white border border-green-200 rounded-lg p-4">
-            <h4 className="font-bold text-green-700 mb-2">📐 NEW: Interactive Angles Tool</h4>
-            <p className="text-sm text-green-600 mb-2">
-              Complete angles teaching system with 5 engaging modes:
-            </p>
-            <ul className="text-xs text-green-600 space-y-1 ml-4">
-              <li>• 📚 Learn Types - Explore acute, right, obtuse, straight & reflex angles</li>
-              <li>• 📏 Measure - Use a virtual protractor to measure angles</li>
-              <li>• ✏️ Create - Draw angles by dragging or using controls</li>
-              <li>• 🔍 Identify - Test angle recognition with challenges</li>
-              <li>• 🎮 Game - Angle estimation game with difficulty levels</li>
-            </ul>
-            <p className="text-xs text-green-500 italic mt-2">
-              Perfect visual tool for teaching geometry concepts!
-            </p>
-          </div>
-          <div className="bg-white border border-rose-200 rounded-lg p-4">
-            <h4 className="font-bold text-rose-700 mb-2">🎯 NEW: Daily Math Challenge Studio</h4>
-            <p className="text-sm text-rose-600 mb-2">
-              Present twenty multi-step challenges in fullscreen and push them straight to the student portal.
-            </p>
-            <ul className="text-xs text-rose-600 space-y-1 ml-4">
-              <li>• Launch presentation mode with keyboard-friendly navigation</li>
-              <li>• Filter tasks by strand, focus tags, or search keywords</li>
-              <li>• Assign a challenge with optional due dates and messages</li>
-            </ul>
-            <p className="text-xs text-rose-500 italic mt-2">
-              Ideal for daily warm-ups, maths meetings, or weekly problem solving investigations.
-            </p>
-          </div>
-          <div className="bg-white border border-purple-200 rounded-lg p-4">
-            <h4 className="font-bold text-purple-700 mb-2">🎉 New: Reading for Fun</h4>
-            <p className="text-sm text-purple-600 mb-2">
-              Engaging texts for advanced readers with 6 exciting categories:
-            </p>
-            <ul className="text-xs text-purple-600 space-y-1 ml-4">
-              <li>• 🚀 Adventure Stories - Epic tales and exciting journeys</li>
-              <li>• 🤯 Cool Facts - Amazing info about gaming, tech, and trends</li>
-              <li>• ⚡ Debate Zone - Persuasive texts about topics kids care about</li>
-              <li>• 🎵 Rhythm & Rhyme - Modern poems and verses with attitude</li>
-              <li>• 😂 Laugh Zone - Jokes, funny stories, and silly situations</li>
-              <li>• 🎭 Readers Theatre - Drama scripts with character roles</li>
-            </ul>
-            <p className="text-xs text-purple-500 italic mt-2">
-              Perfect for students who have mastered fluency and want engaging content!
-            </p>
-          </div>
-          <div className="bg-white border border-red-200 rounded-lg p-4">
-            <h4 className="font-bold text-red-700 mb-2">🔤 Beginner Readers</h4>
-            <p className="text-sm text-red-600 mb-2">
-              A complete early reading system with 3 progressive levels for beginning readers.
-            </p>
-          </div>
-          <div className="bg-white border border-orange-200 rounded-lg p-4">
-            <h4 className="font-bold text-orange-700 mb-2">📖 Updated: Fluency Practice</h4>
-            <p className="text-sm text-orange-600">
-              Better level organization and comprehension question support.
-            </p>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };

@@ -110,7 +110,7 @@ const QuestsTab = ({
 
   // Get available characters based on quest type
   const getAvailableCharacters = (questType) => {
-    return questType === 'assessment' ? BOSS_CHARACTERS : GUIDE_CHARACTERS;
+    return GUIDE_CHARACTERS;
   };
 
   // Get character info by ID
@@ -126,12 +126,15 @@ const QuestsTab = ({
       return;
     }
 
+    const availableCharacters = GUIDE_CHARACTERS;
+    const selectedCharacterId = availableCharacters.some(char => char.id === questForm.character)
+      ? questForm.character
+      : 'guide1';
+
     const newQuest = {
       id: `quest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       ...questForm,
-      character: questForm.questType === 'assessment' && !BOSS_CHARACTERS.find(b => b.id === questForm.character)
-        ? 'boss1' 
-        : questForm.character,
+      character: selectedCharacterId,
       createdAt: new Date().toISOString(),
       completedBy: []
     };
