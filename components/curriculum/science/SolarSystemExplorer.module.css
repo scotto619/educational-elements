@@ -14,6 +14,8 @@
   overflow: hidden;
 }
 
+.appPaused {}
+
 @media (max-width: 1024px) {
   .appContainer {
     grid-template-columns: 1fr;
@@ -72,14 +74,14 @@
   animation: spin linear infinite;
 }
 
-.paused .planetOrbitContainer {
+.appPaused .planetOrbitContainer {
   animation-play-state: paused;
 }
 
 .planetVisual {
   position: absolute;
   top: 50%;
-  left: 50%;
+  left: 100%;
   transform: translate(-50%, -50%);
   border-radius: 50%;
   border: 2px solid rgba(255, 255, 255, 0.15);
@@ -228,6 +230,14 @@
   border: 1px dashed rgba(255, 255, 255, 0.2);
   padding: 0.85rem;
   border-radius: 0.9rem;
+}
+
+.factList {
+  margin: 0.5rem 0 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.35rem;
+  color: #e2e8f0;
 }
 
 @keyframes spin {
