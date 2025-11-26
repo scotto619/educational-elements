@@ -985,6 +985,13 @@ const handleUpdateStudent = useCallback(async (studentId, updatedData, reason = 
     }
   };
 
+  const updateStudentsAndSave = async (updatedStudents, updatedCategories = xpCategories) => {
+    setStudents(updatedStudents);
+    setXpCategories(updatedCategories);
+    await saveClassData({ students: updatedStudents, xpCategories: updatedCategories });
+    setCurrentClassData(prev => ({ ...prev, students: updatedStudents, xpCategories: updatedCategories }));
+  };
+
   // V1 class update helper
   const updateV1ClassData = async (userId, classId, updatedData) => {
     const userRef = doc(db, 'users', userId);
@@ -1022,6 +1029,17 @@ const handleUpdateStudent = useCallback(async (studentId, updatedData, reason = 
       console.error('❌ Error saving widget settings:', error);
       showToast('Error saving widget settings', 'error');
     }
+  };
+
+  const widgetsVisible = widgetSettings?.showTimer || widgetSettings?.showNamePicker;
+
+  const toggleWidgetVisibility = async () => {
+    const nextState = widgetsVisible
+      ? { showTimer: false, showNamePicker: false }
+      : { showTimer: true, showNamePicker: true };
+
+    await saveWidgetSettings(nextState);
+    showToast(widgetsVisible ? 'Widgets hidden' : 'Widgets visible', 'info');
   };
 
   // CLASS CODE MANAGEMENT - FIXED
@@ -1218,7 +1236,7 @@ const handleUpdateStudent = useCallback(async (studentId, updatedData, reason = 
           <SettingsTab
             {...commonProps}
             setStudents={setStudents}
-            updateAndSaveClass={() => {}}
+            updateAndSaveClass={updateStudentsAndSave}
             AVAILABLE_AVATARS={AVAILABLE_AVATARS}
             currentClassData={currentClassData}
             updateClassCode={updateClassCode}
@@ -1479,15 +1497,15 @@ const handleUpdateStudent = useCallback(async (studentId, updatedData, reason = 
                         <div className="w-px bg-gray-300 mx-1 my-1"></div>
                         
                         {EDUCATIONAL_ELEMENTS_TABS.map(tab => (
-                            <button 
-                                key={tab.id} 
+                            <button
+                                key={tab.id}
                                 onClick={() => {
                                     setActiveTab(tab.id);
                                     setShowMobileMenu(false);
-                                }} 
+                                }}
                                 className={`flex flex-col sm:flex-row items-center justify-center space-y-1 sm:space-y-0 sm:space-x-1 px-2 sm:px-3 py-2 sm:py-2.5 transition-all duration-200 text-xs whitespace-nowrap min-w-[60px] sm:min-w-[80px] ${
-                                    activeTab === tab.id 
-                                        ? 'text-blue-600 border-b-2 font-semibold border-blue-600 bg-blue-50' 
+                                    activeTab === tab.id
+                                        ? 'text-blue-600 border-b-2 font-semibold border-blue-600 bg-blue-50'
                                         : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
                                 }`}
                             >
@@ -1496,6 +1514,15 @@ const handleUpdateStudent = useCallback(async (studentId, updatedData, reason = 
                                 <span className="sm:hidden text-[10px] leading-tight text-center">{tab.shortName}</span>
                             </button>
                         ))}
+
+                        <div className="flex items-center ml-auto pr-2">
+                          <button
+                            onClick={toggleWidgetVisibility}
+                            className="text-xs sm:text-sm px-3 py-2 rounded-lg border border-gray-200 bg-white shadow-sm hover:bg-gray-50 flex items-center gap-2"
+                          >
+                            <span>{widgetsVisible ? 'Hide Widgets' : 'Show Widgets'}</span>
+                          </button>
+                        </div>
                     </div>
                 </div>
             </div>
