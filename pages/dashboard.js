@@ -503,8 +503,42 @@ export default function Dashboard() {
 
     try {
       if (classToDelete.isV2) {
-        // V2 deletion would require API call - for now, show a message
-        alert('V2 class deletion requires migration completion. Please contact support.');
+        const classId = classToDelete.id;
+        const batch = writeBatch(firestore);
+        const now = new Date().toISOString();
+
+        const classRef = doc(firestore, 'classes', classId);
+        const membershipRef = doc(firestore, 'class_memberships', classId);
+        const userRef = doc(firestore, 'users', user.uid);
+
+        const membershipSnap = await getDoc(membershipRef);
+        const studentIds = membershipSnap.exists() ? (membershipSnap.data().students || []) : [];
+
+        studentIds.forEach(studentId => {
+          const studentRef = doc(firestore, 'students', studentId);
+          batch.delete(studentRef);
+        });
+
+        batch.delete(membershipRef);
+        batch.delete(classRef);
+
+        const remainingClasses = savedClasses.filter(cls => cls.id !== classId);
+        const newActiveClassId = userData?.activeClassId === classId
+          ? (remainingClasses[0]?.id || null)
+          : (userData?.activeClassId || null);
+
+        batch.update(userRef, {
+          activeClassId: newActiveClassId,
+          updatedAt: now
+        });
+
+        await batch.commit();
+
+        const refreshedClasses = await loadV2Classes(user.uid);
+        setSavedClasses(refreshedClasses);
+        setUserData(prev => ({ ...prev, activeClassId: newActiveClassId }));
+
+        alert(`Class "${classToDelete.name}" has been deleted.`);
         return;
       }
 
