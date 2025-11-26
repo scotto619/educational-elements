@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import styles from './SolarSystemExplorer.module.css';
 
+const DISTANCE_SCALE = 0.6;
+
 const planetsData = [
   {
     id: 0,
@@ -142,18 +144,19 @@ const SolarSystemExplorer = () => {
 
         {planetsData.map((planet) => (
           <React.Fragment key={planet.id}>
+            {/* Scale distances so the outer planets fit comfortably on screen */}
             <div
               className={styles.orbitRing}
               style={{
-                width: planet.distance * 2,
-                height: planet.distance * 2
+                width: planet.distance * DISTANCE_SCALE * 2,
+                height: planet.distance * DISTANCE_SCALE * 2
               }}
             />
             <div
               className={styles.planetOrbitContainer}
               style={{
-                width: planet.distance * 2,
-                height: planet.distance * 2,
+                width: planet.distance * DISTANCE_SCALE * 2,
+                height: planet.distance * DISTANCE_SCALE * 2,
                 animationDuration: `${planet.speed}s`,
                 zIndex: planet.id + 10
               }}
