@@ -21,6 +21,7 @@ import MathMentals from '../curriculum/mathematics/MathMentals';
 import InteractiveClock from '../curriculum/mathematics/InteractiveClock';
 import InteractiveAngles from '../curriculum/mathematics/InteractiveAngles'; // NEW IMPORT
 import DailyMathChallenges from '../curriculum/mathematics/DailyMathChallenges';
+import SolarSystemExplorer from '../curriculum/science/SolarSystemExplorer';
 
 // ===============================================
 // COMING SOON COMPONENT
@@ -359,7 +360,8 @@ const subjects = [
         name: 'Solar System',
         icon: '🪐',
         description: 'Explore planets and space',
-        component: ComingSoon
+        component: SolarSystemExplorer,
+        isNew: true
       }
     ]
   },
