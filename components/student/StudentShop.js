@@ -1,5 +1,6 @@
 // components/student/StudentShop.js - UPDATED WITH CHRISTMAS SUPPORT
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Image from 'next/image';
 
 import {
@@ -30,6 +31,7 @@ import {
   getRarityBreakdown,
   getCardLibraryMap
 } from '../../utils/tradingCards';
+import { DEFAULT_TEACHER_REWARDS, buildShopInventory, getDailySpecials } from '../../utils/shopSpecials';
 
 // ===============================================
 // MYSTERY BOX SYSTEM (SHARED WITH TEACHER SHOP)
@@ -462,10 +464,11 @@ const StudentShop = ({
   classData = null,
   performClassmateTrade = null
 }) => {
-  const [activeCategory, setActiveCategory] = useState('card_packs');
+  const [activeCategory, setActiveCategory] = useState('featured');
   const [purchaseModal, setPurchaseModal] = useState({ visible: false, item: null, type: null });
   const [inventoryModal, setInventoryModal] = useState({ visible: false });
   const [respondingTradeId, setRespondingTradeId] = useState(null);
+  const [mounted, setMounted] = useState(false);
 
   // Mystery Box states
   const [mysteryBoxModal, setMysteryBoxModal] = useState({ visible: false, stage: 'confirm' }); // confirm, opening, reveal
@@ -507,6 +510,10 @@ const StudentShop = ({
     clearPackAnimationTimeouts();
   }, [clearPackAnimationTimeouts]);
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // Egg celebrations
   const [hatchingCelebration, setHatchingCelebration] = useState(null);
 
@@ -524,6 +531,11 @@ const StudentShop = ({
       lastOpenedAt: stored.lastOpenedAt || null
     };
   }, [studentData?.cardCollection]);
+
+  const availableClassRewards = useMemo(
+    () => (classRewards?.length ? classRewards : DEFAULT_TEACHER_REWARDS),
+    [classRewards]
+  );
 
   const equippedCardEffectId = studentData?.equippedCardEffect || '';
   const ownedCardEffects = useMemo(() => {
@@ -562,6 +574,46 @@ const StudentShop = ({
       CHRISTMAS_PETS
     ]
   );
+
+  const seasonalItems = useMemo(
+    () => [
+      ...(HALLOWEEN_BASIC_AVATARS || []).map(item => ({ ...item, category: 'halloween', type: 'avatar' })),
+      ...(HALLOWEEN_PREMIUM_AVATARS || []).map(item => ({ ...item, category: 'halloween', type: 'avatar' })),
+      ...(HALLOWEEN_PETS || []).map(item => ({ ...item, category: 'halloween', type: 'pet' })),
+      ...(CHRISTMAS_BASIC_AVATARS || []).map(item => ({ ...item, category: 'christmas', type: 'avatar' })),
+      ...(CHRISTMAS_PREMIUM_AVATARS || []).map(item => ({ ...item, category: 'christmas', type: 'avatar' })),
+      ...(CHRISTMAS_PETS || []).map(item => ({ ...item, category: 'christmas', type: 'pet' }))
+    ],
+    [
+      HALLOWEEN_BASIC_AVATARS,
+      HALLOWEEN_PREMIUM_AVATARS,
+      HALLOWEEN_PETS,
+      CHRISTMAS_BASIC_AVATARS,
+      CHRISTMAS_PREMIUM_AVATARS,
+      CHRISTMAS_PETS
+    ]
+  );
+
+  const featuredItems = useMemo(() => {
+    const inventory = buildShopInventory({
+      basicAvatars: SHOP_BASIC_AVATARS,
+      premiumAvatars: SHOP_PREMIUM_AVATARS,
+      basicPets: SHOP_BASIC_PETS,
+      premiumPets: SHOP_PREMIUM_PETS,
+      rewards: availableClassRewards,
+      cardPacks: DEFAULT_CARD_PACKS,
+      extraItems: seasonalItems
+    });
+
+    return getDailySpecials(inventory);
+  }, [
+    SHOP_BASIC_AVATARS,
+    SHOP_PREMIUM_AVATARS,
+    SHOP_BASIC_PETS,
+    SHOP_PREMIUM_PETS,
+    availableClassRewards,
+    seasonalItems
+  ]);
 
   const cardLibraryMap = useMemo(
     () => getCardLibraryMap(tradingCardLibrary),
@@ -2000,7 +2052,7 @@ const StudentShop = ({
       SHOP_PREMIUM_AVATARS,
       SHOP_BASIC_PETS,
       SHOP_PREMIUM_PETS,
-      classRewards,
+      availableClassRewards,
       CHRISTMAS_BASIC_AVATARS,
       CHRISTMAS_PREMIUM_AVATARS,
       CHRISTMAS_PETS,
@@ -2059,7 +2111,7 @@ const StudentShop = ({
       SHOP_PREMIUM_AVATARS,
       SHOP_BASIC_PETS,
       SHOP_PREMIUM_PETS,
-      classRewards,
+      availableClassRewards,
       CHRISTMAS_BASIC_AVATARS,
       CHRISTMAS_PREMIUM_AVATARS,
       CHRISTMAS_PETS,
@@ -2126,6 +2178,10 @@ const StudentShop = ({
   // ===============================================
   
   const handleSellItem = (item, type) => {
+    if (type === 'reward') {
+      showToast('Class rewards cannot be sold.', 'warning');
+      return;
+    }
     const itemName = type === 'pet' ? item.name : type === 'avatar' ? item : item.name;
     const originalPrice = findOriginalPrice(
       itemName,
@@ -2134,7 +2190,7 @@ const StudentShop = ({
       SHOP_PREMIUM_AVATARS,
       SHOP_BASIC_PETS,
       SHOP_PREMIUM_PETS,
-      classRewards,
+      availableClassRewards,
       HALLOWEEN_BASIC_AVATARS,
       HALLOWEEN_PREMIUM_AVATARS,
       HALLOWEEN_PETS,
@@ -2153,6 +2209,11 @@ const StudentShop = ({
   };
   
   const confirmSell = async () => {
+    if (sellModal.type === 'reward') {
+      setSellModal({ visible: false, item: null, type: null, price: 0 });
+      showToast('Class rewards cannot be sold.', 'warning');
+      return;
+    }
     let updates = {};
 
     // Add coins from sale
@@ -2304,6 +2365,7 @@ const StudentShop = ({
 
   const categories = [
     { id: 'loot_well', name: '💠 The Loot Well', shortName: 'Loot Well' },
+    { id: 'featured', name: '⭐ Featured Items', shortName: 'Featured' },
     { id: 'card_packs', name: '✨ Card Packs', shortName: 'Cards' },
     { id: 'mysterybox', name: '🎁 Mystery Box', shortName: 'Mystery' },
     { id: 'christmas', name: '🎄 Christmas Special', shortName: '🎄 Christmas' },
@@ -2368,6 +2430,131 @@ const StudentShop = ({
             {currentCoins < MYSTERY_BOX_PRICE ? 'Not Enough Coins' : 'Open Mystery Box!'}
           </button>
         </div>
+      </div>
+    );
+  };
+
+  const renderFeaturedItems = () => {
+    if (!featuredItems || featuredItems.length === 0) {
+      return (
+        <div className="col-span-full text-center py-10">
+          <div className="text-4xl mb-2">✨</div>
+          <p className="text-gray-600">Check back soon for rotating deals!</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+        {featuredItems.map(item => {
+          const isAvatar = item.type === 'avatar';
+          const isPet = item.type === 'pet';
+          const isReward = item.type === 'reward';
+          const isCardPack = item.type === 'card_pack';
+
+          const owned = isAvatar
+            ? studentData?.ownedAvatars?.includes(item.name)
+            : isPet
+              ? studentData?.ownedPets?.some(p => p.name === item.name)
+              : isReward
+                ? studentData?.rewardsPurchased?.some(r => r.id === item.id || r.name === item.name)
+                : false;
+
+          if (isCardPack) {
+            const packStyle = CARD_RARITY_STYLES[item.rarity] || CARD_RARITY_STYLES.common;
+            const ownedCount = cardCollection.packs?.[item.id]?.count || 0;
+            const canAfford = currentCoins >= item.price;
+
+            return (
+              <div
+                key={item.id}
+                className="relative rounded-2xl overflow-hidden shadow-lg border border-white/20"
+                style={{
+                  background: packStyle.gradient,
+                  borderColor: `${packStyle.border}`
+                }}
+              >
+                {item.salePercentage ? (
+                  <div className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 bg-rose-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg">
+                    -{item.salePercentage}%
+                  </div>
+                ) : null}
+
+                <div className="p-4 text-white flex flex-col h-full">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <p className="text-xs uppercase tracking-widest text-white/70">{packStyle.label}</p>
+                      <h4 className="text-lg font-semibold drop-shadow">{item.name}</h4>
+                    </div>
+                    <span className="text-4xl drop-shadow-lg">{item.icon || '🃏'}</span>
+                  </div>
+
+                  <p className="text-xs text-white/80 mb-3">
+                    {item.minCards}-{item.maxCards} cards per pack
+                  </p>
+
+                  <div className="mb-3 space-y-1">
+                    {item.salePercentage && item.originalPrice ? (
+                      <div className="text-xs text-white/70 line-through">💰 {item.originalPrice}</div>
+                    ) : null}
+                    <div className="text-lg font-bold">💰 {item.price}</div>
+                  </div>
+
+                  <div className="mt-auto flex flex-col gap-2">
+                    <button
+                      onClick={() => setPurchaseModal({ visible: true, item, type: 'card_pack' })}
+                      disabled={!canAfford}
+                      className="w-full rounded-lg bg-black/20 backdrop-blur px-3 py-2 text-sm font-semibold text-white hover:bg-black/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Buy Pack
+                    </button>
+                    <p className="text-xs text-center text-white/80">Owned: x{ownedCount}</p>
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
+          const canAfford = currentCoins >= item.price;
+
+          return (
+            <div
+              key={item.name || item.id}
+              className={`border-2 rounded-lg p-4 text-center flex flex-col justify-between relative ${owned ? 'border-green-400 bg-green-50' : 'border-red-300 bg-gradient-to-br from-red-50 to-pink-50'}`}
+            >
+              {item.salePercentage ? (
+                <div className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg">
+                  -{item.salePercentage}%
+                </div>
+              ) : null}
+
+              <div className="text-3xl mb-2">{item.icon || (isPet ? '🐾' : isReward ? '🎁' : '⭐')}</div>
+              <h4 className="font-bold text-lg text-gray-800 mb-1">{item.name}</h4>
+              <p className="text-sm text-gray-600 mb-3 line-clamp-2">{item.description || 'Limited-time deal from the main shop.'}</p>
+
+              <div className="mb-3 space-y-1">
+                {item.salePercentage && item.originalPrice ? (
+                  <div className="text-xs text-gray-500 line-through">💰 {item.originalPrice}</div>
+                ) : null}
+                <div className="text-xl font-bold text-gray-900">💰 {item.price}</div>
+              </div>
+
+              <button
+                onClick={() => setPurchaseModal({ visible: true, item, type: item.type })}
+                disabled={owned || !canAfford}
+                className={`w-full py-2 rounded-lg text-sm font-semibold transition-all ${
+                  owned
+                    ? 'bg-green-100 text-green-700 cursor-not-allowed'
+                    : canAfford
+                      ? 'bg-red-500 text-white hover:bg-red-600 shadow'
+                      : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                }`}
+              >
+                {owned ? 'Owned' : canAfford ? 'Buy Now' : 'Not enough coins'}
+              </button>
+            </div>
+          );
+        })}
       </div>
     );
   };
@@ -2646,8 +2833,10 @@ const StudentShop = ({
   };
 
   const renderSellModal = () => {
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    if (!mounted) return null;
+
+    const modalContent = (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[120] p-4">
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm text-center p-4 md:p-6">
           <h2 className="text-lg md:text-2xl font-bold mb-3 md:mb-4 text-red-600">Sell Item?</h2>
           <p className="mb-4 text-sm md:text-base">
@@ -2655,14 +2844,14 @@ const StudentShop = ({
           </p>
           <p className="text-xs text-gray-500 mb-4">This action cannot be undone!</p>
           <div className="flex gap-3 md:gap-4">
-            <button 
-              onClick={() => setSellModal({ visible: false, item: null, type: null, price: 0 })} 
+            <button
+              onClick={() => setSellModal({ visible: false, item: null, type: null, price: 0 })}
               className="flex-1 py-2 md:py-3 border rounded-lg hover:bg-gray-50 text-sm md:text-base"
             >
               Cancel
             </button>
-            <button 
-              onClick={confirmSell} 
+            <button
+              onClick={confirmSell}
               className="flex-1 py-2 md:py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 text-sm md:text-base"
             >
               Sell Item
@@ -2671,6 +2860,8 @@ const StudentShop = ({
         </div>
       </div>
     );
+
+    return createPortal(modalContent, document.body);
   };
 
   const renderHatchCelebrationModal = () => {
@@ -2747,6 +2938,10 @@ const StudentShop = ({
       return renderLootWell();
     }
 
+    if (activeCategory === 'featured') {
+      return renderFeaturedItems();
+    }
+
     let items = [];
     let itemType = '';
 
@@ -2780,7 +2975,7 @@ const StudentShop = ({
         itemType = 'pet';
         break;
       case 'rewards':
-        items = classRewards || [];
+        items = availableClassRewards || [];
         itemType = 'reward';
         break;
       default:
@@ -3638,12 +3833,7 @@ const StudentShop = ({
                           </div>
                         </div>
                         {showSellMode && (
-                          <button 
-                            onClick={() => handleSellItem(reward, 'reward')} 
-                            className="text-xs bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 flex-shrink-0 active:scale-95"
-                          >
-                            Sell
-                          </button>
+                          <span className="text-[11px] uppercase font-semibold text-red-600">Not sellable</span>
                         )}
                       </div>
                     ))}
