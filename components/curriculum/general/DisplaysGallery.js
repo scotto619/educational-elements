@@ -1,4 +1,6 @@
-import React, { useMemo, useState } from 'react';
+"use client";
+
+import React, { useEffect, useMemo, useState } from 'react';
 
 const displayCategories = [
   {
@@ -93,6 +95,17 @@ const DisplaysGallery = () => {
   const [selectedCategoryId, setSelectedCategoryId] = useState(displayCategories[0].id);
   const [selectedImage, setSelectedImage] = useState(null);
 
+  useEffect(() => {
+    const handleKeyDown = event => {
+      if (event.key === 'Escape') {
+        closeImage();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const selectedCategory = useMemo(
     () => displayCategories.find(category => category.id === selectedCategoryId) || displayCategories[0],
     [selectedCategoryId]
@@ -157,25 +170,32 @@ const DisplaysGallery = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-        {displayCategories.map(category => {
-          const isActive = category.id === selectedCategoryId;
-          return (
-            <button
-              key={category.id}
-              onClick={() => setSelectedCategoryId(category.id)}
-              className={`p-4 rounded-xl border transition-all duration-300 text-left shadow-sm hover:shadow-md hover:-translate-y-0.5 ${
-                isActive ? 'border-indigo-400 bg-indigo-50' : 'border-slate-200 bg-white'
-              }`}
-            >
-              <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${category.accent} flex items-center justify-center text-2xl mb-3`}>{category.icon}</div>
-              <h4 className="font-bold text-slate-800 text-lg mb-1">{category.name}</h4>
-              <p className="text-sm text-slate-600 leading-snug">{category.description}</p>
-              <div className="mt-3 text-xs text-slate-500 font-semibold">{category.images.length} displays</div>
-            </button>
-          );
-        })}
-      </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          {displayCategories.map(category => {
+            const isActive = category.id === selectedCategoryId;
+            return (
+              <button
+                key={category.id}
+                type="button"
+                onClick={() => setSelectedCategoryId(category.id)}
+                className={`p-4 rounded-xl border transition-all duration-300 text-left shadow-sm hover:shadow-md hover:-translate-y-0.5 ${
+                  isActive ? 'border-indigo-400 bg-indigo-50' : 'border-slate-200 bg-white'
+                }`}
+                aria-pressed={isActive}
+              >
+                <div
+                  className={`w-12 h-12 rounded-full bg-gradient-to-br ${category.accent} flex items-center justify-center text-2xl mb-3`}
+                  aria-hidden
+                >
+                  {category.icon}
+                </div>
+                <h4 className="font-bold text-slate-800 text-lg mb-1">{category.name}</h4>
+                <p className="text-sm text-slate-600 leading-snug">{category.description}</p>
+                <div className="mt-3 text-xs text-slate-500 font-semibold">{category.images.length} displays</div>
+              </button>
+            );
+          })}
+        </div>
 
       <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
@@ -192,25 +212,26 @@ const DisplaysGallery = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-          {selectedCategory.images.map(image => {
-            const imageUrl = buildImageUrl(selectedCategory.folder, image.file);
-            return (
-              <div key={image.file} className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-lg transition-all duration-300">
-                <div className="relative group cursor-pointer" onClick={() => openImage(image)}>
-                  <img
-                    src={imageUrl}
-                    alt={image.name}
-                    className="w-full h-56 object-cover"
-                  />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-semibold">
-                    View Fullscreen
-                  </div>
-                </div>
-                <div className="p-4 flex items-center justify-between">
-                  <div>
-                    <h5 className="font-bold text-slate-800">{image.name}</h5>
-                    <p className="text-sm text-slate-600">Tap to enlarge or print</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+            {selectedCategory.images.map(image => {
+              const imageUrl = buildImageUrl(selectedCategory.folder, image.file);
+              return (
+                <div key={image.file} className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-lg transition-all duration-300">
+                  <button
+                    type="button"
+                    className="relative group cursor-pointer w-full"
+                    onClick={() => openImage(image)}
+                    aria-label={`Open ${image.name} in fullscreen`}
+                  >
+                    <img src={imageUrl} alt={image.name} className="w-full h-56 object-cover" loading="lazy" />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-semibold">
+                      View Fullscreen
+                    </div>
+                  </button>
+                  <div className="p-4 flex items-center justify-between">
+                    <div>
+                      <h5 className="font-bold text-slate-800">{image.name}</h5>
+                      <p className="text-sm text-slate-600">Tap to enlarge or print</p>
                   </div>
                   <button
                     onClick={() => handlePrint(image)}
@@ -225,42 +246,49 @@ const DisplaysGallery = () => {
         </div>
       </div>
 
-      {selectedImage && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={closeImage}>
+        {selectedImage && (
           <div
-            className="bg-white rounded-2xl overflow-hidden shadow-2xl max-w-5xl w-full relative"
-            onClick={e => e.stopPropagation()}
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            onClick={closeImage}
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${selectedImage.name} fullscreen preview`}
           >
-            <div className="flex items-center justify-between p-4 border-b border-slate-200 bg-slate-50">
-              <div>
-                <p className="text-xs uppercase text-slate-500 font-semibold">{selectedImage.categoryName}</p>
-                <h5 className="text-xl font-bold text-slate-800">{selectedImage.name}</h5>
+            <div
+              className="bg-white rounded-2xl overflow-hidden shadow-2xl max-w-5xl w-full relative"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between p-4 border-b border-slate-200 bg-slate-50">
+                <div>
+                  <p className="text-xs uppercase text-slate-500 font-semibold">{selectedImage.categoryName}</p>
+                  <h5 className="text-xl font-bold text-slate-800">{selectedImage.name}</h5>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => handlePrint(selectedImage)}
+                    className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-indigo-600 text-white font-semibold hover:bg-indigo-700 shadow"
+                  >
+                    🖨️ Print
+                  </button>
+                  <button
+                    onClick={closeImage}
+                    className="px-3 py-2 rounded-full bg-slate-100 text-slate-700 font-semibold hover:bg-slate-200"
+                    aria-label="Close fullscreen view"
+                  >
+                    ✕ Close
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => handlePrint(selectedImage)}
-                  className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-indigo-600 text-white font-semibold hover:bg-indigo-700 shadow"
-                >
-                  🖨️ Print
-                </button>
-                <button
-                  onClick={closeImage}
-                  className="px-3 py-2 rounded-full bg-slate-100 text-slate-700 font-semibold hover:bg-slate-200"
-                >
-                  ✕ Close
-                </button>
+              <div className="bg-slate-900 flex items-center justify-center p-4">
+                <img
+                  src={buildImageUrl(selectedImage.categoryFolder, selectedImage.file)}
+                  alt={selectedImage.name}
+                  className="max-h-[75vh] max-w-full rounded-xl shadow-lg"
+                />
               </div>
-            </div>
-            <div className="bg-slate-900 flex items-center justify-center p-4">
-              <img
-                src={buildImageUrl(selectedImage.categoryFolder, selectedImage.file)}
-                alt={selectedImage.name}
-                className="max-h-[75vh] max-w-full rounded-xl shadow-lg"
-              />
             </div>
           </div>
-        </div>
-      )}
+        )}
     </div>
   );
 };
