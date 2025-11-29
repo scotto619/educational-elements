@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { auth, firestore } from '../utils/firebase';
@@ -202,11 +202,12 @@ export default function Dashboard() {
   function loadV1Classes(userData) {
     console.log('📚 Loading V1 classes from user document');
     const classes = userData.classes || [];
-    
+
     // Add student count for each class
     const formattedClasses = classes.map(cls => ({
       ...cls,
       studentCount: cls.students?.length || 0,
+      totalXP: (cls.students || []).reduce((sum, student) => sum + (student.totalPoints || 0), 0),
       isV2: false
     }));
     
@@ -659,6 +660,28 @@ export default function Dashboard() {
 
   const totalXP = savedClasses.reduce((total, cls) => total + calculateClassTotalXP(cls), 0);
 
+  const activeClass = useMemo(() => {
+    if (!savedClasses || savedClasses.length === 0) return null;
+    const match = savedClasses.find((cls) => cls.id === userData?.activeClassId);
+    return match || savedClasses[0];
+  }, [savedClasses, userData?.activeClassId]);
+
+  const activeClassTotalXP = activeClass ? calculateClassTotalXP(activeClass) : 0;
+
+  const activeClassRewardProgress = useMemo(() => {
+    const maxTierXP = CLASS_REWARD_TIERS[CLASS_REWARD_TIERS.length - 1].xp;
+    const progress = Math.min(100, Math.round((activeClassTotalXP / maxTierXP) * 100));
+    const nextTier = CLASS_REWARD_TIERS.find((tier) => activeClassTotalXP < tier.xp);
+
+    return {
+      progress,
+      nextTier,
+      nextMessage: nextTier
+        ? `${Math.max(0, nextTier.xp - activeClassTotalXP)} XP until ${nextTier.label}`
+        : '🎉 Major prize unlocked!'
+    };
+  }, [activeClassTotalXP]);
+
   // Subscription Required Screen
   if (!canAccess) {
     return (
@@ -961,6 +984,70 @@ export default function Dashboard() {
               <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 sm:p-6 rounded-xl">
                 <div className="text-2xl sm:text-3xl font-bold">{totalXP}</div>
                 <div className="text-green-100 text-sm sm:text-base">Total XP Earned</div>
+              </div>
+            </div>
+          )}
+
+          {/* Whole-Class Reward Progress */}
+          {activeClass && (
+            <div className="mb-6 sm:mb-8 bg-gradient-to-r from-purple-50 via-blue-50 to-pink-50 border border-purple-200 rounded-xl p-4 sm:p-6 shadow-sm">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="text-2xl sm:text-3xl">🎁</div>
+                  <div>
+                    <p className="text-xs sm:text-sm text-gray-600">Whole class progress</p>
+                    <h3 className="text-lg sm:text-2xl font-bold text-purple-800">Class Reward Scale</h3>
+                    <p className="text-sm text-gray-600">Showing rewards for {activeClass.name}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs sm:text-sm text-gray-500">Total class XP</p>
+                  <p className="text-xl sm:text-2xl font-bold text-purple-700">{activeClassTotalXP.toLocaleString()} XP</p>
+                </div>
+              </div>
+
+              <div className="relative h-3 sm:h-4 bg-white rounded-full overflow-hidden border border-purple-100">
+                <div
+                  className="absolute inset-y-0 left-0 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 shadow-sm"
+                  style={{ width: `${activeClassRewardProgress.progress}%` }}
+                ></div>
+                <div className="absolute inset-0 flex justify-between">
+                  {CLASS_REWARD_TIERS.map((tier) => {
+                    const reached = activeClassTotalXP >= tier.xp;
+                    return (
+                      <div key={tier.xp} className="relative flex-1">
+                        <div
+                          className={`absolute top-1/2 -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 rounded-full border-2 ${
+                            reached ? 'bg-amber-400 border-amber-500 shadow-sm' : 'bg-white border-purple-200'
+                          }`}
+                          style={{ left: '50%', transform: 'translate(-50%, -50%)' }}
+                        ></div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="mt-3 grid grid-cols-5 gap-2 text-center text-[10px] sm:text-xs font-semibold text-purple-700">
+                {CLASS_REWARD_TIERS.map((tier) => {
+                  const reached = activeClassTotalXP >= tier.xp;
+                  return (
+                    <div
+                      key={tier.xp}
+                      className={`px-2 py-1 rounded-lg border ${
+                        reached ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-white border-purple-100 text-purple-600'
+                      }`}
+                    >
+                      <div className="font-bold">{tier.xp.toLocaleString()} XP</div>
+                      <div>{tier.label}</div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="mt-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2 text-xs sm:text-sm text-gray-700">
+                <span className="font-semibold text-purple-800">{activeClassRewardProgress.nextMessage}</span>
+                <span className="text-gray-500">{activeClassRewardProgress.progress}% of 5,000 XP</span>
               </div>
             </div>
           )}
