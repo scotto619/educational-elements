@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 const displayCategories = [
   {
@@ -106,10 +106,7 @@ const DisplaysGallery = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const selectedCategory = useMemo(
-    () => displayCategories.find(category => category.id === selectedCategoryId) || displayCategories[0],
-    [selectedCategoryId]
-  );
+  const selectedCategory = displayCategories.find(category => category.id === selectedCategoryId) || displayCategories[0];
 
   const openImage = image => {
     setSelectedImage({ ...image, categoryFolder: selectedCategory.folder, categoryName: selectedCategory.name });
