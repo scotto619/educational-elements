@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { auth, firestore } from '../utils/firebase';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
 import { DEFAULT_UPDATES, fetchDashboardUpdates } from '../services/globalContent';
 
 const OWNER_EMAIL = 'scotto6190@gmail.com';
@@ -36,6 +36,14 @@ export default function Dashboard() {
     'Monk F', 'Monk M', 'Necromancer F', 'Necromancer M', 'Orc F', 'Orc M',
     'Paladin F', 'Paladin M', 'Rogue F', 'Rogue M', 'Sky Knight F', 'Sky Knight M',
     'Time Mage F', 'Time Mage M', 'Wizard F', 'Wizard M'
+  ];
+
+  const CLASS_REWARD_TIERS = [
+    { xp: 1000, label: 'Prize 1' },
+    { xp: 2000, label: 'Prize 2' },
+    { xp: 3000, label: 'Prize 3' },
+    { xp: 4000, label: 'Prize 4' },
+    { xp: 5000, label: 'Major Prize' }
   ];
 
   const getUpdateBadgeStyles = (status) => {
@@ -128,24 +136,25 @@ export default function Dashboard() {
       
       const classesSnapshot = await getDocs(classesQuery);
       console.log('✅ Found V2 classes:', classesSnapshot.size);
-      
+
       const classes = [];
       for (const classDoc of classesSnapshot.docs) {
         const classData = classDoc.data();
-        
+
         // Get student count from class membership
         const membershipDoc = await getDoc(doc(firestore, 'class_memberships', classDoc.id));
         let studentCount = 0;
         let students = [];
-        
+        let classTotalXP = 0;
+
         if (membershipDoc.exists()) {
           const membershipData = membershipDoc.data();
           const studentIds = membershipData.students || [];
           studentCount = studentIds.length;
-          
+
           // Get student details for display
           if (studentIds.length > 0) {
-            const studentPromises = studentIds.slice(0, 6).map(async (studentId) => {
+            const studentPromises = studentIds.map(async (studentId) => {
               try {
                 const studentDoc = await getDoc(doc(firestore, 'students', studentId));
                 if (studentDoc.exists()) {
@@ -156,12 +165,14 @@ export default function Dashboard() {
               }
               return null;
             });
-            
+
             const studentResults = await Promise.all(studentPromises);
-            students = studentResults.filter(s => s !== null);
+            const validStudents = studentResults.filter(s => s !== null);
+            students = validStudents.slice(0, 6);
+            classTotalXP = validStudents.reduce((sum, student) => sum + (student.totalPoints || 0), 0);
           }
         }
-        
+
         // Format class data for compatibility with dashboard UI
         const formattedClass = {
           id: classDoc.id,
@@ -170,6 +181,7 @@ export default function Dashboard() {
           createdAt: classData.createdAt,
           studentCount: studentCount,
           students: students, // For preview display
+          totalXP: classTotalXP,
           // Add a marker to indicate this is V2 data
           isV2: true
         };
@@ -190,11 +202,12 @@ export default function Dashboard() {
   function loadV1Classes(userData) {
     console.log('📚 Loading V1 classes from user document');
     const classes = userData.classes || [];
-    
+
     // Add student count for each class
     const formattedClasses = classes.map(cls => ({
       ...cls,
       studentCount: cls.students?.length || 0,
+      totalXP: (cls.students || []).reduce((sum, student) => sum + (student.totalPoints || 0), 0),
       isV2: false
     }));
     
@@ -366,9 +379,18 @@ export default function Dashboard() {
     }));
   };
 
+  const generateClassCode = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = '';
+    for (let i = 0; i < 6; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  };
+
   const createClass = async () => {
     setIsCreatingClass(true);
-    
+
     try {
       const studentsArray = studentList.map(student => ({
         id: student.id,
@@ -400,27 +422,80 @@ export default function Dashboard() {
         ]
       };
 
-      // Always create in V1 format for now (the migration will handle V1->V2 conversion)
-      const docRef = doc(firestore, 'users', user.uid);
-      const currentUserData = await getDoc(docRef);
-      const existingClasses = currentUserData.exists() ? (currentUserData.data().classes || []) : [];
-      const updated = [...existingClasses, newClass];
-      
-      await updateDoc(docRef, { 
-        classes: updated,
-        activeClassId: newClass.id
-      });
-      
-      // Reload classes after creation
       if (architectureVersion === 'v2') {
+        const batch = writeBatch(firestore);
+        const now = new Date().toISOString();
+        const classId = `class_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const classRef = doc(firestore, 'classes', classId);
+        const membershipRef = doc(firestore, 'class_memberships', classId);
+        const userRef = doc(firestore, 'users', user.uid);
+
+        const classData = {
+          id: classId,
+          teacherId: user.uid,
+          name: className,
+          classCode: generateClassCode(),
+          createdAt: now,
+          updatedAt: now,
+          xpCategories: newClass.xpCategories,
+          classRewards: [],
+          activeQuests: [],
+          attendanceData: {},
+          toolkitData: {},
+          studentCount: studentsArray.length,
+          lastActivity: now,
+          archived: false
+        };
+
+        const studentIds = studentsArray.map(student => student.id);
+
+        batch.set(classRef, classData);
+        batch.set(membershipRef, {
+          classId,
+          teacherId: user.uid,
+          students: studentIds,
+          createdAt: now,
+          updatedAt: now
+        });
+
+        studentsArray.forEach(student => {
+          const studentRef = doc(firestore, 'students', student.id);
+          batch.set(studentRef, {
+            ...student,
+            classId,
+            classCode: classData.classCode,
+            lastActivity: now,
+            archived: false
+          });
+        });
+
+        batch.update(userRef, {
+          activeClassId: classId,
+          updatedAt: now,
+          version: '2.0'
+        });
+
+        await batch.commit();
+
         const v2Classes = await loadV2Classes(user.uid);
         setSavedClasses(v2Classes);
       } else {
+        // Always create in V1 format for now (the migration will handle V1->V2 conversion)
+        const docRef = doc(firestore, 'users', user.uid);
+        const currentUserData = await getDoc(docRef);
+        const existingClasses = currentUserData.exists() ? (currentUserData.data().classes || []) : [];
+        const updated = [...existingClasses, newClass];
+
+        await updateDoc(docRef, {
+          classes: updated,
+          activeClassId: newClass.id
+        });
+
         const userData = await getDoc(docRef);
         const v1Classes = loadV1Classes(userData.data());
         setSavedClasses(v1Classes);
       }
-      
+
       setShowCreateClassModal(false);
       setCurrentStep(1);
       
@@ -441,8 +516,42 @@ export default function Dashboard() {
 
     try {
       if (classToDelete.isV2) {
-        // V2 deletion would require API call - for now, show a message
-        alert('V2 class deletion requires migration completion. Please contact support.');
+        const classId = classToDelete.id;
+        const batch = writeBatch(firestore);
+        const now = new Date().toISOString();
+
+        const classRef = doc(firestore, 'classes', classId);
+        const membershipRef = doc(firestore, 'class_memberships', classId);
+        const userRef = doc(firestore, 'users', user.uid);
+
+        const membershipSnap = await getDoc(membershipRef);
+        const studentIds = membershipSnap.exists() ? (membershipSnap.data().students || []) : [];
+
+        studentIds.forEach(studentId => {
+          const studentRef = doc(firestore, 'students', studentId);
+          batch.delete(studentRef);
+        });
+
+        batch.delete(membershipRef);
+        batch.delete(classRef);
+
+        const remainingClasses = savedClasses.filter(cls => cls.id !== classId);
+        const newActiveClassId = userData?.activeClassId === classId
+          ? (remainingClasses[0]?.id || null)
+          : (userData?.activeClassId || null);
+
+        batch.update(userRef, {
+          activeClassId: newActiveClassId,
+          updatedAt: now
+        });
+
+        await batch.commit();
+
+        const refreshedClasses = await loadV2Classes(user.uid);
+        setSavedClasses(refreshedClasses);
+        setUserData(prev => ({ ...prev, activeClassId: newActiveClassId }));
+
+        alert(`Class "${classToDelete.name}" has been deleted.`);
         return;
       }
 
@@ -541,14 +650,37 @@ export default function Dashboard() {
     }
   }, 0);
 
-  const totalXP = savedClasses.reduce((total, cls) => {
-    if (cls.isV2) {
-      // For V2, we only have preview students, not full data
-      return total + (cls.students?.reduce((sum, student) => sum + (student.totalPoints || 0), 0) || 0);
-    } else {
-      return total + (cls.students?.reduce((sum, student) => sum + (student.totalPoints || 0), 0) || 0);
+  const calculateClassTotalXP = (cls) => {
+    if (typeof cls.totalXP === 'number') {
+      return cls.totalXP;
     }
-  }, 0);
+
+    return cls.students?.reduce((sum, student) => sum + (student.totalPoints || 0), 0) || 0;
+  };
+
+  const totalXP = savedClasses.reduce((total, cls) => total + calculateClassTotalXP(cls), 0);
+
+  const activeClass = useMemo(() => {
+    if (!savedClasses || savedClasses.length === 0) return null;
+    const match = savedClasses.find((cls) => cls.id === userData?.activeClassId);
+    return match || savedClasses[0];
+  }, [savedClasses, userData?.activeClassId]);
+
+  const activeClassTotalXP = activeClass ? calculateClassTotalXP(activeClass) : 0;
+
+  const activeClassRewardProgress = useMemo(() => {
+    const maxTierXP = CLASS_REWARD_TIERS[CLASS_REWARD_TIERS.length - 1].xp;
+    const progress = Math.min(100, Math.round((activeClassTotalXP / maxTierXP) * 100));
+    const nextTier = CLASS_REWARD_TIERS.find((tier) => activeClassTotalXP < tier.xp);
+
+    return {
+      progress,
+      nextTier,
+      nextMessage: nextTier
+        ? `${Math.max(0, nextTier.xp - activeClassTotalXP)} XP until ${nextTier.label}`
+        : '🎉 Major prize unlocked!'
+    };
+  }, [activeClassTotalXP]);
 
   // Subscription Required Screen
   if (!canAccess) {
@@ -856,6 +988,70 @@ export default function Dashboard() {
             </div>
           )}
 
+          {/* Whole-Class Reward Progress */}
+          {activeClass && (
+            <div className="mb-6 sm:mb-8 bg-gradient-to-r from-purple-50 via-blue-50 to-pink-50 border border-purple-200 rounded-xl p-4 sm:p-6 shadow-sm">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="text-2xl sm:text-3xl">🎁</div>
+                  <div>
+                    <p className="text-xs sm:text-sm text-gray-600">Whole class progress</p>
+                    <h3 className="text-lg sm:text-2xl font-bold text-purple-800">Class Reward Scale</h3>
+                    <p className="text-sm text-gray-600">Showing rewards for {activeClass.name}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs sm:text-sm text-gray-500">Total class XP</p>
+                  <p className="text-xl sm:text-2xl font-bold text-purple-700">{activeClassTotalXP.toLocaleString()} XP</p>
+                </div>
+              </div>
+
+              <div className="relative h-3 sm:h-4 bg-white rounded-full overflow-hidden border border-purple-100">
+                <div
+                  className="absolute inset-y-0 left-0 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 shadow-sm"
+                  style={{ width: `${activeClassRewardProgress.progress}%` }}
+                ></div>
+                <div className="absolute inset-0 flex justify-between">
+                  {CLASS_REWARD_TIERS.map((tier) => {
+                    const reached = activeClassTotalXP >= tier.xp;
+                    return (
+                      <div key={tier.xp} className="relative flex-1">
+                        <div
+                          className={`absolute top-1/2 -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 rounded-full border-2 ${
+                            reached ? 'bg-amber-400 border-amber-500 shadow-sm' : 'bg-white border-purple-200'
+                          }`}
+                          style={{ left: '50%', transform: 'translate(-50%, -50%)' }}
+                        ></div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="mt-3 grid grid-cols-5 gap-2 text-center text-[10px] sm:text-xs font-semibold text-purple-700">
+                {CLASS_REWARD_TIERS.map((tier) => {
+                  const reached = activeClassTotalXP >= tier.xp;
+                  return (
+                    <div
+                      key={tier.xp}
+                      className={`px-2 py-1 rounded-lg border ${
+                        reached ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-white border-purple-100 text-purple-600'
+                      }`}
+                    >
+                      <div className="font-bold">{tier.xp.toLocaleString()} XP</div>
+                      <div>{tier.label}</div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="mt-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2 text-xs sm:text-sm text-gray-700">
+                <span className="font-semibold text-purple-800">{activeClassRewardProgress.nextMessage}</span>
+                <span className="text-gray-500">{activeClassRewardProgress.progress}% of 5,000 XP</span>
+              </div>
+            </div>
+          )}
+
           {/* Create New Class Button - Mobile Optimized */}
           <div className="mb-6 sm:mb-8 bg-gradient-to-r from-purple-50 to-blue-50 p-4 sm:p-6 rounded-xl border border-purple-200">
             <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between space-y-4 lg:space-y-0">
@@ -958,7 +1154,84 @@ export default function Dashboard() {
                           </div>
                         </div>
                       )}
-                      
+
+                      {/* Class Reward Scale */}
+                      <div className="mb-6">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xl">🎁</span>
+                            <div>
+                              <p className="text-xs sm:text-sm text-gray-600">Class Rewards</p>
+                              <p className="text-sm sm:text-base font-semibold text-gray-800">Whole class XP progress</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs text-gray-500">Total XP</p>
+                            <p className="text-lg sm:text-xl font-bold text-purple-600">{calculateClassTotalXP(cls)}</p>
+                          </div>
+                        </div>
+
+                        {(() => {
+                          const classTotalXP = calculateClassTotalXP(cls);
+                          const maxTierXP = CLASS_REWARD_TIERS[CLASS_REWARD_TIERS.length - 1].xp;
+                          const progress = Math.min(100, Math.round((classTotalXP / maxTierXP) * 100));
+                          const nextTier = CLASS_REWARD_TIERS.find(tier => classTotalXP < tier.xp);
+                          const nextMessage = nextTier
+                            ? `${Math.max(0, nextTier.xp - classTotalXP)} XP to ${nextTier.label}`
+                            : '🎉 Major prize unlocked!';
+
+                          return (
+                            <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-100 rounded-xl p-3 sm:p-4 shadow-inner">
+                              <div className="relative h-3 sm:h-4 bg-white rounded-full overflow-hidden border border-purple-100">
+                                <div
+                                  className="absolute inset-y-0 left-0 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 shadow-inner"
+                                  style={{ width: `${progress}%` }}
+                                ></div>
+                                <div className="absolute inset-0 flex justify-between">
+                                  {CLASS_REWARD_TIERS.map((tier) => {
+                                    const reached = classTotalXP >= tier.xp;
+                                    return (
+                                      <div key={tier.xp} className="relative flex-1">
+                                        <div
+                                          className={`absolute top-1/2 -translate-y-1/2 w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full border-2 ${
+                                            reached ? 'bg-amber-400 border-amber-500 shadow-sm' : 'bg-white border-purple-200'
+                                          }`}
+                                          style={{ left: '50%', transform: 'translate(-50%, -50%)' }}
+                                        ></div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+
+                              <div className="mt-3 grid grid-cols-5 gap-2 text-center text-[10px] sm:text-xs font-semibold text-purple-700">
+                                {CLASS_REWARD_TIERS.map((tier) => {
+                                  const reached = classTotalXP >= tier.xp;
+                                  return (
+                                    <div
+                                      key={tier.xp}
+                                      className={`px-2 py-1 rounded-lg border ${
+                                        reached
+                                          ? 'bg-amber-50 border-amber-200 text-amber-700'
+                                          : 'bg-white border-purple-100 text-purple-600'
+                                      }`}
+                                    >
+                                      <div className="font-bold">{tier.xp.toLocaleString()} XP</div>
+                                      <div>{tier.label}</div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+
+                              <div className="mt-3 flex items-center justify-between text-xs sm:text-sm text-gray-700">
+                                <span className="font-semibold text-purple-700">{nextMessage}</span>
+                                <span className="text-gray-500">{progress}% of 5,000 XP</span>
+                              </div>
+                            </div>
+                          );
+                        })()}
+                      </div>
+
                       {/* Action Buttons - Mobile Stack */}
                       <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
                         <button
