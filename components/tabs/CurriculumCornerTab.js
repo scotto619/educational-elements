@@ -13,6 +13,7 @@ import ReadersTheatre from '../curriculum/literacy/ReadersTheatre';
 import Morphology from '../curriculum/literacy/Morphology';
 import VocabularyCorner from '../curriculum/literacy/VocabularyCorner';
 import FlipCardsStudio from '../curriculum/general/FlipCardsStudio';
+import DisplaysGallery from '../curriculum/general/DisplaysGallery';
 import AreaPerimeterTool from '../curriculum/mathematics/AreaPerimeterTool';
 import MathWarmup from '../curriculum/mathematics/MathWarmup';
 import WorksheetGenerator from '../curriculum/mathematics/WorksheetGenerator';
@@ -232,6 +233,23 @@ const subjects = [
         icon: '🎴',
         description: 'Fullscreen flip cards with default decks and a simple deck builder',
         component: FlipCardsStudio,
+        isNew: true
+      }
+    ]
+  },
+  {
+    id: 'displays',
+    name: 'Displays',
+    icon: '🖼️',
+    color: 'from-fuchsia-500 to-indigo-600',
+    description: 'Printable classroom displays organised by subject area',
+    activities: [
+      {
+        id: 'classroom-displays',
+        name: 'Classroom Displays Library',
+        icon: '🖨️',
+        description: 'Browse, fullscreen, and print subject-specific displays',
+        component: DisplaysGallery,
         isNew: true
       }
     ]
