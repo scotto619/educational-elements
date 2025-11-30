@@ -11,11 +11,44 @@ const displayCategories = [
     folder: 'English',
     accent: 'from-purple-500 to-indigo-500',
     images: [
+      { name: 'Alphabet Display', file: 'Alphabet/Alphabet.png' },
+      { name: 'Letter A', file: 'Alphabet/A.png' },
+      { name: 'Letter B', file: 'Alphabet/B.png' },
+      { name: 'Letter C', file: 'Alphabet/C.png' },
+      { name: 'Letter D', file: 'Alphabet/D.png' },
+      { name: 'Letter E', file: 'Alphabet/E.png' },
+      { name: 'Letter F', file: 'Alphabet/F.png' },
+      { name: 'Letter G', file: 'Alphabet/G.png' },
+      { name: 'Letter H', file: 'Alphabet/H.png' },
+      { name: 'Letter I', file: 'Alphabet/I.png' },
+      { name: 'Letter J', file: 'Alphabet/J.png' },
+      { name: 'Letter K', file: 'Alphabet/K.png' },
+      { name: 'Letter L', file: 'Alphabet/L.png' },
+      { name: 'Letter M', file: 'Alphabet/M.png' },
+      { name: 'Letter N', file: 'Alphabet/N.png' },
+      { name: 'Letter O', file: 'Alphabet/O.png' },
+      { name: 'Letter P', file: 'Alphabet/P.png' },
+      { name: 'Letter Q', file: 'Alphabet/Q.png' },
+      { name: 'Letter R', file: 'Alphabet/R.png' },
+      { name: 'Letter S', file: 'Alphabet/S.png' },
+      { name: 'Letter T', file: 'Alphabet/T.png' },
+      { name: 'Letter U', file: 'Alphabet/U.png' },
+      { name: 'Letter V', file: 'Alphabet/V.png' },
+      { name: 'Letter W', file: 'Alphabet/W.png' },
+      { name: 'Letter X', file: 'Alphabet/X.png' },
+      { name: 'Letter Y', file: 'Alphabet/Y.png' },
+      { name: 'Letter Z', file: 'Alphabet/Z.png' },
       { name: 'Fantasy Narratives', file: 'Fantasy Narratives.png' },
-      { name: 'Science Fiction Narratives', file: 'SciFi Narratives.png' },
-      { name: 'Persuasive Writing', file: 'Persuasive.png' },
       { name: 'Information Reports', file: 'InfoReports.png' },
-      { name: 'Poetry', file: 'Poetry.png' }
+      { name: 'Persuasive Writing', file: 'Persuasive.png' },
+      { name: 'Poetry', file: 'Poetry.png' },
+      { name: 'Recount Writing', file: 'Recount.png' },
+      { name: 'Science Fiction Narratives', file: 'SciFi Narratives.png' },
+      { name: 'Spelling - Chunking', file: 'Spelling/Chunking.png' },
+      { name: 'Spelling - Letter Sounds', file: 'Spelling/LetterSound.png' },
+      { name: 'Spelling - Phonetic Strategies', file: 'Spelling/Phonetic Strategies.png' },
+      { name: 'Spelling - Rhyming', file: 'Spelling/Rhyming.png' },
+      { name: 'Spelling - Sound It Out', file: 'Spelling/SoundItOut.png' }
     ]
   },
   {
@@ -25,7 +58,15 @@ const displayCategories = [
     description: 'Printable visuals to support numeracy lessons.',
     folder: 'Maths',
     accent: 'from-blue-500 to-cyan-500',
-    images: [{ name: 'Integers', file: 'Integers.png' }]
+    images: [
+      { name: 'Addition', file: 'Addition.png' },
+      { name: 'Comparing Fractions', file: 'ComparingFractions.png' },
+      { name: 'Division', file: 'Division.png' },
+      { name: 'Integers', file: 'Integers.png' },
+      { name: 'Multiplication', file: 'Multiplication.png' },
+      { name: 'Recount', file: 'Recount.png' },
+      { name: 'Subtraction', file: 'Subtraction.png' }
+    ]
   },
   {
     id: 'science',
@@ -35,6 +76,8 @@ const displayCategories = [
     folder: 'Science',
     accent: 'from-emerald-500 to-teal-500',
     images: [
+      { name: 'Bottle Rocket Experiment', file: 'Experiments/Bottle Rocket.png' },
+      { name: 'Elephant Toothpaste Experiment', file: 'Experiments/Elephant Toothpaste.png' },
       { name: 'Mercury', file: 'Mercury.png' },
       { name: 'Venus', file: 'Venus.png' },
       { name: 'Earth', file: 'Earth.png' },
@@ -89,7 +132,13 @@ const displayCategories = [
   }
 ];
 
-const buildImageUrl = (folder, file) => `/Displays/${folder}/${encodeURIComponent(file)}`;
+const buildImageUrl = (folder, file) => {
+  const encodedPath = file
+    .split('/')
+    .map(part => encodeURIComponent(part))
+    .join('/');
+  return `/Displays/${folder}/${encodedPath}`;
+};
 
 const DisplaysGallery = () => {
   const [selectedCategoryId, setSelectedCategoryId] = useState(displayCategories[0].id);
@@ -107,6 +156,7 @@ const DisplaysGallery = () => {
   }, []);
 
   const selectedCategory = displayCategories.find(category => category.id === selectedCategoryId) || displayCategories[0];
+  const sortedImages = [...selectedCategory.images].sort((a, b) => a.name.localeCompare(b.name));
 
   const openImage = image => {
     setSelectedImage({ ...image, categoryFolder: selectedCategory.folder, categoryName: selectedCategory.name });
@@ -210,7 +260,7 @@ const DisplaysGallery = () => {
         </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-            {selectedCategory.images.map(image => {
+            {sortedImages.map(image => {
               const imageUrl = buildImageUrl(selectedCategory.folder, image.file);
               return (
                 <div key={image.file} className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-lg transition-all duration-300">
