@@ -10,45 +10,60 @@ const displayCategories = [
     description: 'Narrative structures, poetry, persuasive and informative writing supports.',
     folder: 'English',
     accent: 'from-purple-500 to-indigo-500',
-    images: [
-      { name: 'Alphabet Display', file: 'Alphabet/Alphabet.png' },
-      { name: 'Letter A', file: 'Alphabet/A.png' },
-      { name: 'Letter B', file: 'Alphabet/B.png' },
-      { name: 'Letter C', file: 'Alphabet/C.png' },
-      { name: 'Letter D', file: 'Alphabet/D.png' },
-      { name: 'Letter E', file: 'Alphabet/E.png' },
-      { name: 'Letter F', file: 'Alphabet/F.png' },
-      { name: 'Letter G', file: 'Alphabet/G.png' },
-      { name: 'Letter H', file: 'Alphabet/H.png' },
-      { name: 'Letter I', file: 'Alphabet/I.png' },
-      { name: 'Letter J', file: 'Alphabet/J.png' },
-      { name: 'Letter K', file: 'Alphabet/K.png' },
-      { name: 'Letter L', file: 'Alphabet/L.png' },
-      { name: 'Letter M', file: 'Alphabet/M.png' },
-      { name: 'Letter N', file: 'Alphabet/N.png' },
-      { name: 'Letter O', file: 'Alphabet/O.png' },
-      { name: 'Letter P', file: 'Alphabet/P.png' },
-      { name: 'Letter Q', file: 'Alphabet/Q.png' },
-      { name: 'Letter R', file: 'Alphabet/R.png' },
-      { name: 'Letter S', file: 'Alphabet/S.png' },
-      { name: 'Letter T', file: 'Alphabet/T.png' },
-      { name: 'Letter U', file: 'Alphabet/U.png' },
-      { name: 'Letter V', file: 'Alphabet/V.png' },
-      { name: 'Letter W', file: 'Alphabet/W.png' },
-      { name: 'Letter X', file: 'Alphabet/X.png' },
-      { name: 'Letter Y', file: 'Alphabet/Y.png' },
-      { name: 'Letter Z', file: 'Alphabet/Z.png' },
-      { name: 'Fantasy Narratives', file: 'Fantasy Narratives.png' },
-      { name: 'Information Reports', file: 'InfoReports.png' },
-      { name: 'Persuasive Writing', file: 'Persuasive.png' },
-      { name: 'Poetry', file: 'Poetry.png' },
-      { name: 'Recount Writing', file: 'Recount.png' },
-      { name: 'Science Fiction Narratives', file: 'SciFi Narratives.png' },
-      { name: 'Spelling - Chunking', file: 'Spelling/Chunking.png' },
-      { name: 'Spelling - Letter Sounds', file: 'Spelling/LetterSound.png' },
-      { name: 'Spelling - Phonetic Strategies', file: 'Spelling/Phonetic Strategies.png' },
-      { name: 'Spelling - Rhyming', file: 'Spelling/Rhyming.png' },
-      { name: 'Spelling - Sound It Out', file: 'Spelling/SoundItOut.png' }
+    sections: [
+      {
+        name: 'Letters',
+        images: [
+          { name: 'Alphabet Display', file: 'Alphabet/Alphabet.png' },
+          { name: 'Letter A', file: 'Alphabet/A.png' },
+          { name: 'Letter B', file: 'Alphabet/B.png' },
+          { name: 'Letter C', file: 'Alphabet/C.png' },
+          { name: 'Letter D', file: 'Alphabet/D.png' },
+          { name: 'Letter E', file: 'Alphabet/E.png' },
+          { name: 'Letter F', file: 'Alphabet/F.png' },
+          { name: 'Letter G', file: 'Alphabet/G.png' },
+          { name: 'Letter H', file: 'Alphabet/H.png' },
+          { name: 'Letter I', file: 'Alphabet/I.png' },
+          { name: 'Letter J', file: 'Alphabet/J.png' },
+          { name: 'Letter K', file: 'Alphabet/K.png' },
+          { name: 'Letter L', file: 'Alphabet/L.png' },
+          { name: 'Letter M', file: 'Alphabet/M.png' },
+          { name: 'Letter N', file: 'Alphabet/N.png' },
+          { name: 'Letter O', file: 'Alphabet/O.png' },
+          { name: 'Letter P', file: 'Alphabet/P.png' },
+          { name: 'Letter Q', file: 'Alphabet/Q.png' },
+          { name: 'Letter R', file: 'Alphabet/R.png' },
+          { name: 'Letter S', file: 'Alphabet/S.png' },
+          { name: 'Letter T', file: 'Alphabet/T.png' },
+          { name: 'Letter U', file: 'Alphabet/U.png' },
+          { name: 'Letter V', file: 'Alphabet/V.png' },
+          { name: 'Letter W', file: 'Alphabet/W.png' },
+          { name: 'Letter X', file: 'Alphabet/X.png' },
+          { name: 'Letter Y', file: 'Alphabet/Y.png' },
+          { name: 'Letter Z', file: 'Alphabet/Z.png' }
+        ]
+      },
+      {
+        name: 'Spelling',
+        images: [
+          { name: 'Spelling - Chunking', file: 'Spelling/Chunking.png' },
+          { name: 'Spelling - Letter Sounds', file: 'Spelling/LetterSound.png' },
+          { name: 'Spelling - Phonetic Strategies', file: 'Spelling/Phonetic Strategies.png' },
+          { name: 'Spelling - Rhyming', file: 'Spelling/Rhyming.png' },
+          { name: 'Spelling - Sound It Out', file: 'Spelling/SoundItOut.png' }
+        ]
+      },
+      {
+        name: 'Writing',
+        images: [
+          { name: 'Fantasy Narratives', file: 'Fantasy Narratives.png' },
+          { name: 'Information Reports', file: 'InfoReports.png' },
+          { name: 'Persuasive Writing', file: 'Persuasive.png' },
+          { name: 'Poetry', file: 'Poetry.png' },
+          { name: 'Recount Writing', file: 'Recount.png' },
+          { name: 'Science Fiction Narratives', file: 'SciFi Narratives.png' }
+        ]
+      }
     ]
   },
   {
@@ -58,14 +73,21 @@ const displayCategories = [
     description: 'Printable visuals to support numeracy lessons.',
     folder: 'Maths',
     accent: 'from-blue-500 to-cyan-500',
-    images: [
-      { name: 'Addition', file: 'Addition.png' },
-      { name: 'Comparing Fractions', file: 'ComparingFractions.png' },
-      { name: 'Division', file: 'Division.png' },
-      { name: 'Integers', file: 'Integers.png' },
-      { name: 'Multiplication', file: 'Multiplication.png' },
-      { name: 'Recount', file: 'Recount.png' },
-      { name: 'Subtraction', file: 'Subtraction.png' }
+    sections: [
+      {
+        name: 'Number & Operations',
+        images: [
+          { name: 'Addition', file: 'Addition.png' },
+          { name: 'Division', file: 'Division.png' },
+          { name: 'Integers', file: 'Integers.png' },
+          { name: 'Multiplication', file: 'Multiplication.png' },
+          { name: 'Subtraction', file: 'Subtraction.png' }
+        ]
+      },
+      {
+        name: 'Fractions',
+        images: [{ name: 'Comparing Fractions', file: 'ComparingFractions.png' }]
+      }
     ]
   },
   {
@@ -75,18 +97,28 @@ const displayCategories = [
     description: 'Planets and solar system displays for inquiry learning.',
     folder: 'Science',
     accent: 'from-emerald-500 to-teal-500',
-    images: [
-      { name: 'Bottle Rocket Experiment', file: 'Experiments/Bottle Rocket.png' },
-      { name: 'Elephant Toothpaste Experiment', file: 'Experiments/Elephant Toothpaste.png' },
-      { name: 'Mercury', file: 'Mercury.png' },
-      { name: 'Venus', file: 'Venus.png' },
-      { name: 'Earth', file: 'Earth.png' },
-      { name: 'Mars', file: 'Mars.png' },
-      { name: 'Jupiter', file: 'Jupiter.png' },
-      { name: 'Saturn', file: 'Saturn.png' },
-      { name: 'Uranus', file: 'Uranus.png' },
-      { name: 'Neptune', file: 'Neptune.png' },
-      { name: 'Solar System', file: 'SolarSystem.png' }
+    sections: [
+      {
+        name: 'Experiments',
+        images: [
+          { name: 'Bottle Rocket Experiment', file: 'Experiments/Bottle Rocket.png' },
+          { name: 'Elephant Toothpaste Experiment', file: 'Experiments/Elephant Toothpaste.png' }
+        ]
+      },
+      {
+        name: 'Space',
+        images: [
+          { name: 'Earth', file: 'Earth.png' },
+          { name: 'Jupiter', file: 'Jupiter.png' },
+          { name: 'Mars', file: 'Mars.png' },
+          { name: 'Mercury', file: 'Mercury.png' },
+          { name: 'Neptune', file: 'Neptune.png' },
+          { name: 'Saturn', file: 'Saturn.png' },
+          { name: 'Solar System', file: 'SolarSystem.png' },
+          { name: 'Uranus', file: 'Uranus.png' },
+          { name: 'Venus', file: 'Venus.png' }
+        ]
+      }
     ]
   },
   {
@@ -96,12 +128,17 @@ const displayCategories = [
     description: 'Visual cues for classroom expectations and colour systems.',
     folder: 'Behaviour',
     accent: 'from-amber-500 to-rose-500',
-    images: [
-      { name: 'Blue', file: 'Blue.png' },
-      { name: 'Green', file: 'Green.png' },
-      { name: 'Yellow', file: 'Yellow.png' },
-      { name: 'Red', file: 'Red.png' },
-      { name: 'Colours', file: 'Colours.png' }
+    sections: [
+      {
+        name: 'Behaviour Cues',
+        images: [
+          { name: 'Blue', file: 'Blue.png' },
+          { name: 'Colours', file: 'Colours.png' },
+          { name: 'Green', file: 'Green.png' },
+          { name: 'Red', file: 'Red.png' },
+          { name: 'Yellow', file: 'Yellow.png' }
+        ]
+      }
     ]
   },
   {
@@ -111,23 +148,28 @@ const displayCategories = [
     description: 'Brain breaks and energisers to display for students.',
     folder: 'Games',
     accent: 'from-pink-500 to-fuchsia-600',
-    images: [
-      { name: '20 Questions', file: '20Questions.png' },
-      { name: 'Two Truths', file: '2truths.png' },
-      { name: 'Bang', file: 'Bang.png' },
-      { name: "Captain's Orders", file: 'CaptainsOrders.png' },
-      { name: 'Celebrity Heads', file: 'CelebrityHeads.png' },
-      { name: 'Corners', file: 'Corners.png' },
-      { name: 'Fruit Salad', file: 'FruitSalad.png' },
-      { name: 'Heads Down Thumbs Up', file: 'HeadsDownThumbsUp.png' },
-      { name: 'Human Knot', file: 'HumanKnot.png' },
-      { name: 'Musical Statues', file: 'Musical Statues.png' },
-      { name: 'One Word', file: 'OneWord.png' },
-      { name: 'PSR', file: 'PSR.png' },
-      { name: 'Secret Leader', file: 'SecretLeader.png' },
-      { name: 'Sharks and Minnows', file: 'SharksandMinnows.png' },
-      { name: 'Silent Ball', file: 'Silent Ball.png' },
-      { name: 'Sleepy Spy', file: 'SleepySpy.png' }
+    sections: [
+      {
+        name: 'Brain Breaks',
+        images: [
+          { name: '20 Questions', file: '20Questions.png' },
+          { name: 'Two Truths', file: '2truths.png' },
+          { name: 'Bang', file: 'Bang.png' },
+          { name: "Captain's Orders", file: 'CaptainsOrders.png' },
+          { name: 'Celebrity Heads', file: 'CelebrityHeads.png' },
+          { name: 'Corners', file: 'Corners.png' },
+          { name: 'Fruit Salad', file: 'FruitSalad.png' },
+          { name: 'Heads Down Thumbs Up', file: 'HeadsDownThumbsUp.png' },
+          { name: 'Human Knot', file: 'HumanKnot.png' },
+          { name: 'Musical Statues', file: 'Musical Statues.png' },
+          { name: 'One Word', file: 'OneWord.png' },
+          { name: 'PSR', file: 'PSR.png' },
+          { name: 'Secret Leader', file: 'SecretLeader.png' },
+          { name: 'Sharks and Minnows', file: 'SharksandMinnows.png' },
+          { name: 'Silent Ball', file: 'Silent Ball.png' },
+          { name: 'Sleepy Spy', file: 'SleepySpy.png' }
+        ]
+      }
     ]
   }
 ];
@@ -144,6 +186,9 @@ const DisplaysGallery = () => {
   const [selectedCategoryId, setSelectedCategoryId] = useState(displayCategories[0].id);
   const [selectedImage, setSelectedImage] = useState(null);
 
+  const getCategoryImageCount = category =>
+    category.sections?.reduce((total, section) => total + section.images.length, 0) || 0;
+
   useEffect(() => {
     const handleKeyDown = event => {
       if (event.key === 'Escape') {
@@ -156,7 +201,10 @@ const DisplaysGallery = () => {
   }, []);
 
   const selectedCategory = displayCategories.find(category => category.id === selectedCategoryId) || displayCategories[0];
-  const sortedImages = [...selectedCategory.images].sort((a, b) => a.name.localeCompare(b.name));
+  const sortedSections = selectedCategory.sections?.map(section => ({
+    ...section,
+    images: [...section.images].sort((a, b) => a.name.localeCompare(b.name))
+  }));
 
   const openImage = image => {
     setSelectedImage({ ...image, categoryFolder: selectedCategory.folder, categoryName: selectedCategory.name });
@@ -238,7 +286,7 @@ const DisplaysGallery = () => {
                 </div>
                 <h4 className="font-bold text-slate-800 text-lg mb-1">{category.name}</h4>
                 <p className="text-sm text-slate-600 leading-snug">{category.description}</p>
-                <div className="mt-3 text-xs text-slate-500 font-semibold">{category.images.length} displays</div>
+                <div className="mt-3 text-xs text-slate-500 font-semibold">{getCategoryImageCount(category)} displays</div>
               </button>
             );
           })}
@@ -259,37 +307,50 @@ const DisplaysGallery = () => {
           </div>
         </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-            {sortedImages.map(image => {
-              const imageUrl = buildImageUrl(selectedCategory.folder, image.file);
-              return (
-                <div key={image.file} className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-lg transition-all duration-300">
-                  <button
-                    type="button"
-                    className="relative group cursor-pointer w-full"
-                    onClick={() => openImage(image)}
-                    aria-label={`Open ${image.name} in fullscreen`}
-                  >
-                    <img src={imageUrl} alt={image.name} className="w-full h-56 object-cover" loading="lazy" />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-semibold">
-                      View Fullscreen
-                    </div>
-                  </button>
-                  <div className="p-4 flex items-center justify-between">
-                    <div>
-                      <h5 className="font-bold text-slate-800">{image.name}</h5>
-                      <p className="text-sm text-slate-600">Tap to enlarge or print</p>
-                  </div>
-                  <button
-                    onClick={() => handlePrint(image)}
-                    className="inline-flex items-center gap-2 text-sm font-semibold text-indigo-600 hover:text-indigo-700"
-                  >
-                    🖨️ Print
-                  </button>
-                </div>
+        <div className="space-y-8">
+          {sortedSections?.map(section => (
+            <div key={section.name} className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h5 className="text-lg font-semibold text-slate-800">{section.name}</h5>
+                <span className="text-xs font-semibold text-slate-500">{section.images.length} items</span>
               </div>
-            );
-          })}
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                {section.images.map(image => {
+                  const imageUrl = buildImageUrl(selectedCategory.folder, image.file);
+                  return (
+                    <div
+                      key={image.file}
+                      className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-lg transition-all duration-300"
+                    >
+                      <button
+                        type="button"
+                        className="relative group cursor-pointer w-full"
+                        onClick={() => openImage(image)}
+                        aria-label={`Open ${image.name} in fullscreen`}
+                      >
+                        <img src={imageUrl} alt={image.name} className="w-full h-56 object-cover" loading="lazy" />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-semibold">
+                          View Fullscreen
+                        </div>
+                      </button>
+                      <div className="p-4 flex items-center justify-between">
+                        <div>
+                          <h5 className="font-bold text-slate-800">{image.name}</h5>
+                          <p className="text-sm text-slate-600">Tap to enlarge or print</p>
+                        </div>
+                        <button
+                          onClick={() => handlePrint(image)}
+                          className="inline-flex items-center gap-2 text-sm font-semibold text-indigo-600 hover:text-indigo-700"
+                        >
+                          🖨️ Print
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
