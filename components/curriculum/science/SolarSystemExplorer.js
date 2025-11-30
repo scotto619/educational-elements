@@ -11,6 +11,7 @@ const planetsData = [
     size: 12,
     distance: 90,
     speed: 5,
+    displayFile: 'Mercury.png',
     desc: 'Smallest planet, closest to Sun.',
     facts: [
       'A Mercury year is only 88 Earth days.',
@@ -26,6 +27,7 @@ const planetsData = [
     size: 18,
     distance: 130,
     speed: 8,
+    displayFile: 'Venus.png',
     desc: 'Hottest planet due to thick atmosphere.',
     facts: [
       'Venus spins in the opposite direction compared to most planets.',
@@ -41,6 +43,7 @@ const planetsData = [
     size: 19,
     distance: 180,
     speed: 12,
+    displayFile: 'Earth.png',
     desc: 'Our home. Supports life.',
     facts: [
       'Earth is the only known planet with liquid water on the surface.',
@@ -56,6 +59,7 @@ const planetsData = [
     size: 14,
     distance: 230,
     speed: 16,
+    displayFile: 'Mars.png',
     desc: 'The Red Planet.',
     facts: [
       'Home to the largest volcano, Olympus Mons.',
@@ -71,6 +75,7 @@ const planetsData = [
     size: 45,
     distance: 320,
     speed: 25,
+    displayFile: 'Jupiter.png',
     desc: 'Massive gas giant.',
     facts: [
       'Has the Great Red Spot, a storm bigger than Earth.',
@@ -86,6 +91,7 @@ const planetsData = [
     size: 38,
     distance: 420,
     speed: 32,
+    displayFile: 'Saturn.png',
     desc: 'Famous for its beautiful rings.',
     facts: [
       'Saturn’s rings are made of ice, rock, and dust.',
@@ -101,6 +107,7 @@ const planetsData = [
     size: 28,
     distance: 510,
     speed: 40,
+    displayFile: 'Uranus.png',
     desc: 'Rotates on its side.',
     facts: [
       'Uranus’s tilt is about 98 degrees, making it roll around the Sun.',
@@ -116,6 +123,7 @@ const planetsData = [
     size: 28,
     distance: 600,
     speed: 45,
+    displayFile: 'Neptune.png',
     desc: 'Windy and dark ice giant.',
     facts: [
       'Neptune has supersonic winds reaching 1,300 mph (2,100 km/h).',
@@ -128,10 +136,41 @@ const planetsData = [
 
 const SolarSystemExplorer = () => {
   const [activePlanet, setActivePlanet] = useState(null);
+  const [displayPreview, setDisplayPreview] = useState(null);
+
+  const openDisplay = (planet) => {
+    if (!planet.displayFile) return;
+
+    setDisplayPreview({
+      name: planet.name,
+      file: planet.displayFile,
+      url: `/Displays/Science/${encodeURIComponent(planet.displayFile)}`
+    });
+  };
+
+  const closeDisplay = () => setDisplayPreview(null);
+
+  const handleKeyDown = (event) => {
+    if (event.key === 'Escape') {
+      closeDisplay();
+    }
+  };
+
+  React.useEffect(() => {
+    if (!displayPreview) return;
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [displayPreview]);
 
   const handlePlanetClick = (planet, event) => {
     event?.stopPropagation();
     setActivePlanet((current) => (current?.id === planet.id ? null : planet));
+  };
+
+  const handlePlanetListClick = (planet) => {
+    handlePlanetClick(planet);
+    openDisplay(planet);
   };
 
   const handleClose = () => setActivePlanet(null);
@@ -190,7 +229,7 @@ const SolarSystemExplorer = () => {
             <li
               key={planet.id}
               className={`${styles.planetListItem} ${activePlanet?.id === planet.id ? styles.active : ''}`}
-              onClick={() => handlePlanetClick(planet)}
+              onClick={() => handlePlanetListClick(planet)}
             >
               <div className={`${styles.thumbVisual} ${planet.className}`} />
               <div className={styles.listInfo}>
@@ -225,6 +264,26 @@ const SolarSystemExplorer = () => {
           </div>
         )}
       </div>
+
+      {displayPreview ? (
+        <div
+          className={styles.displayOverlay}
+          role="dialog"
+          aria-modal="true"
+          aria-label={`${displayPreview.name} display`}
+          onClick={closeDisplay}
+        >
+          <button type="button" className={styles.closeButton} onClick={closeDisplay}>
+            Close
+          </button>
+          <img
+            src={displayPreview.url}
+            alt={`${displayPreview.name} classroom display`}
+            className={styles.displayImage}
+            onClick={(event) => event.stopPropagation()}
+          />
+        </div>
+      ) : null}
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { auth, firestore } from '../utils/firebase';
@@ -660,27 +660,23 @@ export default function Dashboard() {
 
   const totalXP = savedClasses.reduce((total, cls) => total + calculateClassTotalXP(cls), 0);
 
-  const activeClass = useMemo(() => {
-    if (!savedClasses || savedClasses.length === 0) return null;
-    const match = savedClasses.find((cls) => cls.id === userData?.activeClassId);
-    return match || savedClasses[0];
-  }, [savedClasses, userData?.activeClassId]);
+  const activeClass = savedClasses && savedClasses.length > 0
+    ? savedClasses.find((cls) => cls.id === userData?.activeClassId) || savedClasses[0]
+    : null;
 
   const activeClassTotalXP = activeClass ? calculateClassTotalXP(activeClass) : 0;
 
-  const activeClassRewardProgress = useMemo(() => {
-    const maxTierXP = CLASS_REWARD_TIERS[CLASS_REWARD_TIERS.length - 1].xp;
-    const progress = Math.min(100, Math.round((activeClassTotalXP / maxTierXP) * 100));
-    const nextTier = CLASS_REWARD_TIERS.find((tier) => activeClassTotalXP < tier.xp);
+  const maxTierXP = CLASS_REWARD_TIERS[CLASS_REWARD_TIERS.length - 1].xp;
+  const activeClassRewardProgress = {
+    progress: Math.min(100, Math.round((activeClassTotalXP / maxTierXP) * 100)),
+    nextTier: CLASS_REWARD_TIERS.find((tier) => activeClassTotalXP < tier.xp),
+  };
 
-    return {
-      progress,
-      nextTier,
-      nextMessage: nextTier
-        ? `${Math.max(0, nextTier.xp - activeClassTotalXP)} XP until ${nextTier.label}`
-        : '🎉 Major prize unlocked!'
-    };
-  }, [activeClassTotalXP]);
+  if (activeClassRewardProgress.nextTier) {
+    activeClassRewardProgress.nextMessage = `${Math.max(0, activeClassRewardProgress.nextTier.xp - activeClassTotalXP)} XP until ${activeClassRewardProgress.nextTier.label}`;
+  } else {
+    activeClassRewardProgress.nextMessage = '🎉 Major prize unlocked!';
+  }
 
   // Subscription Required Screen
   if (!canAccess) {
