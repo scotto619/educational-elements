@@ -36,6 +36,45 @@ export default function Home() {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
+  const displayHighlights = [
+    {
+      subject: 'English • Alphabet',
+      title: 'Alphabet Lettering',
+      image: '/Displays/English/Alphabet/Alphabet.png',
+      description: 'A full A–Z set ready for phonics walls, literacy rotations, and bulletin boards.'
+    },
+    {
+      subject: 'English • Spelling',
+      title: 'Sound It Out Strategies',
+      image: '/Displays/English/Spelling/SoundItOut.png',
+      description: 'Printable strategy cards that help learners break down tricky words with confidence.'
+    },
+    {
+      subject: 'Maths • Core Operations',
+      title: 'Addition Anchor Chart',
+      image: '/Displays/Maths/Addition.png',
+      description: 'Bright anchor posters that keep addition steps visible during warm-ups and centres.'
+    },
+    {
+      subject: 'Science • Space',
+      title: 'Solar System Posters',
+      image: '/Displays/Science/SolarSystem.png',
+      description: 'Planet visuals that turn your science corner into a mini observatory.'
+    },
+    {
+      subject: 'Behaviour • Zones',
+      title: 'Colour Zones & Cues',
+      image: '/Displays/Behaviour/Colours.png',
+      description: 'Calming colour prompts to support expectations, routines, and regulation.'
+    },
+    {
+      subject: 'Brain Breaks • Games',
+      title: 'Secret Leader Game',
+      image: '/Displays/Games/SecretLeader.png',
+      description: 'Ready-to-print instructions for quick movement breaks that reset focus.'
+    }
+  ];
+
   return (
     <>
       <Head>
@@ -520,6 +559,77 @@ export default function Home() {
                   <p className="text-gray-600 text-xs md:text-sm">{item.desc}</p>
                 </div>
               ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Displays & Curriculum Corner Preview */}
+        <section className="py-12 md:py-20 bg-gradient-to-br from-indigo-900 via-purple-900 to-blue-900 text-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col lg:flex-row items-start gap-10 md:gap-12 mb-10 md:mb-14">
+              <div className="lg:w-1/2 space-y-4 md:space-y-6">
+                <p className="inline-flex items-center px-3 py-1 rounded-full bg-white/10 border border-white/20 text-xs md:text-sm uppercase tracking-[0.2em]">
+                  New in Curriculum Corner
+                </p>
+                <h2 className="text-2xl md:text-4xl font-bold leading-tight">
+                  Fresh printable displays ready to download, laminate, and brighten your classroom.
+                </h2>
+                <p className="text-sm md:text-base text-indigo-100 leading-relaxed">
+                  Build beautiful bulletin boards in minutes with alphabet lettering, spelling strategies, maths anchors, science posters, behaviour cues, and brain break games—curated from our newest Curriculum Corner uploads.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {["Instant download", "High-res for printing", "Sorted by subject", "New assets weekly"].map((item) => (
+                    <div key={item} className="flex items-center bg-white/5 border border-white/10 rounded-xl px-3 py-2 md:px-4 md:py-3 shadow-lg shadow-indigo-900/30">
+                      <span className="text-lg md:text-xl mr-2">✨</span>
+                      <span className="text-sm md:text-base text-indigo-50">{item}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex flex-col sm:flex-row gap-3 md:gap-4 pt-2">
+                  <Link
+                    href="/signup"
+                    className="bg-white text-indigo-900 px-6 md:px-8 py-3 md:py-4 rounded-xl font-semibold shadow-2xl shadow-indigo-900/40 hover:-translate-y-0.5 transition transform"
+                  >
+                    Browse Curriculum Corner
+                  </Link>
+                  <Link
+                    href="/login"
+                    className="bg-white/10 border border-white/20 text-white px-6 md:px-8 py-3 md:py-4 rounded-xl font-semibold hover:bg-white/15 backdrop-blur"
+                  >
+                    Already a member? Login
+                  </Link>
+                </div>
+              </div>
+
+              <div className="lg:w-1/2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+                  {displayHighlights.map((item, index) => (
+                    <div
+                      key={item.title}
+                      className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden shadow-2xl shadow-indigo-900/40 backdrop-blur"
+                      style={{ animationDelay: `${index * 80}ms` }}
+                    >
+                      <div className="px-4 pt-4 flex items-center justify-between">
+                        <span className="text-[11px] md:text-xs uppercase tracking-[0.18em] text-indigo-100 font-semibold">{item.subject}</span>
+                        <span className="w-2 h-2 rounded-full bg-emerald-300 shadow-[0_0_0_6px_rgba(16,185,129,0.25)]" aria-hidden />
+                      </div>
+                      <div className="relative aspect-[4/3] mx-4 my-3 overflow-hidden rounded-xl border border-white/10 bg-indigo-900/40">
+                        <Image
+                          src={item.image}
+                          alt={`${item.title} display`}
+                          fill
+                          sizes="(min-width: 1024px) 45vw, (min-width: 768px) 40vw, 90vw"
+                          className="object-cover transition duration-500 hover:scale-105"
+                        />
+                      </div>
+                      <div className="px-4 pb-5">
+                        <h3 className="font-semibold text-lg md:text-xl text-white mb-1">{item.title}</h3>
+                        <p className="text-xs md:text-sm text-indigo-100 leading-relaxed">{item.description}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </section>
