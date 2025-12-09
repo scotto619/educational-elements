@@ -29,7 +29,8 @@ import {
   bulkAwardStudents,
   updateUserPreferences,
   listenToClassData,
-  listenToClassStudents
+  listenToClassStudents,
+  removeStudentFromClass
 } from '../utils/firebase-new';
 import { DEFAULT_TEACHER_REWARDS, buildShopInventory, getDailySpecials } from '../utils/shopSpecials';
 import { DEFAULT_CARD_PACKS } from '../utils/tradingCards';
@@ -631,6 +632,41 @@ const handleUpdateStudent = useCallback(async (studentId, updatedData, reason = 
     throw error;
   }
 }, [architectureVersion, user, currentClassId]);
+
+const handleRemoveStudent = useCallback(async (studentId) => {
+  if (!studentId) return;
+
+  const previousStudents = students;
+  const previousOrder = studentOrderRef.current || [];
+
+  const filteredStudents = previousStudents.filter(s => s.id !== studentId);
+  const updatedOrder = previousOrder.filter(id => id !== studentId);
+
+  setStudents(filteredStudents);
+  setStudentOrder(updatedOrder);
+  studentOrderRef.current = updatedOrder;
+
+  try {
+    if (architectureVersion === 'v2') {
+      await removeStudentFromClass(currentClassId, studentId);
+
+      if (updatedOrder.length !== previousOrder.length) {
+        await saveClassData({ studentOrder: updatedOrder });
+      }
+    } else {
+      await updateV1ClassData(user.uid, currentClassId, { students: filteredStudents });
+    }
+
+    showToast('Student removed', 'success');
+  } catch (error) {
+    console.error('❌ Error removing student:', error);
+    setStudents(previousStudents);
+    setStudentOrder(previousOrder);
+    studentOrderRef.current = previousOrder;
+    showToast('Error removing student', 'error');
+    throw error;
+  }
+}, [architectureVersion, currentClassId, saveClassData, students, user]);
 
   // V1 student update helper
   const updateV1StudentData = async (userId, classId, studentId, updatedData) => {
@@ -1243,6 +1279,7 @@ const handleUpdateStudent = useCallback(async (studentId, updatedData, reason = 
             widgetSettings={widgetSettings}
             onUpdateWidgetSettings={saveWidgetSettings}
             onUpdateStudent={handleUpdateStudent}
+            onRemoveStudent={handleRemoveStudent}
             architectureVersion={architectureVersion}
             user={user}
           />

@@ -428,6 +428,44 @@ export async function updateStudentData(studentId, updates, reason = 'Update') {
 }
 
 /**
+ * Remove a student from a class (membership + student document)
+ */
+export async function removeStudentFromClass(classId, studentId) {
+  return await runTransaction(firestore, async (transaction) => {
+    const membershipRef = doc(firestore, 'class_memberships', classId);
+    const classRef = doc(firestore, 'classes', classId);
+    const studentRef = doc(firestore, 'students', studentId);
+
+    const membershipDoc = await transaction.get(membershipRef);
+    if (!membershipDoc.exists()) {
+      throw new Error('Class membership not found');
+    }
+
+    const currentStudents = membershipDoc.data().students || [];
+    const updatedStudents = currentStudents.filter(id => id !== studentId);
+
+    transaction.update(membershipRef, {
+      students: updatedStudents,
+      updatedAt: new Date().toISOString()
+    });
+
+    const classDoc = await transaction.get(classRef);
+    if (classDoc.exists()) {
+      transaction.update(classRef, {
+        studentCount: updatedStudents.length,
+        updatedAt: new Date().toISOString(),
+        lastActivity: new Date().toISOString()
+      });
+    }
+
+    transaction.delete(studentRef);
+
+    console.log('🗑️ Student removed from class:', { classId, studentId });
+    return updatedStudents;
+  });
+}
+
+/**
  * Award XP to student (prevents race conditions)
  */
 export async function awardXPToStudent(studentId, amount, reason = 'XP Award') {

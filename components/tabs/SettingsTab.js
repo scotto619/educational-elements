@@ -26,6 +26,7 @@ const SettingsTab = ({
   onUpdateWidgetSettings,
   // Password management props
   onUpdateStudent,
+  onRemoveStudent,
   architectureVersion
 }) => {
   const [activeSection, setActiveSection] = useState('students');
@@ -266,26 +267,35 @@ const SettingsTab = ({
     setNewStudentForm({ firstName: '', lastName: '' });
   };
 
-  const handleRemoveStudent = (studentId) => {
+  const handleRemoveStudent = async (studentId) => {
     console.log('Removing student:', studentId);
-    
+
     const student = students.find(s => s.id === studentId);
     if (!student) {
       console.log('Student not found. Available student IDs:', students.map(s => s.id));
       return;
     }
 
-    const newStudents = students.filter(s => s.id !== studentId);
-    console.log('New students array:', newStudents.length);
-    
-    setStudents(newStudents);
-    updateAndSaveClass(newStudents, xpCategories);
-    setShowConfirmDialog(null);
-    
+    try {
+      if (architectureVersion === 'v2' && onRemoveStudent) {
+        await onRemoveStudent(studentId);
+      } else {
+        const newStudents = students.filter(s => s.id !== studentId);
+        console.log('New students array:', newStudents.length);
+
+        setStudents(newStudents);
+        await updateAndSaveClass(newStudents, xpCategories);
+      }
+      setShowConfirmDialog(null);
+    } catch (error) {
+      console.error('Error removing student:', error);
+      showToast('Could not remove student', 'error');
+    }
+
     console.log('Student removal completed');
   };
 
-  const handleAdjustStudent = () => {
+  const handleAdjustStudent = async () => {
     if (!adjustmentForm.studentId || !adjustmentForm.amount) {
       return;
     }
@@ -293,46 +303,65 @@ const SettingsTab = ({
     const student = students.find(s => s.id === adjustmentForm.studentId);
     if (!student) return;
 
-    let updatedStudent = { ...student, lastUpdated: new Date().toISOString() };
+    const updates = {};
 
     switch (adjustmentForm.type) {
       case 'xp':
-        updatedStudent.totalPoints = (updatedStudent.totalPoints || 0) + adjustmentForm.amount;
+        updates.totalPoints = (student.totalPoints || 0) + adjustmentForm.amount;
         break;
       case 'remove_xp':
-        updatedStudent.totalPoints = Math.max(0, (updatedStudent.totalPoints || 0) - adjustmentForm.amount);
+        updates.totalPoints = Math.max(0, (student.totalPoints || 0) - adjustmentForm.amount);
         break;
       case 'coins':
-        updatedStudent.currency = (updatedStudent.currency || 0) + adjustmentForm.amount;
+        updates.currency = (student.currency || 0) + adjustmentForm.amount;
         break;
       case 'remove_coins':
-        updatedStudent.currency = Math.max(0, (updatedStudent.currency || 0) - adjustmentForm.amount);
+        updates.currency = Math.max(0, (student.currency || 0) - adjustmentForm.amount);
         break;
     }
 
-    const newStudents = students.map(s => s.id === adjustmentForm.studentId ? updatedStudent : s);
-    setStudents(newStudents);
-    updateAndSaveClass(newStudents, xpCategories);
-    
-    setAdjustmentForm({ studentId: '', type: 'xp', amount: 0, reason: '' });
+    updates.lastUpdated = new Date().toISOString();
+
+    try {
+      if (architectureVersion === 'v2' && onUpdateStudent) {
+        await onUpdateStudent(student.id, updates, 'Settings Adjustment');
+      } else {
+        const newStudents = students.map(s => s.id === adjustmentForm.studentId ? { ...s, ...updates } : s);
+        setStudents(newStudents);
+        await updateAndSaveClass(newStudents, xpCategories);
+      }
+
+      setAdjustmentForm({ studentId: '', type: 'xp', amount: 0, reason: '' });
+    } catch (error) {
+      console.error('Error adjusting student:', error);
+      showToast('Could not update student', 'error');
+    }
   };
 
-  const handleChangeAvatar = (studentId, newAvatarBase) => {
+  const handleChangeAvatar = async (studentId, newAvatarBase) => {
     const student = students.find(s => s.id === studentId);
     if (!student) return;
 
-    const updatedStudent = {
-      ...student,
+    const updates = {
       avatarBase: newAvatarBase,
       ownedAvatars: [...new Set([...(student.ownedAvatars || []), newAvatarBase])],
       lastUpdated: new Date().toISOString()
     };
 
-    const newStudents = students.map(s => s.id === studentId ? updatedStudent : s);
-    setStudents(newStudents);
-    updateAndSaveClass(newStudents, xpCategories);
+    try {
+      if (architectureVersion === 'v2' && onUpdateStudent) {
+        await onUpdateStudent(studentId, updates, 'Avatar Change');
+      } else {
+        const newStudents = students.map(s => s.id === studentId ? { ...s, ...updates } : s);
+        setStudents(newStudents);
+        await updateAndSaveClass(newStudents, xpCategories);
+      }
 
-    setSelectedStudent(null);
+      setSelectedStudent(null);
+    } catch (error) {
+      console.error('Error updating avatar:', error);
+      showToast('Could not update avatar', 'error');
+    }
   };
 
   const handleUpdateClassCode = async () => {
