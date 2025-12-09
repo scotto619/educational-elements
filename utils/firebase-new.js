@@ -441,8 +441,14 @@ export async function removeStudentFromClass(classId, studentId) {
       throw new Error('Class membership not found');
     }
 
+    // Support both legacy object-based memberships and current string IDs
     const currentStudents = membershipDoc.data().students || [];
-    const updatedStudents = currentStudents.filter(id => id !== studentId);
+    const normalizeId = (entry) => typeof entry === 'string' ? entry : entry?.id;
+    const currentStudentIds = currentStudents
+      .map(normalizeId)
+      .filter(Boolean);
+
+    const updatedStudents = currentStudentIds.filter(id => id !== studentId);
 
     transaction.update(membershipRef, {
       students: updatedStudents,
