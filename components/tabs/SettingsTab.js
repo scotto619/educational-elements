@@ -286,10 +286,13 @@ const SettingsTab = ({
         setStudents(newStudents);
         await updateAndSaveClass(newStudents, xpCategories);
       }
-      setShowConfirmDialog(null);
+      showToast('Student removed', 'success');
     } catch (error) {
       console.error('Error removing student:', error);
       showToast('Could not remove student', 'error');
+    } finally {
+      // Always close the confirmation dialog so the UI is not stuck
+      setShowConfirmDialog(null);
     }
 
     console.log('Student removal completed');
