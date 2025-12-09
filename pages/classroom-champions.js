@@ -597,76 +597,92 @@ const loadUserData = async (user) => {
     }
   }, [loading, user, students]);
 
-  // STUDENT UPDATE HANDLERS - FIXED FOR V2 CONSISTENCY
-  
-const handleUpdateStudent = useCallback(async (studentId, updatedData, reason = 'Update') => {
-  try {
-    console.log('📄 Updating student:', studentId, Object.keys(updatedData));
-    
-    // OPTIMISTIC UPDATE - Update local state immediately for instant UI feedback
-    setStudents(prev => prev.map(s => 
-      s.id === studentId ? { ...s, ...updatedData, updatedAt: new Date().toISOString() } : s
-    ));
-    
-    if (architectureVersion === 'v2') {
-      // Use new architecture with Firebase update
-      await updateStudentData(studentId, updatedData, 'Manual Update');
-      console.log('✅ V2 student update sent, optimistic update applied');
-      // Real-time listener will sync any server-side changes
-      return updatedData;
-    } else {
-      // V1 fallback - update in user document
-      await updateV1StudentData(user.uid, currentClassId, studentId, updatedData);
-      console.log('✅ V1 student update completed with local state update');
-      return { ...updatedData };
-    }
-    
-  } catch (error) {
-    console.error('⚠️ Error updating student:', error);
-    showToast('Error updating student data', 'error');
-    
-    // REVERT OPTIMISTIC UPDATE on error - restore previous state
-    console.log('🔄 Reverting optimistic update due to error');
-    // The real-time listeners will restore correct state
-    
-    throw error;
-  }
-}, [architectureVersion, user, currentClassId]);
-
-const handleRemoveStudent = useCallback(async (studentId) => {
-  if (!studentId) return;
-
-  const previousStudents = students;
-  const previousOrder = studentOrderRef.current || [];
-
-  const filteredStudents = previousStudents.filter(s => s.id !== studentId);
-  const updatedOrder = previousOrder.filter(id => id !== studentId);
-
-  setStudents(filteredStudents);
-  setStudentOrder(updatedOrder);
-  studentOrderRef.current = updatedOrder;
-
-  try {
-    if (architectureVersion === 'v2') {
-      await removeStudentFromClass(currentClassId, studentId);
-
-      if (updatedOrder.length !== previousOrder.length) {
-        await saveClassData({ studentOrder: updatedOrder });
+  // CLASS DATA HELPERS (defined early for dependency safety)
+  const saveClassData = async (updates) => {
+    try {
+      if (architectureVersion === 'v2') {
+        await updateClassData(currentClassId, updates);
+      } else {
+        // V1 fallback
+        await updateV1ClassData(user.uid, currentClassId, updates);
       }
-    } else {
-      await updateV1ClassData(user.uid, currentClassId, { students: filteredStudents });
+    } catch (error) {
+      console.error('❌ Error saving class data:', error);
+      showToast('Error saving data', 'error');
+      throw error;
     }
+  };
 
-    showToast('Student removed', 'success');
-  } catch (error) {
-    console.error('❌ Error removing student:', error);
-    setStudents(previousStudents);
-    setStudentOrder(previousOrder);
-    studentOrderRef.current = previousOrder;
-    showToast('Error removing student', 'error');
-    throw error;
-  }
-}, [architectureVersion, currentClassId, saveClassData, students, user]);
+  // STUDENT UPDATE HANDLERS - FIXED FOR V2 CONSISTENCY
+
+  const handleUpdateStudent = useCallback(async (studentId, updatedData, reason = 'Update') => {
+    try {
+      console.log('📄 Updating student:', studentId, Object.keys(updatedData));
+
+      // OPTIMISTIC UPDATE - Update local state immediately for instant UI feedback
+      setStudents(prev => prev.map(s =>
+        s.id === studentId ? { ...s, ...updatedData, updatedAt: new Date().toISOString() } : s
+      ));
+
+      if (architectureVersion === 'v2') {
+        // Use new architecture with Firebase update
+        await updateStudentData(studentId, updatedData, 'Manual Update');
+        console.log('✅ V2 student update sent, optimistic update applied');
+        // Real-time listener will sync any server-side changes
+        return updatedData;
+      } else {
+        // V1 fallback - update in user document
+        await updateV1StudentData(user.uid, currentClassId, studentId, updatedData);
+        console.log('✅ V1 student update completed with local state update');
+        return { ...updatedData };
+      }
+
+    } catch (error) {
+      console.error('⚠️ Error updating student:', error);
+      showToast('Error updating student data', 'error');
+
+      // REVERT OPTIMISTIC UPDATE on error - restore previous state
+      console.log('🔄 Reverting optimistic update due to error');
+      // The real-time listeners will restore correct state
+
+      throw error;
+    }
+  }, [architectureVersion, user, currentClassId]);
+
+  const handleRemoveStudent = useCallback(async (studentId) => {
+    if (!studentId) return;
+
+    const previousStudents = students;
+    const previousOrder = studentOrderRef.current || [];
+
+    const filteredStudents = previousStudents.filter(s => s.id !== studentId);
+    const updatedOrder = previousOrder.filter(id => id !== studentId);
+
+    setStudents(filteredStudents);
+    setStudentOrder(updatedOrder);
+    studentOrderRef.current = updatedOrder;
+
+    try {
+      if (architectureVersion === 'v2') {
+        await removeStudentFromClass(currentClassId, studentId);
+
+        if (updatedOrder.length !== previousOrder.length) {
+          await saveClassData({ studentOrder: updatedOrder });
+        }
+      } else {
+        await updateV1ClassData(user.uid, currentClassId, { students: filteredStudents });
+      }
+
+      showToast('Student removed', 'success');
+    } catch (error) {
+      console.error('❌ Error removing student:', error);
+      setStudents(previousStudents);
+      setStudentOrder(previousOrder);
+      studentOrderRef.current = previousOrder;
+      showToast('Error removing student', 'error');
+      throw error;
+    }
+  }, [architectureVersion, currentClassId, saveClassData, students, user]);
 
   // V1 student update helper
   const updateV1StudentData = async (userId, classId, studentId, updatedData) => {
@@ -990,7 +1006,7 @@ const handleRemoveStudent = useCallback(async (studentId) => {
   };
 
   // CLASS DATA HANDLERS - UPDATED FOR ARCHITECTURE COMPATIBILITY
-  
+
   const handleUpdateCategories = async (newCategories) => {
     try {
       if (architectureVersion === 'v2') {
@@ -1003,21 +1019,6 @@ const handleRemoveStudent = useCallback(async (studentId) => {
     } catch (error) {
       console.error('❌ Error updating categories:', error);
       showToast('Error updating XP categories', 'error');
-    }
-  };
-
-  const saveClassData = async (updates) => {
-    try {
-      if (architectureVersion === 'v2') {
-        await updateClassData(currentClassId, updates);
-      } else {
-        // V1 fallback
-        await updateV1ClassData(user.uid, currentClassId, updates);
-      }
-    } catch (error) {
-      console.error('❌ Error saving class data:', error);
-      showToast('Error saving data', 'error');
-      throw error;
     }
   };
 
