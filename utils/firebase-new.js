@@ -437,28 +437,38 @@ export async function removeStudentFromClass(classId, studentId) {
     const studentRef = doc(firestore, 'students', studentId);
 
     const membershipDoc = await transaction.get(membershipRef);
-    if (!membershipDoc.exists()) {
-      throw new Error('Class membership not found');
-    }
 
     // Support both legacy object-based memberships and current string IDs
-    const currentStudents = membershipDoc.data().students || [];
-    const normalizeId = (entry) => typeof entry === 'string' ? entry : entry?.id;
+    const currentStudents = membershipDoc.exists() ? (membershipDoc.data().students || []) : [];
+    const normalizeId = (entry) => {
+      if (typeof entry === 'string') return entry;
+      if (entry?.id) return entry.id;
+      if (entry?.studentId) return entry.studentId;
+      return null;
+    };
+
     const currentStudentIds = currentStudents
       .map(normalizeId)
       .filter(Boolean);
 
     const updatedStudents = currentStudentIds.filter(id => id !== studentId);
 
-    transaction.update(membershipRef, {
-      students: updatedStudents,
-      updatedAt: new Date().toISOString()
-    });
+    if (membershipDoc.exists()) {
+      transaction.set(membershipRef, {
+        ...membershipDoc.data(),
+        students: updatedStudents,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+    }
 
     const classDoc = await transaction.get(classRef);
     if (classDoc.exists()) {
+      const classData = classDoc.data();
+      const updatedOrder = (classData.studentOrder || []).filter(id => id !== studentId);
+
       transaction.update(classRef, {
-        studentCount: updatedStudents.length,
+        studentCount: updatedStudents.length || Math.max((classData.studentCount || 1) - 1, 0),
+        studentOrder: updatedOrder,
         updatedAt: new Date().toISOString(),
         lastActivity: new Date().toISOString()
       });
