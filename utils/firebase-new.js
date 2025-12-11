@@ -428,6 +428,60 @@ export async function updateStudentData(studentId, updates, reason = 'Update') {
 }
 
 /**
+ * Remove a student from a class (membership + student document)
+ */
+export async function removeStudentFromClass(classId, studentId) {
+  return await runTransaction(firestore, async (transaction) => {
+    const membershipRef = doc(firestore, 'class_memberships', classId);
+    const classRef = doc(firestore, 'classes', classId);
+    const studentRef = doc(firestore, 'students', studentId);
+
+    const membershipDoc = await transaction.get(membershipRef);
+
+    // Support both legacy object-based memberships and current string IDs
+    const currentStudents = membershipDoc.exists() ? (membershipDoc.data().students || []) : [];
+    const normalizeId = (entry) => {
+      if (typeof entry === 'string') return entry;
+      if (entry?.id) return entry.id;
+      if (entry?.studentId) return entry.studentId;
+      return null;
+    };
+
+    const currentStudentIds = currentStudents
+      .map(normalizeId)
+      .filter(Boolean);
+
+    const updatedStudents = currentStudentIds.filter(id => id !== studentId);
+
+    if (membershipDoc.exists()) {
+      transaction.set(membershipRef, {
+        ...membershipDoc.data(),
+        students: updatedStudents,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+    }
+
+    const classDoc = await transaction.get(classRef);
+    if (classDoc.exists()) {
+      const classData = classDoc.data();
+      const updatedOrder = (classData.studentOrder || []).filter(id => id !== studentId);
+
+      transaction.update(classRef, {
+        studentCount: updatedStudents.length || Math.max((classData.studentCount || 1) - 1, 0),
+        studentOrder: updatedOrder,
+        updatedAt: new Date().toISOString(),
+        lastActivity: new Date().toISOString()
+      });
+    }
+
+    transaction.delete(studentRef);
+
+    console.log('🗑️ Student removed from class:', { classId, studentId });
+    return updatedStudents;
+  });
+}
+
+/**
  * Award XP to student (prevents race conditions)
  */
 export async function awardXPToStudent(studentId, amount, reason = 'XP Award') {

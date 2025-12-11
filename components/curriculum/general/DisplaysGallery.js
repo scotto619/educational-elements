@@ -44,6 +44,18 @@ const displayCategories = [
         ]
       },
       {
+        name: 'Alphabet Eye Spy',
+        images: [
+          { name: 'Eye Spy - A', file: 'Alphabet/EyeSpy/A.png' },
+          { name: 'Eye Spy - B', file: 'Alphabet/EyeSpy/B.png' },
+          { name: 'Eye Spy - C', file: 'Alphabet/EyeSpy/C.png' },
+          { name: 'Eye Spy - D', file: 'Alphabet/EyeSpy/D.png' },
+          { name: 'Eye Spy - E', file: 'Alphabet/EyeSpy/E.png' },
+          { name: 'Eye Spy - F', file: 'Alphabet/EyeSpy/F.png' },
+          { name: 'Eye Spy - G', file: 'Alphabet/EyeSpy/G.png' }
+        ]
+      },
+      {
         name: 'Spelling',
         images: [
           { name: 'Spelling - Chunking', file: 'Spelling/Chunking.png' },
@@ -54,14 +66,75 @@ const displayCategories = [
         ]
       },
       {
-        name: 'Writing',
+        name: 'Phonics Blends & Digraphs',
         images: [
-          { name: 'Fantasy Narratives', file: 'Fantasy Narratives.png' },
-          { name: 'Information Reports', file: 'InfoReports.png' },
-          { name: 'Persuasive Writing', file: 'Persuasive.png' },
-          { name: 'Poetry', file: 'Poetry.png' },
-          { name: 'Recount Writing', file: 'Recount.png' },
-          { name: 'Science Fiction Narratives', file: 'SciFi Narratives.png' }
+          { name: 'BL Blend', file: 'Phonics/BL.png' },
+          { name: 'BL Story', file: 'Phonics/BL Story.png' },
+          { name: 'BR Blend', file: 'Phonics/BR.png' },
+          { name: 'BR Story', file: 'Phonics/BR Story.png' },
+          { name: 'CH Digraph', file: 'Phonics/CH.png' },
+          { name: 'CL Blend', file: 'Phonics/CL.png' },
+          { name: 'CR Blend', file: 'Phonics/CR.png' },
+          { name: 'DR Blend', file: 'Phonics/DR.png' },
+          { name: 'FL Blend', file: 'Phonics/FL.png' },
+          { name: 'FR Blend', file: 'Phonics/FR.png' },
+          { name: 'GL Blend', file: 'Phonics/GL.png' },
+          { name: 'GR Blend', file: 'Phonics/GR.png' },
+          { name: 'PL Blend', file: 'Phonics/PL.png' },
+          { name: 'PR Blend', file: 'Phonics/PR.png' },
+          { name: 'SC Blend', file: 'Phonics/SC.png' },
+          { name: 'SCR Blend', file: 'Phonics/SCR.png' },
+          { name: 'SH Digraph', file: 'Phonics/SH.png' },
+          { name: 'SH Story', file: 'Phonics/SH Story.png' },
+          { name: 'SK Blend', file: 'Phonics/SK.png' },
+          { name: 'SL Blend', file: 'Phonics/SL.png' },
+          { name: 'SM Blend', file: 'Phonics/SM.png' },
+          { name: 'SN Blend', file: 'Phonics/SN.png' },
+          { name: 'SP Blend', file: 'Phonics/SP.png' },
+          { name: 'SPL Blend', file: 'Phonics/SPL.png' },
+          { name: 'SPR Blend', file: 'Phonics/SPR.png' },
+          { name: 'ST Blend', file: 'Phonics/ST.png' },
+          { name: 'STR Blend', file: 'Phonics/STR.png' },
+          { name: 'SW Blend', file: 'Phonics/SW.png' },
+          { name: 'TH Digraph', file: 'Phonics/TH.png' },
+          { name: 'TR Blend', file: 'Phonics/TR.png' },
+          { name: 'WH Digraph', file: 'Phonics/WH.png' }
+        ]
+      },
+      {
+        name: 'Writing Genres',
+        images: [
+          { name: 'Fantasy Narratives', file: 'Writing/Fantasy Narratives.png' },
+          { name: 'Information Reports', file: 'Writing/InfoReports.png' },
+          { name: 'Poetry', file: 'Writing/Poetry.png' },
+          { name: 'Recount Writing', file: 'Writing/Recount.png' },
+          { name: 'Science Fiction Narratives', file: 'Writing/SciFi Narratives.png' }
+        ]
+      },
+      {
+        name: 'Book Review Writing',
+        images: [
+          { name: 'Book Review', file: 'Writing/Book Review/Book Review.png' },
+          { name: 'Review Body 1', file: 'Writing/Book Review/Review Body 1.png' },
+          { name: 'Review Body 2', file: 'Writing/Book Review/Review Body 2.png' },
+          { name: 'Review Body 3', file: 'Writing/Book Review/Review Body 3.png' },
+          { name: 'Review Checklist', file: 'Writing/Book Review/Review Checklist.png' },
+          { name: 'Review Conclusion', file: 'Writing/Book Review/Review Conclusion.png' },
+          { name: 'Review Draft', file: 'Writing/Book Review/Review Draft.png' },
+          { name: 'Review Editing', file: 'Writing/Book Review/Review Editing.png' },
+          { name: 'Review Introduction', file: 'Writing/Book Review/Review Introduction.png' },
+          { name: 'Review Preparation', file: 'Writing/Book Review/Review Preperation.png' },
+          { name: 'Review Structure', file: 'Writing/Book Review/Review Structure.png' }
+        ]
+      },
+      {
+        name: 'Persuasive Writing',
+        images: [
+          { name: 'Persuasive Display', file: 'Writing/Persuasive/Persuasive.png' },
+          { name: 'Persuasive Checklist', file: 'Writing/Persuasive/Persuasive Checklist.png' },
+          { name: 'Persuasive Devices', file: 'Writing/Persuasive/Persuasive Devices.png' },
+          { name: 'Persuasive Elements', file: 'Writing/Persuasive/Persuasive Elements.png' },
+          { name: 'Persuasive Structure', file: 'Writing/Persuasive/Persuasive Structure.png' }
         ]
       }
     ]
@@ -87,6 +160,26 @@ const displayCategories = [
       {
         name: 'Fractions',
         images: [{ name: 'Comparing Fractions', file: 'ComparingFractions.png' }]
+      },
+      {
+        name: 'Shapes & Transformations',
+        images: [
+          { name: '2D Shapes', file: '2D Shapes.png' },
+          { name: '3D Shapes', file: '3D Shapes.png' },
+          { name: 'Flip', file: 'Flip.png' },
+          { name: 'Flip Turn Slide', file: 'FlipTurnSlide.png' },
+          { name: 'Slide', file: 'Slide.png' },
+          { name: 'Symmetry', file: 'Symmetry.png' },
+          { name: 'Turn', file: 'Turn.png' }
+        ]
+      },
+      {
+        name: 'Measurement',
+        images: [
+          { name: 'Length', file: 'Length.png' },
+          { name: 'Mass', file: 'Mass.png' },
+          { name: 'Volume', file: 'Volume.png' }
+        ]
       }
     ]
   },
