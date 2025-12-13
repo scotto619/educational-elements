@@ -71,29 +71,36 @@ export default function Login() {
       return;
     }
 
+    const normalizedEmail = email.trim().toLowerCase();
+
     try {
       // Prevent login for accounts that have been cancelled/deleted
       const helpers = firestoreHelpers.current;
       if (helpers?.collection && firestoreDb) {
-        const { collection, query, where, getDocs } = helpers;
-        const userQuery = query(
-          collection(firestoreDb, 'users'),
-          where('email', '==', email.toLowerCase())
-        );
-        const snapshot = await getDocs(userQuery);
-        const blockedAccount = snapshot.docs.some((docSnap) => {
-          const data = docSnap.data();
-          return data?.loginDisabled || data?.accountStatus === 'deleted';
-        });
+        try {
+          const { collection, query, where, getDocs } = helpers;
+          const userQuery = query(
+            collection(firestoreDb, 'users'),
+            where('email', '==', normalizedEmail)
+          );
+          const snapshot = await getDocs(userQuery);
+          const blockedAccount = snapshot.docs.some((docSnap) => {
+            const data = docSnap.data();
+            return data?.loginDisabled || data?.accountStatus === 'deleted';
+          });
 
-        if (blockedAccount) {
-          alert('Your account has been cancelled. Please resubscribe to regain access.');
-          setIsLoading(false);
-          return;
+          if (blockedAccount) {
+            alert('Your account has been cancelled. Please resubscribe to regain access.');
+            setIsLoading(false);
+            return;
+          }
+        } catch (checkError) {
+          // If Firestore denies unauthenticated reads, continue with sign-in and re-check after auth
+          console.warn('Skipping pre-login status check:', checkError);
         }
       }
 
-      await signInWithEmailAndPassword(auth, email, password);
+      await signInWithEmailAndPassword(auth, normalizedEmail, password);
 
       // Double-check account status after login
       if (auth.currentUser && firestoreDb && firestoreHelpers.current?.doc) {
