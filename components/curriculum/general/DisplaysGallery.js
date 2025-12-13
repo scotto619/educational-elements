@@ -112,6 +112,19 @@ const displayCategories = [
         ]
       },
       {
+        name: 'Literary Devices',
+        images: [
+          { name: 'Characterisation', file: 'Writing/Literary Devices/Characterisation.png' },
+          { name: 'Imagery', file: 'Writing/Literary Devices/Imagery.png' },
+          { name: 'Literary Devices Overview', file: 'Writing/Literary Devices/Literary Devices.png' },
+          { name: 'Metaphors', file: 'Writing/Literary Devices/Metaphors.png' },
+          { name: 'Personification', file: 'Writing/Literary Devices/Personification.png' },
+          { name: 'Setting', file: 'Writing/Literary Devices/Setting.png' },
+          { name: 'Similes', file: 'Writing/Literary Devices/Similes.png' },
+          { name: 'Symbolism', file: 'Writing/Literary Devices/Symbolism.png' }
+        ]
+      },
+      {
         name: 'Book Review Writing',
         images: [
           { name: 'Book Review', file: 'Writing/Book Review/Book Review.png' },
@@ -168,6 +181,7 @@ const displayCategories = [
           { name: '3D Shapes', file: '3D Shapes.png' },
           { name: 'Flip', file: 'Flip.png' },
           { name: 'Flip Turn Slide', file: 'FlipTurnSlide.png' },
+          { name: 'Tessellating Patterns', file: 'TessellatingPaterns.png' },
           { name: 'Slide', file: 'Slide.png' },
           { name: 'Symmetry', file: 'Symmetry.png' },
           { name: 'Turn', file: 'Turn.png' }
@@ -201,16 +215,35 @@ const displayCategories = [
       {
         name: 'Space',
         images: [
-          { name: 'Earth', file: 'Earth.png' },
-          { name: 'Jupiter', file: 'Jupiter.png' },
-          { name: 'Mars', file: 'Mars.png' },
-          { name: 'Mercury', file: 'Mercury.png' },
-          { name: 'Neptune', file: 'Neptune.png' },
-          { name: 'Saturn', file: 'Saturn.png' },
-          { name: 'Solar System', file: 'SolarSystem.png' },
-          { name: 'Uranus', file: 'Uranus.png' },
-          { name: 'Venus', file: 'Venus.png' }
+          { name: 'Earth', file: 'Space/Earth.png' },
+          { name: 'Jupiter', file: 'Space/Jupiter.png' },
+          { name: 'Mars', file: 'Space/Mars.png' },
+          { name: 'Mercury', file: 'Space/Mercury.png' },
+          { name: 'Neptune', file: 'Space/Neptune.png' },
+          { name: 'Saturn', file: 'Space/Saturn.png' },
+          { name: 'Solar System', file: 'Space/SolarSystem.png' },
+          { name: 'Space Vocabulary', file: 'Space/SpaceVocab.png' },
+          { name: 'Uranus', file: 'Space/Uranus.png' },
+          { name: 'Venus', file: 'Space/Venus.png' }
         ]
+      },
+      {
+        name: 'Environmental Change',
+        images: [{ name: 'Environmental Change Vocabulary', file: 'EnvironmentalChange/EnvironmentalChangeVocab.png' }]
+      }
+    ]
+  },
+  {
+    id: 'hass',
+    name: 'HASS',
+    icon: '🧭',
+    description: 'Humanities displays and vocabulary to support inquiry units.',
+    folder: 'HASS',
+    accent: 'from-orange-500 to-amber-500',
+    sections: [
+      {
+        name: 'Vocabulary',
+        images: [{ name: 'Australian Federation Vocabulary', file: 'AustralianFederationVocab.png' }]
       }
     ]
   },

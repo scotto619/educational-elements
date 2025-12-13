@@ -58,7 +58,7 @@ export default function Home() {
     {
       subject: 'Science • Space',
       title: 'Solar System Posters',
-      image: '/Displays/Science/SolarSystem.png',
+      image: '/Displays/Science/Space/SolarSystem.png',
       description: 'Planet visuals that turn your science corner into a mini observatory.'
     },
     {
