@@ -1,7 +1,8 @@
 // components/tabs/SettingsTab.js - UPDATED WITH DIRECT PASSWORD UPDATES (NO APIs)
 import React, { useState, useEffect } from 'react';
-import { firestore } from '../../utils/firebase';
+import { auth, firestore } from '../../utils/firebase';
 import { doc, getDoc, updateDoc, collection, getDocs } from 'firebase/firestore';
+import { signOut } from 'firebase/auth';
 
 // Import the password helpers for direct operations
 import { updateStudentPasswordDirect, getDefaultPassword } from '../../utils/passwordHelpers';
@@ -35,6 +36,9 @@ const SettingsTab = ({
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [showClassCodeModal, setShowClassCodeModal] = useState(false);
   const [showUnsubscribeModal, setShowUnsubscribeModal] = useState(false);
+  const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
+  const [deleteReason, setDeleteReason] = useState('');
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   
   // Password management states
   const [selectedStudentId, setSelectedStudentId] = useState('');
@@ -436,8 +440,43 @@ Thank you.
 
     const mailtoLink = `mailto:admin@educational-elements.com?subject=Unsubscribe Request&body=${encodeURIComponent(emailBody)}`;
     window.location.href = mailtoLink;
-    
+
     setShowUnsubscribeModal(false);
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user?.uid) {
+      showToast('You need to be logged in to delete your account.', 'error');
+      return;
+    }
+
+    setIsDeletingAccount(true);
+
+    try {
+      const userRef = doc(firestore, 'users', user.uid);
+      await updateDoc(userRef, {
+        accountStatus: 'deleted',
+        subscriptionStatus: 'canceled',
+        subscription: 'cancelled',
+        loginDisabled: true,
+        unsubscribedAt: new Date().toISOString(),
+        unsubscribeReason: deleteReason.trim() || null,
+        updatedAt: new Date().toISOString()
+      });
+
+      showToast('Account cancelled and access removed. You have been signed out.', 'success');
+      await signOut(auth);
+      setShowDeleteAccountModal(false);
+      setDeleteReason('');
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 300);
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      showToast('Unable to cancel account. Please try again.', 'error');
+    }
+
+    setIsDeletingAccount(false);
   };
 
   const submitFeedback = async () => {
@@ -1124,20 +1163,20 @@ Time: ${new Date().toISOString()}
                   </div>
                 </div>
 
-                <div className="p-3 bg-gray-100 rounded-lg border-t border-gray-200">
-                  <details className="group">
-                    <summary className="text-xs text-gray-500 cursor-pointer hover:text-gray-700 transition-colors list-none">
-                      <span className="select-none">Account Options ▼</span>
-                    </summary>
-                    <div className="mt-3 pt-3 border-t border-gray-200">
-                      <button
-                        onClick={() => setShowUnsubscribeModal(true)}
-                        className="text-xs text-gray-500 hover:text-red-600 transition-colors underline"
-                      >
-                        Request Account Cancellation
-                      </button>
-                    </div>
-                  </details>
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <h4 className="font-semibold text-red-800 mb-2">🛑 Delete My Account</h4>
+                  <p className="text-sm text-red-700 mb-3">
+                    Instantly cancel your subscription, disable login access, and remove future charges. You can resubscribe later to regain access.
+                  </p>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3 space-y-2 sm:space-y-0">
+                    <button
+                      onClick={() => setShowDeleteAccountModal(true)}
+                      className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition-all shadow-sm"
+                    >
+                      Delete my account
+                    </button>
+                    <p className="text-xs text-red-600 italic">This signs you out immediately.</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1219,6 +1258,53 @@ Time: ${new Date().toISOString()}
                 className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all"
               >
                 Update Code
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Account Modal */}
+      {showDeleteAccountModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-6 rounded-t-2xl">
+              <h2 className="text-2xl font-bold">🚫 Delete Account</h2>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <p className="text-gray-800 font-semibold">
+                This will cancel your subscription, disable login access, and sign you out immediately.
+              </p>
+              <p className="text-sm text-gray-600">
+                You can resubscribe later to regain access. Your classes remain preserved but inaccessible until you return.
+              </p>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Reason (optional)</label>
+                <textarea
+                  value={deleteReason}
+                  onChange={(e) => setDeleteReason(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  rows={3}
+                  placeholder="Tell us why you're leaving"
+                />
+              </div>
+            </div>
+
+            <div className="flex space-x-3 p-6 pt-0">
+              <button
+                onClick={() => { setShowDeleteAccountModal(false); setDeleteReason(''); }}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all"
+                disabled={isDeletingAccount}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                className="flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all disabled:opacity-60"
+                disabled={isDeletingAccount}
+              >
+                {isDeletingAccount ? 'Cancelling...' : 'Delete & Sign Out'}
               </button>
             </div>
           </div>
