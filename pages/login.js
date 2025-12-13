@@ -1,3 +1,4 @@
+// pages/login.js - FIXED PASSWORD RESET (No Firestore logging when unauthenticated)
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
@@ -35,7 +36,7 @@ export default function Login() {
           firestoreDb = firebaseModule.firestore;
           signInWithEmailAndPassword = firebaseAuthModule.signInWithEmailAndPassword;
           sendPasswordResetEmail = firebaseAuthModule.sendPasswordResetEmail;
-          // Preload commonly used Firestore helpers
+          
           firestoreHelpers.current = {
             collection: firebaseFirestoreModule.collection,
             query: firebaseFirestoreModule.query,
@@ -95,7 +96,6 @@ export default function Login() {
             return;
           }
         } catch (checkError) {
-          // If Firestore denies unauthenticated reads, continue with sign-in and re-check after auth
           console.warn('Skipping pre-login status check:', checkError);
         }
       }
@@ -152,31 +152,35 @@ export default function Login() {
     setResetStatus(null);
 
     try {
+      // FIXED: Just send the reset email - don't try to log to Firestore
+      // since the user isn't authenticated yet
       await sendPasswordResetEmail(auth, targetEmail);
 
-      // Log reset request to user profile for auditing
-      if (firestoreDb && firestoreHelpers.current?.collection) {
-        const { collection, query, where, getDocs, updateDoc } = firestoreHelpers.current;
-        const userQuery = query(collection(firestoreDb, 'users'), where('email', '==', targetEmail));
-        const snapshot = await getDocs(userQuery);
-
-        await Promise.all(
-          snapshot.docs.map((docSnap) =>
-            updateDoc(docSnap.ref, {
-              passwordResetRequestedAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString()
-            })
-          )
-        );
-      }
-
-      setResetStatus({ type: 'success', message: 'Password reset link sent! Please check your email.' });
+      console.log('✅ Password reset email sent to:', targetEmail);
+      
+      setResetStatus({ 
+        type: 'success', 
+        message: 'Password reset link sent! Please check your email (including spam folder).' 
+      });
+      
+      // Clear the form after successful send
+      setTimeout(() => {
+        setShowResetForm(false);
+        setResetEmail('');
+        setResetStatus(null);
+      }, 5000);
+      
     } catch (error) {
       console.error('Password reset error:', error);
       if (error.code === 'auth/user-not-found') {
         setResetStatus({ type: 'error', message: 'No account found with this email.' });
       } else if (error.code === 'auth/invalid-email') {
         setResetStatus({ type: 'error', message: 'Please enter a valid email address.' });
+      } else if (error.code === 'auth/too-many-requests') {
+        setResetStatus({ 
+          type: 'error', 
+          message: 'Too many reset attempts. Please wait a few minutes and try again.' 
+        });
       } else {
         setResetStatus({ type: 'error', message: 'Unable to send reset link. Please try again.' });
       }
@@ -202,145 +206,163 @@ export default function Login() {
               <div className="text-2xl font-bold">Educational Elements</div>
             </div>
             <h1 className="text-2xl font-bold mb-2">Welcome Back!</h1>
-          <p className="text-blue-100">Sign in to your teacher dashboard</p>
-        </div>
-
-        {/* Form */}
-        <form onSubmit={handleLogin} className="p-8 space-y-6">
-          {/* Email Field */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-            <input
-              type="email"
-              placeholder="your.email@school.edu"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
+            <p className="text-blue-100">Sign in to your teacher dashboard</p>
           </div>
 
-          {/* Password Field */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
-            <input
-              type="password"
-              placeholder="Enter your password"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-            <div className="text-right mt-2">
-              <button
-                type="button"
-                onClick={() => setShowResetForm((prev) => !prev)}
-                className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-              >
-                Forgot password?
-              </button>
+          {/* Form */}
+          <form onSubmit={handleLogin} className="p-8 space-y-6">
+            {/* Email Field */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+              <input
+                type="email"
+                placeholder="your.email@school.edu"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
             </div>
-          </div>
 
-          {showResetForm && (
-            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-blue-800 mb-2">Reset Email</label>
-                <input
-                  type="email"
-                  placeholder="you@example.com"
-                  className="w-full px-4 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  value={resetEmail || email}
-                  onChange={(e) => setResetEmail(e.target.value)}
-                />
+            {/* Password Field */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+              <input
+                type="password"
+                placeholder="Enter your password"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <div className="text-right mt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowResetForm((prev) => !prev)}
+                  className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                >
+                  Forgot password?
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={handlePasswordReset}
-                disabled={isSendingReset || !firebaseLoaded}
-                className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {isSendingReset ? 'Sending reset link...' : 'Send password reset link'}
-              </button>
-              {resetStatus && (
-                <p className={`text-sm ${resetStatus.type === 'success' ? 'text-green-700' : 'text-red-700'}`}>
-                  {resetStatus.message}
-                </p>
-              )}
             </div>
-          )}
 
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={isLoading || !firebaseLoaded}
-            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-4 rounded-lg font-bold text-lg hover:from-blue-700 hover:to-purple-700 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-          >
-            {!firebaseLoaded ? (
-              <div className="flex items-center justify-center space-x-2">
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>Loading...</span>
+            {/* Password Reset Form */}
+            {showResetForm && (
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-blue-800 mb-2">
+                    Email for Password Reset
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="you@example.com"
+                    className="w-full px-4 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    value={resetEmail || email}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={handlePasswordReset}
+                  disabled={isSendingReset || !firebaseLoaded}
+                  className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {isSendingReset ? (
+                    <span className="flex items-center justify-center space-x-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Sending...</span>
+                    </span>
+                  ) : (
+                    '📧 Send Password Reset Link'
+                  )}
+                </button>
+                {resetStatus && (
+                  <div className={`p-3 rounded-lg ${
+                    resetStatus.type === 'success' 
+                      ? 'bg-green-100 border border-green-300' 
+                      : 'bg-red-100 border border-red-300'
+                  }`}>
+                    <p className={`text-sm ${
+                      resetStatus.type === 'success' ? 'text-green-700' : 'text-red-700'
+                    }`}>
+                      {resetStatus.message}
+                    </p>
+                  </div>
+                )}
               </div>
-            ) : isLoading ? (
-              <div className="flex items-center justify-center space-x-2">
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>Signing In...</span>
-              </div>
-            ) : (
-              '🚀 Sign In'
             )}
-          </button>
 
-          {/* Signup Link */}
-          <div className="text-center pt-4 border-t border-gray-200">
-            <p className="text-gray-600">
-              Don't have an account?{' '}
-              <Link href="/signup">
-                <span className="text-blue-600 hover:text-blue-700 font-medium cursor-pointer">
-                  Sign up here
-                </span>
-              </Link>
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={isLoading || !firebaseLoaded}
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-4 rounded-lg font-bold text-lg hover:from-blue-700 hover:to-purple-700 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+            >
+              {!firebaseLoaded ? (
+                <div className="flex items-center justify-center space-x-2">
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>Loading...</span>
+                </div>
+              ) : isLoading ? (
+                <div className="flex items-center justify-center space-x-2">
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>Signing In...</span>
+                </div>
+              ) : (
+                '🚀 Sign In'
+              )}
+            </button>
+
+            {/* Signup Link */}
+            <div className="text-center pt-4 border-t border-gray-200">
+              <p className="text-gray-600">
+                Don't have an account?{' '}
+                <Link href="/signup">
+                  <span className="text-blue-600 hover:text-blue-700 font-medium cursor-pointer">
+                    Sign up here
+                  </span>
+                </Link>
+              </p>
+            </div>
+          </form>
+
+          {/* Security Notice */}
+          <div className="bg-gray-50 px-8 py-4 text-center">
+            <p className="text-xs text-gray-500">
+              Having trouble? <a href="mailto:admin@educational-elements.com" className="text-blue-600 hover:underline">Contact Support</a>
             </p>
           </div>
-        </form>
-
-        {/* Security Notice */}
-        <div className="bg-gray-50 px-8 py-4 text-center">
-          <p className="text-xs text-gray-500">
-            Having trouble? <a href="mailto:admin@educational-elements.com" className="text-blue-600 hover:underline">Contact Support</a>
-          </p>
         </div>
-      </div>
 
-      {/* Additional Info */}
-      <div className="hidden lg:block ml-12 max-w-md">
-        <div className="bg-white rounded-2xl shadow-xl p-8">
-          <h3 className="text-2xl font-bold text-gray-800 mb-4">Welcome Back to Educational Elements</h3>
-          <div className="space-y-4">
-            <div className="flex items-start space-x-3">
-              <div className="text-2xl">🏆</div>
-              <div>
-                <h4 className="font-bold text-gray-700">Your Classroom Champions</h4>
-                <p className="text-gray-600 text-sm">Continue managing your gamified classroom where students level up through learning</p>
+        {/* Additional Info */}
+        <div className="hidden lg:block ml-12 max-w-md">
+          <div className="bg-white rounded-2xl shadow-xl p-8">
+            <h3 className="text-2xl font-bold text-gray-800 mb-4">Welcome Back to Educational Elements</h3>
+            <div className="space-y-4">
+              <div className="flex items-start space-x-3">
+                <div className="text-2xl">🏆</div>
+                <div>
+                  <h4 className="font-bold text-gray-700">Your Classroom Champions</h4>
+                  <p className="text-gray-600 text-sm">Continue managing your gamified classroom where students level up through learning</p>
+                </div>
               </div>
-            </div>
-            <div className="flex items-start space-x-3">
-              <div className="text-2xl">📊</div>
-              <div>
-                <h4 className="font-bold text-gray-700">Analytics & Progress</h4>
-                <p className="text-gray-600 text-sm">Track student engagement and academic progress with detailed insights</p>
+              <div className="flex items-start space-x-3">
+                <div className="text-2xl">📊</div>
+                <div>
+                  <h4 className="font-bold text-gray-700">Analytics & Progress</h4>
+                  <p className="text-gray-600 text-sm">Track student engagement and academic progress with detailed insights</p>
+                </div>
               </div>
-            </div>
-            <div className="flex items-start space-x-3">
-              <div className="text-2xl">🛠️</div>
-              <div>
-                <h4 className="font-bold text-gray-700">Teaching Tools</h4>
-                <p className="text-gray-600 text-sm">Access your complete suite of classroom management and curriculum tools</p>
+              <div className="flex items-start space-x-3">
+                <div className="text-2xl">🛠️</div>
+                <div>
+                  <h4 className="font-bold text-gray-700">Teaching Tools</h4>
+                  <p className="text-gray-600 text-sm">Access your complete suite of classroom management and curriculum tools</p>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
       </div>
     </>
   );

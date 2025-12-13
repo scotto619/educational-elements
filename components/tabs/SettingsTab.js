@@ -271,36 +271,46 @@ const SettingsTab = ({
     setNewStudentForm({ firstName: '', lastName: '' });
   };
 
-  const handleRemoveStudent = async (studentId) => {
-    console.log('Removing student:', studentId);
+const handleRemoveStudent = async (studentId) => {
+  console.log('🗑️ Attempting to remove student:', studentId);
+  console.log('Available student IDs:', students.map(s => s.id));
 
-    const student = students.find(s => s.id === studentId);
-    if (!student) {
-      console.log('Student not found. Available student IDs:', students.map(s => s.id));
-      return;
+  const student = students.find(s => s.id === studentId);
+  if (!student) {
+    console.error('❌ Student not found with ID:', studentId);
+    alert('Student not found. Please refresh the page and try again.');
+    setShowConfirmDialog(null);
+    return;
+  }
+
+  console.log('✅ Student found:', student.firstName, student.lastName);
+
+  try {
+    if (architectureVersion === 'v2' && onRemoveStudent) {
+      console.log('📡 Using V2 architecture - calling onRemoveStudent');
+      await onRemoveStudent(studentId);
+      console.log('✅ Student removed via V2');
+    } else {
+      console.log('📝 Using V1 architecture - manual removal');
+      const newStudents = students.filter(s => s.id !== studentId);
+      console.log('New students count:', newStudents.length, 'Previous:', students.length);
+
+      setStudents(newStudents);
+      await updateAndSaveClass(newStudents, xpCategories);
+      console.log('✅ Student removed via V1');
     }
-
-    try {
-      if (architectureVersion === 'v2' && onRemoveStudent) {
-        await onRemoveStudent(studentId);
-      } else {
-        const newStudents = students.filter(s => s.id !== studentId);
-        console.log('New students array:', newStudents.length);
-
-        setStudents(newStudents);
-        await updateAndSaveClass(newStudents, xpCategories);
-      }
-      showToast('Student removed', 'success');
-    } catch (error) {
-      console.error('Error removing student:', error);
-      showToast('Could not remove student', 'error');
-    } finally {
-      // Always close the confirmation dialog so the UI is not stuck
-      setShowConfirmDialog(null);
-    }
-
-    console.log('Student removal completed');
-  };
+    
+    // Close dialog on success
+    setShowConfirmDialog(null);
+    showToast(`${student.firstName} removed successfully`, 'success');
+    
+  } catch (error) {
+    console.error('❌ Error removing student:', error);
+    showToast('Could not remove student: ' + error.message, 'error');
+    // Still close dialog even on error so UI isn't stuck
+    setShowConfirmDialog(null);
+  }
+};
 
   const handleAdjustStudent = async () => {
     if (!adjustmentForm.studentId || !adjustmentForm.amount) {
@@ -1375,23 +1385,30 @@ Time: ${new Date().toISOString()}
               >
                 Cancel
               </button>
-              <button
-                onClick={() => {
-                  if (showConfirmDialog === 'resetAll') {
-                    resetAllData();
-                  } else if (showConfirmDialog === 'resetProgress') {
-                    resetStudentProgress();
-                  } else if (showConfirmDialog.startsWith('remove_')) {
-                    const studentId = showConfirmDialog.slice(7);
-                    handleRemoveStudent(studentId);
-                  }
-                }}
-                className="flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all"
-              >
-                {showConfirmDialog === 'resetAll' ? '🗑️ Reset Everything' 
-                : showConfirmDialog === 'resetProgress' ? '🔄 Reset Progress'
-                : '🗑️ Remove Student'}
-              </button>
+<button
+  onClick={() => {
+    console.log('🎯 Confirm dialog action:', showConfirmDialog);
+    
+    if (showConfirmDialog === 'resetAll') {
+      resetAllData();
+    } else if (showConfirmDialog === 'resetProgress') {
+      resetStudentProgress();
+    } else if (showConfirmDialog?.startsWith('remove_')) {
+      // Extract student ID from the confirmation string
+      const studentId = showConfirmDialog.replace('remove_', '');
+      console.log('📍 Extracted student ID:', studentId);
+      handleRemoveStudent(studentId);
+    } else {
+      console.warn('⚠️ Unknown confirmation action:', showConfirmDialog);
+      setShowConfirmDialog(null);
+    }
+  }}
+  className="flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all"
+>
+  {showConfirmDialog === 'resetAll' ? '🗑️ Reset Everything' 
+  : showConfirmDialog === 'resetProgress' ? '🔄 Reset Progress'
+  : '🗑️ Remove Student'}
+</button>
             </div>
           </div>
         </div>
