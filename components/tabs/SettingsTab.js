@@ -455,39 +455,60 @@ Thank you.
   };
 
   const handleDeleteAccount = async () => {
-    if (!user?.uid) {
-      showToast('You need to be logged in to delete your account.', 'error');
-      return;
+  if (!user?.uid) {
+    showToast('You need to be logged in to cancel your account.', 'error');
+    return;
+  }
+
+  setIsDeletingAccount(true);
+
+  try {
+    console.log('🚫 Canceling account for user:', user.uid);
+
+    // FIXED: Call the API to properly cancel Stripe subscription
+    const response = await fetch('/api/cancel-subscription', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId: user.uid,
+        reason: deleteReason.trim() || null
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to cancel subscription');
     }
 
-    setIsDeletingAccount(true);
+    console.log('✅ Subscription cancellation result:', result);
 
-    try {
-      const userRef = doc(firestore, 'users', user.uid);
-      await updateDoc(userRef, {
-        accountStatus: 'deleted',
-        subscriptionStatus: 'canceled',
-        subscription: 'cancelled',
-        loginDisabled: true,
-        unsubscribedAt: new Date().toISOString(),
-        unsubscribeReason: deleteReason.trim() || null,
-        updatedAt: new Date().toISOString()
-      });
+    // Show success message
+    if (result.stripeCanceled) {
+      showToast('Subscription canceled successfully. You can resubscribe anytime!', 'success');
+    } else {
+      showToast('Account canceled. You can resubscribe anytime!', 'success');
+    }
 
-      showToast('Account cancelled and access removed. You have been signed out.', 'success');
+    // Close modal
+    setShowDeleteAccountModal(false);
+    setDeleteReason('');
+
+    // Sign out after short delay
+    setTimeout(async () => {
       await signOut(auth);
-      setShowDeleteAccountModal(false);
-      setDeleteReason('');
-      setTimeout(() => {
-        window.location.href = '/login';
-      }, 300);
-    } catch (error) {
-      console.error('Error deleting account:', error);
-      showToast('Unable to cancel account. Please try again.', 'error');
-    }
+      window.location.href = '/login';
+    }, 2000);
 
-    setIsDeletingAccount(false);
-  };
+  } catch (error) {
+    console.error('❌ Error canceling account:', error);
+    showToast('Unable to cancel account: ' + error.message, 'error');
+  }
+
+  setIsDeletingAccount(false);
+};
 
   const submitFeedback = async () => {
     if (!feedbackForm.subject.trim() || !feedbackForm.message.trim()) {

@@ -1,15 +1,18 @@
-// pages/checkout.js - CLEAN TRIAL VERSION (No LAUNCH2025)
+// pages/checkout.js - UPDATED to handle returning/resubscribing users
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { auth } from '../utils/firebase';
+import { auth, firestore } from '../utils/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 
 export default function Checkout() {
   const router = useRouter();
   const [user, setUser] = useState(null);
+  const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [daysUntilJan1, setDaysUntilJan1] = useState(0);
+  const [isReturningUser, setIsReturningUser] = useState(false);
 
   useEffect(() => {
     // Calculate days until January 1, 2026
@@ -26,9 +29,31 @@ export default function Checkout() {
     // Update the countdown every hour
     const interval = setInterval(calculateDaysUntilJan1, 1000 * 60 * 60);
     
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setUser(user);
+        
+        // ADDED: Check if user is returning (previously had a subscription)
+        try {
+          const userDoc = await getDoc(doc(firestore, 'users', user.uid));
+          if (userDoc.exists()) {
+            const data = userDoc.data();
+            setUserData(data);
+            
+            // Check if they previously had a subscription (returning user)
+            const wasSubscribed = data.stripeCustomerId || data.subscriptionId;
+            setIsReturningUser(!!wasSubscribed);
+            
+            console.log('User subscription status:', {
+              hasCustomerId: !!data.stripeCustomerId,
+              subscription: data.subscription,
+              status: data.subscriptionStatus,
+              isReturning: wasSubscribed
+            });
+          }
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+        }
       } else {
         router.push('/login');
       }
@@ -52,7 +77,8 @@ export default function Checkout() {
         },
         body: JSON.stringify({
           userEmail: user.email,
-          userId: user.uid
+          userId: user.uid,
+          isReturningUser: isReturningUser
         }),
       });
 
@@ -99,24 +125,56 @@ export default function Checkout() {
               Educational Elements
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Start Your Free Trial</h1>
-          <p className="text-gray-600">Complete access until January 1st, 2026</p>
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">
+            {isReturningUser ? 'Welcome Back!' : 'Start Your Free Trial'}
+          </h1>
+          <p className="text-gray-600">
+            {isReturningUser 
+              ? 'Resubscribe to regain full access to all features'
+              : 'Complete access until January 1st, 2026'
+            }
+          </p>
         </div>
+
+        {/* Returning User Notice */}
+        {isReturningUser && (
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-8">
+            <div className="flex items-start space-x-3">
+              <span className="text-2xl">👋</span>
+              <div>
+                <h3 className="font-bold text-blue-800 mb-2">Welcome back to Educational Elements!</h3>
+                <p className="text-blue-700 text-sm">
+                  We're excited to have you back. Your classes and student data are still here and will be 
+                  fully accessible once you resubscribe.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Countdown Banner */}
         <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-2xl shadow-2xl p-8 mb-8 text-white relative overflow-hidden">
           <div className="absolute top-0 right-0 bg-yellow-400 text-green-800 px-4 py-2 rounded-bl-lg font-bold">
-            🔥 FREE TRIAL
+            {isReturningUser ? '🎉 RETURNING USER' : '🔥 FREE TRIAL'}
           </div>
           
           <div className="text-center mb-6">
             <div className="text-6xl mb-4">⏰</div>
-            <h2 className="text-4xl font-bold mb-2">{daysUntilJan1} Days Free!</h2>
-            <p className="text-green-100 text-lg">Then $5.99/month • Cancel anytime before trial ends</p>
+            <h2 className="text-4xl font-bold mb-2">
+              {isReturningUser ? 'Resubscribe Now' : `${daysUntilJan1} Days Free!`}
+            </h2>
+            <p className="text-green-100 text-lg">
+              {isReturningUser 
+                ? '$5.99/month • Cancel anytime'
+                : `Then $5.99/month • Cancel anytime before trial ends`
+              }
+            </p>
           </div>
 
           <div className="bg-white bg-opacity-10 rounded-xl p-6 mb-6">
-            <h3 className="font-bold text-xl mb-4">Complete Platform Access:</h3>
+            <h3 className="font-bold text-xl mb-4">
+              {isReturningUser ? 'All Your Features Are Waiting:' : 'Complete Platform Access:'}
+            </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
               <div className="flex items-center"><span className="text-yellow-300 mr-2">🏆</span>Classroom Champions Gamification</div>
               <div className="flex items-center"><span className="text-yellow-300 mr-2">🛠️</span>Professional Teaching Tools</div>
@@ -135,46 +193,85 @@ export default function Checkout() {
             {isProcessing ? (
               <div className="flex items-center justify-center space-x-2">
                 <div className="w-5 h-5 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
-                <span>Setting up trial...</span>
+                <span>Processing...</span>
               </div>
             ) : (
-              `🚀 Start ${daysUntilJan1}-Day Free Trial`
+              isReturningUser 
+                ? '🚀 Resubscribe Now'
+                : `🚀 Start ${daysUntilJan1}-Day Free Trial`
             )}
           </button>
 
           <div className="text-center mt-4 text-green-100 text-sm">
-            <p>💳 Payment details required but not charged until January 1st, 2026</p>
-            <p>✨ Full access starts immediately • Cancel anytime</p>
+            {isReturningUser ? (
+              <>
+                <p>💳 Billing starts immediately</p>
+                <p>✨ Your classes and data are preserved • Cancel anytime</p>
+              </>
+            ) : (
+              <>
+                <p>💳 Payment details required but not charged until January 1st, 2026</p>
+                <p>✨ Full access starts immediately • Cancel anytime</p>
+              </>
+            )}
           </div>
         </div>
 
         {/* How it Works */}
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-200">
-          <h3 className="text-2xl font-bold text-center text-gray-800 mb-6">How Your Free Trial Works</h3>
+          <h3 className="text-2xl font-bold text-center text-gray-800 mb-6">
+            {isReturningUser ? 'Resubscription Details' : 'How Your Free Trial Works'}
+          </h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="text-center">
               <div className="bg-blue-100 text-blue-600 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 text-xl font-bold">1</div>
-              <h4 className="font-bold text-gray-700 mb-2">Enter Payment Details</h4>
-              <p className="text-gray-600 text-sm">Secure checkout powered by Stripe (required for trial)</p>
+              <h4 className="font-bold text-gray-700 mb-2">
+                {isReturningUser ? 'Enter Payment Details' : 'Enter Payment Details'}
+              </h4>
+              <p className="text-gray-600 text-sm">
+                {isReturningUser 
+                  ? 'Secure checkout powered by Stripe'
+                  : 'Secure checkout powered by Stripe (required for trial)'
+                }
+              </p>
             </div>
             
             <div className="text-center">
               <div className="bg-green-100 text-green-600 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 text-xl font-bold">2</div>
-              <h4 className="font-bold text-gray-700 mb-2">Start Using Immediately</h4>
-              <p className="text-gray-600 text-sm">Full access to all features right away</p>
+              <h4 className="font-bold text-gray-700 mb-2">
+                {isReturningUser ? 'Instant Access' : 'Start Using Immediately'}
+              </h4>
+              <p className="text-gray-600 text-sm">
+                {isReturningUser
+                  ? 'Access all your classes and students right away'
+                  : 'Full access to all features right away'
+                }
+              </p>
             </div>
             
             <div className="text-center">
               <div className="bg-purple-100 text-purple-600 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 text-xl font-bold">3</div>
-              <h4 className="font-bold text-gray-700 mb-2">Free Until Jan 1st</h4>
-              <p className="text-gray-600 text-sm">No charges for {daysUntilJan1} days</p>
+              <h4 className="font-bold text-gray-700 mb-2">
+                {isReturningUser ? 'Monthly Billing' : 'Free Until Jan 1st'}
+              </h4>
+              <p className="text-gray-600 text-sm">
+                {isReturningUser
+                  ? '$5.99/month, billed monthly'
+                  : `No charges for ${daysUntilJan1} days`
+                }
+              </p>
             </div>
             
             <div className="text-center">
               <div className="bg-orange-100 text-orange-600 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 text-xl font-bold">4</div>
               <h4 className="font-bold text-gray-700 mb-2">Cancel Anytime</h4>
-              <p className="text-gray-600 text-sm">No charges if you cancel before trial ends</p>
+              <p className="text-gray-600 text-sm">
+                {isReturningUser
+                  ? 'No long-term commitment required'
+                  : 'No charges if you cancel before trial ends'
+                }
+              </p>
             </div>
           </div>
 
@@ -182,13 +279,26 @@ export default function Checkout() {
             <div className="flex items-start space-x-3">
               <div className="text-2xl">ℹ️</div>
               <div>
-                <h4 className="font-bold text-blue-800 mb-2">Trial Details</h4>
+                <h4 className="font-bold text-blue-800 mb-2">
+                  {isReturningUser ? 'Subscription Details' : 'Trial Details'}
+                </h4>
                 <ul className="text-blue-700 text-sm space-y-1">
-                  <li>• Payment method required to prevent abuse</li>
-                  <li>• Trial automatically ends January 1st, 2026</li>
-                  <li>• $5.99/month billing starts after trial (if not cancelled)</li>
-                  <li>• Cancel anytime in your account settings</li>
-                  <li>• No charges until trial period ends</li>
+                  {isReturningUser ? (
+                    <>
+                      <li>• Billing starts immediately at $5.99/month</li>
+                      <li>• All your previous classes and students are preserved</li>
+                      <li>• Cancel anytime in your account settings</li>
+                      <li>• No long-term contracts or hidden fees</li>
+                    </>
+                  ) : (
+                    <>
+                      <li>• Payment method required to prevent abuse</li>
+                      <li>• Trial automatically ends January 1st, 2026</li>
+                      <li>• $5.99/month billing starts after trial (if not cancelled)</li>
+                      <li>• Cancel anytime in your account settings</li>
+                      <li>• No charges until trial period ends</li>
+                    </>
+                  )}
                 </ul>
               </div>
             </div>

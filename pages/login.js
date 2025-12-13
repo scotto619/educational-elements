@@ -57,81 +57,103 @@ export default function Login() {
   }, []);
 
   const handleLogin = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (!firebaseLoaded || !auth || !signInWithEmailAndPassword) {
-      alert('Firebase is still loading. Please try again in a moment.');
-      return;
-    }
+  if (!firebaseLoaded || !auth || !signInWithEmailAndPassword) {
+    alert('Firebase is still loading. Please try again in a moment.');
+    return;
+  }
 
-    setIsLoading(true);
+  setIsLoading(true);
 
-    if (!email || !password) {
-      alert("Please fill in all fields");
-      setIsLoading(false);
-      return;
-    }
+  if (!email || !password) {
+    alert("Please fill in all fields");
+    setIsLoading(false);
+    return;
+  }
 
-    const normalizedEmail = email.trim().toLowerCase();
+  const normalizedEmail = email.trim().toLowerCase();
 
-    try {
-      // Prevent login for accounts that have been cancelled/deleted
-      const helpers = firestoreHelpers.current;
-      if (helpers?.collection && firestoreDb) {
-        try {
-          const { collection, query, where, getDocs } = helpers;
-          const userQuery = query(
-            collection(firestoreDb, 'users'),
-            where('email', '==', normalizedEmail)
-          );
-          const snapshot = await getDocs(userQuery);
-          const blockedAccount = snapshot.docs.some((docSnap) => {
-            const data = docSnap.data();
-            return data?.loginDisabled || data?.accountStatus === 'deleted';
-          });
-
-          if (blockedAccount) {
-            alert('Your account has been cancelled. Please resubscribe to regain access.');
+  try {
+    // FIXED: Check account status, but allow canceled accounts to log back in
+    const helpers = firestoreHelpers.current;
+    if (helpers?.collection && firestoreDb) {
+      try {
+        const { collection, query, where, getDocs } = helpers;
+        const userQuery = query(
+          collection(firestoreDb, 'users'),
+          where('email', '==', normalizedEmail)
+        );
+        const snapshot = await getDocs(userQuery);
+        
+        if (!snapshot.empty) {
+          const userDoc = snapshot.docs[0];
+          const data = userDoc.data();
+          
+          // CHANGED: Only block if loginDisabled is explicitly true
+          // Canceled accounts (accountStatus: 'canceled') are allowed to log in
+          if (data?.loginDisabled === true) {
+            alert('Your account has been disabled. Please contact support to restore access.');
             setIsLoading(false);
             return;
           }
-        } catch (checkError) {
-          console.warn('Skipping pre-login status check:', checkError);
+          
+          // REMOVED: The accountStatus === 'deleted' check
+          // Users with canceled subscriptions can now log in to resubscribe
         }
+      } catch (checkError) {
+        console.warn('Skipping pre-login status check:', checkError);
       }
-
-      await signInWithEmailAndPassword(auth, normalizedEmail, password);
-
-      // Double-check account status after login
-      if (auth.currentUser && firestoreDb && firestoreHelpers.current?.doc) {
-        const { doc, getDoc } = firestoreHelpers.current;
-        const userDoc = await getDoc(doc(firestoreDb, 'users', auth.currentUser.uid));
-        const userData = userDoc.exists() ? userDoc.data() : null;
-        if (userData?.loginDisabled || userData?.accountStatus === 'deleted') {
-          alert('Your account has been cancelled. Please resubscribe to regain access.');
-          await auth.signOut();
-          setIsLoading(false);
-          return;
-        }
-      }
-
-      router.push('/dashboard');
-    } catch (error) {
-      console.error('Login error:', error);
-      if (error.code === 'auth/user-not-found') {
-        alert('No account found with this email. Please sign up first.');
-      } else if (error.code === 'auth/wrong-password') {
-        alert('Incorrect password. Please try again.');
-      } else if (error.code === 'auth/invalid-email') {
-        alert('Please enter a valid email address.');
-      } else if (error.code === 'auth/too-many-requests') {
-        alert('Too many failed login attempts. Please try again later.');
-      } else {
-        alert('Error signing in: ' + error.message);
-      }
-      setIsLoading(false);
     }
-  };
+
+    // Attempt to sign in
+    await signInWithEmailAndPassword(auth, normalizedEmail, password);
+
+    // Check subscription status after login
+    if (auth.currentUser && firestoreDb && firestoreHelpers.current?.doc) {
+      const { doc, getDoc } = firestoreHelpers.current;
+      const userDoc = await getDoc(doc(firestoreDb, 'users', auth.currentUser.uid));
+      const userData = userDoc.exists() ? userDoc.data() : null;
+      
+      // Only block if explicitly disabled
+      if (userData?.loginDisabled === true) {
+        alert('Your account has been disabled. Please contact support.');
+        await auth.signOut();
+        setIsLoading(false);
+        return;
+      }
+      
+      // ADDED: Check if user needs to resubscribe
+      const hasActiveSubscription = userData?.subscription && userData.subscription !== 'cancelled';
+      const hasFreeAccess = userData?.freeAccessUntil && new Date(userData.freeAccessUntil) > new Date();
+      
+      if (!hasActiveSubscription && !hasFreeAccess) {
+        // User needs to subscribe/resubscribe
+        console.log('⚠️ User needs subscription, redirecting to checkout');
+        router.push('/checkout');
+        return;
+      }
+    }
+
+    // All checks passed - go to dashboard
+    router.push('/dashboard');
+
+  } catch (error) {
+    console.error('Login error:', error);
+    if (error.code === 'auth/user-not-found') {
+      alert('No account found with this email. Please sign up first.');
+    } else if (error.code === 'auth/wrong-password') {
+      alert('Incorrect password. Please try again.');
+    } else if (error.code === 'auth/invalid-email') {
+      alert('Please enter a valid email address.');
+    } else if (error.code === 'auth/too-many-requests') {
+      alert('Too many failed login attempts. Please try again later.');
+    } else {
+      alert('Error signing in: ' + error.message);
+    }
+    setIsLoading(false);
+  }
+};
 
   const handlePasswordReset = async (e) => {
     e.preventDefault();
