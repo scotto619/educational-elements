@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Image from 'next/image';
@@ -6,13 +6,20 @@ import Link from 'next/link';
 
 // Dynamic import for Firebase to prevent SSR issues
 let auth = null;
+let firestoreDb = null;
 let signInWithEmailAndPassword = null;
+let sendPasswordResetEmail = null;
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [firebaseLoaded, setFirebaseLoaded] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [isSendingReset, setIsSendingReset] = useState(false);
+  const [resetStatus, setResetStatus] = useState(null);
+  const [showResetForm, setShowResetForm] = useState(false);
+  const firestoreHelpers = useRef({});
   const router = useRouter();
 
   // Load Firebase only on client side
@@ -22,9 +29,22 @@ export default function Login() {
         try {
           const firebaseModule = await import('../utils/firebase');
           const firebaseAuthModule = await import('firebase/auth');
-          
+          const firebaseFirestoreModule = await import('firebase/firestore');
+
           auth = firebaseModule.auth;
+          firestoreDb = firebaseModule.firestore;
           signInWithEmailAndPassword = firebaseAuthModule.signInWithEmailAndPassword;
+          sendPasswordResetEmail = firebaseAuthModule.sendPasswordResetEmail;
+          // Preload commonly used Firestore helpers
+          firestoreHelpers.current = {
+            collection: firebaseFirestoreModule.collection,
+            query: firebaseFirestoreModule.query,
+            where: firebaseFirestoreModule.where,
+            getDocs: firebaseFirestoreModule.getDocs,
+            doc: firebaseFirestoreModule.doc,
+            getDoc: firebaseFirestoreModule.getDoc,
+            updateDoc: firebaseFirestoreModule.updateDoc
+          };
           setFirebaseLoaded(true);
         } catch (error) {
           console.error('Error loading Firebase:', error);
@@ -37,7 +57,7 @@ export default function Login() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    
+
     if (!firebaseLoaded || !auth || !signInWithEmailAndPassword) {
       alert('Firebase is still loading. Please try again in a moment.');
       return;
@@ -52,7 +72,42 @@ export default function Login() {
     }
 
     try {
+      // Prevent login for accounts that have been cancelled/deleted
+      const helpers = firestoreHelpers.current;
+      if (helpers?.collection && firestoreDb) {
+        const { collection, query, where, getDocs } = helpers;
+        const userQuery = query(
+          collection(firestoreDb, 'users'),
+          where('email', '==', email.toLowerCase())
+        );
+        const snapshot = await getDocs(userQuery);
+        const blockedAccount = snapshot.docs.some((docSnap) => {
+          const data = docSnap.data();
+          return data?.loginDisabled || data?.accountStatus === 'deleted';
+        });
+
+        if (blockedAccount) {
+          alert('Your account has been cancelled. Please resubscribe to regain access.');
+          setIsLoading(false);
+          return;
+        }
+      }
+
       await signInWithEmailAndPassword(auth, email, password);
+
+      // Double-check account status after login
+      if (auth.currentUser && firestoreDb && firestoreHelpers.current?.doc) {
+        const { doc, getDoc } = firestoreHelpers.current;
+        const userDoc = await getDoc(doc(firestoreDb, 'users', auth.currentUser.uid));
+        const userData = userDoc.exists() ? userDoc.data() : null;
+        if (userData?.loginDisabled || userData?.accountStatus === 'deleted') {
+          alert('Your account has been cancelled. Please resubscribe to regain access.');
+          await auth.signOut();
+          setIsLoading(false);
+          return;
+        }
+      }
+
       router.push('/dashboard');
     } catch (error) {
       console.error('Login error:', error);
@@ -69,6 +124,58 @@ export default function Login() {
       }
       setIsLoading(false);
     }
+  };
+
+  const handlePasswordReset = async (e) => {
+    e.preventDefault();
+
+    if (!firebaseLoaded || !auth || !sendPasswordResetEmail) {
+      alert('Firebase is still loading. Please try again in a moment.');
+      return;
+    }
+
+    const targetEmail = (resetEmail || email || '').trim().toLowerCase();
+
+    if (!targetEmail) {
+      alert('Please enter your email address to reset your password.');
+      return;
+    }
+
+    setIsSendingReset(true);
+    setResetStatus(null);
+
+    try {
+      await sendPasswordResetEmail(auth, targetEmail);
+
+      // Log reset request to user profile for auditing
+      if (firestoreDb && firestoreHelpers.current?.collection) {
+        const { collection, query, where, getDocs, updateDoc } = firestoreHelpers.current;
+        const userQuery = query(collection(firestoreDb, 'users'), where('email', '==', targetEmail));
+        const snapshot = await getDocs(userQuery);
+
+        await Promise.all(
+          snapshot.docs.map((docSnap) =>
+            updateDoc(docSnap.ref, {
+              passwordResetRequestedAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            })
+          )
+        );
+      }
+
+      setResetStatus({ type: 'success', message: 'Password reset link sent! Please check your email.' });
+    } catch (error) {
+      console.error('Password reset error:', error);
+      if (error.code === 'auth/user-not-found') {
+        setResetStatus({ type: 'error', message: 'No account found with this email.' });
+      } else if (error.code === 'auth/invalid-email') {
+        setResetStatus({ type: 'error', message: 'Please enter a valid email address.' });
+      } else {
+        setResetStatus({ type: 'error', message: 'Unable to send reset link. Please try again.' });
+      }
+    }
+
+    setIsSendingReset(false);
   };
 
   return (
@@ -117,7 +224,44 @@ export default function Login() {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
+            <div className="text-right mt-2">
+              <button
+                type="button"
+                onClick={() => setShowResetForm((prev) => !prev)}
+                className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+              >
+                Forgot password?
+              </button>
+            </div>
           </div>
+
+          {showResetForm && (
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-blue-800 mb-2">Reset Email</label>
+                <input
+                  type="email"
+                  placeholder="you@example.com"
+                  className="w-full px-4 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  value={resetEmail || email}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                />
+              </div>
+              <button
+                type="button"
+                onClick={handlePasswordReset}
+                disabled={isSendingReset || !firebaseLoaded}
+                className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {isSendingReset ? 'Sending reset link...' : 'Send password reset link'}
+              </button>
+              {resetStatus && (
+                <p className={`text-sm ${resetStatus.type === 'success' ? 'text-green-700' : 'text-red-700'}`}>
+                  {resetStatus.message}
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Submit Button */}
           <button
