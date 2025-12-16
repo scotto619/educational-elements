@@ -20,10 +20,10 @@ export default function Home() {
     };
 
     calculateDaysUntilJan1();
-    
+
     // Update the countdown every hour
     const interval = setInterval(calculateDaysUntilJan1, 1000 * 60 * 60);
-    
+
     return () => clearInterval(interval);
   }, []);
 
@@ -289,11 +289,11 @@ export default function Home() {
                     Teaching Platform
                   </span>
                 </h1>
-                
+
                 <p className="text-base md:text-xl text-gray-600 mb-6 md:mb-8 leading-relaxed px-4 lg:px-0">
                   From RPG gamification to professional tools and curriculum resources - everything you need to transform your modern classroom in one comprehensive platform.
                 </p>
-                
+
                 {/* CTA Buttons - Mobile Optimized */}
                 <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center lg:justify-start px-4 lg:px-0">
                   <Link
@@ -302,8 +302,8 @@ export default function Home() {
                   >
                     🚀 Start {daysUntilJan1}-Day FREE Trial
                   </Link>
-                  <button 
-                    onClick={() => scrollToSection('features')} 
+                  <button
+                    onClick={() => scrollToSection('features')}
                     className="bg-white hover:bg-gray-100 text-gray-700 px-6 md:px-8 py-3 md:py-4 rounded-xl text-base md:text-lg font-semibold transition-all border border-gray-200"
                   >
                     Explore Platform
@@ -314,7 +314,7 @@ export default function Home() {
                   ✨ FREE until January 1st, 2026 • Setup in minutes • No charges during trial
                 </p>
               </div>
-              
+
               {/* Right Side - Dashboard Screenshot */}
               <div className="relative order-1 lg:order-2">
                 <div className="bg-white rounded-2xl shadow-2xl p-3 md:p-4 border border-gray-200 mx-4 lg:mx-0">
@@ -349,7 +349,7 @@ export default function Home() {
               <h2 className="text-2xl md:text-4xl font-bold text-gray-900 mb-2 md:mb-4">Everything Your Modern Classroom Needs</h2>
               <p className="text-lg md:text-xl text-gray-600">A comprehensive platform built for today's educators</p>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
               {[
                 {
@@ -407,7 +407,7 @@ export default function Home() {
 
             {/* Three Feature Showcase - Mobile Optimized */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 md:gap-12 mb-12 md:mb-16">
-              
+
               {/* XP Awards */}
               <div className="text-center group">
                 <div className="bg-white rounded-2xl shadow-xl p-4 md:p-6 border border-purple-100 group-hover:shadow-2xl transition-all duration-300">
@@ -484,26 +484,26 @@ export default function Home() {
             {/* How It Works - Mobile Optimized */}
             <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 lg:p-12 border border-purple-200">
               <h3 className="text-2xl md:text-3xl font-bold text-center text-gray-900 mb-6 md:mb-8">How Classroom Champions Works</h3>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
                 <div className="text-center">
                   <div className="bg-gradient-to-br from-blue-400 to-blue-600 text-white w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4 text-lg md:text-2xl font-bold">1</div>
                   <h4 className="font-bold text-base md:text-lg mb-2">Positive Actions</h4>
                   <p className="text-gray-600 text-xs md:text-sm">Students demonstrate good behavior, participate in class, complete tasks, and help others.</p>
                 </div>
-                
+
                 <div className="text-center">
                   <div className="bg-gradient-to-br from-green-400 to-green-600 text-white w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4 text-lg md:text-2xl font-bold">2</div>
                   <h4 className="font-bold text-base md:text-lg mb-2">Instant Rewards</h4>
                   <p className="text-gray-600 text-xs md:text-sm">Teachers award XP and coins instantly with satisfying sound effects and visual celebrations.</p>
                 </div>
-                
+
                 <div className="text-center">
                   <div className="bg-gradient-to-br from-purple-400 to-purple-600 text-white w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4 text-lg md:text-2xl font-bold">3</div>
                   <h4 className="font-bold text-base md:text-lg mb-2">Epic Progression</h4>
                   <p className="text-gray-600 text-xs md:text-sm">Avatars evolve at each level, pets unlock at milestones, creating anticipation and excitement.</p>
                 </div>
-                
+
                 <div className="text-center">
                   <div className="bg-gradient-to-br from-orange-400 to-orange-600 text-white w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4 text-lg md:text-2xl font-bold">4</div>
                   <h4 className="font-bold text-base md:text-lg mb-2">Continued Engagement</h4>
@@ -532,7 +532,7 @@ export default function Home() {
               <h2 className="text-2xl md:text-4xl font-bold text-gray-900 mb-2 md:mb-4">One Platform, Endless Possibilities</h2>
               <p className="text-base md:text-xl text-gray-600">From gamification to professional tools - everything your classroom needs.</p>
             </div>
-            
+
             {/* Screenshots Grid with Hover Effect - Mobile Optimized */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 mb-8 md:mb-12">
               {[
@@ -651,7 +651,7 @@ export default function Home() {
                 <h2 className="text-2xl md:text-4xl font-bold text-gray-900 mb-2 md:mb-4">Built by Teachers, for Teachers</h2>
                 <p className="text-base md:text-xl text-gray-600">The story behind Educational Elements</p>
               </div>
-              
+
               <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 lg:p-12 border border-purple-100">
                 <div className="prose prose-lg max-w-none">
                   <p className="text-gray-700 leading-relaxed mb-4 md:mb-6 text-sm md:text-base">
@@ -663,11 +663,11 @@ export default function Home() {
                       "We needed more than just a behavior management system. We needed a complete educational ecosystem that could grow with our teaching practice and engage students in meaningful ways."
                     </p>
                   </div>
-                  
+
                   <p className="text-gray-700 leading-relaxed mb-4 md:mb-6 text-sm md:text-base">
                     Our <strong>Classroom Champions gamification system</strong> became the breakthrough that transformed student engagement. But we didn't stop there. We built a complete platform with professional tools, curriculum resources, and analytics that support every aspect of modern teaching.
                   </p>
-                  
+
                   <p className="text-gray-700 leading-relaxed mb-4 md:mb-6 text-sm md:text-base">
                     Every feature has been tested in real classrooms with real students. From the RPG-style progression system to the comprehensive teacher toolkit, Educational Elements is designed to make teaching more effective and learning more engaging.
                   </p>
@@ -694,7 +694,7 @@ export default function Home() {
               <h2 className="text-2xl md:text-4xl font-bold text-gray-900 mb-2 md:mb-4">Simple, Affordable Pricing</h2>
               <p className="text-base md:text-xl text-gray-600">Everything you need in one comprehensive platform.</p>
             </div>
-            
+
             {/* Trial Offer Banner - Mobile Optimized */}
             <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 md:px-8 py-4 md:py-6 rounded-2xl mb-8 md:mb-12 shadow-2xl text-center max-w-4xl mx-auto">
               <div className="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-4">
@@ -706,7 +706,7 @@ export default function Home() {
                 <span className="text-2xl md:text-4xl hidden sm:block">⏰</span>
               </div>
             </div>
-            
+
             <div className="max-w-md mx-auto">
               {/* Single Plan - Mobile Optimized */}
               <div className="bg-gradient-to-b from-purple-600 to-indigo-600 rounded-2xl shadow-2xl p-6 md:p-8 border-2 border-purple-500 relative transform scale-100 md:scale-105">
@@ -715,7 +715,7 @@ export default function Home() {
                     🌟 COMPLETE PLATFORM
                   </span>
                 </div>
-                
+
                 <div className="text-center mb-6 md:mb-8 pt-3 md:pt-4">
                   <h3 className="text-2xl md:text-3xl font-bold text-white mb-3 md:mb-4">Educational Elements</h3>
                   <div className="mb-3 md:mb-4">
@@ -724,7 +724,7 @@ export default function Home() {
                     <div className="text-green-300 font-bold text-sm md:text-lg mt-1 md:mt-2">Currently FREE for {daysUntilJan1} days!</div>
                   </div>
                 </div>
-                
+
                 <ul className="space-y-3 md:space-y-4 mb-6 md:mb-8">
                   <li className="flex items-center"><div className="bg-green-200 text-green-700 rounded-full w-5 h-5 md:w-6 md:h-6 flex items-center justify-center mr-2 md:mr-3 text-xs md:text-sm">✓</div><span className="text-white font-semibold text-sm md:text-base">Up to 2 Classrooms</span></li>
                   <li className="flex items-center"><div className="bg-green-200 text-green-700 rounded-full w-5 h-5 md:w-6 md:h-6 flex items-center justify-center mr-2 md:mr-3 text-xs md:text-sm">✓</div><span className="text-white text-sm md:text-base">Unlimited Students</span></li>
@@ -735,7 +735,7 @@ export default function Home() {
                   <li className="flex items-center"><div className="bg-yellow-200 text-yellow-700 rounded-full w-5 h-5 md:w-6 md:h-6 flex items-center justify-center mr-2 md:mr-3 text-xs md:text-sm">★</div><span className="text-white text-sm md:text-base">Interactive Learning Games</span></li>
                   <li className="flex items-center"><div className="bg-yellow-200 text-yellow-700 rounded-full w-5 h-5 md:w-6 md:h-6 flex items-center justify-center mr-2 md:mr-3 text-xs md:text-sm">★</div><span className="text-white text-sm md:text-base">Priority Support</span></li>
                 </ul>
-                
+
                 <Link
                   href="/signup"
                   className="inline-flex w-full justify-center bg-gradient-to-r from-yellow-400 to-orange-500 text-black px-4 md:px-6 py-3 md:py-4 rounded-xl hover:from-yellow-500 hover:to-orange-600 transition-all font-bold text-base md:text-lg shadow-xl transform hover:scale-105"
@@ -748,6 +748,91 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Free Resources Section - Mobile Optimized */}
+        <section id="free-resources" className="py-12 md:py-20 bg-gradient-to-br from-cyan-900 via-blue-900 to-indigo-900 relative overflow-hidden">
+          {/* Background decoration */}
+          <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 opacity-20">
+            <div className="absolute top-10 left-10 w-64 h-64 bg-cyan-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
+            <div className="absolute top-10 right-10 w-64 h-64 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
+            <div className="absolute -bottom-8 left-20 w-64 h-64 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000"></div>
+          </div>
+
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div className="text-center mb-10 md:mb-16">
+              <span className="inline-block py-1 px-3 rounded-full bg-cyan-500/20 border border-cyan-400/30 text-cyan-300 text-xs md:text-sm font-bold uppercase tracking-widest mb-4">
+                Free Downloads
+              </span>
+              <h2 className="text-3xl md:text-5xl font-bold text-white mb-4 md:mb-6">
+                Free Teacher Resources
+              </h2>
+              <p className="text-base md:text-xl text-cyan-100 max-w-2xl mx-auto leading-relaxed">
+                Download premium quality classroom materials, slides, and templates completely free. No sign-up required.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+              {[
+                {
+                  title: "Classroom Management Tips",
+                  type: "PDF Guide",
+                  icon: "📋",
+                  color: "from-emerald-400 to-teal-500",
+                  desc: "Essential strategies for maintaining a positive and productive classroom environment.",
+                  file: "/free-resources/Classroom_Management_Tips.pdf"
+                },
+                {
+                  title: "Math Warmup Slides",
+                  type: "PowerPoint",
+                  icon: "📊",
+                  color: "from-orange-400 to-red-500",
+                  desc: "Ready-to-use daily math activation slides to get students thinking immediately.",
+                  file: "/free-resources/Math_Warmup_Slides.pptx"
+                },
+                {
+                  title: "Lettering Template Pack",
+                  type: "Display Assets",
+                  icon: "🎨",
+                  color: "from-pink-400 to-purple-500",
+                  desc: "Beautiful printable lettering sets for your bulletin boards and displays.",
+                  file: "/free-resources/Lettering_Template.zip"
+                }
+              ].map((resource, index) => (
+                <div key={index} className="group relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-6 md:p-8 hover:-translate-y-2 transition-all duration-300 hover:shadow-2xl hover:shadow-cyan-500/20">
+                  <div className={`absolute inset-0 bg-gradient-to-br ${resource.color} opacity-0 group-hover:opacity-10 rounded-2xl transition-opacity duration-300`}></div>
+
+                  <div className="flex justify-between items-start mb-6">
+                    <div className={`w-12 h-12 md:w-14 md:h-14 rounded-xl bg-gradient-to-br ${resource.color} flex items-center justify-center text-2xl md:text-3xl shadow-lg`}>
+                      {resource.icon}
+                    </div>
+                    <span className="bg-white/10 text-white/80 text-xs font-semibold px-2 py-1 rounded-lg border border-white/10">
+                      {resource.type}
+                    </span>
+                  </div>
+
+                  <h3 className="text-xl md:text-2xl font-bold text-white mb-3 group-hover:text-cyan-200 transition-colors">
+                    {resource.title}
+                  </h3>
+
+                  <p className="text-cyan-100/70 text-sm md:text-base leading-relaxed mb-6">
+                    {resource.desc}
+                  </p>
+
+                  <a
+                    href={resource.file}
+                    download
+                    className="flex items-center justify-center w-full py-3 md:py-4 bg-white/10 hover:bg-white text-white hover:text-cyan-900 border border-white/20 hover:border-white rounded-xl font-bold transition-all duration-300 group-hover:shadow-lg"
+                  >
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Download Now
+                  </a>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
         {/* Final CTA Section - Mobile Optimized */}
         <section className="py-12 md:py-20 bg-gradient-to-br from-purple-600 via-indigo-600 to-blue-700">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -755,7 +840,7 @@ export default function Home() {
             <p className="text-base md:text-xl text-white/90 mb-6 md:mb-8 max-w-3xl mx-auto">
               Join educators who are already using Educational Elements to create engaging, effective, and modern classroom experiences.
             </p>
-            
+
             <div className="flex justify-center">
               <Link
                 href="/signup"
@@ -764,7 +849,7 @@ export default function Home() {
                 🚀 Start {daysUntilJan1}-Day FREE Trial
               </Link>
             </div>
-            
+
             <div className="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-8 text-white/80 mt-6 md:mt-8 text-sm md:text-base">
               <div className="flex items-center"><span className="text-green-400 mr-2">✓</span><span>FREE for {daysUntilJan1} days</span></div>
               <div className="flex items-center"><span className="text-green-400 mr-2">✓</span><span>Setup in 5 minutes</span></div>
@@ -794,7 +879,7 @@ export default function Home() {
                   The complete digital learning platform for modern classrooms. From gamification to professional tools - everything you need in one place.
                 </p>
               </div>
-              
+
               <div>
                 <h4 className="font-semibold mb-4 md:mb-6 text-base md:text-lg">Platform</h4>
                 <ul className="space-y-2 md:space-y-3 text-gray-400 text-sm md:text-base">
@@ -812,7 +897,7 @@ export default function Home() {
                   </li>
                 </ul>
               </div>
-              
+
               <div>
                 <h4 className="font-semibold mb-4 md:mb-6 text-base md:text-lg">Support</h4>
                 <ul className="space-y-2 md:space-y-3 text-gray-400 text-sm md:text-base">
@@ -822,7 +907,7 @@ export default function Home() {
                 </ul>
               </div>
             </div>
-            
+
             <div className="border-t border-gray-800 mt-8 md:mt-12 pt-6 md:pt-8 text-center">
               <p className="text-gray-400 text-sm md:text-base">
                 © 2025 Educational Elements. Built with ❤️ for educators everywhere.
