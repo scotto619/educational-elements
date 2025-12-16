@@ -82,18 +82,15 @@ export default async function handler(req, res) {
     await userRef.update(updateData);
     console.log('✅ Firestore cancellation recorded for user:', userId);
 
-    // Remove authentication access so they can recreate their account with the same email
-    try {
-      await adminAuth.deleteUser(userId);
-      console.log('🗑️ Firebase Auth user deleted:', userId);
-    } catch (authError) {
-      console.error('⚠️ Failed to delete Firebase Auth user:', authError.message);
-    }
+    // NOTE: We do NOT delete the Firebase Auth user here.
+    // This allows the user to log back in and resubscribe to regain access to their classes.
+    // Access control is handled by checking subscriptionStatus in the dashboard.
+    console.log('ℹ️ Firebase Auth user preserved - user can log in and resubscribe');
 
     return res.status(200).json({
       success: true,
       stripeCanceled,
-      message: 'Account deleted and subscription canceled',
+      message: 'Subscription canceled. You can resubscribe anytime to regain access.',
     });
   } catch (error) {
     console.error('❌ Error in delete-account:', error);

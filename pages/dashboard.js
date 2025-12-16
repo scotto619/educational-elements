@@ -16,8 +16,9 @@ export default function Dashboard() {
   const [savedClasses, setSavedClasses] = useState([]);
   const [trialDaysLeft, setTrialDaysLeft] = useState(0);
   const [architectureVersion, setArchitectureVersion] = useState('unknown');
+  const [waitingForWebhook, setWaitingForWebhook] = useState(false);
   const [dashboardUpdates, setDashboardUpdates] = useState(DEFAULT_UPDATES);
-  
+
   // Class creation states
   const [showCreateClassModal, setShowCreateClassModal] = useState(false);
   const [className, setClassName] = useState('');
@@ -109,31 +110,89 @@ export default function Dashboard() {
     };
   }, []);
 
-  // Check for successful checkout
+  // Check for successful checkout and poll for webhook completion
   useEffect(() => {
+    if (!user || !userData) return;
+
     const urlParams = new URLSearchParams(window.location.search);
     const sessionId = urlParams.get('session_id');
-    
+
     if (sessionId) {
+      // Clean up URL
       window.history.replaceState({}, document.title, '/dashboard');
-      setTimeout(() => {
-        alert(`🎉 Welcome to Educational Elements! Your ${trialDaysLeft}-day free trial is now active.`);
-      }, 1000);
+
+      // Check if webhook has completed
+      const hasValidSubscription =
+        userData.subscriptionStatus === 'active' ||
+        userData.subscriptionStatus === 'trialing' ||
+        userData.subscriptionStatus === 'trial';
+
+      if (!hasValidSubscription && userData.stripeCustomerId) {
+        // Webhook hasn't completed yet - poll for it
+        console.log('⏳ Waiting for Stripe webhook to complete...');
+        setWaitingForWebhook(true);
+
+        let pollCount = 0;
+        const maxPolls = 15; // 15 polls × 2s = 30 seconds max
+
+        const pollInterval = setInterval(async () => {
+          pollCount++;
+          console.log(`🔄 Polling for webhook completion (${pollCount}/${maxPolls})...`);
+
+          try {
+            const docRef = doc(firestore, 'users', user.uid);
+            const snap = await getDoc(docRef);
+            const data = snap.data();
+
+            if (data.subscriptionStatus === 'active' ||
+              data.subscriptionStatus === 'trialing' ||
+              data.subscriptionStatus === 'trial') {
+              console.log('✅ Webhook completed! Subscription status:', data.subscriptionStatus);
+              setUserData(data);
+              setWaitingForWebhook(false);
+              clearInterval(pollInterval);
+
+              setTimeout(() => {
+                alert(`🎉 Welcome to Educational Elements! Your subscription is now active.`);
+              }, 500);
+            } else if (pollCount >= maxPolls) {
+              console.warn('⚠️ Webhook polling timeout - stopping');
+              clearInterval(pollInterval);
+              setWaitingForWebhook(false);
+            }
+          } catch (error) {
+            console.error('Error polling for webhook:', error);
+            clearInterval(pollInterval);
+            setWaitingForWebhook(false);
+          }
+        }, 2000); // Poll every 2 seconds
+
+        return () => clearInterval(pollInterval);
+      } else if (hasValidSubscription) {
+        // Webhook already completed
+        setTimeout(() => {
+          const isTrialing = userData.subscriptionStatus === 'trialing' || userData.subscriptionStatus === 'trial';
+          const message = isTrialing
+            ? `🎉 Welcome to Educational Elements! Your ${trialDaysLeft}-day free trial is now active.`
+            : `🎉 Welcome back! Your subscription is active.`;
+          alert(message);
+        }, 1000);
+      }
     }
-  }, [trialDaysLeft]);
+  }, [user, userData, trialDaysLeft]);
 
   // V2 Architecture: Load classes from new collections
   async function loadV2Classes(userId) {
     try {
       console.log('📚 Loading V2 classes for user:', userId);
-      
+
       // Query classes collection where teacherId matches user
       const classesQuery = query(
         collection(firestore, 'classes'),
         where('teacherId', '==', userId),
         where('archived', '==', false)
       );
-      
+
       const classesSnapshot = await getDocs(classesQuery);
       console.log('✅ Found V2 classes:', classesSnapshot.size);
 
@@ -185,13 +244,13 @@ export default function Dashboard() {
           // Add a marker to indicate this is V2 data
           isV2: true
         };
-        
+
         classes.push(formattedClass);
       }
-      
+
       console.log('📊 V2 classes loaded:', classes.length);
       return classes;
-      
+
     } catch (error) {
       console.error('❌ Error loading V2 classes:', error);
       throw error;
@@ -210,7 +269,7 @@ export default function Dashboard() {
       totalXP: (cls.students || []).reduce((sum, student) => sum + (student.totalPoints || 0), 0),
       isV2: false
     }));
-    
+
     console.log('📊 V1 classes loaded:', formattedClasses.length);
     return formattedClasses;
   }
@@ -227,12 +286,12 @@ export default function Dashboard() {
         console.log('User Email:', user.email);
         console.log('User Display Name:', user.displayName);
         console.log('========================');
-        
+
         try {
           // Load user data
           const docRef = doc(firestore, 'users', user.uid);
           const snap = await getDoc(docRef);
-          
+
           let userData;
           if (snap.exists()) {
             userData = snap.data();
@@ -247,21 +306,21 @@ export default function Dashboard() {
               subscriptionStatus: 'trialing',
               trialUntil: '2026-01-01T00:00:00.000Z'
             };
-            
+
             await setDoc(docRef, userData);
             setUserData(userData);
           }
-          
+
           // Determine architecture version and load classes
           console.log('🔍 Determining architecture version...');
-          
+
           // Check if user has been migrated to V2
           const hasV2Marker = userData.version === '2.0' || userData.migratedAt;
-          
+
           if (hasV2Marker) {
             console.log('✅ User is on V2 architecture');
             setArchitectureVersion('v2');
-            
+
             try {
               const v2Classes = await loadV2Classes(user.uid);
               setSavedClasses(v2Classes);
@@ -277,13 +336,13 @@ export default function Dashboard() {
             const v1Classes = loadV1Classes(userData);
             setSavedClasses(v1Classes);
           }
-          
+
         } catch (error) {
           console.error('❌ Error loading user data:', error);
           setArchitectureVersion('error');
           setSavedClasses([]);
         }
-        
+
         setLoading(false);
       }
     });
@@ -357,14 +416,14 @@ export default function Dashboard() {
     }
 
     setStudentList(students);
-    
+
     const initialAvatars = {};
     students.forEach(student => {
       const randomAvatar = LEVEL_1_AVATARS[Math.floor(Math.random() * LEVEL_1_AVATARS.length)];
       initialAvatars[student.id] = randomAvatar;
     });
     setSelectedAvatars(initialAvatars);
-    
+
     setCurrentStep(2);
   };
 
@@ -498,9 +557,9 @@ export default function Dashboard() {
 
       setShowCreateClassModal(false);
       setCurrentStep(1);
-      
+
       alert(`Class "${className}" created successfully with ${studentsArray.length} students!`);
-      
+
     } catch (error) {
       console.error('Error creating class:', error);
       alert('Error creating class. Please try again.');
@@ -560,15 +619,15 @@ export default function Dashboard() {
       const currentUserData = await getDoc(docRef);
       const existingClasses = currentUserData.data().classes || [];
       const updated = existingClasses.filter(cls => cls.id !== classToDelete.id);
-      
-      await updateDoc(docRef, { 
+
+      await updateDoc(docRef, {
         classes: updated,
         activeClassId: updated.length > 0 ? updated[0].id : null
       });
-      
+
       setSavedClasses(prev => prev.filter(cls => cls.id !== classToDelete.id));
       alert(`Class "${classToDelete.name}" has been deleted.`);
-      
+
     } catch (error) {
       console.error('Error deleting class:', error);
       alert('Error deleting class. Please try again.');
@@ -579,9 +638,9 @@ export default function Dashboard() {
     try {
       const docRef = doc(firestore, 'users', user.uid);
       await updateDoc(docRef, { activeClassId: classId });
-      
+
       setUserData(prev => ({ ...prev, activeClassId: classId }));
-      
+
     } catch (error) {
       console.error('Error setting active class:', error);
       alert('Error setting active class. Please try again.');
@@ -603,23 +662,23 @@ export default function Dashboard() {
   }
 
   // FIXED: Access Logic - Now checks both V1 and V2 formats
-  const hasTrialAccess = userData?.subscriptionStatus === 'trialing' || 
-                        (userData?.trialUntil && new Date(userData.trialUntil) > new Date()) ||
-                        (userData?.freeAccessUntil && new Date(userData.freeAccessUntil) > new Date()) ||
-                        (userData?.isTrialUser === true);
+  const hasTrialAccess = userData?.subscriptionStatus === 'trialing' ||
+    (userData?.trialUntil && new Date(userData.trialUntil) > new Date()) ||
+    (userData?.freeAccessUntil && new Date(userData.freeAccessUntil) > new Date()) ||
+    (userData?.isTrialUser === true);
 
   const hasActiveSubscription = userData?.subscriptionStatus === 'active';
 
   const hasLegacySubscription = (
-    (userData?.subscription && 
-     userData?.subscription !== 'cancelled' && 
-     userData?.subscription !== null) ||
-    (userData?.stripeCustomerId && 
-     !userData?.subscriptionStatus && 
-     (!userData?.subscription || userData?.subscription !== 'cancelled'))
+    (userData?.subscription &&
+      userData?.subscription !== 'cancelled' &&
+      userData?.subscription !== null) ||
+    (userData?.stripeCustomerId &&
+      !userData?.subscriptionStatus &&
+      (!userData?.subscription || userData?.subscription !== 'cancelled'))
   );
 
-  const canAccess = hasTrialAccess || hasActiveSubscription || hasLegacySubscription;
+  const canAccess = hasTrialAccess || hasActiveSubscription || hasLegacySubscription || waitingForWebhook;
 
   // DEBUGGING: Add this temporarily to see what's in the user data
   if (process.env.NODE_ENV === 'development') {
@@ -684,13 +743,13 @@ export default function Dashboard() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 px-4 py-6">
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-lg shadow-lg p-4 sm:p-8">
-            
+
             {/* Mobile-Friendly Header */}
             <div className="flex flex-col sm:flex-row items-center justify-between mb-6 sm:mb-8 space-y-4 sm:space-y-0">
               <div className="flex items-center text-center sm:text-left">
-                <img 
-                  src="/Logo/LOGO_NoBG.png" 
-                  alt="Educational Elements Logo" 
+                <img
+                  src="/Logo/LOGO_NoBG.png"
+                  alt="Educational Elements Logo"
                   className="h-12 w-12 sm:h-16 sm:w-16 mr-4"
                 />
                 <div>
@@ -715,7 +774,7 @@ export default function Dashboard() {
               <p className="text-lg sm:text-xl text-gray-600 mb-6 sm:mb-8 leading-relaxed">
                 Your trial has expired. Subscribe now to continue accessing your classroom data and all Educational Elements features.
               </p>
-              
+
               {/* Data Safety Assurance */}
               <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 sm:p-6 mb-6 sm:mb-8">
                 <div className="flex flex-col sm:flex-row items-center justify-center mb-3">
@@ -723,7 +782,7 @@ export default function Dashboard() {
                   <h3 className="text-lg sm:text-xl font-bold text-blue-800">Your Data is Safe!</h3>
                 </div>
                 <p className="text-blue-700 text-sm sm:text-lg leading-relaxed">
-                  All your classes, students, and progress are preserved and secure. 
+                  All your classes, students, and progress are preserved and secure.
                   Subscribe to instantly regain full access to everything you've created.
                 </p>
               </div>
@@ -756,7 +815,7 @@ export default function Dashboard() {
               >
                 Subscribe Now - $5.99/month
               </button>
-              
+
               <div className="space-y-2 text-gray-600 text-sm sm:text-lg">
                 <p>✅ Instant access to all features</p>
                 <p>✅ Cancel anytime</p>
@@ -773,9 +832,20 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 px-4 py-6">
       <div className="max-w-6xl mx-auto">
         <div className="bg-white rounded-lg shadow-lg p-4 sm:p-8">
-          
+
           {/* Trial Status Banner - Mobile Friendly */}
-          {hasTrialAccess && trialDaysLeft > 0 && (
+          {waitingForWebhook && (
+            <div className="bg-gradient-to-r from-blue-400 to-blue-500 border border-blue-300 rounded-lg p-4 sm:p-6 mb-4 sm:mb-6">
+              <div className="flex flex-col sm:flex-row items-center justify-center space-y-3 sm:space-y-0 sm:space-x-4">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                <div className="text-center sm:text-left">
+                  <h3 className="text-lg sm:text-xl font-bold text-white mb-1">Processing Your Payment...</h3>
+                  <p className="text-blue-100 text-sm sm:text-base">Please wait while we confirm your subscription. This usually takes just a few seconds.</p>
+                </div>
+              </div>
+            </div>
+          )}
+          {hasTrialAccess && trialDaysLeft > 0 && !waitingForWebhook && (
             <div className="bg-gradient-to-r from-green-400 to-green-500 border border-green-300 rounded-lg p-4 sm:p-6 mb-4 sm:mb-6">
               <div className="flex flex-col sm:flex-row items-center justify-between space-y-3 sm:space-y-0">
                 <div className="text-center sm:text-left">
@@ -793,9 +863,9 @@ export default function Dashboard() {
           {/* Mobile-Friendly Header */}
           <div className="flex flex-col lg:flex-row justify-between items-start mb-6 sm:mb-8 space-y-4 lg:space-y-0">
             <div className="flex items-center w-full lg:w-auto">
-              <img 
-                src="/Logo/LOGO_NoBG.png" 
-                alt="Educational Elements Logo" 
+              <img
+                src="/Logo/LOGO_NoBG.png"
+                alt="Educational Elements Logo"
                 className="h-12 w-12 sm:h-16 sm:w-16 mr-4"
               />
               <div className="flex-1">
@@ -827,11 +897,10 @@ export default function Dashboard() {
                     </span>
                     {/* Development info */}
                     {process.env.NODE_ENV === 'development' && (
-                      <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                        architectureVersion === 'v2' ? 'bg-green-100 text-green-700' : 
-                        architectureVersion === 'v1' ? 'bg-yellow-100 text-yellow-700' : 
-                        'bg-red-100 text-red-700'
-                      }`}>
+                      <span className={`px-2 py-1 rounded text-xs font-semibold ${architectureVersion === 'v2' ? 'bg-green-100 text-green-700' :
+                        architectureVersion === 'v1' ? 'bg-yellow-100 text-yellow-700' :
+                          'bg-red-100 text-red-700'
+                        }`}>
                         {architectureVersion.toUpperCase()}
                       </span>
                     )}
@@ -839,7 +908,7 @@ export default function Dashboard() {
                 )}
               </div>
             </div>
-            
+
             {/* Action Buttons - Mobile Stack */}
             <div className="flex flex-col sm:flex-row w-full lg:w-auto space-y-2 sm:space-y-0 sm:space-x-3">
               {user?.email?.toLowerCase() === OWNER_EMAIL && (
@@ -902,7 +971,7 @@ export default function Dashboard() {
                   <p className="text-blue-100 text-sm sm:text-base">Educational Elements and Classroom Champions are constantly growing</p>
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                 <div className="bg-white/10 rounded-lg p-3 sm:p-4">
                   <div className="flex items-start gap-3">
@@ -910,7 +979,7 @@ export default function Dashboard() {
                     <div>
                       <h3 className="text-base sm:text-lg font-bold mb-2">Always Updating!</h3>
                       <p className="text-blue-100 text-xs sm:text-sm leading-relaxed">
-                        We're constantly adding new features, tools, and improvements to make your classroom experience even better. 
+                        We're constantly adding new features, tools, and improvements to make your classroom experience even better.
                         Keep an eye out for exciting updates!
                       </p>
                     </div>
@@ -923,7 +992,7 @@ export default function Dashboard() {
                     <div>
                       <h3 className="text-base sm:text-lg font-bold mb-2">Share Your Ideas!</h3>
                       <p className="text-blue-100 text-xs sm:text-sm leading-relaxed">
-                        Found a bug? Have a great idea? Visit the <strong>Settings</strong> tab in your classroom 
+                        Found a bug? Have a great idea? Visit the <strong>Settings</strong> tab in your classroom
                         to report issues or suggest new features. Your feedback shapes our updates!
                       </p>
                     </div>
@@ -938,7 +1007,7 @@ export default function Dashboard() {
                 <div className="text-2xl sm:text-3xl">🎉</div>
                 <h3 className="text-xl sm:text-2xl font-bold text-gray-800">Latest Updates</h3>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 {dashboardUpdates.map((update) => (
                   <article
@@ -1013,9 +1082,8 @@ export default function Dashboard() {
                     return (
                       <div key={tier.xp} className="relative flex-1">
                         <div
-                          className={`absolute top-1/2 -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 rounded-full border-2 ${
-                            reached ? 'bg-amber-400 border-amber-500 shadow-sm' : 'bg-white border-purple-200'
-                          }`}
+                          className={`absolute top-1/2 -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 rounded-full border-2 ${reached ? 'bg-amber-400 border-amber-500 shadow-sm' : 'bg-white border-purple-200'
+                            }`}
                           style={{ left: '50%', transform: 'translate(-50%, -50%)' }}
                         ></div>
                       </div>
@@ -1030,9 +1098,8 @@ export default function Dashboard() {
                   return (
                     <div
                       key={tier.xp}
-                      className={`px-2 py-1 rounded-lg border ${
-                        reached ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-white border-purple-100 text-purple-600'
-                      }`}
+                      className={`px-2 py-1 rounded-lg border ${reached ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-white border-purple-100 text-purple-600'
+                        }`}
                     >
                       <div className="font-bold">{tier.xp.toLocaleString()} XP</div>
                       <div>{tier.label}</div>
@@ -1098,9 +1165,8 @@ export default function Dashboard() {
                           <div className="flex items-center gap-2 mb-2">
                             <h3 className="font-bold text-lg sm:text-xl text-gray-800 truncate">{cls.name}</h3>
                             {process.env.NODE_ENV === 'development' && (
-                              <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                                cls.isV2 ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
-                              }`}>
+                              <span className={`px-2 py-1 rounded text-xs font-semibold ${cls.isV2 ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                                }`}>
                                 {cls.isV2 ? 'V2' : 'V1'}
                               </span>
                             )}
@@ -1125,7 +1191,7 @@ export default function Dashboard() {
                           🗑️
                         </button>
                       </div>
-                      
+
                       {/* Student Avatars Preview - Mobile Responsive */}
                       {cls.students && cls.students.length > 0 && (
                         <div className="mb-4">
@@ -1133,7 +1199,7 @@ export default function Dashboard() {
                           <div className="flex flex-wrap gap-1 sm:gap-2">
                             {cls.students.slice(0, 6).map(student => (
                               <div key={student.id} className="flex items-center space-x-1 bg-gray-50 rounded-lg px-2 py-1">
-                                <img 
+                                <img
                                   src={getAvatarImage(student.avatarBase)}
                                   alt={student.firstName}
                                   className="w-4 h-4 sm:w-6 sm:h-6 rounded-full"
@@ -1189,9 +1255,8 @@ export default function Dashboard() {
                                     return (
                                       <div key={tier.xp} className="relative flex-1">
                                         <div
-                                          className={`absolute top-1/2 -translate-y-1/2 w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full border-2 ${
-                                            reached ? 'bg-amber-400 border-amber-500 shadow-sm' : 'bg-white border-purple-200'
-                                          }`}
+                                          className={`absolute top-1/2 -translate-y-1/2 w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full border-2 ${reached ? 'bg-amber-400 border-amber-500 shadow-sm' : 'bg-white border-purple-200'
+                                            }`}
                                           style={{ left: '50%', transform: 'translate(-50%, -50%)' }}
                                         ></div>
                                       </div>
@@ -1206,11 +1271,10 @@ export default function Dashboard() {
                                   return (
                                     <div
                                       key={tier.xp}
-                                      className={`px-2 py-1 rounded-lg border ${
-                                        reached
-                                          ? 'bg-amber-50 border-amber-200 text-amber-700'
-                                          : 'bg-white border-purple-100 text-purple-600'
-                                      }`}
+                                      className={`px-2 py-1 rounded-lg border ${reached
+                                        ? 'bg-amber-50 border-amber-200 text-amber-700'
+                                        : 'bg-white border-purple-100 text-purple-600'
+                                        }`}
                                     >
                                       <div className="font-bold">{tier.xp.toLocaleString()} XP</div>
                                       <div>{tier.label}</div>
@@ -1264,7 +1328,7 @@ export default function Dashboard() {
                 <span className="ml-2 text-blue-800">Unlimited per class</span>
               </div>
             </div>
-            
+
             {hasTrialAccess && trialDaysLeft > 0 && (
               <div className="mt-3 p-3 bg-green-100 border border-green-300 rounded-lg">
                 <p className="text-green-800 font-medium text-sm sm:text-base">
@@ -1288,7 +1352,7 @@ export default function Dashboard() {
                 {currentStep === 1 ? 'Enter your class information and student names' : 'Select starting avatars for each student'}
               </p>
             </div>
-            
+
             <div className="p-4 sm:p-6">
               {currentStep === 1 ? (
                 <div className="space-y-4 sm:space-y-6">
@@ -1325,22 +1389,21 @@ export default function Dashboard() {
                       Choose a starting avatar for each student. They can change avatars later as they level up!
                     </p>
                   </div>
-                  
+
                   <div className="space-y-4 sm:space-y-6">
                     {studentList.map(student => (
                       <div key={student.id} className="border border-gray-200 rounded-lg p-3 sm:p-4">
                         <h4 className="font-bold text-base sm:text-lg text-gray-800 mb-3 sm:mb-4">{student.fullName}</h4>
-                        
+
                         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 sm:gap-3">
                           {LEVEL_1_AVATARS.map(avatarName => (
                             <button
                               key={avatarName}
                               onClick={() => handleAvatarSelect(student.id, avatarName)}
-                              className={`p-1 sm:p-2 rounded-lg border-2 transition-all ${
-                                selectedAvatars[student.id] === avatarName
-                                  ? 'border-purple-500 bg-purple-50 shadow-lg scale-105'
-                                  : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
-                              }`}
+                              className={`p-1 sm:p-2 rounded-lg border-2 transition-all ${selectedAvatars[student.id] === avatarName
+                                ? 'border-purple-500 bg-purple-50 shadow-lg scale-105'
+                                : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
+                                }`}
                             >
                               <img
                                 src={getAvatarImage(avatarName)}
@@ -1360,7 +1423,7 @@ export default function Dashboard() {
                 </div>
               )}
             </div>
-            
+
             <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 p-4 sm:p-6 pt-0">
               <button
                 onClick={() => {
