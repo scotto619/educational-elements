@@ -1,23 +1,7 @@
 import Stripe from 'stripe';
-import { getFirestore } from 'firebase-admin/firestore';
-import { getAuth } from 'firebase-admin/auth';
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { adminAuth, adminFirestore } from '../../utils/firebase-admin';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-
-// Initialize Firebase Admin if not already initialized
-if (!getApps().length) {
-  initializeApp({
-    credential: cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    }),
-  });
-}
-
-const db = getFirestore();
-const adminAuth = getAuth();
 
 export const config = {
   api: {
@@ -40,7 +24,7 @@ export default async function handler(req, res) {
     console.log('🚫 Processing full account deletion for user:', userId);
 
     // Pull the user's subscription metadata
-    const userRef = db.collection('users').doc(userId);
+    const userRef = adminFirestore.collection('users').doc(userId);
     const userDoc = await userRef.get();
 
     if (!userDoc.exists) {
