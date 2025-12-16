@@ -356,8 +356,11 @@ export default function Dashboard() {
   };
 
   const handleManageSubscription = async () => {
-    if (!userData?.stripeCustomerId) {
-      router.push('/signup');
+    // If user has canceled subscription or no customer ID, send them to checkout
+    if (userData?.subscriptionStatus === 'canceled' ||
+      userData?.subscription === 'cancelled' ||
+      !userData?.stripeCustomerId) {
+      router.push('/checkout');
       return;
     }
 
