@@ -117,67 +117,76 @@ export default function Dashboard() {
     const urlParams = new URLSearchParams(window.location.search);
     const sessionId = urlParams.get('session_id');
 
+    // Mark that we came from checkout to prevent redirect loops
     if (sessionId) {
-      // Clean up URL
+      sessionStorage.setItem('returning_from_checkout', 'true');
       window.history.replaceState({}, document.title, '/dashboard');
+    }
 
-      // Check if webhook has completed
-      const hasValidSubscription =
-        userData.subscriptionStatus === 'active' ||
-        userData.subscriptionStatus === 'trialing' ||
-        userData.subscriptionStatus === 'trial';
+    // Check if webhook has completed
+    const hasValidSubscription =
+      userData.subscriptionStatus === 'active' ||
+      userData.subscriptionStatus === 'trialing' ||
+      userData.subscriptionStatus === 'trial';
 
-      if (!hasValidSubscription && userData.stripeCustomerId) {
-        // Webhook hasn't completed yet - poll for it
-        console.log('⏳ Waiting for Stripe webhook to complete...');
-        setWaitingForWebhook(true);
+    // Poll for webhook if: (1) just returned from Stripe OR (2) marked as returning from checkout
+    const justReturnedFromCheckout = sessionId || sessionStorage.getItem('returning_from_checkout') === 'true';
+    const needsWebhook = !hasValidSubscription && userData.stripeCustomerId && justReturnedFromCheckout;
 
-        let pollCount = 0;
-        const maxPolls = 15; // 15 polls × 2s = 30 seconds max
+    if (needsWebhook) {
+      // Webhook hasn't completed yet - poll for it
+      console.log('⏳ Waiting for Stripe webhook to complete...');
+      setWaitingForWebhook(true);
 
-        const pollInterval = setInterval(async () => {
-          pollCount++;
-          console.log(`🔄 Polling for webhook completion (${pollCount}/${maxPolls})...`);
+      let pollCount = 0;
+      const maxPolls = 15; // 15 polls × 2s = 30 seconds max
 
-          try {
-            const docRef = doc(firestore, 'users', user.uid);
-            const snap = await getDoc(docRef);
-            const data = snap.data();
+      const pollInterval = setInterval(async () => {
+        pollCount++;
+        console.log(`🔄 Polling for webhook completion (${pollCount}/${maxPolls})...`);
 
-            if (data.subscriptionStatus === 'active' ||
-              data.subscriptionStatus === 'trialing' ||
-              data.subscriptionStatus === 'trial') {
-              console.log('✅ Webhook completed! Subscription status:', data.subscriptionStatus);
-              setUserData(data);
-              setWaitingForWebhook(false);
-              clearInterval(pollInterval);
+        try {
+          const docRef = doc(firestore, 'users', user.uid);
+          const snap = await getDoc(docRef);
+          const data = snap.data();
 
-              setTimeout(() => {
-                alert(`🎉 Welcome to Educational Elements! Your subscription is now active.`);
-              }, 500);
-            } else if (pollCount >= maxPolls) {
-              console.warn('⚠️ Webhook polling timeout - stopping');
-              clearInterval(pollInterval);
-              setWaitingForWebhook(false);
-            }
-          } catch (error) {
-            console.error('Error polling for webhook:', error);
+          if (data.subscriptionStatus === 'active' ||
+            data.subscriptionStatus === 'trialing' ||
+            data.subscriptionStatus === 'trial') {
+            console.log('✅ Webhook completed! Subscription status:', data.subscriptionStatus);
+            setUserData(data);
+            setWaitingForWebhook(false);
+            clearInterval(pollInterval);
+            sessionStorage.removeItem('returning_from_checkout'); // Clear flag
+
+            setTimeout(() => {
+              alert(`🎉 Welcome to Educational Elements! Your subscription is now active.`);
+            }, 500);
+          } else if (pollCount >= maxPolls) {
+            console.warn('⚠️ Webhook polling timeout - stopping');
             clearInterval(pollInterval);
             setWaitingForWebhook(false);
+            sessionStorage.removeItem('returning_from_checkout'); // Clear flag even on timeout
           }
-        }, 2000); // Poll every 2 seconds
+        } catch (error) {
+          console.error('Error polling for webhook:', error);
+          clearInterval(pollInterval);
+          setWaitingForWebhook(false);
+          sessionStorage.removeItem('returning_from_checkout');
+        }
+      }, 2000); // Poll every 2 seconds
 
-        return () => clearInterval(pollInterval);
-      } else if (hasValidSubscription) {
-        // Webhook already completed
-        setTimeout(() => {
-          const isTrialing = userData.subscriptionStatus === 'trialing' || userData.subscriptionStatus === 'trial';
-          const message = isTrialing
-            ? `🎉 Welcome to Educational Elements! Your ${trialDaysLeft}-day free trial is now active.`
-            : `🎉 Welcome back! Your subscription is active.`;
-          alert(message);
-        }, 1000);
-      }
+      return () => clearInterval(pollInterval);
+    } else if (hasValidSubscription && sessionId) {
+      // Webhook already completed
+      sessionStorage.removeItem('returning_from_checkout');
+      setTimeout(() => {
+        const isTrialing = userData.subscriptionStatus === 'trialing' || userData.subscriptionStatus === 'trial';
+        const message = isTrialing
+          ? `🎉 Welcome to Educational Elements! Your ${trialDaysLeft}-day free trial is now active.`
+          : `🎉 Welcome back! Your subscription is active.`;
+        alert(message);
+      }, 1000);
     }
   }, [user, userData, trialDaysLeft]);
 
