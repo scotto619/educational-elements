@@ -17,7 +17,7 @@ async function sendAdminNotification(userEmail, userId, stripeCustomerId, subscr
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
-        user: process.env.EMAIL_USER || 'admin@educational-elements.com',
+        user: process.env.EMAIL_USER || 'scotto6190@gmail.com',
         pass: process.env.EMAIL_PASSWORD // App password for Gmail
       }
     });
