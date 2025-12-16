@@ -43,15 +43,55 @@ export default async function handler(req, res) {
 
     // Cancel any active Stripe subscription
     let stripeCanceled = false;
-    if (subscriptionId) {
+    let subscriptionToCancel = subscriptionId;
+
+    // If no subscriptionId stored, try to find subscription by customer ID
+    if (!subscriptionToCancel && stripeCustomerId) {
       try {
-        console.log('🔄 Canceling Stripe subscription:', subscriptionId);
-        const canceledSubscription = await stripe.subscriptions.cancel(subscriptionId);
-        console.log('✅ Stripe subscription canceled:', canceledSubscription.id);
+        console.log('🔍 No subscriptionId stored, looking up subscriptions by customer:', stripeCustomerId);
+        const subscriptions = await stripe.subscriptions.list({
+          customer: stripeCustomerId,
+          status: 'all', // Get all statuses including active, trialing, etc.
+          limit: 10
+        });
+
+        // Find the first active/trialing subscription
+        const activeSub = subscriptions.data.find(sub =>
+          ['active', 'trialing', 'past_due'].includes(sub.status)
+        );
+
+        if (activeSub) {
+          subscriptionToCancel = activeSub.id;
+          console.log('✅ Found active subscription via customer lookup:', subscriptionToCancel);
+        } else if (subscriptions.data.length > 0) {
+          console.log('ℹ️ Customer has subscriptions but none are active:',
+            subscriptions.data.map(s => ({ id: s.id, status: s.status }))
+          );
+        } else {
+          console.log('ℹ️ No subscriptions found for customer');
+        }
+      } catch (lookupError) {
+        console.error('⚠️ Error looking up subscriptions by customer:', lookupError.message);
+      }
+    }
+
+    if (subscriptionToCancel) {
+      try {
+        console.log('🔄 Canceling Stripe subscription:', subscriptionToCancel);
+        const canceledSubscription = await stripe.subscriptions.cancel(subscriptionToCancel);
+        console.log('✅ Stripe subscription canceled:', canceledSubscription.id, 'Status:', canceledSubscription.status);
         stripeCanceled = true;
       } catch (stripeError) {
         console.error('⚠️ Error canceling Stripe subscription:', stripeError.message);
+        // If subscription is already canceled or doesn't exist, that's ok
+        if (stripeError.message.includes('No such subscription') ||
+          stripeError.message.includes('already been canceled')) {
+          console.log('ℹ️ Subscription was already canceled or not found - continuing');
+          stripeCanceled = true; // Mark as handled
+        }
       }
+    } else {
+      console.log('⚠️ No subscription ID found to cancel - user may not have an active subscription');
     }
 
     // Persist cancellation details in Firestore so the user can come back later
