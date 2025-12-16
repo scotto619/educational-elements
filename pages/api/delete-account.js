@@ -46,8 +46,8 @@ Time: ${new Date().toISOString()}
     `.trim();
 
     await transporter.sendMail({
-      from: process.env.EMAIL_USER || 'admin@educational-elements.com',
-      to: 'admin@educational-elements.com',
+      from: process.env.EMAIL_USER || 'scotto6190@gmail.com',
+      to: 'scotto6190@gmail.com',
       subject: `[Educational Elements] Account Deletion: ${userEmail}${!stripeCanceled ? ' ⚠️ MANUAL ACTION NEEDED' : ''}`,
       text: emailContent
     });
