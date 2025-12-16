@@ -679,10 +679,9 @@ export default function Dashboard() {
 
     const now = new Date();
 
-    // Check if explicitly canceled - this takes priority
-    const isCanceled =
-      userData.accountStatus === 'canceled' ||
-      userData.subscriptionStatus === 'canceled';
+    // Check if explicitly canceled via accountStatus ONLY (not subscriptionStatus which may have stale values)
+    // accountStatus is only set when user explicitly cancels their account
+    const isCanceled = userData.accountStatus === 'canceled';
 
     if (isCanceled) {
       return { hasAccess: false, reason: 'canceled', isCanceled: true };
@@ -695,6 +694,7 @@ export default function Dashboard() {
 
     // Check trial access (multiple formats for backward compatibility)
     if (userData.subscriptionStatus === 'trialing' ||
+      userData.subscriptionStatus === 'trial' ||
       (userData.trialUntil && new Date(userData.trialUntil) > now) ||
       (userData.freeAccessUntil && new Date(userData.freeAccessUntil) > now) ||
       userData.isTrialUser === true) {
@@ -702,9 +702,15 @@ export default function Dashboard() {
     }
 
     // Check legacy subscription (for backward compatibility with V1 data)
-    if (userData.subscription &&
-      userData.subscription !== 'cancelled' &&
-      userData.stripeCustomerId) {
+    // Original logic: valid subscription field OR stripeCustomerId without canceled status
+    if (
+      (userData.subscription &&
+        userData.subscription !== 'cancelled' &&
+        userData.subscription !== null) ||
+      (userData.stripeCustomerId &&
+        !userData.subscriptionStatus &&
+        (!userData.subscription || userData.subscription !== 'cancelled'))
+    ) {
       return { hasAccess: true, reason: 'legacy_subscription', isCanceled: false };
     }
 

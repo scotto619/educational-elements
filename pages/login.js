@@ -130,6 +130,7 @@ export default function Login() {
         const hasActiveSubscription =
           userData?.subscriptionStatus === 'active' ||
           userData?.subscriptionStatus === 'trialing' ||
+          userData?.subscriptionStatus === 'trial' ||
           (userData?.subscription && userData.subscription !== 'cancelled');
 
         // Check if user has trial/free access
@@ -138,10 +139,9 @@ export default function Login() {
           (userData?.freeAccessUntil && new Date(userData.freeAccessUntil) > now) ||
           userData?.isTrialUser === true;
 
-        // Check if user has explicitly canceled
-        const isCanceled =
-          userData?.accountStatus === 'canceled' ||
-          userData?.subscriptionStatus === 'canceled';
+        // Check if user has explicitly canceled via accountStatus ONLY
+        // (accountStatus is only set when user explicitly cancels their account)
+        const isCanceled = userData?.accountStatus === 'canceled';
 
         // Redirect to checkout if canceled OR no valid subscription/trial
         if (isCanceled || (!hasActiveSubscription && !hasTrialAccess)) {
@@ -323,8 +323,8 @@ export default function Login() {
                 </button>
                 {resetStatus && (
                   <div className={`p-3 rounded-lg ${resetStatus.type === 'success'
-                      ? 'bg-green-100 border border-green-300'
-                      : 'bg-red-100 border border-red-300'
+                    ? 'bg-green-100 border border-green-300'
+                    : 'bg-red-100 border border-red-300'
                     }`}>
                     <p className={`text-sm ${resetStatus.type === 'success' ? 'text-green-700' : 'text-red-700'
                       }`}>
