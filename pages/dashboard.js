@@ -131,7 +131,7 @@ export default function Dashboard() {
 
     // Poll for webhook if: (1) just returned from Stripe OR (2) marked as returning from checkout
     const justReturnedFromCheckout = sessionId || sessionStorage.getItem('returning_from_checkout') === 'true';
-    const needsWebhook = !hasValidSubscription && userData.stripeCustomerId && justReturnedFromCheckout;
+    const needsWebhook = !hasValidSubscription && justReturnedFromCheckout;
 
     if (needsWebhook) {
       // Webhook hasn't completed yet - poll for it
