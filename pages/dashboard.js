@@ -721,6 +721,11 @@ export default function Dashboard() {
   const canAccess = accessResult.hasAccess || waitingForWebhook;
   const isCanceledUser = accessResult.isCanceled;
 
+  // Helper variables for JSX template (derived from accessResult)
+  const hasTrialAccess = accessResult.reason === 'trial';
+  const hasActiveSubscription = accessResult.reason === 'active_subscription';
+  const hasLegacySubscription = accessResult.reason === 'legacy_subscription';
+
   // DEBUGGING: Log access state in development
   if (process.env.NODE_ENV === 'development') {
     console.log('=== ACCESS CHECK DEBUG ===');
