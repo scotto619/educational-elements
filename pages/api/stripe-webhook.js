@@ -98,7 +98,7 @@ async function handleCheckoutCompleted(session) {
 
     // Update user document in Firestore
     const userRef = adminFirestore.collection('users').doc(firebaseUserId);
-    
+
     const updateData = {
       stripeCustomerId: customerId,
       subscription: 'educational-elements',
@@ -141,7 +141,7 @@ async function handleSubscriptionCreated(subscription) {
 
   try {
     const userRef = adminFirestore.collection('users').doc(firebaseUserId);
-    
+
     await userRef.update({
       stripeCustomerId: customerId,
       subscription: 'educational-elements',
@@ -186,7 +186,7 @@ async function handleSubscriptionUpdated(subscription) {
 
   try {
     const userRef = adminFirestore.collection('users').doc(firebaseUserId);
-    
+
     const updateData = {
       subscriptionStatus: subscription.status,
       currentPeriodEnd: new Date(subscription.current_period_end * 1000),
@@ -196,7 +196,7 @@ async function handleSubscriptionUpdated(subscription) {
     // Handle subscription status changes
     if (subscription.status === 'active') {
       updateData.subscription = 'educational-elements';
-      
+
       // If transitioning from trial to active, clear trial data
       if (subscription.trial_end && new Date() > new Date(subscription.trial_end * 1000)) {
         updateData.isTrialUser = false;
@@ -250,12 +250,19 @@ async function handleSubscriptionDeleted(subscription) {
 
   try {
     const userRef = adminFirestore.collection('users').doc(firebaseUserId);
-    
+
     await userRef.update({
       subscription: 'cancelled',
       subscriptionStatus: 'canceled',
+      accountStatus: 'canceled',
+      loginDisabled: false,  // Allow user to log back in and resubscribe
       canceledAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      // Clear access-related fields
+      currentPeriodEnd: null,
+      isTrialUser: false,
+      trialUntil: null,
+      freeAccessUntil: null,
     });
 
     console.log(`✅ Cancelled subscription for user ${firebaseUserId}`);
@@ -268,7 +275,7 @@ async function handleSubscriptionDeleted(subscription) {
 
 async function handlePaymentSucceeded(invoice) {
   const subscriptionId = invoice.subscription;
-  
+
   if (!subscriptionId) {
     console.log('Invoice not associated with subscription, skipping');
     return;
@@ -284,7 +291,7 @@ async function handlePaymentSucceeded(invoice) {
     }
 
     const userRef = adminFirestore.collection('users').doc(firebaseUserId);
-    
+
     await userRef.update({
       subscriptionStatus: 'active',
       currentPeriodEnd: new Date(subscription.current_period_end * 1000),
@@ -302,7 +309,7 @@ async function handlePaymentSucceeded(invoice) {
 
 async function handlePaymentFailed(invoice) {
   const subscriptionId = invoice.subscription;
-  
+
   if (!subscriptionId) {
     console.log('Invoice not associated with subscription, skipping');
     return;
@@ -318,7 +325,7 @@ async function handlePaymentFailed(invoice) {
     }
 
     const userRef = adminFirestore.collection('users').doc(firebaseUserId);
-    
+
     await userRef.update({
       subscriptionStatus: 'past_due',
       lastFailedPaymentDate: new Date().toISOString(),

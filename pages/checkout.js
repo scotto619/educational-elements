@@ -25,25 +25,28 @@ export default function Checkout() {
     };
 
     calculateDaysUntilJan1();
-    
+
     // Update the countdown every hour
     const interval = setInterval(calculateDaysUntilJan1, 1000 * 60 * 60);
-    
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setUser(user);
-        
+
         // ADDED: Check if user is returning (previously had a subscription)
         try {
           const userDoc = await getDoc(doc(firestore, 'users', user.uid));
           if (userDoc.exists()) {
             const data = userDoc.data();
             setUserData(data);
-            
-            // Check if they previously had a subscription (returning user)
-            const wasSubscribed = data.stripeCustomerId || data.subscriptionId;
-            setIsReturningUser(!!wasSubscribed);
-            
+
+            // Check if they're a returning (canceled) user who needs to resubscribe
+            const isCanceledUser =
+              data.accountStatus === 'canceled' ||
+              data.subscriptionStatus === 'canceled' ||
+              (data.stripeCustomerId && data.subscription === 'cancelled');
+            setIsReturningUser(isCanceledUser);
+
             console.log('User subscription status:', {
               hasCustomerId: !!data.stripeCustomerId,
               subscription: data.subscription,
@@ -116,9 +119,9 @@ export default function Checkout() {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
-            <img 
-              src="/Logo/LOGO_NoBG.png" 
-              alt="Educational Elements Logo" 
+            <img
+              src="/Logo/LOGO_NoBG.png"
+              alt="Educational Elements Logo"
               className="h-16 w-16 mr-4"
             />
             <div className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
@@ -129,7 +132,7 @@ export default function Checkout() {
             {isReturningUser ? 'Welcome Back!' : 'Start Your Free Trial'}
           </h1>
           <p className="text-gray-600">
-            {isReturningUser 
+            {isReturningUser
               ? 'Resubscribe to regain full access to all features'
               : 'Complete access until January 1st, 2026'
             }
@@ -144,7 +147,7 @@ export default function Checkout() {
               <div>
                 <h3 className="font-bold text-blue-800 mb-2">Welcome back to Educational Elements!</h3>
                 <p className="text-blue-700 text-sm">
-                  We're excited to have you back. Your classes and student data are still here and will be 
+                  We're excited to have you back. Your classes and student data are still here and will be
                   fully accessible once you resubscribe.
                 </p>
               </div>
@@ -157,14 +160,14 @@ export default function Checkout() {
           <div className="absolute top-0 right-0 bg-yellow-400 text-green-800 px-4 py-2 rounded-bl-lg font-bold">
             {isReturningUser ? '🎉 RETURNING USER' : '🔥 FREE TRIAL'}
           </div>
-          
+
           <div className="text-center mb-6">
             <div className="text-6xl mb-4">⏰</div>
             <h2 className="text-4xl font-bold mb-2">
               {isReturningUser ? 'Resubscribe Now' : `${daysUntilJan1} Days Free!`}
             </h2>
             <p className="text-green-100 text-lg">
-              {isReturningUser 
+              {isReturningUser
                 ? '$5.99/month • Cancel anytime'
                 : `Then $5.99/month • Cancel anytime before trial ends`
               }
@@ -196,7 +199,7 @@ export default function Checkout() {
                 <span>Processing...</span>
               </div>
             ) : (
-              isReturningUser 
+              isReturningUser
                 ? '🚀 Resubscribe Now'
                 : `🚀 Start ${daysUntilJan1}-Day Free Trial`
             )}
@@ -222,7 +225,7 @@ export default function Checkout() {
           <h3 className="text-2xl font-bold text-center text-gray-800 mb-6">
             {isReturningUser ? 'Resubscription Details' : 'How Your Free Trial Works'}
           </h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="text-center">
               <div className="bg-blue-100 text-blue-600 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 text-xl font-bold">1</div>
@@ -230,13 +233,13 @@ export default function Checkout() {
                 {isReturningUser ? 'Enter Payment Details' : 'Enter Payment Details'}
               </h4>
               <p className="text-gray-600 text-sm">
-                {isReturningUser 
+                {isReturningUser
                   ? 'Secure checkout powered by Stripe'
                   : 'Secure checkout powered by Stripe (required for trial)'
                 }
               </p>
             </div>
-            
+
             <div className="text-center">
               <div className="bg-green-100 text-green-600 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 text-xl font-bold">2</div>
               <h4 className="font-bold text-gray-700 mb-2">
@@ -249,7 +252,7 @@ export default function Checkout() {
                 }
               </p>
             </div>
-            
+
             <div className="text-center">
               <div className="bg-purple-100 text-purple-600 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 text-xl font-bold">3</div>
               <h4 className="font-bold text-gray-700 mb-2">
@@ -262,7 +265,7 @@ export default function Checkout() {
                 }
               </p>
             </div>
-            
+
             <div className="text-center">
               <div className="bg-orange-100 text-orange-600 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 text-xl font-bold">4</div>
               <h4 className="font-bold text-gray-700 mb-2">Cancel Anytime</h4>

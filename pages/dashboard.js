@@ -673,29 +673,53 @@ export default function Dashboard() {
     );
   }
 
-  // FIXED: Access Logic - Now checks both V1 and V2 formats
-  const hasTrialAccess = userData?.subscriptionStatus === 'trialing' ||
-    (userData?.trialUntil && new Date(userData.trialUntil) > new Date()) ||
-    (userData?.freeAccessUntil && new Date(userData.freeAccessUntil) > new Date()) ||
-    (userData?.isTrialUser === true);
+  // UNIFIED ACCESS CHECK - Simplified and consistent with login.js
+  const checkAccess = () => {
+    if (!userData) return { hasAccess: false, reason: 'no_data', isCanceled: false };
 
-  const hasActiveSubscription = userData?.subscriptionStatus === 'active';
+    const now = new Date();
 
-  const hasLegacySubscription = (
-    (userData?.subscription &&
-      userData?.subscription !== 'cancelled' &&
-      userData?.subscription !== null) ||
-    (userData?.stripeCustomerId &&
-      !userData?.subscriptionStatus &&
-      (!userData?.subscription || userData?.subscription !== 'cancelled'))
-  );
+    // Check if explicitly canceled - this takes priority
+    const isCanceled =
+      userData.accountStatus === 'canceled' ||
+      userData.subscriptionStatus === 'canceled';
 
-  const canAccess = hasTrialAccess || hasActiveSubscription || hasLegacySubscription || waitingForWebhook;
+    if (isCanceled) {
+      return { hasAccess: false, reason: 'canceled', isCanceled: true };
+    }
 
-  // DEBUGGING: Add this temporarily to see what's in the user data
+    // Check active subscription
+    if (userData.subscriptionStatus === 'active') {
+      return { hasAccess: true, reason: 'active_subscription', isCanceled: false };
+    }
+
+    // Check trial access (multiple formats for backward compatibility)
+    if (userData.subscriptionStatus === 'trialing' ||
+      (userData.trialUntil && new Date(userData.trialUntil) > now) ||
+      (userData.freeAccessUntil && new Date(userData.freeAccessUntil) > now) ||
+      userData.isTrialUser === true) {
+      return { hasAccess: true, reason: 'trial', isCanceled: false };
+    }
+
+    // Check legacy subscription (for backward compatibility with V1 data)
+    if (userData.subscription &&
+      userData.subscription !== 'cancelled' &&
+      userData.stripeCustomerId) {
+      return { hasAccess: true, reason: 'legacy_subscription', isCanceled: false };
+    }
+
+    return { hasAccess: false, reason: 'no_subscription', isCanceled: false };
+  };
+
+  const accessResult = checkAccess();
+  const canAccess = accessResult.hasAccess || waitingForWebhook;
+  const isCanceledUser = accessResult.isCanceled;
+
+  // DEBUGGING: Log access state in development
   if (process.env.NODE_ENV === 'development') {
-    console.log('=== TRIAL ACCESS DEBUG ===');
+    console.log('=== ACCESS CHECK DEBUG ===');
     console.log('User Data:', {
+      accountStatus: userData?.accountStatus,
       subscriptionStatus: userData?.subscriptionStatus,
       trialUntil: userData?.trialUntil,
       freeAccessUntil: userData?.freeAccessUntil,
@@ -703,12 +727,7 @@ export default function Dashboard() {
       subscription: userData?.subscription,
       stripeCustomerId: userData?.stripeCustomerId
     });
-    console.log('Access Checks:', {
-      hasTrialAccess,
-      hasActiveSubscription,
-      hasLegacySubscription,
-      canAccess
-    });
+    console.log('Access Result:', accessResult);
     console.log('========================');
   }
 

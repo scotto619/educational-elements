@@ -67,6 +67,8 @@ export default async function handler(req, res) {
       isTrialUser: false,
       freeAccessUntil: null,
       trialUntil: null,
+      // Clear current period end to prevent access after cancellation
+      currentPeriodEnd: null,
     };
 
     await userRef.update(updateData);

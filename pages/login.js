@@ -36,7 +36,7 @@ export default function Login() {
           firestoreDb = firebaseModule.firestore;
           signInWithEmailAndPassword = firebaseAuthModule.signInWithEmailAndPassword;
           sendPasswordResetEmail = firebaseAuthModule.sendPasswordResetEmail;
-          
+
           firestoreHelpers.current = {
             collection: firebaseFirestoreModule.collection,
             query: firebaseFirestoreModule.query,
@@ -57,103 +57,126 @@ export default function Login() {
   }, []);
 
   const handleLogin = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (!firebaseLoaded || !auth || !signInWithEmailAndPassword) {
-    alert('Firebase is still loading. Please try again in a moment.');
-    return;
-  }
+    if (!firebaseLoaded || !auth || !signInWithEmailAndPassword) {
+      alert('Firebase is still loading. Please try again in a moment.');
+      return;
+    }
 
-  setIsLoading(true);
+    setIsLoading(true);
 
-  if (!email || !password) {
-    alert("Please fill in all fields");
-    setIsLoading(false);
-    return;
-  }
+    if (!email || !password) {
+      alert("Please fill in all fields");
+      setIsLoading(false);
+      return;
+    }
 
-  const normalizedEmail = email.trim().toLowerCase();
+    const normalizedEmail = email.trim().toLowerCase();
 
-  try {
-    // FIXED: Check account status, but allow canceled accounts to log back in
-    const helpers = firestoreHelpers.current;
-    if (helpers?.collection && firestoreDb) {
-      try {
-        const { collection, query, where, getDocs } = helpers;
-        const userQuery = query(
-          collection(firestoreDb, 'users'),
-          where('email', '==', normalizedEmail)
-        );
-        const snapshot = await getDocs(userQuery);
-        
-        if (!snapshot.empty) {
-          const userDoc = snapshot.docs[0];
-          const data = userDoc.data();
-          
-          // CHANGED: Only block if loginDisabled is explicitly true
-          // Canceled accounts (accountStatus: 'canceled') are allowed to log in
-          if (data?.loginDisabled === true) {
-            alert('Your account has been disabled. Please contact support to restore access.');
-            setIsLoading(false);
-            return;
+    try {
+      // FIXED: Check account status, but allow canceled accounts to log back in
+      const helpers = firestoreHelpers.current;
+      if (helpers?.collection && firestoreDb) {
+        try {
+          const { collection, query, where, getDocs } = helpers;
+          const userQuery = query(
+            collection(firestoreDb, 'users'),
+            where('email', '==', normalizedEmail)
+          );
+          const snapshot = await getDocs(userQuery);
+
+          if (!snapshot.empty) {
+            const userDoc = snapshot.docs[0];
+            const data = userDoc.data();
+
+            // CHANGED: Only block if loginDisabled is explicitly true
+            // Canceled accounts (accountStatus: 'canceled') are allowed to log in
+            if (data?.loginDisabled === true) {
+              alert('Your account has been disabled. Please contact support to restore access.');
+              setIsLoading(false);
+              return;
+            }
+
+            // REMOVED: The accountStatus === 'deleted' check
+            // Users with canceled subscriptions can now log in to resubscribe
           }
-          
-          // REMOVED: The accountStatus === 'deleted' check
-          // Users with canceled subscriptions can now log in to resubscribe
+        } catch (checkError) {
+          console.warn('Skipping pre-login status check:', checkError);
         }
-      } catch (checkError) {
-        console.warn('Skipping pre-login status check:', checkError);
       }
-    }
 
-    // Attempt to sign in
-    await signInWithEmailAndPassword(auth, normalizedEmail, password);
+      // Attempt to sign in
+      await signInWithEmailAndPassword(auth, normalizedEmail, password);
 
-    // Check subscription status after login
-    if (auth.currentUser && firestoreDb && firestoreHelpers.current?.doc) {
-      const { doc, getDoc } = firestoreHelpers.current;
-      const userDoc = await getDoc(doc(firestoreDb, 'users', auth.currentUser.uid));
-      const userData = userDoc.exists() ? userDoc.data() : null;
-      
-      // Only block if explicitly disabled
-      if (userData?.loginDisabled === true) {
-        alert('Your account has been disabled. Please contact support.');
-        await auth.signOut();
-        setIsLoading(false);
-        return;
+      // Check subscription status after login
+      if (auth.currentUser && firestoreDb && firestoreHelpers.current?.doc) {
+        const { doc, getDoc } = firestoreHelpers.current;
+        const userDoc = await getDoc(doc(firestoreDb, 'users', auth.currentUser.uid));
+        const userData = userDoc.exists() ? userDoc.data() : null;
+
+        // Only block if explicitly disabled
+        if (userData?.loginDisabled === true) {
+          alert('Your account has been disabled. Please contact support.');
+          await auth.signOut();
+          setIsLoading(false);
+          return;
+        }
+
+        // IMPROVED: Check if user needs to resubscribe
+        const now = new Date();
+
+        // Check if user has active subscription
+        const hasActiveSubscription =
+          userData?.subscriptionStatus === 'active' ||
+          userData?.subscriptionStatus === 'trialing' ||
+          (userData?.subscription && userData.subscription !== 'cancelled');
+
+        // Check if user has trial/free access
+        const hasTrialAccess =
+          (userData?.trialUntil && new Date(userData.trialUntil) > now) ||
+          (userData?.freeAccessUntil && new Date(userData.freeAccessUntil) > now) ||
+          userData?.isTrialUser === true;
+
+        // Check if user has explicitly canceled
+        const isCanceled =
+          userData?.accountStatus === 'canceled' ||
+          userData?.subscriptionStatus === 'canceled';
+
+        // Redirect to checkout if canceled OR no valid subscription/trial
+        if (isCanceled || (!hasActiveSubscription && !hasTrialAccess)) {
+          // User needs to subscribe/resubscribe
+          console.log('⚠️ User needs subscription, redirecting to checkout', {
+            isCanceled,
+            hasActiveSubscription,
+            hasTrialAccess,
+            accountStatus: userData?.accountStatus,
+            subscriptionStatus: userData?.subscriptionStatus
+          });
+          router.push('/checkout');
+          return;
+        }
       }
-      
-      // ADDED: Check if user needs to resubscribe
-      const hasActiveSubscription = userData?.subscription && userData.subscription !== 'cancelled';
-      const hasFreeAccess = userData?.freeAccessUntil && new Date(userData.freeAccessUntil) > new Date();
-      
-      if (!hasActiveSubscription && !hasFreeAccess) {
-        // User needs to subscribe/resubscribe
-        console.log('⚠️ User needs subscription, redirecting to checkout');
-        router.push('/checkout');
-        return;
+
+      // All checks passed - go to dashboard
+      router.push('/dashboard');
+
+    } catch (error) {
+      console.error('Login error:', error);
+      if (error.code === 'auth/user-not-found') {
+        alert('No account found with this email. Please sign up first.');
+      } else if (error.code === 'auth/wrong-password') {
+        alert('Incorrect password. Please try again.');
+      } else if (error.code === 'auth/invalid-email') {
+        alert('Please enter a valid email address.');
+      } else if (error.code === 'auth/too-many-requests') {
+        alert('Too many failed login attempts. Please try again later.');
+      } else {
+        alert('Error signing in: ' + error.message);
       }
+      setIsLoading(false);
     }
-
-    // All checks passed - go to dashboard
-    router.push('/dashboard');
-
-  } catch (error) {
-    console.error('Login error:', error);
-    if (error.code === 'auth/user-not-found') {
-      alert('No account found with this email. Please sign up first.');
-    } else if (error.code === 'auth/wrong-password') {
-      alert('Incorrect password. Please try again.');
-    } else if (error.code === 'auth/invalid-email') {
-      alert('Please enter a valid email address.');
-    } else if (error.code === 'auth/too-many-requests') {
-      alert('Too many failed login attempts. Please try again later.');
-    } else {
-      alert('Error signing in: ' + error.message);
-    }
-    setIsLoading(false);
-  }
-};
+  };
 
   const handlePasswordReset = async (e) => {
     e.preventDefault();
@@ -179,19 +202,19 @@ export default function Login() {
       await sendPasswordResetEmail(auth, targetEmail);
 
       console.log('✅ Password reset email sent to:', targetEmail);
-      
-      setResetStatus({ 
-        type: 'success', 
-        message: 'Password reset link sent! Please check your email (including spam folder).' 
+
+      setResetStatus({
+        type: 'success',
+        message: 'Password reset link sent! Please check your email (including spam folder).'
       });
-      
+
       // Clear the form after successful send
       setTimeout(() => {
         setShowResetForm(false);
         setResetEmail('');
         setResetStatus(null);
       }, 5000);
-      
+
     } catch (error) {
       console.error('Password reset error:', error);
       if (error.code === 'auth/user-not-found') {
@@ -199,9 +222,9 @@ export default function Login() {
       } else if (error.code === 'auth/invalid-email') {
         setResetStatus({ type: 'error', message: 'Please enter a valid email address.' });
       } else if (error.code === 'auth/too-many-requests') {
-        setResetStatus({ 
-          type: 'error', 
-          message: 'Too many reset attempts. Please wait a few minutes and try again.' 
+        setResetStatus({
+          type: 'error',
+          message: 'Too many reset attempts. Please wait a few minutes and try again.'
         });
       } else {
         setResetStatus({ type: 'error', message: 'Unable to send reset link. Please try again.' });
@@ -299,14 +322,12 @@ export default function Login() {
                   )}
                 </button>
                 {resetStatus && (
-                  <div className={`p-3 rounded-lg ${
-                    resetStatus.type === 'success' 
-                      ? 'bg-green-100 border border-green-300' 
+                  <div className={`p-3 rounded-lg ${resetStatus.type === 'success'
+                      ? 'bg-green-100 border border-green-300'
                       : 'bg-red-100 border border-red-300'
-                  }`}>
-                    <p className={`text-sm ${
-                      resetStatus.type === 'success' ? 'text-green-700' : 'text-red-700'
                     }`}>
+                    <p className={`text-sm ${resetStatus.type === 'success' ? 'text-green-700' : 'text-red-700'
+                      }`}>
                       {resetStatus.message}
                     </p>
                   </div>
