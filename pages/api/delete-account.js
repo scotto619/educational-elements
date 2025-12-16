@@ -1,5 +1,4 @@
 import Stripe from 'stripe';
-import nodemailer from 'nodemailer';
 import { adminAuth, adminFirestore } from '../../utils/firebase-admin';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -10,54 +9,29 @@ export const config = {
   },
 };
 
-// Send admin notification email
-async function sendAdminNotification(userEmail, userId, stripeCustomerId, subscriptionId, stripeCanceled, reason) {
+// Store notification in Firestore for admin to review
+async function createDeletionNotification(data) {
   try {
-    // Create transporter using Gmail (you can change to your email provider)
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.EMAIL_USER || 'scotto6190@gmail.com',
-        pass: process.env.EMAIL_PASSWORD // App password for Gmail
-      }
-    });
+    const notification = {
+      type: 'account_deletion',
+      userEmail: data.userEmail,
+      userId: data.userId,
+      stripeCustomerId: data.stripeCustomerId || null,
+      subscriptionId: data.subscriptionId || null,
+      stripeCanceled: data.stripeCanceled,
+      reason: data.reason || null,
+      requiresManualAction: !data.stripeCanceled,
+      stripeSearchUrl: `https://dashboard.stripe.com/search?query=${data.stripeCustomerId || data.userEmail}`,
+      createdAt: new Date().toISOString(),
+      reviewed: false // Admin can mark as reviewed when handled
+    };
 
-    const emailContent = `
-Account Deletion Request
-
-User Details:
-- Email: ${userEmail}
-- User ID: ${userId}
-- Stripe Customer ID: ${stripeCustomerId || 'NOT SET'}
-- Subscription ID: ${subscriptionId || 'NOT SET'}
-
-Cancellation Result:
-- Stripe Subscription Canceled: ${stripeCanceled ? '✅ YES' : '❌ NO - MANUAL ACTION REQUIRED'}
-
-${reason ? `Reason given: ${reason}` : 'No reason provided'}
-
-${!stripeCanceled ? `
-⚠️ IMPORTANT: The Stripe subscription was NOT canceled automatically.
-Please manually cancel the subscription in Stripe Dashboard:
-https://dashboard.stripe.com/search?query=${stripeCustomerId || userEmail}
-` : ''}
-
-Time: ${new Date().toISOString()}
-    `.trim();
-
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER || 'scotto6190@gmail.com',
-      to: 'scotto6190@gmail.com',
-      subject: `[Educational Elements] Account Deletion: ${userEmail}${!stripeCanceled ? ' ⚠️ MANUAL ACTION NEEDED' : ''}`,
-      text: emailContent
-    });
-
-    console.log('✅ Admin notification email sent');
-    return true;
-  } catch (emailError) {
-    console.error('⚠️ Failed to send admin notification email:', emailError.message);
-    // Don't fail the whole request if email fails
-    return false;
+    const docRef = await adminFirestore.collection('deletion_notifications').add(notification);
+    console.log('✅ Deletion notification saved to Firestore:', docRef.id);
+    return docRef.id;
+  } catch (error) {
+    console.error('⚠️ Failed to save deletion notification:', error.message);
+    return null;
   }
 }
 
@@ -164,7 +138,6 @@ export default async function handler(req, res) {
         console.error('⚠️ Full error:', JSON.stringify(stripeError, null, 2));
         cancellationDetails.error = stripeError.message;
 
-        // If subscription is already canceled or doesn't exist, that's ok
         if (stripeError.message.includes('No such subscription') ||
           stripeError.message.includes('already been canceled') ||
           stripeError.code === 'resource_missing') {
@@ -191,7 +164,6 @@ export default async function handler(req, res) {
       freeAccessUntil: null,
       trialUntil: null,
       currentPeriodEnd: null,
-      // Store cancellation details for debugging
       cancellationDetails: {
         stripeCanceled,
         cancellationMethod: cancellationDetails.method,
@@ -204,21 +176,22 @@ export default async function handler(req, res) {
     await userRef.update(updateData);
     console.log('✅ Firestore cancellation recorded for user:', userId);
 
-    // Send admin notification email
-    await sendAdminNotification(
+    // Create a notification in Firestore for admin to review
+    const notificationId = await createDeletionNotification({
       userEmail,
       userId,
       stripeCustomerId,
-      subscriptionToCancel,
+      subscriptionId: subscriptionToCancel,
       stripeCanceled,
       reason
-    );
+    });
 
     console.log('ℹ️ Firebase Auth user preserved - user can log in and resubscribe');
 
     return res.status(200).json({
       success: true,
       stripeCanceled,
+      notificationId,
       cancellationDetails,
       message: 'Subscription canceled. You can resubscribe anytime to regain access.',
     });
