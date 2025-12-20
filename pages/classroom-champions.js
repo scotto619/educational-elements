@@ -1569,7 +1569,14 @@ const ClassroomChampions = () => {
                 </button>
               ))}
 
-              <div className="flex items-center ml-auto pr-2">
+              <div className="flex items-center ml-auto pr-2 gap-2">
+                <button
+                  onClick={() => router.push('/main-menu')}
+                  className="text-xs sm:text-sm px-3 py-2 rounded-lg border border-indigo-300 bg-indigo-50 text-indigo-700 shadow-sm hover:bg-indigo-100 flex items-center gap-1 font-medium"
+                >
+                  <span>🏠</span>
+                  <span className="hidden sm:inline">Main Menu</span>
+                </button>
                 <button
                   onClick={toggleWidgetVisibility}
                   className="text-xs sm:text-sm px-3 py-2 rounded-lg border border-gray-200 bg-white shadow-sm hover:bg-gray-50 flex items-center gap-2"
