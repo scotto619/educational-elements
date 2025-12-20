@@ -821,7 +821,9 @@ export default function Home() {
                   <a
                     href={resource.file}
                     download
-                    className="flex items-center justify-center w-full py-3 md:py-4 bg-white/10 hover:bg-white text-white hover:text-cyan-900 border border-white/20 hover:border-white rounded-xl font-bold transition-all duration-300 group-hover:shadow-lg"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="relative z-10 flex items-center justify-center w-full py-3 md:py-4 bg-white/10 hover:bg-white text-white hover:text-cyan-900 border border-white/20 hover:border-white rounded-xl font-bold transition-all duration-300 group-hover:shadow-lg"
                   >
                     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
