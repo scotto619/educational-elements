@@ -233,7 +233,7 @@ export default function Home() {
                     <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center text-2xl mr-4">🛍️</div>
                     <div>
                       <h4 className="font-bold text-white mb-1">Classroom Shop</h4>
-                      <p>Use existing banners like <span className="text-yellow-400 font-bold">Shop.png</span> to create an immersive economy.</p>
+                      <p>Student earn points and coins for good behaviour and can use them to purchase fun and engaging items.</p>
                     </div>
                   </div>
                   <div className="flex items-start">
