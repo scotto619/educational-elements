@@ -774,28 +774,28 @@ export default function Home() {
               {/* Resources List */}
               {[
                 {
-                  title: "Classroom Management Tips",
-                  type: "PDF Guide",
-                  icon: "📋",
-                  color: "from-emerald-400 to-teal-500",
-                  desc: "Essential strategies for maintaining a positive and productive classroom environment.",
-                  file: "/free-resources/Classroom_Management_Tips.pdf"
+                  title: "Integer Ocean Adventure",
+                  type: "Math Adventure",
+                  icon: "🌊",
+                  color: "from-blue-400 to-cyan-500",
+                  desc: "A deep dive into integers! Solve math mysteries and navigate the ocean depths in this engaging printable adventure.",
+                  file: "/free-resources/Integer_Ocean_Adventure.pdf"
                 },
                 {
-                  title: "Math Warmup Slides",
-                  type: "PowerPoint",
-                  icon: "📊",
-                  color: "from-orange-400 to-red-500",
-                  desc: "Ready-to-use daily math activation slides to get students thinking immediately.",
-                  file: "/free-resources/Math_Warmup_Slides.pptx"
-                },
-                {
-                  title: "Lettering Template Pack",
-                  type: "Display Assets",
+                  title: "Paint Worlds With Words",
+                  type: "Creative Writing",
                   icon: "🎨",
-                  color: "from-pink-400 to-purple-500",
-                  desc: "Beautiful printable lettering sets for your bulletin boards and displays.",
-                  file: "/free-resources/Lettering_Template.zip"
+                  color: "from-purple-400 to-pink-500",
+                  desc: "Unlock student creativity with descriptive writing prompts that turn blank pages into vivid imaginary worlds.",
+                  file: "/free-resources/Paint_Worlds_With_Words.pdf"
+                },
+                {
+                  title: "Video Game Comprehension",
+                  type: "Reading & Comprehension",
+                  icon: "🎮",
+                  color: "from-emerald-400 to-green-500",
+                  desc: "Level up reading skills with high-interest passages about video game history and design, complete with comprehension questions.",
+                  file: "/free-resources/Video_Game_Comprehension.pdf"
                 }
               ].map((resource, index) => (
                 <div key={index} className="group relative bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-6 md:p-8 hover:-translate-y-2 transition-all duration-300 hover:shadow-2xl hover:shadow-cyan-500/20">
