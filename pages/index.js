@@ -122,7 +122,7 @@ export default function Home() {
               </div>
 
               {/* Main Banner Title */}
-              <div className="relative w-full max-w-4xl mx-auto h-24 sm:h-32 md:h-48 mb-6 transition-transform hover:scale-105 duration-700">
+              <div className="relative w-full mx-auto h-40 sm:h-64 md:h-80 lg:h-96 mb-8 transition-transform hover:scale-105 duration-700">
                 <Image
                   src="/Displays/Banners/Educational Elements.png"
                   alt="Educational Elements"

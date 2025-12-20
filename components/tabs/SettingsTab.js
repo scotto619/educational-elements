@@ -7,13 +7,13 @@ import { signOut } from 'firebase/auth';
 // Import the password helpers for direct operations
 import { updateStudentPasswordDirect, getDefaultPassword } from '../../utils/passwordHelpers';
 
-const SettingsTab = ({ 
+const SettingsTab = ({
   user,
   currentClassId,
   students = [],
   setStudents,
   updateAndSaveClass,
-  showToast = () => {},
+  showToast = () => { },
   getAvatarImage,
   calculateCoins,
   calculateAvatarLevel,
@@ -39,7 +39,7 @@ const SettingsTab = ({
   const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
   const [deleteReason, setDeleteReason] = useState('');
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
-  
+
   // Password management states
   const [selectedStudentId, setSelectedStudentId] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -47,7 +47,7 @@ const SettingsTab = ({
   const [showPasswords, setShowPasswords] = useState({});
   const [bulkAction, setBulkAction] = useState('');
   const [isBulkUpdating, setIsBulkUpdating] = useState(false);
-  
+
   // Form states
   const [newStudentForm, setNewStudentForm] = useState({
     firstName: '',
@@ -62,7 +62,7 @@ const SettingsTab = ({
   });
 
   const [newClassCode, setNewClassCode] = useState('');
-  
+
   // Feedback form state
   const [feedbackForm, setFeedbackForm] = useState({
     type: 'suggestion',
@@ -94,15 +94,15 @@ const SettingsTab = ({
   // DIRECT password update (bypassing APIs completely)
   const handleUpdateStudentPassword = async (studentId, password) => {
     setIsUpdating(true);
-    
+
     try {
       console.log('🔑 Updating password directly (no API) for student:', studentId);
-      
+
       // Use direct Firestore operations (like your XP system)
       const result = await updateStudentPasswordDirect(
-        studentId, 
-        password, 
-        currentClassData?.classCode, 
+        studentId,
+        password,
+        currentClassData?.classCode,
         architectureVersion
       );
 
@@ -112,60 +112,60 @@ const SettingsTab = ({
 
       showToast('Password updated successfully!', 'success');
       console.log('✅ Password updated successfully via direct method');
-      
+
       // Update local state to reflect the change
-      setStudents(prevStudents => 
-        prevStudents.map(student => 
-          student.id === studentId 
-            ? { 
-                ...student, 
-                simplePasswordHash: 'set', // Indicate password is custom
-                passwordLastUpdated: new Date().toISOString() 
-              }
+      setStudents(prevStudents =>
+        prevStudents.map(student =>
+          student.id === studentId
+            ? {
+              ...student,
+              simplePasswordHash: 'set', // Indicate password is custom
+              passwordLastUpdated: new Date().toISOString()
+            }
             : student
         )
       );
-      
+
       // Clear form
       setSelectedStudentId('');
       setNewPassword('');
-      
+
     } catch (error) {
       console.error('❌ Direct password update error:', error);
       showToast('Failed to update password: ' + error.message, 'error');
     }
-    
+
     setIsUpdating(false);
   };
 
   // DIRECT bulk password operations (bypassing APIs)
   const handleBulkPasswordUpdate = async () => {
     if (!bulkAction) return;
-    
-    const confirmMessage = bulkAction === 'reset-simple' 
-      ? 'Generate simple passwords (name + number) for all students?' 
+
+    const confirmMessage = bulkAction === 'reset-simple'
+      ? 'Generate simple passwords (name + number) for all students?'
       : 'Generate secure passwords for all students?';
-      
+
     if (!window.confirm(confirmMessage)) return;
-    
+
     setIsBulkUpdating(true);
-    
+
     try {
       console.log('🔐 Bulk updating passwords directly (no API)');
-      
+
       let successCount = 0;
-      
+
       // Update each student directly (like your XP system)
       for (const student of students) {
         try {
-          const password = bulkAction === 'reset-simple' 
+          const password = bulkAction === 'reset-simple'
             ? generateSimplePassword(student.firstName)
             : generateSecurePassword();
 
           const result = await updateStudentPasswordDirect(
-            student.id, 
-            password, 
-            currentClassData?.classCode, 
+            student.id,
+            password,
+            currentClassData?.classCode,
             architectureVersion
           );
 
@@ -179,21 +179,21 @@ const SettingsTab = ({
 
       showToast(`Updated passwords for ${successCount} students!`, 'success');
       setBulkAction('');
-      
+
       // Update local state for all students
-      setStudents(prevStudents => 
-        prevStudents.map(student => ({ 
-          ...student, 
+      setStudents(prevStudents =>
+        prevStudents.map(student => ({
+          ...student,
           simplePasswordHash: 'set',
-          passwordLastUpdated: new Date().toISOString() 
+          passwordLastUpdated: new Date().toISOString()
         }))
       );
-      
+
     } catch (error) {
       console.error('❌ Bulk password update error:', error);
       showToast('Failed to update passwords: ' + error.message, 'error');
     }
-    
+
     setIsBulkUpdating(false);
   };
 
@@ -223,7 +223,7 @@ const SettingsTab = ({
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    
+
     showToast('Password list exported!', 'success');
   };
 
@@ -236,7 +236,7 @@ const SettingsTab = ({
       ...widgetSettings,
       [widgetName]: enabled
     };
-    
+
     try {
       await onUpdateWidgetSettings(newSettings);
     } catch (error) {
@@ -267,50 +267,50 @@ const SettingsTab = ({
     const newStudents = [...students, newStudent];
     setStudents(newStudents);
     updateAndSaveClass(newStudents, xpCategories);
-    
+
     setNewStudentForm({ firstName: '', lastName: '' });
   };
 
-const handleRemoveStudent = async (studentId) => {
-  console.log('🗑️ Attempting to remove student:', studentId);
-  console.log('Available student IDs:', students.map(s => s.id));
+  const handleRemoveStudent = async (studentId) => {
+    console.log('🗑️ Attempting to remove student:', studentId);
+    console.log('Available student IDs:', students.map(s => s.id));
 
-  const student = students.find(s => s.id === studentId);
-  if (!student) {
-    console.error('❌ Student not found with ID:', studentId);
-    alert('Student not found. Please refresh the page and try again.');
-    setShowConfirmDialog(null);
-    return;
-  }
-
-  console.log('✅ Student found:', student.firstName, student.lastName);
-
-  try {
-    if (architectureVersion === 'v2' && onRemoveStudent) {
-      console.log('📡 Using V2 architecture - calling onRemoveStudent');
-      await onRemoveStudent(studentId);
-      console.log('✅ Student removed via V2');
-    } else {
-      console.log('📝 Using V1 architecture - manual removal');
-      const newStudents = students.filter(s => s.id !== studentId);
-      console.log('New students count:', newStudents.length, 'Previous:', students.length);
-
-      setStudents(newStudents);
-      await updateAndSaveClass(newStudents, xpCategories);
-      console.log('✅ Student removed via V1');
+    const student = students.find(s => s.id === studentId);
+    if (!student) {
+      console.error('❌ Student not found with ID:', studentId);
+      alert('Student not found. Please refresh the page and try again.');
+      setShowConfirmDialog(null);
+      return;
     }
-    
-    // Close dialog on success
-    setShowConfirmDialog(null);
-    showToast(`${student.firstName} removed successfully`, 'success');
-    
-  } catch (error) {
-    console.error('❌ Error removing student:', error);
-    showToast('Could not remove student: ' + error.message, 'error');
-    // Still close dialog even on error so UI isn't stuck
-    setShowConfirmDialog(null);
-  }
-};
+
+    console.log('✅ Student found:', student.firstName, student.lastName);
+
+    try {
+      if (architectureVersion === 'v2' && onRemoveStudent) {
+        console.log('📡 Using V2 architecture - calling onRemoveStudent');
+        await onRemoveStudent(studentId);
+        console.log('✅ Student removed via V2');
+      } else {
+        console.log('📝 Using V1 architecture - manual removal');
+        const newStudents = students.filter(s => s.id !== studentId);
+        console.log('New students count:', newStudents.length, 'Previous:', students.length);
+
+        setStudents(newStudents);
+        await updateAndSaveClass(newStudents, xpCategories);
+        console.log('✅ Student removed via V1');
+      }
+
+      // Close dialog on success
+      setShowConfirmDialog(null);
+      showToast(`${student.firstName} removed successfully`, 'success');
+
+    } catch (error) {
+      console.error('❌ Error removing student:', error);
+      showToast('Could not remove student: ' + error.message, 'error');
+      // Still close dialog even on error so UI isn't stuck
+      setShowConfirmDialog(null);
+    }
+  };
 
   const handleAdjustStudent = async () => {
     if (!adjustmentForm.studentId || !adjustmentForm.amount) {
@@ -397,7 +397,7 @@ const handleRemoveStudent = async (studentId) => {
 
   const exportStudentData = () => {
     const dataStr = JSON.stringify(students, null, 2);
-    const dataBlob = new Blob([dataStr], {type: 'application/json'});
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(dataBlob);
     const link = document.createElement('a');
     link.href = url;
@@ -428,7 +428,7 @@ const handleRemoveStudent = async (studentId) => {
       behaviorPoints: { respectful: 0, responsible: 0, safe: 0, learner: 0 },
       lastUpdated: new Date().toISOString()
     }));
-    
+
     setStudents(resetStudents);
     await updateAndSaveClass(resetStudents, xpCategories);
     setShowConfirmDialog(null);
@@ -454,54 +454,30 @@ Thank you.
     setShowUnsubscribeModal(false);
   };
 
-  const handleDeleteAccount = async () => {
+  const handleDeleteAccount = () => {
     if (!user?.uid) {
-      showToast('You need to be logged in to cancel your account.', 'error');
+      showToast('You need to be logged in to request account deletion.', 'error');
       return;
     }
 
-    setIsDeletingAccount(true);
+    const emailBody = `
+Request to Delete Account:
 
-    try {
-      console.log('🚫 Canceling account for user:', user.uid);
+User Email: ${user?.email || 'Unknown'}
+User ID: ${user?.uid || 'Unknown'}
+Reason: ${deleteReason || 'No reason provided'}
 
-      const response = await fetch('/api/delete-account', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: user.uid,
-          reason: deleteReason.trim() || null
-        }),
-      });
+Please process my account deletion request.
+    `.trim();
 
-      const result = await response.json();
+    const mailtoLink = `mailto:admin@educational-elements.com?subject=Account Deletion Request&body=${encodeURIComponent(emailBody)}`;
 
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to cancel subscription');
-      }
+    // Open email client
+    window.location.href = mailtoLink;
 
-      console.log('✅ Subscription cancellation result:', result);
-
-      showToast('Account deleted. You can resubscribe anytime with the same email!', 'success');
-
-      // Close modal
-      setShowDeleteAccountModal(false);
-      setDeleteReason('');
-
-      // Sign out after short delay
-      setTimeout(async () => {
-        await signOut(auth);
-        window.location.href = '/login';
-      }, 2000);
-
-    } catch (error) {
-      console.error('❌ Error canceling account:', error);
-      showToast('Unable to cancel account: ' + error.message, 'error');
-    }
-
-    setIsDeletingAccount(false);
+    showToast('Opening email client...', 'success');
+    setShowDeleteAccountModal(false);
+    setDeleteReason('');
   };
 
   const submitFeedback = async () => {
@@ -524,9 +500,9 @@ Time: ${new Date().toISOString()}
     `.trim();
 
     const mailtoLink = `mailto:admin@educational-elements.com?subject=Educational Elements ${feedbackForm.type}: ${encodeURIComponent(feedbackForm.subject)}&body=${encodeURIComponent(emailBody)}`;
-    
+
     window.location.href = mailtoLink;
-    
+
     setShowFeedbackModal(false);
     setFeedbackForm({
       type: 'suggestion',
@@ -562,11 +538,10 @@ Time: ${new Date().toISOString()}
             <button
               key={section.id}
               onClick={() => setActiveSection(section.id)}
-              className={`flex items-center space-x-2 px-4 py-4 font-semibold transition-all whitespace-nowrap ${
-                activeSection === section.id
+              className={`flex items-center space-x-2 px-4 py-4 font-semibold transition-all whitespace-nowrap ${activeSection === section.id
                   ? 'bg-blue-500 text-white'
                   : 'text-gray-600 hover:bg-gray-50'
-              }`}
+                }`}
             >
               <span className="text-lg">{section.icon}</span>
               <span className="text-sm">{section.name}</span>
@@ -579,7 +554,7 @@ Time: ${new Date().toISOString()}
           {activeSection === 'students' && (
             <div>
               <h3 className="text-2xl font-bold text-gray-800 mb-6">👥 Student Management</h3>
-              
+
               {/* Add Student */}
               <div className="mb-8 p-4 bg-green-50 rounded-lg">
                 <h4 className="font-semibold text-green-800 mb-4">➕ Add New Student</h4>
@@ -588,14 +563,14 @@ Time: ${new Date().toISOString()}
                     type="text"
                     placeholder="First Name"
                     value={newStudentForm.firstName}
-                    onChange={(e) => setNewStudentForm({...newStudentForm, firstName: e.target.value})}
+                    onChange={(e) => setNewStudentForm({ ...newStudentForm, firstName: e.target.value })}
                     className="flex-1 px-3 py-2 border rounded-lg"
                   />
                   <input
                     type="text"
                     placeholder="Last Name (Optional)"
                     value={newStudentForm.lastName}
-                    onChange={(e) => setNewStudentForm({...newStudentForm, lastName: e.target.value})}
+                    onChange={(e) => setNewStudentForm({ ...newStudentForm, lastName: e.target.value })}
                     className="flex-1 px-3 py-2 border rounded-lg"
                   />
                   <button
@@ -614,8 +589,8 @@ Time: ${new Date().toISOString()}
                   {students.map(student => (
                     <div key={student.id} className="border-2 border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-all">
                       <div className="flex items-center gap-3 mb-3">
-                        <img 
-                          src={getAvatarImage(student.avatarBase, calculateAvatarLevel(student.totalPoints))} 
+                        <img
+                          src={getAvatarImage(student.avatarBase, calculateAvatarLevel(student.totalPoints))}
                           className="w-12 h-12 rounded-full border-2 border-gray-300"
                           alt={student.firstName}
                         />
@@ -629,13 +604,13 @@ Time: ${new Date().toISOString()}
                         <p>Coins: {calculateCoins(student)}</p>
                       </div>
                       <div className="flex gap-2">
-                        <button 
+                        <button
                           onClick={() => setSelectedStudent(student)}
                           className="flex-1 bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
                         >
                           Change Avatar
                         </button>
-                        <button 
+                        <button
                           onClick={() => {
                             console.log('Setting confirm dialog for student:', student.id);
                             setShowConfirmDialog(`remove_${student.id}`);
@@ -688,7 +663,7 @@ Time: ${new Date().toISOString()}
               {/* Individual Password Management */}
               <div className="bg-white rounded-xl shadow-lg p-6">
                 <h3 className="text-xl font-semibold mb-4">Update Individual Password</h3>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -707,7 +682,7 @@ Time: ${new Date().toISOString()}
                       ))}
                     </select>
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       New Password
@@ -721,7 +696,7 @@ Time: ${new Date().toISOString()}
                       disabled={!selectedStudentId}
                     />
                   </div>
-                  
+
                   <div className="flex items-end space-x-2">
                     <button
                       onClick={() => {
@@ -744,7 +719,7 @@ Time: ${new Date().toISOString()}
                     </button>
                   </div>
                 </div>
-                
+
                 <div className="flex space-x-3">
                   <button
                     onClick={() => {
@@ -763,7 +738,7 @@ Time: ${new Date().toISOString()}
               {/* Current Student Status */}
               <div className="bg-white rounded-xl shadow-lg p-6">
                 <h3 className="text-xl font-semibold mb-4">Student Password Status</h3>
-                
+
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
@@ -778,15 +753,15 @@ Time: ${new Date().toISOString()}
                     <tbody>
                       {students.map(student => {
                         const hasCustomPassword = student.simplePasswordHash && student.passwordLastUpdated;
-                        const displayPassword = hasCustomPassword 
+                        const displayPassword = hasCustomPassword
                           ? '(Custom password set)'
                           : getDefaultPassword(student.firstName);
-                        
+
                         return (
                           <tr key={student.id} className="border-b border-gray-100 hover:bg-gray-50">
                             <td className="py-3 px-3">
                               <div className="flex items-center space-x-2">
-                                <img 
+                                <img
                                   src={getAvatarImage(student.avatarBase || 'Wizard F', calculateAvatarLevel(student.totalPoints))}
                                   alt={student.firstName}
                                   className="w-8 h-8 rounded-full border-2 border-gray-300"
@@ -796,11 +771,10 @@ Time: ${new Date().toISOString()}
                               </div>
                             </td>
                             <td className="py-3 px-3">
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                hasCustomPassword 
-                                  ? 'bg-green-100 text-green-700' 
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${hasCustomPassword
+                                  ? 'bg-green-100 text-green-700'
                                   : 'bg-yellow-100 text-yellow-700'
-                              }`}>
+                                }`}>
                                 {hasCustomPassword ? 'Custom Set' : 'Using Default'}
                               </span>
                             </td>
@@ -821,7 +795,7 @@ Time: ${new Date().toISOString()}
                               </div>
                             </td>
                             <td className="py-3 px-3 text-gray-600">
-                              {student.passwordLastUpdated 
+                              {student.passwordLastUpdated
                                 ? new Date(student.passwordLastUpdated).toLocaleDateString()
                                 : 'Never'
                               }
@@ -843,7 +817,7 @@ Time: ${new Date().toISOString()}
                     </tbody>
                   </table>
                 </div>
-                
+
                 {students.length === 0 && (
                   <div className="text-center py-8 text-gray-500">
                     No students in this class yet.
@@ -854,7 +828,7 @@ Time: ${new Date().toISOString()}
               {/* Bulk Operations */}
               <div className="bg-white rounded-xl shadow-lg p-6">
                 <h3 className="text-xl font-semibold mb-4">Bulk Password Operations</h3>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -870,7 +844,7 @@ Time: ${new Date().toISOString()}
                       <option value="reset-secure">Reset all to secure passwords</option>
                     </select>
                   </div>
-                  
+
                   <div className="flex items-end space-x-2">
                     <button
                       onClick={handleBulkPasswordUpdate}
@@ -879,7 +853,7 @@ Time: ${new Date().toISOString()}
                     >
                       {isBulkUpdating ? 'Updating...' : 'Apply to All Students (Direct)'}
                     </button>
-                    
+
                     <button
                       onClick={exportPasswordList}
                       className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 font-medium"
@@ -888,10 +862,10 @@ Time: ${new Date().toISOString()}
                     </button>
                   </div>
                 </div>
-                
+
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
                   <p className="text-sm text-yellow-800">
-                    <strong>Note:</strong> Password updates now work directly (no APIs). 
+                    <strong>Note:</strong> Password updates now work directly (no APIs).
                     Students will need to use their new passwords to log in.
                   </p>
                 </div>
@@ -903,7 +877,7 @@ Time: ${new Date().toISOString()}
           {activeSection === 'adjustments' && (
             <div>
               <h3 className="text-2xl font-bold text-gray-800 mb-6">⚖️ XP & Coin Adjustments</h3>
-              
+
               <div className="p-4 bg-yellow-50 rounded-lg">
                 <h4 className="font-semibold text-yellow-800 mb-4">Adjust Student Points</h4>
                 <div className="space-y-4">
@@ -912,7 +886,7 @@ Time: ${new Date().toISOString()}
                       <label className="block text-sm font-semibold mb-1">Select Student</label>
                       <select
                         value={adjustmentForm.studentId}
-                        onChange={(e) => setAdjustmentForm({...adjustmentForm, studentId: e.target.value})}
+                        onChange={(e) => setAdjustmentForm({ ...adjustmentForm, studentId: e.target.value })}
                         className="w-full px-3 py-2 border rounded-lg"
                       >
                         <option value="">Choose student...</option>
@@ -927,7 +901,7 @@ Time: ${new Date().toISOString()}
                       <label className="block text-sm font-semibold mb-1">Action</label>
                       <select
                         value={adjustmentForm.type}
-                        onChange={(e) => setAdjustmentForm({...adjustmentForm, type: e.target.value})}
+                        onChange={(e) => setAdjustmentForm({ ...adjustmentForm, type: e.target.value })}
                         className="w-full px-3 py-2 border rounded-lg"
                       >
                         <option value="xp">Add XP</option>
@@ -942,7 +916,7 @@ Time: ${new Date().toISOString()}
                         type="number"
                         min="0"
                         value={adjustmentForm.amount}
-                        onChange={(e) => setAdjustmentForm({...adjustmentForm, amount: parseInt(e.target.value) || 0})}
+                        onChange={(e) => setAdjustmentForm({ ...adjustmentForm, amount: parseInt(e.target.value) || 0 })}
                         className="w-full px-3 py-2 border rounded-lg"
                       />
                     </div>
@@ -952,7 +926,7 @@ Time: ${new Date().toISOString()}
                         type="text"
                         placeholder="e.g., manual correction"
                         value={adjustmentForm.reason}
-                        onChange={(e) => setAdjustmentForm({...adjustmentForm, reason: e.target.value})}
+                        onChange={(e) => setAdjustmentForm({ ...adjustmentForm, reason: e.target.value })}
                         className="w-full px-3 py-2 border rounded-lg"
                       />
                     </div>
@@ -973,14 +947,14 @@ Time: ${new Date().toISOString()}
           {activeSection === 'widgets' && (
             <div>
               <h3 className="text-2xl font-bold text-gray-800 mb-6">🎛️ Widget Settings</h3>
-              
+
               <div className="space-y-6">
                 <div className="p-4 bg-purple-50 rounded-lg">
                   <h4 className="font-semibold text-purple-800 mb-4">🎯 Floating Widgets</h4>
                   <p className="text-sm text-gray-600 mb-4">
                     Control which floating widgets appear in the bottom corners of your screen across all tabs.
                   </p>
-                  
+
                   <div className="space-y-4">
                     <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
                       <div className="flex items-center space-x-3">
@@ -1029,7 +1003,7 @@ Time: ${new Date().toISOString()}
           {activeSection === 'class' && (
             <div>
               <h3 className="text-2xl font-bold text-gray-800 mb-6">🎓 Class Settings</h3>
-              
+
               <div className="space-y-6">
                 <div className="p-4 bg-purple-50 rounded-lg">
                   <h4 className="font-semibold text-purple-800 mb-4">🔑 Class Code Management</h4>
@@ -1073,11 +1047,11 @@ Time: ${new Date().toISOString()}
                     </div>
                     <div className="text-center">
                       <div className="text-2xl font-bold text-purple-600">
-                        {students.length > 0 
+                        {students.length > 0
                           ? (students.reduce((sum, s) => {
-                              const level = calculateAvatarLevel(s.totalPoints || 0);
-                              return sum + level;
-                            }, 0) / students.length).toFixed(1)
+                            const level = calculateAvatarLevel(s.totalPoints || 0);
+                            return sum + level;
+                          }, 0) / students.length).toFixed(1)
                           : '0'
                         }
                       </div>
@@ -1093,7 +1067,7 @@ Time: ${new Date().toISOString()}
           {activeSection === 'data' && (
             <div>
               <h3 className="text-2xl font-bold text-gray-800 mb-6">💾 Data Management</h3>
-              
+
               <div className="space-y-6">
                 <div className="p-4 bg-green-50 rounded-lg">
                   <h4 className="font-semibold text-green-800 mb-4">📤 Export Data</h4>
@@ -1107,7 +1081,7 @@ Time: ${new Date().toISOString()}
                     📥 Export Student Data
                   </button>
                 </div>
-                
+
                 <div className="p-4 bg-yellow-50 rounded-lg">
                   <h4 className="font-semibold text-yellow-800 mb-4">🔄 Reset Options</h4>
                   <div className="space-y-3">
@@ -1122,7 +1096,7 @@ Time: ${new Date().toISOString()}
                         🔄 Reset Student Progress
                       </button>
                     </div>
-                    
+
                     <div className="pt-4 border-t border-yellow-200">
                       <p className="text-sm text-gray-600 mb-2">
                         ⚠️ <strong>Danger Zone:</strong> This will completely remove all student data.
@@ -1144,7 +1118,7 @@ Time: ${new Date().toISOString()}
           {activeSection === 'support' && (
             <div>
               <h3 className="text-2xl font-bold text-gray-800 mb-6">💬 Help & Feedback</h3>
-              
+
               <div className="space-y-6">
                 <div className="p-4 bg-blue-50 rounded-lg">
                   <h4 className="font-semibold text-blue-800 mb-4">📚 Quick Start Guide</h4>
@@ -1161,7 +1135,7 @@ Time: ${new Date().toISOString()}
                     <p>• Set individual student passwords in the Student Passwords section</p>
                   </div>
                 </div>
-                
+
                 <div className="p-4 bg-purple-50 rounded-lg">
                   <h4 className="font-semibold text-purple-800 mb-4">💡 Send Feedback or Suggestions</h4>
                   <p className="text-sm text-gray-600 mb-3">
@@ -1210,7 +1184,7 @@ Time: ${new Date().toISOString()}
       </div>
 
       {/* All the modals remain exactly the same as before... */}
-      
+
       {/* Avatar Selection Modal */}
       {selectedStudent && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -1219,19 +1193,18 @@ Time: ${new Date().toISOString()}
               <h2 className="text-2xl font-bold">Change Avatar for {selectedStudent.firstName}</h2>
               <button onClick={() => setSelectedStudent(null)} className="text-2xl font-bold hover:text-red-600">×</button>
             </div>
-            
+
             <div className="p-6 overflow-y-auto">
               <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
                 {AVAILABLE_AVATARS.map(avatarName => (
-                  <div 
-                    key={avatarName} 
-                    className={`border-2 rounded-lg p-3 text-center cursor-pointer transition-all hover:border-blue-400 ${
-                      selectedStudent.avatarBase === avatarName ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
-                    }`}
+                  <div
+                    key={avatarName}
+                    className={`border-2 rounded-lg p-3 text-center cursor-pointer transition-all hover:border-blue-400 ${selectedStudent.avatarBase === avatarName ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
+                      }`}
                     onClick={() => handleChangeAvatar(selectedStudent.id, avatarName)}
                   >
-                    <img 
-                      src={getAvatarImage(avatarName, calculateAvatarLevel(selectedStudent.totalPoints))} 
+                    <img
+                      src={getAvatarImage(avatarName, calculateAvatarLevel(selectedStudent.totalPoints))}
                       className="w-16 h-16 rounded-full mx-auto mb-2"
                       alt={avatarName}
                     />
@@ -1254,7 +1227,7 @@ Time: ${new Date().toISOString()}
             <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-6 rounded-t-2xl">
               <h2 className="text-2xl font-bold">🔑 Update Class Code</h2>
             </div>
-            
+
             <div className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">New Class Code</label>
@@ -1270,10 +1243,10 @@ Time: ${new Date().toISOString()}
                 Students will use this code to join your class on the student portal.
               </p>
             </div>
-            
+
             <div className="flex space-x-3 p-6 pt-0">
               <button
-                onClick={() => {setShowClassCodeModal(false); setNewClassCode('');}}
+                onClick={() => { setShowClassCodeModal(false); setNewClassCode(''); }}
                 className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all"
               >
                 Cancel
@@ -1299,10 +1272,10 @@ Time: ${new Date().toISOString()}
 
             <div className="p-6 space-y-4">
               <p className="text-gray-800 font-semibold">
-                This will cancel your subscription, disable login access, and sign you out immediately.
+                This will open your email client to send a deletion request to our admin team.
               </p>
               <p className="text-sm text-gray-600">
-                You can resubscribe later to regain access. Your classes remain preserved but inaccessible until you return.
+                We will process your request manually to ensure all data is handled correctly.
               </p>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Reason (optional)</label>
@@ -1329,7 +1302,7 @@ Time: ${new Date().toISOString()}
                 className="flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all disabled:opacity-60"
                 disabled={isDeletingAccount}
               >
-                {isDeletingAccount ? 'Cancelling...' : 'Delete & Sign Out'}
+                {isDeletingAccount ? 'Opening...' : 'Send Deletion Request'}
               </button>
             </div>
           </div>
@@ -1343,7 +1316,7 @@ Time: ${new Date().toISOString()}
             <div className="bg-gradient-to-r from-gray-500 to-gray-600 text-white p-6 rounded-t-2xl">
               <h2 className="text-2xl font-bold">📧 Account Cancellation</h2>
             </div>
-            
+
             <div className="p-6 space-y-4">
               <p className="text-gray-800">
                 This will open your email client to send a cancellation request to our support team.
@@ -1352,7 +1325,7 @@ Time: ${new Date().toISOString()}
                 We'll process your request and cancel your subscription. You'll keep access until your current billing period ends.
               </p>
             </div>
-            
+
             <div className="flex space-x-3 p-6 pt-0">
               <button
                 onClick={() => setShowUnsubscribeModal(false)}
@@ -1378,21 +1351,21 @@ Time: ${new Date().toISOString()}
             <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-6 rounded-t-2xl">
               <h2 className="text-2xl font-bold">⚠️ Confirm Action</h2>
             </div>
-            
+
             <div className="p-6">
               <p className="text-gray-800 mb-4">
-                {showConfirmDialog === 'resetAll' 
+                {showConfirmDialog === 'resetAll'
                   ? 'Are you sure you want to reset ALL student data? This will permanently delete all students, their progress, and cannot be undone.'
                   : showConfirmDialog === 'resetProgress'
-                  ? 'Are you sure you want to reset all student progress? This will reset XP, coins, quests, purchases, pets, AND avatars back to default (Wizard F). Only student names will be kept.'
-                  : showConfirmDialog.startsWith('remove_')
-                  ? `Are you sure you want to remove ${students.find(s => s.id === showConfirmDialog.slice(7))?.firstName} from the class? This cannot be undone.`
-                  : 'Are you sure you want to continue?'
+                    ? 'Are you sure you want to reset all student progress? This will reset XP, coins, quests, purchases, pets, AND avatars back to default (Wizard F). Only student names will be kept.'
+                    : showConfirmDialog.startsWith('remove_')
+                      ? `Are you sure you want to remove ${students.find(s => s.id === showConfirmDialog.slice(7))?.firstName} from the class? This cannot be undone.`
+                      : 'Are you sure you want to continue?'
                 }
               </p>
               <p className="text-sm text-red-600 font-semibold">This action cannot be undone!</p>
             </div>
-            
+
             <div className="flex space-x-3 p-6 pt-0">
               <button
                 onClick={() => setShowConfirmDialog(null)}
@@ -1400,30 +1373,30 @@ Time: ${new Date().toISOString()}
               >
                 Cancel
               </button>
-<button
-  onClick={() => {
-    console.log('🎯 Confirm dialog action:', showConfirmDialog);
-    
-    if (showConfirmDialog === 'resetAll') {
-      resetAllData();
-    } else if (showConfirmDialog === 'resetProgress') {
-      resetStudentProgress();
-    } else if (showConfirmDialog?.startsWith('remove_')) {
-      // Extract student ID from the confirmation string
-      const studentId = showConfirmDialog.replace('remove_', '');
-      console.log('📍 Extracted student ID:', studentId);
-      handleRemoveStudent(studentId);
-    } else {
-      console.warn('⚠️ Unknown confirmation action:', showConfirmDialog);
-      setShowConfirmDialog(null);
-    }
-  }}
-  className="flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all"
->
-  {showConfirmDialog === 'resetAll' ? '🗑️ Reset Everything' 
-  : showConfirmDialog === 'resetProgress' ? '🔄 Reset Progress'
-  : '🗑️ Remove Student'}
-</button>
+              <button
+                onClick={() => {
+                  console.log('🎯 Confirm dialog action:', showConfirmDialog);
+
+                  if (showConfirmDialog === 'resetAll') {
+                    resetAllData();
+                  } else if (showConfirmDialog === 'resetProgress') {
+                    resetStudentProgress();
+                  } else if (showConfirmDialog?.startsWith('remove_')) {
+                    // Extract student ID from the confirmation string
+                    const studentId = showConfirmDialog.replace('remove_', '');
+                    console.log('📍 Extracted student ID:', studentId);
+                    handleRemoveStudent(studentId);
+                  } else {
+                    console.warn('⚠️ Unknown confirmation action:', showConfirmDialog);
+                    setShowConfirmDialog(null);
+                  }
+                }}
+                className="flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all"
+              >
+                {showConfirmDialog === 'resetAll' ? '🗑️ Reset Everything'
+                  : showConfirmDialog === 'resetProgress' ? '🔄 Reset Progress'
+                    : '🗑️ Remove Student'}
+              </button>
             </div>
           </div>
         </div>
@@ -1437,13 +1410,13 @@ Time: ${new Date().toISOString()}
               <h2 className="text-2xl font-bold">📝 Send Feedback</h2>
               <p className="text-purple-100">Help us improve Educational Elements</p>
             </div>
-            
+
             <div className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Feedback Type</label>
                 <select
                   value={feedbackForm.type}
-                  onChange={(e) => setFeedbackForm({...feedbackForm, type: e.target.value})}
+                  onChange={(e) => setFeedbackForm({ ...feedbackForm, type: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 >
                   <option value="suggestion">💡 Suggestion</option>
@@ -1459,7 +1432,7 @@ Time: ${new Date().toISOString()}
                 <input
                   type="text"
                   value={feedbackForm.subject}
-                  onChange={(e) => setFeedbackForm({...feedbackForm, subject: e.target.value})}
+                  onChange={(e) => setFeedbackForm({ ...feedbackForm, subject: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   placeholder="Brief description of your feedback"
                 />
@@ -1469,7 +1442,7 @@ Time: ${new Date().toISOString()}
                 <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
                 <textarea
                   value={feedbackForm.message}
-                  onChange={(e) => setFeedbackForm({...feedbackForm, message: e.target.value})}
+                  onChange={(e) => setFeedbackForm({ ...feedbackForm, message: e.target.value })}
                   rows={6}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   placeholder="Please provide detailed information about your feedback..."
@@ -1481,13 +1454,13 @@ Time: ${new Date().toISOString()}
                 <input
                   type="email"
                   value={feedbackForm.email}
-                  onChange={(e) => setFeedbackForm({...feedbackForm, email: e.target.value})}
+                  onChange={(e) => setFeedbackForm({ ...feedbackForm, email: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   placeholder="Your email for follow-up (optional)"
                 />
               </div>
             </div>
-            
+
             <div className="flex space-x-3 p-6 pt-0">
               <button
                 onClick={() => setShowFeedbackModal(false)}

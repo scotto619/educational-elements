@@ -1494,6 +1494,12 @@ const ClassroomChampions = () => {
 
               <div className="space-y-2">
                 <button
+                  onClick={() => router.push('/main-menu')}
+                  className="w-full bg-indigo-500 text-white px-3 py-2 rounded-lg hover:bg-indigo-600 transition-all font-medium text-sm"
+                >
+                  🏠 Return to Main Menu
+                </button>
+                <button
                   onClick={goToStudentPortal}
                   className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white px-3 py-2 rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all font-medium text-sm"
                 >
@@ -1533,8 +1539,8 @@ const ClassroomChampions = () => {
                     setShowMobileMenu(false);
                   }}
                   className={`flex flex-col sm:flex-row items-center justify-center space-y-1 sm:space-y-0 sm:space-x-1 px-2 sm:px-3 py-2 sm:py-2.5 transition-all duration-200 text-xs whitespace-nowrap min-w-[60px] sm:min-w-[80px] ${activeTab === tab.id
-                      ? 'text-purple-600 border-b-2 font-semibold border-purple-600 bg-purple-50'
-                      : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                    ? 'text-purple-600 border-b-2 font-semibold border-purple-600 bg-purple-50'
+                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
                     }`}
                 >
                   <span className="text-sm sm:text-base">{tab.mobileIcon}</span>
@@ -1553,8 +1559,8 @@ const ClassroomChampions = () => {
                     setShowMobileMenu(false);
                   }}
                   className={`flex flex-col sm:flex-row items-center justify-center space-y-1 sm:space-y-0 sm:space-x-1 px-2 sm:px-3 py-2 sm:py-2.5 transition-all duration-200 text-xs whitespace-nowrap min-w-[60px] sm:min-w-[80px] ${activeTab === tab.id
-                      ? 'text-blue-600 border-b-2 font-semibold border-blue-600 bg-blue-50'
-                      : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                    ? 'text-blue-600 border-b-2 font-semibold border-blue-600 bg-blue-50'
+                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
                     }`}
                 >
                   <span className="text-sm sm:text-base">{tab.mobileIcon}</span>

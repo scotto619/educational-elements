@@ -141,7 +141,7 @@ export default function MainMenu() {
                                     src="/Displays/Banners/ClassroomChampions.png"
                                     alt="Classroom Champions"
                                     fill
-                                    className="object-cover transform group-hover:scale-110 transition-transform duration-700"
+                                    className="object-contain transform group-hover:scale-110 transition-transform duration-700"
                                 />
                             </div>
                             <div className="p-6 text-center">
@@ -163,7 +163,7 @@ export default function MainMenu() {
                                     src="/Displays/Banners/CurriculumCorner.png"
                                     alt="Curriculum Corner"
                                     fill
-                                    className="object-cover transform group-hover:scale-110 transition-transform duration-700"
+                                    className="object-contain transform group-hover:scale-110 transition-transform duration-700"
                                 />
                             </div>
                             <div className="p-6 text-center">
@@ -185,7 +185,7 @@ export default function MainMenu() {
                                     src="/Displays/Banners/TeacherToolkit.png"
                                     alt="Teacher Toolkit"
                                     fill
-                                    className="object-cover transform group-hover:scale-110 transition-transform duration-700"
+                                    className="object-contain transform group-hover:scale-110 transition-transform duration-700"
                                 />
                             </div>
                             <div className="p-6 text-center">
@@ -216,7 +216,7 @@ export default function MainMenu() {
                                     src="/Displays/Banners/Shop.png"
                                     alt="Shop"
                                     fill
-                                    className="object-cover transition-transform duration-500 group-hover:scale-110"
+                                    className="object-contain transition-transform duration-500 group-hover:scale-110"
                                 />
                                 <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors"></div>
                             </div>
@@ -232,7 +232,7 @@ export default function MainMenu() {
                                     src="/Displays/Banners/Quests.png"
                                     alt="Quests"
                                     fill
-                                    className="object-cover transition-transform duration-500 group-hover:scale-110"
+                                    className="object-contain transition-transform duration-500 group-hover:scale-110"
                                 />
                                 <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors"></div>
                             </div>
@@ -248,7 +248,7 @@ export default function MainMenu() {
                                     src="/Displays/Banners/Games.png"
                                     alt="Games"
                                     fill
-                                    className="object-cover transition-transform duration-500 group-hover:scale-110"
+                                    className="object-contain transition-transform duration-500 group-hover:scale-110"
                                 />
                                 <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors"></div>
                             </div>
@@ -264,7 +264,7 @@ export default function MainMenu() {
                                     src="/Displays/Banners/Students.png"
                                     alt="Students"
                                     fill
-                                    className="object-cover transition-transform duration-500 group-hover:scale-110"
+                                    className="object-contain transition-transform duration-500 group-hover:scale-110"
                                 />
                                 <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors"></div>
                             </div>
