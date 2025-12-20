@@ -72,6 +72,28 @@ export default async function handler(req, res) {
         data = updatesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         break;
 
+      case 'cancellations':
+        // Query users who have cancelled or deleted their account
+        const canceledUsersSnapshot = await db.collection('users')
+          .where('accountStatus', '==', 'canceled')
+          .orderBy('canceledAt', 'desc')
+          .limit(50) // Limit to 50 for performance
+          .get();
+
+        data = canceledUsersSnapshot.docs.map(doc => {
+          const userData = doc.data();
+          return {
+            id: doc.id,
+            email: userData.email,
+            accountStatus: userData.accountStatus,
+            canceledAt: userData.canceledAt,
+            cancelReason: userData.cancelReason,
+            subscriptionStatus: userData.subscriptionStatus,
+            cancellationDetails: userData.cancellationDetails || {}
+          };
+        });
+        break;
+
       default:
         return res.status(400).json({ error: 'Invalid data type' });
     }
@@ -86,9 +108,9 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('❌ Error fetching admin data:', error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: 'Internal server error',
-      message: error.message 
+      message: error.message
     });
   }
 }
