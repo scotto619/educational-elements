@@ -209,64 +209,64 @@ export default function MainMenu() {
                         {/* Shop */}
                         <div
                             onClick={() => handleNavigation('/classroom-champions?tab=shop')}
-                            className="cursor-pointer group rounded-xl overflow-hidden shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 hover:scale-[1.03]"
+                            className="cursor-pointer group rounded-xl overflow-hidden shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 hover:scale-[1.03] bg-gradient-to-br from-amber-50 to-orange-50"
                         >
-                            <div className="relative h-32 sm:h-40">
+                            <div className="relative aspect-[4/3] overflow-hidden">
                                 <Image
                                     src="/Displays/Banners/Shop.png"
                                     alt="Shop"
                                     fill
-                                    className="object-contain transition-transform duration-500 group-hover:scale-110"
+                                    className="object-contain p-2 transition-transform duration-500 group-hover:scale-110"
                                 />
-                                <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors"></div>
+                                <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors"></div>
                             </div>
                         </div>
 
                         {/* Quests */}
                         <div
                             onClick={() => handleNavigation('/classroom-champions?tab=quests')}
-                            className="cursor-pointer group rounded-xl overflow-hidden shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 hover:scale-[1.03]"
+                            className="cursor-pointer group rounded-xl overflow-hidden shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 hover:scale-[1.03] bg-gradient-to-br from-purple-50 to-indigo-50"
                         >
-                            <div className="relative h-32 sm:h-40">
+                            <div className="relative aspect-[4/3] overflow-hidden">
                                 <Image
                                     src="/Displays/Banners/Quests.png"
                                     alt="Quests"
                                     fill
-                                    className="object-contain transition-transform duration-500 group-hover:scale-110"
+                                    className="object-contain p-2 transition-transform duration-500 group-hover:scale-110"
                                 />
-                                <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors"></div>
+                                <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors"></div>
                             </div>
                         </div>
 
                         {/* Games */}
                         <div
                             onClick={() => handleNavigation('/classroom-champions?tab=games')}
-                            className="cursor-pointer group rounded-xl overflow-hidden shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 hover:scale-[1.03]"
+                            className="cursor-pointer group rounded-xl overflow-hidden shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 hover:scale-[1.03] bg-gradient-to-br from-blue-50 to-cyan-50"
                         >
-                            <div className="relative h-32 sm:h-40">
+                            <div className="relative aspect-[4/3] overflow-hidden">
                                 <Image
                                     src="/Displays/Banners/Games.png"
                                     alt="Games"
                                     fill
-                                    className="object-contain transition-transform duration-500 group-hover:scale-110"
+                                    className="object-contain p-2 transition-transform duration-500 group-hover:scale-110"
                                 />
-                                <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors"></div>
+                                <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors"></div>
                             </div>
                         </div>
 
                         {/* Students */}
                         <div
                             onClick={() => handleNavigation('/classroom-champions?tab=students')}
-                            className="cursor-pointer group rounded-xl overflow-hidden shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 hover:scale-[1.03]"
+                            className="cursor-pointer group rounded-xl overflow-hidden shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 hover:scale-[1.03] bg-gradient-to-br from-green-50 to-emerald-50"
                         >
-                            <div className="relative h-32 sm:h-40">
+                            <div className="relative aspect-[4/3] overflow-hidden">
                                 <Image
                                     src="/Displays/Banners/Students.png"
                                     alt="Students"
                                     fill
-                                    className="object-contain transition-transform duration-500 group-hover:scale-110"
+                                    className="object-contain p-2 transition-transform duration-500 group-hover:scale-110"
                                 />
-                                <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors"></div>
+                                <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors"></div>
                             </div>
                         </div>
 

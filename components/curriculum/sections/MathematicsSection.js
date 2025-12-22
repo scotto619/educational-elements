@@ -115,9 +115,9 @@ const MathematicsSection = ({ onBack, showToast, students, saveData, loadedData 
         <div className="space-y-6">
             <div className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between">
                 <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                    <span className="text-2xl">🔢</span> Mathematics
+                    <span className="text-2xl">🛠️</span> Mathematics Tools
                 </h2>
-                <button onClick={onBack} className="bg-slate-500 text-white px-4 py-2 rounded-lg hover:bg-slate-600">← Back to Subjects</button>
+                <button onClick={onBack} className="bg-slate-500 text-white px-4 py-2 rounded-lg hover:bg-slate-600">← Back</button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">

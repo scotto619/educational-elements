@@ -1,23 +1,133 @@
 // components/tabs/CurriculumCornerTab.js
-// COMPLETE OVERHAUL: Banner-based navigation with lazy-loaded sections
+// 3-TIER NAVIGATION: Subjects → Categories (Tools/Displays/Resources) → Content
 import React, { useState, Suspense, lazy } from 'react';
 
-// Lazy-load section components for performance
-const LiteracySection = lazy(() => import('../curriculum/sections/LiteracySection'));
-const MathematicsSection = lazy(() => import('../curriculum/sections/MathematicsSection'));
-const ScienceSection = lazy(() => import('../curriculum/sections/ScienceSection'));
-const GeographySection = lazy(() => import('../curriculum/sections/GeographySection'));
-const HistorySection = lazy(() => import('../curriculum/sections/HistorySection'));
+// Lazy-load content components for performance
+const LiteracyTools = lazy(() => import('../curriculum/sections/LiteracySection'));
+const MathematicsTools = lazy(() => import('../curriculum/sections/MathematicsSection'));
+const ScienceTools = lazy(() => import('../curriculum/sections/ScienceSection'));
 const DisplaysSection = lazy(() => import('../curriculum/sections/DisplaysSection'));
-const StudyStudioSection = lazy(() => import('../curriculum/sections/StudyStudioSection'));
-const ArtsSection = lazy(() => import('../curriculum/sections/ArtsSection'));
 
-// Loading spinner component
+// Loading spinner
 const LoadingSpinner = () => (
-  <div className="flex items-center justify-center min-h-[400px]">
+  <div className="flex items-center justify-center min-h-[300px]">
     <div className="text-center space-y-4">
-      <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto"></div>
-      <p className="text-slate-600 font-medium">Loading section...</p>
+      <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto"></div>
+      <p className="text-slate-600">Loading...</p>
+    </div>
+  </div>
+);
+
+// PDF Resource Viewer Component
+const PDFResourceViewer = ({ pdfPath, title, onBack }) => {
+  return (
+    <div className="space-y-4">
+      <div className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between">
+        <h2 className="text-xl font-bold text-slate-800">{title}</h2>
+        <div className="flex gap-3">
+          <a
+            href={pdfPath}
+            download
+            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Download PDF
+          </a>
+          <button onClick={onBack} className="bg-slate-500 text-white px-4 py-2 rounded-lg hover:bg-slate-600">← Back</button>
+        </div>
+      </div>
+      <div className="bg-white rounded-xl shadow-lg overflow-hidden" style={{ height: '80vh' }}>
+        <iframe
+          src={pdfPath}
+          className="w-full h-full border-0"
+          title={title}
+        />
+      </div>
+    </div>
+  );
+};
+
+// Resources List Component - shows PDFs for a subject
+const ResourcesList = ({ subject, onBack, onSelectResource }) => {
+  // Define resources by subject
+  const resourcesBySubject = {
+    english: [
+      {
+        id: 'info-text-comprehension',
+        title: 'Information Text Comprehension',
+        description: 'A comprehensive guide for teaching information text comprehension skills',
+        pdfPath: '/Unit Resources/Literacy/Information Text Comprehension.pdf',
+        isNew: true
+      }
+    ],
+    mathematics: [],
+    science: [],
+    geography: [],
+    history: [],
+    arts: []
+  };
+
+  const resources = resourcesBySubject[subject.id] || [];
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between">
+        <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+          <span className="text-2xl">📚</span> {subject.name} Resources
+        </h2>
+        <button onClick={onBack} className="bg-slate-500 text-white px-4 py-2 rounded-lg hover:bg-slate-600">← Back</button>
+      </div>
+
+      {resources.length === 0 ? (
+        <div className="bg-gradient-to-br from-slate-50 to-indigo-50 rounded-2xl p-12 text-center border border-slate-200">
+          <div className="text-6xl mb-4">📂</div>
+          <h3 className="text-2xl font-bold text-slate-700 mb-2">No Resources Yet</h3>
+          <p className="text-slate-500">Resources for {subject.name} will be added soon!</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {resources.map(resource => (
+            <button
+              key={resource.id}
+              onClick={() => onSelectResource(resource)}
+              className="bg-white rounded-xl shadow-lg p-6 text-left hover:shadow-xl transition-all hover:scale-[1.02] border border-slate-200 hover:border-blue-300 relative group"
+            >
+              {resource.isNew && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full animate-pulse">NEW</span>
+              )}
+              <div className="flex items-start gap-4">
+                <div className="bg-red-100 rounded-xl p-3">
+                  <svg className="w-8 h-8 text-red-600" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM6 4h7l5 5v11H6V4zm8.5 11v3.5L12 16l-2.5 2.5V15H8v-1h10v1h-1.5z" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-slate-800 mb-1">{resource.title}</h3>
+                  <p className="text-sm text-slate-500 mb-3">{resource.description}</p>
+                  <span className="text-blue-600 font-semibold text-sm group-hover:text-blue-700">View PDF →</span>
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Coming Soon placeholder for empty categories
+const ComingSoonCategory = ({ category, subject, onBack }) => (
+  <div className="space-y-6">
+    <div className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between">
+      <h2 className="text-xl font-bold text-slate-800">{subject.name} - {category}</h2>
+      <button onClick={onBack} className="bg-slate-500 text-white px-4 py-2 rounded-lg hover:bg-slate-600">← Back</button>
+    </div>
+    <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-12 text-center border border-amber-200">
+      <div className="text-6xl mb-4">🚧</div>
+      <h3 className="text-2xl font-bold text-amber-800 mb-2">{category} Coming Soon!</h3>
+      <p className="text-amber-600">We're working on {subject.name.toLowerCase()} {category.toLowerCase()}.</p>
     </div>
   </div>
 );
@@ -25,76 +135,89 @@ const LoadingSpinner = () => (
 // Subject configuration with banners
 const subjects = [
   {
-    id: 'literacy',
-    name: 'Literacy & Language Arts',
-    description: 'Reading, writing, spelling, phonics & vocabulary tools',
+    id: 'english',
+    name: 'English',
     banner: '/Displays/Banners/Literacy.png',
     color: 'from-blue-500 to-purple-600',
     icon: '📚',
-    component: LiteracySection
+    hasTools: true,
+    hasDisplays: true,
+    hasResources: true
   },
   {
     id: 'mathematics',
     name: 'Mathematics',
-    description: 'Interactive math tools and daily challenges',
     banner: '/Displays/Banners/Mathematics.png',
     color: 'from-green-500 to-emerald-600',
     icon: '🔢',
-    component: MathematicsSection
+    hasTools: true,
+    hasDisplays: true,
+    hasResources: false
   },
   {
     id: 'science',
     name: 'Science',
-    description: 'Scientific exploration and experiments',
     banner: '/Displays/Banners/Science.png',
     color: 'from-purple-500 to-violet-600',
     icon: '🔬',
-    component: ScienceSection
+    hasTools: true,
+    hasDisplays: true,
+    hasResources: false
   },
   {
     id: 'geography',
     name: 'Geography',
-    description: 'World maps, countries, and cultures',
     banner: '/Displays/Banners/GEOGRAPHY.png',
     color: 'from-teal-500 to-cyan-600',
     icon: '🌍',
-    component: GeographySection
+    hasTools: false,
+    hasDisplays: true,
+    hasResources: false
   },
   {
     id: 'history',
     name: 'History',
-    description: 'Historical events and timelines',
     banner: '/Displays/Banners/HISTORY.png',
     color: 'from-amber-500 to-orange-600',
     icon: '🏺',
-    component: HistorySection
-  },
-  {
-    id: 'displays',
-    name: 'Classroom Displays',
-    description: 'Printable posters and classroom decorations',
-    banner: '/Displays/Banners/Displays.png',
-    color: 'from-fuchsia-500 to-pink-600',
-    icon: '🖼️',
-    component: DisplaysSection
-  },
-  {
-    id: 'study-studio',
-    name: 'Study & Revision',
-    description: 'Flip cards and revision tools',
-    banner: null, // No specific banner
-    color: 'from-indigo-500 to-purple-600',
-    icon: '🧠',
-    component: StudyStudioSection
+    hasTools: false,
+    hasDisplays: true,
+    hasResources: false
   },
   {
     id: 'arts',
     name: 'Arts & Creativity',
-    description: 'Creative arts and expression tools',
-    banner: null, // No specific banner
+    banner: null,
     color: 'from-pink-500 to-rose-600',
     icon: '🎨',
-    component: ArtsSection
+    hasTools: false,
+    hasDisplays: true,
+    hasResources: false
+  }
+];
+
+// Category configuration
+const categories = [
+  {
+    id: 'tools',
+    name: 'Tools',
+    icon: '🛠️',
+    description: 'Interactive teaching tools',
+    color: 'from-indigo-500 to-blue-600'
+  },
+  {
+    id: 'displays',
+    name: 'Displays',
+    icon: '🖼️',
+    description: 'Printable classroom posters',
+    color: 'from-fuchsia-500 to-pink-600'
+  },
+  {
+    id: 'resources',
+    name: 'Resources',
+    icon: '📚',
+    description: 'PDFs, worksheets & downloads',
+    color: 'from-emerald-500 to-teal-600'
   }
 ];
 
@@ -106,30 +229,156 @@ const CurriculumCornerTab = ({
   loadedData = {}
 }) => {
   const [activeSubject, setActiveSubject] = useState(null);
+  const [activeCategory, setActiveCategory] = useState(null);
+  const [activeResource, setActiveResource] = useState(null);
   const [imageErrors, setImageErrors] = useState({});
 
   const handleImageError = (subjectId) => {
     setImageErrors(prev => ({ ...prev, [subjectId]: true }));
   };
 
-  // Render active subject section
-  if (activeSubject) {
-    const SubjectComponent = activeSubject.component;
+  const handleBack = () => {
+    if (activeResource) {
+      setActiveResource(null);
+    } else if (activeCategory) {
+      setActiveCategory(null);
+    } else if (activeSubject) {
+      setActiveSubject(null);
+    }
+  };
 
-    return (
-      <Suspense fallback={<LoadingSpinner />}>
-        <SubjectComponent
-          onBack={() => setActiveSubject(null)}
-          showToast={showToast}
-          students={students}
-          saveData={saveData}
-          loadedData={loadedData}
+  const handleBackToSubjects = () => {
+    setActiveSubject(null);
+    setActiveCategory(null);
+    setActiveResource(null);
+  };
+
+  // TIER 3: Render content for selected subject + category
+  if (activeSubject && activeCategory) {
+    // Handle resource viewing
+    if (activeResource) {
+      return (
+        <PDFResourceViewer
+          pdfPath={activeResource.pdfPath}
+          title={activeResource.title}
+          onBack={() => setActiveResource(null)}
         />
-      </Suspense>
+      );
+    }
+
+    // Resources category
+    if (activeCategory.id === 'resources') {
+      return (
+        <ResourcesList
+          subject={activeSubject}
+          onBack={handleBack}
+          onSelectResource={setActiveResource}
+        />
+      );
+    }
+
+    // Displays category - use displays gallery with subject filter
+    if (activeCategory.id === 'displays') {
+      return (
+        <Suspense fallback={<LoadingSpinner />}>
+          <div className="space-y-6">
+            <div className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                <span className="text-2xl">🖼️</span> {activeSubject.name} Displays
+              </h2>
+              <button onClick={handleBack} className="bg-slate-500 text-white px-4 py-2 rounded-lg hover:bg-slate-600">← Back</button>
+            </div>
+            <DisplaysSection
+              onBack={handleBack}
+              showToast={showToast}
+              students={students}
+              subjectFilter={activeSubject.id}
+            />
+          </div>
+        </Suspense>
+      );
+    }
+
+    // Tools category - render the appropriate tools section
+    if (activeCategory.id === 'tools') {
+      let ToolsComponent = null;
+
+      switch (activeSubject.id) {
+        case 'english':
+          ToolsComponent = LiteracyTools;
+          break;
+        case 'mathematics':
+          ToolsComponent = MathematicsTools;
+          break;
+        case 'science':
+          ToolsComponent = ScienceTools;
+          break;
+        default:
+          return <ComingSoonCategory category="Tools" subject={activeSubject} onBack={handleBack} />;
+      }
+
+      return (
+        <Suspense fallback={<LoadingSpinner />}>
+          <ToolsComponent
+            onBack={handleBack}
+            showToast={showToast}
+            students={students}
+            saveData={saveData}
+            loadedData={loadedData}
+          />
+        </Suspense>
+      );
+    }
+  }
+
+  // TIER 2: Render category selection for selected subject
+  if (activeSubject) {
+    return (
+      <div className="space-y-8">
+        {/* Subject Header */}
+        <div className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="text-3xl">{activeSubject.icon}</span>
+            <div>
+              <h2 className="text-2xl font-bold text-slate-800">{activeSubject.name}</h2>
+              <p className="text-slate-500 text-sm">Choose a category</p>
+            </div>
+          </div>
+          <button onClick={handleBackToSubjects} className="bg-slate-500 text-white px-4 py-2 rounded-lg hover:bg-slate-600">← Back to Subjects</button>
+        </div>
+
+        {/* Category Selection */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {categories.map(category => {
+            // Check if this subject has content for this category
+            const hasContent =
+              (category.id === 'tools' && activeSubject.hasTools) ||
+              (category.id === 'displays' && activeSubject.hasDisplays) ||
+              (category.id === 'resources' && activeSubject.hasResources);
+
+            return (
+              <button
+                key={category.id}
+                onClick={() => setActiveCategory(category)}
+                className={`relative rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.03] ${!hasContent ? 'opacity-50' : ''}`}
+              >
+                <div className={`bg-gradient-to-br ${category.color} p-8 text-white text-center`}>
+                  <div className="text-6xl mb-4">{category.icon}</div>
+                  <h3 className="text-2xl font-bold mb-2">{category.name}</h3>
+                  <p className="text-white/80">{category.description}</p>
+                  {!hasContent && (
+                    <span className="mt-4 inline-block bg-white/20 px-3 py-1 rounded-full text-sm">Coming Soon</span>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
     );
   }
 
-  // Main menu with banners
+  // TIER 1: Render subject selection (main menu)
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -138,26 +387,20 @@ const CurriculumCornerTab = ({
           src="/Displays/Banners/CurriculumCorner.png"
           alt="Curriculum Corner"
           className="h-24 md:h-32 mx-auto object-contain mb-4"
-          onError={(e) => {
-            e.target.style.display = 'none';
-            e.target.nextSibling.style.display = 'block';
-          }}
+          onError={(e) => { e.target.style.display = 'none'; }}
         />
-        <div className="hidden text-center bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 text-white rounded-2xl p-8">
-          <h2 className="text-4xl font-bold">📖 Curriculum Corner 🎓</h2>
-        </div>
-        <p className="text-slate-600 text-lg mt-2">Subject-based teaching tools for every classroom need</p>
+        <p className="text-slate-600 text-lg">Choose a subject to explore tools, displays, and resources</p>
       </div>
 
-      {/* Subject Grid with Banners */}
+      {/* Subject Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {subjects.map(subject => (
           <button
             key={subject.id}
             onClick={() => setActiveSubject(subject)}
-            className="group relative rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.03] focus:outline-none focus:ring-4 focus:ring-purple-300"
+            className="group relative rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.03]"
           >
-            {/* Banner Image or Gradient Fallback */}
+            {/* Banner or Gradient */}
             {subject.banner && !imageErrors[subject.id] ? (
               <div className="relative aspect-[16/9] overflow-hidden">
                 <img
@@ -166,11 +409,9 @@ const CurriculumCornerTab = ({
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                   onError={() => handleImageError(subject.id)}
                 />
-                {/* Overlay on hover */}
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300"></div>
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors"></div>
               </div>
             ) : (
-              /* Gradient fallback for subjects without banners */
               <div className={`relative aspect-[16/9] bg-gradient-to-br ${subject.color} flex items-center justify-center`}>
                 <div className="text-center text-white p-6">
                   <span className="text-6xl block mb-4">{subject.icon}</span>
@@ -181,16 +422,15 @@ const CurriculumCornerTab = ({
 
             {/* Info Bar */}
             <div className={`bg-gradient-to-r ${subject.color} p-4`}>
-              <div className="flex items-center justify-between">
-                <div className="text-white">
+              <div className="flex items-center justify-between text-white">
+                <div>
                   <h3 className="font-bold text-lg flex items-center gap-2">
                     <span>{subject.icon}</span>
                     {subject.name}
                   </h3>
-                  <p className="text-white/80 text-sm">{subject.description}</p>
                 </div>
                 <div className="bg-white/20 rounded-full p-2 group-hover:bg-white/30 transition-colors">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </div>
@@ -198,27 +438,6 @@ const CurriculumCornerTab = ({
             </div>
           </button>
         ))}
-      </div>
-
-      {/* Quick Tips */}
-      <div className="bg-gradient-to-r from-slate-50 to-indigo-50 rounded-2xl p-6 border border-slate-200">
-        <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-          <span>💡</span> Quick Navigation Tips
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-          <div className="bg-white rounded-xl p-4 shadow-sm">
-            <div className="font-semibold text-blue-700 mb-1">📚 Literacy</div>
-            <div className="text-slate-600">Has focus area filters for Reading, Writing, Spelling, Phonics & Speaking</div>
-          </div>
-          <div className="bg-white rounded-xl p-4 shadow-sm">
-            <div className="font-semibold text-green-700 mb-1">🔢 Mathematics</div>
-            <div className="text-slate-600">Daily math challenges, interactive angles & clock tools</div>
-          </div>
-          <div className="bg-white rounded-xl p-4 shadow-sm">
-            <div className="font-semibold text-fuchsia-700 mb-1">🖼️ Displays</div>
-            <div className="text-slate-600">Browse and print subject-specific classroom decorations</div>
-          </div>
-        </div>
       </div>
     </div>
   );

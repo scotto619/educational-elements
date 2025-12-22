@@ -169,9 +169,9 @@ const LiteracySection = ({ onBack, showToast, students, saveData, loadedData }) 
             {/* Header with back button */}
             <div className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between">
                 <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                    <span className="text-2xl">📚</span> Literacy & Language Arts
+                    <span className="text-2xl">🛠️</span> English Tools
                 </h2>
-                <button onClick={onBack} className="bg-slate-500 text-white px-4 py-2 rounded-lg hover:bg-slate-600">← Back to Subjects</button>
+                <button onClick={onBack} className="bg-slate-500 text-white px-4 py-2 rounded-lg hover:bg-slate-600">← Back</button>
             </div>
 
             {/* Focus Area Selector */}
