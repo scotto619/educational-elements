@@ -57,12 +57,97 @@ const ResourcesList = ({ subject, onBack, onSelectResource }) => {
       {
         id: 'info-text-comprehension',
         title: 'Information Text Comprehension',
-        description: 'A comprehensive guide for teaching information text comprehension skills',
+        description: 'Teaching information text comprehension skills',
         pdfPath: '/Unit Resources/Literacy/Information Text Comprehension.pdf',
+        isNew: true
+      },
+      {
+        id: 'character-profile',
+        title: 'Character Profile Comprehension',
+        description: 'Analysing and understanding character profiles in texts',
+        pdfPath: '/Unit Resources/Literacy/Character Profile Comprehension.pdf',
+        isNew: true
+      },
+      {
+        id: 'character-creation',
+        title: 'Character Creation Crew',
+        description: 'Building unforgettable stories through character development',
+        pdfPath: '/Unit Resources/Literacy/Character_Creation_Crew_Building_Unforgettable_Stories.pdf',
+        isNew: true
+      },
+      {
+        id: 'metaphors-similes',
+        title: 'Comparison Cuties: Metaphors & Similes',
+        description: 'Understanding and using figurative language',
+        pdfPath: '/Unit Resources/Literacy/Comparison_Cuties_Metaphors_and_Similes.pdf',
+        isNew: true
+      },
+      {
+        id: 'literary-architecture',
+        title: 'Literary Architecture',
+        description: 'Understanding text structure and story building',
+        pdfPath: '/Unit Resources/Literacy/Literary_Architecture.pdf',
+        isNew: true
+      },
+      {
+        id: 'paint-worlds',
+        title: 'Paint Worlds With Words',
+        description: 'Descriptive writing and imagery techniques',
+        pdfPath: '/Unit Resources/Literacy/Paint_Worlds_With_Words.pdf',
+        isNew: true
+      },
+      {
+        id: 'shelter-shore',
+        title: 'Shelter Shore: Identity Craft',
+        description: 'Exploring identity through creative writing',
+        pdfPath: '/Unit Resources/Literacy/Shelter_Shore_Identity_Craft.pdf',
+        isNew: true
+      },
+      {
+        id: 'teresa-book-analysis',
+        title: 'Teresa: A New Australian - Book Analysis',
+        description: 'Comprehensive analysis of the novel Teresa: A New Australian',
+        pdfPath: '/Unit Resources/Literacy/Teresa_A_New_Australian_Book_Analysis.pdf',
+        isNew: true
+      },
+      {
+        id: 'wilds-of-writing',
+        title: 'The Wilds of Writing: A Field Guide',
+        description: 'A comprehensive guide to creative writing techniques',
+        pdfPath: '/Unit Resources/Literacy/The_Wilds_of_Writing_A_Field_Guide.pdf',
         isNew: true
       }
     ],
-    mathematics: [],
+    mathematics: [
+      {
+        id: 'coins-notes',
+        title: 'Australian Coins and Notes',
+        description: 'Understanding Australian currency and money skills',
+        pdfPath: '/Unit Resources/Mathematics/Australian Coins and Notes.pdf',
+        isNew: true
+      },
+      {
+        id: 'fraction-blocks',
+        title: 'Fraction Building Blocks',
+        description: 'Foundational concepts for understanding fractions',
+        pdfPath: '/Unit Resources/Mathematics/Fraction_Building_Blocks.pdf',
+        isNew: true
+      },
+      {
+        id: 'integer-ocean',
+        title: 'Integer Ocean Adventure',
+        description: 'Exploring positive and negative integers',
+        pdfPath: '/Unit Resources/Mathematics/Integer_Ocean_Adventure.pdf',
+        isNew: true
+      },
+      {
+        id: 'world-beyond-zero',
+        title: 'The World Beyond Zero',
+        description: 'Understanding numbers beyond zero - decimals and negatives',
+        pdfPath: '/Unit Resources/Mathematics/The_World_Beyond_Zero.pdf',
+        isNew: true
+      }
+    ],
     science: [],
     geography: [],
     history: [],
@@ -152,7 +237,7 @@ const subjects = [
     icon: '🔢',
     hasTools: true,
     hasDisplays: true,
-    hasResources: false
+    hasResources: true
   },
   {
     id: 'science',
