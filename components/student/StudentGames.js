@@ -26,6 +26,7 @@ import MultiplicationGridGame from '../games/MultiplicationGridGame';
 import PrecisionTimerGame from '../games/PrecisionTimerGame';
 import DodgeballGame from '../games/DodgeballGame';
 import ScoundrelLegendsGame from '../games/ScoundrelLegendsGame';
+import ZTypeGame from '../games/ZTypeGame';
 
 const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 
@@ -68,6 +69,21 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       new: true,
       storageKeySuffix: 'student-typing',
       logo: getGameLogo('typing-legends')
+    },
+    {
+      id: 'type-defender',
+      name: 'Type Defender',
+      icon: '🚀',
+      description: 'Destroy enemy ships by typing their words! A fast-paced space shooter where your keyboard is your weapon.',
+      component: ZTypeGame,
+      color: 'from-cyan-500 to-indigo-600',
+      difficulty: 'Easy - Expert',
+      time: '5-15 minutes',
+      category: 'educational',
+      featured: true,
+      new: true,
+      educational: true,
+      logo: getGameLogo('type-defender')
     },
     // Featured/New Games
     {
@@ -199,7 +215,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       category: 'featured',
       logo: getGameLogo('math-space-invaders')
     },
-    
+
     // Multiplayer Games
     {
       id: 'multiplayer-agar',
@@ -414,7 +430,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
 
         {/* Game Content */}
         <div className="max-w-7xl mx-auto">
-          <GameComponent 
+          <GameComponent
             studentData={studentData}
             updateStudentData={updateStudentData}
             showToast={showToast}

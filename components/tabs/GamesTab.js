@@ -24,17 +24,18 @@ import AmazingTypingAdventure from '../games/AmazingTypingAdventure';
 import MultiplicationGridGame from '../games/MultiplicationGridGame';
 import PrecisionTimerGame from '../games/PrecisionTimerGame';
 import DodgeballGame from '../games/DodgeballGame';
+import ZTypeGame from '../games/ZTypeGame';
 
 const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 
 const resolveLogoSource = (logo) => normalizeImageSource(logo, DEFAULT_GAME_LOGO);
 
-const GamesTab = ({ 
-  students, 
-  showToast, 
-  getAvatarImage, 
-  getPetImage, 
-  calculateCoins, 
+const GamesTab = ({
+  students,
+  showToast,
+  getAvatarImage,
+  getPetImage,
+  calculateCoins,
   calculateAvatarLevel,
   onAwardXP,
   onAwardCoins,
@@ -80,6 +81,20 @@ const GamesTab = ({
       featured: true,
       storageKeySuffix: 'teacher-typing',
       logo: getGameLogo('typing-legends')
+    },
+    {
+      id: 'type-defender',
+      name: 'Type Defender',
+      icon: '🚀',
+      description: 'Display a space shooter typing game where students destroy enemies by typing words.',
+      component: ZTypeGame,
+      color: 'from-cyan-500 to-indigo-600',
+      difficulty: 'Easy - Expert',
+      time: '5-15 minutes',
+      category: 'educational',
+      featured: true,
+      new: true,
+      logo: getGameLogo('type-defender')
     },
     // Featured/New Games
     {
@@ -196,7 +211,7 @@ const GamesTab = ({
       category: 'featured',
       logo: getGameLogo('math-space-invaders')
     },
-    
+
     // Multiplayer Games
     {
       id: 'battleships',
@@ -406,7 +421,7 @@ const GamesTab = ({
 
         {/* Game Content */}
         <div className="max-w-7xl mx-auto">
-          <GameComponent 
+          <GameComponent
             students={students}
             showToast={showToast}
             getAvatarImage={getAvatarImage}
@@ -418,7 +433,7 @@ const GamesTab = ({
             currentClassData={currentClassData}
             user={user}
             studentData={mockTeacherData}
-            updateStudentData={() => {}} // No saving for teacher preview
+            updateStudentData={() => { }} // No saving for teacher preview
             classmates={[]} // No leaderboard for teacher preview
             classData={currentClassData}
             storageKeySuffix={selectedGame.storageKeySuffix}

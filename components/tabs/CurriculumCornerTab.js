@@ -1,855 +1,225 @@
-// components/tabs/CurriculumCornerTab.js - COMPLETE REWRITE WITH INTERACTIVE ANGLES
-import React, { useState } from 'react';
+// components/tabs/CurriculumCornerTab.js
+// COMPLETE OVERHAUL: Banner-based navigation with lazy-loaded sections
+import React, { useState, Suspense, lazy } from 'react';
 
-// Import all activity components
-import LiteracyWarmup from '../curriculum/literacy/LiteracyWarmup';
-import PrepLiteracyWarmup from '../curriculum/literacy/PrepLiteracyWarmUp';
-import ReadingComprehension from '../curriculum/literacy/ReadingComprehension';
-import VisualWritingPrompts from '../curriculum/literacy/VisualWritingPrompts';
-import SpellingProgram from '../curriculum/literacy/SpellingProgram';
-import BeginnerReaders from '../curriculum/literacy/BeginnerReaders';
-import ReadingForFun from '../curriculum/literacy/ReadingForFun';
-import ReadersTheatre from '../curriculum/literacy/ReadersTheatre';
-import Morphology from '../curriculum/literacy/Morphology';
-import VocabularyCorner from '../curriculum/literacy/VocabularyCorner';
-import FlipCardsStudio from '../curriculum/general/FlipCardsStudio';
-import DisplaysGallery from '../curriculum/general/DisplaysGallery';
-import AreaPerimeterTool from '../curriculum/mathematics/AreaPerimeterTool';
-import MathWarmup from '../curriculum/mathematics/MathWarmup';
-import WorksheetGenerator from '../curriculum/mathematics/WorksheetGenerator';
-import NumbersBoard from '../curriculum/mathematics/NumbersBoard';
-import MathMentals from '../curriculum/mathematics/MathMentals';
-import InteractiveClock from '../curriculum/mathematics/InteractiveClock';
-import InteractiveAngles from '../curriculum/mathematics/InteractiveAngles'; // NEW IMPORT
-import DailyMathChallenges from '../curriculum/mathematics/DailyMathChallenges';
-import SolarSystemExplorer from '../curriculum/science/SolarSystemExplorer';
+// Lazy-load section components for performance
+const LiteracySection = lazy(() => import('../curriculum/sections/LiteracySection'));
+const MathematicsSection = lazy(() => import('../curriculum/sections/MathematicsSection'));
+const ScienceSection = lazy(() => import('../curriculum/sections/ScienceSection'));
+const GeographySection = lazy(() => import('../curriculum/sections/GeographySection'));
+const HistorySection = lazy(() => import('../curriculum/sections/HistorySection'));
+const DisplaysSection = lazy(() => import('../curriculum/sections/DisplaysSection'));
+const StudyStudioSection = lazy(() => import('../curriculum/sections/StudyStudioSection'));
+const ArtsSection = lazy(() => import('../curriculum/sections/ArtsSection'));
 
-// ===============================================
-// COMING SOON COMPONENT
-// ===============================================
-const ComingSoon = ({ toolName, description }) => (
-  <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-12 text-center">
-    <div className="text-6xl mb-4">🚧</div>
-    <h3 className="text-2xl font-bold text-gray-700 mb-2">{toolName}</h3>
-    <p className="text-gray-600 mb-6">{description}</p>
-    <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 max-w-md mx-auto">
-      <h4 className="font-bold text-blue-800 mb-2">🌟 Coming Soon!</h4>
-      <p className="text-blue-700 text-sm">This tool is under development and will be available in a future update.</p>
+// Loading spinner component
+const LoadingSpinner = () => (
+  <div className="flex items-center justify-center min-h-[400px]">
+    <div className="text-center space-y-4">
+      <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto"></div>
+      <p className="text-slate-600 font-medium">Loading section...</p>
     </div>
   </div>
 );
 
-// ===============================================
-// COMPLETE SUBJECT CONFIGURATION
-// ===============================================
-const literacyFocusAreas = [
-  {
-    id: 'all',
-    title: 'All Literacy Tools',
-    icon: '🌈',
-    gradient: 'from-pink-500 via-purple-500 to-indigo-500',
-    description: 'Browse the entire literacy toolkit for every learner.'
-  },
-  {
-    id: 'reading',
-    title: 'Reading Power',
-    icon: '📖',
-    gradient: 'from-blue-500 via-indigo-500 to-purple-500',
-    description: 'Comprehension, fluency passages, theatre and advanced texts.'
-  },
-  {
-    id: 'writing',
-    title: 'Writing Workshop',
-    icon: '✍️',
-    gradient: 'from-orange-500 via-pink-500 to-rose-500',
-    description: 'Creative prompts, poetry labs, grammar studios and handwriting.'
-  },
-  {
-    id: 'spelling',
-    title: 'Spelling & Word Study',
-    icon: '🔡',
-    gradient: 'from-emerald-500 via-green-500 to-lime-500',
-    description: 'Structured spelling journeys, morphology mastery and word work.'
-  },
-  {
-    id: 'phonics',
-    title: 'Phonics Foundations',
-    icon: '🔤',
-    gradient: 'from-teal-500 via-cyan-500 to-sky-500',
-    description: 'Sound recognition, SATPIN progressions and early literacy warmups.'
-  },
-  {
-    id: 'speaking',
-    title: 'Speaking & Performance',
-    icon: '🎤',
-    gradient: 'from-red-500 via-rose-500 to-fuchsia-500',
-    description: 'Readers theatre adventures and oral language confidence builders.'
-  }
-];
-
+// Subject configuration with banners
 const subjects = [
   {
     id: 'literacy',
     name: 'Literacy & Language Arts',
-    icon: '📚',
+    description: 'Reading, writing, spelling, phonics & vocabulary tools',
+    banner: '/Displays/Banners/Literacy.png',
     color: 'from-blue-500 to-purple-600',
-    description: 'Complete literacy toolkit: phonics, spelling, reading, writing, drama & vocabulary',
-    activities: [
-      {
-        id: 'beginner-readers',
-        name: 'Beginner Readers',
-        icon: '🔤',
-        description: 'Early reading activities for beginning readers - sound recognition, phonics, and simple passages',
-        component: BeginnerReaders,
-        literacyCategory: ['reading', 'phonics']
-      },
-      {
-        id: 'reading-for-fun',
-        name: 'Reading for Fun',
-        icon: '🎉',
-        description: 'Engaging texts for advanced readers - longer passages with modern topics kids love',
-        component: ReadingForFun,
-        isNew: true,
-        literacyCategory: 'reading',
-        underConstruction: true
-      },
-      {
-        id: 'readers-theatre',
-        name: 'Readers Theatre',
-        icon: '🎭',
-        description: 'Drama scripts with character roles for student performances and oral reading practice',
-        component: ReadersTheatre,
-        isNew: true,
-        literacyCategory: ['reading', 'speaking'],
-        underConstruction: true
-      },
-      {
-        id: 'morphology',
-        name: 'Morphology Master',
-        icon: '🔤',
-        description: 'Learn how words work! Teach prefixes, suffixes, and base words with engaging multi-level lessons',
-        component: Morphology,
-        isNew: true,
-        literacyCategory: 'spelling'
-      },
-      {
-        id: 'literacy-warmup',
-        name: 'Literacy Warmup',
-        icon: '🔥',
-        description: 'Interactive phonics and sound recognition activities',
-        component: LiteracyWarmup,
-        hasYearLevels: true,
-        yearLevels: [
-          {
-            id: 'prep',
-            name: 'Prep/Foundation',
-            description: 'SATPIN progression - single letter sounds (4-6 years)',
-            component: PrepLiteracyWarmup,
-            literacyCategory: 'phonics'
-          },
-          {
-            id: 'grade5',
-            name: 'Grade 5',
-            description: 'Complex blends and morphology (10-11 years)',
-            component: LiteracyWarmup,
-            literacyCategory: 'phonics'
-          }
-        ],
-        literacyCategory: 'phonics',
-        underConstruction: true
-      },
-      {
-        id: 'spelling-program',
-        name: 'Spelling & Fluency Studio',
-        icon: '🌀',
-        description: 'Assign spelling lists with perfectly matched reading passages, fluency games, and assessments',
-        component: SpellingProgram,
-        literacyCategory: ['spelling', 'reading'],
-        isUpdated: true
-      },
-      {
-        id: 'reading-comprehension',
-        name: 'Reading Comprehension',
-        icon: '🧠',
-        description: 'Text analysis and understanding activities',
-        component: ReadingComprehension,
-        literacyCategory: 'reading',
-        underConstruction: true
-      },
-      {
-        id: 'visual-writing-prompts',
-        name: 'Visual Writing Prompts',
-        icon: '🖼️',
-        description: 'Inspire creativity through visual storytelling prompts',
-        component: VisualWritingPrompts,
-        literacyCategory: 'writing'
-      },
-      {
-        id: 'vocabulary-builder',
-        name: 'Vocabulary Builder',
-        icon: '📖',
-        description: 'Discover definitions, synonyms, and build vibrant class word lists',
-        component: VocabularyCorner,
-        literacyCategory: ['spelling', 'reading'],
-        isNew: true,
-        underConstruction: true
-      },
-      {
-        id: 'grammar-workshop',
-        name: 'Grammar Workshop',
-        icon: '✏️',
-        description: 'Interactive grammar lessons and practice',
-        component: ComingSoon,
-        literacyCategory: 'writing'
-      },
-      {
-        id: 'poetry-corner',
-        name: 'Poetry Corner',
-        icon: '🎭',
-        description: 'Explore different forms of poetry writing',
-        component: ComingSoon,
-        literacyCategory: ['writing', 'speaking']
-      },
-      {
-        id: 'handwriting-practice',
-        name: 'Handwriting Practice',
-        icon: '✏️',
-        description: 'Letter formation and handwriting improvement',
-        component: ComingSoon,
-        literacyCategory: 'writing'
-      }
-    ]
-  },
-  {
-    id: 'study-studio',
-    name: 'Study & Revision Studio',
-    icon: '🧠',
-    color: 'from-indigo-500 to-purple-600',
-    description: 'Quick review games and flip decks for any subject area',
-    activities: [
-      {
-        id: 'flip-cards',
-        name: 'Flip Cards Studio',
-        icon: '🎴',
-        description: 'Fullscreen flip cards with default decks and a simple deck builder',
-        component: FlipCardsStudio,
-        isNew: true
-      }
-    ]
-  },
-  {
-    id: 'displays',
-    name: 'Displays',
-    icon: '🖼️',
-    color: 'from-fuchsia-500 to-indigo-600',
-    description: 'Printable classroom displays organised by subject area',
-    activities: [
-      {
-        id: 'classroom-displays',
-        name: 'Classroom Displays Library',
-        icon: '🖨️',
-        description: 'Browse, fullscreen, and print subject-specific displays',
-        component: DisplaysGallery,
-        isNew: true
-      }
-    ]
+    icon: '📚',
+    component: LiteracySection
   },
   {
     id: 'mathematics',
     name: 'Mathematics',
+    description: 'Interactive math tools and daily challenges',
+    banner: '/Displays/Banners/Mathematics.png',
+    color: 'from-green-500 to-emerald-600',
     icon: '🔢',
-    color: 'from-green-500 to-green-600',
-    description: 'Math tools and number activities',
-    activities: [
-      {
-        id: 'daily-math-challenges',
-        name: 'Daily Math Challenge Studio',
-        icon: '🎯',
-        description: 'Display rich daily challenges, present in fullscreen, and assign tasks to students',
-        component: DailyMathChallenges,
-        isNew: true
-      },
-      {
-        id: 'interactive-angles',
-        name: 'Interactive Angles',
-        icon: '📐',
-        description: 'Complete angles teaching tool - learn, measure, create, identify & play with angles!',
-        component: InteractiveAngles,
-        isNew: true
-      },
-      {
-        id: 'interactive-clock',
-        name: 'Interactive Clock',
-        icon: '🕒',
-        description: 'Learn to tell time with draggable hands and digital display',
-        component: InteractiveClock
-      },
-      {
-        id: 'numbers-board',
-        name: 'Numbers Board',
-        icon: '💯',
-        description: 'Interactive hundreds board for number patterns and exploration',
-        component: NumbersBoard
-      },
-      {
-        id: 'times-tables',
-        name: 'Times Tables',
-        icon: '✖️',
-        description: 'Multiplication practice and games',
-        component: ComingSoon
-      },
-      {
-        id: 'problem-solving',
-        name: 'Problem Solving',
-        icon: '🧮',
-        description: 'Word problems and mathematical thinking',
-        component: ComingSoon
-      },
-      {
-        id: 'fractions',
-        name: 'Fractions',
-        icon: '½',
-        description: 'Visual fraction learning tools',
-        component: ComingSoon
-      },
-      {
-        id: 'math-mentals',
-        name: 'Math Mentals',
-        icon: '🧮',
-        description: 'Daily number facts practice for automatic recall - like Wordle for math!',
-        component: MathMentals
-      },
-      {
-        id: 'worksheet-generator',
-        name: 'Worksheet Generator',
-        icon: '📄',
-        description: 'Create professional printable math worksheets for any topic',
-        component: WorksheetGenerator,
-        underConstruction: true
-      },
-      {
-        id: 'math-warmup',
-        name: 'Math Warmup',
-        icon: '🔥',
-        description: 'Daily number activities and mathematical thinking',
-        component: MathWarmup,
-        underConstruction: true
-      },
-      {
-        id: 'area-perimeter',
-        name: 'Area & Perimeter',
-        icon: '📏',
-        description: 'Interactive tool for exploring area and perimeter concepts',
-        component: AreaPerimeterTool,
-        underConstruction: true
-      }
-    ]
+    component: MathematicsSection
   },
   {
     id: 'science',
     name: 'Science',
-    icon: '🔬',
-    color: 'from-purple-500 to-purple-600',
     description: 'Scientific exploration and experiments',
-    activities: [
-      {
-        id: 'virtual-experiments',
-        name: 'Virtual Experiments',
-        icon: '⚗️',
-        description: 'Safe virtual science experiments',
-        component: ComingSoon
-      },
-      {
-        id: 'body-systems',
-        name: 'Body Systems',
-        icon: '🫀',
-        description: 'Learn about the human body',
-        component: ComingSoon
-      },
-      {
-        id: 'weather-station',
-        name: 'Weather Station',
-        icon: '🌤️',
-        description: 'Weather tracking and meteorology',
-        component: ComingSoon
-      },
-      {
-        id: 'solar-system',
-        name: 'Solar System',
-        icon: '🪐',
-        description: 'Explore planets and space',
-        component: SolarSystemExplorer,
-        isNew: true
-      }
-    ]
+    banner: '/Displays/Banners/Science.png',
+    color: 'from-purple-500 to-violet-600',
+    icon: '🔬',
+    component: ScienceSection
   },
   {
     id: 'geography',
     name: 'Geography',
-    icon: '🌍',
-    color: 'from-teal-500 to-teal-600',
     description: 'World maps, countries, and cultures',
-    activities: [
-      {
-        id: 'world-map',
-        name: 'Interactive World Map',
-        icon: '🗺️',
-        description: 'Explore countries and continents',
-        component: ComingSoon
-      },
-      {
-        id: 'country-explorer',
-        name: 'Country Explorer',
-        icon: '🏛️',
-        description: 'Learn about different countries and cultures',
-        component: ComingSoon
-      },
-      {
-        id: 'landmarks',
-        name: 'World Landmarks',
-        icon: '🗽',
-        description: 'Famous landmarks around the world',
-        component: ComingSoon
-      }
-    ]
+    banner: '/Displays/Banners/GEOGRAPHY.png',
+    color: 'from-teal-500 to-cyan-600',
+    icon: '🌍',
+    component: GeographySection
   },
   {
     id: 'history',
     name: 'History',
-    icon: '🏺',
-    color: 'from-amber-500 to-amber-600',
     description: 'Historical events and timelines',
-    activities: [
-      {
-        id: 'timeline-builder',
-        name: 'Timeline Builder',
-        icon: '📅',
-        description: 'Create and explore historical timelines',
-        component: ComingSoon
-      },
-      {
-        id: 'famous-people',
-        name: 'Famous People',
-        icon: '👑',
-        description: 'Learn about historical figures',
-        component: ComingSoon
-      },
-      {
-        id: 'ancient-civilizations',
-        name: 'Ancient Civilizations',
-        icon: '🏛️',
-        description: 'Explore ancient cultures and societies',
-        component: ComingSoon
-      }
-    ]
+    banner: '/Displays/Banners/HISTORY.png',
+    color: 'from-amber-500 to-orange-600',
+    icon: '🏺',
+    component: HistorySection
+  },
+  {
+    id: 'displays',
+    name: 'Classroom Displays',
+    description: 'Printable posters and classroom decorations',
+    banner: '/Displays/Banners/Displays.png',
+    color: 'from-fuchsia-500 to-pink-600',
+    icon: '🖼️',
+    component: DisplaysSection
+  },
+  {
+    id: 'study-studio',
+    name: 'Study & Revision',
+    description: 'Flip cards and revision tools',
+    banner: null, // No specific banner
+    color: 'from-indigo-500 to-purple-600',
+    icon: '🧠',
+    component: StudyStudioSection
   },
   {
     id: 'arts',
     name: 'Arts & Creativity',
-    icon: '🎨',
-    color: 'from-pink-500 to-pink-600',
     description: 'Creative arts and expression tools',
-    activities: [
-      {
-        id: 'art-gallery',
-        name: 'Art Gallery',
-        icon: '🖼️',
-        description: 'Explore famous artworks and artists',
-        component: ComingSoon
-      },
-      {
-        id: 'music-maker',
-        name: 'Music Maker',
-        icon: '🎵',
-        description: 'Create and learn about music',
-        component: ComingSoon
-      },
-      {
-        id: 'drama-workshop',
-        name: 'Drama Workshop',
-        icon: '🎭',
-        description: 'Acting and theater activities',
-        component: ComingSoon
-      }
-    ]
+    banner: null, // No specific banner
+    color: 'from-pink-500 to-rose-600',
+    icon: '🎨',
+    component: ArtsSection
   }
 ];
 
-// ===============================================
-// MAIN CURRICULUM CORNER COMPONENT
-// ===============================================
-const CurriculumCornerTab = ({ 
-  students = [], 
-  showToast = () => {},
-  saveData = () => {},
+// Main Curriculum Corner Component
+const CurriculumCornerTab = ({
+  students = [],
+  showToast = () => { },
+  saveData = () => { },
   loadedData = {}
 }) => {
   const [activeSubject, setActiveSubject] = useState(null);
-  const [activeActivity, setActiveActivity] = useState(null);
-  const [selectedYearLevel, setSelectedYearLevel] = useState(null);
-  const [literacyFocus, setLiteracyFocus] = useState('all');
+  const [imageErrors, setImageErrors] = useState({});
 
-  const handleSubjectSelect = (subject) => {
-    setActiveSubject(subject);
-    setActiveActivity(null);
-    setSelectedYearLevel(null);
-    setLiteracyFocus('all');
+  const handleImageError = (subjectId) => {
+    setImageErrors(prev => ({ ...prev, [subjectId]: true }));
   };
 
-  const handleActivitySelect = (activity) => {
-    if (activity.hasYearLevels) {
-      // Don't set activity yet, show year level selection first
-      setActiveActivity(activity);
-      setSelectedYearLevel(null);
-    } else {
-      setActiveActivity(activity);
-      setSelectedYearLevel(null);
-    }
-  };
-
-  const handleYearLevelSelect = (yearLevel) => {
-    setSelectedYearLevel(yearLevel);
-  };
-
-  const handleBackToSubjects = () => {
-    setActiveSubject(null);
-    setActiveActivity(null);
-    setSelectedYearLevel(null);
-    setLiteracyFocus('all');
-  };
-
-  const handleBackToActivities = () => {
-    setActiveActivity(null);
-    setSelectedYearLevel(null);
-  };
-
-  // Render specific activity
-  if (activeActivity && (!activeActivity.hasYearLevels || selectedYearLevel)) {
-    const ActivityComponent = selectedYearLevel ? selectedYearLevel.component : activeActivity.component;
-    
-    // Pass additional props to activities for Firebase saving
-    const activityProps = {
-      showToast,
-      students
-    };
-    
-    // Add Firebase save/load props for specific activities that need them
-    if (activeActivity.id === 'literacy-warmup' ||
-        activeActivity.id === 'math-warmup' ||
-        activeActivity.id === 'spelling-program' ||
-        activeActivity.id === 'fluency-practice' ||
-        activeActivity.id === 'math-mentals' ||
-        activeActivity.id === 'interactive-clock' ||
-        activeActivity.id === 'interactive-angles' ||
-        activeActivity.id === 'daily-math-challenges' ||
-        activeActivity.id === 'beginner-readers' ||
-        activeActivity.id === 'reading-for-fun' ||
-        activeActivity.id === 'readers-theatre' ||
-        activeActivity.id === 'morphology') {
-      activityProps.saveData = saveData;
-      activityProps.loadedData = loadedData;
-    }
-    
-    return (
-      <div className="space-y-6">
-        {/* Breadcrumb Navigation */}
-        <div className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-slate-600">
-            <button onClick={handleBackToSubjects} className="hover:text-blue-600 transition-colors">Curriculum Corner</button>
-            <span>→</span>
-            <button onClick={handleBackToActivities} className="hover:text-blue-600 transition-colors">{activeSubject.name}</button>
-            <span>→</span>
-            <span className="font-semibold text-slate-800">
-              {activeActivity.name}
-              {selectedYearLevel && <span className="text-blue-600"> ({selectedYearLevel.name})</span>}
-            </span>
-          </div>
-          <button onClick={handleBackToActivities} className="bg-slate-500 text-white px-4 py-2 rounded-lg hover:bg-slate-600 transition-colors">← Back to {activeSubject.name}</button>
-        </div>
-
-        {/* Activity Content */}
-        <ActivityComponent {...activityProps} />
-      </div>
-    );
-  }
-
-  // Render year level selection for activities that have multiple year levels
-  if (activeActivity && activeActivity.hasYearLevels && !selectedYearLevel) {
-    return (
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-slate-600">
-            <button onClick={handleBackToSubjects} className="hover:text-blue-600 transition-colors">Curriculum Corner</button>
-            <span>→</span>
-            <button onClick={handleBackToActivities} className="hover:text-blue-600 transition-colors">{activeSubject.name}</button>
-            <span>→</span>
-            <span className="font-semibold text-slate-800">{activeActivity.name}</span>
-          </div>
-          <button onClick={handleBackToActivities} className="bg-slate-500 text-white px-4 py-2 rounded-lg hover:bg-slate-600 transition-colors">← Back to Activities</button>
-        </div>
-
-        {/* Year Level Selection */}
-        <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-2xl p-8 shadow-lg relative overflow-hidden">
-          <div className="absolute inset-0 bg-black bg-opacity-10"></div>
-          <div className="relative z-10 text-center">
-            <h2 className="text-4xl font-bold mb-4 flex items-center justify-center">
-              <span className="text-3xl mr-3">{activeActivity.icon}</span>
-              {activeActivity.name}
-            </h2>
-            <p className="text-xl opacity-90">Choose your year level</p>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h3 className="text-2xl font-bold text-slate-800 mb-6 text-center">Select Year Level</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-            {activeActivity.yearLevels.map(yearLevel => (
-              <button
-                key={yearLevel.id}
-                onClick={() => handleYearLevelSelect(yearLevel)}
-                className="p-6 rounded-xl border-2 border-slate-200 hover:border-blue-300 bg-white shadow-sm hover:shadow-md transition-all duration-300 text-left hover:scale-105 group"
-              >
-                <div className="text-center mb-4">
-                  <div className="text-5xl mb-3 group-hover:scale-110 transition-transform">
-                    {yearLevel.id === 'prep' ? '🌱' : '🚀'}
-                  </div>
-                  <h4 className="font-bold text-slate-800 text-xl mb-2">{yearLevel.name}</h4>
-                  <p className="text-slate-600 text-sm leading-tight">{yearLevel.description}</p>
-                </div>
-                <div className="text-center">
-                  <span className="text-blue-500 font-semibold text-sm group-hover:text-blue-600">Select →</span>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Render activities for selected subject
+  // Render active subject section
   if (activeSubject) {
-    const isLiteracySubject = activeSubject.id === 'literacy';
-    const displayedActivities = isLiteracySubject
-      ? activeSubject.activities.filter((activity) => {
-          if (literacyFocus === 'all') {
-            return true;
-          }
-
-          const category = activity.literacyCategory;
-
-          if (!category) {
-            return false;
-          }
-
-          if (Array.isArray(category)) {
-            return category.includes(literacyFocus);
-          }
-
-          return category === literacyFocus;
-        })
-      : activeSubject.activities;
-    const orderedActivities = displayedActivities
-      .slice()
-      .sort((a, b) => {
-        if (a.underConstruction === b.underConstruction) return 0;
-        return a.underConstruction ? 1 : -1;
-      });
-    const selectedFocus = isLiteracySubject
-      ? literacyFocusAreas.find((area) => area.id === literacyFocus)
-      : null;
+    const SubjectComponent = activeSubject.component;
 
     return (
-      <div className="space-y-6">
-        {/* Subject Header */}
-        <div className={`text-center bg-gradient-to-r ${activeSubject.color} text-white rounded-2xl p-8 shadow-lg relative overflow-hidden`}>
-          <div className="absolute inset-0 bg-black bg-opacity-10"></div>
-          <div className="relative z-10">
-            <h2 className="text-4xl font-bold mb-4 flex items-center justify-center">
-              <span className="text-3xl mr-3">{activeSubject.icon}</span>
-              {activeSubject.name}
-            </h2>
-            <p className="text-xl opacity-90">{activeSubject.description}</p>
-          </div>
-          <button onClick={handleBackToSubjects} className="absolute top-4 right-4 bg-black bg-opacity-20 text-white px-4 py-2 rounded-lg hover:bg-opacity-30 transition-all">← Back</button>
-        </div>
-
-        {isLiteracySubject && (
-          <div className="bg-white rounded-3xl shadow-lg p-6 md:p-8 space-y-6">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-              <div>
-                <p className="text-xs font-semibold tracking-[0.3em] uppercase text-purple-500">Literacy Focus</p>
-                <h3 className="text-3xl md:text-4xl font-black text-slate-800 mt-2 leading-tight">
-                  Choose a colourful pathway for your class
-                </h3>
-                <p className="text-slate-500 mt-3 text-base md:text-lg max-w-2xl">
-                  Launch instantly into Reading, Writing, Spelling, Phonics or Speaking adventures with bold buttons designed for big screens.
-                </p>
-              </div>
-              {selectedFocus && (
-                <div className={`bg-gradient-to-r ${selectedFocus.gradient} text-white rounded-2xl px-5 py-4 shadow-xl flex flex-col sm:flex-row sm:items-center gap-2 max-w-sm`}> 
-                  <span className="text-3xl">{selectedFocus.icon}</span>
-                  <div>
-                    <p className="text-xs uppercase tracking-widest text-white/70">Currently viewing</p>
-                    <p className="text-lg font-semibold leading-tight">{selectedFocus.title}</p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {literacyFocusAreas.map((area) => {
-                const isActive = literacyFocus === area.id;
-
-                return (
-                  <button
-                    key={area.id}
-                    type="button"
-                    onClick={() => setLiteracyFocus(area.id)}
-                    className={`group relative overflow-hidden rounded-2xl p-6 text-left transition-all duration-300 transform hover:scale-[1.02] focus:outline-none focus-visible:ring-4 focus-visible:ring-offset-2 focus-visible:ring-purple-400 focus-visible:ring-offset-white ${
-                      isActive ? 'shadow-2xl ring-4 ring-purple-200' : 'shadow-lg'
-                    }`}
-                    aria-pressed={isActive}
-                  >
-                    <div className={`absolute inset-0 bg-gradient-to-br ${area.gradient} ${isActive ? 'opacity-100' : 'opacity-90'}`}></div>
-                    <div className="absolute inset-0 bg-white/10 mix-blend-overlay"></div>
-                    <div className="relative z-10 text-white space-y-3">
-                      <div className="text-4xl drop-shadow-lg">{area.icon}</div>
-                      <h4 className="text-2xl font-extrabold tracking-tight drop-shadow">{area.title}</h4>
-                      <p className="text-sm leading-snug text-white/90">{area.description}</p>
-                      <span className={`inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wider rounded-full px-3 py-1 transition-all ${
-                        isActive ? 'bg-white/25 text-white shadow-inner' : 'bg-white/20 text-white/80 group-hover:bg-white/30 group-hover:text-white'
-                      }`}>
-                        {isActive ? 'Selected' : 'Tap to explore'}
-                        <span>→</span>
-                      </span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Activities Grid */}
-        <div className={`grid grid-cols-1 md:grid-cols-2 ${isLiteracySubject ? 'xl:grid-cols-2 2xl:grid-cols-3' : 'lg:grid-cols-3'} gap-6`}>
-          {orderedActivities.map(activity => (
-            <button
-              key={activity.id}
-              onClick={() => handleActivitySelect(activity)}
-              className="bg-white rounded-xl shadow-sm p-6 text-left hover:shadow-md transition-all duration-300 hover:scale-105 border border-slate-200 hover:border-blue-300 relative"
-            >
-              {/* New/Updated Badge */}
-              {activity.isNew && (
-                <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full animate-pulse">
-                  NEW!
-                </div>
-              )}
-              {activity.isUpdated && (
-                <div className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                  UPDATED
-                </div>
-              )}
-              
-              <div className="flex items-center gap-4 mb-4">
-                <div className="text-4xl">{activity.icon}</div>
-                <div>
-                  <h3 className="text-xl font-bold text-slate-800">{activity.name}</h3>
-                  <p className="text-slate-600 text-sm">{activity.description}</p>
-                  {activity.hasYearLevels && (
-                    <p className="text-blue-600 text-xs font-semibold mt-1">
-                      📚 Multiple year levels available
-                    </p>
-                  )}
-                </div>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                  activity.underConstruction
-                    ? 'bg-amber-100 text-amber-700'
-                    : activity.component === ComingSoon
-                      ? 'bg-amber-100 text-amber-700'
-                      : 'bg-green-100 text-green-700'
-                }`}>
-                  {activity.underConstruction
-                    ? 'Under Construction'
-                    : activity.component === ComingSoon
-                      ? 'Coming Soon'
-                      : 'Available'}
-                </span>
-                <div className="flex items-center gap-2">
-                  {activity.hasYearLevels && (
-                    <span className="text-blue-500 text-xs">
-                      {activity.yearLevels?.length || 2} levels
-                    </span>
-                  )}
-                  <span className="text-blue-500 font-semibold">Open →</span>
-                </div>
-              </div>
-              {activity.underConstruction && (
-                <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] rounded-xl flex items-center justify-center text-center p-4 pointer-events-none">
-                  <span className="bg-amber-500 text-white px-3 py-1 rounded-full shadow">Under Construction</span>
-                </div>
-              )}
-            </button>
-          ))}
-          {orderedActivities.length === 0 && (
-            <div className="col-span-full">
-              <div className="bg-white border border-purple-200 rounded-2xl p-8 text-center shadow-sm">
-                <div className="text-4xl mb-3">✨</div>
-                <h4 className="text-2xl font-bold text-slate-800 mb-2">Fresh literacy experiences coming soon!</h4>
-                <p className="text-slate-500 max-w-2xl mx-auto">
-                  We are adding even more {selectedFocus?.title?.toLowerCase() || 'literacy'} resources. Choose a different pathway or check back shortly for new tools.
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+      <Suspense fallback={<LoadingSpinner />}>
+        <SubjectComponent
+          onBack={() => setActiveSubject(null)}
+          showToast={showToast}
+          students={students}
+          saveData={saveData}
+          loadedData={loadedData}
+        />
+      </Suspense>
     );
   }
 
-  // Render main subject selection
+  // Main menu with banners
   return (
-    <div className="space-y-6">
-      {/* Main Header */}
-      <div className="text-center bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 text-white rounded-2xl p-8 shadow-lg relative overflow-hidden">
-        <div className="absolute inset-0 bg-black bg-opacity-10"></div>
-        <div className="relative z-10">
-          <h2 className="text-5xl font-bold mb-4 flex items-center justify-center">
-            <span className="text-4xl mr-4">📖</span>
-            Curriculum Corner
-            <span className="text-4xl ml-4">🎓</span>
-          </h2>
-          <p className="text-xl opacity-90">Subject-based teaching tools for every classroom need</p>
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="text-center">
+        <img
+          src="/Displays/Banners/CurriculumCorner.png"
+          alt="Curriculum Corner"
+          className="h-24 md:h-32 mx-auto object-contain mb-4"
+          onError={(e) => {
+            e.target.style.display = 'none';
+            e.target.nextSibling.style.display = 'block';
+          }}
+        />
+        <div className="hidden text-center bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 text-white rounded-2xl p-8">
+          <h2 className="text-4xl font-bold">📖 Curriculum Corner 🎓</h2>
         </div>
+        <p className="text-slate-600 text-lg mt-2">Subject-based teaching tools for every classroom need</p>
       </div>
 
-      {/* Subject Selection */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <h3 className="text-2xl font-bold text-slate-800 mb-6 text-center">Choose Your Subject Area</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {subjects.map(subject => (
-            <button
-              key={subject.id}
-              onClick={() => handleSubjectSelect(subject)}
-              className="p-6 rounded-xl border border-slate-200 hover:border-slate-300 bg-white shadow-sm hover:shadow-md transition-all duration-300 text-center hover:scale-105 group"
-            >
-              <div className="text-5xl mb-4 group-hover:scale-110 transition-transform">{subject.icon}</div>
-              <h4 className="font-bold text-slate-800 text-lg mb-2">{subject.name}</h4>
-              <p className="text-sm text-slate-600 leading-tight mb-4">{subject.description}</p>
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-slate-500">
-                  {subject.activities.length} tool{subject.activities.length !== 1 ? 's' : ''}
-                </span>
-                <span className="text-blue-500 font-semibold text-sm group-hover:text-blue-600">Enter →</span>
+      {/* Subject Grid with Banners */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {subjects.map(subject => (
+          <button
+            key={subject.id}
+            onClick={() => setActiveSubject(subject)}
+            className="group relative rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.03] focus:outline-none focus:ring-4 focus:ring-purple-300"
+          >
+            {/* Banner Image or Gradient Fallback */}
+            {subject.banner && !imageErrors[subject.id] ? (
+              <div className="relative aspect-[16/9] overflow-hidden">
+                <img
+                  src={subject.banner}
+                  alt={subject.name}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  onError={() => handleImageError(subject.id)}
+                />
+                {/* Overlay on hover */}
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300"></div>
               </div>
-            </button>
-          ))}
-        </div>
+            ) : (
+              /* Gradient fallback for subjects without banners */
+              <div className={`relative aspect-[16/9] bg-gradient-to-br ${subject.color} flex items-center justify-center`}>
+                <div className="text-center text-white p-6">
+                  <span className="text-6xl block mb-4">{subject.icon}</span>
+                  <h3 className="text-2xl font-bold">{subject.name}</h3>
+                </div>
+              </div>
+            )}
+
+            {/* Info Bar */}
+            <div className={`bg-gradient-to-r ${subject.color} p-4`}>
+              <div className="flex items-center justify-between">
+                <div className="text-white">
+                  <h3 className="font-bold text-lg flex items-center gap-2">
+                    <span>{subject.icon}</span>
+                    {subject.name}
+                  </h3>
+                  <p className="text-white/80 text-sm">{subject.description}</p>
+                </div>
+                <div className="bg-white/20 rounded-full p-2 group-hover:bg-white/30 transition-colors">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </button>
+        ))}
       </div>
 
+      {/* Quick Tips */}
+      <div className="bg-gradient-to-r from-slate-50 to-indigo-50 rounded-2xl p-6 border border-slate-200">
+        <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+          <span>💡</span> Quick Navigation Tips
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+          <div className="bg-white rounded-xl p-4 shadow-sm">
+            <div className="font-semibold text-blue-700 mb-1">📚 Literacy</div>
+            <div className="text-slate-600">Has focus area filters for Reading, Writing, Spelling, Phonics & Speaking</div>
+          </div>
+          <div className="bg-white rounded-xl p-4 shadow-sm">
+            <div className="font-semibold text-green-700 mb-1">🔢 Mathematics</div>
+            <div className="text-slate-600">Daily math challenges, interactive angles & clock tools</div>
+          </div>
+          <div className="bg-white rounded-xl p-4 shadow-sm">
+            <div className="font-semibold text-fuchsia-700 mb-1">🖼️ Displays</div>
+            <div className="text-slate-600">Browse and print subject-specific classroom decorations</div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
