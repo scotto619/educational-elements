@@ -1,714 +1,775 @@
-// components/games/MultiplicationGridGame.js
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+// components/games/MultiplicationGridGame.js - COMPLETE OVERHAUL
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 
-const MIN_GRID_SIZE = 5;
-const MAX_GRID_SIZE = 10;
+// ============================================
+// CONSTANTS
+// ============================================
 const GRID_SIZES = [5, 7, 10];
 const OPERATIONS = ['multiply', 'add', 'subtract'];
 const OPERATION_SYMBOLS = { multiply: '×', add: '+', subtract: '−' };
 const OPERATION_NAMES = { multiply: 'Multiplication', add: 'Addition', subtract: 'Subtraction' };
-const SCOREBOARD_SIZE = 5;
-const CLASS_LEADERBOARD_SIZE = 5;
+const OPERATION_COLORS = {
+  multiply: { from: '#8B5CF6', to: '#7C3AED', bg: 'from-violet-500 to-purple-600' },
+  add: { from: '#10B981', to: '#059669', bg: 'from-emerald-500 to-green-600' },
+  subtract: { from: '#F59E0B', to: '#D97706', bg: 'from-amber-500 to-orange-600' }
+};
+const SCOREBOARD_SIZE = 10;
+const CLASS_LEADERBOARD_SIZE = 10;
 
+// ============================================
+// UTILITY FUNCTIONS  
+// ============================================
 const getStudentIdentifier = (student) =>
-  student?.id ||
-  student?.studentId ||
-  student?.uid ||
-  student?.userId ||
-  student?.email ||
-  null;
-
-const parseNumber = (value) => {
-  if (value == null) return null;
-  const parsed = typeof value === 'string' ? Number.parseFloat(value) : value;
-  return Number.isFinite(parsed) ? parsed : null;
-};
-
-const normalizeStoredAttempt = (attempt, index) => {
-  if (!attempt) return null;
-
-  const timeSeconds = parseNumber(attempt.timeSeconds);
-  const gridSize = parseNumber(attempt.gridSize);
-  
-  if (!Number.isFinite(timeSeconds) || !Number.isFinite(gridSize)) {
-    return null;
-  }
-
-  return {
-    id: attempt.id || `attempt-${index}`,
-    timeSeconds,
-    gridSize: gridSize,
-    operation: attempt.operation || 'multiply',
-    createdAt: attempt.createdAt || attempt.timestamp || null
-  };
-};
+  student?.id || student?.studentId || student?.uid || student?.userId || student?.email || null;
 
 const formatTime = (seconds) => {
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+  if (seconds == null || !Number.isFinite(seconds)) return '--:--';
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  const ms = Math.floor((seconds % 1) * 10);
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${ms}`;
+};
+
+const formatTimeShort = (seconds) => {
+  if (seconds == null || !Number.isFinite(seconds)) return '--:--';
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
 
 const formatTimestamp = (value) => {
   if (!value) return null;
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) return null;
-  return date.toLocaleString();
+  return date.toLocaleDateString();
 };
 
+// Generate unique random numbers
+const generateUniqueNumbers = (count, min, max) => {
+  const numbers = [];
+  const available = [];
+  for (let i = min; i <= max; i++) available.push(i);
+
+  for (let i = 0; i < count && available.length > 0; i++) {
+    const idx = Math.floor(Math.random() * available.length);
+    numbers.push(available.splice(idx, 1)[0]);
+  }
+  return numbers;
+};
+
+// Calculate answer based on operation
+const calculateAnswer = (topNum, sideNum, operation) => {
+  switch (operation) {
+    case 'multiply': return topNum * sideNum;
+    case 'add': return topNum + sideNum;
+    case 'subtract': return Math.abs(topNum - sideNum);
+    default: return topNum * sideNum;
+  }
+};
+
+// ============================================
+// MAIN COMPONENT
+// ============================================
 const MultiplicationGridGame = ({
   studentData,
   updateStudentData,
-  showToast = () => {},
+  showToast = () => { },
   classmates = []
 }) => {
+  // Settings
+  const [gridSize, setGridSize] = useState(5);
+  const [operation, setOperation] = useState('multiply');
+
+  // Grid data - all computed together to prevent desync
+  const [gridData, setGridData] = useState(null);
+
   // Game state
-  const [currentSize, setCurrentSize] = useState(5);
-  const [currentOperation, setCurrentOperation] = useState('multiply');
-  const [grid, setGrid] = useState({});
-  const [topNumbers, setTopNumbers] = useState([]);
-  const [sideNumbers, setSideNumbers] = useState([]);
+  const [answers, setAnswers] = useState({});
+  const [gameState, setGameState] = useState('idle'); // idle, playing, complete
   const [timer, setTimer] = useState(0);
-  const [gameStarted, setGameStarted] = useState(false);
-  const [gameCompleted, setGameCompleted] = useState(false);
-  const [timerInterval, setTimerIntervalState] = useState(null);
-  
-  // Progress tracking
+  const [showCelebration, setShowCelebration] = useState(false);
+
+  // Saved progress
   const [bestTimes, setBestTimes] = useState({});
   const [scoreboard, setScoreboard] = useState([]);
   const [attemptCount, setAttemptCount] = useState(0);
-  const [completionMessage, setCompletionMessage] = useState('');
-  const [showCompletion, setShowCompletion] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [lastSavedAt, setLastSavedAt] = useState(null);
 
-  // Load saved data from Firebase
+  // Refs for timer
+  const timerRef = useRef(null);
+  const startTimeRef = useRef(null);
+  const inputRefs = useRef({});
+
+  // ============================================
+  // GRID GENERATION
+  // ============================================
+  const generateGrid = useCallback(() => {
+    // Clear any running timer
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+
+    // Generate numbers based on size and operation
+    // For larger grids, we need a bigger number pool
+    const maxNumber = gridSize <= 5 ? 10 : 12;
+    const minNumber = operation === 'subtract' ? 2 : 1;
+
+    // Generate top and side numbers INDEPENDENTLY
+    // This allows the same numbers to appear on both axes (like a real multiplication table)
+    // and ensures we always have enough numbers for any grid size
+    const topNums = generateUniqueNumbers(gridSize, minNumber, maxNumber).sort((a, b) => a - b);
+    const sideNums = generateUniqueNumbers(gridSize, minNumber, maxNumber).sort((a, b) => a - b);
+
+    // Build grid cells with correct answers
+    const cells = [];
+    for (let row = 0; row < gridSize; row++) {
+      for (let col = 0; col < gridSize; col++) {
+        const correctAnswer = calculateAnswer(topNums[col], sideNums[row], operation);
+        cells.push({
+          row,
+          col,
+          key: `${row}-${col}`,
+          topNum: topNums[col],
+          sideNum: sideNums[row],
+          correctAnswer
+        });
+      }
+    }
+
+    // Set all state at once
+    setGridData({
+      topNumbers: topNums,
+      sideNumbers: sideNums,
+      cells,
+      size: gridSize,
+      operation
+    });
+    setAnswers({});
+    setTimer(0);
+    setGameState('idle');
+    setShowCelebration(false);
+    startTimeRef.current = null;
+  }, [gridSize, operation]);
+
+  // Generate grid on mount and when settings change
+  useEffect(() => {
+    generateGrid();
+  }, [gridSize, operation]);
+
+  // ============================================
+  // TIMER
+  // ============================================
+  useEffect(() => {
+    if (gameState === 'playing' && startTimeRef.current) {
+      timerRef.current = setInterval(() => {
+        setTimer((Date.now() - startTimeRef.current) / 1000);
+      }, 100);
+
+      return () => {
+        if (timerRef.current) clearInterval(timerRef.current);
+      };
+    }
+    return undefined;
+  }, [gameState]);
+
+  // ============================================
+  // LOAD SAVED DATA
+  // ============================================
   useEffect(() => {
     const saved = studentData?.gameProgress?.multiplicationGrid;
-
     if (!saved) {
       setBestTimes({});
       setScoreboard([]);
       setAttemptCount(0);
-      setLastSavedAt(null);
       return;
     }
 
-    // Load best times
-    if (saved.bestTimes) {
-      setBestTimes(saved.bestTimes);
+    if (saved.bestTimes) setBestTimes(saved.bestTimes);
+
+    if (Array.isArray(saved.scoreboard)) {
+      const normalized = saved.scoreboard
+        .filter(e => e && typeof e.timeSeconds === 'number')
+        .sort((a, b) => a.timeSeconds - b.timeSeconds)
+        .slice(0, SCOREBOARD_SIZE);
+      setScoreboard(normalized);
     }
 
-    // Load scoreboard
-    const normalizedAttempts = Array.isArray(saved.scoreboard)
-      ? saved.scoreboard
-          .map((entry, index) => normalizeStoredAttempt(entry, index))
-          .filter(Boolean)
-          .sort((a, b) => a.timeSeconds - b.timeSeconds)
-          .slice(0, SCOREBOARD_SIZE)
-      : [];
-
-    setScoreboard(normalizedAttempts);
-    setAttemptCount(saved.attemptCount || normalizedAttempts.length || 0);
-
-    if (saved.lastPlayed) {
-      const timestamp = new Date(saved.lastPlayed);
-      if (!Number.isNaN(timestamp.getTime())) {
-        setLastSavedAt(timestamp);
-      }
-    }
+    setAttemptCount(saved.attemptCount || 0);
   }, [studentData?.gameProgress?.multiplicationGrid]);
 
-  // Timer effect
-  useEffect(() => {
-    if (gameStarted && !gameCompleted) {
-      const interval = setInterval(() => {
-        setTimer((prev) => prev + 1);
-      }, 1000);
-      setTimerIntervalState(interval);
-      return () => clearInterval(interval);
+  // ============================================
+  // INPUT HANDLING
+  // ============================================
+  const handleInputChange = useCallback((key, value) => {
+    // Start timer on first input
+    if (gameState === 'idle') {
+      setGameState('playing');
+      startTimeRef.current = Date.now();
     }
-    return undefined;
-  }, [gameStarted, gameCompleted]);
 
-  // Generate random unique numbers
-  const getRandomUniqueNumbers = useCallback((count, min, max) => {
-    const numbers = [];
-    const available = [];
-    
-    for (let i = min; i <= max; i++) {
-      available.push(i);
-    }
-    
-    for (let i = 0; i < count && available.length > 0; i++) {
-      const randomIndex = Math.floor(Math.random() * available.length);
-      numbers.push(available.splice(randomIndex, 1)[0]);
-    }
-    
-    return numbers;
-  }, []);
+    setAnswers(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  }, [gameState]);
 
-  // Generate random numbers for grid
-  const generateRandomNumbers = useCallback(() => {
-    const maxNumber = currentSize === 5 ? 10 : currentSize === 7 ? 12 : 12;
-    
-    if (currentOperation === 'subtract') {
-      const allNumbers = getRandomUniqueNumbers(currentSize * 2, 5, maxNumber);
-      setTopNumbers(allNumbers.slice(0, currentSize).sort((a, b) => b - a));
-      setSideNumbers(allNumbers.slice(currentSize).sort((a, b) => b - a));
-    } else {
-      const allNumbers = getRandomUniqueNumbers(currentSize * 2, 1, maxNumber);
-      setTopNumbers(allNumbers.slice(0, currentSize));
-      setSideNumbers(allNumbers.slice(currentSize));
-    }
-  }, [currentSize, currentOperation, getRandomUniqueNumbers]);
+  const handleKeyDown = useCallback((e, row, col) => {
+    const size = gridData?.size || 5;
+    let nextRow = row;
+    let nextCol = col;
 
-  // Calculate answer for a cell
-  const calculateAnswer = useCallback((row, col) => {
-    const topNum = topNumbers[col];
-    const sideNum = sideNumbers[row];
-    
-    switch (currentOperation) {
-      case 'multiply':
-        return topNum * sideNum;
-      case 'add':
-        return topNum + sideNum;
-      case 'subtract':
-        return topNum - sideNum;
+    switch (e.key) {
+      case 'ArrowUp':
+        nextRow = Math.max(0, row - 1);
+        e.preventDefault();
+        break;
+      case 'ArrowDown':
+        nextRow = Math.min(size - 1, row + 1);
+        e.preventDefault();
+        break;
+      case 'ArrowLeft':
+        nextCol = Math.max(0, col - 1);
+        e.preventDefault();
+        break;
+      case 'ArrowRight':
+      case 'Tab':
+        if (!e.shiftKey) {
+          nextCol = col + 1;
+          if (nextCol >= size) {
+            nextCol = 0;
+            nextRow = row + 1;
+          }
+          if (nextRow >= size) {
+            nextRow = 0;
+            nextCol = 0;
+          }
+          if (e.key === 'Tab') e.preventDefault();
+        }
+        break;
+      case 'Enter':
+        // Move to next empty cell
+        nextCol = col + 1;
+        if (nextCol >= size) {
+          nextCol = 0;
+          nextRow = row + 1;
+        }
+        e.preventDefault();
+        break;
       default:
-        return topNum * sideNum;
-    }
-  }, [topNumbers, sideNumbers, currentOperation]);
-
-  // Initialize grid
-  const initializeGrid = useCallback(() => {
-    const newGrid = {};
-    for (let row = 0; row < currentSize; row++) {
-      for (let col = 0; col < currentSize; col++) {
-        const key = `${row}-${col}`;
-        newGrid[key] = {
-          answer: calculateAnswer(row, col),
-          completed: false,
-          userAnswer: ''
-        };
-      }
-    }
-    setGrid(newGrid);
-  }, [currentSize, calculateAnswer]);
-
-  // Generate new grid
-  const generateGrid = useCallback(() => {
-    setTimer(0);
-    setGameStarted(false);
-    setGameCompleted(false);
-    setShowCompletion(false);
-    setCompletionMessage('');
-    if (timerInterval) {
-      clearInterval(timerInterval);
-      setTimerIntervalState(null);
-    }
-    generateRandomNumbers();
-  }, [generateRandomNumbers, timerInterval]);
-
-  // Initialize grid when numbers change
-  useEffect(() => {
-    if (topNumbers.length > 0 && sideNumbers.length > 0) {
-      initializeGrid();
-    }
-  }, [topNumbers, sideNumbers, initializeGrid]);
-
-  // Initial grid generation
-  useEffect(() => {
-    generateRandomNumbers();
-  }, []);
-
-  // Handle input change
-  const handleInputChange = useCallback((row, col, value) => {
-    const key = `${row}-${col}`;
-    const numValue = parseInt(value, 10);
-    
-    setGrid((prevGrid) => {
-      const newGrid = { ...prevGrid };
-      newGrid[key] = { ...newGrid[key], userAnswer: value };
-      
-      if (numValue === newGrid[key].answer) {
-        newGrid[key].completed = true;
-      }
-      
-      return newGrid;
-    });
-  }, []);
-
-  // Start timer on first input
-  const handleFirstInput = useCallback(() => {
-    if (!gameStarted && !gameCompleted) {
-      setGameStarted(true);
-    }
-  }, [gameStarted, gameCompleted]);
-
-  // Check completion
-  const checkCompletion = useCallback(() => {
-    return Object.values(grid).every((cell) => cell.completed);
-  }, [grid]);
-
-  // Save progress to Firebase
-  const persistProgress = useCallback(
-    async (newBestTimes, newScoreboard, totalAttempts) => {
-      if (!updateStudentData || !studentData) {
         return;
+    }
+
+    const nextKey = `${nextRow}-${nextCol}`;
+    if (inputRefs.current[nextKey]) {
+      inputRefs.current[nextKey].focus();
+      inputRefs.current[nextKey].select();
+    }
+  }, [gridData]);
+
+  // ============================================
+  // CHECK COMPLETION
+  // ============================================
+  const completedCells = useMemo(() => {
+    if (!gridData?.cells) return new Set();
+    const completed = new Set();
+
+    gridData.cells.forEach(cell => {
+      const userAnswer = parseInt(answers[cell.key], 10);
+      if (userAnswer === cell.correctAnswer) {
+        completed.add(cell.key);
+      }
+    });
+
+    return completed;
+  }, [gridData, answers]);
+
+  const progressPercent = useMemo(() => {
+    if (!gridData?.cells) return 0;
+    return Math.round((completedCells.size / gridData.cells.length) * 100);
+  }, [completedCells, gridData]);
+
+  // ============================================
+  // GAME COMPLETION
+  // ============================================
+  const saveProgress = useCallback(async (newBestTimes, newScoreboard, newAttemptCount) => {
+    if (!updateStudentData || !studentData) return;
+
+    setIsSaving(true);
+    try {
+      await updateStudentData({
+        gameProgress: {
+          ...(studentData.gameProgress || {}),
+          multiplicationGrid: {
+            bestTimes: newBestTimes,
+            scoreboard: newScoreboard.slice(0, SCOREBOARD_SIZE),
+            attemptCount: newAttemptCount,
+            lastPlayed: new Date().toISOString()
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Failed to save progress:', error);
+      showToast?.('Could not save progress. Try again later.');
+    } finally {
+      setIsSaving(false);
+    }
+  }, [updateStudentData, studentData, showToast]);
+
+  useEffect(() => {
+    if (!gridData?.cells || gameState !== 'playing') return;
+
+    // Check if all cells are complete
+    if (completedCells.size === gridData.cells.length) {
+      // Stop timer
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
       }
 
-      const sanitizedScoreboard = newScoreboard.map((entry, index) => ({
-        id: entry.id || `attempt-${index}`,
-        timeSeconds: entry.timeSeconds,
-        gridSize: entry.gridSize,
-        operation: entry.operation,
-        createdAt: entry.createdAt || new Date().toISOString()
-      }));
+      const finalTime = (Date.now() - startTimeRef.current) / 1000;
+      setTimer(finalTime);
+      setGameState('complete');
+      setShowCelebration(true);
 
-      const payload = {
-        bestTimes: newBestTimes,
-        scoreboard: sanitizedScoreboard,
-        attemptCount: totalAttempts,
-        lastPlayed: new Date().toISOString()
+      // Update best times
+      const timeKey = `${gridData.operation}-${gridData.size}`;
+      const isNewBest = !bestTimes[timeKey] || finalTime < bestTimes[timeKey];
+
+      const newBestTimes = { ...bestTimes };
+      if (isNewBest) {
+        newBestTimes[timeKey] = finalTime;
+        setBestTimes(newBestTimes);
+      }
+
+      // Update scoreboard
+      const newAttempt = {
+        id: `attempt-${Date.now()}`,
+        timeSeconds: finalTime,
+        gridSize: gridData.size,
+        operation: gridData.operation,
+        createdAt: new Date().toISOString()
       };
 
-      try {
-        setIsSaving(true);
-        await updateStudentData({
-          gameProgress: {
-            ...(studentData.gameProgress || {}),
-            multiplicationGrid: payload
-          }
-        });
-        setLastSavedAt(new Date(payload.lastPlayed));
-      } catch (error) {
-        console.error('Failed to save Multiplication Grid progress:', error);
-        showToast('Could not save your progress. Please try again.', 'error');
-      } finally {
-        setIsSaving(false);
-      }
-    },
-    [studentData, updateStudentData, showToast]
-  );
+      const newScoreboard = [...scoreboard, newAttempt]
+        .sort((a, b) => a.timeSeconds - b.timeSeconds)
+        .slice(0, SCOREBOARD_SIZE);
+      setScoreboard(newScoreboard);
 
-  // Complete game
-  const completeGame = useCallback(async () => {
-    setGameCompleted(true);
-    if (timerInterval) {
-      clearInterval(timerInterval);
-      setTimerIntervalState(null);
-    }
-    
-    const timeKey = `${currentOperation}-${currentSize}`;
-    const currentTime = timer;
-    const isNewBest = !bestTimes[timeKey] || currentTime < bestTimes[timeKey];
-    
-    // Update best times
-    const newBestTimes = { ...bestTimes };
-    if (isNewBest) {
-      newBestTimes[timeKey] = currentTime;
-    }
-    setBestTimes(newBestTimes);
-    
-    // Update scoreboard
-    const newAttempt = {
-      id: `attempt-${Date.now()}`,
-      timeSeconds: currentTime,
-      gridSize: currentSize,
-      operation: currentOperation,
-      createdAt: new Date().toISOString()
-    };
-    
-    const newScoreboard = [...scoreboard, newAttempt]
-      .sort((a, b) => a.timeSeconds - b.timeSeconds)
-      .slice(0, SCOREBOARD_SIZE);
-    
-    setScoreboard(newScoreboard);
-    
-    const newAttemptCount = attemptCount + 1;
-    setAttemptCount(newAttemptCount);
-    
-    // Save to Firebase
-    await persistProgress(newBestTimes, newScoreboard, newAttemptCount);
-    
-    // Show completion message
-    if (isNewBest) {
-      setCompletionMessage(
-        `🎉 Congratulations! New Best Time! 🎉\n${formatTime(currentTime)} for ${currentSize}×${currentSize} ${OPERATION_NAMES[currentOperation]}`
-      );
-    } else {
-      setCompletionMessage(
-        `✅ Grid Complete! ✅\nTime: ${formatTime(currentTime)} | Best: ${formatTime(bestTimes[timeKey])}`
-      );
-    }
-    setShowCompletion(true);
-  }, [timer, currentOperation, currentSize, bestTimes, scoreboard, attemptCount, persistProgress, timerInterval]);
+      const newAttemptCount = attemptCount + 1;
+      setAttemptCount(newAttemptCount);
 
-  // Check for completion after each update
-  useEffect(() => {
-    if (gameStarted && !gameCompleted && Object.keys(grid).length > 0) {
-      if (checkCompletion()) {
-        completeGame();
+      // Save to Firebase
+      saveProgress(newBestTimes, newScoreboard, newAttemptCount);
+
+      // Show toast
+      if (isNewBest) {
+        showToast?.(`🎉 New Best Time! ${formatTimeShort(finalTime)} for ${gridData.size}×${gridData.size} ${OPERATION_NAMES[gridData.operation]}!`);
+      } else {
+        showToast?.(`✅ Completed in ${formatTimeShort(finalTime)}!`);
       }
     }
-  }, [grid, gameStarted, gameCompleted, checkCompletion, completeGame]);
+  }, [completedCells, gridData, gameState, bestTimes, scoreboard, attemptCount, saveProgress, showToast]);
 
-  // Calculate progress percentage
-  const progressPercentage = useMemo(() => {
-    if (Object.keys(grid).length === 0) return 0;
-    const totalCells = currentSize * currentSize;
-    const completedCells = Object.values(grid).filter((cell) => cell.completed).length;
-    return Math.round((completedCells / totalCells) * 100);
-  }, [grid, currentSize]);
-
-  // Get current best time display
-  const currentBestTime = useMemo(() => {
-    const timeKey = `${currentOperation}-${currentSize}`;
-    return bestTimes[timeKey] ? formatTime(bestTimes[timeKey]) : '--:--';
-  }, [bestTimes, currentOperation, currentSize]);
-
-  // Class leaderboard
+  // ============================================
+  // CLASS LEADERBOARD - Filter by same settings
+  // ============================================
   const classLeaderboard = useMemo(() => {
-    if (!classmates || classmates.length === 0) {
-      return [];
-    }
+    if (!classmates?.length) return [];
+
+    const timeKey = `${operation}-${gridSize}`;
+    const currentStudentId = getStudentIdentifier(studentData);
 
     const entries = classmates
-      .map((student) => {
-        const identifier = getStudentIdentifier(student);
-        if (!identifier) return null;
+      .map(student => {
+        const id = getStudentIdentifier(student);
+        if (!id) return null;
 
         const progress = student.gameProgress?.multiplicationGrid;
-        if (!progress || !progress.bestTimes) return null;
+        const time = progress?.bestTimes?.[timeKey];
+        if (!time || typeof time !== 'number') return null;
 
-        // Get best overall time
-        const allTimes = Object.entries(progress.bestTimes || {})
-          .map(([key, time]) => ({ key, time }))
-          .sort((a, b) => a.time - b.time);
-
-        if (allTimes.length === 0) return null;
-
-        const bestEntry = allTimes[0];
-        const [operation, size] = bestEntry.key.split('-');
-
-        const name = [student.firstName, student.lastName ? `${student.lastName[0]}.` : null]
+        const name = [student.firstName, student.lastName?.[0] ? `${student.lastName[0]}.` : null]
           .filter(Boolean)
           .join(' ')
           .trim() || 'Student';
 
         return {
-          id: identifier,
+          id,
           name,
-          bestTime: bestEntry.time,
-          gridSize: parseInt(size, 10),
-          operation,
-          attemptCount: progress.attemptCount || 0,
-          lastPlayed: progress.lastPlayed || null,
-          isCurrent: studentData && identifier === getStudentIdentifier(studentData)
+          time,
+          attemptCount: progress?.attemptCount || 0,
+          lastPlayed: progress?.lastPlayed,
+          isCurrentStudent: id === currentStudentId
         };
       })
       .filter(Boolean)
-      .sort((a, b) => a.bestTime - b.bestTime)
+      .sort((a, b) => a.time - b.time)
       .slice(0, CLASS_LEADERBOARD_SIZE);
 
     return entries;
-  }, [classmates, studentData]);
+  }, [classmates, operation, gridSize, studentData]);
+
+  // ============================================
+  // CURRENT BEST TIME
+  // ============================================
+  const currentBestTime = useMemo(() => {
+    const timeKey = `${operation}-${gridSize}`;
+    return bestTimes[timeKey];
+  }, [bestTimes, operation, gridSize]);
+
+  // ============================================
+  // RENDER
+  // ============================================
+  const opColor = OPERATION_COLORS[operation];
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6">
-      {/* Main Game Area */}
-      <div className="flex-1">
-        <div className="bg-gradient-to-br from-purple-100 via-blue-50 to-pink-50 rounded-3xl shadow-2xl p-6 sm:p-8">
-          {/* Header */}
-          <div className="text-center mb-6">
-            <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 mb-2">
-              Math Facts Grid Game
-            </h1>
-            <p className="text-gray-600">Complete the grid as fast as you can!</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 rounded-3xl overflow-hidden">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-violet-600/30 to-fuchsia-600/30 backdrop-blur-sm border-b border-white/10 p-4 md:p-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-3">
+                <span className="text-4xl">🔢</span>
+                <div>
+                  <h1 className="text-2xl md:text-3xl font-black text-white">Math Facts Grid</h1>
+                  <p className="text-purple-300 text-sm">Complete the grid as fast as you can!</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Stats */}
+            <div className="flex flex-wrap gap-3">
+              <div className="bg-black/40 backdrop-blur-sm rounded-xl px-4 py-2 border border-emerald-500/30">
+                <div className="text-xs text-emerald-300 uppercase tracking-wide">Time</div>
+                <div className="text-xl font-bold text-white font-mono">{formatTime(timer)}</div>
+              </div>
+              <div className="bg-black/40 backdrop-blur-sm rounded-xl px-4 py-2 border border-violet-500/30">
+                <div className="text-xs text-violet-300 uppercase tracking-wide">Progress</div>
+                <div className="text-xl font-bold text-white">{progressPercent}%</div>
+              </div>
+              <div className="bg-black/40 backdrop-blur-sm rounded-xl px-4 py-2 border border-amber-500/30">
+                <div className="text-xs text-amber-300 uppercase tracking-wide">Best</div>
+                <div className="text-xl font-bold text-amber-400 font-mono">
+                  {currentBestTime ? formatTimeShort(currentBestTime) : '--:--'}
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Controls */}
-          <div className="flex flex-wrap justify-center gap-4 mb-6">
-            <div className="flex flex-col items-center gap-2">
-              <label className="text-sm font-bold text-gray-700">Grid Size</label>
-              <select
-                value={currentSize}
-                onChange={(e) => {
-                  setCurrentSize(parseInt(e.target.value, 10));
-                  generateGrid();
-                }}
-                className="px-4 py-2 border-2 border-blue-400 rounded-lg font-bold bg-white text-gray-700"
-                disabled={gameStarted && !gameCompleted}
-              >
-                {GRID_SIZES.map((size) => (
-                  <option key={size} value={size}>
+          <div className="flex flex-wrap items-center gap-4 mt-4">
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-semibold text-purple-300">Size:</label>
+              <div className="flex gap-1">
+                {GRID_SIZES.map(size => (
+                  <button
+                    key={size}
+                    onClick={() => setGridSize(size)}
+                    disabled={gameState === 'playing'}
+                    className={`px-3 py-1.5 rounded-lg font-bold text-sm transition-all ${gridSize === size
+                      ? 'bg-violet-500 text-white shadow-lg shadow-violet-500/30'
+                      : 'bg-white/10 text-white/70 hover:bg-white/20'
+                      } ${gameState === 'playing' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
                     {size}×{size}
-                  </option>
+                  </button>
                 ))}
-              </select>
-            </div>
-
-            <div className="flex flex-col items-center gap-2">
-              <label className="text-sm font-bold text-gray-700">Operation</label>
-              <select
-                value={currentOperation}
-                onChange={(e) => {
-                  setCurrentOperation(e.target.value);
-                  generateGrid();
-                }}
-                className="px-4 py-2 border-2 border-blue-400 rounded-lg font-bold bg-white text-gray-700"
-                disabled={gameStarted && !gameCompleted}
-              >
-                {OPERATIONS.map((op) => (
-                  <option key={op} value={op}>
-                    {OPERATION_NAMES[op]}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex items-end">
-              <button
-                onClick={generateGrid}
-                className="px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-bold hover:shadow-lg transition-all hover:-translate-y-1"
-              >
-                New Grid
-              </button>
-            </div>
-          </div>
-
-          {/* Stats */}
-          <div className="flex flex-wrap justify-center gap-6 mb-6">
-            <div className="bg-gradient-to-br from-green-500 to-green-600 text-white px-5 py-3 rounded-2xl shadow-lg text-center">
-              <div className="text-2xl font-bold">{formatTime(timer)}</div>
-              <div className="text-sm opacity-90">Time</div>
-            </div>
-
-            <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white px-5 py-3 rounded-2xl shadow-lg text-center">
-              <div className="text-2xl font-bold">{progressPercentage}%</div>
-              <div className="text-sm opacity-90">Progress</div>
-            </div>
-
-            <div className="bg-gradient-to-br from-orange-500 to-orange-600 text-white px-5 py-3 rounded-2xl shadow-lg text-center">
-              <div className="text-2xl font-bold">{currentBestTime}</div>
-              <div className="text-sm opacity-90">Best Time</div>
-            </div>
-          </div>
-
-          {/* Grid */}
-          <div className="flex justify-center mb-6">
-            <div
-              className="inline-grid gap-1 bg-gray-200 p-3 rounded-2xl shadow-inner"
-              style={{
-                gridTemplateColumns: `repeat(${currentSize + 1}, minmax(40px, 50px))`
-              }}
-            >
-              {/* Corner cell */}
-              <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-lg flex items-center justify-center font-bold shadow-md h-12">
-                {OPERATION_SYMBOLS[currentOperation]}
               </div>
-
-              {/* Top header row */}
-              {topNumbers.map((num, idx) => (
-                <div
-                  key={`top-${idx}`}
-                  className="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-md h-12"
-                >
-                  {num}
-                </div>
-              ))}
-
-              {/* Data rows */}
-              {sideNumbers.map((sideNum, row) => (
-                <React.Fragment key={`row-${row}`}>
-                  {/* Side header */}
-                  <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-md h-12">
-                    {sideNum}
-                  </div>
-
-                  {/* Input cells */}
-                  {topNumbers.map((_, col) => {
-                    const key = `${row}-${col}`;
-                    const cell = grid[key];
-                    const isCompleted = cell?.completed || false;
-                    
-                    return (
-                      <div
-                        key={key}
-                        className={`rounded-lg border-2 flex items-center justify-center transition-all h-12 ${
-                          isCompleted
-                            ? 'bg-gradient-to-br from-green-400 to-green-500 border-green-500 shadow-lg'
-                            : 'bg-white border-gray-300'
-                        }`}
-                      >
-                        <input
-                          type="number"
-                          value={cell?.userAnswer || ''}
-                          onChange={(e) => handleInputChange(row, col, e.target.value)}
-                          onFocus={handleFirstInput}
-                          disabled={isCompleted}
-                          className={`w-full h-full text-center font-bold text-base bg-transparent outline-none ${
-                            isCompleted ? 'text-white' : 'text-gray-700'
-                          }`}
-                          style={{
-                            WebkitAppearance: 'none',
-                            MozAppearance: 'textfield'
-                          }}
-                        />
-                      </div>
-                    );
-                  })}
-                </React.Fragment>
-              ))}
             </div>
+
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-semibold text-purple-300">Operation:</label>
+              <div className="flex gap-1">
+                {OPERATIONS.map(op => (
+                  <button
+                    key={op}
+                    onClick={() => setOperation(op)}
+                    disabled={gameState === 'playing'}
+                    className={`px-3 py-1.5 rounded-lg font-bold text-sm transition-all flex items-center gap-1 ${operation === op
+                      ? `bg-gradient-to-r ${OPERATION_COLORS[op].bg} text-white shadow-lg`
+                      : 'bg-white/10 text-white/70 hover:bg-white/20'
+                      } ${gameState === 'playing' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    <span>{OPERATION_SYMBOLS[op]}</span>
+                    <span className="hidden sm:inline">{OPERATION_NAMES[op]}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button
+              onClick={generateGrid}
+              className="ml-auto px-5 py-2 bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-violet-500/30 transition-all active:scale-95"
+            >
+              {gameState === 'complete' ? '🔄 New Grid' : '🎲 New Grid'}
+            </button>
           </div>
-
-          {/* Completion Message */}
-          {showCompletion && (
-            <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-2xl p-6 text-center font-bold text-lg shadow-lg animate-bounce mb-4">
-              {completionMessage}
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Sidebars */}
-      <div className="w-full lg:w-80 space-y-6">
-        {/* Personal Best Times */}
-        <div className="bg-gray-900 text-white rounded-3xl shadow-xl p-6 border border-gray-800">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold flex items-center gap-2">
-              🏆 Best Times
-            </h2>
-          </div>
-
-          <div className="flex items-center justify-between text-xs uppercase tracking-wide text-gray-500 mb-3">
-            <span>Saved {scoreboard.length}</span>
-            <span>Total {attemptCount}</span>
-          </div>
-
-          {isSaving ? (
-            <div className="text-xs text-amber-300 mb-3">Saving progress...</div>
-          ) : (
-            lastSavedAt && (
-              <div className="text-xs text-gray-500 mb-3">Updated {formatTimestamp(lastSavedAt)}</div>
-            )
-          )}
-
-          {scoreboard.length === 0 ? (
-            <p className="text-gray-400 text-sm">
-              Complete a grid to see your best times here!
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {scoreboard.map((entry, index) => (
-                <div
-                  key={entry.id}
-                  className={`rounded-2xl p-4 border transition-all ${
-                    index === 0
-                      ? 'bg-emerald-500/10 border-emerald-400/40 shadow-lg'
-                      : 'bg-gray-900 border-gray-700'
-                  }`}
-                >
-                  <div className="flex items-center justify-between text-sm mb-2">
-                    <span className="font-semibold text-white">#{index + 1}</span>
-                    <span className="text-gray-400">
-                      {entry.gridSize}×{entry.gridSize} {OPERATION_SYMBOLS[entry.operation]}
-                    </span>
-                  </div>
-                  <div className="text-2xl font-mono text-emerald-300">
-                    {formatTime(entry.timeSeconds)}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Class Leaderboard */}
-        <div className="bg-gray-900 text-white rounded-3xl shadow-xl p-6 border border-gray-800">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold flex items-center gap-2">
-              🎯 Class Leaderboard
-            </h2>
-            {classLeaderboard.length > 0 && (
-              <span className="text-xs uppercase tracking-wide text-gray-400">
-                Top {classLeaderboard.length}
-              </span>
-            )}
-          </div>
-
-          {classLeaderboard.length === 0 ? (
-            <p className="text-gray-400 text-sm">
-              Your class has no saved times yet. Be the first to set a record!
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {classLeaderboard.map((entry, index) => (
-                <div
-                  key={entry.id}
-                  className={`rounded-2xl p-4 border transition-all ${
-                    entry.isCurrent
-                      ? 'bg-emerald-500/10 border-emerald-400/40 shadow-lg'
-                      : 'bg-gray-900 border-gray-700'
-                  }`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-3">
-                      <div className="text-lg font-bold text-emerald-300">#{index + 1}</div>
-                      <div>
-                        <div className="font-semibold text-white">{entry.name}</div>
-                        <div className="text-xs text-gray-400 mt-1">
-                          {entry.gridSize}×{entry.gridSize} {OPERATION_SYMBOLS[entry.operation]}
-                        </div>
-                        {entry.lastPlayed && (
-                          <div className="text-xs uppercase tracking-wide text-gray-500 mt-2">
-                            {formatTimestamp(entry.lastPlayed)}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm font-semibold text-emerald-300">
-                        {formatTime(entry.bestTime)}
-                      </div>
-                      {entry.isCurrent && (
-                        <div className="text-xs uppercase text-emerald-400 tracking-wide mt-1">
-                          You
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* All Best Times Grid */}
-        <div className="bg-gray-900 text-white rounded-3xl shadow-xl p-6 border border-gray-800">
-          <h3 className="text-lg font-bold mb-4 text-center">📊 All Personal Bests</h3>
-          <div className="grid grid-cols-3 gap-2 text-xs">
-            {OPERATIONS.map((op) =>
-              GRID_SIZES.map((size) => {
-                const timeKey = `${op}-${size}`;
-                const time = bestTimes[timeKey];
-                return (
+      {/* Main Content */}
+      <div className="p-4 md:p-6">
+        <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-6">
+          {/* Grid Area */}
+          <div className="flex-1">
+            <div className="bg-black/30 backdrop-blur-sm rounded-2xl p-4 md:p-6 border border-white/10">
+              {/* Progress bar */}
+              <div className="mb-4">
+                <div className="h-3 bg-white/10 rounded-full overflow-hidden">
                   <div
-                    key={timeKey}
-                    className="bg-gray-800 rounded-lg p-2 text-center border border-gray-700"
+                    className={`h-full bg-gradient-to-r ${opColor.bg} transition-all duration-300`}
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Grid */}
+              {gridData && (
+                <div className="flex justify-center overflow-x-auto pb-4">
+                  <div
+                    className="inline-grid gap-1 bg-black/30 p-2 rounded-xl"
+                    style={{
+                      gridTemplateColumns: `repeat(${gridData.size + 1}, minmax(44px, 1fr))`
+                    }}
                   >
-                    <div className="font-semibold text-gray-300">
-                      {size}×{size} {OPERATION_SYMBOLS[op]}
+                    {/* Corner cell */}
+                    <div className={`bg-gradient-to-br ${opColor.bg} text-white rounded-lg flex items-center justify-center font-bold text-xl shadow-lg h-11`}>
+                      {OPERATION_SYMBOLS[operation]}
                     </div>
-                    <div className="text-emerald-400 font-mono mt-1">
-                      {time ? formatTime(time) : '--:--'}
+
+                    {/* Top header row */}
+                    {gridData.topNumbers.map((num, idx) => (
+                      <div
+                        key={`top-${idx}`}
+                        className={`bg-gradient-to-br ${opColor.bg} text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-lg h-11`}
+                      >
+                        {num}
+                      </div>
+                    ))}
+
+                    {/* Data rows */}
+                    {gridData.sideNumbers.map((sideNum, row) => (
+                      <React.Fragment key={`row-${row}`}>
+                        {/* Side header */}
+                        <div className={`bg-gradient-to-br ${opColor.bg} text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-lg h-11`}>
+                          {sideNum}
+                        </div>
+
+                        {/* Input cells */}
+                        {gridData.topNumbers.map((_, col) => {
+                          const key = `${row}-${col}`;
+                          const isComplete = completedCells.has(key);
+                          const userValue = answers[key] || '';
+
+                          return (
+                            <div
+                              key={key}
+                              className={`rounded-lg transition-all duration-200 h-11 ${isComplete
+                                ? 'bg-gradient-to-br from-emerald-400 to-green-500 shadow-lg shadow-emerald-500/30 scale-105'
+                                : 'bg-white/90 hover:bg-white'
+                                }`}
+                            >
+                              <input
+                                ref={el => { inputRefs.current[key] = el; }}
+                                type="number"
+                                inputMode="numeric"
+                                value={userValue}
+                                onChange={e => handleInputChange(key, e.target.value)}
+                                onKeyDown={e => handleKeyDown(e, row, col)}
+                                disabled={isComplete || gameState === 'complete'}
+                                className={`w-full h-full text-center font-bold text-lg bg-transparent outline-none rounded-lg ${isComplete ? 'text-white' : 'text-gray-800'
+                                  } focus:ring-2 focus:ring-violet-400`}
+                                style={{
+                                  WebkitAppearance: 'none',
+                                  MozAppearance: 'textfield'
+                                }}
+                              />
+                            </div>
+                          );
+                        })}
+                      </React.Fragment>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Celebration overlay */}
+              {showCelebration && (
+                <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                  <div className="bg-gradient-to-br from-violet-900 to-fuchsia-900 rounded-3xl p-8 max-w-md w-full text-center border border-white/20 shadow-2xl">
+                    <div className="text-6xl mb-4 animate-bounce">🎉</div>
+                    <h2 className="text-3xl font-black text-white mb-2">Complete!</h2>
+                    <p className="text-2xl font-bold text-emerald-400 font-mono mb-4">
+                      {formatTime(timer)}
+                    </p>
+                    <p className="text-purple-300 mb-6">
+                      {gridData?.size}×{gridData?.size} {OPERATION_NAMES[gridData?.operation || 'multiply']} Grid
+                    </p>
+                    {currentBestTime && timer <= currentBestTime && (
+                      <div className="bg-yellow-500/20 border border-yellow-400/40 rounded-xl p-3 mb-4">
+                        <span className="text-yellow-300 font-bold">🏆 New Personal Best!</span>
+                      </div>
+                    )}
+                    <button
+                      onClick={() => {
+                        setShowCelebration(false);
+                        generateGrid();
+                      }}
+                      className="px-8 py-3 bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white rounded-xl font-bold text-lg hover:shadow-lg hover:shadow-violet-500/30 transition-all"
+                    >
+                      Play Again
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Instructions */}
+              <div className="mt-4 text-center text-sm text-gray-400">
+                <p>Type the answer in each cell • Use Arrow Keys or Tab to navigate • Timer starts on first input</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Sidebar */}
+          <div className="lg:w-80 space-y-4">
+            {/* Class Leaderboard */}
+            <div className="bg-black/40 backdrop-blur-sm rounded-2xl p-4 border border-violet-500/20">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <span>🏆</span> Class Leaderboard
+                </h3>
+                <span className="text-xs text-violet-300 bg-violet-500/20 px-2 py-1 rounded-full">
+                  {gridSize}×{gridSize} {OPERATION_SYMBOLS[operation]}
+                </span>
+              </div>
+
+              {classLeaderboard.length === 0 ? (
+                <p className="text-gray-400 text-sm text-center py-4">
+                  No times recorded yet for this grid size and operation. Be the first!
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {classLeaderboard.map((entry, idx) => (
+                    <div
+                      key={entry.id}
+                      className={`flex items-center gap-3 p-3 rounded-xl transition-all ${entry.isCurrentStudent
+                        ? 'bg-emerald-500/20 border border-emerald-400/40'
+                        : 'bg-white/5 border border-transparent'
+                        }`}
+                    >
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${idx === 0 ? 'bg-yellow-500 text-yellow-900' :
+                        idx === 1 ? 'bg-gray-300 text-gray-700' :
+                          idx === 2 ? 'bg-amber-600 text-amber-100' :
+                            'bg-white/10 text-white/70'
+                        }`}>
+                        {idx + 1}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-white truncate">
+                          {entry.name}
+                          {entry.isCurrentStudent && <span className="text-emerald-400 text-xs ml-1">(You)</span>}
+                        </div>
+                        <div className="text-xs text-gray-400">
+                          {entry.attemptCount} attempts
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-mono font-bold text-emerald-400">
+                          {formatTimeShort(entry.time)}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Personal Best Times */}
+            <div className="bg-black/40 backdrop-blur-sm rounded-2xl p-4 border border-violet-500/20">
+              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                <span>📊</span> Your Best Times
+              </h3>
+
+              <div className="space-y-3">
+                {OPERATIONS.map(op => (
+                  <div key={op} className="bg-white/5 rounded-xl p-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className={`w-6 h-6 rounded flex items-center justify-center text-xs font-bold bg-gradient-to-r ${OPERATION_COLORS[op].bg} text-white`}>
+                        {OPERATION_SYMBOLS[op]}
+                      </span>
+                      <span className="text-sm font-semibold text-white">{OPERATION_NAMES[op]}</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {GRID_SIZES.map(size => {
+                        const timeKey = `${op}-${size}`;
+                        const time = bestTimes[timeKey];
+                        const isCurrentSettings = op === operation && size === gridSize;
+
+                        return (
+                          <div
+                            key={timeKey}
+                            className={`text-center p-2 rounded-lg transition-all ${isCurrentSettings
+                              ? 'bg-violet-500/30 border border-violet-400/40'
+                              : 'bg-black/20'
+                              }`}
+                          >
+                            <div className="text-xs text-gray-400">{size}×{size}</div>
+                            <div className={`font-mono font-bold text-sm ${time ? 'text-emerald-400' : 'text-gray-500'}`}>
+                              {time ? formatTimeShort(time) : '--:--'}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
-                );
-              })
-            )}
+                ))}
+              </div>
+            </div>
+
+            {/* Recent Attempts */}
+            <div className="bg-black/40 backdrop-blur-sm rounded-2xl p-4 border border-violet-500/20">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <span>📜</span> Recent Attempts
+                </h3>
+                <span className="text-xs text-gray-400">{attemptCount} total</span>
+              </div>
+
+              {scoreboard.length === 0 ? (
+                <p className="text-gray-400 text-xs text-center py-2">
+                  Complete a grid to see your history
+                </p>
+              ) : (
+                <div className="space-y-1">
+                  {scoreboard.slice(0, 5).map((entry, idx) => (
+                    <div key={entry.id} className="flex items-center justify-between text-sm py-1">
+                      <span className="text-gray-400">
+                        {entry.gridSize}×{entry.gridSize} {OPERATION_SYMBOLS[entry.operation]}
+                      </span>
+                      <span className="font-mono text-emerald-400">
+                        {formatTimeShort(entry.timeSeconds)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {isSaving && (
+                <div className="text-xs text-amber-300 text-center mt-2">Saving...</div>
+              )}
+            </div>
+
+            {/* Tips */}
+            <div className="bg-gradient-to-br from-violet-500/10 to-fuchsia-500/10 rounded-2xl p-4 border border-violet-500/20">
+              <h4 className="text-sm font-bold text-violet-300 mb-2">💡 Tips</h4>
+              <ul className="text-xs text-gray-400 space-y-1">
+                <li>• Use number keys for fast input</li>
+                <li>• Arrow keys move between cells</li>
+                <li>• Compete with classmates on the same settings!</li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>
