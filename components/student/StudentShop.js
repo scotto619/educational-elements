@@ -2954,7 +2954,7 @@ const StudentShop = ({
             <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
               <span>👤</span> Today's Avatars
             </h3>
-            <div className="flex flex-wrap justify-center gap-4">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-3 md:gap-4">
               {dailyAvatars.map(avatar => {
                 const owned = studentData?.ownedAvatars?.includes(avatar.name);
                 const canAfford = currentCoins >= avatar.price;
@@ -2962,7 +2962,7 @@ const StudentShop = ({
                 return (
                   <div
                     key={avatar.name}
-                    className={`w-40 flex-none bg-white rounded-xl shadow-sm hover:shadow-md transition-all border overflow-hidden flex flex-col ${owned ? 'border-green-400 ring-2 ring-green-100' : 'border-gray-200 hover:border-blue-400'
+                    className={`w-full bg-white rounded-xl shadow-sm hover:shadow-md transition-all border overflow-hidden flex flex-col ${owned ? 'border-green-400 ring-2 ring-green-100' : 'border-gray-200 hover:border-blue-400'
                       }`}
                   >
                     <div className="h-48 w-full bg-gray-50 flex items-center justify-center p-2">
@@ -3007,7 +3007,7 @@ const StudentShop = ({
             <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
               <span>🐾</span> Today's Pets
             </h3>
-            <div className="flex flex-wrap justify-center gap-4">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-3 md:gap-4">
               {dailyPets.map(pet => {
                 const owned = studentData?.ownedPets?.some(p => p.name === pet.name);
                 const canAfford = currentCoins >= pet.price;
@@ -3015,7 +3015,7 @@ const StudentShop = ({
                 return (
                   <div
                     key={pet.name}
-                    className={`w-40 flex-none bg-white rounded-xl shadow-sm hover:shadow-md transition-all border overflow-hidden flex flex-col ${owned ? 'border-green-400 ring-2 ring-green-100' : 'border-gray-200 hover:border-purple-400'
+                    className={`w-full bg-white rounded-xl shadow-sm hover:shadow-md transition-all border overflow-hidden flex flex-col ${owned ? 'border-green-400 ring-2 ring-green-100' : 'border-gray-200 hover:border-purple-400'
                       }`}
                   >
                     <div className="h-40 w-full bg-gray-50 flex items-center justify-center p-2">
@@ -3171,7 +3171,7 @@ const StudentShop = ({
           <div>
             <h4 className="font-semibold text-gray-700 mb-3">Avatars ({ownedAvatars.length})</h4>
             {ownedAvatars.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
                 {ownedAvatars.map(avatarName => {
                   const avatarData = [
                     ...(SHOP_BASIC_AVATARS || []),
@@ -3207,7 +3207,7 @@ const StudentShop = ({
           <div>
             <h4 className="font-semibold text-gray-700 mb-3">Pets ({ownedPets.length})</h4>
             {ownedPets.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
                 {ownedPets.map(pet => (
                   <div key={pet.id || pet.name} className="w-full bg-white rounded-xl overflow-hidden text-center border shadow-sm hover:shadow-md transition-all">
                     <div className="aspect-square w-full bg-gray-50 flex items-center justify-center">
@@ -3309,7 +3309,7 @@ const StudentShop = ({
     }
 
     return (
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3 md:gap-4">
         {items.map((item, index) => {
           const resolvedType = item.__type || itemType;
           const isOwnedItem = resolvedType === 'avatar'
@@ -3947,7 +3947,7 @@ const StudentShop = ({
               <div>
                 <h3 className="font-bold text-base md:text-lg mb-2 md:mb-3">My Avatars</h3>
                 {studentData.ownedAvatars && studentData.ownedAvatars.length > 0 ? (
-                  <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 md:gap-4">
+                  <div className="grid grid-cols-[repeat(auto-fit,minmax(130px,1fr))] gap-2 md:gap-3">
                     {studentData.ownedAvatars.map(avatarName => (
                       <div key={avatarName} className={`border-2 rounded-lg p-2 md:p-3 text-center ${studentData.avatarBase === avatarName ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}>
                         <img
@@ -3999,7 +3999,7 @@ const StudentShop = ({
               <div>
                 <h3 className="font-bold text-base md:text-lg mb-2 md:mb-3">My Pets</h3>
                 {studentData.ownedPets?.length > 0 ? (
-                  <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 md:gap-4">
+                  <div className="grid grid-cols-[repeat(auto-fit,minmax(130px,1fr))] gap-2 md:gap-3">
                     {studentData.ownedPets.map((pet, index) => (
                       <div key={pet.id} className={`border-2 rounded-lg p-2 md:p-3 text-center ${index === 0 ? 'border-purple-500 bg-purple-50' : 'border-gray-200'}`}>
                         {(() => {
