@@ -1184,7 +1184,7 @@ const ShopTab = ({
           <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
             <span>👤</span> Today's Avatars
           </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-3 sm:gap-4 justify-items-center">
             {dailyAvatars.map(avatar => {
               const owned = selectedStudent?.ownedAvatars?.includes(avatar.name);
               const canAfford = selectedStudent ? calculateCoins(selectedStudent) >= avatar.price : false;
@@ -1192,9 +1192,9 @@ const ShopTab = ({
               return (
                 <div
                   key={avatar.name}
-                  className={`w-full bg-white rounded-xl shadow-sm hover:shadow-md transition-all border overflow-hidden flex flex-col ${owned ? 'border-green-400 ring-2 ring-green-100' : 'border-gray-200 hover:border-blue-400'
-                    }`}
-                >
+                    className={`w-full max-w-[220px] mx-auto bg-white rounded-xl shadow-sm hover:shadow-md transition-all border overflow-hidden flex flex-col ${owned ? 'border-green-400 ring-2 ring-green-100' : 'border-gray-200 hover:border-blue-400'
+                      }`}
+                  >
                   <div className="h-48 w-full bg-gray-50 flex items-center justify-center p-2">
                     <img
                       src={avatar.path}
@@ -1237,7 +1237,7 @@ const ShopTab = ({
           <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
             <span>🐾</span> Today's Pets
           </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-3 sm:gap-4 justify-items-center">
             {dailyPets.map(pet => {
               const owned = selectedStudent?.ownedPets?.some(p => p.name === pet.name);
               const canAfford = selectedStudent ? calculateCoins(selectedStudent) >= pet.price : false;
@@ -1245,9 +1245,9 @@ const ShopTab = ({
               return (
                 <div
                   key={pet.name}
-                  className={`w-full bg-white rounded-xl shadow-sm hover:shadow-md transition-all border overflow-hidden flex flex-col ${owned ? 'border-green-400 ring-2 ring-green-100' : 'border-gray-200 hover:border-purple-400'
-                    }`}
-                >
+                    className={`w-full max-w-[220px] mx-auto bg-white rounded-xl shadow-sm hover:shadow-md transition-all border overflow-hidden flex flex-col ${owned ? 'border-green-400 ring-2 ring-green-100' : 'border-gray-200 hover:border-purple-400'
+                      }`}
+                  >
                   <div className="h-40 w-full bg-gray-50 flex items-center justify-center p-2">
                     <img
                       src={pet.path}
@@ -1428,7 +1428,7 @@ const ShopTab = ({
           <div>
             <h4 className="font-semibold text-gray-700 mb-3">Avatars ({ownedAvatars.length})</h4>
             {ownedAvatars.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3 justify-items-center">
                 {ownedAvatars.map(avatarName => {
                   const avatarData = [
                     ...SHOP_BASIC_AVATARS,
@@ -1464,7 +1464,7 @@ const ShopTab = ({
           <div>
             <h4 className="font-semibold text-gray-700 mb-3">Pets ({ownedPets.length})</h4>
             {ownedPets.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3 justify-items-center">
                 {ownedPets.map(pet => (
                   <div key={pet.id || pet.name} className="w-full bg-white rounded-xl overflow-hidden text-center border shadow-sm hover:shadow-md transition-all">
                     <div className="aspect-square w-full bg-gray-50 flex items-center justify-center">
@@ -2066,7 +2066,7 @@ const ShopTab = ({
             <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto">
               <div>
                 <h3 className="font-bold text-base sm:text-lg mb-2">Owned Avatars</h3>
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 sm:gap-4">
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-2 sm:gap-3 justify-items-center">
                   {selectedStudent.ownedAvatars?.map(avatarName => (
                     <div key={avatarName} className={`border-2 rounded-lg p-2 text-center ${selectedStudent.avatarBase === avatarName ? 'border-blue-500' : ''}`}>
                       <img src={getAvatarImage(avatarName, calculateAvatarLevel(selectedStudent.totalPoints))} className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full mx-auto mb-1" />
@@ -2090,7 +2090,7 @@ const ShopTab = ({
               <div>
                 <h3 className="font-bold text-base sm:text-lg mb-2">Owned Pets</h3>
                 {selectedStudent.ownedPets?.length > 0 ? (
-                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-4">
+                  <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-2 sm:gap-3 justify-items-center">
                     {selectedStudent.ownedPets.map((pet, index) => (
                       <div key={pet.id} className={`border-2 rounded-lg p-2 text-center ${index === 0 ? 'border-blue-500' : ''}`}>
                         {(() => {
