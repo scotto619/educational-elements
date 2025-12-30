@@ -2,6 +2,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
+import LootWellTab from '../tabs/LootWellTab';
 
 import {
   PET_EGG_TYPES,
@@ -2377,7 +2378,8 @@ const StudentShop = ({
   const categories = [
     { id: 'shop', name: "🛒 Today's Shop", shortName: 'Shop' },
     { id: 'special', name: '✨ Special Features', shortName: 'Special' },
-    { id: 'inventory', name: '🎒 My Stuff', shortName: 'Items' }
+    { id: 'inventory', name: '🎒 My Stuff', shortName: 'Items' },
+    { id: 'loot_well', name: '💠 Loot Well', shortName: 'Loot Well' }
   ];
 
   const renderMysteryBox = () => {
@@ -3113,32 +3115,32 @@ const StudentShop = ({
 
       // Main special features menu
       return (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
           <button
             onClick={() => setSpecialSection('card_packs')}
-            className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-2xl p-6 text-center hover:shadow-xl transition-all transform hover:scale-105"
+            className="aspect-square flex flex-col items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-2xl p-4 text-center hover:shadow-xl transition-all transform hover:scale-105"
           >
-            <div className="text-5xl mb-3">🃏</div>
-            <h3 className="text-lg font-bold">Card Packs</h3>
-            <p className="text-sm text-white/80 mt-1">Collect trading cards</p>
+            <div className="text-6xl mb-4">🃏</div>
+            <h3 className="text-xl font-bold">Card Packs</h3>
+            <p className="text-white/80 mt-2">Collect trading cards</p>
           </button>
 
           <button
             onClick={() => setSpecialSection('mysterybox')}
-            className="bg-gradient-to-br from-pink-500 to-rose-600 text-white rounded-2xl p-6 text-center hover:shadow-xl transition-all transform hover:scale-105"
+            className="aspect-square flex flex-col items-center justify-center bg-gradient-to-br from-pink-500 to-rose-600 text-white rounded-2xl p-4 text-center hover:shadow-xl transition-all transform hover:scale-105"
           >
-            <div className="text-5xl mb-3">🎁</div>
-            <h3 className="text-lg font-bold">Mystery Box</h3>
-            <p className="text-sm text-white/80 mt-1">Win random prizes</p>
+            <div className="text-6xl mb-4">🎁</div>
+            <h3 className="text-xl font-bold">Mystery Box</h3>
+            <p className="text-white/80 mt-2">Win random prizes</p>
           </button>
 
           <button
             onClick={() => setSpecialSection('rewards')}
-            className="bg-gradient-to-br from-amber-500 to-orange-600 text-white rounded-2xl p-6 text-center hover:shadow-xl transition-all transform hover:scale-105"
+            className="aspect-square flex flex-col items-center justify-center bg-gradient-to-br from-amber-500 to-orange-600 text-white rounded-2xl p-4 text-center hover:shadow-xl transition-all transform hover:scale-105"
           >
-            <div className="text-5xl mb-3">🏆</div>
-            <h3 className="text-lg font-bold">Class Rewards</h3>
-            <p className="text-sm text-white/80 mt-1">Special privileges</p>
+            <div className="text-6xl mb-4">🏆</div>
+            <h3 className="text-xl font-bold">Class Rewards</h3>
+            <p className="text-white/80 mt-2">Special privileges</p>
           </button>
         </div>
       );
@@ -3159,17 +3161,21 @@ const StudentShop = ({
           <div>
             <h4 className="font-semibold text-gray-700 mb-3">Avatars ({ownedAvatars.length})</h4>
             {ownedAvatars.length > 0 ? (
-              <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+              <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-3">
                 {ownedAvatars.map(avatarName => {
                   const avatarData = [...(SHOP_BASIC_AVATARS || []), ...(SHOP_PREMIUM_AVATARS || [])].find(a => a.name === avatarName);
                   return (
-                    <div key={avatarName} className="bg-white rounded-lg p-2 text-center border shadow-sm">
-                      <img
-                        src={avatarData?.path || '/shop/Basic/Banana.png'}
-                        alt={avatarName}
-                        className="w-12 h-12 rounded-full mx-auto mb-1"
-                      />
-                      <p className="text-xs truncate">{avatarName}</p>
+                    <div key={avatarName} className="bg-white rounded-xl overflow-hidden text-center border shadow-sm hover:shadow-md transition-all">
+                      <div className="aspect-[3/4] bg-gray-50">
+                        <img
+                          src={avatarData?.path || '/shop/Basic/Banana.png'}
+                          alt={avatarName}
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                      <div className="p-2">
+                        <p className="text-xs font-semibold truncate">{avatarName}</p>
+                      </div>
                     </div>
                   );
                 })}
@@ -3183,15 +3189,19 @@ const StudentShop = ({
           <div>
             <h4 className="font-semibold text-gray-700 mb-3">Pets ({ownedPets.length})</h4>
             {ownedPets.length > 0 ? (
-              <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+              <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-3">
                 {ownedPets.map(pet => (
-                  <div key={pet.id || pet.name} className="bg-white rounded-lg p-2 text-center border shadow-sm">
-                    <img
-                      src={pet.path || '/shop/BasicPets/Wizard.png'}
-                      alt={pet.name}
-                      className="w-12 h-12 rounded-full mx-auto mb-1"
-                    />
-                    <p className="text-xs truncate">{pet.name}</p>
+                  <div key={pet.id || pet.name} className="bg-white rounded-xl overflow-hidden text-center border shadow-sm hover:shadow-md transition-all">
+                    <div className="aspect-square bg-gray-50">
+                      <img
+                        src={pet.path || '/shop/BasicPets/Wizard.png'}
+                        alt={pet.name}
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                    <div className="p-2">
+                      <p className="text-xs font-semibold truncate">{pet.name}</p>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -3211,7 +3221,20 @@ const StudentShop = ({
     }
 
     if (activeCategory === 'loot_well') {
-      return renderLootWell();
+      return (
+        <div className="py-4">
+          <LootWellTab
+            student={studentData}
+            onUpdateStudent={(id, updates) => updateStudentData(updates)}
+            SHOP_BASIC_AVATARS={SHOP_BASIC_AVATARS}
+            SHOP_PREMIUM_AVATARS={SHOP_PREMIUM_AVATARS}
+            SHOP_BASIC_PETS={SHOP_BASIC_PETS}
+            SHOP_PREMIUM_PETS={SHOP_PREMIUM_PETS}
+            showToast={showToast}
+            calculateCoins={calculateCoins}
+          />
+        </div>
+      );
     }
 
     if (activeCategory === 'featured') {

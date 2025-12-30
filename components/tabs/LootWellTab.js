@@ -19,6 +19,7 @@ const formatDuration = (ms) => {
 
 const LootWellTab = ({
     students = [],
+    student = null, // Optional: for single student mode
     onUpdateStudent,
     SHOP_BASIC_AVATARS = [],
     SHOP_PREMIUM_AVATARS = [],
@@ -27,11 +28,12 @@ const LootWellTab = ({
     showToast = () => { },
     calculateCoins
 }) => {
-    const [selectedStudentId, setSelectedStudentId] = useState(null);
+    const [selectedStudentId, setSelectedStudentId] = useState(student?.id || null);
     const [lootWellAnimating, setLootWellAnimating] = useState(false);
     const [lootWellResult, setLootWellResult] = useState(null);
 
-    const selectedStudent = students.find(s => s.id === selectedStudentId);
+    // Determine effective selected student
+    const selectedStudent = student || students.find(s => s.id === selectedStudentId);
 
     // Get loot well stats from student data
     const lootWellStats = useMemo(() => {
@@ -41,7 +43,7 @@ const LootWellTab = ({
             totalAttempts: 0,
             totalWins: 0
         };
-    }, [selectedStudent?.lootWell]);
+    }, [selectedStudent]); // Fixed dependency to just selectedStudent (object ref change should trigger)
 
     // Calculate cooldown
     const { lootWellReady, timeRemaining } = useMemo(() => {
@@ -248,27 +250,29 @@ const LootWellTab = ({
                 <p className="text-cyan-100">A magical well of treasures awaits!</p>
             </div>
 
-            {/* Student Selector */}
-            <div className="bg-white rounded-xl p-4 shadow-md">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Select Student:
-                </label>
-                <select
-                    value={selectedStudentId || ''}
-                    onChange={(e) => {
-                        setSelectedStudentId(e.target.value || null);
-                        setLootWellResult(null);
-                    }}
-                    className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-cyan-500 focus:outline-none"
-                >
-                    <option value="">-- Choose a student --</option>
-                    {students.map(student => (
-                        <option key={student.id} value={student.id}>
-                            {student.firstName} {student.lastName} (💰 {calculateCoins ? calculateCoins(student) : 0})
-                        </option>
-                    ))}
-                </select>
-            </div>
+            {/* Student Selector - Only show if not in single student mode */}
+            {!student && (
+                <div className="bg-white rounded-xl p-4 shadow-md">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Select Student:
+                    </label>
+                    <select
+                        value={selectedStudentId || ''}
+                        onChange={(e) => {
+                            setSelectedStudentId(e.target.value || null);
+                            setLootWellResult(null);
+                        }}
+                        className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-cyan-500 focus:outline-none"
+                    >
+                        <option value="">-- Choose a student --</option>
+                        {students.map(student => (
+                            <option key={student.id} value={student.id}>
+                                {student.firstName} {student.lastName} (💰 {calculateCoins ? calculateCoins(student) : 0})
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            )}
 
             {/* Main Well Area */}
             {selectedStudent ? (
@@ -301,8 +305,8 @@ const LootWellTab = ({
                         onClick={handleLootWellDraw}
                         disabled={!lootWellReady || lootWellAnimating}
                         className={`px-8 py-4 rounded-xl text-xl font-bold transition-all transform ${lootWellReady && !lootWellAnimating
-                                ? 'bg-gradient-to-r from-cyan-400 to-blue-500 text-white hover:scale-105 hover:shadow-xl active:scale-95'
-                                : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                            ? 'bg-gradient-to-r from-cyan-400 to-blue-500 text-white hover:scale-105 hover:shadow-xl active:scale-95'
+                            : 'bg-gray-600 text-gray-400 cursor-not-allowed'
                             }`}
                     >
                         {lootWellAnimating ? '✨ Drawing...' : '💠 Draw from the Well'}
@@ -316,22 +320,26 @@ const LootWellTab = ({
                             </h3>
                             {lootWellResult.type === 'avatar' && (
                                 <div className="flex flex-col items-center">
-                                    <img
-                                        src={lootWellResult.item.path}
-                                        alt={lootWellResult.item.name}
-                                        className="w-20 h-20 rounded-full border-4 border-white shadow-lg mb-2"
-                                    />
-                                    <span className="font-semibold">{lootWellResult.item.name}</span>
+                                    <div className="w-32 aspect-[3/4] mb-4 bg-white rounded-xl shadow-lg border-4 border-white overflow-hidden">
+                                        <img
+                                            src={lootWellResult.item.path}
+                                            alt={lootWellResult.item.name}
+                                            className="w-full h-full object-contain"
+                                        />
+                                    </div>
+                                    <span className="font-bold text-lg">{lootWellResult.item.name}</span>
                                 </div>
                             )}
                             {lootWellResult.type === 'pet' && (
                                 <div className="flex flex-col items-center">
-                                    <img
-                                        src={lootWellResult.item.path}
-                                        alt={lootWellResult.item.name}
-                                        className="w-20 h-20 rounded-full border-4 border-white shadow-lg mb-2"
-                                    />
-                                    <span className="font-semibold">{lootWellResult.item.name}</span>
+                                    <div className="w-32 aspect-square mb-4 bg-white rounded-xl shadow-lg border-4 border-white overflow-hidden">
+                                        <img
+                                            src={lootWellResult.item.path}
+                                            alt={lootWellResult.item.name}
+                                            className="w-full h-full object-contain"
+                                        />
+                                    </div>
+                                    <span className="font-bold text-lg">{lootWellResult.item.name}</span>
                                 </div>
                             )}
                             {lootWellResult.type === 'coins' && (
