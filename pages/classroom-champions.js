@@ -52,6 +52,7 @@ import SettingsTab from '../components/tabs/SettingsTab';
 import TeachersToolkitTab from '../components/tabs/TeachersToolkitTab';
 import CurriculumCornerTab from '../components/tabs/CurriculumCornerTab';
 import QuizShowTab from '../components/tabs/QuizShowTab';
+import LootWellTab from '../components/tabs/LootWellTab';
 
 // Import floating widgets (unchanged)
 import FloatingTimer from '../components/widgets/FloatingTimer';
@@ -108,7 +109,29 @@ const BASE_SHOP_BASIC_AVATARS = [
   { name: 'Rugby', price: 20, path: '/shop/Basic/Update2/Rugby.png' },
   { name: 'T800', price: 30, path: '/shop/Basic/Update2/T800.png' },
   { name: 'Tralalero', price: 25, path: '/shop/Basic/Update2/Tralalero.png' },
-  { name: 'Cappuccino', price: 18, path: '/shop/Basic/Update2/Cappuccino.png' }
+  { name: 'Cappuccino', price: 18, path: '/shop/Basic/Update2/Cappuccino.png' },
+  // Update 3 - New Character Collection
+  { name: 'Belle', price: 22, path: '/shop/Basic/Update3/Belle.png' },
+  { name: 'Cena', price: 28, path: '/shop/Basic/Update3/Cena.png' },
+  { name: 'Chicken Banana', price: 15, path: '/shop/Basic/Update3/ChickenBanana.png' },
+  { name: 'Chief', price: 25, path: '/shop/Basic/Update3/Chief.png' },
+  { name: 'Deku', price: 30, path: '/shop/Basic/Update3/Deku.png' },
+  { name: 'Elsa', price: 24, path: '/shop/Basic/Update3/Elsa.png' },
+  { name: 'Frodo', price: 22, path: '/shop/Basic/Update3/Frodo.png' },
+  { name: 'Goku', price: 35, path: '/shop/Basic/Update3/Goku.png' },
+  { name: 'Harry', price: 28, path: '/shop/Basic/Update3/Harry.png' },
+  { name: 'Hulk', price: 35, path: '/shop/Basic/Update3/Hulk.png' },
+  { name: 'Hunter', price: 20, path: '/shop/Basic/Update3/Hunter.png' },
+  { name: 'Kakashi', price: 30, path: '/shop/Basic/Update3/Kakashi.png' },
+  { name: 'Link', price: 28, path: '/shop/Basic/Update3/Link.png' },
+  { name: 'Mario', price: 30, path: '/shop/Basic/Update3/Mario.png' },
+  { name: 'Naruto', price: 30, path: '/shop/Basic/Update3/Naruto.png' },
+  { name: 'Sasuke', price: 30, path: '/shop/Basic/Update3/Saske.png' },
+  { name: 'Sonic', price: 28, path: '/shop/Basic/Update3/Sonic.png' },
+  { name: 'Trunks', price: 32, path: '/shop/Basic/Update3/Trunks.png' },
+  { name: 'Vegeta', price: 35, path: '/shop/Basic/Update3/Vegeta.png' },
+  { name: 'Wednesday', price: 22, path: '/shop/Basic/Update3/Wednesday.png' },
+  { name: 'Yoshi', price: 26, path: '/shop/Basic/Update3/Yoshi.png' }
 ];
 
 const BASE_SHOP_PREMIUM_AVATARS = [{ name: 'Dwarf', price: 45, path: '/shop/Premium/Dwarf.png' }, { name: 'Dwarf2', price: 45, path: '/shop/Premium/Dwarf2.png' }, { name: 'FarmerBoy Premium', price: 35, path: '/shop/Premium/FarmerBoy.png' }, { name: 'FarmerGirl Premium', price: 35, path: '/shop/Premium/FarmerGirl.png' }, { name: 'Goblin2', price: 30, path: '/shop/Premium/Goblin2.png' }, { name: 'GoblinGirl2', price: 30, path: '/shop/Premium/GoblinGirl2.png' }, { name: 'King', price: 60, path: '/shop/Premium/King.png' }, { name: 'MechanicGirl', price: 40, path: '/shop/Premium/MechanicGirl.png' }, { name: 'PirateBoy Premium', price: 42, path: '/shop/Premium/PirateBoy.png' }, { name: 'PirateGirl Premium', price: 42, path: '/shop/Premium/PirateGirl.png' }, { name: 'Queen', price: 60, path: '/shop/Premium/Queen.png' }, { name: 'RobotBoy Premium', price: 38, path: '/shop/Premium/RobotBoy.png' }, { name: 'RobotGirl Premium', price: 38, path: '/shop/Premium/RobotGirl.png' }, { name: 'Vampire2', price: 40, path: '/shop/Premium/Vampire2.png' }, { name: 'VampireGirl2', price: 40, path: '/shop/Premium/VampireGirl2.png' }];
@@ -155,7 +178,16 @@ const BASE_SHOP_BASIC_PETS = [
   { name: 'Lizard Hatchling', price: 28, path: '/shop/BasicPets/Update1/LizardPet.png' },
   { name: 'Octopus Buddy', price: 32, path: '/shop/BasicPets/Update1/OctopusPet.png' },
   { name: 'Red Panda Pal', price: 34, path: '/shop/BasicPets/Update1/RedpandaPet.png' },
-  { name: 'Shark Buddy', price: 33, path: '/shop/Basic/Update1/SharkPet.png' }
+  { name: 'Shark Buddy', price: 33, path: '/shop/Basic/Update1/SharkPet.png' },
+  // Update 2 - Elemental & Character Pets
+  { name: 'Air Spirit', price: 35, path: '/shop/BasicPets/Update2/Air.png' },
+  { name: 'Choco Pup', price: 22, path: '/shop/BasicPets/Update2/Choco.png' },
+  { name: 'Earth Spirit', price: 35, path: '/shop/BasicPets/Update2/Earth.png' },
+  { name: 'Fire Spirit', price: 38, path: '/shop/BasicPets/Update2/Fire.png' },
+  { name: 'Nemo', price: 25, path: '/shop/BasicPets/Update2/Nemo.png' },
+  { name: 'Snoopy', price: 28, path: '/shop/BasicPets/Update2/Snoopy.png' },
+  { name: 'Tails', price: 30, path: '/shop/BasicPets/Update2/Tails.png' },
+  { name: 'Water Spirit', price: 35, path: '/shop/BasicPets/Update2/Water.png' }
 ];
 
 const BASE_SHOP_PREMIUM_PETS = [{ name: 'Lion Pet', price: 60, path: '/shop/PremiumPets/LionPet.png' }, { name: 'Snake Pet', price: 50, path: '/shop/PremiumPets/SnakePet.png' }, { name: 'Vampire Pet', price: 50, path: '/shop/PremiumPets/VampirePet.png' }];
@@ -1297,6 +1329,18 @@ const ClassroomChampions = () => {
             onRemoveStudent={handleRemoveStudent}
             architectureVersion={architectureVersion}
             user={user}
+          />
+        );
+
+      case 'lootwell':
+        return (
+          <LootWellTab
+            {...commonProps}
+            onUpdateStudent={handleUpdateStudent}
+            SHOP_BASIC_AVATARS={shopInventory.basicAvatars}
+            SHOP_PREMIUM_AVATARS={shopInventory.premiumAvatars}
+            SHOP_BASIC_PETS={shopInventory.basicPets}
+            SHOP_PREMIUM_PETS={shopInventory.premiumPets}
           />
         );
 
