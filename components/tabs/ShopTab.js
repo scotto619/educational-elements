@@ -1184,7 +1184,7 @@ const ShopTab = ({
           <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
             <span>👤</span> Today's Avatars
           </h3>
-          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {dailyAvatars.map(avatar => {
               const owned = selectedStudent?.ownedAvatars?.includes(avatar.name);
               const canAfford = selectedStudent ? calculateCoins(selectedStudent) >= avatar.price : false;
@@ -1192,32 +1192,37 @@ const ShopTab = ({
               return (
                 <div
                   key={avatar.name}
-                  className={`relative rounded-xl overflow-hidden text-center transition-all hover:shadow-lg hover:scale-105 ${owned
-                    ? 'bg-green-50 border-2 border-green-400'
-                    : 'bg-white border-2 border-gray-200 hover:border-blue-400'
+                  className={`w-full bg-white rounded-xl shadow-sm hover:shadow-md transition-all border overflow-hidden flex flex-col ${owned ? 'border-green-400 ring-2 ring-green-100' : 'border-gray-200 hover:border-blue-400'
                     }`}
                 >
-                  <div className="aspect-[3/4] bg-gradient-to-b from-gray-50 to-gray-100">
+                  <div className="h-48 w-full bg-gray-50 flex items-center justify-center p-2">
                     <img
                       src={avatar.path}
                       alt={avatar.name}
-                      className="w-full h-full object-contain"
+                      className="h-full w-full object-contain"
                       onError={(e) => { e.target.src = '/shop/Basic/Banana.png'; }}
                     />
                   </div>
-                  <div className="p-2">
-                    <p className="font-semibold text-xs sm:text-sm truncate">{avatar.name}</p>
-                    <p className="text-sm font-bold text-blue-600">💰 {avatar.price}</p>
+                  <div className="p-3 text-center border-t flex flex-col flex-grow justify-between">
+                    <div>
+                      <p className="font-bold text-gray-800 truncate mb-1">{avatar.name}</p>
+                      <p className="font-bold text-amber-500 mb-2">💰 {avatar.price}</p>
+                    </div>
 
                     {owned ? (
-                      <span className="text-green-600 text-xs font-bold">✓ Owned</span>
+                      <span className="block w-full py-1.5 bg-green-100 text-green-700 text-xs font-bold rounded-lg">
+                        Owned
+                      </span>
                     ) : (
                       <button
                         onClick={() => setPurchaseModal({ visible: true, item: avatar, type: 'avatar' })}
                         disabled={!selectedStudent || !canAfford}
-                        className="mt-1 w-full py-1.5 bg-blue-500 text-white text-xs font-bold rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                        className={`w-full py-1.5 text-xs font-bold rounded-lg transition-colors ${canAfford
+                          ? 'bg-blue-500 text-white hover:bg-blue-600'
+                          : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                          }`}
                       >
-                        {canAfford ? 'Buy' : 'Need More'}
+                        {canAfford ? 'Buy Now' : 'Need Coins'}
                       </button>
                     )}
                   </div>
@@ -1232,7 +1237,7 @@ const ShopTab = ({
           <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
             <span>🐾</span> Today's Pets
           </h3>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {dailyPets.map(pet => {
               const owned = selectedStudent?.ownedPets?.some(p => p.name === pet.name);
               const canAfford = selectedStudent ? calculateCoins(selectedStudent) >= pet.price : false;
@@ -1240,30 +1245,35 @@ const ShopTab = ({
               return (
                 <div
                   key={pet.name}
-                  className={`relative rounded-xl overflow-hidden text-center transition-all hover:shadow-lg hover:scale-105 ${owned
-                    ? 'bg-green-50 border-2 border-green-400'
-                    : 'bg-white border-2 border-gray-200 hover:border-purple-400'
+                  className={`w-full bg-white rounded-xl shadow-sm hover:shadow-md transition-all border overflow-hidden flex flex-col ${owned ? 'border-green-400 ring-2 ring-green-100' : 'border-gray-200 hover:border-purple-400'
                     }`}
                 >
-                  <div className="aspect-square bg-gradient-to-b from-gray-50 to-gray-100">
+                  <div className="h-40 w-full bg-gray-50 flex items-center justify-center p-2">
                     <img
                       src={pet.path}
                       alt={pet.name}
-                      className="w-full h-full object-contain"
+                      className="h-full w-full object-contain"
                       onError={(e) => { e.target.src = '/shop/BasicPets/Wizard.png'; }}
                     />
                   </div>
-                  <div className="p-2">
-                    <p className="font-semibold text-xs sm:text-sm truncate">{pet.name}</p>
-                    <p className="text-sm font-bold text-purple-600">💰 {pet.price}</p>
+                  <div className="p-3 text-center border-t flex flex-col flex-grow justify-between">
+                    <div>
+                      <p className="font-bold text-gray-800 truncate mb-1">{pet.name}</p>
+                      <p className="font-bold text-purple-600 mb-2">💰 {pet.price}</p>
+                    </div>
 
                     {owned ? (
-                      <span className="text-green-600 text-xs font-bold">✓ Owned</span>
+                      <span className="block w-full py-1.5 bg-green-100 text-green-700 text-xs font-bold rounded-lg">
+                        Owned
+                      </span>
                     ) : (
                       <button
                         onClick={() => setPurchaseModal({ visible: true, item: pet, type: 'pet' })}
                         disabled={!selectedStudent || !canAfford}
-                        className="mt-1 w-full py-1.5 bg-purple-500 text-white text-xs font-bold rounded-lg hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                        className={`w-full py-1.5 text-xs font-bold rounded-lg transition-colors ${canAfford
+                          ? 'bg-purple-500 text-white hover:bg-purple-600'
+                          : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                          }`}
                       >
                         {canAfford ? 'Adopt' : 'Need More'}
                       </button>
@@ -1418,16 +1428,24 @@ const ShopTab = ({
           <div>
             <h4 className="font-semibold text-gray-700 mb-3">Avatars ({ownedAvatars.length})</h4>
             {ownedAvatars.length > 0 ? (
-              <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                 {ownedAvatars.map(avatarName => {
-                  const avatarData = [...SHOP_BASIC_AVATARS, ...SHOP_PREMIUM_AVATARS].find(a => a.name === avatarName);
+                  const avatarData = [
+                    ...SHOP_BASIC_AVATARS,
+                    ...SHOP_PREMIUM_AVATARS,
+                    ...(HALLOWEEN_BASIC_AVATARS || []),
+                    ...(HALLOWEEN_PREMIUM_AVATARS || []),
+                    ...(CHRISTMAS_BASIC_AVATARS || []),
+                    ...(CHRISTMAS_PREMIUM_AVATARS || [])
+                  ].find(a => a.name === avatarName);
                   return (
-                    <div key={avatarName} className="bg-white rounded-xl overflow-hidden text-center border shadow-sm hover:shadow-md transition-all">
-                      <div className="aspect-[3/4] bg-gray-50">
+                    <div key={avatarName} className="w-full bg-white rounded-xl overflow-hidden text-center border shadow-sm hover:shadow-md transition-all">
+                      <div className="aspect-square w-full bg-gray-50 flex items-center justify-center">
                         <img
-                          src={avatarData?.path || '/shop/Basic/Banana.png'}
+                          src={avatarData?.path || getAvatarImage(avatarName, 1)}
                           alt={avatarName}
                           className="w-full h-full object-contain"
+                          onError={(e) => { e.target.src = '/shop/Basic/Banana.png'; }}
                         />
                       </div>
                       <div className="p-2">
@@ -1446,10 +1464,10 @@ const ShopTab = ({
           <div>
             <h4 className="font-semibold text-gray-700 mb-3">Pets ({ownedPets.length})</h4>
             {ownedPets.length > 0 ? (
-              <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                 {ownedPets.map(pet => (
-                  <div key={pet.id || pet.name} className="bg-white rounded-xl overflow-hidden text-center border shadow-sm hover:shadow-md transition-all">
-                    <div className="aspect-square bg-gray-50">
+                  <div key={pet.id || pet.name} className="w-full bg-white rounded-xl overflow-hidden text-center border shadow-sm hover:shadow-md transition-all">
+                    <div className="aspect-square w-full bg-gray-50 flex items-center justify-center">
                       <img
                         src={pet.path || '/shop/BasicPets/Wizard.png'}
                         alt={pet.name}

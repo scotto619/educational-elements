@@ -320,7 +320,7 @@ const LootWellTab = ({
                             </h3>
                             {lootWellResult.type === 'avatar' && (
                                 <div className="flex flex-col items-center">
-                                    <div className="w-32 aspect-[3/4] mb-4 bg-white rounded-xl shadow-lg border-4 border-white overflow-hidden">
+                                    <div className="w-48 h-64 mb-4 bg-white rounded-xl shadow-lg border-4 border-white overflow-hidden flex items-center justify-center">
                                         <img
                                             src={lootWellResult.item.path}
                                             alt={lootWellResult.item.name}
@@ -332,7 +332,7 @@ const LootWellTab = ({
                             )}
                             {lootWellResult.type === 'pet' && (
                                 <div className="flex flex-col items-center">
-                                    <div className="w-32 aspect-square mb-4 bg-white rounded-xl shadow-lg border-4 border-white overflow-hidden">
+                                    <div className="w-48 h-48 mb-4 bg-white rounded-xl shadow-lg border-4 border-white overflow-hidden flex items-center justify-center">
                                         <img
                                             src={lootWellResult.item.path}
                                             alt={lootWellResult.item.name}
