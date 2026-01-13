@@ -1906,124 +1906,84 @@ const StudentShop = ({
     ]
   );
 
-  const renderTradingCardShowcase = () => (
-    <div className="relative overflow-hidden rounded-2xl p-6 md:p-8 bg-gradient-to-br from-slate-900 via-indigo-900 to-purple-900 text-white shadow-xl">
-      <div className="absolute inset-0 opacity-30" aria-hidden>
-        {[...Array(40)].map((_, index) => (
-          <div
-            key={index}
-            className="absolute bg-white/20 rounded-full animate-pulse"
-            style={{
-              width: `${Math.random() * 5 + 3}px`,
-              height: `${Math.random() * 5 + 3}px`,
-              top: `${Math.random() * 100}%`,
-              left: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 2}s`
-            }}
-          />
-        ))}
+  const renderCardPackSection = () => (
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div>
+          <h3 className="text-xl md:text-2xl font-bold text-slate-900">🃏 Card Packs</h3>
+          <p className="text-sm md:text-base text-slate-600">
+            Build your collection with themed packs and open the ones you already own.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setCardBookVisible(true)}
+          className="self-start md:self-auto px-4 py-2 rounded-xl bg-slate-900 text-white hover:bg-slate-800 transition font-semibold"
+        >
+          📖 Card Book
+        </button>
       </div>
 
-      <div className="relative z-10 flex flex-col gap-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h3 className="text-2xl md:text-3xl font-bold drop-shadow-lg">✨ Trading Card Universe</h3>
-            <p className="text-white/70 text-sm md:text-base max-w-2xl mt-1">
-              Collect dazzling avatars, pets, weapons, and artifacts. Complete the Card Book to unlock legendary bragging rights!
-            </p>
-            <div className="mt-4 h-2 rounded-full bg-white/15 overflow-hidden">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {cardPackInventory.map(packInfo => {
+          const packStyle = CARD_RARITY_STYLES[packInfo.rarity] || CARD_RARITY_STYLES.common;
+          const canAfford = currentCoins >= packInfo.price;
+          const canOpen = packInfo.count > 0 && !isOpeningPack;
+
+          return (
+            <div
+              key={packInfo.id}
+              className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+            >
               <div
-                className="h-full rounded-full bg-gradient-to-r from-orange-400 via-fuchsia-400 to-sky-300"
-                style={{ width: `${cardProgress.completion}%` }}
+                className="absolute inset-0 opacity-70"
+                style={{ background: packInfo.visual?.gradient || packStyle.gradient }}
+                aria-hidden
               />
-            </div>
-            <p className="text-xs uppercase tracking-widest text-white/60 mt-2">
-              {cardProgress.uniqueOwned} / {cardProgress.totalUnique} unique cards • {cardProgress.totalOwned} total collected
-            </p>
-          </div>
-
-          <div className="flex flex-wrap gap-2 justify-end">
-            <button
-              type="button"
-              onClick={() => setCardBookVisible(true)}
-              className="px-4 py-2 rounded-xl bg-white/15 border border-white/30 hover:bg-white/25 transition font-semibold"
-            >
-              📖 Card Book
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveCategory('card_packs')}
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-500 hover:shadow-lg font-semibold"
-            >
-              🃏 Shop Packs
-            </button>
-          </div>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-3">
-          {cardPackInventory.map(packInfo => {
-            const packStyle = CARD_RARITY_STYLES[packInfo.rarity] || CARD_RARITY_STYLES.common;
-            return (
-              <div
-                key={packInfo.id}
-                className="relative overflow-hidden rounded-2xl border border-white/15 p-4 md:p-5 backdrop-blur-sm"
-                style={{ background: packInfo.visual?.gradient || 'rgba(255,255,255,0.08)' }}
-              >
-                <div className="absolute inset-0 opacity-30 bg-black/20" aria-hidden></div>
-                <div className="relative z-10 flex flex-col gap-3 text-white">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-xs uppercase tracking-widest text-white/70">
-                        {packStyle.label} Pack
-                      </p>
-                      <p className="text-lg font-bold">{packInfo.name}</p>
-                      <p className="text-xs text-white/70">
-                        {packInfo.minCards}-{packInfo.maxCards} cards • Owned x{packInfo.count}
-                      </p>
-                    </div>
-                    <span className="text-3xl drop-shadow-lg">{packInfo.icon || '🃏'}</span>
+              <div className="relative z-10 p-4 text-white">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs uppercase tracking-widest text-white/80">
+                      {packStyle.label} Pack
+                    </p>
+                    <p className="text-lg font-bold">{packInfo.name}</p>
+                    <p className="text-xs text-white/80">
+                      {packInfo.minCards}-{packInfo.maxCards} cards • Owned x{packInfo.count}
+                    </p>
                   </div>
+                  <span className="text-3xl drop-shadow-lg">{packInfo.icon || '🃏'}</span>
+                </div>
 
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setPurchaseModal({ visible: true, item: packInfo, type: 'card_pack' })}
-                      className="flex-1 px-4 py-2 rounded-lg font-semibold bg-white text-slate-900 border border-white/80 shadow-sm hover:bg-amber-100 hover:shadow-md transition"
-                    >
-                      Buy • 💰{packInfo.price}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleOpenPack(packInfo)}
-                      disabled={packInfo.count === 0 || isOpeningPack}
-                      className={`flex-1 px-4 py-2 rounded-lg font-semibold transition ${packInfo.count === 0 || isOpeningPack
-                        ? 'bg-white/10 text-white/50 cursor-not-allowed'
-                        : 'bg-gradient-to-r from-amber-400 to-pink-500 hover:shadow-lg'
-                        }`}
-                    >
-                      {isOpeningPack ? 'Opening...' : `Open Pack${packInfo.count > 0 ? ` (${packInfo.count})` : ''}`}
-                    </button>
-                  </div>
+                <div className="mt-4 flex flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPurchaseModal({ visible: true, item: packInfo, type: 'card_pack' })}
+                    disabled={!canAfford}
+                    className={`w-full rounded-lg px-4 py-2 text-sm font-semibold transition ${
+                      canAfford
+                        ? 'bg-white text-slate-900 hover:bg-amber-100'
+                        : 'bg-white/30 text-white/70 cursor-not-allowed'
+                    }`}
+                  >
+                    Buy Pack • 💰{packInfo.price}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenPack(packInfo)}
+                    disabled={!canOpen}
+                    className={`w-full rounded-lg px-4 py-2 text-sm font-semibold transition ${
+                      canOpen
+                        ? 'bg-gradient-to-r from-amber-400 to-pink-500 hover:shadow-lg'
+                        : 'bg-white/20 text-white/60 cursor-not-allowed'
+                    }`}
+                  >
+                    {isOpeningPack ? 'Opening...' : `Open Pack${packInfo.count > 0 ? ` (${packInfo.count})` : ''}`}
+                  </button>
                 </div>
               </div>
-            );
-          })}
-        </div>
-
-        <div className="flex flex-wrap gap-3 text-xs text-white/70">
-          {CARD_RARITY_ORDER.map(rarity => {
-            const stats = cardRarityBreakdown[rarity] || { total: 0, owned: 0 };
-            const style = CARD_RARITY_STYLES[rarity];
-            return (
-              <span
-                key={rarity}
-                className="px-3 py-1 rounded-full border border-white/20 bg-white/10 backdrop-blur-sm"
-              >
-                <span style={{ color: style.color }}>{style.label}</span>: {stats.owned}/{stats.total}
-              </span>
-            );
-          })}
-        </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -3485,8 +3445,6 @@ const StudentShop = ({
           </div>
         </div>
       </div>
-
-      {renderTradingCardShowcase()}
 
       {/* Trade Alerts */}
       {(hasPendingOutgoingTrade || pendingIncomingTrades.length > 0) && (
