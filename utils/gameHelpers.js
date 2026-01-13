@@ -95,7 +95,28 @@ export const SHOP_BASIC_AVATARS = [
   { name: 'Rugby', price: 20, path: '/shop/Basic/Update2/Rugby.png' },
   { name: 'T800', price: 30, path: '/shop/Basic/Update2/T800.png' },
   { name: 'Tralalero', price: 25, path: '/shop/Basic/Update2/Tralalero.png' },
-  { name: 'Cappuccino', price: 18, path: '/shop/Basic/Update2/Cappuccino.png' }
+  { name: 'Cappuccino', price: 18, path: '/shop/Basic/Update2/Cappuccino.png' },
+  { name: 'Belle', price: 22, path: '/shop/Basic/Update3/Belle.png' },
+  { name: 'Cena', price: 28, path: '/shop/Basic/Update3/Cena.png' },
+  { name: 'Chicken Banana', price: 15, path: '/shop/Basic/Update3/ChickenBanana.png' },
+  { name: 'Chief', price: 25, path: '/shop/Basic/Update3/Chief.png' },
+  { name: 'Deku', price: 30, path: '/shop/Basic/Update3/Deku.png' },
+  { name: 'Elsa', price: 24, path: '/shop/Basic/Update3/Elsa.png' },
+  { name: 'Frodo', price: 22, path: '/shop/Basic/Update3/Frodo.png' },
+  { name: 'Goku', price: 35, path: '/shop/Basic/Update3/Goku.png' },
+  { name: 'Harry', price: 28, path: '/shop/Basic/Update3/Harry.png' },
+  { name: 'Hulk', price: 35, path: '/shop/Basic/Update3/Hulk.png' },
+  { name: 'Hunter', price: 20, path: '/shop/Basic/Update3/Hunter.png' },
+  { name: 'Kakashi', price: 30, path: '/shop/Basic/Update3/Kakashi.png' },
+  { name: 'Link', price: 28, path: '/shop/Basic/Update3/Link.png' },
+  { name: 'Mario', price: 30, path: '/shop/Basic/Update3/Mario.png' },
+  { name: 'Naruto', price: 30, path: '/shop/Basic/Update3/Naruto.png' },
+  { name: 'Sasuke', price: 30, path: '/shop/Basic/Update3/Saske.png' },
+  { name: 'Sonic', price: 28, path: '/shop/Basic/Update3/Sonic.png' },
+  { name: 'Trunks', price: 32, path: '/shop/Basic/Update3/Trunks.png' },
+  { name: 'Vegeta', price: 35, path: '/shop/Basic/Update3/Vegeta.png' },
+  { name: 'Wednesday', price: 22, path: '/shop/Basic/Update3/Wednesday.png' },
+  { name: 'Yoshi', price: 26, path: '/shop/Basic/Update3/Yoshi.png' }
 ];
 
 export const SHOP_PREMIUM_AVATARS = [
@@ -209,7 +230,15 @@ export const SHOP_BASIC_PETS = [
   { name: 'Lizard Hatchling', price: 28, path: '/shop/BasicPets/Update1/LizardPet.png' },
   { name: 'Octopus Buddy', price: 32, path: '/shop/BasicPets/Update1/OctopusPet.png' },
   { name: 'Red Panda Pal', price: 34, path: '/shop/BasicPets/Update1/RedpandaPet.png' },
-  { name: 'Shark Buddy', price: 33, path: '/shop/Basic/Update1/SharkPet.png' }
+  { name: 'Shark Buddy', price: 33, path: '/shop/Basic/Update1/SharkPet.png' },
+  { name: 'Air Spirit', price: 35, path: '/shop/BasicPets/Update2/Air.png' },
+  { name: 'Choco Pup', price: 22, path: '/shop/BasicPets/Update2/Choco.png' },
+  { name: 'Earth Spirit', price: 35, path: '/shop/BasicPets/Update2/Earth.png' },
+  { name: 'Fire Spirit', price: 38, path: '/shop/BasicPets/Update2/Fire.png' },
+  { name: 'Nemo', price: 25, path: '/shop/BasicPets/Update2/Nemo.png' },
+  { name: 'Snoopy', price: 28, path: '/shop/BasicPets/Update2/Snoopy.png' },
+  { name: 'Tails', price: 30, path: '/shop/BasicPets/Update2/Tails.png' },
+  { name: 'Water Spirit', price: 35, path: '/shop/BasicPets/Update2/Water.png' }
 ];
 
 export const SHOP_PREMIUM_PETS = [
