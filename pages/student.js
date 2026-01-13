@@ -2115,7 +2115,11 @@ const StudentPortal = () => {
       )}
 
       {/* Main Content */}
-      <main className="max-w-6xl mx-auto px-3 md:px-4 py-4 md:py-6">
+      <main
+        className={`mx-auto px-3 md:px-4 py-4 md:py-6 w-full ${
+          activeTab === 'shop' ? 'max-w-none' : 'max-w-6xl'
+        }`}
+      >
         <div className="relative">
           {activeTab === 'dashboard' && (
             <HiddenPresent
