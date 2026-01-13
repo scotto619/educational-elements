@@ -1184,8 +1184,12 @@ const ShopTab = ({
           <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
             <span>👤</span> Today's Avatars
           </h3>
+<<<<<<< HEAD
           {/* FIXED: Changed from flex to proper grid */}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-3 md:gap-4">
+=======
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-3 sm:gap-4 justify-items-center">
+>>>>>>> a5e89919bd567a12a6171c32417b82050e427744
             {dailyAvatars.map(avatar => {
               const owned = selectedStudent?.ownedAvatars?.includes(avatar.name);
               const canAfford = selectedStudent ? calculateCoins(selectedStudent) >= avatar.price : false;
@@ -1193,10 +1197,17 @@ const ShopTab = ({
               return (
                 <div
                   key={avatar.name}
+<<<<<<< HEAD
                   className={`w-full bg-white rounded-xl shadow-sm hover:shadow-md transition-all border overflow-hidden flex flex-col ${owned ? 'border-green-400 ring-2 ring-green-100' : 'border-gray-200 hover:border-blue-400'
                     }`}
                 >
                   <div className="aspect-square w-full bg-gray-50 flex items-center justify-center p-2">
+=======
+                    className={`w-full max-w-[220px] mx-auto bg-white rounded-xl shadow-sm hover:shadow-md transition-all border overflow-hidden flex flex-col ${owned ? 'border-green-400 ring-2 ring-green-100' : 'border-gray-200 hover:border-blue-400'
+                      }`}
+                  >
+                  <div className="h-48 w-full bg-gray-50 flex items-center justify-center p-2">
+>>>>>>> a5e89919bd567a12a6171c32417b82050e427744
                     <img
                       src={avatar.path}
                       alt={avatar.name}
@@ -1238,8 +1249,12 @@ const ShopTab = ({
           <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
             <span>🐾</span> Today's Pets
           </h3>
+<<<<<<< HEAD
           {/* FIXED: Changed from flex to proper grid */}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
+=======
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-3 sm:gap-4 justify-items-center">
+>>>>>>> a5e89919bd567a12a6171c32417b82050e427744
             {dailyPets.map(pet => {
               const owned = selectedStudent?.ownedPets?.some(p => p.name === pet.name);
               const canAfford = selectedStudent ? calculateCoins(selectedStudent) >= pet.price : false;
@@ -1247,10 +1262,17 @@ const ShopTab = ({
               return (
                 <div
                   key={pet.name}
+<<<<<<< HEAD
                   className={`w-full bg-white rounded-xl shadow-sm hover:shadow-md transition-all border overflow-hidden flex flex-col ${owned ? 'border-green-400 ring-2 ring-green-100' : 'border-gray-200 hover:border-purple-400'
                     }`}
                 >
                   <div className="aspect-square w-full bg-gray-50 flex items-center justify-center p-2">
+=======
+                    className={`w-full max-w-[220px] mx-auto bg-white rounded-xl shadow-sm hover:shadow-md transition-all border overflow-hidden flex flex-col ${owned ? 'border-green-400 ring-2 ring-green-100' : 'border-gray-200 hover:border-purple-400'
+                      }`}
+                  >
+                  <div className="h-40 w-full bg-gray-50 flex items-center justify-center p-2">
+>>>>>>> a5e89919bd567a12a6171c32417b82050e427744
                     <img
                       src={pet.path}
                       alt={pet.name}
@@ -1489,6 +1511,7 @@ const ShopTab = ({
         return renderMysteryBox();
       }
 
+<<<<<<< HEAD
       if (activeCategory === 'card_packs') {
         return renderCardPackItems();
       }
@@ -1547,6 +1570,39 @@ const ShopTab = ({
                 <div className="text-3xl sm:text-4xl">{item.icon}</div>
                 <p className="font-semibold mt-1 sm:mt-2 text-xs sm:text-sm">{item.name}</p>
               </>
+=======
+          {/* Owned Avatars */}
+          <div>
+            <h4 className="font-semibold text-gray-700 mb-3">Avatars ({ownedAvatars.length})</h4>
+            {ownedAvatars.length > 0 ? (
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3 justify-items-center">
+                {ownedAvatars.map(avatarName => {
+                  const avatarData = [
+                    ...SHOP_BASIC_AVATARS,
+                    ...SHOP_PREMIUM_AVATARS,
+                    ...(HALLOWEEN_BASIC_AVATARS || []),
+                    ...(HALLOWEEN_PREMIUM_AVATARS || []),
+                    ...(CHRISTMAS_BASIC_AVATARS || []),
+                    ...(CHRISTMAS_PREMIUM_AVATARS || [])
+                  ].find(a => a.name === avatarName);
+                  return (
+                    <div key={avatarName} className="w-full bg-white rounded-xl overflow-hidden text-center border shadow-sm hover:shadow-md transition-all">
+                      <div className="aspect-square w-full bg-gray-50 flex items-center justify-center">
+                        <img
+                          src={avatarData?.path || getAvatarImage(avatarName, 1)}
+                          alt={avatarName}
+                          className="w-full h-full object-contain"
+                          onError={(e) => { e.target.src = '/shop/Basic/Banana.png'; }}
+                        />
+                      </div>
+                      <div className="p-2">
+                        <p className="text-xs font-semibold truncate">{avatarName}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+>>>>>>> a5e89919bd567a12a6171c32417b82050e427744
             ) : (
               <img src={item.path} className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 object-contain rounded-full mx-auto mb-1 sm:mb-2" />
             )}
@@ -1569,6 +1625,7 @@ const ShopTab = ({
       });
     };
 
+<<<<<<< HEAD
     // ===============================================
     // MOBILE-OPTIMIZED MYSTERY BOX MODAL
     // ===============================================
@@ -1667,6 +1724,21 @@ const ShopTab = ({
                       <p className="text-xs text-white/80">
                         {pack?.minCards}-{pack?.maxCards} cards • Price: 💰{pack?.price}
                       </p>
+=======
+          {/* Owned Pets */}
+          <div>
+            <h4 className="font-semibold text-gray-700 mb-3">Pets ({ownedPets.length})</h4>
+            {ownedPets.length > 0 ? (
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3 justify-items-center">
+                {ownedPets.map(pet => (
+                  <div key={pet.id || pet.name} className="w-full bg-white rounded-xl overflow-hidden text-center border shadow-sm hover:shadow-md transition-all">
+                    <div className="aspect-square w-full bg-gray-50 flex items-center justify-center">
+                      <img
+                        src={pet.path || '/shop/BasicPets/Wizard.png'}
+                        alt={pet.name}
+                        className="w-full h-full object-contain"
+                      />
+>>>>>>> a5e89919bd567a12a6171c32417b82050e427744
                     </div>
                   );
                 })()
@@ -2031,6 +2103,7 @@ const ShopTab = ({
                 <button onClick={handlePurchase} className="flex-1 py-2 sm:py-3 bg-green-500 text-white rounded-lg text-sm sm:text-base">Confirm</button>
               </div>
             </div>
+<<<<<<< HEAD
           </div>
         )}
 
@@ -2065,6 +2138,54 @@ const ShopTab = ({
                         <p className="text-xs font-semibold truncate">{avatarName}</p>
                         {selectedStudent.avatarBase === avatarName ? (
                           <p className="text-xs text-blue-600 font-bold">Equipped</p>
+=======
+            <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto">
+              <div>
+                <h3 className="font-bold text-base sm:text-lg mb-2">Owned Avatars</h3>
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-2 sm:gap-3 justify-items-center">
+                  {selectedStudent.ownedAvatars?.map(avatarName => (
+                    <div key={avatarName} className={`border-2 rounded-lg p-2 text-center ${selectedStudent.avatarBase === avatarName ? 'border-blue-500' : ''}`}>
+                      <img src={getAvatarImage(avatarName, calculateAvatarLevel(selectedStudent.totalPoints))} className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full mx-auto mb-1" />
+                      <p className="text-xs font-semibold truncate">{avatarName}</p>
+                      {selectedStudent.avatarBase === avatarName ? (
+                        <p className="text-xs text-blue-600 font-bold">Equipped</p>
+                      ) : showSellMode ? (
+                        <button
+                          onClick={() => handleSellItem(avatarName, 'avatar')}
+                          className="text-xs bg-red-500 text-white px-1 sm:px-2 py-0.5 rounded mt-1 hover:bg-red-600"
+                        >
+                          Sell
+                        </button>
+                      ) : (
+                        <button onClick={() => handleEquip('avatar', avatarName)} className="text-xs bg-gray-200 px-1 sm:px-2 py-0.5 rounded mt-1">Equip</button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <h3 className="font-bold text-base sm:text-lg mb-2">Owned Pets</h3>
+                {selectedStudent.ownedPets?.length > 0 ? (
+                  <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-2 sm:gap-3 justify-items-center">
+                    {selectedStudent.ownedPets.map((pet, index) => (
+                      <div key={pet.id} className={`border-2 rounded-lg p-2 text-center ${index === 0 ? 'border-blue-500' : ''}`}>
+                        {(() => {
+                          const petImage = resolvePetArt(getPetImage(pet));
+                          return (
+                            <img
+                              src={petImage.src}
+                              className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full mx-auto mb-1"
+                              data-fallbacks={serializeFallbacks(petImage.fallbacks)}
+                              data-fallback-index="0"
+                              onError={petImageErrorHandler}
+                              alt={pet.name}
+                            />
+                          );
+                        })()}
+                        <p className="text-xs font-semibold truncate">{pet.name}</p>
+                        {index === 0 ? (
+                          <p className="text-xs text-blue-600 font-bold">Following</p>
+>>>>>>> a5e89919bd567a12a6171c32417b82050e427744
                         ) : showSellMode ? (
                           <button
                             onClick={() => handleSellItem(avatarName, 'avatar')}
