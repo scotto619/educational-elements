@@ -2287,6 +2287,5 @@ const ShopTab = ({
       </div>
     );
   };
-};
 
-export default ShopTab;
+  export default ShopTab;
