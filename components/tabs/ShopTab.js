@@ -947,170 +947,178 @@ const ShopTab = ({
   ];
 
   const renderFeaturedItems = () => {
-    return featuredItems.map(item => {
-      const isAvatar = item.type === 'avatar';
-      const isPet = item.type === 'pet';
-      const isReward = item.type === 'reward';
-      const isCardPack = item.type === 'card_pack';
-      const owned = isAvatar
-        ? selectedStudent?.ownedAvatars?.includes(item.name)
-        : isPet
-          ? selectedStudent?.ownedPets?.some(p => p.name === item.name)
-          : false;
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 w-full">
+        {featuredItems.map(item => {
+          const isAvatar = item.type === 'avatar';
+          const isPet = item.type === 'pet';
+          const isReward = item.type === 'reward';
+          const isCardPack = item.type === 'card_pack';
+          const owned = isAvatar
+            ? selectedStudent?.ownedAvatars?.includes(item.name)
+            : isPet
+              ? selectedStudent?.ownedPets?.some(p => p.name === item.name)
+              : false;
 
-      if (isCardPack) {
-        const packStyle = CARD_RARITY_STYLES[item.rarity] || CARD_RARITY_STYLES.common;
-        const ownedCount = selectedStudentCardCollection.packs?.[item.id]?.count || 0;
-        const canAfford = selectedStudent ? calculateCoins(selectedStudent) >= item.price : false;
+          if (isCardPack) {
+            const packStyle = CARD_RARITY_STYLES[item.rarity] || CARD_RARITY_STYLES.common;
+            const ownedCount = selectedStudentCardCollection.packs?.[item.id]?.count || 0;
+            const canAfford = selectedStudent ? calculateCoins(selectedStudent) >= item.price : false;
 
-        return (
-          <div
-            key={item.id}
-            className="relative rounded-2xl overflow-hidden shadow-lg border border-white/20"
-            style={{
-              background: packStyle.gradient,
-              borderColor: `${packStyle.border}`
-            }}
-          >
-            {item.salePercentage ? (
-              <div className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 bg-rose-500 text-white text-xs font-bold px-1 sm:px-2 py-0.5 sm:py-1 rounded-full shadow-lg">
+            return (
+              <div
+                key={item.id}
+                className="relative rounded-2xl overflow-hidden shadow-lg border border-white/20"
+                style={{
+                  background: packStyle.gradient,
+                  borderColor: `${packStyle.border}`
+                }}
+              >
+                {item.salePercentage ? (
+                  <div className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 bg-rose-500 text-white text-xs font-bold px-1 sm:px-2 py-0.5 sm:py-1 rounded-full shadow-lg">
+                    -{item.salePercentage}%
+                  </div>
+                ) : null}
+
+                <div className="p-3 sm:p-4 text-white flex flex-col h-full">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <p className="text-xs sm:text-sm uppercase tracking-widest text-white/70">
+                        {packStyle.label}
+                      </p>
+                      <h4 className="text-base sm:text-lg font-semibold drop-shadow">{item.name}</h4>
+                    </div>
+                    <span className="text-3xl sm:text-4xl drop-shadow-lg">{item.icon || '🃏'}</span>
+                  </div>
+
+                  <p className="text-xs text-white/70 mb-3">
+                    {item.minCards}-{item.maxCards} cards per pack
+                  </p>
+
+                  <div className="mb-3">
+                    {item.salePercentage ? (
+                      <>
+                        <div className="text-xs text-white/70 line-through">💰 {item.originalPrice}</div>
+                        <div className="text-lg font-bold">💰 {item.price}</div>
+                      </>
+                    ) : (
+                      <div className="text-lg font-bold">💰 {item.price}</div>
+                    )}
+                  </div>
+
+                  <div className="mt-auto flex flex-col gap-2">
+                    <button
+                      onClick={() => setPurchaseModal({ visible: true, item, type: 'card_pack' })}
+                      disabled={!selectedStudent || !canAfford}
+                      className="w-full rounded-lg bg-black/20 backdrop-blur px-3 py-2 text-xs sm:text-sm font-semibold text-white hover:bg-black/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Buy Pack
+                    </button>
+                    <p className="text-xs text-center text-white/80">Owned: x{ownedCount}</p>
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
+          return (
+            <div
+              key={item.name || item.id}
+              className={`border-2 rounded-lg p-3 sm:p-4 text-center flex flex-col justify-between relative ${owned ? 'border-green-400 bg-green-50' : 'border-red-300 bg-gradient-to-br from-red-50 to-pink-50'}`}
+            >
+              <div className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 bg-red-500 text-white text-xs font-bold px-1 sm:px-2 py-0.5 sm:py-1 rounded-full shadow-lg">
                 -{item.salePercentage}%
               </div>
-            ) : null}
 
-            <div className="p-3 sm:p-4 text-white flex flex-col h-full">
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <p className="text-xs sm:text-sm uppercase tracking-widest text-white/70">
-                    {packStyle.label}
-                  </p>
-                  <h4 className="text-base sm:text-lg font-semibold drop-shadow">{item.name}</h4>
-                </div>
-                <span className="text-3xl sm:text-4xl drop-shadow-lg">{item.icon || '🃏'}</span>
+              {isReward ? (
+                <>
+                  <div className="text-3xl sm:text-4xl">{item.icon}</div>
+                  <p className="font-semibold mt-1 sm:mt-2 text-xs sm:text-sm">{item.name}</p>
+                </>
+              ) : (
+                <img src={item.path} className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 object-contain rounded-full mx-auto mb-1 sm:mb-2" />
+              )}
+
+              {!isReward && <p className="font-semibold text-xs sm:text-sm">{item.name}</p>}
+
+              <div className="mt-1 sm:mt-2">
+                <div className="text-xs sm:text-sm text-gray-500 line-through">💰 {item.originalPrice}</div>
+                <div className="text-sm sm:text-lg font-bold text-red-600">💰 {item.price}</div>
               </div>
 
-              <p className="text-xs text-white/70 mb-3">
-                {item.minCards}-{item.maxCards} cards per pack
-              </p>
-
-              <div className="mb-3">
-                {item.salePercentage ? (
-                  <>
-                    <div className="text-xs text-white/70 line-through">💰 {item.originalPrice}</div>
-                    <div className="text-lg font-bold">💰 {item.price}</div>
-                  </>
-                ) : (
-                  <div className="text-lg font-bold">💰 {item.price}</div>
-                )}
-              </div>
-
-              <div className="mt-auto flex flex-col gap-2">
+              {owned ? (
+                <p className="font-bold text-green-600 mt-1 sm:mt-2 text-xs sm:text-sm">Owned</p>
+              ) : (
                 <button
-                  onClick={() => setPurchaseModal({ visible: true, item, type: 'card_pack' })}
-                  disabled={!selectedStudent || !canAfford}
-                  className="w-full rounded-lg bg-black/20 backdrop-blur px-3 py-2 text-xs sm:text-sm font-semibold text-white hover:bg-black/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => setPurchaseModal({ visible: true, item: item, type: item.type })}
+                  disabled={!selectedStudent || calculateCoins(selectedStudent) < item.price}
+                  className="mt-1 sm:mt-2 w-full bg-red-500 text-white text-xs sm:text-sm py-1 sm:py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-red-600 font-semibold"
                 >
-                  Buy Pack
+                  🔥 Buy Now!
                 </button>
-                <p className="text-xs text-center text-white/80">Owned: x{ownedCount}</p>
-              </div>
+              )}
             </div>
-          </div>
-        );
-      }
-
-      return (
-        <div
-          key={item.name || item.id}
-          className={`border-2 rounded-lg p-3 sm:p-4 text-center flex flex-col justify-between relative ${owned ? 'border-green-400 bg-green-50' : 'border-red-300 bg-gradient-to-br from-red-50 to-pink-50'}`}
-        >
-          <div className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 bg-red-500 text-white text-xs font-bold px-1 sm:px-2 py-0.5 sm:py-1 rounded-full shadow-lg">
-            -{item.salePercentage}%
-          </div>
-
-          {isReward ? (
-            <>
-              <div className="text-3xl sm:text-4xl">{item.icon}</div>
-              <p className="font-semibold mt-1 sm:mt-2 text-xs sm:text-sm">{item.name}</p>
-            </>
-          ) : (
-            <img src={item.path} className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 object-contain rounded-full mx-auto mb-1 sm:mb-2" />
-          )}
-
-          {!isReward && <p className="font-semibold text-xs sm:text-sm">{item.name}</p>}
-
-          <div className="mt-1 sm:mt-2">
-            <div className="text-xs sm:text-sm text-gray-500 line-through">💰 {item.originalPrice}</div>
-            <div className="text-sm sm:text-lg font-bold text-red-600">💰 {item.price}</div>
-          </div>
-
-          {owned ? (
-            <p className="font-bold text-green-600 mt-1 sm:mt-2 text-xs sm:text-sm">Owned</p>
-          ) : (
-            <button
-              onClick={() => setPurchaseModal({ visible: true, item: item, type: item.type })}
-              disabled={!selectedStudent || calculateCoins(selectedStudent) < item.price}
-              className="mt-1 sm:mt-2 w-full bg-red-500 text-white text-xs sm:text-sm py-1 sm:py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-red-600 font-semibold"
-            >
-              🔥 Buy Now!
-            </button>
-          )}
-        </div>
-      );
-    });
+          );
+        })}
+      </div>
+    );
   };
 
   const renderCardPackItems = () => {
-    return cardPackInventory.map(pack => {
-      const packStyle = CARD_RARITY_STYLES[pack.rarity] || CARD_RARITY_STYLES.common;
-      const canAfford = selectedStudent ? calculateCoins(selectedStudent) >= pack.price : false;
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
+        {cardPackInventory.map(pack => {
+          const packStyle = CARD_RARITY_STYLES[pack.rarity] || CARD_RARITY_STYLES.common;
+          const canAfford = selectedStudent ? calculateCoins(selectedStudent) >= pack.price : false;
 
-      return (
-        <div
-          key={pack.id}
-          className="relative rounded-2xl overflow-hidden shadow-lg border border-white/20"
-          style={{
-            background: pack.visual?.gradient || packStyle.gradient,
-            borderColor: packStyle.border
-          }}
-        >
-          <div className="absolute inset-0 opacity-20" style={{ background: packStyle.glow }}></div>
-          <div className="relative p-3 sm:p-4 text-white flex flex-col h-full">
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <p className="text-xs sm:text-sm uppercase tracking-widest text-white/70">
-                  {packStyle.label}
+          return (
+            <div
+              key={pack.id}
+              className="relative rounded-2xl overflow-hidden shadow-lg border border-white/20"
+              style={{
+                background: pack.visual?.gradient || packStyle.gradient,
+                borderColor: packStyle.border
+              }}
+            >
+              <div className="absolute inset-0 opacity-20" style={{ background: packStyle.glow }}></div>
+              <div className="relative p-3 sm:p-4 text-white flex flex-col h-full">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="text-xs sm:text-sm uppercase tracking-widest text-white/70">
+                      {packStyle.label}
+                    </p>
+                    <h4 className="text-base sm:text-lg font-semibold drop-shadow">{pack.name}</h4>
+                  </div>
+                  <span className="text-3xl sm:text-4xl drop-shadow-lg">{pack.icon || '🃏'}</span>
+                </div>
+
+                <p className="text-xs text-white/70 mb-2">
+                  {pack.minCards}-{pack.maxCards} cards • Owned x{pack.count}
                 </p>
-                <h4 className="text-base sm:text-lg font-semibold drop-shadow">{pack.name}</h4>
+
+                <div className="flex items-baseline gap-2 mb-3">
+                  <span className="text-lg font-bold">💰 {pack.price}</span>
+                  <span className="text-xs text-white/70">per pack</span>
+                </div>
+
+                <div className="mt-auto flex flex-col gap-2">
+                  <button
+                    onClick={() => setPurchaseModal({ visible: true, item: pack, type: 'card_pack' })}
+                    disabled={!selectedStudent || !canAfford}
+                    className="w-full rounded-lg bg-black/20 backdrop-blur px-3 py-2 text-xs sm:text-sm font-semibold text-white hover:bg-black/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Buy Pack
+                  </button>
+                  <p className="text-[11px] sm:text-xs text-white/70 text-center">
+                    Includes cards across {cardTypeSummary}.
+                  </p>
+                </div>
               </div>
-              <span className="text-3xl sm:text-4xl drop-shadow-lg">{pack.icon || '🃏'}</span>
             </div>
-
-            <p className="text-xs text-white/70 mb-2">
-              {pack.minCards}-{pack.maxCards} cards • Owned x{pack.count}
-            </p>
-
-            <div className="flex items-baseline gap-2 mb-3">
-              <span className="text-lg font-bold">💰 {pack.price}</span>
-              <span className="text-xs text-white/70">per pack</span>
-            </div>
-
-            <div className="mt-auto flex flex-col gap-2">
-              <button
-                onClick={() => setPurchaseModal({ visible: true, item: pack, type: 'card_pack' })}
-                disabled={!selectedStudent || !canAfford}
-                className="w-full rounded-lg bg-black/20 backdrop-blur px-3 py-2 text-xs sm:text-sm font-semibold text-white hover:bg-black/30 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Buy Pack
-              </button>
-              <p className="text-[11px] sm:text-xs text-white/70 text-center">
-                Includes cards across {cardTypeSummary}.
-              </p>
-            </div>
-          </div>
-        </div>
-      );
-    });
+          );
+        })}
+      </div>
+    );
   };
 
   const renderMysteryBox = () => {
@@ -1166,129 +1174,7 @@ const ShopTab = ({
   // ===============================================
   // RENDER DAILY SHOP - Main simplified view
   // ===============================================
-  const renderDailyShop = () => {
-    const countdown = formatRotationCountdown();
 
-    return (
-      <div className="space-y-6">
-        {/* Rotation Timer */}
-        <div className="text-center text-sm text-gray-500">
-          <span className="inline-flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-full">
-            <span>🔄</span>
-            <span>New items in <strong>{countdown}</strong></span>
-          </span>
-        </div>
-
-        {/* Daily Avatars Section - FIXED GRID */}
-        <div>
-          <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <span>👤</span> Today's Avatars
-          </h3>
-          {/* FIXED: Changed from flex to proper grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-3 md:gap-4">
-            {dailyAvatars.map(avatar => {
-              const owned = selectedStudent?.ownedAvatars?.includes(avatar.name);
-              const canAfford = selectedStudent ? calculateCoins(selectedStudent) >= avatar.price : false;
-
-              return (
-                <div
-                  key={avatar.name}
-                  className={`w-full bg-white rounded-xl shadow-sm hover:shadow-md transition-all border overflow-hidden flex flex-col ${owned ? 'border-green-400 ring-2 ring-green-100' : 'border-gray-200 hover:border-blue-400'
-                    }`}
-                >
-                  <div className="aspect-square w-full bg-gray-50 flex items-center justify-center p-2">
-                    <img
-                      src={avatar.path}
-                      alt={avatar.name}
-                      className="h-full w-full object-contain"
-                      onError={(e) => { e.target.src = '/shop/Basic/Banana.png'; }}
-                    />
-                  </div>
-                  <div className="p-3 text-center border-t flex flex-col flex-grow justify-between">
-                    <div>
-                      <p className="font-bold text-gray-800 text-sm truncate mb-1">{avatar.name}</p>
-                      <p className="font-bold text-blue-600 mb-2">💰 {avatar.price}</p>
-                    </div>
-
-                    {owned ? (
-                      <span className="block w-full py-1.5 bg-green-100 text-green-700 text-xs font-bold rounded-lg">
-                        Owned
-                      </span>
-                    ) : (
-                      <button
-                        onClick={() => setPurchaseModal({ visible: true, item: avatar, type: 'avatar' })}
-                        disabled={!selectedStudent || !canAfford}
-                        className={`w-full py-1.5 text-xs font-bold rounded-lg transition-colors ${canAfford
-                          ? 'bg-blue-500 text-white hover:bg-blue-600'
-                          : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                          }`}
-                      >
-                        {canAfford ? 'Buy Now' : 'Need Coins'}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Daily Pets Section - FIXED GRID */}
-        <div>
-          <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <span>🐾</span> Today's Pets
-          </h3>
-          {/* FIXED: Changed from flex to proper grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
-            {dailyPets.map(pet => {
-              const owned = selectedStudent?.ownedPets?.some(p => p.name === pet.name);
-              const canAfford = selectedStudent ? calculateCoins(selectedStudent) >= pet.price : false;
-
-              return (
-                <div
-                  key={pet.name}
-                  className={`w-full bg-white rounded-xl shadow-sm hover:shadow-md transition-all border overflow-hidden flex flex-col ${owned ? 'border-green-400 ring-2 ring-green-100' : 'border-gray-200 hover:border-purple-400'
-                    }`}
-                >
-                  <div className="aspect-square w-full bg-gray-50 flex items-center justify-center p-2">
-                    <img
-                      src={pet.path}
-                      alt={pet.name}
-                      className="h-full w-full object-contain"
-                      onError={(e) => { e.target.src = '/shop/BasicPets/Wizard.png'; }}
-                    />
-                  </div>
-                  <div className="p-3 text-center border-t flex flex-col flex-grow justify-between">
-                    <div>
-                      <p className="font-bold text-gray-800 text-sm truncate mb-1">{pet.name}</p>
-                      <p className="font-bold text-purple-600 mb-2">💰 {pet.price}</p>
-                    </div>
-
-                    {owned ? (
-                      <span className="block w-full py-1.5 bg-green-100 text-green-700 text-xs font-bold rounded-lg">
-                        Owned
-                      </span>
-                    ) : (
-                      <button
-                        onClick={() => setPurchaseModal({ visible: true, item: pet, type: 'pet' })}
-                        disabled={!selectedStudent || !canAfford}
-                        className={`w-full py-1.5 text-xs font-bold rounded-lg transition-colors ${canAfford
-                          ? 'bg-purple-500 text-white hover:bg-purple-600'
-                          : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                          }`}
-                      >
-                        {canAfford ? 'Adopt' : 'Need More'}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    );
-  };
 
   // ===============================================
   // RENDER SPECIAL FEATURES MENU
