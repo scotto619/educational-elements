@@ -1174,6 +1174,139 @@ const ShopTab = ({
   // ===============================================
   // RENDER DAILY SHOP - Main simplified view
   // ===============================================
+  const renderDailyShop = () => {
+    const formatRotationCountdown = () => {
+      const now = new Date();
+      const tomorrow = new Date(now);
+      tomorrow.setHours(24, 0, 0, 0);
+      const diff = tomorrow - now;
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      return `${hours}h ${minutes}m`;
+    };
+
+    const countdown = formatRotationCountdown();
+
+    return (
+      <div className="space-y-6">
+        {/* Rotation Timer */}
+        <div className="text-center text-sm text-gray-500">
+          <span className="inline-flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-full">
+            <span>🔄</span>
+            <span>New items in <strong>{countdown}</strong></span>
+          </span>
+        </div>
+
+        {/* Daily Avatars Section - FIXED GRID */}
+        <div>
+          <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <span>👤</span> Today's Avatars
+          </h3>
+          {/* FIXED: Changed from flex to proper grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-3 md:gap-4">
+            {dailyAvatars.map(avatar => {
+              const owned = selectedStudent?.ownedAvatars?.includes(avatar.name);
+              const canAfford = selectedStudent ? calculateCoins(selectedStudent) >= avatar.price : false;
+
+              return (
+                <div
+                  key={avatar.name}
+                  className={`w-full bg-white rounded-xl shadow-sm hover:shadow-md transition-all border overflow-hidden flex flex-col ${owned ? 'border-green-400 ring-2 ring-green-100' : 'border-gray-200 hover:border-blue-400'
+                    }`}
+                >
+                  <div className="aspect-square w-full bg-gray-50 flex items-center justify-center p-2">
+                    <img
+                      src={avatar.path}
+                      alt={avatar.name}
+                      className="h-full w-full object-contain"
+                      onError={(e) => { e.target.src = '/shop/Basic/Banana.png'; }}
+                    />
+                  </div>
+                  <div className="p-3 text-center border-t flex flex-col flex-grow justify-between">
+                    <div>
+                      <p className="font-bold text-gray-800 text-sm truncate mb-1">{avatar.name}</p>
+                      <p className="font-bold text-blue-600 mb-2">💰 {avatar.price}</p>
+                    </div>
+
+                    {owned ? (
+                      <span className="block w-full py-1.5 bg-green-100 text-green-700 text-xs font-bold rounded-lg">
+                        Owned
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => setPurchaseModal({ visible: true, item: avatar, type: 'avatar' })}
+                        disabled={!selectedStudent || !canAfford}
+                        className={`w-full py-1.5 text-xs font-bold rounded-lg transition-colors ${canAfford
+                          ? 'bg-blue-500 text-white hover:bg-blue-600'
+                          : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                          }`}
+                      >
+                        {canAfford ? 'Buy Now' : 'Need Coins'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Daily Pets Section - FIXED GRID */}
+        <div>
+          <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <span>🐾</span> Today's Pets
+          </h3>
+          {/* FIXED: Changed from flex to proper grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
+            {dailyPets.map(pet => {
+              const owned = selectedStudent?.ownedPets?.some(p => p.name === pet.name);
+              const canAfford = selectedStudent ? calculateCoins(selectedStudent) >= pet.price : false;
+
+              return (
+                <div
+                  key={pet.name}
+                  className={`w-full bg-white rounded-xl shadow-sm hover:shadow-md transition-all border overflow-hidden flex flex-col ${owned ? 'border-green-400 ring-2 ring-green-100' : 'border-gray-200 hover:border-purple-400'
+                    }`}
+                >
+                  <div className="aspect-square w-full bg-gray-50 flex items-center justify-center p-2">
+                    <img
+                      src={pet.path}
+                      alt={pet.name}
+                      className="h-full w-full object-contain"
+                      onError={(e) => { e.target.src = '/shop/BasicPets/Wizard.png'; }}
+                    />
+                  </div>
+                  <div className="p-3 text-center border-t flex flex-col flex-grow justify-between">
+                    <div>
+                      <p className="font-bold text-gray-800 text-sm truncate mb-1">{pet.name}</p>
+                      <p className="font-bold text-purple-600 mb-2">💰 {pet.price}</p>
+                    </div>
+
+                    {owned ? (
+                      <span className="block w-full py-1.5 bg-green-100 text-green-700 text-xs font-bold rounded-lg">
+                        Owned
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => setPurchaseModal({ visible: true, item: pet, type: 'pet' })}
+                        disabled={!selectedStudent || !canAfford}
+                        className={`w-full py-1.5 text-xs font-bold rounded-lg transition-colors ${canAfford
+                          ? 'bg-purple-500 text-white hover:bg-purple-600'
+                          : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                          }`}
+                      >
+                        {canAfford ? 'Adopt' : 'Need More'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
 
   // ===============================================
