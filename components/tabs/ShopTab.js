@@ -2018,15 +2018,7 @@ const ShopTab = ({
             </div>
           )}
 
-          {/* MOBILE-RESPONSIVE Shop Grid */}
-          <div className={`grid gap-3 sm:gap-4 ${activeCategory === 'rewards'
-            ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
-            : activeCategory === 'featured' || activeCategory === 'card_packs'
-              ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3'
-              : activeCategory === 'mysterybox'
-                ? 'grid-cols-1'
-                : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5'
-            }`}>
+          <div className="w-full">
             {renderShopItems()}
           </div>
         </div>

@@ -504,6 +504,8 @@ const AnalyticsComponent = ({ students }) => {
 const TeachersToolkitTab = ({
   students,
   onUpdateStudent,
+  onAwardXP,
+  onAwardCoins,
   saveClassroomDataToFirebase,
   saveToolkitData, // NEW: For saving toolkit data to Firebase
   loadedData = {}, // NEW: For loading toolkit data from Firebase
@@ -546,8 +548,10 @@ const TeachersToolkitTab = ({
             <ClassroomJobs
               students={students}
               showToast={showNotification}
-              saveClassroomDataToFirebase={saveClassroomDataToFirebase}
-              currentClassId={currentClassId}
+              onAwardXP={onAwardXP}
+              onAwardCoins={onAwardCoins}
+              saveData={saveToolkitData}
+              loadedData={loadedData}
             />
           )}
           {activeToolkitTab === 'timetable' && (

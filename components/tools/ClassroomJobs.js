@@ -24,6 +24,7 @@ const ClassroomJobs = ({
   const [showPayAllModal, setShowPayAllModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [recentlyPaidStudents, setRecentlyPaidStudents] = useState(() => new Set());
 
   // New job form state
   const [newJob, setNewJob] = useState({
@@ -97,6 +98,17 @@ const ClassroomJobs = ({
     const unassigned = students.filter(student => !assignedStudentIds.includes(student.id));
     setUnassignedStudents(unassigned);
   }, [students, jobs]);
+
+  useEffect(() => {
+    const assignedIds = new Set(
+      jobs.flatMap(job => job.assignedStudents?.map(student => student.id) || [])
+    );
+    setRecentlyPaidStudents(prev => {
+      if (!prev.size) return prev;
+      const filtered = new Set([...prev].filter(id => assignedIds.has(id)));
+      return filtered.size === prev.size ? prev : filtered;
+    });
+  }, [jobs]);
 
   // ===============================================
   // SYNC STUDENT DATA IN JOBS WHEN STUDENTS PROP UPDATES
@@ -283,6 +295,7 @@ const ClassroomJobs = ({
     }
 
     let paymentCount = 0;
+    const newlyPaid = new Set();
     job.assignedStudents.forEach(student => {
       console.log(`💰 Awarding ${job.payAmount} ${job.payType} to ${student.firstName} (ID: ${student.id})`);
       
@@ -294,8 +307,10 @@ const ClassroomJobs = ({
         onAwardCoins(student.id, job.payAmount, `Job: ${job.title}`);
       }
       paymentCount++;
+      newlyPaid.add(student.id);
     });
 
+    setRecentlyPaidStudents(prev => new Set([...prev, ...newlyPaid]));
     showToast(`Paid ${paymentCount} student(s) for ${job.title}!`, 'success');
   };
 
@@ -309,6 +324,7 @@ const ClassroomJobs = ({
     let totalPayments = 0;
     let totalStudents = 0;
     
+    const newlyPaid = new Set();
     jobs.forEach(job => {
       if (job.assignedStudents.length > 0) {
         console.log(`💼 Processing job: ${job.title} (${job.assignedStudents.length} students)`);
@@ -324,11 +340,13 @@ const ClassroomJobs = ({
             onAwardCoins(student.id, job.payAmount, `Job: ${job.title}`);
           }
           totalStudents++;
+          newlyPaid.add(student.id);
         });
         totalPayments++;
       }
     });
 
+    setRecentlyPaidStudents(prev => new Set([...prev, ...newlyPaid]));
     showToast(`Paid all jobs! ${totalStudents} students received payments for ${totalPayments} different jobs.`, 'success');
     setShowPayAllModal(false);
     
@@ -507,12 +525,19 @@ const ClassroomJobs = ({
                         e.target.src = '/avatars/Wizard F/Level 1.png';
                       }}
                     />
-                    <div>
-                      <div className="font-semibold text-xs">{student.firstName}</div>
-                      <div className="text-xs opacity-75">Working</div>
+                  <div>
+                    <div className="font-semibold text-xs">{student.firstName}</div>
+                    <div className="flex items-center gap-2 text-xs opacity-75">
+                      <span>Working</span>
+                      {recentlyPaidStudents.has(student.id) && (
+                        <span className="inline-flex items-center rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-semibold text-slate-800">
+                          Paid
+                        </span>
+                      )}
                     </div>
                   </div>
-                ))}
+                </div>
+              ))}
                 
                 {/* Empty slots - Compact */}
                 {Array.from({ length: job.maxStudents - job.assignedStudents.length }).map((_, index) => (
