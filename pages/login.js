@@ -77,33 +77,25 @@ export default function Login() {
     try {
       // FIXED: Check account status, but allow canceled accounts to log back in
       const helpers = firestoreHelpers.current;
-      if (helpers?.collection && firestoreDb) {
-        try {
-          const { collection, query, where, getDocs } = helpers;
-          const userQuery = query(
-            collection(firestoreDb, 'users'),
-            where('email', '==', normalizedEmail)
-          );
-          const snapshot = await getDocs(userQuery);
+      try {
+        const response = await fetch('/api/prelogin-status', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ email: normalizedEmail })
+        });
 
-          if (!snapshot.empty) {
-            const userDoc = snapshot.docs[0];
-            const data = userDoc.data();
-
-            // CHANGED: Only block if loginDisabled is explicitly true
-            // Canceled accounts (accountStatus: 'canceled') are allowed to log in
-            if (data?.loginDisabled === true) {
-              alert('Your account has been disabled. Please contact support to restore access.');
-              setIsLoading(false);
-              return;
-            }
-
-            // REMOVED: The accountStatus === 'deleted' check
-            // Users with canceled subscriptions can now log in to resubscribe
+        if (response.ok) {
+          const { loginDisabled } = await response.json();
+          if (loginDisabled === true) {
+            alert('Your account has been disabled. Please contact support to restore access.');
+            setIsLoading(false);
+            return;
           }
-        } catch (checkError) {
-          console.warn('Skipping pre-login status check:', checkError);
         }
+      } catch (checkError) {
+        console.warn('Skipping pre-login status check:', checkError);
       }
 
       // Attempt to sign in
