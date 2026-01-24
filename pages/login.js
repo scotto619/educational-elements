@@ -115,22 +115,50 @@ export default function Login() {
           return;
         }
 
+        let resolvedUserData = userData;
+
+        // If subscription fields are missing, attempt a server-side sync with Stripe
+        if (!resolvedUserData?.subscriptionStatus && !resolvedUserData?.stripeCustomerId) {
+          try {
+            const syncResponse = await fetch('/api/sync-stripe-subscription', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                userId: auth.currentUser.uid,
+                userEmail: normalizedEmail
+              })
+            });
+
+            if (syncResponse.ok) {
+              const { updated } = await syncResponse.json();
+              if (updated) {
+                const refreshedDoc = await getDoc(doc(firestoreDb, 'users', auth.currentUser.uid));
+                resolvedUserData = refreshedDoc.exists() ? refreshedDoc.data() : resolvedUserData;
+              }
+            }
+          } catch (syncError) {
+            console.warn('Stripe subscription sync skipped:', syncError);
+          }
+        }
+
         // IMPROVED: Check if user needs to resubscribe
         const hasActiveSubscription =
-          ['active', 'trialing', 'trial'].includes(userData?.subscriptionStatus) ||
-          (userData?.subscription && userData.subscription !== 'cancelled');
+          ['active', 'trialing', 'trial'].includes(resolvedUserData?.subscriptionStatus) ||
+          (resolvedUserData?.subscription && resolvedUserData.subscription !== 'cancelled');
 
         const hasLegacySubscription =
-          (userData?.subscription &&
-            userData.subscription !== 'cancelled' &&
-            userData.subscription !== null) ||
-          (userData?.stripeCustomerId &&
-            !userData?.subscriptionStatus &&
-            (!userData?.subscription || userData.subscription !== 'cancelled'));
+          (resolvedUserData?.subscription &&
+            resolvedUserData.subscription !== 'cancelled' &&
+            resolvedUserData.subscription !== null) ||
+          (resolvedUserData?.stripeCustomerId &&
+            !resolvedUserData?.subscriptionStatus &&
+            (!resolvedUserData?.subscription || resolvedUserData.subscription !== 'cancelled'));
 
         // Check if user has explicitly canceled via accountStatus ONLY
         // (accountStatus is only set when user explicitly cancels their account)
-        const isCanceled = userData?.accountStatus === 'canceled';
+        const isCanceled = resolvedUserData?.accountStatus === 'canceled';
 
         // Redirect to checkout if canceled OR no valid subscription
         if (isCanceled || (!hasActiveSubscription && !hasLegacySubscription)) {
@@ -139,8 +167,8 @@ export default function Login() {
             isCanceled,
             hasActiveSubscription,
             hasLegacySubscription,
-            accountStatus: userData?.accountStatus,
-            subscriptionStatus: userData?.subscriptionStatus
+            accountStatus: resolvedUserData?.accountStatus,
+            subscriptionStatus: resolvedUserData?.subscriptionStatus
           });
           router.push('/checkout');
           return;
