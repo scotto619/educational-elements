@@ -1,32 +1,14 @@
 import Link from 'next/link';
 import Head from 'next/head';
 import Image from 'next/image';
-import { useState, useEffect } from 'react';
-
 export default function Pricing() {
-  const [daysUntilJan1, setDaysUntilJan1] = useState(0);
-
-  useEffect(() => {
-    // Calculate days until January 1, 2026
-    const calculateDaysUntilJan1 = () => {
-      const now = new Date();
-      const targetDate = new Date('2026-01-01T00:00:00.000Z');
-      const timeDifference = targetDate.getTime() - now.getTime();
-      const days = Math.max(1, Math.ceil(timeDifference / (1000 * 60 * 60 * 24)));
-      setDaysUntilJan1(days);
-    };
-
-    calculateDaysUntilJan1();
-    const interval = setInterval(calculateDaysUntilJan1, 1000 * 60 * 60);
-    
-    return () => clearInterval(interval);
-  }, []);
+  const introBannerVisible = true;
 
   const faqSchema = [
     {
-      question: 'Why do you need payment details for a free trial?',
+      question: 'Why do you need payment details for the $1 intro month?',
       answer:
-        "Payment details prevent trial abuse and ensure a smooth transition after your trial ends. You won't be charged until January 1st, 2026."
+        "Payment details keep your subscription active and apply the $1 introductory month. After the first month, the plan renews at $5.99/month."
     },
     {
       question: 'How many students can I have?',
@@ -36,7 +18,7 @@ export default function Pricing() {
     {
       question: 'Can I cancel anytime?',
       answer:
-        'Yes! Cancel anytime before January 1st, 2026 with no charges. After your trial, you can cancel anytime and your subscription ends at the current billing period.'
+        'Yes! Cancel anytime and your subscription ends at the current billing period.'
     },
     {
       question: 'What happens to my data if I cancel?',
@@ -48,19 +30,19 @@ export default function Pricing() {
   return (
     <>
       <Head>
-        <title>Educational Elements Pricing | Free Trial for Teachers</title>
+        <title>Educational Elements Pricing | $1 First Month</title>
         <meta
           name="description"
-          content="Compare Educational Elements pricing, access our extended free trial for teachers, and discover everything included in the classroom gamification platform."
+          content="Compare Educational Elements pricing, start your first month for $1, and discover everything included in the classroom gamification platform."
         />
         <link rel="canonical" href="https://educational-elements.com/pricing" />
         <meta name="robots" content="index,follow" />
-        <meta name="keywords" content="teacher software pricing, classroom management free trial, educational elements cost" />
+        <meta name="keywords" content="teacher software pricing, classroom management intro month, educational elements cost" />
         <meta property="og:type" content="website" />
         <meta property="og:title" content="Simple, Transparent Pricing | Educational Elements" />
         <meta
           property="og:description"
-          content="Start your free trial of Educational Elements and unlock classroom gamification, curriculum resources, and teaching tools."
+          content="Start your first month for $1 and unlock classroom gamification, curriculum resources, and teaching tools."
         />
         <meta property="og:url" content="https://educational-elements.com/pricing" />
         <meta property="og:image" content="https://educational-elements.com/Logo/LOGO_NoBG.png" />
@@ -119,21 +101,23 @@ export default function Pricing() {
 
         <h1 className="text-5xl font-bold mb-4 text-gray-800">Simple, Transparent Pricing</h1>
       <p className="text-xl text-gray-600 mb-12 text-center max-w-3xl">
-        Start your free trial today. No hidden fees, no complicated tiers.
+        Start your first month for $1. No hidden fees, no complicated tiers.
       </p>
 
-      {/* Trial Banner */}
-      <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-8 py-6 rounded-2xl mb-12 shadow-2xl max-w-4xl text-center">
-        <div className="flex items-center justify-center space-x-4">
-          <span className="text-4xl">⏰</span>
-          <div>
-            <p className="font-bold text-2xl mb-2">{daysUntilJan1} Days FREE Trial!</p>
-            <p className="text-lg opacity-90">Get complete access until January 1st, 2026</p>
-            <p className="text-sm opacity-75 mt-2">Payment details required • No charges during trial • Cancel anytime</p>
+      {/* Intro Offer Banner */}
+      {introBannerVisible && (
+        <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-8 py-6 rounded-2xl mb-12 shadow-2xl max-w-4xl text-center">
+          <div className="flex items-center justify-center space-x-4">
+            <span className="text-4xl">✨</span>
+            <div>
+              <p className="font-bold text-2xl mb-2">$1 Introductory Month</p>
+              <p className="text-lg opacity-90">Then $5.99/month after your first month</p>
+              <p className="text-sm opacity-75 mt-2">Cancel anytime • Secure Stripe checkout</p>
+            </div>
+            <span className="text-4xl">✨</span>
           </div>
-          <span className="text-4xl">⏰</span>
         </div>
-      </div>
+      )}
 
       <div className="max-w-lg mx-auto">
         {/* Single Plan */}
@@ -147,13 +131,13 @@ export default function Pricing() {
           <div className="text-center mb-10 pt-6">
             <h2 className="text-3xl font-bold text-white mb-4">Educational Elements</h2>
             <div className="mb-6">
-              <div className="text-6xl font-bold text-white mb-3">$5.99</div>
-              <div className="text-purple-200 text-xl mb-3">per month</div>
-              <div className="bg-green-400 text-green-900 px-6 py-3 rounded-xl text-lg font-bold">
-                🎁 FREE for {daysUntilJan1} days!
-              </div>
+            <div className="text-6xl font-bold text-white mb-3">$5.99</div>
+            <div className="text-purple-200 text-xl mb-3">per month</div>
+            <div className="bg-green-400 text-green-900 px-6 py-3 rounded-xl text-lg font-bold">
+                🎁 $1 for your first month!
             </div>
           </div>
+        </div>
           
           <div className="space-y-5 mb-10">
             <div className="bg-white bg-opacity-10 rounded-xl p-4">
@@ -210,23 +194,23 @@ export default function Pricing() {
           
           <Link href="/signup">
             <button className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 text-black px-8 py-5 rounded-xl hover:from-yellow-500 hover:to-orange-600 font-bold text-xl transition-all shadow-xl transform hover:scale-105">
-              🚀 Start {daysUntilJan1}-Day FREE Trial
+              🚀 Start for $1
             </button>
           </Link>
           <p className="text-center text-purple-200 text-sm mt-4">
-            FREE for {daysUntilJan1} days • Payment details required • Cancel anytime
+            $1 for your first month • Then $5.99/month • Cancel anytime
           </p>
         </div>
       </div>
 
       {/* How It Works */}
       <div className="mt-16 max-w-4xl">
-        <h3 className="text-3xl font-bold text-center text-gray-800 mb-8">How Your Free Trial Works</h3>
+        <h3 className="text-3xl font-bold text-center text-gray-800 mb-8">How the Intro Offer Works</h3>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="bg-white p-6 rounded-xl shadow-lg text-center">
             <div className="bg-blue-100 text-blue-600 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">1</div>
             <h4 className="font-bold text-gray-800 mb-2">Sign Up</h4>
-            <p className="text-gray-600 text-sm">Create account and enter payment details (required for trial verification)</p>
+            <p className="text-gray-600 text-sm">Create account and enter payment details</p>
           </div>
           <div className="bg-white p-6 rounded-xl shadow-lg text-center">
             <div className="bg-green-100 text-green-600 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">2</div>
@@ -235,13 +219,13 @@ export default function Pricing() {
           </div>
           <div className="bg-purple-100 p-6 rounded-xl shadow-lg text-center">
             <div className="bg-purple-100 text-purple-600 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">3</div>
-            <h4 className="font-bold text-gray-800 mb-2">Free Until Jan 1st</h4>
-            <p className="text-gray-600 text-sm">No charges for {daysUntilJan1} days</p>
+            <h4 className="font-bold text-gray-800 mb-2">$1 First Month</h4>
+            <p className="text-gray-600 text-sm">You pay $1 today for your first month</p>
           </div>
           <div className="bg-white p-6 rounded-xl shadow-lg text-center">
             <div className="bg-orange-100 text-orange-600 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold">4</div>
             <h4 className="font-bold text-gray-800 mb-2">Continue or Cancel</h4>
-            <p className="text-gray-600 text-sm">$5.99/month after trial or cancel anytime before</p>
+            <p className="text-gray-600 text-sm">$5.99/month after your first month or cancel anytime</p>
           </div>
         </div>
       </div>
@@ -265,7 +249,7 @@ export default function Pricing() {
         <p className="text-xl mb-6">Join educators already using Educational Elements</p>
         <Link href="/signup">
           <button className="bg-gradient-to-r from-yellow-400 to-orange-500 text-black px-8 py-4 rounded-xl font-bold text-lg hover:from-yellow-500 hover:to-orange-600 transition-all transform hover:scale-105 shadow-xl">
-            Start Your {daysUntilJan1}-Day FREE Trial
+            Start for $1
           </button>
         </Link>
       </div>

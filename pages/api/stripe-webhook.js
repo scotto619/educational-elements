@@ -71,7 +71,8 @@ export default async function handler(req, res) {
 async function handleCheckoutCompleted(session) {
   const firebaseUserId = session.metadata?.firebaseUserId;
   const customerId = session.customer;
-  const isTrialSubscription = session.metadata?.trialSubscription === 'true';
+  const introOffer = session.metadata?.introOffer === 'true';
+  const introCouponId = process.env.STRIPE_INTRO_COUPON_ID;
 
   if (!firebaseUserId) {
     console.error('No Firebase user ID in checkout session metadata');
@@ -93,8 +94,8 @@ async function handleCheckoutCompleted(session) {
       return;
     }
 
-    // Check if subscription has the trial coupon applied
-    const hasTrialCoupon = subscription.discount && subscription.discount.coupon.id === 'TRIAL2026';
+    const appliedCouponId = subscription.discount?.coupon?.id;
+    const hasIntroCoupon = introCouponId && appliedCouponId === introCouponId;
 
     // Update user document in Firestore
     const userRef = adminFirestore.collection('users').doc(firebaseUserId);
@@ -106,18 +107,17 @@ async function handleCheckoutCompleted(session) {
       subscriptionStatus: subscription.status,
       planType: 'educational-elements',
       currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      isTrialUser: false,
+      trialUntil: null
     };
 
-    // Handle trial subscriptions with coupon
-    if (isTrialSubscription && hasTrialCoupon) {
-      updateData.trialUntil = '2026-01-01T23:59:59.999Z'; // When coupon expires
-      updateData.isTrialUser = true;
-      updateData.discountApplied = 'TRIAL2026';
-      console.log(`✅ Trial subscription with coupon created for user ${firebaseUserId}`);
+    if (introOffer || hasIntroCoupon) {
+      updateData.introOffer = true;
+      updateData.discountApplied = appliedCouponId || introCouponId || null;
+      console.log(`✅ Introductory $1 offer applied for user ${firebaseUserId}`);
     } else {
-      // Regular subscription or trial ended
-      updateData.isTrialUser = false;
+      updateData.introOffer = false;
     }
 
     await userRef.update(updateData);

@@ -312,8 +312,8 @@ export default function Dashboard() {
               createdAt: new Date().toISOString(),
               classes: [],
               subscription: null,
-              subscriptionStatus: 'trialing',
-              trialUntil: '2026-01-01T00:00:00.000Z'
+              subscriptionStatus: null,
+              trialUntil: null
             };
 
             await setDoc(docRef, userData);
