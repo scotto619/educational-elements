@@ -124,32 +124,21 @@ export default function Login() {
         }
 
         // IMPROVED: Check if user needs to resubscribe
-        const now = new Date();
-
         // Check if user has active subscription
         const hasActiveSubscription =
           userData?.subscriptionStatus === 'active' ||
-          userData?.subscriptionStatus === 'trialing' ||
-          userData?.subscriptionStatus === 'trial' ||
           (userData?.subscription && userData.subscription !== 'cancelled');
-
-        // Check if user has trial/free access
-        const hasTrialAccess =
-          (userData?.trialUntil && new Date(userData.trialUntil) > now) ||
-          (userData?.freeAccessUntil && new Date(userData.freeAccessUntil) > now) ||
-          userData?.isTrialUser === true;
 
         // Check if user has explicitly canceled via accountStatus ONLY
         // (accountStatus is only set when user explicitly cancels their account)
         const isCanceled = userData?.accountStatus === 'canceled';
 
-        // Redirect to checkout if canceled OR no valid subscription/trial
-        if (isCanceled || (!hasActiveSubscription && !hasTrialAccess)) {
+        // Redirect to checkout if canceled OR no valid subscription
+        if (isCanceled || !hasActiveSubscription) {
           // User needs to subscribe/resubscribe
           console.log('⚠️ User needs subscription, redirecting to checkout', {
             isCanceled,
             hasActiveSubscription,
-            hasTrialAccess,
             accountStatus: userData?.accountStatus,
             subscriptionStatus: userData?.subscriptionStatus
           });
