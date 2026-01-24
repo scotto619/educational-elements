@@ -125,7 +125,7 @@ export default function Login() {
 
         // IMPROVED: Check if user needs to resubscribe
         const hasActiveSubscription =
-          userData?.subscriptionStatus === 'active' ||
+          ['active', 'trialing', 'trial'].includes(userData?.subscriptionStatus) ||
           (userData?.subscription && userData.subscription !== 'cancelled');
 
         const hasLegacySubscription =

@@ -107,7 +107,7 @@ export default function Dashboard() {
     }
 
     // Check if webhook has completed
-    const hasValidSubscription = userData.subscriptionStatus === 'active';
+    const hasValidSubscription = ['active', 'trialing', 'trial'].includes(userData.subscriptionStatus);
 
     // Poll for webhook if: (1) just returned from Stripe OR (2) marked as returning from checkout
     const justReturnedFromCheckout = sessionId || sessionStorage.getItem('returning_from_checkout') === 'true';
@@ -130,7 +130,7 @@ export default function Dashboard() {
           const snap = await getDoc(docRef);
           const data = snap.data();
 
-          if (data.subscriptionStatus === 'active') {
+          if (['active', 'trialing', 'trial'].includes(data.subscriptionStatus)) {
             console.log('✅ Webhook completed! Subscription status:', data.subscriptionStatus);
             setUserData(data);
             setWaitingForWebhook(false);
@@ -662,7 +662,7 @@ export default function Dashboard() {
     }
 
     // Check active subscription
-    if (userData.subscriptionStatus === 'active') {
+    if (['active', 'trialing', 'trial'].includes(userData.subscriptionStatus)) {
       return { hasAccess: true, reason: 'active_subscription', isCanceled: false };
     }
 
