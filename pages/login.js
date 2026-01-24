@@ -124,21 +124,29 @@ export default function Login() {
         }
 
         // IMPROVED: Check if user needs to resubscribe
-        // Check if user has active subscription
         const hasActiveSubscription =
           userData?.subscriptionStatus === 'active' ||
           (userData?.subscription && userData.subscription !== 'cancelled');
+
+        const hasLegacySubscription =
+          (userData?.subscription &&
+            userData.subscription !== 'cancelled' &&
+            userData.subscription !== null) ||
+          (userData?.stripeCustomerId &&
+            !userData?.subscriptionStatus &&
+            (!userData?.subscription || userData.subscription !== 'cancelled'));
 
         // Check if user has explicitly canceled via accountStatus ONLY
         // (accountStatus is only set when user explicitly cancels their account)
         const isCanceled = userData?.accountStatus === 'canceled';
 
         // Redirect to checkout if canceled OR no valid subscription
-        if (isCanceled || !hasActiveSubscription) {
+        if (isCanceled || (!hasActiveSubscription && !hasLegacySubscription)) {
           // User needs to subscribe/resubscribe
           console.log('⚠️ User needs subscription, redirecting to checkout', {
             isCanceled,
             hasActiveSubscription,
+            hasLegacySubscription,
             accountStatus: userData?.accountStatus,
             subscriptionStatus: userData?.subscriptionStatus
           });
