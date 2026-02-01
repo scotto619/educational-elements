@@ -47,6 +47,9 @@ export default function Home() {
                 <button onClick={() => scrollToSection('features')} className="text-gray-600 hover:text-purple-600 font-medium transition-colors">Features</button>
                 <button onClick={() => scrollToSection('resources')} className="text-gray-600 hover:text-purple-600 font-medium transition-colors">Free Resources</button>
                 <button onClick={() => scrollToSection('pricing')} className="text-gray-600 hover:text-purple-600 font-medium transition-colors">Pricing</button>
+                <Link href="/student" className="text-purple-600 font-bold hover:text-purple-700 transition-colors flex items-center gap-2 bg-purple-50 px-4 py-2 rounded-full border border-purple-100 hover:shadow-md">
+                  <span>🎓</span> Student Portal
+                </Link>
                 <Link href="/login" className="text-gray-900 font-bold hover:text-purple-700 transition-colors">
                   Login
                 </Link>
@@ -80,6 +83,7 @@ export default function Home() {
                 <button onClick={() => scrollToSection('features')} className="text-lg font-medium text-gray-800">Features</button>
                 <button onClick={() => scrollToSection('resources')} className="text-lg font-medium text-gray-800">Free Resources</button>
                 <button onClick={() => scrollToSection('pricing')} className="text-lg font-medium text-gray-800">Pricing</button>
+                <Link href="/student" className="text-lg font-bold text-purple-600 bg-purple-50 px-4 py-2 rounded-full w-full text-center">🎓 Student Portal</Link>
                 <Link href="/login" className="text-lg font-bold text-blue-600">Login</Link>
                 <Link href="/signup" className="w-full text-center bg-gray-900 text-white px-6 py-3 rounded-xl font-bold">Start for $1</Link>
               </div>
