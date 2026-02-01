@@ -1,31 +1,12 @@
 // pages/index.js - Redesigned Landing Page
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import Image from 'next/image';
 
 export default function Home() {
   const [hoveredImage, setHoveredImage] = useState(null);
-  const [daysUntilJan1, setDaysUntilJan1] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  useEffect(() => {
-    // Calculate days until January 1, 2026
-    const calculateDaysUntilJan1 = () => {
-      const now = new Date();
-      const targetDate = new Date('2026-01-01T00:00:00.000Z');
-      const timeDifference = targetDate.getTime() - now.getTime();
-      const days = Math.max(1, Math.ceil(timeDifference / (1000 * 60 * 60 * 24)));
-      setDaysUntilJan1(days);
-    };
-
-    calculateDaysUntilJan1();
-
-    // Update the countdown every hour
-    const interval = setInterval(calculateDaysUntilJan1, 1000 * 60 * 60);
-
-    return () => clearInterval(interval);
-  }, []);
 
   const scrollToSection = (sectionId) => {
     document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
@@ -73,7 +54,7 @@ export default function Home() {
                   href="/signup"
                   className="bg-gray-900 text-white px-6 py-2.5 rounded-full font-bold hover:bg-gray-800 transition-all transform hover:scale-105 shadow-lg hover:shadow-xl"
                 >
-                  Start Free Trial
+                  Start for $1
                 </Link>
               </div>
 
@@ -100,7 +81,7 @@ export default function Home() {
                 <button onClick={() => scrollToSection('resources')} className="text-lg font-medium text-gray-800">Free Resources</button>
                 <button onClick={() => scrollToSection('pricing')} className="text-lg font-medium text-gray-800">Pricing</button>
                 <Link href="/login" className="text-lg font-bold text-blue-600">Login</Link>
-                <Link href="/signup" className="w-full text-center bg-gray-900 text-white px-6 py-3 rounded-xl font-bold">Start Free Trial</Link>
+                <Link href="/signup" className="w-full text-center bg-gray-900 text-white px-6 py-3 rounded-xl font-bold">Start for $1</Link>
               </div>
             </div>
           )}
@@ -148,7 +129,7 @@ export default function Home() {
                   href="/signup"
                   className="w-full sm:w-auto px-8 py-4 bg-gray-900 text-white rounded-2xl font-bold text-lg hover:bg-gray-800 transition-all transform hover:scale-105 hover:shadow-2xl flex items-center justify-center"
                 >
-                  Start {daysUntilJan1}-Day Free Trial
+                  Start for $1
                   <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
                 </Link>
                 <button
@@ -160,7 +141,7 @@ export default function Home() {
               </div>
 
               <p className="mt-6 text-sm text-gray-500 font-medium">
-                Try it free until 2026 • No credit card required for free resources
+                $1 for your first month • No credit card required for free resources
               </p>
             </div>
           </div>
@@ -371,7 +352,7 @@ export default function Home() {
                     href="/signup"
                     className="inline-block bg-white text-gray-900 px-8 py-4 rounded-xl font-bold text-lg hover:shadow-xl transition-shadow"
                   >
-                    Start Free Trial
+                    Start for $1
                   </Link>
                 </div>
               </div>

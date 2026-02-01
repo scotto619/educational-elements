@@ -84,11 +84,10 @@ export default function Signup() {
         classes: [],
         subscription: null,
         stripeCustomerId: null,
-        trialUntil: '2026-01-01T23:59:59.999Z', // Track trial end date
         planType: 'educational-elements'
       });
 
-      // Redirect to Stripe checkout with trial
+      // Redirect to Stripe checkout
       await redirectToStripeCheckout(user);
 
     } catch (error) {
@@ -115,8 +114,7 @@ export default function Signup() {
         },
         body: JSON.stringify({
           userEmail: user.email,
-          userId: user.uid,
-          trialSubscription: true // Flag for trial subscription
+          userId: user.uid
         }),
       });
 
@@ -141,10 +139,10 @@ export default function Signup() {
   return (
     <>
       <Head>
-        <title>Start Your Free Teacher Trial | Educational Elements Sign Up</title>
+        <title>Start for $1 | Educational Elements Sign Up</title>
         <meta
           name="description"
-          content="Create your Educational Elements teacher account to unlock classroom gamification, curriculum resources, and professional tools."
+          content="Create your Educational Elements teacher account and start your first month for $1, then $5.99/month."
         />
         <link rel="canonical" href="https://educational-elements.com/signup" />
         <meta name="robots" content="noindex,nofollow" />
@@ -157,17 +155,17 @@ export default function Signup() {
               <Image src="/Logo/LOGO_NoBG.png" alt="Educational Elements logo" width={48} height={48} className="h-12 w-12 mr-3" />
               <div className="text-2xl font-bold">Educational Elements</div>
             </div>
-            <h1 className="text-2xl font-bold mb-2">Start Your Free Trial</h1>
-            <p className="text-purple-100">Free until January 2026, then $5.99/month</p>
+            <h1 className="text-2xl font-bold mb-2">Start for $1</h1>
+            <p className="text-purple-100">$1 for your first month, then $5.99/month</p>
           </div>
 
-          {/* Trial Info Banner */}
+          {/* Intro Offer Banner */}
           <div className="bg-gradient-to-r from-green-400 to-green-500 text-white p-4 text-center">
             <div className="flex items-center justify-center space-x-2">
               <span className="text-2xl">🎉</span>
               <div>
-                <p className="font-bold">FREE Trial Until January 2026!</p>
-                <p className="text-sm opacity-90">No charges until trial ends</p>
+                <p className="font-bold">$1 Intro Month</p>
+                <p className="text-sm opacity-90">Then $5.99/month, cancel anytime</p>
               </div>
               <span className="text-2xl">🎉</span>
             </div>
@@ -226,14 +224,14 @@ export default function Signup() {
               />
             </div>
 
-            {/* Trial Information */}
+            {/* Intro Offer Information */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <h3 className="font-bold text-blue-800 mb-3">🎯 What happens next:</h3>
               <ul className="text-sm text-blue-700 space-y-2">
                 <li className="flex items-start"><span className="text-blue-500 mr-2 mt-0.5">1.</span>Enter your payment details (secure)</li>
-                <li className="flex items-start"><span className="text-blue-500 mr-2 mt-0.5">2.</span>Start using Educational Elements immediately</li>
-                <li className="flex items-start"><span className="text-blue-500 mr-2 mt-0.5">3.</span>No charges until January 31, 2026</li>
-                <li className="flex items-start"><span className="text-blue-500 mr-2 mt-0.5">4.</span>Cancel anytime before trial ends</li>
+                <li className="flex items-start"><span className="text-blue-500 mr-2 mt-0.5">2.</span>Pay $1 today to unlock full access</li>
+                <li className="flex items-start"><span className="text-blue-500 mr-2 mt-0.5">3.</span>Continue for $5.99/month after the first month</li>
+                <li className="flex items-start"><span className="text-blue-500 mr-2 mt-0.5">4.</span>Cancel anytime</li>
               </ul>
             </div>
 
@@ -254,7 +252,7 @@ export default function Signup() {
                   <span>Redirecting to payment...</span>
                 </div>
               ) : (
-                '🚀 Start FREE Trial'
+                '🚀 Start for $1'
               )}
             </button>
 
@@ -286,7 +284,7 @@ export default function Signup() {
           {/* Security Notice */}
           <div className="bg-gray-50 px-8 py-4 text-center">
             <p className="text-xs text-gray-500">
-              Secure payment processing by Stripe. Cancel anytime before January 31, 2026.
+              Secure payment processing by Stripe. Cancel anytime.
             </p>
           </div>
         </div>
@@ -294,13 +292,13 @@ export default function Signup() {
         {/* Additional Info */}
         <div className="hidden lg:block ml-12 max-w-md">
           <div className="bg-white rounded-2xl shadow-xl p-8">
-            <h3 className="text-2xl font-bold text-gray-800 mb-4">Why Start Your Trial Today?</h3>
+            <h3 className="text-2xl font-bold text-gray-800 mb-4">Why Start Today?</h3>
             <div className="space-y-4">
               <div className="flex items-start space-x-3">
                 <div className="text-2xl">🆓</div>
                 <div>
-                  <h4 className="font-bold text-gray-700">Risk-Free Trial</h4>
-                  <p className="text-gray-600 text-sm">Full access until January 2026 - cancel anytime with no charges</p>
+                  <h4 className="font-bold text-gray-700">$1 Intro Month</h4>
+                  <p className="text-gray-600 text-sm">Get started for just $1 and keep full access after that for $5.99/month</p>
                 </div>
               </div>
               <div className="flex items-start space-x-3">
@@ -314,7 +312,7 @@ export default function Signup() {
                 <div className="text-2xl">🔒</div>
                 <div>
                   <h4 className="font-bold text-gray-700">Secure & Simple</h4>
-                  <p className="text-gray-600 text-sm">Payment details stored securely by Stripe - never charged until trial ends</p>
+                  <p className="text-gray-600 text-sm">Payment details stored securely by Stripe - cancel anytime</p>
                 </div>
               </div>
             </div>

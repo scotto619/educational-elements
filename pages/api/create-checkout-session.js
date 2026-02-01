@@ -18,6 +18,7 @@ export default async function handler(req, res) {
       }
 
       const priceId = process.env.STRIPE_PRICE_ID_EDUCATIONAL_ELEMENTS;
+      const introCouponId = process.env.STRIPE_INTRO_COUPON_ID;
 
       if (!priceId) {
         console.error('Missing Stripe Price ID for Educational Elements');
@@ -71,13 +72,15 @@ export default async function handler(req, res) {
           metadata: {
             firebaseUserId: userId,
             planType: 'educational-elements',
-            isReturningUser: 'true'
+            isReturningUser: 'true',
+            introOffer: 'false'
           },
           subscription_data: {
             metadata: {
               firebaseUserId: userId,
               planType: 'educational-elements',
-              isReturningUser: 'true'
+              isReturningUser: 'true',
+              introOffer: 'false'
             }
           },
           billing_address_collection: 'required',
@@ -94,13 +97,12 @@ export default async function handler(req, res) {
         };
 
       } else {
-        // New user - Give full trial period
-        const now = new Date();
-        const targetDate = new Date('2026-01-01T00:00:00.000Z');
-        const timeDifference = targetDate.getTime() - now.getTime();
-        const daysUntilJan1 = Math.max(1, Math.ceil(timeDifference / (1000 * 60 * 60 * 24)));
+        if (!introCouponId) {
+          console.error('Missing Stripe intro coupon ID for first-month offer');
+          return res.status(500).json({ error: 'Pricing configuration error' });
+        }
 
-        console.log(`🆓 Creating trial for new user: ${daysUntilJan1} days until January 1, 2026`);
+        console.log('💸 Creating subscription for new user with $1 first-month offer');
 
         sessionConfig = {
           customer: customer.id,
@@ -112,19 +114,23 @@ export default async function handler(req, res) {
             },
           ],
           mode: 'subscription',
+          discounts: [
+            {
+              coupon: introCouponId
+            }
+          ],
           success_url: successUrl,
           cancel_url: cancelUrl,
           metadata: {
             firebaseUserId: userId,
             planType: 'educational-elements',
-            trialDays: daysUntilJan1.toString()
+            introOffer: 'true'
           },
           subscription_data: {
-            trial_period_days: daysUntilJan1,
             metadata: {
               firebaseUserId: userId,
               planType: 'educational-elements',
-              trialEndDate: targetDate.toISOString()
+              introOffer: 'true'
             }
           },
           billing_address_collection: 'required',
@@ -136,7 +142,7 @@ export default async function handler(req, res) {
 
         sessionConfig.custom_text = {
           submit: {
-            message: `You'll get free access until January 1, 2026. Billing starts automatically after your trial ends (${daysUntilJan1} days from now).`
+            message: 'Pay $1 today for your first month. Then $5.99/month after your intro period.'
           }
         };
       }
@@ -146,8 +152,7 @@ export default async function handler(req, res) {
       res.status(200).json({ 
         url: session.url, 
         sessionId: session.id,
-        isReturningUser,
-        trialDays: isReturningUser ? 0 : Math.max(1, Math.ceil((new Date('2026-01-01T00:00:00.000Z').getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+        isReturningUser
       });
 
     } catch (error) {

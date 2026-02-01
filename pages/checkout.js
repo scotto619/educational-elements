@@ -11,24 +11,9 @@ export default function Checkout() {
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [daysUntilJan1, setDaysUntilJan1] = useState(0);
   const [isReturningUser, setIsReturningUser] = useState(false);
 
   useEffect(() => {
-    // Calculate days until January 1, 2026
-    const calculateDaysUntilJan1 = () => {
-      const now = new Date();
-      const targetDate = new Date('2026-01-01T00:00:00.000Z');
-      const timeDifference = targetDate.getTime() - now.getTime();
-      const days = Math.max(1, Math.ceil(timeDifference / (1000 * 60 * 60 * 24)));
-      setDaysUntilJan1(days);
-    };
-
-    calculateDaysUntilJan1();
-
-    // Update the countdown every hour
-    const interval = setInterval(calculateDaysUntilJan1, 1000 * 60 * 60);
-
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setUser(user);
@@ -51,7 +36,7 @@ export default function Checkout() {
               hasCustomerId: !!data.stripeCustomerId,
               subscription: data.subscription,
               status: data.subscriptionStatus,
-              isReturning: wasSubscribed
+              isReturning: isCanceledUser
             });
           }
         } catch (error) {
@@ -64,12 +49,11 @@ export default function Checkout() {
     });
 
     return () => {
-      clearInterval(interval);
       unsubscribe();
     };
   }, [router]);
 
-  const handleStartTrial = async () => {
+  const handleStartIntroOffer = async () => {
     setIsProcessing(true);
 
     try {
@@ -129,12 +113,12 @@ export default function Checkout() {
             </div>
           </div>
           <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            {isReturningUser ? 'Welcome Back!' : 'Start Your Free Trial'}
+            {isReturningUser ? 'Welcome Back!' : 'Start for $1'}
           </h1>
           <p className="text-gray-600">
             {isReturningUser
               ? 'Resubscribe to regain full access to all features'
-              : 'Complete access until January 1st, 2026'
+              : '$1 for your first month, then $5.99/month'
             }
           </p>
         </div>
@@ -158,18 +142,18 @@ export default function Checkout() {
         {/* Countdown Banner */}
         <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-2xl shadow-2xl p-8 mb-8 text-white relative overflow-hidden">
           <div className="absolute top-0 right-0 bg-yellow-400 text-green-800 px-4 py-2 rounded-bl-lg font-bold">
-            {isReturningUser ? '🎉 RETURNING USER' : '🔥 FREE TRIAL'}
+            {isReturningUser ? '🎉 RETURNING USER' : '🔥 INTRO OFFER'}
           </div>
 
           <div className="text-center mb-6">
             <div className="text-6xl mb-4">⏰</div>
             <h2 className="text-4xl font-bold mb-2">
-              {isReturningUser ? 'Resubscribe Now' : `${daysUntilJan1} Days Free!`}
+              {isReturningUser ? 'Resubscribe Now' : '$1 First Month'}
             </h2>
             <p className="text-green-100 text-lg">
               {isReturningUser
                 ? '$5.99/month • Cancel anytime'
-                : `Then $5.99/month • Cancel anytime before trial ends`
+                : 'Then $5.99/month • Cancel anytime'
               }
             </p>
           </div>
@@ -189,7 +173,7 @@ export default function Checkout() {
           </div>
 
           <button
-            onClick={handleStartTrial}
+            onClick={handleStartIntroOffer}
             disabled={isProcessing}
             className="w-full bg-white text-green-600 px-8 py-4 rounded-xl font-bold text-lg hover:bg-green-50 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
           >
@@ -201,7 +185,7 @@ export default function Checkout() {
             ) : (
               isReturningUser
                 ? '🚀 Resubscribe Now'
-                : `🚀 Start ${daysUntilJan1}-Day Free Trial`
+                : '🚀 Start for $1'
             )}
           </button>
 
@@ -213,7 +197,7 @@ export default function Checkout() {
               </>
             ) : (
               <>
-                <p>💳 Payment details required but not charged until January 1st, 2026</p>
+                <p>💳 Pay $1 today for full access</p>
                 <p>✨ Full access starts immediately • Cancel anytime</p>
               </>
             )}
@@ -223,7 +207,7 @@ export default function Checkout() {
         {/* How it Works */}
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-200">
           <h3 className="text-2xl font-bold text-center text-gray-800 mb-6">
-            {isReturningUser ? 'Resubscription Details' : 'How Your Free Trial Works'}
+            {isReturningUser ? 'Resubscription Details' : 'How the Intro Offer Works'}
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -235,7 +219,7 @@ export default function Checkout() {
               <p className="text-gray-600 text-sm">
                 {isReturningUser
                   ? 'Secure checkout powered by Stripe'
-                  : 'Secure checkout powered by Stripe (required for trial)'
+                  : 'Secure checkout powered by Stripe'
                 }
               </p>
             </div>
@@ -256,12 +240,12 @@ export default function Checkout() {
             <div className="text-center">
               <div className="bg-purple-100 text-purple-600 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 text-xl font-bold">3</div>
               <h4 className="font-bold text-gray-700 mb-2">
-                {isReturningUser ? 'Monthly Billing' : 'Free Until Jan 1st'}
+                {isReturningUser ? 'Monthly Billing' : '$1 First Month'}
               </h4>
               <p className="text-gray-600 text-sm">
                 {isReturningUser
                   ? '$5.99/month, billed monthly'
-                  : `No charges for ${daysUntilJan1} days`
+                  : '$1 today, $5.99/month after your first month'
                 }
               </p>
             </div>
@@ -272,7 +256,7 @@ export default function Checkout() {
               <p className="text-gray-600 text-sm">
                 {isReturningUser
                   ? 'No long-term commitment required'
-                  : 'No charges if you cancel before trial ends'
+                  : 'No long-term commitment required'
                 }
               </p>
             </div>
@@ -283,7 +267,7 @@ export default function Checkout() {
               <div className="text-2xl">ℹ️</div>
               <div>
                 <h4 className="font-bold text-blue-800 mb-2">
-                  {isReturningUser ? 'Subscription Details' : 'Trial Details'}
+                  {isReturningUser ? 'Subscription Details' : 'Intro Offer Details'}
                 </h4>
                 <ul className="text-blue-700 text-sm space-y-1">
                   {isReturningUser ? (
@@ -295,11 +279,11 @@ export default function Checkout() {
                     </>
                   ) : (
                     <>
-                      <li>• Payment method required to prevent abuse</li>
-                      <li>• Trial automatically ends January 1st, 2026</li>
-                      <li>• $5.99/month billing starts after trial (if not cancelled)</li>
+                      <li>• Payment method required to activate your subscription</li>
+                      <li>• First month is $1, billed today</li>
+                      <li>• $5.99/month billing starts after your first month</li>
                       <li>• Cancel anytime in your account settings</li>
-                      <li>• No charges until trial period ends</li>
+                      <li>• No long-term contracts or hidden fees</li>
                     </>
                   )}
                 </ul>

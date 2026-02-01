@@ -14,7 +14,6 @@ export default function Dashboard() {
   const [user, setUser] = useState(null);
   const [userData, setUserData] = useState(null);
   const [savedClasses, setSavedClasses] = useState([]);
-  const [trialDaysLeft, setTrialDaysLeft] = useState(0);
   const [architectureVersion, setArchitectureVersion] = useState('unknown');
   const [waitingForWebhook, setWaitingForWebhook] = useState(false);
   const [dashboardUpdates, setDashboardUpdates] = useState(DEFAULT_UPDATES);
@@ -73,22 +72,6 @@ export default function Dashboard() {
     }
   };
 
-  // Calculate days until January 1, 2026
-  useEffect(() => {
-    const calculateTrialDays = () => {
-      const now = new Date();
-      const targetDate = new Date('2026-01-01T00:00:00.000Z');
-      const timeDifference = targetDate.getTime() - now.getTime();
-      const days = Math.max(0, Math.ceil(timeDifference / (1000 * 60 * 60 * 24)));
-      setTrialDaysLeft(days);
-    };
-
-    calculateTrialDays();
-    const interval = setInterval(calculateTrialDays, 1000 * 60 * 60);
-
-    return () => clearInterval(interval);
-  }, []);
-
   useEffect(() => {
     let cancelled = false;
 
@@ -124,10 +107,7 @@ export default function Dashboard() {
     }
 
     // Check if webhook has completed
-    const hasValidSubscription =
-      userData.subscriptionStatus === 'active' ||
-      userData.subscriptionStatus === 'trialing' ||
-      userData.subscriptionStatus === 'trial';
+    const hasValidSubscription = ['active', 'trialing', 'trial'].includes(userData.subscriptionStatus);
 
     // Poll for webhook if: (1) just returned from Stripe OR (2) marked as returning from checkout
     const justReturnedFromCheckout = sessionId || sessionStorage.getItem('returning_from_checkout') === 'true';
@@ -150,9 +130,7 @@ export default function Dashboard() {
           const snap = await getDoc(docRef);
           const data = snap.data();
 
-          if (data.subscriptionStatus === 'active' ||
-            data.subscriptionStatus === 'trialing' ||
-            data.subscriptionStatus === 'trial') {
+          if (['active', 'trialing', 'trial'].includes(data.subscriptionStatus)) {
             console.log('✅ Webhook completed! Subscription status:', data.subscriptionStatus);
             setUserData(data);
             setWaitingForWebhook(false);
@@ -181,14 +159,10 @@ export default function Dashboard() {
       // Webhook already completed
       sessionStorage.removeItem('returning_from_checkout');
       setTimeout(() => {
-        const isTrialing = userData.subscriptionStatus === 'trialing' || userData.subscriptionStatus === 'trial';
-        const message = isTrialing
-          ? `🎉 Welcome to Educational Elements! Your ${trialDaysLeft}-day free trial is now active.`
-          : `🎉 Welcome back! Your subscription is active.`;
-        alert(message);
+        alert('🎉 Welcome back! Your subscription is active.');
       }, 1000);
     }
-  }, [user, userData, trialDaysLeft]);
+  }, [user, userData]);
 
   // V2 Architecture: Load classes from new collections
   async function loadV2Classes(userId) {
@@ -312,8 +286,8 @@ export default function Dashboard() {
               createdAt: new Date().toISOString(),
               classes: [],
               subscription: null,
-              subscriptionStatus: 'trialing',
-              trialUntil: '2026-01-01T00:00:00.000Z'
+              subscriptionStatus: null,
+              trialUntil: null
             };
 
             await setDoc(docRef, userData);
@@ -688,17 +662,8 @@ export default function Dashboard() {
     }
 
     // Check active subscription
-    if (userData.subscriptionStatus === 'active') {
+    if (['active', 'trialing', 'trial'].includes(userData.subscriptionStatus)) {
       return { hasAccess: true, reason: 'active_subscription', isCanceled: false };
-    }
-
-    // Check trial access (multiple formats for backward compatibility)
-    if (userData.subscriptionStatus === 'trialing' ||
-      userData.subscriptionStatus === 'trial' ||
-      (userData.trialUntil && new Date(userData.trialUntil) > now) ||
-      (userData.freeAccessUntil && new Date(userData.freeAccessUntil) > now) ||
-      userData.isTrialUser === true) {
-      return { hasAccess: true, reason: 'trial', isCanceled: false };
     }
 
     // Check legacy subscription (for backward compatibility with V1 data)
@@ -722,7 +687,6 @@ export default function Dashboard() {
   const isCanceledUser = accessResult.isCanceled;
 
   // Helper variables for JSX template (derived from accessResult)
-  const hasTrialAccess = accessResult.reason === 'trial';
   const hasActiveSubscription = accessResult.reason === 'active_subscription';
   const hasLegacySubscription = accessResult.reason === 'legacy_subscription';
 
@@ -732,9 +696,6 @@ export default function Dashboard() {
     console.log('User Data:', {
       accountStatus: userData?.accountStatus,
       subscriptionStatus: userData?.subscriptionStatus,
-      trialUntil: userData?.trialUntil,
-      freeAccessUntil: userData?.freeAccessUntil,
-      isTrialUser: userData?.isTrialUser,
       subscription: userData?.subscription,
       stripeCustomerId: userData?.stripeCustomerId
     });
@@ -814,7 +775,7 @@ export default function Dashboard() {
               <div className="text-4xl sm:text-6xl mb-4 sm:mb-6">🔒</div>
               <h2 className="text-2xl sm:text-4xl font-bold text-gray-800 mb-3 sm:mb-4">Subscription Required</h2>
               <p className="text-lg sm:text-xl text-gray-600 mb-6 sm:mb-8 leading-relaxed">
-                Your trial has expired. Subscribe now to continue accessing your classroom data and all Educational Elements features.
+                Your subscription is required to continue accessing your classroom data and all Educational Elements features.
               </p>
 
               {/* Data Safety Assurance */}
@@ -887,21 +848,6 @@ export default function Dashboard() {
               </div>
             </div>
           )}
-          {hasTrialAccess && trialDaysLeft > 0 && !waitingForWebhook && (
-            <div className="bg-gradient-to-r from-green-400 to-green-500 border border-green-300 rounded-lg p-4 sm:p-6 mb-4 sm:mb-6">
-              <div className="flex flex-col sm:flex-row items-center justify-between space-y-3 sm:space-y-0">
-                <div className="text-center sm:text-left">
-                  <h3 className="text-lg sm:text-xl font-bold text-white mb-2">🎉 Free Trial Active!</h3>
-                  <p className="text-green-100 text-sm sm:text-base">You have {trialDaysLeft} days of free access remaining until January 1st, 2026.</p>
-                </div>
-                <div className="text-white text-center">
-                  <div className="text-2xl sm:text-3xl font-bold">{trialDaysLeft}</div>
-                  <div className="text-xs sm:text-sm">Days Left</div>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Mobile-Friendly Header */}
           <div className="flex flex-col lg:flex-row justify-between items-start mb-6 sm:mb-8 space-y-4 lg:space-y-0">
             <div className="flex items-center w-full lg:w-auto">
@@ -917,11 +863,7 @@ export default function Dashboard() {
                 <p className="text-gray-600 text-sm sm:text-lg">Teacher Dashboard</p>
                 {userData && (
                   <div className="flex flex-wrap items-center mt-2 gap-2 sm:gap-4">
-                    {hasTrialAccess ? (
-                      <span className="px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold bg-green-100 text-green-800">
-                        Free Trial ({trialDaysLeft} days left)
-                      </span>
-                    ) : hasActiveSubscription ? (
+                    {hasActiveSubscription ? (
                       <span className="px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold bg-blue-100 text-blue-800">
                         Active Subscription
                       </span>
@@ -931,7 +873,7 @@ export default function Dashboard() {
                       </span>
                     ) : (
                       <span className="px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold bg-yellow-100 text-yellow-800">
-                        Trial Expired
+                        Subscription Required
                       </span>
                     )}
                     <span className="text-xs sm:text-sm text-gray-600">
@@ -1175,7 +1117,7 @@ export default function Dashboard() {
             {!canAccess && (
               <div className="mt-4 p-3 sm:p-4 bg-red-100 border border-red-300 rounded-lg">
                 <p className="text-red-800 font-medium text-sm sm:text-base">
-                  Your trial has expired. Please subscribe to continue using Educational Elements.
+                  Subscription required. Please subscribe to continue using Educational Elements.
                 </p>
               </div>
             )}
@@ -1371,13 +1313,6 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {hasTrialAccess && trialDaysLeft > 0 && (
-              <div className="mt-3 p-3 bg-green-100 border border-green-300 rounded-lg">
-                <p className="text-green-800 font-medium text-sm sm:text-base">
-                  🎉 Free trial active! {trialDaysLeft} days remaining until January 1st, 2026.
-                </p>
-              </div>
-            )}
           </div>
         </div>
       </div>

@@ -77,33 +77,25 @@ export default function Login() {
     try {
       // FIXED: Check account status, but allow canceled accounts to log back in
       const helpers = firestoreHelpers.current;
-      if (helpers?.collection && firestoreDb) {
-        try {
-          const { collection, query, where, getDocs } = helpers;
-          const userQuery = query(
-            collection(firestoreDb, 'users'),
-            where('email', '==', normalizedEmail)
-          );
-          const snapshot = await getDocs(userQuery);
+      try {
+        const response = await fetch('/api/prelogin-status', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ email: normalizedEmail })
+        });
 
-          if (!snapshot.empty) {
-            const userDoc = snapshot.docs[0];
-            const data = userDoc.data();
-
-            // CHANGED: Only block if loginDisabled is explicitly true
-            // Canceled accounts (accountStatus: 'canceled') are allowed to log in
-            if (data?.loginDisabled === true) {
-              alert('Your account has been disabled. Please contact support to restore access.');
-              setIsLoading(false);
-              return;
-            }
-
-            // REMOVED: The accountStatus === 'deleted' check
-            // Users with canceled subscriptions can now log in to resubscribe
+        if (response.ok) {
+          const { loginDisabled } = await response.json();
+          if (loginDisabled === true) {
+            alert('Your account has been disabled. Please contact support to restore access.');
+            setIsLoading(false);
+            return;
           }
-        } catch (checkError) {
-          console.warn('Skipping pre-login status check:', checkError);
         }
+      } catch (checkError) {
+        console.warn('Skipping pre-login status check:', checkError);
       }
 
       // Attempt to sign in
@@ -123,35 +115,60 @@ export default function Login() {
           return;
         }
 
+        let resolvedUserData = userData;
+
+        // If subscription fields are missing, attempt a server-side sync with Stripe
+        if (!resolvedUserData?.subscriptionStatus && !resolvedUserData?.stripeCustomerId) {
+          try {
+            const syncResponse = await fetch('/api/sync-stripe-subscription', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                userId: auth.currentUser.uid,
+                userEmail: normalizedEmail
+              })
+            });
+
+            if (syncResponse.ok) {
+              const { updated } = await syncResponse.json();
+              if (updated) {
+                const refreshedDoc = await getDoc(doc(firestoreDb, 'users', auth.currentUser.uid));
+                resolvedUserData = refreshedDoc.exists() ? refreshedDoc.data() : resolvedUserData;
+              }
+            }
+          } catch (syncError) {
+            console.warn('Stripe subscription sync skipped:', syncError);
+          }
+        }
+
         // IMPROVED: Check if user needs to resubscribe
-        const now = new Date();
-
-        // Check if user has active subscription
         const hasActiveSubscription =
-          userData?.subscriptionStatus === 'active' ||
-          userData?.subscriptionStatus === 'trialing' ||
-          userData?.subscriptionStatus === 'trial' ||
-          (userData?.subscription && userData.subscription !== 'cancelled');
+          ['active', 'trialing', 'trial'].includes(resolvedUserData?.subscriptionStatus) ||
+          (resolvedUserData?.subscription && resolvedUserData.subscription !== 'cancelled');
 
-        // Check if user has trial/free access
-        const hasTrialAccess =
-          (userData?.trialUntil && new Date(userData.trialUntil) > now) ||
-          (userData?.freeAccessUntil && new Date(userData.freeAccessUntil) > now) ||
-          userData?.isTrialUser === true;
+        const hasLegacySubscription =
+          (resolvedUserData?.subscription &&
+            resolvedUserData.subscription !== 'cancelled' &&
+            resolvedUserData.subscription !== null) ||
+          (resolvedUserData?.stripeCustomerId &&
+            !resolvedUserData?.subscriptionStatus &&
+            (!resolvedUserData?.subscription || resolvedUserData.subscription !== 'cancelled'));
 
         // Check if user has explicitly canceled via accountStatus ONLY
         // (accountStatus is only set when user explicitly cancels their account)
-        const isCanceled = userData?.accountStatus === 'canceled';
+        const isCanceled = resolvedUserData?.accountStatus === 'canceled';
 
-        // Redirect to checkout if canceled OR no valid subscription/trial
-        if (isCanceled || (!hasActiveSubscription && !hasTrialAccess)) {
+        // Redirect to checkout if canceled OR no valid subscription
+        if (isCanceled || (!hasActiveSubscription && !hasLegacySubscription)) {
           // User needs to subscribe/resubscribe
           console.log('⚠️ User needs subscription, redirecting to checkout', {
             isCanceled,
             hasActiveSubscription,
-            hasTrialAccess,
-            accountStatus: userData?.accountStatus,
-            subscriptionStatus: userData?.subscriptionStatus
+            hasLegacySubscription,
+            accountStatus: resolvedUserData?.accountStatus,
+            subscriptionStatus: resolvedUserData?.subscriptionStatus
           });
           router.push('/checkout');
           return;
