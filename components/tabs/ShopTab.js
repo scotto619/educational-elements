@@ -527,12 +527,12 @@ const ShopTab = ({
   // Daily rotating items - 7 avatars and 3 pets that change each day
   const dailyAvatars = useMemo(() => {
     const allAvatars = [...SHOP_BASIC_AVATARS, ...SHOP_PREMIUM_AVATARS];
-    return getDailyAvailableAvatars(allAvatars, 7);
+    return getDailyAvailableAvatars(allAvatars, 14);
   }, [SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS]);
 
   const dailyPets = useMemo(() => {
     const allPets = [...SHOP_BASIC_PETS, ...SHOP_PREMIUM_PETS];
-    return getDailyAvailablePets(allPets, 3);
+    return getDailyAvailablePets(allPets, 6);
   }, [SHOP_BASIC_PETS, SHOP_PREMIUM_PETS]);
 
   // Special features menu state

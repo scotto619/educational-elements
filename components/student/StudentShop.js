@@ -620,12 +620,12 @@ const StudentShop = ({
   // Daily rotating items - 7 avatars and 3 pets that change each day
   const dailyAvatars = useMemo(() => {
     const allAvatars = [...(SHOP_BASIC_AVATARS || []), ...(SHOP_PREMIUM_AVATARS || [])];
-    return getDailyAvailableAvatars(allAvatars, 7);
+    return getDailyAvailableAvatars(allAvatars, 14);
   }, [SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS]);
 
   const dailyPets = useMemo(() => {
     const allPets = [...(SHOP_BASIC_PETS || []), ...(SHOP_PREMIUM_PETS || [])];
-    return getDailyAvailablePets(allPets, 3);
+    return getDailyAvailablePets(allPets, 6);
   }, [SHOP_BASIC_PETS, SHOP_PREMIUM_PETS]);
 
   // Special features menu state
@@ -1959,11 +1959,10 @@ const StudentShop = ({
                     type="button"
                     onClick={() => setPurchaseModal({ visible: true, item: packInfo, type: 'card_pack' })}
                     disabled={!canAfford}
-                    className={`w-full rounded-lg px-4 py-2 text-sm font-semibold transition ${
-                      canAfford
+                    className={`w-full rounded-lg px-4 py-2 text-sm font-semibold transition ${canAfford
                         ? 'bg-white text-slate-900 hover:bg-amber-100'
                         : 'bg-white/30 text-white/70 cursor-not-allowed'
-                    }`}
+                      }`}
                   >
                     Buy Pack • 💰{packInfo.price}
                   </button>
@@ -1971,11 +1970,10 @@ const StudentShop = ({
                     type="button"
                     onClick={() => handleOpenPack(packInfo)}
                     disabled={!canOpen}
-                    className={`w-full rounded-lg px-4 py-2 text-sm font-semibold transition ${
-                      canOpen
+                    className={`w-full rounded-lg px-4 py-2 text-sm font-semibold transition ${canOpen
                         ? 'bg-gradient-to-r from-amber-400 to-pink-500 hover:shadow-lg'
                         : 'bg-white/20 text-white/60 cursor-not-allowed'
-                    }`}
+                      }`}
                   >
                     {isOpeningPack ? 'Opening...' : `Open Pack${packInfo.count > 0 ? ` (${packInfo.count})` : ''}`}
                   </button>
