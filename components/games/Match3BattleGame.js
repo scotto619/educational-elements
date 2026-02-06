@@ -538,6 +538,9 @@ const Match3BattleGame = ({ studentData, updateStudentData }) => {
           >
             {board.map((row, r) => (
               row.map((tile, c) => {
+                if (!tile) {
+                  return <div key={`${r}-${c}-empty`} className="w-10 h-10 md:w-12 md:h-12" />;
+                }
                 const isSelected = selectedTile?.r === r && selectedTile?.c === c;
                 return (
                   <div
