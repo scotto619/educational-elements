@@ -1,6 +1,5 @@
 // components/games/Match3BattleGame.js
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Sparkles, Sword, Heart, Shield, Coins, Zap, Skull, Trophy } from 'lucide-react';
 
 // ==========================================
 // CONSTANTS & CONFIGURATION
@@ -10,12 +9,12 @@ const MIN_MATCH = 3;
 
 // Tile Definitions
 const TILE_TYPES = {
-  SWORD: { id: 'sword', emoji: '⚔️', color: 'bg-red-500', icon: Sword, label: 'Attack' },
-  SHIELD: { id: 'shield', emoji: '🛡️', color: 'bg-blue-500', icon: Shield, label: 'Block' },
-  POTION: { id: 'potion', emoji: '🧪', color: 'bg-green-500', icon: Heart, label: 'Heal' },
-  MANA: { id: 'mana', emoji: '✨', color: 'bg-purple-500', icon: Zap, label: 'Mana' },
-  COIN: { id: 'coin', emoji: '💰', color: 'bg-yellow-500', icon: Coins, label: 'Gold' },
-  SKULL: { id: 'skull', emoji: '💀', color: 'bg-gray-800', icon: Skull, label: 'Curse' }, // Enemy specific or special
+  SWORD: { id: 'sword', emoji: '⚔️', color: 'bg-red-500', label: 'Attack' },
+  SHIELD: { id: 'shield', emoji: '🛡️', color: 'bg-blue-500', label: 'Block' },
+  POTION: { id: 'potion', emoji: '🧪', color: 'bg-green-500', label: 'Heal' },
+  MANA: { id: 'mana', emoji: '✨', color: 'bg-purple-500', label: 'Mana' },
+  COIN: { id: 'coin', emoji: '💰', color: 'bg-yellow-500', label: 'Gold' },
+  SKULL: { id: 'skull', emoji: '💀', color: 'bg-gray-800', label: 'Curse' }, // Enemy specific or special
 };
 
 const TILE_KEYS = ['SWORD', 'SHIELD', 'POTION', 'MANA', 'COIN', 'SKULL'];
@@ -464,7 +463,7 @@ const Match3BattleGame = ({ studentData, updateStudentData }) => {
           <div className="flex flex-col">
             <span className="text-gray-400 text-xs uppercase">Gold</span>
             <span className="font-bold text-yellow-400 flex items-center gap-1">
-              <Coins size={16} /> {player.gold}
+              💰 {player.gold}
             </span>
           </div>
         </div>
