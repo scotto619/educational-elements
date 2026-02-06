@@ -297,24 +297,45 @@ const MultiplicationGridGame = ({
 
     setIsSaving(true);
     try {
-      await updateStudentData({
+      // Daily Reward Logic
+      const today = new Date().toISOString().split('T')[0];
+      const rewardKey = `${gridData.operation}-${gridData.size}`;
+      const dailyRewards = studentData.gameProgress?.multiplicationGrid?.dailyRewards || {};
+
+      const alreadyRewarded = dailyRewards[rewardKey] === today;
+      const coinsEarned = alreadyRewarded ? 0 : 2;
+
+      const updates = {
         gameProgress: {
           ...(studentData.gameProgress || {}),
           multiplicationGrid: {
             bestTimes: newBestTimes,
             scoreboard: newScoreboard.slice(0, SCOREBOARD_SIZE),
             attemptCount: newAttemptCount,
-            lastPlayed: new Date().toISOString()
+            lastPlayed: new Date().toISOString(),
+            dailyRewards: {
+              ...dailyRewards,
+              [rewardKey]: today
+            }
           }
         }
-      });
+      };
+
+      if (coinsEarned > 0) {
+        updates.currency = (studentData.currency || 0) + coinsEarned;
+      }
+
+      await updateStudentData(updates);
+
+      return coinsEarned; // Return coins for UI
     } catch (error) {
       console.error('Failed to save progress:', error);
       showToast?.('Could not save progress. Try again later.');
+      return 0;
     } finally {
       setIsSaving(false);
     }
-  }, [updateStudentData, studentData, showToast]);
+  }, [updateStudentData, studentData, showToast, gridData]);
 
   useEffect(() => {
     if (!gridData?.cells || gameState !== 'playing') return;
@@ -330,7 +351,6 @@ const MultiplicationGridGame = ({
       const finalTime = (Date.now() - startTimeRef.current) / 1000;
       setTimer(finalTime);
       setGameState('complete');
-      setShowCelebration(true);
 
       // Update best times
       const timeKey = `${gridData.operation}-${gridData.size}`;
@@ -359,15 +379,20 @@ const MultiplicationGridGame = ({
       const newAttemptCount = attemptCount + 1;
       setAttemptCount(newAttemptCount);
 
-      // Save to Firebase
-      saveProgress(newBestTimes, newScoreboard, newAttemptCount);
+      // Save to Firebase and get potential coins
+      saveProgress(newBestTimes, newScoreboard, newAttemptCount).then((coins) => {
+        setShowCelebration({
+          coinsEarned: coins,
+          isNewBest
+        });
 
-      // Show toast
-      if (isNewBest) {
-        showToast?.(`🎉 New Best Time! ${formatTimeShort(finalTime)} for ${gridData.size}×${gridData.size} ${OPERATION_NAMES[gridData.operation]}!`);
-      } else {
-        showToast?.(`✅ Completed in ${formatTimeShort(finalTime)}!`);
-      }
+        // Show toast
+        if (isNewBest) {
+          showToast?.(`🎉 New Best Time! ${formatTimeShort(finalTime)} for ${gridData.size}×${gridData.size} ${OPERATION_NAMES[gridData.operation]}!`);
+        } else {
+          showToast?.(`✅ Completed in ${formatTimeShort(finalTime)}!`);
+        }
+      });
     }
   }, [completedCells, gridData, gameState, bestTimes, scoreboard, attemptCount, saveProgress, showToast]);
 
@@ -598,7 +623,12 @@ const MultiplicationGridGame = ({
               {/* Celebration overlay */}
               {showCelebration && (
                 <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                  <div className="bg-gradient-to-br from-violet-900 to-fuchsia-900 rounded-3xl p-8 max-w-md w-full text-center border border-white/20 shadow-2xl">
+                  <div className="bg-gradient-to-br from-violet-900 to-fuchsia-900 rounded-3xl p-8 max-w-md w-full text-center border border-white/20 shadow-2xl relative overflow-hidden">
+                    {/* Coin Shower Effect (Visual only) */}
+                    {showCelebration.coinsEarned > 0 && (
+                      <div className="absolute inset-0 pointer-events-none opacity-20" style={{ backgroundImage: 'radial-gradient(circle, #fbbf24 2px, transparent 2.5px)', backgroundSize: '24px 24px' }}></div>
+                    )}
+
                     <div className="text-6xl mb-4 animate-bounce">🎉</div>
                     <h2 className="text-3xl font-black text-white mb-2">Complete!</h2>
                     <p className="text-2xl font-bold text-emerald-400 font-mono mb-4">
@@ -607,11 +637,33 @@ const MultiplicationGridGame = ({
                     <p className="text-purple-300 mb-6">
                       {gridData?.size}×{gridData?.size} {OPERATION_NAMES[gridData?.operation || 'multiply']} Grid
                     </p>
-                    {currentBestTime && timer <= currentBestTime && (
-                      <div className="bg-yellow-500/20 border border-yellow-400/40 rounded-xl p-3 mb-4">
+
+                    {/* Coin Reward Display */}
+                    <div className={`rounded-xl p-4 mb-6 transform transition-all ${showCelebration.coinsEarned > 0
+                      ? 'bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-yellow-400/50 scale-105'
+                      : 'bg-white/5 border border-white/10'}`}>
+                      {showCelebration.coinsEarned > 0 ? (
+                        <>
+                          <div className="text-3xl font-bold text-amber-400 mb-1 flex items-center justify-center gap-2">
+                            <span>💰</span> +{showCelebration.coinsEarned} Coins
+                          </div>
+                          <div className="text-xs text-amber-200">Daily Reward Claimed!</div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="text-lg font-bold text-gray-300 mb-1">Practice Mode</div>
+                          <div className="text-xs text-gray-400">Daily reward already claimed for this grid.</div>
+                          <div className="text-xs text-emerald-300 mt-1">Great practice!</div>
+                        </>
+                      )}
+                    </div>
+
+                    {showCelebration.isNewBest && (
+                      <div className="bg-yellow-500/20 border border-yellow-400/40 rounded-xl p-3 mb-4 animate-pulse">
                         <span className="text-yellow-300 font-bold">🏆 New Personal Best!</span>
                       </div>
                     )}
+
                     <button
                       onClick={() => {
                         setShowCelebration(false);
