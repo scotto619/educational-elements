@@ -179,6 +179,55 @@ const ResourcesList = ({ subject, onBack, onSelectResource }) => {
         description: 'Comprehensive analysis of the novel Teresa: A New Australian',
         pdfPath: '/Unit Resources/Literacy/Teresa_A_New_Australian_Book_Analysis.pdf',
         isNew: true
+      },
+      {
+        id: 'fanboys',
+        title: 'FANBOYS: The Super Squad of Sentences',
+        description: 'Mastering coordinating conjunctions',
+        pdfPath: '/Unit Resources/Literacy/FANBOYS_The_Super_Squad_of_Sentences.pdf',
+        isNew: true
+      },
+      {
+        id: 'grammar-garden',
+        title: 'Grammar Garden Helpers',
+        description: 'Cultivating strong grammar skills',
+        pdfPath: '/Unit Resources/Literacy/Grammar_Garden_Helpers.pdf',
+        isNew: true
+      },
+      {
+        id: 'grammar-kingdoms',
+        title: 'Grammar: The Four Kingdoms',
+        description: 'Exploring the realms of grammar',
+        pdfPath: '/Unit Resources/Literacy/Grammar_The_Four_Kingdoms.pdf',
+        isNew: true
+      },
+      {
+        id: 'narnia',
+        title: 'Narnia: Deep Magic and the Wardrobe',
+        description: 'Exploring the magical world of Narnia',
+        pdfPath: '/Unit Resources/Literacy/Narnia_Deep_Magic_and_the_Wardrobe.pdf',
+        isNew: true
+      },
+      {
+        id: 'nintendo-story',
+        title: 'The Nintendo Story',
+        description: 'Reading comprehension about gaming history',
+        pdfPath: '/Unit Resources/Literacy/The_Nintendo_Story.pdf',
+        isNew: true
+      },
+      {
+        id: 'noun-hunt',
+        title: 'The Noun Hunt',
+        description: 'Activity to identify and understand nouns',
+        pdfPath: '/Unit Resources/Literacy/The_Noun_Hunt.pdf',
+        isNew: true
+      },
+      {
+        id: 'world-cup',
+        title: 'World Cup History: The Global Game',
+        description: 'Reading comprehension about the World Cup',
+        pdfPath: '/Unit Resources/Literacy/World_Cup_History_The_Global_Game.pdf',
+        isNew: true
       }
     ],
     mathematics: [
@@ -211,7 +260,29 @@ const ResourcesList = ({ subject, onBack, onSelectResource }) => {
         isNew: true
       }
     ],
-    science: [],
+    science: [
+      {
+        id: 'city-stars',
+        title: 'A City In The Stars',
+        description: 'Exploring future cities and space',
+        pdfPath: '/Unit Resources/Science/A_City_In_The_Stars.pdf',
+        isNew: true
+      },
+      {
+        id: 'celestial-clockwork',
+        title: 'Celestial Clockwork',
+        description: 'Understanding the mechanics of the universe',
+        pdfPath: '/Unit Resources/Science/Celestial_Clockwork.pdf',
+        isNew: true
+      },
+      {
+        id: 'solar-system',
+        title: 'Our Solar System Tour',
+        description: 'A journey through our solar system',
+        pdfPath: '/Unit Resources/Science/Our_Solar_System_Tour.pdf',
+        isNew: true
+      }
+    ],
     geography: [],
     history: [
       {
@@ -219,6 +290,118 @@ const ResourcesList = ({ subject, onBack, onSelectResource }) => {
         title: 'Historical Figures',
         description: 'Learning about significant historical figures (PowerPoint)',
         pdfPath: '/Unit Resources/HASS/Historical Figures.pptx',
+        isNew: true
+      },
+      {
+        id: 'alexander-unbroken',
+        title: 'Alexander Unbroken',
+        description: 'The Life of Conquest',
+        pdfPath: '/Unit Resources/HASS/Alexander_Unbroken_The_Life_of_Conquest.pdf',
+        isNew: true
+      },
+      {
+        id: 'attila',
+        title: 'Attila: Scourge and Sovereign',
+        description: 'History of the Hunnic Empire',
+        pdfPath: '/Unit Resources/HASS/Attila_Scourge_and_Sovereign.pdf',
+        isNew: true
+      },
+      {
+        id: 'australia-deep-time',
+        title: 'Australia: Deep Time to Now',
+        description: 'Australian history through the ages',
+        pdfPath: '/Unit Resources/HASS/Australia_Deep_Time_to_Now.pdf',
+        isNew: true
+      },
+      {
+        id: 'bermuda-triangle',
+        title: 'Bermuda Triangle Investigation',
+        description: 'Investigating the mystery',
+        pdfPath: '/Unit Resources/HASS/Bermuda_Triangle_Investigation.pdf',
+        isNew: true
+      },
+      {
+        id: 'caesar',
+        title: "Caesar's Path to Empire",
+        description: 'The rise of the Roman Empire',
+        pdfPath: '/Unit Resources/HASS/Caesar_s_Path_to_Empire.pdf',
+        isNew: true
+      },
+      {
+        id: 'cleopatra',
+        title: 'Cleopatra: Power, Propaganda, Legacy',
+        description: 'The life of the Egyptian Queen',
+        pdfPath: '/Unit Resources/HASS/Cleopatra_Power_Propaganda_Legacy.pdf',
+        isNew: true
+      },
+      {
+        id: 'cross-crescent',
+        title: 'Cross and Crescent: War and Ideas',
+        description: 'Historical conflict and exchange',
+        pdfPath: '/Unit Resources/HASS/Cross_and_Crescent_War_and_Ideas.pdf',
+        isNew: true
+      },
+      {
+        id: 'einstein',
+        title: 'Einstein: Mind, Matter, Time',
+        description: 'The life and theories of Albert Einstein',
+        pdfPath: '/Unit Resources/HASS/Einstein_Mind_Matter_Time.pdf',
+        isNew: true
+      },
+      {
+        id: 'genghis-khan',
+        title: 'Genghis Khan',
+        description: 'Architect of the Modern World',
+        pdfPath: '/Unit Resources/HASS/Genghis_Khan_Architect_of_the_Modern_World.pdf',
+        isNew: true
+      },
+      {
+        id: 'joan-of-arc',
+        title: 'Joan of Arc',
+        description: 'The Maid Who Saved France',
+        pdfPath: '/Unit Resources/HASS/Joan_of_Arc_The_Maid_Who_Saved_France.pdf',
+        isNew: true
+      },
+      {
+        id: 'pyramid-engineering',
+        title: 'Pyramid Engineering Solved',
+        description: 'How the pyramids were built',
+        pdfPath: '/Unit Resources/HASS/Pyramid_Engineering_Solved.pdf',
+        isNew: true
+      },
+      {
+        id: 'black-death',
+        title: 'The Black Death',
+        description: 'A Timeline of History',
+        pdfPath: '/Unit Resources/HASS/The_Black_Death_A_Timeline_of_History.pdf',
+        isNew: true
+      },
+      {
+        id: 'french-revolution',
+        title: 'The French Revolution',
+        description: 'A World Transformed',
+        pdfPath: '/Unit Resources/HASS/The_French_Revolution_A_World_Transformed.pdf',
+        isNew: true
+      },
+      {
+        id: 'ww2',
+        title: 'The Second World War',
+        description: '1939–1945 History',
+        pdfPath: '/Unit Resources/HASS/The_Second_World_War_1939–1945.pdf',
+        isNew: true
+      },
+      {
+        id: 'confucius',
+        title: 'The Way of Confucius',
+        description: 'Philosophy and endurance',
+        pdfPath: '/Unit Resources/HASS/The_Way_of_Confucius_Endures.pdf',
+        isNew: true
+      },
+      {
+        id: 'ww1',
+        title: 'World War I Timeline',
+        description: 'From Spark to Treaty',
+        pdfPath: '/Unit Resources/HASS/World_War_I_Timeline_From_Spark_to_Treaty.pdf',
         isNew: true
       }
     ],
@@ -320,7 +503,7 @@ const subjects = [
     icon: '🔬',
     hasTools: true,
     hasDisplays: true,
-    hasResources: false
+    hasResources: true
   },
   {
     id: 'geography',
