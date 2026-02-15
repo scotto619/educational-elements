@@ -41,7 +41,8 @@ const GamesTab = ({
   onAwardXP,
   onAwardCoins,
   currentClassData,
-  user
+  user,
+  saveClassData
 }) => {
   const [selectedGame, setSelectedGame] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -383,9 +384,9 @@ const GamesTab = ({
             user={user}
             studentData={mockTeacherData}
             updateStudentData={() => { }} // No saving for teacher preview
-            classmates={[]} // No leaderboard for teacher preview
             classData={currentClassData}
-            storageKeySuffix={selectedGame.storageKeySuffix}
+            storageKeySuffix={selectedGame.storageKeySuffix || ''}
+            saveClassData={saveClassData}
           />
         </div>
       </div>

@@ -1117,6 +1117,7 @@ const ClassroomChampions = () => {
             onAwardCoins={awardCoinsToStudent}
             currentClassData={currentClassData}
             user={user}
+            saveClassData={saveClassData}
           />
         );
 
