@@ -30,12 +30,12 @@ const DEFAULT_THEMES = {
 };
 
 const DIFFICULTY_SETTINGS = {
-  easy: { size: 8, directions: [[0, 1], [1, 0]], label: 'Easy (8x8)' }, // Horizontal, Vertical
-  medium: { size: 12, directions: [[0, 1], [1, 0], [1, 1], [1, -1]], label: 'Medium (12x12)' }, // + Diagonals
-  hard: { size: 15, directions: [[0, 1], [1, 0], [1, 1], [1, -1], [0, -1], [-1, 0], [-1, -1], [-1, 1]], label: 'Hard (15x15 + Backwards)' }
+  easy: { size: 8, directions: [[0, 1], [1, 0]], label: 'Easy (8x8)', coins: 2 }, // Horizontal, Vertical
+  medium: { size: 12, directions: [[0, 1], [1, 0], [1, 1], [1, -1]], label: 'Medium (12x12)', coins: 5 }, // + Diagonals
+  hard: { size: 15, directions: [[0, 1], [1, 0], [1, 1], [1, -1], [0, -1], [-1, 0], [-1, -1], [-1, 1]], label: 'Hard (15x15 + Backwards)', coins: 10 }
 };
 
-const WordSearchGame = ({ showToast, user, classData, saveClassData }) => {
+const WordSearchGame = ({ showToast, user, classData, saveClassData, studentData, updateStudentData }) => {
   // Game State
   const [gameState, setGameState] = useState('menu'); // menu, playing, teacher, printing
   const [grid, setGrid] = useState([]);
@@ -51,6 +51,9 @@ const WordSearchGame = ({ showToast, user, classData, saveClassData }) => {
   const [editingList, setEditingList] = useState(null);
   const [newListName, setNewListName] = useState('');
   const [newListWords, setNewListWords] = useState('');
+
+  // Touch refs
+  const gridRef = useRef(null);
 
   // Load custom lists from classData
   useEffect(() => {
@@ -170,14 +173,78 @@ const WordSearchGame = ({ showToast, user, classData, saveClassData }) => {
     else if (words.includes(reversed) && !foundWords.includes(reversed)) found = reversed;
 
     if (found) {
-      setFoundWords(prev => [...prev, found]);
+      const newFound = [...foundWords, found];
+      setFoundWords(newFound);
       showToast(`Found ${found}!`, 'success');
-      if (foundWords.length + 1 === words.length) {
-        setTimeout(() => showToast('🎉 PUZZLE COMPLETE! 🎉', 'success'), 500);
+
+      if (newFound.length === words.length) {
+        handlePuzzleComplete();
       }
     }
 
     setSelection({ start: null, end: null, cells: [] });
+  };
+
+  const handlePuzzleComplete = () => {
+    setTimeout(() => showToast('🎉 PUZZLE COMPLETE! 🎉', 'success'), 500);
+
+    // Reward Logic
+    if (studentData && updateStudentData) {
+      const today = new Date().toISOString().split('T')[0];
+      const lastRewardStr = studentData.gameProgress?.wordSearch?.lastRewardDate;
+      // Parse complex date objects if needed, but standard ISO string expected
+      const lastReward = typeof lastRewardStr === 'string' ? lastRewardStr.split('T')[0] : null;
+
+      if (lastReward !== today) {
+        const coinsEarned = DIFFICULTY_SETTINGS[difficulty].coins;
+        const currentCoins = studentData.wallet?.coins || 0;
+        const newCoins = currentCoins + coinsEarned;
+
+        updateStudentData({
+          wallet: { ...studentData.wallet, coins: newCoins },
+          gameProgress: {
+            ...studentData.gameProgress,
+            wordSearch: {
+              ...(studentData.gameProgress?.wordSearch || {}),
+              lastRewardDate: today
+            }
+          }
+        });
+        setTimeout(() => showToast(`You earned ${coinsEarned} coins!`, 'success'), 1500);
+      } else {
+        setTimeout(() => showToast('Daily reward already claimed today.', 'info'), 1500);
+      }
+    }
+  };
+
+  // Touch Handlers
+  const handleTouchStart = (e) => {
+    // Prevent scrolling
+    if (e.cancelable && e.target.closest('[data-grid-pos]')) {
+      e.preventDefault();
+    }
+
+    const touch = e.touches[0];
+    const element = document.elementFromPoint(touch.clientX, touch.clientY);
+    const cell = element?.closest('[data-grid-pos]');
+
+    if (cell) {
+      const [r, c] = cell.dataset.gridPos.split('-').map(Number);
+      handleStart(r, c);
+    }
+  };
+
+  const handleTouchMove = (e) => {
+    if (e.cancelable) e.preventDefault();
+
+    const touch = e.touches[0];
+    const element = document.elementFromPoint(touch.clientX, touch.clientY);
+    const cell = element?.closest('[data-grid-pos]');
+
+    if (cell) {
+      const [r, c] = cell.dataset.gridPos.split('-').map(Number);
+      handleMove(r, c);
+    }
   };
 
   const getLineCells = (start, end) => {
@@ -521,9 +588,12 @@ const WordSearchGame = ({ showToast, user, classData, saveClassData }) => {
           <div className="flex flex-col lg:flex-row gap-8 items-start justify-center">
             {/* Grid */}
             <div
+              ref={gridRef}
               className="bg-white p-4 rounded-xl shadow-2xl select-none touch-none border-4 border-teal-100"
               onMouseUp={handleEnd}
               onMouseLeave={handleEnd}
+              onTouchEnd={handleEnd}
+              onTouchMove={handleTouchMove}
             >
               <div
                 className="grid gap-0"
@@ -537,6 +607,8 @@ const WordSearchGame = ({ showToast, user, classData, saveClassData }) => {
                         key={`${r}-${c}`}
                         onMouseDown={() => handleStart(r, c)}
                         onMouseEnter={() => handleMove(r, c)}
+                        onTouchStart={handleTouchStart}
+                        data-grid-pos={`${r}-${c}`}
                         className={`
                                     w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 flex items-center justify-center 
                                     font-bold text-lg sm:text-xl rounded-sm cursor-pointer transition-colors duration-75
