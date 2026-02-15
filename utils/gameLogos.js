@@ -101,6 +101,7 @@ const GAME_LOGO_MAP = {
   crossword: createLogoCandidates('crossword', ['Crossword']),
   'word-search': createLogoCandidates('word-search', ['Word Search']),
   boggle: createLogoCandidates('boggle', ['Boggle']),
+  'coordinate-quest': createLogoCandidates('coordinate-quest', ['Coordinate Quest', 'Space Coordinates']),
   noggle: createLogoCandidates('noggle', ['Noggle'])
 };
 

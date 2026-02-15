@@ -23,6 +23,7 @@ import MazeGame from '../games/MazeGame';
 import DailyWordleChallenge from '../games/DailyWordleChallenge';
 import AmazingTypingAdventure from '../games/AmazingTypingAdventure';
 import MultiplicationGridGame from '../games/MultiplicationGridGame';
+import CoordinateQuestGame from '../games/CoordinateQuestGame';
 import PrecisionTimerGame from '../games/PrecisionTimerGame';
 import DodgeballGame from '../games/DodgeballGame';
 import ScoundrelLegendsGame from '../games/ScoundrelLegendsGame';
@@ -100,6 +101,21 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       category: 'featured',
       educational: true,
       logo: getGameLogo('math-grid')
+    },
+    {
+      id: 'coordinate-quest',
+      name: 'Coordinate Quest',
+      icon: '🌌',
+      description: 'Explore the galaxy! Use your coordinate skills to find hidden targets in space.',
+      component: CoordinateQuestGame,
+      color: 'from-cyan-500 to-blue-600',
+      difficulty: 'Easy - Hard',
+      time: '2-10 minutes',
+      featured: true,
+      new: true,
+      category: 'featured',
+      educational: true,
+      logo: getGameLogo('coordinate-quest')
     },
     {
       id: 'precision-timer',
