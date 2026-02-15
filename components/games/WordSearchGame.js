@@ -197,11 +197,9 @@ const WordSearchGame = ({ showToast, user, classData, saveClassData, studentData
 
       if (lastReward !== today) {
         const coinsEarned = DIFFICULTY_SETTINGS[difficulty].coins;
-        const currentCoins = studentData.wallet?.coins || 0;
-        const newCoins = currentCoins + coinsEarned;
 
         updateStudentData({
-          wallet: { ...studentData.wallet, coins: newCoins },
+          currency: (studentData.currency || 0) + coinsEarned,
           gameProgress: {
             ...studentData.gameProgress,
             wordSearch: {
@@ -467,8 +465,8 @@ const WordSearchGame = ({ showToast, user, classData, saveClassData, studentData
                 key={key}
                 onClick={() => setDifficulty(key)}
                 className={`px-6 py-2 rounded-full font-bold transition-all ${difficulty === key
-                    ? 'bg-teal-500 text-white shadow-lg scale-105'
-                    : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50'
+                  ? 'bg-teal-500 text-white shadow-lg scale-105'
+                  : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50'
                   }`}
               >
                 {setting.label}
