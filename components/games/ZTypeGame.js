@@ -815,7 +815,7 @@ const ZTypeGame = ({ studentData, updateStudentData, showToast, classmates = [],
             </div>
         </div >
     );
-}
+
 
 // Render countdown
 if (gamePhase === 'countdown') {
