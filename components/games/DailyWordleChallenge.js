@@ -126,7 +126,7 @@ const mergeKeyboardStatuses = (current, guess, evaluations) => {
   return updated;
 };
 
-const DailyWordleChallenge = ({ showToast, storageKeySuffix = '' }) => {
+const DailyWordleChallenge = ({ showToast, storageKeySuffix = '', studentData, updateStudentData }) => {
   const dateKey = useMemo(() => getDateKey(), []);
 
   const storageKey = useMemo(() => {
@@ -219,6 +219,34 @@ const DailyWordleChallenge = ({ showToast, storageKeySuffix = '' }) => {
       showToast?.(`Good effort! The word was ${solution}.`);
     }
   }, [currentGuess, evaluations, guesses, isComplete, keyboardStatuses, showToast, solution]);
+
+  // Handle Win Rewards
+  useEffect(() => {
+    if (status === 'won' && studentData && updateStudentData) {
+      const today = new Date().toDateString();
+      const lastRewardDate = studentData?.gameProgress?.wordle?.lastRewardDate;
+
+      if (lastRewardDate !== today) {
+        // Award 5 coins
+        const newCurrency = (studentData.currency || 0) + 5;
+
+        updateStudentData({
+          ...studentData,
+          currency: newCurrency,
+          gameProgress: {
+            ...studentData.gameProgress,
+            wordle: {
+              ...studentData.gameProgress?.wordle,
+              lastRewardDate: today
+            }
+          }
+        }).then(() => {
+          showToast('🏆 Daily Challenge Complete! +5 Coins', 'success');
+        }).catch(err => console.error('Error awarding coins:', err));
+      }
+    }
+  }, [status, studentData, updateStudentData, showToast]);
+
 
   const handleDelete = useCallback(() => {
     if (isComplete) return;

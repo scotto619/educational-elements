@@ -446,6 +446,39 @@ const ZTypeGame = ({ studentData, updateStudentData, showToast, classmates = [],
                 game.waveEnemies = 0;
                 game.waveEnemiesDestroyed = 0;
                 showToast(`🌟 Wave ${nextWave} Starting!`, 'success');
+
+                // Reward Logic: 2 Coins per wave (Daily reset)
+                if (studentData && updateStudentData) {
+                    const today = new Date().toDateString();
+                    const lastRewardDate = studentData.gameProgress?.ztype?.lastRewardDate;
+                    let highestWaveRewarded = studentData.gameProgress?.ztype?.highestWaveRewarded || 0;
+
+                    // Reset daily
+                    if (lastRewardDate !== today) {
+                        highestWaveRewarded = 0;
+                    }
+
+                    // Award if this wave hasn't been rewarded today (using 'wave' which is the one just completed)
+                    if (wave > highestWaveRewarded) {
+                        const newCurrency = (studentData.currency || 0) + 2;
+
+                        updateStudentData({
+                            ...studentData,
+                            currency: newCurrency,
+                            gameProgress: {
+                                ...studentData.gameProgress,
+                                ztype: {
+                                    ...studentData.gameProgress?.ztype,
+                                    lastRewardDate: today,
+                                    highestWaveRewarded: wave
+                                }
+                            }
+                        }).then(() => {
+                            showToast('💰 Wave Cleared! +2 Coins', 'success');
+                        }).catch(err => console.error('Error awarding coins:', err));
+                    }
+                }
+
                 // Give bonus bomb every 3 waves
                 if (nextWave % 3 === 0) {
                     setBombs(prev => prev + 1);
