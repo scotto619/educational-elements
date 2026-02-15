@@ -57,21 +57,6 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       logo: getGameLogo('daily-word-challenge')
     },
     {
-      id: 'typing-legends',
-      name: 'Typing Legends Academy',
-      icon: '⌨️',
-      description: 'Blast through immersive stories while levelling up your typing speed, accuracy, and combo streaks.',
-      component: AmazingTypingAdventure,
-      color: 'from-indigo-600 to-fuchsia-500',
-      difficulty: 'All Levels',
-      time: '5-10 minutes',
-      category: 'educational',
-      featured: true,
-      new: true,
-      storageKeySuffix: 'student-typing',
-      logo: getGameLogo('typing-legends')
-    },
-    {
       id: 'type-defender',
       name: 'Type Defender',
       icon: '🚀',
@@ -86,7 +71,6 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       educational: true,
       logo: getGameLogo('type-defender')
     },
-    // Featured/New Games
     {
       id: 'multiplication-grid',
       name: 'Math Facts Grid',
@@ -118,59 +102,17 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       logo: getGameLogo('coordinate-quest')
     },
     {
-      id: 'precision-timer',
-      name: 'Precision Timer Challenge',
-      icon: '⏱️',
-      description: 'Test your timing skills! Stop the timer as close to the target time as possible. Compete for the most accurate times.',
-      component: PrecisionTimerGame,
-      color: 'from-red-500 to-orange-600',
-      difficulty: 'All Levels',
-      time: '2-5 minutes',
-      featured: true,
-      new: true,
-      category: 'featured',
-      logo: getGameLogo('precision-timer')
-    },
-    {
-      id: 'dodgeball-frenzy',
-      name: 'Dodgeball Frenzy',
-      icon: '🥎',
-      description: 'Pilot your avatar through an arena of bouncing balls, collect power-ups, and see how long you can survive!',
-      component: DodgeballGame,
-      color: 'from-orange-500 to-red-500',
-      difficulty: 'All Levels',
-      time: '2-8 minutes',
-      featured: true,
-      new: true,
-      category: 'featured',
-      logo: getGameLogo('dodgeball-frenzy'),
-      storageKeySuffix: 'student-dodgeball'
-    },
-    {
-      id: 'scoundrel-legends',
-      name: 'Arcane Scoundrel',
-      icon: '🃏',
-      description: 'Delve through a deck of custom monsters, weapons, and potions in this stylish solo card crawl.',
-      component: ScoundrelLegendsGame,
-      color: 'from-emerald-500 to-sky-600',
-      difficulty: 'Medium',
-      time: '5-15 minutes',
-      category: 'adventure',
-      featured: true,
-      logo: getGameLogo('scoundrel-legends')
-    },
-    {
-      id: 'maze',
-      name: 'Maze Runner',
-      icon: '🧩',
-      description: 'Race through randomly generated mazes! Get a seed from your teacher to compete with friends on the same maze.',
-      component: MazeGame,
-      color: 'from-indigo-500 to-purple-600',
-      difficulty: 'Easy - Hard',
-      time: '2-10 minutes',
+      id: 'math-space-invaders',
+      name: 'Math Space Invaders',
+      icon: '🚀',
+      description: 'Fly through space solving math problems and unlock new ships!',
+      component: MathSpaceInvadersGame,
+      color: 'from-cyan-500 to-purple-600',
+      difficulty: 'Easy - Expert',
+      time: '5-30 minutes',
       featured: true,
       category: 'featured',
-      logo: getGameLogo('maze-runner')
+      logo: getGameLogo('math-space-invaders')
     },
     {
       id: 'bingo',
@@ -188,64 +130,56 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       requiresTeacher: true,
       logo: getGameLogo('educational-bingo')
     },
-    {
-      id: 'educational-memory',
-      name: 'Memory Masters',
-      icon: '🧩',
-      description: 'Match educational content! Play solo or challenge up to 3 friends with custom themes like math, reading, and more.',
-      component: EducationalMemoryGame,
-      color: 'from-purple-500 to-pink-600',
-      difficulty: 'Easy - Hard',
-      time: '5-15 minutes',
-      multiplayer: true,
-      featured: true,
-      category: 'featured',
-      educational: true,
-      logo: getGameLogo('memory-challenge')
-    },
-    {
-      id: 'battle-royale',
-      name: 'Battle Royale Learning',
-      icon: '⚔️',
-      description: 'Epic multiplayer battle! Answer math questions to survive and be the last champion standing.',
-      component: StudentBattleRoyale,
-      color: 'from-red-600 to-orange-600',
-      difficulty: 'Easy - Hard',
-      time: '10-20 minutes',
-      multiplayer: true,
-      featured: true,
-      category: 'featured',
-      requiresClassCode: true,
-      logo: getGameLogo('battle-royale')
-    },
-    {
-      id: 'math-space-invaders',
-      name: 'Math Space Invaders',
-      icon: '🚀',
-      description: 'Fly through space solving math problems and unlock new ships!',
-      component: MathSpaceInvadersGame,
-      color: 'from-cyan-500 to-purple-600',
-      difficulty: 'Easy - Expert',
-      time: '5-30 minutes',
-      featured: true,
-      category: 'featured',
-      logo: getGameLogo('math-space-invaders')
-    },
 
-    // Multiplayer Games
+    // Fun / Adventure Games
     {
-      id: 'multiplayer-agar',
-      name: 'Cell Battle Arena',
-      icon: '🔴',
-      description: 'Battle classmates in real-time! Eat food and smaller players to grow bigger.',
-      component: MultiplayerAgarGame,
-      color: 'from-red-500 to-pink-600',
-      difficulty: 'Medium',
-      time: '5-20 minutes',
-      multiplayer: true,
-      category: 'multiplayer',
-      requiresClassCode: true,
-      logo: getGameLogo('cell-battle')
+      id: 'precision-timer',
+      name: 'Precision Timer Challenge',
+      icon: '⏱️',
+      description: 'Test your timing skills! Stop the timer as close to the target time as possible. Compete for the most accurate times.',
+      component: PrecisionTimerGame,
+      color: 'from-red-500 to-orange-600',
+      difficulty: 'All Levels',
+      time: '2-5 minutes',
+      category: 'fun',
+      logo: getGameLogo('precision-timer')
+    },
+    {
+      id: 'dodgeball-frenzy',
+      name: 'Dodgeball Frenzy',
+      icon: '🥎',
+      description: 'Pilot your avatar through an arena of bouncing balls, collect power-ups, and see how long you can survive!',
+      component: DodgeballGame,
+      color: 'from-orange-500 to-red-500',
+      difficulty: 'All Levels',
+      time: '2-8 minutes',
+      category: 'fun',
+      logo: getGameLogo('dodgeball-frenzy'),
+      storageKeySuffix: 'student-dodgeball'
+    },
+    {
+      id: 'maze',
+      name: 'Maze Runner',
+      icon: '🧩',
+      description: 'Race through randomly generated mazes! Get a seed from your teacher to compete with friends on the same maze.',
+      component: MazeGame,
+      color: 'from-indigo-500 to-purple-600',
+      difficulty: 'Easy - Hard',
+      time: '2-10 minutes',
+      category: 'fun',
+      logo: getGameLogo('maze-runner')
+    },
+    {
+      id: 'clicker',
+      name: 'Hero Forge',
+      icon: '⚡',
+      description: 'Build your fantasy empire in this epic incremental adventure!',
+      component: ClickerGame,
+      color: 'from-yellow-500 to-orange-600',
+      difficulty: 'Easy',
+      time: '10+ minutes',
+      category: 'fun',
+      logo: getGameLogo('hero-forge')
     },
     {
       id: 'battleships',
@@ -274,46 +208,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       logo: getGameLogo('tic-tac-toe')
     },
 
-    // Adventure Games  
-    {
-      id: 'match3battle',
-      name: 'Match-3 Battle Arena',
-      icon: '⚔️',
-      description: 'Epic fantasy RPG adventure with strategic match-3 combat!',
-      component: Match3BattleGame,
-      color: 'from-red-500 to-purple-600',
-      difficulty: 'Medium - Expert',
-      time: '5-30 minutes',
-      category: 'adventure',
-      logo: getGameLogo('match3-adventure')
-    },
-    {
-      id: 'clicker',
-      name: 'Hero Forge',
-      icon: '⚡',
-      description: 'Build your fantasy empire in this epic incremental adventure!',
-      component: ClickerGame,
-      color: 'from-yellow-500 to-orange-600',
-      difficulty: 'Easy',
-      time: '10+ minutes',
-      category: 'adventure',
-      logo: getGameLogo('hero-forge')
-    },
-
-    // Educational Games
-    {
-      id: 'math-race',
-      name: 'Math Race',
-      icon: '🏎️',
-      description: 'Race through math problems to reach the finish line first!',
-      component: MathRaceGame,
-      color: 'from-green-500 to-blue-600',
-      difficulty: 'Easy - Hard',
-      time: '5-15 minutes',
-      category: 'educational',
-      educational: true,
-      logo: getGameLogo('math-race')
-    },
+    // Educational Utils
     {
       id: 'boggle',
       name: 'Word Scramble',
@@ -326,19 +221,6 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       category: 'educational',
       educational: true,
       logo: getGameLogo('word-scramble')
-    },
-    {
-      id: 'noggle',
-      name: 'Number Noggle',
-      icon: '🔢',
-      description: 'Make target numbers using math operations! A numerical twist on word games.',
-      component: NoggleGame,
-      color: 'from-orange-500 to-red-600',
-      difficulty: 'Medium - Hard',
-      time: '5-10 minutes',
-      category: 'educational',
-      educational: true,
-      logo: getGameLogo('number-noggle')
     },
     {
       id: 'word-search',
@@ -381,7 +263,8 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
   ];
 
   const categorizeGame = (game) => {
-    if (game.multiplayer) return 'multiplayer';
+    if (game.category === 'multiplayer') return 'multiplayer';
+    if (game.category === 'fun' || game.id === 'clicker') return 'fun'; // Explicitly check for fun category
     if (game.educational || game.category === 'educational' || game.category === 'featured' || game.category === 'daily') {
       return 'educational';
     }

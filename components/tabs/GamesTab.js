@@ -70,20 +70,6 @@ const GamesTab = ({
       logo: getGameLogo('daily-word-challenge')
     },
     {
-      id: 'amazing-typing-adventure',
-      name: 'Typing Legends Academy',
-      icon: '⌨️',
-      description: 'Launch cinematic typing missions with live accuracy, combo streaks, and storytelling power-ups.',
-      component: AmazingTypingAdventure,
-      color: 'from-indigo-600 to-fuchsia-500',
-      difficulty: 'All Levels',
-      time: '5-10 minutes',
-      category: 'educational',
-      featured: true,
-      storageKeySuffix: 'teacher-typing',
-      logo: getGameLogo('typing-legends')
-    },
-    {
       id: 'type-defender',
       name: 'Type Defender',
       icon: '🚀',
@@ -139,7 +125,7 @@ const GamesTab = ({
       time: '2-5 minutes',
       featured: true,
       new: true,
-      category: 'featured',
+      category: 'fun',
       logo: getGameLogo('precision-timer')
     },
     {
@@ -153,7 +139,7 @@ const GamesTab = ({
       time: '2-8 minutes',
       featured: true,
       new: true,
-      category: 'featured',
+      category: 'fun',
       logo: getGameLogo('dodgeball-frenzy'),
       storageKeySuffix: 'teacher-dodgeball'
     },
@@ -167,7 +153,7 @@ const GamesTab = ({
       difficulty: 'Easy - Hard',
       time: '2-10 minutes',
       featured: true,
-      category: 'featured',
+      category: 'fun',
       logo: getGameLogo('maze-runner')
     },
     {
@@ -184,35 +170,6 @@ const GamesTab = ({
       category: 'featured',
       teacherMode: true,
       logo: getGameLogo('educational-bingo')
-    },
-    {
-      id: 'battle-royale',
-      name: 'Battle Royale Learning',
-      icon: '⚔️',
-      description: 'Epic multiplayer battle! Create a game code for students to join and answer math questions to survive.',
-      component: BattleRoyaleGame,
-      color: 'from-red-600 to-orange-600',
-      difficulty: 'Easy - Hard',
-      time: '10-20 minutes',
-      multiplayer: true,
-      featured: true,
-      category: 'featured',
-      teacherMode: true,
-      logo: getGameLogo('battle-royale')
-    },
-    {
-      id: 'multiplayer-agar',
-      name: 'Cell Battle Arena',
-      icon: '🔴',
-      description: 'Host a real-time battle arena where students control cells and compete to grow bigger.',
-      component: MultiplayerAgarGame,
-      color: 'from-red-500 to-pink-600',
-      difficulty: 'Medium',
-      time: '5-20 minutes',
-      multiplayer: true,
-      category: 'featured',
-      teacherMode: true,
-      logo: getGameLogo('cell-battle')
     },
     {
       id: 'math-space-invaders',
@@ -270,18 +227,6 @@ const GamesTab = ({
       category: 'educational',
       teacherMode: true,
       logo: getGameLogo('classroom-bingo')
-    },
-    {
-      id: 'math-race',
-      name: 'Math Race Challenge',
-      icon: '🧮',
-      description: 'Display timed math challenges for the whole class to solve together.',
-      component: MathRaceGame,
-      color: 'from-green-500 to-green-600',
-      difficulty: 'Easy - Hard',
-      time: '2-5 minutes',
-      category: 'educational',
-      logo: getGameLogo('math-race')
     },
     {
       id: 'crossword',
@@ -346,18 +291,6 @@ const GamesTab = ({
       logo: getGameLogo('memory-match')
     },
     {
-      id: 'match3battle',
-      name: 'Match-3 Adventure Display',
-      icon: '💎',
-      description: 'Display match-3 gameplay for entertainment between lessons.',
-      component: Match3BattleGame,
-      color: 'from-purple-500 to-pink-500',
-      difficulty: 'Easy - Hard',
-      time: '5-15 minutes',
-      category: 'brain',
-      logo: getGameLogo('match3')
-    },
-    {
       id: 'clicker',
       name: 'Hero Forge Display',
       icon: '⚡',
@@ -366,7 +299,7 @@ const GamesTab = ({
       color: 'from-yellow-500 to-orange-500',
       difficulty: 'Easy',
       time: '10+ minutes',
-      category: 'brain',
+      category: 'fun',
       logo: getGameLogo('clicker')
     }
   ];

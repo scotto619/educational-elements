@@ -82,27 +82,28 @@ const createLogoCandidates = (identifier, additionalNames = []) => {
 };
 
 const GAME_LOGO_MAP = {
-  'daily-word-challenge': createLogoCandidates('daily-word-challenge', ['Daily Word Challenge']),
+  'daily-word-challenge': createLogoCandidates('daily-word-challenge', ['daily-word-challenge.png', 'Daily Word Challenge']),
   'typing-legends': createLogoCandidates('typing-legends', ['Typing Legends Academy', 'Typing Legends']),
-  'maze-runner': createLogoCandidates('maze-runner', ['Maze Runner', 'Maze']),
-  'educational-bingo': createLogoCandidates('educational-bingo', ['Educational Bingo', 'Bingo']),
-  'memory-challenge': createLogoCandidates('memory-challenge', ['Memory Challenge', 'Memory Masters', 'Memory']),
-  'battle-royale': createLogoCandidates('battle-royale', ['Battle Royale Learning', 'Battle Royale']),
-  'math-space-invaders': createLogoCandidates('math-space-invaders', ['Math Space Invaders', 'Space Maths']),
-  'dodgeball-frenzy': createLogoCandidates('dodgeball-frenzy', ['Dodgeball Frenzy', 'Dodgeball']),
-  'cell-battle': createLogoCandidates('cell-battle', ['Cell Battle Arena', 'Cell Battle']),
-  battleships: createLogoCandidates('battleships', ['Battleships Tournament', 'Battleships']),
-  'tic-tac-toe': createLogoCandidates('tic-tac-toe', ['Tic Tac Toe Tournament', 'TicTacToe', 'tictactoe']),
-  'precision-timer': createLogoCandidates('precision-timer', ['Precision Timer Challenge', 'Timer Challenge', 'Precision Timer']),
-  'match3-adventure': createLogoCandidates('match3-adventure', ['Match3 Battle', 'Match 3 Battle', 'Match3 Adventure']),
-  'hero-forge': createLogoCandidates('hero-forge', ['Hero Forge', 'Clicker']),
-  'classroom-bingo': createLogoCandidates('classroom-bingo', ['Classroom Bingo', 'Classroom BINGO']),
-  'math-race': createLogoCandidates('math-race', ['Math Race Challenge', 'Math Race']),
-  crossword: createLogoCandidates('crossword', ['Crossword']),
-  'word-search': createLogoCandidates('word-search', ['Word Search']),
-  boggle: createLogoCandidates('boggle', ['Boggle']),
-  'coordinate-quest': createLogoCandidates('coordinate-quest', ['Coordinate Quest', 'Space Coordinates']),
-  noggle: createLogoCandidates('noggle', ['Noggle'])
+  'maze-runner': createLogoCandidates('maze-runner', ['maze-runner.png', 'Maze Runner', 'Maze']),
+  'educational-bingo': createLogoCandidates('educational-bingo', ['classroom-bingo.png', 'Educational Bingo', 'Bingo']),
+  'memory-challenge': createLogoCandidates('memory-challenge', ['memory-challenge.png', 'Memory Challenge', 'Memory Masters', 'Memory']),
+  'battle-royale': createLogoCandidates('battle-royale', ['battle-royale.png', 'Battle Royale Learning', 'Battle Royale']),
+  'math-space-invaders': createLogoCandidates('math-space-invaders', ['math-space-invaders.png', 'Math Space Invaders', 'Space Maths']),
+  'dodgeball-frenzy': createLogoCandidates('dodgeball-frenzy', ['dodgeball.png', 'Dodgeball Frenzy', 'Dodgeball']),
+  'cell-battle': createLogoCandidates('cell-battle', ['cell-battle.png', 'Cell Battle Arena', 'Cell Battle']),
+  battleships: createLogoCandidates('battleships', ['battleships.png', 'Battleships Tournament', 'Battleships']),
+  'tic-tac-toe': createLogoCandidates('tic-tac-toe', ['tic-tac-toe.png', 'Tic Tac Toe Tournament', 'TicTacToe', 'tictactoe']),
+  'precision-timer': createLogoCandidates('precision-timer', ['precisiontimer.png', 'Precision Timer Challenge', 'Timer Challenge', 'Precision Timer']),
+  'match3-adventure': createLogoCandidates('match3-adventure', ['match3-adventure.svg', 'Match3 Battle', 'Match 3 Battle', 'Match3 Adventure']),
+  'hero-forge': createLogoCandidates('hero-forge', ['hero-forge.png', 'Hero Forge', 'Clicker']),
+  'classroom-bingo': createLogoCandidates('classroom-bingo', ['classroom-bingo.png', 'Classroom Bingo', 'Classroom BINGO']),
+  'math-race': createLogoCandidates('math-race', ['math-race.svg', 'Math Race Challenge', 'Math Race']),
+  crossword: createLogoCandidates('crossword', ['crossword.svg', 'Crossword']),
+  'word-search': createLogoCandidates('word-search', ['word-search.svg', 'Word Search']),
+  boggle: createLogoCandidates('boggle', ['boggle.svg', 'Boggle']),
+  'coordinate-quest': createLogoCandidates('coordinate-quest', ['coordinate.png', 'Coordinate Quest', 'Space Coordinates']),
+  noggle: createLogoCandidates('noggle', ['noggle.svg', 'Noggle']),
+  'type-defender': createLogoCandidates('type-defender', ['typedefender.png', 'Type Defender'])
 };
 
 const GAME_LOGO_ALIASES = {

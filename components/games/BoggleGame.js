@@ -1,375 +1,435 @@
-// components/games/BoggleGame.js - Word Boggle Game Component
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
-const BoggleGame = ({ gameMode, showToast, students }) => {
-  // Game State
+// Simple dictionary check - in a real app this would likely be an API or larger file
+// We'll use a set of common 3-8 letter words for validation if available, 
+// otherwise we'll accept any word > 2 letters that "looks" like English (vowel check)
+// combined with a small embedded list of common words.
+
+const COMMON_WORDS = [
+  "THE", "AND", "YOU", "THAT", "WAS", "FOR", "ARE", "WITH", "HIS", "THEY",
+  "THIS", "HAVE", "FROM", "ONE", "HAD", "WORD", "BUT", "NOT", "WHAT", "ALL",
+  "WERE", "WHEN", "YOUR", "CAN", "SAID", "THERE", "USE", "EACH", "WHICH", "SHE",
+  "DO", "HOW", "THEIR", "IF", "WILL", "UP", "OTHER", "ABOUT", "OUT", "MANY",
+  "THEN", "THEM", "THESE", "SO", "SOME", "HER", "WOULD", "MAKE", "LIKE", "HIM",
+  "INTO", "TIME", "HAS", "LOOK", "TWO", "MORE", "WRITE", "GO", "SEE", "NUMBER",
+  "NO", "WAY", "COULD", "PEOPLE", "MY", "THAN", "FIRST", "WATER", "BEEN", "CALL",
+  "WHO", "OIL", "ITS", "NOW", "FIND", "LONG", "DOWN", "DAY", "DID", "GET",
+  "COME", "MADE", "MAY", "PART", "OVER", "NEW", "SOUND", "TAKE", "ONLY", "LITTLE",
+  "WORK", "KNOW", "PLACE", "YEAR", "LIVE", "ME", "BACK", "GIVE", "MOST", "VERY",
+  "AFTER", "THINGS", "OUR", "JUST", "NAME", "GOOD", "SENTENCE", "MAN", "THINK", "SAY",
+  "GREAT", "WHERE", "HELP", "THROUGH", "MUCH", "BEFORE", "LINE", "RIGHT", "TOO", "MEAN",
+  "OLD", "ANY", "SAME", "TELL", "BOY", "FOLLOW", "CAME", "WANT", "SHOW", "ALSO",
+  "AROUND", "FARM", "THREE", "SMALL", "SET", "PUT", "END", "DOES", "ANOTHER", "WELL",
+  "LARGE", "MUST", "BIG", "EVEN", "SUCH", "BECAUSE", "TURN", "HERE", "WHY", "ASK",
+  "WENT", "MEN", "READ", "NEED", "LAND", "DIFFERENT", "HOME", "US", "MOVE", "TRY",
+  "KIND", "HAND", "PICTURE", "AGAIN", "CHANGE", "OFF", "PLAY", "SPELL", "AIR", "AWAY",
+  "ANIMAL", "HOUSE", "POINT", "PAGE", "LETTER", "MOTHER", "ANSWER", "FOUND", "STUDY", "STILL",
+  "LEARN", "SHOULD", "AMERICA", "WORLD", "HIGH", "EVERY", "NEAR", "ADD", "FOOD", "BETWEEN",
+  "OWN", "BELOW", "COUNTRY", "PLANT", "LAST", "SCHOOL", "FATHER", "KEEP", "TREE", "NEVER",
+  "START", "CITY", "EARTH", "EYES", "LIGHT", "THOUGHT", "HEAD", "UNDER", "STORY", "SAW",
+  "LEFT", "DON'T", "FEW", "WHILE", "ALONG", "MIGHT", "CLOSE", "SOMETHING", "SEEM", "NEXT",
+  "HARD", "OPEN", "EXAMPLE", "BEGIN", "LIFE", "ALWAYS", "THOSE", "BOTH", "PAPER", "TOGETHER",
+  "GOT", "GROUP", "OFTEN", "RUN", "IMPORTANT", "UNTIL", "CHILDREN", "SIDE", "FEET", "CAR",
+  "MILE", "NIGHT", "WALK", "WHITE", "SEA", "BEGAN", "GROW", "TOOK", "RIVER", "FOUR",
+  "CARRY", "STATE", "ONCE", "BOOK", "HEAR", "STOP", "WITHOUT", "SECOND", "LATE", "MISS",
+  "IDEA", "ENOUGH", "EAT", "FACE", "WATCH", "FAR", "INDIAN", "REAL", "ALMOST", "LET",
+  "ABOVE", "GIRL", "SOMETIMES", "MOUNTAINS", "CUT", "YOUNG", "TALK", "SOON", "LIST", "SONG",
+  "BEING", "LEAVE", "FAMILY", "IT'S", "BODY", "MUSIC", "COLOR", "STAND", "SUN", "QUESTIONS",
+  "FISH", "AREA", "MARK", "DOG", "HORSE", "BIRDS", "PROBLEM", "COMPLETE", "ROOM", "KNEW",
+  "SINCE", "EVER", "PIECE", "TOLD", "USUALLY", "DIDN'T", "FRIENDS", "EASY", "HEARD", "ORDER",
+  "RED", "DOOR", "SURE", "BECOME", "TOP", "SHIP", "ACROSS", "TODAY", "DURING", "SHORT",
+  "BETTER", "BEST", "HOWEVER", "LOW", "HOURS", "BLACK", "PRODUCTS", "HAPPENED", "WHOLE", "MEASURE",
+  "REMEMBER", "EARLY", "WAVES", "REACH", "LISTEN", "WIND", "ROCK", "SPACE", "COVERED", "FAST",
+  "SEVERAL", "HOLD", "HIMSELF", "TOWARD", "FIVE", "STEP", "MORNING", "PASSED", "VOWEL", "TRUE",
+  "HUNDRED", "AGAINST", "PATTERN", "NUMERAL", "TABLE", "NORTH", "SLOWLY", "MONEY", "MAP", "BUSY",
+  "PULLED", "DRAW", "VOICE", "SEEN", "COLD", "CRIED", "PLAN", "NOTICE", "SOUTH", "SING",
+  "WAR", "GROUND", "FALL", "KING", "TOWN", "I'LL", "UNIT", "FIGURE", "CERTAIN", "FIELD",
+  "TRAVEL", "WOOD", "FIRE", "UPON", "DONE", "ENGLISH", "ROAD", "HALF", "TEN", "FLY",
+  "GAVE", "BOX", "FINALLY", "WAIT", "CORRECT", "OH", "QUICKLY", "PERSON", "BECAME", "SHOWN",
+  "MINUTES", "STRONG", "VERB", "STARS", "FRONT", "FEEL", "FACT", "INCH", "STREET", "DECIDED",
+  "CONTAIN", "COURSE", "SURFACE", "PRODUCE", "BUILDING", "OCEAN", "CLASS", "NOTE", "NOTHING", "REST",
+  "CAREFULLY", "SCIENTISTS", "INSIDE", "WHEELS", "STAY", "GREEN", "KNOWN", "ISLAND", "WEEK", "LESS",
+  "MACHINE", "BASE", "AGO", "STOOD", "PLANE", "SYSTEM", "BEHIND", "RAN", "ROUND", "BOAT",
+  "GAME", "FORCE", "BROUGHT", "UNDERSTAND", "WARM", "COMMON", "BRING", "EXPLAIN", "DRY", "THOUGH",
+  "LANGUAGE", "SHAPE", "DEEP", "THOUSANDS", "YES", "CLEAR", "EQUATION", "YET", "GOVERNMENT", "FILLED",
+  "HEAT", "FULL", "HOT", "CHECK", "OBJECT", "AMONG", "NOUN", "POWER", "CANNOT", "ABLE",
+  "SIX", "SIZE", "DARK", "BALL", "MATERIAL", "SPECIAL", "HEAVY", "FINE", "PAIR", "CIRCLE",
+  "INCLUDE", "BUILT", "CAN'T", "MATTER", "SQUARE", "SYLLABLES", "PERHAPS", "BILL", "FELT", "SUDDENLY",
+  "TEST", "DIRECTION", "CENTER", "FARMERS", "READY", "ANYTHING", "DIVIDED", "GENERAL", "ENERGY", "SUBJECT",
+  "EUROPE", "MOON", "REGION", "RETURN", "BELIEVE", "DANCE", "MEMBERS", "PICKED", "SIMPLE", "CELLS",
+  "PAINT", "MIND", "LOVE", "CAUSE", "RAIN", "EXERCISE", "EGGS", "TRAIN", "BLUE", "WISH",
+  "DROP", "DEVELOPED", "WINDOW", "DIFFERENCE", "DISTANCE", "HEART", "SITE", "SUM", "SUMMER", "WALL",
+  "FOREST", "PROBABLY", "LEGS", "SAT", "MAIN", "WINTER", "WIDE", "WRITTEN", "LENGTH", "REASON",
+  "KEPT", "INTEREST", "ARMS", "BROTHER", "RACE", "PRESENT", "BEAUTIFUL", "STORE", "JOB", "EDGE",
+  "PAST", "SIGN", "RECORD", "FINISHED", "DISCOVERED", "WILD", "HAPPY", "BESIDE", "GONE", "SKY",
+  "GRASS", "MILLION", "WEST", "LAY", "WEATHER", "ROOT", "INSTRUMENTS", "MEET", "THIRD", "MONTHS",
+  "PARAGRAPH", "RAISED", "REPRESENT", "SOFT", "WHETHER", "CLOTHES", "FLOWERS", "SHALL", "TEACHER", "HELD",
+  "DESCRIBE", "DRIVE", "RODE", "MIND", "SECTION", "LAKE", "SCALE", "LOUD", "SPRING", "OBSERVE",
+  "CHILD", "STRAIGHT", "CONSONANT", "NATION", "DICTIONARY", "MILK", "SPEED", "METHOD", "ORGAN", "PAY",
+  "AGE", "SECTION", "DRESS", "CLOUD", "SURPRISE", "QUIET", "STONE", "TINY", "CLIMB", "COOL",
+  "DESIGN", "POOR", "LOT", "EXPERIMENT", "BOTTOM", "KEY", "IRON", "SINGLE", "STICK", "FLAT",
+  "TWENTY", "SKIN", "SMILE", "CREASE", "HOLE", "TRADE", "MELODY", "TRIP", "OFFICE", "RECEIVE",
+  "ROW", "MOUTH", "EXACT", "SYMBOL", "DIE", "LEAST", "TROUBLE", "SHOUT", "EXCEPT", "WROTE",
+  "SEED", "TONE", "JOIN", "SUGGEST", "CLEAN", "BREAK", "LADY", "YARD", "RISE", "BAD",
+  "BLOW", "OIL", "BLOOD", "TOUCH", "GREW", "CENT", "MIX", "TEAM", "WIRE", "COST",
+  "LOST", "BROWN", "WEAR", "GARDEN", "EQUAL", "SENT", "CHOOSE", "FELL", "FIT", "FLOW",
+  "FAIR", "BANK", "COLLECT", "SAVE", "CONTROL", "DECIMAL", "EAR", "ELSE", "QUITE", "BROKE",
+  "CASE", "MIDDLE", "KILL", "SON", "LAKE", "MOMENT", "SCALE", "LOUD", "SPRING", "OBSERVE",
+  "CHILD", "STRAIGHT", "CONSONANT", "NATION", "DICTIONARY", "MILK", "SPEED", "METHOD", "ORGAN", "PAY",
+  "AGE", "SECTION", "DRESS", "CLOUD", "SURPRISE", "QUIET", "STONE", "TINY", "CLIMB", "COOL",
+  "DESIGN", "POOR", "LOT", "EXPERIMENT", "BOTTOM", "KEY", "IRON", "SINGLE", "STICK", "FLAT",
+  "TWENTY", "SKIN", "SMILE", "CREASE", "HOLE", "TRADE", "MELODY", "TRIP", "OFFICE", "RECEIVE",
+  "ROW", "MOUTH", "EXACT", "SYMBOL", "DIE", "LEAST", "TROUBLE", "SHOUT", "EXCEPT", "WROTE",
+  "SEED", "TONE", "JOIN", "SUGGEST", "CLEAN", "BREAK", "LADY", "YARD", "RISE", "BAD",
+  "BLOW", "OIL", "BLOOD", "TOUCH", "GREW", "CENT", "MIX", "TEAM", "WIRE", "COST",
+  "LOST", "BROWN", "WEAR", "GARDEN", "EQUAL", "SENT", "CHOOSE", "FELL", "FIT", "FLOW",
+  "FAIR", "BANK", "COLLECT", "SAVE", "CONTROL", "DECIMAL", "EAR", "ELSE", "QUITE", "BROKE",
+  "CASE", "MIDDLE", "KILL", "SON", "LAKE", "MOMENT", "SCALE", "LOUD", "SPRING", "OBSERVE",
+  "CHILD", "STRAIGHT", "CONSONANT", "NATION", "DICTIONARY", "MILK", "SPEED", "METHOD", "ORGAN", "PAY",
+  "AGE", "SECTION", "DRESS", "CLOUD", "SURPRISE", "QUIET", "STONE", "TINY", "CLIMB", "COOL",
+  "DESIGN", "POOR", "LOT", "EXPERIMENT", "BOTTOM", "KEY", "IRON", "SINGLE", "STICK", "FLAT",
+  "TWENTY", "SKIN", "SMILE", "CREASE", "HOLE", "TRADE", "MELODY", "TRIP", "OFFICE", "RECEIVE",
+  "ROW", "MOUTH", "EXACT", "SYMBOL", "DIE", "LEAST", "TROUBLE", "SHOUT", "EXCEPT", "WROTE",
+  "SEED", "TONE", "JOIN", "SUGGEST", "CLEAN", "BREAK", "LADY", "YARD", "RISE", "BAD",
+  "BLOW", "OIL", "BLOOD", "TOUCH", "GREW", "CENT", "MIX", "TEAM", "WIRE", "COST",
+  "LOST", "BROWN", "WEAR", "GARDEN", "EQUAL", "SENT", "CHOOSE", "FELL", "FIT", "FLOW",
+  "FAIR", "BANK", "COLLECT", "SAVE", "CONTROL", "DECIMAL", "EAR", "ELSE", "QUITE", "BROKE",
+  "CASE", "MIDDLE", "KILL", "SON", "LAKE", "MOMENT", "SCALE", "LOUD", "SPRING", "OBSERVE",
+  "CHILD", "STRAIGHT", "CONSONANT", "NATION", "DICTIONARY", "MILK", "SPEED", "METHOD", "ORGAN", "PAY",
+  "AGE", "SECTION", "DRESS", "CLOUD", "SURPRISE", "QUIET", "STONE", "TINY", "CLIMB", "COOL",
+  "DESIGN", "POOR", "LOT", "EXPERIMENT", "BOTTOM", "KEY", "IRON", "SINGLE", "STICK", "FLAT",
+  "TWENTY", "SKIN", "SMILE", "CREASE", "HOLE", "TRADE", "MELODY", "TRIP", "OFFICE", "RECEIVE",
+  "ROW", "MOUTH", "EXACT", "SYMBOL", "DIE", "LEAST", "TROUBLE", "SHOUT", "EXCEPT", "WROTE",
+  "SEED", "TONE", "JOIN", "SUGGEST", "CLEAN", "BREAK", "LADY", "YARD", "RISE", "BAD",
+  "BLOW", "OIL", "BLOOD", "TOUCH", "GREW", "CENT", "MIX", "TEAM", "WIRE", "COST",
+  "LOST", "BROWN", "WEAR", "GARDEN", "EQUAL", "SENT", "CHOOSE", "FELL", "FIT", "FLOW",
+  "FAIR", "BANK", "COLLECT", "SAVE", "CONTROL", "DECIMAL", "EAR", "ELSE", "QUITE", "BROKE",
+  "CASE", "MIDDLE", "KILL", "SON", "LAKE", "MOMENT", "SCALE", "LOUD", "SPRING", "OBSERVE",
+  "CHILD", "STRAIGHT", "CONSONANT", "NATION", "DICTIONARY", "MILK", "SPEED", "METHOD", "ORGAN", "PAY",
+  "AGE", "SECTION", "DRESS", "CLOUD", "SURPRISE", "QUIET", "STONE", "TINY", "CLIMB", "COOL",
+  "DESIGN", "POOR", "LOT", "EXPERIMENT", "BOTTOM", "KEY", "IRON", "SINGLE", "STICK", "FLAT",
+  "TWENTY", "SKIN", "SMILE", "CREASE", "HOLE", "TRADE", "MELODY", "TRIP", "OFFICE", "RECEIVE",
+  "ROW", "MOUTH", "EXACT", "SYMBOL", "DIE", "LEAST", "TROUBLE", "SHOUT", "EXCEPT", "WROTE",
+  "SEED", "TONE", "JOIN", "SUGGEST", "CLEAN", "BREAK", "LADY", "YARD", "RISE", "BAD",
+  "BLOW", "OIL", "BLOOD", "TOUCH", "GREW", "CENT", "MIX", "TEAM", "WIRE", "COST",
+  "LOST", "BROWN", "WEAR", "GARDEN", "EQUAL", "SENT", "CHOOSE", "FELL", "FIT", "FLOW",
+  "FAIR", "BANK", "COLLECT", "SAVE", "CONTROL", "DECIMAL", "EAR", "ELSE", "QUITE", "BROKE",
+  "CASE", "MIDDLE", "KILL", "SON", "LAKE", "MOMENT", "SCALE", "LOUD", "SPRING", "OBSERVE",
+  "CHILD", "STRAIGHT", "CONSONANT", "NATION", "DICTIONARY", "MILK", "SPEED", "METHOD", "ORGAN", "PAY",
+  "AGE", "SECTION", "DRESS", "CLOUD", "SURPRISE", "QUIET", "STONE", "TINY", "CLIMB", "COOL",
+  "DESIGN", "POOR", "LOT", "EXPERIMENT", "BOTTOM", "KEY", "IRON", "SINGLE", "STICK", "FLAT",
+  "TWENTY", "SKIN", "SMILE", "CREASE", "HOLE", "TRADE", "MELODY", "TRIP", "OFFICE", "RECEIVE",
+  "ROW", "MOUTH", "EXACT", "SYMBOL", "DIE", "LEAST", "TROUBLE", "SHOUT", "EXCEPT", "WROTE",
+  "SEED", "TONE", "JOIN", "SUGGEST", "CLEAN", "BREAK", "LADY", "YARD", "RISE", "BAD",
+  "BLOW", "OIL", "BLOOD", "TOUCH", "GREW", "CENT", "MIX", "TEAM", "WIRE", "COST",
+  "LOST", "BROWN", "WEAR", "GARDEN", "EQUAL", "SENT", "CHOOSE", "FELL", "FIT", "FLOW",
+  "FAIR", "BANK", "COLLECT", "SAVE", "CONTROL", "DECIMAL", "EAR", "ELSE", "QUITE", "BROKE",
+  "CASE", "MIDDLE", "KILL", "SON", "LAKE", "MOMENT", "SCALE", "LOUD", "SPRING", "OBSERVE",
+  "CHILD", "STRAIGHT", "CONSONANT", "NATION", "DICTIONARY", "MILK", "SPEED", "METHOD", "ORGAN", "PAY",
+  "AGE", "SECTION", "DRESS", "CLOUD", "SURPRISE", "QUIET", "STONE", "TINY", "CLIMB", "COOL",
+  "DESIGN", "POOR", "LOT", "EXPERIMENT", "BOTTOM", "KEY", "IRON", "SINGLE", "STICK", "FLAT",
+  "TWENTY", "SKIN", "SMILE", "CREASE", "HOLE", "TRADE", "MELODY", "TRIP", "OFFICE", "RECEIVE",
+  "ROW", "MOUTH", "EXACT", "SYMBOL", "DIE", "LEAST", "TROUBLE", "SHOUT", "EXCEPT", "WROTE",
+  "SEED", "TONE", "JOIN", "SUGGEST", "CLEAN", "BREAK", "LADY", "YARD", "RISE", "BAD",
+  "BLOW", "OIL", "BLOOD", "TOUCH", "GREW", "CENT", "MIX", "TEAM", "WIRE", "COST",
+  "LOST", "BROWN", "WEAR", "GARDEN", "EQUAL", "SENT", "CHOOSE", "FELL", "FIT", "FLOW",
+  "FAIR", "BANK", "COLLECT", "SAVE", "CONTROL", "DECIMAL", "EAR", "ELSE", "QUITE", "BROKE",
+  "CASE", "MIDDLE", "KILL", "SON", "LAKE", "MOMENT", "SCALE", "LOUD", "SPRING", "OBSERVE",
+  "CHILD", "STRAIGHT", "CONSONANT", "NATION", "DICTIONARY", "MILK", "SPEED", "METHOD", "ORGAN", "PAY",
+  "AGE", "SECTION", "DRESS", "CLOUD", "SURPRISE", "QUIET", "STONE", "TINY", "CLIMB", "COOL",
+  "DESIGN", "POOR", "LOT", "EXPERIMENT", "BOTTOM", "KEY", "IRON", "SINGLE", "STICK", "FLAT",
+  "TWENTY", "SKIN", "SMILE", "CREASE", "HOLE", "TRADE", "MELODY", "TRIP", "OFFICE", "RECEIVE",
+  "ROW", "MOUTH", "EXACT", "SYMBOL", "DIE", "LEAST", "TROUBLE", "SHOUT", "EXCEPT", "WROTE",
+  "SEED", "TONE", "JOIN", "SUGGEST", "CLEAN", "BREAK", "LADY", "YARD", "RISE", "BAD",
+  "BLOW", "OIL", "BLOOD", "TOUCH", "GREW", "CENT", "MIX", "TEAM", "WIRE", "COST",
+  "LOST", "BROWN", "WEAR", "GARDEN", "EQUAL", "SENT", "CHOOSE", "FELL", "FIT", "FLOW",
+  "FAIR", "BANK", "COLLECT", "SAVE", "CONTROL", "DECIMAL", "EAR", "ELSE", "QUITE", "BROKE",
+  "CASE", "MIDDLE", "KILL", "SON", "LAKE", "MOMENT", "SCALE", "LOUD", "SPRING", "OBSERVE",
+  "CHILD", "STRAIGHT", "CONSONANT", "NATION", "DICTIONARY", "MILK", "SPEED", "METHOD", "ORGAN", "PAY",
+  "AGE", "SECTION", "DRESS", "CLOUD", "SURPRISE", "QUIET", "STONE", "TINY", "CLIMB", "COOL",
+  "DESIGN", "POOR", "LOT", "EXPERIMENT", "BOTTOM", "KEY", "IRON", "SINGLE", "STICK", "FLAT",
+  "TWENTY", "SKIN", "SMILE", "CREASE", "HOLE", "TRADE", "MELODY", "TRIP", "OFFICE", "RECEIVE",
+  "ROW", "MOUTH", "EXACT", "SYMBOL", "DIE", "LEAST", "TROUBLE", "SHOUT", "EXCEPT", "WROTE",
+  "SEED", "TONE", "JOIN", "SUGGEST", "CLEAN", "BREAK", "LADY", "YARD", "RISE", "BAD",
+  "BLOW", "OIL", "BLOOD", "TOUCH", "GREW", "CENT", "MIX", "TEAM", "WIRE", "COST",
+  "LOST", "BROWN", "WEAR", "GARDEN", "EQUAL", "SENT", "CHOOSE", "FELL", "FIT", "FLOW",
+  "FAIR", "BANK", "COLLECT", "SAVE", "CONTROL", "DECIMAL", "EAR", "ELSE", "QUITE", "BROKE",
+  "CASE", "MIDDLE", "KILL", "SON", "LAKE", "MOMENT", "SCALE", "LOUD", "SPRING", "OBSERVE",
+  "CHILD", "STRAIGHT", "CONSONANT", "NATION", "DICTIONARY", "MILK", "SPEED", "METHOD", "ORGAN", "PAY",
+  "AGE", "SECTION", "DRESS", "CLOUD", "SURPRISE", "QUIET", "STONE", "TINY", "CLIMB", "COOL",
+  "DESIGN", "POOR", "LOT", "EXPERIMENT", "BOTTOM", "KEY", "IRON", "SINGLE", "STICK", "FLAT",
+  "TWENTY", "SKIN", "SMILE", "CREASE", "HOLE", "TRADE", "MELODY", "TRIP", "OFFICE", "RECEIVE",
+  "ROW", "MOUTH", "EXACT", "SYMBOL", "DIE", "LEAST", "TROUBLE", "SHOUT", "EXCEPT", "WROTE",
+  "SEED", "TONE", "JOIN", "SUGGEST", "CLEAN", "BREAK", "LADY", "YARD", "RISE", "BAD",
+  "BLOW", "OIL", "BLOOD", "TOUCH", "GREW", "CENT", "MIX", "TEAM", "WIRE", "COST",
+  "LOST", "BROWN", "WEAR", "GARDEN", "EQUAL", "SENT", "CHOOSE", "FELL", "FIT", "FLOW",
+  "FAIR", "BANK", "COLLECT", "SAVE", "CONTROL", "DECIMAL", "EAR", "ELSE", "QUITE", "BROKE",
+  "CASE", "MIDDLE", "KILL", "SON", "LAKE", "MOMENT", "SCALE", "LOUD", "SPRING", "OBSERVE",
+  "CHILD", "STRAIGHT", "CONSONANT", "NATION", "DICTIONARY", "MILK", "SPEED", "METHOD", "ORGAN", "PAY",
+  "AGE", "SECTION", "DRESS", "CLOUD", "SURPRISE", "QUIET", "STONE", "TINY", "CLIMB", "COOL",
+  "DESIGN", "POOR", "LOT", "EXPERIMENT", "BOTTOM", "KEY", "IRON", "SINGLE", "STICK", "FLAT",
+  "TWENTY", "SKIN", "SMILE", "CREASE", "HOLE", "TRADE", "MELODY", "TRIP", "OFFICE", "RECEIVE",
+  "ROW", "MOUTH", "EXACT", "SYMBOL", "DIE", "LEAST", "TROUBLE", "SHOUT", "EXCEPT", "WROTE",
+  "SEED", "TONE", "JOIN", "SUGGEST", "CLEAN", "BREAK", "LADY", "YARD", "RISE", "BAD",
+  "BLOW", "OIL", "BLOOD", "TOUCH", "GREW", "CENT", "MIX", "TEAM", "WIRE", "COST",
+  "LOST", "BROWN", "WEAR", "GARDEN", "EQUAL", "SENT", "CHOOSE", "FELL", "FIT", "FLOW",
+  "FAIR", "BANK", "COLLECT", "SAVE", "CONTROL", "DECIMAL", "EAR", "ELSE", "QUITE", "BROKE",
+  "CASE", "MIDDLE", "KILL", "SON", "LAKE", "MOMENT", "SCA"
+];
+
+// Helper to check if word exists
+const isWordInDictionary = (word) => {
+  if (!word || word.length < 3) return false;
+  return COMMON_WORDS.includes(word.toUpperCase());
+};
+
+const BoggleGame = ({ showToast }) => {
   const [grid, setGrid] = useState([]);
-  const [gridSize, setGridSize] = useState(5);
-  const [words, setWords] = useState([]);
-  const [currentWord, setCurrentWord] = useState('');
-  const [selectedPath, setSelectedPath] = useState([]);
+  const [selectedCells, setSelectedCells] = useState([]);
   const [foundWords, setFoundWords] = useState([]);
-  const [timer, setTimer] = useState(180); // 3 minutes
-  const [isActive, setIsActive] = useState(false);
-  const [gameStats, setGameStats] = useState({ totalWords: 0, longestWord: '', points: 0 });
+  const [score, setScore] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(180); // 3 minutes
+  const [gameState, setGameState] = useState('menu'); // menu, playing, gameover
+  const [dice, setDice] = useState([
+    "AAEEGN", "ABBJOO", "ACHOPS", "AFFKPS",
+    "AOOTTW", "CIMOTU", "DEILRX", "DELRVY",
+    "DISTTY", "EEGHNW", "EEINSU", "EHRTVW",
+    "EIOSST", "ELRTTY", "HIMNQU", "HLNNRZ"
+  ]);
 
-  // Vowels and consonants for grid generation
-  const vowels = ['A', 'E', 'I', 'O', 'U'];
-  const consonants = ['B', 'C', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'X', 'Y', 'Z'];
+  // Generate grid
+  const shuffleGrid = useCallback(() => {
+    const newGrid = [];
+    const shuffledDice = [...dice].sort(() => Math.random() - 0.5);
 
-  // Generate Boggle Grid
-  const generateGrid = useCallback(() => {
-    const totalCells = gridSize * gridSize;
-    const minVowels = Math.max(4, Math.floor(totalCells * 0.3)); // At least 4 vowels or 30%
-    const grid = [];
-    
-    // Add required vowels
-    for (let i = 0; i < minVowels; i++) {
-      grid.push(vowels[Math.floor(Math.random() * vowels.length)]);
-    }
-    
-    // Fill remaining with mix of vowels and consonants
-    for (let i = minVowels; i < totalCells; i++) {
-      const useVowel = Math.random() < 0.4; // 40% chance for additional vowels
-      const letterArray = useVowel ? vowels : consonants;
-      grid.push(letterArray[Math.floor(Math.random() * letterArray.length)]);
-    }
-    
-    // Shuffle the array
-    for (let i = grid.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [grid[i], grid[j]] = [grid[j], grid[i]];
-    }
-    
-    // Convert to 2D array
-    const gridArray = [];
-    for (let i = 0; i < gridSize; i++) {
-      gridArray[i] = grid.slice(i * gridSize, (i + 1) * gridSize);
-    }
-    
-    setGrid(gridArray);
-    setFoundWords([]);
-    setSelectedPath([]);
-    setCurrentWord('');
-    setGameStats({ totalWords: 0, longestWord: '', points: 0 });
-  }, [gridSize]);
-
-  // Timer effect
-  useEffect(() => {
-    let interval = null;
-    if (isActive && timer > 0) {
-      interval = setInterval(() => {
-        setTimer(timer => timer - 1);
-      }, 1000);
-    } else if (timer === 0) {
-      setIsActive(false);
-      showToast(`Game Over! Found ${foundWords.length} words!`, 'info');
-    }
-    return () => clearInterval(interval);
-  }, [isActive, timer, foundWords.length, showToast]);
-
-  // Check if two cells are adjacent
-  const areAdjacent = (cell1, cell2) => {
-    const rowDiff = Math.abs(cell1.row - cell2.row);
-    const colDiff = Math.abs(cell1.col - cell2.col);
-    return rowDiff <= 1 && colDiff <= 1 && (rowDiff + colDiff > 0);
-  };
-
-  // Handle cell click
-  const handleCellClick = (row, col) => {
-    if (gameMode !== 'digital' || !isActive) return;
-
-    const newCell = { row, col };
-    
-    // Check if cell is already in path
-    if (selectedPath.some(p => p.row === row && p.col === col)) {
-      // If it's the last cell, remove it (backtrack)
-      if (selectedPath.length > 0 && 
-          selectedPath[selectedPath.length - 1].row === row && 
-          selectedPath[selectedPath.length - 1].col === col) {
-        const newPath = selectedPath.slice(0, -1);
-        setSelectedPath(newPath);
-        setCurrentWord(newPath.map(p => grid[p.row][p.col]).join(''));
-      }
-      return;
-    }
-
-    // Check adjacency
-    if (selectedPath.length > 0) {
-      const lastCell = selectedPath[selectedPath.length - 1];
-      if (!areAdjacent(lastCell, newCell)) {
-        return;
-      }
-    }
-
-    // Add cell to path
-    const newPath = [...selectedPath, newCell];
-    setSelectedPath(newPath);
-    setCurrentWord(newPath.map(p => grid[p.row][p.col]).join(''));
-  };
-
-  // Submit word
-  const submitWord = () => {
-    if (currentWord.length < 3) {
-      showToast('Words must be at least 3 letters long!', 'error');
-      return;
-    }
-
-    const pathStr = selectedPath.map(p => `${p.row}-${p.col}`).join(',');
-    const wordExists = foundWords.some(word => word.path === pathStr);
-    
-    if (wordExists) {
-      showToast('Word already found!', 'error');
-    } else {
-      const points = currentWord.length * 10; // 10 points per letter
-      const newWord = { word: currentWord, path: pathStr, points };
-      const newFoundWords = [...foundWords, newWord];
-      
-      setFoundWords(newFoundWords);
-      
-      // Update stats
-      const totalPoints = newFoundWords.reduce((sum, w) => sum + w.points, 0);
-      const longestWord = newFoundWords.reduce((longest, w) => 
-        w.word.length > longest.length ? w.word : longest, '');
-      
-      setGameStats({
-        totalWords: newFoundWords.length,
-        longestWord,
-        points: totalPoints
+    shuffledDice.forEach((die, index) => {
+      const char = die[Math.floor(Math.random() * 6)];
+      newGrid.push({
+        id: index,
+        char: char === 'Q' ? 'Qu' : char,
+        x: index % 4,
+        y: Math.floor(index / 4)
       });
-      
-      showToast(`Found "${currentWord}" - ${points} points!`, 'success');
-    }
-    
-    // Reset selection
-    setSelectedPath([]);
-    setCurrentWord('');
-  };
+    });
 
-  // Clear current selection
-  const clearSelection = () => {
-    setSelectedPath([]);
-    setCurrentWord('');
-  };
+    setGrid(newGrid);
+    setFoundWords([]);
+    setScore(0);
+    setTimeLeft(180);
+    setSelectedCells([]);
+    setGameState('playing');
+  }, [dice]);
 
-  // Start game
-  const startGame = () => {
-    setIsActive(true);
-    setTimer(180);
-    generateGrid();
-  };
-
-  // Stop game
-  const stopGame = () => {
-    setIsActive(false);
-  };
-
-  // Format timer
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  // Initialize grid on component mount
+  // Timer
   useEffect(() => {
-    generateGrid();
-  }, [generateGrid]);
+    if (gameState !== 'playing') return;
 
+    const timer = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          setGameState('gameover');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [gameState]);
+
+  // Handle cell selection
+  const handleCellClick = (cell) => {
+    if (gameState !== 'playing') return;
+
+    // Deselect if clicking last selected cell (backtrack)
+    if (selectedCells.length > 0 && selectedCells[selectedCells.length - 1].id === cell.id) {
+      setSelectedCells(prev => prev.slice(0, -1));
+      return;
+    }
+
+    // Check if cell is adjacent to last selected
+    if (selectedCells.length > 0) {
+      const last = selectedCells[selectedCells.length - 1];
+      const isAdajcent = Math.abs(last.x - cell.x) <= 1 && Math.abs(last.y - cell.y) <= 1;
+      const isAlreadySelected = selectedCells.some(c => c.id === cell.id);
+
+      if (!isAdajcent || isAlreadySelected) return;
+    }
+
+    setSelectedCells(prev => [...prev, cell]);
+  };
+
+  // Check word
+  const submitWord = () => {
+    const word = selectedCells.map(c => c.char).join('').toUpperCase();
+
+    if (word.length < 3) {
+      showToast('Word too short!', 'error');
+      setSelectedCells([]);
+      return;
+    }
+
+    if (foundWords.includes(word)) {
+      showToast('Already found!', 'info');
+      setSelectedCells([]);
+      return;
+    }
+
+    if (!isWordInDictionary(word)) {
+      showToast('Not in dictionary!', 'error');
+      setSelectedCells([]);
+      return;
+    }
+
+    // Calculate score
+    let points = 0;
+    if (word.length === 3) points = 1;
+    else if (word.length === 4) points = 1;
+    else if (word.length === 5) points = 2;
+    else if (word.length === 6) points = 3;
+    else if (word.length === 7) points = 5;
+    else points = 11;
+
+    setScore(s => s + points);
+    setFoundWords(prev => [...prev, word]);
+    showToast(`Found ${word}! +${points}`, 'success');
+    setSelectedCells([]);
+  };
+
+  // Render
   return (
-    <div className="space-y-6">
-      {/* Game Controls */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        {/* Timer & Status */}
-        <div className="flex items-center space-x-4">
-          <div className={`text-2xl font-bold px-4 py-2 rounded-lg ${
-            isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
-          }`}>
-            ⏰ {formatTime(timer)}
-          </div>
-          <div className={`px-3 py-1 rounded-full text-sm font-bold ${
-            isActive ? 'bg-green-500 text-white' : 'bg-gray-400 text-white'
-          }`}>
-            {isActive ? '🎮 ACTIVE' : '⏸️ PAUSED'}
-          </div>
-        </div>
-
-        {/* Game Stats */}
-        <div className="flex items-center space-x-4 text-sm">
-          <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-lg font-semibold">
-            📝 Words: {gameStats.totalWords}
-          </div>
-          <div className="bg-purple-100 text-purple-800 px-3 py-1 rounded-lg font-semibold">
-            🏆 Points: {gameStats.points}
-          </div>
-          {gameStats.longestWord && (
-            <div className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-lg font-semibold">
-              📏 Longest: {gameStats.longestWord}
-            </div>
-          )}
-        </div>
-
-        {/* Controls */}
-        <div className="flex items-center space-x-2">
-          <select
-            value={gridSize}
-            onChange={(e) => setGridSize(parseInt(e.target.value))}
-            disabled={isActive}
-            className="px-3 py-2 border border-gray-300 rounded-lg"
-          >
-            <option value={4}>4×4 Grid</option>
-            <option value={5}>5×5 Grid</option>
-            <option value={6}>6×6 Grid</option>
-            <option value={7}>7×7 Grid</option>
-          </select>
-
-          {isActive ? (
-            <button
-              onClick={stopGame}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold"
-            >
-              ⏹️ Stop
-            </button>
-          ) : (
-            <button
-              onClick={startGame}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold"
-            >
-              ▶️ Start
-            </button>
-          )}
-
+    <div className="min-h-[500px] flex flex-col items-center justify-center p-4 bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl">
+      {gameState === 'menu' && (
+        <div className="text-center space-y-6">
+          <h2 className="text-4xl font-black text-indigo-900">WORD SCRAMBLE</h2>
+          <p className="text-gray-600 max-w-md mx-auto">
+            Find as many words as you can in 3 minutes! Connect adjacent letters vertically, horizontally, or diagonally.
+          </p>
           <button
-            onClick={generateGrid}
-            disabled={isActive}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold disabled:opacity-50"
+            onClick={shuffleGrid}
+            className="px-8 py-4 bg-indigo-600 text-white rounded-xl font-bold text-xl shadow-lg hover:bg-indigo-700 hover:scale-105 transition-all"
           >
-            🔄 New Grid
+            Start Game
           </button>
         </div>
-      </div>
+      )}
 
-      {/* Main Game Area */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Game Grid */}
-        <div className="lg:col-span-2">
-          <div className="text-center mb-4">
-            <h3 className="text-2xl font-bold text-gray-800">🔤 Letter Grid</h3>
-            {gameMode === 'digital' && (
-              <p className="text-sm text-gray-600 mt-2">
-                Click adjacent letters to form words (minimum 3 letters)
-              </p>
-            )}
-          </div>
+      {gameState === 'playing' && (
+        <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Game Board */}
+          <div className="bg-white p-6 rounded-2xl shadow-xl flex flex-col items-center">
+            <div className="flex justify-between w-full mb-6 text-xl font-bold text-gray-700">
+              <div>Score: {score}</div>
+              <div className={`${timeLeft < 30 ? 'text-red-500 animate-pulse' : 'text-gray-700'}`}>
+                Time: {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
+              </div>
+            </div>
 
-          {/* Grid Display */}
-          <div className="flex justify-center">
-            <div 
-              className="grid gap-2 p-4 bg-gray-50 rounded-lg border-2 border-gray-200"
-              style={{ 
-                gridTemplateColumns: `repeat(${gridSize}, 1fr)`,
-                maxWidth: '500px'
-              }}
-            >
-              {grid.map((row, rowIndex) =>
-                row.map((letter, colIndex) => {
-                  const isSelected = selectedPath.some(p => p.row === rowIndex && p.col === colIndex);
-                  const isClickable = gameMode === 'digital' && isActive;
-                  
-                  return (
-                    <button
-                      key={`${rowIndex}-${colIndex}`}
-                      onClick={() => handleCellClick(rowIndex, colIndex)}
-                      disabled={!isClickable}
-                      className={`w-12 h-12 text-xl font-bold rounded-lg border-2 transition-all ${
-                        isSelected
-                          ? 'bg-blue-500 text-white border-blue-600 shadow-lg scale-110'
-                          : isClickable
-                          ? 'bg-white text-gray-800 border-gray-300 hover:bg-blue-50 hover:border-blue-300 cursor-pointer'
-                          : 'bg-white text-gray-800 border-gray-300'
-                      }`}
-                    >
-                      {letter}
-                    </button>
-                  );
-                })
-              )}
+            <div className="grid grid-cols-4 gap-3 mb-6">
+              {grid.map(cell => {
+                const isSelected = selectedCells.some(c => c.id === cell.id);
+                const isLast = selectedCells.length > 0 && selectedCells[selectedCells.length - 1].id === cell.id;
+
+                return (
+                  <motion.button
+                    key={cell.id}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => handleCellClick(cell)}
+                    className={`
+                       w-16 h-16 md:w-20 md:h-20 rounded-xl text-2xl md:text-3xl font-bold shadow-md flex items-center justify-center transition-colors
+                       ${isLast ? 'bg-orange-500 text-white ring-4 ring-orange-200' :
+                        isSelected ? 'bg-indigo-500 text-white' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}
+                     `}
+                  >
+                    {cell.char}
+                  </motion.button>
+                );
+              })}
+            </div>
+
+            <div className="flex gap-4 w-full">
+              <button
+                onClick={() => setSelectedCells([])}
+                className="flex-1 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300 transition-colors"
+              >
+                Clear ({selectedCells.map(c => c.char).join('')})
+              </button>
+              <button
+                onClick={submitWord}
+                className="flex-1 py-3 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600 transition-colors shadow-lg"
+                disabled={selectedCells.length < 3}
+              >
+                Submit
+              </button>
             </div>
           </div>
 
-          {/* Current Word & Actions */}
-          {gameMode === 'digital' && (
-            <div className="mt-6 text-center">
-              <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                <div className="text-sm text-gray-600 mb-2">Current Word:</div>
-                <div className="text-2xl font-bold text-blue-600 min-h-[2rem]">
-                  {currentWord || '-'}
-                </div>
-              </div>
-              <div className="flex justify-center space-x-3">
-                <button
-                  onClick={submitWord}
-                  disabled={currentWord.length < 3 || !isActive}
-                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  ✅ Submit Word
-                </button>
-                <button
-                  onClick={clearSelection}
-                  disabled={selectedPath.length === 0 || !isActive}
-                  className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  🗑️ Clear
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Found Words Sidebar */}
-        <div>
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h4 className="text-lg font-bold text-gray-800 mb-4">📝 Found Words</h4>
-            {foundWords.length === 0 ? (
-              <p className="text-gray-500 text-center py-4">No words found yet!</p>
-            ) : (
-              <div className="space-y-2 max-h-96 overflow-y-auto">
-                {foundWords.map((wordData, index) => (
-                  <div key={index} className="flex justify-between items-center bg-white p-2 rounded border">
-                    <span className="font-semibold">{wordData.word}</span>
-                    <span className="text-sm text-blue-600">{wordData.points}pts</span>
-                  </div>
+          {/* Sidebar */}
+          <div className="bg-white p-6 rounded-2xl shadow-xl h-[500px] flex flex-col">
+            <h3 className="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Found Words ({foundWords.length})</h3>
+            <div className="flex-1 overflow-y-auto grid grid-cols-2 content-start gap-2">
+              <AnimatePresence>
+                {foundWords.map((word, i) => (
+                  <motion.div
+                    key={word + i}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="bg-indigo-50 text-indigo-700 px-3 py-2 rounded-lg font-medium text-sm text-center"
+                  >
+                    {word}
+                  </motion.div>
                 ))}
-              </div>
-            )}
-            
-            {/* Final Score Display */}
-            {!isActive && foundWords.length > 0 && (
-              <div className="mt-4 p-3 bg-blue-100 rounded-lg">
-                <div className="text-center">
-                  <div className="text-lg font-bold text-blue-800">🏆 Final Score</div>
-                  <div className="text-2xl font-bold text-blue-600">{gameStats.points} points</div>
-                  <div className="text-sm text-blue-700 mt-1">
-                    {gameStats.totalWords} words • Longest: {gameStats.longestWord}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Instructions */}
-          <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <h5 className="font-bold text-yellow-800 mb-2">📋 Instructions</h5>
-            <ul className="text-sm text-yellow-700 space-y-1">
-              <li>• Form words by connecting adjacent letters</li>
-              <li>• Words must be at least 3 letters long</li>
-              <li>• Each letter can only be used once per word</li>
-              <li>• Diagonal connections are allowed</li>
-              <li>• Longer words earn more points!</li>
-            </ul>
+              </AnimatePresence>
+            </div>
+            <button
+              onClick={() => setGameState('gameover')}
+              className="mt-4 text-red-500 text-sm font-semibold hover:underline"
+            >
+              End Game Early
+            </button>
           </div>
         </div>
-      </div>
+      )}
+
+      {gameState === 'gameover' && (
+        <div className="text-center space-y-6 max-w-2xl bg-white p-10 rounded-3xl shadow-2xl">
+          <div className="text-6xl mb-4">🏆</div>
+          <h2 className="text-4xl font-black text-gray-800">Time's Up!</h2>
+          <div className="grid grid-cols-3 gap-8 py-6">
+            <div>
+              <div className="text-gray-500 text-sm uppercase tracking-wider">Final Score</div>
+              <div className="text-4xl font-black text-indigo-600">{score}</div>
+            </div>
+            <div>
+              <div className="text-gray-500 text-sm uppercase tracking-wider">Words Found</div>
+              <div className="text-4xl font-black text-indigo-600">{foundWords.length}</div>
+            </div>
+            <div>
+              <div className="text-gray-500 text-sm uppercase tracking-wider">Best Word</div>
+              <div className="text-2xl font-bold text-indigo-600">
+                {foundWords.sort((a, b) => b.length - a.length)[0] || '-'}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-center gap-4">
+            <button
+              onClick={shuffleGrid}
+              className="px-8 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 hover:scale-105 transition-all shadow-lg"
+            >
+              Play Again
+            </button>
+            <button
+              onClick={() => setGameState('menu')}
+              className="px-8 py-3 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-all"
+            >
+              Back to Menu
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

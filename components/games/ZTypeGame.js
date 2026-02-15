@@ -779,36 +779,42 @@ const ZTypeGame = ({ studentData, updateStudentData, showToast, classmates = [],
 
                 {/* Leaderboard */}
                 {showLeaderboard && (
-                    <p className="text-gray-500 text-center py-4">No scores yet. Be the first to play!</p>
-                ) : (
-                <div className="space-y-2">
-                    {classLeaderboard.map((player, index) => (
-                        <div
-                            key={player.id}
-                            className={`flex items-center justify-between p-3 rounded-lg ${index === 0 ? 'bg-gradient-to-r from-amber-100 to-yellow-100' :
-                                index === 1 ? 'bg-gradient-to-r from-gray-100 to-slate-100' :
-                                    index === 2 ? 'bg-gradient-to-r from-orange-50 to-amber-50' :
-                                        'bg-gray-50'
-                                }`}
-                        >
-                            <div className="flex items-center gap-3">
-                                <span className="text-xl font-bold">
-                                    {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
-                                </span>
-                                <span className="font-semibold text-gray-800">{player.name}</span>
+                    <div className="bg-white/95 rounded-xl shadow-xl p-6 max-w-2xl mx-auto backdrop-blur-sm mt-4">
+                        <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center justify-center gap-2">
+                            <span>🏆</span> Class Leaderboard
+                        </h3>
+                        {classLeaderboard.length === 0 ? (
+                            <p className="text-gray-500 text-center py-4">No scores yet. Be the first to play!</p>
+                        ) : (
+                            <div className="space-y-2">
+                                {classLeaderboard.map((player, index) => (
+                                    <div
+                                        key={player.id}
+                                        className={`flex items-center justify-between p-3 rounded-lg ${index === 0 ? 'bg-gradient-to-r from-amber-100 to-yellow-100' :
+                                            index === 1 ? 'bg-gradient-to-r from-gray-100 to-slate-100' :
+                                                index === 2 ? 'bg-gradient-to-r from-orange-50 to-amber-50' :
+                                                    'bg-gray-50'
+                                            }`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-xl font-bold">
+                                                {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
+                                            </span>
+                                            <span className="font-semibold text-gray-800">{player.name}</span>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="font-bold text-indigo-600">{player.score}</div>
+                                            <div className="text-xs text-gray-500">Wave {player.wave}</div>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
-                            <div className="text-right">
-                                <div className="font-bold text-indigo-600">{player.score}</div>
-                                <div className="text-xs text-gray-500">Wave {player.wave}</div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
                         )}
+                    </div>
+                )}
             </div>
-        )
+        );
     }
-            </div >
         );
     }
 
