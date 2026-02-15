@@ -75,6 +75,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
   const [activeBoss, setActiveBoss] = useState(null);
   const [bossHealth, setBossHealth] = useState(0);
   const [maxBossHealth, setMaxBossHealth] = useState(0);
+  const [triggeredPhases, setTriggeredPhases] = useState([]); // NEW: Track triggered boss phases
   const [showSkillChallenge, setShowSkillChallenge] = useState(false);
   const [challengeData, setChallengeData] = useState(null);
 
@@ -646,6 +647,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
     setActiveBoss(boss);
     setBossHealth(boss.health);
     setMaxBossHealth(boss.health);
+    setTriggeredPhases([]); // Reset triggered phases
     addToast(`${boss.name} appears! Prepare for battle!`, 'warning');
   }, [addToast]);
 
@@ -657,12 +659,18 @@ const ClickerGame = ({ studentData, updateStudentData, showToast }) => {
 
     // Check for phase transitions
     const healthPercent = (newHealth / maxBossHealth) * 100;
-    const currentPhase = activeBoss.phases.find(p =>
-      healthPercent <= p.healthPercent && healthPercent > (activeBoss.phases[activeBoss.phases.indexOf(p) + 1]?.healthPercent || 0)
-    );
+    const currentPhaseIndex = activeBoss.phases.findIndex((p, idx) => {
+      const nextPhaseHealth = activeBoss.phases[idx + 1]?.healthPercent || 0;
+      return healthPercent <= p.healthPercent && healthPercent > nextPhaseHealth;
+    });
 
-    if (currentPhase && newHealth !== bossHealth) {
-      addToast(currentPhase.message, 'info');
+    if (currentPhaseIndex !== -1) {
+      const currentPhase = activeBoss.phases[currentPhaseIndex];
+      // Check if we haven't triggered this phase yet
+      if (!triggeredPhases.includes(currentPhaseIndex)) {
+        addToast(currentPhase.message, 'info');
+        setTriggeredPhases(prev => [...prev, currentPhaseIndex]);
+      }
     }
 
     // Boss defeated
@@ -2447,17 +2455,17 @@ const SequenceChallenge = ({ onComplete, duration }) => {
   };
 
   const buttons = [
-    { color: 'bg-red-500', activeColor: 'bg-red-300' },
-    { color: 'bg-blue-500', activeColor: 'bg-blue-300' },
-    { color: 'bg-green-500', activeColor: 'bg-green-300' },
-    { color: 'bg-yellow-500', activeColor: 'bg-yellow-300' }
+    { color: 'bg-red-500', activeColor: 'bg-red-300', icon: '❤️' },
+    { color: 'bg-blue-500', activeColor: 'bg-blue-300', icon: '💧' },
+    { color: 'bg-green-500', activeColor: 'bg-green-300', icon: '🍀' },
+    { color: 'bg-yellow-500', activeColor: 'bg-yellow-300', icon: '⭐' }
   ];
 
   return (
     <div className="text-center">
       <div className="mb-4">
         <div className="text-lg font-bold mb-2">
-          {showingSequence ? 'Watch the sequence...' : 'Repeat the sequence!'}
+          {showingSequence ? 'Memorize the symbols...' : 'Repeat the sequence!'}
         </div>
         <div className="text-sm text-gray-600">Time left: {timeLeft}s</div>
         <div className="text-sm text-gray-600">Progress: {playerSequence.length}/{sequence.length}</div>
@@ -2469,13 +2477,13 @@ const SequenceChallenge = ({ onComplete, duration }) => {
             key={index}
             onClick={() => handleButtonClick(index)}
             disabled={showingSequence}
-            className={`w-20 h-20 rounded-lg font-bold text-white transition-all ${showingSequence && currentShow === index
-              ? button.activeColor
+            className={`w-20 h-20 rounded-lg font-bold text-3xl text-white transition-all transform duration-100 ${showingSequence && currentShow === index
+              ? `${button.activeColor} scale-110 ring-4 ring-white shadow-xl`
               : button.color
               } ${!showingSequence ? 'hover:opacity-80 active:scale-95' : ''
               }`}
           >
-            {index + 1}
+            {button.icon}
           </button>
         ))}
       </div>
