@@ -110,6 +110,17 @@ const getTitleColor = (title) => {
     return titleColorMap[title] || 'text-gray-600';
 };
 
+// NEW: Get prestige effects for student card
+const getPrestigeEffects = (prestige, masterLevel) => {
+    if (masterLevel > 0) return 'animate-pulse ring-4 ring-offset-2 ring-purple-500 shadow-2xl shadow-purple-500/50';
+    if (prestige >= 50) return 'animate-pulse ring-4 ring-indigo-500 shadow-xl shadow-indigo-500/50';
+    if (prestige >= 25) return 'ring-4 ring-pink-500 shadow-lg shadow-pink-500/50';
+    if (prestige >= 10) return 'ring-4 ring-yellow-400 shadow-lg shadow-yellow-400/50';
+    if (prestige >= 5) return 'ring-4 ring-gray-400 shadow-md shadow-gray-400/50';
+    if (prestige >= 1) return 'ring-4 ring-orange-400 shadow-md shadow-orange-400/50';
+    return '';
+};
+
 // ===============================================
 // MOBILE-OPTIMIZED AWARD NOTIFICATION POPUP
 // ===============================================
@@ -759,8 +770,12 @@ const StudentCard = ({
         ? getTitleColor(clickerAchievements.title)
         : 'text-gray-600';
 
+    const prestigeEffects = hasClickerData
+        ? getPrestigeEffects(clickerAchievements.prestige || 0, clickerAchievements.masterLevel || 0)
+        : '';
+
     const achievementBorderClass = hasClickerData
-        ? `border-4 ${themeBorder} shadow-lg`
+        ? `border-4 ${themeBorder} shadow-lg ${prestigeEffects}`
         : 'border-2 border-gray-200';
 
     return (
@@ -771,8 +786,8 @@ const StudentCard = ({
             onDrop={onDrop}
             onClick={handleCardClick}
             className={`relative p-2 sm:p-3 rounded-xl sm:rounded-2xl shadow-lg transition-all duration-300 cursor-pointer hover:shadow-xl ${achievementBorderClass} ${isSelected
-                    ? `border-purple-500 bg-purple-100 scale-105 shadow-purple-200`
-                    : `${themeBackground} hover:border-blue-400 hover:shadow-xl`
+                ? `border-purple-500 bg-purple-100 scale-105 shadow-purple-200`
+                : `${themeBackground} hover:border-blue-400 hover:shadow-xl`
                 } ${isDragged ? 'opacity-30 ring-2 ring-blue-500' : ''
                 }`}
         >
@@ -781,22 +796,22 @@ const StudentCard = ({
                 <button
                     onClick={(e) => handleTrafficLightClickInternal(e, 'green')}
                     className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full border-2 transition-all ${behaviorStatus === 'green'
-                            ? 'bg-green-500 border-green-700 shadow-lg scale-110'
-                            : 'bg-green-200 border-green-400 hover:bg-green-300'
+                        ? 'bg-green-500 border-green-700 shadow-lg scale-110'
+                        : 'bg-green-200 border-green-400 hover:bg-green-300'
                         }`}
                 />
                 <button
                     onClick={(e) => handleTrafficLightClickInternal(e, 'yellow')}
                     className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full border-2 transition-all ${behaviorStatus === 'yellow'
-                            ? 'bg-yellow-500 border-yellow-700 shadow-lg scale-110'
-                            : 'bg-yellow-200 border-yellow-400 hover:bg-yellow-300'
+                        ? 'bg-yellow-500 border-yellow-700 shadow-lg scale-110'
+                        : 'bg-yellow-200 border-yellow-400 hover:bg-yellow-300'
                         }`}
                 />
                 <button
                     onClick={(e) => handleTrafficLightClickInternal(e, 'red')}
                     className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full border-2 transition-all ${behaviorStatus === 'red'
-                            ? 'bg-red-500 border-red-700 shadow-lg scale-110'
-                            : 'bg-red-200 border-red-400 hover:bg-red-300'
+                        ? 'bg-red-500 border-red-700 shadow-lg scale-110'
+                        : 'bg-red-200 border-red-400 hover:bg-red-300'
                         }`}
                 />
             </div>
@@ -805,10 +820,10 @@ const StudentCard = ({
             <button
                 onClick={handleAttendanceClickInternal}
                 className={`absolute top-1 right-1 w-5 h-5 sm:w-6 sm:h-6 rounded border-2 flex items-center justify-center text-xs font-bold transition-all z-10 ${todayAttendance === 'present'
-                        ? 'bg-green-500 border-green-700 text-white shadow-md'
-                        : todayAttendance === 'absent'
-                            ? 'bg-red-500 border-red-700 text-white shadow-md'
-                            : 'bg-gray-100 border-gray-300 hover:bg-gray-200'
+                    ? 'bg-green-500 border-green-700 text-white shadow-md'
+                    : todayAttendance === 'absent'
+                        ? 'bg-red-500 border-red-700 text-white shadow-md'
+                        : 'bg-gray-100 border-gray-300 hover:bg-gray-200'
                     }`}
                 title={todayAttendance === 'present' ? 'Present' : todayAttendance === 'absent' ? 'Absent' : 'Mark attendance'}
             >
@@ -910,8 +925,8 @@ const AwardModal = ({ isBulk, awardType, onTypeChange, studentCount, student, on
                         <button
                             onClick={() => onTypeChange('xp')}
                             className={`px-3 sm:px-4 py-2 rounded-md font-semibold transition-all duration-200 text-sm sm:text-base ${awardType === 'xp'
-                                    ? 'bg-blue-500 text-white shadow-lg transform scale-105'
-                                    : 'text-gray-600 hover:bg-gray-100'
+                                ? 'bg-blue-500 text-white shadow-lg transform scale-105'
+                                : 'text-gray-600 hover:bg-gray-100'
                                 }`}
                         >
                             Award XP ⭐
@@ -919,8 +934,8 @@ const AwardModal = ({ isBulk, awardType, onTypeChange, studentCount, student, on
                         <button
                             onClick={() => onTypeChange('coins')}
                             className={`px-3 sm:px-4 py-2 rounded-md font-semibold transition-all duration-200 text-sm sm:text-base ${awardType === 'coins'
-                                    ? 'bg-yellow-500 text-white shadow-lg transform scale-105'
-                                    : 'text-gray-600 hover:bg-gray-100'
+                                ? 'bg-yellow-500 text-white shadow-lg transform scale-105'
+                                : 'text-gray-600 hover:bg-gray-100'
                                 }`}
                         >
                             Award Coins 💰
