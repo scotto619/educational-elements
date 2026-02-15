@@ -254,6 +254,7 @@ const ZTypeGame = ({ studentData, updateStudentData, showToast, classmates = [],
 
         if (destroyed > 0) {
             setWordsDestroyed(prev => prev + destroyed);
+            game.waveEnemiesDestroyed += destroyed; // FIX: Update wave progress
             showToast(`💥 EMP BLAST! ${destroyed} enemies destroyed!`, 'success');
         }
 
@@ -753,230 +754,167 @@ const ZTypeGame = ({ studentData, updateStudentData, showToast, classmates = [],
                             Destroy enemy ships by typing their words! Target enemies by typing the first letter
                             of their word, then complete the word to destroy them. Press ENTER to use EMP bombs!
                         </p>
-                    </div>
-                </div>
-
-                {/* Game instructions and controls */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-100">
-                        <h3 className="text-lg font-bold text-gray-800 mb-4">🎯 How to Play</h3>
-                        <ul className="space-y-2 text-sm text-gray-600">
-                            <li className="flex items-start gap-2">
-                                <span className="text-green-500 font-bold">•</span>
-                                Type the first letter of a word to target that enemy
-                            </li>
-                            <li className="flex items-start gap-2">
-                                <span className="text-green-500 font-bold">•</span>
-                                Complete the word to destroy the enemy ship
-                            </li>
-                            <li className="flex items-start gap-2">
-                                <span className="text-green-500 font-bold">•</span>
-                                Don't let enemies reach the bottom!
-                            </li>
-                            <li className="flex items-start gap-2">
-                                <span className="text-yellow-500 font-bold">•</span>
-                                Press ENTER to use EMP bomb (destroys all enemies)
-                            </li>
-                        </ul>
-                    </div>
-
-                    <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-100">
-                        <h3 className="text-lg font-bold text-gray-800 mb-4">⚡ Scoring</h3>
-                        <ul className="space-y-2 text-sm text-gray-600">
-                            <li className="flex items-start gap-2">
-                                <span className="text-blue-500 font-bold">•</span>
-                                Points = Word length × 10
-                            </li>
-                            <li className="flex items-start gap-2">
-                                <span className="text-purple-500 font-bold">•</span>
-                                Combo bonus every 5 words
-                            </li>
-                            <li className="flex items-start gap-2">
-                                <span className="text-orange-500 font-bold">•</span>
-                                Higher waves = harder words + more points
-                            </li>
-                            <li className="flex items-start gap-2">
-                                <span className="text-red-500 font-bold">•</span>
-                                Mistakes break your combo!
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-
-                {/* Personal Best */}
-                {personalBest && (
-                    <div className="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-xl p-6 border border-amber-200">
-                        <h3 className="text-lg font-bold text-amber-800 mb-3">🏆 Your Best</h3>
-                        <div className="grid grid-cols-2 gap-4 text-center">
-                            <div>
-                                <div className="text-3xl font-black text-amber-600">{personalBest.highScore}</div>
-                                <div className="text-sm text-amber-700">High Score</div>
-                            </div>
-                            <div>
-                                <div className="text-3xl font-black text-amber-600">Wave {personalBest.maxWave}</div>
-                                <div className="text-sm text-amber-700">Best Wave</div>
-                            </div>
+                        <div className="mt-6 flex flex-col items-center gap-4">
+                            <button
+                                onClick={startGame}
+                                className="px-12 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xl font-bold rounded-2xl shadow-xl hover:shadow-2xl hover:scale-105 transition-all"
+                            >
+                                🚀 Start Game
+                            </button>
+                            <button
+                                onClick={() => setShowLeaderboard(!showLeaderboard)}
+                                className="px-8 py-3 bg-white/10 text-white rounded-xl hover:bg-white/20 transition-all border border-white/10"
+                            >
+                                {showLeaderboard ? 'Hide Leaderboard' : 'Show Leaderboard'}
+                            </button>
                         </div>
                     </div>
-                )}
-
-                {/* Start button */}
-                <div className="flex flex-col items-center gap-4">
-                    <button
-                        onClick={startGame}
-                        className="px-12 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xl font-bold rounded-2xl shadow-xl hover:shadow-2xl hover:scale-105 transition-all"
-                    >
-                        🚀 Start Game
-                    </button>
-
-                    <button
-                        onClick={() => setShowLeaderboard(!showLeaderboard)}
-                        className="px-6 py-2 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-all"
-                    >
-                        {showLeaderboard ? 'Hide Leaderboard' : '📊 Class Leaderboard'}
-                    </button>
                 </div>
 
-                {/* Class Leaderboard */}
+                {/* Keyboard Help */}
+                <div className="text-gray-400 text-sm mt-4 text-center">
+                    Ideally played with a physical keyboard.
+                    For iPad/Mobile, use the on-screen keyboard after starting.
+                </div>
+
+                {/* Leaderboard */}
                 {showLeaderboard && (
-                    <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-100">
-                        <h3 className="text-lg font-bold text-gray-800 mb-4">🏆 Class Leaderboard</h3>
-                        {classLeaderboard.length === 0 ? (
-                            <p className="text-gray-500 text-center py-4">No scores yet. Be the first to play!</p>
-                        ) : (
-                            <div className="space-y-2">
-                                {classLeaderboard.map((player, index) => (
-                                    <div
-                                        key={player.id}
-                                        className={`flex items-center justify-between p-3 rounded-lg ${index === 0 ? 'bg-gradient-to-r from-amber-100 to-yellow-100' :
-                                            index === 1 ? 'bg-gradient-to-r from-gray-100 to-slate-100' :
-                                                index === 2 ? 'bg-gradient-to-r from-orange-50 to-amber-50' :
-                                                    'bg-gray-50'
-                                            }`}
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <span className="text-xl font-bold">
-                                                {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
-                                            </span>
-                                            <span className="font-semibold text-gray-800">{player.name}</span>
-                                        </div>
-                                        <div className="text-right">
-                                            <div className="font-bold text-indigo-600">{player.score}</div>
-                                            <div className="text-xs text-gray-500">Wave {player.wave}</div>
-                                        </div>
-                                    </div>
-                                ))}
+                    <p className="text-gray-500 text-center py-4">No scores yet. Be the first to play!</p>
+                ) : (
+                <div className="space-y-2">
+                    {classLeaderboard.map((player, index) => (
+                        <div
+                            key={player.id}
+                            className={`flex items-center justify-between p-3 rounded-lg ${index === 0 ? 'bg-gradient-to-r from-amber-100 to-yellow-100' :
+                                index === 1 ? 'bg-gradient-to-r from-gray-100 to-slate-100' :
+                                    index === 2 ? 'bg-gradient-to-r from-orange-50 to-amber-50' :
+                                        'bg-gray-50'
+                                }`}
+                        >
+                            <div className="flex items-center gap-3">
+                                <span className="text-xl font-bold">
+                                    {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
+                                </span>
+                                <span className="font-semibold text-gray-800">{player.name}</span>
                             </div>
+                            <div className="text-right">
+                                <div className="font-bold text-indigo-600">{player.score}</div>
+                                <div className="text-xs text-gray-500">Wave {player.wave}</div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
                         )}
-                    </div>
-                )}
             </div>
+        )
+    }
+            </div >
         );
     }
 
-    // Render countdown
-    if (gamePhase === 'countdown') {
-        return (
-            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-900 to-purple-900 text-white shadow-2xl p-10 md:p-16">
-                <div className="absolute inset-0 opacity-25 bg-[radial-gradient(circle,_rgba(255,255,255,0.25),_transparent_70%)]" />
-                <div className="relative text-center space-y-6">
-                    <p className="uppercase tracking-[0.5em] text-white/70 text-sm">Get Ready!</p>
-                    <div className="text-7xl md:text-9xl font-black drop-shadow-lg animate-pulse">{countdown}</div>
-                    <p className="text-lg md:text-xl text-white/80 max-w-2xl mx-auto">
-                        Position your fingers on the keyboard and prepare to defend!
-                    </p>
-                </div>
-            </div>
-        );
-    }
-
-    // Render game over
-    if (gamePhase === 'gameover') {
-        const isNewHighScore = personalBest && score >= personalBest.highScore;
-
-        return (
-            <div className="space-y-6">
-                <div className={`rounded-3xl p-8 shadow-2xl relative overflow-hidden text-white ${isNewHighScore
-                    ? 'bg-gradient-to-br from-amber-500 via-yellow-500 to-orange-500'
-                    : 'bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600'
-                    }`}>
-                    <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle,_rgba(255,255,255,0.35),_transparent_60%)]" />
-                    <div className="relative text-center space-y-4">
-                        <p className="uppercase tracking-[0.6em] text-white/70 text-xs">
-                            {isNewHighScore ? '🎉 NEW HIGH SCORE!' : 'Game Over'}
-                        </p>
-                        <h2 className="text-4xl md:text-5xl font-black">
-                            {isNewHighScore ? 'LEGENDARY!' : 'Great Run!'}
-                        </h2>
-                    </div>
-
-                    <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                        <div className="bg-white/10 rounded-2xl p-4">
-                            <div className="text-3xl font-black">{score}</div>
-                            <div className="text-sm text-white/70">Score</div>
-                        </div>
-                        <div className="bg-white/10 rounded-2xl p-4">
-                            <div className="text-3xl font-black">{wave}</div>
-                            <div className="text-sm text-white/70">Wave</div>
-                        </div>
-                        <div className="bg-white/10 rounded-2xl p-4">
-                            <div className="text-3xl font-black">{wordsDestroyed}</div>
-                            <div className="text-sm text-white/70">Words</div>
-                        </div>
-                        <div className="bg-white/10 rounded-2xl p-4">
-                            <div className="text-3xl font-black">{accuracy}%</div>
-                            <div className="text-sm text-white/70">Accuracy</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-                    <h3 className="text-lg font-bold text-gray-800 mb-4">📊 Game Stats</h3>
-                    <div className="grid grid-cols-2 gap-4 text-center">
-                        <div>
-                            <div className="text-2xl font-bold text-purple-600">x{maxCombo}</div>
-                            <div className="text-sm text-gray-500">Best Combo</div>
-                        </div>
-                        <div>
-                            <div className="text-2xl font-bold text-green-600">{correctTyped}/{totalTyped}</div>
-                            <div className="text-sm text-gray-500">Correct Keys</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="flex flex-wrap gap-3 justify-center">
-                    <button
-                        onClick={startGame}
-                        className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all"
-                    >
-                        🔄 Play Again
-                    </button>
-                    <button
-                        onClick={() => setGamePhase('menu')}
-                        className="px-8 py-3 bg-gray-200 text-gray-700 font-semibold rounded-xl hover:bg-gray-300 transition-all"
-                    >
-                        📋 Back to Menu
-                    </button>
-                </div>
-            </div>
-        );
-    }
-
-    // Render game
+// Render countdown
+if (gamePhase === 'countdown') {
     return (
-        <div className="relative">
-            <canvas
-                ref={canvasRef}
-                width={800}
-                height={600}
-                className="w-full max-w-4xl mx-auto rounded-2xl shadow-2xl border-4 border-indigo-900"
-                style={{ backgroundColor: '#0a0a1a' }}
-            />
-            <div className="text-center mt-4 text-sm text-gray-500">
-                Type to target enemies • ENTER = EMP Bomb • Click game to focus
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-900 to-purple-900 text-white shadow-2xl p-10 md:p-16">
+            <div className="absolute inset-0 opacity-25 bg-[radial-gradient(circle,_rgba(255,255,255,0.25),_transparent_70%)]" />
+            <div className="relative text-center space-y-6">
+                <p className="uppercase tracking-[0.5em] text-white/70 text-sm">Get Ready!</p>
+                <div className="text-7xl md:text-9xl font-black drop-shadow-lg animate-pulse">{countdown}</div>
+                <p className="text-lg md:text-xl text-white/80 max-w-2xl mx-auto">
+                    Position your fingers on the keyboard and prepare to defend!
+                </p>
             </div>
         </div>
     );
+}
+
+// Render game over
+if (gamePhase === 'gameover') {
+    const isNewHighScore = personalBest && score >= personalBest.highScore;
+
+    return (
+        <div className="space-y-6">
+            <div className={`rounded-3xl p-8 shadow-2xl relative overflow-hidden text-white ${isNewHighScore
+                ? 'bg-gradient-to-br from-amber-500 via-yellow-500 to-orange-500'
+                : 'bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600'
+                }`}>
+                <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle,_rgba(255,255,255,0.35),_transparent_60%)]" />
+                <div className="relative text-center space-y-4">
+                    <p className="uppercase tracking-[0.6em] text-white/70 text-xs">
+                        {isNewHighScore ? '🎉 NEW HIGH SCORE!' : 'Game Over'}
+                    </p>
+                    <h2 className="text-4xl md:text-5xl font-black">
+                        {isNewHighScore ? 'LEGENDARY!' : 'Great Run!'}
+                    </h2>
+                </div>
+
+                <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                    <div className="bg-white/10 rounded-2xl p-4">
+                        <div className="text-3xl font-black">{score}</div>
+                        <div className="text-sm text-white/70">Score</div>
+                    </div>
+                    <div className="bg-white/10 rounded-2xl p-4">
+                        <div className="text-3xl font-black">{wave}</div>
+                        <div className="text-sm text-white/70">Wave</div>
+                    </div>
+                    <div className="bg-white/10 rounded-2xl p-4">
+                        <div className="text-3xl font-black">{wordsDestroyed}</div>
+                        <div className="text-sm text-white/70">Words</div>
+                    </div>
+                    <div className="bg-white/10 rounded-2xl p-4">
+                        <div className="text-3xl font-black">{accuracy}%</div>
+                        <div className="text-sm text-white/70">Accuracy</div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
+                <h3 className="text-lg font-bold text-gray-800 mb-4">📊 Game Stats</h3>
+                <div className="grid grid-cols-2 gap-4 text-center">
+                    <div>
+                        <div className="text-2xl font-bold text-purple-600">x{maxCombo}</div>
+                        <div className="text-sm text-gray-500">Best Combo</div>
+                    </div>
+                    <div>
+                        <div className="text-2xl font-bold text-green-600">{correctTyped}/{totalTyped}</div>
+                        <div className="text-sm text-gray-500">Correct Keys</div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="flex flex-wrap gap-3 justify-center">
+                <button
+                    onClick={startGame}
+                    className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all"
+                >
+                    🔄 Play Again
+                </button>
+                <button
+                    onClick={() => setGamePhase('menu')}
+                    className="px-8 py-3 bg-gray-200 text-gray-700 font-semibold rounded-xl hover:bg-gray-300 transition-all"
+                >
+                    📋 Back to Menu
+                </button>
+            </div>
+        </div>
+    );
+}
+
+// Render game
+return (
+    <div className="relative">
+        <canvas
+            ref={canvasRef}
+            width={800}
+            height={600}
+            className="w-full max-w-4xl mx-auto rounded-2xl shadow-2xl border-4 border-indigo-900"
+            style={{ backgroundColor: '#0a0a1a' }}
+        />
+        <div className="text-center mt-4 text-sm text-gray-500">
+            Type to target enemies • ENTER = EMP Bomb • Click game to focus
+        </div>
+    </div>
+);
 };
 
 export default ZTypeGame;
