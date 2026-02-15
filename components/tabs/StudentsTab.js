@@ -1,6 +1,6 @@
 // components/tabs/StudentsTab.js - UPDATED WITH TRAFFIC LIGHTS, ATTENDANCE & AUTO-REFRESH
 import React, { useState, useEffect, useRef } from 'react';
-import { DEFAULT_PET_IMAGE, getAvatarImage as resolveAvatarImage } from '../../utils/gameHelpers';
+import { DEFAULT_PET_IMAGE, getAvatarImage as resolveAvatarImage, getPetImage as resolvePetImage } from '../../utils/gameHelpers';
 import { normalizeImageSource, serializeFallbacks, createImageErrorHandler } from '../../utils/imageFallback';
 
 // ===============================================
@@ -136,7 +136,7 @@ const AwardNotification = ({ notification, onClose }) => {
     };
 
     return (
-        <div 
+        <div
             className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4"
             onClick={handleBackdropClick}
         >
@@ -154,7 +154,7 @@ const AwardNotification = ({ notification, onClose }) => {
                     <h2 className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4">
                         {isBulk ? 'BULK AWARD!' : 'AWARD GIVEN!'}
                     </h2>
-                    
+
                     <div className="bg-white bg-opacity-20 rounded-xl p-3 sm:p-4 mb-3 sm:mb-4">
                         <div className="text-xl sm:text-2xl font-bold mb-2">
                             +{amount} {typeText}
@@ -194,7 +194,7 @@ const AwardNotification = ({ notification, onClose }) => {
 // ===============================================
 const ContextMenu = ({ student, position, onAward, onView, onAvatar, onClose, getAvatarImage, calculateAvatarLevel }) => {
     const menuRef = useRef(null);
-    
+
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (menuRef.current && !menuRef.current.contains(event.target)) onClose();
@@ -291,9 +291,9 @@ const StudentsTab = ({
     xpCategories = [],
     onUpdateCategories,
     onBulkAward,
-    onUpdateStudent, 
-    onReorderStudents, 
-    onViewDetails, 
+    onUpdateStudent,
+    onReorderStudents,
+    onViewDetails,
     onAddStudent,
     getAvatarImage: propGetAvatarImage,
     getPetImage: propGetPetImage,
@@ -302,17 +302,14 @@ const StudentsTab = ({
 }) => {
     // Use passed functions or fallback to local ones
     const getAvatarImageFunc = propGetAvatarImage || ((avatarBase, level) => resolveAvatarImage(avatarBase, level));
-    
+
     const getPetImageFunc = propGetPetImage || ((pet) => {
-        if (!pet) return '/Pets/Wizard.png';
-        const key = (pet.type || pet.name || '').toLowerCase();
-        const map = { 'alchemist': '/Pets/Alchemist.png', 'barbarian': '/Pets/Barbarian.png', 'bard': '/Pets/Bard.png', 'beastmaster': '/Pets/Beastmaster.png', 'cleric': '/Pets/Cleric.png', 'crystal knight': '/Pets/Crystal Knight.png', 'crystal sage': '/Pets/Crystal Sage.png', 'engineer': '/Pets/Engineer.png', 'frost mage': '/Pets/Frost Mage.png', 'illusionist': '/Pets/Illusionist.png', 'knight': '/Pets/Knight.png', 'lightning': '/Pets/Lightning.png', 'monk': '/Pets/Monk.png', 'necromancer': '/Pets/Necromancer.png', 'rogue': '/Pets/Rogue.png', 'stealth': '/Pets/Stealth.png', 'time knight': '/Pets/Time Knight.png', 'warrior': '/Pets/Warrior.png', 'wizard': '/Pets/Wizard.png', 'dragon': '/Pets/Lightning.png', 'phoenix': '/Pets/Crystal Sage.png', 'unicorn': '/Pets/Time Knight.png', 'wolf': '/Pets/Warrior.png', 'owl': '/Pets/Wizard.png', 'cat': '/Pets/Rogue.png', 'tiger': '/Pets/Barbarian.png', 'bear': '/Pets/Beastmaster.png', 'lion': '/Pets/Knight.png', 'eagle': '/Pets/Stealth.png' };
-        return map[key] || '/Pets/Wizard.png';
+        return resolvePetImage(pet);
     });
-    
+
     const calculateCoinsFunc = propCalculateCoins || ((student) => Math.max(0, Math.floor((student?.totalPoints || 0) / 5) + (student?.currency || 0) - (student?.coinsSpent || 0)));
     const calculateAvatarLevelFunc = propCalculateAvatarLevel || ((xp) => (xp >= 300 ? 4 : xp >= 200 ? 3 : xp >= 100 ? 2 : 1));
-    
+
     // States
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedStudents, setSelectedStudents] = useState([]);
@@ -346,7 +343,7 @@ const StudentsTab = ({
 
         const exitFullscreen = () => {
             if (typeof document.exitFullscreen === 'function') {
-                document.exitFullscreen().catch(() => {});
+                document.exitFullscreen().catch(() => { });
             } else if (typeof document.webkitExitFullscreen === 'function') {
                 document.webkitExitFullscreen();
             }
@@ -362,7 +359,7 @@ const StudentsTab = ({
 
         const request = element.requestFullscreen || element.webkitRequestFullscreen || element.mozRequestFullScreen || element.msRequestFullscreen;
         if (typeof request === 'function') {
-            request.call(element).catch(() => {});
+            request.call(element).catch(() => { });
         }
     };
 
@@ -371,7 +368,7 @@ const StudentsTab = ({
         console.log('📊 Students tab refreshed - student data updated');
         setRefreshKey(prev => prev + 1);
     }, [students]);
-    
+
     const filteredStudents = students.filter(student =>
         student.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         student.lastName?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -401,10 +398,10 @@ const StudentsTab = ({
         try {
             const targetIds = awardModal.isBulk ? selectedStudents : [awardModal.studentId];
             const awardedStudents = students.filter(student => targetIds.includes(student.id));
-            
+
             onBulkAward(targetIds, amount, type);
             playAwardSound(type);
-            
+
             setAwardNotification({
                 students: awardedStudents,
                 amount: amount,
@@ -412,7 +409,7 @@ const StudentsTab = ({
                 isBulk: awardModal.isBulk,
                 reason: reason
             });
-            
+
         } finally {
             setAwardModal({ visible: false, isBulk: false, type: 'xp', studentId: null, student: null });
             if (awardModal.isBulk) setSelectedStudents([]);
@@ -426,10 +423,10 @@ const StudentsTab = ({
     const handleQuickAward = (student, type) => {
         const amount = 1;
         const awardedStudents = [student];
-        
+
         onBulkAward([student.id], amount, type);
         playAwardSound(type);
-        
+
         setAwardNotification({
             students: awardedStudents,
             amount: amount,
@@ -440,8 +437,8 @@ const StudentsTab = ({
     };
 
     const toggleStudentSelection = (studentId) => {
-        setSelectedStudents(prev => 
-            prev.includes(studentId) 
+        setSelectedStudents(prev =>
+            prev.includes(studentId)
                 ? prev.filter(id => id !== studentId)
                 : [...prev, studentId]
         );
@@ -460,7 +457,7 @@ const StudentsTab = ({
     const handleAttendanceToggle = (student) => {
         const today = getTodayDate();
         const currentAttendance = student.attendance?.[today];
-        
+
         let newStatus;
         if (!currentAttendance) {
             newStatus = 'present';
@@ -469,20 +466,20 @@ const StudentsTab = ({
         } else {
             newStatus = null;
         }
-        
+
         const updatedAttendance = {
             ...(student.attendance || {}),
             [today]: newStatus
         };
-        
+
         // Remove null entries to keep data clean
         if (newStatus === null) {
             delete updatedAttendance[today];
         }
-        
+
         onUpdateStudent(student.id, { attendance: updatedAttendance });
     };
-    
+
     return (
         <div ref={containerRef} className="space-y-4 sm:space-y-6" onMouseMove={handleMouseMove}>
             {/* MOBILE-OPTIMIZED HEADER */}
@@ -490,40 +487,40 @@ const StudentsTab = ({
                 {/* Mobile Layout - Stacked */}
                 <div className="flex flex-col space-y-3 sm:hidden">
                     {/* Search */}
-                    <input 
-                        type="text" 
-                        placeholder="Search students..." 
-                        value={searchTerm} 
-                        onChange={(e) => setSearchTerm(e.target.value)} 
+                    <input
+                        type="text"
+                        placeholder="Search students..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
                         className="w-full px-3 py-2 border rounded-lg text-sm"
                     />
-                    
+
                     {/* Mobile Status */}
                     <div className="text-center text-sm text-gray-600 font-medium">
-                        {selectedStudents.length > 0 
-                            ? `${selectedStudents.length} student(s) selected` 
+                        {selectedStudents.length > 0
+                            ? `${selectedStudents.length} student(s) selected`
                             : 'Tap avatar for options • Star/coin to award'
                         }
                     </div>
-                    
+
                     {/* Mobile Action Buttons */}
                     <div className="flex space-x-2">
-                        <button 
-                            onClick={handleSelectAll} 
+                        <button
+                            onClick={handleSelectAll}
                             className="flex-1 bg-blue-500 text-white px-3 py-2 rounded-lg text-sm font-medium"
                         >
                             {selectedStudents.length === filteredStudents.length ? 'Deselect All' : 'Select All'}
                         </button>
                         {selectedStudents.length > 0 && (
-                            <button 
-                                onClick={() => setAwardModal({ visible: true, isBulk: true, type: 'xp', studentId: null, student: null })} 
+                            <button
+                                onClick={() => setAwardModal({ visible: true, isBulk: true, type: 'xp', studentId: null, student: null })}
                                 className="flex-1 bg-purple-600 text-white font-bold px-3 py-2 rounded-lg text-sm"
                             >
                                 Award Bulk
                             </button>
                         )}
-                        <button 
-                            onClick={onAddStudent} 
+                        <button
+                            onClick={onAddStudent}
                             className="bg-green-500 text-white px-3 py-2 rounded-lg text-sm font-medium"
                         >
                             + Add
@@ -538,17 +535,17 @@ const StudentsTab = ({
                             type="text"
                             placeholder="Search..."
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)} 
-                            className="w-full md:w-auto pl-4 pr-4 py-2 border rounded-lg" 
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full md:w-auto pl-4 pr-4 py-2 border rounded-lg"
                         />
-                        <button 
-                            onClick={handleSelectAll} 
+                        <button
+                            onClick={handleSelectAll}
                             className="bg-blue-500 text-white px-4 py-2 rounded-lg whitespace-nowrap"
                         >
                             {selectedStudents.length === filteredStudents.length ? 'Deselect All' : 'Select All'}
                         </button>
                     </div>
-                    
+
                     <div className="text-gray-600 font-semibold text-sm lg:text-base">
                         {selectedStudents.length > 0
                             ? `${selectedStudents.length} student(s) selected`
@@ -574,8 +571,8 @@ const StudentsTab = ({
                                 🏆 Award Bulk
                             </button>
                         )}
-                        <button 
-                            onClick={onAddStudent} 
+                        <button
+                            onClick={onAddStudent}
                             className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-all"
                         >
                             + Add Student
@@ -611,43 +608,43 @@ const StudentsTab = ({
                 ))}
             </div>
 
-            <AwardNotification 
-                notification={awardNotification} 
-                onClose={closeAwardNotification} 
+            <AwardNotification
+                notification={awardNotification}
+                onClose={closeAwardNotification}
             />
 
             <HoverPreview preview={hoverPreview} position={mousePosition} />
-            
+
             {contextMenu.visible && (
-                <ContextMenu 
-                    student={contextMenu.student} 
-                    position={{ x: contextMenu.x, y: contextMenu.y }} 
-                    onAward={() => { 
-                        setAwardModal({ visible: true, isBulk: false, type: 'xp', studentId: contextMenu.student.id, student: contextMenu.student }); 
-                        closeContextMenu(); 
-                    }} 
-                    onView={() => { 
-                        onViewDetails(contextMenu.student); 
-                        closeContextMenu(); 
-                    }} 
-                    onAvatar={() => { 
-                        closeContextMenu(); 
-                    }} 
-                    onClose={closeContextMenu} 
-                    getAvatarImage={getAvatarImageFunc} 
-                    calculateAvatarLevel={calculateAvatarLevelFunc} 
+                <ContextMenu
+                    student={contextMenu.student}
+                    position={{ x: contextMenu.x, y: contextMenu.y }}
+                    onAward={() => {
+                        setAwardModal({ visible: true, isBulk: false, type: 'xp', studentId: contextMenu.student.id, student: contextMenu.student });
+                        closeContextMenu();
+                    }}
+                    onView={() => {
+                        onViewDetails(contextMenu.student);
+                        closeContextMenu();
+                    }}
+                    onAvatar={() => {
+                        closeContextMenu();
+                    }}
+                    onClose={closeContextMenu}
+                    getAvatarImage={getAvatarImageFunc}
+                    calculateAvatarLevel={calculateAvatarLevelFunc}
                 />
             )}
-            
+
             {awardModal.visible && (
-                <AwardModal 
-                    isBulk={awardModal.isBulk} 
-                    awardType={awardModal.type} 
-                    onTypeChange={(newType) => setAwardModal(prev => ({ ...prev, type: newType }))} 
-                    studentCount={selectedStudents.length} 
-                    student={awardModal.student} 
-                    onSubmit={handleAwardSubmit} 
-                    onClose={() => setAwardModal({ visible: false, isBulk: false, type: 'xp', studentId: null, student: null })} 
+                <AwardModal
+                    isBulk={awardModal.isBulk}
+                    awardType={awardModal.type}
+                    onTypeChange={(newType) => setAwardModal(prev => ({ ...prev, type: newType }))}
+                    studentCount={selectedStudents.length}
+                    student={awardModal.student}
+                    onSubmit={handleAwardSubmit}
+                    onClose={() => setAwardModal({ visible: false, isBulk: false, type: 'xp', studentId: null, student: null })}
                 />
             )}
         </div>
@@ -657,22 +654,22 @@ const StudentsTab = ({
 // ===============================================
 // MOBILE-OPTIMIZED STUDENT CARD COMPONENT - WITH TRAFFIC LIGHTS & ATTENDANCE
 // ===============================================
-const StudentCard = ({ 
-    student, 
-    isSelected, 
-    isDragged, 
-    onClick, 
-    onDragStart, 
-    onDragOver, 
-    onDrop, 
-    onAvatarHover, 
-    onPetHover, 
-    onHoverEnd, 
-    getAvatarImage, 
-    getPetImage, 
-    calculateCoins, 
-    calculateAvatarLevel, 
-    onQuickAward, 
+const StudentCard = ({
+    student,
+    isSelected,
+    isDragged,
+    onClick,
+    onDragStart,
+    onDragOver,
+    onDrop,
+    onAvatarHover,
+    onPetHover,
+    onHoverEnd,
+    getAvatarImage,
+    getPetImage,
+    calculateCoins,
+    calculateAvatarLevel,
+    onQuickAward,
     onToggleSelection,
     onTrafficLightClick,
     onAttendanceToggle
@@ -693,7 +690,7 @@ const StudentCard = ({
     // Get clicker data from clickerGameData
     const clickerGameData = student.clickerGameData || null;
     const hasClickerData = clickerGameData && clickerGameData.activeTheme;
-    
+
     let clickerAchievements = null;
     if (hasClickerData) {
         const themeNameMap = {
@@ -709,7 +706,7 @@ const StudentCard = ({
             'celestial': 'Celestial Realm',
             'volcanic': 'Volcanic Forge'
         };
-        
+
         clickerAchievements = {
             title: clickerGameData.activeTitle || 'Novice',
             themeName: themeNameMap[clickerGameData.activeTheme] || 'Hero\'s Dawn',
@@ -750,16 +747,16 @@ const StudentCard = ({
     };
 
     // Apply theme styling when clicker data exists
-    const themeBorder = hasClickerData 
-        ? getThemeBorder(clickerAchievements.themeName) 
+    const themeBorder = hasClickerData
+        ? getThemeBorder(clickerAchievements.themeName)
         : 'border-gray-200';
-        
-    const themeBackground = hasClickerData 
-        ? getThemeBackground(clickerAchievements.themeName) 
+
+    const themeBackground = hasClickerData
+        ? getThemeBackground(clickerAchievements.themeName)
         : (isSelected ? 'bg-purple-100' : 'bg-white');
 
-    const titleColor = hasClickerData 
-        ? getTitleColor(clickerAchievements.title) 
+    const titleColor = hasClickerData
+        ? getTitleColor(clickerAchievements.title)
         : 'text-gray-600';
 
     const achievementBorderClass = hasClickerData
@@ -767,58 +764,52 @@ const StudentCard = ({
         : 'border-2 border-gray-200';
 
     return (
-        <div 
-            draggable="true" 
-            onDragStart={onDragStart} 
-            onDragOver={onDragOver} 
-            onDrop={onDrop} 
-            onClick={handleCardClick} 
-            className={`relative p-2 sm:p-3 rounded-xl sm:rounded-2xl shadow-lg transition-all duration-300 cursor-pointer hover:shadow-xl ${achievementBorderClass} ${
-                isSelected 
-                    ? `border-purple-500 bg-purple-100 scale-105 shadow-purple-200` 
+        <div
+            draggable="true"
+            onDragStart={onDragStart}
+            onDragOver={onDragOver}
+            onDrop={onDrop}
+            onClick={handleCardClick}
+            className={`relative p-2 sm:p-3 rounded-xl sm:rounded-2xl shadow-lg transition-all duration-300 cursor-pointer hover:shadow-xl ${achievementBorderClass} ${isSelected
+                    ? `border-purple-500 bg-purple-100 scale-105 shadow-purple-200`
                     : `${themeBackground} hover:border-blue-400 hover:shadow-xl`
-            } ${
-                isDragged ? 'opacity-30 ring-2 ring-blue-500' : ''
-            }`}
+                } ${isDragged ? 'opacity-30 ring-2 ring-blue-500' : ''
+                }`}
         >
             {/* TRAFFIC LIGHTS - Top Left Corner */}
             <div className="absolute top-1 left-1 flex flex-col space-y-0.5 z-10">
                 <button
                     onClick={(e) => handleTrafficLightClickInternal(e, 'green')}
-                    className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full border-2 transition-all ${
-                        behaviorStatus === 'green'
+                    className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full border-2 transition-all ${behaviorStatus === 'green'
                             ? 'bg-green-500 border-green-700 shadow-lg scale-110'
                             : 'bg-green-200 border-green-400 hover:bg-green-300'
-                    }`}
+                        }`}
                 />
                 <button
                     onClick={(e) => handleTrafficLightClickInternal(e, 'yellow')}
-                    className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full border-2 transition-all ${
-                        behaviorStatus === 'yellow'
+                    className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full border-2 transition-all ${behaviorStatus === 'yellow'
                             ? 'bg-yellow-500 border-yellow-700 shadow-lg scale-110'
                             : 'bg-yellow-200 border-yellow-400 hover:bg-yellow-300'
-                    }`}
+                        }`}
                 />
                 <button
                     onClick={(e) => handleTrafficLightClickInternal(e, 'red')}
-                    className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full border-2 transition-all ${
-                        behaviorStatus === 'red'
+                    className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full border-2 transition-all ${behaviorStatus === 'red'
                             ? 'bg-red-500 border-red-700 shadow-lg scale-110'
                             : 'bg-red-200 border-red-400 hover:bg-red-300'
-                    }`}
+                        }`}
                 />
             </div>
 
             {/* ATTENDANCE BUTTON - Top Right Corner */}
             <button
                 onClick={handleAttendanceClickInternal}
-                className={`absolute top-1 right-1 w-5 h-5 sm:w-6 sm:h-6 rounded border-2 flex items-center justify-center text-xs font-bold transition-all z-10 ${
-                    todayAttendance === 'present' 
-                        ? 'bg-green-500 border-green-700 text-white shadow-md' 
+                className={`absolute top-1 right-1 w-5 h-5 sm:w-6 sm:h-6 rounded border-2 flex items-center justify-center text-xs font-bold transition-all z-10 ${todayAttendance === 'present'
+                        ? 'bg-green-500 border-green-700 text-white shadow-md'
                         : todayAttendance === 'absent'
-                        ? 'bg-red-500 border-red-700 text-white shadow-md'
-                        : 'bg-gray-100 border-gray-300 hover:bg-gray-200'
-                }`}
+                            ? 'bg-red-500 border-red-700 text-white shadow-md'
+                            : 'bg-gray-100 border-gray-300 hover:bg-gray-200'
+                    }`}
                 title={todayAttendance === 'present' ? 'Present' : todayAttendance === 'absent' ? 'Absent' : 'Mark attendance'}
             >
                 {todayAttendance === 'present' ? '✓' : todayAttendance === 'absent' ? 'A' : ''}
@@ -826,12 +817,12 @@ const StudentCard = ({
 
             <div className="flex flex-col items-center text-center">
                 <div className="relative">
-                    <img 
-                        src={avatarImg} 
-                        alt={student.firstName} 
-                        className="w-12 h-12 sm:w-16 md:w-20 lg:w-20 sm:h-16 md:h-20 lg:h-20 rounded-full border-2 sm:border-4 border-white shadow-md transition-transform duration-200 hover:scale-105" 
-                        onMouseEnter={() => onAvatarHover && onAvatarHover(avatarImg, `${student.firstName}'s Avatar`)} 
-                        onMouseLeave={onHoverEnd} 
+                    <img
+                        src={avatarImg}
+                        alt={student.firstName}
+                        className="w-12 h-12 sm:w-16 md:w-20 lg:w-20 sm:h-16 md:h-20 lg:h-20 rounded-full border-2 sm:border-4 border-white shadow-md transition-transform duration-200 hover:scale-105"
+                        onMouseEnter={() => onAvatarHover && onAvatarHover(avatarImg, `${student.firstName}'s Avatar`)}
+                        onMouseLeave={onHoverEnd}
                     />
                     <div className="absolute -bottom-1 -right-1 bg-blue-600 text-white text-[10px] sm:text-xs px-1 sm:px-2 py-0.5 rounded-full font-bold shadow-sm">
                         L{level}
@@ -848,20 +839,20 @@ const StudentCard = ({
                         />
                     )}
                 </div>
-                
+
                 <h3 className="text-xs sm:text-sm md:text-md font-bold text-gray-800 mt-1 sm:mt-2 truncate w-full leading-tight">
                     {student.firstName}
                 </h3>
-                
+
                 <div className="flex items-center justify-around w-full mt-1 sm:mt-2 text-[10px] sm:text-xs">
-                    <span 
+                    <span
                         onClick={handleStarClick}
                         className="font-semibold text-blue-600 bg-blue-50 px-1 sm:px-2 py-0.5 sm:py-1 rounded-full cursor-pointer hover:bg-blue-100 hover:scale-110 transition-all duration-200 select-none"
                         title="Click to award 1 XP"
                     >
                         ⭐ {student.totalPoints || 0}
                     </span>
-                    <span 
+                    <span
                         onClick={handleCoinClick}
                         className="font-semibold text-yellow-600 bg-yellow-50 px-1 sm:px-2 py-0.5 sm:py-1 rounded-full cursor-pointer hover:bg-yellow-100 hover:scale-110 transition-all duration-200 select-none"
                         title="Click to award 1 coin"
@@ -869,20 +860,20 @@ const StudentCard = ({
                         💰 {coins}
                     </span>
                 </div>
-                
+
                 <div className="w-full bg-gray-200 rounded-full h-1 sm:h-1.5 mt-1 sm:mt-1.5">
-                    <div 
-                        className="bg-gradient-to-r from-blue-400 to-purple-500 h-1 sm:h-1.5 rounded-full transition-all duration-500" 
+                    <div
+                        className="bg-gradient-to-r from-blue-400 to-purple-500 h-1 sm:h-1.5 rounded-full transition-all duration-500"
                         style={{ width: `${xpForNextLevel}%` }}
                     ></div>
                 </div>
-                
+
                 {isSelected && (
                     <div className="absolute top-1 left-1/2 transform -translate-x-1/2 bg-purple-500 text-white rounded-full w-4 h-4 sm:w-6 sm:h-6 flex items-center justify-center text-xs sm:text-sm font-bold">
                         ✓
                     </div>
                 )}
-                
+
                 {/* Show hero title or "Common Hero" */}
                 <div className="text-[10px] sm:text-xs mt-0.5 sm:mt-1">
                     {hasClickerData ? (
@@ -907,7 +898,7 @@ const AwardModal = ({ isBulk, awardType, onTypeChange, studentCount, student, on
     const [amount, setAmount] = useState(10);
     const [reason, setReason] = useState('Good Work');
     const title = isBulk ? `Award to ${studentCount} Students` : `Award to ${student?.firstName || ''}`;
-    
+
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md transform animate-scale-in">
@@ -916,56 +907,54 @@ const AwardModal = ({ isBulk, awardType, onTypeChange, studentCount, student, on
                 </div>
                 <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
                     <div className="grid grid-cols-2 gap-2 p-1 bg-gray-200 rounded-lg">
-                        <button 
-                            onClick={() => onTypeChange('xp')} 
-                            className={`px-3 sm:px-4 py-2 rounded-md font-semibold transition-all duration-200 text-sm sm:text-base ${
-                                awardType === 'xp' 
-                                    ? 'bg-blue-500 text-white shadow-lg transform scale-105' 
+                        <button
+                            onClick={() => onTypeChange('xp')}
+                            className={`px-3 sm:px-4 py-2 rounded-md font-semibold transition-all duration-200 text-sm sm:text-base ${awardType === 'xp'
+                                    ? 'bg-blue-500 text-white shadow-lg transform scale-105'
                                     : 'text-gray-600 hover:bg-gray-100'
-                            }`}
+                                }`}
                         >
                             Award XP ⭐
                         </button>
-                        <button 
-                            onClick={() => onTypeChange('coins')} 
-                            className={`px-3 sm:px-4 py-2 rounded-md font-semibold transition-all duration-200 text-sm sm:text-base ${
-                                awardType === 'coins' 
-                                    ? 'bg-yellow-500 text-white shadow-lg transform scale-105' 
+                        <button
+                            onClick={() => onTypeChange('coins')}
+                            className={`px-3 sm:px-4 py-2 rounded-md font-semibold transition-all duration-200 text-sm sm:text-base ${awardType === 'coins'
+                                    ? 'bg-yellow-500 text-white shadow-lg transform scale-105'
                                     : 'text-gray-600 hover:bg-gray-100'
-                            }`}
+                                }`}
                         >
                             Award Coins 💰
                         </button>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Amount</label>
-                        <input 
-                            type="number" 
-                            min="1" 
-                            value={amount} 
-                            onChange={(e) => setAmount(Number(e.target.value))} 
+                        <input
+                            type="number"
+                            min="1"
+                            value={amount}
+                            onChange={(e) => setAmount(Number(e.target.value))}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm sm:text-base"
                         />
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Reason (Optional)</label>
-                        <input 
-                            type="text" 
-                            value={reason} 
-                            onChange={(e) => setReason(e.target.value)} 
+                        <input
+                            type="text"
+                            value={reason}
+                            onChange={(e) => setReason(e.target.value)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm sm:text-base"
                         />
                     </div>
                 </div>
                 <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 p-4 sm:p-6 bg-gray-50 rounded-b-2xl">
-                    <button 
-                        onClick={onClose} 
+                    <button
+                        onClick={onClose}
                         className="w-full sm:flex-1 px-4 py-3 border rounded-lg bg-white hover:bg-gray-100 font-semibold transition-all duration-200 text-sm sm:text-base"
                     >
                         Cancel
                     </button>
-                    <button 
-                        onClick={() => onSubmit(amount, reason, awardType)} 
+                    <button
+                        onClick={() => onSubmit(amount, reason, awardType)}
                         className="w-full sm:flex-1 px-4 py-3 rounded-lg bg-green-500 hover:bg-green-600 font-semibold text-white transition-all duration-200 transform hover:scale-105 shadow-lg text-sm sm:text-base"
                     >
                         Confirm Award
