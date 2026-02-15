@@ -813,113 +813,114 @@ const ZTypeGame = ({ studentData, updateStudentData, showToast, classmates = [],
                     </div>
                 )}
             </div>
-        </div >
-    );
+
+        );
+    }
 
 
-// Render countdown
-if (gamePhase === 'countdown') {
-    return (
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-900 to-purple-900 text-white shadow-2xl p-10 md:p-16">
-            <div className="absolute inset-0 opacity-25 bg-[radial-gradient(circle,_rgba(255,255,255,0.25),_transparent_70%)]" />
-            <div className="relative text-center space-y-6">
-                <p className="uppercase tracking-[0.5em] text-white/70 text-sm">Get Ready!</p>
-                <div className="text-7xl md:text-9xl font-black drop-shadow-lg animate-pulse">{countdown}</div>
-                <p className="text-lg md:text-xl text-white/80 max-w-2xl mx-auto">
-                    Position your fingers on the keyboard and prepare to defend!
-                </p>
-            </div>
-        </div>
-    );
-}
-
-// Render game over
-if (gamePhase === 'gameover') {
-    const isNewHighScore = personalBest && score >= personalBest.highScore;
-
-    return (
-        <div className="space-y-6">
-            <div className={`rounded-3xl p-8 shadow-2xl relative overflow-hidden text-white ${isNewHighScore
-                ? 'bg-gradient-to-br from-amber-500 via-yellow-500 to-orange-500'
-                : 'bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600'
-                }`}>
-                <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle,_rgba(255,255,255,0.35),_transparent_60%)]" />
-                <div className="relative text-center space-y-4">
-                    <p className="uppercase tracking-[0.6em] text-white/70 text-xs">
-                        {isNewHighScore ? '🎉 NEW HIGH SCORE!' : 'Game Over'}
+    // Render countdown
+    if (gamePhase === 'countdown') {
+        return (
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-900 to-purple-900 text-white shadow-2xl p-10 md:p-16">
+                <div className="absolute inset-0 opacity-25 bg-[radial-gradient(circle,_rgba(255,255,255,0.25),_transparent_70%)]" />
+                <div className="relative text-center space-y-6">
+                    <p className="uppercase tracking-[0.5em] text-white/70 text-sm">Get Ready!</p>
+                    <div className="text-7xl md:text-9xl font-black drop-shadow-lg animate-pulse">{countdown}</div>
+                    <p className="text-lg md:text-xl text-white/80 max-w-2xl mx-auto">
+                        Position your fingers on the keyboard and prepare to defend!
                     </p>
-                    <h2 className="text-4xl md:text-5xl font-black">
-                        {isNewHighScore ? 'LEGENDARY!' : 'Great Run!'}
-                    </h2>
-                </div>
-
-                <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                    <div className="bg-white/10 rounded-2xl p-4">
-                        <div className="text-3xl font-black">{score}</div>
-                        <div className="text-sm text-white/70">Score</div>
-                    </div>
-                    <div className="bg-white/10 rounded-2xl p-4">
-                        <div className="text-3xl font-black">{wave}</div>
-                        <div className="text-sm text-white/70">Wave</div>
-                    </div>
-                    <div className="bg-white/10 rounded-2xl p-4">
-                        <div className="text-3xl font-black">{wordsDestroyed}</div>
-                        <div className="text-sm text-white/70">Words</div>
-                    </div>
-                    <div className="bg-white/10 rounded-2xl p-4">
-                        <div className="text-3xl font-black">{accuracy}%</div>
-                        <div className="text-sm text-white/70">Accuracy</div>
-                    </div>
                 </div>
             </div>
+        );
+    }
 
-            <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-                <h3 className="text-lg font-bold text-gray-800 mb-4">📊 Game Stats</h3>
-                <div className="grid grid-cols-2 gap-4 text-center">
-                    <div>
-                        <div className="text-2xl font-bold text-purple-600">x{maxCombo}</div>
-                        <div className="text-sm text-gray-500">Best Combo</div>
+    // Render game over
+    if (gamePhase === 'gameover') {
+        const isNewHighScore = personalBest && score >= personalBest.highScore;
+
+        return (
+            <div className="space-y-6">
+                <div className={`rounded-3xl p-8 shadow-2xl relative overflow-hidden text-white ${isNewHighScore
+                    ? 'bg-gradient-to-br from-amber-500 via-yellow-500 to-orange-500'
+                    : 'bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600'
+                    }`}>
+                    <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle,_rgba(255,255,255,0.35),_transparent_60%)]" />
+                    <div className="relative text-center space-y-4">
+                        <p className="uppercase tracking-[0.6em] text-white/70 text-xs">
+                            {isNewHighScore ? '🎉 NEW HIGH SCORE!' : 'Game Over'}
+                        </p>
+                        <h2 className="text-4xl md:text-5xl font-black">
+                            {isNewHighScore ? 'LEGENDARY!' : 'Great Run!'}
+                        </h2>
                     </div>
-                    <div>
-                        <div className="text-2xl font-bold text-green-600">{correctTyped}/{totalTyped}</div>
-                        <div className="text-sm text-gray-500">Correct Keys</div>
+
+                    <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                        <div className="bg-white/10 rounded-2xl p-4">
+                            <div className="text-3xl font-black">{score}</div>
+                            <div className="text-sm text-white/70">Score</div>
+                        </div>
+                        <div className="bg-white/10 rounded-2xl p-4">
+                            <div className="text-3xl font-black">{wave}</div>
+                            <div className="text-sm text-white/70">Wave</div>
+                        </div>
+                        <div className="bg-white/10 rounded-2xl p-4">
+                            <div className="text-3xl font-black">{wordsDestroyed}</div>
+                            <div className="text-sm text-white/70">Words</div>
+                        </div>
+                        <div className="bg-white/10 rounded-2xl p-4">
+                            <div className="text-3xl font-black">{accuracy}%</div>
+                            <div className="text-sm text-white/70">Accuracy</div>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div className="flex flex-wrap gap-3 justify-center">
-                <button
-                    onClick={startGame}
-                    className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all"
-                >
-                    🔄 Play Again
-                </button>
-                <button
-                    onClick={() => setGamePhase('menu')}
-                    className="px-8 py-3 bg-gray-200 text-gray-700 font-semibold rounded-xl hover:bg-gray-300 transition-all"
-                >
-                    📋 Back to Menu
-                </button>
+                <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
+                    <h3 className="text-lg font-bold text-gray-800 mb-4">📊 Game Stats</h3>
+                    <div className="grid grid-cols-2 gap-4 text-center">
+                        <div>
+                            <div className="text-2xl font-bold text-purple-600">x{maxCombo}</div>
+                            <div className="text-sm text-gray-500">Best Combo</div>
+                        </div>
+                        <div>
+                            <div className="text-2xl font-bold text-green-600">{correctTyped}/{totalTyped}</div>
+                            <div className="text-sm text-gray-500">Correct Keys</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex flex-wrap gap-3 justify-center">
+                    <button
+                        onClick={startGame}
+                        className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all"
+                    >
+                        🔄 Play Again
+                    </button>
+                    <button
+                        onClick={() => setGamePhase('menu')}
+                        className="px-8 py-3 bg-gray-200 text-gray-700 font-semibold rounded-xl hover:bg-gray-300 transition-all"
+                    >
+                        📋 Back to Menu
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    // Render game
+    return (
+        <div className="relative">
+            <canvas
+                ref={canvasRef}
+                width={800}
+                height={600}
+                className="w-full max-w-4xl mx-auto rounded-2xl shadow-2xl border-4 border-indigo-900"
+                style={{ backgroundColor: '#0a0a1a' }}
+            />
+            <div className="text-center mt-4 text-sm text-gray-500">
+                Type to target enemies • ENTER = EMP Bomb • Click game to focus
             </div>
         </div>
     );
-}
-
-// Render game
-return (
-    <div className="relative">
-        <canvas
-            ref={canvasRef}
-            width={800}
-            height={600}
-            className="w-full max-w-4xl mx-auto rounded-2xl shadow-2xl border-4 border-indigo-900"
-            style={{ backgroundColor: '#0a0a1a' }}
-        />
-        <div className="text-center mt-4 text-sm text-gray-500">
-            Type to target enemies • ENTER = EMP Bomb • Click game to focus
-        </div>
-    </div>
-);
 };
 
 export default ZTypeGame;
