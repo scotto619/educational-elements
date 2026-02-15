@@ -69,7 +69,41 @@ const WordSearchGame = ({ showToast, user, classData, saveClassData, studentData
 
   // --- Logic: Generator ---
 
-  const generatePuzzle = (wordListStr, difficultyKey) => {
+  // --- Logic: Generator ---
+
+  const generatePuzzle = (wordListStr, initialDifficultyKey) => {
+    let currentDifficulty = initialDifficultyKey;
+    let result = attemptGeneration(wordListStr, currentDifficulty);
+
+    // If not all words placed, try upgrading difficulty
+    if (result.placedWords.length < result.totalWords && currentDifficulty !== 'hard') {
+      if (currentDifficulty === 'easy') {
+        currentDifficulty = 'medium';
+        result = attemptGeneration(wordListStr, currentDifficulty);
+      }
+
+      if (result.placedWords.length < result.totalWords && currentDifficulty === 'medium') {
+        currentDifficulty = 'hard';
+        result = attemptGeneration(wordListStr, currentDifficulty);
+      }
+
+      if (result.placedWords.length === result.totalWords) {
+        showToast('Difficulty increased to fit all words!', 'info');
+      }
+    }
+
+    if (result.placedWords.length < result.totalWords) {
+      showToast(`Could only fit ${result.placedWords.length} of ${result.totalWords} words.`, 'warning');
+    }
+
+    setDifficulty(currentDifficulty);
+    setWords(result.placedWords);
+    setFoundWords([]);
+    setGrid(result.grid);
+    setGameState('playing');
+  };
+
+  const attemptGeneration = (wordListStr, difficultyKey) => {
     const settings = DIFFICULTY_SETTINGS[difficultyKey];
     const size = settings.size;
     const directions = settings.directions;
@@ -80,9 +114,6 @@ const WordSearchGame = ({ showToast, user, classData, saveClassData, studentData
       .map(w => w.toUpperCase().replace(/[^A-Z]/g, ''))
       .filter(w => w.length > 0 && w.length <= size)
       .slice(0, 15); // Cap at 15 words max
-
-    setWords(cleanWords);
-    setFoundWords([]);
 
     // Init Grid
     let newGrid = Array(size).fill().map(() => Array(size).fill(''));
@@ -119,8 +150,11 @@ const WordSearchGame = ({ showToast, user, classData, saveClassData, studentData
       }
     }
 
-    setGrid(newGrid);
-    setGameState('playing');
+    return {
+      grid: newGrid,
+      placedWords: placedWords,
+      totalWords: cleanWords.length
+    };
   };
 
   const canPlaceWord = (grid, word, row, col, [dRow, dCol], size) => {
