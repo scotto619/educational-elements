@@ -288,6 +288,14 @@ const CoordinateQuestGame = ({ showToast, difficulty: initialDifficulty }) => {
         <div className="flex flex-col lg:flex-row gap-6 p-4 max-w-6xl mx-auto">
             {/* Game Area */}
             <div className="flex-1 flex flex-col items-center">
+                {/* Target Indicator - Moved outside to prevent blocking */}
+                {isActive && (
+                    <div className="mb-4 bg-gray-900/90 px-8 py-3 rounded-2xl border-2 border-cyan-500/50 text-cyan-400 font-mono text-2xl shadow-xl flex items-center gap-3 backdrop-blur-sm z-10">
+                        <span className="text-gray-400 text-base font-sans font-bold tracking-wider uppercase">Target</span>
+                        <span className="text-white font-bold tracking-widest">({target.x}, {target.y})</span>
+                    </div>
+                )}
+
                 <div className="w-full max-w-[500px] aspect-square bg-gray-900 rounded-xl overflow-hidden shadow-2xl relative border-4 border-indigo-500" ref={containerRef}>
                     <canvas
                         ref={canvasRef}
@@ -327,14 +335,9 @@ const CoordinateQuestGame = ({ showToast, difficulty: initialDifficulty }) => {
                     {/* HUD Overlay */}
                     {isActive && (
                         <>
-                            {/* Target Indicator */}
-                            <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/80 px-6 py-2 rounded-full border border-cyan-500/50 text-cyan-400 font-mono text-xl shadow-lg">
-                                TARGET: <span className="text-white font-bold">({target.x}, {target.y})</span>
-                            </div>
-
                             {/* Feedback Overlay */}
                             {feedback && (
-                                <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-8 py-4 rounded-xl font-bold text-2xl animate-bounce shadow-xl z-20 ${feedback.type === 'correct' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+                                <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-8 py-4 rounded-xl font-bold text-2xl animate-bounce shadow-xl z-20 pointer-events-none ${feedback.type === 'correct' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
                                     }`}>
                                     {feedback.message}
                                     {feedback.type === 'correct' && <div className="text-sm font-normal text-green-100">+{feedback.points} pts</div>}
