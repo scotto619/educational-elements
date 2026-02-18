@@ -117,6 +117,7 @@ const GAME_LOGO_ALIASES = {
   'math-race-challenge': 'math-race',
   match3battle: 'match3-adventure',
   clicker: 'hero-forge',
+  'sin-miner': 'sin-miner-logo',
   'precision-timer-challenge': 'precision-timer',
   'timer-challenge': 'precision-timer'
 };

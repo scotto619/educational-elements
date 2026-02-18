@@ -26,6 +26,7 @@ import CoordinateQuestGame from '../games/CoordinateQuestGame';
 import PrecisionTimerGame from '../games/PrecisionTimerGame';
 import DodgeballGame from '../games/DodgeballGame';
 import ZTypeGame from '../games/ZTypeGame';
+import SinMinerGame from '../games/SinMinerGame';
 
 const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 
@@ -302,6 +303,19 @@ const GamesTab = ({
       time: '10+ minutes',
       category: 'fun',
       logo: getGameLogo('clicker')
+    },
+    {
+      id: 'sin-miner',
+      name: 'Sin Miner',
+      icon: '⛏️',
+      description: 'Dig deep into the abyss! Choose your Sin, mine for gold, and battle bosses in this roguelike clicker adventure.',
+      component: SinMinerGame,
+      color: 'from-red-900 to-purple-900',
+      difficulty: 'Hard',
+      time: '15-30 minutes',
+      category: 'fun',
+      new: true,
+      logo: getGameLogo('sin-miner')
     }
   ];
 

@@ -28,6 +28,7 @@ import PrecisionTimerGame from '../games/PrecisionTimerGame';
 import DodgeballGame from '../games/DodgeballGame';
 import ScoundrelLegendsGame from '../games/ScoundrelLegendsGame';
 import ZTypeGame from '../games/ZTypeGame';
+import SinMinerGame from '../games/SinMinerGame';
 
 const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 
@@ -259,10 +260,24 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       time: '3-10 minutes',
       category: 'educational',
       logo: getGameLogo('memory-match')
+    },
+    {
+      id: 'sin-miner',
+      name: 'Sin Miner',
+      icon: '⛏️',
+      description: 'Dig deep into the abyss! Choose your Sin, mine for gold, and battle bosses in this roguelike clicker adventure.',
+      component: SinMinerGame,
+      color: 'from-red-900 to-purple-900',
+      difficulty: 'Hard',
+      time: '15-30 minutes',
+      category: 'fun',
+      new: true,
+      logo: getGameLogo('sin-miner')
     }
   ];
 
   const categorizeGame = (game) => {
+    // Determine category based on game object properties
     if (game.category === 'multiplayer') return 'multiplayer';
     if (game.category === 'fun' || game.id === 'clicker') return 'fun'; // Explicitly check for fun category
     if (game.educational || game.category === 'educational' || game.category === 'featured' || game.category === 'daily') {
