@@ -134,46 +134,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     transition: 'background-image 1s ease-in-out'
   };
 
-  // Memoized Leaderboard Rows
-  const leaderboardRows = useMemo(() => {
-    if (!classmates || !Array.isArray(classmates)) return <div className="p-4 text-center text-gray-500">No classmates found.</div>;
 
-    return [...classmates]
-      .filter(s => s && typeof s === 'object')
-      .sort((a, b) => {
-        const goldA = a?.clickerGameData?.totalGold || 0;
-        const goldB = b?.clickerGameData?.totalGold || 0;
-        return goldB - goldA;
-      })
-      .map((student, index) => {
-        const data = student.clickerGameData || {};
-        const isMe = studentData && getStudentIdentifier(student) === getStudentIdentifier(studentData);
-        return (
-          <div key={student.id || index} className={`p-4 flex items-center gap-4 ${isMe ? 'bg-yellow-50' : 'hover:bg-gray-50'}`}>
-            <div className={`w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full font-bold text-sm 
-                            ${index === 0 ? 'bg-yellow-400 text-yellow-900' :
-                index === 1 ? 'bg-gray-300 text-gray-800' :
-                  index === 2 ? 'bg-orange-300 text-orange-900' : 'bg-gray-100 text-gray-500'}`}>
-              {index + 1}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="font-bold text-gray-900 truncate">
-                {student.firstName || 'Unknown'} {student.lastName && student.lastName[0]}.
-                {isMe && <span className="ml-2 text-xs bg-yellow-200 text-yellow-800 px-2 py-0.5 rounded-full">You</span>}
-              </div>
-              <div className="text-xs text-gray-500 flex gap-2">
-                {data.activeTitle && <span>{data.activeTitle}</span>}
-                {data.prestige > 0 && <span className="text-yellow-600">Prestige {data.prestige}</span>}
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="font-mono font-bold text-yellow-600">{fmt(data.totalGold || 0)}</div>
-              <div className="text-xs text-gray-400">{fmt(data.dpc || 0)} DPS</div>
-            </div>
-          </div>
-        );
-      });
-  }, [classmates, studentData, fmt]);
 
   // EXPANDED Theme definitions with PRESTIGE themes
   const THEMES = {
@@ -1689,6 +1650,47 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
   const currentWeapon = WEAPONS[gameState.activeWeapon] || WEAPONS['1'];
   const currentTitle = TITLES[gameState.activeTitle] || TITLES['Novice'];
   const prestigeBorder = getPrestigeBorder(gameState.prestige);
+
+  // Memoized Leaderboard Rows
+  const leaderboardRows = useMemo(() => {
+    if (!classmates || !Array.isArray(classmates)) return <div className="p-4 text-center text-gray-500">No classmates found.</div>;
+
+    return [...classmates]
+      .filter(s => s && typeof s === 'object')
+      .sort((a, b) => {
+        const goldA = a?.clickerGameData?.totalGold || 0;
+        const goldB = b?.clickerGameData?.totalGold || 0;
+        return goldB - goldA;
+      })
+      .map((student, index) => {
+        const data = student.clickerGameData || {};
+        const isMe = studentData && getStudentIdentifier(student) === getStudentIdentifier(studentData);
+        return (
+          <div key={student.id || index} className={`p-4 flex items-center gap-4 ${isMe ? 'bg-yellow-50' : 'hover:bg-gray-50'}`}>
+            <div className={`w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full font-bold text-sm 
+                            ${index === 0 ? 'bg-yellow-400 text-yellow-900' :
+                index === 1 ? 'bg-gray-300 text-gray-800' :
+                  index === 2 ? 'bg-orange-300 text-orange-900' : 'bg-gray-100 text-gray-500'}`}>
+              {index + 1}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-bold text-gray-900 truncate">
+                {student.firstName || 'Unknown'} {student.lastName && student.lastName[0]}.
+                {isMe && <span className="ml-2 text-xs bg-yellow-200 text-yellow-800 px-2 py-0.5 rounded-full">You</span>}
+              </div>
+              <div className="text-xs text-gray-500 flex gap-2">
+                {data.activeTitle && <span>{data.activeTitle}</span>}
+                {data.prestige > 0 && <span className="text-yellow-600">Prestige {data.prestige}</span>}
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="font-mono font-bold text-yellow-600">{fmt(data.totalGold || 0)}</div>
+              <div className="text-xs text-gray-400">{fmt(data.dpc || 0)} DPS</div>
+            </div>
+          </div>
+        );
+      });
+  }, [classmates, studentData, fmt]);
 
   return (
     <div className={`min-h-screen p-4 ${currentTheme.bg}`} style={backgroundStyle}>
