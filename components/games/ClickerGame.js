@@ -113,11 +113,25 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     '16': { name: 'Soul Reaper', icon: '💀', path: '/Loot/Weapons/16.png', requirement: { type: 'prestige', value: 5 }, dpcMultiplier: 2500 },
     '17': { name: 'Cosmic Blades', icon: '🌟', path: '/Loot/Weapons/17.png', requirement: { type: 'prestige', value: 10 }, dpcMultiplier: 10000 },
 
-    // NEW: Ultra-rare weapons for extreme high levels
     '18': { name: 'Genesis Sword', icon: '💫', path: '/Loot/Weapons/18.png', requirement: { type: 'prestige', value: 15 }, dpcMultiplier: 25000 },
     '19': { name: 'Reality Breaker', icon: '⚫', path: '/Loot/Weapons/19.png', requirement: { type: 'prestige', value: 20 }, dpcMultiplier: 50000 },
     '20': { name: 'Infinity Edge', icon: '♾️', path: '/Loot/Weapons/20.png', requirement: { type: 'prestige', value: 25 }, dpcMultiplier: 100000 },
     '21': { name: 'Omnislayer', icon: '🌠', path: '/Loot/Weapons/21.png', requirement: { type: 'masterLevel', value: 10 }, dpcMultiplier: 500000 }
+  };
+
+  // NEW: Day/Night Cycle derived state
+  // 1500 clicks per cycle. 0-1000 = Day, 1000-1500 = Night.
+  const cyclePosition = gameState.attacks % 1500;
+  const isNight = cyclePosition >= 1000;
+  const cycleProgress = isNight ? (cyclePosition - 1000) / 500 : cyclePosition / 1000; // 0 to 1 for current phase
+
+  // Background style
+  const backgroundStyle = {
+    backgroundImage: `url(${isNight ? '/Loot/Backgrounds/night.png' : '/Loot/Backgrounds/day.png'})`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundAttachment: 'fixed',
+    transition: 'background-image 1s ease-in-out'
   };
 
   // EXPANDED Theme definitions with PRESTIGE themes
@@ -1635,7 +1649,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
   const prestigeBorder = getPrestigeBorder(gameState.prestige);
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br ${currentTheme.bg} p-4 relative transition-all duration-500`}>
+    <div className={`min-h-screen p-4 ${currentTheme.bg}`} style={backgroundStyle}>
       {/* Custom styles */}
       <style jsx>{`
         @keyframes float-up {
@@ -1841,6 +1855,14 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
             </div>
 
             <div className="flex items-center space-x-4">
+              {/* NEW: Scoreboard Button */}
+              <button
+                onClick={() => setShowScoreboard(true)}
+                className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all font-bold flex items-center gap-2"
+              >
+                <span>🏆</span> Scoreboard
+              </button>
+
               {/* NEW: Music Toggle Button */}
               <button
                 onClick={toggleMusic}
@@ -1886,6 +1908,75 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
             </div>
           </div>
         </div>
+
+        {/* Scoreboard Modal */}
+        {showScoreboard && (
+          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+            <div className={`${currentTheme.panel} w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]`}>
+              <div className="p-6 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-yellow-500/10 to-orange-500/10">
+                <h2 className="text-2xl font-black text-yellow-600 flex items-center gap-2">
+                  <span>🏆</span> Global Leaderboard
+                </h2>
+                <button
+                  onClick={() => setShowScoreboard(false)}
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 text-gray-600 transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="overflow-y-auto p-0 flex-1">
+                <div className="divide-y divide-gray-100">
+                  {useMemo(() => {
+                    return [...classmates]
+                      .sort((a, b) => {
+                        const goldA = a.clickerGameData?.totalGold || 0;
+                        const goldB = b.clickerGameData?.totalGold || 0;
+                        return goldB - goldA;
+                      })
+                      .map((student, index) => {
+                        const data = student.clickerGameData || {};
+                        const isMe = getStudentIdentifier(student) === getStudentIdentifier(studentData);
+                        return (
+                          <div key={student.id || index} className={`p-4 flex items-center gap-4 ${isMe ? 'bg-yellow-50' : 'hover:bg-gray-50'}`}>
+                            <div className={`w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full font-bold text-sm 
+                                            ${index === 0 ? 'bg-yellow-400 text-yellow-900' :
+                                index === 1 ? 'bg-gray-300 text-gray-800' :
+                                  index === 2 ? 'bg-orange-300 text-orange-900' : 'bg-gray-100 text-gray-500'}`}>
+                              {index + 1}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-bold text-gray-900 truncate">
+                                {student.firstName} {student.lastName && student.lastName[0]}.
+                                {isMe && <span className="ml-2 text-xs bg-yellow-200 text-yellow-800 px-2 py-0.5 rounded-full">You</span>}
+                              </div>
+                              <div className="text-xs text-gray-500 flex gap-2">
+                                {data.activeTitle && <span>{data.activeTitle}</span>}
+                                {data.prestige > 0 && <span className="text-yellow-600">Prestige {data.prestige}</span>}
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="font-mono font-bold text-yellow-600">{fmt(data.totalGold || 0)}</div>
+                              <div className="text-xs text-gray-400">{fmt(data.dpc || 0)} DPS</div>
+                            </div>
+                          </div>
+                        );
+                      });
+                  }, [classmates, studentData])}
+                </div>
+              </div>
+
+              <div className="p-4 border-t border-gray-200 bg-gray-50 flex justify-end">
+                <button
+                  onClick={() => setShowScoreboard(false)} // In a real app we might re-fetch here
+                  className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-gray-700 font-semibold text-sm transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* NEW: Skill Shop Modal */}
         {showSkillShop && (
