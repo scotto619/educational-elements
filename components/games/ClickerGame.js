@@ -1633,25 +1633,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     };
   }, [isLoaded, dps, addGold, gameState.event, spawnChoiceEvent]);
 
-  // Show loading screen
-  if (!isLoaded) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-100 flex items-center justify-center">
-        <div className="bg-white rounded-xl shadow-lg p-8 text-center">
-          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <h2 className="text-xl font-bold text-gray-700">Loading Hero Forge...</h2>
-          <p className="text-gray-500 mt-2">Preparing your enhanced adventure!</p>
-        </div>
-      </div>
-    );
-  }
-
-  const currentTheme = THEMES[gameState.activeTheme] || THEMES.default;
-  const currentWeapon = WEAPONS[gameState.activeWeapon] || WEAPONS['1'];
-  const currentTitle = TITLES[gameState.activeTitle] || TITLES['Novice'];
-  const prestigeBorder = getPrestigeBorder(gameState.prestige);
-
-  // Memoized Leaderboard Rows
+  // Memoized Leaderboard Rows - Moved here to be before conditional returns but after fmt definition
   const leaderboardRows = useMemo(() => {
     if (!classmates || !Array.isArray(classmates)) return <div className="p-4 text-center text-gray-500">No classmates found.</div>;
 
@@ -1691,6 +1673,26 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         );
       });
   }, [classmates, studentData, fmt]);
+
+  // Show loading screen
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-100 flex items-center justify-center">
+        <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <h2 className="text-xl font-bold text-gray-700">Loading Hero Forge...</h2>
+          <p className="text-gray-500 mt-2">Preparing your enhanced adventure!</p>
+        </div>
+      </div>
+    );
+  }
+
+  const currentTheme = THEMES[gameState.activeTheme] || THEMES.default;
+  const currentWeapon = WEAPONS[gameState.activeWeapon] || WEAPONS['1'];
+  const currentTitle = TITLES[gameState.activeTitle] || TITLES['Novice'];
+  const prestigeBorder = getPrestigeBorder(gameState.prestige);
+
+
 
   return (
     <div className={`min-h-screen p-4 ${currentTheme.bg}`} style={backgroundStyle}>
