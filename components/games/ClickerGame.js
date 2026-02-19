@@ -1063,8 +1063,9 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
           let oppDpc = dpc() * (0.8 + Math.random() * 0.6); // Random difficulty if no opponent
           let oppGold = prev.gold; // Fallback gold
 
-          if (classmates && classmates.length > 0) {
-            const others = classmates.filter(c => getStudentIdentifier(c) !== getStudentIdentifier(studentData));
+          if (classmates && Array.isArray(classmates) && classmates.length > 0 && studentData) {
+            const myId = getStudentIdentifier(studentData);
+            const others = classmates.filter(c => c && getStudentIdentifier(c) !== myId);
             if (others.length > 0) {
               const randomStudent = others[Math.floor(Math.random() * others.length)];
               opponent = randomStudent;
@@ -1079,7 +1080,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
 
           const myDpc = dpc();
           if (myDpc > oppDpc) {
-            const stealAmount = Math.floor(oppGold * 0.5); // Steal 50%
+            const stealAmount = Math.floor(oppGold * 0.05); // Steal 5% (Reduced from 50% for balance)
             // Cap steal amount to avoid massive injection from hacked/bugged saves, e.g. max 10% of my total gold or something? 
             // User asked for "steak 50% of that players gold". Let's stick to the requested logic but maybe cap it at 100% of my own gold to prevent game breaking.
             // For now, raw 50%.
@@ -1928,15 +1929,18 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
               <div className="overflow-y-auto p-0 flex-1">
                 <div className="divide-y divide-gray-100">
                   {useMemo(() => {
+                    if (!classmates || !Array.isArray(classmates)) return <div className="p-4 text-center text-gray-500">No classmates found.</div>;
+
                     return [...classmates]
+                      .filter(s => s && typeof s === 'object')
                       .sort((a, b) => {
-                        const goldA = a.clickerGameData?.totalGold || 0;
-                        const goldB = b.clickerGameData?.totalGold || 0;
+                        const goldA = a?.clickerGameData?.totalGold || 0;
+                        const goldB = b?.clickerGameData?.totalGold || 0;
                         return goldB - goldA;
                       })
                       .map((student, index) => {
                         const data = student.clickerGameData || {};
-                        const isMe = getStudentIdentifier(student) === getStudentIdentifier(studentData);
+                        const isMe = studentData && getStudentIdentifier(student) === getStudentIdentifier(studentData);
                         return (
                           <div key={student.id || index} className={`p-4 flex items-center gap-4 ${isMe ? 'bg-yellow-50' : 'hover:bg-gray-50'}`}>
                             <div className={`w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full font-bold text-sm 
@@ -1947,7 +1951,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="font-bold text-gray-900 truncate">
-                                {student.firstName} {student.lastName && student.lastName[0]}.
+                                {student.firstName || 'Unknown'} {student.lastName && student.lastName[0]}.
                                 {isMe && <span className="ml-2 text-xs bg-yellow-200 text-yellow-800 px-2 py-0.5 rounded-full">You</span>}
                               </div>
                               <div className="text-xs text-gray-500 flex gap-2">
