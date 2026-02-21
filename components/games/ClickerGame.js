@@ -63,6 +63,9 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     skillPoints: 0,
     masteries: {},
     skillUpgrades: {}, // NEW: Track purchased skill upgrades
+    currentCycle: 'Day',
+    cycleClicks: 0,
+    pickaxeLevel: 1,
   });
 
   const [selectedWeapon, setSelectedWeapon] = useState('1');
@@ -95,39 +98,44 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
 
   // EXPANDED: Weapon definitions with ULTRA-RARE weapons for high levels
   const WEAPONS = {
-    '1': { name: 'Novice Blade', icon: '⚔️', path: '/Loot/Weapons/1.png', requirement: null, dpcMultiplier: 1 },
-    '2': { name: 'Mystic Staff', icon: '🔮', path: '/Loot/Weapons/2.png', requirement: { type: 'totalGold', value: 1000 }, dpcMultiplier: 1.5 },
-    '3': { name: 'Frost Axe', icon: '🪓', path: '/Loot/Weapons/3.png', requirement: { type: 'totalGold', value: 5000 }, dpcMultiplier: 2 },
-    '4': { name: 'Shadow Daggers', icon: '🗡️', path: '/Loot/Weapons/4.png', requirement: { type: 'totalGold', value: 25000 }, dpcMultiplier: 3 },
-    '5': { name: 'Elven Bow', icon: '🏹', path: '/Loot/Weapons/5.png', requirement: { type: 'attacks', value: 1000 }, dpcMultiplier: 4 },
-    '6': { name: 'Orcish Cleaver', icon: '⚔️', path: '/Loot/Weapons/6.png', requirement: { type: 'artifacts', value: 50 }, dpcMultiplier: 6 },
-    '7': { name: 'Divine Hammer', icon: '🔨', path: '/Loot/Weapons/7.png', requirement: { type: 'totalGold', value: 100000 }, dpcMultiplier: 8 },
-    '8': { name: 'Nature\'s Whip', icon: '🌿', path: '/Loot/Weapons/8.png', requirement: { type: 'upgrades', value: 3 }, dpcMultiplier: 12 },
-    '9': { name: 'Celestial Orb', icon: '✨', path: '/Loot/Weapons/9.png', requirement: { type: 'totalGold', value: 1000000 }, dpcMultiplier: 20 },
-    '10': { name: 'Heart Mace', icon: '❤️', path: '/Loot/Weapons/10.png', requirement: { type: 'dps', value: 100000 }, dpcMultiplier: 30 },
-    '11': { name: 'Mechanical Gauntlet', icon: '🤖', path: '/Loot/Weapons/11.png', requirement: { type: 'totalGold', value: 10000000 }, dpcMultiplier: 50 },
-    '12': { name: 'Golden Hammer', icon: '🌹', path: '/Loot/Weapons/12.png', requirement: { type: 'prestige', value: 1 }, dpcMultiplier: 100 },
-    '13': { name: 'Electro Staff', icon: '⚡', path: '/Loot/Weapons/13.png', requirement: { type: 'totalGold', value: 100000000 }, dpcMultiplier: 200 },
-    '14': { name: 'Void Staff', icon: '🌌', path: '/Loot/Weapons/14.png', requirement: { type: 'prestige', value: 2 }, dpcMultiplier: 1500 },
-    '15': { name: 'Elemental Trident', icon: '🔱', path: '/Loot/Weapons/15.png', requirement: { type: 'totalGold', value: 1000000000 }, dpcMultiplier: 1000 },
-    '16': { name: 'Soul Reaper', icon: '💀', path: '/Loot/Weapons/16.png', requirement: { type: 'prestige', value: 5 }, dpcMultiplier: 2500 },
-    '17': { name: 'Cosmic Blades', icon: '🌟', path: '/Loot/Weapons/17.png', requirement: { type: 'prestige', value: 10 }, dpcMultiplier: 10000 },
+    '1': { name: 'Novice Blade', icon: '⚔️', path: '/hero forge/Items/Weapons/1.png', requirement: null, dpcMultiplier: 1 },
+    '2': { name: 'Mystic Staff', icon: '🔮', path: '/hero forge/Items/Weapons/2.png', requirement: { type: 'totalGold', value: 1000 }, dpcMultiplier: 1.5 },
+    '3': { name: 'Frost Axe', icon: '🪓', path: '/hero forge/Items/Weapons/3.png', requirement: { type: 'totalGold', value: 5000 }, dpcMultiplier: 2 },
+    '4': { name: 'Shadow Daggers', icon: '🗡️', path: '/hero forge/Items/Weapons/4.png', requirement: { type: 'totalGold', value: 25000 }, dpcMultiplier: 3 },
+    '5': { name: 'Elven Bow', icon: '🏹', path: '/hero forge/Items/Weapons/5.png', requirement: { type: 'attacks', value: 1000 }, dpcMultiplier: 4 },
+    '6': { name: 'Orcish Cleaver', icon: '⚔️', path: '/hero forge/Items/Weapons/6.png', requirement: { type: 'artifacts', value: 50 }, dpcMultiplier: 6 },
+    '7': { name: 'Divine Hammer', icon: '🔨', path: '/hero forge/Items/Weapons/7.png', requirement: { type: 'totalGold', value: 100000 }, dpcMultiplier: 8 },
+    '8': { name: 'Nature\'s Whip', icon: '🌿', path: '/hero forge/Items/Weapons/8.png', requirement: { type: 'upgrades', value: 3 }, dpcMultiplier: 12 },
+    '9': { name: 'Celestial Orb', icon: '✨', path: '/hero forge/Items/Weapons/9.png', requirement: { type: 'totalGold', value: 1000000 }, dpcMultiplier: 20 },
+    '10': { name: 'Heart Mace', icon: '❤️', path: '/hero forge/Items/Weapons/10.png', requirement: { type: 'dps', value: 100000 }, dpcMultiplier: 30 },
+    '11': { name: 'Mechanical Gauntlet', icon: '🤖', path: '/hero forge/Items/Weapons/11.png', requirement: { type: 'totalGold', value: 10000000 }, dpcMultiplier: 50 },
+    '12': { name: 'Golden Hammer', icon: '🌹', path: '/hero forge/Items/Weapons/12.png', requirement: { type: 'prestige', value: 1 }, dpcMultiplier: 100 },
+    '13': { name: 'Electro Staff', icon: '⚡', path: '/hero forge/Items/Weapons/13.png', requirement: { type: 'totalGold', value: 100000000 }, dpcMultiplier: 200 },
+    '14': { name: 'Void Staff', icon: '🌌', path: '/hero forge/Items/Weapons/14.png', requirement: { type: 'prestige', value: 2 }, dpcMultiplier: 1500 },
+    '15': { name: 'Elemental Trident', icon: '🔱', path: '/hero forge/Items/Weapons/15.png', requirement: { type: 'totalGold', value: 1000000000 }, dpcMultiplier: 1000 },
+    '16': { name: 'Soul Reaper', icon: '💀', path: '/hero forge/Items/Weapons/16.png', requirement: { type: 'prestige', value: 5 }, dpcMultiplier: 2500 },
+    '17': { name: 'Cosmic Blades', icon: '🌟', path: '/hero forge/Items/Weapons/17.png', requirement: { type: 'prestige', value: 10 }, dpcMultiplier: 10000 },
 
-    '18': { name: 'Genesis Sword', icon: '💫', path: '/Loot/Weapons/18.png', requirement: { type: 'prestige', value: 15 }, dpcMultiplier: 25000 },
+    '18': { name: 'Genesis Sword', icon: '💫', path: '/hero forge/Items/Weapons/18.png', requirement: { type: 'prestige', value: 15 }, dpcMultiplier: 25000 },
     '19': { name: 'Reality Breaker', icon: '⚫', path: '/Loot/Weapons/19.png', requirement: { type: 'prestige', value: 20 }, dpcMultiplier: 50000 },
     '20': { name: 'Infinity Edge', icon: '♾️', path: '/Loot/Weapons/20.png', requirement: { type: 'prestige', value: 25 }, dpcMultiplier: 100000 },
     '21': { name: 'Omnislayer', icon: '🌠', path: '/Loot/Weapons/21.png', requirement: { type: 'masterLevel', value: 10 }, dpcMultiplier: 500000 }
   };
 
-  // NEW: Day/Night Cycle derived state
-  // 1500 clicks per cycle. 0-1000 = Day, 1000-1500 = Night.
-  const cyclePosition = gameState.attacks % 1500;
-  const isNight = cyclePosition >= 1000;
-  const cycleProgress = isNight ? (cyclePosition - 1000) / 500 : cyclePosition / 1000; // 0 to 1 for current phase
+  // NEW: Environment Cycle logic
+  const isNight = gameState.currentCycle === 'Night' || gameState.currentCycle === 'BloodMoon';
+  const getBackgroundImage = () => {
+    switch (gameState.currentCycle) {
+      case 'BloodMoon': return '/hero forge/BloodMoon/BloodMoonMining.png';
+      case 'Night': return '/hero forge/Night/NightMining.png';
+      case 'Snow': return '/hero forge/Snow/SnowMining.png';
+      default: return '/hero forge/Day/DayMining.png'; // Day
+    }
+  };
 
   // Background style
   const backgroundStyle = {
-    backgroundImage: `url(${isNight ? '/Loot/Backgrounds/night.png' : '/Loot/Backgrounds/day.png'})`,
+    backgroundImage: `url('${getBackgroundImage()}')`,
     backgroundSize: 'cover',
     backgroundPosition: 'center',
     backgroundAttachment: 'fixed',
@@ -824,11 +832,42 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
       addGold(gain);
     }
 
-    setGameState(prev => ({
-      ...prev,
-      handGold: prev.handGold + gain,
-      attacks: prev.attacks + 1
-    }));
+    setGameState(prev => {
+      let newCycle = prev.currentCycle;
+      let newCycleClicks = prev.cycleClicks + 1;
+
+      // Every 500 clicks, advance the cycle
+      if (newCycleClicks >= 500) {
+        newCycleClicks = 0;
+        if (prev.currentCycle === 'Day' || prev.currentCycle === 'Snow') {
+          // Transition to Night or Blood Moon
+          if (Math.random() < 0.05) {
+            newCycle = 'BloodMoon';
+            addToast('The Blood Moon rises...', 'error');
+          } else {
+            newCycle = 'Night';
+            addToast('Night has fallen.', 'info');
+          }
+        } else {
+          // Transition to Day or Snow
+          if (Math.random() < 0.20) {
+            newCycle = 'Snow';
+            addToast('A snow storm begins!', 'info');
+          } else {
+            newCycle = 'Day';
+            addToast('A new day dawns.', 'success');
+          }
+        }
+      }
+
+      return {
+        ...prev,
+        handGold: prev.handGold + gain,
+        attacks: prev.attacks + 1,
+        cycleClicks: newCycleClicks,
+        currentCycle: newCycle
+      };
+    });
 
     // Add floating number at click position
     if (event && event.currentTarget) {
@@ -1033,15 +1072,28 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
   const spawnChoiceEvent = useCallback(() => {
     if (gameState.event.shown) return;
 
-    const randomEvent = CHOICE_EVENTS[Math.floor(Math.random() * CHOICE_EVENTS.length)];
+    const isEnemy = Math.random() < 0.70;
+
+    let eventData;
+    if (isEnemy) {
+      eventData = {
+        text: "👿 A wild enemy appears! (Combat system coming soon)",
+        choices: [
+          { text: "⚔️ Fight Enemy", effect: { type: 'placeholderEnemy' } }
+        ]
+      };
+    } else {
+      eventData = CHOICE_EVENTS[Math.floor(Math.random() * CHOICE_EVENTS.length)];
+    }
+
     setGameState(prev => ({
       ...prev,
       event: {
         ...prev.event,
         shown: true,
         until: Date.now() + 60000,
-        eventText: randomEvent.text,
-        choices: randomEvent.choices
+        eventText: eventData.text,
+        choices: eventData.choices
       }
     }));
     setShowChoiceEvent(true);
@@ -1058,6 +1110,13 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
       let newState = { ...prev };
 
       switch (effect.type) {
+        case 'placeholderEnemy':
+          const enemyGold = Math.max(100, prev.totalGold * 0.05);
+          newState.gold += enemyGold;
+          newState.totalGold += enemyGold;
+          addToast(`Enemy defeated! Found ${fmt(enemyGold)} gold.`, 'success');
+          break;
+
         case 'nightRaid':
           // Find oppponent
           let opponent = null;
@@ -1385,9 +1444,12 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         skillPoints: gameState.skillPoints,
         skillUpgrades: gameState.skillUpgrades, // NEW
         masteries: gameState.masteries,
+        currentCycle: gameState.currentCycle,
+        cycleClicks: gameState.cycleClicks,
+        pickaxeLevel: gameState.pickaxeLevel,
         dpc: dpc(), // NEW: Save current DPC for leaderboards/pvp
         lastSave: Date.now(),
-        version: '3.1'
+        version: '4.0'
       };
 
       const currentWeapon = WEAPONS[gameState.activeWeapon] || WEAPONS['1'];
@@ -1436,6 +1498,13 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
 
       const data = studentData.clickerGameData;
 
+      if (data.version !== '4.0') {
+        console.log('🎮 Version upgrade to 4.0, resetting game state for new Hero Forge update');
+        setIsLoaded(true);
+        addToast('Hero Forge updated! Progress reset for the new update!', 'success');
+        return; // Will keep the default initial state
+      }
+
       const loadedState = {
         gold: typeof data.gold === 'number' ? data.gold : 0,
         totalGold: typeof data.totalGold === 'number' ? data.totalGold : 0,
@@ -1468,6 +1537,9 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         skillPoints: typeof data.skillPoints === 'number' ? data.skillPoints : 0,
         skillUpgrades: data.skillUpgrades || {}, // NEW
         masteries: data.masteries && typeof data.masteries === 'object' ? data.masteries : {},
+        currentCycle: data.currentCycle || 'Day',
+        cycleClicks: typeof data.cycleClicks === 'number' ? data.cycleClicks : 0,
+        pickaxeLevel: typeof data.pickaxeLevel === 'number' ? data.pickaxeLevel : 1,
         event: { nextIn: 60 + Math.random() * 120, shown: false, until: 0, choices: [], eventText: '' }
       };
 
@@ -2053,25 +2125,25 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Enhanced with Master Level display */}
           <div className="lg:col-span-1 space-y-6">
-            {/* Weapon Emblem */}
+            {/* Main Clickable Area - Pickaxe */}
             <div className="text-center">
               <div
-                className={`w-64 h-64 mx-auto rounded-full bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 flex items-center justify-center text-8xl cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-2xl relative ${prestigeBorder}`}
+                className={`w-64 h-64 mx-auto rounded-full bg-gradient-to-br from-gray-700 via-gray-800 to-black flex items-center justify-center text-8xl cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-2xl relative ${prestigeBorder}`}
                 onClick={attack}
                 style={{
-                  boxShadow: `inset 0 20px 60px rgba(0,0,0,0.3), 0 30px 60px rgba(0,0,0,0.3)`
+                  boxShadow: `inset 0 20px 60px rgba(0,0,0,0.5), 0 30px 60px rgba(0,0,0,0.5)`
                 }}
               >
                 <img
-                  src={currentWeapon.path}
-                  alt={currentWeapon.name}
-                  className="w-32 h-32 object-contain filter drop-shadow-lg"
+                  src={`/hero forge/Items/Pickaxes/level${gameState.pickaxeLevel}.png`}
+                  alt="Pickaxe"
+                  className="w-40 h-40 object-contain filter drop-shadow-lg"
                   onError={(e) => {
                     e.target.style.display = 'none';
                     e.target.nextSibling.style.display = 'block';
                   }}
                 />
-                <div className="text-8xl hidden">⚔️</div>
+                <div className="text-8xl hidden">⛏️</div>
 
                 {/* Enhanced decorative elements */}
                 <div className="absolute top-4 left-12 w-4 h-4 border-2 border-yellow-400 rounded transform rotate-45 opacity-70 animate-pulse"></div>
@@ -2081,11 +2153,26 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                 <div className="absolute bottom-16 right-4 w-4 h-4 border-2 border-yellow-400 rounded transform rotate-45 opacity-70 animate-pulse" style={{ animationDelay: '2s' }}></div>
                 <div className="absolute bottom-24 right-12 w-4 h-4 border-2 border-yellow-400 rounded transform rotate-45 opacity-70 animate-pulse" style={{ animationDelay: '2.5s' }}></div>
               </div>
-              <p className="mt-4 text-gray-600 text-sm">
-                {activeBoss ? `Click to attack ${activeBoss.name}!` : 'Click to attack!'}
+              <p className="mt-4 text-gray-800 bg-white/70 inline-block px-3 py-1 rounded-full text-sm font-bold shadow">
+                {activeBoss ? `Mine to fight ${activeBoss.name}!` : 'Mine for resources!'}
               </p>
-              <p className="text-sm font-semibold text-purple-600">{currentWeapon.name}</p>
-              <p className="text-xs text-green-600 font-semibold">+{currentWeapon.dpcMultiplier}x Damage</p>
+
+              {/* Equipped Weapon Display */}
+              <div className="mt-6 flex flex-col items-center">
+                <div className="bg-gray-800/80 backdrop-blur-sm p-4 rounded-xl border-2 border-gray-600 shadow-xl inline-flex flex-col items-center">
+                  <h3 className="text-xs uppercase tracking-widest text-gray-400 mb-2 font-bold">Equipped Weapon</h3>
+                  <div className="w-20 h-20 flex items-center justify-center bg-gray-900 rounded-lg shadow-inner mb-2 border border-gray-700">
+                    <img
+                      src={currentWeapon.path}
+                      alt={currentWeapon.name}
+                      className="w-16 h-16 object-contain drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]"
+                      onError={(e) => { e.target.style.display = 'none'; }}
+                    />
+                  </div>
+                  <p className="text-sm font-bold text-blue-400">{currentWeapon.name}</p>
+                  <p className="text-xs text-green-400 font-semibold">+{currentWeapon.dpcMultiplier}x DMG</p>
+                </div>
+              </div>
             </div>
           </div>
 
