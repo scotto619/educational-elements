@@ -108,65 +108,68 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
   const lastSaveRef = useRef(0);
   const musicRef = useRef(null); // Background music reference
 
+  // NEW: Anti-cheat state tracking
+  const clickTimesRef = useRef([]);
+
   // EXPANDED: Weapon definitions with ULTRA-RARE weapons for high levels
   const WEAPONS = {
-    '1': { name: 'Novice Blade', icon: '⚔️', path: '/hero forge/Items/Weapons/1.png', requirement: null, dpcMultiplier: 1 },
-    '2': { name: 'Mystic Staff', icon: '🔮', path: '/hero forge/Items/Weapons/2.png', requirement: { type: 'level', value: 10 }, dpcMultiplier: 2 },
-    '3': { name: 'Frost Axe', icon: '🪓', path: '/hero forge/Items/Weapons/3.png', requirement: { type: 'level', value: 20 }, dpcMultiplier: 4 },
-    '4': { name: 'Shadow Daggers', icon: '🗡️', path: '/hero forge/Items/Weapons/4.png', requirement: { type: 'level', value: 30 }, dpcMultiplier: 8 },
-    '5': { name: 'Elven Bow', icon: '🏹', path: '/hero forge/Items/Weapons/5.png', requirement: { type: 'level', value: 40 }, dpcMultiplier: 16 },
-    '6': { name: 'Orcish Cleaver', icon: '⚔️', path: '/hero forge/Items/Weapons/6.png', requirement: { type: 'level', value: 50 }, dpcMultiplier: 32 },
-    '7': { name: 'Divine Hammer', icon: '🔨', path: '/hero forge/Items/Weapons/7.png', requirement: { type: 'level', value: 60 }, dpcMultiplier: 64 },
-    '8': { name: 'Nature\'s Whip', icon: '🌿', path: '/hero forge/Items/Weapons/8.png', requirement: { type: 'level', value: 70 }, dpcMultiplier: 128 },
-    '9': { name: 'Celestial Orb', icon: '✨', path: '/hero forge/Items/Weapons/9.png', requirement: { type: 'level', value: 80 }, dpcMultiplier: 256 },
-    '10': { name: 'Heart Mace', icon: '❤️', path: '/hero forge/Items/Weapons/10.png', requirement: { type: 'level', value: 90 }, dpcMultiplier: 512 },
+    '1': { name: 'Novice Blade', icon: '??', path: '/Hero Forge/Items/Weapons/1.png', requirement: null, dpcMultiplier: 1 },
+    '2': { name: 'Mystic Staff', icon: '??', path: '/Hero Forge/Items/Weapons/2.png', requirement: { type: 'level', value: 10 }, dpcMultiplier: 2 },
+    '3': { name: 'Frost Axe', icon: '??', path: '/Hero Forge/Items/Weapons/3.png', requirement: { type: 'level', value: 20 }, dpcMultiplier: 4 },
+    '4': { name: 'Shadow Daggers', icon: '???', path: '/Hero Forge/Items/Weapons/4.png', requirement: { type: 'level', value: 30 }, dpcMultiplier: 8 },
+    '5': { name: 'Elven Bow', icon: '??', path: '/Hero Forge/Items/Weapons/5.png', requirement: { type: 'level', value: 40 }, dpcMultiplier: 16 },
+    '6': { name: 'Orcish Cleaver', icon: '??', path: '/Hero Forge/Items/Weapons/6.png', requirement: { type: 'level', value: 50 }, dpcMultiplier: 32 },
+    '7': { name: 'Divine Hammer', icon: '??', path: '/Hero Forge/Items/Weapons/7.png', requirement: { type: 'level', value: 60 }, dpcMultiplier: 64 },
+    '8': { name: 'Nature\'s Whip', icon: '??', path: '/Hero Forge/Items/Weapons/8.png', requirement: { type: 'level', value: 70 }, dpcMultiplier: 128 },
+    '9': { name: 'Celestial Orb', icon: '?', path: '/Hero Forge/Items/Weapons/9.png', requirement: { type: 'level', value: 80 }, dpcMultiplier: 256 },
+    '10': { name: 'Heart Mace', icon: '??', path: '/Hero Forge/Items/Weapons/10.png', requirement: { type: 'level', value: 90 }, dpcMultiplier: 512 },
 
     // Chest exclusively found weapons (VERY RARE)
-    '11': { name: 'Mechanical Gauntlet', icon: '🤖', path: '/hero forge/Items/Weapons/11.png', requirement: { type: 'chest', value: true }, dpcMultiplier: 1024 },
-    '12': { name: 'Golden Hammer', icon: '🌹', path: '/hero forge/Items/Weapons/12.png', requirement: { type: 'chest', value: true }, dpcMultiplier: 2048 },
-    '13': { name: 'Electro Staff', icon: '⚡', path: '/hero forge/Items/Weapons/13.png', requirement: { type: 'chest', value: true }, dpcMultiplier: 4096 },
-    '14': { name: 'Void Staff', icon: '🌌', path: '/hero forge/Items/Weapons/14.png', requirement: { type: 'chest', value: true }, dpcMultiplier: 8192 },
-    '15': { name: 'Elemental Trident', icon: '🔱', path: '/hero forge/Items/Weapons/15.png', requirement: { type: 'chest', value: true }, dpcMultiplier: 16384 },
-    '16': { name: 'Soul Reaper', icon: '💀', path: '/hero forge/Items/Weapons/16.png', requirement: { type: 'chest', value: true }, dpcMultiplier: 32768 },
-    '17': { name: 'Cosmic Blades', icon: '🌟', path: '/hero forge/Items/Weapons/17.png', requirement: { type: 'chest', value: true }, dpcMultiplier: 65536 },
+    '11': { name: 'Mechanical Gauntlet', icon: '??', path: '/Hero Forge/Items/Weapons/11.png', requirement: { type: 'chest', value: true }, dpcMultiplier: 1024 },
+    '12': { name: 'Golden Hammer', icon: '??', path: '/Hero Forge/Items/Weapons/12.png', requirement: { type: 'chest', value: true }, dpcMultiplier: 2048 },
+    '13': { name: 'Electro Staff', icon: '?', path: '/Hero Forge/Items/Weapons/13.png', requirement: { type: 'chest', value: true }, dpcMultiplier: 4096 },
+    '14': { name: 'Void Staff', icon: '??', path: '/Hero Forge/Items/Weapons/14.png', requirement: { type: 'chest', value: true }, dpcMultiplier: 8192 },
+    '15': { name: 'Elemental Trident', icon: '??', path: '/Hero Forge/Items/Weapons/15.png', requirement: { type: 'chest', value: true }, dpcMultiplier: 16384 },
+    '16': { name: 'Soul Reaper', icon: '??', path: '/Hero Forge/Items/Weapons/16.png', requirement: { type: 'chest', value: true }, dpcMultiplier: 32768 },
+    '17': { name: 'Cosmic Blades', icon: '??', path: '/Hero Forge/Items/Weapons/17.png', requirement: { type: 'chest', value: true }, dpcMultiplier: 65536 },
 
     // Boss rewards (Blood moon exclusive bosses)
-    '18': { name: 'Genesis Sword', icon: '💫', path: '/hero forge/Items/Weapons/18.png', requirement: { type: 'boss', value: 'skeleton_lord' }, dpcMultiplier: 131072 },
-    '19': { name: 'Reality Breaker', icon: '⚫', path: '/hero forge/Items/Weapons/19.png', requirement: { type: 'bossDefeated', value: 'skeleton_lord' }, dpcMultiplier: 262144 },
-    '20': { name: 'Infinity Edge', icon: '♾️', path: '/hero forge/Items/Weapons/20.png', requirement: { type: 'bossDefeated', value: 'demon_lord' }, dpcMultiplier: 524288 },
-    '21': { name: 'Omnislayer', icon: '🌠', path: '/hero forge/Items/Weapons/21.png', requirement: { type: 'bossDefeated', value: 'death_dragon' }, dpcMultiplier: 1048576 }
+    '18': { name: 'Genesis Sword', icon: '??', path: '/Hero Forge/Items/Weapons/18.png', requirement: { type: 'boss', value: 'skeleton_lord' }, dpcMultiplier: 131072 },
+    '19': { name: 'Reality Breaker', icon: '?', path: '/Hero Forge/Items/Weapons/19.png', requirement: { type: 'bossDefeated', value: 'skeleton_lord' }, dpcMultiplier: 262144 },
+    '20': { name: 'Infinity Edge', icon: '??', path: '/Hero Forge/Items/Weapons/20.png', requirement: { type: 'bossDefeated', value: 'demon_lord' }, dpcMultiplier: 524288 },
+    '21': { name: 'Omnislayer', icon: '??', path: '/Hero Forge/Items/Weapons/21.png', requirement: { type: 'bossDefeated', value: 'death_dragon' }, dpcMultiplier: 1048576 }
   };
 
   // NEW: Enemy definitions with difficulty tiers and varied skill tests
   const ENEMIES = {
     Day: [
-      { id: 'mouse', name: 'Field Mouse', path: '/hero forge/Day/Enemies/Mouse.png', hp: 20, timeLimit: 15, skillTest: 'Quick Click', baseGold: 50, xp: 10, difficulty: 1 },
-      { id: 'slime', name: 'Green Slime', path: '/hero forge/Day/Enemies/Slime.png', hp: 50, timeLimit: 20, skillTest: 'Split Target', baseGold: 100, xp: 25, difficulty: 2 },
-      { id: 'mushroom', name: 'Toxic Mushroom', path: '/hero forge/Day/Enemies/Mushroom.png', hp: 150, timeLimit: 25, skillTest: 'Poison Spores', baseGold: 300, xp: 75, difficulty: 3 },
-      { id: 'wisp', name: 'Forest Wisp', path: '/hero forge/Day/Enemies/Wisp.png', hp: 300, timeLimit: 25, skillTest: 'Erratic Orbit', baseGold: 800, xp: 150, difficulty: 4 },
-      { id: 'goblin', name: 'Scavenger Goblin', path: '/hero forge/Day/Enemies/Goblin.png', hp: 1000, timeLimit: 30, skillTest: 'Ambush', baseGold: 2500, xp: 400, difficulty: 5 }
+      { id: 'mouse', name: 'Field Mouse', path: '/Hero Forge/Day/Enemies/Mouse.png', hp: 20, timeLimit: 15, skillTest: 'Quick Click', baseGold: 50, xp: 10, difficulty: 1 },
+      { id: 'slime', name: 'Green Slime', path: '/Hero Forge/Day/Enemies/Slime.png', hp: 50, timeLimit: 20, skillTest: 'Split Target', baseGold: 100, xp: 25, difficulty: 2 },
+      { id: 'mushroom', name: 'Toxic Mushroom', path: '/Hero Forge/Day/Enemies/Mushroom.png', hp: 150, timeLimit: 25, skillTest: 'Poison Spores', baseGold: 300, xp: 75, difficulty: 3 },
+      { id: 'wisp', name: 'Forest Wisp', path: '/Hero Forge/Day/Enemies/Wisp.png', hp: 300, timeLimit: 25, skillTest: 'Erratic Orbit', baseGold: 800, xp: 150, difficulty: 4 },
+      { id: 'goblin', name: 'Scavenger Goblin', path: '/Hero Forge/Day/Enemies/Goblin.png', hp: 1000, timeLimit: 30, skillTest: 'Ambush', baseGold: 2500, xp: 400, difficulty: 5 }
     ],
     Night: [
-      { id: 'orc', name: 'Orc Marauder', path: '/hero forge/Night/Enemies/Orc.png', hp: 2500, timeLimit: 30, skillTest: 'Brute Force', baseGold: 5000, xp: 800, difficulty: 6 },
-      { id: 'golem', name: 'Stone Golem', path: '/hero forge/Night/Enemies/Golem.png', hp: 8000, timeLimit: 35, skillTest: 'Shield Block', baseGold: 15000, xp: 2000, difficulty: 7 },
-      { id: 'knightreaper', name: 'Knight Reaper', path: '/hero forge/Night/Enemies/KnightReaper.png', hp: 25000, timeLimit: 40, skillTest: 'Combo Sequence', baseGold: 50000, xp: 5000, difficulty: 8 },
-      { id: 'lootgoblin', name: 'Loot Goblin', path: '/hero forge/Night/Enemies/LootGoblin.png', hp: 50000, timeLimit: 15, skillTest: 'Gold Rush', baseGold: 100000, xp: 10000, difficulty: 9 },
-      { id: 'dragon', name: 'Elder Dragon', path: '/hero forge/Night/Enemies/Dragon.png', hp: 100000, timeLimit: 45, skillTest: 'Inferno', baseGold: 250000, xp: 25000, difficulty: 10 }
+      { id: 'orc', name: 'Orc Marauder', path: '/Hero Forge/Night/Enemies/Orc.png', hp: 2500, timeLimit: 30, skillTest: 'Brute Force', baseGold: 5000, xp: 800, difficulty: 6 },
+      { id: 'golem', name: 'Stone Golem', path: '/Hero Forge/Night/Enemies/Golem.png', hp: 8000, timeLimit: 35, skillTest: 'Shield Block', baseGold: 15000, xp: 2000, difficulty: 7 },
+      { id: 'knightreaper', name: 'Knight Reaper', path: '/Hero Forge/Night/Enemies/KnightReaper.png', hp: 25000, timeLimit: 40, skillTest: 'Combo Sequence', baseGold: 50000, xp: 5000, difficulty: 8 },
+      { id: 'lootgoblin', name: 'Loot Goblin', path: '/Hero Forge/Night/Enemies/LootGoblin.png', hp: 50000, timeLimit: 15, skillTest: 'Gold Rush', baseGold: 100000, xp: 10000, difficulty: 9 },
+      { id: 'dragon', name: 'Elder Dragon', path: '/Hero Forge/Night/Enemies/Dragon.png', hp: 100000, timeLimit: 45, skillTest: 'Inferno', baseGold: 250000, xp: 25000, difficulty: 10 }
     ]
   };
 
   // NEW: Merchant Artifacts (Purchasable upgrades)
   const MERCHANT_ITEMS = {
-    '1': { id: '1', name: 'Rusty Pickaxe Head', path: '/hero forge/Items/Artifacts/1.png', type: 'gold', value: 1.1, desc: '+10% Mining Gold', cost: 150, rarity: 'common' },
-    '2': { id: '2', name: 'Wooden Buckler', path: '/hero forge/Items/Artifacts/2.png', type: 'damage', value: 1.2, desc: '+20% Damage', cost: 300, rarity: 'common' },
-    '3': { id: '3', name: 'Apprentice Sandals', path: '/hero forge/Items/Artifacts/3.png', type: 'dps', value: 1.2, desc: '+20% Auto-DPS', cost: 450, rarity: 'common' },
-    '4': { id: '4', name: 'Mining Charm', path: '/hero forge/Items/Artifacts/4.png', type: 'gold', value: 1.5, desc: '+50% Mining Gold', cost: 1500, rarity: 'uncommon' },
-    '5': { id: '5', name: 'Warrior Crest', path: '/hero forge/Items/Artifacts/5.png', type: 'damage', value: 2, desc: '+100% Damage', cost: 2500, rarity: 'uncommon' },
-    '6': { id: '6', name: 'Swift Boots', path: '/hero forge/Items/Artifacts/6.png', type: 'dps', value: 2, desc: '+100% Auto-DPS', cost: 3500, rarity: 'uncommon' },
-    '7': { id: '7', name: 'Golden Scythe', path: '/hero forge/Items/Artifacts/7.png', type: 'gold', value: 3, desc: '+200% Mining Gold', cost: 12000, rarity: 'rare' },
-    '8': { id: '8', name: 'Berserker Mask', path: '/hero forge/Items/Artifacts/8.png', type: 'damage', value: 5, desc: '+400% Damage', cost: 25000, rarity: 'rare' },
-    '9': { id: '9', name: 'Crown of Greed', path: '/hero forge/Items/Artifacts/9.png', type: 'gold', value: 10, desc: '+900% Mining Gold', cost: 150000, rarity: 'epic' },
-    '10': { id: '10', name: 'Divine Sentinel', path: '/hero forge/Items/Artifacts/10.png', type: 'all', value: 5, desc: '+400% All Stats', cost: 2000000, rarity: 'legendary' },
+    '1': { id: '1', name: 'Rusty Pickaxe Head', path: '/Hero Forge/Items/Artifacts/1.png', type: 'gold', value: 1.1, desc: '+10% Mining Gold', cost: 150, rarity: 'common' },
+    '2': { id: '2', name: 'Wooden Buckler', path: '/Hero Forge/Items/Artifacts/2.png', type: 'damage', value: 1.2, desc: '+20% Damage', cost: 300, rarity: 'common' },
+    '3': { id: '3', name: 'Apprentice Sandals', path: '/Hero Forge/Items/Artifacts/3.png', type: 'dps', value: 1.2, desc: '+20% Auto-DPS', cost: 450, rarity: 'common' },
+    '4': { id: '4', name: 'Mining Charm', path: '/Hero Forge/Items/Artifacts/4.png', type: 'gold', value: 1.5, desc: '+50% Mining Gold', cost: 1500, rarity: 'uncommon' },
+    '5': { id: '5', name: 'Warrior Crest', path: '/Hero Forge/Items/Artifacts/5.png', type: 'damage', value: 2, desc: '+100% Damage', cost: 2500, rarity: 'uncommon' },
+    '6': { id: '6', name: 'Swift Boots', path: '/Hero Forge/Items/Artifacts/6.png', type: 'dps', value: 2, desc: '+100% Auto-DPS', cost: 3500, rarity: 'uncommon' },
+    '7': { id: '7', name: 'Golden Scythe', path: '/Hero Forge/Items/Artifacts/7.png', type: 'gold', value: 3, desc: '+200% Mining Gold', cost: 12000, rarity: 'rare' },
+    '8': { id: '8', name: 'Berserker Mask', path: '/Hero Forge/Items/Artifacts/8.png', type: 'damage', value: 5, desc: '+400% Damage', cost: 25000, rarity: 'rare' },
+    '9': { id: '9', name: 'Crown of Greed', path: '/Hero Forge/Items/Artifacts/9.png', type: 'gold', value: 10, desc: '+900% Mining Gold', cost: 150000, rarity: 'epic' },
+    '10': { id: '10', name: 'Divine Sentinel', path: '/Hero Forge/Items/Artifacts/10.png', type: 'all', value: 5, desc: '+400% All Stats', cost: 2000000, rarity: 'legendary' },
   };
 
   // NEW: Environment Cycle logic
@@ -175,19 +178,19 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     if (showChoiceEvent && gameState.event.shown) {
       if (gameState.event.type === 'merchant') {
         return gameState.currentCycle === 'Night' || gameState.currentCycle === 'BloodMoon'
-          ? '/hero forge/Night/Events/DarkMerchant.png'
-          : '/hero forge/Day/Events/Merchant.png';
+          ? '/Hero Forge/Night/Events/DarkMerchant.png'
+          : '/Hero Forge/Day/Events/Merchant.png';
       }
-      return gameState.event.image || '/hero forge/Day/DayMining.png';
+      return gameState.event.image || '/Hero Forge/Day/DayMining.png';
     }
     if (gameState.activeEnemy) {
       return gameState.activeEnemy.path;
     }
     switch (gameState.currentCycle) {
-      case 'BloodMoon': return '/hero forge/BloodMoon/BloodMoonMining.png';
-      case 'Night': return '/hero forge/Night/NightMining.png';
-      case 'Snow': return '/hero forge/Snow/SnowMining.png';
-      default: return '/hero forge/Day/DayMining.png'; // Day
+      case 'BloodMoon': return '/Hero Forge/BloodMoon/BloodMoonMining.png';
+      case 'Night': return '/Hero Forge/Night/NightMining.png';
+      case 'Snow': return '/Hero Forge/Snow/SnowMining.png';
+      default: return '/Hero Forge/Day/DayMining.png'; // Day
     }
   };
 
@@ -331,7 +334,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     {
       id: 'skeleton_lord',
       name: 'Skeleton Lord',
-      path: '/hero forge/BloodMoon/Enemies/SkeletonLord.png',
+      path: '/Hero Forge/BloodMoon/Enemies/SkeletonLord.png',
       health: 5000000,
       goldReward: 500000,
       specialReward: { type: 'weapon', value: '18' },
@@ -345,7 +348,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     {
       id: 'demon_lord',
       name: 'Demon Lord',
-      path: '/hero forge/BloodMoon/Enemies/DemonLord.png',
+      path: '/Hero Forge/BloodMoon/Enemies/DemonLord.png',
       health: 50000000,
       goldReward: 5000000,
       specialReward: { type: 'weapon', value: '19' },
@@ -359,7 +362,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     {
       id: 'death_dragon',
       name: 'Death Dragon',
-      path: '/hero forge/BloodMoon/Enemies/DeathDragon.png',
+      path: '/Hero Forge/BloodMoon/Enemies/DeathDragon.png',
       health: 500000000,
       goldReward: 50000000,
       specialReward: { type: 'weapon', value: '20' },
@@ -373,7 +376,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     {
       id: 'abyss',
       name: 'The Abyss',
-      path: '/hero forge/BloodMoon/Enemies/Abyss.png',
+      path: '/Hero Forge/BloodMoon/Enemies/Abyss.png',
       health: 5000000000,
       goldReward: 500000000,
       specialReward: { type: 'weapon', value: '21' },
@@ -495,8 +498,8 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
   const CHOICE_EVENTS = [
     // DAY
     {
-      text: "🧚 A Friendly Fairy flutters down, offering two sparkling dusts.",
-      image: '/hero forge/Day/Events/FriendlyFairy.png',
+      text: "?? A Friendly Fairy flutters down, offering two sparkling dusts.",
+      image: '/Hero Forge/Day/Events/FriendlyFairy.png',
       cycle: 'Day',
       choices: [
         { text: "Sprinkle Gold Dust (+Gold)", effect: { type: 'goldGain', amount: 0.1 } },
@@ -504,8 +507,8 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
       ]
     },
     {
-      text: "📜 You find an ancient Tome. It hums with magical energy.",
-      image: '/hero forge/Day/Events/Tome.png',
+      text: "?? You find an ancient Tome. It hums with magical energy.",
+      image: '/Hero Forge/Day/Events/Tome.png',
       cycle: 'Day',
       choices: [
         { text: "Study its secrets (Skill Test)", effect: { type: 'skillChallenge', challengeType: 'sequence_challenge' } },
@@ -514,8 +517,8 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     },
     // NIGHT
     {
-      text: "🧙‍♂️ A Mysterious Wizard blocks your path. \"A test of reflexes!\"",
-      image: '/hero forge/Night/Events/MysteryWizard.png',
+      text: "????? A Mysterious Wizard blocks your path. \"A test of reflexes!\"",
+      image: '/Hero Forge/Night/Events/MysteryWizard.png',
       cycle: 'Night',
       choices: [
         { text: "Accept the test!", effect: { type: 'skillChallenge', challengeType: 'rapid_fire' } },
@@ -523,8 +526,8 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
       ]
     },
     {
-      text: "👻 A Friendly Wisp offers to guide you, for a price.",
-      image: '/hero forge/Night/Events/FriendlyWisp.png',
+      text: "?? A Friendly Wisp offers to guide you, for a price.",
+      image: '/Hero Forge/Night/Events/FriendlyWisp.png',
       cycle: 'Night',
       choices: [
         { text: "Follow the Wisp (+Gold)", effect: { type: 'goldGain', amount: 0.2 } },
@@ -533,8 +536,8 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     },
     // SNOW
     {
-      text: "⛄ An enchanted Snowman challenges you to a freezing duel.",
-      image: '/hero forge/Snow/Events/SnowMan.png',
+      text: "? An enchanted Snowman challenges you to a freezing duel.",
+      image: '/Hero Forge/Snow/Events/SnowMan.png',
       cycle: 'Snow',
       choices: [
         { text: "Fight the Snowman!", effect: { type: 'skillChallenge', challengeType: 'timing_challenge' } },
@@ -542,8 +545,8 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
       ]
     },
     {
-      text: "🧊 A lake is completely Frozen Over. Below the ice, something glimmers.",
-      image: '/hero forge/Snow/Events/FrozenOver.png',
+      text: "?? A lake is completely Frozen Over. Below the ice, something glimmers.",
+      image: '/Hero Forge/Snow/Events/FrozenOver.png',
       cycle: 'Snow',
       choices: [
         { text: "Carefully chip the ice (+Gold)", effect: { type: 'goldGain', amount: 0.15 } },
@@ -552,8 +555,8 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     },
     // BLOOD MOON
     {
-      text: "🌌 A terrifying Death Rift tears open reality!",
-      image: '/hero forge/BloodMoon/Events/DeathRift.png',
+      text: "?? A terrifying Death Rift tears open reality!",
+      image: '/Hero Forge/BloodMoon/Events/DeathRift.png',
       cycle: 'BloodMoon',
       choices: [
         { text: "Enter the Rift! (Boss Fight)", effect: { type: 'bossEncounter' } },
@@ -563,39 +566,39 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
   ];
   CHOICE_EVENTS.push({
     text: "A frozen Locked Ice Chest is stuck in the ice...",
-    image: "/hero forge/Snow/Events/LockedIceChest.png",
+    image: "/Hero Forge/Snow/Events/LockedIceChest.png",
     cycle: 'Snow',
     choices: [
-      { text: "🔑 Use Ice Key", effect: { type: 'openChest', keyType: 'ice' } },
-      { text: "🚶 Leave it", effect: { type: 'nothing' } }
+      { text: "?? Use Ice Key", effect: { type: 'openChest', keyType: 'ice' } },
+      { text: "?? Leave it", effect: { type: 'nothing' } }
     ]
   });
 
   // NEW: Additional Fun Events
   CHOICE_EVENTS.push({
-    text: "🎲 You encounter The Gambler. He proposes a high-stakes game. Bet 25% of your gold?",
-    image: "/hero forge/Day/Events/Gambler.png", // Assume we have this or fallback works
+    text: "?? You encounter The Gambler. He proposes a high-stakes game. Bet 25% of your gold?",
+    image: "/Hero Forge/Day/Events/Gambler.png", // Assume we have this or fallback works
     choices: [
-      { text: "🎲 Bet 25% (30% to TRIPLE it)", effect: { type: 'gambler_bet' } },
-      { text: "🚶 Not my style", effect: { type: 'nothing' } }
+      { text: "?? Bet 25% (30% to TRIPLE it)", effect: { type: 'gambler_bet' } },
+      { text: "?? Not my style", effect: { type: 'nothing' } }
     ]
   });
 
   CHOICE_EVENTS.push({
-    text: "🎸 A Traveling Bard offers to play an inspiring tune for 10% of your gold.",
-    image: "/hero forge/Day/Events/TravelingBard.png",
+    text: "?? A Traveling Bard offers to play an inspiring tune for 10% of your gold.",
+    image: "/Hero Forge/Day/Events/TravelingBard.png",
     choices: [
-      { text: "🎸 Pay the Bard (Massive DPS boost)", effect: { type: 'bard_song' } },
-      { text: "🚶 Save my gold", effect: { type: 'nothing' } }
+      { text: "?? Pay the Bard (Massive DPS boost)", effect: { type: 'bard_song' } },
+      { text: "?? Save my gold", effect: { type: 'nothing' } }
     ]
   });
 
   CHOICE_EVENTS.push({
-    text: "🌀 A Mysterious Portal shimmers before you. It could lead anywhere.",
-    image: "/hero forge/Night/Events/Portal.png",
+    text: "?? A Mysterious Portal shimmers before you. It could lead anywhere.",
+    image: "/Hero Forge/Night/Events/Portal.png",
     choices: [
-      { text: "🌀 Step through", effect: { type: 'mysterious_portal' } },
-      { text: "🚶 Ignore it", effect: { type: 'nothing' } }
+      { text: "?? Step through", effect: { type: 'mysterious_portal' } },
+      { text: "?? Ignore it", effect: { type: 'nothing' } }
     ]
   });
 
@@ -1074,9 +1077,41 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
 
   // Attack function - UPDATED with Critical Hits, Gem Hunter, and XP
   const attack = useCallback((event) => {
+    // === NEW: Anti-cheat Click Tracking ===
+    const now = Date.now();
+    const clickTimes = clickTimesRef.current;
+    clickTimes.push(now);
+
+    // Keep only clicks within the last 1 second
+    while (clickTimes.length > 0 && now - clickTimes[0] > 1000) {
+      clickTimes.shift();
+    }
+
+    // If more than 15 clicks in 1 second, trigger penalty
+    if (clickTimes.length > 15) {
+      clickTimesRef.current = []; // Reset tracked clicks to prevent continuous firing
+      addToast('⚠️ WEAPON BROKEN! You swung too wildly and broke your gear! Paid 50% of gold for repairs.', 'error');
+
+      setGameState(prev => ({
+        ...prev,
+        gold: Math.floor(prev.gold * 0.5)
+      }));
+      // Optional: Add a screen shake or visual indication here if desired
+      if (document.getElementById('game-container-main')) {
+        document.getElementById('game-container-main').classList.add('animate-shake');
+        setTimeout(() => {
+          if (document.getElementById('game-container-main')) {
+            document.getElementById('game-container-main').classList.remove('animate-shake');
+          }
+        }, 500);
+      }
+      return; // Stop the attack from giving rewards
+    }
+    // ======================================
+
     gainXP(1); // NEW: Gain 1 XP per click
 
-    let baseValue = (activeBoss && bossHealth > 0) ? dpc() : gpc();
+    let baseValue = gpc();
     let gain = baseValue;
     let isCrit = false;
 
@@ -1096,16 +1131,13 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
       const gemChance = SKILL_UPGRADES['gem_hunter'].effect(gemHunterLevel).value;
       if (Math.random() < gemChance) {
         setGameState(prev => ({ ...prev, skillPoints: prev.skillPoints + 1 }));
-        addToast('💎 You found a Skill Point!', 'success');
+        addToast('?? You found a Skill Point!', 'success');
       }
     }
 
     // If boss is active, deal damage to boss instead
-    if (activeBoss && bossHealth > 0) {
-      attackBoss(gain);
-    } else {
-      addGold(gain);
-    }
+    // NOTE: Boss damage has been moved purely to the weapon attack!
+    addGold(gain);
 
     // NEW: Key Drop Logic (0.05% chance)
     if (Math.random() < 0.0005) {
@@ -1116,7 +1148,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         else if (prev.currentCycle === 'Snow') keyType = 'ice';
 
         if (keyType && (!prev.keys || prev.keys[keyType] < 1)) {
-          addToast(`🔑 Found a ${keyType.charAt(0).toUpperCase() + keyType.slice(1)} Key!`, 'success');
+          addToast(`?? Found a ${keyType.charAt(0).toUpperCase() + keyType.slice(1)} Key!`, 'success');
           return {
             ...prev,
             keys: {
@@ -1172,8 +1204,8 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
       const x = event.clientX - rect.left;
       const y = event.clientY - rect.top;
       const color = activeBoss ? '#ff4444' : isCrit ? '#ff00ff' : '#ffd700'; // Purple for Crit
-      const text = `${activeBoss ? 'DMG: ' : '+'}${fmt(gain)}${isCrit ? ' 💥' : ''}`;
-      const icon = activeBoss ? '⚔️' : '⛏️';
+      const text = `${activeBoss ? 'DMG: ' : '+'}${fmt(gain)}${isCrit ? ' ??' : ''}`;
+      const icon = activeBoss ? '??' : '??';
       addFloatingNumber(x, y, text, color, icon);
     }
 
@@ -1192,7 +1224,34 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
 
   // NEW: Weapon Attack logic for Enemies
   const attackEnemy = useCallback((event) => {
-    if (!gameState.activeEnemy) return;
+    // === NEW: Anti-cheat Click Tracking for Weapons ===
+    const now = Date.now();
+    const clickTimes = clickTimesRef.current;
+    clickTimes.push(now);
+
+    while (clickTimes.length > 0 && now - clickTimes[0] > 1000) {
+      clickTimes.shift();
+    }
+
+    if (clickTimes.length > 15) {
+      clickTimesRef.current = [];
+      addToast('⚠️ WEAPON BROKEN! You swung too quickly and broke your gear! Paid 50% of gold for repairs.', 'error');
+
+      setGameState(prev => ({
+        ...prev,
+        gold: Math.floor(prev.gold * 0.5)
+      }));
+      if (document.getElementById('game-container-main')) {
+        document.getElementById('game-container-main').classList.add('animate-shake');
+        setTimeout(() => {
+          if (document.getElementById('game-container-main')) {
+            document.getElementById('game-container-main').classList.remove('animate-shake');
+          }
+        }, 500);
+      }
+      return;
+    }
+    // ===================================================
 
     let gain = dpc();
     let isCrit = false;
@@ -1205,6 +1264,29 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         isCrit = true;
       }
     }
+
+    // NEW: Allow weapon to hit Bosses!
+    if (activeBoss && bossHealth > 0) {
+      attackBoss(gain);
+      // Floating number for Boss
+      if (event && event.currentTarget) {
+        const rect = event.currentTarget.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        const text = `DMG: ${fmt(gain)}${isCrit ? ' 💥' : ''}`;
+        const color = isCrit ? '#ff00ff' : '#ff4444';
+        addFloatingNumber(x, y, text, color, '⚔️');
+      }
+      try {
+        const audio = new Audio('/sounds/ding.mp3');
+        audio.volume = 0.4;
+        audio.play().catch(() => { });
+      } catch (e) { }
+      return;
+    }
+
+    // Otherwise, hit normal enemy
+    if (!gameState.activeEnemy) return;
 
     setGameState(prev => {
       const enemy = prev.activeEnemy;
@@ -1236,9 +1318,9 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
       const rect = event.currentTarget.getBoundingClientRect();
       const x = event.clientX - rect.left;
       const y = event.clientY - rect.top;
-      const text = `DMG: ${fmt(gain)}${isCrit ? ' 💥' : ''}`;
+      const text = `DMG: ${fmt(gain)}${isCrit ? ' ??' : ''}`;
       const color = isCrit ? '#ff00ff' : '#ff4444';
-      addFloatingNumber(x, y, text, color, '⚔️');
+      addFloatingNumber(x, y, text, color, '??');
     }
     try {
       const audio = new Audio('/sounds/ding.mp3');
@@ -1593,11 +1675,11 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
             const actualSteal = Math.max(100, stealAmount);
             newState.gold += actualSteal;
             newState.totalGold += actualSteal;
-            addToast(`⚔️ VICTORY! You raided ${oppName} and stole ${fmt(actualSteal)} gold!`, 'success');
+            addToast(`?? VICTORY! You raided ${oppName} and stole ${fmt(actualSteal)} gold!`, 'success');
           } else {
             const lostAmount = Math.floor(prev.gold * 0.2); // Lose 20%
             newState.gold = Math.max(0, prev.gold - lostAmount);
-            addToast(`⚔️ DEFEAT! ${oppName} was too strong! You lost ${fmt(lostAmount)} gold escaping!`, 'error');
+            addToast(`?? DEFEAT! ${oppName} was too strong! You lost ${fmt(lostAmount)} gold escaping!`, 'error');
           }
           break;
 
@@ -1624,9 +1706,9 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
 
         case 'cosmicRift':
           const riftRewards = [
-            { gold: 0.5, message: '🌟 The rift showered you with cosmic gold!' },
-            { dpc: 2.0, message: '⚡ Cosmic energy enhances your power!' },
-            { masterLevel: 1, message: '🌌 You gained cosmic understanding!' }
+            { gold: 0.5, message: '?? The rift showered you with cosmic gold!' },
+            { dpc: 2.0, message: '? Cosmic energy enhances your power!' },
+            { masterLevel: 1, message: '?? You gained cosmic understanding!' }
           ];
           const riftReward = riftRewards[Math.floor(Math.random() * riftRewards.length)];
 
@@ -1655,7 +1737,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
             if (unownedChestWeapons.length > 0 && Math.random() < 0.05) {
               const newWeapon = unownedChestWeapons[0];
               newState.unlockedWeapons = [...newState.unlockedWeapons, newWeapon];
-              addToast(`🔓 Chest Opened! Found ${fmt(chestGold)} gold and a VERY RARE WEAPON: ${WEAPONS[newWeapon].name}!`, 'success');
+              addToast(`?? Chest Opened! Found ${fmt(chestGold)} gold and a VERY RARE WEAPON: ${WEAPONS[newWeapon].name}!`, 'success');
             } else {
               // grant a rare item
               const artIds = Object.keys(MERCHANT_ITEMS);
@@ -1664,10 +1746,10 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
 
               if (!newState.inventory.includes(randomArtId)) {
                 newState.inventory = [...newState.inventory, randomArtId];
-                addToast(`🔓 Chest Opened! Found ${fmt(chestGold)} gold and ${item.name}!`, 'success');
+                addToast(`?? Chest Opened! Found ${fmt(chestGold)} gold and ${item.name}!`, 'success');
               } else {
                 newState.dpcMult *= 2;
-                addToast(`🔓 Chest Opened! Found ${fmt(chestGold)} gold and a 2x Power Boost!`, 'success');
+                addToast(`?? Chest Opened! Found ${fmt(chestGold)} gold and a 2x Power Boost!`, 'success');
               }
             }
           } else {
@@ -1677,9 +1759,9 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
 
         case 'carnival':
           const carnivalGames = [
-            { type: 'big_win', gold: 0.3, message: '🎪 JACKPOT! You won big at the carnival!' },
-            { type: 'skill_point', skill: 1, message: '🎯 Your carnival skills earned you a skill point!' },
-            { type: 'small_prize', gold: 0.1, message: '🎈 You won a small carnival prize!' }
+            { type: 'big_win', gold: 0.3, message: '?? JACKPOT! You won big at the carnival!' },
+            { type: 'skill_point', skill: 1, message: '?? Your carnival skills earned you a skill point!' },
+            { type: 'small_prize', gold: 0.1, message: '?? You won a small carnival prize!' }
           ];
           const carnivalResult = carnivalGames[Math.floor(Math.random() * carnivalGames.length)];
 
@@ -1708,26 +1790,26 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
               mult: stormEffect.mult,
               until: Date.now() + stormEffect.duration
             }];
-            addToast(`⚡ Energy storm grants ${stormEffect.mult}x DPS for ${stormEffect.duration / 1000}s!`, 'success');
+            addToast(`? Energy storm grants ${stormEffect.mult}x DPS for ${stormEffect.duration / 1000}s!`, 'success');
           } else if (stormEffect.type === 'gold_rain') {
             const stormGold = Math.max(15000, prev.totalGold * stormEffect.gold);
             newState.gold += stormGold;
             newState.totalGold += stormGold;
-            addToast(`💰 Energy storm brings gold rain: ${fmt(stormGold)}!`, 'success');
+            addToast(`?? Energy storm brings gold rain: ${fmt(stormGold)}!`, 'success');
           } else if (stormEffect.type === 'energy_overload') {
             newState.dpcMult *= stormEffect.mult;
-            addToast(`⚡ Permanent energy overload! +50% attack power!`, 'success');
+            addToast(`? Permanent energy overload! +50% attack power!`, 'success');
           }
           break;
 
         case 'luckyWheel':
           const wheelOutcomes = [
-            { type: 'gold', amount: 0.5, message: '🎰 JACKPOT! Huge gold bonus!' },
-            { type: 'gold', amount: 0.2, message: '🎰 Big win! Gold bonus!' },
-            { type: 'gold', amount: 0.1, message: '🎰 Nice! Small gold bonus!' },
-            { type: 'dpc', mult: 2, message: '🎰 Amazing! Double click power!' },
-            { type: 'boon', mult: 4, duration: 90000, message: '🎰 Incredible! Temporary super boost!' },
-            { type: 'nothing', message: '🎰 Almost! Better luck next time!' }
+            { type: 'gold', amount: 0.5, message: '?? JACKPOT! Huge gold bonus!' },
+            { type: 'gold', amount: 0.2, message: '?? Big win! Gold bonus!' },
+            { type: 'gold', amount: 0.1, message: '?? Nice! Small gold bonus!' },
+            { type: 'dpc', mult: 2, message: '?? Amazing! Double click power!' },
+            { type: 'boon', mult: 4, duration: 90000, message: '?? Incredible! Temporary super boost!' },
+            { type: 'nothing', message: '?? Almost! Better luck next time!' }
           ];
           const wheelResult = wheelOutcomes[Math.floor(Math.random() * wheelOutcomes.length)];
 
@@ -1761,10 +1843,10 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
             const winnings = betAmount * 3;
             newState.gold += winnings;
             newState.totalGold += (winnings - betAmount);
-            addToast(`🎲 WIN! You won ${fmt(winnings)} gold!`, 'success');
+            addToast(`?? WIN! You won ${fmt(winnings)} gold!`, 'success');
           } else {
             // Lose
-            addToast(`🎲 LOSS. You lost ${fmt(betAmount)} gold.`, 'error');
+            addToast(`?? LOSS. You lost ${fmt(betAmount)} gold.`, 'error');
           }
           break;
 
@@ -1778,13 +1860,13 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
             mult: 5,
             until: Date.now() + 300000 // 5 minutes
           }];
-          addToast(`🎸 The Bard plays an epic tune! Paid ${fmt(songCost)} gold for 5x DPS for 5 minutes!`, 'success');
+          addToast(`?? The Bard plays an epic tune! Paid ${fmt(songCost)} gold for 5x DPS for 5 minutes!`, 'success');
           break;
 
         case 'mysterious_portal':
           if (Math.random() < 0.5) {
             // Mini boss
-            addToast('🌀 The portal teleported you directly to a Boss!', 'warning');
+            addToast('?? The portal teleported you directly to a Boss!', 'warning');
             setTimeout(() => {
               const availableBosses = BOSS_ENCOUNTERS.filter(boss => checkUnlockRequirement(boss.requirement));
               if (availableBosses.length > 0) {
@@ -1801,7 +1883,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
             const item = MERCHANT_ITEMS[randomArtId];
 
             newState.inventory = [...newState.inventory, randomArtId];
-            addToast(`🌀 The portal spat out an item! You gained ${item.name}!`, 'success');
+            addToast(`?? The portal spat out an item! You gained ${item.name}!`, 'success');
           }
           break;
 
@@ -1835,7 +1917,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         case 'loseGold':
           const loss = Math.max(100, prev.totalGold * effect.amount);
           newState.gold = Math.max(0, newState.gold - loss);
-          addToast(`👺 Goblin stole ${fmt(loss)} gold!`, 'error');
+          addToast(`?? Goblin stole ${fmt(loss)} gold!`, 'error');
           break;
 
         case 'goblinPrank':
@@ -1847,7 +1929,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
             mult: 0.5,
             until: Date.now() + 30000 // 30s debuff
           }];
-          addToast('👺 Goblin greased your weapon! Damage halved for 30s!', 'warning');
+          addToast('?? Goblin greased your weapon! Damage halved for 30s!', 'warning');
           break;
 
         case 'shrineGamble':
@@ -1858,17 +1940,17 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
               mult: 3,
               until: Date.now() + 60000
             }];
-            addToast('🙏 The shrine blesses you! 3x DPS for 60s!', 'success');
+            addToast('?? The shrine blesses you! 3x DPS for 60s!', 'success');
           } else {
             newState.gold = Math.floor(newState.gold * 0.5);
-            addToast('💀 The shrine curses you! Lost 50% of current gold!', 'error');
+            addToast('?? The shrine curses you! Lost 50% of current gold!', 'error');
           }
           break;
 
         case 'repairCost':
           const repairCost = Math.max(500, prev.totalGold * effect.amount);
           newState.gold = Math.max(0, newState.gold - repairCost);
-          addToast(`🛠️ Repairs cost ${fmt(repairCost)} gold.`, 'info');
+          addToast(`??? Repairs cost ${fmt(repairCost)} gold.`, 'info');
           break;
 
         case 'debuffDPS':
@@ -1879,7 +1961,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
             mult: effect.mult,
             until: Date.now() + effect.duration
           }];
-          addToast(`⚡ Gear damaged! DPS reduced by 50% for ${(effect.duration / 1000)}s!`, 'error');
+          addToast(`? Gear damaged! DPS reduced by 50% for ${(effect.duration / 1000)}s!`, 'error');
           break;
 
         case 'mysteryBox':
@@ -1895,16 +1977,16 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                 mult: 10,
                 until: Date.now() + 120000
               }];
-              addToast('💎 JACKPOT! 10x Power for 2 mins!', 'success');
+              addToast('?? JACKPOT! 10x Power for 2 mins!', 'success');
             } else if (roll < 0.5) {
               // Medium
               const boxGold = prev.totalGold * 0.5;
               newState.gold += boxGold;
               newState.totalGold += boxGold;
-              addToast(`📦 Box contained ${fmt(boxGold)} gold!`, 'success');
+              addToast(`?? Box contained ${fmt(boxGold)} gold!`, 'success');
             } else {
               // Dud
-              addToast('📦 The box was empty...', 'warning');
+              addToast('?? The box was empty...', 'warning');
             }
           } else {
             addToast('Not enough Skill Points!', 'error');
@@ -2009,11 +2091,11 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         clickerAchievements: clickerAchievements
       });
 
-      console.log('✅ Enhanced clicker game saved successfully to Firebase');
+      console.log('? Enhanced clicker game saved successfully to Firebase');
       lastSaveRef.current = Date.now();
 
     } catch (error) {
-      console.error('⚠️ Error saving clicker game to Firebase:', error);
+      console.error('?? Error saving clicker game to Firebase:', error);
       addToast('Save failed! Please try again!', 'error');
     } finally {
       setSaveInProgress(false);
@@ -2025,10 +2107,10 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     if (isLoaded) return;
 
     try {
-      console.log('📄 Loading clicker game from Firebase...');
+      console.log('?? Loading clicker game from Firebase...');
 
       if (!studentData?.clickerGameData) {
-        console.log('🎮 No existing game data found, starting new game for student');
+        console.log('?? No existing game data found, starting new game for student');
         setIsLoaded(true);
         addToast('New adventure begins! Welcome to Hero Forge!', 'success');
         return;
@@ -2037,7 +2119,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
       const data = studentData.clickerGameData;
 
       if (data.version !== '4.0') {
-        console.log('🎮 Version upgrade to 4.0, resetting game state for new Hero Forge update');
+        console.log('?? Version upgrade to 4.0, resetting game state for new Hero Forge update');
         setIsLoaded(true);
         addToast('Hero Forge updated! Progress reset for the new update!', 'success');
         return; // Will keep the default initial state
@@ -2136,10 +2218,10 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
 
       setIsLoaded(true);
 
-      console.log('✅ Enhanced clicker game loaded successfully from Firebase');
+      console.log('? Enhanced clicker game loaded successfully from Firebase');
 
     } catch (error) {
-      console.error('⚠️ Error loading clicker game from Firebase:', error);
+      console.error('?? Error loading clicker game from Firebase:', error);
       setIsLoaded(true);
       addToast('Load failed, starting new game!', 'warning');
     }
@@ -2165,7 +2247,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     const interval = setInterval(() => {
       const now = Date.now();
       if (now - lastSaveRef.current > 25000) {
-        console.log('⏰ Auto-saving enhanced clicker game...');
+        console.log('? Auto-saving enhanced clicker game...');
         saveToFirebase();
       }
     }, 30000);
@@ -2439,7 +2521,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
           <div className={`${currentTheme.panel} rounded-xl shadow-2xl w-full max-w-md p-6 border-4 border-purple-400`}>
             <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold text-purple-600 mb-2">🎯 {challengeData.name}</h2>
+              <h2 className="text-2xl font-bold text-purple-600 mb-2">?? {challengeData.name}</h2>
               <p className="text-gray-700 mb-4">{challengeData.description}</p>
               <div className="text-lg font-semibold text-green-600">
                 Reward: {fmt(challengeData.goldReward)} gold + 1 skill point
@@ -2485,7 +2567,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-4">
               <div className="w-12 h-12 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 flex items-center justify-center text-2xl">
-                ⚔️
+                ??
               </div>
               <div>
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">
@@ -2507,31 +2589,31 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                   </div>
                   {gameState.prestige > 0 && (
                     <div className="inline-block px-3 py-1 rounded-full text-sm font-bold text-yellow-400 bg-yellow-400 bg-opacity-20 border-2 border-yellow-400 shadow-yellow-400/50 shadow-lg">
-                      Prestige {gameState.prestige} ⭐
+                      Prestige {gameState.prestige} ?
                     </div>
                   )}
                   {gameState.masterLevel > 0 && (
                     <div className="inline-block px-3 py-1 rounded-full text-sm font-bold text-purple-300 bg-purple-300 bg-opacity-20 border-2 border-purple-300 shadow-purple-300/50 shadow-lg">
-                      Master Level {gameState.masterLevel} 🌌
+                      Master Level {gameState.masterLevel} ??
                     </div>
                   )}
                   {(gameState.keys?.normal > 0 || gameState.keys?.dark > 0 || gameState.keys?.ice > 0) && (
                     <div className="flex items-center space-x-2 ml-2">
                       {gameState.keys.normal > 0 && (
                         <div className="flex items-center bg-gray-800/80 px-2 py-1 rounded-lg border border-gray-600 shadow-lg" title="Normal Keys">
-                          <img src="/hero forge/Items/Keys/Key.png" alt="Normal Key" className="w-5 h-5 object-contain mr-1" />
+                          <img src="/Hero Forge/Items/Keys/Key.png" alt="Normal Key" className="w-5 h-5 object-contain mr-1" />
                           <span className="font-bold text-yellow-400 text-sm">{gameState.keys.normal}</span>
                         </div>
                       )}
                       {gameState.keys.dark > 0 && (
                         <div className="flex items-center bg-gray-800/80 px-2 py-1 rounded-lg border border-purple-600 shadow-lg" title="Dark Keys">
-                          <img src="/hero forge/Items/Keys/Dark Key.png" alt="Dark Key" className="w-5 h-5 object-contain mr-1" />
+                          <img src="/Hero Forge/Items/Keys/Dark Key.png" alt="Dark Key" className="w-5 h-5 object-contain mr-1" />
                           <span className="font-bold text-purple-400 text-sm">{gameState.keys.dark}</span>
                         </div>
                       )}
                       {gameState.keys.ice > 0 && (
                         <div className="flex items-center bg-gray-800/80 px-2 py-1 rounded-lg border border-blue-400 shadow-lg" title="Ice Keys">
-                          <img src="/hero forge/Items/Keys/Ice Key.png" alt="Ice Key" className="w-5 h-5 object-contain mr-1" />
+                          <img src="/Hero Forge/Items/Keys/Ice Key.png" alt="Ice Key" className="w-5 h-5 object-contain mr-1" />
                           <span className="font-bold text-blue-300 text-sm">{gameState.keys.ice}</span>
                         </div>
                       )}
@@ -2547,7 +2629,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                 onClick={() => setShowScoreboard(true)}
                 className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all font-bold flex items-center gap-2"
               >
-                <span>🏆</span> Scoreboard
+                <span>??</span> Scoreboard
               </button>
 
               {/* NEW: Music Toggle Button */}
@@ -2559,7 +2641,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                   }`}
                 title={gameState.musicEnabled ? 'Turn off music' : 'Turn on music'}
               >
-                {gameState.musicEnabled ? '🎵 Music On' : '🔇 Music Off'}
+                {gameState.musicEnabled ? '?? Music On' : '?? Music Off'}
               </button>
 
               {canPrestige() && (
@@ -2567,20 +2649,20 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                   onClick={doPrestige}
                   className="bg-gradient-to-r from-yellow-500 to-orange-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all font-bold prestige-glow"
                 >
-                  ⭐ Prestige (+{calculatePrestigeGain()})
+                  ? Prestige (+{calculatePrestigeGain()})
                 </button>
               )}
               <button
                 onClick={() => setShowSkillShop(true)}
                 className="bg-gradient-to-r from-teal-500 to-emerald-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all"
               >
-                💎 Skills ({gameState.skillPoints})
+                ?? Skills ({gameState.skillPoints})
               </button>
               <button
                 onClick={() => setShowUnlockables(!showUnlockables)}
                 className="bg-gradient-to-r from-purple-500 to-pink-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all"
               >
-                🎨 Customize
+                ?? Customize
               </button>
               <button
                 onClick={manualSave}
@@ -2590,7 +2672,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                   : 'bg-gray-500 hover:bg-gray-600'
                   } text-white`}
               >
-                {saveInProgress ? '⏳ Saving...' : '💾 Save'}
+                {saveInProgress ? '? Saving...' : '?? Save'}
               </button>
             </div>
           </div>
@@ -2602,13 +2684,13 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
             <div className={`${currentTheme.panel} w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]`}>
               <div className="p-6 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-yellow-500/10 to-orange-500/10">
                 <h2 className="text-2xl font-black text-yellow-600 flex items-center gap-2">
-                  <span>🏆</span> Global Leaderboard
+                  <span>??</span> Global Leaderboard
                 </h2>
                 <button
                   onClick={() => setShowScoreboard(false)}
                   className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 text-gray-600 transition-colors"
                 >
-                  ✕
+                  ?
                 </button>
               </div>
 
@@ -2638,7 +2720,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
             <div className={`${currentTheme.panel} rounded-xl shadow-2xl w-full max-w-4xl p-6 border-4 border-teal-400 max-h-[90vh] overflow-y-auto`}>
               <div className="flex justify-between items-center mb-6">
                 <div>
-                  <h2 className="text-3xl font-bold text-teal-600">💎 Skill Shop</h2>
+                  <h2 className="text-3xl font-bold text-teal-600">?? Skill Shop</h2>
                   <p className="text-gray-600">Spend Skill Points to unlock permanent upgrades!</p>
                 </div>
                 <div className="text-right">
@@ -2694,14 +2776,14 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         <div className="flex flex-col items-center justify-center min-h-[70vh] mt-8 max-w-7xl mx-auto">
           {/* Prominent Gold Display */}
           <div className="bg-gray-900 px-10 py-4 rounded-full border-2 border-yellow-500 shadow-[0_0_30px_rgba(234,179,8,0.3)] z-20 flex items-center gap-4 mb-4 transform hover:scale-105 transition-transform cursor-default">
-            <span className="text-5xl drop-shadow-lg">💰</span>
+            <span className="text-5xl drop-shadow-lg">??</span>
             <span className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 to-yellow-600 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
               {fmt(Math.floor(gameState.totalGold))}
             </span>
           </div>
 
           <p className="text-white bg-gray-900 px-6 py-2 rounded-full text-lg font-bold shadow-xl border border-gray-700 mb-8 uppercase tracking-widest text-sm z-20">
-            {activeBoss ? `⚠️ Fending off ${activeBoss.name}! ⚠️` : 'Mine for resources'}
+            {activeBoss ? `?? Fending off ${activeBoss.name}! ??` : 'Mine for resources'}
           </p>
 
           <div className="relative z-10 w-full flex flex-col lg:flex-row gap-8 items-start justify-center p-4">
@@ -2717,7 +2799,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                 }}
               >
                 <img
-                  src={`/hero forge/Items/Pickaxes/level${gameState.pickaxeLevel}.png`}
+                  src={`/Hero Forge/Items/Pickaxes/level${gameState.pickaxeLevel}.png`}
                   alt="Pickaxe"
                   className="w-40 h-40 object-contain filter drop-shadow-2xl hover:drop-shadow-[0_0_15px_rgba(255,255,255,0.5)] transition-all z-20 relative"
                   onError={(e) => {
@@ -2725,7 +2807,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                     e.target.nextSibling.style.display = 'block';
                   }}
                 />
-                <div className="text-8xl hidden">⛏️</div>
+                <div className="text-8xl hidden">??</div>
 
                 {/* Enhanced decorative elements */}
                 <div className="absolute top-4 left-12 w-4 h-4 border-2 border-yellow-400 rounded transform rotate-45 opacity-70 animate-pulse"></div>
@@ -2756,7 +2838,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                   <p className="text-xs text-green-400 font-semibold">+{currentWeapon.dpcMultiplier}x DMG</p>
 
                   {/* Equipped Artifacts */}
-                  {gameState.equippedArtifacts.some(a => a) && (
+                  {gameState.equippedArtifacts && gameState.equippedArtifacts.some(a => a) && (
                     <div className="border-t border-gray-700/50 mt-3 pt-3 w-full flex justify-center gap-2">
                       {gameState.equippedArtifacts.map((artId, idx) => {
                         if (!artId) return null;
@@ -2803,7 +2885,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                 {/* NEW: Inline Choice Event Overlay */}
                 {showChoiceEvent && gameState.event && (
                   <div className="absolute inset-0 z-40 bg-black/90 flex flex-col items-center justify-center p-6 text-center overflow-y-auto w-full h-full">
-                    <h2 className="text-3xl font-black text-yellow-400 mb-2 drop-shadow-lg tracking-wider">⚡ Adventure Event ⚡</h2>
+                    <h2 className="text-3xl font-black text-yellow-400 mb-2 drop-shadow-lg tracking-wider">? Adventure Event ?</h2>
 
                     <div className="w-full max-w-md mb-4 bg-black/50 p-2 rounded-lg border border-yellow-500/30">
                       <div className="flex justify-between text-xs font-bold text-yellow-500 mb-1 px-1">
@@ -2855,7 +2937,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                               </div>
                               <div className="text-[10px] font-semibold text-blue-300 text-center mb-1 leading-tight">{item.desc}</div>
                               <div className={`font-black text-sm bg-black/80 px-4 py-1.5 rounded-full w-full text-center border ${canAfford ? 'text-yellow-400 border-yellow-500/30' : 'text-red-500 border-red-500/30'}`}>
-                                💰 {fmt(item.cost)}
+                                ?? {fmt(item.cost)}
                               </div>
                             </div>
                           );
@@ -2882,10 +2964,10 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                   <div className="absolute top-4 left-1/2 transform -translate-x-1/2 w-3/4 max-w-md bg-black/80 p-3 rounded-xl border-2 border-red-500/50 shadow-[0_0_20px_rgba(255,0,0,0.3)] z-30 flex flex-col items-center">
                     <div className="w-full flex justify-between items-center mb-1 px-2">
                       <div className="text-xl font-bold text-red-400 flex items-center gap-2">
-                        ⚔️ {gameState.activeEnemy.name}
+                        ?? {gameState.activeEnemy.name}
                       </div>
                       <div className={`text-sm font-bold ${enemyTimeLeft <= 5 ? 'text-red-500 animate-pulse' : 'text-yellow-400'}`}>
-                        ⏰ {enemyTimeLeft}s
+                        ? {enemyTimeLeft}s
                       </div>
                     </div>
                     <div className="w-full h-4 bg-gray-800 rounded-full overflow-hidden border border-gray-600 relative">
@@ -2911,28 +2993,28 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                 <div className="flex justify-around items-center mb-4 flex-wrap gap-4">
                   <div className="flex flex-col items-center hover:scale-110 transition-transform" title="Mining Power (Gold per Click)">
                     <div className="w-12 h-12 rounded-full bg-yellow-900/40 border border-yellow-500/30 flex items-center justify-center mb-2 shadow-inner">
-                      <span className="text-xl drop-shadow-md">⛏️</span>
+                      <span className="text-xl drop-shadow-md">??</span>
                     </div>
                     <span className="text-base font-black text-white drop-shadow-md">{fmt(gpc())}</span>
                   </div>
 
                   <div className="flex flex-col items-center hover:scale-110 transition-transform" title="Damage per Click">
                     <div className="w-12 h-12 rounded-full bg-red-900/40 border border-red-500/30 flex items-center justify-center mb-2 shadow-inner">
-                      <span className="text-xl drop-shadow-md">⚔️</span>
+                      <span className="text-xl drop-shadow-md">??</span>
                     </div>
                     <span className="text-base font-black text-white drop-shadow-md">{fmt(dpc())}</span>
                   </div>
 
                   <div className="flex flex-col items-center hover:scale-110 transition-transform" title="Attacks">
                     <div className="w-12 h-12 rounded-full bg-gray-900/40 border border-gray-500/30 flex items-center justify-center mb-2 shadow-inner">
-                      <span className="text-xl drop-shadow-md">🎯</span>
+                      <span className="text-xl drop-shadow-md">??</span>
                     </div>
                     <span className="text-base font-black text-white drop-shadow-md">{gameState.attacks.toLocaleString()}</span>
                   </div>
 
                   <div className="flex flex-col items-center hover:scale-110 transition-transform" title="Damage per Second">
                     <div className="w-12 h-12 rounded-full bg-blue-900/40 border border-blue-500/30 flex items-center justify-center mb-2 shadow-inner">
-                      <span className="text-xl drop-shadow-md">⚡</span>
+                      <span className="text-xl drop-shadow-md">?</span>
                     </div>
                     <span className="text-base font-black text-white drop-shadow-md">{fmt(dps())}</span>
                   </div>
@@ -2940,7 +3022,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                   {gameState.skillPoints > 0 && (
                     <div className="flex flex-col items-center hover:scale-110 transition-transform" title="Skill Points">
                       <div className="w-12 h-12 rounded-full bg-emerald-900/40 border border-emerald-500/30 flex items-center justify-center mb-2 shadow-inner">
-                        <span className="text-xl drop-shadow-md">💎</span>
+                        <span className="text-xl drop-shadow-md">??</span>
                       </div>
                       <span className="text-base font-black text-emerald-400 drop-shadow-md">{gameState.skillPoints}</span>
                     </div>
@@ -2949,7 +3031,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                   {gameState.prestige > 0 && (
                     <div className="flex flex-col items-center hover:scale-110 transition-transform" title="Prestige">
                       <div className="w-12 h-12 rounded-full bg-purple-900/40 border border-purple-500/30 flex items-center justify-center mb-2 shadow-inner">
-                        <span className="text-xl drop-shadow-md">⭐</span>
+                        <span className="text-xl drop-shadow-md">?</span>
                       </div>
                       <span className="text-base font-black text-purple-400 drop-shadow-md">{gameState.prestige}</span>
                     </div>
@@ -2958,13 +3040,13 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
 
                 {/* Stat Key at the bottom */}
                 <div className="pt-3 border-t border-gray-600/50 flex justify-center flex-wrap gap-x-6 gap-y-2 text-[10px] uppercase tracking-wider text-gray-400 font-semibold bg-black/30 rounded-xl p-2">
-                  <span className="flex items-center gap-1"><span className="text-sm">⛏️</span> Mining Pwr</span>
-                  <span className="flex items-center gap-1"><span className="text-sm">⚔️</span> Dmg/Click</span>
-                  <span className="flex items-center gap-1"><span className="text-sm">🎯</span> Attacks</span>
-                  <span className="flex items-center gap-1"><span className="text-sm">⚡</span> Dmg/Sec</span>
-                  <span className="flex items-center gap-1"><span className="text-sm">💰</span> Total Gold</span>
-                  {gameState.skillPoints > 0 && <span className="flex items-center gap-1"><span className="text-sm">💎</span> Skill Pts</span>}
-                  {gameState.prestige > 0 && <span className="flex items-center gap-1"><span className="text-sm">⭐</span> Prestige</span>}
+                  <span className="flex items-center gap-1"><span className="text-sm">??</span> Mining Pwr</span>
+                  <span className="flex items-center gap-1"><span className="text-sm">??</span> Dmg/Click</span>
+                  <span className="flex items-center gap-1"><span className="text-sm">??</span> Attacks</span>
+                  <span className="flex items-center gap-1"><span className="text-sm">?</span> Dmg/Sec</span>
+                  <span className="flex items-center gap-1"><span className="text-sm">??</span> Total Gold</span>
+                  {gameState.skillPoints > 0 && <span className="flex items-center gap-1"><span className="text-sm">??</span> Skill Pts</span>}
+                  {gameState.prestige > 0 && <span className="flex items-center gap-1"><span className="text-sm">?</span> Prestige</span>}
                 </div>
               </div>
             </div>
@@ -2979,7 +3061,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
             <div className={`${currentTheme.panel} rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-y-auto`}>
               <div className="p-6">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold">🎨 Customize Your Legend</h2>
+                  <h2 className="text-2xl font-bold">?? Customize Your Legend</h2>
                   <button
                     onClick={() => setShowUnlockables(false)}
                     className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
@@ -2991,7 +3073,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   {/* Enhanced Weapons with ultra-rare options */}
                   <div>
-                    <h3 className="text-lg font-bold mb-4">⚔️ Legendary Weapons</h3>
+                    <h3 className="text-lg font-bold mb-4">?? Legendary Weapons</h3>
                     <div className="grid grid-cols-2 gap-3 max-h-96 overflow-y-auto">
                       {Object.entries(WEAPONS).map(([key, weapon]) => {
                         const unlocked = gameState.unlockedWeapons.includes(key);
@@ -3023,7 +3105,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                             </div>
                             <div className={`text-xs font-semibold ${isUltraRare ? 'text-yellow-700' : ''}`}>
                               {weapon.name}
-                              {isUltraRare && <span className="ml-1">✨</span>}
+                              {isUltraRare && <span className="ml-1">?</span>}
                             </div>
                             <div className={`text-xs font-bold ${isUltraRare ? 'text-orange-600' : 'text-green-600'}`}>
                               +{weapon.dpcMultiplier.toLocaleString()}x
@@ -3048,7 +3130,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
 
                   {/* Enhanced Themes with prestige themes */}
                   <div>
-                    <h3 className="text-lg font-bold mb-4">🎨 Realm Themes</h3>
+                    <h3 className="text-lg font-bold mb-4">?? Realm Themes</h3>
                     <div className="space-y-3 max-h-96 overflow-y-auto">
                       {Object.entries(THEMES).map(([key, theme]) => {
                         const unlocked = gameState.unlockedThemes.includes(key);
@@ -3071,7 +3153,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                             <div className={`w-full h-6 rounded bg-gradient-to-r ${theme.bg} mb-2 ${isPrestigeTheme ? 'shadow-lg' : ''}`}></div>
                             <div className={`text-sm font-semibold ${isPrestigeTheme ? 'text-purple-700' : ''}`}>
                               {theme.name}
-                              {isPrestigeTheme && <span className="ml-1">⭐</span>}
+                              {isPrestigeTheme && <span className="ml-1">?</span>}
                             </div>
                             {!unlocked && requirement && (
                               <div className="text-xs text-gray-500 mt-1">
@@ -3092,7 +3174,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
 
                   {/* Enhanced Titles with master tiers */}
                   <div>
-                    <h3 className="text-lg font-bold mb-4">🏆 Hero Titles</h3>
+                    <h3 className="text-lg font-bold mb-4">?? Hero Titles</h3>
                     <div className="space-y-3 max-h-96 overflow-y-auto">
                       {Object.entries(TITLES).map(([key, title]) => {
                         const unlocked = gameState.unlockedTitles.includes(key);
@@ -3114,7 +3196,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                           >
                             <div className={`text-sm font-bold ${title.color} mb-1`}>
                               {key}
-                              {isMasterTitle && <span className="ml-1">🌟</span>}
+                              {isMasterTitle && <span className="ml-1">??</span>}
                             </div>
                             <div className={`w-full h-2 rounded ${title.color.replace('text-', 'bg-')} opacity-20 mb-2 ${isMasterTitle ? 'shadow-md' : ''}`}></div>
                             {!unlocked && requirement && (
@@ -3135,7 +3217,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
 
                   {/* NEW: Artifact Loadouts */}
                   <div>
-                    <h3 className="text-lg font-bold mb-4">🎒 Mystical Artifacts</h3>
+                    <h3 className="text-lg font-bold mb-4">?? Mystical Artifacts</h3>
                     <div className="mb-4 bg-gray-900 rounded-lg p-3 border-2 border-gray-700 shadow-inner">
                       <div className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-2 text-center">Active Loadout</div>
                       <div className="flex justify-center gap-2">
@@ -3243,7 +3325,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
           <div className="bg-gray-900 border-2 border-red-500/50 rounded-xl shadow-[0_0_30px_rgba(255,0,0,0.2)] p-6 relative overflow-hidden">
             <div className="absolute top-0 right-0 bg-red-500 text-white text-[10px] font-black uppercase px-3 py-1 rounded-bl-lg">Admin Tools</div>
             <h2 className="text-xl font-bold text-red-400 mb-4 flex items-center gap-2">
-              <span>🛠️</span> Developer Console
+              <span>???</span> Developer Console
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -3473,10 +3555,10 @@ const SequenceChallenge = ({ onComplete, duration }) => {
   };
 
   const buttons = [
-    { color: 'bg-red-500', activeColor: 'bg-red-300', icon: '❤️' },
-    { color: 'bg-blue-500', activeColor: 'bg-blue-300', icon: '💧' },
-    { color: 'bg-green-500', activeColor: 'bg-green-300', icon: '🍀' },
-    { color: 'bg-yellow-500', activeColor: 'bg-yellow-300', icon: '⭐' }
+    { color: 'bg-red-500', activeColor: 'bg-red-300', icon: '??' },
+    { color: 'bg-blue-500', activeColor: 'bg-blue-300', icon: '??' },
+    { color: 'bg-green-500', activeColor: 'bg-green-300', icon: '??' },
+    { color: 'bg-yellow-500', activeColor: 'bg-yellow-300', icon: '?' }
   ];
 
   return (
@@ -3636,7 +3718,7 @@ const InlineSkillTest = ({ testName, onComplete }) => {
         className="absolute transform -translate-x-1/2 -translate-y-1/2 w-20 h-20 bg-gradient-to-br from-red-500 to-purple-600 rounded-full border-4 border-white shadow-[0_0_25px_rgba(255,255,255,0.8)] hover:scale-110 active:scale-90 transition-transform flex items-center justify-center text-3xl"
         style={{ ...targetPos, transition: config.move ? 'all 0.2s ease-out' : 'none' }}
       >
-        🎯
+        ??
       </button>
     </div>
   );
