@@ -66,6 +66,15 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     currentCycle: 'Day',
     cycleClicks: 0,
     pickaxeLevel: 1,
+    xp: 0, // NEW: Experience points
+    level: 1, // NEW: Player level
+    activeEnemy: null, // NEW: Currently fought enemy
+
+    // NEW: Artifact Inventory System
+    inventory: [], // List of acquired merchant artifact IDs
+    equippedArtifacts: [null, null, null], // Max 3 equipped artifacts
+    keys: { normal: 0, dark: 0, ice: 0 }, // NEW: Keys inventory
+    nextEncounter: 'enemy', // NEW: Alternates between 'enemy' and 'event'
   });
 
   const [selectedWeapon, setSelectedWeapon] = useState('1');
@@ -76,7 +85,10 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
   const [toasts, setToasts] = useState([]);
   const [showChoiceEvent, setShowChoiceEvent] = useState(false);
   const [eventTimeLeft, setEventTimeLeft] = useState(0);
+  const [enemyTimeLeft, setEnemyTimeLeft] = useState(0); // NEW: Track time limit for active enemies
   const [showScoreboard, setShowScoreboard] = useState(false); // NEW: Scoreboard state
+  const [showLevelUp, setShowLevelUp] = useState(false); // NEW: Level Up state
+  const [levelUpData, setLevelUpData] = useState(null); // NEW: Level Up data
 
   // NEW: Challenge and boss states
   const [activeBoss, setActiveBoss] = useState(null);
@@ -99,32 +111,78 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
   // EXPANDED: Weapon definitions with ULTRA-RARE weapons for high levels
   const WEAPONS = {
     '1': { name: 'Novice Blade', icon: '⚔️', path: '/hero forge/Items/Weapons/1.png', requirement: null, dpcMultiplier: 1 },
-    '2': { name: 'Mystic Staff', icon: '🔮', path: '/hero forge/Items/Weapons/2.png', requirement: { type: 'totalGold', value: 1000 }, dpcMultiplier: 1.5 },
-    '3': { name: 'Frost Axe', icon: '🪓', path: '/hero forge/Items/Weapons/3.png', requirement: { type: 'totalGold', value: 5000 }, dpcMultiplier: 2 },
-    '4': { name: 'Shadow Daggers', icon: '🗡️', path: '/hero forge/Items/Weapons/4.png', requirement: { type: 'totalGold', value: 25000 }, dpcMultiplier: 3 },
-    '5': { name: 'Elven Bow', icon: '🏹', path: '/hero forge/Items/Weapons/5.png', requirement: { type: 'attacks', value: 1000 }, dpcMultiplier: 4 },
-    '6': { name: 'Orcish Cleaver', icon: '⚔️', path: '/hero forge/Items/Weapons/6.png', requirement: { type: 'artifacts', value: 50 }, dpcMultiplier: 6 },
-    '7': { name: 'Divine Hammer', icon: '🔨', path: '/hero forge/Items/Weapons/7.png', requirement: { type: 'totalGold', value: 100000 }, dpcMultiplier: 8 },
-    '8': { name: 'Nature\'s Whip', icon: '🌿', path: '/hero forge/Items/Weapons/8.png', requirement: { type: 'upgrades', value: 3 }, dpcMultiplier: 12 },
-    '9': { name: 'Celestial Orb', icon: '✨', path: '/hero forge/Items/Weapons/9.png', requirement: { type: 'totalGold', value: 1000000 }, dpcMultiplier: 20 },
-    '10': { name: 'Heart Mace', icon: '❤️', path: '/hero forge/Items/Weapons/10.png', requirement: { type: 'dps', value: 100000 }, dpcMultiplier: 30 },
-    '11': { name: 'Mechanical Gauntlet', icon: '🤖', path: '/hero forge/Items/Weapons/11.png', requirement: { type: 'totalGold', value: 10000000 }, dpcMultiplier: 50 },
-    '12': { name: 'Golden Hammer', icon: '🌹', path: '/hero forge/Items/Weapons/12.png', requirement: { type: 'prestige', value: 1 }, dpcMultiplier: 100 },
-    '13': { name: 'Electro Staff', icon: '⚡', path: '/hero forge/Items/Weapons/13.png', requirement: { type: 'totalGold', value: 100000000 }, dpcMultiplier: 200 },
-    '14': { name: 'Void Staff', icon: '🌌', path: '/hero forge/Items/Weapons/14.png', requirement: { type: 'prestige', value: 2 }, dpcMultiplier: 1500 },
-    '15': { name: 'Elemental Trident', icon: '🔱', path: '/hero forge/Items/Weapons/15.png', requirement: { type: 'totalGold', value: 1000000000 }, dpcMultiplier: 1000 },
-    '16': { name: 'Soul Reaper', icon: '💀', path: '/hero forge/Items/Weapons/16.png', requirement: { type: 'prestige', value: 5 }, dpcMultiplier: 2500 },
-    '17': { name: 'Cosmic Blades', icon: '🌟', path: '/hero forge/Items/Weapons/17.png', requirement: { type: 'prestige', value: 10 }, dpcMultiplier: 10000 },
+    '2': { name: 'Mystic Staff', icon: '🔮', path: '/hero forge/Items/Weapons/2.png', requirement: { type: 'level', value: 10 }, dpcMultiplier: 2 },
+    '3': { name: 'Frost Axe', icon: '🪓', path: '/hero forge/Items/Weapons/3.png', requirement: { type: 'level', value: 20 }, dpcMultiplier: 4 },
+    '4': { name: 'Shadow Daggers', icon: '🗡️', path: '/hero forge/Items/Weapons/4.png', requirement: { type: 'level', value: 30 }, dpcMultiplier: 8 },
+    '5': { name: 'Elven Bow', icon: '🏹', path: '/hero forge/Items/Weapons/5.png', requirement: { type: 'level', value: 40 }, dpcMultiplier: 16 },
+    '6': { name: 'Orcish Cleaver', icon: '⚔️', path: '/hero forge/Items/Weapons/6.png', requirement: { type: 'level', value: 50 }, dpcMultiplier: 32 },
+    '7': { name: 'Divine Hammer', icon: '🔨', path: '/hero forge/Items/Weapons/7.png', requirement: { type: 'level', value: 60 }, dpcMultiplier: 64 },
+    '8': { name: 'Nature\'s Whip', icon: '🌿', path: '/hero forge/Items/Weapons/8.png', requirement: { type: 'level', value: 70 }, dpcMultiplier: 128 },
+    '9': { name: 'Celestial Orb', icon: '✨', path: '/hero forge/Items/Weapons/9.png', requirement: { type: 'level', value: 80 }, dpcMultiplier: 256 },
+    '10': { name: 'Heart Mace', icon: '❤️', path: '/hero forge/Items/Weapons/10.png', requirement: { type: 'level', value: 90 }, dpcMultiplier: 512 },
 
-    '18': { name: 'Genesis Sword', icon: '💫', path: '/hero forge/Items/Weapons/18.png', requirement: { type: 'prestige', value: 15 }, dpcMultiplier: 25000 },
-    '19': { name: 'Reality Breaker', icon: '⚫', path: '/Loot/Weapons/19.png', requirement: { type: 'prestige', value: 20 }, dpcMultiplier: 50000 },
-    '20': { name: 'Infinity Edge', icon: '♾️', path: '/Loot/Weapons/20.png', requirement: { type: 'prestige', value: 25 }, dpcMultiplier: 100000 },
-    '21': { name: 'Omnislayer', icon: '🌠', path: '/Loot/Weapons/21.png', requirement: { type: 'masterLevel', value: 10 }, dpcMultiplier: 500000 }
+    // Chest exclusively found weapons (VERY RARE)
+    '11': { name: 'Mechanical Gauntlet', icon: '🤖', path: '/hero forge/Items/Weapons/11.png', requirement: { type: 'chest', value: true }, dpcMultiplier: 1024 },
+    '12': { name: 'Golden Hammer', icon: '🌹', path: '/hero forge/Items/Weapons/12.png', requirement: { type: 'chest', value: true }, dpcMultiplier: 2048 },
+    '13': { name: 'Electro Staff', icon: '⚡', path: '/hero forge/Items/Weapons/13.png', requirement: { type: 'chest', value: true }, dpcMultiplier: 4096 },
+    '14': { name: 'Void Staff', icon: '🌌', path: '/hero forge/Items/Weapons/14.png', requirement: { type: 'chest', value: true }, dpcMultiplier: 8192 },
+    '15': { name: 'Elemental Trident', icon: '🔱', path: '/hero forge/Items/Weapons/15.png', requirement: { type: 'chest', value: true }, dpcMultiplier: 16384 },
+    '16': { name: 'Soul Reaper', icon: '💀', path: '/hero forge/Items/Weapons/16.png', requirement: { type: 'chest', value: true }, dpcMultiplier: 32768 },
+    '17': { name: 'Cosmic Blades', icon: '🌟', path: '/hero forge/Items/Weapons/17.png', requirement: { type: 'chest', value: true }, dpcMultiplier: 65536 },
+
+    // Boss rewards (Blood moon exclusive bosses)
+    '18': { name: 'Genesis Sword', icon: '💫', path: '/hero forge/Items/Weapons/18.png', requirement: { type: 'boss', value: 'skeleton_lord' }, dpcMultiplier: 131072 },
+    '19': { name: 'Reality Breaker', icon: '⚫', path: '/hero forge/Items/Weapons/19.png', requirement: { type: 'bossDefeated', value: 'skeleton_lord' }, dpcMultiplier: 262144 },
+    '20': { name: 'Infinity Edge', icon: '♾️', path: '/hero forge/Items/Weapons/20.png', requirement: { type: 'bossDefeated', value: 'demon_lord' }, dpcMultiplier: 524288 },
+    '21': { name: 'Omnislayer', icon: '🌠', path: '/hero forge/Items/Weapons/21.png', requirement: { type: 'bossDefeated', value: 'death_dragon' }, dpcMultiplier: 1048576 }
+  };
+
+  // NEW: Enemy definitions with difficulty tiers and varied skill tests
+  const ENEMIES = {
+    Day: [
+      { id: 'mouse', name: 'Field Mouse', path: '/hero forge/Day/Enemies/Mouse.png', hp: 20, timeLimit: 15, skillTest: 'Quick Click', baseGold: 50, xp: 10, difficulty: 1 },
+      { id: 'slime', name: 'Green Slime', path: '/hero forge/Day/Enemies/Slime.png', hp: 50, timeLimit: 20, skillTest: 'Split Target', baseGold: 100, xp: 25, difficulty: 2 },
+      { id: 'mushroom', name: 'Toxic Mushroom', path: '/hero forge/Day/Enemies/Mushroom.png', hp: 150, timeLimit: 25, skillTest: 'Poison Spores', baseGold: 300, xp: 75, difficulty: 3 },
+      { id: 'wisp', name: 'Forest Wisp', path: '/hero forge/Day/Enemies/Wisp.png', hp: 300, timeLimit: 25, skillTest: 'Erratic Orbit', baseGold: 800, xp: 150, difficulty: 4 },
+      { id: 'goblin', name: 'Scavenger Goblin', path: '/hero forge/Day/Enemies/Goblin.png', hp: 1000, timeLimit: 30, skillTest: 'Ambush', baseGold: 2500, xp: 400, difficulty: 5 }
+    ],
+    Night: [
+      { id: 'orc', name: 'Orc Marauder', path: '/hero forge/Night/Enemies/Orc.png', hp: 2500, timeLimit: 30, skillTest: 'Brute Force', baseGold: 5000, xp: 800, difficulty: 6 },
+      { id: 'golem', name: 'Stone Golem', path: '/hero forge/Night/Enemies/Golem.png', hp: 8000, timeLimit: 35, skillTest: 'Shield Block', baseGold: 15000, xp: 2000, difficulty: 7 },
+      { id: 'knightreaper', name: 'Knight Reaper', path: '/hero forge/Night/Enemies/KnightReaper.png', hp: 25000, timeLimit: 40, skillTest: 'Combo Sequence', baseGold: 50000, xp: 5000, difficulty: 8 },
+      { id: 'lootgoblin', name: 'Loot Goblin', path: '/hero forge/Night/Enemies/LootGoblin.png', hp: 50000, timeLimit: 15, skillTest: 'Gold Rush', baseGold: 100000, xp: 10000, difficulty: 9 },
+      { id: 'dragon', name: 'Elder Dragon', path: '/hero forge/Night/Enemies/Dragon.png', hp: 100000, timeLimit: 45, skillTest: 'Inferno', baseGold: 250000, xp: 25000, difficulty: 10 }
+    ]
+  };
+
+  // NEW: Merchant Artifacts (Purchasable upgrades)
+  const MERCHANT_ITEMS = {
+    '1': { id: '1', name: 'Rusty Pickaxe Head', path: '/hero forge/Items/Artifacts/1.png', type: 'gold', value: 1.1, desc: '+10% Mining Gold', cost: 150, rarity: 'common' },
+    '2': { id: '2', name: 'Wooden Buckler', path: '/hero forge/Items/Artifacts/2.png', type: 'damage', value: 1.2, desc: '+20% Damage', cost: 300, rarity: 'common' },
+    '3': { id: '3', name: 'Apprentice Sandals', path: '/hero forge/Items/Artifacts/3.png', type: 'dps', value: 1.2, desc: '+20% Auto-DPS', cost: 450, rarity: 'common' },
+    '4': { id: '4', name: 'Mining Charm', path: '/hero forge/Items/Artifacts/4.png', type: 'gold', value: 1.5, desc: '+50% Mining Gold', cost: 1500, rarity: 'uncommon' },
+    '5': { id: '5', name: 'Warrior Crest', path: '/hero forge/Items/Artifacts/5.png', type: 'damage', value: 2, desc: '+100% Damage', cost: 2500, rarity: 'uncommon' },
+    '6': { id: '6', name: 'Swift Boots', path: '/hero forge/Items/Artifacts/6.png', type: 'dps', value: 2, desc: '+100% Auto-DPS', cost: 3500, rarity: 'uncommon' },
+    '7': { id: '7', name: 'Golden Scythe', path: '/hero forge/Items/Artifacts/7.png', type: 'gold', value: 3, desc: '+200% Mining Gold', cost: 12000, rarity: 'rare' },
+    '8': { id: '8', name: 'Berserker Mask', path: '/hero forge/Items/Artifacts/8.png', type: 'damage', value: 5, desc: '+400% Damage', cost: 25000, rarity: 'rare' },
+    '9': { id: '9', name: 'Crown of Greed', path: '/hero forge/Items/Artifacts/9.png', type: 'gold', value: 10, desc: '+900% Mining Gold', cost: 150000, rarity: 'epic' },
+    '10': { id: '10', name: 'Divine Sentinel', path: '/hero forge/Items/Artifacts/10.png', type: 'all', value: 5, desc: '+400% All Stats', cost: 2000000, rarity: 'legendary' },
   };
 
   // NEW: Environment Cycle logic
   const isNight = gameState.currentCycle === 'Night' || gameState.currentCycle === 'BloodMoon';
   const getBackgroundImage = () => {
+    if (showChoiceEvent && gameState.event.shown) {
+      if (gameState.event.type === 'merchant') {
+        return gameState.currentCycle === 'Night' || gameState.currentCycle === 'BloodMoon'
+          ? '/hero forge/Night/Events/DarkMerchant.png'
+          : '/hero forge/Day/Events/Merchant.png';
+      }
+      return gameState.event.image || '/hero forge/Day/DayMining.png';
+    }
+    if (gameState.activeEnemy) {
+      return gameState.activeEnemy.path;
+    }
     switch (gameState.currentCycle) {
       case 'BloodMoon': return '/hero forge/BloodMoon/BloodMoonMining.png';
       case 'Night': return '/hero forge/Night/NightMining.png';
@@ -133,7 +191,6 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     }
   };
 
-  // Background style
   const backgroundStyle = {
     backgroundImage: `url('${getBackgroundImage()}')`,
     backgroundSize: 'cover',
@@ -272,43 +329,59 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
   // NEW: Boss definitions for epic encounters
   const BOSS_ENCOUNTERS = [
     {
-      id: 'shadow_king',
-      name: 'Shadow King',
-      health: 50000,
-      goldReward: 25000,
-      specialReward: { type: 'dpcMult', value: 1.5 },
-      requirement: { type: 'totalGold', value: 100000 },
+      id: 'skeleton_lord',
+      name: 'Skeleton Lord',
+      path: '/hero forge/BloodMoon/Enemies/SkeletonLord.png',
+      health: 5000000,
+      goldReward: 500000,
+      specialReward: { type: 'weapon', value: '18' },
+      requirement: { type: 'level', value: 10 },
       phases: [
-        { healthPercent: 100, message: 'The Shadow King emerges from the darkness!' },
-        { healthPercent: 50, message: 'The Shadow King calls forth minions!' },
-        { healthPercent: 10, message: 'The Shadow King enters a rage!' }
+        { healthPercent: 100, message: 'The Skeleton Lord rattles to life!' },
+        { healthPercent: 50, message: 'The Skeleton Lord summons an army of bones!' },
+        { healthPercent: 10, message: 'The Skeleton Lord unleashes a deathly scream!' }
       ]
     },
     {
-      id: 'crystal_dragon',
-      name: 'Crystal Dragon',
-      health: 500000,
-      goldReward: 250000,
-      specialReward: { type: 'globalDpsMult', value: 2.0 },
-      requirement: { type: 'prestige', value: 2 },
+      id: 'demon_lord',
+      name: 'Demon Lord',
+      path: '/hero forge/BloodMoon/Enemies/DemonLord.png',
+      health: 50000000,
+      goldReward: 5000000,
+      specialReward: { type: 'weapon', value: '19' },
+      requirement: { type: 'bossDefeated', value: 'skeleton_lord' },
       phases: [
-        { healthPercent: 100, message: 'A massive Crystal Dragon blocks your path!' },
-        { healthPercent: 30, message: 'The Crystal Dragon breathes devastating fire!' },
-        { healthPercent: 5, message: 'The Crystal Dragon makes one final desperate attack!' }
+        { healthPercent: 100, message: 'The Demon Lord steps out of a portal of fire!' },
+        { healthPercent: 50, message: 'The Demon Lord envelops the area in flames!' },
+        { healthPercent: 10, message: 'The Demon Lord unleashes his ultimate hellfire!' }
       ]
     },
     {
-      id: 'void_emperor',
-      name: 'Void Emperor',
-      health: 10000000,
-      goldReward: 2000000,
-      specialReward: { type: 'masterLevel', value: 1 },
-      requirement: { type: 'prestige', value: 10 },
+      id: 'death_dragon',
+      name: 'Death Dragon',
+      path: '/hero forge/BloodMoon/Enemies/DeathDragon.png',
+      health: 500000000,
+      goldReward: 50000000,
+      specialReward: { type: 'weapon', value: '20' },
+      requirement: { type: 'bossDefeated', value: 'demon_lord' },
       phases: [
-        { healthPercent: 100, message: 'The Void Emperor materializes from nothingness!' },
-        { healthPercent: 66, message: 'Reality bends around the Void Emperor!' },
-        { healthPercent: 33, message: 'The Void Emperor summons cosmic storms!' },
-        { healthPercent: 10, message: 'The Void Emperor prepares for annihilation!' }
+        { healthPercent: 100, message: 'The sky darkens as the Death Dragon descends!' },
+        { healthPercent: 50, message: 'The Death Dragon scorches the earth with necromancy!' },
+        { healthPercent: 10, message: 'The Death Dragon channels the energy of departed souls!' }
+      ]
+    },
+    {
+      id: 'abyss',
+      name: 'The Abyss',
+      path: '/hero forge/BloodMoon/Enemies/Abyss.png',
+      health: 5000000000,
+      goldReward: 500000000,
+      specialReward: { type: 'weapon', value: '21' },
+      requirement: { type: 'bossDefeated', value: 'death_dragon' },
+      phases: [
+        { healthPercent: 100, message: 'The very fabric of reality tears as The Abyss awakens!' },
+        { healthPercent: 50, message: 'The Abyss begins to consume light itself!' },
+        { healthPercent: 10, message: 'The Abyss attempts to swallow your soul!' }
       ]
     }
   ];
@@ -395,83 +468,134 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
       costScale: 1,
       type: 'passive',
       effect: (level) => ({ type: 'skillPointChance', value: 0.0001 }) // 0.01% chance
+    },
+    'offline_efficiency': {
+      id: 'offline_efficiency',
+      name: 'Restful Sleep',
+      description: 'Increases Idle/Offline Gold generation by 10% per level',
+      maxLevel: 10,
+      costPerLevel: 5,
+      costScale: 1.5,
+      type: 'passive',
+      effect: (level) => ({ type: 'offlineEfficiency', value: level * 0.1 })
+    },
+    'event_cap': {
+      id: 'event_cap',
+      name: 'Eagle Eye',
+      description: 'Reduces the time between events by 5 seconds per level',
+      maxLevel: 10,
+      costPerLevel: 3,
+      costScale: 1.3,
+      type: 'passive',
+      effect: (level) => ({ type: 'eventCooldownReduction', value: level * 5 })
     }
   };
 
-  // NEW: Enhanced choice events with multi-stage and interactive elements (Inc. Negative Outcomes)
+  // NEW: Enhanced choice events - No "walk away", all require a choice.
   const CHOICE_EVENTS = [
+    // DAY
     {
-      text: "🎰 You find a magical Lucky Wheel! Spin to win fantastic prizes!",
+      text: "🧚 A Friendly Fairy flutters down, offering two sparkling dusts.",
+      image: '/hero forge/Day/Events/FriendlyFairy.png',
+      cycle: 'Day',
       choices: [
-        { text: "🎰 Spin the Wheel!", effect: { type: 'luckyWheel' } },
-        { text: "Walk away safely", effect: { type: 'smallGoldGain', amount: 0.02 } }
+        { text: "Sprinkle Gold Dust (+Gold)", effect: { type: 'goldGain', amount: 0.1 } },
+        { text: "Sprinkle Red Dust (+DPS 60s)", effect: { type: 'randomBoon', duration: 60000 } }
       ]
     },
     {
-      text: "⚔️ A legendary warrior challenges you! Do you accept their trial?",
+      text: "📜 You find an ancient Tome. It hums with magical energy.",
+      image: '/hero forge/Day/Events/Tome.png',
+      cycle: 'Day',
       choices: [
-        { text: "🗡️ Accept the duel!", effect: { type: 'skillChallenge', challengeType: 'timing_challenge' } },
-        { text: "🏃 Decline respectfully", effect: { type: 'goldGain', amount: 0.05 } }
+        { text: "Study its secrets (Skill Test)", effect: { type: 'skillChallenge', challengeType: 'sequence_challenge' } },
+        { text: "Sell it to a collector (+Gold)", effect: { type: 'goldGain', amount: 0.15 } }
+      ]
+    },
+    // NIGHT
+    {
+      text: "🧙‍♂️ A Mysterious Wizard blocks your path. \"A test of reflexes!\"",
+      image: '/hero forge/Night/Events/MysteryWizard.png',
+      cycle: 'Night',
+      choices: [
+        { text: "Accept the test!", effect: { type: 'skillChallenge', challengeType: 'rapid_fire' } },
+        { text: "Bribe him to leave (-Gold)", effect: { type: 'loseGold', amount: 0.05 } }
       ]
     },
     {
-      text: "🐉 A mighty boss appears on the horizon! Will you face this legendary foe?",
+      text: "👻 A Friendly Wisp offers to guide you, for a price.",
+      image: '/hero forge/Night/Events/FriendlyWisp.png',
+      cycle: 'Night',
       choices: [
-        { text: "⚔️ Engage in epic battle!", effect: { type: 'bossEncounter' } },
-        { text: "🏃 Retreat for now", effect: { type: 'goldGain', amount: 0.1 } }
+        { text: "Follow the Wisp (+Gold)", effect: { type: 'goldGain', amount: 0.2 } },
+        { text: "Capture its energy (+DPS 120s)", effect: { type: 'randomBoon', duration: 120000 } }
+      ]
+    },
+    // SNOW
+    {
+      text: "⛄ An enchanted Snowman challenges you to a freezing duel.",
+      image: '/hero forge/Snow/Events/SnowMan.png',
+      cycle: 'Snow',
+      choices: [
+        { text: "Fight the Snowman!", effect: { type: 'skillChallenge', challengeType: 'timing_challenge' } },
+        { text: "Smash it quickly (+Gold)", effect: { type: 'smallGoldGain', amount: 0.05 } }
       ]
     },
     {
-      text: "🧙‍♂️ An ancient wizard offers to test your magical abilities...",
+      text: "🧊 A lake is completely Frozen Over. Below the ice, something glimmers.",
+      image: '/hero forge/Snow/Events/FrozenOver.png',
+      cycle: 'Snow',
       choices: [
-        { text: "✨ Accept the magical test", effect: { type: 'skillChallenge', challengeType: 'sequence_challenge' } },
-        { text: "🚶 Politely decline", effect: { type: 'smallGoldGain', amount: 0.03 } }
+        { text: "Carefully chip the ice (+Gold)", effect: { type: 'goldGain', amount: 0.15 } },
+        { text: "Smash it! (Risk Damage)", effect: { type: 'shrineGamble' } }
       ]
     },
+    // BLOOD MOON
     {
-      text: "🏃‍♂️ A speed demon challenges you to a contest of reflexes!",
+      text: "🌌 A terrifying Death Rift tears open reality!",
+      image: '/hero forge/BloodMoon/Events/DeathRift.png',
+      cycle: 'BloodMoon',
       choices: [
-        { text: "⚡ Show your lightning reflexes!", effect: { type: 'skillChallenge', challengeType: 'rapid_fire' } },
-        { text: "🚶 Walk away calmly", effect: { type: 'goldGain', amount: 0.04 } }
-      ]
-    },
-    // NEW NEGATIVE / NEUTRAL EVENTS
-    {
-      text: "👺 A mischievous goblin demands a tribute! Pay him or face his prank?",
-      choices: [
-        { text: "💰 Pay tribute (Lost Gold)", effect: { type: 'loseGold', amount: 0.05 } },
-        { text: "😡 Refuse!", effect: { type: 'goblinPrank' } }
-      ]
-    },
-    {
-      text: "🏚️ You find a crumbling shrine. It radiates unstable energy.",
-      choices: [
-        { text: "🙏 Pray for power", effect: { type: 'shrineGamble' } },
-        { text: "🚶 Walk away", effect: { type: 'nothing' } }
-      ]
-    },
-    {
-      text: "🌩️ A sudden storm damages your equipment!",
-      choices: [
-        { text: "🛠️ Repair immediately (Cost Gold)", effect: { type: 'repairCost', amount: 0.1 } },
-        { text: "🤷 Work with damaged gear (Temp DPS Loss)", effect: { type: 'debuffDPS', duration: 60000, mult: 0.5 } }
-      ]
-    },
-    {
-      text: "📦 A mysterious merchant offers a mystery box for 1 Skill Point.",
-      choices: [
-        { text: "💎 Buy Box (1 SP)", effect: { type: 'mysteryBox' } },
-        { text: "🚫 Decline", effect: { type: 'nothing' } }
+        { text: "Enter the Rift! (Boss Fight)", effect: { type: 'bossEncounter' } },
+        { text: "Seal it with magic (-Gold)", effect: { type: 'loseGold', amount: 0.1 } }
       ]
     }
   ];
-
-  // NEW: Night Raid Event
   CHOICE_EVENTS.push({
-    text: "🌙 You spot a rival camp in the darkness. Do you dare to launch a Night Raid?",
+    text: "A frozen Locked Ice Chest is stuck in the ice...",
+    image: "/hero forge/Snow/Events/LockedIceChest.png",
+    cycle: 'Snow',
     choices: [
-      { text: "⚔️ Raid them! (Compare Attack)", effect: { type: 'nightRaid' } },
-      { text: "🛡️ Stay Defensive", effect: { type: 'nothing' } }
+      { text: "🔑 Use Ice Key", effect: { type: 'openChest', keyType: 'ice' } },
+      { text: "🚶 Leave it", effect: { type: 'nothing' } }
+    ]
+  });
+
+  // NEW: Additional Fun Events
+  CHOICE_EVENTS.push({
+    text: "🎲 You encounter The Gambler. He proposes a high-stakes game. Bet 25% of your gold?",
+    image: "/hero forge/Day/Events/Gambler.png", // Assume we have this or fallback works
+    choices: [
+      { text: "🎲 Bet 25% (30% to TRIPLE it)", effect: { type: 'gambler_bet' } },
+      { text: "🚶 Not my style", effect: { type: 'nothing' } }
+    ]
+  });
+
+  CHOICE_EVENTS.push({
+    text: "🎸 A Traveling Bard offers to play an inspiring tune for 10% of your gold.",
+    image: "/hero forge/Day/Events/TravelingBard.png",
+    choices: [
+      { text: "🎸 Pay the Bard (Massive DPS boost)", effect: { type: 'bard_song' } },
+      { text: "🚶 Save my gold", effect: { type: 'nothing' } }
+    ]
+  });
+
+  CHOICE_EVENTS.push({
+    text: "🌀 A Mysterious Portal shimmers before you. It could lead anywhere.",
+    image: "/hero forge/Night/Events/Portal.png",
+    choices: [
+      { text: "🌀 Step through", effect: { type: 'mysterious_portal' } },
+      { text: "🚶 Ignore it", effect: { type: 'nothing' } }
     ]
   });
 
@@ -519,14 +643,46 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
 
     let mult = gameState.dpcMult * activeBoonMult('dpc') * weaponMultiplier;
 
-    // NEW: Apply Gold Boost Skill
+    // Apply Artifact Boosts
+    gameState.equippedArtifacts.forEach(artId => {
+      if (artId) {
+        const art = MERCHANT_ITEMS[artId];
+        // Damage is boosted by damage or all artifacts
+        if (art && (art.type === 'damage' || art.type === 'all')) {
+          const count = gameState.inventory.filter(id => id === artId).length;
+          mult *= (1 + (art.value - 1) * count);
+        }
+      }
+    });
+
+    return Math.max(1, gameState.dpcBase * mult);
+  }, [gameState.dpcBase, gameState.dpcMult, gameState.activeWeapon, activeBoonMult, gameState.equippedArtifacts, gameState.inventory]);
+
+  // NEW: GPC (Gold Per Click) logic for mining separately from DPC
+  const gpc = useCallback(() => {
+    // Determine Mining Multiplier from Pickaxe Level
+    let mult = Math.pow(2, gameState.pickaxeLevel - 1);
+
+    // Apply Gold Artifact Boosts 
+    gameState.equippedArtifacts.forEach(artId => {
+      if (artId) {
+        const art = MERCHANT_ITEMS[artId];
+        // Mining efficiency only boosted by gold or all artifacts
+        if (art && (art.type === 'gold' || art.type === 'all')) {
+          const count = gameState.inventory.filter(id => id === artId).length;
+          mult *= (1 + (art.value - 1) * count);
+        }
+      }
+    });
+
+    // Apply Gold Boost Skill
     const goldBoostLevel = getSkillLevel('gold_boost');
     if (goldBoostLevel > 0) {
       mult *= SKILL_UPGRADES['gold_boost'].effect(goldBoostLevel).value;
     }
 
     return Math.max(1, gameState.dpcBase * mult);
-  }, [gameState.dpcBase, gameState.dpcMult, gameState.activeWeapon, activeBoonMult, getSkillLevel]);
+  }, [gameState.dpcBase, gameState.pickaxeLevel, getSkillLevel, gameState.equippedArtifacts, gameState.inventory]);
 
   const dps = useCallback(() => {
     let total = 0;
@@ -537,7 +693,19 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         }
       }
     }
+
     total *= gameState.globalDpsMult * activeBoonMult('dps');
+
+    // Apply Artifact Boosts
+    gameState.equippedArtifacts.forEach(artId => {
+      if (artId) {
+        const art = MERCHANT_ITEMS[artId];
+        if (art && (art.type === 'dps' || art.type === 'all')) {
+          const count = gameState.inventory.filter(id => id === artId).length;
+          total *= (1 + (art.value - 1) * count);
+        }
+      }
+    });
 
     // NEW: Apply Gold Boost Skill
     const goldBoostLevel = getSkillLevel('gold_boost');
@@ -546,7 +714,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     }
 
     return total;
-  }, [gameState.artifacts, gameState.globalDpsMult, artifactMult, activeBoonMult, getSkillLevel]);
+  }, [gameState.artifacts, gameState.globalDpsMult, artifactMult, activeBoonMult, getSkillLevel, gameState.equippedArtifacts]);
 
   const totalArtifacts = useCallback(() => {
     if (!gameState.artifacts || !Array.isArray(gameState.artifacts)) return 0;
@@ -628,6 +796,44 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     }
   }, [showToast]);
 
+  // NEW: XP and Leveling
+  const getNextLevelXP = useCallback((currentLevel) => {
+    return Math.floor(100 * Math.pow(1.2, currentLevel - 1));
+  }, []);
+
+  const gainXP = useCallback((amount) => {
+    setGameState(prev => {
+      let newXp = prev.xp + amount;
+      let newLevel = prev.level;
+      let leveledUp = false;
+
+      while (newXp >= getNextLevelXP(newLevel)) {
+        newXp -= getNextLevelXP(newLevel);
+        newLevel++;
+        leveledUp = true;
+      }
+
+      if (leveledUp) {
+        addToast(`Level Up! You are now Level ${newLevel}!`, 'success');
+        setLevelUpData({ level: newLevel, spGained: newLevel - prev.level });
+        setShowLevelUp(true);
+      }
+
+      let newPickaxe = 1;
+      if (newLevel >= 100) newPickaxe = 5;
+      else if (newLevel >= 50) newPickaxe = 4;
+      else if (newLevel >= 25) newPickaxe = 3;
+      else if (newLevel >= 10) newPickaxe = 2;
+
+      return {
+        ...prev,
+        xp: newXp,
+        level: newLevel,
+        pickaxeLevel: newPickaxe
+      };
+    });
+  }, [getNextLevelXP, addToast]);
+
   // Check unlock requirements
   const checkUnlockRequirement = useCallback((requirement) => {
     if (!requirement) return true;
@@ -647,18 +853,38 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         return gameState.prestige >= requirement.value;
       case 'masterLevel':
         return gameState.masterLevel >= requirement.value;
+      case 'level':
+        return gameState.level >= requirement.value;
+      case 'bossDefeated':
+        return gameState.bossesDefeated && gameState.bossesDefeated.includes(requirement.value);
+      case 'chest':
+      case 'boss':
+        return false; // These are unlocked explicitly, not through stat checks
       default:
         return false;
     }
-  }, [gameState.totalGold, gameState.attacks, gameState.prestige, gameState.masterLevel, totalArtifacts, dps, purchasedUpgrades]);
+  }, [gameState.totalGold, gameState.attacks, gameState.prestige, gameState.masterLevel, gameState.level, totalArtifacts, dps, purchasedUpgrades]);
 
   // Add floating number
-  const addFloatingNumber = useCallback((x, y, text, color = '#ffd700') => {
+  const addFloatingNumber = useCallback((x, y, text, color = '#ffd700', icon = null) => {
     const id = Date.now() + Math.random();
-    setFloatingNumbers(prev => [...prev, { id, x, y, text, color, time: Date.now() }]);
+    // Add random slight variation to x and y for a more scattered look
+    const randomOffsetX = (Math.random() - 0.5) * 40;
+    const randomOffsetY = (Math.random() - 0.5) * 20;
+
+    setFloatingNumbers(prev => [...prev, {
+      id,
+      x: x + randomOffsetX,
+      y: y + randomOffsetY,
+      text,
+      color,
+      icon,
+      time: Date.now()
+    }]);
+
     setTimeout(() => {
       setFloatingNumbers(prev => prev.filter(f => f.id !== id));
-    }, 800);
+    }, 1000); // Slightly longer duration for better flair
   }, []);
 
   // Add gold with effects
@@ -681,9 +907,23 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     const boss = BOSS_ENCOUNTERS.find(b => b.id === bossId);
     if (!boss) return;
 
-    setActiveBoss(boss);
-    setBossHealth(boss.health);
-    setMaxBossHealth(boss.health);
+    // Dynamically scale boss health based on player's overall power (Level + DPC/DPS combo)
+    // We want the bosses to always take a reasonable amount of time to kill, even with ultra weapons.
+    // Calculate a rough DPS (Clicks per second average ~5 + AutoDPS)
+    const currentPower = (dpc() * 5) + dps();
+    // Base boss health multiplied by a scaling factor on player level, but also ensuring it's at minimum 30 seconds of pure DPS
+    const levelFactor = Math.pow(1.15, gameState.level);
+    const timeToKill = 30 + (boss.health / 1000000); // Base 30s + more for higher tier bosses
+
+    // The health is either the mathematically scaled base health, OR the dynamic "30 seconds of DPS" health, whichever is HIGHER.
+    const scaledHealth = Math.max(Math.floor(boss.health * levelFactor), Math.floor(currentPower * timeToKill));
+
+    // Scale gold reward similarly
+    const scaledReward = Math.floor(boss.goldReward * Math.pow(1.10, gameState.level));
+
+    setActiveBoss({ ...boss, health: scaledHealth, goldReward: scaledReward });
+    setBossHealth(scaledHealth);
+    setMaxBossHealth(scaledHealth);
     setTriggeredPhases([]); // Reset triggered phases
     addToast(`${boss.name} appears! Prepare for battle!`, 'warning');
   }, [addToast]);
@@ -724,18 +964,50 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
           newState.globalDpsMult *= activeBoss.specialReward.value;
         } else if (activeBoss.specialReward.type === 'masterLevel') {
           newState.masterLevel += activeBoss.specialReward.value;
+        } else if (activeBoss.specialReward.type === 'weapon') {
+          if (!newState.unlockedWeapons.includes(activeBoss.specialReward.value)) {
+            newState.unlockedWeapons = [...newState.unlockedWeapons, activeBoss.specialReward.value];
+          }
         }
 
         newState.bossesDefeated = [...(prev.bossesDefeated || []), activeBoss.id];
+
+        // Grant SP based on boss difficulty
+        const spReward = Math.ceil(Math.log10(activeBoss.health) * 2);
+        newState.skillPoints += spReward;
+
         return newState;
       });
 
-      addToast(`${activeBoss.name} defeated! Gained ${fmt(reward)} gold and special power!`, 'success');
+      addToast(`${activeBoss.name} defeated! Gained ${fmt(reward)} gold, ${Math.ceil(Math.log10(activeBoss.health) * 2)} SP, and an epic reward!`, 'success');
       setActiveBoss(null);
       setBossHealth(0);
       setMaxBossHealth(0);
+
+      // End Blood Moon early upon victory
+      setGameState(prev => {
+        if (prev.currentCycle === 'BloodMoon') {
+          return { ...prev, currentCycle: 'Day', cycleClicks: 0 };
+        }
+        return prev;
+      });
     }
   }, [activeBoss, bossHealth, maxBossHealth, addGold, addToast, fmt]);
+
+  // NEW: Effect to trigger Boss automatically when Blood Moon starts
+  useEffect(() => {
+    if (gameState.currentCycle === 'BloodMoon' && !activeBoss) {
+      // Find the next available boss
+      const bossToFight = BOSS_ENCOUNTERS.find(b => !(gameState.bossesDefeated || []).includes(b.id));
+
+      if (bossToFight) {
+        startBossEncounter(bossToFight.id);
+      } else {
+        addToast('The Blood Moon passes quickly, as there are no stronger foes left...', 'info');
+        setGameState(prev => ({ ...prev, currentCycle: 'Day', cycleClicks: 0 }));
+      }
+    }
+  }, [gameState.currentCycle, gameState.bossesDefeated, activeBoss, startBossEncounter, addToast]);
 
   // NEW: Skill challenge functions
   const startSkillChallenge = useCallback((challengeType) => {
@@ -800,9 +1072,12 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     }
   }, [gameState.skillPoints, gameState.skillUpgrades, addToast]);
 
-  // Attack function - UPDATED with Critical Hits and Gem Hunter
+  // Attack function - UPDATED with Critical Hits, Gem Hunter, and XP
   const attack = useCallback((event) => {
-    let gain = dpc();
+    gainXP(1); // NEW: Gain 1 XP per click
+
+    let baseValue = (activeBoss && bossHealth > 0) ? dpc() : gpc();
+    let gain = baseValue;
     let isCrit = false;
 
     // NEW: Critical Hit Logic
@@ -832,6 +1107,28 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
       addGold(gain);
     }
 
+    // NEW: Key Drop Logic (0.05% chance)
+    if (Math.random() < 0.0005) {
+      setGameState(prev => {
+        let keyType = null;
+        if (prev.currentCycle === 'Day') keyType = 'normal';
+        else if (prev.currentCycle === 'Night' || prev.currentCycle === 'BloodMoon') keyType = 'dark';
+        else if (prev.currentCycle === 'Snow') keyType = 'ice';
+
+        if (keyType && (!prev.keys || prev.keys[keyType] < 1)) {
+          addToast(`🔑 Found a ${keyType.charAt(0).toUpperCase() + keyType.slice(1)} Key!`, 'success');
+          return {
+            ...prev,
+            keys: {
+              ...(prev.keys || { normal: 0, dark: 0, ice: 0 }),
+              [keyType]: 1
+            }
+          };
+        }
+        return prev;
+      });
+    }
+
     setGameState(prev => {
       let newCycle = prev.currentCycle;
       let newCycleClicks = prev.cycleClicks + 1;
@@ -841,7 +1138,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         newCycleClicks = 0;
         if (prev.currentCycle === 'Day' || prev.currentCycle === 'Snow') {
           // Transition to Night or Blood Moon
-          if (Math.random() < 0.05) {
+          if (prev.level >= 10 && Math.random() < 0.05) {
             newCycle = 'BloodMoon';
             addToast('The Blood Moon rises...', 'error');
           } else {
@@ -876,7 +1173,8 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
       const y = event.clientY - rect.top;
       const color = activeBoss ? '#ff4444' : isCrit ? '#ff00ff' : '#ffd700'; // Purple for Crit
       const text = `${activeBoss ? 'DMG: ' : '+'}${fmt(gain)}${isCrit ? ' 💥' : ''}`;
-      addFloatingNumber(x, y, text, color);
+      const icon = activeBoss ? '⚔️' : '⛏️';
+      addFloatingNumber(x, y, text, color, icon);
     }
 
     // Play sound effect
@@ -890,7 +1188,64 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     if (gameState.attacks === 0) {
       addToast('Achievement: First Strike!', 'success');
     }
-  }, [dpc, addGold, activeBoss, bossHealth, attackBoss, addFloatingNumber, fmt, gameState.attacks, addToast, getSkillLevel]);
+  }, [dpc, gpc, addGold, activeBoss, bossHealth, attackBoss, addFloatingNumber, fmt, gameState.attacks, addToast, getSkillLevel, gainXP]);
+
+  // NEW: Weapon Attack logic for Enemies
+  const attackEnemy = useCallback((event) => {
+    if (!gameState.activeEnemy) return;
+
+    let gain = dpc();
+    let isCrit = false;
+
+    const critLevel = getSkillLevel('crit_chance');
+    if (critLevel > 0) {
+      const critChance = SKILL_UPGRADES['crit_chance'].effect(critLevel).value;
+      if (Math.random() < critChance) {
+        gain *= 2;
+        isCrit = true;
+      }
+    }
+
+    setGameState(prev => {
+      const enemy = prev.activeEnemy;
+      if (!enemy) return prev;
+
+      const newHp = Math.max(0, enemy.currentHp - gain);
+
+      if (newHp <= 0) {
+        addGold(enemy.baseGold);
+        gainXP(enemy.xp);
+        addToast(`Defeated ${enemy.name}! +${fmt(enemy.baseGold)} Gold, +${enemy.xp} XP`, 'success');
+        return {
+          ...prev,
+          activeEnemy: null
+        };
+      }
+
+      return {
+        ...prev,
+        activeEnemy: {
+          ...enemy,
+          currentHp: newHp
+        }
+      };
+    });
+
+    // Floating number
+    if (event && event.currentTarget) {
+      const rect = event.currentTarget.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      const text = `DMG: ${fmt(gain)}${isCrit ? ' 💥' : ''}`;
+      const color = isCrit ? '#ff00ff' : '#ff4444';
+      addFloatingNumber(x, y, text, color, '⚔️');
+    }
+    try {
+      const audio = new Audio('/sounds/ding.mp3');
+      audio.volume = 0.4;
+      audio.play().catch(() => { });
+    } catch (e) { }
+  }, [gameState.activeEnemy, dpc, getSkillLevel, addGold, gainXP, addToast, addFloatingNumber, fmt]);
 
   // Check for new unlocks
   const checkUnlocks = useCallback(() => {
@@ -1068,36 +1423,126 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     addToast(`Prestige ${gameState.prestige + 1} achieved! +${prestigeGain} prestige points!`, 'success');
   }, [canPrestige, calculatePrestigeGain, gameState.prestige, addToast]);
 
-  // Spawn choice event
+  // Spawn combat or choice event
   const spawnChoiceEvent = useCallback(() => {
-    if (gameState.event.shown) return;
+    if (gameState.activeEnemy || gameState.event.shown) return;
 
-    const isEnemy = Math.random() < 0.70;
+    const roll = Math.random();
 
-    let eventData;
-    if (isEnemy) {
-      eventData = {
-        text: "👿 A wild enemy appears! (Combat system coming soon)",
-        choices: [
-          { text: "⚔️ Fight Enemy", effect: { type: 'placeholderEnemy' } }
-        ]
-      };
-    } else {
-      eventData = CHOICE_EVENTS[Math.floor(Math.random() * CHOICE_EVENTS.length)];
+    // 35% chance to spawn Traveling Merchant
+    if (roll < 0.35) {
+      // Filter items to ensure players don't see totally unaffordable items early on
+      const availableItems = Object.keys(MERCHANT_ITEMS).filter(id => {
+        const item = MERCHANT_ITEMS[id];
+        // Ensure they can afford it soon, or guarantee all items at level 20+
+        return item.cost <= gameState.totalGold * 3 || gameState.level >= 20 || parseInt(id) <= 3;
+      });
+      const pool = availableItems.length >= 3 ? availableItems : Object.keys(MERCHANT_ITEMS);
+
+      // Pick 3 random, unique artifacts
+      let shopItems = [];
+      while (shopItems.length < 3) {
+        let rId = pool[Math.floor(Math.random() * pool.length)];
+        if (!shopItems.includes(rId)) {
+          shopItems.push(rId);
+        }
+      }
+
+      setGameState(prev => ({
+        ...prev,
+        event: {
+          ...prev.event,
+          shown: true,
+          nextIn: 60 + Math.random() * 60,
+          until: Date.now() + 60000, // 60s timeout to prevent flashing
+          type: 'merchant',
+          eventText: "A Traveling Merchant approaches...",
+          choices: [],
+          merchantInventory: shopItems
+        }
+      }));
+      setShowChoiceEvent(true);
+      return;
     }
 
-    setGameState(prev => ({
-      ...prev,
-      event: {
-        ...prev.event,
-        shown: true,
-        until: Date.now() + 60000,
-        eventText: eventData.text,
-        choices: eventData.choices
+    // Determine type: alternate between Enemy and Event
+    const isEnemyTurn = gameState.nextEncounter === 'enemy';
+
+    if (isEnemyTurn) {
+      const isNightCycle = gameState.currentCycle === 'Night' || gameState.currentCycle === 'BloodMoon';
+      let enemyList = isNightCycle ? ENEMIES.Night : ENEMIES.Day;
+
+      // Gate enemies by player level. Player can encounter enemies up to (level + 2) difficulty
+      const maxDifficulty = gameState.level + 2;
+      let validEnemies = enemyList.filter(e => e.difficulty <= maxDifficulty);
+
+      // Failsafe in case array is somehow empty (shouldn't be, level 1 enemies exist)
+      if (validEnemies.length === 0) validEnemies = [enemyList[0]];
+
+      const randomEnemy = validEnemies[Math.floor(Math.random() * validEnemies.length)];
+
+      // Exponential scaling factors
+      const levelFactor = Math.max(1, prev.level);
+      const expoMult = Math.pow(1.15, levelFactor - 1); // 15% increase per level compounding
+
+      setGameState(prev => ({
+        ...prev,
+        activeEnemy: {
+          ...randomEnemy,
+          // Scale HP exponentially
+          currentHp: Math.floor(randomEnemy.hp * expoMult),
+          hp: Math.floor(randomEnemy.hp * expoMult), // Base HP for the progress bar
+          // Scale rewards exponentially but slightly slower than health
+          baseGold: Math.floor(randomEnemy.baseGold * Math.pow(1.10, levelFactor - 1)),
+          xp: Math.floor(randomEnemy.xp * Math.max(1, Math.floor(levelFactor / 2))),
+          spawnTime: Date.now(),
+          skillTestActive: true
+        },
+        nextEncounter: 'event' // Flips for next time
+      }));
+      addToast(`A wild ${randomEnemy.name} appears ! Defend yourself!`, 'warning');
+    } else {
+      // It's the Event's turn
+      // Filter events by cycle
+      const validEvents = CHOICE_EVENTS.filter(e => !e.cycle || e.cycle === gameState.currentCycle);
+      const eventData = validEvents[Math.floor(Math.random() * validEvents.length)];
+      setGameState(prev => ({
+        ...prev,
+        event: {
+          ...prev.event,
+          shown: true,
+          type: 'TextEvent',
+          nextIn: 60 + Math.random() * 60,
+          until: Date.now() + 60000,  // 60s timeout to prevent flashing
+          eventText: eventData.text,
+          image: eventData.image || null,
+          choices: eventData.choices
+        },
+        nextEncounter: 'enemy' // Flips for next time
+      }));
+      setShowChoiceEvent(true);
+    }
+  }, [gameState.event.shown, gameState.activeEnemy, gameState.currentCycle, gameState.level, gameState.nextEncounter, addToast]);
+
+  // Handle outcome of the inline combat test
+  const handleEnemySkillTest = useCallback((success) => {
+    setGameState(prev => {
+      if (!prev.activeEnemy) return prev;
+      let newEnemy = { ...prev.activeEnemy, skillTestActive: false };
+
+      if (success) {
+        addToast(`Defense Successful!`, 'success');
+      } else {
+        addToast(`Defense test failed! Time reduced by 5s.`, 'error');
+        newEnemy.timeLimit = Math.max(5, newEnemy.timeLimit - 5);
       }
-    }));
-    setShowChoiceEvent(true);
-  }, [gameState.event.shown]);
+
+      return {
+        ...prev,
+        activeEnemy: newEnemy
+      };
+    });
+  }, [addToast]);
 
   // Enhanced choice event handler with new event types
   const handleChoiceEvent = useCallback((choiceIndex) => {
@@ -1197,6 +1642,39 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
           addToast(riftReward.message, 'success');
           break;
 
+        case 'openChest':
+          if (prev.keys && prev.keys[effect.keyType] > 0) {
+            newState.keys = { ...prev.keys, [effect.keyType]: prev.keys[effect.keyType] - 1 };
+            const chestGold = Math.max(50000, prev.totalGold * 1.5);
+            newState.gold += chestGold;
+            newState.totalGold += chestGold;
+
+            const chestWeapons = ['11', '12', '13', '14', '15', '16', '17'];
+            const unownedChestWeapons = chestWeapons.filter(w => !newState.unlockedWeapons.includes(w));
+
+            if (unownedChestWeapons.length > 0 && Math.random() < 0.05) {
+              const newWeapon = unownedChestWeapons[0];
+              newState.unlockedWeapons = [...newState.unlockedWeapons, newWeapon];
+              addToast(`🔓 Chest Opened! Found ${fmt(chestGold)} gold and a VERY RARE WEAPON: ${WEAPONS[newWeapon].name}!`, 'success');
+            } else {
+              // grant a rare item
+              const artIds = Object.keys(MERCHANT_ITEMS);
+              const randomArtId = artIds[Math.floor(Math.random() * artIds.length)];
+              const item = MERCHANT_ITEMS[randomArtId];
+
+              if (!newState.inventory.includes(randomArtId)) {
+                newState.inventory = [...newState.inventory, randomArtId];
+                addToast(`🔓 Chest Opened! Found ${fmt(chestGold)} gold and ${item.name}!`, 'success');
+              } else {
+                newState.dpcMult *= 2;
+                addToast(`🔓 Chest Opened! Found ${fmt(chestGold)} gold and a 2x Power Boost!`, 'success');
+              }
+            }
+          } else {
+            addToast(`You don't have the required key!`, 'error');
+          }
+          break;
+
         case 'carnival':
           const carnivalGames = [
             { type: 'big_win', gold: 0.3, message: '🎪 JACKPOT! You won big at the carnival!' },
@@ -1268,6 +1746,63 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
             }];
           }
           addToast(wheelResult.message, 'success');
+          break;
+
+        case 'gambler_bet':
+          const betAmount = Math.floor(prev.gold * 0.25);
+          if (betAmount <= 0) {
+            addToast('You need more gold to play!', 'error');
+            break;
+          }
+          newState.gold -= betAmount; // Deduct first
+
+          if (Math.random() <= 0.30) {
+            // Win
+            const winnings = betAmount * 3;
+            newState.gold += winnings;
+            newState.totalGold += (winnings - betAmount);
+            addToast(`🎲 WIN! You won ${fmt(winnings)} gold!`, 'success');
+          } else {
+            // Lose
+            addToast(`🎲 LOSS. You lost ${fmt(betAmount)} gold.`, 'error');
+          }
+          break;
+
+        case 'bard_song':
+          const songCost = Math.floor(prev.gold * 0.10);
+          newState.gold = Math.max(0, newState.gold - songCost);
+
+          newState.boons = [...prev.boons, {
+            name: 'Inspiring Tune',
+            type: 'dps',
+            mult: 5,
+            until: Date.now() + 300000 // 5 minutes
+          }];
+          addToast(`🎸 The Bard plays an epic tune! Paid ${fmt(songCost)} gold for 5x DPS for 5 minutes!`, 'success');
+          break;
+
+        case 'mysterious_portal':
+          if (Math.random() < 0.5) {
+            // Mini boss
+            addToast('🌀 The portal teleported you directly to a Boss!', 'warning');
+            setTimeout(() => {
+              const availableBosses = BOSS_ENCOUNTERS.filter(boss => checkUnlockRequirement(boss.requirement));
+              if (availableBosses.length > 0) {
+                const randomBoss = availableBosses[Math.floor(Math.random() * availableBosses.length)];
+                startBossEncounter(randomBoss.id);
+              } else {
+                startBossEncounter(BOSS_ENCOUNTERS[0].id); // default to first boss
+              }
+            }, 1000);
+          } else {
+            // Instant artifact
+            const artIds = Object.keys(MERCHANT_ITEMS);
+            const randomArtId = artIds[Math.floor(Math.random() * artIds.length)];
+            const item = MERCHANT_ITEMS[randomArtId];
+
+            newState.inventory = [...newState.inventory, randomArtId];
+            addToast(`🌀 The portal spat out an item! You gained ${item.name}!`, 'success');
+          }
           break;
 
         case 'smallGoldGain':
@@ -1448,6 +1983,9 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         cycleClicks: gameState.cycleClicks,
         pickaxeLevel: gameState.pickaxeLevel,
         dpc: dpc(), // NEW: Save current DPC for leaderboards/pvp
+        gpc: gpc(), // NEW: Save current GPC 
+        keys: gameState.keys || { normal: 0, dark: 0, ice: 0 },
+        nextEncounter: gameState.nextEncounter || 'enemy',
         lastSave: Date.now(),
         version: '4.0'
       };
@@ -1540,8 +2078,45 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         currentCycle: data.currentCycle || 'Day',
         cycleClicks: typeof data.cycleClicks === 'number' ? data.cycleClicks : 0,
         pickaxeLevel: typeof data.pickaxeLevel === 'number' ? data.pickaxeLevel : 1,
-        event: { nextIn: 60 + Math.random() * 120, shown: false, until: 0, choices: [], eventText: '' }
+        xp: typeof data.xp === 'number' ? data.xp : 0,
+        level: typeof data.level === 'number' ? data.level : 1,
+        activeEnemy: data.activeEnemy || null,
+        keys: data.keys || { normal: 0, dark: 0, ice: 0 },
+        nextEncounter: data.nextEncounter || 'enemy',
+        event: { nextIn: 60 + Math.random() * 120, shown: false, until: 0, choices: [], eventText: '', image: null }
       };
+
+      // NEW: Offline Progress Calculation
+      const now = Date.now();
+      const lastSaveTime = loadedState.lastSave || now;
+      let timeElapsedSeconds = Math.max(0, Math.floor((now - lastSaveTime) / 1000));
+
+      // Cap offline progress to 24 hours to prevent extreme overflow (86400 seconds)
+      if (timeElapsedSeconds > 86400) {
+        timeElapsedSeconds = 86400;
+      }
+
+      // We need a rough estimate of DPS to award offline gold.
+      // Since `dps()` relies on `gameState`, we calculate a temporary one based on `loadedState.artifacts`
+      let tempDps = 0;
+      loadedState.artifacts.forEach(a => { tempDps += (a.baseDps * a.count); });
+      tempDps *= loadedState.globalDpsMult;
+      if (loadedState.prestige > 0) tempDps *= (1 + (loadedState.prestige * 0.1));
+
+      // Apply offline efficiency multiplier from skill upgrades if purchased
+      const offlineEfficiencyLvl = loadedState.skillUpgrades['offline_efficiency'] || 0;
+      const offlineMult = 0.1 + (offlineEfficiencyLvl * 0.1); // Base 10%, +10% per level
+
+      if (timeElapsedSeconds >= 60 && tempDps > 0) {
+        const offlineGold = Math.floor(tempDps * timeElapsedSeconds * offlineMult);
+        if (offlineGold > 0) {
+          loadedState.gold += offlineGold;
+          loadedState.totalGold += offlineGold;
+          setTimeout(() => {
+            addToast(`Welcome back! You earned ${fmt(offlineGold)} gold while you were away! (${Math.floor(timeElapsedSeconds / 60)} mins)`, 'success');
+          }, 1500);
+        }
+      }
 
       setGameState(loadedState);
       setSelectedWeapon(loadedState.activeWeapon);
@@ -1562,14 +2137,13 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
       setIsLoaded(true);
 
       console.log('✅ Enhanced clicker game loaded successfully from Firebase');
-      addToast('Game loaded successfully!', 'success');
 
     } catch (error) {
       console.error('⚠️ Error loading clicker game from Firebase:', error);
       setIsLoaded(true);
       addToast('Load failed, starting new game!', 'warning');
     }
-  }, [studentData, isLoaded, gameState.artifacts, gameState.upgrades, addToast, initializeMusic]);
+  }, [studentData, isLoaded, gameState.artifacts, gameState.upgrades, addToast, initializeMusic, fmt]);
 
   // Manual save function
   const manualSave = useCallback(() => {
@@ -1599,20 +2173,35 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     return () => clearInterval(interval);
   }, [isLoaded, saveToFirebase]);
 
-  // Update event timer
+  // Update event and enemy timers
   useEffect(() => {
-    if (!showChoiceEvent) return;
-
     const updateTimer = () => {
-      const timeLeft = Math.max(0, Math.ceil((gameState.event.until - Date.now()) / 1000));
-      setEventTimeLeft(timeLeft);
+      const now = Date.now();
+
+      if (showChoiceEvent) {
+        const timeLeft = Math.max(0, Math.ceil((gameState.event.until - now) / 1000));
+        setEventTimeLeft(timeLeft);
+      }
+
+      if (gameState.activeEnemy) {
+        const elapsed = (now - gameState.activeEnemy.spawnTime) / 1000;
+        const timeLeft = Math.max(0, Math.ceil(gameState.activeEnemy.timeLimit - elapsed));
+        setEnemyTimeLeft(timeLeft);
+
+        if (timeLeft <= 0) {
+          const penalty = Math.floor(gameState.activeEnemy.baseGold * 0.5);
+          addGold(-penalty);
+          addToast(`Time's up! The ${gameState.activeEnemy.name} escaped. You lost ${fmt(penalty)} gold!`, 'error');
+          setGameState(prev => ({ ...prev, activeEnemy: null }));
+        }
+      }
     };
 
     updateTimer();
     const timerInterval = setInterval(updateTimer, 1000);
 
     return () => clearInterval(timerInterval);
-  }, [showChoiceEvent, gameState.event.until]);
+  }, [showChoiceEvent, gameState.event.until, gameState.activeEnemy, addGold, addToast, fmt]);
 
   // Check unlocks & Apply Auto-Clicker
   useEffect(() => {
@@ -1767,7 +2356,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
 
 
   return (
-    <div className={`min-h-screen p-4 ${currentTheme.bg}`} style={backgroundStyle}>
+    <div className={`min-h-screen p-4 ${currentTheme.bg}`}>
       {/* Custom styles */}
       <style jsx>{`
         @keyframes float-up {
@@ -1786,22 +2375,29 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         }
       `}</style>
 
-      {/* Floating Numbers */}
-      {floatingNumbers.map(num => (
-        <div
-          key={num.id}
-          className="absolute pointer-events-none font-bold text-lg z-30 float-number"
-          style={{
-            left: num.x,
-            top: num.y,
-            color: num.color,
-            textShadow: '0 2px 4px rgba(0,0,0,0.5)'
-          }}
-        >
-          {num.text}
-        </div>
-      ))}
-
+      {/* Floating Numbers overlay */}
+      <div className="absolute inset-0 pointer-events-none z-50 overflow-hidden">
+        {floatingNumbers.map(({ id, x, y, text, color, icon }) => (
+          <div
+            key={id}
+            className="absolute select-none font-bold float-up"
+            style={{
+              left: x,
+              top: y - 20, // Start slightly above click
+              color: color,
+              textShadow: '0 2px 4px rgba(0,0,0,0.8), 0 0 10px rgba(0,0,0,0.5)', /* Stronger shadow */
+              transform: 'translate(-50%, -50%)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              fontSize: icon ? '1.5rem' : '1.25rem' // Slightly bigger if it has an icon
+            }}
+          >
+            {icon && <span className="animate-spin-slow drop-shadow-md">{icon}</span>}
+            {text}
+          </div>
+        ))}
+      </div>
       {/* Toast Notifications */}
       <div className="fixed top-4 right-4 z-50 space-y-2">
         {toasts.map(toast => (
@@ -1836,66 +2432,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         </div>
       )}
 
-      {/* Enhanced Choice Event Modal */}
-      {showChoiceEvent && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-          <div className={`${currentTheme.panel} rounded-xl shadow-2xl w-full max-w-lg p-6 border-4 border-yellow-400 ${eventTimeLeft <= 10 ? 'animate-pulse' : eventTimeLeft <= 30 ? 'animate-bounce' : ''
-            }`}>
-            <div className="text-center mb-6">
-              <div className="flex items-center justify-center mb-4">
-                <h2 className="text-xl font-bold text-yellow-600">⚡ Adventure Event ⚡</h2>
-              </div>
 
-              <div className={`mb-4 p-2 rounded-lg border-2 ${eventTimeLeft <= 10
-                ? 'bg-red-100 border-red-400'
-                : eventTimeLeft <= 30
-                  ? 'bg-orange-100 border-orange-300'
-                  : 'bg-yellow-100 border-yellow-300'
-                }`}>
-                <div className={`text-sm font-semibold ${eventTimeLeft <= 10 ? 'text-red-700' : eventTimeLeft <= 30 ? 'text-orange-700' : 'text-yellow-700'
-                  }`}>
-                  ⏰ Time remaining: {eventTimeLeft}s {eventTimeLeft <= 10 ? '⚠️' : ''}
-                </div>
-                <div className={`w-full rounded-full h-2 mt-1 ${eventTimeLeft <= 10 ? 'bg-red-200' : eventTimeLeft <= 30 ? 'bg-orange-200' : 'bg-yellow-200'
-                  }`}>
-                  <div
-                    className={`h-2 rounded-full transition-all duration-1000 ${eventTimeLeft <= 10 ? 'bg-red-500' : eventTimeLeft <= 30 ? 'bg-orange-500' : 'bg-yellow-500'
-                      }`}
-                    style={{
-                      width: `${Math.max(0, Math.min(100, (eventTimeLeft / 60) * 100))}%`
-                    }}
-                  ></div>
-                </div>
-              </div>
-
-              <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg border-2 border-blue-200 mb-4">
-                <p className="text-gray-700 leading-relaxed font-medium">{gameState.event.eventText}</p>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              {gameState.event.choices.map((choice, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleChoiceEvent(index)}
-                  className={`w-full p-4 rounded-lg border-2 border-transparent hover:border-yellow-300 bg-gradient-to-r ${currentTheme.accent} text-white font-semibold transition-all hover:shadow-lg hover:scale-105 active:scale-95 text-base`}
-                >
-                  {choice.text}
-                </button>
-              ))}
-            </div>
-
-            <div className="mt-4 text-center">
-              <button
-                onClick={closeChoiceEvent}
-                className="text-gray-500 hover:text-gray-700 text-sm underline"
-              >
-                Walk away and ignore the event...
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* NEW: Skill Challenge Modal */}
       {showSkillChallenge && challengeData && (
@@ -1943,10 +2480,10 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
       )}
 
       <div className="max-w-7xl mx-auto">
-        {/* Enhanced Header with Music Button */}
-        <div className={`${currentTheme.panel} rounded-xl shadow-lg p-6 mb-6`}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
+        {/* Enhanced Header with Music Button and Glassmorphism */}
+        <div className={`${currentTheme.panel} rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-gray-200 p-6 mb-6`}>
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-4">
               <div className="w-12 h-12 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 flex items-center justify-center text-2xl">
                 ⚔️
               </div>
@@ -1955,8 +2492,18 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                   Hero Forge Enhanced
                 </h1>
                 <div className="flex items-center space-x-4">
-                  <div className={`inline-block px-3 py-1 rounded-full text-sm font-bold ${currentTitle.color} bg-opacity-20 border-2 border-current ${currentTitle.glow} shadow-lg`}>
-                    {gameState.activeTitle} {studentData?.firstName}
+                  <div className="flex flex-col items-center min-w-[150px]">
+                    <div className={`inline-block px-3 py-0.5 rounded-full text-sm font-bold ${currentTitle.color} bg-opacity-20 border-2 border-current ${currentTitle.glow} shadow-lg`}>
+                      Lvl {gameState.level} {gameState.activeTitle}
+                    </div>
+                    <div className="w-full bg-gray-800 rounded-full h-3 mt-1.5 border border-gray-600 overflow-hidden relative shadow-inner" title={`${gameState.xp} / ${getNextLevelXP(gameState.level)} XP`}>
+                      <div className="bg-gradient-to-r from-blue-500 to-indigo-500 h-full rounded-full transition-all duration-300 relative" style={{ width: `${Math.min(100, (gameState.xp / getNextLevelXP(gameState.level)) * 100)}%` }}>
+                        <div className="absolute inset-0 bg-white/20"></div>
+                      </div>
+                      <div className="absolute inset-0 flex items-center justify-center text-[9px] text-white font-black drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">
+                        {Math.floor(gameState.xp)} / {getNextLevelXP(gameState.level)} XP
+                      </div>
+                    </div>
                   </div>
                   {gameState.prestige > 0 && (
                     <div className="inline-block px-3 py-1 rounded-full text-sm font-bold text-yellow-400 bg-yellow-400 bg-opacity-20 border-2 border-yellow-400 shadow-yellow-400/50 shadow-lg">
@@ -1968,11 +2515,33 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                       Master Level {gameState.masterLevel} 🌌
                     </div>
                   )}
+                  {(gameState.keys?.normal > 0 || gameState.keys?.dark > 0 || gameState.keys?.ice > 0) && (
+                    <div className="flex items-center space-x-2 ml-2">
+                      {gameState.keys.normal > 0 && (
+                        <div className="flex items-center bg-gray-800/80 px-2 py-1 rounded-lg border border-gray-600 shadow-lg" title="Normal Keys">
+                          <img src="/hero forge/Items/Keys/Key.png" alt="Normal Key" className="w-5 h-5 object-contain mr-1" />
+                          <span className="font-bold text-yellow-400 text-sm">{gameState.keys.normal}</span>
+                        </div>
+                      )}
+                      {gameState.keys.dark > 0 && (
+                        <div className="flex items-center bg-gray-800/80 px-2 py-1 rounded-lg border border-purple-600 shadow-lg" title="Dark Keys">
+                          <img src="/hero forge/Items/Keys/Dark Key.png" alt="Dark Key" className="w-5 h-5 object-contain mr-1" />
+                          <span className="font-bold text-purple-400 text-sm">{gameState.keys.dark}</span>
+                        </div>
+                      )}
+                      {gameState.keys.ice > 0 && (
+                        <div className="flex items-center bg-gray-800/80 px-2 py-1 rounded-lg border border-blue-400 shadow-lg" title="Ice Keys">
+                          <img src="/hero forge/Items/Keys/Ice Key.png" alt="Ice Key" className="w-5 h-5 object-contain mr-1" />
+                          <span className="font-bold text-blue-300 text-sm">{gameState.keys.ice}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center space-x-4">
+            <div className="flex flex-wrap justify-center gap-3">
               {/* NEW: Scoreboard Button */}
               <button
                 onClick={() => setShowScoreboard(true)}
@@ -2122,22 +2691,35 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Enhanced with Master Level display */}
-          <div className="lg:col-span-1 space-y-6">
-            {/* Main Clickable Area - Pickaxe */}
-            <div className="text-center">
+        <div className="flex flex-col items-center justify-center min-h-[70vh] mt-8 max-w-7xl mx-auto">
+          {/* Prominent Gold Display */}
+          <div className="bg-gray-900 px-10 py-4 rounded-full border-2 border-yellow-500 shadow-[0_0_30px_rgba(234,179,8,0.3)] z-20 flex items-center gap-4 mb-4 transform hover:scale-105 transition-transform cursor-default">
+            <span className="text-5xl drop-shadow-lg">💰</span>
+            <span className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 to-yellow-600 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
+              {fmt(Math.floor(gameState.totalGold))}
+            </span>
+          </div>
+
+          <p className="text-white bg-gray-900 px-6 py-2 rounded-full text-lg font-bold shadow-xl border border-gray-700 mb-8 uppercase tracking-widest text-sm z-20">
+            {activeBoss ? `⚠️ Fending off ${activeBoss.name}! ⚠️` : 'Mine for resources'}
+          </p>
+
+          <div className="relative z-10 w-full flex flex-col lg:flex-row gap-8 items-start justify-center p-4">
+
+            {/* Left Column: Player Actions (Pickaxe + Weapon) */}
+            <div className="w-full lg:w-1/3 flex flex-col items-center mt-10">
+              {/* Main Clickable Area - Pickaxe */}
               <div
-                className={`w-64 h-64 mx-auto rounded-full bg-gradient-to-br from-gray-700 via-gray-800 to-black flex items-center justify-center text-8xl cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-2xl relative ${prestigeBorder}`}
+                className={`w-64 h-64 mx-auto rounded-full bg-gradient-to-br from-gray-800 via-gray-900 to-black flex items-center justify-center text-8xl cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-2xl relative ${prestigeBorder} border-4 border-gray-600`}
                 onClick={attack}
                 style={{
-                  boxShadow: `inset 0 20px 60px rgba(0,0,0,0.5), 0 30px 60px rgba(0,0,0,0.5)`
+                  boxShadow: `inset 0 20px 60px rgba(0,0,0,0.5), 0 30px 60px rgba(0,0,0,0.8)`
                 }}
               >
                 <img
                   src={`/hero forge/Items/Pickaxes/level${gameState.pickaxeLevel}.png`}
                   alt="Pickaxe"
-                  className="w-40 h-40 object-contain filter drop-shadow-lg"
+                  className="w-40 h-40 object-contain filter drop-shadow-2xl hover:drop-shadow-[0_0_15px_rgba(255,255,255,0.5)] transition-all z-20 relative"
                   onError={(e) => {
                     e.target.style.display = 'none';
                     e.target.nextSibling.style.display = 'block';
@@ -2153,234 +2735,238 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                 <div className="absolute bottom-16 right-4 w-4 h-4 border-2 border-yellow-400 rounded transform rotate-45 opacity-70 animate-pulse" style={{ animationDelay: '2s' }}></div>
                 <div className="absolute bottom-24 right-12 w-4 h-4 border-2 border-yellow-400 rounded transform rotate-45 opacity-70 animate-pulse" style={{ animationDelay: '2.5s' }}></div>
               </div>
-              <p className="mt-4 text-gray-800 bg-white/70 inline-block px-3 py-1 rounded-full text-sm font-bold shadow">
-                {activeBoss ? `Mine to fight ${activeBoss.name}!` : 'Mine for resources!'}
-              </p>
 
               {/* Equipped Weapon Display */}
               <div className="mt-6 flex flex-col items-center">
-                <div className="bg-gray-800/80 backdrop-blur-sm p-4 rounded-xl border-2 border-gray-600 shadow-xl inline-flex flex-col items-center">
-                  <h3 className="text-xs uppercase tracking-widest text-gray-400 mb-2 font-bold">Equipped Weapon</h3>
-                  <div className="w-20 h-20 flex items-center justify-center bg-gray-900 rounded-lg shadow-inner mb-2 border border-gray-700">
+                <div className="bg-gray-900 p-4 rounded-2xl border border-gray-600 shadow-2xl inline-flex flex-col items-center min-w-[160px] hover:bg-gray-800 transition-colors">
+                  <h3 className="text-[10px] uppercase tracking-widest text-gray-400 mb-2 font-bold">Equipped</h3>
+                  <div
+                    className="w-16 h-16 flex items-center justify-center bg-gray-900/50 rounded-xl shadow-inner mb-2 border border-gray-700/50 relative overflow-hidden group cursor-pointer hover:border-red-500/50 transition-colors"
+                    onClick={attackEnemy}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-t from-blue-900/20 to-transparent"></div>
                     <img
                       src={currentWeapon.path}
                       alt={currentWeapon.name}
-                      className="w-16 h-16 object-contain drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]"
+                      className="w-12 h-12 object-contain drop-shadow-[0_0_8px_rgba(255,255,255,0.4)] z-10 group-hover:scale-110 transition-transform active:scale-95"
                       onError={(e) => { e.target.style.display = 'none'; }}
                     />
                   </div>
-                  <p className="text-sm font-bold text-blue-400">{currentWeapon.name}</p>
+                  <p className="text-sm font-bold text-blue-300">{currentWeapon.name}</p>
                   <p className="text-xs text-green-400 font-semibold">+{currentWeapon.dpcMultiplier}x DMG</p>
-                </div>
-              </div>
-            </div>
-          </div>
 
-          {/* Enhanced Stats with new metrics */}
-          <div className={`${currentTheme.panel} rounded-xl shadow-lg p-6`}>
-            <h2 className="text-xl font-bold mb-4">⚡ Combat Stats</h2>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span>Damage per Click:</span>
-                <span className="font-bold">{fmt(dpc())}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Damage per Second:</span>
-                <span className="font-bold">{fmt(dps())}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Total Earned:</span>
-                <span className="font-bold">{fmt(Math.floor(gameState.totalGold))}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Attacks:</span>
-                <span className="font-bold">{gameState.attacks.toLocaleString()}</span>
-              </div>
+                  {/* Equipped Artifacts */}
+                  {gameState.equippedArtifacts.some(a => a) && (
+                    <div className="border-t border-gray-700/50 mt-3 pt-3 w-full flex justify-center gap-2">
+                      {gameState.equippedArtifacts.map((artId, idx) => {
+                        if (!artId) return null;
+                        const art = MERCHANT_ITEMS[artId];
+                        const count = gameState.inventory.filter(id => id === artId).length;
+                        return (
+                          <div key={idx} className="w-10 h-10 rounded-lg bg-gray-900/50 border border-yellow-500/50 flex items-center justify-center relative group cursor-help hover:bg-gray-800/80 transition-colors shadow-md">
+                            <img src={art.path} alt={art.name} className="w-8 h-8 object-contain drop-shadow-[0_0_5px_rgba(255,215,0,0.5)]" onError={(e) => { e.target.style.display = 'none'; }} />
+                            {count > 0 && <span className="absolute -bottom-1 -right-1 bg-pink-600 text-white text-[9px] font-black px-1 rounded-sm shadow-sm ring-1 ring-black">x{count}</span>}
 
-              {/* NEW: Enhanced progression stats */}
-              {gameState.skillPoints > 0 && (
-                <div className="flex justify-between">
-                  <span>Skill Points:</span>
-                  <span className="font-bold text-purple-600">{gameState.skillPoints}</span>
-                </div>
-              )}
-
-              {gameState.challengesCompleted && gameState.challengesCompleted.length > 0 && (
-                <div className="flex justify-between">
-                  <span>Challenges Won:</span>
-                  <span className="font-bold text-blue-600">{gameState.challengesCompleted.length}</span>
-                </div>
-              )}
-
-              {gameState.bossesDefeated && gameState.bossesDefeated.length > 0 && (
-                <div className="flex justify-between">
-                  <span>Bosses Defeated:</span>
-                  <span className="font-bold text-red-600">{gameState.bossesDefeated.length}</span>
-                </div>
-              )}
-
-              {gameState.prestige > 0 && (
-                <div className="flex justify-between">
-                  <span>Lifetime Earnings:</span>
-                  <span className="font-bold text-purple-600">{fmt(gameState.lifetimeEarnings)}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Active Boons */}
-            {gameState.boons.length > 0 && (
-              <div className="mt-4 pt-4 border-t">
-                <h3 className="font-semibold mb-2">🔮 Active Effects</h3>
-                {gameState.boons.map((boon, index) => (
-                  <div key={index} className="text-sm text-purple-600 font-medium">
-                    {boon.name} (x{boon.mult.toFixed(1)})
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Right Columns - Enhanced content */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* PROMINENT GOLD DISPLAY */}
-          <div className={`${currentTheme.panel} rounded-xl shadow-lg p-8 border-4 border-yellow-400`}>
-            <div className="text-center">
-              <div className="text-6xl mb-4">💰</div>
-              <div className="text-5xl font-bold text-yellow-600 mb-2">
-                {fmt(Math.floor(gameState.gold))}
-              </div>
-              <div className="text-xl font-semibold text-yellow-700 bg-yellow-100 px-4 py-2 rounded-full inline-block">
-                GOLD
-              </div>
-            </div>
-          </div>
-
-          {/* Buy Amount Controls */}
-          <div className={`${currentTheme.panel} rounded-xl shadow-lg p-6`}>
-            <h2 className="text-xl font-bold mb-4">🛒 Buy Amount</h2>
-            <div className="flex space-x-2">
-              {[1, 10, 100].map(amount => (
-                <button
-                  key={amount}
-                  onClick={() => setGameState(prev => ({ ...prev, buyAmount: amount }))}
-                  className={`px-4 py-2 rounded-lg font-semibold transition-all ${gameState.buyAmount === amount
-                    ? `bg-gradient-to-r ${currentTheme.accent} text-white`
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}
-                >
-                  x{amount}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Artifacts */}
-          <div className={`${currentTheme.panel} rounded-xl shadow-lg p-6`}>
-            <h2 className="text-xl font-bold mb-4">🔮 Mystic Artifacts</h2>
-            <div className="space-y-3 max-h-80 overflow-y-auto">
-              {(gameState.artifacts && Array.isArray(gameState.artifacts) ? gameState.artifacts : []).map((artifact, index) => {
-                if (!artifact || typeof artifact !== 'object') return null;
-
-                const cost = costFor(artifact);
-                const canAfford = gameState.gold >= cost;
-
-                return (
-                  <div
-                    key={artifact.key || index}
-                    className={`flex items-center space-x-4 p-4 rounded-lg border-2 transition-all ${canAfford
-                      ? 'border-green-300 bg-green-50 hover:bg-green-100'
-                      : 'border-gray-300 bg-gray-50 opacity-60'
-                      }`}
-                  >
-                    <div className="w-12 h-12 flex items-center justify-center">
-                      <img
-                        src={artifact.path}
-                        alt={artifact.name}
-                        className="w-10 h-10 object-contain"
-                        onError={(e) => {
-                          e.target.style.display = 'none';
-                          e.target.nextSibling.style.display = 'block';
-                        }}
-                      />
-                      <div className="text-2xl hidden">🔮</div>
+                            {/* Tooltip */}
+                            <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 w-max bg-gray-900 text-white text-xs p-2 rounded shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 border border-gray-700">
+                              <div className="font-bold text-yellow-400">{art.name}</div>
+                              <div className="text-blue-300">{art.desc}</div>
+                              <div className="text-green-400 mt-1 font-bold">Total Bonus: +{Math.round((art.value - 1) * count * 100)}%</div>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                    <div className="flex-1">
-                      <h3 className="font-bold text-gray-800">{artifact.name} <span className="text-sm text-gray-600">x{artifact.count || 0}</span></h3>
-                      <p className="text-sm text-gray-600">
-                        Each: {fmt((artifact.baseDps || 0) * artifactMult(artifact.key))} DPS • Cost: {fmt(cost)}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => buyArtifact(index, gameState.buyAmount)}
-                      disabled={!canAfford}
-                      className={`px-4 py-2 rounded-lg font-semibold transition-all ${canAfford
-                        ? `bg-gradient-to-r ${currentTheme.accent} text-white hover:shadow-lg`
-                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                        }`}
-                    >
-                      Acquire
-                    </button>
-                  </div>
-                );
-              })}
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
 
-          {/* Enhanced Upgrades */}
-          <div className={`${currentTheme.panel} rounded-xl shadow-lg p-6`}>
-            <h2 className="text-xl font-bold mb-4">⚡ Power Upgrades</h2>
-            <div className="space-y-3 max-h-60 overflow-y-auto">
-              {(gameState.upgrades && Array.isArray(gameState.upgrades) ? gameState.upgrades : []).filter(upgrade => {
-                if (!upgrade || upgrade.purchased) return false;
-                if (upgrade.req && upgrade.req.key) {
-                  const artifact = (gameState.artifacts && Array.isArray(gameState.artifacts))
-                    ? gameState.artifacts.find(a => a && a.key === upgrade.req.key)
-                    : null;
-                  return artifact && (artifact.count || 0) >= (upgrade.req.count || 0);
-                }
-                return true;
-              }).map((upgrade, index) => {
-                if (!upgrade) return null;
+            {/* Right Column: Environment & Stats */}
+            <div className="w-full lg:w-2/3 flex flex-col items-center lg:items-end">
+              {/* Environment Display */}
+              <div className="w-full relative rounded-3xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] border-4 border-yellow-500/50 overflow-hidden bg-gray-950 flex justify-center items-center mb-6 min-h-[300px] lg:min-h-[400px]" style={{ maxHeight: '500px' }}>
+                <img
+                  src={getBackgroundImage()}
+                  alt="Mining Environment"
+                  className="w-full h-auto object-cover relative z-10 transition-all duration-1000"
+                  style={{ maxHeight: '500px', width: '100%', objectFit: 'contain' }}
+                />
 
-                const canAfford = gameState.gold >= (upgrade.cost || 0);
-                const originalIndex = (gameState.upgrades && Array.isArray(gameState.upgrades))
-                  ? gameState.upgrades.findIndex(u => u && u.id === upgrade.id)
-                  : -1;
-                const isLegendary = (upgrade.cost || 0) >= 1000000000;
+                {/* Fallback ambient blur behind the contained image */}
+                <img
+                  src={getBackgroundImage()}
+                  alt=""
+                  className="absolute inset-0 w-full h-full object-cover opacity-40 blur-2xl z-0 transition-all duration-1000"
+                />
 
-                return (
-                  <div
-                    key={upgrade.id || index}
-                    className={`flex items-center space-x-4 p-4 rounded-lg border-2 transition-all ${canAfford
-                      ? isLegendary
-                        ? 'border-yellow-300 bg-yellow-50 hover:bg-yellow-100 shadow-yellow-200 shadow-lg'
-                        : 'border-blue-300 bg-blue-50 hover:bg-blue-100'
-                      : 'border-gray-300 bg-gray-50 opacity-60'
-                      }`}
-                  >
-                    <div className="flex-1">
-                      <h3 className={`font-bold flex items-center text-gray-800 ${isLegendary ? 'text-yellow-700' : ''}`}>
-                        {upgrade.name || 'Unknown Upgrade'}
-                        {isLegendary && <span className="ml-2">✨</span>}
-                      </h3>
-                      <p className="text-sm text-gray-600">{upgrade.desc || 'No description'}</p>
+                {/* NEW: Inline Choice Event Overlay */}
+                {showChoiceEvent && gameState.event && (
+                  <div className="absolute inset-0 z-40 bg-black/90 flex flex-col items-center justify-center p-6 text-center overflow-y-auto w-full h-full">
+                    <h2 className="text-3xl font-black text-yellow-400 mb-2 drop-shadow-lg tracking-wider">⚡ Adventure Event ⚡</h2>
+
+                    <div className="w-full max-w-md mb-4 bg-black/50 p-2 rounded-lg border border-yellow-500/30">
+                      <div className="flex justify-between text-xs font-bold text-yellow-500 mb-1 px-1">
+                        <span>Time Remaining</span>
+                        <span className={eventTimeLeft <= 10 ? 'text-red-500 animate-pulse' : ''}>{eventTimeLeft}s</span>
+                      </div>
+                      <div className="w-full bg-gray-900 rounded-full h-2">
+                        <div
+                          className={`h-2 rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(234,179,8,0.5)] ${eventTimeLeft <= 10 ? 'bg-red-500' : 'bg-yellow-500'}`}
+                          style={{ width: `${Math.max(0, Math.min(100, (eventTimeLeft / 60) * 100))}%` }}
+                        ></div>
+                      </div>
                     </div>
-                    <button
-                      onClick={() => originalIndex >= 0 && buyUpgrade(originalIndex)}
-                      disabled={!canAfford || originalIndex < 0}
-                      className={`px-4 py-2 rounded-lg font-semibold transition-all ${canAfford && originalIndex >= 0
-                        ? isLegendary
-                          ? 'bg-gradient-to-r from-yellow-500 to-orange-600 text-white hover:shadow-lg prestige-glow'
-                          : `bg-gradient-to-r ${currentTheme.accent} text-white hover:shadow-lg`
-                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                        }`}
-                    >
-                      {fmt(upgrade.cost || 0)}
-                    </button>
+
+                    <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 p-4 rounded-xl border border-gray-600/50 mb-6 max-w-2xl shadow-inner w-full">
+                      <p className="text-white text-lg leading-relaxed font-bold drop-shadow-md">{gameState.event.eventText}</p>
+                    </div>
+
+                    {gameState.event.type === 'merchant' ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-3xl">
+                        {(gameState.event.merchantInventory || []).map((artId, index) => {
+                          const item = MERCHANT_ITEMS[artId];
+                          if (!item) return null;
+                          const canAfford = gameState.totalGold >= item.cost;
+                          const count = gameState.inventory.filter(id => id === artId).length;
+
+                          return (
+                            <div key={index} className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 ${count > 0 ? 'border-yellow-500 bg-yellow-900/40 hover:bg-yellow-800/60 cursor-pointer' : canAfford ? 'border-yellow-400 bg-yellow-900/40 hover:bg-yellow-800/60 cursor-pointer' : 'border-gray-600 bg-gray-900/80 opacity-60'} transition-all hover:scale-105 active:scale-95`}
+                              onClick={() => {
+                                if (canAfford) {
+                                  setGameState(prev => ({
+                                    ...prev,
+                                    gold: Math.max(0, prev.gold - item.cost),
+                                    inventory: [...prev.inventory, artId],
+                                    event: { ...prev.event, shown: false, nextIn: 60 + Math.random() * 120 }
+                                  }));
+                                  addToast(`Purchased ${item.name}! Check Customization to equip.`, 'success');
+                                  setShowChoiceEvent(false);
+                                } else {
+                                  addToast(`Not enough gold for ${item.name}.`, 'error');
+                                }
+                              }}
+                            >
+                              <div className="w-14 h-14 bg-black/60 rounded-lg shadow-inner flex items-center justify-center p-2 mb-1 border border-white/10">
+                                <img src={item.path} alt={item.name} className="max-w-full max-h-full object-contain filter drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]" onError={(e) => e.target.style.display = 'none'} />
+                              </div>
+                              <div className="font-bold text-white text-[13px] text-center leading-tight">
+                                {item.name} {count > 0 && <span className="text-pink-400 ml-1 text-[11px] bg-pink-900/50 px-1 rounded">x{count}</span>}
+                              </div>
+                              <div className="text-[10px] font-semibold text-blue-300 text-center mb-1 leading-tight">{item.desc}</div>
+                              <div className={`font-black text-sm bg-black/80 px-4 py-1.5 rounded-full w-full text-center border ${canAfford ? 'text-yellow-400 border-yellow-500/30' : 'text-red-500 border-red-500/30'}`}>
+                                💰 {fmt(item.cost)}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-3 w-full max-w-md">
+                        {gameState.event.choices.map((choice, index) => (
+                          <button
+                            key={index}
+                            onClick={() => handleChoiceEvent(index)}
+                            className="w-full p-4 rounded-xl border-2 border-yellow-500/50 hover:border-yellow-400 bg-gradient-to-r from-gray-900 to-black text-white font-bold transition-all hover:scale-105 active:scale-95 text-base shadow-[0_0_15px_rgba(234,179,8,0.2)] hover:shadow-[0_0_20px_rgba(234,179,8,0.4)]"
+                          >
+                            {choice.text}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                );
-              })}
+                )}
+
+                {/* NEW: Enemy Health Bar Overlay */}
+                {gameState.activeEnemy && (
+                  <div className="absolute top-4 left-1/2 transform -translate-x-1/2 w-3/4 max-w-md bg-black/80 p-3 rounded-xl border-2 border-red-500/50 shadow-[0_0_20px_rgba(255,0,0,0.3)] z-30 flex flex-col items-center">
+                    <div className="w-full flex justify-between items-center mb-1 px-2">
+                      <div className="text-xl font-bold text-red-400 flex items-center gap-2">
+                        ⚔️ {gameState.activeEnemy.name}
+                      </div>
+                      <div className={`text-sm font-bold ${enemyTimeLeft <= 5 ? 'text-red-500 animate-pulse' : 'text-yellow-400'}`}>
+                        ⏰ {enemyTimeLeft}s
+                      </div>
+                    </div>
+                    <div className="w-full h-4 bg-gray-800 rounded-full overflow-hidden border border-gray-600 relative">
+                      <div className="h-full bg-gradient-to-r from-red-600 to-orange-500 transition-all duration-300 relative" style={{ width: `${(gameState.activeEnemy.currentHp / gameState.activeEnemy.hp) * 100}%` }}>
+                        <div className="absolute inset-0 bg-white/20"></div>
+                      </div>
+                    </div>
+                    <div className="text-white text-xs font-bold mt-1 drop-shadow-md">{fmt(Math.ceil(gameState.activeEnemy.currentHp))} / {fmt(gameState.activeEnemy.hp)} HP</div>
+                  </div>
+                )}
+
+                {/* NEW: Inline Skill Test Overlay */}
+                {gameState.activeEnemy && gameState.activeEnemy.skillTestActive && (
+                  <InlineSkillTest
+                    testName={gameState.activeEnemy.skillTest}
+                    onComplete={handleEnemySkillTest}
+                  />
+                )}
+              </div>
+
+              {/* Visual Combat Stats */}
+              <div className="w-full bg-gray-900 rounded-2xl p-4 border border-gray-600 shadow-2xl">
+                <div className="flex justify-around items-center mb-4 flex-wrap gap-4">
+                  <div className="flex flex-col items-center hover:scale-110 transition-transform" title="Mining Power (Gold per Click)">
+                    <div className="w-12 h-12 rounded-full bg-yellow-900/40 border border-yellow-500/30 flex items-center justify-center mb-2 shadow-inner">
+                      <span className="text-xl drop-shadow-md">⛏️</span>
+                    </div>
+                    <span className="text-base font-black text-white drop-shadow-md">{fmt(gpc())}</span>
+                  </div>
+
+                  <div className="flex flex-col items-center hover:scale-110 transition-transform" title="Damage per Click">
+                    <div className="w-12 h-12 rounded-full bg-red-900/40 border border-red-500/30 flex items-center justify-center mb-2 shadow-inner">
+                      <span className="text-xl drop-shadow-md">⚔️</span>
+                    </div>
+                    <span className="text-base font-black text-white drop-shadow-md">{fmt(dpc())}</span>
+                  </div>
+
+                  <div className="flex flex-col items-center hover:scale-110 transition-transform" title="Attacks">
+                    <div className="w-12 h-12 rounded-full bg-gray-900/40 border border-gray-500/30 flex items-center justify-center mb-2 shadow-inner">
+                      <span className="text-xl drop-shadow-md">🎯</span>
+                    </div>
+                    <span className="text-base font-black text-white drop-shadow-md">{gameState.attacks.toLocaleString()}</span>
+                  </div>
+
+                  <div className="flex flex-col items-center hover:scale-110 transition-transform" title="Damage per Second">
+                    <div className="w-12 h-12 rounded-full bg-blue-900/40 border border-blue-500/30 flex items-center justify-center mb-2 shadow-inner">
+                      <span className="text-xl drop-shadow-md">⚡</span>
+                    </div>
+                    <span className="text-base font-black text-white drop-shadow-md">{fmt(dps())}</span>
+                  </div>
+
+                  {gameState.skillPoints > 0 && (
+                    <div className="flex flex-col items-center hover:scale-110 transition-transform" title="Skill Points">
+                      <div className="w-12 h-12 rounded-full bg-emerald-900/40 border border-emerald-500/30 flex items-center justify-center mb-2 shadow-inner">
+                        <span className="text-xl drop-shadow-md">💎</span>
+                      </div>
+                      <span className="text-base font-black text-emerald-400 drop-shadow-md">{gameState.skillPoints}</span>
+                    </div>
+                  )}
+
+                  {gameState.prestige > 0 && (
+                    <div className="flex flex-col items-center hover:scale-110 transition-transform" title="Prestige">
+                      <div className="w-12 h-12 rounded-full bg-purple-900/40 border border-purple-500/30 flex items-center justify-center mb-2 shadow-inner">
+                        <span className="text-xl drop-shadow-md">⭐</span>
+                      </div>
+                      <span className="text-base font-black text-purple-400 drop-shadow-md">{gameState.prestige}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Stat Key at the bottom */}
+                <div className="pt-3 border-t border-gray-600/50 flex justify-center flex-wrap gap-x-6 gap-y-2 text-[10px] uppercase tracking-wider text-gray-400 font-semibold bg-black/30 rounded-xl p-2">
+                  <span className="flex items-center gap-1"><span className="text-sm">⛏️</span> Mining Pwr</span>
+                  <span className="flex items-center gap-1"><span className="text-sm">⚔️</span> Dmg/Click</span>
+                  <span className="flex items-center gap-1"><span className="text-sm">🎯</span> Attacks</span>
+                  <span className="flex items-center gap-1"><span className="text-sm">⚡</span> Dmg/Sec</span>
+                  <span className="flex items-center gap-1"><span className="text-sm">💰</span> Total Gold</span>
+                  {gameState.skillPoints > 0 && <span className="flex items-center gap-1"><span className="text-sm">💎</span> Skill Pts</span>}
+                  {gameState.prestige > 0 && <span className="flex items-center gap-1"><span className="text-sm">⭐</span> Prestige</span>}
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -2402,7 +2988,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   {/* Enhanced Weapons with ultra-rare options */}
                   <div>
                     <h3 className="text-lg font-bold mb-4">⚔️ Legendary Weapons</h3>
@@ -2432,10 +3018,8 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                                 className="w-8 h-8 object-contain"
                                 onError={(e) => {
                                   e.target.style.display = 'none';
-                                  e.target.nextSibling.style.display = 'block';
                                 }}
                               />
-                              <div className="text-2xl hidden">{weapon.icon}</div>
                             </div>
                             <div className={`text-xs font-semibold ${isUltraRare ? 'text-yellow-700' : ''}`}>
                               {weapon.name}
@@ -2548,6 +3132,96 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                       })}
                     </div>
                   </div>
+
+                  {/* NEW: Artifact Loadouts */}
+                  <div>
+                    <h3 className="text-lg font-bold mb-4">🎒 Mystical Artifacts</h3>
+                    <div className="mb-4 bg-gray-900 rounded-lg p-3 border-2 border-gray-700 shadow-inner">
+                      <div className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-2 text-center">Active Loadout</div>
+                      <div className="flex justify-center gap-2">
+                        {[0, 1, 2].map(slotIndex => {
+                          const equippedId = gameState.equippedArtifacts[slotIndex];
+                          const item = equippedId ? MERCHANT_ITEMS[equippedId] : null;
+                          return (
+                            <div
+                              key={`slot-${slotIndex}`}
+                              className="w-14 h-14 bg-gray-800 rounded-md border-2 border-gray-600 flex items-center justify-center relative group cursor-pointer hover:border-red-400 transition-colors"
+                              onClick={() => {
+                                // Unequip
+                                if (equippedId) {
+                                  setGameState(prev => {
+                                    const newEquipped = [...prev.equippedArtifacts];
+                                    newEquipped[slotIndex] = null;
+                                    return { ...prev, equippedArtifacts: newEquipped };
+                                  });
+                                  addToast(`Unequipped ${item.name}`, 'info');
+                                }
+                              }}
+                            >
+                              {item ? (
+                                <>
+                                  <img src={item.path} alt={item.name} className="w-10 h-10 object-contain drop-shadow-md" onError={(e) => e.target.style.display = 'none'} />
+                                  <div className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity">×</div>
+                                </>
+                              ) : (
+                                <span className="text-gray-600 text-xl font-black">+</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
+                      {gameState.inventory.length === 0 ? (
+                        <div className="text-center text-gray-500 text-sm italic p-4">Your bag is empty. Find the Traveling Merchant!</div>
+                      ) : (
+                        gameState.inventory.map(artId => {
+                          const item = MERCHANT_ITEMS[artId];
+                          if (!item) return null;
+                          const isEquipped = gameState.equippedArtifacts.includes(artId);
+
+                          return (
+                            <div
+                              key={`inv-${artId}`}
+                              className={`p-3 rounded-lg border-2 cursor-pointer transition-all flex items-center gap-3 ${isEquipped ? 'border-green-500 bg-green-50' : 'border-gray-300 bg-white hover:border-gray-400 hover:shadow-md'}`}
+                              onClick={() => {
+                                if (isEquipped) {
+                                  // Unequip
+                                  setGameState(prev => {
+                                    const newEq = [...prev.equippedArtifacts];
+                                    const idx = newEq.indexOf(artId);
+                                    if (idx !== -1) newEq[idx] = null;
+                                    return { ...prev, equippedArtifacts: newEq };
+                                  });
+                                } else {
+                                  // Try to equip in first empty slot
+                                  const emptyIdx = gameState.equippedArtifacts.indexOf(null);
+                                  if (emptyIdx !== -1) {
+                                    setGameState(prev => {
+                                      const newEq = [...prev.equippedArtifacts];
+                                      newEq[emptyIdx] = artId;
+                                      return { ...prev, equippedArtifacts: newEq };
+                                    });
+                                    addToast(`Equipped ${item.name}`, 'success');
+                                  } else {
+                                    addToast('Loadout full! Unequip an artifact first.', 'warning');
+                                  }
+                                }
+                              }}
+                            >
+                              <div className="w-10 h-10 shrink-0 bg-gray-100 rounded flex items-center justify-center">
+                                <img src={item.path} alt={item.name} className="w-8 h-8 object-contain" onError={(e) => e.target.style.display = 'none'} />
+                              </div>
+                              <div className="min-w-0">
+                                <div className="text-sm font-bold truncate text-gray-800">{item.name}</div>
+                                <div className="text-xs text-blue-600 truncate">{item.desc}</div>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 <div className="mt-6 pt-6 border-t text-center">
@@ -2562,7 +3236,107 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
             </div>
           </div>
         )}
-    </div >
+
+      {/* NEW: Admin / Developer Tools Panel */}
+      {studentData?.firstName === 'Teacher' && (
+        <div className="max-w-7xl mx-auto mt-8 mb-12">
+          <div className="bg-gray-900 border-2 border-red-500/50 rounded-xl shadow-[0_0_30px_rgba(255,0,0,0.2)] p-6 relative overflow-hidden">
+            <div className="absolute top-0 right-0 bg-red-500 text-white text-[10px] font-black uppercase px-3 py-1 rounded-bl-lg">Admin Tools</div>
+            <h2 className="text-xl font-bold text-red-400 mb-4 flex items-center gap-2">
+              <span>🛠️</span> Developer Console
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Unlock cheats */}
+              <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
+                <h3 className="text-sm font-bold text-gray-300 mb-2 uppercase">Unlocks</h3>
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={() => {
+                      const allWeaponKeys = Object.keys(WEAPONS);
+                      setGameState(prev => ({ ...prev, unlockedWeapons: allWeaponKeys, xp: prev.xp + 1000000, level: Math.max(prev.level, 100) }));
+                      addToast('All Weapons Unlocked! Level boosted to 100.', 'success');
+                    }}
+                    className="bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold py-2 px-3 rounded"
+                  >
+                    Unlock All Weapons & Level 100
+                  </button>
+                  <button
+                    onClick={() => {
+                      const allMerchItems = Object.keys(MERCHANT_ITEMS);
+                      setGameState(prev => ({
+                        ...prev,
+                        inventory: [...prev.inventory, ...allMerchItems],
+                        keys: { normal: 99, dark: 99, ice: 99 },
+                        gold: prev.gold + 1000000000,
+                        totalGold: prev.totalGold + 1000000000
+                      }));
+                      addToast('Max Keys, 1B Gold, & All Artifacts Added!', 'success');
+                    }}
+                    className="bg-purple-600 hover:bg-purple-500 text-white text-sm font-bold py-2 px-3 rounded"
+                  >
+                    Give All Items & 1B Gold
+                  </button>
+                  <button
+                    onClick={() => {
+                      setGameState(prev => ({ ...prev, pickaxeLevel: Math.min(prev.pickaxeLevel + 1, 10) }));
+                      addToast('Pickaxe Upgrade Forced!', 'success');
+                    }}
+                    className="bg-yellow-600 hover:bg-yellow-500 text-white text-sm font-bold py-2 px-3 rounded"
+                  >
+                    Upgrade Pickaxe (+1)
+                  </button>
+                </div>
+              </div>
+
+              {/* Spawner Cheats */}
+              <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
+                <h3 className="text-sm font-bold text-gray-300 mb-2 uppercase">Force Spawns</h3>
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={() => {
+                      setGameState(prev => ({ ...prev, event: { ...prev.event, shown: false }, activeEnemy: null, nextEncounter: 'enemy' }));
+                      setTimeout(() => {
+                        spawnChoiceEvent();
+                      }, 100);
+                      addToast('Forced Enemy Spawn...', 'info');
+                    }}
+                    className="bg-red-700 hover:bg-red-600 text-white text-sm font-bold py-2 px-3 rounded"
+                  >
+                    Force Spawn Enemy
+                  </button>
+                  <button
+                    onClick={() => {
+                      setGameState(prev => ({ ...prev, event: { ...prev.event, shown: false }, activeEnemy: null, nextEncounter: 'event' }));
+                      setTimeout(() => {
+                        spawnChoiceEvent();
+                      }, 100);
+                      addToast('Forced Choice Event Spawn...', 'info');
+                    }}
+                    className="bg-teal-700 hover:bg-teal-600 text-white text-sm font-bold py-2 px-3 rounded"
+                  >
+                    Force Spawn Choice Event
+                  </button>
+                </div>
+              </div>
+
+              {/* Env Cycle Cheats */}
+              <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
+                <h3 className="text-sm font-bold text-gray-300 mb-2 uppercase">Cycles</h3>
+                <div className="grid grid-cols-2 gap-2">
+                  <button onClick={() => setGameState(prev => ({ ...prev, currentCycle: 'Day' }))} className="bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold py-2 px-2 rounded">Day</button>
+                  <button onClick={() => setGameState(prev => ({ ...prev, currentCycle: 'Night' }))} className="bg-indigo-900 hover:bg-indigo-800 text-white text-xs font-bold py-2 px-2 rounded">Night</button>
+                  <button onClick={() => setGameState(prev => ({ ...prev, currentCycle: 'Snow' }))} className="bg-cyan-200 hover:bg-cyan-100 text-cyan-900 text-xs font-bold py-2 px-2 rounded">Snow</button>
+                  <button onClick={() => setGameState(prev => ({ ...prev, currentCycle: 'BloodMoon' }))} className="bg-red-900 hover:bg-red-800 text-white text-xs font-bold py-2 px-2 rounded">Blood Moon</button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
+
+    </div>
   );
 };
 
@@ -2787,6 +3561,83 @@ const SpeedChallenge = ({ onComplete, duration }) => {
           ></div>
         </div>
       </div>
+    </div>
+  );
+};
+
+// NEW: Inline Skill Test Component
+const InlineSkillTest = ({ testName, onComplete }) => {
+  const [progress, setProgress] = useState(0);
+  const [targetPos, setTargetPos] = useState({ top: '50%', left: '50%' });
+  const [isActive, setIsActive] = useState(true);
+
+  const getTestConfig = () => {
+    switch (testName) {
+      case 'Quick Click': return { goal: 5, move: false, timeout: 4000 };
+      case 'Split Target': return { goal: 4, move: true, timeout: 5000 };
+      case 'Poison Spores': return { goal: 6, move: true, timeout: 5500 };
+      case 'Erratic Orbit': return { goal: 8, move: true, timeout: 6000, fast: true };
+      case 'Ambush': return { goal: 3, move: true, timeout: 3000 };
+      case 'Brute Force': return { goal: 12, move: false, timeout: 5000 };
+      case 'Shield Block': return { goal: 1, move: false, timeout: 2000 };
+      case 'Combo Sequence': return { goal: 5, move: true, timeout: 5000 };
+      case 'Gold Rush': return { goal: 10, move: true, timeout: 6000 };
+      case 'Inferno': return { goal: 15, move: true, fast: true, timeout: 6000 };
+      default: return { goal: 4, move: false, timeout: 4000 };
+    }
+  };
+
+  const config = getTestConfig();
+
+  useEffect(() => {
+    if (!isActive) return;
+    const timer = setTimeout(() => {
+      setIsActive(false);
+      onComplete(false);
+    }, config.timeout);
+
+    let moveInterval;
+    if (config.move) {
+      moveInterval = setInterval(() => {
+        setTargetPos({
+          top: `${15 + Math.random() * 70}%`,
+          left: `${15 + Math.random() * 70}%`
+        });
+      }, config.fast ? 600 : 1000);
+    }
+
+    return () => {
+      clearTimeout(timer);
+      if (moveInterval) clearInterval(moveInterval);
+    };
+  }, [isActive, onComplete, config.timeout, config.move, config.fast]);
+
+  const handleClick = (e) => {
+    e.stopPropagation();
+    if (!isActive) return;
+    const newProgress = progress + 1;
+    setProgress(newProgress);
+    if (newProgress >= config.goal) {
+      setIsActive(false);
+      onComplete(true);
+    }
+  };
+
+  if (!isActive) return null;
+
+  return (
+    <div className="absolute inset-0 z-40 bg-black/50 rounded-3xl overflow-hidden pointer-events-auto backdrop-blur-sm">
+      <div className="absolute top-1/4 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/90 text-white px-6 py-2 rounded-full text-base font-bold border-2 border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.5)] text-center whitespace-nowrap animate-pulse">
+        Defend: {testName} ({progress}/{config.goal})
+      </div>
+
+      <button
+        onClick={handleClick}
+        className="absolute transform -translate-x-1/2 -translate-y-1/2 w-20 h-20 bg-gradient-to-br from-red-500 to-purple-600 rounded-full border-4 border-white shadow-[0_0_25px_rgba(255,255,255,0.8)] hover:scale-110 active:scale-90 transition-transform flex items-center justify-center text-3xl"
+        style={{ ...targetPos, transition: config.move ? 'all 0.2s ease-out' : 'none' }}
+      >
+        🎯
+      </button>
     </div>
   );
 };
