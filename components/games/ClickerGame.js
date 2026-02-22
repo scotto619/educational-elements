@@ -647,7 +647,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     let mult = gameState.dpcMult * activeBoonMult('dpc') * weaponMultiplier;
 
     // Apply Artifact Boosts
-    gameState.equippedArtifacts.forEach(artId => {
+    (gameState.equippedArtifacts || []).forEach(artId => {
       if (artId) {
         const art = MERCHANT_ITEMS[artId];
         // Damage is boosted by damage or all artifacts
@@ -667,7 +667,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     let mult = Math.pow(2, gameState.pickaxeLevel - 1);
 
     // Apply Gold Artifact Boosts 
-    gameState.equippedArtifacts.forEach(artId => {
+    (gameState.equippedArtifacts || []).forEach(artId => {
       if (artId) {
         const art = MERCHANT_ITEMS[artId];
         // Mining efficiency only boosted by gold or all artifacts
@@ -700,7 +700,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     total *= gameState.globalDpsMult * activeBoonMult('dps');
 
     // Apply Artifact Boosts
-    gameState.equippedArtifacts.forEach(artId => {
+    (gameState.equippedArtifacts || []).forEach(artId => {
       if (artId) {
         const art = MERCHANT_ITEMS[artId];
         if (art && (art.type === 'dps' || art.type === 'all')) {
