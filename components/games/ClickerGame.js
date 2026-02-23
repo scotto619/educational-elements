@@ -2246,6 +2246,30 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     addToast('Game saved!', 'success');
   }, [saveToFirebase, addToast]);
 
+  const restartGame = useCallback(async () => {
+    const confirmed = typeof window !== 'undefined'
+      ? window.confirm('Are you sure? This will permanently reset your Hero Forge progress.')
+      : false;
+
+    if (!confirmed) return;
+
+    try {
+      if (updateStudentData) {
+        await updateStudentData({
+          clickerGameData: null,
+          clickerAchievements: null
+        });
+      }
+      addToast('Hero Forge progress reset. Starting a new adventure!', 'success');
+      if (typeof window !== 'undefined') {
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error('Failed to restart Hero Forge:', error);
+      addToast('Could not reset progress. Please try again.', 'error');
+    }
+  }, [updateStudentData, addToast]);
+
   // Load on component mount
   useEffect(() => {
     if (studentData && !isLoaded) {
@@ -2680,6 +2704,13 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                 className="bg-gradient-to-r from-purple-500 to-pink-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all"
               >
                 🎨 Customize
+              </button>
+              <button
+                onClick={restartGame}
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all font-bold"
+                title="Restart Hero Forge"
+              >
+                🔄 Restart
               </button>
               <button
                 onClick={manualSave}
