@@ -684,8 +684,9 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
       mult *= SKILL_UPGRADES['gold_boost'].effect(goldBoostLevel).value;
     }
 
-    return Math.max(1, gameState.dpcBase * mult);
-  }, [gameState.dpcBase, gameState.pickaxeLevel, getSkillLevel, gameState.equippedArtifacts, gameState.inventory]);
+    const levelMiningBonus = Math.max(0, gameState.level - 1);
+    return Math.max(1, gameState.dpcBase * mult) + levelMiningBonus;
+  }, [gameState.dpcBase, gameState.pickaxeLevel, gameState.level, getSkillLevel, gameState.equippedArtifacts, gameState.inventory]);
 
   const dps = useCallback(() => {
     let total = 0;
@@ -1131,7 +1132,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
       const gemChance = SKILL_UPGRADES['gem_hunter'].effect(gemHunterLevel).value;
       if (Math.random() < gemChance) {
         setGameState(prev => ({ ...prev, skillPoints: prev.skillPoints + 1 }));
-        addToast('?? You found a Skill Point!', 'success');
+        addToast('✨ You found a Skill Point!', 'success');
       }
     }
 
@@ -2343,8 +2344,9 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
       const dt = Math.min(0.25, (now - (lastUpdateRef.current || now)) / 1000);
       lastUpdateRef.current = now;
 
-      // Update DPS production
-      const production = dps() * dt;
+      // Update DPS production + level-based auto farming (starts at 0 at level 1)
+      const levelAutoFarm = Math.max(0, gameState.level - 1);
+      const production = (dps() + levelAutoFarm) * dt;
       if (production > 0 && isFinite(production)) {
         addGold(production);
       }
@@ -2386,7 +2388,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         cancelAnimationFrame(gameLoopRef.current);
       }
     };
-  }, [isLoaded, dps, addGold, gameState.event, spawnChoiceEvent]);
+  }, [isLoaded, dps, addGold, gameState.level, gameState.event, spawnChoiceEvent]);
 
   // Memoized Leaderboard Rows - Moved here to be before conditional returns but after fmt definition
   const leaderboardRows = useMemo(() => {
@@ -2641,7 +2643,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                 onClick={() => setShowScoreboard(true)}
                 className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all font-bold flex items-center gap-2"
               >
-                <span>??</span> Scoreboard
+                <span>🏆</span> Scoreboard
               </button>
 
               {/* NEW: Music Toggle Button */}
@@ -2653,7 +2655,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                   }`}
                 title={gameState.musicEnabled ? 'Turn off music' : 'Turn on music'}
               >
-                {gameState.musicEnabled ? '?? Music On' : '?? Music Off'}
+                {gameState.musicEnabled ? '🎵 Music On' : '🔇 Music Off'}
               </button>
 
               {canPrestige() && (
@@ -2661,20 +2663,20 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                   onClick={doPrestige}
                   className="bg-gradient-to-r from-yellow-500 to-orange-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all font-bold prestige-glow"
                 >
-                  ? Prestige (+{calculatePrestigeGain()})
+                  ✨ Prestige (+{calculatePrestigeGain()})
                 </button>
               )}
               <button
                 onClick={() => setShowSkillShop(true)}
                 className="bg-gradient-to-r from-teal-500 to-emerald-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all"
               >
-                ?? Skills ({gameState.skillPoints})
+                🧠 Skills ({gameState.skillPoints})
               </button>
               <button
                 onClick={() => setShowUnlockables(!showUnlockables)}
                 className="bg-gradient-to-r from-purple-500 to-pink-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all"
               >
-                ?? Customize
+                🎨 Customize
               </button>
               <button
                 onClick={manualSave}
@@ -2684,7 +2686,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                   : 'bg-gray-500 hover:bg-gray-600'
                   } text-white`}
               >
-                {saveInProgress ? '? Saving...' : '?? Save'}
+                {saveInProgress ? '💾 Saving...' : '💾 Save'}
               </button>
             </div>
           </div>
@@ -2976,10 +2978,10 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                   <div className="absolute top-4 left-1/2 transform -translate-x-1/2 w-3/4 max-w-md bg-black/80 p-3 rounded-xl border-2 border-red-500/50 shadow-[0_0_20px_rgba(255,0,0,0.3)] z-30 flex flex-col items-center">
                     <div className="w-full flex justify-between items-center mb-1 px-2">
                       <div className="text-xl font-bold text-red-400 flex items-center gap-2">
-                        ?? {gameState.activeEnemy.name}
+                        👹 {gameState.activeEnemy.name}
                       </div>
                       <div className={`text-sm font-bold ${enemyTimeLeft <= 5 ? 'text-red-500 animate-pulse' : 'text-yellow-400'}`}>
-                        ? {enemyTimeLeft}s
+                        ⏱️ {enemyTimeLeft}s
                       </div>
                     </div>
                     <div className="w-full h-4 bg-gray-800 rounded-full overflow-hidden border border-gray-600 relative">
@@ -3005,28 +3007,28 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                 <div className="flex justify-around items-center mb-4 flex-wrap gap-4">
                   <div className="flex flex-col items-center hover:scale-110 transition-transform" title="Mining Power (Gold per Click)">
                     <div className="w-12 h-12 rounded-full bg-yellow-900/40 border border-yellow-500/30 flex items-center justify-center mb-2 shadow-inner">
-                      <span className="text-xl drop-shadow-md">??</span>
+                      <span className="text-xl drop-shadow-md">⛏️</span>
                     </div>
                     <span className="text-base font-black text-white drop-shadow-md">{fmt(gpc())}</span>
                   </div>
 
                   <div className="flex flex-col items-center hover:scale-110 transition-transform" title="Damage per Click">
                     <div className="w-12 h-12 rounded-full bg-red-900/40 border border-red-500/30 flex items-center justify-center mb-2 shadow-inner">
-                      <span className="text-xl drop-shadow-md">??</span>
+                      <span className="text-xl drop-shadow-md">⚔️</span>
                     </div>
                     <span className="text-base font-black text-white drop-shadow-md">{fmt(dpc())}</span>
                   </div>
 
                   <div className="flex flex-col items-center hover:scale-110 transition-transform" title="Attacks">
                     <div className="w-12 h-12 rounded-full bg-gray-900/40 border border-gray-500/30 flex items-center justify-center mb-2 shadow-inner">
-                      <span className="text-xl drop-shadow-md">??</span>
+                      <span className="text-xl drop-shadow-md">🖱️</span>
                     </div>
                     <span className="text-base font-black text-white drop-shadow-md">{gameState.attacks.toLocaleString()}</span>
                   </div>
 
                   <div className="flex flex-col items-center hover:scale-110 transition-transform" title="Damage per Second">
                     <div className="w-12 h-12 rounded-full bg-blue-900/40 border border-blue-500/30 flex items-center justify-center mb-2 shadow-inner">
-                      <span className="text-xl drop-shadow-md">?</span>
+                      <span className="text-xl drop-shadow-md">⚡</span>
                     </div>
                     <span className="text-base font-black text-white drop-shadow-md">{fmt(dps())}</span>
                   </div>
@@ -3034,7 +3036,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                   {gameState.skillPoints > 0 && (
                     <div className="flex flex-col items-center hover:scale-110 transition-transform" title="Skill Points">
                       <div className="w-12 h-12 rounded-full bg-emerald-900/40 border border-emerald-500/30 flex items-center justify-center mb-2 shadow-inner">
-                        <span className="text-xl drop-shadow-md">??</span>
+                        <span className="text-xl drop-shadow-md">🧠</span>
                       </div>
                       <span className="text-base font-black text-emerald-400 drop-shadow-md">{gameState.skillPoints}</span>
                     </div>
@@ -3043,7 +3045,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                   {gameState.prestige > 0 && (
                     <div className="flex flex-col items-center hover:scale-110 transition-transform" title="Prestige">
                       <div className="w-12 h-12 rounded-full bg-purple-900/40 border border-purple-500/30 flex items-center justify-center mb-2 shadow-inner">
-                        <span className="text-xl drop-shadow-md">?</span>
+                        <span className="text-xl drop-shadow-md">✨</span>
                       </div>
                       <span className="text-base font-black text-purple-400 drop-shadow-md">{gameState.prestige}</span>
                     </div>
@@ -3052,13 +3054,13 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
 
                 {/* Stat Key at the bottom */}
                 <div className="pt-3 border-t border-gray-600/50 flex justify-center flex-wrap gap-x-6 gap-y-2 text-[10px] uppercase tracking-wider text-gray-400 font-semibold bg-black/30 rounded-xl p-2">
-                  <span className="flex items-center gap-1"><span className="text-sm">??</span> Mining Pwr</span>
-                  <span className="flex items-center gap-1"><span className="text-sm">??</span> Dmg/Click</span>
-                  <span className="flex items-center gap-1"><span className="text-sm">??</span> Attacks</span>
-                  <span className="flex items-center gap-1"><span className="text-sm">?</span> Dmg/Sec</span>
-                  <span className="flex items-center gap-1"><span className="text-sm">??</span> Total Gold</span>
-                  {gameState.skillPoints > 0 && <span className="flex items-center gap-1"><span className="text-sm">??</span> Skill Pts</span>}
-                  {gameState.prestige > 0 && <span className="flex items-center gap-1"><span className="text-sm">?</span> Prestige</span>}
+                  <span className="flex items-center gap-1"><span className="text-sm">⛏️</span> Mining Pwr</span>
+                  <span className="flex items-center gap-1"><span className="text-sm">⚔️</span> Dmg/Click</span>
+                  <span className="flex items-center gap-1"><span className="text-sm">🖱️</span> Attacks</span>
+                  <span className="flex items-center gap-1"><span className="text-sm">⚡</span> Dmg/Sec</span>
+                  <span className="flex items-center gap-1"><span className="text-sm">💰</span> Total Gold</span>
+                  {gameState.skillPoints > 0 && <span className="flex items-center gap-1"><span className="text-sm">🧠</span> Skill Pts</span>}
+                  {gameState.prestige > 0 && <span className="flex items-center gap-1"><span className="text-sm">✨</span> Prestige</span>}
                 </div>
               </div>
             </div>
@@ -3073,7 +3075,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
             <div className={`${currentTheme.panel} rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-y-auto`}>
               <div className="p-6">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold">?? Customize Your Legend</h2>
+                  <h2 className="text-2xl font-bold">🎨 Customize Your Legend</h2>
                   <button
                     onClick={() => setShowUnlockables(false)}
                     className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
@@ -3085,7 +3087,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   {/* Enhanced Weapons with ultra-rare options */}
                   <div>
-                    <h3 className="text-lg font-bold mb-4">?? Legendary Weapons</h3>
+                    <h3 className="text-lg font-bold mb-4">⚔️ Legendary Weapons</h3>
                     <div className="grid grid-cols-2 gap-3 max-h-96 overflow-y-auto">
                       {Object.entries(WEAPONS).map(([key, weapon]) => {
                         const unlocked = gameState.unlockedWeapons.includes(key);
@@ -3117,7 +3119,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                             </div>
                             <div className={`text-xs font-semibold ${isUltraRare ? 'text-yellow-700' : ''}`}>
                               {weapon.name}
-                              {isUltraRare && <span className="ml-1">?</span>}
+                              {isUltraRare && <span className="ml-1">✨</span>}
                             </div>
                             <div className={`text-xs font-bold ${isUltraRare ? 'text-orange-600' : 'text-green-600'}`}>
                               +{weapon.dpcMultiplier.toLocaleString()}x
@@ -3142,7 +3144,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
 
                   {/* Enhanced Themes with prestige themes */}
                   <div>
-                    <h3 className="text-lg font-bold mb-4">?? Realm Themes</h3>
+                    <h3 className="text-lg font-bold mb-4">🌌 Realm Themes</h3>
                     <div className="space-y-3 max-h-96 overflow-y-auto">
                       {Object.entries(THEMES).map(([key, theme]) => {
                         const unlocked = gameState.unlockedThemes.includes(key);
@@ -3165,7 +3167,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                             <div className={`w-full h-6 rounded bg-gradient-to-r ${theme.bg} mb-2 ${isPrestigeTheme ? 'shadow-lg' : ''}`}></div>
                             <div className={`text-sm font-semibold ${isPrestigeTheme ? 'text-purple-700' : ''}`}>
                               {theme.name}
-                              {isPrestigeTheme && <span className="ml-1">?</span>}
+                              {isPrestigeTheme && <span className="ml-1">🌟</span>}
                             </div>
                             {!unlocked && requirement && (
                               <div className="text-xs text-gray-500 mt-1">
@@ -3186,7 +3188,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
 
                   {/* Enhanced Titles with master tiers */}
                   <div>
-                    <h3 className="text-lg font-bold mb-4">?? Hero Titles</h3>
+                    <h3 className="text-lg font-bold mb-4">👑 Hero Titles</h3>
                     <div className="space-y-3 max-h-96 overflow-y-auto">
                       {Object.entries(TITLES).map(([key, title]) => {
                         const unlocked = gameState.unlockedTitles.includes(key);
@@ -3208,7 +3210,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                           >
                             <div className={`text-sm font-bold ${title.color} mb-1`}>
                               {key}
-                              {isMasterTitle && <span className="ml-1">??</span>}
+                              {isMasterTitle && <span className="ml-1">👑</span>}
                             </div>
                             <div className={`w-full h-2 rounded ${title.color.replace('text-', 'bg-')} opacity-20 mb-2 ${isMasterTitle ? 'shadow-md' : ''}`}></div>
                             {!unlocked && requirement && (
@@ -3229,7 +3231,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
 
                   {/* NEW: Artifact Loadouts */}
                   <div>
-                    <h3 className="text-lg font-bold mb-4">?? Mystical Artifacts</h3>
+                    <h3 className="text-lg font-bold mb-4">🔮 Mystical Artifacts</h3>
                     <div className="mb-4 bg-gray-900 rounded-lg p-3 border-2 border-gray-700 shadow-inner">
                       <div className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-2 text-center">Active Loadout</div>
                       <div className="flex justify-center gap-2">
