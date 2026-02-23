@@ -720,6 +720,10 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     return total;
   }, [gameState.artifacts, gameState.globalDpsMult, artifactMult, activeBoonMult, getSkillLevel, gameState.equippedArtifacts]);
 
+  const passiveGoldPerSecond = useCallback(() => {
+    return dps() + Math.max(0, gameState.level - 1);
+  }, [dps, gameState.level]);
+
   const totalArtifacts = useCallback(() => {
     if (!gameState.artifacts || !Array.isArray(gameState.artifacts)) return 0;
     return gameState.artifacts.reduce((sum, a) => {
@@ -2345,8 +2349,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
       lastUpdateRef.current = now;
 
       // Update DPS production + level-based auto farming (starts at 0 at level 1)
-      const levelAutoFarm = Math.max(0, gameState.level - 1);
-      const production = (dps() + levelAutoFarm) * dt;
+      const production = passiveGoldPerSecond() * dt;
       if (production > 0 && isFinite(production)) {
         addGold(production);
       }
@@ -2388,7 +2391,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         cancelAnimationFrame(gameLoopRef.current);
       }
     };
-  }, [isLoaded, dps, addGold, gameState.level, gameState.event, spawnChoiceEvent]);
+  }, [isLoaded, passiveGoldPerSecond, addGold, gameState.event, spawnChoiceEvent]);
 
   // Memoized Leaderboard Rows - Moved here to be before conditional returns but after fmt definition
   const leaderboardRows = useMemo(() => {
@@ -3041,7 +3044,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                     <div className="w-12 h-12 rounded-full bg-blue-900/40 border border-blue-500/30 flex items-center justify-center mb-2 shadow-inner">
                       <span className="text-xl drop-shadow-md">⚡</span>
                     </div>
-                    <span className="text-base font-black text-white drop-shadow-md">{fmt(dps())}</span>
+                    <span className="text-base font-black text-white drop-shadow-md">{fmt(passiveGoldPerSecond())}</span>
                   </div>
 
                   {gameState.skillPoints > 0 && (
