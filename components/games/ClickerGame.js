@@ -65,6 +65,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     skillUpgrades: {}, // NEW: Track purchased skill upgrades
     currentCycle: 'Day',
     cycleClicks: 0,
+    encounterClicks: 0,
     pickaxeLevel: 1,
     xp: 0, // NEW: Experience points
     level: 1, // NEW: Player level
@@ -104,7 +105,6 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
 
   const gameLoopRef = useRef();
   const lastUpdateRef = useRef();
-  const eventAccumRef = useRef(0);
   const lastSaveRef = useRef(0);
   const musicRef = useRef(null); // Background music reference
 
@@ -718,7 +718,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     }
 
     return total;
-  }, [gameState.artifacts, gameState.globalDpsMult, artifactMult, activeBoonMult, getSkillLevel, gameState.equippedArtifacts]);
+  }, [gameState.artifacts, gameState.globalDpsMult, artifactMult, activeBoonMult, getSkillLevel, gameState.equippedArtifacts, gameState.inventory]);
 
   const passiveGoldPerSecond = useCallback(() => {
     return dps() + Math.max(0, gameState.level - 1);
@@ -1198,6 +1198,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         ...prev,
         handGold: prev.handGold + gain,
         attacks: prev.attacks + 1,
+        encounterClicks: (prev.encounterClicks || 0) + 1,
         cycleClicks: newCycleClicks,
         currentCycle: newCycle
       };
@@ -1510,26 +1511,62 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     addToast(`Prestige ${gameState.prestige + 1} achieved! +${prestigeGain} prestige points!`, 'success');
   }, [canPrestige, calculatePrestigeGain, gameState.prestige, addToast]);
 
-  // Spawn combat or choice event
+  // Spawn combat or choice event (alternates enemy/event every 150 clicks)
   const spawnChoiceEvent = useCallback(() => {
     if (gameState.activeEnemy || gameState.event.shown) return;
 
-    const roll = Math.random();
+    // Determine type: alternate between Enemy and Event
+    const isEnemyTurn = gameState.nextEncounter === 'enemy';
 
-    // 35% chance to spawn Traveling Merchant
-    if (roll < 0.35) {
-      // Filter items to ensure players don't see totally unaffordable items early on
+    if (isEnemyTurn) {
+      const isNightCycle = gameState.currentCycle === 'Night' || gameState.currentCycle === 'BloodMoon';
+      const enemyList = isNightCycle ? ENEMIES.Night : ENEMIES.Day;
+
+      // Gate enemies by player level. Player can encounter enemies up to (level + 2) difficulty
+      const maxDifficulty = gameState.level + 2;
+      let validEnemies = enemyList.filter(e => e.difficulty <= maxDifficulty);
+
+      // Failsafe in case array is somehow empty
+      if (validEnemies.length === 0) validEnemies = [enemyList[0]];
+
+      const randomEnemy = validEnemies[Math.floor(Math.random() * validEnemies.length)];
+
+      // Exponential scaling factors
+      const levelFactor = Math.max(1, gameState.level);
+      const expoMult = Math.pow(1.15, levelFactor - 1); // 15% increase per level compounding
+
+      setGameState(prev => ({
+        ...prev,
+        activeEnemy: {
+          ...randomEnemy,
+          currentHp: Math.floor(randomEnemy.hp * expoMult),
+          hp: Math.floor(randomEnemy.hp * expoMult),
+          baseGold: Math.floor(randomEnemy.baseGold * Math.pow(1.10, levelFactor - 1)),
+          xp: Math.floor(randomEnemy.xp * Math.max(1, Math.floor(levelFactor / 2))),
+          spawnTime: Date.now(),
+          skillTestActive: true
+        },
+        nextEncounter: 'event'
+      }));
+      addToast(`A wild ${randomEnemy.name} appears ! Defend yourself!`, 'warning');
+      return;
+    }
+
+    // Event turn: every event type has equal chance, including merchant event.
+    const validEvents = CHOICE_EVENTS.filter(e => !e.cycle || e.cycle === gameState.currentCycle);
+    const eventPool = [...validEvents, { type: 'merchant' }];
+    const eventPick = eventPool[Math.floor(Math.random() * eventPool.length)];
+
+    if (eventPick.type === 'merchant') {
       const availableItems = Object.keys(MERCHANT_ITEMS).filter(id => {
         const item = MERCHANT_ITEMS[id];
-        // Ensure they can afford it soon, or guarantee all items at level 20+
         return item.cost <= gameState.totalGold * 3 || gameState.level >= 20 || parseInt(id) <= 3;
       });
       const pool = availableItems.length >= 3 ? availableItems : Object.keys(MERCHANT_ITEMS);
 
-      // Pick 3 random, unique artifacts
       let shopItems = [];
       while (shopItems.length < 3) {
-        let rId = pool[Math.floor(Math.random() * pool.length)];
+        const rId = pool[Math.floor(Math.random() * pool.length)];
         if (!shopItems.includes(rId)) {
           shopItems.push(rId);
         }
@@ -1540,76 +1577,35 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         event: {
           ...prev.event,
           shown: true,
-          nextIn: 60 + Math.random() * 60,
-          until: Date.now() + 60000, // 60s timeout to prevent flashing
+          until: Date.now() + 60000,
           type: 'merchant',
-          eventText: "A Traveling Merchant approaches...",
+          eventText: prev.currentCycle === 'Night' || prev.currentCycle === 'BloodMoon'
+            ? 'A Dark Merchant emerges from the shadows...'
+            : 'A Traveling Merchant approaches...',
           choices: [],
           merchantInventory: shopItems
-        }
+        },
+        nextEncounter: 'enemy'
       }));
       setShowChoiceEvent(true);
       return;
     }
 
-    // Determine type: alternate between Enemy and Event
-    const isEnemyTurn = gameState.nextEncounter === 'enemy';
-
-    if (isEnemyTurn) {
-      const isNightCycle = gameState.currentCycle === 'Night' || gameState.currentCycle === 'BloodMoon';
-      let enemyList = isNightCycle ? ENEMIES.Night : ENEMIES.Day;
-
-      // Gate enemies by player level. Player can encounter enemies up to (level + 2) difficulty
-      const maxDifficulty = gameState.level + 2;
-      let validEnemies = enemyList.filter(e => e.difficulty <= maxDifficulty);
-
-      // Failsafe in case array is somehow empty (shouldn't be, level 1 enemies exist)
-      if (validEnemies.length === 0) validEnemies = [enemyList[0]];
-
-      const randomEnemy = validEnemies[Math.floor(Math.random() * validEnemies.length)];
-
-      // Exponential scaling factors
-      const levelFactor = Math.max(1, prev.level);
-      const expoMult = Math.pow(1.15, levelFactor - 1); // 15% increase per level compounding
-
-      setGameState(prev => ({
-        ...prev,
-        activeEnemy: {
-          ...randomEnemy,
-          // Scale HP exponentially
-          currentHp: Math.floor(randomEnemy.hp * expoMult),
-          hp: Math.floor(randomEnemy.hp * expoMult), // Base HP for the progress bar
-          // Scale rewards exponentially but slightly slower than health
-          baseGold: Math.floor(randomEnemy.baseGold * Math.pow(1.10, levelFactor - 1)),
-          xp: Math.floor(randomEnemy.xp * Math.max(1, Math.floor(levelFactor / 2))),
-          spawnTime: Date.now(),
-          skillTestActive: true
-        },
-        nextEncounter: 'event' // Flips for next time
-      }));
-      addToast(`A wild ${randomEnemy.name} appears ! Defend yourself!`, 'warning');
-    } else {
-      // It's the Event's turn
-      // Filter events by cycle
-      const validEvents = CHOICE_EVENTS.filter(e => !e.cycle || e.cycle === gameState.currentCycle);
-      const eventData = validEvents[Math.floor(Math.random() * validEvents.length)];
-      setGameState(prev => ({
-        ...prev,
-        event: {
-          ...prev.event,
-          shown: true,
-          type: 'TextEvent',
-          nextIn: 60 + Math.random() * 60,
-          until: Date.now() + 60000,  // 60s timeout to prevent flashing
-          eventText: eventData.text,
-          image: eventData.image || null,
-          choices: eventData.choices
-        },
-        nextEncounter: 'enemy' // Flips for next time
-      }));
-      setShowChoiceEvent(true);
-    }
-  }, [gameState.event.shown, gameState.activeEnemy, gameState.currentCycle, gameState.level, gameState.nextEncounter, addToast]);
+    setGameState(prev => ({
+      ...prev,
+      event: {
+        ...prev.event,
+        shown: true,
+        type: 'TextEvent',
+        until: Date.now() + 60000,
+        eventText: eventPick.text,
+        image: eventPick.image || null,
+        choices: eventPick.choices
+      },
+      nextEncounter: 'enemy'
+    }));
+    setShowChoiceEvent(true);
+  }, [gameState.event.shown, gameState.activeEnemy, gameState.currentCycle, gameState.level, gameState.nextEncounter, gameState.totalGold, addToast]);
 
   // Handle outcome of the inline combat test
   const handleEnemySkillTest = useCallback((success) => {
@@ -2004,8 +2000,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
 
       newState.event = {
         ...newState.event,
-        shown: false,
-        nextIn: 60 + Math.random() * 120
+        shown: false
       };
 
       return newState;
@@ -2020,8 +2015,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
       ...prev,
       event: {
         ...prev.event,
-        shown: false,
-        nextIn: 60 + Math.random() * 120
+        shown: false
       }
     }));
     setShowChoiceEvent(false);
@@ -2068,6 +2062,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         masteries: gameState.masteries,
         currentCycle: gameState.currentCycle,
         cycleClicks: gameState.cycleClicks,
+        encounterClicks: gameState.encounterClicks || 0,
         pickaxeLevel: gameState.pickaxeLevel,
         xp: gameState.xp,
         level: gameState.level,
@@ -2172,6 +2167,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         masteries: data.masteries && typeof data.masteries === 'object' ? data.masteries : {},
         currentCycle: data.currentCycle || 'Day',
         cycleClicks: typeof data.cycleClicks === 'number' ? data.cycleClicks : 0,
+        encounterClicks: typeof data.encounterClicks === 'number' ? data.encounterClicks : 0,
         pickaxeLevel: typeof data.pickaxeLevel === 'number' ? data.pickaxeLevel : 1,
         xp: typeof data.xp === 'number' ? data.xp : 0,
         level: typeof data.level === 'number' ? data.level : 1,
@@ -2272,6 +2268,16 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     return () => clearInterval(interval);
   }, [isLoaded, saveToFirebase]);
 
+  // Trigger encounters every 150 attacks, alternating enemy/event.
+  useEffect(() => {
+    if (!isLoaded) return;
+    if (gameState.encounterClicks < 150) return;
+    if (gameState.activeEnemy || gameState.event.shown) return;
+
+    setGameState(prev => ({ ...prev, encounterClicks: 0 }));
+    spawnChoiceEvent();
+  }, [isLoaded, gameState.encounterClicks, gameState.activeEnemy, gameState.event.shown, spawnChoiceEvent]);
+
   // Update event and enemy timers
   useEffect(() => {
     const updateTimer = () => {
@@ -2366,17 +2372,11 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         boons: prev.boons.filter(boon => now < boon.until)
       }));
 
-      // Choice event system
-      if (!gameState.event.shown) {
-        eventAccumRef.current += dt;
-        if (eventAccumRef.current >= gameState.event.nextIn) {
-          eventAccumRef.current = 0;
-          spawnChoiceEvent();
-        }
-      } else if (now >= gameState.event.until) {
+      // Choice event timeout system
+      if (gameState.event.shown && now >= gameState.event.until) {
         setGameState(prev => ({
           ...prev,
-          event: { ...prev.event, shown: false, nextIn: 60 + Math.random() * 120 }
+          event: { ...prev.event, shown: false }
         }));
         setShowChoiceEvent(false);
       }
@@ -2391,7 +2391,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         cancelAnimationFrame(gameLoopRef.current);
       }
     };
-  }, [isLoaded, passiveGoldPerSecond, addGold, gameState.event, spawnChoiceEvent]);
+  }, [isLoaded, passiveGoldPerSecond, addGold, gameState.event]);
 
   // Memoized Leaderboard Rows - Moved here to be before conditional returns but after fmt definition
   const leaderboardRows = useMemo(() => {
@@ -2938,7 +2938,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                                       ...prev,
                                       gold: Math.max(0, prev.gold - item.cost),
                                       inventory: [...prev.inventory, artId],
-                                      event: { ...prev.event, shown: false, nextIn: 60 + Math.random() * 120 }
+                                      event: { ...prev.event, shown: false }
                                     }));
                                     addToast(`Purchased ${item.name}! Check Customization to equip.`, 'success');
                                     setShowChoiceEvent(false);
