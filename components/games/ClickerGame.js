@@ -2919,43 +2919,54 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                     </div>
 
                     {gameState.event.type === 'merchant' ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-3xl">
-                        {(gameState.event.merchantInventory || []).map((artId, index) => {
-                          const item = MERCHANT_ITEMS[artId];
-                          if (!item) return null;
-                          const canAfford = gameState.totalGold >= item.cost;
-                          const count = gameState.inventory.filter(id => id === artId).length;
+                      <div className="w-full max-w-3xl space-y-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          {(gameState.event.merchantInventory || []).map((artId, index) => {
+                            const item = MERCHANT_ITEMS[artId];
+                            if (!item) return null;
+                            const canAfford = gameState.totalGold >= item.cost;
+                            const count = gameState.inventory.filter(id => id === artId).length;
 
-                          return (
-                            <div key={index} className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 ${count > 0 ? 'border-yellow-500 bg-yellow-900/40 hover:bg-yellow-800/60 cursor-pointer' : canAfford ? 'border-yellow-400 bg-yellow-900/40 hover:bg-yellow-800/60 cursor-pointer' : 'border-gray-600 bg-gray-900/80 opacity-60'} transition-all hover:scale-105 active:scale-95`}
-                              onClick={() => {
-                                if (canAfford) {
-                                  setGameState(prev => ({
-                                    ...prev,
-                                    gold: Math.max(0, prev.gold - item.cost),
-                                    inventory: [...prev.inventory, artId],
-                                    event: { ...prev.event, shown: false, nextIn: 60 + Math.random() * 120 }
-                                  }));
-                                  addToast(`Purchased ${item.name}! Check Customization to equip.`, 'success');
-                                  setShowChoiceEvent(false);
-                                } else {
-                                  addToast(`Not enough gold for ${item.name}.`, 'error');
-                                }
-                              }}
-                            >
-                              <div className="w-14 h-14 bg-black/60 rounded-lg shadow-inner flex items-center justify-center p-2 mb-1 border border-white/10">
-                                <img src={item.path} alt={item.name} className="max-w-full max-h-full object-contain filter drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]" onError={(e) => e.target.style.display = 'none'} />
+                            return (
+                              <div key={index} className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 ${count > 0 ? 'border-yellow-500 bg-yellow-900/40 hover:bg-yellow-800/60 cursor-pointer' : canAfford ? 'border-yellow-400 bg-yellow-900/40 hover:bg-yellow-800/60 cursor-pointer' : 'border-gray-600 bg-gray-900/80 opacity-60'} transition-all hover:scale-105 active:scale-95`}
+                                onClick={() => {
+                                  if (canAfford) {
+                                    setGameState(prev => ({
+                                      ...prev,
+                                      gold: Math.max(0, prev.gold - item.cost),
+                                      inventory: [...prev.inventory, artId],
+                                      event: { ...prev.event, shown: false, nextIn: 60 + Math.random() * 120 }
+                                    }));
+                                    addToast(`Purchased ${item.name}! Check Customization to equip.`, 'success');
+                                    setShowChoiceEvent(false);
+                                  } else {
+                                    addToast(`Not enough gold for ${item.name}.`, 'error');
+                                  }
+                                }}
+                              >
+                                <div className="w-14 h-14 bg-black/60 rounded-lg shadow-inner flex items-center justify-center p-2 mb-1 border border-white/10">
+                                  <img src={item.path} alt={item.name} className="max-w-full max-h-full object-contain filter drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]" onError={(e) => e.target.style.display = 'none'} />
+                                </div>
+                                <div className="font-bold text-white text-[13px] text-center leading-tight">
+                                  {item.name} {count > 0 && <span className="text-pink-400 ml-1 text-[11px] bg-pink-900/50 px-1 rounded">x{count}</span>}
+                                </div>
+                                <div className="text-[10px] font-semibold text-blue-300 text-center mb-1 leading-tight">{item.desc}</div>
+                                <div className={`font-black text-sm bg-black/80 px-4 py-1.5 rounded-full w-full text-center border ${canAfford ? 'text-yellow-400 border-yellow-500/30' : 'text-red-500 border-red-500/30'}`}>
+                                  💰 {fmt(item.cost)}
+                                </div>
                               </div>
-                              <div className="font-bold text-white text-[13px] text-center leading-tight">
-                                {item.name} {count > 0 && <span className="text-pink-400 ml-1 text-[11px] bg-pink-900/50 px-1 rounded">x{count}</span>}
-                              </div>
-                              <div className="text-[10px] font-semibold text-blue-300 text-center mb-1 leading-tight">{item.desc}</div>
-                              <div className={`font-black text-sm bg-black/80 px-4 py-1.5 rounded-full w-full text-center border ${canAfford ? 'text-yellow-400 border-yellow-500/30' : 'text-red-500 border-red-500/30'}`}>
-                                ?? {fmt(item.cost)}
-                              </div>
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
+                        </div>
+
+                        <div className="flex justify-center">
+                          <button
+                            onClick={closeChoiceEvent}
+                            className="px-6 py-2 rounded-xl border-2 border-gray-400/60 hover:border-gray-300 bg-gray-900/80 hover:bg-gray-800 text-white font-bold transition-all hover:scale-105 active:scale-95"
+                          >
+                            🚪 Leave Merchant
+                          </button>
+                        </div>
                       </div>
                     ) : (
                       <div className="flex flex-col gap-3 w-full max-w-md">
