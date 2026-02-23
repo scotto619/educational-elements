@@ -2064,6 +2064,13 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         currentCycle: gameState.currentCycle,
         cycleClicks: gameState.cycleClicks,
         pickaxeLevel: gameState.pickaxeLevel,
+        xp: gameState.xp,
+        level: gameState.level,
+        inventory: Array.isArray(gameState.inventory) ? gameState.inventory : [],
+        equippedArtifacts: Array.isArray(gameState.equippedArtifacts)
+          ? gameState.equippedArtifacts.slice(0, 3)
+          : [null, null, null],
+        activeEnemy: gameState.activeEnemy || null,
         dpc: dpc(), // NEW: Save current DPC for leaderboards/pvp
         gpc: gpc(), // NEW: Save current GPC 
         keys: gameState.keys || { normal: 0, dark: 0, ice: 0 },
@@ -2082,7 +2089,8 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         weapon: currentWeapon.name,
         totalGold: gameState.totalGold,
         masterLevel: gameState.masterLevel,
-        level: Math.min(Math.floor(gameState.totalGold / 10000) + 1, 100),
+        level: gameState.level,
+        xp: gameState.xp,
         lastPlayed: Date.now()
       };
 
@@ -2162,6 +2170,10 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         pickaxeLevel: typeof data.pickaxeLevel === 'number' ? data.pickaxeLevel : 1,
         xp: typeof data.xp === 'number' ? data.xp : 0,
         level: typeof data.level === 'number' ? data.level : 1,
+        inventory: Array.isArray(data.inventory) ? data.inventory : [],
+        equippedArtifacts: Array.isArray(data.equippedArtifacts)
+          ? [...data.equippedArtifacts.slice(0, 3), null, null, null].slice(0, 3)
+          : [null, null, null],
         activeEnemy: data.activeEnemy || null,
         keys: data.keys || { normal: 0, dark: 0, ice: 0 },
         nextEncounter: data.nextEncounter || 'enemy',
