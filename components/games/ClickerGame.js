@@ -106,6 +106,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
   const gameLoopRef = useRef();
   const lastUpdateRef = useRef();
   const lastSaveRef = useRef(0);
+  const nextRandomEncounterAtRef = useRef(null);
   const musicRef = useRef(null); // Background music reference
 
   // NEW: Anti-cheat state tracking
@@ -1496,16 +1497,31 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
 
       const randomEnemy = validEnemies[Math.floor(Math.random() * validEnemies.length)];
 
-      // Exponential scaling factors
+      // Drastically reduced HP scaling tuned by player level.
       const levelFactor = Math.max(1, gameState.level);
-      const expoMult = Math.pow(1.15, levelFactor - 1); // 15% increase per level compounding
+      const isNightOrBloodMoon = gameState.currentCycle === 'Night' || gameState.currentCycle === 'BloodMoon';
+
+      let scaledHp;
+      if (levelFactor < 10) {
+        // Level <10 target: ~20-150 HP for day enemies, double at night.
+        const minHp = Math.max(20, 20 + ((levelFactor - 1) * 5));
+        const maxHp = Math.min(150, 70 + ((levelFactor - 1) * 10) + (randomEnemy.difficulty * 5));
+        const baseHp = Math.floor(minHp + Math.random() * Math.max(1, maxHp - minHp));
+        scaledHp = isNightOrBloodMoon ? baseHp * 2 : baseHp;
+      } else {
+        // Post level 10: continue scaling, but keep much lower than legacy values.
+        const minHp = 90 + ((levelFactor - 10) * 18);
+        const maxHp = 180 + ((levelFactor - 10) * 28) + (randomEnemy.difficulty * 12);
+        const baseHp = Math.floor(minHp + Math.random() * Math.max(1, maxHp - minHp));
+        scaledHp = isNightOrBloodMoon ? baseHp * 2 : baseHp;
+      }
 
       setGameState(prev => ({
         ...prev,
         activeEnemy: {
           ...randomEnemy,
-          currentHp: Math.floor(randomEnemy.hp * expoMult),
-          hp: Math.floor(randomEnemy.hp * expoMult),
+          currentHp: scaledHp,
+          hp: scaledHp,
           baseGold: Math.floor(randomEnemy.baseGold * Math.pow(1.10, levelFactor - 1)),
           xp: Math.floor(randomEnemy.xp * Math.max(1, Math.floor(levelFactor / 2))),
           spawnTime: Date.now(),
@@ -2250,6 +2266,26 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     spawnChoiceEvent();
   }, [isLoaded, gameState.encounterClicks, gameState.activeEnemy, gameState.event.shown, spawnChoiceEvent]);
 
+  // Trigger encounters randomly every 90-120 seconds (in addition to click-based triggers).
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    if (!nextRandomEncounterAtRef.current) {
+      nextRandomEncounterAtRef.current = Date.now() + (90000 + Math.random() * 30000);
+    }
+
+    const timer = setInterval(() => {
+      const now = Date.now();
+      if (now < nextRandomEncounterAtRef.current) return;
+      if (gameState.activeEnemy || gameState.event.shown) return;
+
+      spawnChoiceEvent();
+      nextRandomEncounterAtRef.current = Date.now() + (90000 + Math.random() * 30000);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [isLoaded, gameState.activeEnemy, gameState.event.shown, spawnChoiceEvent]);
+
   // Update event and enemy timers
   useEffect(() => {
     const updateTimer = () => {
@@ -2267,9 +2303,12 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
 
         if (timeLeft <= 0) {
           const penalty = Math.floor(gameState.activeEnemy.baseGold * 0.5);
-          addGold(-penalty);
-          addToast(`Time's up! The ${gameState.activeEnemy.name} escaped. You lost ${fmt(penalty)} gold!`, 'error');
-          setGameState(prev => ({ ...prev, activeEnemy: null }));
+          let actualLoss = 0;
+          setGameState(prev => {
+            actualLoss = Math.min(prev.gold, penalty);
+            return { ...prev, gold: Math.max(0, prev.gold - penalty), activeEnemy: null };
+          });
+          addToast(`Time's up! The ${gameState.activeEnemy.name} escaped. You lost ${fmt(actualLoss)} gold!`, 'error');
         }
       }
     };
@@ -2278,7 +2317,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     const timerInterval = setInterval(updateTimer, 1000);
 
     return () => clearInterval(timerInterval);
-  }, [showChoiceEvent, gameState.event.until, gameState.activeEnemy, addGold, addToast, fmt]);
+  }, [showChoiceEvent, gameState.event.until, gameState.activeEnemy, addToast, fmt]);
 
   // Check unlocks & Apply Auto-Clicker
   useEffect(() => {
