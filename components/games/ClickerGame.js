@@ -65,6 +65,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     skillUpgrades: {}, // NEW: Track purchased skill upgrades
     currentCycle: 'Day',
     cycleClicks: 0,
+    encounterClicks: 0,
     pickaxeLevel: 1,
     xp: 0, // NEW: Experience points
     level: 1, // NEW: Player level
@@ -104,8 +105,8 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
 
   const gameLoopRef = useRef();
   const lastUpdateRef = useRef();
-  const eventAccumRef = useRef(0);
   const lastSaveRef = useRef(0);
+  const nextRandomEncounterAtRef = useRef(null);
   const musicRef = useRef(null); // Background music reference
 
   // NEW: Anti-cheat state tracking
@@ -559,8 +560,8 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
       image: '/Hero Forge/BloodMoon/Events/DeathRift.png',
       cycle: 'BloodMoon',
       choices: [
-        { text: "Enter the Rift! (Boss Fight)", effect: { type: 'bossEncounter' } },
-        { text: "Seal it with magic (-Gold)", effect: { type: 'loseGold', amount: 0.1 } }
+        { text: "Harvest Rift Crystals (+Gold)", effect: { type: 'goldGain', amount: 0.35 } },
+        { text: "Stabilize the Rift (+DPS 120s)", effect: { type: 'randomBoon', duration: 120000 } }
       ]
     }
   ];
@@ -684,8 +685,9 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
       mult *= SKILL_UPGRADES['gold_boost'].effect(goldBoostLevel).value;
     }
 
-    return Math.max(1, gameState.dpcBase * mult);
-  }, [gameState.dpcBase, gameState.pickaxeLevel, getSkillLevel, gameState.equippedArtifacts, gameState.inventory]);
+    const levelMiningBonus = Math.max(0, gameState.level - 1);
+    return Math.max(1, gameState.dpcBase * mult) + levelMiningBonus;
+  }, [gameState.dpcBase, gameState.pickaxeLevel, gameState.level, getSkillLevel, gameState.equippedArtifacts, gameState.inventory]);
 
   const dps = useCallback(() => {
     let total = 0;
@@ -717,7 +719,11 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     }
 
     return total;
-  }, [gameState.artifacts, gameState.globalDpsMult, artifactMult, activeBoonMult, getSkillLevel, gameState.equippedArtifacts]);
+  }, [gameState.artifacts, gameState.globalDpsMult, artifactMult, activeBoonMult, getSkillLevel, gameState.equippedArtifacts, gameState.inventory]);
+
+  const passiveGoldPerSecond = useCallback(() => {
+    return dps() + Math.max(0, gameState.level - 1);
+  }, [dps, gameState.level]);
 
   const totalArtifacts = useCallback(() => {
     if (!gameState.artifacts || !Array.isArray(gameState.artifacts)) return 0;
@@ -997,21 +1003,6 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     }
   }, [activeBoss, bossHealth, maxBossHealth, addGold, addToast, fmt]);
 
-  // NEW: Effect to trigger Boss automatically when Blood Moon starts
-  useEffect(() => {
-    if (gameState.currentCycle === 'BloodMoon' && !activeBoss) {
-      // Find the next available boss
-      const bossToFight = BOSS_ENCOUNTERS.find(b => !(gameState.bossesDefeated || []).includes(b.id));
-
-      if (bossToFight) {
-        startBossEncounter(bossToFight.id);
-      } else {
-        addToast('The Blood Moon passes quickly, as there are no stronger foes left...', 'info');
-        setGameState(prev => ({ ...prev, currentCycle: 'Day', cycleClicks: 0 }));
-      }
-    }
-  }, [gameState.currentCycle, gameState.bossesDefeated, activeBoss, startBossEncounter, addToast]);
-
   // NEW: Skill challenge functions
   const startSkillChallenge = useCallback((challengeType) => {
     const challenge = SKILL_CHALLENGES.find(c => c.id === challengeType);
@@ -1131,7 +1122,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
       const gemChance = SKILL_UPGRADES['gem_hunter'].effect(gemHunterLevel).value;
       if (Math.random() < gemChance) {
         setGameState(prev => ({ ...prev, skillPoints: prev.skillPoints + 1 }));
-        addToast('?? You found a Skill Point!', 'success');
+        addToast('✨ You found a Skill Point!', 'success');
       }
     }
 
@@ -1193,6 +1184,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         ...prev,
         handGold: prev.handGold + gain,
         attacks: prev.attacks + 1,
+        encounterClicks: (prev.encounterClicks || 0) + 1,
         cycleClicks: newCycleClicks,
         currentCycle: newCycle
       };
@@ -1220,7 +1212,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     if (gameState.attacks === 0) {
       addToast('Achievement: First Strike!', 'success');
     }
-  }, [dpc, gpc, addGold, activeBoss, bossHealth, attackBoss, addFloatingNumber, fmt, gameState.attacks, addToast, getSkillLevel, gainXP]);
+  }, [dpc, gpc, addGold, addFloatingNumber, fmt, gameState.attacks, addToast, getSkillLevel, gainXP]);
 
   // NEW: Weapon Attack logic for Enemies
   const attackEnemy = useCallback((event) => {
@@ -1263,26 +1255,6 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         gain *= 2;
         isCrit = true;
       }
-    }
-
-    // NEW: Allow weapon to hit Bosses!
-    if (activeBoss && bossHealth > 0) {
-      attackBoss(gain);
-      // Floating number for Boss
-      if (event && event.currentTarget) {
-        const rect = event.currentTarget.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
-        const text = `DMG: ${fmt(gain)}${isCrit ? ' 💥' : ''}`;
-        const color = isCrit ? '#ff00ff' : '#ff4444';
-        addFloatingNumber(x, y, text, color, '⚔️');
-      }
-      try {
-        const audio = new Audio('/sounds/ding.mp3');
-        audio.volume = 0.4;
-        audio.play().catch(() => { });
-      } catch (e) { }
-      return;
     }
 
     // Otherwise, hit normal enemy
@@ -1505,26 +1477,77 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     addToast(`Prestige ${gameState.prestige + 1} achieved! +${prestigeGain} prestige points!`, 'success');
   }, [canPrestige, calculatePrestigeGain, gameState.prestige, addToast]);
 
-  // Spawn combat or choice event
+  // Spawn combat or choice event (alternates enemy/event every 150 clicks)
   const spawnChoiceEvent = useCallback(() => {
     if (gameState.activeEnemy || gameState.event.shown) return;
 
-    const roll = Math.random();
+    // Determine type: alternate between Enemy and Event
+    const isEnemyTurn = gameState.nextEncounter === 'enemy';
 
-    // 35% chance to spawn Traveling Merchant
-    if (roll < 0.35) {
-      // Filter items to ensure players don't see totally unaffordable items early on
+    if (isEnemyTurn) {
+      const isNightCycle = gameState.currentCycle === 'Night' || gameState.currentCycle === 'BloodMoon';
+      const enemyList = isNightCycle ? ENEMIES.Night : ENEMIES.Day;
+
+      // Gate enemies by player level. Player can encounter enemies up to (level + 2) difficulty
+      const maxDifficulty = gameState.level + 2;
+      let validEnemies = enemyList.filter(e => e.difficulty <= maxDifficulty);
+
+      // Failsafe in case array is somehow empty
+      if (validEnemies.length === 0) validEnemies = [enemyList[0]];
+
+      const randomEnemy = validEnemies[Math.floor(Math.random() * validEnemies.length)];
+
+      // Drastically reduced HP scaling tuned by player level.
+      const levelFactor = Math.max(1, gameState.level);
+      const isNightOrBloodMoon = gameState.currentCycle === 'Night' || gameState.currentCycle === 'BloodMoon';
+
+      let scaledHp;
+      if (levelFactor < 10) {
+        // Level <10 target: ~20-150 HP for day enemies, double at night.
+        const minHp = Math.max(20, 20 + ((levelFactor - 1) * 5));
+        const maxHp = Math.min(150, 70 + ((levelFactor - 1) * 10) + (randomEnemy.difficulty * 5));
+        const baseHp = Math.floor(minHp + Math.random() * Math.max(1, maxHp - minHp));
+        scaledHp = isNightOrBloodMoon ? baseHp * 2 : baseHp;
+      } else {
+        // Post level 10: continue scaling, but keep much lower than legacy values.
+        const minHp = 90 + ((levelFactor - 10) * 18);
+        const maxHp = 180 + ((levelFactor - 10) * 28) + (randomEnemy.difficulty * 12);
+        const baseHp = Math.floor(minHp + Math.random() * Math.max(1, maxHp - minHp));
+        scaledHp = isNightOrBloodMoon ? baseHp * 2 : baseHp;
+      }
+
+      setGameState(prev => ({
+        ...prev,
+        activeEnemy: {
+          ...randomEnemy,
+          currentHp: scaledHp,
+          hp: scaledHp,
+          baseGold: Math.floor(randomEnemy.baseGold * Math.pow(1.10, levelFactor - 1)),
+          xp: Math.floor(randomEnemy.xp * Math.max(1, Math.floor(levelFactor / 2))),
+          spawnTime: Date.now(),
+          skillTestActive: true
+        },
+        nextEncounter: 'event'
+      }));
+      addToast(`A wild ${randomEnemy.name} appears ! Defend yourself!`, 'warning');
+      return;
+    }
+
+    // Event turn: every event type has equal chance, including merchant event.
+    const validEvents = CHOICE_EVENTS.filter(e => !e.cycle || e.cycle === gameState.currentCycle);
+    const eventPool = [...validEvents, { type: 'merchant' }];
+    const eventPick = eventPool[Math.floor(Math.random() * eventPool.length)];
+
+    if (eventPick.type === 'merchant') {
       const availableItems = Object.keys(MERCHANT_ITEMS).filter(id => {
         const item = MERCHANT_ITEMS[id];
-        // Ensure they can afford it soon, or guarantee all items at level 20+
         return item.cost <= gameState.totalGold * 3 || gameState.level >= 20 || parseInt(id) <= 3;
       });
       const pool = availableItems.length >= 3 ? availableItems : Object.keys(MERCHANT_ITEMS);
 
-      // Pick 3 random, unique artifacts
       let shopItems = [];
       while (shopItems.length < 3) {
-        let rId = pool[Math.floor(Math.random() * pool.length)];
+        const rId = pool[Math.floor(Math.random() * pool.length)];
         if (!shopItems.includes(rId)) {
           shopItems.push(rId);
         }
@@ -1535,76 +1558,35 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         event: {
           ...prev.event,
           shown: true,
-          nextIn: 60 + Math.random() * 60,
-          until: Date.now() + 60000, // 60s timeout to prevent flashing
+          until: Date.now() + 60000,
           type: 'merchant',
-          eventText: "A Traveling Merchant approaches...",
+          eventText: prev.currentCycle === 'Night' || prev.currentCycle === 'BloodMoon'
+            ? 'A Dark Merchant emerges from the shadows...'
+            : 'A Traveling Merchant approaches...',
           choices: [],
           merchantInventory: shopItems
-        }
+        },
+        nextEncounter: 'enemy'
       }));
       setShowChoiceEvent(true);
       return;
     }
 
-    // Determine type: alternate between Enemy and Event
-    const isEnemyTurn = gameState.nextEncounter === 'enemy';
-
-    if (isEnemyTurn) {
-      const isNightCycle = gameState.currentCycle === 'Night' || gameState.currentCycle === 'BloodMoon';
-      let enemyList = isNightCycle ? ENEMIES.Night : ENEMIES.Day;
-
-      // Gate enemies by player level. Player can encounter enemies up to (level + 2) difficulty
-      const maxDifficulty = gameState.level + 2;
-      let validEnemies = enemyList.filter(e => e.difficulty <= maxDifficulty);
-
-      // Failsafe in case array is somehow empty (shouldn't be, level 1 enemies exist)
-      if (validEnemies.length === 0) validEnemies = [enemyList[0]];
-
-      const randomEnemy = validEnemies[Math.floor(Math.random() * validEnemies.length)];
-
-      // Exponential scaling factors
-      const levelFactor = Math.max(1, prev.level);
-      const expoMult = Math.pow(1.15, levelFactor - 1); // 15% increase per level compounding
-
-      setGameState(prev => ({
-        ...prev,
-        activeEnemy: {
-          ...randomEnemy,
-          // Scale HP exponentially
-          currentHp: Math.floor(randomEnemy.hp * expoMult),
-          hp: Math.floor(randomEnemy.hp * expoMult), // Base HP for the progress bar
-          // Scale rewards exponentially but slightly slower than health
-          baseGold: Math.floor(randomEnemy.baseGold * Math.pow(1.10, levelFactor - 1)),
-          xp: Math.floor(randomEnemy.xp * Math.max(1, Math.floor(levelFactor / 2))),
-          spawnTime: Date.now(),
-          skillTestActive: true
-        },
-        nextEncounter: 'event' // Flips for next time
-      }));
-      addToast(`A wild ${randomEnemy.name} appears ! Defend yourself!`, 'warning');
-    } else {
-      // It's the Event's turn
-      // Filter events by cycle
-      const validEvents = CHOICE_EVENTS.filter(e => !e.cycle || e.cycle === gameState.currentCycle);
-      const eventData = validEvents[Math.floor(Math.random() * validEvents.length)];
-      setGameState(prev => ({
-        ...prev,
-        event: {
-          ...prev.event,
-          shown: true,
-          type: 'TextEvent',
-          nextIn: 60 + Math.random() * 60,
-          until: Date.now() + 60000,  // 60s timeout to prevent flashing
-          eventText: eventData.text,
-          image: eventData.image || null,
-          choices: eventData.choices
-        },
-        nextEncounter: 'enemy' // Flips for next time
-      }));
-      setShowChoiceEvent(true);
-    }
-  }, [gameState.event.shown, gameState.activeEnemy, gameState.currentCycle, gameState.level, gameState.nextEncounter, addToast]);
+    setGameState(prev => ({
+      ...prev,
+      event: {
+        ...prev.event,
+        shown: true,
+        type: 'TextEvent',
+        until: Date.now() + 60000,
+        eventText: eventPick.text,
+        image: eventPick.image || null,
+        choices: eventPick.choices
+      },
+      nextEncounter: 'enemy'
+    }));
+    setShowChoiceEvent(true);
+  }, [gameState.event.shown, gameState.activeEnemy, gameState.currentCycle, gameState.level, gameState.nextEncounter, gameState.totalGold, addToast]);
 
   // Handle outcome of the inline combat test
   const handleEnemySkillTest = useCallback((success) => {
@@ -1688,20 +1670,11 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
           break;
 
         case 'bossEncounter':
-          // Find an appropriate boss based on player progress
-          const availableBosses = BOSS_ENCOUNTERS.filter(boss =>
-            checkUnlockRequirement(boss.requirement) &&
-            !gameState.bossesDefeated.includes(boss.id)
-          );
-          if (availableBosses.length > 0) {
-            const randomBoss = availableBosses[Math.floor(Math.random() * availableBosses.length)];
-            setTimeout(() => startBossEncounter(randomBoss.id), 500);
-          } else {
-            const fallbackGold = Math.max(10000, prev.totalGold * 0.2);
-            newState.gold += fallbackGold;
-            newState.totalGold += fallbackGold;
-            addToast(`No worthy opponents found! Gained ${fmt(fallbackGold)} gold instead!`, 'info');
-          }
+          // Bosses are temporarily disabled.
+          const fallbackGold = Math.max(10000, prev.totalGold * 0.2);
+          newState.gold += fallbackGold;
+          newState.totalGold += fallbackGold;
+          addToast(`The rift is unstable! You salvage ${fmt(fallbackGold)} gold instead.`, 'info');
           break;
 
         case 'cosmicRift':
@@ -1865,25 +1838,17 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
 
         case 'mysterious_portal':
           if (Math.random() < 0.5) {
-            // Mini boss
-            addToast('?? The portal teleported you directly to a Boss!', 'warning');
-            setTimeout(() => {
-              const availableBosses = BOSS_ENCOUNTERS.filter(boss => checkUnlockRequirement(boss.requirement));
-              if (availableBosses.length > 0) {
-                const randomBoss = availableBosses[Math.floor(Math.random() * availableBosses.length)];
-                startBossEncounter(randomBoss.id);
-              } else {
-                startBossEncounter(BOSS_ENCOUNTERS[0].id); // default to first boss
-              }
-            }, 1000);
+            const portalGold = Math.max(25000, prev.totalGold * 0.25);
+            newState.gold += portalGold;
+            newState.totalGold += portalGold;
+            addToast(`✨ The portal showered you with ${fmt(portalGold)} gold!`, 'success');
           } else {
-            // Instant artifact
             const artIds = Object.keys(MERCHANT_ITEMS);
             const randomArtId = artIds[Math.floor(Math.random() * artIds.length)];
             const item = MERCHANT_ITEMS[randomArtId];
 
             newState.inventory = [...newState.inventory, randomArtId];
-            addToast(`?? The portal spat out an item! You gained ${item.name}!`, 'success');
+            addToast(`✨ The portal bestowed ${item.name}!`, 'success');
           }
           break;
 
@@ -1999,15 +1964,14 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
 
       newState.event = {
         ...newState.event,
-        shown: false,
-        nextIn: 60 + Math.random() * 120
+        shown: false
       };
 
       return newState;
     });
 
     setShowChoiceEvent(false);
-  }, [gameState.event.choices, gameState.bossesDefeated, startSkillChallenge, startBossEncounter, checkUnlockRequirement, addToast, fmt, classmates, dpc, studentData]);
+  }, [gameState.event.choices, startSkillChallenge, addToast, fmt, classmates, dpc, studentData]);
 
   // Close choice event without selecting
   const closeChoiceEvent = useCallback(() => {
@@ -2015,8 +1979,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
       ...prev,
       event: {
         ...prev.event,
-        shown: false,
-        nextIn: 60 + Math.random() * 120
+        shown: false
       }
     }));
     setShowChoiceEvent(false);
@@ -2063,7 +2026,15 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         masteries: gameState.masteries,
         currentCycle: gameState.currentCycle,
         cycleClicks: gameState.cycleClicks,
+        encounterClicks: gameState.encounterClicks || 0,
         pickaxeLevel: gameState.pickaxeLevel,
+        xp: gameState.xp,
+        level: gameState.level,
+        inventory: Array.isArray(gameState.inventory) ? gameState.inventory : [],
+        equippedArtifacts: Array.isArray(gameState.equippedArtifacts)
+          ? gameState.equippedArtifacts.slice(0, 3)
+          : [null, null, null],
+        activeEnemy: gameState.activeEnemy || null,
         dpc: dpc(), // NEW: Save current DPC for leaderboards/pvp
         gpc: gpc(), // NEW: Save current GPC 
         keys: gameState.keys || { normal: 0, dark: 0, ice: 0 },
@@ -2082,7 +2053,8 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         weapon: currentWeapon.name,
         totalGold: gameState.totalGold,
         masterLevel: gameState.masterLevel,
-        level: Math.min(Math.floor(gameState.totalGold / 10000) + 1, 100),
+        level: gameState.level,
+        xp: gameState.xp,
         lastPlayed: Date.now()
       };
 
@@ -2159,9 +2131,14 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         masteries: data.masteries && typeof data.masteries === 'object' ? data.masteries : {},
         currentCycle: data.currentCycle || 'Day',
         cycleClicks: typeof data.cycleClicks === 'number' ? data.cycleClicks : 0,
+        encounterClicks: typeof data.encounterClicks === 'number' ? data.encounterClicks : 0,
         pickaxeLevel: typeof data.pickaxeLevel === 'number' ? data.pickaxeLevel : 1,
         xp: typeof data.xp === 'number' ? data.xp : 0,
         level: typeof data.level === 'number' ? data.level : 1,
+        inventory: Array.isArray(data.inventory) ? data.inventory : [],
+        equippedArtifacts: Array.isArray(data.equippedArtifacts)
+          ? [...data.equippedArtifacts.slice(0, 3), null, null, null].slice(0, 3)
+          : [null, null, null],
         activeEnemy: data.activeEnemy || null,
         keys: data.keys || { normal: 0, dark: 0, ice: 0 },
         nextEncounter: data.nextEncounter || 'enemy',
@@ -2233,6 +2210,30 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     addToast('Game saved!', 'success');
   }, [saveToFirebase, addToast]);
 
+  const restartGame = useCallback(async () => {
+    const confirmed = typeof window !== 'undefined'
+      ? window.confirm('Are you sure? This will permanently reset your Hero Forge progress.')
+      : false;
+
+    if (!confirmed) return;
+
+    try {
+      if (updateStudentData) {
+        await updateStudentData({
+          clickerGameData: null,
+          clickerAchievements: null
+        });
+      }
+      addToast('Hero Forge progress reset. Starting a new adventure!', 'success');
+      if (typeof window !== 'undefined') {
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error('Failed to restart Hero Forge:', error);
+      addToast('Could not reset progress. Please try again.', 'error');
+    }
+  }, [updateStudentData, addToast]);
+
   // Load on component mount
   useEffect(() => {
     if (studentData && !isLoaded) {
@@ -2255,6 +2256,36 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     return () => clearInterval(interval);
   }, [isLoaded, saveToFirebase]);
 
+  // Trigger encounters every 150 attacks, alternating enemy/event.
+  useEffect(() => {
+    if (!isLoaded) return;
+    if (gameState.encounterClicks < 150) return;
+    if (gameState.activeEnemy || gameState.event.shown) return;
+
+    setGameState(prev => ({ ...prev, encounterClicks: 0 }));
+    spawnChoiceEvent();
+  }, [isLoaded, gameState.encounterClicks, gameState.activeEnemy, gameState.event.shown, spawnChoiceEvent]);
+
+  // Trigger encounters randomly every 90-120 seconds (in addition to click-based triggers).
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    if (!nextRandomEncounterAtRef.current) {
+      nextRandomEncounterAtRef.current = Date.now() + (90000 + Math.random() * 30000);
+    }
+
+    const timer = setInterval(() => {
+      const now = Date.now();
+      if (now < nextRandomEncounterAtRef.current) return;
+      if (gameState.activeEnemy || gameState.event.shown) return;
+
+      spawnChoiceEvent();
+      nextRandomEncounterAtRef.current = Date.now() + (90000 + Math.random() * 30000);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [isLoaded, gameState.activeEnemy, gameState.event.shown, spawnChoiceEvent]);
+
   // Update event and enemy timers
   useEffect(() => {
     const updateTimer = () => {
@@ -2272,9 +2303,12 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
 
         if (timeLeft <= 0) {
           const penalty = Math.floor(gameState.activeEnemy.baseGold * 0.5);
-          addGold(-penalty);
-          addToast(`Time's up! The ${gameState.activeEnemy.name} escaped. You lost ${fmt(penalty)} gold!`, 'error');
-          setGameState(prev => ({ ...prev, activeEnemy: null }));
+          let actualLoss = 0;
+          setGameState(prev => {
+            actualLoss = Math.min(prev.gold, penalty);
+            return { ...prev, gold: Math.max(0, prev.gold - penalty), activeEnemy: null };
+          });
+          addToast(`Time's up! The ${gameState.activeEnemy.name} escaped. You lost ${fmt(actualLoss)} gold!`, 'error');
         }
       }
     };
@@ -2283,7 +2317,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     const timerInterval = setInterval(updateTimer, 1000);
 
     return () => clearInterval(timerInterval);
-  }, [showChoiceEvent, gameState.event.until, gameState.activeEnemy, addGold, addToast, fmt]);
+  }, [showChoiceEvent, gameState.event.until, gameState.activeEnemy, addToast, fmt]);
 
   // Check unlocks & Apply Auto-Clicker
   useEffect(() => {
@@ -2302,16 +2336,12 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
           // Actually, calling attack(null) is fine, it just won't show floating number.
 
           // To be safe and show effect, let's just add gold directly
-          if (activeBoss && bossHealth > 0) {
-            attackBoss(gain);
-          } else {
-            addGold(gain);
-          }
+          addGold(gain);
         }, intervalMs);
         return () => clearInterval(autoClickInterval);
       }
     }
-  }, [checkUnlocks, isLoaded, getSkillLevel, dpc, activeBoss, bossHealth, attackBoss, addGold]);
+  }, [checkUnlocks, isLoaded, getSkillLevel, dpc, addGold]);
 
   // Apply selected weapon and theme
   useEffect(() => {
@@ -2331,8 +2361,8 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
       const dt = Math.min(0.25, (now - (lastUpdateRef.current || now)) / 1000);
       lastUpdateRef.current = now;
 
-      // Update DPS production
-      const production = dps() * dt;
+      // Update DPS production + level-based auto farming (starts at 0 at level 1)
+      const production = passiveGoldPerSecond() * dt;
       if (production > 0 && isFinite(production)) {
         addGold(production);
       }
@@ -2349,17 +2379,11 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         boons: prev.boons.filter(boon => now < boon.until)
       }));
 
-      // Choice event system
-      if (!gameState.event.shown) {
-        eventAccumRef.current += dt;
-        if (eventAccumRef.current >= gameState.event.nextIn) {
-          eventAccumRef.current = 0;
-          spawnChoiceEvent();
-        }
-      } else if (now >= gameState.event.until) {
+      // Choice event timeout system
+      if (gameState.event.shown && now >= gameState.event.until) {
         setGameState(prev => ({
           ...prev,
-          event: { ...prev.event, shown: false, nextIn: 60 + Math.random() * 120 }
+          event: { ...prev.event, shown: false }
         }));
         setShowChoiceEvent(false);
       }
@@ -2374,7 +2398,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         cancelAnimationFrame(gameLoopRef.current);
       }
     };
-  }, [isLoaded, dps, addGold, gameState.event, spawnChoiceEvent]);
+  }, [isLoaded, passiveGoldPerSecond, addGold, gameState.event]);
 
   // Memoized Leaderboard Rows - Moved here to be before conditional returns but after fmt definition
   const leaderboardRows = useMemo(() => {
@@ -2496,26 +2520,6 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         ))}
       </div>
 
-      {/* Boss Health Bar */}
-      {activeBoss && (
-        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-40 bg-black bg-opacity-80 rounded-xl p-4 min-w-96">
-          <div className="text-center text-white mb-2">
-            <h3 className="text-xl font-bold text-red-400">{activeBoss.name}</h3>
-          </div>
-          <div className="w-full bg-gray-700 rounded-full h-6 mb-2">
-            <div
-              className="boss-health-bar h-6 rounded-full transition-all duration-300"
-              style={{ width: `${(bossHealth / maxBossHealth) * 100}%` }}
-            ></div>
-          </div>
-          <div className="text-center text-white text-sm">
-            {fmt(bossHealth)} / {fmt(maxBossHealth)} HP
-          </div>
-        </div>
-      )}
-
-
-
       {/* NEW: Skill Challenge Modal */}
       {showSkillChallenge && challengeData && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
@@ -2629,7 +2633,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                 onClick={() => setShowScoreboard(true)}
                 className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all font-bold flex items-center gap-2"
               >
-                <span>??</span> Scoreboard
+                <span>🏆</span> Scoreboard
               </button>
 
               {/* NEW: Music Toggle Button */}
@@ -2641,7 +2645,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                   }`}
                 title={gameState.musicEnabled ? 'Turn off music' : 'Turn on music'}
               >
-                {gameState.musicEnabled ? '?? Music On' : '?? Music Off'}
+                {gameState.musicEnabled ? '🎵 Music On' : '🔇 Music Off'}
               </button>
 
               {canPrestige() && (
@@ -2649,20 +2653,27 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                   onClick={doPrestige}
                   className="bg-gradient-to-r from-yellow-500 to-orange-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all font-bold prestige-glow"
                 >
-                  ? Prestige (+{calculatePrestigeGain()})
+                  ✨ Prestige (+{calculatePrestigeGain()})
                 </button>
               )}
               <button
                 onClick={() => setShowSkillShop(true)}
                 className="bg-gradient-to-r from-teal-500 to-emerald-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all"
               >
-                ?? Skills ({gameState.skillPoints})
+                🧠 Skills ({gameState.skillPoints})
               </button>
               <button
                 onClick={() => setShowUnlockables(!showUnlockables)}
                 className="bg-gradient-to-r from-purple-500 to-pink-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all"
               >
-                ?? Customize
+                🎨 Customize
+              </button>
+              <button
+                onClick={restartGame}
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all font-bold"
+                title="Restart Hero Forge"
+              >
+                🔄 Restart
               </button>
               <button
                 onClick={manualSave}
@@ -2672,7 +2683,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                   : 'bg-gray-500 hover:bg-gray-600'
                   } text-white`}
               >
-                {saveInProgress ? '? Saving...' : '?? Save'}
+                {saveInProgress ? '💾 Saving...' : '💾 Save'}
               </button>
             </div>
           </div>
@@ -2783,7 +2794,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
           </div>
 
           <p className="text-white bg-gray-900 px-6 py-2 rounded-full text-lg font-bold shadow-xl border border-gray-700 mb-8 uppercase tracking-widest text-sm z-20">
-            {activeBoss ? `?? Fending off ${activeBoss.name}! ??` : 'Mine for resources'}
+            Mine for resources
           </p>
 
           <div className="relative z-10 w-full flex flex-col lg:flex-row gap-8 items-start justify-center p-4">
@@ -2905,43 +2916,54 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                     </div>
 
                     {gameState.event.type === 'merchant' ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-3xl">
-                        {(gameState.event.merchantInventory || []).map((artId, index) => {
-                          const item = MERCHANT_ITEMS[artId];
-                          if (!item) return null;
-                          const canAfford = gameState.totalGold >= item.cost;
-                          const count = gameState.inventory.filter(id => id === artId).length;
+                      <div className="w-full max-w-3xl space-y-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          {(gameState.event.merchantInventory || []).map((artId, index) => {
+                            const item = MERCHANT_ITEMS[artId];
+                            if (!item) return null;
+                            const canAfford = gameState.totalGold >= item.cost;
+                            const count = gameState.inventory.filter(id => id === artId).length;
 
-                          return (
-                            <div key={index} className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 ${count > 0 ? 'border-yellow-500 bg-yellow-900/40 hover:bg-yellow-800/60 cursor-pointer' : canAfford ? 'border-yellow-400 bg-yellow-900/40 hover:bg-yellow-800/60 cursor-pointer' : 'border-gray-600 bg-gray-900/80 opacity-60'} transition-all hover:scale-105 active:scale-95`}
-                              onClick={() => {
-                                if (canAfford) {
-                                  setGameState(prev => ({
-                                    ...prev,
-                                    gold: Math.max(0, prev.gold - item.cost),
-                                    inventory: [...prev.inventory, artId],
-                                    event: { ...prev.event, shown: false, nextIn: 60 + Math.random() * 120 }
-                                  }));
-                                  addToast(`Purchased ${item.name}! Check Customization to equip.`, 'success');
-                                  setShowChoiceEvent(false);
-                                } else {
-                                  addToast(`Not enough gold for ${item.name}.`, 'error');
-                                }
-                              }}
-                            >
-                              <div className="w-14 h-14 bg-black/60 rounded-lg shadow-inner flex items-center justify-center p-2 mb-1 border border-white/10">
-                                <img src={item.path} alt={item.name} className="max-w-full max-h-full object-contain filter drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]" onError={(e) => e.target.style.display = 'none'} />
+                            return (
+                              <div key={index} className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 ${count > 0 ? 'border-yellow-500 bg-yellow-900/40 hover:bg-yellow-800/60 cursor-pointer' : canAfford ? 'border-yellow-400 bg-yellow-900/40 hover:bg-yellow-800/60 cursor-pointer' : 'border-gray-600 bg-gray-900/80 opacity-60'} transition-all hover:scale-105 active:scale-95`}
+                                onClick={() => {
+                                  if (canAfford) {
+                                    setGameState(prev => ({
+                                      ...prev,
+                                      gold: Math.max(0, prev.gold - item.cost),
+                                      inventory: [...prev.inventory, artId],
+                                      event: { ...prev.event, shown: false }
+                                    }));
+                                    addToast(`Purchased ${item.name}! Check Customization to equip.`, 'success');
+                                    setShowChoiceEvent(false);
+                                  } else {
+                                    addToast(`Not enough gold for ${item.name}.`, 'error');
+                                  }
+                                }}
+                              >
+                                <div className="w-14 h-14 bg-black/60 rounded-lg shadow-inner flex items-center justify-center p-2 mb-1 border border-white/10">
+                                  <img src={item.path} alt={item.name} className="max-w-full max-h-full object-contain filter drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]" onError={(e) => e.target.style.display = 'none'} />
+                                </div>
+                                <div className="font-bold text-white text-[13px] text-center leading-tight">
+                                  {item.name} {count > 0 && <span className="text-pink-400 ml-1 text-[11px] bg-pink-900/50 px-1 rounded">x{count}</span>}
+                                </div>
+                                <div className="text-[10px] font-semibold text-blue-300 text-center mb-1 leading-tight">{item.desc}</div>
+                                <div className={`font-black text-sm bg-black/80 px-4 py-1.5 rounded-full w-full text-center border ${canAfford ? 'text-yellow-400 border-yellow-500/30' : 'text-red-500 border-red-500/30'}`}>
+                                  💰 {fmt(item.cost)}
+                                </div>
                               </div>
-                              <div className="font-bold text-white text-[13px] text-center leading-tight">
-                                {item.name} {count > 0 && <span className="text-pink-400 ml-1 text-[11px] bg-pink-900/50 px-1 rounded">x{count}</span>}
-                              </div>
-                              <div className="text-[10px] font-semibold text-blue-300 text-center mb-1 leading-tight">{item.desc}</div>
-                              <div className={`font-black text-sm bg-black/80 px-4 py-1.5 rounded-full w-full text-center border ${canAfford ? 'text-yellow-400 border-yellow-500/30' : 'text-red-500 border-red-500/30'}`}>
-                                ?? {fmt(item.cost)}
-                              </div>
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
+                        </div>
+
+                        <div className="flex justify-center">
+                          <button
+                            onClick={closeChoiceEvent}
+                            className="px-6 py-2 rounded-xl border-2 border-gray-400/60 hover:border-gray-300 bg-gray-900/80 hover:bg-gray-800 text-white font-bold transition-all hover:scale-105 active:scale-95"
+                          >
+                            🚪 Leave Merchant
+                          </button>
+                        </div>
                       </div>
                     ) : (
                       <div className="flex flex-col gap-3 w-full max-w-md">
@@ -2964,10 +2986,10 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                   <div className="absolute top-4 left-1/2 transform -translate-x-1/2 w-3/4 max-w-md bg-black/80 p-3 rounded-xl border-2 border-red-500/50 shadow-[0_0_20px_rgba(255,0,0,0.3)] z-30 flex flex-col items-center">
                     <div className="w-full flex justify-between items-center mb-1 px-2">
                       <div className="text-xl font-bold text-red-400 flex items-center gap-2">
-                        ?? {gameState.activeEnemy.name}
+                        👹 {gameState.activeEnemy.name}
                       </div>
                       <div className={`text-sm font-bold ${enemyTimeLeft <= 5 ? 'text-red-500 animate-pulse' : 'text-yellow-400'}`}>
-                        ? {enemyTimeLeft}s
+                        ⏱️ {enemyTimeLeft}s
                       </div>
                     </div>
                     <div className="w-full h-4 bg-gray-800 rounded-full overflow-hidden border border-gray-600 relative">
@@ -2993,36 +3015,36 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                 <div className="flex justify-around items-center mb-4 flex-wrap gap-4">
                   <div className="flex flex-col items-center hover:scale-110 transition-transform" title="Mining Power (Gold per Click)">
                     <div className="w-12 h-12 rounded-full bg-yellow-900/40 border border-yellow-500/30 flex items-center justify-center mb-2 shadow-inner">
-                      <span className="text-xl drop-shadow-md">??</span>
+                      <span className="text-xl drop-shadow-md">⛏️</span>
                     </div>
                     <span className="text-base font-black text-white drop-shadow-md">{fmt(gpc())}</span>
                   </div>
 
                   <div className="flex flex-col items-center hover:scale-110 transition-transform" title="Damage per Click">
                     <div className="w-12 h-12 rounded-full bg-red-900/40 border border-red-500/30 flex items-center justify-center mb-2 shadow-inner">
-                      <span className="text-xl drop-shadow-md">??</span>
+                      <span className="text-xl drop-shadow-md">⚔️</span>
                     </div>
                     <span className="text-base font-black text-white drop-shadow-md">{fmt(dpc())}</span>
                   </div>
 
                   <div className="flex flex-col items-center hover:scale-110 transition-transform" title="Attacks">
                     <div className="w-12 h-12 rounded-full bg-gray-900/40 border border-gray-500/30 flex items-center justify-center mb-2 shadow-inner">
-                      <span className="text-xl drop-shadow-md">??</span>
+                      <span className="text-xl drop-shadow-md">🖱️</span>
                     </div>
                     <span className="text-base font-black text-white drop-shadow-md">{gameState.attacks.toLocaleString()}</span>
                   </div>
 
                   <div className="flex flex-col items-center hover:scale-110 transition-transform" title="Damage per Second">
                     <div className="w-12 h-12 rounded-full bg-blue-900/40 border border-blue-500/30 flex items-center justify-center mb-2 shadow-inner">
-                      <span className="text-xl drop-shadow-md">?</span>
+                      <span className="text-xl drop-shadow-md">⚡</span>
                     </div>
-                    <span className="text-base font-black text-white drop-shadow-md">{fmt(dps())}</span>
+                    <span className="text-base font-black text-white drop-shadow-md">{fmt(passiveGoldPerSecond())}</span>
                   </div>
 
                   {gameState.skillPoints > 0 && (
                     <div className="flex flex-col items-center hover:scale-110 transition-transform" title="Skill Points">
                       <div className="w-12 h-12 rounded-full bg-emerald-900/40 border border-emerald-500/30 flex items-center justify-center mb-2 shadow-inner">
-                        <span className="text-xl drop-shadow-md">??</span>
+                        <span className="text-xl drop-shadow-md">🧠</span>
                       </div>
                       <span className="text-base font-black text-emerald-400 drop-shadow-md">{gameState.skillPoints}</span>
                     </div>
@@ -3031,7 +3053,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                   {gameState.prestige > 0 && (
                     <div className="flex flex-col items-center hover:scale-110 transition-transform" title="Prestige">
                       <div className="w-12 h-12 rounded-full bg-purple-900/40 border border-purple-500/30 flex items-center justify-center mb-2 shadow-inner">
-                        <span className="text-xl drop-shadow-md">?</span>
+                        <span className="text-xl drop-shadow-md">✨</span>
                       </div>
                       <span className="text-base font-black text-purple-400 drop-shadow-md">{gameState.prestige}</span>
                     </div>
@@ -3040,13 +3062,13 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
 
                 {/* Stat Key at the bottom */}
                 <div className="pt-3 border-t border-gray-600/50 flex justify-center flex-wrap gap-x-6 gap-y-2 text-[10px] uppercase tracking-wider text-gray-400 font-semibold bg-black/30 rounded-xl p-2">
-                  <span className="flex items-center gap-1"><span className="text-sm">??</span> Mining Pwr</span>
-                  <span className="flex items-center gap-1"><span className="text-sm">??</span> Dmg/Click</span>
-                  <span className="flex items-center gap-1"><span className="text-sm">??</span> Attacks</span>
-                  <span className="flex items-center gap-1"><span className="text-sm">?</span> Dmg/Sec</span>
-                  <span className="flex items-center gap-1"><span className="text-sm">??</span> Total Gold</span>
-                  {gameState.skillPoints > 0 && <span className="flex items-center gap-1"><span className="text-sm">??</span> Skill Pts</span>}
-                  {gameState.prestige > 0 && <span className="flex items-center gap-1"><span className="text-sm">?</span> Prestige</span>}
+                  <span className="flex items-center gap-1"><span className="text-sm">⛏️</span> Mining Pwr</span>
+                  <span className="flex items-center gap-1"><span className="text-sm">⚔️</span> Dmg/Click</span>
+                  <span className="flex items-center gap-1"><span className="text-sm">🖱️</span> Attacks</span>
+                  <span className="flex items-center gap-1"><span className="text-sm">⚡</span> Dmg/Sec</span>
+                  <span className="flex items-center gap-1"><span className="text-sm">💰</span> Total Gold</span>
+                  {gameState.skillPoints > 0 && <span className="flex items-center gap-1"><span className="text-sm">🧠</span> Skill Pts</span>}
+                  {gameState.prestige > 0 && <span className="flex items-center gap-1"><span className="text-sm">✨</span> Prestige</span>}
                 </div>
               </div>
             </div>
@@ -3061,7 +3083,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
             <div className={`${currentTheme.panel} rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-y-auto`}>
               <div className="p-6">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold">?? Customize Your Legend</h2>
+                  <h2 className="text-2xl font-bold">🎨 Customize Your Legend</h2>
                   <button
                     onClick={() => setShowUnlockables(false)}
                     className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
@@ -3073,7 +3095,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   {/* Enhanced Weapons with ultra-rare options */}
                   <div>
-                    <h3 className="text-lg font-bold mb-4">?? Legendary Weapons</h3>
+                    <h3 className="text-lg font-bold mb-4">⚔️ Legendary Weapons</h3>
                     <div className="grid grid-cols-2 gap-3 max-h-96 overflow-y-auto">
                       {Object.entries(WEAPONS).map(([key, weapon]) => {
                         const unlocked = gameState.unlockedWeapons.includes(key);
@@ -3105,7 +3127,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                             </div>
                             <div className={`text-xs font-semibold ${isUltraRare ? 'text-yellow-700' : ''}`}>
                               {weapon.name}
-                              {isUltraRare && <span className="ml-1">?</span>}
+                              {isUltraRare && <span className="ml-1">✨</span>}
                             </div>
                             <div className={`text-xs font-bold ${isUltraRare ? 'text-orange-600' : 'text-green-600'}`}>
                               +{weapon.dpcMultiplier.toLocaleString()}x
@@ -3130,7 +3152,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
 
                   {/* Enhanced Themes with prestige themes */}
                   <div>
-                    <h3 className="text-lg font-bold mb-4">?? Realm Themes</h3>
+                    <h3 className="text-lg font-bold mb-4">🌌 Realm Themes</h3>
                     <div className="space-y-3 max-h-96 overflow-y-auto">
                       {Object.entries(THEMES).map(([key, theme]) => {
                         const unlocked = gameState.unlockedThemes.includes(key);
@@ -3153,7 +3175,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                             <div className={`w-full h-6 rounded bg-gradient-to-r ${theme.bg} mb-2 ${isPrestigeTheme ? 'shadow-lg' : ''}`}></div>
                             <div className={`text-sm font-semibold ${isPrestigeTheme ? 'text-purple-700' : ''}`}>
                               {theme.name}
-                              {isPrestigeTheme && <span className="ml-1">?</span>}
+                              {isPrestigeTheme && <span className="ml-1">🌟</span>}
                             </div>
                             {!unlocked && requirement && (
                               <div className="text-xs text-gray-500 mt-1">
@@ -3174,7 +3196,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
 
                   {/* Enhanced Titles with master tiers */}
                   <div>
-                    <h3 className="text-lg font-bold mb-4">?? Hero Titles</h3>
+                    <h3 className="text-lg font-bold mb-4">👑 Hero Titles</h3>
                     <div className="space-y-3 max-h-96 overflow-y-auto">
                       {Object.entries(TITLES).map(([key, title]) => {
                         const unlocked = gameState.unlockedTitles.includes(key);
@@ -3196,7 +3218,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                           >
                             <div className={`text-sm font-bold ${title.color} mb-1`}>
                               {key}
-                              {isMasterTitle && <span className="ml-1">??</span>}
+                              {isMasterTitle && <span className="ml-1">👑</span>}
                             </div>
                             <div className={`w-full h-2 rounded ${title.color.replace('text-', 'bg-')} opacity-20 mb-2 ${isMasterTitle ? 'shadow-md' : ''}`}></div>
                             {!unlocked && requirement && (
@@ -3217,7 +3239,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
 
                   {/* NEW: Artifact Loadouts */}
                   <div>
-                    <h3 className="text-lg font-bold mb-4">?? Mystical Artifacts</h3>
+                    <h3 className="text-lg font-bold mb-4">🔮 Mystical Artifacts</h3>
                     <div className="mb-4 bg-gray-900 rounded-lg p-3 border-2 border-gray-700 shadow-inner">
                       <div className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-2 text-center">Active Loadout</div>
                       <div className="flex justify-center gap-2">
