@@ -150,18 +150,18 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
   // NEW: Enemy definitions with difficulty tiers and varied skill tests
   const ENEMIES = {
     Day: [
-      { id: 'mouse', name: 'Field Mouse', path: '/Hero Forge/Day/Enemies/Mouse.png', hp: 20, timeLimit: 15, skillTest: 'Quick Click', baseGold: 50, xp: 10, difficulty: 1 },
-      { id: 'slime', name: 'Green Slime', path: '/Hero Forge/Day/Enemies/Slime.png', hp: 50, timeLimit: 20, skillTest: 'Split Target', baseGold: 100, xp: 25, difficulty: 2 },
-      { id: 'mushroom', name: 'Toxic Mushroom', path: '/Hero Forge/Day/Enemies/Mushroom.png', hp: 150, timeLimit: 25, skillTest: 'Poison Spores', baseGold: 300, xp: 75, difficulty: 3 },
-      { id: 'wisp', name: 'Forest Wisp', path: '/Hero Forge/Day/Enemies/Wisp.png', hp: 300, timeLimit: 25, skillTest: 'Erratic Orbit', baseGold: 800, xp: 150, difficulty: 4 },
-      { id: 'goblin', name: 'Scavenger Goblin', path: '/Hero Forge/Day/Enemies/Goblin.png', hp: 1000, timeLimit: 30, skillTest: 'Ambush', baseGold: 2500, xp: 400, difficulty: 5 }
+      { id: 'mouse', name: 'Field Mouse', path: '/Hero Forge/Day/Enemies/Mouse.png', hp: 20, timeLimit: 15, skillTest: 'Quick Click', baseGold: 10, xp: 2, difficulty: 1 },
+      { id: 'slime', name: 'Green Slime', path: '/Hero Forge/Day/Enemies/Slime.png', hp: 50, timeLimit: 20, skillTest: 'Split Target', baseGold: 20, xp: 5, difficulty: 2 },
+      { id: 'mushroom', name: 'Toxic Mushroom', path: '/Hero Forge/Day/Enemies/Mushroom.png', hp: 150, timeLimit: 25, skillTest: 'Poison Spores', baseGold: 60, xp: 15, difficulty: 3 },
+      { id: 'wisp', name: 'Forest Wisp', path: '/Hero Forge/Day/Enemies/Wisp.png', hp: 300, timeLimit: 25, skillTest: 'Erratic Orbit', baseGold: 160, xp: 30, difficulty: 4 },
+      { id: 'goblin', name: 'Scavenger Goblin', path: '/Hero Forge/Day/Enemies/Goblin.png', hp: 1000, timeLimit: 30, skillTest: 'Ambush', baseGold: 500, xp: 80, difficulty: 5 }
     ],
     Night: [
-      { id: 'orc', name: 'Orc Marauder', path: '/Hero Forge/Night/Enemies/Orc.png', hp: 2500, timeLimit: 30, skillTest: 'Brute Force', baseGold: 5000, xp: 800, difficulty: 6 },
-      { id: 'golem', name: 'Stone Golem', path: '/Hero Forge/Night/Enemies/Golem.png', hp: 8000, timeLimit: 35, skillTest: 'Shield Block', baseGold: 15000, xp: 2000, difficulty: 7 },
-      { id: 'knightreaper', name: 'Knight Reaper', path: '/Hero Forge/Night/Enemies/KnightReaper.png', hp: 25000, timeLimit: 40, skillTest: 'Combo Sequence', baseGold: 50000, xp: 5000, difficulty: 8 },
-      { id: 'lootgoblin', name: 'Loot Goblin', path: '/Hero Forge/Night/Enemies/LootGoblin.png', hp: 50000, timeLimit: 15, skillTest: 'Gold Rush', baseGold: 100000, xp: 10000, difficulty: 9 },
-      { id: 'dragon', name: 'Elder Dragon', path: '/Hero Forge/Night/Enemies/Dragon.png', hp: 100000, timeLimit: 45, skillTest: 'Inferno', baseGold: 250000, xp: 25000, difficulty: 10 }
+      { id: 'orc', name: 'Orc Marauder', path: '/Hero Forge/Night/Enemies/Orc.png', hp: 2500, timeLimit: 30, skillTest: 'Brute Force', baseGold: 1000, xp: 160, difficulty: 6 },
+      { id: 'golem', name: 'Stone Golem', path: '/Hero Forge/Night/Enemies/Golem.png', hp: 8000, timeLimit: 35, skillTest: 'Shield Block', baseGold: 3000, xp: 400, difficulty: 7 },
+      { id: 'knightreaper', name: 'Knight Reaper', path: '/Hero Forge/Night/Enemies/KnightReaper.png', hp: 25000, timeLimit: 40, skillTest: 'Combo Sequence', baseGold: 10000, xp: 1000, difficulty: 8 },
+      { id: 'lootgoblin', name: 'Loot Goblin', path: '/Hero Forge/Night/Enemies/LootGoblin.png', hp: 50000, timeLimit: 15, skillTest: 'Gold Rush', baseGold: 20000, xp: 2000, difficulty: 9 },
+      { id: 'dragon', name: 'Elder Dragon', path: '/Hero Forge/Night/Enemies/Dragon.png', hp: 100000, timeLimit: 45, skillTest: 'Inferno', baseGold: 50000, xp: 5000, difficulty: 10 }
     ]
   };
 
@@ -614,36 +614,36 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     image: "/Hero Forge/Snow/Events/LockedIceChest.png",
     cycle: 'Snow',
     choices: [
-      { text: "?? Use Ice Key", effect: { type: 'openChest', keyType: 'ice' } },
-      { text: "?? Leave it", effect: { type: 'nothing' } }
+      { text: "🗝️ Use Ice Key", effect: { type: 'openChest', keyType: 'ice' } },
+      { text: "🏃 Leave it", effect: { type: 'nothing' } }
     ]
   });
 
   // NEW: Additional Fun Events
   CHOICE_EVENTS.push({
-    text: "?? You encounter The Gambler. He proposes a high-stakes game. Bet 25% of your gold?",
+    text: "🎲 You encounter The Gambler. He proposes a high-stakes game. Bet 25% of your gold?",
     image: "/Hero Forge/Day/Events/Gambler.png", // Assume we have this or fallback works
     choices: [
-      { text: "?? Bet 25% (30% to TRIPLE it)", effect: { type: 'gambler_bet' } },
-      { text: "?? Not my style", effect: { type: 'nothing' } }
+      { text: "💰 Bet 25% (30% to TRIPLE it)", effect: { type: 'gambler_bet' } },
+      { text: "❌ Not my style", effect: { type: 'nothing' } }
     ]
   });
 
   CHOICE_EVENTS.push({
-    text: "?? A Traveling Bard offers to play an inspiring tune for 10% of your gold.",
+    text: "🎵 A Traveling Bard offers to play an inspiring tune for 10% of your gold.",
     image: "/Hero Forge/Day/Events/TravelingBard.png",
     choices: [
-      { text: "?? Pay the Bard (Massive DPS boost)", effect: { type: 'bard_song' } },
-      { text: "?? Save my gold", effect: { type: 'nothing' } }
+      { text: "🪙 Pay the Bard (Massive DPS boost)", effect: { type: 'bard_song' } },
+      { text: "❌ Save my gold", effect: { type: 'nothing' } }
     ]
   });
 
   CHOICE_EVENTS.push({
-    text: "?? A Mysterious Portal shimmers before you. It could lead anywhere.",
+    text: "✨ A Mysterious Portal shimmers before you. It could lead anywhere.",
     image: "/Hero Forge/Night/Events/Portal.png",
     choices: [
-      { text: "?? Step through", effect: { type: 'mysterious_portal' } },
-      { text: "?? Ignore it", effect: { type: 'nothing' } }
+      { text: "🚪 Step through", effect: { type: 'mysterious_portal' } },
+      { text: "❌ Ignore it", effect: { type: 'nothing' } }
     ]
   });
 
@@ -1732,11 +1732,12 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
             const actualSteal = Math.max(100, stealAmount);
             newState.gold += actualSteal;
             newState.totalGold += actualSteal;
-            addToast(`?? VICTORY! You raided ${oppName} and stole ${fmt(actualSteal)} gold!`, 'success');
+            addToast(`⚔️ VICTORY! You raided ${oppName} and stole ${fmt(actualSteal)} gold!`, 'success');
           } else {
             const lostAmount = Math.floor(prev.gold * 0.2); // Lose 20%
             newState.gold = Math.max(0, prev.gold - lostAmount);
-            addToast(`?? DEFEAT! ${oppName} was too strong! You lost ${fmt(lostAmount)} gold escaping!`, 'error');
+            newState.totalGold = Math.max(0, newState.totalGold - lostAmount);
+            addToast(`💀 DEFEAT! ${oppName} was too strong! You lost ${fmt(lostAmount)} gold escaping!`, 'error');
           }
           break;
 
@@ -1890,16 +1891,18 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
             const winnings = betAmount * 3;
             newState.gold += winnings;
             newState.totalGold += (winnings - betAmount);
-            addToast(`?? WIN! You won ${fmt(winnings)} gold!`, 'success');
+            addToast(`🎲 WIN! You won ${fmt(winnings)} gold!`, 'success');
           } else {
             // Lose
-            addToast(`?? LOSS. You lost ${fmt(betAmount)} gold.`, 'error');
+            newState.totalGold -= betAmount;
+            addToast(`❌ LOSS. You lost ${fmt(betAmount)} gold.`, 'error');
           }
           break;
 
         case 'bard_song':
           const songCost = Math.floor(prev.gold * 0.10);
           newState.gold = Math.max(0, newState.gold - songCost);
+          newState.totalGold = Math.max(0, newState.totalGold - songCost);
 
           newState.boons = [...prev.boons, {
             name: 'Inspiring Tune',
@@ -1907,7 +1910,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
             mult: 5,
             until: Date.now() + 300000 // 5 minutes
           }];
-          addToast(`?? The Bard plays an epic tune! Paid ${fmt(songCost)} gold for 5x DPS for 5 minutes!`, 'success');
+          addToast(`🎵 The Bard plays an epic tune! Paid ${fmt(songCost)} gold for 5x DPS for 5 minutes!`, 'success');
           break;
 
         case 'mysterious_portal':
@@ -1955,7 +1958,8 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         case 'loseGold':
           const loss = Math.max(100, prev.totalGold * effect.amount);
           newState.gold = Math.max(0, newState.gold - loss);
-          addToast(`?? Goblin stole ${fmt(loss)} gold!`, 'error');
+          newState.totalGold = Math.max(0, newState.totalGold - loss);
+          addToast(`👺 Goblin stole ${fmt(loss)} gold!`, 'error');
           break;
 
         case 'goblinPrank':
@@ -2379,7 +2383,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
           let actualLoss = 0;
           setGameState(prev => {
             actualLoss = Math.min(prev.gold, penalty);
-            return { ...prev, gold: Math.max(0, prev.gold - penalty), activeEnemy: null };
+            return { ...prev, gold: Math.max(0, prev.gold - penalty), totalGold: Math.max(0, prev.totalGold - actualLoss), activeEnemy: null };
           });
           addToast(`Time's up! The ${gameState.activeEnemy.name} escaped. You lost ${fmt(actualLoss)} gold!`, 'error');
         }
@@ -2921,8 +2925,8 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
             <button
               onClick={() => setGameState(prev => ({ ...prev, inCamp: !prev.inCamp }))}
               className={`px-6 py-2 rounded-full text-lg font-bold shadow-xl border-2 uppercase tracking-widest text-sm transition-all ${gameState.inCamp
-                  ? 'bg-blue-600 border-blue-400 text-white hover:bg-blue-500'
-                  : 'bg-green-600 border-green-400 text-white hover:bg-green-500'
+                ? 'bg-blue-600 border-blue-400 text-white hover:bg-blue-500'
+                : 'bg-green-600 border-green-400 text-white hover:bg-green-500'
                 }`}
             >
               {gameState.inCamp ? 'Back to Mine' : 'Camp'}
