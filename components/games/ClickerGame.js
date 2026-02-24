@@ -161,17 +161,51 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
 
   // NEW: Merchant Artifacts (Purchasable upgrades)
   const MERCHANT_ITEMS = {
-    '1': { id: '1', name: 'Rusty Pickaxe Head', path: '/Hero Forge/Items/Artifacts/1.png', type: 'gold', value: 1.1, desc: '+10% Mining Gold', cost: 150, rarity: 'common' },
-    '2': { id: '2', name: 'Wooden Buckler', path: '/Hero Forge/Items/Artifacts/2.png', type: 'damage', value: 1.2, desc: '+20% Damage', cost: 300, rarity: 'common' },
-    '3': { id: '3', name: 'Apprentice Sandals', path: '/Hero Forge/Items/Artifacts/3.png', type: 'dps', value: 1.2, desc: '+20% Auto-DPS', cost: 450, rarity: 'common' },
-    '4': { id: '4', name: 'Mining Charm', path: '/Hero Forge/Items/Artifacts/4.png', type: 'gold', value: 1.5, desc: '+50% Mining Gold', cost: 1500, rarity: 'uncommon' },
-    '5': { id: '5', name: 'Warrior Crest', path: '/Hero Forge/Items/Artifacts/5.png', type: 'damage', value: 2, desc: '+100% Damage', cost: 2500, rarity: 'uncommon' },
-    '6': { id: '6', name: 'Swift Boots', path: '/Hero Forge/Items/Artifacts/6.png', type: 'dps', value: 2, desc: '+100% Auto-DPS', cost: 3500, rarity: 'uncommon' },
-    '7': { id: '7', name: 'Golden Scythe', path: '/Hero Forge/Items/Artifacts/7.png', type: 'gold', value: 3, desc: '+200% Mining Gold', cost: 12000, rarity: 'rare' },
-    '8': { id: '8', name: 'Berserker Mask', path: '/Hero Forge/Items/Artifacts/8.png', type: 'damage', value: 5, desc: '+400% Damage', cost: 25000, rarity: 'rare' },
-    '9': { id: '9', name: 'Crown of Greed', path: '/Hero Forge/Items/Artifacts/9.png', type: 'gold', value: 10, desc: '+900% Mining Gold', cost: 150000, rarity: 'epic' },
-    '10': { id: '10', name: 'Divine Sentinel', path: '/Hero Forge/Items/Artifacts/10.png', type: 'all', value: 5, desc: '+400% All Stats', cost: 2000000, rarity: 'legendary' },
+    // Common items (Cost: 1500)
+    '1': { id: '1', name: 'Galaxy Ball', path: '/Hero Forge/Items/Artifacts/1.png', type: 'dps', effectType: 'additive', value: 1, desc: '+1 GPS (Auto mining)', cost: 1500, rarity: 'common' },
+    '2': { id: '2', name: 'Necro Book', path: '/Hero Forge/Items/Artifacts/2.png', type: 'damage', effectType: 'additive', value: 1, desc: '+1 Weapon Damage', cost: 1500, rarity: 'common' },
+    '3': { id: '3', name: 'Lute', path: '/Hero Forge/Items/Artifacts/3.png', type: 'gpc', effectType: 'additive', value: 1, desc: '+1 Gold per click', cost: 1500, rarity: 'common' },
+    '4': { id: '4', name: 'Lion Medal', path: '/Hero Forge/Items/Artifacts/4.png', type: 'dps', effectType: 'additive', value: 3, desc: '+3 GPS', cost: 4500, rarity: 'common' },
+    '5': { id: '5', name: 'Sand Wand', path: '/Hero Forge/Items/Artifacts/5.png', type: 'gpc', effectType: 'additive', value: 3, desc: '+3 Gold per click', cost: 4500, rarity: 'common' },
+    '6': { id: '6', name: 'Quiver', path: '/Hero Forge/Items/Artifacts/6.png', type: 'damage', effectType: 'additive', value: 3, desc: '+3 Weapon Damage', cost: 4500, rarity: 'common' },
+
+    // Rare items (Cost: 25000)
+    '7': { id: '7', name: 'Rogue Mask', path: '/Hero Forge/Items/Artifacts/7.png', type: 'dps', effectType: 'additive', value: 5, desc: '+5 GPS', cost: 25000, rarity: 'rare' },
+    '8': { id: '8', name: 'Skull Totem', path: '/Hero Forge/Items/Artifacts/8.png', type: 'damage', effectType: 'additive', value: 5, desc: '+5 Weapon Damage', cost: 25000, rarity: 'rare' },
+    '9': { id: '9', name: 'Horn', path: '/Hero Forge/Items/Artifacts/9.png', type: 'gpc', effectType: 'additive', value: 5, desc: '+5 Gold Per click', cost: 25000, rarity: 'rare' },
+    '10': { id: '10', name: 'Dark Moon', path: '/Hero Forge/Items/Artifacts/10.png', type: 'dps', effectType: 'additive', value: 7, desc: '+7 GPS', cost: 50000, rarity: 'rare' },
+    '11': { id: '11', name: 'Air Crystal', path: '/Hero Forge/Items/Artifacts/11.png', type: 'damage', effectType: 'additive', value: 7, desc: '+7 Weapon Damage', cost: 50000, rarity: 'rare' },
+    '12': { id: '12', name: 'Harp', path: '/Hero Forge/Items/Artifacts/12.png', type: 'gpc', effectType: 'additive', value: 7, desc: '+7 Gold per click', cost: 50000, rarity: 'rare' },
+
+    // Legendary items (Cost: 2500000)
+    '13': { id: '13', name: 'Bell', path: '/Hero Forge/Items/Artifacts/13.png', type: 'gpc', effectType: 'multiplicative', value: 1.5, desc: 'x1.5 Gold per click', cost: 2500000, rarity: 'legendary' },
+    '14': { id: '14', name: 'Water Ball', path: '/Hero Forge/Items/Artifacts/14.png', type: 'dps', effectType: 'multiplicative', value: 1.5, desc: 'x1.5 GPS', cost: 2500000, rarity: 'legendary' },
+    '15': { id: '15', name: 'Ice crystal', path: '/Hero Forge/Items/Artifacts/15.png', type: 'damage', effectType: 'multiplicative', value: 1.5, desc: 'x1.5 Weapon damage', cost: 2500000, rarity: 'legendary' },
+    '16': { id: '16', name: 'Hourglass', path: '/Hero Forge/Items/Artifacts/16.png', type: 'dps', effectType: 'multiplicative', value: 2, desc: 'x2 GPS', cost: 10000000, rarity: 'legendary' },
+    '17': { id: '17', name: 'Leaf Totem', path: '/Hero Forge/Items/Artifacts/17.png', type: 'gpc', effectType: 'multiplicative', value: 2, desc: 'x2 Gold per click', cost: 10000000, rarity: 'legendary' },
+    '18': { id: '18', name: 'Boar Head', path: '/Hero Forge/Items/Artifacts/18.png', type: 'damage', effectType: 'multiplicative', value: 2, desc: 'x2 Weapon Damage', cost: 10000000, rarity: 'legendary' },
+
+    // Mythic items (Cost: 0 since they drop from chests only)
+    '19': { id: '19', name: 'Compass', path: '/Hero Forge/Items/Artifacts/19.png', type: 'all', effectType: 'additive', value: 5, desc: '+5 All Stats', cost: 0, rarity: 'mythic', chestOnly: true },
+    '20': { id: '20', name: 'Element Ball', path: '/Hero Forge/Items/Artifacts/20.png', type: 'all', effectType: 'multiplicative', value: 1.5, desc: 'x1.5 All Stats', cost: 0, rarity: 'mythic', chestOnly: true },
+    '21': { id: '21', name: 'Mythic Ball', path: '/Hero Forge/Items/Artifacts/21.png', type: 'all', effectType: 'multiplicative', value: 2, desc: 'x2 All Stats', cost: 0, rarity: 'mythic', chestOnly: true },
   };
+
+  const RARITY_WEIGHTS = { common: 60, rare: 30, legendary: 9, mythic: 1 };
+
+  const pickArtifactByRarity = useCallback((excludeMythic = false) => {
+    let pool = Object.values(MERCHANT_ITEMS);
+    if (excludeMythic) pool = pool.filter(i => !i.chestOnly);
+
+    let totalWeight = pool.reduce((sum, item) => sum + RARITY_WEIGHTS[item.rarity], 0);
+    let random = Math.random() * totalWeight;
+
+    for (const item of pool) {
+      random -= RARITY_WEIGHTS[item.rarity];
+      if (random <= 0) return item.id;
+    }
+    return pool[0].id; // Fallback
+  }, []);
 
   // NEW: Environment Cycle logic
   const isNight = gameState.currentCycle === 'Night' || gameState.currentCycle === 'BloodMoon';
@@ -646,35 +680,43 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     const weaponMultiplier = currentWeapon.dpcMultiplier || 1;
 
     let mult = gameState.dpcMult * activeBoonMult('dpc') * weaponMultiplier;
+    let add = 0;
 
     // Apply Artifact Boosts
     (gameState.equippedArtifacts || []).forEach(artId => {
       if (artId) {
         const art = MERCHANT_ITEMS[artId];
-        // Damage is boosted by damage or all artifacts
         if (art && (art.type === 'damage' || art.type === 'all')) {
           const count = gameState.inventory.filter(id => id === artId).length;
-          mult *= (1 + (art.value - 1) * count);
+          if (art.effectType === 'additive') {
+            add += art.value * count;
+          } else if (art.effectType === 'multiplicative') {
+            mult *= Math.pow(art.value, count);
+          }
         }
       }
     });
 
-    return Math.max(1, gameState.dpcBase * mult);
+    return Math.max(1, gameState.dpcBase * mult) + add;
   }, [gameState.dpcBase, gameState.dpcMult, gameState.activeWeapon, activeBoonMult, gameState.equippedArtifacts, gameState.inventory]);
 
   // NEW: GPC (Gold Per Click) logic for mining separately from DPC
   const gpc = useCallback(() => {
     // Determine Mining Multiplier from Pickaxe Level
     let mult = Math.pow(2, gameState.pickaxeLevel - 1);
+    let add = 0;
 
     // Apply Gold Artifact Boosts 
     (gameState.equippedArtifacts || []).forEach(artId => {
       if (artId) {
         const art = MERCHANT_ITEMS[artId];
-        // Mining efficiency only boosted by gold or all artifacts
-        if (art && (art.type === 'gold' || art.type === 'all')) {
+        if (art && (art.type === 'gpc' || art.type === 'all')) {
           const count = gameState.inventory.filter(id => id === artId).length;
-          mult *= (1 + (art.value - 1) * count);
+          if (art.effectType === 'additive') {
+            add += art.value * count;
+          } else if (art.effectType === 'multiplicative') {
+            mult *= Math.pow(art.value, count);
+          }
         }
       }
     });
@@ -686,7 +728,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     }
 
     const levelMiningBonus = Math.max(0, gameState.level - 1);
-    return Math.max(1, gameState.dpcBase * mult) + levelMiningBonus;
+    return Math.max(1, gameState.dpcBase * mult) + add + levelMiningBonus;
   }, [gameState.dpcBase, gameState.pickaxeLevel, gameState.level, getSkillLevel, gameState.equippedArtifacts, gameState.inventory]);
 
   const dps = useCallback(() => {
@@ -700,6 +742,8 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     }
 
     total *= gameState.globalDpsMult * activeBoonMult('dps');
+    let mult = 1;
+    let add = 0;
 
     // Apply Artifact Boosts
     (gameState.equippedArtifacts || []).forEach(artId => {
@@ -707,7 +751,11 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         const art = MERCHANT_ITEMS[artId];
         if (art && (art.type === 'dps' || art.type === 'all')) {
           const count = gameState.inventory.filter(id => id === artId).length;
-          total *= (1 + (art.value - 1) * count);
+          if (art.effectType === 'additive') {
+            add += art.value * count;
+          } else if (art.effectType === 'multiplicative') {
+            mult *= Math.pow(art.value, count);
+          }
         }
       }
     });
@@ -715,10 +763,10 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     // NEW: Apply Gold Boost Skill
     const goldBoostLevel = getSkillLevel('gold_boost');
     if (goldBoostLevel > 0) {
-      total *= SKILL_UPGRADES['gold_boost'].effect(goldBoostLevel).value;
+      mult *= SKILL_UPGRADES['gold_boost'].effect(goldBoostLevel).value;
     }
 
-    return total;
+    return (total * mult) + add;
   }, [gameState.artifacts, gameState.globalDpsMult, artifactMult, activeBoonMult, getSkillLevel, gameState.equippedArtifacts, gameState.inventory]);
 
   const passiveGoldPerSecond = useCallback(() => {
@@ -1539,18 +1587,17 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     const eventPick = eventPool[Math.floor(Math.random() * eventPool.length)];
 
     if (eventPick.type === 'merchant') {
-      const availableItems = Object.keys(MERCHANT_ITEMS).filter(id => {
-        const item = MERCHANT_ITEMS[id];
-        return item.cost <= gameState.totalGold * 3 || gameState.level >= 20 || parseInt(id) <= 3;
-      });
-      const pool = availableItems.length >= 3 ? availableItems : Object.keys(MERCHANT_ITEMS);
-
       let shopItems = [];
-      while (shopItems.length < 3) {
-        const rId = pool[Math.floor(Math.random() * pool.length)];
+      let attempts = 0;
+      while (shopItems.length < 3 && attempts < 50) {
+        const rId = pickArtifactByRarity(true); // Exclude Mythic
         if (!shopItems.includes(rId)) {
           shopItems.push(rId);
         }
+        attempts++;
+      }
+      if (shopItems.length < 3) {
+        shopItems = ['1', '2', '3']; // Fallback
       }
 
       setGameState(prev => ({
@@ -1713,8 +1760,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
               addToast(`?? Chest Opened! Found ${fmt(chestGold)} gold and a VERY RARE WEAPON: ${WEAPONS[newWeapon].name}!`, 'success');
             } else {
               // grant a rare item
-              const artIds = Object.keys(MERCHANT_ITEMS);
-              const randomArtId = artIds[Math.floor(Math.random() * artIds.length)];
+              const randomArtId = pickArtifactByRarity(false);
               const item = MERCHANT_ITEMS[randomArtId];
 
               if (!newState.inventory.includes(randomArtId)) {
@@ -1843,8 +1889,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
             newState.totalGold += portalGold;
             addToast(`✨ The portal showered you with ${fmt(portalGold)} gold!`, 'success');
           } else {
-            const artIds = Object.keys(MERCHANT_ITEMS);
-            const randomArtId = artIds[Math.floor(Math.random() * artIds.length)];
+            const randomArtId = pickArtifactByRarity(false);
             const item = MERCHANT_ITEMS[randomArtId];
 
             newState.inventory = [...newState.inventory, randomArtId];
