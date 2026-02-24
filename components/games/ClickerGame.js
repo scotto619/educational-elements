@@ -559,8 +559,8 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
       image: '/Hero Forge/BloodMoon/Events/DeathRift.png',
       cycle: 'BloodMoon',
       choices: [
-        { text: "Enter the Rift! (Boss Fight)", effect: { type: 'bossEncounter' } },
-        { text: "Seal it with magic (-Gold)", effect: { type: 'loseGold', amount: 0.1 } }
+        { text: "Harvest Rift Crystals (+Gold)", effect: { type: 'goldGain', amount: 0.35 } },
+        { text: "Stabilize the Rift (+DPS 120s)", effect: { type: 'randomBoon', duration: 120000 } }
       ]
     }
   ];
@@ -1002,21 +1002,6 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     }
   }, [activeBoss, bossHealth, maxBossHealth, addGold, addToast, fmt]);
 
-  // NEW: Effect to trigger Boss automatically when Blood Moon starts
-  useEffect(() => {
-    if (gameState.currentCycle === 'BloodMoon' && !activeBoss) {
-      // Find the next available boss
-      const bossToFight = BOSS_ENCOUNTERS.find(b => !(gameState.bossesDefeated || []).includes(b.id));
-
-      if (bossToFight) {
-        startBossEncounter(bossToFight.id);
-      } else {
-        addToast('The Blood Moon passes quickly, as there are no stronger foes left...', 'info');
-        setGameState(prev => ({ ...prev, currentCycle: 'Day', cycleClicks: 0 }));
-      }
-    }
-  }, [gameState.currentCycle, gameState.bossesDefeated, activeBoss, startBossEncounter, addToast]);
-
   // NEW: Skill challenge functions
   const startSkillChallenge = useCallback((challengeType) => {
     const challenge = SKILL_CHALLENGES.find(c => c.id === challengeType);
@@ -1226,7 +1211,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     if (gameState.attacks === 0) {
       addToast('Achievement: First Strike!', 'success');
     }
-  }, [dpc, gpc, addGold, activeBoss, bossHealth, attackBoss, addFloatingNumber, fmt, gameState.attacks, addToast, getSkillLevel, gainXP]);
+  }, [dpc, gpc, addGold, addFloatingNumber, fmt, gameState.attacks, addToast, getSkillLevel, gainXP]);
 
   // NEW: Weapon Attack logic for Enemies
   const attackEnemy = useCallback((event) => {
@@ -1269,26 +1254,6 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         gain *= 2;
         isCrit = true;
       }
-    }
-
-    // NEW: Allow weapon to hit Bosses!
-    if (activeBoss && bossHealth > 0) {
-      attackBoss(gain);
-      // Floating number for Boss
-      if (event && event.currentTarget) {
-        const rect = event.currentTarget.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
-        const text = `DMG: ${fmt(gain)}${isCrit ? ' 💥' : ''}`;
-        const color = isCrit ? '#ff00ff' : '#ff4444';
-        addFloatingNumber(x, y, text, color, '⚔️');
-      }
-      try {
-        const audio = new Audio('/sounds/ding.mp3');
-        audio.volume = 0.4;
-        audio.play().catch(() => { });
-      } catch (e) { }
-      return;
     }
 
     // Otherwise, hit normal enemy
@@ -1689,20 +1654,11 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
           break;
 
         case 'bossEncounter':
-          // Find an appropriate boss based on player progress
-          const availableBosses = BOSS_ENCOUNTERS.filter(boss =>
-            checkUnlockRequirement(boss.requirement) &&
-            !gameState.bossesDefeated.includes(boss.id)
-          );
-          if (availableBosses.length > 0) {
-            const randomBoss = availableBosses[Math.floor(Math.random() * availableBosses.length)];
-            setTimeout(() => startBossEncounter(randomBoss.id), 500);
-          } else {
-            const fallbackGold = Math.max(10000, prev.totalGold * 0.2);
-            newState.gold += fallbackGold;
-            newState.totalGold += fallbackGold;
-            addToast(`No worthy opponents found! Gained ${fmt(fallbackGold)} gold instead!`, 'info');
-          }
+          // Bosses are temporarily disabled.
+          const fallbackGold = Math.max(10000, prev.totalGold * 0.2);
+          newState.gold += fallbackGold;
+          newState.totalGold += fallbackGold;
+          addToast(`The rift is unstable! You salvage ${fmt(fallbackGold)} gold instead.`, 'info');
           break;
 
         case 'cosmicRift':
@@ -1866,25 +1822,17 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
 
         case 'mysterious_portal':
           if (Math.random() < 0.5) {
-            // Mini boss
-            addToast('?? The portal teleported you directly to a Boss!', 'warning');
-            setTimeout(() => {
-              const availableBosses = BOSS_ENCOUNTERS.filter(boss => checkUnlockRequirement(boss.requirement));
-              if (availableBosses.length > 0) {
-                const randomBoss = availableBosses[Math.floor(Math.random() * availableBosses.length)];
-                startBossEncounter(randomBoss.id);
-              } else {
-                startBossEncounter(BOSS_ENCOUNTERS[0].id); // default to first boss
-              }
-            }, 1000);
+            const portalGold = Math.max(25000, prev.totalGold * 0.25);
+            newState.gold += portalGold;
+            newState.totalGold += portalGold;
+            addToast(`✨ The portal showered you with ${fmt(portalGold)} gold!`, 'success');
           } else {
-            // Instant artifact
             const artIds = Object.keys(MERCHANT_ITEMS);
             const randomArtId = artIds[Math.floor(Math.random() * artIds.length)];
             const item = MERCHANT_ITEMS[randomArtId];
 
             newState.inventory = [...newState.inventory, randomArtId];
-            addToast(`?? The portal spat out an item! You gained ${item.name}!`, 'success');
+            addToast(`✨ The portal bestowed ${item.name}!`, 'success');
           }
           break;
 
@@ -2007,7 +1955,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     });
 
     setShowChoiceEvent(false);
-  }, [gameState.event.choices, gameState.bossesDefeated, startSkillChallenge, startBossEncounter, checkUnlockRequirement, addToast, fmt, classmates, dpc, studentData]);
+  }, [gameState.event.choices, startSkillChallenge, addToast, fmt, classmates, dpc, studentData]);
 
   // Close choice event without selecting
   const closeChoiceEvent = useCallback(() => {
@@ -2349,16 +2297,12 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
           // Actually, calling attack(null) is fine, it just won't show floating number.
 
           // To be safe and show effect, let's just add gold directly
-          if (activeBoss && bossHealth > 0) {
-            attackBoss(gain);
-          } else {
-            addGold(gain);
-          }
+          addGold(gain);
         }, intervalMs);
         return () => clearInterval(autoClickInterval);
       }
     }
-  }, [checkUnlocks, isLoaded, getSkillLevel, dpc, activeBoss, bossHealth, attackBoss, addGold]);
+  }, [checkUnlocks, isLoaded, getSkillLevel, dpc, addGold]);
 
   // Apply selected weapon and theme
   useEffect(() => {
@@ -2536,26 +2480,6 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
           </div>
         ))}
       </div>
-
-      {/* Boss Health Bar */}
-      {activeBoss && (
-        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-40 bg-black bg-opacity-80 rounded-xl p-4 min-w-96">
-          <div className="text-center text-white mb-2">
-            <h3 className="text-xl font-bold text-red-400">{activeBoss.name}</h3>
-          </div>
-          <div className="w-full bg-gray-700 rounded-full h-6 mb-2">
-            <div
-              className="boss-health-bar h-6 rounded-full transition-all duration-300"
-              style={{ width: `${(bossHealth / maxBossHealth) * 100}%` }}
-            ></div>
-          </div>
-          <div className="text-center text-white text-sm">
-            {fmt(bossHealth)} / {fmt(maxBossHealth)} HP
-          </div>
-        </div>
-      )}
-
-
 
       {/* NEW: Skill Challenge Modal */}
       {showSkillChallenge && challengeData && (
@@ -2831,7 +2755,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
           </div>
 
           <p className="text-white bg-gray-900 px-6 py-2 rounded-full text-lg font-bold shadow-xl border border-gray-700 mb-8 uppercase tracking-widest text-sm z-20">
-            {activeBoss ? `?? Fending off ${activeBoss.name}! ??` : 'Mine for resources'}
+            Mine for resources
           </p>
 
           <div className="relative z-10 w-full flex flex-col lg:flex-row gap-8 items-start justify-center p-4">
