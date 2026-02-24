@@ -76,12 +76,18 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     equippedArtifacts: [null, null, null], // Max 3 equipped artifacts
     keys: { normal: 0, dark: 0, ice: 0 }, // NEW: Keys inventory
     nextEncounter: 'enemy', // NEW: Alternates between 'enemy' and 'event'
+
+    // NEW: Camp Area
+    inCamp: false,
+    campShopItems: [],
+    campShopPurchased: [],
   });
 
   const [selectedWeapon, setSelectedWeapon] = useState('1');
   const [selectedTheme, setSelectedTheme] = useState('default');
   const [showUnlockables, setShowUnlockables] = useState(false);
   const [showSkillShop, setShowSkillShop] = useState(false); // NEW: Skill Shop Modal State
+  const [showCampShop, setShowCampShop] = useState(false); // NEW: Camp Shop Modal state
   const [floatingNumbers, setFloatingNumbers] = useState([]);
   const [toasts, setToasts] = useState([]);
   const [showChoiceEvent, setShowChoiceEvent] = useState(false);
@@ -210,6 +216,10 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
   // NEW: Environment Cycle logic
   const isNight = gameState.currentCycle === 'Night' || gameState.currentCycle === 'BloodMoon';
   const getBackgroundImage = () => {
+    if (gameState.inCamp) {
+      return isNight ? '/Hero Forge/Night/NightCamp.png' : '/Hero Forge/Day/DayCamp.png';
+    }
+
     if (showChoiceEvent && gameState.event.shown) {
       if (gameState.event.type === 'merchant') {
         return gameState.currentCycle === 'Night' || gameState.currentCycle === 'BloodMoon'
@@ -1203,6 +1213,8 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     setGameState(prev => {
       let newCycle = prev.currentCycle;
       let newCycleClicks = prev.cycleClicks + 1;
+      let newCampShopItems = prev.campShopItems;
+      let newCampShopPurchased = prev.campShopPurchased;
 
       // Every 500 clicks, advance the cycle
       if (newCycleClicks >= 500) {
@@ -1225,6 +1237,20 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
             newCycle = 'Day';
             addToast('A new day dawns.', 'success');
           }
+
+          // NEW: Restock camp shop on morning
+          let shopItems = [];
+          let attempts = 0;
+          while (shopItems.length < 3 && attempts < 50) {
+            const rId = pickArtifactByRarity(true); // Exclude Mythic
+            if (!shopItems.includes(rId)) {
+              shopItems.push(rId);
+            }
+            attempts++;
+          }
+          newCampShopItems = shopItems.length === 3 ? shopItems : ['1', '2', '3'];
+          newCampShopPurchased = [];
+          addToast('The Camp Shop has restocked!', 'success');
         }
       }
 
@@ -1234,7 +1260,9 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         attacks: prev.attacks + 1,
         encounterClicks: (prev.encounterClicks || 0) + 1,
         cycleClicks: newCycleClicks,
-        currentCycle: newCycle
+        currentCycle: newCycle,
+        campShopItems: newCampShopItems,
+        campShopPurchased: newCampShopPurchased
       };
     });
 
@@ -2437,13 +2465,61 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     };
 
     gameLoopRef.current = requestAnimationFrame(gameLoop);
-
     return () => {
       if (gameLoopRef.current) {
         cancelAnimationFrame(gameLoopRef.current);
       }
     };
   }, [isLoaded, passiveGoldPerSecond, addGold, gameState.event]);
+
+  // NEW: Daily Restock Logic for Camp Shop
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    const checkAndRestock = () => {
+      const now = new Date();
+      const lastRestock = new Date(gameState.lastCampRestock);
+
+      // Check if it's a new day since the last restock
+      if (now.getDate() !== lastRestock.getDate() ||
+        now.getMonth() !== lastRestock.getMonth() ||
+        now.getFullYear() !== lastRestock.getFullYear()) {
+
+        setGameState(prev => {
+          // Only restock if items are not already present or if it's a new day
+          if (prev.campShopItems && prev.campShopItems.length === 3 &&
+            now.getDate() === new Date(prev.lastCampRestock).getDate() &&
+            now.getMonth() === new Date(prev.lastCampRestock).getMonth() &&
+            now.getFullYear() === new Date(prev.lastCampRestock).getFullYear()) {
+            return prev; // Already restocked for today
+          }
+
+          let shopItems = [];
+          let attempts = 0;
+          while (shopItems.length < 3 && attempts < 50) {
+            const rId = pickArtifactByRarity(true); // Exclude Mythic
+            if (rId && !shopItems.includes(rId)) {
+              shopItems.push(rId);
+            }
+            attempts++;
+          }
+          // Fallback if not enough unique items found
+          const finalShopItems = shopItems.length === 3 ? shopItems : ['1', '2', '3'];
+          addToast('Camp shop restocked with new items!', 'info');
+          return { ...prev, campShopItems: finalShopItems, lastCampRestock: now.toISOString() };
+        });
+      }
+    };
+
+    // Run immediately on load
+    checkAndRestock();
+
+    // Set up interval to check daily (e.g., every hour)
+    const interval = setInterval(checkAndRestock, 3600 * 1000); // Check every hour
+
+    return () => clearInterval(interval);
+  }, [isLoaded, gameState.lastCampRestock, setGameState, pickArtifactByRarity, addToast]);
+
 
   // Memoized Leaderboard Rows - Moved here to be before conditional returns but after fmt definition
   const leaderboardRows = useMemo(() => {
@@ -2838,86 +2914,142 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
             </span>
           </div>
 
-          <p className="text-white bg-gray-900 px-6 py-2 rounded-full text-lg font-bold shadow-xl border border-gray-700 mb-8 uppercase tracking-widest text-sm z-20">
-            Mine for resources
-          </p>
+          <div className="flex items-center gap-4 mb-8 z-20">
+            <p className="text-white bg-gray-900 px-6 py-2 rounded-full text-lg font-bold shadow-xl border border-gray-700 uppercase tracking-widest text-sm">
+              {gameState.inCamp ? 'Rest at Camp' : 'Mine for resources'}
+            </p>
+            <button
+              onClick={() => setGameState(prev => ({ ...prev, inCamp: !prev.inCamp }))}
+              className={`px-6 py-2 rounded-full text-lg font-bold shadow-xl border-2 uppercase tracking-widest text-sm transition-all ${gameState.inCamp
+                  ? 'bg-blue-600 border-blue-400 text-white hover:bg-blue-500'
+                  : 'bg-green-600 border-green-400 text-white hover:bg-green-500'
+                }`}
+            >
+              {gameState.inCamp ? 'Back to Mine' : 'Camp'}
+            </button>
+          </div>
 
           <div className="relative z-10 w-full flex flex-col lg:flex-row gap-8 items-start justify-center p-4">
 
-            {/* Left Column: Player Actions (Pickaxe + Weapon) */}
+            {/* Left Column: Player Actions (Pickaxe + Weapon or Camp Options) */}
             <div className="w-full lg:w-1/3 flex flex-col items-center mt-10">
-              {/* Main Clickable Area - Pickaxe */}
-              <div
-                className={`w-64 h-64 mx-auto rounded-full bg-gradient-to-br from-gray-800 via-gray-900 to-black flex items-center justify-center text-8xl cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-2xl relative ${prestigeBorder} border-4 border-gray-600`}
-                onClick={attack}
-                style={{
-                  boxShadow: `inset 0 20px 60px rgba(0,0,0,0.5), 0 30px 60px rgba(0,0,0,0.8)`
-                }}
-              >
-                <img
-                  src={`/Hero Forge/Items/Pickaxes/level${gameState.pickaxeLevel}.png`}
-                  alt="Pickaxe"
-                  className="w-40 h-40 object-contain filter drop-shadow-2xl hover:drop-shadow-[0_0_15px_rgba(255,255,255,0.5)] transition-all z-20 relative"
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                    e.target.nextSibling.style.display = 'block';
-                  }}
-                />
-                <div className="text-8xl hidden">??</div>
 
-                {/* Enhanced decorative elements */}
-                <div className="absolute top-4 left-12 w-4 h-4 border-2 border-yellow-400 rounded transform rotate-45 opacity-70 animate-pulse"></div>
-                <div className="absolute top-16 left-6 w-4 h-4 border-2 border-yellow-400 rounded transform rotate-45 opacity-70 animate-pulse" style={{ animationDelay: '0.5s' }}></div>
-                <div className="absolute bottom-8 left-24 w-4 h-4 border-2 border-yellow-400 rounded transform rotate-45 opacity-70 animate-pulse" style={{ animationDelay: '1s' }}></div>
-                <div className="absolute top-12 right-6 w-4 h-4 border-2 border-yellow-400 rounded transform rotate-45 opacity-70 animate-pulse" style={{ animationDelay: '1.5s' }}></div>
-                <div className="absolute bottom-16 right-4 w-4 h-4 border-2 border-yellow-400 rounded transform rotate-45 opacity-70 animate-pulse" style={{ animationDelay: '2s' }}></div>
-                <div className="absolute bottom-24 right-12 w-4 h-4 border-2 border-yellow-400 rounded transform rotate-45 opacity-70 animate-pulse" style={{ animationDelay: '2.5s' }}></div>
-              </div>
-
-              {/* Equipped Weapon Display */}
-              <div className="mt-6 flex flex-col items-center">
-                <div className="bg-gray-900 p-4 rounded-2xl border border-gray-600 shadow-2xl inline-flex flex-col items-center min-w-[160px] hover:bg-gray-800 transition-colors">
-                  <h3 className="text-[10px] uppercase tracking-widest text-gray-400 mb-2 font-bold">Equipped</h3>
+              {gameState.inCamp ? (
+                /* CAMP VIEW UI */
+                <div className="w-full flex-1 grid grid-cols-2 gap-4">
+                  {/* Shop Button */}
                   <div
-                    className="w-16 h-16 flex items-center justify-center bg-gray-900/50 rounded-xl shadow-inner mb-2 border border-gray-700/50 relative overflow-hidden group cursor-pointer hover:border-red-500/50 transition-colors"
-                    onClick={attackEnemy}
+                    onClick={() => setShowCampShop(true)}
+                    className="bg-gray-800 border-2 border-yellow-500 rounded-2xl p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-700 transition hover:scale-105 active:scale-95 shadow-xl"
                   >
-                    <div className="absolute inset-0 bg-gradient-to-t from-blue-900/20 to-transparent"></div>
-                    <img
-                      src={currentWeapon.path}
-                      alt={currentWeapon.name}
-                      className="w-12 h-12 object-contain drop-shadow-[0_0_8px_rgba(255,255,255,0.4)] z-10 group-hover:scale-110 transition-transform active:scale-95"
-                      onError={(e) => { e.target.style.display = 'none'; }}
-                    />
+                    <span className="text-5xl mb-2">??</span>
+                    <span className="text-xl font-bold text-yellow-500">Shop</span>
                   </div>
-                  <p className="text-sm font-bold text-blue-300">{currentWeapon.name}</p>
-                  <p className="text-xs text-green-400 font-semibold">+{currentWeapon.dpcMultiplier}x DMG</p>
 
-                  {/* Equipped Artifacts */}
-                  {gameState.equippedArtifacts && gameState.equippedArtifacts.some(a => a) && (
-                    <div className="border-t border-gray-700/50 mt-3 pt-3 w-full flex justify-center gap-2">
-                      {gameState.equippedArtifacts.map((artId, idx) => {
-                        if (!artId) return null;
-                        const art = MERCHANT_ITEMS[artId];
-                        const count = gameState.inventory.filter(id => id === artId).length;
-                        return (
-                          <div key={idx} className="w-10 h-10 rounded-lg bg-gray-900/50 border border-yellow-500/50 flex items-center justify-center relative group cursor-help hover:bg-gray-800/80 transition-colors shadow-md">
-                            <img src={art.path} alt={art.name} className="w-8 h-8 object-contain drop-shadow-[0_0_5px_rgba(255,215,0,0.5)]" onError={(e) => { e.target.style.display = 'none'; }} />
-                            {count > 0 && <span className="absolute -bottom-1 -right-1 bg-pink-600 text-white text-[9px] font-black px-1 rounded-sm shadow-sm ring-1 ring-black">x{count}</span>}
+                  {/* Craft Button */}
+                  <div
+                    onClick={() => addToast('Coming soon!', 'info')}
+                    className="bg-gray-800 border-2 border-orange-500 rounded-2xl p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-700 transition hover:scale-105 active:scale-95 shadow-xl"
+                  >
+                    <span className="text-5xl mb-2">??</span>
+                    <span className="text-xl font-bold text-orange-500">Craft</span>
+                  </div>
 
-                            {/* Tooltip */}
-                            <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 w-max bg-gray-900 text-white text-xs p-2 rounded shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 border border-gray-700">
-                              <div className="font-bold text-yellow-400">{art.name}</div>
-                              <div className="text-blue-300">{art.desc}</div>
-                              <div className="text-green-400 mt-1 font-bold">Total Bonus: +{Math.round((art.value - 1) * count * 100)}%</div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
+                  {/* Anvil Button */}
+                  <div
+                    onClick={() => addToast('Coming soon!', 'info')}
+                    className="bg-gray-800 border-2 border-gray-500 rounded-2xl p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-700 transition hover:scale-105 active:scale-95 shadow-xl"
+                  >
+                    <span className="text-5xl mb-2">??</span>
+                    <span className="text-xl font-bold text-gray-400">Anvil</span>
+                  </div>
+
+                  {/* House Button */}
+                  <div
+                    onClick={() => addToast('Coming soon!', 'info')}
+                    className="bg-gray-800 border-2 border-blue-400 rounded-2xl p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-700 transition hover:scale-105 active:scale-95 shadow-xl"
+                  >
+                    <span className="text-5xl mb-2">??</span>
+                    <span className="text-xl font-bold text-blue-400">House</span>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                /* MINING VIEW UI */
+                <>
+                  {/* Main Clickable Area - Pickaxe */}
+                  <div
+                    className={`w-64 h-64 mx-auto rounded-full bg-gradient-to-br from-gray-800 via-gray-900 to-black flex items-center justify-center text-8xl cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-2xl relative ${prestigeBorder} border-4 border-gray-600`}
+                    onClick={attack}
+                    style={{
+                      boxShadow: `inset 0 20px 60px rgba(0,0,0,0.5), 0 30px 60px rgba(0,0,0,0.8)`
+                    }}
+                  >
+                    <img
+                      src={`/Hero Forge/Items/Pickaxes/level${gameState.pickaxeLevel}.png`}
+                      alt="Pickaxe"
+                      className="w-40 h-40 object-contain filter drop-shadow-2xl hover:drop-shadow-[0_0_15px_rgba(255,255,255,0.5)] transition-all z-20 relative"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'block';
+                      }}
+                    />
+                    <div className="text-8xl hidden">??</div>
+
+                    {/* Enhanced decorative elements */}
+                    <div className="absolute top-4 left-12 w-4 h-4 border-2 border-yellow-400 rounded transform rotate-45 opacity-70 animate-pulse"></div>
+                    <div className="absolute top-16 left-6 w-4 h-4 border-2 border-yellow-400 rounded transform rotate-45 opacity-70 animate-pulse" style={{ animationDelay: '0.5s' }}></div>
+                    <div className="absolute bottom-8 left-24 w-4 h-4 border-2 border-yellow-400 rounded transform rotate-45 opacity-70 animate-pulse" style={{ animationDelay: '1s' }}></div>
+                    <div className="absolute top-12 right-6 w-4 h-4 border-2 border-yellow-400 rounded transform rotate-45 opacity-70 animate-pulse" style={{ animationDelay: '1.5s' }}></div>
+                    <div className="absolute bottom-16 right-4 w-4 h-4 border-2 border-yellow-400 rounded transform rotate-45 opacity-70 animate-pulse" style={{ animationDelay: '2s' }}></div>
+                    <div className="absolute bottom-24 right-12 w-4 h-4 border-2 border-yellow-400 rounded transform rotate-45 opacity-70 animate-pulse" style={{ animationDelay: '2.5s' }}></div>
+                  </div>
+
+                  {/* Equipped Weapon Display */}
+                  <div className="mt-6 flex flex-col items-center">
+                    <div className="bg-gray-900 p-4 rounded-2xl border border-gray-600 shadow-2xl inline-flex flex-col items-center min-w-[160px] hover:bg-gray-800 transition-colors">
+                      <h3 className="text-[10px] uppercase tracking-widest text-gray-400 mb-2 font-bold">Equipped</h3>
+                      <div
+                        className="w-16 h-16 flex items-center justify-center bg-gray-900/50 rounded-xl shadow-inner mb-2 border border-gray-700/50 relative overflow-hidden group cursor-pointer hover:border-red-500/50 transition-colors"
+                        onClick={attackEnemy}
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-t from-blue-900/20 to-transparent"></div>
+                        <img
+                          src={currentWeapon.path}
+                          alt={currentWeapon.name}
+                          className="w-12 h-12 object-contain drop-shadow-[0_0_8px_rgba(255,255,255,0.4)] z-10 group-hover:scale-110 transition-transform active:scale-95"
+                          onError={(e) => { e.target.style.display = 'none'; }}
+                        />
+                      </div>
+                      <p className="text-sm font-bold text-blue-300">{currentWeapon.name}</p>
+                      <p className="text-xs text-green-400 font-semibold">+{currentWeapon.dpcMultiplier}x DMG</p>
+
+                      {/* Equipped Artifacts */}
+                      {gameState.equippedArtifacts && gameState.equippedArtifacts.some(a => a) && (
+                        <div className="border-t border-gray-700/50 mt-3 pt-3 w-full flex justify-center gap-2">
+                          {gameState.equippedArtifacts.map((artId, idx) => {
+                            if (!artId) return null;
+                            const art = MERCHANT_ITEMS[artId];
+                            const count = gameState.inventory.filter(id => id === artId).length;
+                            return (
+                              <div key={idx} className="w-10 h-10 rounded-lg bg-gray-900/50 border border-yellow-500/50 flex items-center justify-center relative group cursor-help hover:bg-gray-800/80 transition-colors shadow-md">
+                                <img src={art.path} alt={art.name} className="w-8 h-8 object-contain drop-shadow-[0_0_5px_rgba(255,215,0,0.5)]" onError={(e) => { e.target.style.display = 'none'; }} />
+                                {count > 0 && <span className="absolute -bottom-1 -right-1 bg-pink-600 text-white text-[9px] font-black px-1 rounded-sm shadow-sm ring-1 ring-black">x{count}</span>}
+
+                                {/* Tooltip */}
+                                <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 w-max bg-gray-900 text-white text-xs p-2 rounded shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 border border-gray-700">
+                                  <div className="font-bold text-yellow-400">{art.name}</div>
+                                  <div className="text-blue-300">{art.desc}</div>
+                                  <div className="text-green-400 mt-1 font-bold">Total Bonus: +{Math.round((art.value - 1) * count * 100)}%</div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Right Column: Environment & Stats */}
@@ -3385,6 +3517,104 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
             </div>
           </div>
         )}
+
+      {/* NEW: Camp Shop Modal */}
+      {showCampShop && (
+        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className="bg-gray-900 rounded-2xl shadow-2xl w-full max-w-3xl p-8 border-4 border-yellow-500 relative max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex justify-between items-start mb-8 border-b border-gray-700 pb-4">
+              <div>
+                <h2 className="text-3xl font-black text-yellow-400 drop-shadow-lg flex items-center gap-3">
+                  <span className="text-4xl">??</span> Camp Trader
+                </h2>
+                <p className="text-gray-400 mt-2 font-medium">Stock refreshes every morning.</p>
+              </div>
+              <div className="text-right flex flex-col items-end">
+                <button
+                  onClick={() => setShowCampShop(false)}
+                  className="text-gray-500 hover:text-white transition-colors bg-gray-800 hover:bg-gray-700 rounded-full w-10 h-10 flex items-center justify-center text-xl font-bold shadow-md border border-gray-700"
+                >
+                  ×
+                </button>
+                <div className="mt-4 bg-gray-800 px-4 py-2 rounded-xl border border-yellow-500/30 flex items-center gap-2 shadow-inner">
+                  <span className="text-yellow-500 text-xl">??</span>
+                  <span className="text-yellow-400 font-bold text-lg">{fmt(Math.floor(gameState.gold))}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Items Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {gameState.campShopItems.map((itemId, idx) => {
+                const item = MERCHANT_ITEMS[itemId];
+                if (!item) return null;
+                const isPurchased = gameState.campShopPurchased?.includes(itemId);
+                const canAfford = gameState.gold >= item.cost;
+
+                return (
+                  <div
+                    key={`${itemId}-${idx}`}
+                    className={`relative flex flex-col items-center p-6 rounded-2xl border-2 transition-all 
+                        ${isPurchased ? 'border-gray-700 bg-gray-800/50 opacity-70 grayscale' : 'border-gray-700 bg-gray-800 hover:border-yellow-500/50 hover:bg-gray-800/80 shadow-lg'}`}
+                  >
+                    {isPurchased && (
+                      <div className="absolute inset-0 flex items-center justify-center z-10 backdrop-blur-[2px] rounded-2xl">
+                        <div className="bg-red-600 text-white font-black text-xl px-6 py-2 rounded shadow-2xl transform -rotate-12 border-2 border-red-800 tracking-wider">
+                          SOLD OUT
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Item Image */}
+                    <div className="w-24 h-24 bg-gray-900 rounded-xl flex items-center justify-center mb-4 p-2 shadow-inner border border-gray-700">
+                      <img
+                        src={item.path}
+                        alt={item.name}
+                        className="w-full h-full object-contain filter drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]"
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      />
+                    </div>
+
+                    {/* Details */}
+                    <h3 className="text-lg font-bold text-blue-300 text-center mb-1">{item.name}</h3>
+                    <p className="text-xs text-green-400 font-semibold text-center mb-4 h-8 flex items-center">{item.desc}</p>
+
+                    {/* Price */}
+                    <div className="flex items-center gap-1 mb-4 bg-black/50 px-3 py-1.5 rounded-lg border border-gray-700">
+                      <span className="text-sm">??</span>
+                      <span className={`font-bold ${canAfford || isPurchased ? 'text-yellow-400' : 'text-red-400'}`}>
+                        {fmt(item.cost)}
+                      </span>
+                    </div>
+
+                    {/* Buy Button */}
+                    <button
+                      disabled={isPurchased || !canAfford}
+                      onClick={() => {
+                        setGameState(prev => ({
+                          ...prev,
+                          gold: prev.gold - item.cost,
+                          inventory: [...prev.inventory, itemId],
+                          campShopPurchased: [...(prev.campShopPurchased || []), itemId]
+                        }));
+                        addToast(`Purchased ${item.name}!`, 'success');
+                      }}
+                      className={`w-full py-3 px-4 rounded-xl font-bold uppercase tracking-wider text-sm shadow-lg transition-all
+                          ${isPurchased ? 'bg-gray-700 text-gray-500 cursor-not-allowed' :
+                          canAfford ? 'bg-yellow-600 hover:bg-yellow-500 text-black hover:-translate-y-1 hover:shadow-yellow-500/30' :
+                            'bg-red-900/50 text-red-500/50 cursor-not-allowed border border-red-900/50'
+                        }`}
+                    >
+                      {isPurchased ? 'Purchased' : canAfford ? 'Purchase' : 'Too Expensive'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* NEW: Admin / Developer Tools Panel */}
       {studentData?.firstName === 'Teacher' && (
