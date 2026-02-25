@@ -81,6 +81,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     inCamp: false,
     campShopItems: [],
     campShopPurchased: [],
+    metalOre: 0, // NEW: Crafting material
   });
 
   const [selectedWeapon, setSelectedWeapon] = useState('1');
@@ -1210,6 +1211,13 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
       });
     }
 
+    // NEW: Metal Ore Drop Logic (0.05% chance)
+    if (Math.random() < 0.0005) {
+      setGameState(prev => ({ ...prev, metalOre: (prev.metalOre || 0) + 1 }));
+      addToast('⛏️ Found 1 Metal Ore!', 'success');
+      addFloatingNumber(event.clientX, event.clientY, '+1 Metal Ore', '#A0AEC0', '⛏️');
+    }
+
     setGameState(prev => {
       let newCycle = prev.currentCycle;
       let newCycleClicks = prev.cycleClicks + 1;
@@ -1268,9 +1276,8 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
 
     // Add floating number at click position
     if (event && event.currentTarget) {
-      const rect = event.currentTarget.getBoundingClientRect();
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
+      const x = event.clientX;
+      const y = event.clientY;
       const color = activeBoss ? '#ff4444' : isCrit ? '#ff00ff' : '#ffd700'; // Purple for Crit
       const text = `${activeBoss ? 'DMG: ' : '+'}${fmt(gain)}${isCrit ? ' ??' : ''}`;
       const icon = activeBoss ? '??' : '??';
@@ -1365,9 +1372,8 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
 
     // Floating number
     if (event && event.currentTarget) {
-      const rect = event.currentTarget.getBoundingClientRect();
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
+      const x = event.clientX;
+      const y = event.clientY;
       const text = `DMG: ${fmt(gain)}${isCrit ? ' ??' : ''}`;
       const color = isCrit ? '#ff00ff' : '#ff4444';
       addFloatingNumber(x, y, text, color, '??');
@@ -2649,7 +2655,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         ))}
       </div>
       {/* Toast Notifications */}
-      <div className="fixed top-4 right-4 z-50 space-y-2">
+      <div className="fixed top-4 right-4 z-50 flex flex-col items-end gap-2 pointer-events-none">
         {toasts.map(toast => (
           <div
             key={toast.id}
@@ -3636,6 +3642,78 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                 );
               })}
             </div>
+
+            {/* NEW: Crafting Forge Section */}
+            <div className="mt-8 border-t border-gray-700 pt-6">
+              <h3 className="text-2xl font-black text-gray-300 mb-4 flex items-center justify-between">
+                <span>🔨 Crafting Forge</span>
+                <div className="bg-gray-800 px-3 py-1 rounded-lg border border-gray-600 text-sm flex items-center gap-2">
+                  <span>⛏️ Metal Ore:</span>
+                  <span className="text-white font-bold">{gameState.metalOre || 0}</span>
+                </div>
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Basic Craft */}
+                <div className="bg-gray-800 p-4 rounded-xl border border-gray-700 flex flex-col items-center justify-between gap-4">
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-gray-200">Basic Forging</div>
+                    <div className="text-sm text-gray-400">Craft a random artifact</div>
+                  </div>
+                  <button
+                    disabled={(gameState.metalOre || 0) < 10}
+                    onClick={() => {
+                      const randomArtId = pickArtifactByRarity(true); // normal pool
+                      const item = MERCHANT_ITEMS[randomArtId];
+                      setGameState(prev => ({
+                        ...prev,
+                        metalOre: (prev.metalOre || 0) - 10,
+                        inventory: [...prev.inventory, randomArtId]
+                      }));
+                      addToast(`Crafted: ${item.name}!`, 'success');
+                    }}
+                    className={`w-full py-2 px-4 rounded-lg font-bold 
+                           ${(gameState.metalOre || 0) >= 10 ? 'bg-blue-600 hover:bg-blue-500 text-white' : 'bg-gray-700 text-gray-500 cursor-not-allowed'}`}
+                  >
+                    Craft (10 ⛏️)
+                  </button>
+                </div>
+
+                {/* Rare Craft */}
+                <div className="bg-gray-800 p-4 rounded-xl border border-yellow-700/50 flex flex-col items-center justify-between gap-4">
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-yellow-500">Premium Forging</div>
+                    <div className="text-sm text-gray-400">Guaranteed Rare or better</div>
+                  </div>
+                  <button
+                    disabled={(gameState.metalOre || 0) < 100}
+                    onClick={() => {
+                      let randomArtId = '1';
+                      // Force rare or better
+                      let attempts = 0;
+                      while (attempts < 50) {
+                        randomArtId = pickArtifactByRarity(true);
+                        if (MERCHANT_ITEMS[randomArtId].rarity !== 'common') break;
+                        attempts++;
+                      }
+                      const item = MERCHANT_ITEMS[randomArtId];
+                      setGameState(prev => ({
+                        ...prev,
+                        metalOre: (prev.metalOre || 0) - 100,
+                        inventory: [...prev.inventory, randomArtId]
+                      }));
+                      addToast(`Crafted Premium: ${item.name}!`, 'success');
+                    }}
+                    className={`w-full py-2 px-4 rounded-lg font-bold 
+                           ${(gameState.metalOre || 0) >= 100 ? 'bg-yellow-600 hover:bg-yellow-500 text-black' : 'bg-gray-700 text-gray-500 cursor-not-allowed'}`}
+                  >
+                    Craft (100 ⛏️)
+                  </button>
+                </div>
+              </div>
+            </div>
+            {/* End Crafting Forge */}
+
           </div>
         </div>
       )}
