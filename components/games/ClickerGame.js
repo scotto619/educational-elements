@@ -1343,9 +1343,11 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
       const newHp = Math.max(0, enemy.currentHp - gain);
 
       if (newHp <= 0) {
-        addGold(enemy.baseGold);
-        gainXP(enemy.xp);
-        addToast(`Defeated ${enemy.name}! +${fmt(enemy.baseGold)} Gold, +${enemy.xp} XP`, 'success');
+        const cappedGold = Math.min(enemy.baseGold, 100);
+        const cappedXp = Math.min(enemy.xp, 100);
+        addGold(cappedGold);
+        gainXP(cappedXp);
+        addToast(`Defeated ${enemy.name}! +${fmt(cappedGold)} Gold, +${cappedXp} XP`, 'success');
         return {
           ...prev,
           activeEnemy: null
@@ -1929,17 +1931,33 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
           break;
 
         case 'smallGoldGain':
-          const smallGain = Math.max(100, prev.totalGold * effect.amount);
+          const smallGain = Math.max(10, prev.gold * effect.amount * 0.1); // Reduced heavily
           newState.gold += smallGain;
           newState.totalGold += smallGain;
-          addToast(`Found ${fmt(smallGain)} gold!`, 'success');
+
+          if (Math.random() < 0.1) {
+            const randomArtId = pickArtifactByRarity(true); // Exclude Mythic
+            const item = MERCHANT_ITEMS[randomArtId];
+            newState.inventory = [...newState.inventory, randomArtId];
+            addToast(`Found ${fmt(smallGain)} gold AND a shiny ${item.name}!`, 'success');
+          } else {
+            addToast(`Found ${fmt(smallGain)} gold!`, 'success');
+          }
           break;
 
         case 'goldGain':
-          const gain = Math.max(500, prev.totalGold * effect.amount);
+          const gain = Math.max(50, prev.gold * effect.amount * 0.1); // Reduced heavily
           newState.gold += gain;
           newState.totalGold += gain;
-          addToast(`Earned ${fmt(gain)} gold!`, 'success');
+
+          if (Math.random() < 0.1) {
+            const randomArtId = pickArtifactByRarity(true); // Exclude Mythic
+            const item = MERCHANT_ITEMS[randomArtId];
+            newState.inventory = [...newState.inventory, randomArtId];
+            addToast(`Earned ${fmt(gain)} gold AND discovered a ${item.name}!`, 'success');
+          } else {
+            addToast(`Earned ${fmt(gain)} gold!`, 'success');
+          }
           break;
 
         case 'randomBoon':
@@ -2379,11 +2397,12 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         setEnemyTimeLeft(timeLeft);
 
         if (timeLeft <= 0) {
-          const penalty = Math.floor(gameState.activeEnemy.baseGold * 0.5);
           let actualLoss = 0;
           setGameState(prev => {
+            const lossPercentage = 0.1 + (Math.random() * 0.1); // 10% to 20%
+            const penalty = Math.floor(prev.gold * lossPercentage);
             actualLoss = Math.min(prev.gold, penalty);
-            return { ...prev, gold: Math.max(0, prev.gold - penalty), totalGold: Math.max(0, prev.totalGold - actualLoss), activeEnemy: null };
+            return { ...prev, gold: Math.max(0, prev.gold - penalty), totalGold: Math.max(0, prev.totalGold - penalty), activeEnemy: null };
           });
           addToast(`Time's up! The ${gameState.activeEnemy.name} escaped. You lost ${fmt(actualLoss)} gold!`, 'error');
         }
@@ -3599,6 +3618,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
                         setGameState(prev => ({
                           ...prev,
                           gold: prev.gold - item.cost,
+                          totalGold: Math.max(0, prev.totalGold - item.cost),
                           inventory: [...prev.inventory, itemId],
                           campShopPurchased: [...(prev.campShopPurchased || []), itemId]
                         }));
