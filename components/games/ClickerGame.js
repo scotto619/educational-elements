@@ -89,6 +89,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
   const [showUnlockables, setShowUnlockables] = useState(false);
   const [showSkillShop, setShowSkillShop] = useState(false); // NEW: Skill Shop Modal State
   const [showCampShop, setShowCampShop] = useState(false); // NEW: Camp Shop Modal state
+  const [showCraftingForge, setShowCraftingForge] = useState(false); // NEW: Crafting Forge Modal state
   const [floatingNumbers, setFloatingNumbers] = useState([]);
   const [toasts, setToasts] = useState([]);
   const [showChoiceEvent, setShowChoiceEvent] = useState(false);
@@ -2977,7 +2978,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
 
                   {/* Craft Button */}
                   <div
-                    onClick={() => addToast('Coming soon!', 'info')}
+                    onClick={() => setShowCraftingForge(true)}
                     className="bg-gray-800 border-2 border-orange-500 rounded-2xl p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-700 transition hover:scale-105 active:scale-95 shadow-xl"
                   >
                     <span className="text-5xl mb-2">??</span>
@@ -3643,181 +3644,203 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
               })}
             </div>
 
-            {/* NEW: Crafting Forge Section */}
-            <div className="mt-8 border-t border-gray-700 pt-6">
-              <h3 className="text-2xl font-black text-gray-300 mb-4 flex items-center justify-between">
-                <span>🔨 Crafting Forge</span>
-                <div className="bg-gray-800 px-3 py-1 rounded-lg border border-gray-600 text-sm flex items-center gap-2">
-                  <span>⛏️ Metal Ore:</span>
-                  <span className="text-white font-bold">{gameState.metalOre || 0}</span>
-                </div>
-              </h3>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Basic Craft */}
-                <div className="bg-gray-800 p-4 rounded-xl border border-gray-700 flex flex-col items-center justify-between gap-4">
-                  <div className="text-center">
-                    <div className="text-lg font-bold text-gray-200">Basic Forging</div>
-                    <div className="text-sm text-gray-400">Craft a random artifact</div>
-                  </div>
-                  <button
-                    disabled={(gameState.metalOre || 0) < 10}
-                    onClick={() => {
-                      const randomArtId = pickArtifactByRarity(true); // normal pool
-                      const item = MERCHANT_ITEMS[randomArtId];
-                      setGameState(prev => ({
-                        ...prev,
-                        metalOre: (prev.metalOre || 0) - 10,
-                        inventory: [...prev.inventory, randomArtId]
-                      }));
-                      addToast(`Crafted: ${item.name}!`, 'success');
-                    }}
-                    className={`w-full py-2 px-4 rounded-lg font-bold 
-                           ${(gameState.metalOre || 0) >= 10 ? 'bg-blue-600 hover:bg-blue-500 text-white' : 'bg-gray-700 text-gray-500 cursor-not-allowed'}`}
-                  >
-                    Craft (10 ⛏️)
-                  </button>
-                </div>
-
-                {/* Rare Craft */}
-                <div className="bg-gray-800 p-4 rounded-xl border border-yellow-700/50 flex flex-col items-center justify-between gap-4">
-                  <div className="text-center">
-                    <div className="text-lg font-bold text-yellow-500">Premium Forging</div>
-                    <div className="text-sm text-gray-400">Guaranteed Rare or better</div>
-                  </div>
-                  <button
-                    disabled={(gameState.metalOre || 0) < 100}
-                    onClick={() => {
-                      let randomArtId = '1';
-                      // Force rare or better
-                      let attempts = 0;
-                      while (attempts < 50) {
-                        randomArtId = pickArtifactByRarity(true);
-                        if (MERCHANT_ITEMS[randomArtId].rarity !== 'common') break;
-                        attempts++;
-                      }
-                      const item = MERCHANT_ITEMS[randomArtId];
-                      setGameState(prev => ({
-                        ...prev,
-                        metalOre: (prev.metalOre || 0) - 100,
-                        inventory: [...prev.inventory, randomArtId]
-                      }));
-                      addToast(`Crafted Premium: ${item.name}!`, 'success');
-                    }}
-                    className={`w-full py-2 px-4 rounded-lg font-bold 
-                           ${(gameState.metalOre || 0) >= 100 ? 'bg-yellow-600 hover:bg-yellow-500 text-black' : 'bg-gray-700 text-gray-500 cursor-not-allowed'}`}
-                  >
-                    Craft (100 ⛏️)
-                  </button>
-                </div>
-              </div>
-            </div>
-            {/* End Crafting Forge */}
-
+            {/* End Camp Shop Items Grid */}
           </div>
         </div>
       )}
+
+      {/* NEW: Crafting Forge Modal */}
+      {showCraftingForge && (
+        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className="bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl p-8 border-4 border-orange-500 relative max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex justify-between items-start mb-8 border-b border-gray-700 pb-4">
+              <div>
+                <h2 className="text-3xl font-black text-orange-500 drop-shadow-lg flex items-center gap-3">
+                  <span className="text-4xl">🔨</span> Crafting Forge
+                </h2>
+                <p className="text-gray-400 mt-2 font-medium">Use Metal Ore to forge new artifacts.</p>
+              </div>
+              <div className="text-right flex flex-col items-end">
+                <button
+                  onClick={() => setShowCraftingForge(false)}
+                  className="text-gray-500 hover:text-white transition-colors bg-gray-800 hover:bg-gray-700 rounded-full w-10 h-10 flex items-center justify-center text-xl font-bold shadow-md border border-gray-700"
+                >
+                  ×
+                </button>
+                <div className="mt-4 bg-gray-800 px-4 py-2 rounded-xl border border-orange-500/30 flex items-center gap-2 shadow-inner">
+                  <span className="text-orange-500 text-xl">⛏️</span>
+                  <span className="text-white font-bold text-lg">{gameState.metalOre || 0}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Basic Craft */}
+              <div className="bg-gray-800 p-6 rounded-xl border border-gray-700 flex flex-col items-center justify-between gap-6 shadow-lg">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-gray-200 mb-2">Basic Forging</div>
+                  <div className="text-md text-gray-400">Craft a random artifact</div>
+                </div>
+                <button
+                  disabled={(gameState.metalOre || 0) < 10}
+                  onClick={() => {
+                    const randomArtId = pickArtifactByRarity(true); // normal pool
+                    const item = MERCHANT_ITEMS[randomArtId];
+                    setGameState(prev => ({
+                      ...prev,
+                      metalOre: (prev.metalOre || 0) - 10,
+                      inventory: [...prev.inventory, randomArtId]
+                    }));
+                    addToast(`Crafted: ${item.name}!`, 'success');
+                  }}
+                  className={`w-full py-4 px-6 rounded-xl font-bold text-lg tracking-wider
+                         ${(gameState.metalOre || 0) >= 10 ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-500/30 shadow-lg transform hover:-translate-y-1 transition' : 'bg-gray-700 text-gray-500 cursor-not-allowed'}`}
+                >
+                  Forging (10 ⛏️)
+                </button>
+              </div>
+
+              {/* Rare Craft */}
+              <div className="bg-gray-800 p-6 rounded-xl border-2 border-yellow-700/50 flex flex-col items-center justify-between gap-6 shadow-lg relative overflow-hidden">
+                <div className="absolute top-0 right-0 bg-yellow-500 text-black text-[10px] font-black uppercase px-3 py-1 rounded-bl-lg">Premium</div>
+                <div className="text-center mt-4">
+                  <div className="text-2xl font-bold text-yellow-500 mb-2">Perfect Forging</div>
+                  <div className="text-md text-gray-400">Guaranteed Rare or better</div>
+                </div>
+                <button
+                  disabled={(gameState.metalOre || 0) < 100}
+                  onClick={() => {
+                    let randomArtId = '1';
+                    // Force rare or better
+                    let attempts = 0;
+                    while (attempts < 50) {
+                      randomArtId = pickArtifactByRarity(true);
+                      if (MERCHANT_ITEMS[randomArtId].rarity !== 'common') break;
+                      attempts++;
+                    }
+                    const item = MERCHANT_ITEMS[randomArtId];
+                    setGameState(prev => ({
+                      ...prev,
+                      metalOre: (prev.metalOre || 0) - 100,
+                      inventory: [...prev.inventory, randomArtId]
+                    }));
+                    addToast(`Crafted Premium: ${item.name}!`, 'success');
+                  }}
+                  className={`w-full py-4 px-6 rounded-xl font-bold text-lg tracking-wider
+                         ${(gameState.metalOre || 0) >= 100 ? 'bg-yellow-600 hover:bg-yellow-500 text-black shadow-yellow-500/30 shadow-lg transform hover:-translate-y-1 transition' : 'bg-gray-700 text-gray-500 cursor-not-allowed'}`}
+                >
+                  Forging (100 ⛏️)
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+      }
 
       {/* NEW: Admin / Developer Tools Panel */}
-      {studentData?.firstName === 'Teacher' && (
-        <div className="max-w-7xl mx-auto mt-8 mb-12">
-          <div className="bg-gray-900 border-2 border-red-500/50 rounded-xl shadow-[0_0_30px_rgba(255,0,0,0.2)] p-6 relative overflow-hidden">
-            <div className="absolute top-0 right-0 bg-red-500 text-white text-[10px] font-black uppercase px-3 py-1 rounded-bl-lg">Admin Tools</div>
-            <h2 className="text-xl font-bold text-red-400 mb-4 flex items-center gap-2">
-              <span>???</span> Developer Console
-            </h2>
+      {
+        studentData?.firstName === 'Teacher' && (
+          <div className="max-w-7xl mx-auto mt-8 mb-12">
+            <div className="bg-gray-900 border-2 border-red-500/50 rounded-xl shadow-[0_0_30px_rgba(255,0,0,0.2)] p-6 relative overflow-hidden">
+              <div className="absolute top-0 right-0 bg-red-500 text-white text-[10px] font-black uppercase px-3 py-1 rounded-bl-lg">Admin Tools</div>
+              <h2 className="text-xl font-bold text-red-400 mb-4 flex items-center gap-2">
+                <span>???</span> Developer Console
+              </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {/* Unlock cheats */}
-              <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
-                <h3 className="text-sm font-bold text-gray-300 mb-2 uppercase">Unlocks</h3>
-                <div className="flex flex-col gap-2">
-                  <button
-                    onClick={() => {
-                      const allWeaponKeys = Object.keys(WEAPONS);
-                      setGameState(prev => ({ ...prev, unlockedWeapons: allWeaponKeys, xp: prev.xp + 1000000, level: Math.max(prev.level, 100) }));
-                      addToast('All Weapons Unlocked! Level boosted to 100.', 'success');
-                    }}
-                    className="bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold py-2 px-3 rounded"
-                  >
-                    Unlock All Weapons & Level 100
-                  </button>
-                  <button
-                    onClick={() => {
-                      const allMerchItems = Object.keys(MERCHANT_ITEMS);
-                      setGameState(prev => ({
-                        ...prev,
-                        inventory: [...prev.inventory, ...allMerchItems],
-                        keys: { normal: 99, dark: 99, ice: 99 },
-                        gold: prev.gold + 1000000000,
-                        totalGold: prev.totalGold + 1000000000
-                      }));
-                      addToast('Max Keys, 1B Gold, & All Artifacts Added!', 'success');
-                    }}
-                    className="bg-purple-600 hover:bg-purple-500 text-white text-sm font-bold py-2 px-3 rounded"
-                  >
-                    Give All Items & 1B Gold
-                  </button>
-                  <button
-                    onClick={() => {
-                      setGameState(prev => ({ ...prev, pickaxeLevel: Math.min(prev.pickaxeLevel + 1, 10) }));
-                      addToast('Pickaxe Upgrade Forced!', 'success');
-                    }}
-                    className="bg-yellow-600 hover:bg-yellow-500 text-white text-sm font-bold py-2 px-3 rounded"
-                  >
-                    Upgrade Pickaxe (+1)
-                  </button>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Unlock cheats */}
+                <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
+                  <h3 className="text-sm font-bold text-gray-300 mb-2 uppercase">Unlocks</h3>
+                  <div className="flex flex-col gap-2">
+                    <button
+                      onClick={() => {
+                        const allWeaponKeys = Object.keys(WEAPONS);
+                        setGameState(prev => ({ ...prev, unlockedWeapons: allWeaponKeys, xp: prev.xp + 1000000, level: Math.max(prev.level, 100) }));
+                        addToast('All Weapons Unlocked! Level boosted to 100.', 'success');
+                      }}
+                      className="bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold py-2 px-3 rounded"
+                    >
+                      Unlock All Weapons & Level 100
+                    </button>
+                    <button
+                      onClick={() => {
+                        const allMerchItems = Object.keys(MERCHANT_ITEMS);
+                        setGameState(prev => ({
+                          ...prev,
+                          inventory: [...prev.inventory, ...allMerchItems],
+                          keys: { normal: 99, dark: 99, ice: 99 },
+                          gold: prev.gold + 1000000000,
+                          totalGold: prev.totalGold + 1000000000
+                        }));
+                        addToast('Max Keys, 1B Gold, & All Artifacts Added!', 'success');
+                      }}
+                      className="bg-purple-600 hover:bg-purple-500 text-white text-sm font-bold py-2 px-3 rounded"
+                    >
+                      Give All Items & 1B Gold
+                    </button>
+                    <button
+                      onClick={() => {
+                        setGameState(prev => ({ ...prev, pickaxeLevel: Math.min(prev.pickaxeLevel + 1, 10) }));
+                        addToast('Pickaxe Upgrade Forced!', 'success');
+                      }}
+                      className="bg-yellow-600 hover:bg-yellow-500 text-white text-sm font-bold py-2 px-3 rounded"
+                    >
+                      Upgrade Pickaxe (+1)
+                    </button>
+                  </div>
                 </div>
-              </div>
 
-              {/* Spawner Cheats */}
-              <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
-                <h3 className="text-sm font-bold text-gray-300 mb-2 uppercase">Force Spawns</h3>
-                <div className="flex flex-col gap-2">
-                  <button
-                    onClick={() => {
-                      setGameState(prev => ({ ...prev, event: { ...prev.event, shown: false }, activeEnemy: null, nextEncounter: 'enemy' }));
-                      setTimeout(() => {
-                        spawnChoiceEvent();
-                      }, 100);
-                      addToast('Forced Enemy Spawn...', 'info');
-                    }}
-                    className="bg-red-700 hover:bg-red-600 text-white text-sm font-bold py-2 px-3 rounded"
-                  >
-                    Force Spawn Enemy
-                  </button>
-                  <button
-                    onClick={() => {
-                      setGameState(prev => ({ ...prev, event: { ...prev.event, shown: false }, activeEnemy: null, nextEncounter: 'event' }));
-                      setTimeout(() => {
-                        spawnChoiceEvent();
-                      }, 100);
-                      addToast('Forced Choice Event Spawn...', 'info');
-                    }}
-                    className="bg-teal-700 hover:bg-teal-600 text-white text-sm font-bold py-2 px-3 rounded"
-                  >
-                    Force Spawn Choice Event
-                  </button>
+                {/* Spawner Cheats */}
+                <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
+                  <h3 className="text-sm font-bold text-gray-300 mb-2 uppercase">Force Spawns</h3>
+                  <div className="flex flex-col gap-2">
+                    <button
+                      onClick={() => {
+                        setGameState(prev => ({ ...prev, event: { ...prev.event, shown: false }, activeEnemy: null, nextEncounter: 'enemy' }));
+                        setTimeout(() => {
+                          spawnChoiceEvent();
+                        }, 100);
+                        addToast('Forced Enemy Spawn...', 'info');
+                      }}
+                      className="bg-red-700 hover:bg-red-600 text-white text-sm font-bold py-2 px-3 rounded"
+                    >
+                      Force Spawn Enemy
+                    </button>
+                    <button
+                      onClick={() => {
+                        setGameState(prev => ({ ...prev, event: { ...prev.event, shown: false }, activeEnemy: null, nextEncounter: 'event' }));
+                        setTimeout(() => {
+                          spawnChoiceEvent();
+                        }, 100);
+                        addToast('Forced Choice Event Spawn...', 'info');
+                      }}
+                      className="bg-teal-700 hover:bg-teal-600 text-white text-sm font-bold py-2 px-3 rounded"
+                    >
+                      Force Spawn Choice Event
+                    </button>
+                  </div>
                 </div>
-              </div>
 
-              {/* Env Cycle Cheats */}
-              <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
-                <h3 className="text-sm font-bold text-gray-300 mb-2 uppercase">Cycles</h3>
-                <div className="grid grid-cols-2 gap-2">
-                  <button onClick={() => setGameState(prev => ({ ...prev, currentCycle: 'Day' }))} className="bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold py-2 px-2 rounded">Day</button>
-                  <button onClick={() => setGameState(prev => ({ ...prev, currentCycle: 'Night' }))} className="bg-indigo-900 hover:bg-indigo-800 text-white text-xs font-bold py-2 px-2 rounded">Night</button>
-                  <button onClick={() => setGameState(prev => ({ ...prev, currentCycle: 'Snow' }))} className="bg-cyan-200 hover:bg-cyan-100 text-cyan-900 text-xs font-bold py-2 px-2 rounded">Snow</button>
-                  <button onClick={() => setGameState(prev => ({ ...prev, currentCycle: 'BloodMoon' }))} className="bg-red-900 hover:bg-red-800 text-white text-xs font-bold py-2 px-2 rounded">Blood Moon</button>
+                {/* Env Cycle Cheats */}
+                <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
+                  <h3 className="text-sm font-bold text-gray-300 mb-2 uppercase">Cycles</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button onClick={() => setGameState(prev => ({ ...prev, currentCycle: 'Day' }))} className="bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold py-2 px-2 rounded">Day</button>
+                    <button onClick={() => setGameState(prev => ({ ...prev, currentCycle: 'Night' }))} className="bg-indigo-900 hover:bg-indigo-800 text-white text-xs font-bold py-2 px-2 rounded">Night</button>
+                    <button onClick={() => setGameState(prev => ({ ...prev, currentCycle: 'Snow' }))} className="bg-cyan-200 hover:bg-cyan-100 text-cyan-900 text-xs font-bold py-2 px-2 rounded">Snow</button>
+                    <button onClick={() => setGameState(prev => ({ ...prev, currentCycle: 'BloodMoon' }))} className="bg-red-900 hover:bg-red-800 text-white text-xs font-bold py-2 px-2 rounded">Blood Moon</button>
+                  </div>
                 </div>
-              </div>
 
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
-    </div>
+    </div >
   );
 };
 
