@@ -82,6 +82,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     campShopItems: [],
     campShopPurchased: [],
     metalOre: 0, // NEW: Crafting material
+    bonusWeaponDamage: 0, // NEW: Anvil upgrades
   });
 
   const [selectedWeapon, setSelectedWeapon] = useState('1');
@@ -90,6 +91,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
   const [showSkillShop, setShowSkillShop] = useState(false); // NEW: Skill Shop Modal State
   const [showCampShop, setShowCampShop] = useState(false); // NEW: Camp Shop Modal state
   const [showCraftingForge, setShowCraftingForge] = useState(false); // NEW: Crafting Forge Modal state
+  const [showAnvil, setShowAnvil] = useState(false); // NEW: Anvil Modal State
   const [floatingNumbers, setFloatingNumbers] = useState([]);
   const [toasts, setToasts] = useState([]);
   const [showChoiceEvent, setShowChoiceEvent] = useState(false);
@@ -692,7 +694,7 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     const weaponMultiplier = currentWeapon.dpcMultiplier || 1;
 
     let mult = gameState.dpcMult * activeBoonMult('dpc') * weaponMultiplier;
-    let add = 0;
+    let add = gameState.bonusWeaponDamage || 0;
 
     // Apply Artifact Boosts
     (gameState.equippedArtifacts || []).forEach(artId => {
@@ -2465,9 +2467,11 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
       lastUpdateRef.current = now;
 
       // Update DPS production + level-based auto farming (starts at 0 at level 1)
-      const production = passiveGoldPerSecond() * dt;
-      if (production > 0 && isFinite(production)) {
-        addGold(production);
+      if (!gameState.inCamp) {
+        const production = passiveGoldPerSecond() * dt;
+        if (production > 0 && isFinite(production)) {
+          addGold(production);
+        }
       }
 
       // Update time played
@@ -2936,12 +2940,25 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         )}
 
         <div className="flex flex-col items-center justify-center min-h-[70vh] mt-8 max-w-7xl mx-auto">
-          {/* Prominent Gold Display */}
-          <div className="bg-gray-900 px-10 py-4 rounded-full border-2 border-yellow-500 shadow-[0_0_30px_rgba(234,179,8,0.3)] z-20 flex items-center gap-4 mb-4 transform hover:scale-105 transition-transform cursor-default">
-            <span className="text-5xl drop-shadow-lg">??</span>
-            <span className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 to-yellow-600 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
-              {fmt(Math.floor(gameState.totalGold))}
-            </span>
+          {/* Prominent Resource Display */}
+          <div className="flex flex-col md:flex-row items-center gap-6 mb-4 z-20">
+            {/* Gold */}
+            <div className="bg-gray-900 px-10 py-4 rounded-full border-2 border-yellow-500 shadow-[0_0_30px_rgba(234,179,8,0.3)] flex items-center gap-4 transform hover:scale-105 transition-transform cursor-default">
+              <span className="text-5xl drop-shadow-lg">??</span>
+              <span className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 to-yellow-600 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
+                {fmt(Math.floor(gameState.totalGold))}
+              </span>
+            </div>
+
+            {/* Metal Ore */}
+            {(gameState.metalOre || 0) > 0 && (
+              <div className="bg-gray-900 px-8 py-3 rounded-full border-2 border-gray-500 shadow-[0_0_30px_rgba(156,163,175,0.3)] flex items-center gap-3 transform hover:scale-105 transition-transform cursor-default">
+                <span className="text-4xl drop-shadow-lg">⛏️</span>
+                <span className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-b from-gray-200 to-gray-500 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
+                  {fmt(gameState.metalOre || 0)}
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-4 mb-8 z-20">
@@ -2987,10 +3004,10 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
 
                   {/* Anvil Button */}
                   <div
-                    onClick={() => addToast('Coming soon!', 'info')}
+                    onClick={() => setShowAnvil(true)}
                     className="bg-gray-800 border-2 border-gray-500 rounded-2xl p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-700 transition hover:scale-105 active:scale-95 shadow-xl"
                   >
-                    <span className="text-5xl mb-2">??</span>
+                    <span className="text-5xl mb-2">⚒️</span>
                     <span className="text-xl font-bold text-gray-400">Anvil</span>
                   </div>
 
@@ -3736,8 +3753,59 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
             </div>
           </div>
         </div>
-      )
-      }
+      )}
+
+      {/* NEW: Anvil Modal */}
+      {showAnvil && (
+        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className="bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md p-8 border-4 border-gray-500 relative max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex justify-between items-start mb-8 border-b border-gray-700 pb-4">
+              <div>
+                <h2 className="text-3xl font-black text-gray-300 drop-shadow-lg flex items-center gap-3">
+                  <span className="text-4xl">⚒️</span> The Anvil
+                </h2>
+                <p className="text-gray-400 mt-2 font-medium">Upgrade your base damage globally.</p>
+              </div>
+              <div className="text-right flex flex-col items-end">
+                <button
+                  onClick={() => setShowAnvil(false)}
+                  className="text-gray-500 hover:text-white transition-colors bg-gray-800 hover:bg-gray-700 rounded-full w-10 h-10 flex items-center justify-center text-xl font-bold shadow-md border border-gray-700"
+                >
+                  ×
+                </button>
+                <div className="mt-4 bg-gray-800 px-4 py-2 rounded-xl border border-gray-500/30 flex items-center gap-2 shadow-inner">
+                  <span className="text-orange-500 text-xl">⛏️</span>
+                  <span className="text-white font-bold text-lg">{gameState.metalOre || 0}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gray-800 p-6 rounded-xl border border-gray-600 flex flex-col items-center justify-between gap-6 shadow-lg">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-gray-200 mb-2">Sharpen Weapons</div>
+                <div className="text-md text-gray-400">Permanently grants +1 Base Damage.</div>
+                <div className="text-sm font-bold text-orange-400 mt-2">Current Bonus: +{gameState.bonusWeaponDamage || 0}</div>
+              </div>
+              <button
+                disabled={(gameState.metalOre || 0) < 20}
+                onClick={() => {
+                  setGameState(prev => ({
+                    ...prev,
+                    metalOre: (prev.metalOre || 0) - 20,
+                    bonusWeaponDamage: (prev.bonusWeaponDamage || 0) + 1
+                  }));
+                  addToast(`Weapons Sharpened! +1 Base Damage`, 'success');
+                }}
+                className={`w-full py-4 px-6 rounded-xl font-bold text-lg tracking-wider
+                       ${(gameState.metalOre || 0) >= 20 ? 'bg-gray-600 hover:bg-gray-500 text-white shadow-gray-500/30 shadow-lg transform hover:-translate-y-1 transition' : 'bg-gray-700 text-gray-500 cursor-not-allowed'}`}
+              >
+                Upgrade (20 ⛏️)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* NEW: Admin / Developer Tools Panel */}
       {
