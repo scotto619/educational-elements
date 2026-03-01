@@ -1,7 +1,10 @@
 import React, { useState, Suspense, lazy } from 'react';
 
-// Lazy-load the new Science section
+// Lazy-load the new subject sections
 const ScienceNewSection = lazy(() => import('../curriculum/new/ScienceNewSection'));
+const EnglishNewSection = lazy(() => import('../curriculum/new/EnglishNewSection'));
+const MathNewSection = lazy(() => import('../curriculum/new/MathNewSection'));
+const HassNewSection = lazy(() => import('../curriculum/new/HassNewSection'));
 
 const LoadingSpinner = () => (
     <div className="flex items-center justify-center min-h-[300px]">
@@ -48,7 +51,7 @@ const subjects = [
         gradient: 'from-blue-600 via-blue-500 to-indigo-600',
         description: 'Master the art of language and literature',
         pattern: 'bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))]',
-        available: false
+        available: true
     },
     {
         id: 'mathematics',
@@ -57,7 +60,7 @@ const subjects = [
         gradient: 'from-emerald-600 via-emerald-500 to-teal-600',
         description: 'Unlock the universe with numbers',
         pattern: 'bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))]',
-        available: false
+        available: true
     },
     {
         id: 'science',
@@ -75,7 +78,7 @@ const subjects = [
         gradient: 'from-amber-600 via-orange-500 to-red-600',
         description: 'Explore human societies and history',
         pattern: 'bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))]',
-        available: false
+        available: true
     }
 ];
 
@@ -86,6 +89,34 @@ const NewCurriculumCornerTab = ({
     loadedData = {}
 }) => {
     const [activeSubject, setActiveSubject] = useState(null);
+
+    const assignedTopics = loadedData.assignedTopics || [];
+
+    const handleToggleAssign = async (topicInfo) => {
+        try {
+            const isAssigned = assignedTopics.some(
+                t => t.id === topicInfo.id && t.domainId === topicInfo.domainId && t.subjectId === topicInfo.subjectId
+            );
+
+            let newAssignedTopics;
+            if (isAssigned) {
+                // Remove
+                newAssignedTopics = assignedTopics.filter(
+                    t => !(t.id === topicInfo.id && t.domainId === topicInfo.domainId && t.subjectId === topicInfo.subjectId)
+                );
+                showToast(`Removed "${topicInfo.name}" from student assignments`, 'info');
+            } else {
+                // Add
+                newAssignedTopics = [...assignedTopics, topicInfo];
+                showToast(`Assigned "${topicInfo.name}" to all students!`, 'success');
+            }
+
+            await saveData({ assignedTopics: newAssignedTopics });
+        } catch (error) {
+            console.error("Error toggling assignment:", error);
+            showToast("Failed to update assigned topics", "error");
+        }
+    };
 
     const handleBackToMenu = () => {
         setActiveSubject(null);
@@ -100,6 +131,50 @@ const NewCurriculumCornerTab = ({
                         onBack={handleBackToMenu}
                         students={students}
                         showToast={showToast}
+                        onToggleAssign={handleToggleAssign}
+                        assignedTopics={assignedTopics}
+                    />
+                </Suspense>
+            );
+        }
+
+        if (activeSubject.id === 'english') {
+            return (
+                <Suspense fallback={<LoadingSpinner />}>
+                    <EnglishNewSection
+                        onBack={handleBackToMenu}
+                        students={students}
+                        showToast={showToast}
+                        onToggleAssign={handleToggleAssign}
+                        assignedTopics={assignedTopics}
+                    />
+                </Suspense>
+            );
+        }
+
+        if (activeSubject.id === 'mathematics') {
+            return (
+                <Suspense fallback={<LoadingSpinner />}>
+                    <MathNewSection
+                        onBack={handleBackToMenu}
+                        students={students}
+                        showToast={showToast}
+                        onToggleAssign={handleToggleAssign}
+                        assignedTopics={assignedTopics}
+                    />
+                </Suspense>
+            );
+        }
+
+        if (activeSubject.id === 'hass') {
+            return (
+                <Suspense fallback={<LoadingSpinner />}>
+                    <HassNewSection
+                        onBack={handleBackToMenu}
+                        students={students}
+                        showToast={showToast}
+                        onToggleAssign={handleToggleAssign}
+                        assignedTopics={assignedTopics}
                     />
                 </Suspense>
             );

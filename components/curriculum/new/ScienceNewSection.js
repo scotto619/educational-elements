@@ -1,101 +1,21 @@
 import React, { useState } from 'react';
 import TopicContentView from './TopicContentView';
+import { scienceDomains } from '../../../utils/curriculumData';
 
-// Data Structure for Science Topics
-const scienceDomains = [
-    {
-        id: 'physical_sciences',
-        name: '1. Physical Sciences (Physics)',
-        icon: '🔬',
-        color: 'bg-blue-50 border-blue-200 text-blue-900',
-        topics: [
-            { id: 'forces_motion', name: 'Forces & Motion', icon: '⚡', domain: 'Physical Sciences' },
-            { id: 'energy', name: 'Energy', icon: '🔊', domain: 'Physical Sciences' },
-            { id: 'light', name: 'Light', icon: '💡', domain: 'Physical Sciences' },
-            { id: 'sound', name: 'Sound', icon: '🔉', domain: 'Physical Sciences' },
-            { id: 'heat_temp', name: 'Heat & Temperature', icon: '🌡', domain: 'Physical Sciences' },
-            { id: 'electricity', name: 'Electricity', icon: '⚙', domain: 'Physical Sciences' }
-        ]
-    },
-    {
-        id: 'earth_space',
-        name: '2. Earth & Space Sciences',
-        icon: '🌍',
-        color: 'bg-indigo-50 border-indigo-200 text-indigo-900',
-        topics: [
-            { id: 'earth_materials', name: 'Earth Materials', icon: '🌎', domain: 'Earth & Space Sciences' },
-            { id: 'weather_climate', name: 'Weather & Climate', icon: '🌦', domain: 'Earth & Space Sciences' },
-            { id: 'water_earth', name: 'Water on Earth', icon: '🌊', domain: 'Earth & Space Sciences' },
-            { id: 'earth_systems', name: 'Earth Systems', icon: '🌏', domain: 'Earth & Space Sciences' },
-            { id: 'space', name: 'Space', icon: '🚀', domain: 'Earth & Space Sciences' }
-        ]
-    },
-    {
-        id: 'biological_sciences',
-        name: '3. Biological Sciences (Life Science)',
-        icon: '🌱',
-        color: 'bg-green-50 border-green-200 text-green-900',
-        topics: [
-            { id: 'plants', name: 'Plants', icon: '🌿', domain: 'Biological Sciences' },
-            { id: 'animals', name: 'Animals', icon: '🐾', domain: 'Biological Sciences' },
-            { id: 'human_biology', name: 'Human Biology', icon: '👩‍⚕️', domain: 'Biological Sciences' },
-            { id: 'ecosystems', name: 'Ecosystems', icon: '🌏', domain: 'Biological Sciences' },
-            { id: 'adaptations', name: 'Adaptations', icon: '🧬', domain: 'Biological Sciences' }
-        ]
-    },
-    {
-        id: 'chemical_sciences',
-        name: '4. Chemical Sciences (Chemistry)',
-        icon: '🧪',
-        color: 'bg-rose-50 border-rose-200 text-rose-900',
-        topics: [
-            { id: 'matter', name: 'Matter', icon: '🧱', domain: 'Chemical Sciences' },
-            { id: 'materials', name: 'Materials', icon: '🧴', domain: 'Chemical Sciences' },
-            { id: 'changes_materials', name: 'Changes in Materials', icon: '🔄', domain: 'Chemical Sciences' }
-        ]
-    },
-    {
-        id: 'inquiry_skills',
-        name: '5. Scientific Inquiry Skills (Process Skills)',
-        icon: '🔎',
-        color: 'bg-amber-50 border-amber-200 text-amber-900',
-        topics: [
-            { id: 'investigating', name: 'Investigating', icon: '🔬', domain: 'Scientific Inquiry Skills' },
-            { id: 'observing_measuring', name: 'Observing & Measuring', icon: '📏', domain: 'Scientific Inquiry Skills' },
-            { id: 'analysing', name: 'Analysing', icon: '📊', domain: 'Scientific Inquiry Skills' },
-            { id: 'communicating_science', name: 'Communicating Science', icon: '🗣', domain: 'Scientific Inquiry Skills' }
-        ]
-    },
-    {
-        id: 'stem_technology',
-        name: '6. STEM & Technology Links',
-        icon: '🤖',
-        color: 'bg-cyan-50 border-cyan-200 text-cyan-900',
-        topics: [
-            { id: 'engineering_concepts', name: 'Engineering Concepts', icon: '🏗', domain: 'STEM & Technology' },
-            { id: 'digital_science_skills', name: 'Digital Science Skills', icon: '💻', domain: 'STEM & Technology' },
-            { id: 'sustainability', name: 'Sustainability & Environmental Science', icon: '♻', domain: 'STEM & Technology' }
-        ]
-    },
-    {
-        id: 'cross_curriculum',
-        name: '7. Cross-Curriculum / Real-World Science',
-        icon: '🧠',
-        color: 'bg-fuchsia-50 border-fuchsia-200 text-fuchsia-900',
-        topics: [
-            { id: 'health_science', name: 'Health Science', icon: '🍎', domain: 'Cross-Curriculum' },
-            { id: 'environmental_awareness', name: 'Environmental Awareness', icon: '🌲', domain: 'Cross-Curriculum' },
-            { id: 'indigenous_science', name: 'Indigenous Science Perspectives', icon: '🪃', domain: 'Cross-Curriculum' }
-        ]
-    }
-];
-
-const ScienceNewSection = ({ onBack }) => {
+const ScienceNewSection = ({ onBack, onToggleAssign, assignedTopics }) => {
     const [selectedTopic, setSelectedTopic] = useState(null);
 
     // If a topic is selected, render the TopicContentView
     if (selectedTopic) {
-        return <TopicContentView topic={selectedTopic} onBack={() => setSelectedTopic(null)} />;
+        return (
+            <TopicContentView
+                topic={selectedTopic}
+                onBack={() => setSelectedTopic(null)}
+                onToggleAssign={onToggleAssign}
+                assignedTopics={assignedTopics}
+                subjectId="science"
+            />
+        );
     }
 
     // Otherwise render the domain layout

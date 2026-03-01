@@ -19,6 +19,7 @@ import StudentScience from '../components/student/StudentScience';
 import VisualWritingPrompts from '../components/curriculum/literacy/VisualWritingPrompts';
 import DailyMysteryBoxModal from '../components/student/DailyMysteryBoxModal';
 import HiddenPresent from '../components/student/HiddenPresent';
+import StudentAssignments from '../components/student/StudentAssignments';
 import { DEFAULT_NOTICE_ITEMS, subscribeToNoticeBoard } from '../services/noticeBoard';
 import { CARD_EFFECTS } from '../constants/cardEffects';
 
@@ -276,12 +277,11 @@ const StudentPortal = () => {
 
   const showToast = useCallback((message, type = 'info') => {
     const toastElement = document.createElement('div');
-    toastElement.className = `fixed top-4 left-4 right-4 md:top-4 md:right-4 md:left-auto z-50 p-4 rounded-lg shadow-lg text-white font-semibold text-center md:text-left max-w-sm mx-auto md:mx-0 ${
-      type === 'success' ? 'bg-green-500' :
-      type === 'error' ? 'bg-red-500' :
-      type === 'warning' ? 'bg-yellow-500' :
-      'bg-blue-500'
-    }`;
+    toastElement.className = `fixed top-4 left-4 right-4 md:top-4 md:right-4 md:left-auto z-50 p-4 rounded-lg shadow-lg text-white font-semibold text-center md:text-left max-w-sm mx-auto md:mx-0 ${type === 'success' ? 'bg-green-500' :
+        type === 'error' ? 'bg-red-500' :
+          type === 'warning' ? 'bg-yellow-500' :
+            'bg-blue-500'
+      }`;
     toastElement.textContent = message;
 
     document.body.appendChild(toastElement);
@@ -482,7 +482,7 @@ const StudentPortal = () => {
   // ===============================================
   // STEP 1: CLASS CODE SEARCH
   // ===============================================
-  
+
   const handleClassCodeSubmit = async (e) => {
     e.preventDefault();
     if (!classCode.trim()) {
@@ -495,15 +495,15 @@ const StudentPortal = () => {
 
     try {
       console.log('🔍 Searching for class code:', classCode.trim());
-      
+
       // Try V2 architecture first, then V1 fallback
       let classResult = await searchV2Architecture(classCode.trim());
-      
+
       if (!classResult) {
         console.log('🔄 V2 search failed, trying V1 fallback...');
         classResult = await searchV1Architecture(classCode.trim());
       }
-      
+
       if (!classResult) {
         setError('Class code not found. Please check with your teacher and make sure the code is correct.');
         setLoading(false);
@@ -538,29 +538,29 @@ const StudentPortal = () => {
   const searchV2Architecture = async (classCodeInput) => {
     try {
       console.log('🔍 V2 Search: Querying classes collection...');
-      
+
       const classesQuery = query(
         collection(firestore, 'classes'),
         where('classCode', '==', classCodeInput.toUpperCase())
       );
-      
+
       const classesSnapshot = await getDocs(classesQuery);
-      
+
       if (classesSnapshot.empty) {
         return null;
       }
 
       const classDoc = classesSnapshot.docs[0];
       const classData = { id: classDoc.id, ...classDoc.data() };
-      
+
       // Get class membership and students
       const membershipDoc = await getDoc(doc(firestore, 'class_memberships', classDoc.id));
-      
+
       let students = [];
       if (membershipDoc.exists()) {
         const membershipData = membershipDoc.data();
         const studentIds = membershipData.students || [];
-        
+
         if (studentIds.length > 0) {
           const studentPromises = studentIds.map(async (studentId) => {
             try {
@@ -573,7 +573,7 @@ const StudentPortal = () => {
             }
             return null;
           });
-          
+
           const studentResults = await Promise.all(studentPromises);
           students = studentResults.filter(s => s !== null);
         }
@@ -596,19 +596,19 @@ const StudentPortal = () => {
   const searchV1Architecture = async (classCodeInput) => {
     try {
       console.log('🔄 V1 Fallback: Scanning user documents...');
-      
+
       const usersRef = collection(firestore, 'users');
       const usersSnapshot = await getDocs(usersRef);
-      
+
       for (const userDoc of usersSnapshot.docs) {
         try {
           const userData = userDoc.data();
-          
+
           if (userData.classes && Array.isArray(userData.classes)) {
-            const matchingClass = userData.classes.find(cls => 
+            const matchingClass = userData.classes.find(cls =>
               cls.classCode && cls.classCode.trim().toUpperCase() === classCodeInput.toUpperCase()
             );
-            
+
             if (matchingClass) {
               return {
                 classData: {
@@ -628,7 +628,7 @@ const StudentPortal = () => {
       }
 
       return null;
-      
+
     } catch (error) {
       console.error('❌ V1 search error:', error);
       return null;
@@ -638,7 +638,7 @@ const StudentPortal = () => {
   // ===============================================
   // STEP 2: STUDENT SELECTION
   // ===============================================
-  
+
   const handleStudentSelect = (student) => {
     console.log('👤 Student selected:', student.firstName);
     setSelectedStudent(student);
@@ -650,7 +650,7 @@ const StudentPortal = () => {
   // ===============================================
   // STEP 3: PASSWORD VERIFICATION - DIRECT (NO APIs)
   // ===============================================
-  
+
   const handlePasswordSubmit = async (e) => {
     e.preventDefault();
     if (!studentPassword.trim()) {
@@ -663,19 +663,19 @@ const StudentPortal = () => {
 
     try {
       console.log('🔐 Verifying password directly (no API) for:', selectedStudent.firstName);
-      
+
       // Use direct password verification (bypasses problematic APIs)
       const result = await verifyStudentPasswordDirect(
-        selectedStudent.id, 
-        studentPassword, 
+        selectedStudent.id,
+        studentPassword,
         classData.classCode
       );
 
       if (!result.success) {
         const defaultPassword = getDefaultPassword(selectedStudent.firstName);
         setPasswordError(
-          result.error === 'Invalid password' 
-            ? `Incorrect password. Try: ${defaultPassword}` 
+          result.error === 'Invalid password'
+            ? `Incorrect password. Try: ${defaultPassword}`
             : 'Unable to verify password. Please try again.'
         );
         setPasswordLoading(false);
@@ -707,7 +707,7 @@ const StudentPortal = () => {
       refreshDailyMysteryBoxAvailability(selectedStudent, { autoOpen: true });
       setIsLoggedIn(true);
       setActiveTab('dashboard');
-      
+
     } catch (error) {
       console.error('❌ Direct password verification error:', error);
       setPasswordError('Network error. Please check your connection and try again.');
@@ -719,7 +719,7 @@ const StudentPortal = () => {
   // ===============================================
   // ENHANCED UPDATE FUNCTION - DIRECT (NO APIs)
   // ===============================================
-  
+
   const updateStudentData = async (updatedStudentData) => {
     if (!teacherUserId || !classData || !studentData) {
       console.error('Missing required data for student update');
@@ -729,7 +729,7 @@ const StudentPortal = () => {
 
     try {
       console.log('💾 Updating student data directly (no API):', studentData.firstName);
-      
+
       if (architectureVersion === 'v2') {
         // Direct V2 update
         const studentRef = doc(firestore, 'students', studentData.id);
@@ -738,15 +738,15 @@ const StudentPortal = () => {
           updatedAt: new Date().toISOString(),
           lastActivity: new Date().toISOString()
         };
-        
+
         await updateDoc(studentRef, updates);
         console.log('✅ V2 direct student update completed');
-        
+
       } else {
         // Direct V1 update
         const userRef = doc(firestore, 'users', teacherUserId);
         const userDoc = await getDoc(userRef);
-        
+
         if (userDoc.exists()) {
           const userData = userDoc.data();
           const updatedClasses = userData.classes.map(cls => {
@@ -755,10 +755,10 @@ const StudentPortal = () => {
                 ...cls,
                 students: cls.students.map(s => {
                   if (s.id === studentData.id) {
-                    return { 
-                      ...s, 
+                    return {
+                      ...s,
                       ...updatedStudentData,
-                      updatedAt: new Date().toISOString() 
+                      updatedAt: new Date().toISOString()
                     };
                   }
                   return s;
@@ -767,7 +767,7 @@ const StudentPortal = () => {
             }
             return cls;
           });
-          
+
           await updateDoc(userRef, { classes: updatedClasses });
           console.log('✅ V1 direct student update completed');
         }
@@ -787,9 +787,9 @@ const StudentPortal = () => {
       } catch (sessionError) {
         console.warn('Could not update session storage:', sessionError);
       }
-      
+
       return true;
-      
+
     } catch (error) {
       console.error('❌ Direct student update error:', error);
       showToast('Failed to save changes. Please try again.', 'error');
@@ -1546,14 +1546,14 @@ const StudentPortal = () => {
   // ===============================================
   // LOGOUT AND NAVIGATION
   // ===============================================
-  
+
   const handleLogout = () => {
     try {
       sessionStorage.removeItem('studentSession');
     } catch (error) {
       console.warn('Could not clear session storage:', error);
     }
-    
+
     setIsLoggedIn(false);
     setStudentData(null);
     setClassData(null);
@@ -1593,16 +1593,16 @@ const StudentPortal = () => {
   // ===============================================
   // RENDER LOGIN SCREEN
   // ===============================================
-  
+
   if (!isLoggedIn) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-100 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 md:p-8">
           {/* Header */}
           <div className="text-center mb-6 md:mb-8">
-            <img 
-              src="/Logo/LOGO_NoBG.png" 
-              alt="Educational Elements Logo" 
+            <img
+              src="/Logo/LOGO_NoBG.png"
+              alt="Educational Elements Logo"
               className="h-12 w-12 md:h-16 md:w-16 mx-auto mb-3 md:mb-4"
               onError={(e) => { e.target.style.display = 'none'; }}
             />
@@ -1615,22 +1615,19 @@ const StudentPortal = () => {
           {/* Step Indicator */}
           <div className="flex items-center justify-center mb-6">
             <div className="flex items-center space-x-2">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold ${
-                loginStep === 'classCode' ? 'bg-blue-500 text-white' : 'bg-green-500 text-white'
-              }`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold ${loginStep === 'classCode' ? 'bg-blue-500 text-white' : 'bg-green-500 text-white'
+                }`}>
                 1
               </div>
               <div className={`w-8 h-1 ${loginStep !== 'classCode' ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold ${
-                loginStep === 'studentSelect' ? 'bg-blue-500 text-white' : 
-                loginStep === 'password' ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'
-              }`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold ${loginStep === 'studentSelect' ? 'bg-blue-500 text-white' :
+                  loginStep === 'password' ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'
+                }`}>
                 2
               </div>
               <div className={`w-8 h-1 ${loginStep === 'password' ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold ${
-                loginStep === 'password' ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-600'
-              }`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold ${loginStep === 'password' ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-600'
+                }`}>
                 3
               </div>
             </div>
@@ -1656,13 +1653,13 @@ const StudentPortal = () => {
                   Ask your teacher for the 6-character class code
                 </p>
               </div>
-              
+
               {error && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                   <p className="text-red-600 text-sm">{error}</p>
                 </div>
               )}
-              
+
               <button
                 type="submit"
                 disabled={loading || !classCode.trim()}
@@ -1691,7 +1688,7 @@ const StudentPortal = () => {
                 <p className="text-gray-600 text-sm md:text-base">Class: {classData?.name || 'Unknown Class'}</p>
                 <p className="text-xs md:text-sm text-gray-500">Found {availableStudents.length} students</p>
               </div>
-              
+
               <div className="grid grid-cols-1 gap-2 md:gap-3 max-h-64 md:max-h-80 overflow-y-auto">
                 {availableStudents.map(student => (
                   <button
@@ -1699,8 +1696,8 @@ const StudentPortal = () => {
                     onClick={() => handleStudentSelect(student)}
                     className="flex items-center space-x-3 p-3 md:p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all active:scale-95"
                   >
-                    <img 
-                      src={getAvatarImage(student.avatarBase, calculateAvatarLevel(student.totalPoints))} 
+                    <img
+                      src={getAvatarImage(student.avatarBase, calculateAvatarLevel(student.totalPoints))}
                       alt={student.firstName}
                       className="w-10 h-10 md:w-12 md:h-12 rounded-full border-2 border-gray-300 flex-shrink-0"
                       onError={(e) => { e.target.src = '/shop/Basic/Banana.png'; }}
@@ -1716,7 +1713,7 @@ const StudentPortal = () => {
                   </button>
                 ))}
               </div>
-              
+
               <button
                 onClick={handleBackToClassCode}
                 className="w-full py-2 md:py-3 text-gray-600 hover:text-gray-800 transition-colors text-sm md:text-base"
@@ -1730,8 +1727,8 @@ const StudentPortal = () => {
           {loginStep === 'password' && selectedStudent && (
             <form onSubmit={handlePasswordSubmit} className="space-y-4 md:space-y-6">
               <div className="text-center">
-                <img 
-                  src={getAvatarImage(selectedStudent.avatarBase, calculateAvatarLevel(selectedStudent.totalPoints))} 
+                <img
+                  src={getAvatarImage(selectedStudent.avatarBase, calculateAvatarLevel(selectedStudent.totalPoints))}
                   alt={selectedStudent.firstName}
                   className="w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-blue-300 mx-auto mb-3"
                   onError={(e) => { e.target.src = '/shop/Basic/Banana.png'; }}
@@ -1745,7 +1742,7 @@ const StudentPortal = () => {
               {/* PASSWORD HINT */}
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                 <p className="text-sm text-blue-800 text-center">
-                  💡 <strong>Hint:</strong> Your password is usually your first name + "123"<br/>
+                  💡 <strong>Hint:</strong> Your password is usually your first name + "123"<br />
                   Try: <code className="bg-blue-100 px-1 rounded">{getDefaultPassword(selectedStudent.firstName)}</code>
                 </p>
               </div>
@@ -1767,13 +1764,13 @@ const StudentPortal = () => {
                   Ask your teacher if you forgot your password
                 </p>
               </div>
-              
+
               {passwordError && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                   <p className="text-red-600 text-sm">{passwordError}</p>
                 </div>
               )}
-              
+
               <button
                 type="submit"
                 disabled={passwordLoading || !studentPassword.trim()}
@@ -1809,9 +1806,13 @@ const StudentPortal = () => {
   // ===============================================
   // RENDER MAIN PORTAL WITH NEW LITERACY TAB
   // ===============================================
-  
+
   const tabs = [
     { id: 'dashboard', name: 'Home', icon: '🏠', shortName: 'Home' },
+    // Only show assignments tab if there are actual assignments
+    ...(classData?.assignedTopics?.length > 0 ? [
+      { id: 'assignments', name: 'Assigned Topics', icon: '📝', shortName: 'Assignments' }
+    ] : []),
     { id: 'maths', name: 'Maths', icon: '🔢', shortName: 'Maths', hasSubTabs: true },
     { id: 'literacy', name: 'Literacy', icon: '📚', shortName: 'Literacy', hasSubTabs: true },
     { id: 'science', name: 'Science', icon: '🪐', shortName: 'Science' },
@@ -1836,7 +1837,7 @@ const StudentPortal = () => {
   // Handle tab changes
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
-    
+
     // Set default subtab for tabs with subtabs
     if (tabId === 'maths') {
       setActiveSubTab('general');
@@ -1863,7 +1864,14 @@ const StudentPortal = () => {
             noticeBoardItems={noticeBoardItems}
           />
         );
-      
+
+      case 'assignments':
+        return (
+          <StudentAssignments
+            assignedTopics={classData?.assignedTopics || []}
+          />
+        );
+
       case 'maths':
         // Render maths subtabs content
         switch (activeSubTab) {
@@ -1886,13 +1894,13 @@ const StudentPortal = () => {
               />
             );
         }
-      
+
       case 'literacy':
         // Render literacy subtabs content
         switch (activeSubTab) {
           case 'reading':
             return (
-              <StudentReading 
+              <StudentReading
                 studentData={studentData}
                 classData={classData}
                 showToast={showToast}
@@ -1900,7 +1908,7 @@ const StudentPortal = () => {
             );
           case 'writing':
             return (
-              <VisualWritingPrompts 
+              <VisualWritingPrompts
                 showToast={showToast}
                 students={[studentData]}
               />
@@ -1931,7 +1939,7 @@ const StudentPortal = () => {
 
       case 'science':
         return <StudentScience />;
-      
+
       case 'shop':
         return (
           <StudentShop
@@ -1958,7 +1966,7 @@ const StudentPortal = () => {
             performClassmateTrade={tradeWithClassmate}
           />
         );
-      
+
       case 'games':
         return (
           <StudentGames
@@ -1969,7 +1977,7 @@ const StudentPortal = () => {
             classmates={availableStudents}
           />
         );
-      
+
       case 'quizshow':
         return (
           <div className="bg-white rounded-xl p-8 text-center shadow-lg border border-dashed border-purple-200">
@@ -1981,7 +1989,7 @@ const StudentPortal = () => {
             </div>
           </div>
         );
-      
+
       default:
         return <div>Tab not found</div>;
     }
@@ -2003,8 +2011,8 @@ const StudentPortal = () => {
           />
           <div className="flex items-center min-w-0 flex-1">
             <img
-              src="/Logo/LOGO_NoBG.png" 
-              alt="Educational Elements Logo" 
+              src="/Logo/LOGO_NoBG.png"
+              alt="Educational Elements Logo"
               className="h-8 w-8 md:h-10 md:w-10 mr-2 md:mr-3 flex-shrink-0"
               onError={(e) => { e.target.style.display = 'none'; }}
             />
@@ -2017,7 +2025,7 @@ const StudentPortal = () => {
               </p>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-2">
             {dailyMysteryBoxAvailable && (
               <button
@@ -2056,11 +2064,10 @@ const StudentPortal = () => {
               <button
                 key={tab.id}
                 onClick={() => handleTabChange(tab.id)}
-                className={`flex-shrink-0 flex flex-col md:flex-row items-center justify-center space-y-1 md:space-y-0 md:space-x-2 px-2 md:px-4 py-2 md:py-3 transition-all duration-200 min-w-[70px] md:min-w-0 ${
-                  activeTab === tab.id 
-                    ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50 font-semibold' 
+                className={`flex-shrink-0 flex flex-col md:flex-row items-center justify-center space-y-1 md:space-y-0 md:space-x-2 px-2 md:px-4 py-2 md:py-3 transition-all duration-200 min-w-[70px] md:min-w-0 ${activeTab === tab.id
+                    ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50 font-semibold'
                     : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                }`}
+                  }`}
               >
                 <span className="text-lg md:text-xl">{tab.icon}</span>
                 <span className="text-xs md:text-base md:hidden">{tab.shortName}</span>
@@ -2080,11 +2087,10 @@ const StudentPortal = () => {
                 <button
                   key={subTab.id}
                   onClick={() => setActiveSubTab(subTab.id)}
-                  className={`flex-shrink-0 flex items-center justify-center space-x-2 px-3 md:px-6 py-2 md:py-3 transition-all duration-200 min-w-[100px] md:min-w-0 ${
-                    activeSubTab === subTab.id 
-                      ? 'text-purple-600 border-b-2 border-purple-600 bg-white font-semibold' 
+                  className={`flex-shrink-0 flex items-center justify-center space-x-2 px-3 md:px-6 py-2 md:py-3 transition-all duration-200 min-w-[100px] md:min-w-0 ${activeSubTab === subTab.id
+                      ? 'text-purple-600 border-b-2 border-purple-600 bg-white font-semibold'
                       : 'text-gray-600 hover:text-gray-800 hover:bg-white hover:bg-opacity-50'
-                  }`}
+                    }`}
                 >
                   <span className="text-base md:text-lg">{subTab.icon}</span>
                   <span className="text-xs md:text-sm">{subTab.shortName}</span>
@@ -2094,11 +2100,10 @@ const StudentPortal = () => {
                 <button
                   key={subTab.id}
                   onClick={() => setActiveSubTab(subTab.id)}
-                  className={`flex-shrink-0 flex items-center justify-center space-x-2 px-3 md:px-6 py-2 md:py-3 transition-all duration-200 min-w-[100px] md:min-w-0 ${
-                    activeSubTab === subTab.id
+                  className={`flex-shrink-0 flex items-center justify-center space-x-2 px-3 md:px-6 py-2 md:py-3 transition-all duration-200 min-w-[100px] md:min-w-0 ${activeSubTab === subTab.id
                       ? 'text-purple-600 border-b-2 border-purple-600 bg-white font-semibold'
                       : 'text-gray-600 hover:text-gray-800 hover:bg-white hover:bg-opacity-50'
-                  }`}
+                    }`}
                 >
                   <span className="text-base md:text-lg">{subTab.icon}</span>
                   <span className="text-xs md:text-sm">{subTab.shortName}</span>
@@ -2116,9 +2121,8 @@ const StudentPortal = () => {
 
       {/* Main Content */}
       <main
-        className={`mx-auto px-3 md:px-4 py-4 md:py-6 w-full ${
-          activeTab === 'shop' ? 'max-w-none' : 'max-w-6xl'
-        }`}
+        className={`mx-auto px-3 md:px-4 py-4 md:py-6 w-full ${activeTab === 'shop' ? 'max-w-none' : 'max-w-6xl'
+          }`}
       >
         <div className="relative">
           {activeTab === 'dashboard' && (
