@@ -25,15 +25,15 @@ export const englishDomains = [
                                 name: 'Nouns',
                                 resources: {
                                     display: [
-                                        { type: 'image', title: 'Noun Kingdom Display', src: '/curriculum/New Literacy/Grammar/Nouns/Displays/Nouns.png' }
+                                        { type: 'image', title: 'Noun Kingdom Display', src: '/Curriculum/New Literacy/Grammar/Nouns/Displays/Nouns.png' }
                                     ],
                                     learn: [
-                                        { type: 'pdf', title: 'Noun Kingdom Guide', src: '/curriculum/New Literacy/Grammar/Nouns/Learning/Noun_Kingdom.pdf', pptxSrc: '/curriculum/New Literacy/Grammar/Nouns/Learning/Noun_Kingdom.pptx', thumbnail: '/curriculum/New Literacy/Grammar/Nouns/Learning/Cover.png' }
+                                        { type: 'pdf', title: 'Noun Kingdom Guide', src: '/Curriculum/New Literacy/Grammar/Nouns/Learning/Noun_Kingdom.pdf', pptxSrc: '/Curriculum/New Literacy/Grammar/Nouns/Learning/Noun_Kingdom.pptx', thumbnail: '/Curriculum/New Literacy/Grammar/Nouns/Learning/Cover.png' }
                                     ],
                                     practice: [
-                                        { type: 'game', componentId: 'noun_sorting', title: 'Noun Master Challenge', thumbnail: '/curriculum/New Literacy/Grammar/Nouns/Displays/Nouns.png' },
-                                        { type: 'game', componentId: 'noun_detective', title: 'Noun Detective Case', thumbnail: '/curriculum/New Literacy/Grammar/Nouns/Displays/Nouns.png' },
-                                        { type: 'game', componentId: 'noun_pop', title: 'Balloon Pop Nouns', thumbnail: '/curriculum/New Literacy/Grammar/Nouns/Displays/Nouns.png' }
+                                        { type: 'game', componentId: 'noun_sorting', title: 'Noun Master Challenge', thumbnail: '/Curriculum/New Literacy/Grammar/Nouns/Displays/Nouns.png' },
+                                        { type: 'game', componentId: 'noun_detective', title: 'Noun Detective Case', thumbnail: '/Curriculum/New Literacy/Grammar/Nouns/Displays/Nouns.png' },
+                                        { type: 'game', componentId: 'noun_pop', title: 'Balloon Pop Nouns', thumbnail: '/Curriculum/New Literacy/Grammar/Nouns/Displays/Nouns.png' }
                                     ]
                                 }
                             },
@@ -42,15 +42,15 @@ export const englishDomains = [
                                 name: 'Verbs',
                                 resources: {
                                     display: [
-                                        { type: 'image', title: 'Verbs Display', src: '/curriculum/New Literacy/Grammar/Verbs/Display/Verbs.png' }
+                                        { type: 'image', title: 'Verbs Display', src: '/Curriculum/New Literacy/Grammar/Verbs/Display/Verbs.png' }
                                     ],
                                     learn: [
-                                        { type: 'pdf', title: 'Verbs Guide', src: '/curriculum/New Literacy/Grammar/Verbs/Learning/Verbs.pdf', pptxSrc: '/curriculum/New Literacy/Grammar/Verbs/Learning/Verbs.pptx', thumbnail: '/curriculum/New Literacy/Grammar/Verbs/Learning/cover.png' }
+                                        { type: 'pdf', title: 'Verbs Guide', src: '/Curriculum/New Literacy/Grammar/Verbs/Learning/Verbs.pdf', pptxSrc: '/Curriculum/New Literacy/Grammar/Verbs/Learning/Verbs.pptx', thumbnail: '/Curriculum/New Literacy/Grammar/Verbs/Learning/cover.png' }
                                     ],
                                     practice: [
-                                        { type: 'game', componentId: 'verb_race', title: 'Verb Action Race', thumbnail: '/curriculum/New Literacy/Grammar/Verbs/Display/Verbs.png' },
-                                        { type: 'game', componentId: 'verb_sorting', title: 'Verb Master Challenge', thumbnail: '/curriculum/New Literacy/Grammar/Verbs/Display/Verbs.png' },
-                                        { type: 'game', componentId: 'verb_time_machine', title: 'Verb Time Machine', thumbnail: '/curriculum/New Literacy/Grammar/Verbs/Display/Verbs.png' }
+                                        { type: 'game', componentId: 'verb_race', title: 'Verb Action Race', thumbnail: '/Curriculum/New Literacy/Grammar/Verbs/Display/Verbs.png' },
+                                        { type: 'game', componentId: 'verb_sorting', title: 'Verb Master Challenge', thumbnail: '/Curriculum/New Literacy/Grammar/Verbs/Display/Verbs.png' },
+                                        { type: 'game', componentId: 'verb_time_machine', title: 'Verb Time Machine', thumbnail: '/Curriculum/New Literacy/Grammar/Verbs/Display/Verbs.png' }
                                     ]
                                 }
                             },
@@ -59,15 +59,15 @@ export const englishDomains = [
                                 name: 'Adjectives',
                                 resources: {
                                     display: [
-                                        { type: 'image', title: 'Adjectives Display', src: '/curriculum/New Literacy/Grammar/Adjectives/Display/Adjectives.png' }
+                                        { type: 'image', title: 'Adjectives Display', src: '/Curriculum/New Literacy/Grammar/Adjectives/Display/Adjectives.png' }
                                     ],
                                     learn: [
-                                        { type: 'pdf', title: 'Adjectives Guide', src: '/curriculum/New Literacy/Grammar/Adjectives/Learning/Adjectives.pdf', pptxSrc: '/curriculum/New Literacy/Grammar/Adjectives/Learning/Adjectives.pptx', thumbnail: '/curriculum/New Literacy/Grammar/Adjectives/Learning/cover.png' }
+                                        { type: 'pdf', title: 'Adjectives Guide', src: '/Curriculum/New Literacy/Grammar/Adjectives/Learning/Adjectives.pdf', pptxSrc: '/Curriculum/New Literacy/Grammar/Adjectives/Learning/Adjectives.pptx', thumbnail: '/Curriculum/New Literacy/Grammar/Adjectives/Learning/cover.png' }
                                     ],
                                     practice: [
-                                        { type: 'game', componentId: 'adjective_detective', title: 'Adjective Detective Case', thumbnail: '/curriculum/New Literacy/Grammar/Adjectives/Display/Adjectives.png' },
-                                        { type: 'game', componentId: 'adjective_sorting', title: 'Adjective Master Challenge', thumbnail: '/curriculum/New Literacy/Grammar/Adjectives/Display/Adjectives.png' },
-                                        { type: 'game', componentId: 'adjective_opposites', title: 'Adjective Opposites Match', thumbnail: '/curriculum/New Literacy/Grammar/Adjectives/Display/Adjectives.png' }
+                                        { type: 'game', componentId: 'adjective_detective', title: 'Adjective Detective Case', thumbnail: '/Curriculum/New Literacy/Grammar/Adjectives/Display/Adjectives.png' },
+                                        { type: 'game', componentId: 'adjective_sorting', title: 'Adjective Master Challenge', thumbnail: '/Curriculum/New Literacy/Grammar/Adjectives/Display/Adjectives.png' },
+                                        { type: 'game', componentId: 'adjective_opposites', title: 'Adjective Opposites Match', thumbnail: '/Curriculum/New Literacy/Grammar/Adjectives/Display/Adjectives.png' }
                                     ]
                                 }
                             },
@@ -76,15 +76,15 @@ export const englishDomains = [
                                 name: 'Adverbs',
                                 resources: {
                                     display: [
-                                        { type: 'image', title: 'Adverbs Display', src: '/curriculum/New Literacy/Grammar/Adverbs/Display/Adverbs.png' }
+                                        { type: 'image', title: 'Adverbs Display', src: '/Curriculum/New Literacy/Grammar/Adverbs/Display/Adverbs.png' }
                                     ],
                                     learn: [
-                                        { type: 'pdf', title: 'Adverbs Guide', src: '/curriculum/New Literacy/Grammar/Adverbs/Learning/Adverbs.pdf', pptxSrc: '/curriculum/New Literacy/Grammar/Adverbs/Learning/Adverbs.pptx', thumbnail: '/curriculum/New Literacy/Grammar/Adverbs/Learning/cover.png' }
+                                        { type: 'pdf', title: 'Adverbs Guide', src: '/Curriculum/New Literacy/Grammar/Adverbs/Learning/Adverbs.pdf', pptxSrc: '/Curriculum/New Literacy/Grammar/Adverbs/Learning/Adverbs.pptx', thumbnail: '/Curriculum/New Literacy/Grammar/Adverbs/Learning/cover.png' }
                                     ],
                                     practice: [
-                                        { type: 'game', title: 'Adverb Asteroids', src: 'AdverbAsteroidsGame', thumbnail: '/curriculum/New Literacy/Grammar/Adverbs/Display/Adverbs.png' },
-                                        { type: 'game', title: 'Adverb Sort', src: 'AdverbSortingGame', thumbnail: '/curriculum/New Literacy/Grammar/Adverbs/Display/Adverbs.png' },
-                                        { type: 'game', title: 'Action Builder', src: 'AdverbActionBuilder', thumbnail: '/curriculum/New Literacy/Grammar/Adverbs/Display/Adverbs.png' }
+                                        { type: 'game', title: 'Adverb Asteroids', src: 'AdverbAsteroidsGame', thumbnail: '/Curriculum/New Literacy/Grammar/Adverbs/Display/Adverbs.png' },
+                                        { type: 'game', title: 'Adverb Sort', src: 'AdverbSortingGame', thumbnail: '/Curriculum/New Literacy/Grammar/Adverbs/Display/Adverbs.png' },
+                                        { type: 'game', title: 'Action Builder', src: 'AdverbActionBuilder', thumbnail: '/Curriculum/New Literacy/Grammar/Adverbs/Display/Adverbs.png' }
                                     ]
                                 }
                             },
@@ -93,15 +93,15 @@ export const englishDomains = [
                                 name: 'Pronouns',
                                 resources: {
                                     display: [
-                                        { type: 'image', title: 'Pronouns Display', src: '/curriculum/New Literacy/Grammar/Pronouns/Display/Pronouns.png' }
+                                        { type: 'image', title: 'Pronouns Display', src: '/Curriculum/New Literacy/Grammar/Pronouns/Display/Pronouns.png' }
                                     ],
                                     learn: [
-                                        { type: 'pdf', title: 'Pronouns Guide', src: '/curriculum/New Literacy/Grammar/Pronouns/Learning/Pronouns.pdf', pptxSrc: '/curriculum/New Literacy/Grammar/Pronouns/Learning/Pronouns.pptx', thumbnail: '/curriculum/New Literacy/Grammar/Pronouns/Learning/cover.png' }
+                                        { type: 'pdf', title: 'Pronouns Guide', src: '/Curriculum/New Literacy/Grammar/Pronouns/Learning/Pronouns.pdf', pptxSrc: '/Curriculum/New Literacy/Grammar/Pronouns/Learning/Pronouns.pptx', thumbnail: '/Curriculum/New Literacy/Grammar/Pronouns/Learning/cover.png' }
                                     ],
                                     practice: [
-                                        { type: 'game', title: 'Pronoun Replacement Race', src: 'PronounReplacementRace', thumbnail: '/curriculum/New Literacy/Grammar/Pronouns/Display/Pronouns.png' },
-                                        { type: 'game', title: 'Pronoun Type Match', src: 'PronounTypeMatch', thumbnail: '/curriculum/New Literacy/Grammar/Pronouns/Display/Pronouns.png' },
-                                        { type: 'game', title: 'Pronoun Rescue Mission', src: 'PronounRescueMission', thumbnail: '/curriculum/New Literacy/Grammar/Pronouns/Display/Pronouns.png' }
+                                        { type: 'game', title: 'Pronoun Replacement Race', src: 'PronounReplacementRace', thumbnail: '/Curriculum/New Literacy/Grammar/Pronouns/Display/Pronouns.png' },
+                                        { type: 'game', title: 'Pronoun Type Match', src: 'PronounTypeMatch', thumbnail: '/Curriculum/New Literacy/Grammar/Pronouns/Display/Pronouns.png' },
+                                        { type: 'game', title: 'Pronoun Rescue Mission', src: 'PronounRescueMission', thumbnail: '/Curriculum/New Literacy/Grammar/Pronouns/Display/Pronouns.png' }
                                     ]
                                 }
                             },
@@ -110,15 +110,15 @@ export const englishDomains = [
                                 name: 'Prepositions',
                                 resources: {
                                     display: [
-                                        { type: 'image', title: 'Prepositions Display', src: '/curriculum/New Literacy/Grammar/Prepositions/Display/Prepositions.png' }
+                                        { type: 'image', title: 'Prepositions Display', src: '/Curriculum/New Literacy/Grammar/Prepositions/Display/Prepositions.png' }
                                     ],
                                     learn: [
-                                        { type: 'pdf', title: 'Prepositions Guide', src: '/curriculum/New Literacy/Grammar/Prepositions/Learning/Prepositions.pdf', pptxSrc: '/curriculum/New Literacy/Grammar/Prepositions/Learning/Prepositions.pptx', thumbnail: '/curriculum/New Literacy/Grammar/Prepositions/Learning/cover.png' }
+                                        { type: 'pdf', title: 'Prepositions Guide', src: '/Curriculum/New Literacy/Grammar/Prepositions/Learning/Prepositions.pdf', pptxSrc: '/Curriculum/New Literacy/Grammar/Prepositions/Learning/Prepositions.pptx', thumbnail: '/Curriculum/New Literacy/Grammar/Prepositions/Learning/cover.png' }
                                     ],
                                     practice: [
-                                        { type: 'game', title: 'Preposition Ninja', src: 'PrepositionNinja', thumbnail: '/curriculum/New Literacy/Grammar/Prepositions/Display/Prepositions.png' },
-                                        { type: 'game', title: 'Preposition Location Match', src: 'PrepositionLocationGame', thumbnail: '/curriculum/New Literacy/Grammar/Prepositions/Display/Prepositions.png' },
-                                        { type: 'game', title: 'Phrase Builder', src: 'PrepositionPhraseBuilder', thumbnail: '/curriculum/New Literacy/Grammar/Prepositions/Display/Prepositions.png' }
+                                        { type: 'game', title: 'Preposition Ninja', src: 'PrepositionNinja', thumbnail: '/Curriculum/New Literacy/Grammar/Prepositions/Display/Prepositions.png' },
+                                        { type: 'game', title: 'Preposition Location Match', src: 'PrepositionLocationGame', thumbnail: '/Curriculum/New Literacy/Grammar/Prepositions/Display/Prepositions.png' },
+                                        { type: 'game', title: 'Phrase Builder', src: 'PrepositionPhraseBuilder', thumbnail: '/Curriculum/New Literacy/Grammar/Prepositions/Display/Prepositions.png' }
                                     ]
                                 }
                             },
@@ -127,15 +127,15 @@ export const englishDomains = [
                                 name: 'Conjunctions',
                                 resources: {
                                     display: [
-                                        { type: 'image', title: 'Conjunctions Display', src: '/curriculum/New Literacy/Grammar/Conjunctions/Display/Conjunctions.png' }
+                                        { type: 'image', title: 'Conjunctions Display', src: '/Curriculum/New Literacy/Grammar/Conjunctions/Display/Conjunctions.png' }
                                     ],
                                     learn: [
-                                        { type: 'pdf', title: 'Conjunctions Guide', src: '/curriculum/New Literacy/Grammar/Conjunctions/Learning/Conjunctions.pdf', pptxSrc: '/curriculum/New Literacy/Grammar/Conjunctions/Learning/Conjunctions.pptx', thumbnail: '/curriculum/New Literacy/Grammar/Conjunctions/Learning/cover.png' }
+                                        { type: 'pdf', title: 'Conjunctions Guide', src: '/Curriculum/New Literacy/Grammar/Conjunctions/Learning/Conjunctions.pdf', pptxSrc: '/Curriculum/New Literacy/Grammar/Conjunctions/Learning/Conjunctions.pptx', thumbnail: '/Curriculum/New Literacy/Grammar/Conjunctions/Learning/cover.png' }
                                     ],
                                     practice: [
-                                        { type: 'game', title: 'Conjunction Conductor', src: 'ConjunctionConductor', thumbnail: '/curriculum/New Literacy/Grammar/Conjunctions/Display/Conjunctions.png' },
-                                        { type: 'game', title: 'Bridge Builder', src: 'ConjunctionBridgeBuilder', thumbnail: '/curriculum/New Literacy/Grammar/Conjunctions/Display/Conjunctions.png' },
-                                        { type: 'game', title: 'Conjunction Sort', src: 'ConjunctionSort', thumbnail: '/curriculum/New Literacy/Grammar/Conjunctions/Display/Conjunctions.png' }
+                                        { type: 'game', title: 'Conjunction Conductor', src: 'ConjunctionConductor', thumbnail: '/Curriculum/New Literacy/Grammar/Conjunctions/Display/Conjunctions.png' },
+                                        { type: 'game', title: 'Bridge Builder', src: 'ConjunctionBridgeBuilder', thumbnail: '/Curriculum/New Literacy/Grammar/Conjunctions/Display/Conjunctions.png' },
+                                        { type: 'game', title: 'Conjunction Sort', src: 'ConjunctionSort', thumbnail: '/Curriculum/New Literacy/Grammar/Conjunctions/Display/Conjunctions.png' }
                                     ]
                                 }
                             },
@@ -144,15 +144,15 @@ export const englishDomains = [
                                 name: 'Interjections',
                                 resources: {
                                     display: [
-                                        { type: 'image', title: 'Interjections Display', src: '/curriculum/New Literacy/Grammar/Interjections/Displays/Interjections.png' }
+                                        { type: 'image', title: 'Interjections Display', src: '/Curriculum/New Literacy/Grammar/Interjections/Displays/Interjections.png' }
                                     ],
                                     learn: [
-                                        { type: 'pdf', title: 'Interjections Guide', src: '/curriculum/New Literacy/Grammar/Interjections/Learning/Interjections.pdf', pptxSrc: '/curriculum/New Literacy/Grammar/Interjections/Learning/Interjections.pptx', thumbnail: '/curriculum/New Literacy/Grammar/Interjections/Learning/cover.png' }
+                                        { type: 'pdf', title: 'Interjections Guide', src: '/Curriculum/New Literacy/Grammar/Interjections/Learning/Interjections.pdf', pptxSrc: '/Curriculum/New Literacy/Grammar/Interjections/Learning/Interjections.pptx', thumbnail: '/Curriculum/New Literacy/Grammar/Interjections/Learning/cover.png' }
                                     ],
                                     practice: [
-                                        { type: 'game', title: 'Emotion Match', src: 'InterjectionEmotionMatch', thumbnail: '/curriculum/New Literacy/Grammar/Interjections/Displays/Interjections.png' },
-                                        { type: 'game', title: 'Balloon Pop Interjections', src: 'InterjectionPopGame', thumbnail: '/curriculum/New Literacy/Grammar/Interjections/Displays/Interjections.png' },
-                                        { type: 'game', title: 'Interjection Comic Strip', src: 'InterjectionComicStrip', thumbnail: '/curriculum/New Literacy/Grammar/Interjections/Displays/Interjections.png' }
+                                        { type: 'game', title: 'Emotion Match', src: 'InterjectionEmotionMatch', thumbnail: '/Curriculum/New Literacy/Grammar/Interjections/Displays/Interjections.png' },
+                                        { type: 'game', title: 'Balloon Pop Interjections', src: 'InterjectionPopGame', thumbnail: '/Curriculum/New Literacy/Grammar/Interjections/Displays/Interjections.png' },
+                                        { type: 'game', title: 'Interjection Comic Strip', src: 'InterjectionComicStrip', thumbnail: '/Curriculum/New Literacy/Grammar/Interjections/Displays/Interjections.png' }
                                     ]
                                 }
                             }
@@ -167,10 +167,10 @@ export const englishDomains = [
                                 name: 'Subjects and Predicates',
                                 resources: {
                                     display: [
-                                        { type: 'image', title: 'Subjects and Predicates Display', src: '/curriculum/New Literacy/Grammar/Subject and Predicate/Display/SubjectandPredicate.png' }
+                                        { type: 'image', title: 'Subjects and Predicates Display', src: '/Curriculum/New Literacy/Grammar/Subject and Predicate/Display/SubjectandPredicate.png' }
                                     ],
                                     learn: [
-                                        { type: 'pdf', title: 'Subjects and Predicates Guide', src: '/curriculum/New Literacy/Grammar/Subject and Predicate/Learning/SubjectandPredicate.pdf', pptxSrc: '/curriculum/New Literacy/Grammar/Subject and Predicate/Learning/SubjectandPredicate.pptx', thumbnail: '/curriculum/New Literacy/Grammar/Subject and Predicate/Learning/cover.png' }
+                                        { type: 'pdf', title: 'Subjects and Predicates Guide', src: '/Curriculum/New Literacy/Grammar/Subject and Predicate/Learning/SubjectandPredicate.pdf', pptxSrc: '/Curriculum/New Literacy/Grammar/Subject and Predicate/Learning/SubjectandPredicate.pptx', thumbnail: '/Curriculum/New Literacy/Grammar/Subject and Predicate/Learning/cover.png' }
                                     ],
                                     practice: []
                                 }
@@ -180,10 +180,10 @@ export const englishDomains = [
                                 name: 'Active and Passive Voice',
                                 resources: {
                                     display: [
-                                        { type: 'image', title: 'Active vs Passive Voice Display', src: '/curriculum/New Literacy/Grammar/Active vs Passive Voice/Display/ActiveVsPassive.png' }
+                                        { type: 'image', title: 'Active vs Passive Voice Display', src: '/Curriculum/New Literacy/Grammar/Active vs Passive Voice/Display/ActiveVsPassive.png' }
                                     ],
                                     learn: [
-                                        { type: 'pdf', title: 'Active vs Passive Voice Guide', src: '/curriculum/New Literacy/Grammar/Active vs Passive Voice/Learning/ActiveVsPassive.pdf', pptxSrc: '/curriculum/New Literacy/Grammar/Active vs Passive Voice/Learning/ActiveVsPassive.pptx', thumbnail: '/curriculum/New Literacy/Grammar/Active vs Passive Voice/Learning/cover.png' }
+                                        { type: 'pdf', title: 'Active vs Passive Voice Guide', src: '/Curriculum/New Literacy/Grammar/Active vs Passive Voice/Learning/ActiveVsPassive.pdf', pptxSrc: '/Curriculum/New Literacy/Grammar/Active vs Passive Voice/Learning/ActiveVsPassive.pptx', thumbnail: '/Curriculum/New Literacy/Grammar/Active vs Passive Voice/Learning/cover.png' }
                                     ],
                                     practice: []
                                 }
@@ -193,10 +193,10 @@ export const englishDomains = [
                                 name: 'Fragments and Run-Ons',
                                 resources: {
                                     display: [
-                                        { type: 'image', title: 'Fragments and Run-Ons Display', src: '/curriculum/New Literacy/Grammar/Sentence Fragments and Run-ons/Display/FragmentsandRunons.png' }
+                                        { type: 'image', title: 'Fragments and Run-Ons Display', src: '/Curriculum/New Literacy/Grammar/Sentence Fragments and Run-ons/Display/FragmentsandRunons.png' }
                                     ],
                                     learn: [
-                                        { type: 'pdf', title: 'Fragments and Run-Ons Guide', src: '/curriculum/New Literacy/Grammar/Sentence Fragments and Run-ons/Learning/SegmentsandRunons.pdf', pptxSrc: '/curriculum/New Literacy/Grammar/Sentence Fragments and Run-ons/Learning/SegmentsandRunons.pptx', thumbnail: '/curriculum/New Literacy/Grammar/Sentence Fragments and Run-ons/Learning/cover.png' }
+                                        { type: 'pdf', title: 'Fragments and Run-Ons Guide', src: '/Curriculum/New Literacy/Grammar/Sentence Fragments and Run-ons/Learning/SegmentsandRunons.pdf', pptxSrc: '/Curriculum/New Literacy/Grammar/Sentence Fragments and Run-ons/Learning/SegmentsandRunons.pptx', thumbnail: '/Curriculum/New Literacy/Grammar/Sentence Fragments and Run-ons/Learning/cover.png' }
                                     ],
                                     practice: []
                                 }
