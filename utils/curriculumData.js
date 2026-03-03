@@ -233,9 +233,47 @@ export const englishDomains = [
                         id: 'tense',
                         name: 'Tense',
                         subtopics: [
-                            { id: 'past_present_future', name: 'Past, present, future' },
-                            { id: 'irregular_verbs', name: 'Irregular verbs' },
-                            { id: 'consistent_tense', name: 'Consistent tense use' }
+                            {
+                                id: 'past_present_future',
+                                name: 'Past, present, future',
+                                resources: {
+                                    display: [
+                                        { type: 'image', title: 'Past, Present, Future Display', src: '/Curriculum/New Literacy/Grammar/Past Present Future/Display/PastPresentFuture.png' }
+                                    ],
+                                    learn: [
+                                        { type: 'pdf', title: 'Past, Present, Future Guide', src: '/Curriculum/New Literacy/Grammar/Past Present Future/Learning/PastPresentFuture.pdf', pptxSrc: '/Curriculum/New Literacy/Grammar/Past Present Future/Learning/PastPresentFuture.pptx', thumbnail: '/Curriculum/New Literacy/Grammar/Past Present Future/Learning/cover.png' }
+                                    ],
+                                    practice: [
+                                        { type: 'game', title: 'Verb Tense Time Machine', src: 'VerbTenseTimeMachine', thumbnail: '/Curriculum/New Literacy/Grammar/Past Present Future/Display/PastPresentFuture.png' }
+                                    ]
+                                }
+                            },
+                            {
+                                id: 'irregular_verbs',
+                                name: 'Irregular verbs',
+                                resources: {
+                                    display: [
+                                        { type: 'image', title: 'Irregular Verbs Display', src: '/Curriculum/New Literacy/Grammar/Irreguluar Verbs/Display/IrregularVerbs.png' }
+                                    ],
+                                    learn: [
+                                        { type: 'pdf', title: 'Irregular Verbs Guide', src: '/Curriculum/New Literacy/Grammar/Irreguluar Verbs/Learning/IrregularVerbs.pdf', pptxSrc: '/Curriculum/New Literacy/Grammar/Irreguluar Verbs/Learning/IrregularVerbs.pptx', thumbnail: '/Curriculum/New Literacy/Grammar/Irreguluar Verbs/Learning/cover.png' }
+                                    ],
+                                    practice: []
+                                }
+                            },
+                            {
+                                id: 'consistent_tense',
+                                name: 'Consistent tense use',
+                                resources: {
+                                    display: [
+                                        { type: 'image', title: 'Consistent Tense Use Display', src: '/Curriculum/New Literacy/Grammar/Consistent Tense Use/Display/ConsistentTenseUse.png' }
+                                    ],
+                                    learn: [
+                                        { type: 'pdf', title: 'Consistent Tense Use Guide', src: '/Curriculum/New Literacy/Grammar/Consistent Tense Use/Learning/ConsistentTenseUse.pdf', pptxSrc: '/Curriculum/New Literacy/Grammar/Consistent Tense Use/Learning/ConsistentTenseUse.pptx', thumbnail: '/Curriculum/New Literacy/Grammar/Consistent Tense Use/Learning/cover.png' }
+                                    ],
+                                    practice: []
+                                }
+                            }
                         ]
                     }
                 ]
