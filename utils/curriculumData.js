@@ -163,6 +163,32 @@ export const englishDomains = [
                         name: 'Sentence Structure',
                         subtopics: [
                             {
+                                id: 'simple_compound_complex',
+                                name: 'Simple, compound, complex sentences',
+                                resources: {
+                                    display: [
+                                        { type: 'image', title: 'Sentence Types Display', src: '/Curriculum/New Literacy/Grammar/Simple Compound Complex Sentences/Display/SentenceTypes.png' }
+                                    ],
+                                    learn: [
+                                        { type: 'pdf', title: 'Sentence Types Guide', src: '/Curriculum/New Literacy/Grammar/Simple Compound Complex Sentences/Learning/SentenceTypes.pdf', pptxSrc: '/Curriculum/New Literacy/Grammar/Simple Compound Complex Sentences/Learning/SentenceTypes.pptx', thumbnail: '/Curriculum/New Literacy/Grammar/Simple Compound Complex Sentences/Learning/cover.png' }
+                                    ],
+                                    practice: []
+                                }
+                            },
+                            {
+                                id: 'clauses',
+                                name: 'Clauses (main/subordinate)',
+                                resources: {
+                                    display: [
+                                        { type: 'image', title: 'Clauses Display', src: '/Curriculum/New Literacy/Grammar/Clauses/Display/Clauses.png' }
+                                    ],
+                                    learn: [
+                                        { type: 'pdf', title: 'Clauses Guide', src: '/Curriculum/New Literacy/Grammar/Clauses/Learning/Clauses.pdf', pptxSrc: '/Curriculum/New Literacy/Grammar/Clauses/Learning/Clauses.pptx', thumbnail: '/Curriculum/New Literacy/Grammar/Clauses/Learning/cover.png' }
+                                    ],
+                                    practice: []
+                                }
+                            },
+                            {
                                 id: 'subjects_predicates',
                                 name: 'Subjects and Predicates',
                                 resources: {
@@ -202,6 +228,15 @@ export const englishDomains = [
                                 }
                             }
                         ]
+                    },
+                    {
+                        id: 'tense',
+                        name: 'Tense',
+                        subtopics: [
+                            { id: 'past_present_future', name: 'Past, present, future' },
+                            { id: 'irregular_verbs', name: 'Irregular verbs' },
+                            { id: 'consistent_tense', name: 'Consistent tense use' }
+                        ]
                     }
                 ]
             },
@@ -211,52 +246,322 @@ export const englishDomains = [
                 icon: '❕',
                 domain: 'Language (How English Works)',
                 subtopics: [
-                    { id: 'end_punctuation', name: 'End Punctuation (. ? !)' },
-                    { id: 'commas', name: 'Commas (,)' },
-                    { id: 'apostrophes', name: "Apostrophes (')" },
-                    { id: 'quotation_marks', name: 'Quotation Marks (" ")' },
-                    { id: 'colons_semicolons', name: 'Colons & Semicolons (: ;)' },
-                    { id: 'hyphens_dashes', name: 'Hyphens & Dashes (- —)' }
+                    { id: 'capital_letters', name: 'Capital letters' },
+                    { id: 'full_stops', name: 'Full stops' },
+                    { id: 'question_marks', name: 'Question marks' },
+                    { id: 'exclamation_marks', name: 'Exclamation marks' },
+                    { id: 'commas', name: 'Commas (lists, clauses, dialogue)' },
+                    { id: 'apostrophes', name: 'Apostrophes (contractions/possession)' },
+                    { id: 'quotation_marks', name: 'Quotation marks' },
+                    { id: 'colons_semicolons', name: 'Colons and semicolons (upper primary)' },
+                    { id: 'hyphens', name: 'Hyphens' }
                 ]
             },
             {
                 id: 'spelling',
-                name: 'Spelling (Orthography)',
+                name: 'Spelling & Word Study',
                 icon: '📝',
                 domain: 'Language (How English Works)',
                 subtopics: [
-                    { id: 'phonics', name: 'Phonics & Sounds' },
-                    { id: 'morphemes', name: 'Prefixes & Suffixes' },
-                    { id: 'etymology', name: 'Word Origins (Etymology)' },
-                    { id: 'spelling_rules', name: 'Common Spelling Rules' },
-                    { id: 'homophones', name: 'Homophones' }
+                    { id: 'phonics_patterns', name: 'Phonics patterns' },
+                    { id: 'digraphs_trigraphs', name: 'Digraphs/trigraphs/quadgraphs' },
+                    { id: 'prefixes_suffixes', name: 'Prefixes/suffixes' },
+                    { id: 'root_words', name: 'Root words' },
+                    { id: 'homophones', name: 'Homophones' },
+                    { id: 'silent_letters', name: 'Silent letters' },
+                    { id: 'spelling_rules', name: 'Spelling rules' },
+                    { id: 'high_frequency_words', name: 'High-frequency words' },
+                    { id: 'morphology', name: 'Morphology' }
+                ]
+            },
+            {
+                id: 'vocabulary',
+                name: 'Vocabulary Development',
+                icon: '🧠',
+                domain: 'Language (How English Works)',
+                subtopics: [
+                    { id: 'synonyms_antonyms', name: 'Synonyms and antonyms' },
+                    { id: 'shades_of_meaning', name: 'Shades of meaning' },
+                    { id: 'figurative_vocabulary', name: 'Figurative vocabulary' },
+                    { id: 'technical_vocabulary', name: 'Technical vocabulary' },
+                    { id: 'context_clues', name: 'Context clues' },
+                    { id: 'word_origins', name: 'Word origins (etymology basics)' }
                 ]
             }
         ]
     },
     {
         id: 'literature',
-        name: '2. Literature (Responding to & Creating Literature)',
+        name: '2. Literature (Understanding Texts)',
         icon: '🎭',
         color: 'bg-purple-50 border-purple-200 text-purple-900',
         topics: [
-            { id: 'examining_literature', name: 'Examining Literature', icon: '🔍', domain: 'Literature' },
-            { id: 'creating_literature', name: 'Creating Literature', icon: '✍️', domain: 'Literature' },
-            { id: 'poetry', name: 'Poetry', icon: '📜', domain: 'Literature' },
-            { id: 'story_elements', name: 'Story Elements (Plot, Character, Setting)', icon: '📖', domain: 'Literature' }
+            {
+                id: 'narrative_texts',
+                name: 'Narrative Texts',
+                icon: '📚',
+                domain: 'Literature',
+                subtopics: [
+                    { id: 'story_elements', name: 'Story elements (Character, Setting, Plot, Conflict, Resolution)' },
+                    { id: 'themes_messages', name: 'Themes and messages' },
+                    { id: 'point_of_view', name: 'Point of view' },
+                    { id: 'character_development', name: 'Character development' },
+                    { id: 'narrative_voice', name: 'Narrative voice' }
+                ]
+            },
+            {
+                id: 'poetry_lit',
+                name: 'Poetry',
+                icon: '📝',
+                domain: 'Literature',
+                subtopics: [
+                    { id: 'rhythm_rhyme', name: 'Rhythm and rhyme' },
+                    { id: 'imagery_poetry', name: 'Imagery' },
+                    { id: 'figurative_language', name: 'Figurative language (Simile, Metaphor, Personification, Alliteration)' },
+                    { id: 'free_verse', name: 'Free verse vs structured poetry' },
+                    { id: 'performance_poetry', name: 'Performance poetry' }
+                ]
+            },
+            {
+                id: 'drama',
+                name: 'Drama',
+                icon: '🎭',
+                domain: 'Literature',
+                subtopics: [
+                    { id: 'scripts_dialogue', name: 'Scripts and dialogue' },
+                    { id: 'role_play', name: 'Role play' },
+                    { id: 'readers_theatre', name: 'Readers theatre' },
+                    { id: 'performance_skills', name: 'Performance skills' },
+                    { id: 'stage_directions', name: 'Stage directions' }
+                ]
+            },
+            {
+                id: 'literary_appreciation',
+                name: 'Literary Appreciation',
+                icon: '🌍',
+                domain: 'Literature',
+                subtopics: [
+                    { id: 'author_studies', name: 'Author studies' },
+                    { id: 'genre_exploration', name: 'Genre exploration' },
+                    { id: 'cultural_perspectives', name: 'Cultural perspectives in texts' },
+                    { id: 'comparing_texts', name: 'Comparing texts' },
+                    { id: 'visual_literacy_lit', name: 'Visual literacy (illustrations, film, media)' }
+                ]
+            }
         ]
     },
     {
         id: 'literacy',
-        name: '3. Literacy (Reading, Writing, Speaking, Listening)',
+        name: '3. Literacy (Using English)',
         icon: '🗣️',
         color: 'bg-indigo-50 border-indigo-200 text-indigo-900',
         topics: [
-            { id: 'reading_comprehension', name: 'Reading Comprehension', icon: '👁️', domain: 'Literacy' },
-            { id: 'writing_genres', name: 'Writing Genres (Text Types)', icon: '✒️', domain: 'Literacy' },
-            { id: 'speaking_listening', name: 'Speaking & Listening', icon: '🎧', domain: 'Literacy' },
-            { id: 'visual_literacy', name: 'Visual Literacy', icon: '🖼️', domain: 'Literacy' },
-            { id: 'information_literacy', name: 'Information Literacy', icon: '📰', domain: 'Literacy' }
+            {
+                id: 'writing_genres',
+                name: 'Writing Genres',
+                icon: '📝',
+                domain: 'Literacy',
+                subtopics: [
+                    { id: 'narrative_writing', name: 'Narrative Writing (Short stories, Fantasy/adventure, Historical fiction, Personal narratives)' },
+                    { id: 'persuasive_writing', name: 'Persuasive Writing (Arguments, Opinion pieces, Debates, Advertisements)' },
+                    { id: 'informative_writing', name: 'Informative Writing (Reports, Explanations, Procedures, Information texts)' },
+                    { id: 'creative_writing', name: 'Creative Writing (Poetry, Plays/scripts, Imaginative pieces)' }
+                ]
+            },
+            {
+                id: 'writing_skills',
+                name: 'Writing Skills',
+                icon: '📊',
+                domain: 'Literacy',
+                subtopics: [
+                    { id: 'planning_drafting', name: 'Planning and drafting' },
+                    { id: 'editing_revising', name: 'Editing and revising' },
+                    { id: 'paragraph_structure', name: 'Paragraph structure (TEEL/PEEL etc.)' },
+                    { id: 'cohesion_flow', name: 'Cohesion and flow' },
+                    { id: 'audience_awareness', name: 'Audience awareness' }
+                ]
+            },
+            {
+                id: 'reading_skills',
+                name: 'Reading Skills',
+                icon: '📖',
+                domain: 'Literacy',
+                subtopics: [
+                    { id: 'decoding_fluency', name: 'Decoding & Fluency (Phonics, Sight words, Expression, Reading pace)' },
+                    { id: 'comprehension_strategies', name: 'Comprehension Strategies (Predicting, Questioning, Summarising, Inferring, Visualising, Clarifying)' },
+                    { id: 'higher_level_comprehension', name: 'Higher-Level Comprehension (Analysing themes, Evaluating texts, Comparing texts, Identifying bias)' }
+                ]
+            },
+            {
+                id: 'speaking_listening',
+                name: 'Speaking & Listening',
+                icon: '🗣',
+                domain: 'Literacy',
+                subtopics: [
+                    { id: 'oral_presentations', name: 'Oral presentations' },
+                    { id: 'discussions', name: 'Discussions' },
+                    { id: 'active_listening', name: 'Active listening' },
+                    { id: 'public_speaking', name: 'Public speaking skills' },
+                    { id: 'interviews', name: 'Interviews' },
+                    { id: 'debates', name: 'Debates' }
+                ]
+            }
+        ]
+    },
+    {
+        id: 'media_digital_literacy',
+        name: '4. Media & Digital Literacy',
+        icon: '📱',
+        color: 'bg-cyan-50 border-cyan-200 text-cyan-900',
+        topics: [
+            {
+                id: 'media_texts',
+                name: 'Media Texts',
+                subtopics: [
+                    { id: 'advertisements', name: 'Advertisements' },
+                    { id: 'news_reports', name: 'News reports' },
+                    { id: 'films_videos', name: 'Films/videos' },
+                    { id: 'social_media', name: 'Social media texts' }
+                ]
+            },
+            {
+                id: 'critical_literacy',
+                name: 'Critical Literacy',
+                subtopics: [
+                    { id: 'bias_persuasion', name: 'Bias and persuasion' },
+                    { id: 'fact_vs_opinion', name: 'Fact vs opinion' },
+                    { id: 'audience_targeting', name: 'Audience targeting' },
+                    { id: 'credibility', name: 'Credibility of sources' }
+                ]
+            },
+            {
+                id: 'digital_communication',
+                name: 'Digital Communication',
+                subtopics: [
+                    { id: 'emails_messages', name: 'Emails/messages' },
+                    { id: 'multimedia_presentations', name: 'Multimedia presentations' },
+                    { id: 'online_etiquette', name: 'Online etiquette' }
+                ]
+            }
+        ]
+    },
+    {
+        id: 'text_types_genres',
+        name: '5. Text Types & Genres (Great for Units)',
+        icon: '🎯',
+        color: 'bg-rose-50 border-rose-200 text-rose-900',
+        topics: [
+            {
+                id: 'fiction_genres',
+                name: 'Fiction Genres',
+                subtopics: [
+                    { id: 'fantasy', name: 'Fantasy' },
+                    { id: 'sci_fi', name: 'Sci-fi' },
+                    { id: 'mystery', name: 'Mystery' },
+                    { id: 'adventure', name: 'Adventure' },
+                    { id: 'historical_fiction', name: 'Historical fiction' },
+                    { id: 'humour', name: 'Humour' }
+                ]
+            },
+            {
+                id: 'non_fiction_genres',
+                name: 'Non-Fiction Genres',
+                subtopics: [
+                    { id: 'biographies', name: 'Biographies' },
+                    { id: 'reports', name: 'Reports' },
+                    { id: 'explanations', name: 'Explanations' },
+                    { id: 'instructions', name: 'Instructions' }
+                ]
+            },
+            {
+                id: 'functional_texts',
+                name: 'Functional Texts',
+                subtopics: [
+                    { id: 'letters', name: 'Letters' },
+                    { id: 'emails', name: 'Emails' },
+                    { id: 'posters', name: 'Posters' },
+                    { id: 'speeches', name: 'Speeches' }
+                ]
+            }
+        ]
+    },
+    {
+        id: 'language_features_style',
+        name: '6. Language Features & Style',
+        icon: '🌟',
+        color: 'bg-amber-50 border-amber-200 text-amber-900',
+        topics: [
+            {
+                id: 'figurative_language',
+                name: 'Figurative Language',
+                subtopics: [
+                    { id: 'simile_metaphor', name: 'Simile/metaphor' },
+                    { id: 'personification', name: 'Personification' },
+                    { id: 'hyperbole', name: 'Hyperbole' },
+                    { id: 'idioms', name: 'Idioms' }
+                ]
+            },
+            {
+                id: 'author_techniques',
+                name: 'Author Techniques',
+                subtopics: [
+                    { id: 'tone', name: 'Tone' },
+                    { id: 'mood', name: 'Mood' },
+                    { id: 'imagery', name: 'Imagery' },
+                    { id: 'symbolism', name: 'Symbolism' }
+                ]
+            }
+        ]
+    },
+    {
+        id: 'oral_language',
+        name: '7. Oral Language Development',
+        icon: '🧩',
+        color: 'bg-blue-50 border-blue-200 text-blue-900',
+        topics: [
+            { id: 'conversation_skills', name: 'Conversation skills' },
+            { id: 'turn_taking', name: 'Turn-taking' },
+            { id: 'expressive_language', name: 'Expressive language' },
+            { id: 'questioning_techniques', name: 'Questioning techniques' },
+            { id: 'storytelling', name: 'Storytelling' }
+        ]
+    },
+    {
+        id: 'cross_curricular_english',
+        name: '8. Cross-Curricular English Topics',
+        icon: '🧪',
+        color: 'bg-green-50 border-green-200 text-green-900',
+        topics: [
+            { id: 'science_report', name: 'Science report writing' },
+            { id: 'historical_narratives', name: 'Historical narratives' },
+            { id: 'persuasive_environmental', name: 'Persuasive environmental writing' },
+            { id: 'stem_explanations', name: 'STEM explanations' },
+            { id: 'media_literacy_projects', name: 'Media literacy projects' }
+        ]
+    },
+    {
+        id: 'aus_curriculum_cultural',
+        name: '9. Australian Curriculum / Cultural Context Topics',
+        icon: '🇦🇺',
+        color: 'bg-orange-50 border-orange-200 text-orange-900',
+        topics: [
+            { id: 'indigenous_storytelling', name: 'Indigenous storytelling' },
+            { id: 'australian_authors', name: 'Australian authors' },
+            { id: 'multicultural_literature', name: 'Multicultural literature' },
+            { id: 'local_community_texts', name: 'Local community texts' }
+        ]
+    },
+    {
+        id: 'higher_level_literacy',
+        name: '10. Higher-Level Literacy Skills (Upper Primary)',
+        icon: '💡',
+        color: 'bg-fuchsia-50 border-fuchsia-200 text-fuchsia-900',
+        topics: [
+            { id: 'author_intent', name: 'Author intent' },
+            { id: 'bias_perspective', name: 'Bias and perspective' },
+            { id: 'critical_analysis', name: 'Critical analysis' },
+            { id: 'comparing_sources', name: 'Comparing multiple sources' },
+            { id: 'research_skills', name: 'Research skills' }
         ]
     }
 ];
