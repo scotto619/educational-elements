@@ -131,8 +131,8 @@ const TopicContentView = ({ topic, subjectId, onBack, onToggleAssign, assignedTo
                     <button
                         onClick={handleAssignClick}
                         className={`px-6 py-3 rounded-xl font-bold tracking-wide transition-all duration-300 shadow-sm flex items-center gap-2 ${isAssigned
-                                ? 'bg-emerald-100 text-emerald-800 border-2 border-emerald-500 hover:bg-emerald-200'
-                                : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md'
+                            ? 'bg-emerald-100 text-emerald-800 border-2 border-emerald-500 hover:bg-emerald-200'
+                            : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md'
                             }`}
                     >
                         {isAssigned ? (
@@ -223,90 +223,158 @@ const TopicContentView = ({ topic, subjectId, onBack, onToggleAssign, assignedTo
 
                 {/* If we have resources, display them in a grid */}
                 {currentResources && currentResources.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {currentResources.map((resource, index) => {
-                            if (resource.type === 'game') {
-                                return (
-                                    <div
-                                        key={index}
-                                        onClick={() => setViewingResource(resource)}
-                                        className="relative group cursor-pointer h-[276px] rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border-[3px] border-transparent hover:border-indigo-300 bg-gradient-to-br from-indigo-500 via-purple-500 to-fuchsia-500 flex flex-col items-center justify-center transform hover:-translate-y-1"
-                                    >
-                                        {/* Background pattern */}
-                                        <div className="absolute inset-0 opacity-20 mix-blend-overlay pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '16px 16px' }}></div>
+                    <div className="space-y-12">
+                        {/* Featured Resources Section */}
+                        {currentResources.filter(r => !r.extra).length > 0 && (
+                            <div>
+                                <h3 className="text-xl font-bold tracking-wide text-slate-800 border-b border-slate-300 pb-2 mb-6">FEATURED RESOURCES</h3>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {currentResources.filter(r => !r.extra).map((resource, index) => {
+                                        if (resource.type === 'game') {
+                                            return (
+                                                <div
+                                                    key={`featured-game-${index}`}
+                                                    onClick={() => setViewingResource(resource)}
+                                                    className="relative group cursor-pointer h-[276px] rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border-[3px] border-transparent hover:border-indigo-300 bg-gradient-to-br from-indigo-500 via-purple-500 to-fuchsia-500 flex flex-col items-center justify-center transform hover:-translate-y-1"
+                                                >
+                                                    {/* Background pattern */}
+                                                    <div className="absolute inset-0 opacity-20 mix-blend-overlay pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '16px 16px' }}></div>
 
-                                        <div className="relative z-10 flex flex-col items-center justify-center h-full w-full bg-white/10 backdrop-blur-sm p-6 transition-colors group-hover:bg-white/20">
-                                            {/* Icon */}
-                                            <div className="w-[72px] h-[72px] bg-white shadow-xl rounded-full flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500">
-                                                <span className="text-4xl translate-x-[2px]">🎮</span>
+                                                    <div className="relative z-10 flex flex-col items-center justify-center h-full w-full bg-white/10 backdrop-blur-sm p-6 transition-colors group-hover:bg-white/20">
+                                                        {/* Icon */}
+                                                        <div className="w-[72px] h-[72px] bg-white shadow-xl rounded-full flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500">
+                                                            <span className="text-4xl translate-x-[2px]">🎮</span>
+                                                        </div>
+
+                                                        {/* Title */}
+                                                        <h4 className="text-xl font-black text-white text-center tracking-wide drop-shadow-md mb-4 line-clamp-2 leading-tight">
+                                                            {resource.title}
+                                                        </h4>
+
+                                                        {/* Play Button */}
+                                                        <div className="mt-auto flex items-center gap-2 px-6 py-2.5 bg-white text-indigo-600 rounded-full font-black text-sm shadow-lg group-hover:bg-indigo-50 group-hover:shadow-indigo-500/30 transition-all border border-indigo-100">
+                                                            <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                                                            <span className="tracking-wider">PLAY</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        }
+
+                                        return (
+                                            <div
+                                                key={`featured-${index}`}
+                                                className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-lg transition-all group cursor-pointer flex flex-col"
+                                                onClick={() => setViewingResource(resource)}
+                                            >
+                                                {/* Resource Thumbnail Preview */}
+                                                <div className="h-48 bg-slate-100 relative overflow-hidden flex items-center justify-center border-b border-slate-100">
+                                                    {resource.type === 'image' && (
+                                                        <img src={resource.src} alt={resource.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                                    )}
+                                                    {resource.thumbnail && (
+                                                        <img src={resource.thumbnail} alt={resource.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                                    )}
+                                                    {resource.type === 'pdf' && !resource.thumbnail && (
+                                                        <div className="text-rose-500 group-hover:scale-110 transition-transform duration-500">
+                                                            <svg className="w-16 h-16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                                                        </div>
+                                                    )}
+                                                    {resource.type === 'pptx' && !resource.thumbnail && (
+                                                        <div className="text-orange-500 group-hover:scale-110 transition-transform duration-500">
+                                                            <svg className="w-16 h-16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Featured Badge Overlay */}
+                                                    <div className="absolute top-2 right-2 bg-amber-400 text-amber-900 text-xs font-black tracking-wider px-2 py-1 rounded-md shadow-sm z-20 flex items-center gap-1">
+                                                        <span className="text-base">⭐</span> FEATURED
+                                                    </div>
+
+                                                    {/* View Overlay */}
+                                                    <div className="absolute inset-0 bg-indigo-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm z-30">
+                                                        <span className="text-white font-bold tracking-widest flex items-center gap-2">
+                                                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                                                            VIEW RESOURCE
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                {/* Resource Details */}
+                                                <div className="p-5 flex-1 flex flex-col justify-between">
+                                                    <div>
+                                                        <h4 className="font-bold text-slate-800 line-clamp-2 leading-snug">{resource.title}</h4>
+                                                    </div>
+                                                    <div className="mt-4 flex items-center justify-between">
+                                                        <span className="text-xs font-bold text-indigo-500 uppercase tracking-wider bg-indigo-50 px-2 py-1 rounded-md">
+                                                            {resource.type === 'pdf' && resource.pptxSrc ? 'PDF & PPTX' : resource.type}
+                                                        </span>
+                                                        <span className="text-indigo-600 bg-indigo-50 rounded-full p-2 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                                        </span>
+                                                    </div>
+                                                </div>
                                             </div>
-
-                                            {/* Title */}
-                                            <h4 className="text-xl font-black text-white text-center tracking-wide drop-shadow-md mb-4 line-clamp-2 leading-tight">
-                                                {resource.title}
-                                            </h4>
-
-                                            {/* Play Button */}
-                                            <div className="mt-auto flex items-center gap-2 px-6 py-2.5 bg-white text-indigo-600 rounded-full font-black text-sm shadow-lg group-hover:bg-indigo-50 group-hover:shadow-indigo-500/30 transition-all border border-indigo-100">
-                                                <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-                                                <span className="tracking-wider">PLAY</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            }
-
-                            return (
-                                <div
-                                    key={index}
-                                    className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-lg transition-all group cursor-pointer flex flex-col"
-                                    onClick={() => setViewingResource(resource)}
-                                >
-                                    {/* Resource Thumbnail Preview */}
-                                    <div className="h-48 bg-slate-100 relative overflow-hidden flex items-center justify-center border-b border-slate-100">
-                                        {resource.type === 'image' && (
-                                            <img src={resource.src} alt={resource.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                                        )}
-                                        {resource.thumbnail && (
-                                            <img src={resource.thumbnail} alt={resource.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                                        )}
-                                        {resource.type === 'pdf' && !resource.thumbnail && (
-                                            <div className="text-rose-500 group-hover:scale-110 transition-transform duration-500">
-                                                <svg className="w-16 h-16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
-                                            </div>
-                                        )}
-                                        {resource.type === 'pptx' && !resource.thumbnail && (
-                                            <div className="text-orange-500 group-hover:scale-110 transition-transform duration-500">
-                                                <svg className="w-16 h-16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>
-                                            </div>
-                                        )}
-
-                                        {/* View Overlay */}
-                                        <div className="absolute inset-0 bg-indigo-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
-                                            <span className="text-white font-bold tracking-widest flex items-center gap-2">
-                                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                                                VIEW RESOURCE
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    {/* Resource Details */}
-                                    <div className="p-5 flex-1 flex flex-col justify-between">
-                                        <div>
-                                            <h4 className="font-bold text-slate-800 line-clamp-2 leading-snug">{resource.title}</h4>
-                                        </div>
-                                        <div className="mt-4 flex items-center justify-between">
-                                            <span className="text-xs font-bold text-indigo-500 uppercase tracking-wider bg-indigo-50 px-2 py-1 rounded-md">
-                                                {resource.type === 'pdf' && resource.pptxSrc ? 'PDF & PPTX' : resource.type}
-                                            </span>
-                                            <span className="text-indigo-600 bg-indigo-50 rounded-full p-2 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
-                                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                                            </span>
-                                        </div>
-                                    </div>
+                                        );
+                                    })}
                                 </div>
-                            );
-                        })}
+                            </div>
+                        )}
+
+                        {/* Extra Resources Section */}
+                        {currentResources.filter(r => r.extra).length > 0 && (
+                            <div>
+                                <h3 className="text-xl font-bold tracking-wide text-slate-500 border-b border-slate-300 pb-2 mb-6">EXTRA RESOURCES</h3>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                                    {currentResources.filter(r => r.extra).map((resource, index) => {
+                                        return (
+                                            <div
+                                                key={`extra-${index}`}
+                                                className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-all group cursor-pointer flex flex-col"
+                                                onClick={() => setViewingResource(resource)}
+                                            >
+                                                {/* Smaller Thumbnail */}
+                                                <div className="h-32 bg-slate-100 relative overflow-hidden flex items-center justify-center border-b border-slate-100">
+                                                    {resource.type === 'image' && (
+                                                        <img src={resource.src} alt={resource.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                                    )}
+                                                    {resource.thumbnail && (
+                                                        <img src={resource.thumbnail} alt={resource.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                                    )}
+                                                    {resource.type === 'pdf' && !resource.thumbnail && (
+                                                        <div className="text-slate-400 group-hover:scale-110 transition-transform duration-500">
+                                                            <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                                                        </div>
+                                                    )}
+                                                    {resource.type === 'pptx' && !resource.thumbnail && (
+                                                        <div className="text-slate-400 group-hover:scale-110 transition-transform duration-500">
+                                                            <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>
+                                                        </div>
+                                                    )}
+
+                                                    {/* View Overlay */}
+                                                    <div className="absolute inset-0 bg-slate-800/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm z-30">
+                                                        <span className="text-white font-bold text-sm tracking-widest flex items-center gap-1">
+                                                            VIEW
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                {/* Resource Details */}
+                                                <div className="p-3 flex-1 flex flex-col justify-between">
+                                                    <div>
+                                                        <h4 className="font-semibold text-slate-700 text-sm line-clamp-2 leading-tight">{resource.title}</h4>
+                                                    </div>
+                                                    <div className="mt-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                                        {resource.type === 'pdf' && resource.pptxSrc ? 'PDF & PPTX' : resource.type}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 ) : (
                     /* Placeholder Content if no resources exist */

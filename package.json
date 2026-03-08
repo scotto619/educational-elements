@@ -9,6 +9,10 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@babel/generator": "^7.29.1",
+    "@babel/parser": "^7.29.0",
+    "@babel/traverse": "^7.29.0",
+    "@babel/types": "^7.29.0",
     "@stripe/stripe-js": "^2.4.0",
     "bcryptjs": "^3.0.2",
     "confetti-js": "^0.0.18",
