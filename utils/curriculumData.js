@@ -693,7 +693,105 @@ export const scienceDomains = [
         icon: '🔬',
         color: 'bg-blue-50 border-blue-200 text-blue-900',
         topics: [
-            { id: 'forces_motion', name: 'Forces & Motion', icon: '⚡', domain: 'Physical Sciences' },
+            {
+                id: 'forces_motion',
+                name: 'Forces & Motion',
+                icon: '⚡',
+                domain: 'Physical Sciences',
+                subtopics: [
+                    {
+                        id: 'pushes_pulls',
+                        name: 'Pushes and Pulls',
+                        resources: {
+                            display: [
+                                { type: 'image', title: 'Pushes and Pulls Display', src: '/Curriculum/New Science/Forces and Motion/Pushes and pulls/Display/PushesAndPulls.png' }
+                            ],
+                            learn: [
+                                { type: 'pdf', title: 'Pushes and Pulls Guide', src: '/Curriculum/New Science/Forces and Motion/Pushes and pulls/Learning/PushesAndPulls.pdf', pptxSrc: '/Curriculum/New Science/Forces and Motion/Pushes and pulls/Learning/PushesAndPulls.pptx', thumbnail: '/Curriculum/New Science/Forces and Motion/Pushes and pulls/Learning/cover.png' }
+                            ],
+                            practice: []
+                        }
+                    },
+                    {
+                        id: 'contact_vs_non_contact',
+                        name: 'Contact vs Non-Contact Forces',
+                        resources: {
+                            display: [
+                                { type: 'image', title: 'Contact Vs Non Contact Display', src: '/Curriculum/New Science/Forces and Motion/Contact Vs Non Contact/Display/ContactVsNonContact.png' }
+                            ],
+                            learn: [
+                                { type: 'pdf', title: 'Contact Vs Non Contact Guide', src: '/Curriculum/New Science/Forces and Motion/Contact Vs Non Contact/Learning/ContactVsNonContact.pdf', pptxSrc: '/Curriculum/New Science/Forces and Motion/Contact Vs Non Contact/Learning/ContactVsNonContact.pptx', thumbnail: '/Curriculum/New Science/Forces and Motion/Contact Vs Non Contact/Learning/cover.png' }
+                            ],
+                            practice: []
+                        }
+                    },
+                    {
+                        id: 'gravity',
+                        name: 'Gravity',
+                        resources: {
+                            display: [
+                                { type: 'image', title: 'Gravity Display', src: '/Curriculum/New Science/Forces and Motion/Gravity/Display/Gravity.png' }
+                            ],
+                            learn: [
+                                { type: 'pdf', title: 'Gravity Guide', src: '/Curriculum/New Science/Forces and Motion/Gravity/Learning/Gravity.pdf', pptxSrc: '/Curriculum/New Science/Forces and Motion/Gravity/Learning/Gravity.pptx', thumbnail: '/Curriculum/New Science/Forces and Motion/Gravity/Learning/cover.png' }
+                            ],
+                            practice: []
+                        }
+                    },
+                    {
+                        id: 'friction',
+                        name: 'Friction',
+                        resources: {
+                            display: [
+                                { type: 'image', title: 'Friction Display', src: '/Curriculum/New Science/Forces and Motion/Friction/Display/Friction.png' }
+                            ],
+                            learn: [
+                                { type: 'pdf', title: 'Friction Guide', src: '/Curriculum/New Science/Forces and Motion/Friction/Learning/Friction.pdf', pptxSrc: '/Curriculum/New Science/Forces and Motion/Friction/Learning/Friction.pptx', thumbnail: '/Curriculum/New Science/Forces and Motion/Friction/Learning/cover.png' }
+                            ],
+                            practice: []
+                        }
+                    },
+                    {
+                        id: 'air_resistance',
+                        name: 'Air Resistance',
+                        resources: {
+                            display: [
+                                { type: 'image', title: 'Air Resistance Display', src: '/Curriculum/New Science/Forces and Motion/Air Resistance/Display/AirResistance.png' }
+                            ],
+                            learn: [
+                                { type: 'pdf', title: 'Air Resistance Guide', src: '/Curriculum/New Science/Forces and Motion/Air Resistance/Learning/AirResistance.pdf', pptxSrc: '/Curriculum/New Science/Forces and Motion/Air Resistance/Learning/AirResistance.pptx', thumbnail: '/Curriculum/New Science/Forces and Motion/Air Resistance/Learning/cover.png' }
+                            ],
+                            practice: []
+                        }
+                    },
+                    {
+                        id: 'magnetic_forces',
+                        name: 'Magnetic Forces',
+                        resources: {
+                            display: [
+                                { type: 'image', title: 'Magnetic Forces Display', src: '/Curriculum/New Science/Forces and Motion/Magnetic Forces/Display/Magnetic Forces.png' }
+                            ],
+                            learn: [
+                                { type: 'pdf', title: 'Magnetic Forces Guide', src: '/Curriculum/New Science/Forces and Motion/Magnetic Forces/Learning/MagneticForces.pdf', pptxSrc: '/Curriculum/New Science/Forces and Motion/Magnetic Forces/Learning/MagneticForces.pptx', thumbnail: '/Curriculum/New Science/Forces and Motion/Magnetic Forces/Learning/cover.png' }
+                            ],
+                            practice: []
+                        }
+                    },
+                    {
+                        id: 'simple_machines',
+                        name: 'Simple Machines',
+                        resources: {
+                            display: [
+                                { type: 'image', title: 'Simple Machines Display', src: '/Curriculum/New Science/Forces and Motion/Simple Machines/Display/Simple Machines.png' }
+                            ],
+                            learn: [
+                                { type: 'pdf', title: 'Simple Machines Guide', src: '/Curriculum/New Science/Forces and Motion/Simple Machines/Learning/SimpleMachines.pdf', pptxSrc: '/Curriculum/New Science/Forces and Motion/Simple Machines/Learning/SimpleMachines.pptx', thumbnail: '/Curriculum/New Science/Forces and Motion/Simple Machines/Learning/cover.png' }
+                            ],
+                            practice: []
+                        }
+                    }
+                ]
+            },
             { id: 'energy', name: 'Energy', icon: '🔊', domain: 'Physical Sciences' },
             { id: 'light', name: 'Light', icon: '💡', domain: 'Physical Sciences' },
             { id: 'sound', name: 'Sound', icon: '🔉', domain: 'Physical Sciences' },
