@@ -8,7 +8,8 @@ const GroupMaker = ({
   showToast, 
   saveGroupDataToFirebase, 
   userData, 
-  currentClassId 
+  currentClassId,
+  groupData 
 }) => {
   // --- State ---
   const [unassignedStudents, setUnassignedStudents] = useState([]);
