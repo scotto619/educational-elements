@@ -1068,6 +1068,7 @@ const ClassroomChampions = () => {
           onReorderStudents={handleReorderStudents}
           onViewDetails={setSelectedStudent}
           onAddStudent={() => setShowAddStudentModal(true)}
+          groupData={currentClassData?.groupData}
         />;
 
       case 'quests':
@@ -1171,6 +1172,7 @@ const ClassroomChampions = () => {
           setShowQuestManagement={() => showToast('Quest management opened!', 'info')}
           saveToolkitData={(data) => saveClassData({ toolkitData: { ...currentClassData?.toolkitData, ...data } })}
           loadedData={currentClassData?.toolkitData || {}}
+          groupData={currentClassData?.groupData}
         />;
 
       case 'settings':

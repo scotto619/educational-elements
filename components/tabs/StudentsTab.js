@@ -309,7 +309,8 @@ const StudentsTab = ({
     getAvatarImage: propGetAvatarImage,
     getPetImage: propGetPetImage,
     calculateCoins: propCalculateCoins,
-    calculateAvatarLevel: propCalculateAvatarLevel
+    calculateAvatarLevel: propCalculateAvatarLevel,
+    groupData
 }) => {
     // Use passed functions or fallback to local ones
     const getAvatarImageFunc = propGetAvatarImage || ((avatarBase, level) => resolveAvatarImage(avatarBase, level));
@@ -348,6 +349,12 @@ const StudentsTab = ({
             document.removeEventListener('fullscreenchange', handleFullscreenChange);
         };
     }, []);
+
+    // Extra Active Groups logic
+    const activeGroups = React.useMemo(() => {
+        if (!groupData || !groupData.groupsToSave || groupData.groupsToSave.length === 0) return [];
+        return groupData.groupsToSave;
+    }, [groupData]);
 
     const toggleFullscreen = () => {
         if (typeof document === 'undefined') return;
@@ -591,6 +598,29 @@ const StudentsTab = ({
                     </div>
                 </div>
             </div>
+
+            {/* NEW: GROUP SCOREBOARD */}
+            {activeGroups.length > 0 && (
+                <div className="bg-white rounded-xl p-4 shadow-md border border-purple-200">
+                    <h3 className="text-sm font-bold text-purple-600 uppercase tracking-wider mb-3 flex items-center">
+                        <span className="text-lg mr-2">🏆</span> Active Group Scores
+                    </h3>
+                    <div className="flex overflow-x-auto pb-2 gap-3 snap-x">
+                        {activeGroups.map(group => (
+                            <div key={group.id} className="min-w-[140px] flex-shrink-0 bg-purple-50 rounded-lg p-3 border border-purple-100 snap-start">
+                                <div className="font-bold text-gray-800 text-sm truncate mb-1">{group.name}</div>
+                                <div className="flex justify-between items-center text-xs">
+                                    <span className="text-purple-600 font-semibold">Daily: {group.scores?.daily || 0}</span>
+                                    <span className="text-gray-500 font-medium">Wk: {group.scores?.weekly || 0}</span>
+                                </div>
+                                <div className="mt-2 text-[10px] text-gray-400">
+                                    {group.students?.length || 0} Members
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* MOBILE-OPTIMIZED STUDENT GRID */}
             <div className={`grid ${getGridClasses(filteredStudents.length)} gap-2 sm:gap-3 md:gap-4`} key={refreshKey}>

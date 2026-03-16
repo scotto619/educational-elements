@@ -108,6 +108,38 @@ const GroupMaker = ({
     }
   }, [numberOfGroups, students.length, groupingMethod]);
 
+  // Initial Load from groupData prop passed down
+  useEffect(() => {
+    // If we have groupData from firebase, load it
+    if (groupData && groupData.groupsToSave) {
+      loadGrouping(groupData);
+    }
+  }, [groupData]); // Runs when prop changes
+
+  // Auto-save debounced whenever groups state changes
+  useEffect(() => {
+    // Only auto-save if we have something to save, and not on initial render
+    if (groups.length === 0) return;
+    
+    // We don't want to save on the very first mount if the user hasn't created groups
+    const timeoutId = setTimeout(() => {
+      if (saveGroupDataToFirebase) {
+        // Create grouping object matching the correct expected structure
+        const grouping = {
+          id: Date.now(),
+          name: `Active Grouping`,
+          groupsToSave: groups, 
+          method: groupingMethod,
+          groupSize: groupSize,
+          createdAt: new Date()
+        };
+        saveGroupDataToFirebase(grouping);
+      }
+    }, 1000); // Debounce to prevent spam saving on typing / rapid points updating
+    
+    return () => clearTimeout(timeoutId);
+  }, [groups, groupingMethod, groupSize]); // Note: removing saveGroupDataToFirebase from dep array to avoid infinite loops if it changes reference on render
+
   // --- Helpers ---
   const generateNewGroupId = () => `group-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   
@@ -427,8 +459,8 @@ const GroupMaker = ({
     };
 
     setSavedGroupings(prev => [grouping, ...prev]);
-    if (saveGroupDataToFirebase && currentClassId) {
-      saveGroupDataToFirebase(currentClassId, grouping);
+    if (saveGroupDataToFirebase) {
+      saveGroupDataToFirebase(grouping);
     }
     if (showToast) showToast('Grouping saved!');
   };

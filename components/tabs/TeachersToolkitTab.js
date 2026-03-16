@@ -511,7 +511,9 @@ const TeachersToolkitTab = ({
   loadedData = {}, // NEW: For loading toolkit data from Firebase
   currentClassId,
   getAvatarImage,
-  calculateAvatarLevel
+  calculateAvatarLevel,
+  saveGroupDataToFirebase,
+  groupData
 }) => {
   const [activeToolkitTab, setActiveToolkitTab] = useState(null);
   const [notifications, setNotifications] = useState([]);
@@ -601,6 +603,9 @@ const TeachersToolkitTab = ({
             <GroupMaker 
               students={students} 
               showToast={showNotification}
+              saveGroupDataToFirebase={saveGroupDataToFirebase}
+              currentClassId={currentClassId}
+              groupData={groupData}
             />
           )}
           {activeToolkitTab === 'name-picker' && (
