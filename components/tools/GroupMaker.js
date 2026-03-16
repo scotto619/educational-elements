@@ -249,7 +249,8 @@ const GroupMaker = ({
         };
 
         const newDaily = type === 'daily' ? Math.max(0, g.scores.daily + delta) : g.scores.daily;
-        const newWeekly = type === 'weekly' ? Math.max(0, g.scores.weekly + delta) : g.scores.weekly;
+        // Notice that modifying 'daily' also adjusts 'weekly'
+        const newWeekly = type === 'daily' ? Math.max(0, g.scores.weekly + delta) : g.scores.weekly;
 
         return {
           ...g,
@@ -258,7 +259,7 @@ const GroupMaker = ({
             daily: newDaily,
             weekly: newWeekly,
             lastUpdatedDaily: type === 'daily' ? getTodayStr() : g.scores.lastUpdatedDaily,
-            lastUpdatedWeekly: type === 'weekly' ? getTodayStr() : g.scores.lastUpdatedWeekly
+            lastUpdatedWeekly: type === 'daily' ? getTodayStr() : g.scores.lastUpdatedWeekly
           },
           pointHistory: [historyEntry, ...(g.pointHistory || [])].slice(0, 50)
         };
@@ -759,9 +760,7 @@ const GroupMaker = ({
                     <div className="flex-1 flex flex-col items-center">
                       <span className="text-xs uppercase opacity-80 mb-1">Weekly</span>
                       <div className="flex items-center gap-2">
-                        <button onClick={() => updateGroupScore(group.id, 'weekly', -10)} className="hover:scale-110 active:scale-95 transition-transform">-</button>
-                        <span className="text-lg">{group.scores.weekly || 0}</span>
-                        <button onClick={() => updateGroupScore(group.id, 'weekly', 10)} className="hover:scale-110 active:scale-95 transition-transform">+</button>
+                        <span className="text-lg font-bold">{group.scores.weekly || 0}</span>
                       </div>
                     </div>
                   </div>
