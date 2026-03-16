@@ -41,7 +41,7 @@ export const readingComprehensionContent = {
           },
           {
             id: 4,
-            type: "short_answer", 
+            type: "short_answer",
             question: "How do you think Emma felt when she first heard the plants talking?",
             suggestedAnswer: "Surprised, amazed, or shocked because she gasped in surprise.",
             keyWords: ["surprised", "amazed", "shocked", "gasped"]
@@ -51,7 +51,7 @@ export const readingComprehensionContent = {
         vocabulary: ["crept", "gasped", "agreement", "whispered", "gentle"]
       },
       {
-        id: "fiction_2", 
+        id: "fiction_2",
         title: "The Brave Little Mouse",
         difficulty: "intermediate",
         readingLevel: "Grade 3-4",
@@ -60,7 +60,7 @@ export const readingComprehensionContent = {
         questions: [
           {
             id: 1,
-            type: "multiple_choice", 
+            type: "multiple_choice",
             question: "What was special about Chester compared to the other mice?",
             options: ["He was the biggest", "He was the fastest", "He was brave and had a big heart", "He was the smartest"],
             correctAnswer: 2,
@@ -104,7 +104,7 @@ export const readingComprehensionContent = {
   },
 
   nonFiction: {
-    name: "Non-Fiction Articles", 
+    name: "Non-Fiction Articles",
     icon: "📰",
     color: "from-blue-500 to-blue-600",
     description: "Factual texts about real people, places, and events",
@@ -113,14 +113,14 @@ export const readingComprehensionContent = {
         id: "nonfiction_1",
         title: "Amazing Dolphins",
         difficulty: "beginner",
-        readingLevel: "Grade 2-3", 
+        readingLevel: "Grade 2-3",
         wordCount: 140,
         text: "Dolphins are some of the smartest animals in the ocean. They live in groups called pods and love to play together. Dolphins can jump high out of the water and do flips in the air! They use special clicking sounds to talk to each other and to find food. This is called echolocation. Baby dolphins are called calves, and they stay close to their mothers for two years. Dolphins are mammals, which means they breathe air just like humans do. They have to come to the surface of the water to breathe through a blowhole on top of their heads. Dolphins are very friendly and have been known to help humans who are in trouble in the ocean. They can swim up to 25 miles per hour!",
         questions: [
           {
             id: 1,
             type: "multiple_choice",
-            question: "What are baby dolphins called?", 
+            question: "What are baby dolphins called?",
             options: ["Puppies", "Calves", "Cubs", "Kits"],
             correctAnswer: 1,
             explanation: "Baby dolphins are called calves, just like baby cows."
@@ -136,7 +136,7 @@ export const readingComprehensionContent = {
             id: 3,
             type: "multiple_choice",
             question: "What is echolocation?",
-            options: ["Swimming fast", "Using clicking sounds to talk and find food", "Jumping out of water", "Living in groups"], 
+            options: ["Swimming fast", "Using clicking sounds to talk and find food", "Jumping out of water", "Living in groups"],
             correctAnswer: 1,
             explanation: "Echolocation is when dolphins use clicking sounds to communicate and locate food."
           },
@@ -154,7 +154,7 @@ export const readingComprehensionContent = {
       {
         id: "nonfiction_2",
         title: "The Life Cycle of a Butterfly",
-        difficulty: "intermediate", 
+        difficulty: "intermediate",
         readingLevel: "Grade 3-4",
         wordCount: 180,
         text: "The transformation of a caterpillar into a butterfly is one of nature's most amazing processes. This change is called metamorphosis, and it happens in four distinct stages. First, an adult butterfly lays tiny eggs on a leaf. These eggs are usually round or oval and very small. After about five days, a tiny caterpillar, or larva, hatches from each egg. The caterpillar's main job is to eat and grow. It starts by eating its own eggshell, then munches on leaves almost constantly. As it grows bigger, the caterpillar sheds its skin several times. When the caterpillar is fully grown, it forms a protective casing around itself called a chrysalis or cocoon. Inside this casing, the most incredible transformation takes place. After about two weeks, a beautiful butterfly emerges. The butterfly must pump fluid into its wings and let them dry before it can fly. Once ready, the butterfly will mate and lay eggs, starting the cycle all over again.",
@@ -169,7 +169,7 @@ export const readingComprehensionContent = {
           },
           {
             id: 2,
-            type: "short_answer", 
+            type: "short_answer",
             question: "List the four stages of a butterfly's life cycle in order.",
             suggestedAnswer: "1. Egg, 2. Caterpillar/larva, 3. Chrysalis/cocoon, 4. Butterfly",
             keyWords: ["egg", "caterpillar", "larva", "chrysalis", "cocoon", "butterfly"]
@@ -200,13 +200,289 @@ export const readingComprehensionContent = {
         ],
         teachingFocus: ["Sequence of events", "Scientific vocabulary", "Process description", "Cause and effect"],
         vocabulary: ["metamorphosis", "distinct", "larva", "chrysalis", "emerges"]
+      },
+      {
+        id: "nonfiction_volcanoes",
+        title: "How Volcanoes Erupt",
+        isMultiLevel: true,
+        levels: [
+          {
+            difficulty: "beginner",
+            readingLevel: "Grade 1-2",
+            wordCount: 228,
+            text: "A volcano is a mountain with an opening in the ground. Deep under the ground, the Earth is very hot. In some places, the rock gets so hot that it melts. Melted rock under the ground is called magma.\n\nMagma can move slowly under the Earth. Sometimes it pushes up through cracks in the rock. When too much magma and gas build up, the volcano can erupt.\n\nAn eruption is when hot magma, gas, ash, and rocks burst out of the volcano. When magma comes out onto the ground, it is called lava. Lava is very, very hot. It can glow red, orange, or yellow.\n\nVolcanoes do not all erupt in the same way. Some volcanoes erupt quietly. Lava flows down the sides like a hot river. Other volcanoes erupt with a loud boom! They can shoot ash, smoke, and rocks high into the sky.\n\nBefore a volcano erupts, there are often clues. The ground may start to shake. This is called an earthquake. Sometimes steam or gas comes out from the top of the volcano. These signs can tell scientists that an eruption may happen soon.\n\nInside the volcano, gas is trapped in the magma. As the magma rises, the gas pushes harder and harder. It is a bit like shaking a bottle of fizzy drink. When the pressure gets too strong, the volcano erupts.\n\nAfter an eruption, lava cools down and becomes hard rock. Over time, this can change the shape of the land. Some volcanoes even make new islands!\n\nVolcanoes can be dangerous, but they are also amazing. They help make new land. The ash from volcanoes can also help plants grow because it adds minerals to the soil.\n\nThere are volcanoes in many places around the world. Some are on land, and some are under the sea. Some volcanoes are active, which means they can still erupt. Others are sleeping, which means they have not erupted for a long time. Some are extinct, which means they will probably not erupt again.\n\nVolcanoes are one of the most powerful parts of nature. Deep under the Earth, heat and pressure work together to make an eruption happen. When a volcano erupts, it reminds us just how strong our planet really is.",
+            questions: [
+              {
+                id: 1,
+                type: "click_word",
+                question: "Find and click the word in the text that means 'melted rock under the ground'.",
+                correctAnswer: "magma",
+                explanation: "Melted rock under the ground is called magma."
+              },
+              {
+                id: 2,
+                type: "multiple_choice",
+                question: "What do we call magma when it comes out of the volcano?",
+                options: ["Fire", "Water", "Lava", "Rock"],
+                correctAnswer: 2,
+                explanation: "When magma comes out onto the ground, it is called lava."
+              },
+              {
+                id: 3,
+                type: "short_answer",
+                question: "What colour can lava be?",
+                suggestedAnswer: "It can glow red, orange, or yellow.",
+                keyWords: ["red", "orange", "yellow"]
+              },
+              {
+                id: 4,
+                type: "multiple_choice",
+                question: "What might happen to the ground before a volcano erupts?",
+                options: ["It turns green", "It might start to shake (an earthquake)", "It gets very cold", "It starts to rain"],
+                correctAnswer: 1,
+                explanation: "The ground may start to shake in an earthquake before an eruption."
+              },
+              {
+                id: 5,
+                type: "short_answer",
+                question: "Why are volcanoes important for plants?",
+                suggestedAnswer: "The ash from volcanoes adds minerals to the soil, helping plants grow.",
+                keyWords: ["ash", "minerals", "soil", "grow"]
+              },
+              {
+                id: 6,
+                type: "multiple_choice",
+                question: "Where does magma come from?",
+                options: ["From the sky", "Deep under the ground", "From the ocean", "From rivers"],
+                correctAnswer: 1,
+                explanation: "Magma is melted rock that forms deep under the ground."
+              },
+              {
+                id: 7,
+                type: "short_answer",
+                question: "What happens during a volcano eruption?",
+                suggestedAnswer: "Hot magma, gas, ash, and rocks burst out of the volcano.",
+                keyWords: ["burst", "magma", "gas", "ash", "rocks"]
+              },
+              {
+                id: 8,
+                type: "short_answer",
+                question: "What happens to lava after it cools down?",
+                suggestedAnswer: "It becomes hard rock.",
+                keyWords: ["hard", "rock"]
+              },
+              {
+                id: 9,
+                type: "multiple_choice",
+                question: "What kind of volcano has not erupted for a very long time?",
+                options: ["Extinct", "Sleeping", "Active", "Awake"],
+                correctAnswer: 1,
+                explanation: "A sleeping volcano has not erupted for a long time."
+              },
+              {
+                id: 10,
+                type: "short_answer",
+                question: "Why does a volcano erupt?",
+                suggestedAnswer: "When too much magma and gas build up, the pressure gets too strong and it erupts.",
+                keyWords: ["magma", "gas", "build up", "pressure"]
+              }
+            ],
+            teachingFocus: ["Earth science", "Cause and effect", "Descriptive writing", "Sequencing"],
+            vocabulary: ["magma", "lava", "eruption", "active", "extinct"],
+            glossary: {
+              "magma": "Melted rock beneath the Earth's surface.",
+              "lava": "Hot, melted rock that erupts from a volcano.",
+              "eruption": "When hot magma, gas, ash, and rocks burst out of a volcano."
+            }
+          },
+          {
+            difficulty: "intermediate",
+            readingLevel: "Grade 3-4",
+            wordCount: 350,
+            text: "Volcanoes are one of the most exciting and powerful natural features on Earth. They may look like ordinary mountains, but deep inside them something amazing is happening. Far below the ground, it is so hot that some rock melts into a thick, hot liquid called magma.\n\nMagma forms deep inside the Earth’s crust and mantle. Because it is hot and full of gas, magma wants to rise upward. It moves through weak spots and cracks in the Earth’s crust. Sometimes, it collects in a large underground space called a magma chamber.\n\nAs more magma fills the chamber, pressure begins to build. The gases trapped inside the magma push harder and harder. This pressure is a little bit like air building up inside a balloon. When the pressure becomes too great, the magma is forced up through the volcano and out of the top. This is called a volcanic eruption.\n\nWhen magma comes out of the volcano, it is called lava. Lava can flow down the sides of the volcano like a fiery river. Volcanoes can also release ash, steam, gas, and pieces of rock during an eruption.\n\nNot all volcanoes erupt in the same way. Some eruptions are gentle, with lava slowly pouring out. Other eruptions are explosive and violent. These eruptions can blast ash and hot rocks high into the air. The type of eruption depends on the kind of magma inside the volcano. Thick, sticky magma traps more gas, which can cause a bigger explosion. Runny magma lets gas escape more easily, so the eruption is often quieter.\n\nScientists watch volcanoes carefully for warning signs. Before an eruption, the ground might shake with small earthquakes. The volcano may swell or bulge as magma rises inside it. More gas and steam may also escape from cracks or vents. These clues help scientists know when a volcano might erupt.\n\nAfter an eruption, the lava cools and hardens into rock. Over many eruptions, this rock builds up and changes the shape of the land. In fact, some mountains and islands were formed by volcanoes. The Hawaiian Islands, for example, were created by volcanic activity.\n\nVolcanoes can be dangerous, but they are also important. They create new land and bring minerals from deep inside the Earth up to the surface. Volcanic ash can make soil rich and good for growing plants.\n\nThere are many volcanoes around the world. Some are active, which means they can still erupt. Others are dormant, which means they are resting for now. A volcano that is extinct is not expected to erupt again.\n\nVolcanoes are a powerful reminder that Earth is always changing. Deep underground, heat, pressure, gas, and magma work together to create nature’s most dramatic events.",
+            questions: [
+              {
+                id: 1,
+                type: "short_answer",
+                question: "What is magma?",
+                suggestedAnswer: "Magma is rock that has melted into a thick, hot liquid deep underground.",
+                keyWords: ["rock", "melted", "liquid", "hot"]
+              },
+              {
+                id: 2,
+                type: "short_answer",
+                question: "What is a magma chamber?",
+                suggestedAnswer: "A large underground space where magma collects.",
+                keyWords: ["underground", "space", "collects"]
+              },
+              {
+                id: 3,
+                type: "click_word",
+                question: "Click the word in the text that is the name for magma when it comes out of the volcano.",
+                correctAnswer: "lava",
+                explanation: "When magma comes out of the volcano, it is called lava."
+              },
+              {
+                id: 4,
+                type: "short_answer",
+                question: "What are two things that might come out of a volcano during an eruption?",
+                suggestedAnswer: "Lava, ash, steam, gas, and pieces of rock.",
+                keyWords: ["lava", "ash", "steam", "gas", "rock"]
+              },
+              {
+                id: 5,
+                type: "multiple_choice",
+                question: "Why does magma move upward inside the Earth?",
+                options: ["Because it is pushed by water", "Because it is hot and full of gas", "Because it is heavier than solid rock", "Because it is cold"],
+                correctAnswer: 1,
+                explanation: "Magma wants to rise upward because it is hot and full of gas."
+              },
+              {
+                id: 6,
+                type: "multiple_choice",
+                question: "What causes pressure to build up inside a volcano?",
+                options: ["More magma fills the chamber and trapped gases push harder", "Water leaking into the volcano", "Lava cooling down rapidly", "Heavy rocks falling inside"],
+                correctAnswer: 0,
+                explanation: "As more magma fills the chamber, pressure builds because trapped gases push harder."
+              },
+              {
+                id: 7,
+                type: "short_answer",
+                question: "What is one sign that a volcano may erupt soon?",
+                suggestedAnswer: "Small earthquakes, the volcano swelling/bulging, or more gas and steam escaping.",
+                keyWords: ["earthquakes", "swelling", "bulging", "gas", "steam"]
+              },
+              {
+                id: 8,
+                type: "multiple_choice",
+                question: "How were the Hawaiian Islands formed?",
+                options: ["By earthquakes breaking up land", "By human construction", "By volcanic activity", "By severe storms"],
+                correctAnswer: 2,
+                explanation: "The Hawaiian Islands were created by volcanic activity."
+              },
+              {
+                id: 9,
+                type: "multiple_choice",
+                question: "Why are some eruptions gentle while others are explosive?",
+                options: ["Explosive volcanoes are taller", "Thick magma traps gas causing explosions, runny magma lets gas escape for quieter eruptions", "Gentle volcanoes don't have magma", "It depends on the weather"],
+                correctAnswer: 1,
+                explanation: "Thick, sticky magma traps more gas causing a bigger explosion. Runny magma lets gas escape easily leading to quieter eruptions."
+              },
+              {
+                id: 10,
+                type: "short_answer",
+                question: "What does the word dormant mean when talking about volcanoes?",
+                suggestedAnswer: "It means the volcano is resting for now.",
+                keyWords: ["resting"]
+              }
+            ],
+            teachingFocus: ["Comparing and contrasting", "Technical vocabulary", "Main ideas", "Supporting details"],
+            vocabulary: ["chamber", "dormant", "violent", "crust", "mantle"],
+            glossary: {
+              "magma": "Thick, hot liquid rock deep underground.",
+              "lava": "Magma that has reached the Earth's surface.",
+              "crust": "The outer solid layer of the Earth.",
+              "dormant": "Resting for now, but a volcano that could erupt again."
+            }
+          },
+          {
+            difficulty: "advanced",
+            readingLevel: "Grade 5-6",
+            wordCount: 410,
+            text: "Volcanoes are among the most powerful and dramatic natural forces on Earth. Although they may appear to be ordinary mountains, volcanoes are actually openings in the Earth’s crust where molten rock, gas, ash, and other materials can escape from deep below the surface. A volcanic eruption is the result of heat, pressure, and movement inside the Earth.\n\nDeep beneath the Earth’s crust, temperatures are so extreme that some rock begins to melt. This molten rock is known as magma. Magma forms in parts of the mantle and lower crust where heat, pressure changes, and trapped water lower the melting point of rock. Because magma is less dense than the solid rock around it, it begins to rise toward the surface.\n\nAs magma rises, it may collect in an underground reservoir called a magma chamber. Over time, more magma can flow into this chamber, increasing the pressure inside. At the same time, gases such as water vapour, carbon dioxide, and sulfur dioxide are trapped within the magma. As the magma moves upward, the pressure around it decreases, causing the gases to expand. This creates even more pressure inside the volcano.\n\nEventually, the pressure becomes too great for the surrounding rock to hold it back. The magma is then forced upward through cracks, vents, or weak points in the Earth’s crust, causing a volcanic eruption. Once magma reaches the Earth’s surface, it is called lava.\n\nThe way a volcano erupts depends largely on the type of magma it contains. Thin, runny magma allows gas to escape easily, which usually leads to gentler eruptions with flowing lava. Thick, sticky magma traps gas more effectively, causing pressure to build up until it is released in a violent explosion. This is why some volcanoes produce slow lava flows, while others erupt with enormous blasts of ash, rock, and hot gas.\n\nBefore a volcano erupts, there are often warning signs. Small earthquakes may occur as magma pushes through underground rock. The ground around the volcano might bulge or crack. Scientists may also detect increased gas emissions or rising temperatures near the volcano. By studying these clues, volcanologists can sometimes predict when an eruption may happen.\n\nVolcanic eruptions can have both destructive and constructive effects. They can destroy homes, forests, and roads, and ash clouds can affect air travel and breathing. However, eruptions also create new landforms, including mountains and islands. Volcanic ash can enrich the soil, making it excellent for farming once the area becomes safe again.\n\nVolcanoes are found all over the world, especially near the edges of tectonic plates. Many are located around the Pacific Ring of Fire, a region with frequent earthquakes and volcanic activity. Volcanoes are usually described as active, dormant, or extinct, depending on whether they are erupting now, may erupt again, or are unlikely to erupt in the future.\n\nVolcanoes show us that Earth is a living, changing planet. Their eruptions are caused by an incredible combination of heat, pressure, gases, and moving rock deep beneath our feet.",
+            questions: [
+              {
+                id: 1,
+                type: "short_answer",
+                question: "What is magma and where does it form?",
+                suggestedAnswer: "Magma is molten rock that forms in parts of the mantle and lower crust.",
+                keyWords: ["molten rock", "mantle", "lower crust"]
+              },
+              {
+                id: 2,
+                type: "click_word",
+                question: "Find and click the word in the text that means 'closely compacted in substance' (which magma is less of than solid rock).",
+                correctAnswer: "dense",
+                explanation: "Magma is less dense than the solid rock around it, so it naturally begins to rise."
+              },
+              {
+                id: 3,
+                type: "multiple_choice",
+                question: "What are three gases that can be found in magma?",
+                options: ["Oxygen, nitrogen, methane", "Water vapour, carbon dioxide, sulfur dioxide", "Helium, hydrogen, argon", "Carbon monoxide, ozone, sulfur"],
+                correctAnswer: 1,
+                explanation: "The text mentions water vapour, carbon dioxide, and sulfur dioxide."
+              },
+              {
+                id: 4,
+                type: "multiple_choice",
+                question: "How does pressure build inside a volcano before an eruption?",
+                options: ["Rock falls into the magma chamber", "More magma flows into the chamber and expanding gases create more pressure", "Rain enters the volcano", "The mantle pushes up from below"],
+                correctAnswer: 1,
+                explanation: "More magma flows in, and as magma moves upward, decreasing external pressure allows gases to expand, creating huge internal pressure."
+              },
+              {
+                id: 5,
+                type: "short_answer",
+                question: "What warning signs might scientists observe before an eruption?",
+                suggestedAnswer: "Small earthquakes, ground bulging or cracking, increased gas emissions, or rising temperatures.",
+                keyWords: ["earthquakes", "bulge", "crack", "gas emissions", "temperatures"]
+              },
+              {
+                id: 6,
+                type: "short_answer",
+                question: "What is the Pacific Ring of Fire?",
+                suggestedAnswer: "A region around the edges of tectonic plates with frequent earthquakes and volcanic activity.",
+                keyWords: ["region", "tectonic plates", "earthquakes", "volcanic activity"]
+              },
+              {
+                id: 7,
+                type: "multiple_choice",
+                question: "What are two negative effects of volcanic eruptions?",
+                options: ["Creating mountains and enriching soil", "Destroying homes/forests and ash affecting air travel/breathing", "Causing tsunamis and making rain", "Melting ice caps and destroying ozone"],
+                correctAnswer: 1,
+                explanation: "Eruptions can destroy homes, forests, roads, and ash clouds can affect air travel and breathing."
+              },
+              {
+                id: 8,
+                type: "short_answer",
+                question: "Why does gas expansion make eruptions stronger?",
+                suggestedAnswer: "As gas expands, it creates even more pressure inside the volcano, eventually forcing its way out violently (especially if trapped in thick magma).",
+                keyWords: ["pressure", "violently", "trapped"]
+              },
+              {
+                id: 9,
+                type: "short_answer",
+                question: "How can volcanoes both destroy and create land?",
+                suggestedAnswer: "They destroy land, homes, and forests with lava and ash, but the cooled lava creates new landforms (mountains/islands) and the ash enriches the soil.",
+                keyWords: ["destroy", "create", "new landforms", "enrich"]
+              },
+              {
+                id: 10,
+                type: "multiple_choice",
+                question: "What role do tectonic plates play in the formation of volcanoes?",
+                options: ["They spin to generate heat", "Volcanoes are often found near the edges of tectonic plates", "They hold volcanoes up", "They stop magma from escaping"],
+                correctAnswer: 1,
+                explanation: "Volcanoes are found all over the world, especially near the edges of tectonic plates where there is frequent activity."
+              }
+            ],
+            teachingFocus: ["Scientific processes", "Advanced vocabulary", "Citing evidence", "Text structure analysis"],
+            vocabulary: ["tectonic", "emissions", "volcanologists", "constructive", "reservoir"],
+            glossary: {
+              "molten": "Liquefied by heat; melted.",
+              "dense": "Closely compacted in substance.",
+              "vent": "An opening that allows gas or liquid to escape.",
+              "constructive": "Serving a useful purpose; tending to build up."
+            }
+          }
+        ]
       }
     ]
   },
 
   poetry: {
     name: "Poetry & Rhymes",
-    icon: "🎵", 
+    icon: "🎵",
     color: "from-pink-500 to-pink-600",
     description: "Poems, songs, and rhyming texts with rhythm and imagery",
     passages: [
@@ -235,7 +511,7 @@ export const readingComprehensionContent = {
           },
           {
             id: 3,
-            type: "multiple_choice", 
+            type: "multiple_choice",
             question: "How is the willow tree described?",
             options: ["Tall and proud", "Weeping with drooping arms", "Strong and loud", "Small and quiet"],
             correctAnswer: 1,
@@ -258,7 +534,7 @@ export const readingComprehensionContent = {
   instructions: {
     name: "Instructions & Procedures",
     icon: "📋",
-    color: "from-green-500 to-green-600", 
+    color: "from-green-500 to-green-600",
     description: "How-to texts and step-by-step procedures",
     passages: [
       {
@@ -313,7 +589,7 @@ export const readingComprehensionContent = {
     description: "Personal letters, emails, and written communications",
     passages: [
       {
-        id: "letter_1", 
+        id: "letter_1",
         title: "Letter to Grandma",
         difficulty: "beginner",
         readingLevel: "Grade 2-3",
@@ -324,7 +600,7 @@ export const readingComprehensionContent = {
             id: 1,
             type: "multiple_choice",
             question: "Who wrote this letter?",
-            options: ["Grandma", "Mom", "Sarah", "Dad"], 
+            options: ["Grandma", "Mom", "Sarah", "Dad"],
             correctAnswer: 2,
             explanation: "The letter is signed 'Love, Sarah' at the end."
           },
@@ -364,7 +640,7 @@ export const getPassagesByDifficulty = (difficulty) => {
   Object.values(readingComprehensionContent).forEach(textType => {
     textType.passages.forEach(passage => {
       if (passage.difficulty === difficulty) {
-        allPassages.push({...passage, textType: textType.name});
+        allPassages.push({ ...passage, textType: textType.name });
       }
     });
   });

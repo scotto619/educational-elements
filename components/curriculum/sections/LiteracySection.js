@@ -71,7 +71,7 @@ const literacyActivities = [
     {
         id: 'reading-comprehension', name: 'Reading Comprehension', icon: '🧠',
         description: 'Text analysis and understanding',
-        component: ReadingComprehension, category: 'reading', underConstruction: true
+        component: ReadingComprehension, category: 'reading', isUpdated: true
     },
     {
         id: 'visual-writing-prompts', name: 'Visual Writing Prompts', icon: '🖼️',

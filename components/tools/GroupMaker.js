@@ -1,25 +1,49 @@
-// GroupMaker.js - Smart Group Creation Tool (FIXED CONTRAST)
+// GroupMaker.js - Smart Group Creation Tool (Redesigned)
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const GroupMaker = ({ 
-  students, 
+  students = [], 
   showToast, 
   saveGroupDataToFirebase, 
   userData, 
   currentClassId 
 }) => {
+  // --- State ---
+  const [unassignedStudents, setUnassignedStudents] = useState([]);
+  const [groups, setGroups] = useState([]);
+  const [studentPoints, setStudentPoints] = useState({}); // { studentId: points }
+  
+  // Settings Mode
+  const [showSettings, setShowSettings] = useState(false);
+  const [activeTab, setActiveTab] = useState('random'); // 'random', 'constraints'
+  
+  // Random Settings
   const [groupSize, setGroupSize] = useState(4);
   const [numberOfGroups, setNumberOfGroups] = useState(0);
   const [groupingMethod, setGroupingMethod] = useState('size'); // 'size' or 'number'
-  const [groups, setGroups] = useState([]);
-  const [constraints, setConstraints] = useState({
-    neverGroup: [], // Array of arrays - students that should never be grouped together
-    alwaysGroup: [] // Array of arrays - students that should always be grouped together
-  });
-  const [constraintMode, setConstraintMode] = useState(null); // 'never', 'always', or null
+  
+  // Constraints
+  const [constraints, setConstraints] = useState({ neverGroup: [], alwaysGroup: [] });
+  const [constraintMode, setConstraintMode] = useState(null);
   const [selectedStudentsForConstraint, setSelectedStudentsForConstraint] = useState([]);
+  
+  // Random Picker
+  const [showPicker, setShowPicker] = useState(false);
+  const [pickerSelectedGroups, setPickerSelectedGroups] = useState([]);
+  const [pickerResult, setPickerResult] = useState(null);
+  const [isSpinning, setIsSpinning] = useState(false);
+
+  // Saved Groupings
   const [savedGroupings, setSavedGroupings] = useState([]);
-  const [showConstraints, setShowConstraints] = useState(false);
+  const [showSaved, setShowSaved] = useState(false);
+
+  // --- Effects ---
+  useEffect(() => {
+    if (groups.length === 0 && students.length > 0) {
+      setUnassignedStudents([...students]);
+    }
+  }, [students, groups.length]);
 
   useEffect(() => {
     if (groupingMethod === 'size' && students.length > 0) {
@@ -33,7 +57,151 @@ const GroupMaker = ({
     }
   }, [numberOfGroups, students.length, groupingMethod]);
 
-  // Shuffle array function
+  // --- Helpers ---
+  const generateNewGroupId = () => `group-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  
+  const getGroupColor = (index) => {
+    const colors = [
+      'bg-blue-50 border-blue-200 shadow-blue-100',
+      'bg-green-50 border-green-200 shadow-green-100',
+      'bg-yellow-50 border-yellow-200 shadow-yellow-100',
+      'bg-purple-50 border-purple-200 shadow-purple-100',
+      'bg-pink-50 border-pink-200 shadow-pink-100',
+      'bg-indigo-50 border-indigo-200 shadow-indigo-100',
+      'bg-orange-50 border-orange-200 shadow-orange-100',
+      'bg-teal-50 border-teal-200 shadow-teal-100'
+    ];
+    return colors[index % colors.length];
+  };
+
+  const getHeaderColor = (index) => {
+    const colors = [
+      'bg-blue-100 text-blue-800',
+      'bg-green-100 text-green-800',
+      'bg-yellow-100 text-yellow-800',
+      'bg-purple-100 text-purple-800',
+      'bg-pink-100 text-pink-800',
+      'bg-indigo-100 text-indigo-800',
+      'bg-orange-100 text-orange-800',
+      'bg-teal-100 text-teal-800'
+    ];
+    return colors[index % colors.length];
+  };
+
+  // --- Core Actions ---
+  const addEmptyGroup = () => {
+    setGroups(prev => [...prev, {
+      id: generateNewGroupId(),
+      name: `Group ${prev.length + 1}`,
+      students: [],
+      leaderId: null,
+      scores: { daily: 0, weekly: 0 }
+    }]);
+  };
+
+  const removeGroup = (groupId) => {
+    const group = groups.find(g => g.id === groupId);
+    if (group && group.students.length > 0) {
+      setUnassignedStudents(prev => [...prev, ...group.students]);
+    }
+    setGroups(prev => prev.filter(g => g.id !== groupId));
+  };
+
+  const clearAllGroups = () => {
+    setGroups([]);
+    setUnassignedStudents([...students]);
+    if (showToast) showToast('All groups cleared!');
+  };
+
+  // --- Drag & Drop ---
+  const handleDragStart = (e, studentId, sourceId) => {
+    e.dataTransfer.setData('studentId', studentId);
+    e.dataTransfer.setData('sourceId', sourceId);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault(); 
+  };
+
+  const handleDrop = (e, targetId) => {
+    e.preventDefault();
+    const studentId = e.dataTransfer.getData('studentId');
+    const sourceId = e.dataTransfer.getData('sourceId');
+    
+    if (!studentId || sourceId === targetId) return;
+
+    let studentToMove = null;
+    
+    if (sourceId === 'unassigned') {
+      studentToMove = unassignedStudents.find(s => s.id === studentId);
+    } else {
+      const g = groups.find(g => g.id === sourceId);
+      if (g) studentToMove = g.students.find(s => s.id === studentId);
+    }
+
+    if (!studentToMove) return;
+
+    if (sourceId === 'unassigned') {
+      setUnassignedStudents(prev => prev.filter(s => s.id !== studentId));
+    } else {
+      setGroups(prev => prev.map(group => {
+        if (group.id === sourceId) {
+          return {
+            ...group,
+            students: group.students.filter(s => s.id !== studentId),
+            leaderId: group.leaderId === studentId ? null : group.leaderId
+          };
+        }
+        return group;
+      }));
+    }
+
+    if (targetId === 'unassigned') {
+      setUnassignedStudents(prev => [...prev, studentToMove]);
+    } else {
+      setGroups(prev => prev.map(group => {
+        if (group.id === targetId) {
+          return { ...group, students: [...group.students, studentToMove] };
+        }
+        return group;
+      }));
+    }
+  };
+
+  // --- Group Info Updates ---
+  const updateGroupName = (groupId, newName) => {
+    setGroups(prev => prev.map(g => g.id === groupId ? { ...g, name: newName } : g));
+  };
+
+  const toggleLeader = (groupId, studentId) => {
+    setGroups(prev => prev.map(g => {
+      if (g.id === groupId) {
+        return { ...g, leaderId: g.leaderId === studentId ? null : studentId };
+      }
+      return g;
+    }));
+  };
+
+  const updateGroupScore = (groupId, type, delta) => {
+    setGroups(prev => prev.map(g => {
+      if (g.id === groupId) {
+        return {
+          ...g,
+          scores: { ...g.scores, [type]: Math.max(0, g.scores[type] + delta) }
+        };
+      }
+      return g;
+    }));
+  };
+
+  const updateStudentPoints = (studentId, delta) => {
+    setStudentPoints(prev => ({
+      ...prev,
+      [studentId]: Math.max(0, (prev[studentId] || 0) + delta)
+    }));
+  };
+
+  // --- Random Generation ---
   const shuffleArray = (array) => {
     const shuffled = [...array];
     for (let i = shuffled.length - 1; i > 0; i--) {
@@ -43,552 +211,560 @@ const GroupMaker = ({
     return shuffled;
   };
 
-  // Check if two students can be grouped together
-  const canGroupTogether = (student1, student2) => {
-    // Check if they're in a "never group" constraint
-    return !constraints.neverGroup.some(constraint => 
-      constraint.includes(student1.id) && constraint.includes(student2.id)
-    );
-  };
-
-  // Generate groups with constraints
   const generateGroups = () => {
     if (students.length === 0) {
-      showToast('No students available to group!', 'error');
+      if (showToast) showToast('No students available to group!', 'error');
       return;
     }
 
+    const canGroupTogether = (s1, s2) => {
+      return !constraints.neverGroup.some(c => c.includes(s1.id) && c.includes(s2.id));
+    };
+
     let availableStudents = [...students];
-    let newGroups = [];
+    let generatedGroups = [];
     
-    // First, handle "always group" constraints
-    constraints.alwaysGroup.forEach(constraint => {
-      if (constraint.length > 0) {
-        const constraintStudents = availableStudents.filter(s => constraint.includes(s.id));
-        if (constraintStudents.length > 0) {
-          newGroups.push(constraintStudents);
-          availableStudents = availableStudents.filter(s => !constraint.includes(s.id));
+    constraints.alwaysGroup.forEach(c => {
+      if (c.length > 0) {
+        const cStudents = availableStudents.filter(s => c.includes(s.id));
+        if (cStudents.length > 0) {
+          generatedGroups.push(cStudents);
+          availableStudents = availableStudents.filter(s => !c.includes(s.id));
         }
       }
     });
 
-    // Shuffle remaining students
     availableStudents = shuffleArray(availableStudents);
 
-    // Create groups with remaining students
     const targetGroupCount = groupingMethod === 'number' ? numberOfGroups : Math.ceil(students.length / groupSize);
     const targetGroupSize = groupingMethod === 'size' ? groupSize : Math.ceil(students.length / numberOfGroups);
 
-    // Fill existing groups from constraints first
     let groupIndex = 0;
-    while (availableStudents.length > 0 && groupIndex < newGroups.length) {
-      while (newGroups[groupIndex].length < targetGroupSize && availableStudents.length > 0) {
-        // Find a student that can be added to this group
-        let studentAdded = false;
+    while (availableStudents.length > 0 && groupIndex < generatedGroups.length) {
+      while (generatedGroups[groupIndex].length < targetGroupSize && availableStudents.length > 0) {
+        let added = false;
         for (let i = 0; i < availableStudents.length; i++) {
-          const student = availableStudents[i];
-          const canAddToGroup = newGroups[groupIndex].every(groupMember => 
-            canGroupTogether(student, groupMember)
-          );
-          
-          if (canAddToGroup) {
-            newGroups[groupIndex].push(student);
+          const s = availableStudents[i];
+          if (generatedGroups[groupIndex].every(gm => canGroupTogether(s, gm))) {
+            generatedGroups[groupIndex].push(s);
             availableStudents.splice(i, 1);
-            studentAdded = true;
+            added = true;
             break;
           }
         }
-        
-        if (!studentAdded) break; // No compatible student found
+        if (!added) break;
       }
       groupIndex++;
     }
 
-    // Create new groups for remaining students
     while (availableStudents.length > 0) {
-      const newGroup = [];
+      const newG = [];
+      newG.push(availableStudents.shift());
       
-      // Add first student
-      if (availableStudents.length > 0) {
-        newGroup.push(availableStudents.shift());
-      }
-      
-      // Add more students to reach target size
-      while (newGroup.length < targetGroupSize && availableStudents.length > 0) {
-        let studentAdded = false;
+      while (newG.length < targetGroupSize && availableStudents.length > 0) {
+        let added = false;
         for (let i = 0; i < availableStudents.length; i++) {
-          const student = availableStudents[i];
-          const canAddToGroup = newGroup.every(groupMember => 
-            canGroupTogether(student, groupMember)
-          );
-          
-          if (canAddToGroup) {
-            newGroup.push(student);
+          const s = availableStudents[i];
+          if (newG.every(gm => canGroupTogether(s, gm))) {
+            newG.push(s);
             availableStudents.splice(i, 1);
-            studentAdded = true;
+            added = true;
             break;
           }
         }
-        
-        if (!studentAdded) break; // No compatible student found
+        if (!added) break;
       }
-      
-      newGroups.push(newGroup);
+      generatedGroups.push(newG);
     }
 
-    // Handle any remaining students (distribute among existing groups)
     while (availableStudents.length > 0) {
-      const student = availableStudents.shift();
-      // Find the smallest group that can accommodate this student
-      let targetGroup = null;
+      const s = availableStudents.shift();
+      let tGroup = null;
       let minSize = Infinity;
       
-      for (const group of newGroups) {
-        if (group.length < minSize) {
-          const canAdd = group.every(groupMember => canGroupTogether(student, groupMember));
-          if (canAdd) {
-            targetGroup = group;
-            minSize = group.length;
-          }
+      for (const group of generatedGroups) {
+        if (group.length < minSize && group.every(gm => canGroupTogether(s, gm))) {
+          tGroup = group;
+          minSize = group.length;
         }
       }
       
-      if (targetGroup) {
-        targetGroup.push(student);
-      } else {
-        // Create a new group for this student if no compatible group found
-        newGroups.push([student]);
-      }
+      if (tGroup) tGroup.push(s);
+      else generatedGroups.push([s]);
     }
 
-    setGroups(newGroups);
-    showToast(`Created ${newGroups.length} groups!`);
+    const finalGroups = generatedGroups.map((arr, i) => ({
+      id: generateNewGroupId(),
+      name: `Group ${i + 1}`,
+      students: arr,
+      leaderId: null,
+      scores: { daily: 0, weekly: 0 }
+    }));
+
+    setGroups(finalGroups);
+    setUnassignedStudents([]);
+    setShowSettings(false);
+    if (showToast) showToast(`Created ${finalGroups.length} groups!`);
   };
 
-  // Save current grouping
+  // --- Save / Load ---
   const saveGrouping = () => {
     if (groups.length === 0) {
-      showToast('No groups to save!', 'error');
+      if (showToast) showToast('No groups to save!', 'error');
       return;
     }
 
     const grouping = {
       id: Date.now(),
-      name: `Grouping ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`,
-      groups: groups,
-      constraints: constraints,
-      createdAt: new Date(),
+      name: `Grouping ${new Date().toLocaleDateString()}`,
+      groupsToSave: groups, 
+      method: groupingMethod,
       groupSize: groupSize,
-      method: groupingMethod
+      createdAt: new Date()
     };
 
     setSavedGroupings(prev => [grouping, ...prev]);
-    
-    // Save to Firebase if available
     if (saveGroupDataToFirebase && currentClassId) {
       saveGroupDataToFirebase(currentClassId, grouping);
     }
-    
-    showToast('Grouping saved successfully!');
+    if (showToast) showToast('Grouping saved!');
   };
 
-  // Load a saved grouping
   const loadGrouping = (grouping) => {
-    setGroups(grouping.groups);
-    setConstraints(grouping.constraints);
-    setGroupSize(grouping.groupSize);
-    setGroupingMethod(grouping.method);
-    showToast('Grouping loaded!');
-  };
-
-  // Clear all groups
-  const clearGroups = () => {
-    setGroups([]);
-    showToast('All groups cleared!');
-  };
-
-  // Add constraint
-  const addNeverGroupConstraint = () => {
-    if (selectedStudentsForConstraint.length < 2) {
-      showToast('Select at least 2 students for a constraint!', 'error');
-      return;
+    if (grouping.groupsToSave) {
+      setGroups(grouping.groupsToSave);
+    } else if (grouping.groups) {
+      setGroups(grouping.groups.map((arr, i) => ({
+        id: generateNewGroupId(),
+        name: `Group ${i + 1}`,
+        students: arr,
+        leaderId: null,
+        scores: { daily: 0, weekly: 0 }
+      })));
     }
+    setUnassignedStudents([]);
+    setShowSaved(false);
+    if (showToast) showToast('Grouping loaded!');
+  };
 
-    const studentIds = selectedStudentsForConstraint.map(s => s.id);
-    setConstraints(prev => ({
-      ...prev,
-      neverGroup: [...prev.neverGroup, studentIds]
-    }));
+  // --- Random Picker ---
+  const toggleGroupSelectionForPicker = (groupId) => {
+    setPickerSelectedGroups(prev => 
+      prev.includes(groupId) ? prev.filter(id => id !== groupId) : [...prev, groupId]
+    );
+  };
+
+  const pickRandomStudent = () => {
+    if (pickerSelectedGroups.length === 0) return;
     
-    setSelectedStudentsForConstraint([]);
-    setConstraintMode(null);
-    showToast('Never group constraint added!');
-  };
-
-  const addAlwaysGroupConstraint = () => {
-    if (selectedStudentsForConstraint.length < 2) {
-      showToast('Select at least 2 students for a constraint!', 'error');
-      return;
-    }
-
-    const studentIds = selectedStudentsForConstraint.map(s => s.id);
-    setConstraints(prev => ({
-      ...prev,
-      alwaysGroup: [...prev.alwaysGroup, studentIds]
-    }));
-    
-    setSelectedStudentsForConstraint([]);
-    setConstraintMode(null);
-    showToast('Always group constraint added!');
-  };
-
-  // Remove constraint
-  const removeConstraint = (type, index) => {
-    setConstraints(prev => ({
-      ...prev,
-      [type]: prev[type].filter((_, i) => i !== index)
-    }));
-    showToast('Constraint removed!');
-  };
-
-  // Handle student selection for constraints
-  const handleStudentSelectForConstraint = (student) => {
-    setSelectedStudentsForConstraint(prev => {
-      const isSelected = prev.find(s => s.id === student.id);
-      if (isSelected) {
-        return prev.filter(s => s.id !== student.id);
-      } else {
-        return [...prev, student];
+    let pool = [];
+    groups.forEach(g => {
+      if (pickerSelectedGroups.includes(g.id)) {
+        pool.push(...g.students);
       }
     });
+
+    if (pool.length === 0) {
+      if (showToast) showToast('No students in selected groups!', 'error');
+      return;
+    }
+
+    setIsSpinning(true);
+    setPickerResult(null);
+    
+    let spins = 0;
+    const duration = 20; 
+    
+    const spinInterval = setInterval(() => {
+      const luckyIndex = Math.floor(Math.random() * pool.length);
+      setPickerResult(pool[luckyIndex]);
+      spins++;
+      
+      if (spins > duration) {
+        clearInterval(spinInterval);
+        setIsSpinning(false);
+      }
+    }, 100);
   };
 
-  // Get group color
-  const getGroupColor = (index) => {
-    const colors = [
-      'bg-blue-100 border-blue-300',
-      'bg-green-100 border-green-300',
-      'bg-yellow-100 border-yellow-300',
-      'bg-purple-100 border-purple-300',
-      'bg-pink-100 border-pink-300',
-      'bg-indigo-100 border-indigo-300',
-      'bg-orange-100 border-orange-300',
-      'bg-teal-100 border-teal-300'
-    ];
-    return colors[index % colors.length];
-  };
+  const renderStudentCard = (student, groupId) => (
+    <motion.div 
+      layout
+      layoutId={student.id}
+      draggable
+      onDragStart={(e) => handleDragStart(e, student.id, groupId)}
+      className="flex items-center justify-between p-2 mb-2 bg-white rounded-lg border border-gray-100 shadow-sm cursor-grab active:cursor-grabbing hover:border-blue-300 transition-colors"
+    >
+      <div className="flex items-center space-x-2">
+        {student.avatar && (
+          <img src={student.avatar} alt={student.firstName} className="w-8 h-8 rounded-full border border-gray-200" />
+        )}
+        <span className="font-semibold text-gray-700">{student.firstName}</span>
+        {groupId !== 'unassigned' && groups.find(g => g.id === groupId)?.leaderId === student.id && (
+          <span title="Group Leader">👑</span>
+        )}
+      </div>
+
+      {groupId !== 'unassigned' && (
+        <div className="flex items-center space-x-1">
+          <button 
+            onClick={() => updateStudentPoints(student.id, -1)}
+            className="w-6 h-6 text-xs bg-red-100 text-red-600 rounded-full hover:bg-red-200 flex items-center justify-center font-bold"
+          >-</button>
+          <span className="text-sm font-bold w-4 text-center">{studentPoints[student.id] || 0}</span>
+          <button 
+            onClick={() => updateStudentPoints(student.id, 1)}
+            className="w-6 h-6 text-xs bg-green-100 text-green-600 rounded-full hover:bg-green-200 flex items-center justify-center font-bold"
+          >+</button>
+          <button 
+            onClick={() => toggleLeader(groupId, student.id)}
+            className="ml-1 text-gray-400 hover:text-yellow-500 transition-colors text-sm"
+            title="Toggle Leader"
+          >
+            ⭐
+          </button>
+        </div>
+      )}
+    </motion.div>
+  );
 
   if (students.length === 0) {
     return (
-      <div className="text-center py-16">
+      <div className="text-center py-16 bg-white rounded-2xl shadow-sm border border-gray-100">
         <div className="text-6xl mb-4">👥</div>
         <h2 className="text-2xl font-bold text-gray-800 mb-4">No Students Available</h2>
-        <p className="text-gray-700">
-          Add students to your class or load a class to use the Group Maker.
-        </p>
+        <p className="text-gray-500">Please add students to your class first.</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="text-center">
-        <h2 className="text-3xl font-bold text-gray-800 mb-2">👥 Smart Group Maker</h2>
-        <p className="text-gray-700">Create balanced groups with intelligent constraints</p>
-      </div>
-
-      {/* Controls */}
-      <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="bg-gray-50 min-h-screen rounded-2xl">
+      {/* Top Application Bar */}
+      <div className="bg-white px-6 py-4 rounded-t-2xl border-b border-gray-200 flex flex-wrap justify-between items-center gap-4 sticky top-0 z-10 shadow-sm">
+        <div>
+          <h2 className="text-2xl font-bold flex items-center gap-2 text-gray-800">
+            <span className="text-blue-500">✨</span> Group Maker
+          </h2>
+        </div>
+        
+        <div className="flex gap-2 flex-wrap">
+          <button onClick={addEmptyGroup} className="flex items-center gap-1 px-4 py-2 bg-indigo-50 text-indigo-600 font-semibold rounded-lg hover:bg-indigo-100 transition shadow-sm border border-indigo-100">
+            ➕ Add Group
+          </button>
+          <button onClick={() => setShowSettings(!showSettings)} className="flex items-center gap-1 px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition shadow-sm">
+            🎲 Auto Generate
+          </button>
+          <button onClick={() => setShowPicker(true)} className="flex items-center gap-1 px-4 py-2 bg-purple-50 text-purple-600 font-semibold rounded-lg hover:bg-purple-100 transition shadow-sm border border-purple-100">
+            🎯 Name Picker
+          </button>
           
-          {/* Grouping Method */}
-          <div>
-            <h3 className="font-bold text-gray-800 mb-3">Grouping Method</h3>
-            <div className="space-y-3">
-              <label className="flex items-center space-x-2">
-                <input
-                  type="radio"
-                  value="size"
-                  checked={groupingMethod === 'size'}
-                  onChange={(e) => setGroupingMethod(e.target.value)}
-                  className="text-blue-600"
-                />
-                <span className="text-gray-800 font-semibold">By Group Size</span>
-              </label>
-              <label className="flex items-center space-x-2">
-                <input
-                  type="radio"
-                  value="number"
-                  checked={groupingMethod === 'number'}
-                  onChange={(e) => setGroupingMethod(e.target.value)}
-                  className="text-blue-600"
-                />
-                <span className="text-gray-800 font-semibold">By Number of Groups</span>
-              </label>
-            </div>
-          </div>
-
-          {/* Group Size/Number */}
-          <div>
-            <h3 className="font-bold text-gray-800 mb-3">
-              {groupingMethod === 'size' ? 'Students per Group' : 'Number of Groups'}
-            </h3>
-            <input
-              type="number"
-              min="1"
-              max={groupingMethod === 'size' ? students.length : students.length}
-              value={groupingMethod === 'size' ? groupSize : numberOfGroups}
-              onChange={(e) => {
-                const value = parseInt(e.target.value) || 1;
-                if (groupingMethod === 'size') {
-                  setGroupSize(value);
-                } else {
-                  setNumberOfGroups(value);
-                }
-              }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-800"
-            />
-            <p className="text-sm text-gray-600 mt-2">
-              {groupingMethod === 'size' 
-                ? `Will create ${Math.ceil(students.length / groupSize)} groups`
-                : `Each group will have ~${Math.ceil(students.length / numberOfGroups)} students`
-              }
-            </p>
-          </div>
-
-          {/* Action Buttons */}
-          <div>
-            <h3 className="font-bold text-gray-800 mb-3">Actions</h3>
-            <div className="space-y-2">
-              <button
-                onClick={generateGroups}
-                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition-colors"
-              >
-                🎲 Generate Groups
-              </button>
-              <button
-                onClick={() => setShowConstraints(!showConstraints)}
-                className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-semibold transition-colors"
-              >
-                ⚙️ Constraints
-              </button>
-              <button
-                onClick={saveGrouping}
-                disabled={groups.length === 0}
-                className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-semibold transition-colors"
-              >
-                💾 Save Grouping
-              </button>
-              <button
-                onClick={clearGroups}
-                className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-semibold transition-colors"
-              >
-                🗑️ Clear Groups
-              </button>
-            </div>
-          </div>
+          <div className="h-10 w-px bg-gray-200 mx-1"></div>
+          
+          <button onClick={() => setShowSaved(true)} className="px-3 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition" title="Saved Groupings">
+            💾
+          </button>
+          <button onClick={clearAllGroups} className="px-3 py-2 text-red-500 hover:bg-red-50 rounded-lg transition" title="Clear All Groups">
+            🗑️
+          </button>
         </div>
       </div>
 
-      {/* Constraints Panel */}
-      {showConstraints && (
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-          <h3 className="text-xl font-bold text-gray-800 mb-4">Group Constraints</h3>
-          
-          <div className="space-y-6">
-            {/* Constraint Mode Selection */}
-            <div>
-              <div className="flex gap-3 mb-4">
-                <button
-                  onClick={() => {
-                    setConstraintMode('never');
-                    setSelectedStudentsForConstraint([]);
-                  }}
-                  className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-                    constraintMode === 'never' 
-                      ? 'bg-red-600 text-white' 
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  Never Group Together
-                </button>
-                <button
-                  onClick={() => {
-                    setConstraintMode('always');
-                    setSelectedStudentsForConstraint([]);
-                  }}
-                  className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-                    constraintMode === 'always' 
-                      ? 'bg-green-600 text-white' 
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  Always Group Together
-                </button>
-              </div>
-
-              {constraintMode && (
-                <div>
-                  <p className="text-sm text-gray-700 mb-3 font-semibold">
-                    Select students for this constraint:
-                  </p>
-                  
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 mb-4">
-                    {students.map((student) => (
-                      <button
-                        key={student.id}
-                        onClick={() => handleStudentSelectForConstraint(student)}
-                        className={`p-2 rounded-lg border-2 transition-colors text-left ${
-                          selectedStudentsForConstraint.find(s => s.id === student.id)
-                            ? 'border-blue-500 bg-blue-50 text-blue-800'
-                            : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-800'
-                        }`}
-                      >
-                        <div className="flex items-center space-x-2">
-                          {student.avatar && (
-                            <img src={student.avatar} alt={student.firstName} className="w-6 h-6 rounded-full" />
-                          )}
-                          <span className="font-semibold text-sm">{student.firstName}</span>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="flex gap-2">
-                    <button
-                      onClick={constraintMode === 'never' ? addNeverGroupConstraint : addAlwaysGroupConstraint}
-                      disabled={selectedStudentsForConstraint.length < 2}
-                      className={`px-4 py-2 rounded-lg font-semibold transition-colors disabled:opacity-50 ${
-                        constraintMode === 'never' 
-                          ? 'bg-red-600 text-white hover:bg-red-700'
-                          : 'bg-green-600 text-white hover:bg-green-700'
-                      }`}
-                    >
-                      Add {constraintMode === 'never' ? 'Never Group' : 'Always Group'} Constraint
-                    </button>
-                    <button
-                      onClick={() => {
-                        setConstraintMode(null);
-                        setSelectedStudentsForConstraint([]);
-                      }}
-                      className="px-4 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500 font-semibold transition-colors"
-                    >
-                      Cancel
-                    </button>
-                  </div>
+      <div className="p-6">
+        {/* Settings Panel */}
+        <AnimatePresence>
+          {showSettings && (
+            <motion.div 
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden mb-6"
+            >
+              <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
+                <div className="flex border-b border-gray-200 mb-6">
+                  <button onClick={() => setActiveTab('random')} className={`px-4 py-2 font-semibold ${activeTab === 'random' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}>Randomize Settings</button>
+                  <button onClick={() => setActiveTab('constraints')} className={`px-4 py-2 font-semibold ${activeTab === 'constraints' ? 'text-purple-600 border-b-2 border-purple-600' : 'text-gray-500 hover:text-gray-700'}`}>Constraints</button>
                 </div>
-              )}
-            </div>
 
-            {/* Current Constraints Display */}
-            <div className="space-y-4">
-              {constraints.neverGroup.length > 0 && (
-                <div>
-                  <h4 className="font-semibold text-red-700 mb-2">Never Group Together:</h4>
-                  <div className="space-y-2">
-                    {constraints.neverGroup.map((group, index) => (
-                      <div key={index} className="flex items-center justify-between bg-red-50 border border-red-200 rounded-lg p-3">
-                        <span className="text-red-800 font-semibold">
-                          {group.map(id => students.find(s => s.id === id)?.firstName || 'Unknown').join(', ')}
-                        </span>
-                        <button
-                          onClick={() => removeConstraint('neverGroup', index)}
-                          className="text-red-600 hover:text-red-800 font-bold"
-                        >
-                          Remove
-                        </button>
+                {activeTab === 'random' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                      <h3 className="font-bold text-gray-800 mb-4">Generation Method</h3>
+                      <div className="space-y-3">
+                        <label className="flex items-center space-x-3 cursor-pointer">
+                          <input type="radio" value="size" checked={groupingMethod === 'size'} onChange={(e) => setGroupingMethod(e.target.value)} className="w-5 h-5 text-blue-600" />
+                          <span className="text-gray-700 font-medium">By Group Size ({groupSize} per group)</span>
+                        </label>
+                        <label className="flex items-center space-x-3 cursor-pointer">
+                          <input type="radio" value="number" checked={groupingMethod === 'number'} onChange={(e) => setGroupingMethod(e.target.value)} className="w-5 h-5 text-blue-600" />
+                          <span className="text-gray-700 font-medium">By Number of Groups ({numberOfGroups} groups)</span>
+                        </label>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {constraints.alwaysGroup.length > 0 && (
-                <div>
-                  <h4 className="font-semibold text-green-700 mb-2">Always Group Together:</h4>
-                  <div className="space-y-2">
-                    {constraints.alwaysGroup.map((group, index) => (
-                      <div key={index} className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg p-3">
-                        <span className="text-green-800 font-semibold">
-                          {group.map(id => students.find(s => s.id === id)?.firstName || 'Unknown').join(', ')}
-                        </span>
-                        <button
-                          onClick={() => removeConstraint('alwaysGroup', index)}
-                          className="text-green-600 hover:text-green-800 font-bold"
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {constraints.neverGroup.length === 0 && constraints.alwaysGroup.length === 0 && (
-                <p className="text-gray-600 italic">No constraints set. Students will be grouped randomly.</p>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Generated Groups */}
-      {groups.length > 0 && (
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-          <h3 className="text-xl font-bold text-gray-800 mb-4">Generated Groups ({groups.length})</h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {groups.map((group, groupIndex) => (
-              <div key={groupIndex} className={`p-4 rounded-lg border-2 ${getGroupColor(groupIndex)}`}>
-                <h4 className="font-bold text-gray-800 mb-3">Group {groupIndex + 1} ({group.length} students)</h4>
-                <div className="space-y-2">
-                  {group.map((student) => (
-                    <div key={student.id} className="flex items-center space-x-2 p-2 bg-white rounded-lg">
-                      {student.avatar && (
-                        <img src={student.avatar} alt={student.firstName} className="w-8 h-8 rounded-full" />
-                      )}
-                      <span className="font-semibold text-gray-800">{student.firstName}</span>
                     </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+                    <div>
+                      <h3 className="font-bold text-gray-800 mb-4">
+                        {groupingMethod === 'size' ? 'Students Per Group' : 'Target Groups Count'}
+                      </h3>
+                      <input
+                        type="number"
+                        min="1"
+                        max={students.length}
+                        value={groupingMethod === 'size' ? groupSize : numberOfGroups}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value) || 1;
+                          groupingMethod === 'size' ? setGroupSize(val) : setNumberOfGroups(val);
+                        }}
+                        className="w-full text-lg px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-0 transition"
+                      />
+                      <button onClick={generateGroups} className="mt-4 w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg transition">
+                        ⚡ Generate Random Groups Now
+                      </button>
+                    </div>
+                  </div>
+                )}
 
-      {/* Saved Groupings */}
-      {savedGroupings.length > 0 && (
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-          <h3 className="text-xl font-bold text-gray-800 mb-4">Saved Groupings</h3>
+                {activeTab === 'constraints' && (
+                  <div>
+                    <div className="flex gap-4 mb-4">
+                      <button onClick={() => { setConstraintMode('neverGroup'); setSelectedStudentsForConstraint([]); }} className={`px-4 py-2 rounded-lg font-bold ${constraintMode === 'neverGroup' ? 'bg-red-600 text-white' : 'bg-red-50 text-red-600'}`}>
+                        Never Group (-)
+                      </button>
+                      <button onClick={() => { setConstraintMode('alwaysGroup'); setSelectedStudentsForConstraint([]); }} className={`px-4 py-2 rounded-lg font-bold ${constraintMode === 'alwaysGroup' ? 'bg-green-600 text-white' : 'bg-green-50 text-green-600'}`}>
+                        Always Group (+)
+                      </button>
+                    </div>
+
+                    {constraintMode && (
+                      <div className="mb-4 bg-gray-50 p-4 border border-gray-200 rounded-lg">
+                        <p className="font-semibold text-gray-700 mb-2">Select students to {constraintMode === 'neverGroup' ? 'keep apart' : 'keep together'}:</p>
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          {students.map(s => {
+                            const isSelected = selectedStudentsForConstraint.find(ss => ss.id === s.id);
+                            return (
+                              <button key={s.id} onClick={() => handleStudentSelectForConstraint(s)} className={`px-3 py-1.5 rounded-full border-2 text-sm font-semibold transition ${isSelected ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 bg-white text-gray-600'}`}>
+                                {s.firstName}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <button onClick={() => addConstraint(constraintMode)} disabled={selectedStudentsForConstraint.length < 2} className="px-4 py-2 bg-gray-800 text-white rounded-lg disabled:opacity-50">
+                          Add Constraint Rule
+                        </button>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                      {constraints.neverGroup.length > 0 && (
+                        <div>
+                          <h4 className="font-bold text-red-700 mb-2">Never Together</h4>
+                          <div className="space-y-2">
+                            {constraints.neverGroup.map((c, i) => (
+                              <div key={i} className="flex justify-between p-2 bg-red-50 border border-red-200 rounded-lg text-sm font-medium">
+                                <span>{c.map(id => students.find(s => s.id === id)?.firstName).join(', ')}</span>
+                                <button onClick={() => removeConstraint('neverGroup', i)} className="text-red-500">❌</button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {constraints.alwaysGroup.length > 0 && (
+                        <div>
+                          <h4 className="font-bold text-green-700 mb-2">Always Together</h4>
+                          <div className="space-y-2">
+                            {constraints.alwaysGroup.map((c, i) => (
+                              <div key={i} className="flex justify-between p-2 bg-green-50 border border-green-200 rounded-lg text-sm font-medium">
+                                <span>{c.map(id => students.find(s => s.id === id)?.firstName).join(', ')}</span>
+                                <button onClick={() => removeConstraint('alwaysGroup', i)} className="text-green-500">❌</button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Main Workspace Layout */}
+        <div className="flex flex-col lg:flex-row gap-6">
           
-          <div className="space-y-3">
-            {savedGroupings.map((grouping) => (
-              <div key={grouping.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
-                <div>
-                  <div className="font-semibold text-gray-800">{grouping.name}</div>
-                  <div className="text-sm text-gray-600">
-                    {grouping.groups.length} groups • {grouping.method === 'size' ? 'By size' : 'By number'} • {grouping.groupSize} per group
+          {/* Unassigned Pool */}
+          {unassignedStudents.length > 0 && (
+            <div 
+              className="lg:w-1/4 min-w-[250px] bg-white rounded-2xl p-4 shadow-sm border-2 border-dashed border-gray-300 flex-shrink-0"
+              onDragOver={handleDragOver}
+              onDrop={(e) => handleDrop(e, 'unassigned')}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-gray-700 uppercase tracking-wider text-sm">Unassigned ({unassignedStudents.length})</h3>
+                <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-1 rounded">Drag & Drop</span>
+              </div>
+              <div className="flex flex-col h-[calc(100vh-250px)] overflow-y-auto pr-2 custom-scrollbar">
+                {unassignedStudents.map(s => renderStudentCard(s, 'unassigned'))}
+              </div>
+            </div>
+          )}
+
+          {/* Groups Grid */}
+          <div className="flex-1 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 auto-rows-max items-start">
+            {groups.map((group, index) => (
+              <motion.div 
+                layout
+                key={group.id} 
+                className={`rounded-2xl border-2 flex flex-col ${getGroupColor(index)} shadow-sm`}
+                onDragOver={handleDragOver}
+                onDrop={(e) => handleDrop(e, group.id)}
+              >
+                {/* Group Header */}
+                <div className={`p-4 rounded-t-xl ${getHeaderColor(index)} border-b border-inherit`}>
+                  <div className="flex justify-between items-center mb-2">
+                    <input 
+                      value={group.name}
+                      onChange={(e) => updateGroupName(group.id, e.target.value)}
+                      className="bg-transparent font-bold text-lg w-full outline-none mr-2 focus:bg-white/50 rounded px-1 transition-colors"
+                    />
+                    <button onClick={() => removeGroup(group.id)} className="text-gray-500 hover:text-red-500 font-bold" title="Remove Group">✕</button>
+                  </div>
+
+                  {/* Group Scores (Daily & Weekly) */}
+                  <div className="flex gap-4 text-sm font-semibold bg-white/40 p-2 rounded-lg">
+                    <div className="flex-1 flex flex-col items-center">
+                      <span className="text-xs uppercase opacity-80 mb-1">Daily</span>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => updateGroupScore(group.id, 'daily', -1)} className="hover:scale-110 active:scale-95 transition-transform">-</button>
+                        <span className="text-lg">{group.scores.daily || 0}</span>
+                        <button onClick={() => updateGroupScore(group.id, 'daily', 1)} className="hover:scale-110 active:scale-95 transition-transform">+</button>
+                      </div>
+                    </div>
+                    <div className="w-px bg-black/10"></div>
+                    <div className="flex-1 flex flex-col items-center">
+                      <span className="text-xs uppercase opacity-80 mb-1">Weekly</span>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => updateGroupScore(group.id, 'weekly', -10)} className="hover:scale-110 active:scale-95 transition-transform">-</button>
+                        <span className="text-lg">{group.scores.weekly || 0}</span>
+                        <button onClick={() => updateGroupScore(group.id, 'weekly', 10)} className="hover:scale-110 active:scale-95 transition-transform">+</button>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <button
-                  onClick={() => loadGrouping(grouping)}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition-colors"
-                >
-                  Load
-                </button>
-              </div>
+
+                {/* Group Members */}
+                <div className="p-4 bg-white/90 rounded-b-xl flex-1 min-h-[150px]">
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="text-xs font-bold text-gray-400 uppercase">{group.students.length} Members</span>
+                    {group.leaderId && <span className="text-xs font-bold text-yellow-500 bg-yellow-50 px-2 py-0.5 rounded-full border border-yellow-200">Leader Assigned</span>}
+                  </div>
+                  <div className="space-y-1">
+                    {group.students.map(s => renderStudentCard(s, group.id))}
+                    {group.students.length === 0 && (
+                      <div className="h-full min-h-[100px] border-2 border-dashed border-gray-200 rounded-xl flex items-center justify-center text-gray-400 text-sm font-medium">
+                        Drag students here
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
             ))}
+            
+            {groups.length === 0 && unassignedStudents.length === 0 && (
+              <div className="col-span-full"></div> // Replaces the big warning since we handle it at root
+            )}
           </div>
         </div>
-      )}
+      </div>
 
-      <style jsx>{`
-        .cursor-move:active {
-          cursor: grabbing;
-        }
-      `}</style>
+      {/* Random Name Picker Modal */}
+      <AnimatePresence>
+        {showPicker && (
+          <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+            <motion.div initial={{scale:0.95}} animate={{scale:1}} exit={{scale:0.95}} className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 text-center">
+              <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-blue-600 mb-2">Random Name Picker</h2>
+              <p className="text-gray-500 mb-6 font-medium">Select groups to draw a student from</p>
+              
+              <div className="flex flex-wrap gap-2 justify-center mb-6">
+                {groups.map(g => (
+                  <button 
+                    key={g.id} 
+                    onClick={() => toggleGroupSelectionForPicker(g.id)}
+                    className={`px-4 py-2 rounded-full font-bold border-2 transition-colors ${pickerSelectedGroups.includes(g.id) ? 'bg-purple-600 border-purple-600 text-white' : 'bg-white border-purple-200 text-purple-600 hover:bg-purple-50'}`}
+                  >
+                    {g.name}
+                  </button>
+                ))}
+                <button 
+                  onClick={() => setPickerSelectedGroups(groups.map(g=>g.id))}
+                  className="px-4 py-2 rounded-full font-bold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                >
+                  All Groups
+                </button>
+              </div>
+
+              <div className="h-32 flex items-center justify-center bg-gray-50 rounded-xl border-4 border-gray-100 mb-6 relative overflow-hidden">
+                 <AnimatePresence mode="popLayout">
+                   {pickerResult ? (
+                     <motion.div 
+                       key={pickerResult.id}
+                       initial={{ y: 20, opacity: 0 }}
+                       animate={{ y: 0, opacity: 1 }}
+                       exit={{ y: -20, opacity: 0, position: 'absolute' }}
+                       className="flex items-center space-x-3"
+                     >
+                       {pickerResult.avatar && <img src={pickerResult.avatar} className="w-12 h-12 rounded-full shadow-md" />}
+                       <span className={`text-3xl font-black ${isSpinning ? 'text-gray-400' : 'text-purple-600'}`}>{pickerResult.firstName}</span>
+                     </motion.div>
+                   ) : (
+                     <span className="text-gray-400 font-bold text-xl">Ready to spin...</span>
+                   )}
+                 </AnimatePresence>
+              </div>
+
+              <div className="flex gap-3">
+                <button onClick={() => setShowPicker(false)} className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200">Close</button>
+                <button onClick={pickRandomStudent} disabled={isSpinning || pickerSelectedGroups.length === 0} className={`flex-1 px-4 py-3 font-bold rounded-xl transition ${isSpinning ? 'bg-gray-300' : 'bg-purple-600 text-white hover:bg-purple-700'}`}>
+                  {isSpinning ? 'SPINNING...' : 'SPIN THE WHEEL'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Saved Groupings Modal */}
+      <AnimatePresence>
+        {showSaved && (
+          <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+            <motion.div initial={{scale:0.95}} animate={{scale:1}} exit={{scale:0.95}} className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-800">Saved Groupings</h2>
+                <button onClick={() => setShowSaved(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+              </div>
+              
+              <button onClick={saveGrouping} disabled={groups.length === 0} className="w-full mb-6 py-3 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 disabled:opacity-50">
+                💾 Save Current Grouping
+              </button>
+
+              <div className="max-h-[60vh] overflow-y-auto space-y-3">
+                {savedGroupings.length === 0 && <p className="text-center text-gray-500 py-8">No saved groupings yet.</p>}
+                {savedGroupings.map((g, idx) => (
+                  <div key={idx} className="p-4 bg-gray-50 border border-gray-200 rounded-xl flex justify-between items-center">
+                    <div>
+                      <div className="font-bold text-gray-800">{g.name}</div>
+                      <div className="text-sm text-gray-500">{g.groupsToSave ? g.groupsToSave.length : g.groups.length} Groups</div>
+                    </div>
+                    <button onClick={() => loadGrouping(g)} className="px-4 py-2 bg-blue-100 text-blue-700 font-bold rounded-lg hover:bg-blue-200">
+                      Load
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 };
