@@ -218,23 +218,23 @@ const GroupMaker = ({
     let studentToMove = null;
     
     if (sourceId === 'unassigned') {
-      studentToMove = unassignedStudents.find(s => s.id === studentId);
+      studentToMove = unassignedStudents.find(s => String(s.id) === String(studentId));
     } else {
-      const g = groups.find(g => g.id === sourceId);
-      if (g) studentToMove = g.students.find(s => s.id === studentId);
+      const g = groups.find(g => String(g.id) === String(sourceId));
+      if (g) studentToMove = g.students.find(s => String(s.id) === String(studentId));
     }
 
     if (!studentToMove) return;
 
     if (sourceId === 'unassigned') {
-      setUnassignedStudents(prev => prev.filter(s => s.id !== studentId));
+      setUnassignedStudents(prev => prev.filter(s => String(s.id) !== String(studentId)));
     } else {
       setGroups(prev => prev.map(group => {
-        if (group.id === sourceId) {
+        if (String(group.id) === String(sourceId)) {
           return {
             ...group,
-            students: group.students.filter(s => s.id !== studentId),
-            leaderId: group.leaderId === studentId ? null : group.leaderId
+            students: group.students.filter(s => String(s.id) !== String(studentId)),
+            leaderId: String(group.leaderId) === String(studentId) ? null : group.leaderId
           };
         }
         return group;
@@ -245,7 +245,7 @@ const GroupMaker = ({
       setUnassignedStudents(prev => [...prev, studentToMove]);
     } else {
       setGroups(prev => prev.map(group => {
-        if (group.id === targetId) {
+        if (String(group.id) === String(targetId)) {
           return { ...group, students: [...group.students, studentToMove] };
         }
         return group;
@@ -485,7 +485,13 @@ const GroupMaker = ({
     const { updatedGroups } = checkAndResetScores(loadedGroups);
     setGroups(updatedGroups);
 
-    setUnassignedStudents([]);
+    // Compute unassigned students by removing students that are already in groups
+    const assignedIds = new Set();
+    updatedGroups.forEach(g => {
+      g.students.forEach(s => assignedIds.add(String(s.id)));
+    });
+    setUnassignedStudents(students.filter(s => !assignedIds.has(String(s.id))));
+
     setShowSaved(false);
     if (showToast) showToast('Grouping loaded!');
   };
@@ -537,7 +543,7 @@ const GroupMaker = ({
     return (
     <motion.div 
       layout
-      layoutId={student.id}
+      layoutId={String(student.id)}
       draggable
       onDragStart={(e) => handleDragStart(e, student.id, groupId)}
       className="flex items-center justify-between p-2 mb-2 bg-white rounded-lg border border-gray-100 shadow-sm cursor-grab active:cursor-grabbing hover:border-blue-300 transition-colors"
