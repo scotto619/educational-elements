@@ -1,6 +1,7 @@
 // GroupMaker.js - Smart Group Creation Tool (Redesigned)
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getAvatarImage, calculateAvatarLevel } from '../../utils/gameHelpers';
 
 const GroupMaker = ({ 
   students = [], 
@@ -13,6 +14,7 @@ const GroupMaker = ({
   const [unassignedStudents, setUnassignedStudents] = useState([]);
   const [groups, setGroups] = useState([]);
   const [studentPoints, setStudentPoints] = useState({}); // { studentId: points }
+  const [showHistoryForGroup, setShowHistoryForGroup] = useState(null); // groupId
   
   // Settings Mode
   const [showSettings, setShowSettings] = useState(false);
@@ -44,6 +46,55 @@ const GroupMaker = ({
       setUnassignedStudents([...students]);
     }
   }, [students, groups.length]);
+
+  // --- Date Check & Reset Logic ---
+  const checkAndResetScores = (groupArray) => {
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    
+    // Get the Monday of this week
+    const currentDay = today.getDay();
+    const diff = today.getDate() - currentDay + (currentDay === 0 ? -6 : 1); // adjust when day is sunday
+    const thisMonday = new Date(today.setDate(diff));
+    const thisMondayStr = thisMonday.toISOString().split('T')[0];
+
+    let hasChanges = false;
+    const updatedGroups = groupArray.map(g => {
+      const scores = g.scores || { daily: 0, weekly: 0, lastUpdatedDaily: todayStr, lastUpdatedWeekly: thisMondayStr };
+      let updatedScores = { ...scores };
+      let changed = false;
+
+      if (scores.lastUpdatedDaily !== todayStr) {
+        updatedScores.daily = 0;
+        updatedScores.lastUpdatedDaily = todayStr;
+        changed = true;
+      }
+
+      // Check if the lastUpdatedWeekly is before this Monday
+      if (!scores.lastUpdatedWeekly || Array.isArray(scores.lastUpdatedWeekly) || scores.lastUpdatedWeekly < thisMondayStr) {
+        updatedScores.weekly = 0;
+        updatedScores.lastUpdatedWeekly = thisMondayStr;
+        changed = true;
+      }
+
+      if (changed) {
+        hasChanges = true;
+        return { ...g, scores: updatedScores };
+      }
+      return g;
+    });
+
+    return { updatedGroups, hasChanges };
+  };
+
+  useEffect(() => {
+    if (groups.length > 0) {
+      const { updatedGroups, hasChanges } = checkAndResetScores(groups);
+      if (hasChanges) {
+        setGroups(updatedGroups);
+      }
+    }
+  }, [groups.length]);
 
   useEffect(() => {
     if (groupingMethod === 'size' && students.length > 0) {
@@ -95,7 +146,8 @@ const GroupMaker = ({
       name: `Group ${prev.length + 1}`,
       students: [],
       leaderId: null,
-      scores: { daily: 0, weekly: 0 }
+      scores: { daily: 0, weekly: 0, lastUpdatedDaily: new Date().toISOString().split('T')[0], lastUpdatedWeekly: new Date().toISOString().split('T')[0] },
+      pointHistory: []
     }]);
   };
 
@@ -182,22 +234,71 @@ const GroupMaker = ({
     }));
   };
 
-  const updateGroupScore = (groupId, type, delta) => {
+  const getTodayStr = () => new Date().toISOString().split('T')[0];
+
+  const updateGroupScore = (groupId, type, delta, reason = 'Teacher Adjustment') => {
     setGroups(prev => prev.map(g => {
       if (g.id === groupId) {
+        const historyEntry = {
+          id: Date.now(),
+          target: 'Group',
+          delta,
+          type,
+          reason,
+          timestamp: new Date().toLocaleTimeString()
+        };
+
+        const newDaily = type === 'daily' ? Math.max(0, g.scores.daily + delta) : g.scores.daily;
+        const newWeekly = type === 'weekly' ? Math.max(0, g.scores.weekly + delta) : g.scores.weekly;
+
         return {
           ...g,
-          scores: { ...g.scores, [type]: Math.max(0, g.scores[type] + delta) }
+          scores: { 
+            ...g.scores, 
+            daily: newDaily,
+            weekly: newWeekly,
+            lastUpdatedDaily: type === 'daily' ? getTodayStr() : g.scores.lastUpdatedDaily,
+            lastUpdatedWeekly: type === 'weekly' ? getTodayStr() : g.scores.lastUpdatedWeekly
+          },
+          pointHistory: [historyEntry, ...(g.pointHistory || [])].slice(0, 50)
         };
       }
       return g;
     }));
   };
 
-  const updateStudentPoints = (studentId, delta) => {
+  const updateStudentPoints = (groupId, studentId, studentName, delta) => {
+    // 1. Update individual floating point state 
     setStudentPoints(prev => ({
       ...prev,
       [studentId]: Math.max(0, (prev[studentId] || 0) + delta)
+    }));
+
+    // 2. Cascade points to the group's daily and weekly totals
+    setGroups(prev => prev.map(g => {
+      if (g.id === groupId) {
+        const historyEntry = {
+          id: Date.now(),
+          target: studentName,
+          delta,
+          type: 'daily & weekly',
+          reason: 'Individual Award',
+          timestamp: new Date().toLocaleTimeString()
+        };
+
+        return {
+          ...g,
+          scores: {
+            ...g.scores,
+            daily: Math.max(0, g.scores.daily + delta),
+            weekly: Math.max(0, g.scores.weekly + delta),
+            lastUpdatedDaily: getTodayStr(),
+            lastUpdatedWeekly: getTodayStr()
+          },
+          pointHistory: [historyEntry, ...(g.pointHistory || [])].slice(0, 50)
+        };
+      }
+      return g;
     }));
   };
 
@@ -298,7 +399,8 @@ const GroupMaker = ({
       name: `Group ${i + 1}`,
       students: arr,
       leaderId: null,
-      scores: { daily: 0, weekly: 0 }
+      scores: { daily: 0, weekly: 0, lastUpdatedDaily: new Date().toISOString().split('T')[0], lastUpdatedWeekly: new Date().toISOString().split('T')[0] },
+      pointHistory: []
     }));
 
     setGroups(finalGroups);
@@ -331,17 +433,24 @@ const GroupMaker = ({
   };
 
   const loadGrouping = (grouping) => {
+    let loadedGroups = [];
     if (grouping.groupsToSave) {
-      setGroups(grouping.groupsToSave);
+      loadedGroups = grouping.groupsToSave;
     } else if (grouping.groups) {
-      setGroups(grouping.groups.map((arr, i) => ({
+      loadedGroups = grouping.groups.map((arr, i) => ({
         id: generateNewGroupId(),
         name: `Group ${i + 1}`,
         students: arr,
         leaderId: null,
-        scores: { daily: 0, weekly: 0 }
-      })));
+        scores: { daily: 0, weekly: 0, lastUpdatedDaily: new Date().toISOString().split('T')[0], lastUpdatedWeekly: new Date().toISOString().split('T')[0] },
+        pointHistory: []
+      }));
     }
+    
+    // Check dates and reset if necessary on load
+    const { updatedGroups } = checkAndResetScores(loadedGroups);
+    setGroups(updatedGroups);
+
     setUnassignedStudents([]);
     setShowSaved(false);
     if (showToast) showToast('Grouping loaded!');
@@ -387,7 +496,11 @@ const GroupMaker = ({
     }, 100);
   };
 
-  const renderStudentCard = (student, groupId) => (
+  const renderStudentCard = (student, groupId) => {
+    const level = calculateAvatarLevel(student.totalPoints || 0);
+    const avatarImg = getAvatarImage(student.avatarBase, level);
+    
+    return (
     <motion.div 
       layout
       layoutId={student.id}
@@ -396,8 +509,8 @@ const GroupMaker = ({
       className="flex items-center justify-between p-2 mb-2 bg-white rounded-lg border border-gray-100 shadow-sm cursor-grab active:cursor-grabbing hover:border-blue-300 transition-colors"
     >
       <div className="flex items-center space-x-2">
-        {student.avatar && (
-          <img src={student.avatar} alt={student.firstName} className="w-8 h-8 rounded-full border border-gray-200" />
+        {avatarImg && (
+          <img src={avatarImg} alt={student.firstName} className="w-8 h-8 rounded-full border border-gray-200 object-cover bg-blue-50" />
         )}
         <span className="font-semibold text-gray-700">{student.firstName}</span>
         {groupId !== 'unassigned' && groups.find(g => g.id === groupId)?.leaderId === student.id && (
@@ -408,12 +521,12 @@ const GroupMaker = ({
       {groupId !== 'unassigned' && (
         <div className="flex items-center space-x-1">
           <button 
-            onClick={() => updateStudentPoints(student.id, -1)}
+            onClick={() => updateStudentPoints(groupId, student.id, student.firstName, -1)}
             className="w-6 h-6 text-xs bg-red-100 text-red-600 rounded-full hover:bg-red-200 flex items-center justify-center font-bold"
           >-</button>
           <span className="text-sm font-bold w-4 text-center">{studentPoints[student.id] || 0}</span>
           <button 
-            onClick={() => updateStudentPoints(student.id, 1)}
+            onClick={() => updateStudentPoints(groupId, student.id, student.firstName, 1)}
             className="w-6 h-6 text-xs bg-green-100 text-green-600 rounded-full hover:bg-green-200 flex items-center justify-center font-bold"
           >+</button>
           <button 
@@ -426,7 +539,7 @@ const GroupMaker = ({
         </div>
       )}
     </motion.div>
-  );
+  )};
 
   if (students.length === 0) {
     return (
@@ -626,7 +739,10 @@ const GroupMaker = ({
                       onChange={(e) => updateGroupName(group.id, e.target.value)}
                       className="bg-transparent font-bold text-lg w-full outline-none mr-2 focus:bg-white/50 rounded px-1 transition-colors"
                     />
-                    <button onClick={() => removeGroup(group.id)} className="text-gray-500 hover:text-red-500 font-bold" title="Remove Group">✕</button>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => setShowHistoryForGroup(group.id)} className="text-blue-500 hover:text-blue-700 font-bold text-sm bg-blue-50 px-2 py-1 rounded" title="View History">📜</button>
+                      <button onClick={() => removeGroup(group.id)} className="text-gray-500 hover:text-red-500 font-bold" title="Remove Group">✕</button>
+                    </div>
                   </div>
 
                   {/* Group Scores (Daily & Weekly) */}
@@ -702,7 +818,7 @@ const GroupMaker = ({
                 </button>
               </div>
 
-              <div className="h-32 flex items-center justify-center bg-gray-50 rounded-xl border-4 border-gray-100 mb-6 relative overflow-hidden">
+               <div className="h-32 flex items-center justify-center bg-gray-50 rounded-xl border-4 border-gray-100 mb-6 relative overflow-hidden">
                  <AnimatePresence mode="popLayout">
                    {pickerResult ? (
                      <motion.div 
@@ -712,7 +828,9 @@ const GroupMaker = ({
                        exit={{ y: -20, opacity: 0, position: 'absolute' }}
                        className="flex items-center space-x-3"
                      >
-                       {pickerResult.avatar && <img src={pickerResult.avatar} className="w-12 h-12 rounded-full shadow-md" />}
+                       {getAvatarImage(pickerResult.avatarBase, calculateAvatarLevel(pickerResult.totalPoints || 0)) && (
+                         <img src={getAvatarImage(pickerResult.avatarBase, calculateAvatarLevel(pickerResult.totalPoints || 0))} className="w-12 h-12 rounded-full shadow-md object-cover bg-blue-50" />
+                       )}
                        <span className={`text-3xl font-black ${isSpinning ? 'text-gray-400' : 'text-purple-600'}`}>{pickerResult.firstName}</span>
                      </motion.div>
                    ) : (
@@ -760,6 +878,47 @@ const GroupMaker = ({
                   </div>
                 ))}
               </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Point History Modal */}
+      <AnimatePresence>
+        {showHistoryForGroup && (
+          <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+            <motion.div initial={{scale:0.95}} animate={{scale:1}} exit={{scale:0.95}} className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                  <span>📜</span> {groups.find(g => g.id === showHistoryForGroup)?.name} History
+                </h2>
+                <button onClick={() => setShowHistoryForGroup(null)} className="text-gray-400 hover:text-gray-600 font-bold text-xl">✕</button>
+              </div>
+              
+              <div className="max-h-[50vh] overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+                {groups.find(g => g.id === showHistoryForGroup)?.pointHistory?.length > 0 ? (
+                  groups.find(g => g.id === showHistoryForGroup).pointHistory.map(entry => (
+                    <div key={entry.id} className="flex justify-between items-center bg-gray-50 p-3 rounded-lg border border-gray-100">
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-gray-800 text-sm">
+                           {entry.delta > 0 ? '+' : ''}{entry.delta} from {entry.target}
+                        </span>
+                        <span className="text-xs text-gray-500">{entry.reason}</span>
+                      </div>
+                      <div className="flex flex-col items-end">
+                        <span className="text-xs font-medium text-gray-400 uppercase">{entry.type}</span>
+                        <span className="text-xs text-gray-400">{entry.timestamp}</span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-center text-gray-500 py-6 italic border-2 border-dashed border-gray-100 rounded-xl">No point history for this group yet.</p>
+                )}
+              </div>
+              
+              <button onClick={() => setShowHistoryForGroup(null)} className="mt-6 w-full py-2 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors">
+                Close
+              </button>
             </motion.div>
           </motion.div>
         )}
