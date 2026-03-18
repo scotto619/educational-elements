@@ -173,10 +173,15 @@ const MultiplayerAgarGame = ({
       
       playerRef.current = ref(database, `gameRooms/${roomId}/players/${localPlayer.id}`);
       
-      // Set initial state
-      await set(playerRef.current, {
-        ...localPlayer,
-        timestamp: Date.now()
+      // We must write roomCode for Firebase Validation Rules to pass!
+      await update(ref(database, `gameRooms/${roomId}`), {
+        roomCode: classData.classCode,
+        gameType: 'cell-arena',
+        lastActivity: Date.now(),
+        [`players/${localPlayer.id}`]: {
+          ...localPlayer,
+          timestamp: Date.now()
+        }
       });
 
       // Manage disconnects
