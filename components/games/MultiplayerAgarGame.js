@@ -1,24 +1,27 @@
-// components/games/MultiplayerAgarGame.js - Real-time Multiplayer Agar Game
+// components/games/MultiplayerAgarGame.js - Optimized Real-time Multiplayer Agar Game
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { database } from '../../utils/firebase';
-import { ref, push, set, onValue, off, remove, onDisconnect } from 'firebase/database';
+import { ref, push, set, update, onChildAdded, onChildChanged, onChildRemoved, off, remove, onDisconnect } from 'firebase/database';
 
 const MultiplayerAgarGame = ({ 
   gameMode = "digital", 
   showToast, 
   studentData, 
   updateStudentData,
-  classData 
+  classData,
+  classmates = []
 }) => {
   const canvasRef = useRef(null);
-  const gameLoopRef = useRef(null);
+  const animationFrameRef = useRef(null);
+  const networkIntervalRef = useRef(null);
   const playerRef = useRef(null);
-  const gameRoomRef = useRef(null);
+  const roomPath = useRef(null);
   
   const [gameState, setGameState] = useState('menu'); // menu, joining, playing, gameOver
-  const [connectedPlayers, setConnectedPlayers] = useState({});
   const [gameRoom, setGameRoom] = useState(null);
   const [score, setScore] = useState(0);
+  const [leaderboard, setLeaderboard] = useState([]);
+  const [activePlayerCount, setActivePlayerCount] = useState(0);
   const [gameStats, setGameStats] = useState({
     cellsEaten: 0,
     timePlayed: 0,
@@ -28,19 +31,21 @@ const MultiplayerAgarGame = ({
   // Game constants
   const WORLD_WIDTH = 4000;
   const WORLD_HEIGHT = 4000;
-  const MIN_CELL_SIZE = 10;
-  const MAX_CELL_SIZE = 200;
-  const FOOD_COUNT = 1200;
+  const MIN_CELL_SIZE = 15;
+  const MAX_CELL_SIZE = 300;
+  const FOOD_COUNT = 800;
   const VIEWPORT_WIDTH = 800;
   const VIEWPORT_HEIGHT = 600;
-  const UPDATE_RATE = 50; // ms between updates
+  const NETWORK_RATE = 100; // ms between Firebase syncs
 
-  // Game objects
+  // Game state held entirely in refs for requestAnimationFrame
   const gameObjects = useRef({
     localPlayer: null,
-    food: [],
+    remotePlayers: {}, // { id: {x, y, targetX, targetY, size, name, color, score} }
+    food: {}, // { id: {x, y, size, color} }
     camera: { x: 0, y: 0 },
-    lastUpdate: 0
+    lastNetworkSync: 0,
+    mouse: { x: VIEWPORT_WIDTH / 2, y: VIEWPORT_HEIGHT / 2 }
   });
 
   // Player colors
@@ -52,25 +57,103 @@ const MultiplayerAgarGame = ({
     '#F39C12', '#E67E22', '#E74C3C', '#1ABC9C'
   ];
 
-  // Initialize local player
-  const createLocalPlayer = useCallback(() => {
-    const colorIndex = Object.keys(connectedPlayers).length % PLAYER_COLORS.length;
-    return {
-      id: `${studentData.id}_${Date.now()}`,
-      name: studentData.firstName || 'Student',
-      x: Math.random() * WORLD_WIDTH,
-      y: Math.random() * WORLD_HEIGHT,
-      size: 20,
-      color: PLAYER_COLORS[colorIndex],
-      targetX: 0,
-      targetY: 0,
-      score: 0,
-      lastUpdate: Date.now(),
-      isLocal: true
-    };
-  }, [studentData, connectedPlayers]);
+  // Utility functions
+  const distance = (x1, y1, x2, y2) => Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+  const getCellSpeed = (size) => Math.max(1.5, 6 - (size - MIN_CELL_SIZE) / 25);
+  const getRandomColor = () => `hsl(${Math.random() * 360}, 80%, 60%)`;
 
-  // Create or join game room
+  // Determine an initial spawn point
+  const getSpawnPoint = () => ({
+    x: 200 + Math.random() * (WORLD_WIDTH - 400),
+    y: 200 + Math.random() * (WORLD_HEIGHT - 400)
+  });
+
+  const createLocalPlayer = useCallback(() => {
+    // Attempt to keep same color per character
+    const charCode = (studentData?.firstName?.charCodeAt(0) || 0) + (studentData?.lastName?.charCodeAt(0) || 0);
+    const colorIndex = charCode % PLAYER_COLORS.length;
+    const spawn = getSpawnPoint();
+
+    return {
+      id: studentData?.id || `anon_${Date.now()}`,
+      name: studentData?.firstName || 'Student',
+      x: spawn.x,
+      y: spawn.y,
+      size: MIN_CELL_SIZE,
+      color: PLAYER_COLORS[colorIndex],
+      targetX: spawn.x,
+      targetY: spawn.y,
+      score: 0,
+      active: true
+    };
+  }, [studentData]);
+
+  // Network listeners setup
+  const setupNetworkListeners = (roomId) => {
+    const foodRefPath = ref(database, `gameRooms/${roomId}/food`);
+    const playersRefPath = ref(database, `gameRooms/${roomId}/players`);
+
+    // --- FOOD LISTENERS ---
+    onChildAdded(foodRefPath, (snapshot) => {
+      if (snapshot.exists()) {
+        gameObjects.current.food[snapshot.key] = snapshot.val();
+      }
+    });
+
+    onChildRemoved(foodRefPath, (snapshot) => {
+      delete gameObjects.current.food[snapshot.key];
+    });
+
+    // --- PLAYER LISTENERS ---
+    onChildAdded(playersRefPath, (snapshot) => {
+      if (snapshot.exists()) {
+        const p = snapshot.val();
+        if (p.id !== gameObjects.current.localPlayer?.id && p.active) {
+          gameObjects.current.remotePlayers[snapshot.key] = p;
+        }
+      }
+    });
+
+    onChildChanged(playersRefPath, (snapshot) => {
+      if (snapshot.exists()) {
+        const p = snapshot.val();
+        
+        // If this is US (from server), we check if we got eaten!
+        if (p.id === gameObjects.current.localPlayer?.id) {
+          if (!p.active) {
+            setGameState('gameOver');
+            showToast('You were eaten!', 'error');
+          } else if (p.size < gameObjects.current.localPlayer.size - 10) {
+            // Significant size reduction = eaten or forced resize
+            gameObjects.current.localPlayer.size = p.size;
+            gameObjects.current.localPlayer.score = p.score;
+            setGameState('gameOver'); 
+            showToast('You were eaten!', 'error');
+          }
+        } 
+        // If it's a remote player
+        else {
+          if (p.active) {
+            gameObjects.current.remotePlayers[snapshot.key] = p;
+          } else {
+            delete gameObjects.current.remotePlayers[snapshot.key];
+          }
+        }
+      }
+    });
+
+    onChildRemoved(playersRefPath, (snapshot) => {
+      delete gameObjects.current.remotePlayers[snapshot.key];
+    });
+  };
+
+  const removeNetworkListeners = (roomId) => {
+    if (!roomId) return;
+    off(ref(database, `gameRooms/${roomId}/food`));
+    off(ref(database, `gameRooms/${roomId}/players`));
+  };
+
+  // Join the Game Room
   const joinGameRoom = useCallback(async () => {
     if (!classData?.classCode) {
       showToast('Class code not found!', 'error');
@@ -80,505 +163,372 @@ const MultiplayerAgarGame = ({
     setGameState('joining');
     
     try {
-      const roomId = `agar_${classData.classCode}`;
-      gameRoomRef.current = ref(database, `gameRooms/${roomId}`);
+      const roomId = `agar_${classData.classCode.toLowerCase()}`;
+      roomPath.current = roomId;
       
-      // Create local player
       const localPlayer = createLocalPlayer();
       gameObjects.current.localPlayer = localPlayer;
+      gameObjects.current.remotePlayers = {}; // reset
+      gameObjects.current.food = {}; // reset
       
-      // Set up player reference
       playerRef.current = ref(database, `gameRooms/${roomId}/players/${localPlayer.id}`);
       
-      // Join the game room
+      // Set initial state
       await set(playerRef.current, {
         ...localPlayer,
-        connectedAt: Date.now(),
-        active: true
+        timestamp: Date.now()
       });
 
-      // Set up disconnect cleanup
-      onDisconnect(playerRef.current).remove();
+      // Manage disconnects
+      onDisconnect(playerRef.current).update({ active: false, size: 0 });
 
-      // Initialize food if we're the first player
-      const foodRef = ref(database, `gameRooms/${roomId}/food`);
-      const foodSnapshot = await new Promise(resolve => {
-        onValue(foodRef, resolve, { onlyOnce: true });
-      });
-
-      if (!foodSnapshot.exists()) {
-        const foodData = {};
-        for (let i = 0; i < FOOD_COUNT; i++) {
-          const foodId = `food_${i}`;
-          foodData[foodId] = {
-            id: foodId,
-            x: Math.random() * WORLD_WIDTH,
-            y: Math.random() * WORLD_HEIGHT,
-            size: 3 + Math.random() * 4,
-            color: `hsl(${Math.random() * 360}, 70%, 60%)`
-          };
-        }
-        await set(foodRef, foodData);
-      }
-
-      // Listen for other players
-      const playersRef = ref(database, `gameRooms/${roomId}/players`);
-      onValue(playersRef, (snapshot) => {
-        const players = snapshot.val() || {};
-        setConnectedPlayers(players);
-      });
-
-      // Listen for food updates
-      onValue(foodRef, (snapshot) => {
-        const food = snapshot.val() || {};
-        gameObjects.current.food = Object.values(food);
-      });
+      // Check if food exists, if not generate initial food (avoids 1200 items, just do 400 locally!)
+      // BUT, Firebase limit... we should let players dynamically spawn food over time if low!
+      // For now we'll spawn some if there's very little.
+      
+      setupNetworkListeners(roomId);
 
       setGameRoom(roomId);
+      setScore(0);
+      setGameStats({ cellsEaten: 0, timePlayed: 0, playersEaten: 0 });
       setGameState('playing');
-      showToast(`Joined multiplayer arena! ${Object.keys(connectedPlayers).length} players online`, 'success');
+      showToast(`Joined the arena!`, 'success');
+
+      // Start the network sync interval
+      networkIntervalRef.current = setInterval(syncNetwork, NETWORK_RATE);
+
+      // Periodically generate food if room is barren (only the first player or randomly)
+      setTimeout(() => generateFoodIfNeeded(roomId), 2000);
 
     } catch (error) {
       console.error('Error joining game room:', error);
       showToast('Failed to join multiplayer game', 'error');
       setGameState('menu');
     }
-  }, [classData, createLocalPlayer, connectedPlayers, showToast]);
+  }, [classData, createLocalPlayer, showToast]);
 
-  // Leave game room
+  const generateFoodIfNeeded = async (roomId) => {
+    if (Object.keys(gameObjects.current.food).length < FOOD_COUNT / 4) {
+      // Spawn a batch of 50 food items (throttling to prevent massive writes)
+      const updates = {};
+      for(let i=0; i<50; i++) {
+        const id = `food_${Date.now()}_${Math.floor(Math.random()*1000)}`;
+        updates[id] = {
+          id,
+          x: Math.random() * WORLD_WIDTH,
+          y: Math.random() * WORLD_HEIGHT,
+          size: 3 + Math.random() * 4,
+          color: getRandomColor()
+        };
+      }
+      try {
+        await update(ref(database, `gameRooms/${roomId}/food`), updates);
+      } catch (e) {
+        // ignore
+      }
+    }
+  };
+
   const leaveGameRoom = useCallback(async () => {
     try {
+      clearInterval(networkIntervalRef.current);
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+
       if (playerRef.current) {
-        await remove(playerRef.current);
+        await update(playerRef.current, { active: false, size: 0 });
       }
-      
-      // Clean up listeners
-      if (gameRoomRef.current) {
-        off(gameRoomRef.current);
-      }
+      removeNetworkListeners(roomPath.current);
       
       setGameState('menu');
-      setConnectedPlayers({});
-      setScore(0);
       
     } catch (error) {
       console.error('Error leaving game room:', error);
     }
   }, []);
 
-  // Update player position to Firebase
-  const updatePlayerPosition = useCallback(async (player) => {
-    if (!playerRef.current || !player) return;
-    
-    try {
-      await set(playerRef.current, {
-        ...player,
-        lastUpdate: Date.now(),
-        active: true
-      });
-    } catch (error) {
-      console.warn('Error updating player position:', error);
-    }
-  }, []);
+  // Update position to Firebase
+  const syncNetwork = useCallback(() => {
+    const loc = gameObjects.current.localPlayer;
+    if (!loc || !playerRef.current || gameState !== 'playing') return;
 
-  // Handle eating food
-  const eatFood = useCallback(async (foodId, player) => {
-    if (!gameRoom) return;
+    // Send the current target and loc
+    update(playerRef.current, {
+      x: Math.round(loc.x),
+      y: Math.round(loc.y),
+      targetX: Math.round(loc.targetX),
+      targetY: Math.round(loc.targetY),
+      size: Math.round(loc.size * 10) / 10,
+      score: loc.score,
+      timestamp: Date.now()
+    }).catch(() => {});
 
-    try {
-      const foodRef = ref(database, `gameRooms/${gameRoom}/food/${foodId}`);
-      const food = gameObjects.current.food.find(f => f.id === foodId);
-      
-      if (food) {
-        // Remove the eaten food
-        await remove(foodRef);
-        
-        // Create new food elsewhere
-        const newFoodId = `food_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        const newFoodRef = ref(database, `gameRooms/${gameRoom}/food/${newFoodId}`);
-        await set(newFoodRef, {
-          id: newFoodId,
-          x: Math.random() * WORLD_WIDTH,
-          y: Math.random() * WORLD_HEIGHT,
-          size: 3 + Math.random() * 4,
-          color: `hsl(${Math.random() * 360}, 70%, 60%)`
-        });
-
-        // Update local player
-        player.size += food.size * 0.3;
-        player.size = Math.min(player.size, MAX_CELL_SIZE);
-        player.score += Math.floor(food.size * 2);
-        
-        setScore(prev => prev + Math.floor(food.size * 2));
-        setGameStats(prev => ({ ...prev, cellsEaten: prev.cellsEaten + 1 }));
-      }
-    } catch (error) {
-      console.warn('Error handling food consumption:', error);
-    }
-  }, [gameRoom]);
-
-  // Handle eating another player
-  const eatPlayer = useCallback(async (eatenPlayerId, eater) => {
-    if (!gameRoom) return;
-
-    try {
-      const eatenPlayer = connectedPlayers[eatenPlayerId];
-      if (!eatenPlayer) return;
-
-      // Update eater
-      eater.size += eatenPlayer.size * 0.7;
-      eater.size = Math.min(eater.size, MAX_CELL_SIZE);
-      eater.score += Math.floor(eatenPlayer.size * 10);
-
-      setScore(prev => prev + Math.floor(eatenPlayer.size * 10));
-      setGameStats(prev => ({ ...prev, playersEaten: prev.playersEaten + 1 }));
-      
-      showToast(`You ate ${eatenPlayer.name}! +${Math.floor(eatenPlayer.size * 10)} points`, 'success');
-
-      // If we ate someone, respawn them
-      const respawnedPlayer = {
-        ...eatenPlayer,
+    // Every sync, maybe spawn 1 food if room is getting empty
+    if (Math.random() < 0.2 && Object.keys(gameObjects.current.food).length < FOOD_COUNT) {
+      const id = `f_${Date.now()}`;
+      set(ref(database, `gameRooms/${roomPath.current}/food/${id}`), {
+        id,
         x: Math.random() * WORLD_WIDTH,
         y: Math.random() * WORLD_HEIGHT,
-        size: 20,
-        score: Math.floor(eatenPlayer.score * 0.5) // Lose half their score
-      };
-
-      const eatenPlayerRef = ref(database, `gameRooms/${gameRoom}/players/${eatenPlayerId}`);
-      await set(eatenPlayerRef, respawnedPlayer);
-
-    } catch (error) {
-      console.warn('Error handling player consumption:', error);
-    }
-  }, [gameRoom, connectedPlayers, showToast]);
-
-  // Check collisions and eating
-  const checkCollisions = useCallback((localPlayer) => {
-    if (!localPlayer) return;
-
-    // Check food collisions
-    gameObjects.current.food.forEach(food => {
-      const dist = distance(localPlayer.x, localPlayer.y, food.x, food.y);
-      if (dist < localPlayer.size * 0.8 + food.size) {
-        eatFood(food.id, localPlayer);
-      }
-    });
-
-    // Check player collisions
-    Object.values(connectedPlayers).forEach(otherPlayer => {
-      if (otherPlayer.id === localPlayer.id || !otherPlayer.active) return;
-      
-      const dist = distance(localPlayer.x, localPlayer.y, otherPlayer.x, otherPlayer.y);
-      const sizeDiff = localPlayer.size - otherPlayer.size;
-      
-      if (sizeDiff > otherPlayer.size * 0.1 && dist < localPlayer.size * 0.8) {
-        // We can eat the other player
-        eatPlayer(otherPlayer.id, localPlayer);
-      } else if (sizeDiff < -localPlayer.size * 0.1 && dist < otherPlayer.size * 0.8) {
-        // We got eaten - game over for us
-        setGameState('gameOver');
-        showToast(`You were eaten by ${otherPlayer.name}!`, 'error');
-      }
-    });
-  }, [connectedPlayers, eatFood, eatPlayer]);
-
-  // Utility functions
-  const distance = (x1, y1, x2, y2) => Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
-  const getCellSpeed = (size) => Math.max(1, 5 - (size - MIN_CELL_SIZE) / 20);
-
-  // Update camera to follow local player
-  const updateCamera = useCallback(() => {
-    const localPlayer = gameObjects.current.localPlayer;
-    if (!localPlayer) return;
-    
-    const camera = gameObjects.current.camera;
-    const targetCameraX = localPlayer.x - VIEWPORT_WIDTH / 2;
-    const targetCameraY = localPlayer.y - VIEWPORT_HEIGHT / 2;
-    
-    camera.x += (targetCameraX - camera.x) * 0.1;
-    camera.y += (targetCameraY - camera.y) * 0.1;
-
-    // Keep camera within bounds
-    camera.x = Math.max(0, Math.min(WORLD_WIDTH - VIEWPORT_WIDTH, camera.x));
-    camera.y = Math.max(0, Math.min(WORLD_HEIGHT - VIEWPORT_HEIGHT, camera.y));
-  }, []);
-
-  // Render game
-  const render = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    const objects = gameObjects.current;
-    const camera = objects.camera;
-
-    // Clear canvas
-    ctx.fillStyle = '#001122';
-    ctx.fillRect(0, 0, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
-
-    // Draw grid
-    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
-    ctx.lineWidth = 1;
-    const gridSize = 50;
-    
-    for (let x = -camera.x % gridSize; x < VIEWPORT_WIDTH; x += gridSize) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, VIEWPORT_HEIGHT);
-      ctx.stroke();
-    }
-    
-    for (let y = -camera.y % gridSize; y < VIEWPORT_HEIGHT; y += gridSize) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(VIEWPORT_WIDTH, y);
-      ctx.stroke();
-    }
-
-    // Draw food
-    objects.food.forEach(food => {
-      const screenX = food.x - camera.x;
-      const screenY = food.y - camera.y;
-
-      if (screenX + food.size >= -50 && screenX - food.size <= VIEWPORT_WIDTH + 50 &&
-          screenY + food.size >= -50 && screenY - food.size <= VIEWPORT_HEIGHT + 50) {
-        
-        ctx.fillStyle = food.color;
-        ctx.beginPath();
-        ctx.arc(screenX, screenY, food.size, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    });
-
-    // Draw players
-    const allPlayers = Object.values(connectedPlayers).filter(p => p.active);
-    
-    // Sort by size (smallest first, so largest renders on top)
-    allPlayers.sort((a, b) => a.size - b.size);
-    
-    allPlayers.forEach(player => {
-      const screenX = player.x - camera.x;
-      const screenY = player.y - camera.y;
-
-      if (screenX + player.size >= -50 && screenX - player.size <= VIEWPORT_WIDTH + 50 &&
-          screenY + player.size >= -50 && screenY - player.size <= VIEWPORT_HEIGHT + 50) {
-        
-        // Cell body with gradient
-        const gradient = ctx.createRadialGradient(
-          screenX - player.size * 0.3, 
-          screenY - player.size * 0.3, 
-          0, 
-          screenX, 
-          screenY, 
-          player.size
-        );
-        gradient.addColorStop(0, player.color);
-        gradient.addColorStop(1, player.color + '80');
-        
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.arc(screenX, screenY, player.size, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Cell border
-        const isLocalPlayer = player.id === objects.localPlayer?.id;
-        ctx.strokeStyle = isLocalPlayer ? '#FFD700' : 'rgba(255,255,255,0.3)';
-        ctx.lineWidth = isLocalPlayer ? 3 : 1;
-        ctx.beginPath();
-        ctx.arc(screenX, screenY, player.size, 0, Math.PI * 2);
-        ctx.stroke();
-
-        // Player name
-        const fontSize = Math.max(10, Math.min(18, player.size / 4));
-        ctx.fillStyle = '#FFFFFF';
-        ctx.font = `bold ${fontSize}px Arial`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(player.name, screenX, screenY);
-
-        // Score display for local player
-        if (isLocalPlayer && player.size > 30) {
-          ctx.fillStyle = '#FFFF00';
-          ctx.font = `bold ${Math.min(12, fontSize - 2)}px Arial`;
-          ctx.fillText(player.score.toLocaleString(), screenX, screenY + fontSize + 2);
-        }
-      }
-    });
-
-    // Draw world borders
-    ctx.strokeStyle = '#FF4444';
-    ctx.lineWidth = 5;
-    ctx.setLineDash([10, 10]);
-    
-    const borderLeft = -camera.x;
-    const borderRight = WORLD_WIDTH - camera.x;
-    const borderTop = -camera.y;
-    const borderBottom = WORLD_HEIGHT - camera.y;
-    
-    if (borderLeft > -10 && borderLeft < VIEWPORT_WIDTH + 10) {
-      ctx.beginPath();
-      ctx.moveTo(borderLeft, 0);
-      ctx.lineTo(borderLeft, VIEWPORT_HEIGHT);
-      ctx.stroke();
-    }
-    
-    if (borderRight > -10 && borderRight < VIEWPORT_WIDTH + 10) {
-      ctx.beginPath();
-      ctx.moveTo(borderRight, 0);
-      ctx.lineTo(borderRight, VIEWPORT_HEIGHT);
-      ctx.stroke();
-    }
-    
-    if (borderTop > -10 && borderTop < VIEWPORT_HEIGHT + 10) {
-      ctx.beginPath();
-      ctx.moveTo(0, borderTop);
-      ctx.lineTo(VIEWPORT_WIDTH, borderTop);
-      ctx.stroke();
-    }
-    
-    if (borderBottom > -10 && borderBottom < VIEWPORT_HEIGHT + 10) {
-      ctx.beginPath();
-      ctx.moveTo(0, borderBottom);
-      ctx.lineTo(VIEWPORT_WIDTH, borderBottom);
-      ctx.stroke();
-    }
-    
-    ctx.setLineDash([]);
-  }, [connectedPlayers]);
-
-  // Main game loop
-  const gameLoop = useCallback(() => {
-    if (gameState !== 'playing') return;
-
-    const now = Date.now();
-    const objects = gameObjects.current;
-    const localPlayer = objects.localPlayer;
-    
-    if (!localPlayer) return;
-
-    // Update local player movement
-    const targetDist = distance(localPlayer.x, localPlayer.y, localPlayer.targetX, localPlayer.targetY);
-    if (targetDist > 5) {
-      const angle = Math.atan2(localPlayer.targetY - localPlayer.y, localPlayer.targetX - localPlayer.x);
-      const speed = getCellSpeed(localPlayer.size);
-      localPlayer.x += Math.cos(angle) * speed;
-      localPlayer.y += Math.sin(angle) * speed;
-    }
-
-    // Keep player within bounds
-    localPlayer.x = Math.max(localPlayer.size, Math.min(WORLD_WIDTH - localPlayer.size, localPlayer.x));
-    localPlayer.y = Math.max(localPlayer.size, Math.min(WORLD_HEIGHT - localPlayer.size, localPlayer.y));
-
-    // Check collisions
-    checkCollisions(localPlayer);
-
-    // Update camera
-    updateCamera();
-
-    // Update player position to Firebase (throttled)
-    if (now - objects.lastUpdate > UPDATE_RATE) {
-      updatePlayerPosition(localPlayer);
-      objects.lastUpdate = now;
-    }
-
-    // Render
-    render();
-
-    // Continue game loop
-    gameLoopRef.current = requestAnimationFrame(gameLoop);
-  }, [gameState, checkCollisions, updateCamera, updatePlayerPosition, render]);
-
-  // Mouse movement handler
-  const handleMouseMove = useCallback((event) => {
-    if (gameState !== 'playing') return;
-
-    const canvas = canvasRef.current;
-    const rect = canvas.getBoundingClientRect();
-    const mouseX = event.clientX - rect.left;
-    const mouseY = event.clientY - rect.top;
-
-    const objects = gameObjects.current;
-    const localPlayer = objects.localPlayer;
-    if (localPlayer) {
-      localPlayer.targetX = mouseX + objects.camera.x;
-      localPlayer.targetY = mouseY + objects.camera.y;
+        size: 3 + Math.random() * 4,
+        color: getRandomColor()
+      }).catch(()=>{});
     }
   }, [gameState]);
 
-  // Game loop effect
+  // Eating Mechanics
+  const checkEating = () => {
+    const p = gameObjects.current.localPlayer;
+    if (!p || gameState !== 'playing') return;
+
+    // Eat Food
+    Object.values(gameObjects.current.food).forEach(food => {
+      const dist = distance(p.x, p.y, food.x, food.y);
+      if (dist < p.size * 0.85 + food.size) {
+        // Eat it locally immediately
+        delete gameObjects.current.food[food.id];
+        
+        // Update stats
+        p.size = Math.min(MAX_CELL_SIZE, p.size + food.size * 0.2);
+        p.score += Math.floor(food.size * 2);
+        setScore(p.score);
+        setGameStats(s => ({...s, cellsEaten: s.cellsEaten + 1}));
+
+        // Send removal to Firebase
+        remove(ref(database, `gameRooms/${roomPath.current}/food/${food.id}`)).catch(()=>{});
+      }
+    });
+
+    // Eat Other Players
+    Object.values(gameObjects.current.remotePlayers).forEach(remote => {
+      const dist = distance(p.x, p.y, remote.x, remote.y);
+      const sizeDiff = p.size - remote.size;
+
+      // Can we eat them? (Must be 10% larger)
+      if (sizeDiff > remote.size * 0.1 && dist < p.size * 0.8) {
+        // Eat them!
+        p.size = Math.min(MAX_CELL_SIZE, p.size + remote.size * 0.5);
+        p.score += Math.floor(remote.size * 10);
+        setScore(p.score);
+        setGameStats(s => ({...s, playersEaten: s.playersEaten + 1}));
+        showToast(`You ate ${remote.name}! +${Math.floor(remote.size * 10)} pts`, 'success');
+
+        // Kill them in Firebase
+        update(ref(database, `gameRooms/${roomPath.current}/players/${remote.id}`), {
+          active: false,
+          size: 10,
+          killedBy: p.name
+        }).catch(()=>{});
+        
+        // Remove locally temporarily so we don't eat them multiple times this frame
+        delete gameObjects.current.remotePlayers[remote.id];
+      }
+    });
+  };
+
+  // Interpolate and handle movement
+  const updateMovement = () => {
+    const objs = gameObjects.current;
+    
+    // 1. Move Local Player
+    const p = objs.localPlayer;
+    if (p) {
+      // Update target based on mouse AND camera (mouse is screen relative)
+      p.targetX = objs.mouse.x + objs.camera.x;
+      p.targetY = objs.mouse.y + objs.camera.y;
+
+      const dist = distance(p.x, p.y, p.targetX, p.targetY);
+      if (dist > 5) {
+        const speed = getCellSpeed(p.size);
+        const ratio = Math.min(1, speed / dist);
+        p.x += (p.targetX - p.x) * ratio;
+        p.y += (p.targetY - p.y) * ratio;
+      }
+      p.x = Math.max(p.size, Math.min(WORLD_WIDTH - p.size, p.x));
+      p.y = Math.max(p.size, Math.min(WORLD_HEIGHT - p.size, p.y));
+
+      // Update camera smooth follow
+      const targetCamX = p.x - VIEWPORT_WIDTH / 2;
+      const targetCamY = p.y - VIEWPORT_HEIGHT / 2;
+      objs.camera.x += (targetCamX - objs.camera.x) * 0.1;
+      objs.camera.y += (targetCamY - objs.camera.y) * 0.1;
+      objs.camera.x = Math.max(0, Math.min(WORLD_WIDTH - VIEWPORT_WIDTH, objs.camera.x));
+      objs.camera.y = Math.max(0, Math.min(WORLD_HEIGHT - VIEWPORT_HEIGHT, objs.camera.y));
+    }
+
+    // 2. Interpolate Remote Players
+    Object.values(objs.remotePlayers).forEach(remote => {
+      const dist = distance(remote.x, remote.y, remote.targetX, remote.targetY);
+      if (dist > 2) {
+        const speed = getCellSpeed(remote.size);
+        // Slightly faster to catch up to network latency
+        const ratio = Math.min(1, (speed * 1.2) / dist);
+        remote.x += (remote.targetX - remote.x) * ratio;
+        remote.y += (remote.targetY - remote.y) * ratio;
+      }
+    });
+  };
+
+  const updatePeriodicState = () => {
+    // Render dynamic leaderboard every ~1s (handled here just for UI react updates)
+    const all = [gameObjects.current.localPlayer, ...Object.values(gameObjects.current.remotePlayers)].filter(Boolean);
+    setActivePlayerCount(all.length);
+    
+    const sorted = [...all].sort((a,b) => b.score - a.score).slice(0, 10);
+    setLeaderboard(sorted.map((s, i) => ({
+      rank: i+1,
+      name: s.name,
+      score: s.score,
+      isLocal: s.id === gameObjects.current.localPlayer?.id
+    })));
+  };
+
+  // Main Render/Update Loop
+  const loop = useCallback(() => {
+    if (gameState !== 'playing') return;
+
+    // Logic
+    updateMovement();
+    checkEating();
+
+    // Occasional UI updates for performance (we skip expensive React state setters on every frame)
+    if (Math.random() < 0.05) updatePeriodicState();
+
+    // Render 
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      const { camera, localPlayer, remotePlayers, food } = gameObjects.current;
+
+      // Clear
+      ctx.fillStyle = '#111827'; // Dark gray/bg
+      ctx.fillRect(0, 0, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
+
+      // Grid
+      ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+      ctx.lineWidth = 1;
+      const gridSize = 50;
+      for (let x = -camera.x % gridSize; x < VIEWPORT_WIDTH; x += gridSize) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, VIEWPORT_HEIGHT); ctx.stroke();
+      }
+      for (let y = -camera.y % gridSize; y < VIEWPORT_HEIGHT; y += gridSize) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(VIEWPORT_WIDTH, y); ctx.stroke();
+      }
+
+      // Draw World Borders
+      ctx.strokeStyle = '#ef4444';
+      ctx.lineWidth = 4;
+      ctx.setLineDash([10, 10]);
+      const padding = 2; // draw slightly inside so we see it
+      const borderL = -camera.x + padding;
+      const borderR = WORLD_WIDTH - camera.x - padding;
+      const borderT = -camera.y + padding;
+      const borderB = WORLD_HEIGHT - camera.y - padding;
+      ctx.strokeRect(borderL, borderT, WORLD_WIDTH, WORLD_HEIGHT);
+      ctx.setLineDash([]);
+
+      // Draw Food
+      Object.values(food).forEach(f => {
+        const sx = f.x - camera.x;
+        const sy = f.y - camera.y;
+        if (sx + f.size >= 0 && sx - f.size <= VIEWPORT_WIDTH && sy + f.size >= 0 && sy - f.size <= VIEWPORT_HEIGHT) {
+          ctx.fillStyle = f.color;
+          ctx.beginPath(); ctx.arc(sx, sy, f.size, 0, Math.PI * 2); ctx.fill();
+        }
+      });
+
+      // Draw all Players (sorted by size, smallest first so big eats visually properly)
+      const visiblePlayers = [localPlayer, ...Object.values(remotePlayers)].filter(Boolean)
+        .sort((a,b) => a.size - b.size);
+
+      visiblePlayers.forEach(p => {
+        const sx = p.x - camera.x;
+        const sy = p.y - camera.y;
+
+        if (sx + p.size >= -50 && sx - p.size <= VIEWPORT_WIDTH + 50 && sy + p.size >= -50 && sy - p.size <= VIEWPORT_HEIGHT + 50) {
+          const isLocal = p.id === localPlayer?.id;
+          
+          ctx.beginPath();
+          ctx.arc(sx, sy, p.size, 0, Math.PI * 2);
+          
+          const grad = ctx.createRadialGradient(sx - p.size*0.3, sy - p.size*0.3, 0, sx, sy, p.size);
+          grad.addColorStop(0, p.color);
+          grad.addColorStop(1, p.color + '80'); // transparency
+          
+          ctx.fillStyle = grad;
+          ctx.fill();
+
+          ctx.lineWidth = isLocal ? 4 : 2;
+          ctx.strokeStyle = isLocal ? '#eab308' : 'rgba(255,255,255,0.4)';
+          ctx.stroke();
+
+          // Text
+          ctx.fillStyle = 'white';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          let fSize = Math.max(12, p.size * 0.3);
+          ctx.font = `bold ${Math.min(fSize, 24)}px Inter, sans-serif`;
+          ctx.fillText(p.name, sx, sy - (p.size * 0.1));
+          
+          // Score under name if large enough
+          if (p.size > 30) {
+            ctx.font = `normal ${Math.min(fSize * 0.7, 16)}px Inter, sans-serif`;
+            ctx.fillStyle = 'rgba(255,255,255,0.8)';
+            ctx.fillText(Math.floor(p.size).toString(), sx, sy + (p.size * 0.3));
+          }
+        }
+      });
+    }
+
+    animationFrameRef.current = requestAnimationFrame(loop);
+  }, [gameState]);
+
   useEffect(() => {
     if (gameState === 'playing') {
-      gameLoopRef.current = requestAnimationFrame(gameLoop);
+      animationFrameRef.current = requestAnimationFrame(loop);
     }
-    return () => {
-      if (gameLoopRef.current) {
-        cancelAnimationFrame(gameLoopRef.current);
-      }
-    };
-  }, [gameState, gameLoop]);
+    return () => cancelAnimationFrame(animationFrameRef.current);
+  }, [gameState, loop]);
 
-  // Cleanup on unmount
   useEffect(() => {
-    return () => {
-      leaveGameRoom();
-      if (gameLoopRef.current) {
-        cancelAnimationFrame(gameLoopRef.current);
-      }
-    };
+    return () => leaveGameRoom();
   }, [leaveGameRoom]);
 
-  // Create leaderboard from connected players
-  const leaderboard = Object.values(connectedPlayers)
-    .filter(p => p.active)
-    .sort((a, b) => (Math.floor(b.size * 10) + b.score) - (Math.floor(a.size * 10) + a.score))
-    .slice(0, 10)
-    .map((player, index) => ({
-      rank: index + 1,
-      name: player.name,
-      score: Math.floor(player.size * 10) + player.score,
-      isLocalPlayer: player.id === gameObjects.current.localPlayer?.id
-    }));
+  const handleMouseMove = (e) => {
+    const rect = canvasRef.current.getBoundingClientRect();
+    gameObjects.current.mouse.x = e.clientX - rect.left;
+    gameObjects.current.mouse.y = e.clientY - rect.top;
+  };
 
   if (gameState === 'menu') {
     return (
-      <div className="bg-gradient-to-br from-blue-900 to-purple-900 rounded-xl p-8 text-white text-center min-h-96">
-        <div className="text-6xl mb-6">🔴</div>
-        <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent">
-          Multiplayer Cell Arena
-        </h2>
-        <p className="text-xl mb-6 text-blue-100">
-          Battle your classmates in real-time!
-        </p>
-        
-        <div className="mb-6 p-4 bg-blue-800 rounded-lg">
-          <div className="text-lg font-semibold mb-2">Class: {classData?.name || 'Unknown'}</div>
-          <div className="text-sm text-blue-200">Room Code: {classData?.classCode || 'N/A'}</div>
-        </div>
+      <div className="bg-gradient-to-br from-indigo-900 via-purple-900 to-indigo-900 rounded-2xl p-8 text-white text-center min-h-[500px] flex items-center justify-center shadow-xl border border-indigo-700/50 relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.1)_0,transparent_100%)] pointer-events-none"></div>
+        <div className="relative z-10 max-w-lg">
+          <div className="text-8xl mb-6 animate-pulse">🦠</div>
+          <h2 className="text-4xl md:text-5xl font-extrabold mb-4 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent drop-shadow-lg">
+            Cell Battle Arena
+          </h2>
+          <p className="text-xl mb-10 text-indigo-200">
+            Join your classmates in the arena. Eat dots to grow, and hunt smaller cells to claim victory!
+          </p>
+          
+          <div className="mb-8 p-6 bg-black/30 backdrop-blur-md rounded-2xl border border-white/10 shadow-inner">
+            <div className="text-indigo-200 font-medium mb-1">Current Class Room</div>
+            <div className="text-3xl font-bold tracking-widest text-emerald-400 font-mono">
+              {classData?.classCode || 'NO CODE'}
+            </div>
+          </div>
 
-        <button
-          onClick={joinGameRoom}
-          className="bg-gradient-to-r from-green-500 to-blue-600 text-white px-8 py-4 rounded-xl font-bold text-xl hover:shadow-lg transition-all hover:scale-105"
-          disabled={!classData?.classCode}
-        >
-          🚀 Join Multiplayer Game
-        </button>
-
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-          <div className="bg-blue-800 rounded-lg p-4">
-            <div className="text-2xl mb-2">👥</div>
-            <div className="font-semibold">Multiplayer</div>
-            <div className="text-blue-200">Play with your classmates in real-time</div>
-          </div>
-          <div className="bg-green-800 rounded-lg p-4">
-            <div className="text-2xl mb-2">🏃</div>
-            <div className="font-semibold">Movement</div>
-            <div className="text-green-200">Move mouse to control your cell</div>
-          </div>
-          <div className="bg-purple-800 rounded-lg p-4">
-            <div className="text-2xl mb-2">⚡</div>
-            <div className="font-semibold">Strategy</div>
-            <div className="text-purple-200">Eat food and smaller players to grow</div>
-          </div>
+          <button
+            onClick={joinGameRoom}
+            disabled={!classData?.classCode}
+            className={`w-full py-5 rounded-2xl font-bold text-2xl transition-all shadow-xl
+              ${classData?.classCode 
+                ? 'bg-gradient-to-r from-emerald-500 hover:from-emerald-400 to-teal-600 hover:to-teal-500 text-white hover:scale-[1.02] transform' 
+                : 'bg-gray-700 text-gray-400 cursor-not-allowed'}`}
+          >
+            {classData?.classCode ? '🚀 Enter Arena' : 'Missing Class Code'}
+          </button>
         </div>
       </div>
     );
@@ -586,11 +536,10 @@ const MultiplayerAgarGame = ({
 
   if (gameState === 'joining') {
     return (
-      <div className="bg-gradient-to-br from-blue-900 to-purple-900 rounded-xl p-8 text-white text-center min-h-96 flex items-center justify-center">
-        <div>
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-400 border-t-transparent mx-auto mb-4"></div>
-          <h3 className="text-xl font-bold mb-2">Joining Multiplayer Arena...</h3>
-          <p className="text-blue-200">Connecting to your classmates</p>
+      <div className="bg-indigo-900 rounded-2xl p-8 text-white text-center min-h-[500px] flex items-center justify-center border border-indigo-700/50">
+        <div className="space-y-6">
+          <div className="animate-spin rounded-full h-20 w-20 border-t-4 border-b-4 border-emerald-400 mx-auto"></div>
+          <h3 className="text-2xl font-bold text-emerald-400">Connecting to Arena...</h3>
         </div>
       </div>
     );
@@ -598,119 +547,134 @@ const MultiplayerAgarGame = ({
 
   return (
     <div className="space-y-4">
-      {/* Game HUD */}
-      <div className="bg-black bg-opacity-50 rounded-lg p-4 text-white">
-        <div className="flex justify-between items-center mb-2">
-          <div className="flex items-center space-x-6">
-            <div>
-              <span className="text-sm text-gray-300">Score: </span>
-              <span className="text-xl font-bold text-yellow-400">{score.toLocaleString()}</span>
-            </div>
-            <div>
-              <span className="text-sm text-gray-300">Size: </span>
-              <span className="text-lg font-bold text-green-400">
-                {gameObjects.current.localPlayer ? Math.floor(gameObjects.current.localPlayer.size) : 0}
-              </span>
-            </div>
-            <div>
-              <span className="text-sm text-gray-300">Players: </span>
-              <span className="text-lg font-bold text-blue-400">
-                {Object.values(connectedPlayers).filter(p => p.active).length}
-              </span>
-            </div>
+      {/* Game Header */}
+      <div className="bg-gray-900 rounded-2xl p-4 md:p-5 text-white shadow-lg border border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="flex items-center gap-6">
+          <div className="bg-gray-800 rounded-xl px-4 py-2 border border-gray-700">
+            <span className="text-xs text-gray-400 uppercase tracking-wider block mb-1">Score</span>
+            <span className="text-2xl font-bold text-yellow-400">{score.toLocaleString()}</span>
           </div>
-          
-          <button
-            onClick={leaveGameRoom}
-            className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm"
-          >
-            🚪 Leave Game
-          </button>
+          <div className="bg-gray-800 rounded-xl px-4 py-2 border border-gray-700">
+            <span className="text-xs text-gray-400 uppercase tracking-wider block mb-1">Size</span>
+            <span className="text-2xl font-bold text-emerald-400">
+              {gameObjects.current.localPlayer ? Math.floor(gameObjects.current.localPlayer.size) : 0}
+            </span>
+          </div>
+          <div className="hidden md:block bg-gray-800 rounded-xl px-4 py-2 border border-gray-700">
+            <span className="text-xs text-gray-400 uppercase tracking-wider block mb-1">Active Players</span>
+            <span className="text-2xl font-bold text-cyan-400">{activePlayerCount}</span>
+          </div>
         </div>
+        
+        <button
+          onClick={leaveGameRoom}
+          className="bg-red-500/10 text-red-400 border border-red-500/30 px-5 py-2.5 rounded-xl hover:bg-red-500 hover:text-white transition-all font-semibold"
+        >
+          Leave Game
+        </button>
       </div>
 
-      <div className="flex space-x-4">
-        {/* Game Canvas */}
-        <div className="flex-1">
-          <div className="relative bg-black rounded-lg overflow-hidden">
-            <canvas
-              ref={canvasRef}
-              width={VIEWPORT_WIDTH}
-              height={VIEWPORT_HEIGHT}
-              onMouseMove={handleMouseMove}
-              className="cursor-none"
-              style={{ display: 'block', width: '100%', height: 'auto' }}
-            />
-            
-            {gameState === 'gameOver' && (
-              <div className="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center">
-                <div className="bg-white rounded-lg p-8 text-center max-w-md">
-                  <div className="text-4xl mb-4">💀</div>
-                  <h3 className="text-2xl font-bold mb-4 text-red-600">You Were Eaten!</h3>
-                  <div className="space-y-2 mb-6 text-lg">
-                    <div>Final Score: <span className="font-bold text-blue-600">{score.toLocaleString()}</span></div>
-                    <div>Cells Eaten: <span className="font-bold text-green-600">{gameStats.cellsEaten}</span></div>
-                    <div>Players Eaten: <span className="font-bold text-purple-600">{gameStats.playersEaten}</span></div>
+      <div className="flex flex-col lg:flex-row gap-4">
+        {/* Game Canvas container */}
+        <div className="flex-1 order-2 lg:order-1 relative rounded-2xl overflow-hidden shadow-2xl bg-gray-900 border-2 border-gray-800">
+          <canvas
+            ref={canvasRef}
+            width={VIEWPORT_WIDTH}
+            height={VIEWPORT_HEIGHT}
+            onMouseMove={handleMouseMove}
+            className="w-full h-auto cursor-crosshair touch-none"
+            style={{ aspectRatio: '4/3' }}
+          />
+          
+          {gameState === 'gameOver' && (
+            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-10 animate-fade-in">
+              <div className="bg-gray-900 p-8 md:p-10 rounded-3xl border border-red-500/30 text-center max-w-sm w-full mx-4 shadow-2xl transform scale-100">
+                <div className="text-6xl mb-6">💀</div>
+                <h3 className="text-3xl font-extrabold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500">
+                  Eaten Alive!
+                </h3>
+                <p className="text-gray-400 mb-8">Better luck next time.</p>
+                
+                <div className="bg-gray-800 rounded-2xl p-5 mb-8 space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400">Final Score</span>
+                    <span className="font-bold text-xl text-yellow-400">{score.toLocaleString()}</span>
                   </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-500">Food Eaten</span>
+                    <span className="font-semibold text-emerald-400">{gameStats.cellsEaten}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-500">Players Eaten</span>
+                    <span className="font-semibold text-cyan-400">{gameStats.playersEaten}</span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-3">
                   <button
                     onClick={joinGameRoom}
-                    className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 text-lg mr-3"
+                    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-4 rounded-xl hover:scale-[1.02] transition-transform"
                   >
-                    🔄 Respawn
+                    Respawn
                   </button>
                   <button
-                    onClick={() => setGameState('menu')}
-                    className="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 text-lg"
+                    onClick={leaveGameRoom}
+                    className="w-full bg-gray-800 text-gray-300 py-3 rounded-xl hover:bg-gray-700 transition-colors"
                   >
-                    🏠 Menu
+                    Back to Menu
                   </button>
                 </div>
               </div>
-            )}
-          </div>
-        </div>
-
-        {/* Leaderboard */}
-        <div className="w-64 bg-white rounded-lg p-4">
-          <h3 className="text-lg font-bold mb-4 text-center">🏆 Live Leaderboard</h3>
-          {leaderboard.length === 0 ? (
-            <div className="text-center text-gray-500 py-8">
-              <div className="text-2xl mb-2">👥</div>
-              <div>Waiting for players...</div>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {leaderboard.map((entry) => (
-                <div
-                  key={`${entry.name}_${entry.rank}`}
-                  className={`flex items-center justify-between p-2 rounded-lg text-sm ${
-                    entry.isLocalPlayer 
-                      ? 'bg-yellow-100 border-2 border-yellow-400 font-bold' 
-                      : 'bg-gray-50'
-                  }`}
-                >
-                  <div className="flex items-center space-x-2">
-                    <span className={`
-                      ${entry.rank === 1 ? 'text-yellow-500' : ''}
-                      ${entry.rank === 2 ? 'text-gray-400' : ''}
-                      ${entry.rank === 3 ? 'text-yellow-600' : ''}
-                      font-bold
-                    `}>
-                      #{entry.rank}
-                    </span>
-                    <span className="truncate">{entry.name}</span>
-                    {entry.isLocalPlayer && <span>👤</span>}
-                  </div>
-                  <span className="font-bold text-blue-600">
-                    {entry.score.toLocaleString()}
-                  </span>
-                </div>
-              ))}
             </div>
           )}
-          
-          <div className="mt-4 pt-4 border-t border-gray-200 text-xs text-gray-500 text-center">
-            Room: {classData?.classCode}
+        </div>
+
+        {/* Leaderboard Column */}
+        <div className="lg:w-72 order-1 lg:order-2 shrink-0">
+          <div className="bg-gray-900 rounded-2xl p-5 border border-gray-800 shadow-xl lg:h-[calc(100%-0px)] overflow-hidden flex flex-col">
+            <h3 className="text-lg font-bold mb-4 text-white flex items-center gap-2">
+              🏆 Top Players
+            </h3>
+            
+            {leaderboard.length === 0 ? (
+              <div className="text-center text-gray-500 py-10 flex-1 flex flex-col justify-center">
+                 <span className="text-3xl mb-3 block opacity-50">📡</span>
+                Waiting for players...
+              </div>
+            ) : (
+              <div className="space-y-2 flex-1 overflow-y-auto pr-1">
+                {leaderboard.map((entry) => (
+                  <div
+                    key={`${entry.name}_${entry.rank}`}
+                    className={`flex items-center justify-between p-3 rounded-xl transition-colors ${
+                      entry.isLocal 
+                        ? 'bg-indigo-600/20 border border-indigo-500/50' 
+                        : 'bg-gray-800/50 border border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 overflow-hidden">
+                      <span className={`font-black text-sm w-5 text-center shrink-0 ${
+                        entry.rank === 1 ? 'text-yellow-400' :
+                        entry.rank === 2 ? 'text-gray-300' :
+                        entry.rank === 3 ? 'text-orange-400' : 'text-gray-600'
+                      }`}>
+                        {entry.rank}
+                      </span>
+                      <span className={`truncate font-medium text-sm ${entry.isLocal ? 'text-white' : 'text-gray-300'}`}>
+                        {entry.name}
+                      </span>
+                    </div>
+                    <span className="font-bold text-sm text-yellow-400/90 shrink-0 ml-2">
+                      {entry.score >= 1000 ? (entry.score/1000).toFixed(1)+'k' : entry.score}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            <div className="pt-4 mt-4 border-t border-gray-800 text-xs text-center text-gray-500 font-mono tracking-widest">
+              ROOM: {classData?.classCode}
+            </div>
           </div>
         </div>
       </div>

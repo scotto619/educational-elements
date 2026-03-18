@@ -208,6 +208,20 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       category: 'multiplayer',
       logo: getGameLogo('tic-tac-toe')
     },
+    {
+      id: 'cell-arena',
+      name: 'Cell Battle Arena',
+      icon: '🦠',
+      description: 'Battle your classmates online! Eat food to grow and absorb smaller cells to win.',
+      component: MultiplayerAgarGame,
+      color: 'from-emerald-500 to-teal-600',
+      difficulty: 'Medium',
+      time: '5-15 minutes',
+      multiplayer: true,
+      requiresClassCode: true,
+      category: 'multiplayer',
+      logo: getGameLogo('cell-arena')
+    },
 
     // Educational Utils
     {

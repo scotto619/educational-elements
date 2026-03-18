@@ -214,6 +214,19 @@ const GamesTab = ({
       category: 'multiplayer',
       logo: getGameLogo('tic-tac-toe')
     },
+    {
+      id: 'cell-arena',
+      name: 'Cell Battle Arena',
+      icon: '🦠',
+      description: 'Battle your classmates in a real-time multiplayer arena! Grow your cell and conquer.',
+      component: MultiplayerAgarGame,
+      color: 'from-emerald-500 to-teal-600',
+      difficulty: 'Medium',
+      time: '5-15 minutes',
+      multiplayer: true,
+      category: 'multiplayer',
+      logo: getGameLogo('cell-arena')
+    },
 
     // Educational Games  
     {
