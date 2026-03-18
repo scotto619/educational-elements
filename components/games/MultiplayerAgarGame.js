@@ -213,11 +213,13 @@ const MultiplayerAgarGame = ({
   }, [classData, createLocalPlayer, showToast]);
 
   const generateFoodIfNeeded = async (roomId) => {
-    if (Object.keys(gameObjects.current.food).length < FOOD_COUNT / 4) {
-      // Spawn a batch of 50 food items (throttling to prevent massive writes)
+    const currentFoodCount = Object.keys(gameObjects.current.food).length;
+    if (currentFoodCount < FOOD_COUNT / 2) {
+      // Spawn up to 100 food items at a time to restore balance quickly
+      const spawnCount = Math.min(100, FOOD_COUNT - currentFoodCount);
       const updates = {};
-      for(let i=0; i<50; i++) {
-        const id = `food_${Date.now()}_${Math.floor(Math.random()*1000)}`;
+      for(let i=0; i<spawnCount; i++) {
+        const id = `food_${Date.now()}_${Math.floor(Math.random()*10000)}`;
         updates[id] = {
           id,
           x: Math.random() * WORLD_WIDTH,
@@ -232,6 +234,10 @@ const MultiplayerAgarGame = ({
         // ignore
       }
     }
+    // Continue checking every few seconds as long as we're in the game
+    setTimeout(() => {
+        if (gameState === 'playing') generateFoodIfNeeded(roomId);
+    }, 5000);
   };
 
   const leaveGameRoom = useCallback(async () => {
@@ -267,9 +273,9 @@ const MultiplayerAgarGame = ({
       timestamp: Date.now()
     }).catch(() => {});
 
-    // Every sync, maybe spawn 1 food if room is getting empty
-    if (Math.random() < 0.2 && Object.keys(gameObjects.current.food).length < FOOD_COUNT) {
-      const id = `f_${Date.now()}`;
+    // Every sync, maybe spawn a few food items if room is getting empty to maintain density randomly
+    if (Math.random() < 0.4 && Object.keys(gameObjects.current.food).length < FOOD_COUNT) {
+      const id = `f_${Date.now()}_${Math.floor(Math.random()*1000)}`;
       set(ref(database, `gameRooms/${roomPath.current}/food/${id}`), {
         id,
         x: Math.random() * WORLD_WIDTH,
@@ -498,10 +504,24 @@ const MultiplayerAgarGame = ({
     return () => leaveGameRoom();
   }, [leaveGameRoom]);
 
-  const handleMouseMove = (e) => {
-    const rect = canvasRef.current.getBoundingClientRect();
-    gameObjects.current.mouse.x = e.clientX - rect.left;
-    gameObjects.current.mouse.y = e.clientY - rect.top;
+  const updatePointer = (clientX, clientY) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    gameObjects.current.mouse.x = (clientX - rect.left) * scaleX;
+    gameObjects.current.mouse.y = (clientY - rect.top) * scaleY;
+  };
+
+  const handleMouseMove = (e) => updatePointer(e.clientX, e.clientY);
+  
+  const handleTouch = (e) => {
+    // Stop scrolling while dragging on the canvas
+    if (e.touches && e.touches.length > 0) {
+      updatePointer(e.touches[0].clientX, e.touches[0].clientY);
+    }
   };
 
   if (gameState === 'menu') {
@@ -587,6 +607,8 @@ const MultiplayerAgarGame = ({
             width={VIEWPORT_WIDTH}
             height={VIEWPORT_HEIGHT}
             onMouseMove={handleMouseMove}
+            onTouchStart={handleTouch}
+            onTouchMove={handleTouch}
             className="w-full h-auto cursor-crosshair touch-none"
             style={{ aspectRatio: '4/3' }}
           />
