@@ -134,7 +134,25 @@ const MultiplayerAgarGame = ({
         // If it's a remote player
         else {
           if (p.active) {
-            gameObjects.current.remotePlayers[snapshot.key] = p;
+            if (gameObjects.current.remotePlayers[snapshot.key]) {
+              // Smoothly update parameters rather than snapping x/y instantly
+              const existing = gameObjects.current.remotePlayers[snapshot.key];
+              existing.targetX = p.targetX || p.x;
+              existing.targetY = p.targetY || p.y;
+              existing.size = p.size;
+              existing.score = p.score;
+              existing.name = p.name;
+              existing.color = p.color;
+              
+              const catchUpDistance = Math.sqrt((existing.x - p.x)**2 + (existing.y - p.y)**2);
+              if (catchUpDistance > 150) {
+                // If severely lagging, snap to position securely 
+                existing.x = p.x;
+                existing.y = p.y;
+              }
+            } else {
+              gameObjects.current.remotePlayers[snapshot.key] = p;
+            }
           } else {
             delete gameObjects.current.remotePlayers[snapshot.key];
           }
@@ -260,7 +278,8 @@ const MultiplayerAgarGame = ({
   // Update position to Firebase
   const syncNetwork = useCallback(() => {
     const loc = gameObjects.current.localPlayer;
-    if (!loc || !playerRef.current || gameState !== 'playing') return;
+    // We check via refs since gameState can become a stale closure in setInterval
+    if (!loc || !playerRef.current) return;
 
     // Send the current target and loc
     update(playerRef.current, {
@@ -284,7 +303,7 @@ const MultiplayerAgarGame = ({
         color: getRandomColor()
       }).catch(()=>{});
     }
-  }, [gameState]);
+  }, []);
 
   // Eating Mechanics
   const checkEating = () => {
