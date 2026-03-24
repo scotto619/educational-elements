@@ -76,6 +76,4 @@ const InlineSkillTest = ({ testName, onComplete }) => {
   );
 };
 
-export default ClickerGame;
-
 export default InlineSkillTest;
