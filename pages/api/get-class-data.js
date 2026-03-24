@@ -1,21 +1,11 @@
 // pages/api/get-class-data.js - NEW API to refresh class data for students
 import { adminFirestore } from '../../utils/firebase-admin';
+import { withHandler, requireFields, ApiError } from '../../utils/apiHelpers';
 
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+export default withHandler('POST', async (req, res) => {
+    requireFields(req.body, ['teacherUserId', 'classId', 'classCode']);
 
-  try {
     const { teacherUserId, classId, classCode } = req.body;
-
-    // Validate required fields
-    if (!teacherUserId || !classId || !classCode) {
-      return res.status(400).json({ 
-        error: 'Missing required fields',
-        required: ['teacherUserId', 'classId', 'classCode']
-      });
-    }
 
     console.log('Getting fresh class data for:', { teacherUserId, classId, classCode });
 
@@ -24,7 +14,7 @@ export default async function handler(req, res) {
     const teacherDoc = await teacherDocRef.get();
 
     if (!teacherDoc.exists) {
-      return res.status(404).json({ error: 'Teacher not found' });
+      throw new ApiError(404, 'Teacher not found');
     }
 
     const teacherData = teacherDoc.data();
@@ -35,7 +25,7 @@ export default async function handler(req, res) {
     );
 
     if (!targetClass) {
-      return res.status(404).json({ error: 'Class not found or invalid class code' });
+      throw new ApiError(404, 'Class not found or invalid class code');
     }
 
     console.log('Class data retrieved successfully');
@@ -46,18 +36,4 @@ export default async function handler(req, res) {
       message: 'Class data retrieved successfully'
     });
 
-  } catch (error) {
-    console.error('Error getting class data:', error);
-    
-    const errorResponse = {
-      error: 'Internal server error',
-      message: error.message
-    };
-    
-    if (process.env.NODE_ENV === 'development') {
-      errorResponse.stack = error.stack;
-    }
-    
-    res.status(500).json(errorResponse);
-  }
-}
+});

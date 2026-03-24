@@ -1,5 +1,6 @@
 // pages/api/admin/add-shop-item.js
 import admin from 'firebase-admin';
+import { withHandler, requireFields, ApiError } from '../../../utils/apiHelpers';
 
 // Initialize Firebase Admin if not already done
 if (!admin.apps.length) {
@@ -31,31 +32,19 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  try {
+export default withHandler('POST', async (req, res) => {
+    requireFields(req.body, ['itemType', 'itemData', 'adminEmail']);
     const { itemType, itemData, adminEmail } = req.body;
 
-    // Verify admin email
     if (adminEmail !== 'scotto6190@gmail.com') {
-      return res.status(403).json({ error: 'Unauthorized. Admin access only.' });
+      throw new ApiError(403, 'Unauthorized. Admin access only.');
     }
 
-    // Validate item type
     if (!['avatar', 'pet'].includes(itemType)) {
-      return res.status(400).json({ error: 'Invalid item type. Must be "avatar" or "pet".' });
+      throw new ApiError(400, 'Invalid item type. Must be "avatar" or "pet".');
     }
 
-    // Validate required fields
-    if (!itemData.name || !itemData.price || !itemData.path || !itemData.type) {
-      return res.status(400).json({ 
-        error: 'Missing required fields',
-        required: ['name', 'price', 'path', 'type']
-      });
-    }
+    requireFields(itemData, ['name', 'price', 'path', 'type']);
 
     console.log(`🛠️ Admin adding ${itemType}:`, itemData.name);
 
@@ -87,11 +76,4 @@ export default async function handler(req, res) {
       }
     });
 
-  } catch (error) {
-    console.error('❌ Error adding shop item:', error);
-    return res.status(500).json({ 
-      error: 'Internal server error',
-      message: error.message 
-    });
-  }
-}
+});

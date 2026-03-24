@@ -1,22 +1,15 @@
 // pages/api/update-class-v2.js - UPDATE CLASS SETTINGS
-export async function updateClassV2(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+import { withHandler, requireFields, ApiError } from '../../utils/apiHelpers';
 
-  try {
-    const { 
+export async function updateClassV2(req, res) {
+  return withHandler('POST', async (req, res) => {
+    requireFields(req.body, ['classId', 'updates', 'teacherUserId']);
+
+    const {
       classId,
       updates,
       teacherUserId
     } = req.body;
-
-    if (!classId || !updates || !teacherUserId) {
-      return res.status(400).json({ 
-        error: 'Missing required fields',
-        required: ['classId', 'updates', 'teacherUserId']
-      });
-    }
 
     console.log('🏫 Updating class (v2):', { classId, updates: Object.keys(updates) });
 
@@ -25,12 +18,12 @@ export async function updateClassV2(req, res) {
       const classDoc = await transaction.get(classRef);
 
       if (!classDoc.exists) {
-        throw new Error('Class not found');
+        throw new ApiError(404, 'Class not found');
       }
 
       const classData = classDoc.data();
       if (classData.teacherId !== teacherUserId) {
-        throw new Error('Unauthorized: You do not own this class');
+        throw new ApiError(403, 'Unauthorized: You do not own this class');
       }
 
       // Sanitize updates - only allow certain fields
@@ -65,15 +58,7 @@ export async function updateClassV2(req, res) {
       message: 'Class updated successfully'
     });
 
-  } catch (error) {
-    console.error('❌ Error updating class:', error);
-    
-    res.status(500).json({
-      error: 'Failed to update class',
-      message: error.message
-    });
-  }
+  })(req, res);
 }
 
-// Export all functions for Next.js API routes
 export default updateClassV2;

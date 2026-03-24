@@ -1,23 +1,16 @@
 // pages/api/create-student-v2.js - CREATE STUDENT IN NEW ARCHITECTURE
-export async function createStudentV2(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+import { withHandler, requireFields, ApiError } from '../../utils/apiHelpers';
 
-  try {
-    const { 
+export async function createStudentV2(req, res) {
+  return withHandler('POST', async (req, res) => {
+    requireFields(req.body, ['classId', 'firstName', 'teacherUserId']);
+
+    const {
       classId,
       firstName,
       lastName = '',
       teacherUserId
     } = req.body;
-
-    if (!classId || !firstName || !teacherUserId) {
-      return res.status(400).json({ 
-        error: 'Missing required fields',
-        required: ['classId', 'firstName', 'teacherUserId']
-      });
-    }
 
     console.log('👤 Creating student (v2):', { classId, firstName, lastName });
 
@@ -32,7 +25,7 @@ export async function createStudentV2(req, res) {
 
       const classData = classDoc.data();
       if (classData.teacherId !== teacherUserId) {
-        throw new Error('Unauthorized: You do not own this class');
+        throw new ApiError(403, 'Unauthorized: You do not own this class');
       }
 
       // Create student
@@ -104,12 +97,5 @@ export async function createStudentV2(req, res) {
       message: 'Student created successfully'
     });
 
-  } catch (error) {
-    console.error('❌ Error creating student:', error);
-    
-    res.status(500).json({
-      error: 'Failed to create student',
-      message: error.message
-    });
-  }
+  })(req, res);
 }

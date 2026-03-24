@@ -3,6 +3,8 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import LootWellTab from '../tabs/LootWellTab';
+import MysteryBoxModal from './modals/MysteryBoxModal';
+import HatchCelebrationModal from './modals/HatchCelebrationModal';
 
 import {
   PET_EGG_TYPES,
@@ -11,12 +13,9 @@ import {
   getEggStageStatus,
   resolveEggHatch,
   getEggTypeById,
-  EGG_STAGE_ART,
-  EGG_STAGE_MESSAGES,
-  getEggStageArt,
-  DEFAULT_PET_IMAGE
+  EGG_STAGE_MESSAGES
 } from '../../utils/gameHelpers';
-import { normalizeImageSource, serializeFallbacks, createImageErrorHandler } from '../../utils/imageFallback';
+import { serializeFallbacks } from '../../utils/imageFallback';
 import CardPackOpeningModal from './cards/CardPackOpeningModal';
 import CardBookModal from './cards/CardBookModal';
 import { CARD_EFFECTS, CARD_EFFECT_MAP } from '../../constants/cardEffects';
@@ -35,413 +34,17 @@ import {
 import { DEFAULT_TEACHER_REWARDS, buildShopInventory, getDailySpecials } from '../../utils/shopSpecials';
 import { getDailyAvailableAvatars, getDailyAvailablePets, formatRotationCountdown } from '../../utils/shopRotation';
 
-// ===============================================
-// MYSTERY BOX SYSTEM (SHARED WITH TEACHER SHOP)
-// ===============================================
-
-const defaultEggArt = (EGG_STAGE_ART?.unbroken && EGG_STAGE_ART.unbroken.src) || '/shop/Egg/Egg.png';
-const eggImageErrorHandler = createImageErrorHandler(defaultEggArt);
-const petImageErrorHandler = createImageErrorHandler(DEFAULT_PET_IMAGE);
-
-const resolveEggArt = (stage) => normalizeImageSource(getEggStageArt(stage), defaultEggArt);
-
-const resolvePetArt = (source) => normalizeImageSource(source, DEFAULT_PET_IMAGE);
-
-const MYSTERY_BOX_PRICE = 10;
-
-const LOOT_WELL_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
-const MAX_LOOT_WELL_HISTORY = 12;
-
-// Define rarity weights (higher = more common)
-const RARITY_WEIGHTS = {
-  common: 70,     // more common
-  uncommon: 22,   // frequent but modest
-  rare: 6,        // occasional
-  epic: 2,        // very rare
-  legendary: 1    // extremely rare
-};
-
-// Eggs should be a bit easier to find than other items that share their rarity tier
-const EGG_RARITY_WEIGHT_BOOST = 3;
-
-// Define XP and Coin rewards by rarity
-const MYSTERY_REWARDS = {
-  xp: {
-    common: [3, 5, 8],
-    uncommon: [10, 12, 15],
-    rare: [18, 20, 25],
-    epic: [30, 35, 40],
-    legendary: [50, 75, 100]
-  },
-  coins: {
-    common: [2, 3, 5],
-    uncommon: [8, 10, 12],
-    rare: [15, 18, 20],
-    epic: [25, 30, 35],
-    legendary: [40, 50, 60]
-  }
-};
-
-// Function to determine item rarity based on price
-const getItemRarity = (price) => {
-  if (price <= 12) return 'common';
-  if (price <= 20) return 'uncommon';
-  if (price <= 30) return 'rare';
-  if (price <= 45) return 'epic';
-  return 'legendary';
-};
-
-// Function to get all possible mystery box prizes (includes Christmas items via props)
-const getMysteryBoxPrizes = (
-  SHOP_BASIC_AVATARS,
-  SHOP_PREMIUM_AVATARS,
-  SHOP_BASIC_PETS,
-  SHOP_PREMIUM_PETS,
-  classRewards,
-  CHRISTMAS_BASIC_AVATARS = [],
-  CHRISTMAS_PREMIUM_AVATARS = [],
-  CHRISTMAS_PETS = [],
-  EGG_TYPES = PET_EGG_TYPES,
-  CARD_PACKS = [],
-  CARD_EFFECTS_POOL = CARD_EFFECTS
-) => {
-  const prizes = [];
-
-  // Add shop avatars (includes Christmas avatars passed from parent)
-  [
-    ...SHOP_BASIC_AVATARS,
-    ...SHOP_PREMIUM_AVATARS,
-    ...CHRISTMAS_BASIC_AVATARS,
-    ...CHRISTMAS_PREMIUM_AVATARS
-  ].forEach(avatar => {
-    prizes.push({
-      type: 'avatar',
-      item: avatar,
-      rarity: getItemRarity(avatar.price),
-      name: avatar.name,
-      displayName: avatar.name
-    });
-  });
-
-  // Add shop pets (includes Christmas pets passed from parent)
-  [...SHOP_BASIC_PETS, ...SHOP_PREMIUM_PETS, ...CHRISTMAS_PETS].forEach(pet => {
-    prizes.push({
-      type: 'pet',
-      item: pet,
-      rarity: getItemRarity(pet.price),
-      name: pet.name,
-      displayName: pet.name
-    });
-  });
-
-  // Add eggs
-  (EGG_TYPES || []).forEach(eggType => {
-    prizes.push({
-      type: 'egg',
-      eggTypeId: eggType.id,
-      eggType,
-      rarity: eggType.rarity,
-      name: `${eggType.name} Egg`,
-      displayName: `${eggType.name} Egg`,
-      icon: '🥚'
-    });
-  });
-
-  // Add class rewards
-  (classRewards || []).forEach(reward => {
-    prizes.push({
-      type: 'reward',
-      item: reward,
-      rarity: getItemRarity(reward.price),
-      name: reward.name,
-      displayName: reward.name
-    });
-  });
-
-  // Add XP rewards
-  Object.entries(MYSTERY_REWARDS.xp).forEach(([rarity, amounts]) => {
-    amounts.forEach(amount => {
-      prizes.push({
-        type: 'xp',
-        amount: amount,
-        rarity: rarity,
-        name: `${amount} XP`,
-        displayName: `${amount} XP Boost`,
-        icon: '⭐'
-      });
-    });
-  });
-
-  // Add coin rewards
-  Object.entries(MYSTERY_REWARDS.coins).forEach(([rarity, amounts]) => {
-    amounts.forEach(amount => {
-      prizes.push({
-        type: 'coins',
-        amount: amount,
-        rarity: rarity,
-        name: `${amount} Coins`,
-        displayName: `${amount} Bonus Coins`,
-        icon: '💰'
-      });
-    });
-  });
-
-  (CARD_PACKS || []).forEach(pack => {
-    prizes.push({
-      type: 'card_pack',
-      pack,
-      rarity: pack.rarity || 'rare',
-      name: pack.name,
-      displayName: pack.name,
-      icon: pack.icon || '🃏'
-    });
-  });
-
-  // Add rare cosmetic card effects (loot well and boxes only)
-  (CARD_EFFECTS_POOL || []).forEach(effect => {
-    prizes.push({
-      type: 'card_effect',
-      effectId: effect.id,
-      rarity: effect.rarity,
-      name: effect.name,
-      displayName: effect.name,
-      icon: '✨'
-    });
-  });
-
-  return prizes;
-};
-
-// Weighted random selection function
-const selectRandomPrize = (prizes) => {
-  // Create weighted array
-  const weightedPrizes = [];
-  prizes.forEach(prize => {
-    const baseWeight = RARITY_WEIGHTS[prize.rarity] || 1;
-    const weightBoost = prize.type === 'egg' ? EGG_RARITY_WEIGHT_BOOST : 1;
-    const weight = Math.max(1, Math.round(baseWeight * weightBoost));
-    for (let i = 0; i < weight; i++) {
-      weightedPrizes.push(prize);
-    }
-  });
-
-  // Select random prize
-  const randomIndex = Math.floor(Math.random() * weightedPrizes.length);
-  return weightedPrizes[randomIndex];
-};
-
-// Get rarity color
-const getRarityColor = (rarity) => {
-  switch (rarity) {
-    case 'common': return 'text-gray-600 border-gray-300';
-    case 'uncommon': return 'text-green-600 border-green-300';
-    case 'rare': return 'text-blue-600 border-blue-300';
-    case 'epic': return 'text-purple-600 border-purple-300';
-    case 'legendary': return 'text-yellow-600 border-yellow-300';
-    default: return 'text-gray-600 border-gray-300';
-  }
-};
-
-const getRarityBg = (rarity) => {
-  switch (rarity) {
-    case 'common': return 'bg-gray-100';
-    case 'uncommon': return 'bg-green-100';
-    case 'rare': return 'bg-blue-100';
-    case 'epic': return 'bg-purple-100';
-    case 'legendary': return 'bg-yellow-100';
-    default: return 'bg-gray-100';
-  }
-};
-
-const formatDuration = (ms) => {
-  if (!ms || ms <= 0) {
-    return '0s';
-  }
-
-  const totalSeconds = Math.ceil(ms / 1000);
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-
-  const parts = [];
-  if (hours > 0) {
-    parts.push(`${hours}h`);
-  }
-  if (minutes > 0) {
-    parts.push(`${minutes}m`);
-  }
-  if (hours === 0 && seconds > 0) {
-    parts.push(`${seconds}s`);
-  }
-
-  return parts.join(' ') || '0s';
-};
-
-const isSameCalendarDay = (dateA, dateB) => {
-  if (!(dateA instanceof Date) || !(dateB instanceof Date)) {
-    return false;
-  }
-
-  return (
-    dateA.getFullYear() === dateB.getFullYear() &&
-    dateA.getMonth() === dateB.getMonth() &&
-    dateA.getDate() === dateB.getDate()
-  );
-};
-
-const parseDateValue = (value) => {
-  if (!value) return null;
-
-  if (value instanceof Date) {
-    return Number.isNaN(value.getTime()) ? null : value;
-  }
-
-  if (typeof value === 'string' || typeof value === 'number') {
-    const parsed = new Date(value);
-    return Number.isNaN(parsed.getTime()) ? null : parsed;
-  }
-
-  if (typeof value === 'object') {
-    if (typeof value.toDate === 'function') {
-      const parsed = value.toDate();
-      return parsed instanceof Date && !Number.isNaN(parsed.getTime()) ? parsed : null;
-    }
-
-    if (typeof value.seconds === 'number') {
-      const milliseconds = value.seconds * 1000 + Math.floor((value.nanoseconds || 0) / 1e6);
-      const parsed = new Date(milliseconds);
-      return Number.isNaN(parsed.getTime()) ? null : parsed;
-    }
-  }
-
-  return null;
-};
-
-const getEggAccent = (egg) => {
-  if (!egg) return '#6366f1';
-  if (egg.accent) return egg.accent;
-  switch (egg.rarity) {
-    case 'common':
-      return '#6b7280';
-    case 'uncommon':
-      return '#16a34a';
-    case 'rare':
-      return '#2563eb';
-    case 'epic':
-      return '#7c3aed';
-    case 'legendary':
-      return '#f59e0b';
-    default:
-      return '#6366f1';
-  }
-};
-
-const getPrizeDisplayName = (prize) => {
-  if (!prize) {
-    return '';
-  }
-
-  switch (prize.type) {
-    case 'avatar':
-      return prize.item?.name || 'Mystery Avatar';
-    case 'pet':
-      return prize.item?.name || 'Mystery Pet';
-    case 'reward':
-      return prize.item?.name || 'Class Reward';
-    case 'egg': {
-      const eggName = prize.eggType?.name || prize.item?.name || prize.name;
-      return eggName ? `${eggName} Egg` : 'Mystery Egg';
-    }
-    case 'xp':
-      return `${prize.amount || 0} XP`;
-    case 'coins':
-      return `${prize.amount || 0} Coins`;
-    case 'card_pack':
-      return prize.pack?.name || 'Mystery Card Pack';
-    case 'card_effect':
-      return prize.name || 'Cosmetic Card Effect';
-    default:
-      return prize.name || 'Mystery Prize';
-  }
-};
-
-// ===============================================
-// SELLING SYSTEM
-// ===============================================
-
-// Calculate sell price (25% of original cost)
-const calculateSellPrice = (originalPrice) => {
-  return Math.max(1, Math.floor(originalPrice * 0.25));
-};
-
-// Find original item price from shop data (includes Christmas items)
-const findOriginalPrice = (
-  itemName,
-  itemType,
-  SHOP_BASIC_AVATARS,
-  SHOP_PREMIUM_AVATARS,
-  SHOP_BASIC_PETS,
-  SHOP_PREMIUM_PETS,
-  classRewards,
-  HALLOWEEN_BASIC_AVATARS = [],
-  HALLOWEEN_PREMIUM_AVATARS = [],
-  HALLOWEEN_PETS = [],
-  CHRISTMAS_BASIC_AVATARS = [],
-  CHRISTMAS_PREMIUM_AVATARS = [],
-  CHRISTMAS_PETS = []
-) => {
-  if (itemType === 'avatar') {
-    const basicAvatar = SHOP_BASIC_AVATARS.find(a => a.name === itemName);
-    const premiumAvatar = SHOP_PREMIUM_AVATARS.find(a => a.name === itemName);
-    const halloweenBasic = HALLOWEEN_BASIC_AVATARS.find(a => a.name === itemName);
-    const halloweenPremium = HALLOWEEN_PREMIUM_AVATARS.find(a => a.name === itemName);
-    const christmasBasic = CHRISTMAS_BASIC_AVATARS.find(a => a.name === itemName);
-    const christmasPremium = CHRISTMAS_PREMIUM_AVATARS.find(a => a.name === itemName);
-    return (
-      basicAvatar?.price ||
-      premiumAvatar?.price ||
-      halloweenBasic?.price ||
-      halloweenPremium?.price ||
-      christmasBasic?.price ||
-      christmasPremium?.price ||
-      10
-    ); // Default if not found
-  } else if (itemType === 'pet') {
-    const basicPet = SHOP_BASIC_PETS.find(p => p.name === itemName);
-    const premiumPet = SHOP_PREMIUM_PETS.find(p => p.name === itemName);
-    const halloweenPet = HALLOWEEN_PETS.find(p => p.name === itemName);
-    const christmasPet = CHRISTMAS_PETS.find(p => p.name === itemName);
-    return basicPet?.price || premiumPet?.price || halloweenPet?.price || christmasPet?.price || 15; // Default if not found
-  } else if (itemType === 'reward') {
-    const reward = (classRewards || []).find(r => r.id === itemName || r.name === itemName);
-    return reward?.price || 10; // Default if not found
-  }
-  return 10; // Fallback default
-};
-
-const INITIAL_TRADE_MODAL_STATE = {
-  visible: false,
-  type: null,
-  item: null,
-  stage: 'select',
-  selectedPartnerId: null,
-  selectedPartnerItem: null,
-  result: null
-};
-
-const TRADE_TYPE_LABELS = {
-  avatar: 'Avatar',
-  pet: 'Pet',
-  card: 'Card'
-};
-
-const DEFAULT_CARD_PACK_OPENING_STATE = {
-  visible: false,
-  pack: null,
-  stage: 'charging',
-  cards: [],
-  results: []
-};
+import {
+  defaultEggArt, eggImageErrorHandler, petImageErrorHandler,
+  resolveEggArt, resolvePetArt,
+  MYSTERY_BOX_PRICE, LOOT_WELL_COOLDOWN_MS, MAX_LOOT_WELL_HISTORY,
+  RARITY_WEIGHTS, EGG_RARITY_WEIGHT_BOOST, MYSTERY_REWARDS,
+  getItemRarity, getMysteryBoxPrizes, selectRandomPrize,
+  getRarityColor, getRarityBg, getEggAccent, getPrizeDisplayName,
+  calculateSellPrice, findOriginalPrice,
+  formatDuration, isSameCalendarDay, parseDateValue,
+  INITIAL_TRADE_MODAL_STATE, TRADE_TYPE_LABELS, DEFAULT_CARD_PACK_OPENING_STATE
+} from './shopHelpers';
 
 const StudentShop = ({
   studentData,
@@ -2650,149 +2253,6 @@ const StudentShop = ({
     );
   };
 
-  const renderMysteryBoxModal = () => {
-    if (mysteryBoxModal.stage === 'confirm') {
-      return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm text-center p-4 md:p-6">
-            <div className="text-5xl md:text-6xl mb-4">🎁</div>
-            <h2 className="text-lg md:text-2xl font-bold mb-3 md:mb-4">Open Mystery Box?</h2>
-            <p className="mb-4 text-sm md:text-base">
-              This will cost you <span className="font-bold text-yellow-600">{MYSTERY_BOX_PRICE} coins</span>
-            </p>
-            <p className="text-xs md:text-sm text-gray-600 mb-4">
-              You'll receive a random prize based on rarity!
-            </p>
-            <div className="flex gap-3 md:gap-4">
-              <button
-                onClick={() => setMysteryBoxModal({ visible: false, stage: 'confirm' })}
-                className="flex-1 py-2 md:py-3 border rounded-lg hover:bg-gray-50 text-sm md:text-base"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmMysteryBoxPurchase}
-                className="flex-1 py-2 md:py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 text-sm md:text-base"
-              >
-                Open It!
-              </button>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    if (mysteryBoxModal.stage === 'opening') {
-      return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm text-center p-6 md:p-8">
-            <div className={`text-6xl md:text-8xl mb-4 ${isSpinning ? 'animate-spin' : ''}`}>🎁</div>
-            <h2 className="text-xl md:text-2xl font-bold mb-2">Opening Mystery Box...</h2>
-            <p className="text-purple-600 text-sm md:text-base">✨ Preparing your surprise! ✨</p>
-          </div>
-        </div>
-      );
-    }
-
-    if (mysteryBoxModal.stage === 'reveal' && mysteryBoxPrize) {
-      const rarityColor = getRarityColor(mysteryBoxPrize.rarity);
-      const rarityBg = getRarityBg(mysteryBoxPrize.rarity);
-
-      return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md text-center p-4 md:p-6">
-            <div className="text-4xl md:text-5xl mb-4">🎉</div>
-            <h2 className="text-lg md:text-2xl font-bold mb-3 md:mb-4">You Won!</h2>
-
-            <div className={`${rarityBg} border-2 ${rarityColor} rounded-xl p-4 md:p-6 mb-4`}>
-              {mysteryBoxPrize.type === 'avatar' && (
-                <img
-                  src={mysteryBoxPrize.item.path}
-                  alt={mysteryBoxPrize.displayName}
-                  className="w-20 h-20 md:w-24 md:h-24 rounded-full mx-auto mb-3 border-4 border-white"
-                  onError={(e) => {
-                    e.target.src = '/shop/Basic/Banana.png';
-                  }}
-                />
-              )}
-              {mysteryBoxPrize.type === 'pet' && (
-                <img
-                  src={mysteryBoxPrize.item.path}
-                  alt={mysteryBoxPrize.displayName}
-                  className="w-20 h-20 md:w-24 md:h-24 rounded-full mx-auto mb-3 border-4 border-white"
-                  onError={(e) => {
-                    e.target.src = '/shop/BasicPets/Wizard.png';
-                  }}
-                />
-              )}
-              {mysteryBoxPrize.type === 'egg' && (
-                <div
-                  className="w-24 h-24 md:w-28 md:h-28 mx-auto mb-3 rounded-full flex items-center justify-center shadow-inner"
-                  style={{
-                    background: `radial-gradient(circle at 30% 30%, ${getEggAccent(mysteryBoxPrize.eggType)}33, #ffffff)`,
-                    border: `4px solid ${getEggAccent(mysteryBoxPrize.eggType)}`
-                  }}
-                >
-                  <span className="text-4xl md:text-5xl">🥚</span>
-                </div>
-              )}
-              {mysteryBoxPrize.type === 'reward' && (
-                <div className="text-4xl md:text-5xl mb-3">{mysteryBoxPrize.item.icon || '🎁'}</div>
-              )}
-              {(mysteryBoxPrize.type === 'xp' || mysteryBoxPrize.type === 'coins') && (
-                <div className="text-4xl md:text-5xl mb-3">{mysteryBoxPrize.icon}</div>
-              )}
-              {mysteryBoxPrize.type === 'card_pack' && (() => {
-                const pack = mysteryBoxPrize.pack;
-                return (
-                  <div
-                    className="rounded-2xl px-4 py-5 text-white"
-                    style={{
-                      background: pack.visual?.gradient || 'linear-gradient(135deg,#3730a3,#7c3aed)',
-                      boxShadow: `0 0 30px ${pack.visual?.glow || 'rgba(124,58,237,0.45)'}`
-                    }}
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-sm uppercase tracking-widest text-white/70">
-                          {CARD_RARITY_STYLES[pack.rarity]?.label || pack.rarity} Pack
-                        </p>
-                        <p className="text-lg font-bold">{pack.name}</p>
-                      </div>
-                      <span className="text-4xl drop-shadow-xl">{pack.icon || '🃏'}</span>
-                    </div>
-                    <p className="text-sm text-white/80 mt-2">
-                      Contains {pack.minCards}-{pack.maxCards} trading cards.
-                    </p>
-                  </div>
-                );
-              })()}
-
-              <h3 className="text-base md:text-xl font-bold mb-1">{mysteryBoxPrize.displayName}</h3>
-              <p className={`text-xs md:text-sm font-semibold ${rarityColor} uppercase`}>
-                {mysteryBoxPrize.rarity} Rarity
-              </p>
-              {mysteryBoxPrize.type === 'egg' && (
-                <p className="text-xs md:text-sm text-gray-600 mt-2">
-                  {mysteryBoxPrize.eggType?.description || 'Keep this egg safe while it incubates. It will hatch into a surprise pet!'}
-                </p>
-              )}
-            </div>
-
-            <button
-              onClick={collectMysteryBoxPrize}
-              className="w-full py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 font-bold text-base md:text-lg"
-            >
-              Collect Prize!
-            </button>
-          </div>
-        </div>
-      );
-    }
-
-    return null;
-  };
-
   const renderSellModal = () => {
     if (!mounted) return null;
 
@@ -2823,71 +2283,6 @@ const StudentShop = ({
     );
 
     return createPortal(modalContent, document.body);
-  };
-
-  const renderHatchCelebrationModal = () => {
-    if (!hatchingCelebration) return null;
-
-    const { pet, egg } = hatchingCelebration;
-    const accent = getEggAccent(egg);
-    const rarityColor = getRarityColor(pet.rarity);
-    const rarityBg = getRarityBg(pet.rarity);
-
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md text-center p-6 md:p-8 relative overflow-hidden">
-          <div className="absolute inset-0 pointer-events-none">
-            {[...Array(24)].map((_, index) => (
-              <div
-                key={index}
-                className="absolute w-2 h-2 bg-yellow-400 rounded-full animate-ping"
-                style={{
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`,
-                  animationDelay: `${Math.random() * 1.5}s`
-                }}
-              ></div>
-            ))}
-          </div>
-
-          <div className="text-5xl md:text-6xl mb-4 animate-bounce">🐣</div>
-          <h2 className="text-xl md:text-2xl font-bold mb-2">A New Friend Appeared!</h2>
-          <p className="text-sm md:text-base text-gray-600 mb-4">
-            Your <span className="font-semibold" style={{ color: accent }}>{egg.name}</span> hatched into a
-            {pet.rarity ? ` ${pet.rarity.toUpperCase()}` : ''} baby pet!
-          </p>
-
-          <div className={`${rarityBg} border-2 ${rarityColor} rounded-2xl p-4 md:p-6 mb-4 relative`}
-            style={{ borderColor: `${accent}66` }}>
-            <div className="absolute -top-6 left-1/2 transform -translate-x-1/2">
-              <div
-                className="w-14 h-14 rounded-full flex items-center justify-center shadow-lg"
-                style={{ background: `radial-gradient(circle at 30% 30%, ${accent}33, #ffffff)`, border: `4px solid ${accent}` }}
-              >
-                <span className="text-3xl">✨</span>
-              </div>
-            </div>
-            <img
-              src={pet.path}
-              alt={pet.name}
-              className="w-24 h-24 md:w-28 md:h-28 mx-auto mb-3 object-contain"
-              onError={(e) => {
-                e.target.src = '/shop/BasicPets/Wizard.png';
-              }}
-            />
-            <p className="text-lg md:text-xl font-bold mb-1">{pet.name}</p>
-            <p className={`text-xs md:text-sm uppercase font-semibold ${rarityColor}`}>{pet.rarity || 'special'} hatchling</p>
-          </div>
-
-          <button
-            onClick={() => setHatchingCelebration(null)}
-            className="w-full py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 font-bold text-base md:text-lg"
-          >
-            Awesome!
-          </button>
-        </div>
-      </div>
-    );
   };
 
   const renderShopItems = () => {
@@ -3639,7 +3034,16 @@ const StudentShop = ({
       )}
 
       {/* Mystery Box Modal */}
-      {mysteryBoxModal.visible && renderMysteryBoxModal()}
+      {mysteryBoxModal.visible && (
+        <MysteryBoxModal
+          modal={mysteryBoxModal}
+          isSpinning={isSpinning}
+          prize={mysteryBoxPrize}
+          onClose={() => setMysteryBoxModal({ visible: false, stage: 'confirm' })}
+          onConfirm={confirmMysteryBoxPurchase}
+          onCollect={collectMysteryBoxPrize}
+        />
+      )}
 
       {/* Sell Confirmation Modal */}
       {sellModal.visible && renderSellModal()}
@@ -3648,7 +3052,10 @@ const StudentShop = ({
       {tradeModal.visible && renderTradeModal()}
 
       {/* Hatch Celebration */}
-      {renderHatchCelebrationModal()}
+      <HatchCelebrationModal
+        hatchingCelebration={hatchingCelebration}
+        onClose={() => setHatchingCelebration(null)}
+      />
 
       <CardPackOpeningModal
         visible={cardPackOpening.visible}

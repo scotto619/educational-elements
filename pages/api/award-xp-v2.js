@@ -1,11 +1,11 @@
 // pages/api/award-xp-v2.js - BULK XP AWARDING WITH RACE CONDITION PREVENTION
-export async function awardXpV2(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+import { withHandler, requireFields, ApiError } from '../../utils/apiHelpers';
 
-  try {
-    const { 
+export async function awardXpV2(req, res) {
+  return withHandler('POST', async (req, res) => {
+    requireFields(req.body, ['studentIds', 'amount']);
+
+    const {
       studentIds, // Array of student IDs
       amount,
       reason = 'XP Award',
@@ -13,11 +13,8 @@ export async function awardXpV2(req, res) {
       classId
     } = req.body;
 
-    if (!studentIds || !Array.isArray(studentIds) || studentIds.length === 0 || !amount) {
-      return res.status(400).json({ 
-        error: 'Missing required fields',
-        required: ['studentIds (array)', 'amount']
-      });
+    if (!Array.isArray(studentIds) || studentIds.length === 0) {
+      throw new ApiError(400, 'studentIds must be a non-empty array');
     }
 
     console.log('🏆 Bulk XP award (v2):', {
@@ -111,12 +108,5 @@ export async function awardXpV2(req, res) {
       message: `Successfully awarded XP to ${results.length} students`
     });
 
-  } catch (error) {
-    console.error('❌ Error in bulk XP award:', error);
-    
-    res.status(500).json({
-      error: 'Bulk XP award failed',
-      message: error.message
-    });
-  }
+  })(req, res);
 }
