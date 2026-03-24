@@ -1,8 +1,7 @@
-// components/tabs/ShopTab.js - SIMPLIFIED SHOP WITH DAILY ROTATION
+// components/tabs/ShopTab.js - FULL CATALOG SHOP WITH FLAT NAVIGATION
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { DEFAULT_TEACHER_REWARDS, buildShopInventory, getDailySpecials } from '../../utils/shopSpecials';
-import { getDailyAvailableAvatars, getDailyAvailablePets, formatRotationCountdown } from '../../utils/shopRotation';
 import {
   PET_EGG_TYPES,
   createPetEgg,
@@ -326,7 +325,7 @@ const ShopTab = ({
   dailySpecials = []
 }) => {
   const [selectedStudentId, setSelectedStudentId] = useState(null);
-  const [activeCategory, setActiveCategory] = useState('shop'); // Default to daily shop items
+  const [activeCategory, setActiveCategory] = useState('avatars'); // Default to full avatars catalog
   const [purchaseModal, setPurchaseModal] = useState({ visible: false, item: null, type: null });
   const [inventoryModal, setInventoryModal] = useState({ visible: false });
 
@@ -487,20 +486,22 @@ const ShopTab = ({
     seasonalItems
   ]);
 
-  // Daily rotating items - 7 avatars and 3 pets that change each day
-  const dailyAvatars = useMemo(() => {
-    const allAvatars = [...SHOP_BASIC_AVATARS, ...SHOP_PREMIUM_AVATARS];
-    return getDailyAvailableAvatars(allAvatars, 14);
-  }, [SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS]);
+  // All avatars and pets - always fully available (no daily rotation)
+  const allAvatars = useMemo(() => [
+    ...SHOP_BASIC_AVATARS,
+    ...SHOP_PREMIUM_AVATARS,
+    ...CHRISTMAS_BASIC_AVATARS,
+    ...CHRISTMAS_PREMIUM_AVATARS
+  ], [SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS]);
 
-  const dailyPets = useMemo(() => {
-    const allPets = [...SHOP_BASIC_PETS, ...SHOP_PREMIUM_PETS];
-    return getDailyAvailablePets(allPets, 6);
-  }, [SHOP_BASIC_PETS, SHOP_PREMIUM_PETS]);
+  const allPets = useMemo(() => [
+    ...SHOP_BASIC_PETS,
+    ...SHOP_PREMIUM_PETS,
+    ...CHRISTMAS_PETS
+  ], [SHOP_BASIC_PETS, SHOP_PREMIUM_PETS]);
 
-  // Special features menu state
-  const [showSpecialMenu, setShowSpecialMenu] = useState(false);
-  const [specialSection, setSpecialSection] = useState(null); // 'card_packs', 'mysterybox', 'rewards'
+  // Search state for filtering
+  const [searchQuery, setSearchQuery] = useState('');
 
   // ===============================================
   // MYSTERY BOX FUNCTIONS
@@ -902,11 +903,14 @@ const ShopTab = ({
     onUpdateStudent(selectedStudent.id, updates);
   };
 
-  // SIMPLIFIED SHOP CATEGORIES - Clean two-section design
+  // FLAT NAVIGATION - All sections accessible in one click
   const SHOP_CATEGORIES = [
-    { id: 'shop', name: "🛒 Today's Shop", shortName: 'Shop' },
-    { id: 'special', name: '✨ Special Features', shortName: 'Special' },
-    { id: 'inventory', name: '🎒 Inventory', shortName: 'Items' }
+    { id: 'avatars', name: '👤 Avatars', shortName: '👤', count: allAvatars.length },
+    { id: 'pets', name: '🐾 Pets', shortName: '🐾', count: allPets.length },
+    { id: 'card_packs', name: '🃏 Cards', shortName: '🃏' },
+    { id: 'mysterybox', name: '🎁 Mystery Box', shortName: '🎁' },
+    { id: 'rewards', name: '🏆 Rewards', shortName: '🏆' },
+    { id: 'inventory', name: '🎒 Inventory', shortName: '🎒' }
   ];
 
   const renderFeaturedItems = () => {
@@ -1135,74 +1139,65 @@ const ShopTab = ({
   };
 
   // ===============================================
-  // RENDER DAILY SHOP - Main simplified view
+  // RENDER ALL AVATARS - Full catalog, always available
   // ===============================================
-  const renderDailyShop = () => {
-    const formatRotationCountdown = () => {
-      const now = new Date();
-      const tomorrow = new Date(now);
-      tomorrow.setHours(24, 0, 0, 0);
-      const diff = tomorrow - now;
-      const hours = Math.floor(diff / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      return `${hours}h ${minutes}m`;
-    };
-
-    const countdown = formatRotationCountdown();
+  const renderAllAvatars = () => {
+    const query = searchQuery.toLowerCase().trim();
+    const filteredAvatars = query
+      ? allAvatars.filter(a => a.name.toLowerCase().includes(query))
+      : allAvatars;
 
     return (
-      <div className="space-y-6">
-        {/* Rotation Timer */}
-        <div className="text-center text-sm text-gray-500">
-          <span className="inline-flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-full">
-            <span>🔄</span>
-            <span>New items in <strong>{countdown}</strong></span>
-          </span>
+      <div className="space-y-4">
+        <div className="relative">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search avatars..."
+            className="w-full px-4 py-2.5 pl-10 border-2 border-gray-200 rounded-xl text-sm focus:border-blue-400 focus:outline-none transition-colors"
+          />
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+          {searchQuery && (
+            <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm">✕</button>
+          )}
         </div>
-
-        {/* Daily Avatars Section - FIXED GRID */}
-        <div>
-          <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <span>👤</span> Today's Avatars
-          </h3>
-          {/* FIXED: Changed from flex to proper grid */}
+        <p className="text-sm text-gray-500">{filteredAvatars.length} avatars available</p>
+        {filteredAvatars.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="text-4xl mb-3">🔍</div>
+            <p className="text-gray-500">No avatars match &quot;{searchQuery}&quot;</p>
+          </div>
+        ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-3 md:gap-4">
-            {dailyAvatars.map(avatar => {
+            {filteredAvatars.map(avatar => {
               const owned = selectedStudent?.ownedAvatars?.includes(avatar.name);
               const canAfford = selectedStudent ? calculateCoins(selectedStudent) >= avatar.price : false;
-
+              const isChristmas = avatar.theme === 'christmas';
               return (
                 <div
                   key={avatar.name}
-                  className={`w-full bg-white rounded-xl shadow-sm hover:shadow-md transition-all border overflow-hidden flex flex-col ${owned ? 'border-green-400 ring-2 ring-green-100' : 'border-gray-200 hover:border-blue-400'
-                    }`}
+                  className={`group bg-white rounded-xl shadow-sm hover:shadow-lg transition-all border-2 overflow-hidden flex flex-col ${
+                    owned ? 'border-green-400 bg-green-50/30' : 'border-gray-100 hover:border-blue-300'
+                  } ${isChristmas ? 'ring-2 ring-emerald-200' : ''}`}
                 >
-                  <div className="aspect-square w-full bg-gray-50 flex items-center justify-center p-2">
-                    <img
-                      src={avatar.path}
-                      alt={avatar.name}
-                      className="h-full w-full object-contain"
-                      onError={(e) => { e.target.src = '/shop/Basic/Banana.png'; }}
-                    />
+                  <div className="relative aspect-square w-full bg-gradient-to-b from-gray-50 to-white flex items-center justify-center p-3 overflow-hidden">
+                    {isChristmas && <div className="absolute top-1 right-1 bg-emerald-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full z-10">🎄</div>}
+                    {owned && <div className="absolute top-1 left-1 bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full z-10">✓</div>}
+                    <img src={avatar.path} alt={avatar.name} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-200" onError={(e) => { e.target.src = '/shop/Basic/Banana.png'; }} />
                   </div>
-                  <div className="p-3 text-center border-t flex flex-col flex-grow justify-between">
-                    <div>
-                      <p className="font-bold text-gray-800 text-sm truncate mb-1">{avatar.name}</p>
-                      <p className="font-bold text-blue-600 mb-2">💰 {avatar.price}</p>
-                    </div>
-
+                  <div className="p-2.5 text-center border-t bg-white">
+                    <p className="font-semibold text-gray-800 text-sm truncate mb-1">{avatar.name}</p>
+                    <p className="font-bold text-blue-600 text-sm mb-2">💰 {avatar.price}</p>
                     {owned ? (
-                      <span className="block w-full py-1.5 bg-green-100 text-green-700 text-xs font-bold rounded-lg">
-                        Owned
-                      </span>
+                      <span className="block w-full py-1.5 bg-green-100 text-green-700 text-xs font-bold rounded-lg">Owned ✓</span>
                     ) : (
                       <button
                         onClick={() => setPurchaseModal({ visible: true, item: avatar, type: 'avatar' })}
                         disabled={!selectedStudent || !canAfford}
-                        className={`w-full py-1.5 text-xs font-bold rounded-lg transition-colors ${canAfford
-                          ? 'bg-blue-500 text-white hover:bg-blue-600'
-                          : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                          }`}
+                        className={`w-full py-1.5 text-xs font-bold rounded-lg transition-all ${
+                          canAfford ? 'bg-blue-500 text-white hover:bg-blue-600 active:scale-95' : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                        }`}
                       >
                         {canAfford ? 'Buy Now' : 'Need Coins'}
                       </button>
@@ -1212,51 +1207,71 @@ const ShopTab = ({
               );
             })}
           </div>
-        </div>
+        )}
+      </div>
+    );
+  };
 
-        {/* Daily Pets Section - FIXED GRID */}
-        <div>
-          <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <span>🐾</span> Today's Pets
-          </h3>
-          {/* FIXED: Changed from flex to proper grid */}
+  // ===============================================
+  // RENDER ALL PETS - Full catalog, always available
+  // ===============================================
+  const renderAllPets = () => {
+    const query = searchQuery.toLowerCase().trim();
+    const filteredPets = query
+      ? allPets.filter(p => p.name.toLowerCase().includes(query))
+      : allPets;
+
+    return (
+      <div className="space-y-4">
+        <div className="relative">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search pets..."
+            className="w-full px-4 py-2.5 pl-10 border-2 border-gray-200 rounded-xl text-sm focus:border-purple-400 focus:outline-none transition-colors"
+          />
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+          {searchQuery && (
+            <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm">✕</button>
+          )}
+        </div>
+        <p className="text-sm text-gray-500">{filteredPets.length} pets available</p>
+        {filteredPets.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="text-4xl mb-3">🔍</div>
+            <p className="text-gray-500">No pets match &quot;{searchQuery}&quot;</p>
+          </div>
+        ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
-            {dailyPets.map(pet => {
+            {filteredPets.map(pet => {
               const owned = selectedStudent?.ownedPets?.some(p => p.name === pet.name);
               const canAfford = selectedStudent ? calculateCoins(selectedStudent) >= pet.price : false;
-
+              const isChristmas = pet.theme === 'christmas';
               return (
                 <div
                   key={pet.name}
-                  className={`w-full bg-white rounded-xl shadow-sm hover:shadow-md transition-all border overflow-hidden flex flex-col ${owned ? 'border-green-400 ring-2 ring-green-100' : 'border-gray-200 hover:border-purple-400'
-                    }`}
+                  className={`group bg-white rounded-xl shadow-sm hover:shadow-lg transition-all border-2 overflow-hidden flex flex-col ${
+                    owned ? 'border-green-400 bg-green-50/30' : 'border-gray-100 hover:border-purple-300'
+                  } ${isChristmas ? 'ring-2 ring-emerald-200' : ''}`}
                 >
-                  <div className="aspect-square w-full bg-gray-50 flex items-center justify-center p-2">
-                    <img
-                      src={pet.path}
-                      alt={pet.name}
-                      className="h-full w-full object-contain"
-                      onError={(e) => { e.target.src = '/shop/BasicPets/Wizard.png'; }}
-                    />
+                  <div className="relative aspect-square w-full bg-gradient-to-b from-gray-50 to-white flex items-center justify-center p-3 overflow-hidden">
+                    {isChristmas && <div className="absolute top-1 right-1 bg-emerald-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full z-10">🎄</div>}
+                    {owned && <div className="absolute top-1 left-1 bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full z-10">✓</div>}
+                    <img src={pet.path} alt={pet.name} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-200" onError={(e) => { e.target.src = '/shop/BasicPets/Wizard.png'; }} />
                   </div>
-                  <div className="p-3 text-center border-t flex flex-col flex-grow justify-between">
-                    <div>
-                      <p className="font-bold text-gray-800 text-sm truncate mb-1">{pet.name}</p>
-                      <p className="font-bold text-purple-600 mb-2">💰 {pet.price}</p>
-                    </div>
-
+                  <div className="p-2.5 text-center border-t bg-white">
+                    <p className="font-semibold text-gray-800 text-sm truncate mb-1">{pet.name}</p>
+                    <p className="font-bold text-purple-600 text-sm mb-2">💰 {pet.price}</p>
                     {owned ? (
-                      <span className="block w-full py-1.5 bg-green-100 text-green-700 text-xs font-bold rounded-lg">
-                        Owned
-                      </span>
+                      <span className="block w-full py-1.5 bg-green-100 text-green-700 text-xs font-bold rounded-lg">Owned ✓</span>
                     ) : (
                       <button
                         onClick={() => setPurchaseModal({ visible: true, item: pet, type: 'pet' })}
                         disabled={!selectedStudent || !canAfford}
-                        className={`w-full py-1.5 text-xs font-bold rounded-lg transition-colors ${canAfford
-                          ? 'bg-purple-500 text-white hover:bg-purple-600'
-                          : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                          }`}
+                        className={`w-full py-1.5 text-xs font-bold rounded-lg transition-all ${
+                          canAfford ? 'bg-purple-500 text-white hover:bg-purple-600 active:scale-95' : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                        }`}
                       >
                         {canAfford ? 'Adopt' : 'Need More'}
                       </button>
@@ -1266,129 +1281,56 @@ const ShopTab = ({
               );
             })}
           </div>
-        </div>
+        )}
       </div>
     );
   };
 
-
   // ===============================================
-  // RENDER SPECIAL FEATURES MENU
+  // RENDER REWARDS - Direct access with manage button
   // ===============================================
-  const renderSpecialFeatures = () => {
-    // If a specific section is selected, render it
-    if (specialSection === 'card_packs') {
-      return (
-        <div>
-          <button
-            onClick={() => setSpecialSection(null)}
-            className="mb-4 text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-2"
-          >
-            ← Back to Special Features
-          </button>
-          {renderCardPackItems()}
-        </div>
-      );
-    }
-
-    if (specialSection === 'mysterybox') {
-      return (
-        <div>
-          <button
-            onClick={() => setSpecialSection(null)}
-            className="mb-4 text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-2"
-          >
-            ← Back to Special Features
-          </button>
-          {renderMysteryBox()}
-        </div>
-      );
-    }
-
-    if (specialSection === 'rewards') {
-      return (
-        <div>
-          <button
-            onClick={() => setSpecialSection(null)}
-            className="mb-4 text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-2"
-          >
-            ← Back to Special Features
-          </button>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {currentRewards.map(reward => (
-              <div
-                key={reward.id}
-                className="bg-white border-2 border-yellow-300 rounded-xl p-4 text-center hover:shadow-lg transition-all"
+  const renderRewardsSection = () => (
+    <div className="space-y-4">
+      <p className="text-sm text-gray-500">Rewards that students can claim with their coins.</p>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4">
+        {currentRewards.map(reward => {
+          const canAfford = selectedStudent ? calculateCoins(selectedStudent) >= reward.price : false;
+          return (
+            <div key={reward.id} className="bg-white border-2 border-amber-200 rounded-xl p-4 text-center hover:shadow-lg hover:border-amber-400 transition-all flex flex-col justify-between">
+              <div className="text-4xl md:text-5xl mb-3">{reward.icon}</div>
+              <p className="font-bold text-sm md:text-base text-gray-800">{reward.name}</p>
+              <p className="text-lg font-bold text-amber-600 my-2">💰 {reward.price}</p>
+              <button
+                onClick={() => setPurchaseModal({ visible: true, item: reward, type: 'reward' })}
+                disabled={!selectedStudent || !canAfford}
+                className={`w-full py-2 text-xs md:text-sm font-bold rounded-lg transition-all ${
+                  canAfford ? 'bg-amber-500 text-white hover:bg-amber-600 active:scale-95' : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                }`}
               >
-                <div className="text-4xl mb-2">{reward.icon}</div>
-                <p className="font-semibold text-sm">{reward.name}</p>
-                <p className="text-lg font-bold text-yellow-600">💰 {reward.price}</p>
-                <button
-                  onClick={() => setPurchaseModal({ visible: true, item: reward, type: 'reward' })}
-                  disabled={!selectedStudent || calculateCoins(selectedStudent) < reward.price}
-                  className="mt-2 w-full py-2 bg-yellow-500 text-white text-xs font-bold rounded-lg hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                >
-                  Claim
-                </button>
-              </div>
-            ))}
-          </div>
-
-          {/* Reward Manager Button for Teachers */}
-          <div className="mt-6 text-center">
-            <button
-              onClick={() => setShowRewardManager(true)}
-              className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold"
-            >
-              ⚙️ Manage Rewards
-            </button>
-          </div>
-        </div>
-      );
-    }
-
-    // Main special features menu
-    return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 max-w-5xl mx-auto">
+                {canAfford ? 'Claim Reward' : 'Need More Coins'}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+      <div className="text-center mt-4">
         <button
-          onClick={() => setSpecialSection('card_packs')}
-          className="aspect-square flex flex-col items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-2xl p-6 text-center hover:shadow-xl transition-all transform hover:scale-105"
+          onClick={() => setShowRewardManager(true)}
+          className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold text-sm"
         >
-          <div className="text-6xl mb-4">🃏</div>
-          <h3 className="text-xl font-bold">Card Packs</h3>
-          <p className="text-white/80 mt-2 text-sm">Collect trading cards</p>
-        </button>
-
-        <button
-          onClick={() => setSpecialSection('mysterybox')}
-          className="aspect-square flex flex-col items-center justify-center bg-gradient-to-br from-pink-500 to-rose-600 text-white rounded-2xl p-6 text-center hover:shadow-xl transition-all transform hover:scale-105"
-        >
-          <div className="text-6xl mb-4">🎁</div>
-          <h3 className="text-xl font-bold">Mystery Box</h3>
-          <p className="text-white/80 mt-2 text-sm">Win random prizes</p>
-        </button>
-
-        <button
-          onClick={() => setSpecialSection('rewards')}
-          className="aspect-square flex flex-col items-center justify-center bg-gradient-to-br from-amber-500 to-orange-600 text-white rounded-2xl p-6 text-center hover:shadow-xl transition-all transform hover:scale-105"
-        >
-          <div className="text-6xl mb-4">🏆</div>
-          <h3 className="text-xl font-bold">Class Rewards</h3>
-          <p className="text-white/80 mt-2 text-sm">Special privileges</p>
+          ⚙️ Manage Rewards
         </button>
       </div>
-    );
-  };
+    </div>
+  );
 
-  // UPDATED RENDER SHOP ITEMS
-  const renderShopItems = () => {
-    if (activeCategory === 'shop') {
-      return renderDailyShop();
-    }
-
-    if (activeCategory === 'special') {
-      return renderSpecialFeatures();
-    }
+  // FLAT NAVIGATION – master routing function
+  const renderShopContent = () => {
+    if (activeCategory === 'avatars') return renderAllAvatars();
+    if (activeCategory === 'pets') return renderAllPets();
+    if (activeCategory === 'card_packs') return renderCardPackItems();
+    if (activeCategory === 'mysterybox') return renderMysteryBox();
+    if (activeCategory === 'rewards') return renderRewardsSection();
 
     if (activeCategory === 'inventory') {
       const ownedAvatars = selectedStudent?.ownedAvatars || [];
@@ -1398,7 +1340,6 @@ const ShopTab = ({
         <div className="space-y-6">
           <h3 className="text-lg font-bold text-gray-800">🎒 {selectedStudent?.firstName}'s Inventory</h3>
 
-          {/* Owned Avatars - FIXED GRID */}
           <div>
             <h4 className="font-semibold text-gray-700 mb-3">Avatars ({ownedAvatars.length})</h4>
             {ownedAvatars.length > 0 ? (
@@ -1413,8 +1354,10 @@ const ShopTab = ({
                     ...CHRISTMAS_PREMIUM_AVATARS
                   ].find(a => a.name === avatarName);
 
+                  const isEquipped = selectedStudent.avatarBase === avatarName;
+
                   return (
-                    <div key={avatarName} className="w-full bg-white rounded-xl overflow-hidden text-center border shadow-sm hover:shadow-md transition-all">
+                    <div key={avatarName} className={`w-full bg-white rounded-xl overflow-hidden text-center border-2 shadow-sm hover:shadow-md transition-all ${isEquipped ? 'border-blue-400 ring-2 ring-blue-100' : 'border-gray-200'}`}>
                       <div className="aspect-square w-full bg-gray-50 flex items-center justify-center p-2">
                         <img
                           src={avatarData?.path || getAvatarImage(avatarName, 1)}
@@ -1424,132 +1367,109 @@ const ShopTab = ({
                         />
                       </div>
                       <div className="p-2">
-                        <p className="text-xs font-semibold truncate">{avatarName}</p>
+                        <p className="text-xs font-semibold truncate mb-1">{avatarName}</p>
+                        {isEquipped ? (
+                          <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">Active</span>
+                        ) : (
+                          <button
+                            onClick={() => handleEquip('avatar', avatarName)}
+                            className="text-[10px] font-semibold text-gray-500 hover:text-blue-600 transition-colors"
+                          >Equip</button>
+                        )}
                       </div>
                     </div>
                   );
                 })}
               </div>
             ) : (
-              <p className="text-gray-400 text-sm">No avatars owned yet</p>
+              <p className="text-gray-400 text-sm">No avatars owned yet — browse the Avatars tab!</p>
             )}
           </div>
 
-          {/* Owned Pets - FIXED GRID */}
           <div>
             <h4 className="font-semibold text-gray-700 mb-3">Pets ({ownedPets.length})</h4>
             {ownedPets.length > 0 ? (
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
-                {ownedPets.map(pet => (
-                  <div key={pet.id || pet.name} className="w-full bg-white rounded-xl overflow-hidden text-center border shadow-sm hover:shadow-md transition-all">
-                    <div className="aspect-square w-full bg-gray-50 flex items-center justify-center p-2">
-                      <img
-                        src={pet.path || '/shop/BasicPets/Wizard.png'}
-                        alt={pet.name}
-                        className="w-full h-full object-contain"
-                      />
+                {ownedPets.map((pet, index) => {
+                  const isActive = index === 0;
+                  return (
+                    <div key={pet.id || pet.name} className={`w-full bg-white rounded-xl overflow-hidden text-center border-2 shadow-sm hover:shadow-md transition-all ${isActive ? 'border-purple-400 ring-2 ring-purple-100' : 'border-gray-200'}`}>
+                      <div className="aspect-square w-full bg-gray-50 flex items-center justify-center p-2">
+                        <img
+                          src={pet.path || '/shop/BasicPets/Wizard.png'}
+                          alt={pet.name}
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                      <div className="p-2">
+                        <p className="text-xs font-semibold truncate mb-1">{pet.name}</p>
+                        {isActive ? (
+                          <span className="text-[10px] font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">Active</span>
+                        ) : (
+                          <button
+                            onClick={() => handleEquip('pet', pet.id)}
+                            className="text-[10px] font-semibold text-gray-500 hover:text-purple-600 transition-colors"
+                          >Equip</button>
+                        )}
+                      </div>
                     </div>
-                    <div className="p-2">
-                      <p className="text-xs font-semibold truncate">{pet.name}</p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
-              <p className="text-gray-400 text-sm">No pets owned yet</p>
+              <p className="text-gray-400 text-sm">No pets owned yet — browse the Pets tab!</p>
             )}
           </div>
-        </div>
-      );
-    }
 
-    // Legacy category handling (for backward compatibility)
-    if (activeCategory === 'featured') {
-      return renderFeaturedItems();
-    }
-
-    if (activeCategory === 'mysterybox') {
-      return renderMysteryBox();
-    }
-
-    if (activeCategory === 'card_packs') {
-      return renderCardPackItems();
-    }
-
-    let items;
-    let type;
-    switch (activeCategory) {
-      case 'christmas':
-        // Combine all Christmas items
-        items = [...CHRISTMAS_BASIC_AVATARS, ...CHRISTMAS_PREMIUM_AVATARS, ...CHRISTMAS_PETS];
-        type = 'mixed';
-        break;
-      case 'basic_avatars': items = SHOP_BASIC_AVATARS; type = 'avatar'; break;
-      case 'premium_avatars': items = SHOP_PREMIUM_AVATARS; type = 'avatar'; break;
-      case 'basic_pets': items = SHOP_BASIC_PETS; type = 'pet'; break;
-      case 'premium_pets': items = SHOP_PREMIUM_PETS; type = 'pet'; break;
-      case 'rewards': items = currentRewards; type = 'reward'; break;
-      default: items = [];
-    }
-
-    return items.map(item => {
-      // Determine actual type for mixed Christmas items
-      let actualType = type;
-      if (type === 'mixed') {
-        if (item.name.toLowerCase().includes('cat') || item.name.toLowerCase().includes('pet')) {
-          actualType = 'pet';
-        } else {
-          actualType = 'avatar';
-        }
-      }
-
-      const isChristmasPet = CHRISTMAS_PETS.some(pet => pet.name === item.name);
-      const isChristmasAvatar = [...CHRISTMAS_BASIC_AVATARS, ...CHRISTMAS_PREMIUM_AVATARS].some(avatar => avatar.name === item.name);
-
-      if (type === 'mixed') {
-        if (isChristmasPet) {
-          actualType = 'pet';
-        } else if (isChristmasAvatar) {
-          actualType = 'avatar';
-        }
-      }
-
-      const isAvatar = actualType === 'avatar';
-      const isPet = actualType === 'pet';
-      const isReward = actualType === 'reward';
-      const owned = isAvatar ? selectedStudent?.ownedAvatars?.includes(item.name) :
-        isPet ? selectedStudent?.ownedPets?.some(p => p.name === item.name) : false;
-
-      return (
-        <div key={item.name || item.id} className={`border-2 rounded-lg p-3 sm:p-4 text-center flex flex-col justify-between ${owned ? 'border-green-400 bg-green-50' :
-          activeCategory === 'christmas' ? 'border-emerald-500 bg-gradient-to-br from-emerald-50 via-sky-50 to-emerald-100' :
-            'border-gray-200'
-          }`}>
-          {isReward ? (
-            <>
-              <div className="text-3xl sm:text-4xl">{item.icon}</div>
-              <p className="font-semibold mt-1 sm:mt-2 text-xs sm:text-sm">{item.name}</p>
-            </>
-          ) : (
-            <img src={item.path} className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 object-contain rounded-full mx-auto mb-1 sm:mb-2" />
-          )}
-
-          {!isReward && <p className="font-semibold text-xs sm:text-sm">{item.name}</p>}
-
-          {owned ? (
-            <p className="font-bold text-green-600 mt-1 sm:mt-2 text-xs sm:text-sm">Owned</p>
-          ) : (
-            <button
-              onClick={() => setPurchaseModal({ visible: true, item: item, type: actualType })}
-              disabled={calculateCoins(selectedStudent) < item.price}
-              className="mt-1 sm:mt-2 w-full bg-blue-500 text-white text-xs sm:text-sm py-1 sm:py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-600"
-            >
-              💰 {item.price}
-            </button>
+          {/* Incubating Eggs */}
+          {selectedStudentEggs.length > 0 && (
+            <div>
+              <h4 className="font-bold text-gray-700 mb-3 text-base">🥚 Incubating Eggs ({selectedStudentEggs.length})</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {selectedStudentEggs.map((egg) => {
+                  const status = getEggStageStatus(egg);
+                  const accent = getEggAccent(egg);
+                  const eggArt = resolveEggArt(status.stage);
+                  const stageMessage = EGG_STAGE_MESSAGES[status.stage] || 'A surprise is brewing inside.';
+                  return (
+                    <div
+                      key={egg.id}
+                      className="border-2 rounded-xl p-3 flex items-center gap-3"
+                      style={{ borderColor: `${accent}55`, background: `linear-gradient(135deg, ${accent}11, #ffffff)` }}
+                    >
+                      <div
+                        className={`relative w-12 h-12 rounded-xl overflow-hidden shadow flex-shrink-0 ${status.stage === 'unbroken' ? 'egg-shake' : ''}`}
+                        style={{ background: `radial-gradient(circle at 30% 30%, ${accent}22, #ffffff)`, border: `3px solid ${accent}` }}
+                      >
+                        <Image src={eggArt.src} alt={egg.name} fill sizes="48px" className="object-contain p-1"
+                          data-fallbacks={serializeFallbacks(eggArt.fallbacks)} data-fallback-index="0" onError={eggImageErrorHandler}
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm truncate">{egg.name}</p>
+                        <p className="text-xs text-gray-500">{status.stageLabel}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">{stageMessage}</p>
+                        {status.stage === 'ready' && (
+                          <button
+                            onClick={() => handleHatchEgg(egg)}
+                            className="mt-1 text-xs bg-orange-500 text-white px-3 py-1 rounded-lg hover:bg-orange-600 font-semibold"
+                          >Hatch!</button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           )}
         </div>
       );
-    });
+    }
+
+    // Legacy featured/etc.
+    if (activeCategory === 'featured') return renderFeaturedItems();
+
+    return null;
   };
 
   // ===============================================
@@ -1909,80 +1829,79 @@ const ShopTab = ({
             </div>
           )}
 
-          {/* MOBILE-FRIENDLY Category Tabs */}
-          <div className="flex space-x-1 sm:space-x-2 border-b pb-3 sm:pb-4 mb-4 overflow-x-auto">
-            {SHOP_CATEGORIES.map(cat => (
-              <button
-                key={cat.id}
-                onClick={() => setActiveCategory(cat.id)}
-                className={`px-2 sm:px-4 py-2 rounded-lg font-semibold whitespace-nowrap text-xs sm:text-sm ${activeCategory === cat.id
-                  ? cat.id === 'christmas'
-                    ? 'bg-gradient-to-r from-emerald-500 via-sky-500 to-emerald-600 text-white'
-                    : cat.id === 'featured'
-                      ? 'bg-red-500 text-white'
-                      : cat.id === 'mysterybox'
-                        ? 'bg-purple-500 text-white'
-                        : 'bg-blue-500 text-white'
-                  : 'bg-gray-100'
+          {/* Navigation Pills */}
+          <div className="flex overflow-x-auto gap-1.5 pb-4 mb-4 border-b scrollbar-hide">
+            {SHOP_CATEGORIES.map(cat => {
+              const isActive = activeCategory === cat.id;
+              const colorMap = {
+                avatars: { active: 'bg-blue-500 text-white shadow-blue-200', hover: 'hover:bg-blue-50 hover:text-blue-700' },
+                pets: { active: 'bg-purple-500 text-white shadow-purple-200', hover: 'hover:bg-purple-50 hover:text-purple-700' },
+                card_packs: { active: 'bg-indigo-500 text-white shadow-indigo-200', hover: 'hover:bg-indigo-50 hover:text-indigo-700' },
+                mysterybox: { active: 'bg-pink-500 text-white shadow-pink-200', hover: 'hover:bg-pink-50 hover:text-pink-700' },
+                rewards: { active: 'bg-amber-500 text-white shadow-amber-200', hover: 'hover:bg-amber-50 hover:text-amber-700' },
+                inventory: { active: 'bg-emerald-500 text-white shadow-emerald-200', hover: 'hover:bg-emerald-50 hover:text-emerald-700' }
+              };
+              const colors = colorMap[cat.id] || { active: 'bg-blue-500 text-white', hover: 'hover:bg-gray-200' };
+
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => { setActiveCategory(cat.id); setSearchQuery(''); }}
+                  className={`flex-shrink-0 px-3 py-2 md:px-4 md:py-2.5 rounded-xl font-semibold transition-all text-xs md:text-sm whitespace-nowrap ${
+                    isActive
+                      ? `${colors.active} shadow-md`
+                      : `bg-white text-gray-600 border border-gray-200 ${colors.hover}`
                   }`}
-              >
-                <span className="sm:hidden">{cat.shortName}</span>
-                <span className="hidden sm:inline">{cat.name}</span>
-              </button>
-            ))}
+                >
+                  <span className="sm:hidden">{cat.shortName}</span>
+                  <span className="hidden sm:inline">{cat.name}</span>
+                  {cat.count != null && (
+                    <span className={`ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                      isActive ? 'bg-white/25' : 'bg-gray-100 text-gray-500'
+                    }`}>{cat.count}</span>
+                  )}
+                </button>
+              );
+            })}
 
             {/* Manage Rewards Button */}
             {activeCategory === 'rewards' && (
               <button
                 onClick={() => setShowRewardManager(true)}
-                className="px-2 sm:px-4 py-2 rounded-lg font-semibold bg-green-500 text-white hover:bg-green-600 ml-2 sm:ml-4 text-xs sm:text-sm whitespace-nowrap"
+                className="px-2 sm:px-4 py-2 rounded-xl font-semibold bg-green-500 text-white hover:bg-green-600 ml-2 sm:ml-4 text-xs sm:text-sm whitespace-nowrap"
               >
                 🛠️ <span className="hidden sm:inline">Manage</span>
               </button>
             )}
           </div>
 
-          {/* SPECIAL HEADER FOR CHRISTMAS SECTION */}
-          {activeCategory === 'christmas' && (
-            <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-gradient-to-r from-emerald-50 via-sky-50 to-emerald-100 rounded-lg border-2 border-emerald-400">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="text-2xl sm:text-3xl animate-bounce">🎄</div>
-                <div>
-                  <h3 className="text-lg sm:text-xl font-bold text-emerald-800">🎄 Christmas Special Collection! 🎄</h3>
-                  <p className="text-sm sm:text-base text-emerald-700 font-semibold">Limited time festive avatars and pets - get them before they're gone!</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Special Header for Featured Section */}
-          {activeCategory === 'featured' && (
-            <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-gradient-to-r from-red-100 to-pink-100 rounded-lg border-2 border-red-200">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="text-2xl sm:text-3xl">🔥</div>
-                <div>
-                  <h3 className="text-lg sm:text-xl font-bold text-red-800">Daily Special Offers!</h3>
-                  <p className="text-sm sm:text-base text-red-600">Limited time discounts - Save up to 30%!</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Special Header for Mystery Box Section */}
+          {/* Section Header Banners */}
           {activeCategory === 'mysterybox' && (
-            <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg border-2 border-purple-200">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="text-2xl sm:text-3xl">🎁</div>
+            <div className="mb-4 p-3 md:p-4 bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl border border-purple-200">
+              <div className="flex items-center gap-3">
+                <div className="text-2xl md:text-3xl">🎁</div>
                 <div>
-                  <h3 className="text-lg sm:text-xl font-bold text-purple-800">Mystery Box Adventure!</h3>
-                  <p className="text-sm sm:text-base text-purple-600">Take a chance and discover amazing surprises!</p>
+                  <h3 className="text-base md:text-lg font-bold text-purple-800">Mystery Box</h3>
+                  <p className="text-purple-600 text-xs md:text-sm">Take a chance and discover amazing surprises!</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeCategory === 'rewards' && (
+            <div className="mb-4 p-3 md:p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-200">
+              <div className="flex items-center gap-3">
+                <div className="text-2xl md:text-3xl">🏆</div>
+                <div>
+                  <h3 className="text-base md:text-lg font-bold text-amber-800">Class Rewards</h3>
+                  <p className="text-amber-600 text-xs md:text-sm">Rewards that students can purchase with their coins.</p>
                 </div>
               </div>
             </div>
           )}
 
           <div className="w-full">
-            {renderShopItems()}
+            {renderShopContent()}
           </div>
         </div>
       )}

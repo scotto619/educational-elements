@@ -1,4 +1,4 @@
-// components/student/StudentShop.js - SIMPLIFIED SHOP WITH DAILY ROTATION
+// components/student/StudentShop.js - FULL CATALOG SHOP WITH FLAT NAVIGATION
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
@@ -32,7 +32,6 @@ import {
   getCardLibraryMap
 } from '../../utils/tradingCards';
 import { DEFAULT_TEACHER_REWARDS, buildShopInventory, getDailySpecials } from '../../utils/shopSpecials';
-import { getDailyAvailableAvatars, getDailyAvailablePets, formatRotationCountdown } from '../../utils/shopRotation';
 
 import {
   defaultEggArt, eggImageErrorHandler, petImageErrorHandler,
@@ -69,7 +68,7 @@ const StudentShop = ({
   classData = null,
   performClassmateTrade = null
 }) => {
-  const [activeCategory, setActiveCategory] = useState('shop'); // Default to daily shop items
+  const [activeCategory, setActiveCategory] = useState('avatars'); // Default to all avatars
   const [purchaseModal, setPurchaseModal] = useState({ visible: false, item: null, type: null });
   const [inventoryModal, setInventoryModal] = useState({ visible: false });
   const [respondingTradeId, setRespondingTradeId] = useState(null);
@@ -220,19 +219,22 @@ const StudentShop = ({
     seasonalItems
   ]);
 
-  // Daily rotating items - 7 avatars and 3 pets that change each day
-  const dailyAvatars = useMemo(() => {
-    const allAvatars = [...(SHOP_BASIC_AVATARS || []), ...(SHOP_PREMIUM_AVATARS || [])];
-    return getDailyAvailableAvatars(allAvatars, 14);
-  }, [SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS]);
+  // All avatars and pets - always fully available (no daily rotation)
+  const allAvatars = useMemo(() => [
+    ...(SHOP_BASIC_AVATARS || []),
+    ...(SHOP_PREMIUM_AVATARS || []),
+    ...(CHRISTMAS_BASIC_AVATARS || []),
+    ...(CHRISTMAS_PREMIUM_AVATARS || [])
+  ], [SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, CHRISTMAS_BASIC_AVATARS, CHRISTMAS_PREMIUM_AVATARS]);
 
-  const dailyPets = useMemo(() => {
-    const allPets = [...(SHOP_BASIC_PETS || []), ...(SHOP_PREMIUM_PETS || [])];
-    return getDailyAvailablePets(allPets, 6);
-  }, [SHOP_BASIC_PETS, SHOP_PREMIUM_PETS]);
+  const allPets = useMemo(() => [
+    ...(SHOP_BASIC_PETS || []),
+    ...(SHOP_PREMIUM_PETS || []),
+    ...(CHRISTMAS_PETS || [])
+  ], [SHOP_BASIC_PETS, SHOP_PREMIUM_PETS, CHRISTMAS_PETS]);
 
-  // Special features menu state
-  const [specialSection, setSpecialSection] = useState(null); // 'card_packs', 'mysterybox', 'rewards'
+  // Search state for filtering items
+  const [searchQuery, setSearchQuery] = useState('');
 
   const cardLibraryMap = useMemo(
     () => getCardLibraryMap(tradingCardLibrary),
@@ -1935,12 +1937,15 @@ const StudentShop = ({
     await updateStudentData(updates);
   };
 
-  // SIMPLIFIED SHOP CATEGORIES - Clean two-section design (no loot well or christmas)
+  // FLAT NAVIGATION - All sections accessible in one click
   const categories = [
-    { id: 'shop', name: "🛒 Today's Shop", shortName: 'Shop' },
-    { id: 'special', name: '✨ Special Features', shortName: 'Special' },
-    { id: 'inventory', name: '🎒 My Stuff', shortName: 'Items' },
-    { id: 'loot_well', name: '💠 Loot Well', shortName: 'Loot Well' }
+    { id: 'avatars', name: '👤 Avatars', shortName: '👤', count: allAvatars.length },
+    { id: 'pets', name: '🐾 Pets', shortName: '🐾', count: allPets.length },
+    { id: 'card_packs', name: '🃏 Cards', shortName: '🃏' },
+    { id: 'mysterybox', name: '🎁 Mystery Box', shortName: '🎁' },
+    { id: 'loot_well', name: '💠 Loot Well', shortName: '💠' },
+    { id: 'rewards', name: '🏆 Rewards', shortName: '🏆' },
+    { id: 'inventory', name: '🎒 My Stuff', shortName: '🎒' }
   ];
 
   const renderMysteryBox = () => {
@@ -2287,65 +2292,85 @@ const StudentShop = ({
 
   const renderShopItems = () => {
     // ===============================================
-    // NEW: Daily Shop - 7 avatars + 3 pets rotating
+    // AVATARS - Full catalog, always available
     // ===============================================
-    if (activeCategory === 'shop') {
-      const countdown = formatRotationCountdown();
+    if (activeCategory === 'avatars') {
+      const query = searchQuery.toLowerCase().trim();
+      const filteredAvatars = query
+        ? allAvatars.filter(a => a.name.toLowerCase().includes(query))
+        : allAvatars;
 
       return (
-        <div className="space-y-6">
-          {/* Rotation Timer */}
-          <div className="text-center text-sm text-gray-500">
-            <span className="inline-flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-full">
-              <span>🔄</span>
-              <span>New items in <strong>{countdown}</strong></span>
-            </span>
+        <div className="space-y-4">
+          {/* Search Bar */}
+          <div className="relative">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search avatars..."
+              className="w-full px-4 py-2.5 pl-10 border-2 border-gray-200 rounded-xl text-sm focus:border-blue-400 focus:outline-none transition-colors"
+            />
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm"
+              >✕</button>
+            )}
           </div>
 
-          {/* Daily Avatars Section */}
-          <div>
-            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-              <span>👤</span> Today's Avatars
-            </h3>
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4 justify-items-center">
-              {dailyAvatars.map(avatar => {
+          <p className="text-sm text-gray-500">{filteredAvatars.length} avatars available</p>
+
+          {filteredAvatars.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-4xl mb-3">🔍</div>
+              <p className="text-gray-500">No avatars match &quot;{searchQuery}&quot;</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
+              {filteredAvatars.map(avatar => {
                 const owned = studentData?.ownedAvatars?.includes(avatar.name);
                 const canAfford = currentCoins >= avatar.price;
+                const isChristmas = avatar.theme === 'christmas';
 
                 return (
                   <div
                     key={avatar.name}
-                    className={`w-full max-w-[220px] mx-auto bg-white rounded-xl shadow-sm hover:shadow-md transition-all border overflow-hidden flex flex-col ${owned ? 'border-green-400 ring-2 ring-green-100' : 'border-gray-200 hover:border-blue-400'
-                      }`}
+                    className={`group bg-white rounded-xl shadow-sm hover:shadow-lg transition-all border-2 overflow-hidden flex flex-col ${
+                      owned ? 'border-green-400 bg-green-50/30' : 'border-gray-100 hover:border-blue-300'
+                    } ${isChristmas ? 'ring-2 ring-emerald-200' : ''}`}
                   >
-                    <div className="h-48 w-full bg-gray-50 flex items-center justify-center p-2">
+                    <div className="relative aspect-square w-full bg-gradient-to-b from-gray-50 to-white flex items-center justify-center p-3 overflow-hidden">
+                      {isChristmas && (
+                        <div className="absolute top-1 right-1 bg-emerald-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full z-10">🎄</div>
+                      )}
+                      {owned && (
+                        <div className="absolute top-1 left-1 bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full z-10">✓</div>
+                      )}
                       <img
                         src={avatar.path}
                         alt={avatar.name}
-                        className="h-full w-full object-contain"
+                        className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-200"
                         onError={(e) => { e.target.src = '/shop/Basic/Banana.png'; }}
                       />
                     </div>
-                    <div className="p-3 text-center border-t flex flex-col flex-grow justify-between">
-                      <div>
-                        <p className="font-bold text-gray-800 truncate mb-1">{avatar.name}</p>
-                        <p className="font-bold text-blue-600 mb-2">💰 {avatar.price}</p>
-                      </div>
-
+                    <div className="p-2.5 text-center border-t bg-white">
+                      <p className="font-semibold text-gray-800 text-sm truncate mb-1">{avatar.name}</p>
+                      <p className="font-bold text-blue-600 text-sm mb-2">💰 {avatar.price}</p>
                       {owned ? (
-                        <span className="block w-full py-1.5 bg-green-100 text-green-700 text-xs font-bold rounded-lg">
-                          Owned
-                        </span>
+                        <span className="block w-full py-1.5 bg-green-100 text-green-700 text-xs font-bold rounded-lg">Owned ✓</span>
                       ) : (
                         <button
                           onClick={() => setPurchaseModal({ visible: true, item: avatar, type: 'avatar' })}
                           disabled={!canAfford}
-                          className={`w-full py-1.5 text-xs font-bold rounded-lg transition-colors ${canAfford
-                            ? 'bg-blue-500 text-white hover:bg-blue-600'
-                            : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                            }`}
+                          className={`w-full py-1.5 text-xs font-bold rounded-lg transition-all ${
+                            canAfford
+                              ? 'bg-blue-500 text-white hover:bg-blue-600 active:scale-95'
+                              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                          }`}
                         >
-                          {canAfford ? 'Buy Now' : 'Need Coins'}
+                          {canAfford ? 'Buy Now' : `Need ${avatar.price - currentCoins} more`}
                         </button>
                       )}
                     </div>
@@ -2353,52 +2378,91 @@ const StudentShop = ({
                 );
               })}
             </div>
+          )}
+        </div>
+      );
+    }
+
+    // ===============================================
+    // PETS - Full catalog, always available
+    // ===============================================
+    if (activeCategory === 'pets') {
+      const query = searchQuery.toLowerCase().trim();
+      const filteredPets = query
+        ? allPets.filter(p => p.name.toLowerCase().includes(query))
+        : allPets;
+
+      return (
+        <div className="space-y-4">
+          {/* Search Bar */}
+          <div className="relative">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search pets..."
+              className="w-full px-4 py-2.5 pl-10 border-2 border-gray-200 rounded-xl text-sm focus:border-purple-400 focus:outline-none transition-colors"
+            />
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm"
+              >✕</button>
+            )}
           </div>
 
-          {/* Daily Pets Section */}
-          <div>
-            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-              <span>🐾</span> Today's Pets
-            </h3>
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4 justify-items-center">
-              {dailyPets.map(pet => {
+          <p className="text-sm text-gray-500">{filteredPets.length} pets available</p>
+
+          {filteredPets.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-4xl mb-3">🔍</div>
+              <p className="text-gray-500">No pets match &quot;{searchQuery}&quot;</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
+              {filteredPets.map(pet => {
                 const owned = studentData?.ownedPets?.some(p => p.name === pet.name);
                 const canAfford = currentCoins >= pet.price;
+                const isChristmas = pet.theme === 'christmas';
 
                 return (
                   <div
                     key={pet.name}
-                    className={`w-full max-w-[220px] mx-auto bg-white rounded-xl shadow-sm hover:shadow-md transition-all border overflow-hidden flex flex-col ${owned ? 'border-green-400 ring-2 ring-green-100' : 'border-gray-200 hover:border-purple-400'
-                      }`}
+                    className={`group bg-white rounded-xl shadow-sm hover:shadow-lg transition-all border-2 overflow-hidden flex flex-col ${
+                      owned ? 'border-green-400 bg-green-50/30' : 'border-gray-100 hover:border-purple-300'
+                    } ${isChristmas ? 'ring-2 ring-emerald-200' : ''}`}
                   >
-                    <div className="h-40 w-full bg-gray-50 flex items-center justify-center p-2">
+                    <div className="relative aspect-square w-full bg-gradient-to-b from-gray-50 to-white flex items-center justify-center p-3 overflow-hidden">
+                      {isChristmas && (
+                        <div className="absolute top-1 right-1 bg-emerald-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full z-10">🎄</div>
+                      )}
+                      {owned && (
+                        <div className="absolute top-1 left-1 bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full z-10">✓</div>
+                      )}
                       <img
                         src={pet.path}
                         alt={pet.name}
-                        className="h-full w-full object-contain"
+                        className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-200"
                         onError={(e) => { e.target.src = '/shop/BasicPets/Wizard.png'; }}
                       />
                     </div>
-                    <div className="p-3 text-center border-t flex flex-col flex-grow justify-between">
-                      <div>
-                        <p className="font-bold text-gray-800 truncate mb-1">{pet.name}</p>
-                        <p className="font-bold text-purple-600 mb-2">💰 {pet.price}</p>
-                      </div>
-
+                    <div className="p-2.5 text-center border-t bg-white">
+                      <p className="font-semibold text-gray-800 text-sm truncate mb-1">{pet.name}</p>
+                      <p className="font-bold text-purple-600 text-sm mb-2">💰 {pet.price}</p>
                       {owned ? (
-                        <span className="block w-full py-1.5 bg-green-100 text-green-700 text-xs font-bold rounded-lg">
-                          Owned
-                        </span>
+                        <span className="block w-full py-1.5 bg-green-100 text-green-700 text-xs font-bold rounded-lg">Owned ✓</span>
                       ) : (
                         <button
                           onClick={() => setPurchaseModal({ visible: true, item: pet, type: 'pet' })}
                           disabled={!canAfford}
-                          className={`w-full py-1.5 text-xs font-bold rounded-lg transition-colors ${canAfford
-                            ? 'bg-purple-500 text-white hover:bg-purple-600'
-                            : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                            }`}
+                          className={`w-full py-1.5 text-xs font-bold rounded-lg transition-all ${
+                            canAfford
+                              ? 'bg-purple-500 text-white hover:bg-purple-600 active:scale-95'
+                              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                          }`}
                         >
-                          {canAfford ? 'Adopt' : 'Need More'}
+                          {canAfford ? 'Adopt' : `Need ${pet.price - currentCoins} more`}
                         </button>
                       )}
                     </div>
@@ -2406,191 +2470,28 @@ const StudentShop = ({
                 );
               })}
             </div>
-          </div>
+          )}
         </div>
       );
     }
 
     // ===============================================
-    // NEW: Special Features Menu
+    // CARD PACKS - Direct access
     // ===============================================
-    if (activeCategory === 'special') {
-      // Sub-section handling
-      if (specialSection === 'card_packs') {
-        return (
-          <div>
-            <button
-              onClick={() => setSpecialSection(null)}
-              className="mb-4 text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-2"
-            >
-              ← Back to Special Features
-            </button>
-            {renderCardPackSection()}
-          </div>
-        );
-      }
-
-      if (specialSection === 'mysterybox') {
-        return (
-          <div>
-            <button
-              onClick={() => setSpecialSection(null)}
-              className="mb-4 text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-2"
-            >
-              ← Back to Special Features
-            </button>
-            {renderMysteryBox()}
-          </div>
-        );
-      }
-
-      if (specialSection === 'rewards') {
-        return (
-          <div>
-            <button
-              onClick={() => setSpecialSection(null)}
-              className="mb-4 text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-2"
-            >
-              ← Back to Special Features
-            </button>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-              {(availableClassRewards || []).map(reward => (
-                <div
-                  key={reward.id}
-                  className="w-full bg-white border-2 border-yellow-300 rounded-xl p-4 text-center hover:shadow-lg transition-all flex flex-col justify-between"
-                >
-                  <div className="text-4xl mb-2">{reward.icon}</div>
-                  <p className="font-semibold text-sm">{reward.name}</p>
-                  <p className="text-lg font-bold text-yellow-600">💰 {reward.price}</p>
-                  <button
-                    onClick={() => setPurchaseModal({ visible: true, item: reward, type: 'reward' })}
-                    disabled={currentCoins < reward.price}
-                    className="mt-2 w-full py-2 bg-yellow-500 text-white text-xs font-bold rounded-lg hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                  >
-                    Claim
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      }
-
-      // Main special features menu
-      return (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 max-w-4xl mx-auto">
-          <button
-            onClick={() => setSpecialSection('card_packs')}
-            className="w-full aspect-square flex flex-col items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-2xl p-4 text-center hover:shadow-xl transition-all transform hover:scale-105"
-          >
-            <div className="text-6xl mb-4">🃏</div>
-            <h3 className="text-xl font-bold">Card Packs</h3>
-            <p className="text-white/80 mt-2">Collect trading cards</p>
-          </button>
-
-          <button
-            onClick={() => setSpecialSection('mysterybox')}
-            className="w-full aspect-square flex flex-col items-center justify-center bg-gradient-to-br from-pink-500 to-rose-600 text-white rounded-2xl p-4 text-center hover:shadow-xl transition-all transform hover:scale-105"
-          >
-            <div className="text-6xl mb-4">🎁</div>
-            <h3 className="text-xl font-bold">Mystery Box</h3>
-            <p className="text-white/80 mt-2">Win random prizes</p>
-          </button>
-
-          <button
-            onClick={() => setSpecialSection('rewards')}
-            className="w-full aspect-square flex flex-col items-center justify-center bg-gradient-to-br from-amber-500 to-orange-600 text-white rounded-2xl p-4 text-center hover:shadow-xl transition-all transform hover:scale-105"
-          >
-            <div className="text-6xl mb-4">🏆</div>
-            <h3 className="text-xl font-bold">Class Rewards</h3>
-            <p className="text-white/80 mt-2">Special privileges</p>
-          </button>
-        </div>
-      );
+    if (activeCategory === 'card_packs') {
+      return renderCardPackSection();
     }
 
     // ===============================================
-    // NEW: Inventory view - inline display
-    // ===============================================
-    if (activeCategory === 'inventory') {
-      const ownedAvatars = studentData?.ownedAvatars || [];
-      const ownedPets = studentData?.ownedPets || [];
-
-      return (
-        <div className="space-y-6">
-          <h3 className="text-lg font-bold text-gray-800">🎒 My Inventory</h3>
-
-          {/* Owned Avatars */}
-          <div>
-            <h4 className="font-semibold text-gray-700 mb-3">Avatars ({ownedAvatars.length})</h4>
-            {ownedAvatars.length > 0 ? (
-              <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3 justify-items-center">
-                {ownedAvatars.map(avatarName => {
-                  const avatarData = [
-                    ...(SHOP_BASIC_AVATARS || []),
-                    ...(SHOP_PREMIUM_AVATARS || []),
-                    ...(HALLOWEEN_BASIC_AVATARS || []),
-                    ...(HALLOWEEN_PREMIUM_AVATARS || []),
-                    ...(CHRISTMAS_BASIC_AVATARS || []),
-                    ...(CHRISTMAS_PREMIUM_AVATARS || [])
-                  ].find(a => a.name === avatarName);
-                  return (
-                    <div key={avatarName} className="w-full bg-white rounded-xl overflow-hidden text-center border shadow-sm hover:shadow-md transition-all">
-                      <div className="aspect-square w-full bg-gray-50 flex items-center justify-center">
-                        <img
-                          src={avatarData?.path || getAvatarImage(avatarName, 1)}
-                          alt={avatarName}
-                          className="w-full h-full object-contain"
-                          onError={(e) => { e.target.src = '/shop/Basic/Banana.png'; }}
-                        />
-                      </div>
-                      <div className="p-2">
-                        <p className="text-xs font-semibold truncate">{avatarName}</p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <p className="text-gray-400 text-sm">No avatars owned yet - visit the shop!</p>
-            )}
-          </div>
-
-          {/* Owned Pets */}
-          <div>
-            <h4 className="font-semibold text-gray-700 mb-3">Pets ({ownedPets.length})</h4>
-            {ownedPets.length > 0 ? (
-              <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3 justify-items-center">
-                {ownedPets.map(pet => (
-                  <div key={pet.id || pet.name} className="w-full bg-white rounded-xl overflow-hidden text-center border shadow-sm hover:shadow-md transition-all">
-                    <div className="aspect-square w-full bg-gray-50 flex items-center justify-center">
-                      <img
-                        src={pet.path || '/shop/BasicPets/Wizard.png'}
-                        alt={pet.name}
-                        className="w-full h-full object-contain"
-                      />
-                    </div>
-                    <div className="p-2">
-                      <p className="text-xs font-semibold truncate">{pet.name}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-400 text-sm">No pets owned yet - visit the shop!</p>
-            )}
-          </div>
-        </div>
-      );
-    }
-
-    // ===============================================
-    // LEGACY: Keep old categories for backward compat
+    // MYSTERY BOX - Direct access
     // ===============================================
     if (activeCategory === 'mysterybox') {
       return renderMysteryBox();
     }
 
+    // ===============================================
+    // LOOT WELL - Direct access
+    // ===============================================
     if (activeCategory === 'loot_well') {
       return (
         <div className="py-4">
@@ -2608,219 +2509,193 @@ const StudentShop = ({
       );
     }
 
-    if (activeCategory === 'featured') {
-      return renderFeaturedItems();
-    }
-
-    let items = [];
-    let itemType = '';
-
-    switch (activeCategory) {
-      case 'card_packs':
-        items = cardPackInventory;
-        itemType = 'card_pack';
-        break;
-      case 'christmas':
-        items = [
-          ...CHRISTMAS_BASIC_AVATARS.map(item => ({ ...item, __type: 'avatar' })),
-          ...CHRISTMAS_PREMIUM_AVATARS.map(item => ({ ...item, __type: 'avatar' })),
-          ...CHRISTMAS_PETS.map(item => ({ ...item, __type: 'pet' }))
-        ];
-        itemType = 'mixed';
-        break;
-      case 'basic_avatars':
-        items = SHOP_BASIC_AVATARS;
-        itemType = 'avatar';
-        break;
-      case 'premium_avatars':
-        items = SHOP_PREMIUM_AVATARS;
-        itemType = 'avatar';
-        break;
-      case 'basic_pets':
-        items = SHOP_BASIC_PETS;
-        itemType = 'pet';
-        break;
-      case 'premium_pets':
-        items = SHOP_PREMIUM_PETS;
-        itemType = 'pet';
-        break;
-      case 'rewards':
-        items = availableClassRewards || [];
-        itemType = 'reward';
-        break;
-      default:
-        return null;
-    }
-
-    if (items.length === 0) {
+    // ===============================================
+    // REWARDS - Direct access
+    // ===============================================
+    if (activeCategory === 'rewards') {
       return (
-        <div className="col-span-full text-center py-8 md:py-12">
-          <div className="text-4xl md:text-5xl mb-3 md:mb-4">📦</div>
-          <p className="text-gray-600 text-sm md:text-base">No items available in this category yet!</p>
+        <div className="space-y-4">
+          <p className="text-sm text-gray-500">Spend your coins on class rewards set by your teacher!</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4">
+            {(availableClassRewards || []).map(reward => {
+              const canAfford = currentCoins >= reward.price;
+              return (
+                <div
+                  key={reward.id}
+                  className="bg-white border-2 border-amber-200 rounded-xl p-4 text-center hover:shadow-lg hover:border-amber-400 transition-all flex flex-col justify-between"
+                >
+                  <div className="text-4xl md:text-5xl mb-3">{reward.icon}</div>
+                  <p className="font-bold text-sm md:text-base text-gray-800">{reward.name}</p>
+                  <p className="text-lg font-bold text-amber-600 my-2">💰 {reward.price}</p>
+                  <button
+                    onClick={() => setPurchaseModal({ visible: true, item: reward, type: 'reward' })}
+                    disabled={!canAfford}
+                    className={`w-full py-2 text-xs md:text-sm font-bold rounded-lg transition-all ${
+                      canAfford
+                        ? 'bg-amber-500 text-white hover:bg-amber-600 active:scale-95'
+                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                    }`}
+                  >
+                    {canAfford ? 'Claim Reward' : 'Need More Coins'}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
         </div>
       );
     }
 
-    return (
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4 justify-items-center">
-        {items.map((item, index) => {
-          const resolvedType = item.__type || itemType;
-          const isOwnedItem = resolvedType === 'avatar'
-            ? studentData.ownedAvatars?.includes(item.name)
-            : resolvedType === 'pet'
-              ? studentData.ownedPets?.some(p => p.name === item.name)
-              : false;
+    // ===============================================
+    // INVENTORY - Inline display
+    // ===============================================
+    if (activeCategory === 'inventory') {
+      const ownedAvatars = studentData?.ownedAvatars || [];
+      const ownedPets = studentData?.ownedPets || [];
 
-          const canAfford = currentCoins >= (item.price || 0);
-          const isChristmas = item.theme === 'christmas';
-          const packCount = resolvedType === 'card_pack' ? item.count || 0 : 0;
-          const packStyle = resolvedType === 'card_pack' ? (CARD_RARITY_STYLES[item.rarity] || CARD_RARITY_STYLES.common) : null;
-          const packLabelColor = resolvedType === 'card_pack'
-            ? item.visual?.label || '#f8fafc'
-            : null;
-          const packSubtitleColor = resolvedType === 'card_pack'
-            ? item.visual?.label
-              ? `${item.visual.label}cc`
-              : 'rgba(248,250,252,0.75)'
-            : null;
-          const packIconShadow = resolvedType === 'card_pack'
-            ? item.visual?.glow || 'rgba(15, 23, 42, 0.55)'
-            : null;
+      return (
+        <div className="space-y-6">
+          {/* Owned Avatars */}
+          <div>
+            <h4 className="font-bold text-gray-700 mb-3 text-base">👤 Avatars ({ownedAvatars.length})</h4>
+            {ownedAvatars.length > 0 ? (
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
+                {ownedAvatars.map(avatarName => {
+                  const avatarData = [
+                    ...(SHOP_BASIC_AVATARS || []),
+                    ...(SHOP_PREMIUM_AVATARS || []),
+                    ...(HALLOWEEN_BASIC_AVATARS || []),
+                    ...(HALLOWEEN_PREMIUM_AVATARS || []),
+                    ...(CHRISTMAS_BASIC_AVATARS || []),
+                    ...(CHRISTMAS_PREMIUM_AVATARS || [])
+                  ].find(a => a.name === avatarName);
+                  const isEquipped = studentData.avatarBase === avatarName;
+                  return (
+                    <div key={avatarName} className={`bg-white rounded-xl overflow-hidden text-center border-2 shadow-sm transition-all ${isEquipped ? 'border-blue-400 ring-2 ring-blue-100' : 'border-gray-100'}`}>
+                      <div className="aspect-square w-full bg-gray-50 flex items-center justify-center p-2">
+                        <img
+                          src={avatarData?.path || getAvatarImage(avatarName, 1)}
+                          alt={avatarName}
+                          className="w-full h-full object-contain"
+                          onError={(e) => { e.target.src = '/shop/Basic/Banana.png'; }}
+                        />
+                      </div>
+                      <div className="p-2">
+                        <p className="text-xs font-semibold truncate mb-1">{avatarName}</p>
+                        {isEquipped ? (
+                          <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">Equipped</span>
+                        ) : (
+                          <button
+                            onClick={() => handleEquip('avatar', avatarName)}
+                            className="text-[10px] font-semibold text-gray-500 hover:text-blue-600 transition-colors"
+                          >Equip</button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-gray-400 text-sm">No avatars owned yet — browse the Avatars tab!</p>
+            )}
+          </div>
 
-          return (
-            <div
-              key={index}
-              className={`w-full bg-white rounded-xl shadow-lg p-3 text-center transition-all hover:shadow-xl flex flex-col justify-between ${resolvedType === 'card_pack' ? 'bg-slate-900 text-white border border-white/15' : ''
-                } ${isOwnedItem && resolvedType !== 'card_pack' ? 'opacity-50' : ''} ${isChristmas ? 'border-2 border-emerald-500' : ''}`}
-            >
-              {isChristmas && (
-                <div className="bg-emerald-600 text-white text-xs font-bold px-2 py-1 rounded-full mb-2 inline-block">
-                  🎄 CHRISTMAS
-                </div>
-              )}
+          {/* Owned Pets */}
+          <div>
+            <h4 className="font-bold text-gray-700 mb-3 text-base">🐾 Pets ({ownedPets.length})</h4>
+            {ownedPets.length > 0 ? (
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
+                {ownedPets.map((pet, index) => {
+                  const isActive = index === 0;
+                  return (
+                    <div key={pet.id || pet.name} className={`bg-white rounded-xl overflow-hidden text-center border-2 shadow-sm transition-all ${isActive ? 'border-purple-400 ring-2 ring-purple-100' : 'border-gray-100'}`}>
+                      <div className="aspect-square w-full bg-gray-50 flex items-center justify-center p-2">
+                        <img
+                          src={pet.path || '/shop/BasicPets/Wizard.png'}
+                          alt={pet.name}
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                      <div className="p-2">
+                        <p className="text-xs font-semibold truncate mb-1">{pet.name}</p>
+                        {isActive ? (
+                          <span className="text-[10px] font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">Active</span>
+                        ) : (
+                          <button
+                            onClick={() => handleEquip('pet', pet.id)}
+                            className="text-[10px] font-semibold text-gray-500 hover:text-purple-600 transition-colors"
+                          >Equip</button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-gray-400 text-sm">No pets owned yet — browse the Pets tab!</p>
+            )}
+          </div>
 
-              {resolvedType === 'card_pack' && (
-                <div
-                  className="relative rounded-2xl overflow-hidden py-6 mb-3"
-                  style={{
-                    background: item.visual?.gradient || 'linear-gradient(135deg,#4338ca,#f472b6)',
-                    boxShadow: `0 0 25px ${item.visual?.glow || 'rgba(79,70,229,0.4)'}`
-                  }}
-                >
-                  <div className="absolute inset-0 bg-white/10 mix-blend-overlay" aria-hidden></div>
-                  <div
-                    className="relative z-10 flex flex-col items-center gap-2"
-                    style={{ color: packLabelColor || '#f8fafc' }}
-                  >
-                    <span
-                      className="text-4xl drop-shadow-xl"
-                      style={{ textShadow: `0 6px 18px ${packIconShadow}` }}
+          {/* Incubating Eggs */}
+          {studentEggs.length > 0 && (
+            <div>
+              <h4 className="font-bold text-gray-700 mb-3 text-base">🥚 Incubating Eggs ({studentEggs.length})</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {studentEggs.map((egg) => {
+                  const status = getEggStageStatus(egg);
+                  const accent = getEggAccent(egg);
+                  const eggArt = resolveEggArt(status.stage);
+                  const stageMessage = EGG_STAGE_MESSAGES[status.stage] || 'A surprise is brewing inside.';
+
+                  return (
+                    <div
+                      key={egg.id}
+                      className="border-2 rounded-xl p-3 flex items-center gap-3"
+                      style={{
+                        borderColor: `${accent}55`,
+                        background: `linear-gradient(135deg, ${accent}11, #ffffff)`
+                      }}
                     >
-                      {item.icon || '🃏'}
-                    </span>
-                    <p className="font-bold text-lg" style={{ color: packLabelColor || '#f8fafc' }}>
-                      {item.name}
-                    </p>
-                    <p
-                      className="text-xs uppercase tracking-widest"
-                      style={{ color: packSubtitleColor || 'rgba(248,250,252,0.75)' }}
-                    >
-                      {item.minCards}-{item.maxCards} Cards
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {resolvedType === 'avatar' && (
-                <img
-                  src={item.path}
-                  alt={item.name}
-                  className="w-16 h-16 md:w-20 md:h-20 rounded-full mx-auto mb-2 border-4 border-purple-300"
-                  onError={(e) => {
-                    e.target.src = '/shop/Basic/Banana.png';
-                  }}
-                />
-              )}
-              {resolvedType === 'pet' && (
-                <img
-                  src={item.path}
-                  alt={item.name}
-                  className="w-16 h-16 md:w-20 md:h-20 rounded-full mx-auto mb-2 border-4 border-green-300"
-                  onError={(e) => {
-                    e.target.src = '/shop/BasicPets/Wizard.png';
-                  }}
-                />
-              )}
-              {resolvedType === 'reward' && (
-                <div className="text-3xl md:text-4xl mb-2">{item.icon || '🎁'}</div>
-              )}
-
-              {resolvedType !== 'card_pack' && (
-                <>
-                  <h4 className="font-bold text-sm md:text-base mb-1 truncate">{item.name}</h4>
-                  <p className="text-yellow-600 font-bold mb-2 text-sm md:text-base">💰 {item.price}</p>
-                </>
-              )}
-
-              {resolvedType === 'card_pack' && (
-                <div className="space-y-2">
-                  <h4 className="font-bold text-base md:text-lg mb-1">{item.name}</h4>
-                  <p className="text-sm text-white/80">
-                    {packStyle?.label || item.rarity} Pack • Owned x{packCount}
-                  </p>
-                  <p className="text-xs text-white/60">{item.description}</p>
-                </div>
-              )}
-
-              {isOwnedItem && resolvedType !== 'card_pack' ? (
-                <button
-                  disabled
-                  className="w-full py-2 bg-gray-300 text-gray-600 rounded-lg text-xs md:text-sm font-semibold cursor-not-allowed"
-                >
-                  Owned ✓
-                </button>
-              ) : (
-                resolvedType === 'card_pack' ? (
-                  <div className="mt-4 space-y-2">
-                    <button
-                      onClick={() => setPurchaseModal({ visible: true, item, type: 'card_pack' })}
-                      disabled={!canAfford}
-                      className={`w-full py-2 rounded-lg text-xs md:text-sm font-semibold transition-all ${canAfford
-                        ? 'bg-white text-slate-900 border border-white/70 hover:bg-amber-100'
-                        : 'bg-white/10 text-white/50 cursor-not-allowed'
-                        }`}
-                    >
-                      {canAfford ? `Buy Pack • 💰${item.price}` : 'Not Enough Coins'}
-                    </button>
-                    <button
-                      onClick={() => handleOpenPack(item)}
-                      disabled={packCount === 0 || isOpeningPack}
-                      className={`w-full py-2 rounded-lg text-xs md:text-sm font-semibold transition-all ${packCount === 0 || isOpeningPack
-                        ? 'bg-white/10 text-white/50 cursor-not-allowed'
-                        : 'bg-gradient-to-r from-amber-400 to-pink-500 hover:shadow-lg'
-                        }`}
-                    >
-                      {packCount > 0 ? `Open Pack (${packCount})` : 'No Packs Yet'}
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setPurchaseModal({ visible: true, item, type: resolvedType })}
-                    disabled={!canAfford}
-                    className={`w-full py-2 rounded-lg text-xs md:text-sm font-semibold transition-all ${canAfford
-                      ? 'bg-blue-500 text-white hover:bg-blue-600 active:scale-95'
-                      : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                      }`}
-                  >
-                    {canAfford ? 'Buy Now' : 'Not Enough Coins'}
-                  </button>
-                )
-              )}
+                      <div
+                        className={`relative w-12 h-12 rounded-xl overflow-hidden shadow flex-shrink-0 ${status.stage === 'unbroken' ? 'egg-shake' : ''}`}
+                        style={{
+                          background: `radial-gradient(circle at 30% 30%, ${accent}22, #ffffff)`,
+                          border: `3px solid ${accent}`
+                        }}
+                      >
+                        <Image src={eggArt.src} alt={`${egg.name}`} fill sizes="48px" className="object-contain p-1"
+                          data-fallbacks={serializeFallbacks(eggArt.fallbacks)} data-fallback-index="0" onError={eggImageErrorHandler}
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm truncate">{egg.name}</p>
+                        <p className="text-xs text-gray-500">{status.stageLabel}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">{stageMessage}</p>
+                        {status.stage === 'ready' && (
+                          <button
+                            onClick={() => handleHatchEgg(egg)}
+                            className="mt-1 text-xs bg-orange-500 text-white px-3 py-1 rounded-lg hover:bg-orange-600 font-semibold"
+                          >Hatch!</button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          );
-        })}
-      </div>
-    );
+          )}
+        </div>
+      );
+    }
+
+    // ===============================================
+    // FEATURED (legacy, still reachable from specials)
+    // ===============================================
+    if (activeCategory === 'featured') {
+      return renderFeaturedItems();
+    }
+
+    return null;
   };
 
   return (
@@ -2929,82 +2804,105 @@ const StudentShop = ({
         </div>
       )}
 
-      {/* Quick Actions - Mobile Optimized */}
-      <div className="flex gap-2 md:gap-3 overflow-x-auto pb-2">
-        <button
-          onClick={() => setInventoryModal({ visible: true })}
-          className="flex-shrink-0 bg-purple-500 text-white px-4 py-2 md:px-6 md:py-3 rounded-lg font-semibold hover:bg-purple-600 transition-all text-sm md:text-base"
-        >
-          🎒 My Inventory
-        </button>
+      {/* Utility Bar — Card Book, Sell Mode, Trade status */}
+      <div className="flex items-center gap-2 flex-wrap">
         <button
           onClick={() => setCardBookVisible(true)}
-          className="flex-shrink-0 bg-slate-900 text-white px-4 py-2 md:px-6 md:py-3 rounded-lg font-semibold hover:bg-slate-800 transition-all text-sm md:text-base"
+          className="bg-slate-800 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg font-semibold hover:bg-slate-700 transition-all text-xs md:text-sm shadow-sm"
         >
           📖 Card Book
         </button>
         <button
-          onClick={() => setActiveCategory('card_packs')}
-          className="flex-shrink-0 bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-4 py-2 md:px-6 md:py-3 rounded-lg font-semibold hover:shadow-lg transition-all text-sm md:text-base"
-        >
-          🃏 Card Packs
-        </button>
-        <button
           onClick={() => setShowSellMode(!showSellMode)}
-          className={`flex-shrink-0 px-4 py-2 md:px-6 md:py-3 rounded-lg font-semibold transition-all text-sm md:text-base ${showSellMode
+          className={`px-3 py-1.5 md:px-4 md:py-2 rounded-lg font-semibold transition-all text-xs md:text-sm shadow-sm ${showSellMode
             ? 'bg-red-500 text-white hover:bg-red-600'
-            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
             }`}
         >
           💵 {showSellMode ? 'Stop Selling' : 'Sell Items'}
         </button>
+        {tradeAvailabilityText && (
+          <span className="text-xs text-gray-500 ml-auto hidden md:inline">{tradeAvailabilityText}</span>
+        )}
       </div>
 
-      {/* Shop Content - Mobile Optimized */}
-      <div className="bg-white rounded-xl shadow-lg p-4 md:p-6">
-        {/* Category Tabs - Mobile Optimized */}
-        <div className="flex overflow-x-auto gap-2 mb-4 md:mb-6 pb-2 scrollbar-hide">
-          {categories.map(cat => (
-            <button
-              key={cat.id}
-              onClick={() => setActiveCategory(cat.id)}
-              className={`flex-shrink-0 px-3 py-2 md:px-4 md:py-2 rounded-lg font-semibold transition-all text-xs md:text-sm ${activeCategory === cat.id
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+      {/* Shop Content */}
+      <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+        {/* Navigation Pills */}
+        <div className="flex overflow-x-auto gap-1.5 p-3 md:p-4 bg-gray-50 border-b scrollbar-hide">
+          {categories.map(cat => {
+            const isActive = activeCategory === cat.id;
+            const colorMap = {
+              avatars: { active: 'bg-blue-500 text-white shadow-blue-200', hover: 'hover:bg-blue-50 hover:text-blue-700' },
+              pets: { active: 'bg-purple-500 text-white shadow-purple-200', hover: 'hover:bg-purple-50 hover:text-purple-700' },
+              card_packs: { active: 'bg-indigo-500 text-white shadow-indigo-200', hover: 'hover:bg-indigo-50 hover:text-indigo-700' },
+              mysterybox: { active: 'bg-pink-500 text-white shadow-pink-200', hover: 'hover:bg-pink-50 hover:text-pink-700' },
+              loot_well: { active: 'bg-sky-500 text-white shadow-sky-200', hover: 'hover:bg-sky-50 hover:text-sky-700' },
+              rewards: { active: 'bg-amber-500 text-white shadow-amber-200', hover: 'hover:bg-amber-50 hover:text-amber-700' },
+              inventory: { active: 'bg-emerald-500 text-white shadow-emerald-200', hover: 'hover:bg-emerald-50 hover:text-emerald-700' }
+            };
+            const colors = colorMap[cat.id] || { active: 'bg-blue-500 text-white', hover: 'hover:bg-gray-200' };
+
+            return (
+              <button
+                key={cat.id}
+                onClick={() => { setActiveCategory(cat.id); setSearchQuery(''); }}
+                className={`flex-shrink-0 px-3 py-2 md:px-4 md:py-2.5 rounded-xl font-semibold transition-all text-xs md:text-sm whitespace-nowrap ${
+                  isActive
+                    ? `${colors.active} shadow-md`
+                    : `bg-white text-gray-600 border border-gray-200 ${colors.hover}`
                 }`}
-            >
-              <span className="md:hidden">{cat.shortName}</span>
-              <span className="hidden md:inline">{cat.name}</span>
-            </button>
-          ))}
+              >
+                <span className="md:hidden">{cat.shortName}</span>
+                <span className="hidden md:inline">{cat.name}</span>
+                {cat.count != null && (
+                  <span className={`ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                    isActive ? 'bg-white/25' : 'bg-gray-100 text-gray-500'
+                  }`}>{cat.count}</span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
-        {/* Special Header for Mystery Box Section */}
+        {/* Section Header Banners */}
         {activeCategory === 'mysterybox' && (
-          <div className="mb-4 md:mb-6 p-3 md:p-4 bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg border-2 border-purple-200">
+          <div className="mx-4 mt-4 p-3 md:p-4 bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl border border-purple-200">
             <div className="flex items-center gap-3">
               <div className="text-2xl md:text-3xl">🎁</div>
               <div>
-                <h3 className="text-lg md:text-xl font-bold text-purple-800">Mystery Box Adventure!</h3>
-                <p className="text-purple-600 text-sm md:text-base">Take a chance and discover amazing surprises including Christmas items!</p>
+                <h3 className="text-base md:text-lg font-bold text-purple-800">Mystery Box</h3>
+                <p className="text-purple-600 text-xs md:text-sm">Take a chance and discover amazing surprises!</p>
               </div>
             </div>
           </div>
         )}
 
         {activeCategory === 'loot_well' && (
-          <div className="mb-4 md:mb-6 p-3 md:p-4 bg-gradient-to-r from-sky-100 via-indigo-100 to-purple-100 rounded-lg border-2 border-sky-200">
+          <div className="mx-4 mt-4 p-3 md:p-4 bg-gradient-to-r from-sky-100 via-indigo-100 to-purple-100 rounded-xl border border-sky-200">
             <div className="flex items-center gap-3">
               <div className="text-2xl md:text-3xl">💠</div>
               <div>
-                <h3 className="text-lg md:text-xl font-bold text-indigo-800">The Loot Well is overflowing!</h3>
-                <p className="text-indigo-600 text-sm md:text-base">Dip into the well once every hour for a rare chance at dazzling rewards.</p>
+                <h3 className="text-base md:text-lg font-bold text-indigo-800">The Loot Well</h3>
+                <p className="text-indigo-600 text-xs md:text-sm">Dip into the well once every hour for rare rewards!</p>
               </div>
             </div>
           </div>
         )}
 
-        <div className="w-full">
+        {activeCategory === 'rewards' && (
+          <div className="mx-4 mt-4 p-3 md:p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-200">
+            <div className="flex items-center gap-3">
+              <div className="text-2xl md:text-3xl">🏆</div>
+              <div>
+                <h3 className="text-base md:text-lg font-bold text-amber-800">Class Rewards</h3>
+                <p className="text-amber-600 text-xs md:text-sm">Special privileges set by your teacher!</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="p-4 md:p-6">
           {renderShopItems()}
         </div>
       </div>
