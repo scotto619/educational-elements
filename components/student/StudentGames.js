@@ -1,34 +1,37 @@
 // components/student/StudentGames.js - UPDATED: Added Multiplication Grid and Precision Timer
 import React, { useState } from 'react';
+import dynamic from 'next/dynamic';
 import { getGameLogo, DEFAULT_LOGO as DEFAULT_GAME_LOGO } from '../../utils/gameLogos';
 import { normalizeImageSource, serializeFallbacks, createImageErrorHandler } from '../../utils/imageFallback';
 
-// Import existing game components
-import BoggleGame from '../games/BoggleGame';
-import MathRaceGame from '../games/MathRaceGame';
-import MemoryMatchGame from '../games/MemoryMatchGame';
-import NoggleGame from '../games/NoggleGame';
-import WordSearchGame from '../games/WordSearchGame';
-import CrosswordGame from '../games/CrosswordGame';
-import TicTacToeGame from '../games/TicTacToeGame';
-import BattleshipsGame from '../games/BattleshipsGame';
-import ClickerGame from '../games/ClickerGame';
-import Match3BattleGame from '../games/Match3BattleGame';
-import MathSpaceInvadersGame from '../games/MathSpaceInvadersGame';
-import MultiplayerAgarGame from '../games/MultiplayerAgarGame';
-import StudentBattleRoyale from '../student/StudentBattleRoyale';
-import EducationalMemoryGame from '../games/EducationalMemoryGame';
-import StudentBingo from '../student/StudentBingo';
-import MazeGame from '../games/MazeGame';
-import DailyWordleChallenge from '../games/DailyWordleChallenge';
-import AmazingTypingAdventure from '../games/AmazingTypingAdventure';
-import MultiplicationGridGame from '../games/MultiplicationGridGame';
-import CoordinateQuestGame from '../games/CoordinateQuestGame';
-import PrecisionTimerGame from '../games/PrecisionTimerGame';
-import DodgeballGame from '../games/DodgeballGame';
-import ScoundrelLegendsGame from '../games/ScoundrelLegendsGame';
-import ZTypeGame from '../games/ZTypeGame';
-import SinMinerGame from '../games/SinMinerGame';
+const GameLoadingSpinner = () => (
+  <div className="flex items-center justify-center min-h-64">
+    <div className="flex flex-col items-center gap-3">
+      <div className="w-12 h-12 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin" />
+      <p className="text-purple-600 font-semibold">Loading game...</p>
+    </div>
+  </div>
+);
+
+// Dynamically imported game components (loaded only when a game is selected)
+const BoggleGame = dynamic(() => import('../games/BoggleGame'), { loading: GameLoadingSpinner, ssr: false });
+const MemoryMatchGame = dynamic(() => import('../games/MemoryMatchGame'), { loading: GameLoadingSpinner, ssr: false });
+const WordSearchGame = dynamic(() => import('../games/WordSearchGame'), { loading: GameLoadingSpinner, ssr: false });
+const CrosswordGame = dynamic(() => import('../games/CrosswordGame'), { loading: GameLoadingSpinner, ssr: false });
+const TicTacToeGame = dynamic(() => import('../games/TicTacToeGame'), { loading: GameLoadingSpinner, ssr: false });
+const BattleshipsGame = dynamic(() => import('../games/BattleshipsGame'), { loading: GameLoadingSpinner, ssr: false });
+const ClickerGame = dynamic(() => import('../games/ClickerGame'), { loading: GameLoadingSpinner, ssr: false });
+const MathSpaceInvadersGame = dynamic(() => import('../games/MathSpaceInvadersGame'), { loading: GameLoadingSpinner, ssr: false });
+const MultiplayerAgarGame = dynamic(() => import('../games/MultiplayerAgarGame'), { loading: GameLoadingSpinner, ssr: false });
+const StudentBingo = dynamic(() => import('../student/StudentBingo'), { loading: GameLoadingSpinner, ssr: false });
+const MazeGame = dynamic(() => import('../games/MazeGame'), { loading: GameLoadingSpinner, ssr: false });
+const DailyWordleChallenge = dynamic(() => import('../games/DailyWordleChallenge'), { loading: GameLoadingSpinner, ssr: false });
+const MultiplicationGridGame = dynamic(() => import('../games/MultiplicationGridGame'), { loading: GameLoadingSpinner, ssr: false });
+const CoordinateQuestGame = dynamic(() => import('../games/CoordinateQuestGame'), { loading: GameLoadingSpinner, ssr: false });
+const PrecisionTimerGame = dynamic(() => import('../games/PrecisionTimerGame'), { loading: GameLoadingSpinner, ssr: false });
+const DodgeballGame = dynamic(() => import('../games/DodgeballGame'), { loading: GameLoadingSpinner, ssr: false });
+const ZTypeGame = dynamic(() => import('../games/ZTypeGame'), { loading: GameLoadingSpinner, ssr: false });
+const SinMinerGame = dynamic(() => import('../games/SinMinerGame'), { loading: GameLoadingSpinner, ssr: false });
 
 const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 

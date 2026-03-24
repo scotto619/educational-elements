@@ -1,56 +1,42 @@
 import React, { useState } from 'react';
+import dynamic from 'next/dynamic';
 import ResourceViewer from './ResourceViewer';
-import NounSortingGame from '../../games/NounSortingGame';
-import NounDetectiveGame from '../../games/NounDetectiveGame';
-import NounPopGame from '../../games/NounPopGame';
-import VerbActionRace from '../../games/VerbActionRace';
-import VerbSortingGame from '../../games/VerbSortingGame';
-import VerbTenseTimeMachine from '../../games/VerbTenseTimeMachine';
-import AdjectiveDetectiveGame from '../../games/AdjectiveDetectiveGame';
-import AdjectiveSortingGame from '../../games/AdjectiveSortingGame';
-import AdjectiveOppositesGame from '../../games/AdjectiveOppositesGame';
-import AdverbAsteroidsGame from '../../games/AdverbAsteroidsGame';
-import AdverbSortingGame from '../../games/AdverbSortingGame';
-import AdverbActionBuilder from '../../games/AdverbActionBuilder';
-import PronounReplacementRace from '../../games/PronounReplacementRace';
-import PronounTypeMatch from '../../games/PronounTypeMatch';
-import PronounRescueMission from '../../games/PronounRescueMission';
-import PrepositionNinja from '../../games/PrepositionNinja';
-import PrepositionLocationGame from '../../games/PrepositionLocationGame';
-import PrepositionPhraseBuilder from '../../games/PrepositionPhraseBuilder';
-import ConjunctionConductor from '../../games/ConjunctionConductor';
-import ConjunctionBridgeBuilder from '../../games/ConjunctionBridgeBuilder';
-import ConjunctionSort from '../../games/ConjunctionSort';
-import InterjectionEmotionMatch from '../../games/InterjectionEmotionMatch';
-import InterjectionPopGame from '../../games/InterjectionPopGame';
-import InterjectionComicStrip from '../../games/InterjectionComicStrip';
 
-// Map game string identifiers to their actual components
+const GameLoadingSpinner = () => (
+    <div className="flex items-center justify-center min-h-64">
+        <div className="flex flex-col items-center gap-3">
+            <div className="w-12 h-12 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin" />
+            <p className="text-purple-600 font-semibold">Loading game...</p>
+        </div>
+    </div>
+);
+
+// Map game string identifiers to dynamically imported components (loaded only when opened)
 const COMPONENTS = {
-    NounSortingGame,
-    NounDetectiveGame,
-    NounPopGame,
-    VerbActionRace,
-    VerbSortingGame,
-    VerbTenseTimeMachine,
-    AdjectiveDetectiveGame,
-    AdjectiveSortingGame,
-    AdjectiveOppositesGame,
-    AdverbAsteroidsGame,
-    AdverbSortingGame,
-    AdverbActionBuilder,
-    PronounReplacementRace,
-    PronounTypeMatch,
-    PronounRescueMission,
-    PrepositionNinja,
-    PrepositionLocationGame,
-    PrepositionPhraseBuilder,
-    ConjunctionConductor,
-    ConjunctionBridgeBuilder,
-    ConjunctionSort,
-    InterjectionEmotionMatch,
-    InterjectionPopGame,
-    InterjectionComicStrip
+    NounSortingGame: dynamic(() => import('../../games/NounSortingGame'), { loading: GameLoadingSpinner, ssr: false }),
+    NounDetectiveGame: dynamic(() => import('../../games/NounDetectiveGame'), { loading: GameLoadingSpinner, ssr: false }),
+    NounPopGame: dynamic(() => import('../../games/NounPopGame'), { loading: GameLoadingSpinner, ssr: false }),
+    VerbActionRace: dynamic(() => import('../../games/VerbActionRace'), { loading: GameLoadingSpinner, ssr: false }),
+    VerbSortingGame: dynamic(() => import('../../games/VerbSortingGame'), { loading: GameLoadingSpinner, ssr: false }),
+    VerbTenseTimeMachine: dynamic(() => import('../../games/VerbTenseTimeMachine'), { loading: GameLoadingSpinner, ssr: false }),
+    AdjectiveDetectiveGame: dynamic(() => import('../../games/AdjectiveDetectiveGame'), { loading: GameLoadingSpinner, ssr: false }),
+    AdjectiveSortingGame: dynamic(() => import('../../games/AdjectiveSortingGame'), { loading: GameLoadingSpinner, ssr: false }),
+    AdjectiveOppositesGame: dynamic(() => import('../../games/AdjectiveOppositesGame'), { loading: GameLoadingSpinner, ssr: false }),
+    AdverbAsteroidsGame: dynamic(() => import('../../games/AdverbAsteroidsGame'), { loading: GameLoadingSpinner, ssr: false }),
+    AdverbSortingGame: dynamic(() => import('../../games/AdverbSortingGame'), { loading: GameLoadingSpinner, ssr: false }),
+    AdverbActionBuilder: dynamic(() => import('../../games/AdverbActionBuilder'), { loading: GameLoadingSpinner, ssr: false }),
+    PronounReplacementRace: dynamic(() => import('../../games/PronounReplacementRace'), { loading: GameLoadingSpinner, ssr: false }),
+    PronounTypeMatch: dynamic(() => import('../../games/PronounTypeMatch'), { loading: GameLoadingSpinner, ssr: false }),
+    PronounRescueMission: dynamic(() => import('../../games/PronounRescueMission'), { loading: GameLoadingSpinner, ssr: false }),
+    PrepositionNinja: dynamic(() => import('../../games/PrepositionNinja'), { loading: GameLoadingSpinner, ssr: false }),
+    PrepositionLocationGame: dynamic(() => import('../../games/PrepositionLocationGame'), { loading: GameLoadingSpinner, ssr: false }),
+    PrepositionPhraseBuilder: dynamic(() => import('../../games/PrepositionPhraseBuilder'), { loading: GameLoadingSpinner, ssr: false }),
+    ConjunctionConductor: dynamic(() => import('../../games/ConjunctionConductor'), { loading: GameLoadingSpinner, ssr: false }),
+    ConjunctionBridgeBuilder: dynamic(() => import('../../games/ConjunctionBridgeBuilder'), { loading: GameLoadingSpinner, ssr: false }),
+    ConjunctionSort: dynamic(() => import('../../games/ConjunctionSort'), { loading: GameLoadingSpinner, ssr: false }),
+    InterjectionEmotionMatch: dynamic(() => import('../../games/InterjectionEmotionMatch'), { loading: GameLoadingSpinner, ssr: false }),
+    InterjectionPopGame: dynamic(() => import('../../games/InterjectionPopGame'), { loading: GameLoadingSpinner, ssr: false }),
+    InterjectionComicStrip: dynamic(() => import('../../games/InterjectionComicStrip'), { loading: GameLoadingSpinner, ssr: false }),
 };
 
 const TopicContentView = ({ topic, subjectId, onBack, onToggleAssign, assignedTopics = [], isStudentView = false }) => {
